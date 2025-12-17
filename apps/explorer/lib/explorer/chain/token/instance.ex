@@ -53,7 +53,6 @@ defmodule Explorer.Chain.Token.Instance do
     field(:cdn_upload_error, :string)
     field(:metadata_url, :string)
     field(:skip_metadata_url, :boolean)
-    field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
     belongs_to(:owner, Address, foreign_key: :owner_address_hash, references: :hash, type: Hash.Address)
 
@@ -135,47 +134,107 @@ defmodule Explorer.Chain.Token.Instance do
     do:
       from(i in __MODULE__, where: i.token_contract_address_hash == ^token_contract_address and i.token_id == ^token_id)
 
-  @spec nft_list(binary() | Hash.Address.t(), keyword()) :: [__MODULE__.t()]
-  def nft_list(address_hash, options \\ [])
-
-  def nft_list(address_hash, options) when is_list(options) do
-    nft_list(address_hash, Keyword.get(options, :token_type, []), options)
-  end
-
-  defp nft_list(address_hash, ["ERC-721"], options) do
-    erc_721_token_instances_by_owner_address_hash(address_hash, options)
-  end
-
-  defp nft_list(address_hash, ["ERC-1155"], options) do
-    erc_1155_token_instances_by_address_hash(address_hash, options)
-  end
-
-  defp nft_list(address_hash, ["ERC-404"], options) do
-    erc_404_token_instances_by_address_hash(address_hash, options)
-  end
-
-  defp nft_list(address_hash, _, options) do
+  @spec page_nft_list(
+          binary() | Hash.Address.t(),
+          keyword(),
+          (PagingOptions.t() -> String.t() | nil),
+          %{
+            String.t() => (binary()
+                           | Hash.Address.t(),
+                           keyword() ->
+                             [any()])
+          }
+        ) :: [any()]
+  defp page_nft_list(address_hash, options, get_type, type_to_fetch_func) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
+    page_size = paging_options.page_size
+    remaining_types = remaining_token_types(options, get_type)
 
-    case paging_options do
-      %PagingOptions{key: {_contract_address_hash, _token_id, "ERC-1155"}} ->
-        erc_1155_token_instances_by_address_hash(address_hash, options)
+    {acc, _filled} =
+      Enum.reduce_while(remaining_types, {[], 0}, fn type, {list, count} ->
+        options =
+          if Enum.empty?(list) do
+            options
+          else
+            Keyword.put(options, :paging_options, %PagingOptions{
+              page_size: page_size - count
+            })
+          end
 
-      %PagingOptions{key: {_contract_address_hash, _token_id, "ERC-404"}} ->
-        erc_404_token_instances_by_address_hash(address_hash, options)
+        fetch = Map.get(type_to_fetch_func, type, fn _, _ -> [] end)
+        fetched = fetch.(address_hash, options)
+        new_list = list ++ fetched
+        new_count = count + length(fetched)
+
+        if new_count >= page_size do
+          {:halt, {Enum.take(new_list, page_size), page_size}}
+        else
+          {:cont, {new_list, new_count}}
+        end
+      end)
+
+    acc
+  end
+
+  @spec remaining_token_types(keyword(), (PagingOptions.t() -> String.t() | nil)) :: [String.t()]
+  defp remaining_token_types(options, get_type) do
+    token_types =
+      options
+      |> Keyword.get(:token_type, [])
+      |> then(fn types ->
+        if Enum.empty?(types) do
+          Token.allowed_nft_type_labels()
+        else
+          Token.allowed_nft_type_labels() |> Enum.filter(&(&1 in types))
+        end
+      end)
+
+    options
+    |> Keyword.get(:paging_options, Chain.default_paging_options())
+    |> get_type.()
+    |> case do
+      type when is_binary(type) ->
+        Enum.drop_while(token_types, &(&1 != type))
 
       _ ->
-        erc_721 = erc_721_token_instances_by_owner_address_hash(address_hash, options)
-
-        if length(erc_721) == paging_options.page_size do
-          erc_721
-        else
-          erc_1155 = erc_1155_token_instances_by_address_hash(address_hash, options)
-          erc_404 = erc_404_token_instances_by_address_hash(address_hash, options)
-
-          (erc_721 ++ erc_1155 ++ erc_404) |> Enum.take(paging_options.page_size)
-        end
+        token_types
     end
+  end
+
+  @doc """
+  Paginated NFT instances owned by an address.
+
+  ## Notes
+  * Filter: `:token_type` list (empty or omitted = all).
+  * Pagination key: `{token_contract_address_hash, token_id, token_type}`.
+  * Resumes at the key's type; earlier types skipped.
+  * Fills one page sequentially across types; spillover allowed.
+
+  ## Params
+  * `address_hash` - owner address (binary or `Hash.Address`).
+  * `options` (keyword):
+    - `:paging_options` (%PagingOptions{}; default `Chain.default_paging_options/0`).
+    - `:token_type` (list of labels) filter.
+    - `:necessity_by_association` pass-through for joins.
+
+  ## Returns
+  * list (<= page_size) of `%Explorer.Chain.Token.Instance{}`; empty list if none.
+  """
+  @spec nft_list(binary() | Hash.Address.t(), keyword()) :: [__MODULE__.t()]
+  def nft_list(address_hash, options) when is_list(options) do
+    page_nft_list(
+      address_hash,
+      options,
+      fn
+        %PagingOptions{key: {_, _, type}} -> type
+        _ -> nil
+      end,
+      %{
+        "ERC-721" => &erc_721_token_instances_by_owner_address_hash/2,
+        "ERC-1155" => &erc_1155_token_instances_by_address_hash/2,
+        "ERC-404" => &erc_404_token_instances_by_address_hash/2
+      }
+    )
   end
 
   @doc """
@@ -310,44 +369,21 @@ defmodule Explorer.Chain.Token.Instance do
 
   @preloaded_nfts_limit 9
 
-  @spec nft_collections(binary() | Hash.Address.t(), keyword) :: list
-  def nft_collections(address_hash, options \\ [])
-
+  @spec nft_collections(binary() | Hash.Address.t(), keyword()) :: [CurrentTokenBalance.t()]
   def nft_collections(address_hash, options) when is_list(options) do
-    nft_collections(address_hash, Keyword.get(options, :token_type, []), options)
-  end
-
-  defp nft_collections(address_hash, ["ERC-721"], options) do
-    erc_721_collections_by_address_hash(address_hash, options)
-  end
-
-  defp nft_collections(address_hash, ["ERC-1155"], options) do
-    erc_1155_collections_by_address_hash(address_hash, options)
-  end
-
-  defp nft_collections(address_hash, ["ERC-404"], options) do
-    erc_404_collections_by_address_hash(address_hash, options)
-  end
-
-  defp nft_collections(address_hash, _, options) do
-    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
-
-    case paging_options do
-      %PagingOptions{key: {_contract_address_hash, "ERC-1155"}} ->
-        erc_1155_collections_by_address_hash(address_hash, options)
-
-      _ ->
-        erc_721 = erc_721_collections_by_address_hash(address_hash, options)
-
-        if length(erc_721) == paging_options.page_size do
-          erc_721
-        else
-          erc_1155 = erc_1155_collections_by_address_hash(address_hash, options)
-          erc_404 = erc_404_collections_by_address_hash(address_hash, options)
-
-          (erc_721 ++ erc_1155 ++ erc_404) |> Enum.take(paging_options.page_size)
-        end
-    end
+    page_nft_list(
+      address_hash,
+      options,
+      fn
+        %PagingOptions{key: {_, type}} -> type
+        _ -> nil
+      end,
+      %{
+        "ERC-721" => &erc_721_collections_by_address_hash/2,
+        "ERC-1155" => &erc_1155_collections_by_address_hash/2,
+        "ERC-404" => &erc_404_collections_by_address_hash/2
+      }
+    )
   end
 
   @spec erc_721_collections_by_address_hash(binary() | Hash.Address.t(), keyword) :: [CurrentTokenBalance.t()]
@@ -391,12 +427,19 @@ defmodule Explorer.Chain.Token.Instance do
       distinct_token_instances_count: fragment("COUNT(*)"),
       token_ids: fragment("array_agg(?)", ctb.token_id)
     })
-    |> ExplorerHelper.maybe_hide_scam_addresses_with_aggregate(:token_contract_address_hash, options)
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
     |> page_erc_1155_nft_collections(paging_options)
     |> limit(^paging_options.page_size)
     |> Chain.select_repo(options).all()
     |> Enum.map(&erc_1155_preload_nft(&1, address_hash, options))
-    |> Helper.custom_preload(options, Token, :token_contract_address_hash, :contract_address_hash, :token)
+    |> Helper.custom_preload(
+      options,
+      Token,
+      :token_contract_address_hash,
+      :contract_address_hash,
+      :token,
+      Reputation.reputation_association()
+    )
   end
 
   defp page_erc_1155_nft_collections(query, %PagingOptions{key: {contract_address_hash, "ERC-1155"}}) do
@@ -429,7 +472,14 @@ defmodule Explorer.Chain.Token.Instance do
     |> limit(^paging_options.page_size)
     |> Chain.select_repo(options).all()
     |> Enum.map(&erc_1155_preload_nft(&1, address_hash, options))
-    |> Helper.custom_preload(options, Token, :token_contract_address_hash, :contract_address_hash, :token)
+    |> Helper.custom_preload(
+      options,
+      Token,
+      :token_contract_address_hash,
+      :contract_address_hash,
+      :token,
+      Reputation.reputation_association()
+    )
   end
 
   defp page_erc_404_nft_collections(query, %PagingOptions{key: {contract_address_hash, "ERC-404"}}) do
@@ -630,7 +680,7 @@ defmodule Explorer.Chain.Token.Instance do
     is_unique is true for ERC-721 always and for ERC-1155 only if token_id is unique
   """
   @spec put_is_unique(__MODULE__.t(), Token.t(), Keyword.t()) :: __MODULE__.t()
-  def put_is_unique(instance, token, options) do
+  def put_is_unique(%__MODULE__{} = instance, token, options) do
     %__MODULE__{instance | is_unique: unique?(instance, token, options)}
   end
 
@@ -781,7 +831,7 @@ defmodule Explorer.Chain.Token.Instance do
 
   def batch_upsert_cdn_results(instances) do
     {_, result} =
-      Repo.insert_all(__MODULE__, instances,
+      Repo.safe_insert_all(__MODULE__, instances,
         on_conflict: {:replace, [:thumbnails, :media_type, :updated_at, :cdn_upload_error]},
         conflict_target: [:token_id, :token_contract_address_hash],
         returning: true

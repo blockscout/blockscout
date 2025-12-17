@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
     plug(BlockScoutWeb.ChecksumAddress)
   end
 
-  pipeline :account_api do
+  pipeline :account_api_v2 do
     plug(
       Plug.Parsers,
       parsers: [:urlencoded, :multipart, :json],
@@ -46,14 +46,14 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
       json_decoder: Poison
     )
 
-    plug(BlockScoutWeb.Plug.Logger, application: :api)
+    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
     plug(:fetch_session)
     plug(:protect_from_forgery)
     plug(CheckAccountAPI)
   end
 
-  pipeline :api do
+  pipeline :api_v2 do
     plug(
       Plug.Parsers,
       parsers: [:urlencoded, :multipart, :json],
@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
       json_decoder: Poison
     )
 
-    plug(BlockScoutWeb.Plug.Logger, application: :api)
+    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
   end
 
@@ -112,7 +112,7 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
   end
 
   scope "/v2", as: :account_v2 do
-    pipe_through(:account_api)
+    pipe_through(:account_api_v2)
 
     get("/authenticate", AuthenticateController, :authenticate_get)
     post("/authenticate", AuthenticateController, :authenticate_post)
@@ -163,8 +163,7 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
   end
 
   scope "/v2" do
-    pipe_through(:api)
-    pipe_through(:account_api)
+    pipe_through([:api_v2, :account_api_v2])
 
     scope "/tags" do
       get("/address/:address_hash", TagsController, :tags_address)
@@ -174,7 +173,7 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
   end
 
   scope "/v2" do
-    pipe_through(:api)
+    pipe_through(:api_v2)
 
     post("/authenticate_via_wallet", AuthenticateController, :authenticate_via_wallet)
     post("/send_otp", AuthenticateController, :send_otp)

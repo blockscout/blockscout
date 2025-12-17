@@ -9,7 +9,6 @@ defmodule Explorer.SmartContract.Helper do
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.{Reader, Writer}
-  alias Phoenix.HTML
 
   @api_true [api?: true]
 
@@ -67,7 +66,11 @@ defmodule Explorer.SmartContract.Helper do
 
   def add_contract_code_md5(attrs), do: attrs
 
-  def contract_code_md5(bytes) do
+  @doc """
+  Calculates MD5 hash of given binary.
+  """
+  @spec md5(binary()) :: String.t()
+  def md5(bytes) do
     :md5
     |> :crypto.hash(bytes)
     |> Base.encode16(case: :lower)
@@ -75,22 +78,13 @@ defmodule Explorer.SmartContract.Helper do
 
   defp attrs_extend_with_contract_code_md5(attrs, address) do
     if address.contract_code do
-      contract_code_md5 = contract_code_md5(address.contract_code.bytes)
+      contract_code_md5 = md5(address.contract_code.bytes)
 
       attrs
       |> Map.put_new(:contract_code_md5, contract_code_md5)
     else
       attrs
     end
-  end
-
-  def sanitize_input(nil), do: nil
-
-  def sanitize_input(input) do
-    input
-    |> HTML.html_escape()
-    |> HTML.safe_to_string()
-    |> String.trim()
   end
 
   @doc """
@@ -198,8 +192,8 @@ defmodule Explorer.SmartContract.Helper do
     Metadata will be sent to a verifier microservice
   """
   @spec fetch_data_for_verification(binary() | Hash.t()) :: {binary() | nil, binary(), map()}
-  def fetch_data_for_verification(address_hash) do
-    deployed_bytecode = Chain.smart_contract_bytecode(address_hash)
+  def fetch_data_for_verification(address_hash, deployed_bytecode \\ nil) do
+    deployed_bytecode = deployed_bytecode || Chain.smart_contract_bytecode(address_hash)
 
     metadata = %{
       "contractAddress" => to_string(address_hash),

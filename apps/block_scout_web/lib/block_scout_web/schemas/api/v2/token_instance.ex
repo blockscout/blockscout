@@ -4,8 +4,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
   """
   require OpenApiSpex
 
-  alias OpenApiSpex.Schema
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     type: :object,
@@ -18,6 +18,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
       },
       owner: %Schema{allOf: [Address], nullable: true},
       token: %Schema{allOf: [Token], nullable: true},
+      token_type: %Schema{allOf: [BlockScoutWeb.Schemas.API.V2.Token.Type], nullable: true},
+      value: General.IntegerStringNullable,
       external_app_url: General.URLNullable,
       animation_url: General.URLNullable,
       image_url: General.URLNullable,
@@ -53,6 +55,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
       :thumbnails,
       :media_type,
       :media_url
-    ]
+    ],
+    nullable: false,
+    additionalProperties: false
   })
 end

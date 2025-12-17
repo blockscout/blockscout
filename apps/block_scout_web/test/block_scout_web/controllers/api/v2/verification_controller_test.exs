@@ -41,83 +41,83 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
     end
   end
 
-  describe "bytecode lookup on verification requests" do
-    # Set up Mox and start on-demand bytecode fetcher with mocked transport
-    setup :set_mox_global
-    setup :verify_on_exit!
-
-    setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      mocked_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
-
-      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
-      start_supervised!({ContractCodeOnDemand, [mocked_json_rpc_named_arguments, [name: ContractCodeOnDemand]]})
-      start_supervised!({ContractCreatorOnDemand, name: ContractCreatorOnDemand})
-
-      %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}
-    end
-
-    test "proceeds when bytecode is fetched from RPC", %{conn: conn} do
-      address = insert(:address)
-      string_address_hash = to_string(address.hash)
-
-      contract_code = "0x6080"
-
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: id,
-                                  jsonrpc: "2.0",
-                                  method: "eth_getCode",
-                                  params: [^string_address_hash, "latest"]
-                                }
-                              ],
-                              _ ->
-        {:ok, [%{id: id, result: contract_code}]}
-      end)
-
-      params = %{"compiler_version" => "", "source_code" => ""}
-
-      request =
-        post(
-          conn,
-          "/api/v2/smart-contracts/#{address.hash}/verification/via/flattened-code",
-          params
-        )
-
-      assert %{"message" => "Smart-contract verification started"} = json_response(request, 200)
-    end
-
-    test "returns 404 when RPC returns empty code (EOA or not a contract)", %{conn: conn} do
-      address = insert(:address)
-      string_address_hash = to_string(address.hash)
-
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: id,
-                                  jsonrpc: "2.0",
-                                  method: "eth_getCode",
-                                  params: [^string_address_hash, "latest"]
-                                }
-                              ],
-                              _ ->
-        {:ok, [%{id: id, result: "0x"}]}
-      end)
-
-      params = %{"compiler_version" => "", "source_code" => ""}
-
-      request =
-        post(
-          conn,
-          "/api/v2/smart-contracts/#{address.hash}/verification/via/flattened-code",
-          params
-        )
-
-      assert %{"message" => "Address is not a smart-contract"} = json_response(request, 404)
-    end
-  end
-
   if Application.compile_env(:explorer, :chain_type) !== :zksync do
+    describe "bytecode lookup on verification requests" do
+      # Set up Mox and start on-demand bytecode fetcher with mocked transport
+      setup :set_mox_global
+      setup :verify_on_exit!
+
+      setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+        mocked_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
+
+        start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+        start_supervised!({ContractCodeOnDemand, [mocked_json_rpc_named_arguments, [name: ContractCodeOnDemand]]})
+        start_supervised!({ContractCreatorOnDemand, name: ContractCreatorOnDemand})
+
+        %{json_rpc_named_arguments: mocked_json_rpc_named_arguments}
+      end
+
+      test "proceeds when bytecode is fetched from RPC", %{conn: conn} do
+        address = insert(:address)
+        string_address_hash = to_string(address.hash)
+
+        contract_code = "0x6080"
+
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [
+                                  %{
+                                    id: id,
+                                    jsonrpc: "2.0",
+                                    method: "eth_getCode",
+                                    params: [^string_address_hash, "latest"]
+                                  }
+                                ],
+                                _ ->
+          {:ok, [%{id: id, result: contract_code}]}
+        end)
+
+        params = %{"compiler_version" => "", "source_code" => ""}
+
+        request =
+          post(
+            conn,
+            "/api/v2/smart-contracts/#{address.hash}/verification/via/flattened-code",
+            params
+          )
+
+        assert %{"message" => "Smart-contract verification started"} = json_response(request, 200)
+      end
+
+      test "returns 404 when RPC returns empty code (EOA or not a contract)", %{conn: conn} do
+        address = insert(:address)
+        string_address_hash = to_string(address.hash)
+
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [
+                                  %{
+                                    id: id,
+                                    jsonrpc: "2.0",
+                                    method: "eth_getCode",
+                                    params: [^string_address_hash, "latest"]
+                                  }
+                                ],
+                                _ ->
+          {:ok, [%{id: id, result: "0x"}]}
+        end)
+
+        params = %{"compiler_version" => "", "source_code" => ""}
+
+        request =
+          post(
+            conn,
+            "/api/v2/smart-contracts/#{address.hash}/verification/via/flattened-code",
+            params
+          )
+
+        assert %{"message" => "Address is not a smart-contract"} = json_response(request, 404)
+      end
+    end
+
     describe "/api/v2/smart-contracts/{address_hash}/verification/via/flattened-code" do
       test "get 200 for verified contract", %{conn: conn} do
         contract = insert(:smart_contract)
@@ -131,7 +131,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
       test "success verification", %{conn: conn} do
         before = Application.get_env(:explorer, :solc_bin_api_url)
 
-        Application.put_env(:explorer, :solc_bin_api_url, "https://solc-bin.ethereum.org")
+        Application.put_env(:explorer, :solc_bin_api_url, "https://binaries.soliditylang.org")
 
         path = File.cwd!() <> "/../explorer/test/support/fixture/smart_contract/solidity_0.5.9_smart_contract.sol"
         contract = File.read!(path)
@@ -186,7 +186,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
       test "get error on empty contract name", %{conn: conn} do
         before = Application.get_env(:explorer, :solc_bin_api_url)
 
-        Application.put_env(:explorer, :solc_bin_api_url, "https://solc-bin.ethereum.org")
+        Application.put_env(:explorer, :solc_bin_api_url, "https://binaries.soliditylang.org")
 
         contract_address = insert(:contract_address, contract_code: "0x01")
 
@@ -310,7 +310,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
       test "success verification", %{conn: conn} do
         before = Application.get_env(:explorer, :solc_bin_api_url)
 
-        Application.put_env(:explorer, :solc_bin_api_url, "https://solc-bin.ethereum.org")
+        Application.put_env(:explorer, :solc_bin_api_url, "https://binaries.soliditylang.org")
 
         path = File.cwd!() <> "/../explorer/test/support/fixture/smart_contract/vyper.vy"
         contract = File.read!(path)
@@ -462,7 +462,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
     test "success verification", %{conn: conn} do
       before = Application.get_env(:explorer, :solc_bin_api_url)
 
-      Application.put_env(:explorer, :solc_bin_api_url, "https://solc-bin.ethereum.org")
+      Application.put_env(:explorer, :solc_bin_api_url, "https://binaries.soliditylang.org")
 
       path = File.cwd!() <> "/../explorer/test/support/fixture/smart_contract/standard_input.json"
       json = File.read!(path)

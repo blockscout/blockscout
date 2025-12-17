@@ -1,4 +1,5 @@
 defmodule Indexer.Fetcher.Beacon.DepositTest do
+  use EthereumJSONRPC.Case
   use Explorer.DataCase, async: false
 
   import ExUnit.CaptureLog, only: [capture_log: 1]
@@ -188,7 +189,9 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
     """
 
     describe "init/1" do
-      test "fetches config and initializes state without deposits in the database" do
+      test "fetches config and initializes state without deposits in the database", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
         Tesla.Test.expect_tesla_call(
           times: 1,
           returns: fn %{url: "http://localhost:5052/eth/v1/config/spec"}, _opts ->
@@ -196,7 +199,7 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
           end
         )
 
-        DepositSupervisor.Case.start_supervised!()
+        DepositSupervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
         {_, pid, _, _} =
           Supervisor.which_children(DepositSupervisor) |> Enum.find(fn {name, _, _, _} -> name == DepositFetcher end)
@@ -209,11 +212,14 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
                  genesis_fork_version: <<0, 0, 0, 0>>,
                  deposit_index: -1,
                  last_processed_log_block_number: -1,
-                 last_processed_log_index: -1
+                 last_processed_log_index: -1,
+                 json_rpc_named_arguments: json_rpc_named_arguments
                }
       end
 
-      test "fetches config and initializes state with deposits in the database" do
+      test "fetches config and initializes state with deposits in the database", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
         Tesla.Test.expect_tesla_call(
           times: 1,
           returns: fn %{url: "http://localhost:5052/eth/v1/config/spec"}, _opts ->
@@ -223,7 +229,7 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
 
         deposit = insert(:beacon_deposit)
 
-        DepositSupervisor.Case.start_supervised!()
+        DepositSupervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
         {_, pid, _, _} =
           Supervisor.which_children(DepositSupervisor) |> Enum.find(fn {name, _, _, _} -> name == DepositFetcher end)
@@ -236,7 +242,8 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
                  genesis_fork_version: <<0, 0, 0, 0>>,
                  deposit_index: deposit.index,
                  last_processed_log_block_number: deposit.block_number,
-                 last_processed_log_index: deposit.log_index
+                 last_processed_log_index: deposit.log_index,
+                 json_rpc_named_arguments: json_rpc_named_arguments
                }
       end
     end
@@ -335,47 +342,149 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
                  Repo.all(from(d in Deposit, order_by: [asc: :index]))
       end
 
-      test "fails to process non-sequential logs (logs starts not from 0, between batches)" do
+      test "fallbacks to fetch data from the node when non-sequential logs are detected (logs starts not from 0, between batches)",
+           %{json_rpc_named_arguments: json_rpc_named_arguments} do
         deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
 
-        transaction_a_to_be_ignored = insert(:transaction) |> with_block()
-
-        _log_to_be_ignored_a =
-          insert(:beacon_deposit_log,
+        log_from_node =
+          build(:beacon_deposit_log,
             address: deposit_contract_address,
-            deposit_index: 1,
-            transaction: transaction_a_to_be_ignored,
-            block: transaction_a_to_be_ignored.block
+            deposit_index: 0
           )
+
+        deposit_signature = log_from_node.first_topic
+        log_from_node_block_number_quantity = EthereumJSONRPC.integer_to_quantity(log_from_node.block_number)
+        log_from_node_transaction_hash = log_from_node.transaction.hash
 
         transaction_a = insert(:transaction) |> with_block()
 
-        _log_a =
+        log_a =
           insert(:beacon_deposit_log,
             address: deposit_contract_address,
-            deposit_index: 2,
+            deposit_index: 1,
             transaction: transaction_a,
             block: transaction_a.block
           )
 
+        log_a_transaction_hash = log_a.transaction_hash
+        log_a_block_number_quantity = EthereumJSONRPC.integer_to_quantity(log_a.block_number)
+
         transaction_b = insert(:transaction) |> with_block()
 
-        _log_b =
+        log_b =
           insert(:beacon_deposit_log,
             address: deposit_contract_address,
-            deposit_index: 3,
+            deposit_index: 2,
             transaction: transaction_b,
             block: transaction_b.block
           )
 
-        log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, @state) end)
+        log_b_transaction_hash = log_b.transaction_hash
 
-        assert log =~ "Non-sequential deposits detected:"
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, 2, fn
+          %{
+            id: _id,
+            method: "eth_getLogs",
+            params: [
+              %{
+                address: "0x00000000219ab540356cbb839cbe05303d7705fa",
+                topics: [^deposit_signature],
+                fromBlock: "0x0",
+                toBlock: ^log_a_block_number_quantity
+              }
+            ]
+          },
+          _options ->
+            {:ok,
+             [
+               %{
+                 "address" => "0x7f02c3e3c98b133055b8b348b2ac625669ed295d",
+                 "blockHash" => to_string(log_from_node.block.hash),
+                 "blockNumber" => log_from_node_block_number_quantity,
+                 "data" => to_string(log_from_node.data),
+                 "logIndex" => "0x1",
+                 "removed" => false,
+                 "topics" => [
+                   "0x649bbc62d0e31342afea4e5cd82d4049e7e1ee912fc0889aa790803be39038c5"
+                 ],
+                 "transactionHash" => to_string(log_from_node_transaction_hash),
+                 "transactionIndex" => "0x4"
+               }
+             ]}
 
-        assert [] == Repo.all(Deposit)
+          [
+            %{
+              id: id,
+              method: "eth_getBlockByNumber",
+              params: [^log_from_node_block_number_quantity, false]
+            }
+          ],
+          _options ->
+            {:ok,
+             [
+               %{
+                 id: id,
+                 result: %{
+                   "difficulty" => "0xa3ff9e",
+                   "extraData" => "0x",
+                   "gasLimit" => "0x1c9c380",
+                   "gasUsed" => "0x0",
+                   "hash" => to_string(log_from_node.block.hash),
+                   "logsBloom" =>
+                     "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                   "miner" => "0x2f14582947e292a2ecd20c430b46f2d27cfe213c",
+                   "mixHash" => "0xa85d26c4efa1d9fdbb095935b49c93a1ddcc967634d899826168abe486f095d8",
+                   "nonce" => "0xc7faaf72b6690188",
+                   "number" => log_from_node_block_number_quantity,
+                   "parentHash" => "0x8ac578a998c3af00a0eab91f7fa209aeed0251c61c37f3b1d43d4253a5e2fa7a",
+                   "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+                   "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+                   "size" => "0x203",
+                   "stateRoot" => "0xd432683a9704dcabff1daacf8c40742301248faf3d9f05ea738daa2dffc19043",
+                   "totalDifficulty" => "0x5113296ac",
+                   "timestamp" => "0x617383e7",
+                   "baseFeePerGas" => "0x7",
+                   "transactions" => [],
+                   "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+                   "uncles" => []
+                 }
+               }
+             ]}
+        end)
+
+        log =
+          capture_log(fn ->
+            DepositFetcher.handle_info(
+              :process_logs,
+              Map.put(@state, :json_rpc_named_arguments, json_rpc_named_arguments)
+            )
+            |> then(fn {:noreply, new_state} ->
+              DepositFetcher.handle_info(
+                :process_logs,
+                new_state
+              )
+            end)
+            |> then(fn {:noreply, new_state} ->
+              DepositFetcher.handle_info(
+                :process_logs,
+                new_state
+              )
+            end)
+          end)
+
+        assert log =~ "Non-sequential deposits detected"
+
+        assert [
+                 %Deposit{transaction_hash: ^log_from_node_transaction_hash, index: 0},
+                 %Deposit{transaction_hash: ^log_a_transaction_hash, index: 1},
+                 %Deposit{transaction_hash: ^log_b_transaction_hash, index: 2}
+               ] =
+                 Repo.all(from(d in Deposit, order_by: [asc: :index]))
       end
 
-      test "fails to process non-sequential logs (non-sequential between, between batches)" do
+      test "fallbacks to fetch data from the node when non-sequential logs are detected (non-sequential between, between batches)",
+           %{json_rpc_named_arguments: json_rpc_named_arguments} do
         deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
 
         transaction_a = insert(:transaction) |> with_block()
@@ -389,85 +498,241 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
           )
 
         log_a_transaction_hash = log_a.transaction_hash
-        transaction_a_to_be_ignored = insert(:transaction) |> with_block()
+        log_a_block_number_quantity = EthereumJSONRPC.integer_to_quantity(log_a.block_number)
 
-        _log_to_be_ignored_a =
-          insert(:beacon_deposit_log,
+        transaction_with_missing_logs = insert(:transaction) |> with_block()
+
+        log_from_node =
+          build(:beacon_deposit_log,
             address: deposit_contract_address,
-            deposit_index: 2,
-            transaction: transaction_a_to_be_ignored,
-            block: transaction_a_to_be_ignored.block
+            deposit_index: 1,
+            transaction: transaction_with_missing_logs,
+            block: transaction_with_missing_logs.block
           )
+
+        deposit_signature = log_from_node.first_topic
+        log_from_node_block_number_quantity = EthereumJSONRPC.integer_to_quantity(log_from_node.block_number)
+        log_from_node_transaction_hash = log_from_node.transaction.hash
 
         transaction_b = insert(:transaction) |> with_block()
 
-        _log_b =
+        log_b =
           insert(:beacon_deposit_log,
             address: deposit_contract_address,
-            deposit_index: 3,
+            deposit_index: 2,
             transaction: transaction_b,
             block: transaction_b.block
           )
 
-        {:noreply, new_state} = DepositFetcher.handle_info(:process_logs, @state)
+        log_b_transaction_hash = log_b.transaction_hash
+        log_b_block_number_quantity = EthereumJSONRPC.integer_to_quantity(log_b.block_number)
+
+        transaction_c = insert(:transaction) |> with_block()
+
+        _log_c =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 3,
+            transaction: transaction_c,
+            block: transaction_c.block
+          )
+
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, 1, fn
+          %{
+            id: _id,
+            method: "eth_getLogs",
+            params: [
+              %{
+                address: "0x00000000219ab540356cbb839cbe05303d7705fa",
+                topics: [^deposit_signature],
+                fromBlock: ^log_a_block_number_quantity,
+                toBlock: ^log_b_block_number_quantity
+              }
+            ]
+          },
+          _options ->
+            {:ok,
+             [
+               %{
+                 "address" => "0x7f02c3e3c98b133055b8b348b2ac625669ed295d",
+                 "blockHash" => to_string(log_from_node.block.hash),
+                 "blockNumber" => log_from_node_block_number_quantity,
+                 "data" => to_string(log_from_node.data),
+                 "logIndex" => "0x1",
+                 "removed" => false,
+                 "topics" => [
+                   "0x649bbc62d0e31342afea4e5cd82d4049e7e1ee912fc0889aa790803be39038c5"
+                 ],
+                 "transactionHash" => to_string(log_from_node_transaction_hash),
+                 "transactionIndex" => "0x4"
+               }
+             ]}
+        end)
+
+        {:noreply, new_state} =
+          DepositFetcher.handle_info(
+            :process_logs,
+            Map.put(@state, :json_rpc_named_arguments, json_rpc_named_arguments)
+          )
 
         log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, new_state) end)
 
-        assert log =~ "Non-sequential deposits detected:"
+        assert log =~ "Non-sequential deposits detected"
 
-        assert [%Deposit{transaction_hash: ^log_a_transaction_hash}] = Repo.all(Deposit)
+        assert [
+                 %Deposit{transaction_hash: ^log_a_transaction_hash},
+                 %Deposit{transaction_hash: ^log_from_node_transaction_hash},
+                 %Deposit{transaction_hash: ^log_b_transaction_hash}
+               ] = Repo.all(from(d in Deposit, order_by: [asc: :index]))
       end
 
-      test "fails to process non-sequential logs (logs starts not from 0, inside batch)" do
-        state = Map.put(@state, :batch_size, 5)
+      test "fallbacks to fetch data from the node when non-sequential logs are detected (logs starts not from 0, inside batch)",
+           %{json_rpc_named_arguments: json_rpc_named_arguments} do
+        state = @state |> Map.put(:batch_size, 5) |> Map.put(:json_rpc_named_arguments, json_rpc_named_arguments)
 
         deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
 
-        transaction_a_to_be_ignored = insert(:transaction) |> with_block()
-
-        _log_to_be_ignored_a =
-          insert(:beacon_deposit_log,
+        log_from_node =
+          build(:beacon_deposit_log,
             address: deposit_contract_address,
-            deposit_index: 1,
-            transaction: transaction_a_to_be_ignored,
-            block: transaction_a_to_be_ignored.block
+            deposit_index: 0
           )
+
+        deposit_signature = log_from_node.first_topic
+        log_from_node_block_number_quantity = EthereumJSONRPC.integer_to_quantity(log_from_node.block_number)
+        log_from_node_transaction_hash = log_from_node.transaction.hash
 
         transaction_a = insert(:transaction) |> with_block()
 
-        _log_a =
+        log_a =
           insert(:beacon_deposit_log,
             address: deposit_contract_address,
-            deposit_index: 2,
+            deposit_index: 1,
             transaction: transaction_a,
             block: transaction_a.block
           )
 
+        log_a_transaction_hash = log_a.transaction_hash
+        log_a_block_number_quantity = EthereumJSONRPC.integer_to_quantity(log_a.block_number)
+
         transaction_b = insert(:transaction) |> with_block()
 
-        _log_b =
+        log_b =
           insert(:beacon_deposit_log,
             address: deposit_contract_address,
-            deposit_index: 3,
+            deposit_index: 2,
             transaction: transaction_b,
             block: transaction_b.block
           )
 
+        log_b_transaction_hash = log_b.transaction_hash
+
+        transaction_c = insert(:transaction) |> with_block()
+
+        log_c =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 3,
+            transaction: transaction_c,
+            block: transaction_c.block
+          )
+
+        log_c_transaction_hash = log_c.transaction_hash
+
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, 2, fn
+          %{
+            id: _id,
+            method: "eth_getLogs",
+            params: [
+              %{
+                address: "0x00000000219ab540356cbb839cbe05303d7705fa",
+                topics: [^deposit_signature],
+                fromBlock: "0x0",
+                toBlock: ^log_a_block_number_quantity
+              }
+            ]
+          },
+          _options ->
+            {:ok,
+             [
+               %{
+                 "address" => "0x7f02c3e3c98b133055b8b348b2ac625669ed295d",
+                 "blockHash" => to_string(log_from_node.block.hash),
+                 "blockNumber" => log_from_node_block_number_quantity,
+                 "data" => to_string(log_from_node.data),
+                 "logIndex" => "0x1",
+                 "removed" => false,
+                 "topics" => [
+                   "0x649bbc62d0e31342afea4e5cd82d4049e7e1ee912fc0889aa790803be39038c5"
+                 ],
+                 "transactionHash" => to_string(log_from_node_transaction_hash),
+                 "transactionIndex" => "0x4"
+               }
+             ]}
+
+          [
+            %{
+              id: id,
+              method: "eth_getBlockByNumber",
+              params: [^log_from_node_block_number_quantity, false]
+            }
+          ],
+          _options ->
+            {:ok,
+             [
+               %{
+                 id: id,
+                 result: %{
+                   "difficulty" => "0xa3ff9e",
+                   "extraData" => "0x",
+                   "gasLimit" => "0x1c9c380",
+                   "gasUsed" => "0x0",
+                   "hash" => to_string(log_from_node.block.hash),
+                   "logsBloom" =>
+                     "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                   "miner" => "0x2f14582947e292a2ecd20c430b46f2d27cfe213c",
+                   "mixHash" => "0xa85d26c4efa1d9fdbb095935b49c93a1ddcc967634d899826168abe486f095d8",
+                   "nonce" => "0xc7faaf72b6690188",
+                   "number" => log_from_node_block_number_quantity,
+                   "parentHash" => "0x8ac578a998c3af00a0eab91f7fa209aeed0251c61c37f3b1d43d4253a5e2fa7a",
+                   "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+                   "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+                   "size" => "0x203",
+                   "stateRoot" => "0xd432683a9704dcabff1daacf8c40742301248faf3d9f05ea738daa2dffc19043",
+                   "totalDifficulty" => "0x5113296ac",
+                   "timestamp" => "0x617383e7",
+                   "baseFeePerGas" => "0x7",
+                   "transactions" => [],
+                   "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+                   "uncles" => []
+                 }
+               }
+             ]}
+        end)
+
         log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, state) end)
 
-        assert log =~ "Non-sequential deposits detected:"
+        assert log =~ "Non-sequential deposits detected"
 
-        assert [] == Repo.all(Deposit)
+        assert [
+                 %Deposit{transaction_hash: ^log_from_node_transaction_hash},
+                 %Deposit{transaction_hash: ^log_a_transaction_hash},
+                 %Deposit{transaction_hash: ^log_b_transaction_hash},
+                 %Deposit{transaction_hash: ^log_c_transaction_hash}
+               ] = Repo.all(from(d in Deposit, order_by: [asc: :index]))
       end
 
-      test "fails to process non-sequential logs (non-sequential between, inside batch)" do
-        state = Map.put(@state, :batch_size, 5)
+      test "fallbacks to fetch data from the node when non-sequential logs are detected (non-sequential between, inside batch)",
+           %{json_rpc_named_arguments: json_rpc_named_arguments} do
+        state = @state |> Map.put(:batch_size, 5) |> Map.put(:json_rpc_named_arguments, json_rpc_named_arguments)
 
         deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
 
         transaction_a = insert(:transaction) |> with_block()
 
-        _log_a =
+        log_a =
           insert(:beacon_deposit_log,
             address: deposit_contract_address,
             deposit_index: 0,
@@ -475,31 +740,126 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
             block: transaction_a.block
           )
 
-        transaction_a_to_be_ignored = insert(:transaction) |> with_block()
+        log_a_transaction_hash = log_a.transaction_hash
+        log_a_block_number_quantity = EthereumJSONRPC.integer_to_quantity(log_a.block_number)
 
-        _log_to_be_ignored_a =
-          insert(:beacon_deposit_log,
+        log_from_node =
+          build(:beacon_deposit_log,
             address: deposit_contract_address,
-            deposit_index: 2,
-            transaction: transaction_a_to_be_ignored,
-            block: transaction_a_to_be_ignored.block
+            deposit_index: 1
           )
+
+        deposit_signature = log_from_node.first_topic
+        log_from_node_block_number_quantity = EthereumJSONRPC.integer_to_quantity(log_from_node.block_number)
+        log_from_node_transaction_hash = log_from_node.transaction.hash
 
         transaction_b = insert(:transaction) |> with_block()
 
-        _log_b =
+        log_b =
           insert(:beacon_deposit_log,
             address: deposit_contract_address,
-            deposit_index: 3,
+            deposit_index: 2,
             transaction: transaction_b,
             block: transaction_b.block
           )
 
+        log_b_transaction_hash = log_b.transaction_hash
+        log_b_block_number_quantity = EthereumJSONRPC.integer_to_quantity(log_b.block_number)
+
+        transaction_c = insert(:transaction) |> with_block()
+
+        log_c =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 3,
+            transaction: transaction_c,
+            block: transaction_c.block
+          )
+
+        log_c_transaction_hash = log_c.transaction_hash
+
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, 2, fn
+          %{
+            id: _id,
+            method: "eth_getLogs",
+            params: [
+              %{
+                address: "0x00000000219ab540356cbb839cbe05303d7705fa",
+                topics: [^deposit_signature],
+                fromBlock: ^log_a_block_number_quantity,
+                toBlock: ^log_b_block_number_quantity
+              }
+            ]
+          },
+          _options ->
+            {:ok,
+             [
+               %{
+                 "address" => "0x7f02c3e3c98b133055b8b348b2ac625669ed295d",
+                 "blockHash" => to_string(log_from_node.block.hash),
+                 "blockNumber" => log_from_node_block_number_quantity,
+                 "data" => to_string(log_from_node.data),
+                 "logIndex" => "0x1",
+                 "removed" => false,
+                 "topics" => [
+                   "0x649bbc62d0e31342afea4e5cd82d4049e7e1ee912fc0889aa790803be39038c5"
+                 ],
+                 "transactionHash" => to_string(log_from_node_transaction_hash),
+                 "transactionIndex" => "0x4"
+               }
+             ]}
+
+          [
+            %{
+              id: id,
+              method: "eth_getBlockByNumber",
+              params: [^log_from_node_block_number_quantity, false]
+            }
+          ],
+          _options ->
+            {:ok,
+             [
+               %{
+                 id: id,
+                 result: %{
+                   "difficulty" => "0xa3ff9e",
+                   "extraData" => "0x",
+                   "gasLimit" => "0x1c9c380",
+                   "gasUsed" => "0x0",
+                   "hash" => to_string(log_from_node.block.hash),
+                   "logsBloom" =>
+                     "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+                   "miner" => "0x2f14582947e292a2ecd20c430b46f2d27cfe213c",
+                   "mixHash" => "0xa85d26c4efa1d9fdbb095935b49c93a1ddcc967634d899826168abe486f095d8",
+                   "nonce" => "0xc7faaf72b6690188",
+                   "number" => log_from_node_block_number_quantity,
+                   "parentHash" => "0x8ac578a998c3af00a0eab91f7fa209aeed0251c61c37f3b1d43d4253a5e2fa7a",
+                   "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+                   "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+                   "size" => "0x203",
+                   "stateRoot" => "0xd432683a9704dcabff1daacf8c40742301248faf3d9f05ea738daa2dffc19043",
+                   "totalDifficulty" => "0x5113296ac",
+                   "timestamp" => "0x617383e7",
+                   "baseFeePerGas" => "0x7",
+                   "transactions" => [],
+                   "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+                   "uncles" => []
+                 }
+               }
+             ]}
+        end)
+
         log = capture_log(fn -> DepositFetcher.handle_info(:process_logs, state) end)
 
-        assert log =~ "Non-sequential deposits detected:"
+        assert log =~ "Non-sequential deposits detected"
 
-        assert [] = Repo.all(Deposit)
+        assert [
+                 %Deposit{transaction_hash: ^log_a_transaction_hash},
+                 %Deposit{transaction_hash: ^log_from_node_transaction_hash},
+                 %Deposit{transaction_hash: ^log_b_transaction_hash},
+                 %Deposit{transaction_hash: ^log_c_transaction_hash}
+               ] = Repo.all(from(d in Deposit, order_by: [asc: :index]))
       end
 
       test "signature verification" do

@@ -10,16 +10,23 @@ defmodule BlockScoutWeb.API.V2.CeloView do
 
   alias BlockScoutWeb.API.V2.{Helper, TokenTransferView, TokenView, TransactionView}
   alias Explorer.Chain
+  alias Explorer.Chain.{Address, Address.Reputation, Block, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Cache.{CeloCoreContracts, CeloEpochs}
+  alias Explorer.Chain.Celo.{Account, Epoch, EpochReward}
   alias Explorer.Chain.Celo.Helper, as: CeloHelper
-  alias Explorer.Chain.Celo.{Epoch, EpochReward}
-  alias Explorer.Chain.{Block, Token, TokenTransfer, Transaction, Wei}
 
   @address_params [
     necessity_by_association: %{
       :names => :optional,
       :smart_contract => :optional,
       proxy_implementations_association() => :optional
+    },
+    api?: true
+  ]
+
+  @token_params [
+    necessity_by_association: %{
+      Reputation.reputation_association() => :optional
     },
     api?: true
   ]
@@ -225,6 +232,44 @@ defmodule BlockScoutWeb.API.V2.CeloView do
       |> maybe_add_base_fee_info(block, single_block?)
 
     Map.put(out_json, :celo, celo_json)
+  end
+
+  def extend_address_json_response(out_json, %Address{} = address) do
+    account_json =
+      address
+      |> Map.get(:celo_account)
+      |> case do
+        %Account{} = account ->
+          %{
+            type: account.type,
+            name: account.name,
+            metadata_url: account.metadata_url,
+            nonvoting_locked_celo: account.nonvoting_locked_celo,
+            locked_celo: account.locked_celo,
+            vote_signer_address:
+              Helper.address_with_info(
+                account.vote_signer_address,
+                account.vote_signer_address_hash
+              ),
+            validator_signer_address:
+              Helper.address_with_info(
+                account.validator_signer_address,
+                account.validator_signer_address_hash
+              ),
+            attestation_signer_address:
+              Helper.address_with_info(
+                account.attestation_signer_address,
+                account.attestation_signer_address_hash
+              )
+          }
+
+        _ ->
+          nil
+      end
+
+    Map.put(out_json, :celo, %{
+      account: account_json
+    })
   end
 
   @doc """
@@ -499,7 +544,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
           }
         )
 
-      celo_token = Token.get_by_contract_address_hash(celo_token_address_hash, api?: true)
+      celo_token = Token.get_by_contract_address_hash(celo_token_address_hash, @token_params)
 
       %{
         recipient: fee_handler_contract_address_info,
@@ -566,7 +611,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
           address_hash
         )
 
-      celo_token = Token.get_by_contract_address_hash(celo_token_address_hash, api?: true)
+      celo_token = Token.get_by_contract_address_hash(celo_token_address_hash, @token_params)
 
       %{
         recipient: address_with_info,

@@ -5,11 +5,13 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   if @chain_type == :zilliqa do
-    # TODO: remove when https://github.com/elixir-lang/elixir/issues/13975 comes to elixir release
-    import Explorer.Chain.Zilliqa.Helper, only: [scilla_transaction?: 1], warn: false
-    alias Ecto.Association.NotLoaded, warn: false
-    alias Explorer.Chain.{Address, Block, Transaction}, warn: false
-    alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}, warn: false
+    import Explorer.Chain.Zilliqa.Helper, only: [scilla_transaction?: 1]
+    alias Ecto.Association.NotLoaded
+    alias Explorer.Chain.{Address, Block, Transaction}
+    alias Explorer.Chain.Zilliqa.{AggregateQuorumCertificate, QuorumCertificate}
+    alias Explorer.Chain.Zilliqa.Zrc2.TokenAdapter
+
+    @api_true [api?: true]
 
     @doc """
     Extends the JSON output with a sub-map containing information related to Zilliqa,
@@ -52,6 +54,28 @@ defmodule BlockScoutWeb.API.V2.ZilliqaView do
       Map.put(out_json, :zilliqa, %{
         is_scilla: scilla_transaction?(transaction)
       })
+    end
+
+    @doc """
+    Extends the JSON output with a sub-map containing information related to Zilliqa,
+    such as ZRC-2 contract address.
+
+    ## Parameters
+    - `out_json`: A map defining the output JSON which will be extended.
+    - `adapter_address`: The adapter contract address bound with the ZRC-2 contract address.
+
+    ## Returns
+    - A map extended with data related to Zilliqa.
+    """
+    @spec extend_token_json_response(map(), Address.t()) :: map()
+    def extend_token_json_response(%{"type" => "ZRC-2"} = out_json, %Address{} = adapter_address) do
+      Map.put(out_json, :zilliqa, %{
+        zrc2_address_hash: TokenAdapter.adapter_address_hash_to_zrc2_address_hash(adapter_address.hash, @api_true)
+      })
+    end
+
+    def extend_token_json_response(out_json, _) do
+      out_json
     end
 
     @doc """

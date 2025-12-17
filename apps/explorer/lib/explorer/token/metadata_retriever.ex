@@ -5,15 +5,15 @@ defmodule Explorer.Token.MetadataRetriever do
 
   require Logger
 
-  alias Explorer.{HttpClient, MetadataURIValidator, Repo}
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.Helper, as: ExplorerHelper
+  alias Explorer.{HttpClient, MetadataURIValidator}
   alias Explorer.SmartContract.Reader
 
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
   @invalid_base64_data "invalid data:application/json;base64"
-  @default_headers [{"User-Agent", "blockscout-9.1.0"}]
+  @default_headers [{"User-Agent", "blockscout-9.3.1"}]
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
@@ -170,8 +170,10 @@ defmodule Explorer.Token.MetadataRetriever do
   It will retry to fetch each function in the Smart Contract according to :token_functions_reader_max_retries
   configured in the application env case one of them raised error.
   """
-  @spec get_functions_of([Token.t()] | Token.t()) :: map() | {:ok, [map()]}
-  def get_functions_of(tokens) when is_list(tokens) do
+  @spec get_functions_of([Token.t()] | Token.t(), Keyword.t()) :: map() | {:ok, [map()]}
+  def get_functions_of(tokens, opts \\ [])
+
+  def get_functions_of(tokens, _opts) when is_list(tokens) do
     requests =
       tokens
       |> Enum.flat_map(fn token ->
@@ -225,23 +227,28 @@ defmodule Explorer.Token.MetadataRetriever do
     {:ok, processed_result}
   end
 
-  def get_functions_of(%Token{contract_address_hash: contract_address_hash, type: type}) do
-    base_metadata =
+  def get_functions_of(%Token{contract_address_hash: contract_address_hash, type: type}, opts) do
+    set_skip_metadata = Keyword.get(opts, :set_skip_metadata, false)
+
+    raw_metadata =
       contract_address_hash
       |> fetch_functions_from_contract(@contract_functions)
+
+    base_metadata =
+      raw_metadata
       |> format_contract_functions_result(contract_address_hash)
 
     metadata = try_to_fetch_erc_1155_name(base_metadata, contract_address_hash, type)
 
-    if metadata == %{} do
-      token_to_update =
-        Token
-        |> Repo.get_by(contract_address_hash: contract_address_hash)
-
-      set_skip_metadata(token_to_update)
+    if Enum.empty?(metadata) && set_skip_metadata do
+      Map.put(
+        metadata,
+        :skip_metadata,
+        Enum.all?(raw_metadata, fn {_key, value} -> EthereumJSONRPC.contract_failure?(value) end)
+      )
+    else
+      metadata
     end
-
-    metadata
   end
 
   defp try_to_fetch_erc_1155_name(base_metadata, contract_address_hash, token_type) do
@@ -305,10 +312,6 @@ defmodule Explorer.Token.MetadataRetriever do
 
   def parse_fetch_json_response(other) do
     other
-  end
-
-  defp set_skip_metadata(token_to_update) do
-    Token.update(token_to_update, %{skip_metadata: true})
   end
 
   def get_total_supply_of(contract_address_hash) when is_binary(contract_address_hash) do
@@ -386,8 +389,8 @@ defmodule Explorer.Token.MetadataRetriever do
 
     contract_functions
     |> handle_invalid_strings(contract_address_hash)
-    |> handle_large_strings
-    |> limit_decimals
+    |> handle_large_strings()
+    |> limit_decimals()
   end
 
   defp atomized_key(@name_signature), do: :name

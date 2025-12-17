@@ -12,9 +12,9 @@ defmodule Explorer.Chain.Address.TokenBalance do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.{Address, Block, Hash, Token}
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.{Address, Block, Hash, Token}
 
   @typedoc """
    *  `address` - The `t:Explorer.Chain.Address.t/0` that is the balance's owner.
@@ -80,6 +80,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
         tb in TokenBalance,
         where:
           ((tb.address_hash != ^@burn_address_hash and tb.token_type == "ERC-721") or tb.token_type == "ERC-20" or
+             tb.token_type == "ZRC-2" or
              tb.token_type == "ERC-1155" or tb.token_type == "ERC-404") and
             (is_nil(tb.value_fetched_at) or is_nil(tb.value)) and
             (is_nil(tb.refetch_after) or tb.refetch_after < ^Timex.now())
@@ -90,7 +91,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
         join: t in Token,
         on: tb.token_contract_address_hash == t.contract_address_hash,
         where:
-          ((tb.address_hash != ^@burn_address_hash and t.type == "ERC-721") or t.type == "ERC-20" or
+          ((tb.address_hash != ^@burn_address_hash and t.type == "ERC-721") or t.type == "ERC-20" or t.type == "ZRC-2" or
              t.type == "ERC-1155" or t.type == "ERC-404") and
             (is_nil(tb.value_fetched_at) or is_nil(tb.value)) and
             (is_nil(tb.refetch_after) or tb.refetch_after < ^Timex.now())

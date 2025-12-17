@@ -137,6 +137,28 @@ defmodule Indexer.Transform.Addresses do
         %{from: :token_contract_address_hash, to: :hash}
       ]
     ],
+    zilliqa_zrc2_token_transfers: [
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :from_address_hash, to: :hash}
+      ],
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :to_address_hash, to: :hash}
+      ],
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :zrc2_address_hash, to: :hash}
+      ]
+    ],
+    zilliqa_zrc2_token_adapters: [
+      [
+        %{from: :zrc2_address_hash, to: :hash}
+      ],
+      [
+        %{from: :adapter_address_hash, to: :hash}
+      ]
+    ],
     mint_transfers: [
       [
         %{from: :block_number, to: :fetched_coin_balance_block_number},
@@ -175,6 +197,26 @@ defmodule Indexer.Transform.Addresses do
       ],
       [
         %{from: :group_address_hash, to: :hash}
+      ]
+    ],
+    celo_accounts: [
+      [
+        %{from: :address_hash, to: :hash}
+      ],
+      [
+        %{from: :vote_signer_address_hash, to: :hash}
+      ],
+      [
+        %{from: :validator_signer_address_hash, to: :hash}
+      ],
+      [
+        %{from: :attestation_signer_address_hash, to: :hash}
+      ]
+    ],
+    celo_pending_account_operations: [
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :address_hash, to: :hash}
       ]
     ]
   }
@@ -460,6 +502,20 @@ defmodule Indexer.Transform.Addresses do
               required(:block_number) => non_neg_integer()
             }
           ],
+          optional(:zilliqa_zrc2_token_transfers) => [
+            %{
+              required(:from_address_hash) => String.t(),
+              required(:to_address_hash) => String.t(),
+              required(:zrc2_address_hash) => String.t(),
+              required(:block_number) => non_neg_integer()
+            }
+          ],
+          optional(:zilliqa_zrc2_token_adapters) => [
+            %{
+              required(:zrc2_address_hash) => String.t(),
+              required(:adapter_address_hash) => String.t()
+            }
+          ],
           optional(:transaction_actions) => [
             %{
               required(:data) => map()
@@ -498,6 +554,19 @@ defmodule Indexer.Transform.Addresses do
             %{
               required(:account_address_hash) => String.t(),
               required(:group_address_hash) => String.t()
+            }
+          ],
+          optional(:celo_accounts) => [
+            %{
+              optional(:address_hash) => String.t() | nil,
+              optional(:vote_signer_address_hash) => String.t() | nil,
+              optional(:validator_signer_address_hash) => String.t() | nil,
+              optional(:attestation_signer_address_hash) => String.t() | nil
+            }
+          ],
+          optional(:celo_pending_account_operations) => [
+            %{
+              required(:address_hash) => String.t()
             }
           ]
         }) :: [params]

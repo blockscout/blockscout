@@ -9,6 +9,20 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
 
   if Application.compile_env(:explorer, :chain_type) in [:polygon_zkevm, :rsk, :filecoin] do
     describe "Sanitize duplicated log index logs" do
+      setup do
+        configuration = Application.get_env(:explorer, SanitizeDuplicatedLogIndexLogs)
+
+        Application.put_env(
+          :explorer,
+          SanitizeDuplicatedLogIndexLogs,
+          Keyword.merge(configuration, batch_size: 50_000, concurrency: 10)
+        )
+
+        on_exit(fn ->
+          Application.put_env(:explorer, SanitizeDuplicatedLogIndexLogs, configuration)
+        end)
+      end
+
       test "correctly identifies and updates duplicated log index logs" do
         block = insert(:block)
 

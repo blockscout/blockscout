@@ -1,6 +1,6 @@
 defmodule BlockScoutWeb.API.V2.StabilityView do
   alias BlockScoutWeb.API.V2.{Helper, TokenView}
-  alias Explorer.Chain.{Log, Token, Transaction}
+  alias Explorer.Chain.{Address.Reputation, Log, Token, Transaction}
 
   @api_true [api?: true]
   @transaction_fee_event_signature "0x99e7b0ba56da2819c37c047f0511fd2bf6c9b4e27b4a979a19d6da0f74be8155"
@@ -89,7 +89,7 @@ defmodule BlockScoutWeb.API.V2.StabilityView do
 
   defp do_extend_with_stability_fees_info(transactions) when is_list(transactions) do
     {transactions, _tokens_acc} =
-      Enum.map_reduce(transactions, %{}, fn transaction, tokens_acc ->
+      Enum.map_reduce(transactions, %{}, fn transaction = %Transaction{}, tokens_acc ->
         case Log.fetch_log_by_transaction_hash_and_first_topic(
                transaction.hash,
                @transaction_fee_event_signature,
@@ -122,7 +122,11 @@ defmodule BlockScoutWeb.API.V2.StabilityView do
     if Map.has_key?(tokens_acc, token_address_hash) do
       {tokens_acc[token_address_hash], tokens_acc}
     else
-      token = Token.get_by_contract_address_hash(token_address_hash, @api_true)
+      token =
+        Token.get_by_contract_address_hash(token_address_hash,
+          api?: true,
+          necessity_by_association: %{Reputation.reputation_association() => :optional}
+        )
 
       {token, Map.put(tokens_acc, token_address_hash, token)}
     end

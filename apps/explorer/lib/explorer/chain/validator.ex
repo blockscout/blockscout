@@ -4,8 +4,8 @@ defmodule Explorer.Chain.Validator do
   """
 
   use Explorer.Schema
-  alias Explorer.Chain.Hash.Address
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Hash.Address
 
   @primary_key false
   typed_schema "validators" do

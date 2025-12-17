@@ -100,7 +100,7 @@ defmodule Explorer.Account.Notifier.Summary do
          %Chain.TokenTransfer{} = transfer
        ) do
     case transfer.token.type do
-      "ERC-20" ->
+      type when type in ["ERC-20", "ZRC-2"] ->
         %Summary{
           transaction_hash: transaction.hash,
           method: method(transfer),

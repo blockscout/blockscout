@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.CoinBalance.Realtime do
   alias Explorer.Chain.{Block, Hash}
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.CoinBalance.Helper
+  alias Indexer.Fetcher.CoinBalance.Realtime.Supervisor, as: CoinBalanceSupervisor
 
   @behaviour BufferedTask
 
@@ -22,9 +23,13 @@ defmodule Indexer.Fetcher.CoinBalance.Realtime do
           %{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}
         ]) :: :ok
   def async_fetch_balances(balance_fields) when is_list(balance_fields) do
-    entries = Enum.map(balance_fields, &Helper.entry/1)
+    if CoinBalanceSupervisor.disabled?() do
+      :ok
+    else
+      entries = Enum.map(balance_fields, &Helper.entry/1)
 
-    BufferedTask.buffer(__MODULE__, entries, true)
+      BufferedTask.buffer(__MODULE__, entries, true)
+    end
   end
 
   def child_spec(params) do

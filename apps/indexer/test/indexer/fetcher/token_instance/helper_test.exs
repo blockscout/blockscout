@@ -68,32 +68,11 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
            })
            |> Base.encode16(case: :lower))
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: 0,
-                                  jsonrpc: "2.0",
-                                  method: "eth_call",
-                                  params: [
-                                    %{
-                                      data:
-                                        "0x0e89341c0000000000000000000000000000000000000000000000000000000000000309",
-                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
-                                    },
-                                    "latest"
-                                  ]
-                                }
-                              ],
-                              _options ->
-        {:ok,
-         [
-           %{
-             id: 0,
-             jsonrpc: "2.0",
-             result: encoded_url
-           }
-         ]}
-      end)
+      success_eth_call_expectation(
+        "0x0e89341c0000000000000000000000000000000000000000000000000000000000000309",
+        "0x5caebd3b32e210e85ce3e9d51638b9c445481567",
+        encoded_url
+      )
 
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
@@ -124,33 +103,11 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
     test "fetch ipfs of ipfs/{id} format" do
       address_hash_string = String.downcase("0x7e01CC81fCfdf6a71323900288A69e234C464f63")
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: 0,
-                                  jsonrpc: "2.0",
-                                  method: "eth_call",
-                                  params: [
-                                    %{
-                                      data:
-                                        "0xc87b56dd0000000000000000000000000000000000000000000000000000000000000000",
-                                      to: ^address_hash_string
-                                    },
-                                    "latest"
-                                  ]
-                                }
-                              ],
-                              _options ->
-        {:ok,
-         [
-           %{
-             id: 0,
-             jsonrpc: "2.0",
-             result:
-               "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000033697066732f516d6439707654684577676a544262456b4e6d6d47466263704a4b773137666e524241543454643472636f67323200000000000000000000000000"
-           }
-         ]}
-      end)
+      success_eth_call_expectation(
+        "0xc87b56dd0000000000000000000000000000000000000000000000000000000000000000",
+        address_hash_string,
+        "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000033697066732f516d6439707654684577676a544262456b4e6d6d47466263704a4b773137666e524241543454643472636f67323200000000000000000000000000"
+      )
 
       Tesla.Test.expect_tesla_call(
         times: 1,
@@ -186,32 +143,10 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       }
       """
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: id,
-                                  jsonrpc: "2.0",
-                                  method: "eth_call",
-                                  params: [
-                                    %{
-                                      data:
-                                        "0xc87b56dd0000000000000000000000000000000000000000000000004f3f5ce294ff3d36",
-                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
-                                    },
-                                    "latest"
-                                  ]
-                                }
-                              ],
-                              _options ->
-        {:ok,
-         [
-           %{
-             error: %{code: -32015, data: "Reverted 0x", message: "execution reverted"},
-             id: id,
-             jsonrpc: "2.0"
-           }
-         ]}
-      end)
+      error_eth_call_expectation(
+        "0xc87b56dd0000000000000000000000000000000000000000000000004f3f5ce294ff3d36",
+        "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
+      )
 
       encoded_url =
         "0x" <>
@@ -223,31 +158,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
            })
            |> Base.encode16(case: :lower))
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: id,
-                                  jsonrpc: "2.0",
-                                  method: "eth_call",
-                                  params: [
-                                    %{
-                                      data: "0x6c0360eb",
-                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
-                                    },
-                                    "latest"
-                                  ]
-                                }
-                              ],
-                              _options ->
-        {:ok,
-         [
-           %{
-             id: id,
-             jsonrpc: "2.0",
-             result: encoded_url
-           }
-         ]}
-      end)
+      success_eth_call_expectation("0x6c0360eb", "0x5caebd3b32e210e85ce3e9d51638b9c445481567", encoded_url)
 
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
@@ -282,33 +193,11 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
 
     # https://github.com/blockscout/blockscout/issues/9696
     test "fetch json in utf8 format" do
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: 0,
-                                  jsonrpc: "2.0",
-                                  method: "eth_call",
-                                  params: [
-                                    %{
-                                      data:
-                                        "0xc87b56dd000000000000000000000000000000000000000000000000042a0d58bfd13000",
-                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
-                                    },
-                                    "latest"
-                                  ]
-                                }
-                              ],
-                              _options ->
-        {:ok,
-         [
-           %{
-             id: 0,
-             jsonrpc: "2.0",
-             result:
-               "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000115646174613a6170706c69636174696f6e2f6a736f6e3b757466382c7b226e616d65223a20224f4d4e493430342023333030303637303030303030303030303030222c226465736372697074696f6e223a225468652066726f6e74696572206f66207065726d697373696f6e6c657373206173736574732e222c2265787465726e616c5f75726c223a2268747470733a2f2f747769747465722e636f6d2f6f6d6e69636861696e343034222c22696d616765223a2268747470733a2f2f697066732e696f2f697066732f516d55364447586369535a5854483166554b6b45716a3734503846655850524b7853546a675273564b55516139352f626173652f3330303036373030303030303030303030302e4a5047227d0000000000000000000000"
-           }
-         ]}
-      end)
+      success_eth_call_expectation(
+        "0xc87b56dd000000000000000000000000000000000000000000000000042a0d58bfd13000",
+        "0x5caebd3b32e210e85ce3e9d51638b9c445481567",
+        "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000115646174613a6170706c69636174696f6e2f6a736f6e3b757466382c7b226e616d65223a20224f4d4e493430342023333030303637303030303030303030303030222c226465736372697074696f6e223a225468652066726f6e74696572206f66207065726d697373696f6e6c657373206173736574732e222c2265787465726e616c5f75726c223a2268747470733a2f2f747769747465722e636f6d2f6f6d6e69636861696e343034222c22696d616765223a2268747470733a2f2f697066732e696f2f697066732f516d55364447586369535a5854483166554b6b45716a3734503846655850524b7853546a675273564b55516139352f626173652f3330303036373030303030303030303030302e4a5047227d0000000000000000000000"
+      )
 
       token =
         insert(:token,
@@ -347,32 +236,11 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
            })
            |> Base.encode16(case: :lower))
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: 0,
-                                  jsonrpc: "2.0",
-                                  method: "eth_call",
-                                  params: [
-                                    %{
-                                      data:
-                                        "0x0e89341c0000000000000000000000000000000000000000000000000000000000000309",
-                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
-                                    },
-                                    "latest"
-                                  ]
-                                }
-                              ],
-                              _options ->
-        {:ok,
-         [
-           %{
-             id: 0,
-             jsonrpc: "2.0",
-             result: encoded_url
-           }
-         ]}
-      end)
+      success_eth_call_expectation(
+        "0x0e89341c0000000000000000000000000000000000000000000000000000000000000309",
+        "0x5caebd3b32e210e85ce3e9d51638b9c445481567",
+        encoded_url
+      )
 
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
@@ -428,32 +296,11 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
            })
            |> Base.encode16(case: :lower))
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: 0,
-                                  jsonrpc: "2.0",
-                                  method: "eth_call",
-                                  params: [
-                                    %{
-                                      data:
-                                        "0x0e89341c0000000000000000000000000000000000000000000000000000000000000309",
-                                      to: "0x5caebd3b32e210e85ce3e9d51638b9c445481567"
-                                    },
-                                    "latest"
-                                  ]
-                                }
-                              ],
-                              _options ->
-        {:ok,
-         [
-           %{
-             id: 0,
-             jsonrpc: "2.0",
-             result: encoded_url
-           }
-         ]}
-      end)
+      success_eth_call_expectation(
+        "0x0e89341c0000000000000000000000000000000000000000000000000000000000000309",
+        "0x5caebd3b32e210e85ce3e9d51638b9c445481567",
+        encoded_url
+      )
 
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
@@ -594,32 +441,11 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
         "0xc87b56dd" <>
           (ABI.TypeEncoder.encode([token_instance.token_id], [{:uint, 256}]) |> Base.encode16(case: :lower))
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: 0,
-                                  jsonrpc: "2.0",
-                                  method: "eth_call",
-                                  params: [
-                                    %{
-                                      data: ^data,
-                                      to: ^token_address
-                                    },
-                                    "latest"
-                                  ]
-                                }
-                              ],
-                              _options ->
-        {:ok,
-         [
-           %{
-             id: 0,
-             jsonrpc: "2.0",
-             result:
-               "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000115646174613a6170706c69636174696f6e2f6a736f6e3b757466382c7b226e616d65223a20224f4d4e493430342023333030303637303030303030303030303030222c226465736372697074696f6e223a225468652066726f6e74696572206f66207065726d697373696f6e6c657373206173736574732e222c2265787465726e616c5f75726c223a2268747470733a2f2f747769747465722e636f6d2f6f6d6e69636861696e343034222c22696d616765223a2268747470733a2f2f697066732e696f2f697066732f516d55364447586369535a5854483166554b6b45716a3734503846655850524b7853546a675273564b55516139352f626173652f3330303036373030303030303030303030302e4a5047227d0000000000000000000000"
-           }
-         ]}
-      end)
+      success_eth_call_expectation(
+        data,
+        token_address,
+        "0x00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000115646174613a6170706c69636174696f6e2f6a736f6e3b757466382c7b226e616d65223a20224f4d4e493430342023333030303637303030303030303030303030222c226465736372697074696f6e223a225468652066726f6e74696572206f66207065726d697373696f6e6c657373206173736574732e222c2265787465726e616c5f75726c223a2268747470733a2f2f747769747465722e636f6d2f6f6d6e69636861696e343034222c22696d616765223a2268747470733a2f2f697066732e696f2f697066732f516d55364447586369535a5854483166554b6b45716a3734503846655850524b7853546a675273564b55516139352f626173652f3330303036373030303030303030303030302e4a5047227d0000000000000000000000"
+      )
 
       Helper.batch_fetch_instances([
         %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
@@ -686,31 +512,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
           (ABI.TypeEncoder.encode([Decimal.to_integer(token_instance.token_id)], [{:uint, 256}])
            |> Base.encode16(case: :lower))
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: id,
-                                  jsonrpc: "2.0",
-                                  method: "eth_call",
-                                  params: [
-                                    %{
-                                      data: ^data,
-                                      to: ^token_address
-                                    },
-                                    "latest"
-                                  ]
-                                }
-                              ],
-                              _options ->
-        {:ok,
-         [
-           %{
-             error: %{code: -32015, data: "Reverted 0x", message: "execution reverted"},
-             id: id,
-             jsonrpc: "2.0"
-           }
-         ]}
-      end)
+      error_eth_call_expectation(data, token_address)
 
       Helper.batch_fetch_instances([
         %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
@@ -739,31 +541,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
           (ABI.TypeEncoder.encode([Decimal.to_integer(token_instance.token_id)], [{:uint, 256}])
            |> Base.encode16(case: :lower))
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: id,
-                                  jsonrpc: "2.0",
-                                  method: "eth_call",
-                                  params: [
-                                    %{
-                                      data: ^data,
-                                      to: ^token_address
-                                    },
-                                    "latest"
-                                  ]
-                                }
-                              ],
-                              _options ->
-        {:ok,
-         [
-           %{
-             error: %{code: -32015, data: "Reverted 0x", message: "execution reverted"},
-             id: id,
-             jsonrpc: "2.0"
-           }
-         ]}
-      end)
+      error_eth_call_expectation(data, token_address)
 
       Helper.batch_fetch_instances([
         %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
@@ -802,31 +580,7 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
            })
            |> Base.encode16(case: :lower))
 
-      EthereumJSONRPC.Mox
-      |> expect(:json_rpc, fn [
-                                %{
-                                  id: 0,
-                                  jsonrpc: "2.0",
-                                  method: "eth_call",
-                                  params: [
-                                    %{
-                                      data: ^data,
-                                      to: ^token_address
-                                    },
-                                    "latest"
-                                  ]
-                                }
-                              ],
-                              _options ->
-        {:ok,
-         [
-           %{
-             id: 0,
-             jsonrpc: "2.0",
-             result: encoded_url
-           }
-         ]}
-      end)
+      success_eth_call_expectation(data, token_address, encoded_url)
 
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
@@ -858,5 +612,61 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       assert instance.retries_count == 1001
       assert not instance.is_banned
     end
+  end
+
+  defp success_eth_call_expectation(data, to, result) do
+    EthereumJSONRPC.Mox
+    |> expect(:json_rpc, fn [
+                              %{
+                                id: 0,
+                                jsonrpc: "2.0",
+                                method: "eth_call",
+                                params: [
+                                  %{
+                                    data: ^data,
+                                    to: ^to
+                                  },
+                                  "latest"
+                                ]
+                              }
+                            ],
+                            _options ->
+      {:ok,
+       [
+         %{
+           id: 0,
+           jsonrpc: "2.0",
+           result: result
+         }
+       ]}
+    end)
+  end
+
+  defp error_eth_call_expectation(data, to) do
+    EthereumJSONRPC.Mox
+    |> expect(:json_rpc, fn [
+                              %{
+                                id: id,
+                                jsonrpc: "2.0",
+                                method: "eth_call",
+                                params: [
+                                  %{
+                                    data: ^data,
+                                    to: ^to
+                                  },
+                                  "latest"
+                                ]
+                              }
+                            ],
+                            _options ->
+      {:ok,
+       [
+         %{
+           error: %{code: -32015, data: "Reverted 0x", message: "execution reverted"},
+           id: id,
+           jsonrpc: "2.0"
+         }
+       ]}
+    end)
   end
 end

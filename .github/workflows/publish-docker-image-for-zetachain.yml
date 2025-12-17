@@ -12,9 +12,9 @@ permissions:
 jobs:
   push_to_registry:
     name: Push Docker image to GitHub Container Registry
-    runs-on: ubuntu-latest
+    runs-on: build
     env:
-      RELEASE_VERSION: 9.1.0
+      RELEASE_VERSION: 9.3.1
       DOCKER_CHAIN_NAME: zetachain
     steps:
       - uses: actions/checkout@v5
@@ -26,7 +26,7 @@ jobs:
           docker-remote-multi-platform: true
           docker-arm-host: ${{ secrets.ARM_RUNNER_HOSTNAME }}
           docker-arm-host-key: ${{ secrets.ARM_RUNNER_KEY }}
-      
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:

@@ -1,6 +1,6 @@
 defmodule Explorer.Prometheus.Instrumenter do
   @moduledoc """
-  Blocks fetch and import metrics for `Prometheus`.
+  Explorer metrics for `Prometheus`.
   """
 
   use Prometheus.Metric
@@ -14,11 +14,14 @@ defmodule Explorer.Prometheus.Instrumenter do
   ]
 
   @histogram [
-    name: :media_processing_time,
-    buckets: :default,
-    duration_unit: :seconds,
-    help: "Time in seconds taken for media resizing and uploading"
+    name: :stats_import_stage_runner_duration_microseconds,
+    labels: [:stats_type],
+    buckets: [1000, 5000, 10000, 100_000],
+    duration_unit: :microseconds,
+    help: "Stats import stage runner duration microseconds"
   ]
+
+  # Public chain metrics exposed at /public_metrics endpoint
 
   @gauge [
     name: :success_transactions_number,
@@ -63,6 +66,15 @@ defmodule Explorer.Prometheus.Instrumenter do
     registry: :public
   ]
 
+  # metrics of NFT media handler
+
+  @histogram [
+    name: :media_processing_time,
+    buckets: :default,
+    duration_unit: :seconds,
+    help: "Time in seconds taken for media resizing and uploading"
+  ]
+
   @counter [
     name: :successfully_uploaded_media_number,
     help: "Number of successfully uploaded media to CDN",
@@ -77,6 +89,15 @@ defmodule Explorer.Prometheus.Instrumenter do
 
   @gauge [name: :batch_average_time, help: "L2 average batch time"]
 
+  def setup do
+    prepare_batch_metric([])
+  end
+
+  @doc """
+  Defines the metric for the full processing time of a block (in microseconds).
+  """
+  @spec block_import_stage_runner(function :: (-> any()), stage :: atom(), runner :: atom(), step :: atom()) ::
+          any()
   def block_import_stage_runner(function, stage, runner, step) do
     {time, result} = :timer.tc(function)
 
@@ -85,50 +106,108 @@ defmodule Explorer.Prometheus.Instrumenter do
     result
   end
 
+  @doc """
+  Defines the metric for the full processing time of a stats import stage runner
+  (in microseconds).
+  """
+  @spec stats_import_stage_runner(function :: (-> any()), stats_type :: atom()) :: any()
+  def stats_import_stage_runner(function, stats_type) do
+    {time, result} = :timer.tc(function)
+
+    Histogram.observe([name: :stats_import_stage_runner_duration_microseconds, labels: [stats_type]], time)
+
+    result
+  end
+
+  @doc """
+  Defines the metric for the number of successful transactions in the period (default is 1 day).
+  """
+  @spec success_transactions_number(number :: integer()) :: :ok
   def success_transactions_number(number) do
     Gauge.set([name: :success_transactions_number, registry: :public], number)
   end
 
-  def media_processing_time(seconds) do
-    Histogram.observe([name: :media_processing_time], seconds)
-  end
-
+  @doc """
+  Defines the metric for the number of weekly successful transactions.
+  """
+  @spec weekly_success_transactions_number(number :: integer()) :: :ok
   def weekly_success_transactions_number(number) do
     Gauge.set([name: :weekly_success_transactions_number, registry: :public], number)
   end
 
+  @doc """
+  Defines the metric for the number of deployed smart-contracts in the period (default is 1 day).
+  """
+  @spec deployed_smart_contracts_number(number :: integer()) :: :ok
   def deployed_smart_contracts_number(number) do
     Gauge.set([name: :deployed_smart_contracts_number, registry: :public], number)
   end
 
+  @doc """
+  Defines the metric for the number of verified smart-contracts in the period (default is 1 day).
+  """
+  @spec verified_smart_contracts_number(number :: integer()) :: :ok
   def verified_smart_contracts_number(number) do
     Gauge.set([name: :verified_smart_contracts_number, registry: :public], number)
   end
 
+  @doc """
+  Defines the metric for the number of new addresses in the period (default is 1 day).
+  """
+  @spec new_addresses_number(number :: integer()) :: :ok
   def new_addresses_number(number) do
     Gauge.set([name: :new_addresses_number, registry: :public], number)
   end
 
+  @doc """
+  Defines the metric for the number of new tokens in the period (default is 1 day).
+  """
+  @spec new_tokens_number(number :: integer()) :: :ok
   def new_tokens_number(number) do
     Gauge.set([name: :new_tokens_number, registry: :public], number)
   end
 
+  @doc """
+  Defines the metric for the number of new token transfers in the period (default is 1 day).
+  """
+  @spec new_token_transfers_number(number :: integer()) :: :ok
   def new_token_transfers_number(number) do
     Gauge.set([name: :new_token_transfers_number, registry: :public], number)
   end
 
+  @doc """
+  Defines the metric for the number of active EOA addresses in the period (default is 1 day).
+  """
+  @spec simplified_active_addresses_number(number :: integer()) :: :ok
   def simplified_active_addresses_number(number) do
     Gauge.set([name: :active_addresses_number, registry: :public], number)
   end
 
+  @doc """
+  Defines the metric for time taken for media resizing and uploading (in seconds).
+  """
+  @spec media_processing_time(number()) :: :ok
+  def media_processing_time(seconds) do
+    Histogram.observe([name: :media_processing_time], seconds)
+  end
+
+  @doc """
+  Increments the counter for successfully uploaded media to the CDN.
+  """
+  @spec increment_successfully_uploaded_media_number() :: :ok
   def increment_successfully_uploaded_media_number do
     Counter.inc(name: :successfully_uploaded_media_number, registry: :public)
   end
 
+  @doc """
+  Increments the counter for failed media uploads to the CDN.
+  """
+  @spec increment_failed_uploading_media_number() :: :ok
   def increment_failed_uploading_media_number do
     Counter.inc(name: :failed_uploading_media_number, registry: :public)
   end
 
+  @spec batch_average_time(integer()) :: :ok
   defp batch_average_time(average_time) do
     Gauge.set([name: :batch_average_time], average_time)
   end
@@ -185,6 +264,8 @@ defmodule Explorer.Prometheus.Instrumenter do
   def prepare_batch_metric(batches) do
     case batches do
       [] ->
+        batch_average_time(0)
+
         {:error, :not_found}
 
       [batch] ->

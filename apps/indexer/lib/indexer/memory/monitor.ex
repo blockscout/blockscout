@@ -47,7 +47,7 @@ defmodule Indexer.Memory.Monitor do
 
   @impl GenServer
   def init(options) when is_map(options) do
-    state = struct!(__MODULE__, Map.put_new(options, :limit, define_memory_limit()))
+    %__MODULE__{} = state = struct!(__MODULE__, Map.put_new(options, :limit, define_memory_limit()))
     {:ok, timer_reference} = :timer.send_interval(state.timer_interval, :check)
 
     {:ok, %__MODULE__{state | timer_reference: timer_reference}}
@@ -105,7 +105,7 @@ defmodule Indexer.Memory.Monitor do
     default_limit = 1 <<< 30
 
     percentage =
-      case Application.get_env(:explorer, :mode) do
+      case Explorer.mode() do
         :indexer -> 100
         _ -> Application.get_env(:indexer, :system_memory_percentage)
       end

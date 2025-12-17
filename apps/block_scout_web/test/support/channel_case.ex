@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.ChannelCase do
   setup tags do
     _ = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo)
 
-    unless tags[:async] do
+    if !tags[:async] do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
     end
 

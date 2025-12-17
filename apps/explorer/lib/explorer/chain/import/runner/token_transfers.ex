@@ -3,6 +3,9 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
   Bulk imports `t:Explorer.Chain.TokenTransfer.t/0`.
   """
 
+  use Utils.RuntimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
+
   require Ecto.Query
 
   import Ecto.Query, only: [from: 2]
@@ -61,16 +64,20 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce TokenTransfer ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list =
-      case Application.get_env(:explorer, :chain_type) do
-        :celo -> Enum.sort_by(changes_list, &{&1.block_hash, &1.log_index})
-        _ -> Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.log_index})
-      end
 
-    conflict_target =
-      case Application.get_env(:explorer, :chain_type) do
-        :celo -> [:log_index, :block_hash]
-        _ -> [:transaction_hash, :log_index, :block_hash]
+    {ordered_changes_list, conflict_target} =
+      case chain_identity() do
+        {:optimism, :celo} ->
+          {
+            Enum.sort_by(changes_list, &{&1.block_hash, &1.log_index}),
+            [:log_index, :block_hash]
+          }
+
+        _ ->
+          {
+            Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.log_index}),
+            [:transaction_hash, :log_index, :block_hash]
+          }
       end
 
     {:ok, inserted} =
@@ -89,8 +96,8 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
   end
 
   defp default_on_conflict do
-    case Application.get_env(:explorer, :chain_type) do
-      :celo ->
+    case chain_identity() do
+      {:optimism, :celo} ->
         from(
           token_transfer in TokenTransfer,
           update: [

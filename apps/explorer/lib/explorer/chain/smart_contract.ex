@@ -64,7 +64,6 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:certified, :boolean)
         field(:is_blueprint, :boolean)
         field(:language, Ecto.Enum, values: @languages_enum, default: :solidity)
-        field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
         belongs_to(
           :address,
@@ -79,6 +78,8 @@ defmodule Explorer.Chain.SmartContract.Schema do
           references: :address_hash,
           foreign_key: :address_hash
         )
+
+        has_one(:reputation, Reputation, foreign_key: :address_hash, references: :address_hash)
 
         timestamps()
 
@@ -210,8 +211,11 @@ defmodule Explorer.Chain.SmartContract do
                          end)
 
   @languages_enum @default_languages ++ @chain_type_languages
-  @language_string_to_atom @languages_enum
-                           |> Enum.map(&elem(&1, 0))
+  @language_atoms @languages_enum
+                  |> Enum.map(&elem(&1, 0))
+  @language_strings @language_atoms
+                    |> Enum.map(&to_string(&1))
+  @language_string_to_atom @language_atoms
                            |> Map.new(&{to_string(&1), &1})
 
   @type base_language :: :solidity | :vyper | :yul | :geas
@@ -228,7 +232,15 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
-    Returns list of languages supported by the database schema.
+  Returns list of languages (as strings) supported by the database schema.
+  """
+  @spec language_strings() :: [String.t()]
+  def language_strings do
+    @language_strings
+  end
+
+  @doc """
+  Returns list of languages as map(string to atom) supported by the database schema.
   """
   @spec language_string_to_atom() :: %{String.t() => atom()}
   def language_string_to_atom do
@@ -236,7 +248,7 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
-    Returns burn address hash
+  Returns burn address hash
   """
   @spec burn_address_hash_string() :: EthereumJSONRPC.address()
   def burn_address_hash_string do
@@ -244,7 +256,7 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
-    Returns dead address hash
+  Returns dead address hash
   """
   @spec dead_address_hash_string() :: EthereumJSONRPC.address()
   def dead_address_hash_string do
@@ -809,7 +821,7 @@ defmodule Explorer.Chain.SmartContract do
 
     contract_code_md5 =
       target_address.contract_code.bytes
-      |> Helper.contract_code_md5()
+      |> Helper.md5()
 
     verified_bytecode_twin_contract_query =
       from(
@@ -1454,19 +1466,23 @@ defmodule Explorer.Chain.SmartContract do
     # If no sorting options are provided, we sort by `:id` descending only. If
     # there are some sorting options supplied, we sort by `:hash` ascending as a
     # secondary key.
-    {sorting_options, default_sorting_options} =
+    {sorting_options, default_sorting_options, use_legacy_query?} =
       options
       |> Keyword.get(:sorting)
       |> case do
         nil ->
-          {[], [{:desc, :id, :smart_contract}]}
+          {[], [{:desc, :id, :smart_contract}], true}
 
         options ->
-          {options, [asc: :hash]}
+          {options, [asc: :hash], false}
       end
 
+    # We don't use alias so the mock of background_migrations_finished?/0 in
+    # tests is working properly
+    #
+    # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
     addresses_query =
-      if background_migrations_finished?() do
+      if Explorer.Chain.SmartContract.background_migrations_finished?() and not use_legacy_query? do
         verified_addresses_query(options)
       else
         # Legacy query approach - will be removed in future releases
@@ -1474,7 +1490,7 @@ defmodule Explorer.Chain.SmartContract do
       end
 
     addresses_query
-    |> ExplorerHelper.maybe_hide_scam_addresses(:hash, options)
+    |> ExplorerHelper.maybe_hide_scam_addresses_with_select(:hash, options)
     |> SortingHelper.apply_sorting(sorting_options, default_sorting_options)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting_options)
     |> Chain.join_associations(necessity_by_association)

@@ -4,9 +4,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   """
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
-  alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.{Block, Hash, Token, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Range
+  alias Explorer.Chain.Cache.ChainId
 
   alias Explorer.Chain.MultichainSearchDb.{
     BalancesExportQueue,
@@ -23,7 +23,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   @max_concurrency 5
   @post_timeout :timer.minutes(5)
-  @unspecified "UNSPECIFIED"
 
   @doc """
   Processes a batch import of data by splitting the input parameters into chunks and sending each chunk as an HTTP POST request to a configured microservice endpoint.
@@ -698,6 +697,30 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     end
   end
 
+  @spec filter_addresses_to_multichain_import(
+          [Address.t()],
+          atom() | nil
+        ) :: [Address.t()]
+  def filter_addresses_to_multichain_import(addresses, :on_demand) do
+    addresses
+    |> Enum.filter(fn %Address{
+                        fetched_coin_balance: fetched_coin_balance,
+                        transactions_count: transactions_count,
+                        token_transfers_count: token_transfers_count
+                      } ->
+      case fetched_coin_balance do
+        %Wei{value: value} -> Decimal.compare(value, 0) == :gt
+        _ -> false
+      end ||
+        (is_number(transactions_count) and transactions_count > 0) ||
+        (is_number(token_transfers_count) and token_transfers_count > 0)
+    end)
+  end
+
+  def filter_addresses_to_multichain_import(addresses, _broadcast) do
+    addresses
+  end
+
   defp token_optional_field(data, metadata, key, convert_to_string \\ false) do
     case Map.get(metadata, key) do
       nil ->
@@ -1131,10 +1154,6 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       hash: Hash.to_string(address.hash),
       is_contract: !is_nil(address.contract_code),
       is_verified_contract: address.verified,
-      is_token: token?(address.token),
-      ens_name: address.ens_domain_name,
-      token_name: get_token_name(address.token),
-      token_type: get_token_type(address.token),
       contract_name: get_smart_contract_name(address.smart_contract)
     }
   end
@@ -1201,29 +1220,11 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     }
   end
 
-  defp token?(nil), do: false
-
-  defp token?(%NotLoaded{}), do: false
-
-  defp token?(_), do: true
-
-  defp get_token_name(nil), do: nil
-
-  defp get_token_name(%NotLoaded{}), do: nil
-
-  defp get_token_name(token), do: token.name
-
   defp get_smart_contract_name(nil), do: nil
 
   defp get_smart_contract_name(%NotLoaded{}), do: nil
 
   defp get_smart_contract_name(smart_contract), do: smart_contract.name
-
-  defp get_token_type(nil), do: @unspecified
-
-  defp get_token_type(%NotLoaded{}), do: @unspecified
-
-  defp get_token_type(token), do: token.type
 
   defp get_block_ranges([]), do: []
 

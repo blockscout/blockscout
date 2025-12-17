@@ -1,8 +1,8 @@
 defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
   use BlockScoutWeb, :controller
 
-  alias Explorer.Chain.Hash.Address, as: AddressHash
   alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.Hash.Address, as: AddressHash
   alias Explorer.SmartContract.Solidity.Publisher
 
   def create(conn, params) do

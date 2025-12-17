@@ -103,4 +103,22 @@ defmodule Explorer.Chain.Arbitrum.DaMultiPurposeRecord.Helper do
       when is_integer(height) and is_binary(transaction_commitment) do
     :crypto.hash(:sha256, :binary.encode_unsigned(height) <> transaction_commitment)
   end
+
+  @doc """
+    Calculates the data key for `Explorer.Chain.Arbitrum.DaMultiPurposeRecord` that contains EigenDA blob data.
+
+    ## Parameters
+    - `blob_header`: The binary blob header from EigenDA.
+
+    ## Returns
+    - A binary representing the calculated data key for the record containing
+      EigenDA blob data.
+  """
+  @spec calculate_eigenda_data_key(binary()) :: binary()
+  def calculate_eigenda_data_key(blob_header) when is_binary(blob_header) do
+    # The data key is calculated as the hash of the blob header as per
+    # https://layr-labs.github.io/eigenda/integration/spec/3-data-structs.html#blobheader
+
+    ExKeccak.hash_256(blob_header)
+  end
 end

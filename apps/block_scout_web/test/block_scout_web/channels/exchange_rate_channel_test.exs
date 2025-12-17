@@ -65,6 +65,13 @@ defmodule BlockScoutWeb.ExchangeRateChannelTest do
     end
 
     test "subscribed user is notified with market history", %{token: token} do
+      initial_value = :persistent_term.get(:market_history_fetcher_enabled, false)
+      :persistent_term.put(:market_history_fetcher_enabled, true)
+
+      on_exit(fn ->
+        :persistent_term.put(:market_history_fetcher_enabled, initial_value)
+      end)
+
       Coin.handle_info({nil, {{:ok, token}, false}}, %{})
       Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
       Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})

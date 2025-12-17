@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations do
   @moduledoc false
   require OpenApiSpex
 
+  alias BlockScoutWeb.Schemas.Helper
   alias Ecto.Enum, as: EctoEnum
   alias Explorer.Chain.Address
   alias OpenApiSpex.Schema
@@ -13,29 +14,40 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations do
     nullable: true
   }
 
+  @doc """
+   OpenAPI schema for Filecoin robust address.
+  """
+  @spec filecoin_robust_address_schema() :: Schema.t()
+  def filecoin_robust_address_schema, do: @filecoin_robust_address_schema
+
   def chain_type_fields(schema) do
     case Application.get_env(:explorer, :chain_type) do
       :filecoin ->
         schema
-        |> put_in([:properties, :filecoin], %Schema{
-          type: :object,
+        |> Helper.extend_schema(
           properties: %{
-            id: %Schema{
-              type: :string,
-              description: "Short f0 Filecoin address that may change during chain reorgs",
-              example: "f03248220",
-              nullable: true
-            },
-            robust: @filecoin_robust_address_schema,
-            actor_type: %Schema{
-              type: :string,
-              description: "Type of actor associated with the Filecoin address",
-              enum: EctoEnum.values(Address, :filecoin_actor_type),
-              nullable: true
+            filecoin: %Schema{
+              type: :object,
+              properties: %{
+                id: %Schema{
+                  type: :string,
+                  description: "Short f0 Filecoin address that may change during chain reorgs",
+                  example: "f03248220",
+                  nullable: true
+                },
+                robust: @filecoin_robust_address_schema,
+                actor_type: %Schema{
+                  type: :string,
+                  description: "Type of actor associated with the Filecoin address",
+                  enum: EctoEnum.values(Address, :filecoin_actor_type),
+                  nullable: true
+                }
+              },
+              required: [:id, :robust, :actor_type],
+              additionalProperties: false
             }
-          },
-          required: [:id, :robust, :actor_type]
-        })
+          }
+        )
 
       _ ->
         schema
@@ -90,7 +102,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
           items: General.Tag
         },
         watchlist_names: %Schema{
-          description: "Watch list name associated with the address",
+          description: "Watchlist name associated with the address",
           type: :array,
           items: General.WatchlistName
         },
@@ -110,11 +122,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address do
         :implementations,
         :is_verified,
         :ens_domain_name,
-        :metadata,
-        :private_tags,
-        :watchlist_names,
-        :public_tags
-      ]
+        :metadata
+      ],
+      additionalProperties: false
     }
     |> ChainTypeCustomizations.chain_type_fields()
   )

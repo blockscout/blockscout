@@ -5,11 +5,11 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
     Changes in the schema should be reflected in the bulk import module:
     - Explorer.Chain.Import.Runner.TokenTransfers
   """
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.CompileTimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
 
   alias Explorer.Chain.{
     Address,
-    Address.Reputation,
     Block,
     Hash,
     Transaction
@@ -17,10 +17,10 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
 
   alias Explorer.Chain.Token.Instance
 
-  # Remove `transaction_hash` from primary key for `:celo` chain type. See
+  # Remove `transaction_hash` from primary key for `optimism-celo` chain type. See
   # `Explorer.Chain.Log.Schema` for more details.
-  @transaction_field (case @chain_type do
-                        :celo ->
+  @transaction_field (case @chain_identity do
+                        {:optimism, :celo} ->
                           quote do
                             [
                               belongs_to(:transaction, Transaction,
@@ -61,7 +61,6 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
         field(:token_type, :string)
         field(:block_consensus, :boolean)
         field(:token_instance, :any, virtual: true) :: Instance.t() | nil
-        field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
         belongs_to(:from_address, Address,
           foreign_key: :from_address_hash,
@@ -136,12 +135,14 @@ defmodule Explorer.Chain.TokenTransfer do
   """
 
   use Explorer.Schema
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
-  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
+  use Utils.RuntimeEnvHelper, chain_identity: [:explorer, :chain_identity]
 
   require Explorer.Chain.TokenTransfer.Schema
 
   import Ecto.Changeset
+  import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
   alias Explorer.Chain
   alias Explorer.Chain.{DenormalizationHelper, Hash, Log, TokenTransfer}
@@ -161,6 +162,15 @@ defmodule Explorer.Chain.TokenTransfer do
   @erc1155_batch_transfer_signature "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb"
   @erc404_erc20_transfer_event "0xe59fdd36d0d223c0c7d996db7ad796880f45e1936cb0bb7ac102e7082e031487"
   @erc404_erc721_transfer_event "0xe5f815dc84b8cecdfd4beedfc3f91ab5be7af100eca4e8fb11552b867995394f"
+
+  # event NativeCoinTransferred(address indexed from, address indexed to, uint256 amount)
+  @arc_native_coin_transferred_event "0x62f084c00a442dcf51cdbb51beed2839bf42a268da8474b0e98f38edb7db5a22"
+
+  # event NativeCoinMinted(address indexed recipient, uint256 amount)
+  @arc_native_coin_minted_event "0xb049859d09b3a7d0189a07db4d4becee1a2aa269023205478b1360ab6fc12114"
+
+  # event NativeCoinBurned(address indexed from, uint256 amount)
+  @arc_native_coin_burned_event "0xaaf1ef013644e67c5cea90217acdf0accd334f8437fc9a89a53cfc9b25fb5c25"
 
   @transfer_function_signature "0xa9059cbb"
 
@@ -187,16 +197,16 @@ defmodule Explorer.Chain.TokenTransfer do
   Explorer.Chain.TokenTransfer.Schema.generate()
 
   @required_attrs ~w(block_number log_index from_address_hash to_address_hash token_contract_address_hash block_hash token_type)a
-                  |> (&(case @chain_type do
-                          :celo ->
+                  |> (&(case @chain_identity do
+                          {:optimism, :celo} ->
                             &1
 
                           _ ->
                             [:transaction_hash | &1]
                         end)).()
   @optional_attrs ~w(amount amounts token_ids block_consensus)a
-                  |> (&(case @chain_type do
-                          :celo ->
+                  |> (&(case @chain_identity do
+                          {:optimism, :celo} ->
                             [:transaction_hash | &1]
 
                           _ ->
@@ -229,6 +239,12 @@ defmodule Explorer.Chain.TokenTransfer do
 
   def erc404_erc721_transfer_event, do: @erc404_erc721_transfer_event
 
+  def arc_native_coin_transferred_event, do: @arc_native_coin_transferred_event
+
+  def arc_native_coin_minted_event, do: @arc_native_coin_minted_event
+
+  def arc_native_coin_burned_event, do: @arc_native_coin_burned_event
+
   @doc """
   ERC 20's transfer(address,uint256) function signature
   """
@@ -246,7 +262,7 @@ defmodule Explorer.Chain.TokenTransfer do
         preloads =
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
-            :token,
+            [token: reputation_association()],
             [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
             [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
           ])
@@ -273,7 +289,7 @@ defmodule Explorer.Chain.TokenTransfer do
         preloads =
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
-            :token,
+            [token: reputation_association()],
             [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
             [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
           ])
@@ -306,7 +322,7 @@ defmodule Explorer.Chain.TokenTransfer do
         preloads =
           DenormalizationHelper.extend_transaction_preload([
             :transaction,
-            :token,
+            [token: reputation_association()],
             [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
             [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
           ])
@@ -692,9 +708,9 @@ defmodule Explorer.Chain.TokenTransfer do
         where: tt.log_index == parent_as(:log).index
       )
 
-    chain_type()
+    chain_identity()
     |> case do
-      :celo ->
+      {:optimism, :celo} ->
         query
         |> where(
           [tt],

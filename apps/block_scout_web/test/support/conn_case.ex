@@ -19,7 +19,8 @@ defmodule BlockScoutWeb.ConnCase do
     quote do
       # Import conveniences for testing with connections
       import Plug.Conn
-      import Phoenix.ConnTest
+      import Phoenix.ConnTest, except: [json_response: 2]
+      import BlockScoutWeb.TestApiSchemaAssertions, only: [json_response: 2]
       import BlockScoutWeb.Router.Helpers
       import BlockScoutWeb.Routers.WebRouter.Helpers, except: [static_path: 2]
       import BlockScoutWeb.Routers.AccountRouter.Helpers, except: [static_path: 2]
@@ -40,7 +41,7 @@ defmodule BlockScoutWeb.ConnCase do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo)
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Explorer.Repo.Account)
 
-    unless tags[:async] do
+    if !tags[:async] do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, {:shared, self()})
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Account, {:shared, self()})
     end

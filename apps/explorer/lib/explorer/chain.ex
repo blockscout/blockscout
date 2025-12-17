@@ -707,6 +707,10 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+  Checks if indexing of blocks finished based on the ratio of indexed blocks to blockchain height
+  """
+  @spec finished_indexing_from_ratio?(Decimal.t()) :: boolean()
   def finished_indexing_from_ratio?(ratio) do
     Decimal.compare(ratio, 1) !== :lt
   end
@@ -1138,7 +1142,13 @@ defmodule Explorer.Chain do
           address_current_token_balances: imported[:address_current_token_balances] || []
         }
 
+        filtered_addresses_to_import =
+          MultichainSearch.filter_addresses_to_multichain_import(assets_to_import[:addresses], options[:broadcast])
+
+        assets_to_import = Map.put(assets_to_import, :addresses, filtered_addresses_to_import)
+
         MultichainSearch.send_data_to_queue(assets_to_import)
+
         result
 
       other_result ->
@@ -1712,28 +1722,47 @@ defmodule Explorer.Chain do
     select_repo(options).one!(query)
   end
 
-  def indexer_running? do
+  @spec indexer_running?() :: boolean()
+  defp indexer_running? do
     Application.get_env(:indexer, Indexer.Supervisor)[:enabled] or
       match?({:ok, _, _}, HealthHelper.last_db_block_status())
   end
 
-  def internal_transactions_fetcher_running? do
+  @spec internal_transactions_fetcher_running?() :: boolean()
+  defp internal_transactions_fetcher_running? do
     not Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] or
       match?({:ok, _, _}, last_db_internal_transaction_block_status())
   end
 
-  def last_db_internal_transaction_block_status do
-    query =
-      from(it in InternalTransaction,
-        join: block in assoc(it, :block),
-        select: {block.number, block.timestamp},
-        order_by: [desc: block.number],
+  @spec last_db_internal_transaction_block_status() ::
+          {:ok, Block.block_number(), DateTime.t()}
+          | {:stale, Block.block_number(), DateTime.t()}
+          | {:error, :no_blocks}
+  defp last_db_internal_transaction_block_status do
+    it_query =
+      from(internal_transaction in InternalTransaction,
+        select: internal_transaction.block_number,
+        order_by: [desc: internal_transaction.block_number],
         limit: 1
       )
 
-    query
-    |> Repo.one()
-    |> HealthHelper.block_status()
+    last_it_block_number =
+      it_query
+      |> Repo.one()
+
+    if is_nil(last_it_block_number) do
+      {:error, :no_blocks}
+    else
+      block_query =
+        from(block in Block,
+          select: {block.number, block.timestamp},
+          where: block.consensus == true and block.number == ^last_it_block_number
+        )
+
+      block_query
+      |> Repo.one()
+      |> HealthHelper.block_status()
+    end
   end
 
   def fetch_min_missing_block_cache(from \\ nil, to \\ nil) do
@@ -3053,11 +3082,14 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
-  @spec fetch_last_token_balances(Hash.Address.t(), [api?]) :: []
+  @spec fetch_last_token_balances(Hash.Address.t(), [api? | necessity_by_association_option]) :: []
   def fetch_last_token_balances(address_hash, options \\ []) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
     address_hash
     |> CurrentTokenBalance.last_token_balances()
     |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
+    |> join_associations(necessity_by_association)
     |> select_repo(options).all()
   end
 
@@ -3066,6 +3098,7 @@ defmodule Explorer.Chain do
     filter = Keyword.get(options, :token_type)
     options = Keyword.delete(options, :token_type)
     paging_options = Keyword.get(options, :paging_options)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
     case paging_options do
       %PagingOptions{key: {nil, 0, _id}} ->
@@ -3076,6 +3109,7 @@ defmodule Explorer.Chain do
         |> CurrentTokenBalance.last_token_balances(options, filter)
         |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
         |> page_current_token_balances(paging_options)
+        |> join_associations(necessity_by_association)
         |> select_repo(options).all()
     end
   end
@@ -3132,12 +3166,19 @@ defmodule Explorer.Chain do
     result =
       balances_by_day
       |> Enum.filter(fn day -> day.value end)
-      |> (&if(api?, do: &1, else: Enum.map(&1, fn day -> Map.update!(day, :date, fn x -> to_string(x) end) end))).()
-      |> (&if(api?, do: &1, else: Enum.map(&1, fn day -> Map.update!(day, :value, fn x -> Wei.to(x, :ether) end) end))).()
+      |> (&if(api?,
+            do: &1,
+            else:
+              Enum.map(&1, fn day ->
+                day
+                |> Map.update!(:date, fn x -> to_string(x) end)
+                |> Map.update!(:value, fn x -> Wei.to(x, :ether) end)
+              end)
+          )).()
 
     today = Date.to_string(NaiveDateTime.utc_now())
 
-    if not Enum.empty?(result) && !Enum.any?(result, fn map -> map[:date] == today end) do
+    if not Enum.empty?(result) && !Enum.any?(result, fn map -> to_string(map[:date]) == today end) do
       List.flatten([result | [%{date: today, value: List.last(result)[:value]}]])
     else
       result
@@ -3188,18 +3229,30 @@ defmodule Explorer.Chain do
   @spec data() :: Dataloader.Ecto.t()
   def data, do: DataloaderEcto.new(Repo)
 
+  @doc """
+    Determines token transfer type by its transaction.
+
+    ## Parameters
+    - `transaction`: The transaction which token transfer type we need to determine.
+
+    ## Returns
+    - A token transfer type which can be one of the following cases:
+      :erc20 | :erc721 | :erc1155 | :erc404 | :zrc2 | :token_transfer
+      The `:token_transfer` means the token transfer of unknown type.
+    - `nil` if this transaction is not related to any token transfer.
+  """
   @spec transaction_token_transfer_type(Transaction.t()) ::
-          :erc20 | :erc721 | :erc1155 | :erc404 | :token_transfer | nil
+          :erc20 | :erc721 | :erc1155 | :erc404 | :zrc2 | :token_transfer | nil
   def transaction_token_transfer_type(
         %Transaction{
           status: :ok,
           created_contract_address_hash: nil,
-          input: input,
+          input: _input,
           value: value
         } = transaction
       ) do
     zero_wei = %Wei{value: Decimal.new(0)}
-    result = find_token_transfer_type(transaction, input, value)
+    result = find_token_transfer_type(transaction)
 
     if is_nil(result) && not Enum.empty?(transaction.token_transfers) && value == zero_wei,
       do: :token_transfer,
@@ -3210,11 +3263,21 @@ defmodule Explorer.Chain do
 
   def transaction_token_transfer_type(_), do: nil
 
-  defp find_token_transfer_type(transaction, input, value) do
+  # Determines token transfer type by its transaction.
+  #
+  # ## Parameters
+  # - `transaction`: The transaction which token transfer type we need to determine.
+  #
+  # ## Returns
+  # - A token transfer type which can be one of the following cases:
+  #   :erc20 | :erc721 | :erc1155 | :erc404 | :zrc2
+  # - `nil` if this transaction has unknown transfer type or not related to any token transfer.
+  @spec find_token_transfer_type(Transaction.t()) :: :erc20 | :erc721 | :erc1155 | :erc404 | :zrc2 | nil
+  defp find_token_transfer_type(transaction) do
     zero_wei = %Wei{value: Decimal.new(0)}
 
     # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC721/ERC721.sol#L35
-    case {to_string(input), value} do
+    case {to_string(transaction.input), transaction.value} do
       # transferFrom(address,address,uint256)
       {"0x23b872dd" <> params, ^zero_wei} ->
         types = [:address, :address, {:uint, 256}]
@@ -3250,7 +3313,7 @@ defmodule Explorer.Chain do
 
         find_erc1155_token_transfer(transaction.token_transfers, {from_address, to_address})
 
-      # check for ERC-20 or for old ERC-721, ERC-1155, ERC-404 token versions
+      # check for ERC-20, ZRC-2 or for old ERC-721, ERC-1155, ERC-404 token versions
       {unquote(TokenTransfer.transfer_function_signature()) <> params, ^zero_wei} ->
         types = [:address, {:uint, 256}]
 
@@ -3258,7 +3321,7 @@ defmodule Explorer.Chain do
 
         decimal_value = Decimal.new(value)
 
-        find_known_token_transfer(transaction.token_transfers, {address, decimal_value})
+        find_known_token_transfer(transaction.token_transfers, address, decimal_value)
 
       _ ->
         nil
@@ -3283,7 +3346,20 @@ defmodule Explorer.Chain do
     if token_transfer, do: :erc1155
   end
 
-  defp find_known_token_transfer(token_transfers, {address, decimal_value}) do
+  # Finds token transfer type by the given list of token transfers in a transaction.
+  # To filter transaction's token transfers, the `to_address_hash` and `amount` fields are used.
+  #
+  # ## Parameters
+  # - `token_transfers`: The list of transaction's token transfers.
+  # - `address`: The destination address of the transfer.
+  # - `decimal_value`: The decimal amount of the transfer.
+  #
+  # ## Returns
+  # - A token transfer type which can be one of the following cases:
+  #   :erc20 | :erc721 | :erc1155 | :erc404 | :zrc2
+  # - `nil` if the corresponding transaction has unknown transfer type.
+  @spec find_known_token_transfer(list(), binary(), Decimal.t()) :: :erc20 | :erc721 | :erc1155 | :erc404 | :zrc2 | nil
+  defp find_known_token_transfer(token_transfers, address, decimal_value) do
     token_transfer =
       Enum.find(token_transfers, fn token_transfer ->
         token_transfer.to_address_hash.bytes == address && token_transfer.amount == decimal_value
@@ -3295,6 +3371,7 @@ defmodule Explorer.Chain do
         %Token{type: "ERC-721"} -> :erc721
         %Token{type: "ERC-1155"} -> :erc1155
         %Token{type: "ERC-404"} -> :erc404
+        %Token{type: "ZRC-2"} -> :zrc2
         _ -> nil
       end
     else
@@ -3912,21 +3989,48 @@ defmodule Explorer.Chain do
 
     [total_token_transfers_task, total_token_holders_task]
     |> Task.yield_many(timeout)
-    |> Enum.map(fn {_task, res} ->
+    |> Enum.map(fn {task, res} ->
       case res do
         {:ok, result} ->
           result
 
         {:exit, reason} ->
           Logger.warning("Query fetching token counters terminated: #{inspect(reason)}")
-          0
+
+          fallback_cached_value_based_on_async_task_pid(
+            task.pid,
+            total_token_transfers_task.pid,
+            total_token_holders_task.pid,
+            address_hash
+          )
 
         nil ->
           Logger.warning("Query fetching token counters timed out.")
-          0
+
+          fallback_cached_value_based_on_async_task_pid(
+            task.pid,
+            total_token_transfers_task.pid,
+            total_token_holders_task.pid,
+            address_hash
+          )
       end
     end)
     |> List.to_tuple()
+  end
+
+  defp fallback_cached_value_based_on_async_task_pid(
+         task_pid,
+         total_token_transfers_task_pid,
+         total_token_holders_task_pid,
+         address_hash
+       ) do
+    case task_pid do
+      ^total_token_transfers_task_pid ->
+        TokenTransfersCount.fetch_count_from_cache(address_hash)
+
+      ^total_token_holders_task_pid ->
+        TokenHoldersCount.fetch_count_from_cache(address_hash)
+    end
   end
 
   @spec flat_1155_batch_token_transfers([TokenTransfer.t()], Decimal.t() | nil) :: [TokenTransfer.t()]
@@ -3946,7 +4050,7 @@ defmodule Explorer.Chain do
     |> Enum.reverse()
   end
 
-  defp flat_1155_batch_token_transfer(tt, amounts, token_ids, token_id_to_filter) do
+  defp flat_1155_batch_token_transfer(%TokenTransfer{} = tt, amounts, token_ids, token_id_to_filter) do
     amounts
     |> Enum.zip(token_ids)
     |> Enum.with_index()
@@ -3970,7 +4074,7 @@ defmodule Explorer.Chain do
     transfer
   end
 
-  defp group_batch_reducer(transfer, acc) do
+  defp group_batch_reducer(transfer, %TokenTransfer{} = acc) do
     %TokenTransfer{acc | amount: Decimal.add(acc.amount, transfer.amount)}
   end
 

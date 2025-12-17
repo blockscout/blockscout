@@ -1,4 +1,4 @@
-FROM hexpm/elixir:1.17.3-erlang-27.3.4-alpine-3.21.3 AS builder-deps
+FROM hexpm/elixir:1.19.4-erlang-27.3.4.6-alpine-3.22.2 AS builder-deps
 
 WORKDIR /app
 
@@ -17,7 +17,7 @@ COPY apps/nft_media_handler/mix.exs ./apps/nft_media_handler/
 ENV MIX_ENV="prod"
 ENV MIX_HOME=/opt/mix
 RUN mix local.hex --force
-RUN mix do deps.get, local.rebar --force, deps.compile --skip-umbrella-children
+RUN MIX_OS_DEPS_COMPILE_PARTITION_COUNT=$(nproc) mix do deps.get + local.rebar --force + deps.compile --skip-umbrella-children
 
 COPY config ./config
 COPY rel ./rel
@@ -49,7 +49,7 @@ RUN mkdir -p /opt/release && \
     mv _build/${MIX_ENV}/rel/blockscout /opt/release
 
 ##############################################################
-FROM hexpm/elixir:1.17.3-erlang-27.3.4-alpine-3.21.3
+FROM hexpm/elixir:1.19.4-erlang-27.3.4.6-alpine-3.22.2
 
 WORKDIR /app
 

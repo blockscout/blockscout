@@ -301,7 +301,7 @@ defmodule Explorer.Chain.Transaction.StateChange do
       balance_diff = Decimal.sub(balance, balance_before)
       transfer = elem(List.first(transfers), 1)
 
-      if transfer.token.type != "ERC-20" or has_diff?(balance_diff) do
+      if transfer.token.type not in ["ERC-20", "ZRC-2"] or has_diff?(balance_diff) do
         %StateChange{
           coin_or_token_transfers: transfers,
           address: address,

@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
 
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, CurrencyHelper, Hash, Token}
-  alias Explorer.Chain.Address.{Reputation, TokenBalance}
+  alias Explorer.Chain.Address.TokenBalance
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -40,7 +40,6 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     field(:distinct_token_instances_count, :integer, virtual: true)
     field(:token_ids, {:array, :decimal}, virtual: true)
     field(:preloaded_token_instances, {:array, :any}, virtual: true)
-    field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
     # A transient field for deriving token holder count deltas during address_current_token_balances upserts
     field(:old_value, :decimal)
@@ -104,7 +103,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
         offset = (max(paging_options.page_number, 1) - 1) * paging_options.page_size
 
         token_contract_address_hash
-        |> token_holders_query
+        |> token_holders_query()
         |> order_by([tb], desc: :value, desc: :address_hash)
         |> Chain.page_token_balances(paging_options)
         |> limit(^paging_options.page_size)

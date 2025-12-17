@@ -1,6 +1,6 @@
 services:
   elixir:
-    image: ghcr.io/blockscout/devcontainer-elixir:1.17.3-erlang-27.1
+    image: ghcr.io/blockscout/devcontainer-elixir:1.19.4-erlang-27.3.4.6
 
     # Uncomment next lines to use test Dockerfile with new Elixir version
     # build:

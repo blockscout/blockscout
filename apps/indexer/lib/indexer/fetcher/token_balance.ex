@@ -60,7 +60,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   def child_spec([init_options, gen_server_options]) do
     {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
 
-    unless state do
+    if !state do
       raise ArgumentError,
             ":json_rpc_named_arguments must be provided to `#{__MODULE__}.child_spec " <>
               "to allow for json_rpc calls when running."
@@ -167,11 +167,7 @@ defmodule Indexer.Fetcher.TokenBalance do
 
   # defp handle_missing_balance_of_tokens(failed_token_balances) do
   #   {missing_balance_of_balances, other_failed_balances} =
-  #     Enum.split_with(failed_token_balances, fn
-  #       %{error: :unable_to_decode} -> true
-  #       %{error: error} when is_binary(error) -> String.match?(error, ~r/execution.*revert/)
-  #       _ -> false
-  #     end)
+  #     Enum.split_with(failed_token_balances, &EthereumJSONRPC.contract_failure?/1)
 
   #   MissingBalanceOfToken.insert_from_params(missing_balance_of_balances)
 

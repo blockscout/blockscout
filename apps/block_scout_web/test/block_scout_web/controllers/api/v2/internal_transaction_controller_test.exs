@@ -2,93 +2,103 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Chain.{Address, InternalTransaction}
+  alias Explorer.Chain.Cache.BackgroundMigrations
 
-  # todo: enable when /internal-transactions API endpoint will be enabled
-  # describe "/internal-transactions" do
-  #   test "empty list", %{conn: conn} do
-  #     request = get(conn, "/api/v2/internal-transactions")
+  describe "/internal-transactions" do
+    setup do
+      BackgroundMigrations.set_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(
+        true
+      )
 
-  #     assert response = json_response(request, 200)
-  #     assert response["items"] == []
-  #     assert response["next_page_params"] == nil
-  #   end
+      :ok
+    end
 
-  #   test "non empty list", %{conn: conn} do
-  #     tx =
-  #       :transaction
-  #       |> insert()
-  #       |> with_block()
+    test "empty list", %{conn: conn} do
+      request = get(conn, "/api/v2/internal-transactions")
 
-  #     insert(:internal_transaction,
-  #       transaction: tx,
-  #       block_hash: tx.block_hash,
-  #       index: 0,
-  #       block_index: 0
-  #     )
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+    end
 
-  #     request = get(conn, "/api/v2/internal-transactions")
+    test "non empty list", %{conn: conn} do
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
 
-  #     assert response = json_response(request, 200)
-  #     assert Enum.count(response["items"]) == 1
-  #     assert response["next_page_params"] == nil
-  #   end
+      insert(:internal_transaction,
+        transaction: tx,
+        transaction_index: 0,
+        block_number: tx.block_number,
+        block_hash: tx.block_hash,
+        index: 0,
+        block_index: 0
+      )
 
-  #   test "internal transactions with next_page_params", %{conn: conn} do
-  #     transaction = insert(:transaction) |> with_block()
+      request = get(conn, "/api/v2/internal-transactions")
 
-  #     internal_transaction =
-  #       insert(:internal_transaction,
-  #         transaction: transaction,
-  #         transaction_index: 0,
-  #         block_number: transaction.block_number,
-  #         block_hash: transaction.block_hash,
-  #         index: 0,
-  #         block_index: 0
-  #       )
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+    end
 
-  #     transaction_2 = insert(:transaction) |> with_block()
+    test "internal transactions with next_page_params", %{conn: conn} do
+      transaction = insert(:transaction) |> with_block()
 
-  #     internal_transactions =
-  #       for i <- 0..49 do
-  #         insert(:internal_transaction,
-  #           transaction: transaction_2,
-  #           transaction_index: 0,
-  #           block_number: transaction_2.block_number,
-  #           block_hash: transaction_2.block_hash,
-  #           index: i,
-  #           block_index: i
-  #         )
-  #       end
+      internal_transaction =
+        insert(:internal_transaction,
+          transaction: transaction,
+          transaction_index: 0,
+          block_number: transaction.block_number,
+          block_hash: transaction.block_hash,
+          index: 0,
+          block_index: 0
+        )
 
-  #     internal_transactions = [internal_transaction | internal_transactions]
+      transaction_2 = insert(:transaction) |> with_block()
 
-  #     request = get(conn, "/api/v2/internal-transactions")
-  #     assert response = json_response(request, 200)
+      internal_transactions =
+        for i <- 0..49 do
+          insert(:internal_transaction,
+            transaction: transaction_2,
+            transaction_index: 0,
+            block_number: transaction_2.block_number,
+            block_hash: transaction_2.block_hash,
+            index: i,
+            block_index: i
+          )
+        end
 
-  #     request_2nd_page = get(conn, "/api/v2/internal-transactions", response["next_page_params"])
-  #     assert response_2nd_page = json_response(request_2nd_page, 200)
+      internal_transactions = [internal_transaction | internal_transactions]
 
-  #     check_paginated_response(response, response_2nd_page, internal_transactions)
-  #   end
-  # end
+      request = get(conn, "/api/v2/internal-transactions")
+      assert response = json_response(request, 200)
 
-  # defp compare_item(%InternalTransaction{} = internal_transaction, json) do
-  #   assert Address.checksum(internal_transaction.from_address_hash) == json["from"]["hash"]
-  #   assert Address.checksum(internal_transaction.to_address_hash) == json["to"]["hash"]
-  #   assert to_string(internal_transaction.transaction_hash) == json["transaction_hash"]
-  #   assert internal_transaction.block_number == json["block_number"]
-  #   assert internal_transaction.block_index == json["block_index"]
-  # end
+      request_2nd_page = get(conn, "/api/v2/internal-transactions", response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
 
-  # defp check_paginated_response(first_page_resp, second_page_resp, internal_transactions) do
-  #   assert Enum.count(first_page_resp["items"]) == 50
-  #   assert first_page_resp["next_page_params"] != nil
-  #   compare_item(Enum.at(internal_transactions, 50), Enum.at(first_page_resp["items"], 0))
+      check_paginated_response(response, response_2nd_page, internal_transactions)
+    end
+  end
 
-  #   compare_item(Enum.at(internal_transactions, 1), Enum.at(first_page_resp["items"], 49))
+  defp compare_item(%InternalTransaction{} = internal_transaction, json) do
+    assert Address.checksum(internal_transaction.from_address_hash) == json["from"]["hash"]
+    assert Address.checksum(internal_transaction.to_address_hash) == json["to"]["hash"]
+    assert to_string(internal_transaction.transaction_hash) == json["transaction_hash"]
+    assert internal_transaction.block_number == json["block_number"]
+    assert internal_transaction.block_index == json["block_index"]
+  end
 
-  #   assert Enum.count(second_page_resp["items"]) == 1
-  #   assert second_page_resp["next_page_params"] == nil
-  #   compare_item(Enum.at(internal_transactions, 0), Enum.at(second_page_resp["items"], 0))
-  # end
+  defp check_paginated_response(first_page_resp, second_page_resp, internal_transactions) do
+    assert Enum.count(first_page_resp["items"]) == 50
+    assert first_page_resp["next_page_params"] != nil
+    compare_item(Enum.at(internal_transactions, 50), Enum.at(first_page_resp["items"], 0))
+
+    compare_item(Enum.at(internal_transactions, 1), Enum.at(first_page_resp["items"], 49))
+
+    assert Enum.count(second_page_resp["items"]) == 1
+    assert second_page_resp["next_page_params"] == nil
+    compare_item(Enum.at(internal_transactions, 0), Enum.at(second_page_resp["items"], 0))
+  end
 end

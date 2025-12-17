@@ -1,22 +1,21 @@
 defmodule BlockScoutWeb.Schemas.API.V2.Token.ChainTypeCustomizations do
   @moduledoc false
   require OpenApiSpex
+  import BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations, only: [filecoin_robust_address_schema: 0]
 
+  alias BlockScoutWeb.Schemas.API.V2.General
+  alias BlockScoutWeb.Schemas.Helper
   alias Explorer.Chain.BridgedToken
   alias OpenApiSpex.Schema
-
-  @filecoin_robust_address_schema %Schema{
-    type: :string,
-    example: "f25nml2cfbljvn4goqtclhifepvfnicv6g7mfmmvq",
-    nullable: true
-  }
 
   def chain_type_fields(schema) do
     case Application.get_env(:explorer, :chain_type) do
       :filecoin ->
         schema
-        |> put_in([:properties, :filecoin_robust_address], @filecoin_robust_address_schema)
-        |> update_in([:required], &[:filecoin_robust_address | &1])
+        |> Helper.extend_schema(
+          properties: %{filecoin_robust_address: filecoin_robust_address_schema()},
+          required: [:filecoin_robust_address]
+        )
 
       _ ->
         schema
@@ -51,13 +50,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
       type: :object,
       properties: %{
         address_hash: General.AddressHash,
-        symbol: %Schema{type: :string, nullable: false},
-        name: %Schema{type: :string, nullable: false},
+        symbol: %Schema{type: :string, nullable: true},
+        name: %Schema{type: :string, nullable: true},
         decimals: General.IntegerStringNullable,
-        type: %Schema{
-          anyOf: [Type],
-          nullable: true
-        },
+        type: %Schema{allOf: [Type], nullable: true},
         holders_count: General.IntegerStringNullable,
         exchange_rate: General.FloatStringNullable,
         volume_24h: General.FloatStringNullable,
@@ -69,7 +65,15 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
           enum: Reputation.enum_values(),
           description: "Reputation of the token",
           nullable: true
-        }
+        },
+        bridge_type: %Schema{
+          type: :string,
+          enum: ["omni", "amb"],
+          description: "Type of bridge used for this bridged token",
+          nullable: true
+        },
+        foreign_address: %Schema{type: :string, pattern: General.address_hash_pattern(), nullable: true},
+        origin_chain_id: General.IntegerStringNullable
       },
       required: [
         :address_hash,
@@ -84,7 +88,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         :icon_url,
         :circulating_market_cap,
         :reputation
-      ]
+      ],
+      additionalProperties: false
     }
     |> ChainTypeCustomizations.chain_type_fields()
     |> ChainTypeCustomizations.maybe_append_bridged_info()
@@ -97,13 +102,18 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Type do
   """
   require OpenApiSpex
 
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  @token_types ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
+
+  if @chain_type == :zilliqa do
+    @chain_type_token_types ["ZRC-2"]
+  else
+    @chain_type_token_types []
+  end
+
   OpenApiSpex.schema(%{
     type: :string,
-    enum: [
-      "ERC-20",
-      "ERC-721",
-      "ERC-1155",
-      "ERC-404"
-    ]
+    enum: @token_types ++ @chain_type_token_types
   })
 end

@@ -17,7 +17,8 @@ config :block_scout_web,
   # 604800 seconds, 1 week
   session_cookie_ttl: 60 * 60 * 24 * 7,
   invalid_session_key: "invalid_session",
-  api_v2_temp_token_key: "api_v2_temp_token",
+  api_v2_temp_token_cookie_key: "api_v2_temp_token",
+  api_v2_temp_token_header_key: "api-v2-temp-token",
   http_client: Explorer.HttpClient.Tesla
 
 config :block_scout_web,
@@ -48,49 +49,19 @@ config :block_scout_web, BlockScoutWeb.Chain.TransactionHistoryChartController,
   # days
   history_size: 30
 
+config :logger, :block_scout_web,
+  metadata: ConfigHelper.logger_metadata(),
+  metadata_filter: [application: :block_scout_web]
+
 config :ex_cldr,
   default_locale: "en",
   default_backend: BlockScoutWeb.Cldr
-
-config :logger, :block_scout_web,
-  # keep synced with `config/config.exs`
-  format: "$dateT$time $metadata[$level] $message\n",
-  metadata:
-    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
-       block_number step count error_count shrunk import_id transaction_id)a,
-  metadata_filter: [application: :block_scout_web]
-
-config :logger, :api,
-  # keep synced with `config/config.exs`
-  format: "$dateT$time $metadata[$level] $message\n",
-  metadata:
-    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
-       block_number step count error_count shrunk import_id transaction_id)a,
-  metadata_filter: [application: :api]
-
-config :logger, :api_v2,
-  # keep synced with `config/config.exs`
-  format: "$dateT$time $metadata[$level] $message\n",
-  metadata:
-    ~w(application fetcher request_id first_block_number last_block_number missing_block_range_count missing_block_count
-       block_number step count error_count shrunk import_id transaction_id)a,
-  metadata_filter: [application: :api_v2]
 
 config :prometheus, BlockScoutWeb.Prometheus.PublicExporter,
   path: "/public-metrics",
   format: :auto,
   registry: :public,
   auth: false
-
-config :prometheus, BlockScoutWeb.Prometheus.PhoenixInstrumenter,
-  # override default for Phoenix 1.4 compatibility
-  # * `:transport_name` to `:transport`
-  # * remove `:vsn`
-  channel_join_labels: [:channel, :topic, :transport],
-  # override default for Phoenix 1.4 compatibility
-  # * `:transport_name` to `:transport`
-  # * remove `:vsn`
-  channel_receive_labels: [:channel, :topic, :transport, :event]
 
 config :spandex_phoenix, tracer: BlockScoutWeb.Tracer
 

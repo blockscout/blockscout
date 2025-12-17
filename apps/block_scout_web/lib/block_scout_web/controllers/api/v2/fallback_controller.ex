@@ -1,5 +1,5 @@
 defmodule BlockScoutWeb.API.V2.FallbackController do
-  use Phoenix.Controller
+  use Phoenix.Controller, namespace: BlockScoutWeb
 
   require Logger
 
@@ -343,5 +343,12 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     conn
     |> put_status(code)
     |> json(response)
+  end
+
+  def call(conn, :unknown_action) do
+    conn
+    |> put_status(400)
+    |> put_view(ApiView)
+    |> render(:message, %{message: "Unknown API v2 action"})
   end
 end

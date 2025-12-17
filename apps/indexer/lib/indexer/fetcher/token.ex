@@ -21,7 +21,7 @@ defmodule Indexer.Fetcher.Token do
   def child_spec([init_options, gen_server_options]) do
     {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
 
-    unless state do
+    if !state do
       raise ArgumentError,
             ":json_rpc_named_arguments must be provided to `#{__MODULE__}.child_spec " <>
               "to allow for json_rpc calls when running."
@@ -70,22 +70,22 @@ defmodule Indexer.Fetcher.Token do
   end
 
   # defp catalog_token(token) do
-  #   token_params =
-  #     token
-  #     |> MetadataRetriever.get_functions_of()
-  #     |> (&if(&1 == %{}, do: &1, else: Map.put(&1, :cataloged, true))).()
+  #   token
+  #   |> MetadataRetriever.get_functions_of(set_skip_metadata: true)
+  #   |> case do
+  #     %{skip_metadata: false} ->
+  #       :ok
 
-  #   {:ok, _} = Token.update(token, token_params)
+  #     token_params ->
+  #       data_for_multichain = MultichainSearch.prepare_token_metadata_for_queue(token, token_params)
 
-  #   if Map.get(token_params, :cataloged) do
-  #     data_for_multichain = MultichainSearch.prepare_token_metadata_for_queue(token, token_params)
+  #       %{}
+  #       |> Map.put(token.contract_address_hash.bytes, data_for_multichain)
+  #       |> MultichainSearch.send_token_info_to_queue(:metadata)
 
-  #     %{}
-  #     |> Map.put(token.contract_address_hash.bytes, data_for_multichain)
-  #     |> MultichainSearch.send_token_info_to_queue(:metadata)
+  #       {:ok, _} = Token.update(token, Map.put(token_params, :cataloged, true))
+  #       :ok
   #   end
-
-  #   :ok
   # end
 
   defp defaults do

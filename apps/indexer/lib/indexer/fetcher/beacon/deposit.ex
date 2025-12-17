@@ -11,10 +11,13 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
   import Ecto.Query
 
   alias ABI.Event
+  alias Ecto.Changeset
+  alias EthereumJSONRPC.Block, as: EthereumJSONRPCBlock
   alias Explorer.Chain.Beacon.Deposit
-  alias Explorer.Chain.{Data, Wei}
+  alias Explorer.Chain.{Block, Data, Hash, Wei}
   alias Explorer.Repo
   alias Indexer.Fetcher.Beacon.Client
+  alias Indexer.Helper
 
   defstruct [
     :interval,
@@ -24,7 +27,8 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
     :genesis_fork_version,
     :deposit_index,
     :last_processed_log_block_number,
-    :last_processed_log_index
+    :last_processed_log_index,
+    :json_rpc_named_arguments
   ]
 
   def start_link([init_opts, server_opts]) do
@@ -32,14 +36,21 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
   end
 
   @impl GenServer
-  def init(_opts) do
+  def init(opts) do
     Logger.metadata(fetcher: :beacon_deposit)
 
-    {:ok, nil, {:continue, nil}}
+    json_rpc_named_arguments = opts[:json_rpc_named_arguments]
+
+    if !json_rpc_named_arguments do
+      raise ArgumentError,
+            ":json_rpc_named_arguments must be provided to `#{__MODULE__}.init to allow for json_rpc calls when running."
+    end
+
+    {:ok, nil, {:continue, json_rpc_named_arguments}}
   end
 
   @impl GenServer
-  def handle_continue(nil, _state) do
+  def handle_continue(json_rpc_named_arguments, _state) do
     chain_id = Application.get_env(:indexer, :chain_id)
 
     case Client.get_spec() do
@@ -62,7 +73,8 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
           genesis_fork_version: Base.decode16!(genesis_fork_version_hex, case: :mixed),
           deposit_index: last_processed_deposit.index,
           last_processed_log_block_number: last_processed_deposit.block_number,
-          last_processed_log_index: last_processed_deposit.log_index
+          last_processed_log_index: last_processed_deposit.log_index,
+          json_rpc_named_arguments: json_rpc_named_arguments
         }
 
         Process.send_after(self(), :process_logs, state.interval)
@@ -95,7 +107,11 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
   def handle_cast({:lost_consensus, block_number}, %__MODULE__{} = state) do
     {_deleted_deposits_count, deleted_deposits} =
       Repo.delete_all(
-        from(d in Deposit, where: d.block_number >= ^block_number, select: d.index),
+        from(
+          d in Deposit,
+          where: d.block_number > ^block_number,
+          select: d.index
+        ),
         timeout: :infinity
       )
 
@@ -129,7 +145,8 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
           genesis_fork_version: genesis_fork_version,
           deposit_index: deposit_index,
           last_processed_log_block_number: last_processed_log_block_number,
-          last_processed_log_index: last_processed_log_index
+          last_processed_log_index: last_processed_log_index,
+          json_rpc_named_arguments: json_rpc_named_arguments
         } = state
       ) do
     deposits =
@@ -139,15 +156,38 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
         last_processed_log_index,
         batch_size
       )
-      |> Enum.map(&log_to_deposit/1)
+      |> Enum.map(&db_log_to_deposit/1)
 
-    case sequential?(deposit_index, deposits) do
-      {:error, prev, curr} ->
-        Logger.error("Non-sequential deposits detected: #{inspect(prev)} followed by #{inspect(curr)}")
-        Process.send_after(self(), :process_logs, interval * 10)
-        {:noreply, state}
+    result =
+      case find_missing_ranges(deposit_index, deposits) do
+        [_ | _] = missing_ranges ->
+          Logger.error(
+            "Non-sequential deposits detected, missing ranges are: #{inspect(missing_ranges)}, trying to fetch from the node"
+          )
 
-      _ ->
+          case fetch_and_process_logs_from_node(
+                 deposit_index,
+                 last_processed_log_block_number,
+                 missing_ranges,
+                 deposits,
+                 deposit_contract_address_hash,
+                 json_rpc_named_arguments
+               ) do
+            {:ok, deposits} ->
+              {:ok, deposits}
+
+            {:error, reason} ->
+              Logger.error("Failed to fetch deposit logs from node: #{inspect(reason)}")
+              Process.send_after(self(), :process_logs, interval * 30)
+              :error
+          end
+
+        _ ->
+          {:ok, deposits}
+      end
+
+    case result do
+      {:ok, deposits} ->
         {deposits_count, _} =
           Repo.insert_all(Deposit, set_status(deposits, domain_deposit, genesis_fork_version),
             on_conflict: :replace_all,
@@ -174,7 +214,133 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
              last_processed_log_block_number: last_deposit.block_number,
              last_processed_log_index: last_deposit.log_index
          }}
+
+      _ ->
+        {:noreply, state}
     end
+  end
+
+  defp fetch_and_process_logs_from_node(
+         last_processed_deposit_index,
+         last_processed_deposit_block_number,
+         missing_ranges,
+         deposits,
+         deposit_contract_address_hash,
+         json_rpc_named_arguments
+       ) do
+    with {:ok, deposits_from_node} <-
+           missing_ranges
+           |> Task.async_stream(
+             fn {from_deposit_index, to_deposit_index} ->
+               do_fetch_and_process_logs_from_node(
+                 last_processed_deposit_index,
+                 last_processed_deposit_block_number,
+                 from_deposit_index,
+                 to_deposit_index,
+                 deposits,
+                 deposit_contract_address_hash,
+                 json_rpc_named_arguments
+               )
+             end,
+             max_concurrency: 5,
+             timeout: :infinity
+           )
+           |> Enum.reduce_while({:ok, []}, fn
+             {:ok, {:ok, deposits_from_node}}, {:ok, acc} ->
+               {:cont, {:ok, deposits_from_node ++ acc}}
+
+             {:ok, {:error, reason}}, _ ->
+               {:halt, {:error, reason}}
+
+             {:exit, reason}, _ ->
+               {:halt, {:error, reason}}
+           end),
+         merged_deposits =
+           deposits
+           |> Map.new(fn d -> {d.index, d} end)
+           |> Map.merge(deposits_from_node |> Map.new(fn d -> {d.index, d} end))
+           |> Map.values()
+           |> Enum.sort_by(& &1.index),
+         [] <- find_missing_ranges(last_processed_deposit_index, merged_deposits) do
+      {:ok, merged_deposits}
+    else
+      [_ | _] = missing_ranges ->
+        Logger.error("Still missing deposit ranges after fetching from the node: #{inspect(missing_ranges)}")
+        {:error, :missing_ranges_after_node_fetch}
+
+      err ->
+        err
+    end
+  end
+
+  defp do_fetch_and_process_logs_from_node(
+         last_processed_deposit_index,
+         last_processed_deposit_block_number,
+         from_deposit_index,
+         to_deposit_index,
+         deposits,
+         deposit_contract_address_hash,
+         json_rpc_named_arguments
+       ) do
+    from_deposit_block_number =
+      if last_processed_deposit_index == from_deposit_index do
+        last_processed_deposit_block_number
+      else
+        Enum.find(deposits, fn %{index: i} -> i == from_deposit_index end).block_number
+      end
+
+    to_deposit_block_number = Enum.find(deposits, fn %{index: i} -> i == to_deposit_index end).block_number
+
+    with {:ok, logs} <-
+           Helper.get_logs(
+             max(0, from_deposit_block_number),
+             max(0, to_deposit_block_number),
+             to_string(deposit_contract_address_hash),
+             [Deposit.event_signature()],
+             json_rpc_named_arguments
+           ) do
+      node_logs_to_deposits(logs, json_rpc_named_arguments)
+    end
+  end
+
+  defp node_logs_to_deposits(logs, json_rpc_named_arguments) do
+    blocks_from_db =
+      logs
+      |> Enum.map(fn l -> l["blockHash"] end)
+      |> Enum.uniq()
+      |> Block.by_hashes_query()
+      |> Repo.all()
+      |> Map.new(fn b -> {b.hash, b} end)
+
+    logs_with_missing_blocks =
+      logs
+      |> Enum.reject(fn l ->
+        {:ok, l_block_hash} = Hash.Full.cast(l["blockHash"])
+        Map.has_key?(blocks_from_db, l_block_hash)
+      end)
+
+    blocks_from_node =
+      logs_with_missing_blocks
+      |> Helper.get_blocks_by_events(json_rpc_named_arguments, 3)
+      |> Map.new(fn b ->
+        b = b |> EthereumJSONRPCBlock.to_elixir() |> EthereumJSONRPCBlock.elixir_to_params()
+        b = %Block{} |> Changeset.cast(b, ~w(hash number timestamp)a) |> Changeset.apply_changes()
+        {b.hash, b}
+      end)
+
+    blocks = Map.merge(blocks_from_db, blocks_from_node)
+
+    logs
+    |> Enum.reduce_while({:ok, []}, fn l, {:ok, acc} ->
+      case node_log_to_deposit(l, blocks) do
+        {:ok, deposit} ->
+          {:cont, {:ok, [deposit | acc]}}
+
+        {:error, reason} ->
+          Logger.error("Failed to decode deposit log from node: #{inspect(reason)}")
+          {:halt, {:error, :missing_block}}
+      end
+    end)
   end
 
   @abi ABI.parse_specification(
@@ -220,7 +386,66 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
          include_events?: true
        )
 
-  defp log_to_deposit(log) do
+  defp db_log_to_deposit(log) do
+    do_log_to_deposit(
+      log.first_topic,
+      log.data,
+      log.from_address_hash,
+      log.transaction_hash,
+      log.block_hash,
+      log.block_number,
+      log.block_timestamp,
+      log.index
+    )
+  end
+
+  defp node_log_to_deposit(
+         %{
+           "topics" => [str_first_topic],
+           "data" => str_data,
+           "address" => str_from_address_hash,
+           "transactionHash" => str_transaction_hash,
+           "blockHash" => str_block_hash,
+           "logIndex" => str_log_index
+         },
+         blocks
+       ) do
+    {:ok, block_hash} = Hash.Full.cast(str_block_hash)
+
+    case blocks[block_hash] do
+      nil ->
+        {:error, :missing_block}
+
+      block ->
+        {:ok, first_topic} = Data.cast(str_first_topic)
+        {:ok, data} = Data.cast(str_data)
+        {:ok, from_address_hash} = Hash.Address.cast(str_from_address_hash)
+        {:ok, transaction_hash} = Hash.Full.cast(str_transaction_hash)
+
+        {:ok,
+         do_log_to_deposit(
+           first_topic,
+           data,
+           from_address_hash,
+           transaction_hash,
+           block.hash,
+           block.number,
+           block.timestamp,
+           EthereumJSONRPC.quantity_to_integer(str_log_index)
+         )}
+    end
+  end
+
+  defp do_log_to_deposit(
+         first_topic,
+         data,
+         from_address_hash,
+         transaction_hash,
+         block_hash,
+         block_number,
+         block_timestamp,
+         log_index
+       ) do
     {_,
      [
        {"pubkey", "bytes", false, pubkey},
@@ -231,11 +456,11 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
      ]} =
       Event.find_and_decode(
         @abi,
-        log.first_topic && log.first_topic.bytes,
+        first_topic.bytes,
         nil,
         nil,
         nil,
-        log.data.bytes
+        data.bytes
       )
 
     %{
@@ -244,25 +469,28 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
       amount: amount |> Decimal.new() |> Wei.from(:gwei),
       signature: %Data{bytes: signature},
       index: index,
-      from_address_hash: log.from_address_hash,
-      transaction_hash: log.transaction_hash,
-      block_hash: log.block_hash,
-      block_number: log.block_number,
-      block_timestamp: log.block_timestamp,
-      log_index: log.index,
+      from_address_hash: from_address_hash,
+      transaction_hash: transaction_hash,
+      block_hash: block_hash,
+      block_number: block_number,
+      block_timestamp: block_timestamp,
+      log_index: log_index,
       inserted_at: DateTime.utc_now(),
       updated_at: DateTime.utc_now()
     }
   end
 
-  defp sequential?(last_processed_deposit_index, deposits) do
-    Enum.reduce_while(deposits, %{index: last_processed_deposit_index}, fn
-      %{index: i}, %{index: prev} when i == prev + 1 ->
-        {:cont, %{index: i}}
+  defp find_missing_ranges(last_processed_deposit_index, deposits) do
+    result =
+      Enum.reduce(deposits, %{index: last_processed_deposit_index, gaps: []}, fn
+        %{index: i}, %{index: prev, gaps: gaps} when i - prev <= 1 ->
+          %{index: i, gaps: gaps}
 
-      %{index: i}, %{index: prev} ->
-        {:halt, {:error, prev, i}}
-    end)
+        %{index: i}, %{index: prev, gaps: gaps} ->
+          %{index: i, gaps: [{prev, i} | gaps]}
+      end)
+
+    Enum.reverse(result.gaps)
   end
 
   defp set_status(deposits, domain_deposit, genesis_fork_version) do

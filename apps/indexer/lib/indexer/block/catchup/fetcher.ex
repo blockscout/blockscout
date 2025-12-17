@@ -12,6 +12,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       async_import_blobs: 2,
       async_import_block_rewards: 2,
       async_import_celo_epoch_block_operations: 2,
+      async_import_celo_accounts: 2,
       async_import_coin_balances: 2,
       async_import_created_contract_codes: 2,
       async_import_filecoin_addresses_info: 2,
@@ -146,6 +147,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_token_instances(imported)
     async_import_blobs(imported, realtime?)
     async_import_celo_epoch_block_operations(imported, realtime?)
+    async_import_celo_accounts(imported, realtime?)
     async_import_filecoin_addresses_info(imported, realtime?)
     async_import_signed_authorizations_statuses(imported, realtime?)
   end
@@ -177,7 +179,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
 
     {fetch_duration, result} = :timer.tc(fn -> fetch_and_import_range(block_fetcher, range) end)
 
-    Prometheus.Instrumenter.block_full_process(fetch_duration, __MODULE__)
+    Prometheus.Instrumenter.set_block_full_process(fetch_duration, __MODULE__)
 
     case result do
       {:ok, %{errors: errors}} ->
@@ -186,13 +188,13 @@ defmodule Indexer.Block.Catchup.Fetcher do
         {:ok, %{range: range, errors: valid_errors}}
 
       {:error, {:import = step, [%Changeset{} | _] = changesets}} = error ->
-        Prometheus.Instrumenter.import_errors()
+        Prometheus.Instrumenter.set_import_errors_count()
         Logger.error(fn -> ["failed to validate: ", inspect(changesets), ". Retrying."] end, step: step)
 
         error
 
       {:error, {:import = step, reason}} = error ->
-        Prometheus.Instrumenter.import_errors()
+        Prometheus.Instrumenter.set_import_errors_count()
         Logger.error(fn -> [inspect(reason), ". Retrying."] end, step: step)
         if reason == :timeout, do: add_range_to_massive_blocks(range)
 
@@ -254,10 +256,18 @@ defmodule Indexer.Block.Catchup.Fetcher do
   end
 
   defp timeout_exception?(%{message: message}) when is_binary(message) do
-    String.match?(message, ~r/due to a timeout/) or String.match?(message, ~r/due to user request/)
+    match_timeout_exception?(message)
+  end
+
+  defp timeout_exception?(%{postgres: %{message: message}}) when is_binary(message) do
+    match_timeout_exception?(message)
   end
 
   defp timeout_exception?(_exception), do: false
+
+  defp match_timeout_exception?(error_message) do
+    String.match?(error_message, ~r/due to a timeout/) or String.match?(error_message, ~r/due to user request/)
+  end
 
   defp add_range_to_massive_blocks(range) do
     clear_missing_ranges(range)

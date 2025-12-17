@@ -430,7 +430,7 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
       variables = %{
         "hash" => to_string(transaction.hash),
         "last" => 1,
-        "count" => 3
+        "count" => 2
       }
 
       [internal_transaction] =

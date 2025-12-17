@@ -66,6 +66,10 @@ defmodule BlockScoutWeb.Tokens.HolderView do
     format_according_to_decimals(value, decimals)
   end
 
+  def format_token_balance_value(value, _id, %Token{type: "ZRC-2", decimals: decimals}) do
+    format_according_to_decimals(value, decimals)
+  end
+
   def format_token_balance_value(value, id, %Token{type: "ERC-1155", decimals: decimals}) do
     to_string(format_according_to_decimals(value, decimals)) <> " TokenID " <> to_string(id)
   end

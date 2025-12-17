@@ -8,8 +8,8 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
-  alias Explorer.Chain.Wei
   alias Explorer.Chain.{Hash, MultichainSearchDb.BalancesExportQueue}
+  alias Explorer.Chain.Wei
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Repo
 
@@ -66,7 +66,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
             coin_balances ++ token_balances
           end)
 
-        unless Enum.empty?(all_balances) do
+        if !Enum.empty?(all_balances) do
           all_balances
           |> Enum.sort_by(&{&1.address_hash, &1.token_contract_address_hash_or_native, &1.token_id})
           |> Enum.chunk_every(@delete_queries_chunk_size)

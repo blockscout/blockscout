@@ -10,15 +10,15 @@ permissions:
   packages: write
 
 env:
-  OTP_VERSION: ${{ vars.OTP_VERSION }}
-  ELIXIR_VERSION: ${{ vars.ELIXIR_VERSION }}
+  OTP_VERSION: '27.3.4.6'
+  ELIXIR_VERSION: '1.19.4'
 
 jobs:
   push_to_registry:
     name: Push Docker image to GitHub Container Registry
-    runs-on: ubuntu-latest
+    runs-on: build
     env:
-      RELEASE_VERSION: 9.1.0
+      RELEASE_VERSION: 9.3.1
     steps:
       - uses: actions/checkout@v5
       - name: Setup repo
@@ -62,4 +62,3 @@ jobs:
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
             CHAIN_TYPE=ethereum
-

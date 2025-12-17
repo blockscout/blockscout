@@ -9,8 +9,8 @@ defmodule Indexer.Transform.TransactionActions do
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
   import Explorer.Helper, only: [decode_data: 2]
 
-  alias Explorer.Chain.Cache.{ChainId, TransactionActionTokensData, TransactionActionUniswapPools}
   alias Explorer.Chain.{Address, Hash, Token, TransactionAction}
+  alias Explorer.Chain.Cache.{ChainId, TransactionActionTokensData, TransactionActionUniswapPools}
   alias Explorer.Repo
   alias Indexer.Helper, as: IndexerHelper
 

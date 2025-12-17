@@ -7,8 +7,8 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
 
   import Ecto.Changeset
 
-  alias Explorer.Chain.Hash
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Hash
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Que.Persistence, as: QuePersistence
 

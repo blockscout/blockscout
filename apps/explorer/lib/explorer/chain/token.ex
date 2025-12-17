@@ -3,6 +3,7 @@ defmodule Explorer.Chain.Token.Schema do
   use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
 
   alias Explorer.Chain.{Address, Address.Reputation, Hash}
+  alias Explorer.Chain.Token.FiatValue
 
   if @bridged_tokens_enabled do
     @bridged_field [
@@ -28,13 +29,12 @@ defmodule Explorer.Chain.Token.Schema do
         field(:skip_metadata, :boolean)
         field(:total_supply_updated_at_block, :integer)
         field(:metadata_updated_at, :utc_datetime_usec)
-        field(:fiat_value, :decimal)
-        field(:circulating_market_cap, :decimal)
+        field(:fiat_value, FiatValue)
+        field(:circulating_market_cap, FiatValue)
         field(:icon_url, :string)
         field(:is_verified_via_admin_panel, :boolean)
-        field(:volume_24h, :decimal)
+        field(:volume_24h, FiatValue)
         field(:transfer_count, :integer)
-        field(:reputation, Ecto.Enum, values: Reputation.enum_values(), virtual: true)
 
         belongs_to(
           :contract_address,
@@ -45,6 +45,8 @@ defmodule Explorer.Chain.Token.Schema do
           type: Hash.Address,
           null: false
         )
+
+        has_one(:reputation, Reputation, foreign_key: :address_hash, references: :contract_address_hash)
 
         unquote_splicing(@bridged_field)
 
@@ -66,6 +68,7 @@ defmodule Explorer.Chain.Token do
   * ERC-721
   * ERC-1155
   * ERC-404
+  * ZRC-2 (for Zilliqa chain type)
 
   ## Token Specifications
 
@@ -74,6 +77,7 @@ defmodule Explorer.Chain.Token do
   * [ERC-777](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-777.md)
   * [ERC-1155](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md)
   * [ERC-404](https://github.com/Pandora-Labs-Org/erc404)
+  * [ZRC-2](https://github.com/Zilliqa/ZRC/blob/main/zrcs/zrc-2.md)
   """
 
   use Explorer.Schema
@@ -141,6 +145,17 @@ defmodule Explorer.Chain.Token do
 
   @required_attrs ~w(contract_address_hash type)a
   @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block metadata_updated_at updated_at fiat_value circulating_market_cap icon_url is_verified_via_admin_panel volume_24h)a
+
+  @doc """
+    Returns the **ordered** list of allowed NFT type labels.
+  """
+  @spec allowed_nft_type_labels() :: [String.t()]
+  def allowed_nft_type_labels,
+    do: [
+      "ERC-721",
+      "ERC-1155",
+      "ERC-404"
+    ]
 
   @doc false
   def changeset(%Token{} = token, params \\ %{}) do
@@ -353,7 +368,7 @@ defmodule Explorer.Chain.Token do
     sorted_paginated_query =
       Token
       |> Chain.join_associations(necessity_by_association)
-      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
+      |> ExplorerHelper.maybe_hide_scam_addresses_with_select(:contract_address_hash, options)
       |> apply_filter(token_type)
       |> SortingHelper.apply_sorting(sorting, @default_sorting)
       |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
@@ -379,15 +394,26 @@ defmodule Explorer.Chain.Token do
   end
 
   def get_by_contract_address_hash(hash, options) do
-    Chain.select_repo(options).get_by(__MODULE__, contract_address_hash: hash)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    __MODULE__
+    |> where([t], t.contract_address_hash == ^hash)
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).one()
   end
 
   @doc """
     Gets tokens with given contract address hashes.
   """
-  @spec get_by_contract_address_hashes([Hash.Address.t()], [Chain.api?()]) :: [Token.t()]
+  @spec get_by_contract_address_hashes([Hash.Address.t()], [Chain.api?() | Chain.necessity_by_association_option()]) ::
+          [Token.t()]
   def get_by_contract_address_hashes(hashes, options) do
-    Chain.select_repo(options).all(from(t in __MODULE__, where: t.contract_address_hash in ^hashes))
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    __MODULE__
+    |> where([t], t.contract_address_hash in ^hashes)
+    |> Chain.join_associations(necessity_by_association)
+    |> Chain.select_repo(options).all()
   end
 
   @doc """
@@ -491,5 +517,22 @@ defmodule Explorer.Chain.Token do
       )
 
     Chain.select_repo(options).exists?(query)
+  end
+
+  @doc """
+  Checks if the given token is ZRC-2 token.
+
+  ## Parameters
+  - `token`: The token to check the type of.
+
+  ## Returns
+  - `true` if this is ZRC-2 token, `false` otherwise.
+  """
+  @spec zrc_2_token?(__MODULE__.t()) :: bool
+  def zrc_2_token?(token) do
+    case Map.get(token, :type) do
+      "ZRC-2" -> true
+      _ -> false
+    end
   end
 end

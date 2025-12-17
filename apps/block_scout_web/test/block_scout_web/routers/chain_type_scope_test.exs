@@ -36,15 +36,13 @@ defmodule BlockScoutWeb.Routers.ChainTypeScopeTest do
          %{conn: conn} do
       Application.put_env(:explorer, :chain_type, :blackfort)
 
-      assert response =
-               conn
-               |> get("/api/v2/validators/blackfort/counters")
-               |> json_response(200)
+      assert conn
+             |> get("/api/v2/validators/blackfort/counters")
+             |> json_response(200)
 
-      assert response =
-               conn
-               |> get("/api/v2/validators/stability/counters")
-               |> json_response(404)
+      assert conn
+             |> get("/api/v2/validators/stability/counters")
+             |> json_response(404)
     end
   end
 end

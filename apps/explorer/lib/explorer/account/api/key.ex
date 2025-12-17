@@ -4,9 +4,9 @@ defmodule Explorer.Account.Api.Key do
   """
   use Explorer.Schema
 
+  alias Ecto.{Changeset, UUID}
   alias Ecto.Multi
   alias Explorer.Account.Identity
-  alias Ecto.{Changeset, UUID}
   alias Explorer.Repo
 
   import Ecto.Changeset

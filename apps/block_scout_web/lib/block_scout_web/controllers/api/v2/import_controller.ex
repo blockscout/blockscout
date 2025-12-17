@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
   alias Explorer.SmartContract.EthBytecodeDBInterface
   alias Indexer.Fetcher.TokenUpdater
 
-  import Explorer.SmartContract.Helper, only: [prepare_bytecode_for_microservice: 3, contract_creation_input: 1]
+  import Explorer.SmartContract.Helper, only: [prepare_bytecode_for_microservice: 3, fetch_data_for_verification: 2]
 
   require Logger
   @api_true [api?: true]
@@ -126,14 +126,16 @@ defmodule BlockScoutWeb.API.V2.ImportController do
            {:already_verified,
             not (is_nil(address.smart_contract) or
                    address.smart_contract.partially_verified)} do
-      creation_transaction_input = contract_creation_input(address.hash)
+      {creation_transaction_input, deployed_bytecode, verifier_metadata} =
+        fetch_data_for_verification(address_hash_string, Data.to_string(address.contract_code))
 
       with {:ok, %{"sourceType" => type} = source} <-
              %{}
-             |> prepare_bytecode_for_microservice(creation_transaction_input, Data.to_string(address.contract_code))
+             |> prepare_bytecode_for_microservice(creation_transaction_input, deployed_bytecode)
              |> EthBytecodeDBInterface.search_contract_in_eth_bytecode_internal_db(
                address_hash_string,
-               params_to_contract_search_options(params)
+               params_to_contract_search_options(params),
+               verifier_metadata
              ),
            {:ok, _} <- LookUpSmartContractSourcesOnDemand.process_contract_source(type, source, address.hash) do
         conn
