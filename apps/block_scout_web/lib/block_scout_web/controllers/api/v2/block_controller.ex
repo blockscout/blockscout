@@ -377,7 +377,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     description: "Retrieves transactions included in a specific block, ordered by transaction index.",
     parameters:
       base_params() ++
-        [block_hash_or_number_param(), transaction_type_param()] ++
+        [block_hash_or_number_param(), block_transaction_type_param()] ++
         define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
