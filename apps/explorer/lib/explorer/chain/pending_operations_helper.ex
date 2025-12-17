@@ -154,4 +154,56 @@ defmodule Explorer.Chain.PendingOperationsHelper do
       where: pending_ops.block_hash in ^block_hashes
     )
   end
+
+  @doc """
+  Checks if a block with the given hash is pending.
+  A block is considered pending if there exists a corresponding entry in the `PendingBlockOperation` table.
+  """
+  @spec block_pending?(Hash.Full.t()) :: boolean()
+  def block_pending?(block_hash) do
+    [block_hash]
+    |> block_hash_in_query()
+    |> Repo.exists?()
+  end
+
+  # Generates a query to find pending block operations within a specified range of block numbers.
+  @spec block_range_in_query(non_neg_integer(), non_neg_integer()) :: Ecto.Query.t()
+  defp block_range_in_query(min_block_number, max_block_number)
+       when is_integer(min_block_number) and is_integer(max_block_number) do
+    from(
+      pending_ops in PendingBlockOperation,
+      where: pending_ops.block_number >= ^min_block_number and pending_ops.block_number <= ^max_block_number
+    )
+  end
+
+  defp block_range_in_query(min_block_number, max_block_number)
+       when is_nil(min_block_number) and is_nil(max_block_number) do
+    from(pending_ops in PendingBlockOperation)
+  end
+
+  defp block_range_in_query(min_block_number, max_block_number) when is_nil(min_block_number) do
+    from(
+      pending_ops in PendingBlockOperation,
+      where: pending_ops.block_number <= ^max_block_number
+    )
+  end
+
+  defp block_range_in_query(min_block_number, max_block_number) when is_nil(max_block_number) do
+    from(
+      pending_ops in PendingBlockOperation,
+      where: pending_ops.block_number >= ^min_block_number
+    )
+  end
+
+  @doc """
+  Checks if there are any pending blocks within the specified range of block numbers.
+  A block is considered pending if there exists a corresponding entry in the `PendingBlockOperation`
+  table.
+  """
+  @spec blocks_pending?(non_neg_integer(), non_neg_integer()) :: boolean()
+  def blocks_pending?(min_block_number, max_block_number) do
+    min_block_number
+    |> block_range_in_query(max_block_number)
+    |> Repo.exists?()
+  end
 end
