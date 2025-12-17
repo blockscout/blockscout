@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
 
   alias BlockScoutWeb.API.EthRPC.View, as: EthRPCView
   alias BlockScoutWeb.API.RPC.RPCView
-  alias Explorer.Chain.{DenormalizationHelper, Transaction}
+  alias Explorer.Chain.{DenormalizationHelper, InternalTransaction, Transaction}
 
   def render("listaccounts.json", %{accounts: accounts}) do
     accounts = Enum.map(accounts, &prepare_account/1)
@@ -74,6 +74,10 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     EthRPCView.render("error.json", %{error: message, id: 0})
   end
 
+  def render("pending_internal_transaction.json", assigns) do
+    RPCView.render("pending_internal_transaction.json", assigns)
+  end
+
   def render("error.json", assigns) do
     RPCView.render("error.json", assigns)
   end
@@ -134,7 +138,11 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     }
   end
 
-  defp prepare_internal_transaction(internal_transaction) do
+  @doc """
+  Prepares an internal transaction for API response.
+  """
+  @spec prepare_internal_transaction(InternalTransaction.t()) :: map()
+  def prepare_internal_transaction(internal_transaction) do
     %{
       "blockNumber" => "#{internal_transaction.block_number}",
       "timeStamp" => "#{DateTime.to_unix(internal_transaction.block_timestamp)}",
