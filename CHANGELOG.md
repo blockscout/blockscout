@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.3.1
+
+### 🐛 Bug Fixes
+
+- Fix blob transactions list API endpoint ([#13756](https://github.com/blockscout/blockscout/issues/13756))
+
 ## 9.3.0
 
 ### 🚀 Features
