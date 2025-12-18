@@ -1,8 +1,13 @@
 defmodule Indexer.Fetcher.TokenInstance.SanitizeERC1155Test do
   use Explorer.DataCase
 
+  import Mox
+
   alias Explorer.Repo
   alias Explorer.Chain.Token.Instance
+
+  setup :verify_on_exit!
+  setup :set_mox_global
 
   describe "sanitizer test" do
     test "imports token instances" do
@@ -16,6 +21,18 @@ defmodule Indexer.Fetcher.TokenInstance.SanitizeERC1155Test do
           value: Enum.random(1..100_000)
         )
       end
+
+      # Mock the ERC-1155 uri() calls to return errors so instances get error field populated
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn _requests, _options ->
+        {:ok,
+         [
+           %{id: 0, error: %{code: -32015, message: "VM execution error"}},
+           %{id: 1, error: %{code: -32015, message: "VM execution error"}},
+           %{id: 2, error: %{code: -32015, message: "VM execution error"}},
+           %{id: 3, error: %{code: -32015, message: "VM execution error"}}
+         ]}
+      end)
 
       assert [] = Repo.all(Instance)
 
