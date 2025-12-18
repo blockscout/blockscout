@@ -118,7 +118,7 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
   # fetch token balances
   @impl true
   def handle_info(:migrate, %{queue: queue, current_concurrency: current_concurrency} = state) do
-    if Enum.count(queue) > 0 and current_concurrency < concurrency() do
+    if not Enum.empty?(queue) and current_concurrency < concurrency() do
       to_take = batch_size() * (concurrency() - current_concurrency)
       {to_process, remainder} = Enum.split(queue, to_take)
 

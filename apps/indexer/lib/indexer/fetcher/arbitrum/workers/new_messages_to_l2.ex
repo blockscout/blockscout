@@ -236,7 +236,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
         json_rpc_named_arguments
       )
 
-    if length(logs) > 0 do
+    unless Enum.empty?(logs) do
       log_debug("Found #{length(logs)} MessageDelivered logs")
     end
 

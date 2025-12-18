@@ -219,7 +219,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     description: "Retrieves a paginated list of transactions with optional filtering by status, type, and method.",
     parameters:
       base_params() ++
-        [transaction_filter_param()] ++
+        [transaction_filter_param(), transaction_type_param()] ++
         define_paging_params(["block_number", "index", "items_count", "hash", "inserted_at"]),
     responses: [
       ok:

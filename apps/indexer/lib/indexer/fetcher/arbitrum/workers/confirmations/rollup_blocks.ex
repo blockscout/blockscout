@@ -100,14 +100,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
           )
 
         # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-        if length(confirmed_blocks) > 0 do
+        if Enum.empty?(confirmed_blocks) do
+          log_info("Either no unconfirmed blocks found or DB inconsistency error discovered")
+          []
+        else
           log_info("Found #{length(confirmed_blocks)} confirmed blocks")
 
           add_confirmation_transaction(confirmed_blocks, block_to_l1_transactions[block_number].l1_transaction_hash) ++
             updated_rollup_blocks
-        else
-          log_info("Either no unconfirmed blocks found or DB inconsistency error discovered")
-          []
         end
       end)
     end

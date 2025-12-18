@@ -13,9 +13,15 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
   setup :verify_on_exit!
 
   setup do
-    initial_env = Application.get_all_env(:ethereum_jsonrpc)
-    on_exit(fn -> Application.put_all_env([{:ethereum_jsonrpc, initial_env}]) end)
-    EthereumJSONRPC.Case.Geth.Mox.setup()
+    initial_ethereum_jsonrpc_env = Application.get_all_env(:ethereum_jsonrpc)
+    initial_json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    %{json_rpc_named_arguments: json_rpc_named_arguments} = EthereumJSONRPC.Case.Geth.Mox.setup()
+    Application.put_env(:explorer, :json_rpc_named_arguments, json_rpc_named_arguments)
+
+    on_exit(fn ->
+      Application.put_all_env([{:ethereum_jsonrpc, initial_ethereum_jsonrpc_env}])
+      Application.put_env(:explorer, :json_rpc_named_arguments, initial_json_rpc_named_arguments)
+    end)
   end
 
   test "fetch_by_transaction/2" do

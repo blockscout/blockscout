@@ -387,6 +387,23 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :type,
       in: :query,
+      schema: %Schema{type: :string, enum: ["blob_transaction"]},
+      required: false,
+      description: """
+      Filter by transaction type. Comma-separated list of:
+      * blob_transaction - Only show blob transactions
+      """
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for filtering block transactions by type.
+  """
+  @spec block_transaction_type_param() :: Parameter.t()
+  def block_transaction_type_param do
+    %Parameter{
+      name: :type,
+      in: :query,
       schema: %Schema{type: :string, enum: @allowed_transaction_types},
       required: false,
       description: """

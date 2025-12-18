@@ -133,10 +133,10 @@ defmodule BlockScoutWeb.API.RPC.LogsController do
     fetched_params = Map.take(params, @required_params.one_of)
     found_keys = Map.keys(fetched_params)
 
-    if length(found_keys) > 0 do
-      {:ok, fetched_params}
-    else
+    if Enum.empty?(found_keys) do
       {:error, @required_params.one_of}
+    else
+      {:ok, fetched_params}
     end
   end
 
