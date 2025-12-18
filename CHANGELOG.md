@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.3.1
+
+### 🐛 Bug Fixes
+
+- Fix blob transactions list API endpoint ([#13756](https://github.com/blockscout/blockscout/issues/13756))
+
 ## 9.3.0
 
 ### 🚀 Features
@@ -17,6 +23,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix tests for on-demand internal transaction fetcher ([#13744](https://github.com/blockscout/blockscout/pull/13744))
 - `batch_number` input param is now integer for OP and Scroll API endpoints ([#13727](https://github.com/blockscout/blockscout/pull/13727))
 - Set timeout: :infinity for delete zero value migration ([#13708](https://github.com/blockscout/blockscout/pull/13708))
 - Limit batch size for placeholders insertion ([#13699](https://github.com/blockscout/blockscout/pull/13699))
@@ -45,6 +52,7 @@
 
 ### ⚡ Performance
 
+- Improve performance of api/v2/main-page/indexing-status endpoint ([#13730](https://github.com/blockscout/blockscout/pull/13730))
 - Implement celo aggregated election rewards ([#13418](https://github.com/blockscout/blockscout/issues/13418))
 
 ### ⚙️ Miscellaneous Tasks
