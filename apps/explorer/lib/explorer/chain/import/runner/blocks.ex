@@ -36,7 +36,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Zilliqa.Zrc2.TokenTransfer, as: Zrc2TokenTransfer
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
-  alias Explorer.Utility.MissingRangesManipulator
+  alias Explorer.Utility.MissingBlockRange
 
   alias Explorer.Chain.Celo.AggregatedElectionReward, as: CeloAggregatedElectionReward
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
@@ -627,7 +627,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     removed_consensus_block_numbers
     |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
-    |> MissingRangesManipulator.add_ranges_by_block_numbers()
+    |> MissingBlockRange.add_ranges_by_block_numbers()
 
     {:ok, removed_consensus_blocks}
   rescue

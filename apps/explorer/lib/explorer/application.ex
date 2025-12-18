@@ -93,7 +93,6 @@ defmodule Explorer.Application do
       con_cache_child_spec(MarketHistoryCache.cache_name()),
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
       {Redix, redix_opts()},
-      {Explorer.Utility.MissingRangesManipulator, []},
       {Explorer.Utility.ReplicaAccessibilityManager, []},
       :hackney_pool.child_spec(:default,
         recv_timeout: 60_000,
