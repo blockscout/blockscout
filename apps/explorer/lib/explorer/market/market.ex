@@ -54,7 +54,7 @@ defmodule Explorer.Market do
 
         :persistent_term.put(@history_key, !is_nil(history_pid))
         :persistent_term.put(@tokens_key, !is_nil(token_pid))
-        {:stop, :normal}
+        {:stop, :normal, nil}
 
       multiple_indexers ->
         if attempt < 5 do
