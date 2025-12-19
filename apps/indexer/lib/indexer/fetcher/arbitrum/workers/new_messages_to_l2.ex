@@ -26,6 +26,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
 
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum
+  alias Explorer.Chain.Arbitrum.Message, as: ArbitrumMessage
   alias Explorer.Chain.Events.Publisher
 
   require Logger
@@ -215,13 +216,17 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
       log_info("Origins of #{length(messages)} L1-to-L2 messages will be imported")
     end
 
-    {:ok, _} =
+    {:ok, import_result} =
       Chain.import(%{
         arbitrum_messages: %{params: messages},
         timeout: :infinity
       })
 
-    length(messages)
+    # Count the actual imported records returned by the runner; the input `messages`
+    # length can overstate inserts when conflicts/updates happen during import.
+    import_result
+    |> Map.get(ArbitrumMessage.insert_result_key(), [])
+    |> length()
   end
 
   # Retrieves logs representing the `MessageDelivered` events.
