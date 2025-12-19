@@ -100,6 +100,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
     if safe_start_block <= end_block do
       log_info("Block range for discovery new messages from L1: #{safe_start_block}..#{end_block}")
 
+      # credo:disable-for-lines:16 Credo.Check.Refactor.PipeChainStart
       new_messages_amount =
         ArbitrumHelper.execute_for_block_range_in_chunks(
           safe_start_block,
