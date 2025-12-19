@@ -21,7 +21,7 @@ config :block_scout_web, BlockScoutWeb.Endpoint,
   ],
   https: [
     port: port + 1,
-    cipher_suite: :strong,
+    cipher_suite: :compatible,
     certfile: System.get_env("CERTFILE") || "priv/cert/selfsigned.pem",
     keyfile: System.get_env("KEYFILE") || "priv/cert/selfsigned_key.pem"
   ]
@@ -38,7 +38,7 @@ config :block_scout_web, BlockScoutWeb.HealthEndpoint,
   ],
   https: [
     port: port + 1,
-    cipher_suite: :strong,
+    cipher_suite: :compatible,
     certfile: System.get_env("CERTFILE") || "priv/cert/selfsigned.pem",
     keyfile: System.get_env("KEYFILE") || "priv/cert/selfsigned_key.pem"
   ]
