@@ -325,6 +325,57 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   end
 
   @doc """
+    Computes the safe start and end L1 blocks for discovery, respecting overlap safeguards.
+
+    The returned `safe_start_block` is constrained to avoid revisiting blocks already
+    covered by historical entities discovery (`historical_entities_end_block`) while
+    still overlapping the safe block window derived from the current chain state.
+    The `end_block` is bounded by both the configured block range and the latest block
+    number.
+
+    ## Parameters
+    - `new_entities_start_block`: Proposed start block for new-entity discovery.
+    - `historical_entities_end_block`: Last block already covered by historical discovery.
+    - `json_rpc_named_arguments`: RPC arguments used to query safe/latest blocks.
+    - `rpc_logs_block_range`: Max range to cover in a single discovery iteration.
+
+    ## Returns
+    - `{safe_start_block, end_block}` tuple delimiting the adjusted discovery range.
+  """
+  @spec safe_start_and_end_blocks(
+          non_neg_integer(),
+          non_neg_integer(),
+          EthereumJSONRPC.json_rpc_named_arguments(),
+          non_neg_integer()
+        ) :: {non_neg_integer(), non_neg_integer()}
+  def safe_start_and_end_blocks(
+        new_entities_start_block,
+        historical_entities_end_block,
+        json_rpc_named_arguments,
+        rpc_logs_block_range
+      )
+      when is_integer(new_entities_start_block) and new_entities_start_block >= 0 and
+             is_integer(historical_entities_end_block) and
+             historical_entities_end_block >= 0 and is_integer(rpc_logs_block_range) and rpc_logs_block_range > 0 do
+    # It is necessary to revisit some of the previous blocks to ensure that
+    # no information is missed due to reorgs or RPC node inconsistency behind
+    # a load balancer. The number of blocks to revisit depends on the current safe
+    # block or the block which is considered as safest in case of L3 (where the
+    # safe block could be too far behind the latest block) or if RPC does not
+    # support "safe" block.
+    {safe_block, latest_block} = get_safe_and_latest_l1_blocks(json_rpc_named_arguments, rpc_logs_block_range)
+
+    # At the same time it does not make sense to revisit blocks that will be
+    # revisited by the historical entities discovery process.
+    # If the new entities discovery process does not reach the chain head
+    # previously, there is no need to revisit the blocks.
+    safe_start_block = max(min(new_entities_start_block, safe_block), historical_entities_end_block + 1)
+    end_block = min(new_entities_start_block + rpc_logs_block_range - 1, latest_block)
+
+    {safe_start_block, end_block}
+  end
+
+  @doc """
     Identifies the block range for a batch by using the block number located on one end of the range.
 
     The function verifies suspicious block numbers by using the

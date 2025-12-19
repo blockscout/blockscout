@@ -21,6 +21,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
+  alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
 
@@ -66,6 +67,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
           },
           :data => %{
             :new_msg_to_l2_start_block => non_neg_integer(),
+            :historical_msg_to_l2_end_block => non_neg_integer(),
             optional(any()) => any()
           },
           optional(any()) => any()
@@ -78,31 +80,42 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
             l1_rpc_block_range: rpc_block_range,
             l1_bridge_address: bridge_address
           },
-          data: %{new_msg_to_l2_start_block: start_block}
+          data: %{
+            new_msg_to_l2_start_block: start_block,
+            historical_msg_to_l2_end_block: historical_msg_to_l2_end_block
+          }
         } = _state
       ) do
-    # Requesting the "latest" block instead of "safe" allows to get messages originated to L2
-    # much earlier than they will be seen by the Arbitrum Sequencer.
-    {:ok, latest_block} =
-      IndexerHelper.get_block_number_by_tag(
-        "latest",
+    # It is necessary to revisit some of the previous blocks to ensure that
+    # no information is missed due to reorgs or RPC node inconsistency behind
+    # a load balancer.
+    {safe_start_block, end_block} =
+      Rpc.safe_start_and_end_blocks(
+        start_block,
+        historical_msg_to_l2_end_block,
         json_rpc_named_arguments,
-        Rpc.get_resend_attempts()
+        rpc_block_range
       )
 
-    end_block = min(start_block + rpc_block_range - 1, latest_block)
-
-    if start_block <= end_block do
-      log_info("Block range for discovery new messages from L1: #{start_block}..#{end_block}")
+    if safe_start_block <= end_block do
+      log_info("Block range for discovery new messages from L1: #{safe_start_block}..#{end_block}")
 
       new_messages_amount =
-        discover(
-          bridge_address,
-          start_block,
+        ArbitrumHelper.execute_for_block_range_in_chunks(
+          safe_start_block,
           end_block,
-          json_rpc_named_arguments,
-          chunk_size
+          rpc_block_range,
+          fn chunk_start, chunk_end ->
+            discover(
+              bridge_address,
+              chunk_start,
+              chunk_end,
+              json_rpc_named_arguments,
+              chunk_size
+            )
+          end
         )
+        |> Enum.reduce(0, fn {_range, amount}, acc -> acc + amount end)
 
       if new_messages_amount > 0 do
         Publisher.broadcast(%{new_messages_to_arbitrum_amount: new_messages_amount}, :realtime)
