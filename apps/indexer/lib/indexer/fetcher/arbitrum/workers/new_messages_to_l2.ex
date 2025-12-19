@@ -212,21 +212,25 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
 
     messages = get_messages_from_logs(logs, json_rpc_named_argument, chunk_size)
 
-    if messages != [] do
-      log_info("Origins of #{length(messages)} L1-to-L2 messages will be imported")
+    case messages do
+      [] ->
+        0
+
+      _ ->
+        log_info("Origins of #{length(messages)} L1-to-L2 messages will be imported")
+
+        {:ok, import_result} =
+          Chain.import(%{
+            arbitrum_messages: %{params: messages},
+            timeout: :infinity
+          })
+
+        # Count the actual imported records returned by the runner; the input `messages`
+        # length can overstate inserts when conflicts/updates happen during import.
+        import_result
+        |> Map.get(ArbitrumMessage.insert_result_key(), [])
+        |> length()
     end
-
-    {:ok, import_result} =
-      Chain.import(%{
-        arbitrum_messages: %{params: messages},
-        timeout: :infinity
-      })
-
-    # Count the actual imported records returned by the runner; the input `messages`
-    # length can overstate inserts when conflicts/updates happen during import.
-    import_result
-    |> Map.get(ArbitrumMessage.insert_result_key(), [])
-    |> length()
   end
 
   # Retrieves logs representing the `MessageDelivered` events.
