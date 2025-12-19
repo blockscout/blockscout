@@ -800,7 +800,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       full_options =
         [
           necessity_by_association: %{
-            [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional
+            [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional,
+            :block => :required
           }
         ]
         |> Keyword.merge(paging_options(params))
