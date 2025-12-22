@@ -349,6 +349,7 @@ defmodule Explorer.Application do
         Explorer.Migrator.SwitchPendingOperations,
         configure_mode_dependent_process(Explorer.Utility.RateLimiter, :api),
         Hammer.child_for_supervisor() |> configure_mode_dependent_process(:api),
+        configure_mode_dependent_process(Explorer.ThirdPartyIntegrations.Dynamic.Strategy, :api),
         # keep at the end
         configure_libcluster()
       ]

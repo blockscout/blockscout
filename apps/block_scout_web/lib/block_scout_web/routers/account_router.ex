@@ -176,6 +176,7 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
     pipe_through(:api_v2)
 
     post("/authenticate_via_wallet", AuthenticateController, :authenticate_via_wallet)
+    get("/authenticate_via_dynamic", AuthenticateController, :authenticate_via_dynamic)
     post("/send_otp", AuthenticateController, :send_otp)
     post("/confirm_otp", AuthenticateController, :confirm_otp)
     get("/siwe_message", AuthenticateController, :siwe_message)
