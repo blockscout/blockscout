@@ -119,7 +119,7 @@ defmodule Explorer.Chain.Cache.Counters.Helper do
   def evaluate_count(cache_key, nil, estimated_count_fun) do
     cached_value_from_db =
       cache_key
-      |> LastFetchedCounter.get()
+      |> LastFetchedCounter.get(api?: true)
       |> case do
         nil -> 0
         value -> Decimal.to_integer(value)
