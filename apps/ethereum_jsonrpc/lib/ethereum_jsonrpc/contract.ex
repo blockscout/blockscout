@@ -30,54 +30,111 @@ defmodule EthereumJSONRPC.Contract do
           call_result()
         ]
   def execute_contract_functions(requests, abi, json_rpc_named_arguments, leave_error_as_map \\ false) do
-    parsed_abi =
-      abi
-      |> ABI.parse_specification()
-
+    parsed_abi = ABI.parse_specification(abi)
     functions = Enum.into(parsed_abi, %{}, &{&1.method_id, &1})
-
     requests_with_index = Enum.with_index(requests)
 
-    indexed_responses =
+    {valid_requests, local_errors} =
       requests_with_index
-      |> Enum.map(fn {%{contract_address: contract_address, method_id: target_method_id, args: args} = request, index} ->
-        function =
-          functions
-          |> define_function(target_method_id)
-          |> Map.drop([:method_id])
+      |> build_rpc_requests(functions)
+      |> Enum.split_with(&match?({:ok, _}, &1))
 
-        formatted_args = format_args(function, args)
+    local_error_map =
+      local_errors
+      |> Enum.into(%{}, fn {:error, {index, message}} -> {index, {:local_error, message}} end)
 
-        function
-        |> Encoder.encode_function_call(formatted_args)
-        |> eth_call_request(contract_address, index, Map.get(request, :block_number), Map.get(request, :from))
-      end)
-      |> json_rpc(json_rpc_named_arguments)
-      |> case do
-        {:ok, responses} -> responses
-        {:error, {:bad_gateway, _request_url}} -> raise "Bad gateway"
-        {:error, {reason, _request_url}} -> raise to_string(reason)
-        {:error, reason} when is_atom(reason) -> raise Atom.to_string(reason)
-        {:error, error} -> raise error
+    indexed_responses =
+      case valid_requests do
+        [] ->
+          {:ok, local_error_map}
+
+        _ ->
+          valid_requests
+          |> Enum.map(fn {:ok, request} -> request end)
+          |> safe_json_rpc(json_rpc_named_arguments)
+          |> handle_batch_response()
+          |> merge_local_errors(local_error_map)
       end
-      |> Enum.into(%{}, &{&1.id, &1})
 
-    Enum.map(requests_with_index, fn {%{method_id: method_id}, index} ->
-      indexed_responses[index]
-      |> case do
-        nil ->
-          {:error, "No result"}
+    process_responses(indexed_responses, requests_with_index, parsed_abi, requests, leave_error_as_map)
+  end
 
-        response ->
-          selectors = define_selectors(parsed_abi, method_id)
+  defp build_rpc_requests(requests_with_index, functions) do
+    Enum.map(requests_with_index, fn {%{contract_address: contract_address, method_id: target_method_id, args: args} =
+                                        request, index} ->
+      function =
+        functions
+        |> define_function(target_method_id)
+        |> Map.drop([:method_id])
 
-          {^index, result} = Encoder.decode_result(response, selectors, leave_error_as_map)
-          result
+      with {:ok, formatted_args} <- safe_format_args(function, args),
+           {:ok, encoded} <- safe_encode_function_call(function, formatted_args) do
+        {:ok,
+         eth_call_request(encoded, contract_address, index, Map.get(request, :block_number), Map.get(request, :from))}
+      else
+        {:error, message} -> {:error, {index, message}}
       end
     end)
+  end
+
+  defp merge_local_errors({:ok, response_map}, local_error_map), do: {:ok, Map.merge(response_map, local_error_map)}
+  defp merge_local_errors(other, _local_error_map), do: other
+
+  defp handle_batch_response({:ok, responses}), do: {:ok, Enum.into(responses, %{}, &{&1.id, &1})}
+  defp handle_batch_response({:error, {:bad_gateway, _request_url}}), do: {:error, :batch_error, "Bad gateway"}
+  defp handle_batch_response({:error, {reason, _request_url}}), do: {:error, :batch_error, to_string(reason)}
+  defp handle_batch_response({:error, reason}) when is_atom(reason), do: {:error, :batch_error, Atom.to_string(reason)}
+  defp handle_batch_response({:error, error}), do: {:error, :batch_error, error}
+
+  defp process_responses({:ok, response_map}, requests_with_index, parsed_abi, _requests, leave_error_as_map) do
+    Enum.map(requests_with_index, fn {%{method_id: method_id}, index} ->
+      process_single_response(response_map[index], index, method_id, parsed_abi, leave_error_as_map)
+    end)
+  end
+
+  defp process_responses(
+         {:error, :batch_error, error},
+         _requests_with_index,
+         _parsed_abi,
+         requests,
+         _leave_error_as_map
+       ) do
+    # Only apply error to all requests if the entire batch failed
+    Enum.map(requests, fn _ -> format_error(error) end)
+  end
+
+  defp process_single_response(nil, _index, _method_id, _parsed_abi, _leave_error_as_map), do: {:error, "No result"}
+
+  defp process_single_response({:local_error, message}, _index, _method_id, _parsed_abi, _leave_error_as_map),
+    do: {:error, message}
+
+  defp process_single_response(response, index, method_id, parsed_abi, leave_error_as_map) do
+    selectors = define_selectors(parsed_abi, method_id)
+    {^index, result} = Encoder.decode_result(response, selectors, leave_error_as_map)
+    result
   rescue
     error ->
-      Enum.map(requests, fn _ -> format_error(error) end)
+      format_error(error)
+  end
+
+  defp safe_format_args(function, args) do
+    {:ok, format_args(function, args)}
+  rescue
+    e -> {:error, Exception.message(e)}
+  end
+
+  defp safe_encode_function_call(function, formatted_args) do
+    {:ok, Encoder.encode_function_call(function, formatted_args)}
+  rescue
+    e -> {:error, Exception.message(e)}
+  end
+
+  defp safe_json_rpc(requests, json_rpc_named_arguments) do
+    json_rpc(requests, json_rpc_named_arguments)
+  rescue
+    error -> {:error, error}
+  catch
+    :exit, reason -> {:error, reason}
   end
 
   defp format_args(function, args) do

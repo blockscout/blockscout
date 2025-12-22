@@ -74,14 +74,10 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
         encoded_url
       )
 
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
-
-      Bypass.expect(
-        bypass,
-        "GET",
-        "/api/card/0000000000000000000000000000000000000000000000000000000000000309",
-        fn conn ->
-          Conn.resp(conn, 200, json)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: _url}, _opts ->
+          {:ok, %Tesla.Env{status: 200, body: json}}
         end
       )
 
@@ -242,14 +238,10 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
         encoded_url
       )
 
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
-
-      Bypass.expect(
-        bypass,
-        "GET",
-        "/api/card/0000000000000000000000000000000000000000000000000000000000000309",
-        fn conn ->
-          Conn.resp(conn, 200, json)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: _url}, _opts ->
+          {:ok, %Tesla.Env{status: 200, body: json}}
         end
       )
 
@@ -416,9 +408,21 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
 
       token_instance = build(:token_instance, token_contract_address_hash: erc_721_token.contract_address_hash)
 
+      token_address = to_string(erc_721_token.contract_address_hash)
+
+      data =
+        "0xc87b56dd" <>
+          (ABI.TypeEncoder.encode([token_instance.token_id], [{:uint, 256}]) |> Base.encode16(case: :lower))
+
+      # First call - should fail
+      error_eth_call_expectation(data, token_address)
+
       Helper.batch_fetch_instances([
         %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
       ])
+
+      # Second call - should also fail
+      error_eth_call_expectation(data, token_address)
 
       Helper.batch_fetch_instances([
         %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
