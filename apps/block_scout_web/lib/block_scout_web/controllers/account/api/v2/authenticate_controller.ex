@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   alias Explorer.Account.Identity
   alias Explorer.Chain
   alias Explorer.Chain.Address
-  alias Explorer.ThirdPartyIntegrations.Auth0
+  alias Explorer.ThirdPartyIntegrations.{Auth0, Dynamic}
   alias Plug.Conn
 
   action_fallback(BlockScoutWeb.Account.API.V2.FallbackController)
@@ -215,6 +215,45 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   @spec authenticate_via_wallet(Conn.t(), map()) :: :error | {:error, any()} | Conn.t()
   def authenticate_via_wallet(conn, %{"message" => message, "signature" => signature}) do
     with {:ok, auth} <- Auth0.get_auth_with_web3(message, signature) do
+      put_auth_to_session(conn, auth)
+    end
+  end
+
+  @doc """
+  Authenticates a request using a Dynamic JWT token from the Authorization header.
+
+  This function extracts a Bearer token from the request's "authorization"
+  header, verifies it through Dynamic's authentication system, and upon
+  successful validation, establishes a user session with the extracted
+  identity information.
+
+  The function accepts both "Bearer" and "bearer" prefixes in the
+  authorization header (case-insensitive prefix matching).
+
+  ## Parameters
+  - `conn`: The `Plug.Conn` struct representing the current connection.
+  - `params`: Request parameters (unused).
+
+  ## Returns
+  - `Conn.t()` with updated session and rendered user info on successful
+    authentication.
+  - `{:error, any()}` if token verification or session creation fails.
+  - `{:token, nil}` if the authorization header is missing or malformed.
+
+  ## Notes
+  - Errors are handled by `BlockScoutWeb.Account.API.V2.FallbackController`.
+  """
+  @spec authenticate_via_dynamic(Conn.t(), map()) :: {:error, any()} | Conn.t()
+  def authenticate_via_dynamic(conn, _params) do
+    token =
+      case get_req_header(conn, "authorization") do
+        ["Bearer " <> token] -> token
+        ["bearer " <> token] -> token
+        _ -> nil
+      end
+
+    with {:token, not_nil_token} when not is_nil(not_nil_token) <- {:token, token},
+         {:ok, auth} <- Dynamic.get_auth_from_token(not_nil_token) do
       put_auth_to_session(conn, auth)
     end
   end
