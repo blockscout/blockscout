@@ -43,6 +43,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
 
   require Logger
 
+  @catchup_recheck_interval :timer.seconds(2)
+
   def child_spec(start_link_arguments) do
     spec = %{
       id: __MODULE__,
@@ -72,6 +74,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
 
     config_tracker = Application.get_all_env(:indexer)[__MODULE__]
     recheck_interval = config_tracker[:recheck_interval]
+    failure_interval_threshold = config_tracker[:failure_interval_threshold]
 
     Process.send(self(), :init_worker, [])
 
@@ -85,7 +88,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
          l1_rpc_block_range: l1_rpc_block_range,
          l1_rollup_address: l1_rollup_address,
          l1_start_block: l1_start_block,
-         l1_rollup_init_block: l1_rollup_init_block
+         l1_rollup_init_block: l1_rollup_init_block,
+         failure_interval_threshold: failure_interval_threshold,
+         catchup_recheck_interval: @catchup_recheck_interval
        },
        data: %{}
      }}
