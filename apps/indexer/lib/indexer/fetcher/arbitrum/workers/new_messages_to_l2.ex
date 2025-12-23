@@ -65,27 +65,25 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
             :l1_rpc_chunk_size => non_neg_integer(),
             optional(any()) => any()
           },
-          :data => %{
-            :new_msg_to_l2_start_block => non_neg_integer(),
-            :historical_msg_to_l2_end_block => non_neg_integer(),
+          :task_data => %{
+            :check_new => %{start_block: non_neg_integer()},
+            :check_historical => %{end_block: non_neg_integer()},
             optional(any()) => any()
           },
           optional(any()) => any()
         }) :: {:ok, non_neg_integer()}
-  def discover_new_messages_to_l2(
-        %{
-          config: %{
-            json_l1_rpc_named_arguments: json_rpc_named_arguments,
-            l1_rpc_chunk_size: chunk_size,
-            l1_rpc_block_range: rpc_block_range,
-            l1_bridge_address: bridge_address
-          },
-          data: %{
-            new_msg_to_l2_start_block: start_block,
-            historical_msg_to_l2_end_block: historical_msg_to_l2_end_block
-          }
-        } = _state
-      ) do
+  def discover_new_messages_to_l2(%{
+        config: %{
+          json_l1_rpc_named_arguments: json_rpc_named_arguments,
+          l1_rpc_chunk_size: chunk_size,
+          l1_rpc_block_range: rpc_block_range,
+          l1_bridge_address: bridge_address
+        },
+        task_data: %{
+          check_new: %{start_block: start_block},
+          check_historical: %{end_block: historical_msg_to_l2_end_block}
+        }
+      }) do
     # It is necessary to revisit some of the previous blocks to ensure that
     # no information is missed due to reorgs or RPC node inconsistency behind
     # a load balancer.
@@ -161,24 +159,22 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
             :l1_rpc_chunk_size => non_neg_integer(),
             optional(any()) => any()
           },
-          :data => %{
-            :historical_msg_to_l2_end_block => non_neg_integer(),
+          :task_data => %{
+            :check_historical => %{end_block: non_neg_integer()},
             optional(any()) => any()
           },
           optional(any()) => any()
         }) :: {:ok, non_neg_integer()}
-  def discover_historical_messages_to_l2(
-        %{
-          config: %{
-            json_l1_rpc_named_arguments: json_rpc_named_arguments,
-            l1_rpc_chunk_size: chunk_size,
-            l1_rpc_block_range: rpc_block_range,
-            l1_bridge_address: bridge_address,
-            l1_rollup_init_block: l1_rollup_init_block
-          },
-          data: %{historical_msg_to_l2_end_block: end_block}
-        } = _state
-      ) do
+  def discover_historical_messages_to_l2(%{
+        config: %{
+          json_l1_rpc_named_arguments: json_rpc_named_arguments,
+          l1_rpc_chunk_size: chunk_size,
+          l1_rpc_block_range: rpc_block_range,
+          l1_bridge_address: bridge_address,
+          l1_rollup_init_block: l1_rollup_init_block
+        },
+        task_data: %{check_historical: %{end_block: end_block}}
+      }) do
     if end_block >= l1_rollup_init_block do
       start_block = max(l1_rollup_init_block, end_block - rpc_block_range + 1)
 
