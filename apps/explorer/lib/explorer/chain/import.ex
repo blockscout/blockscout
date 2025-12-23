@@ -445,7 +445,7 @@ defmodule Explorer.Chain.Import do
   end
 
   defp handle_partially_imported_blocks(%{blocks: %{params: blocks_params}}) do
-    block_numbers = Enum.map(blocks_params, & &1.number)
+    block_numbers = blocks_params |> Enum.map(& &1.number) |> Enum.uniq()
     Block.set_refetch_needed(block_numbers)
     Import.Runner.Blocks.process_blocks_consensus(blocks_params)
 
