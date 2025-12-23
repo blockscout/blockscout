@@ -124,7 +124,7 @@ defmodule Indexer.Fetcher.UncleBlockTest do
       end)
 
       UncleBlock.Supervisor.Case.start_supervised!(
-        block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
+        block_fetcher: %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments, task_supervisor: nil}
       )
 
       wait(fn ->
@@ -167,7 +167,10 @@ defmodule Indexer.Fetcher.UncleBlockTest do
       end)
 
       assert {:retry, ^entries} =
-               UncleBlock.run(entries, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments})
+               UncleBlock.run(entries, %Block.Fetcher{
+                 json_rpc_named_arguments: json_rpc_named_arguments,
+                 task_supervisor: nil
+               })
     end
 
     test "retries only unique uncles on failed request", %{json_rpc_named_arguments: json_rpc_named_arguments} do
@@ -197,7 +200,10 @@ defmodule Indexer.Fetcher.UncleBlockTest do
       end)
 
       assert {:retry, [^entry]} =
-               UncleBlock.run(entries, %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments})
+               UncleBlock.run(entries, %Block.Fetcher{
+                 json_rpc_named_arguments: json_rpc_named_arguments,
+                 task_supervisor: nil
+               })
     end
   end
 
@@ -229,7 +235,8 @@ defmodule Indexer.Fetcher.UncleBlockTest do
                  params,
                  %Block.Fetcher{
                    json_rpc_named_arguments: json_rpc_named_arguments,
-                   callback_module: Indexer.Block.Realtime.Fetcher
+                   callback_module: Indexer.Block.Realtime.Fetcher,
+                   task_supervisor: nil
                  },
                  []
                )

@@ -15,6 +15,7 @@ defmodule BlockScoutWeb.TransactionController do
 
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Cache.Counters.TransactionsCount
+  alias Explorer.Chain.Transaction
 
   @necessity_by_association %{
     :block => :optional,

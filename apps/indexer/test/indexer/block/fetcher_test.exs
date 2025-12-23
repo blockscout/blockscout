@@ -73,15 +73,18 @@ defmodule Indexer.Block.FetcherTest do
       ReplacedTransaction.Supervisor.Case.start_supervised!()
       {:ok, _pid} = ContractCreatorOnDemand.start_link([[], []])
 
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+
       UncleBlock.Supervisor.Case.start_supervised!(
-        block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
+        block_fetcher: %Fetcher{
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          task_supervisor: Indexer.TaskSupervisor
+        }
       )
 
       Application.put_env(:indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor, disabled?: true)
 
       maybe_set_celo_core_contracts_env()
-
-      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
 
       %{
         block_fetcher: %Fetcher{
@@ -822,9 +825,13 @@ defmodule Indexer.Block.FetcherTest do
         TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
         ReplacedTransaction.Supervisor.Case.start_supervised!()
         {:ok, _pid} = ContractCreatorOnDemand.start_link([[], []])
+        start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
 
         UncleBlock.Supervisor.Case.start_supervised!(
-          block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
+          block_fetcher: %Fetcher{
+            json_rpc_named_arguments: json_rpc_named_arguments,
+            task_supervisor: Indexer.TaskSupervisor
+          }
         )
 
         Application.put_env(:indexer, Indexer.Fetcher.Celo.EpochBlockOperations.Supervisor, disabled?: true)
@@ -835,7 +842,8 @@ defmodule Indexer.Block.FetcherTest do
           block_fetcher: %Fetcher{
             broadcast: false,
             callback_module: Indexer.Block.Catchup.Fetcher,
-            json_rpc_named_arguments: json_rpc_named_arguments
+            json_rpc_named_arguments: json_rpc_named_arguments,
+            task_supervisor: Indexer.TaskSupervisor
           }
         }
       end

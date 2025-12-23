@@ -280,7 +280,7 @@ defmodule Explorer.Chain.OrderedCache do
 
             preloaded_elements
             |> Enum.map(&{element_to_id(&1), sanitize_before_update(&1)})
-            |> do_raw_update()
+            |> do_raw_update(true)
 
           _ ->
             :ok
@@ -289,7 +289,7 @@ defmodule Explorer.Chain.OrderedCache do
 
       def update(element), do: update([element])
 
-      def do_raw_update(prepared_elements) do
+      def do_raw_update(prepared_elements, propagate) do
         case Explorer.mode() do
           mode when mode in [:all, :api] ->
             ConCache.update(cache_name(), ids_list_key(), fn ids ->
@@ -302,7 +302,12 @@ defmodule Explorer.Chain.OrderedCache do
             end)
 
           :indexer ->
-            Node.list() |> :erpc.multicast(__MODULE__, :do_raw_update, [prepared_elements])
+            if propagate do
+              Node.list() |> :erpc.multicast(__MODULE__, :do_raw_update, [prepared_elements, false])
+            else
+              Logger.error("Indexer got unexpected propagation call to do_raw_update/2")
+              :ok
+            end
 
           _ ->
             :ok

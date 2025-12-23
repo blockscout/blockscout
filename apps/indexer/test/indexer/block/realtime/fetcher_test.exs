@@ -94,9 +94,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      UncleBlock.Supervisor.Case.start_supervised!(
-        block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
-      )
+      UncleBlock.Supervisor.Case.start_supervised!(block_fetcher: block_fetcher)
 
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 
@@ -605,9 +603,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      UncleBlock.Supervisor.Case.start_supervised!(
-        block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
-      )
+      UncleBlock.Supervisor.Case.start_supervised!(block_fetcher: block_fetcher)
 
       Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!(
         json_rpc_named_arguments: json_rpc_named_arguments
@@ -866,9 +862,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
         InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-        UncleBlock.Supervisor.Case.start_supervised!(
-          block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
-        )
+        UncleBlock.Supervisor.Case.start_supervised!(block_fetcher: block_fetcher)
 
         ReplacedTransaction.Supervisor.Case.start_supervised!()
 

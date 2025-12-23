@@ -14,9 +14,12 @@ defmodule Indexer.Block.Fetcher.ReceiptsTest do
 
   describe "fetch/2" do
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+
       %{
         block_fetcher: %Fetcher{
           json_rpc_named_arguments: json_rpc_named_arguments,
+          task_supervisor: Indexer.TaskSupervisor,
           receipts_concurrency: 10
         }
       }

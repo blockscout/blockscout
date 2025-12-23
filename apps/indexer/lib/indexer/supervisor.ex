@@ -109,6 +109,7 @@ defmodule Indexer.Supervisor do
       )
       |> Enum.into(%{})
       |> Map.put(:memory_monitor, memory_monitor)
+      |> Map.put(:task_supervisor, nil)
       |> Map.put_new(:realtime_overrides, %{})
 
     %{
