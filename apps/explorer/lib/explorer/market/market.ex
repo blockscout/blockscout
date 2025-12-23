@@ -37,8 +37,7 @@ defmodule Explorer.Market do
   def handle_continue(attempt, _state) do
     attempt |> Kernel.**(3) |> :timer.seconds() |> :timer.sleep()
 
-    case Node.list()
-         |> Enum.filter(&Helper.indexer_node?/1) do
+    case Node.list() |> Enum.filter(&Helper.indexer_node?/1) do
       [] ->
         if attempt < 5 do
           {:noreply, nil, {:continue, attempt + 1}}

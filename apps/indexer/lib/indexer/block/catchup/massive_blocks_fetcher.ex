@@ -20,7 +20,7 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcher do
   def child_spec([named_arguments, gen_server_options] = start_link_arguments)
       when is_map(named_arguments) and is_list(gen_server_options) do
     Supervisor.child_spec(
-      %{id: __MODULE__, start: {__MODULE__, :start_link, start_link_arguments}, type: :supervisor},
+      %{id: __MODULE__, start: {__MODULE__, :start_link, start_link_arguments}, type: :worker},
       []
     )
   end
