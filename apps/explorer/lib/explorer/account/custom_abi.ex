@@ -103,7 +103,7 @@ defmodule Explorer.Account.CustomABI do
   defp check_is_abi_valid?(custom_abi, given_abi \\ nil)
 
   defp check_is_abi_valid?(%{abi: abi} = custom_abi, given_abi) when is_list(abi) do
-    with true <- length(abi) > 0,
+    with true <- not Enum.empty?(abi),
          filtered_abi <- filter_abi(abi),
          false <- Enum.empty?(filtered_abi) do
       Map.put(custom_abi, :abi, filtered_abi)

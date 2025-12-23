@@ -13,21 +13,21 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
   tags(["withdrawals"])
 
   operation :withdrawals_list,
-    summary: "List withdrawals",
-    description: "Retrieves withdrawals with optional filtering and pagination.",
+    summary: "List validator withdrawal details on proof-of-stake networks",
+    description:
+      "Retrieves a paginated list of withdrawals, typically for proof-of-stake networks supporting validator withdrawals.",
     parameters:
       base_params() ++
         define_paging_params(["index", "items_count"]),
     responses: [
       ok:
-        {"Withdrawals", "application/json",
+        {"List of withdrawals with pagination.", "application/json",
          paginated_response(
            items: Schemas.Withdrawal,
            next_page_params_example: %{
              "index" => 50,
              "items_count" => 50
-           },
-           title_prefix: "Withdrawals"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -61,7 +61,7 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
     description: "Returns total withdrawals count and sum from cache.",
     parameters: base_params(),
     responses: [
-      ok: {"Withdrawals counters", "application/json", Schemas.Withdrawal.Counter},
+      ok: {"Withdrawals counters.", "application/json", Schemas.Withdrawal.Counter},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 

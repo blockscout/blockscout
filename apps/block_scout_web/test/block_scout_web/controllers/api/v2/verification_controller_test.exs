@@ -131,7 +131,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
       test "success verification", %{conn: conn} do
         before = Application.get_env(:explorer, :solc_bin_api_url)
 
-        Application.put_env(:explorer, :solc_bin_api_url, "https://solc-bin.ethereum.org")
+        Application.put_env(:explorer, :solc_bin_api_url, "https://binaries.soliditylang.org")
 
         path = File.cwd!() <> "/../explorer/test/support/fixture/smart_contract/solidity_0.5.9_smart_contract.sol"
         contract = File.read!(path)
@@ -186,7 +186,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
       test "get error on empty contract name", %{conn: conn} do
         before = Application.get_env(:explorer, :solc_bin_api_url)
 
-        Application.put_env(:explorer, :solc_bin_api_url, "https://solc-bin.ethereum.org")
+        Application.put_env(:explorer, :solc_bin_api_url, "https://binaries.soliditylang.org")
 
         contract_address = insert(:contract_address, contract_code: "0x01")
 
@@ -310,7 +310,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
       test "success verification", %{conn: conn} do
         before = Application.get_env(:explorer, :solc_bin_api_url)
 
-        Application.put_env(:explorer, :solc_bin_api_url, "https://solc-bin.ethereum.org")
+        Application.put_env(:explorer, :solc_bin_api_url, "https://binaries.soliditylang.org")
 
         path = File.cwd!() <> "/../explorer/test/support/fixture/smart_contract/vyper.vy"
         contract = File.read!(path)
@@ -462,7 +462,7 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
     test "success verification", %{conn: conn} do
       before = Application.get_env(:explorer, :solc_bin_api_url)
 
-      Application.put_env(:explorer, :solc_bin_api_url, "https://solc-bin.ethereum.org")
+      Application.put_env(:explorer, :solc_bin_api_url, "https://binaries.soliditylang.org")
 
       path = File.cwd!() <> "/../explorer/test/support/fixture/smart_contract/standard_input.json"
       json = File.read!(path)

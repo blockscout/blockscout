@@ -38,11 +38,12 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   @api_true [api?: true]
 
   operation :stats,
-    summary: "Get indexing and chain stats",
-    description: "Returns current indexing progress, chain stats and market data used on the UI.",
+    summary: "Retrieve blockchain network statistics and metrics",
+    description:
+      "Retrieves blockchain network statistics including total blocks, transactions, addresses, average block time, market data, and network utilization.",
     parameters: base_params(),
     responses: [
-      ok: {"Stats", "application/json", Schemas.Stats.Response},
+      ok: {"Blockchain network statistics.", "application/json", Schemas.Stats.Response},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -132,12 +133,12 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   end
 
   operation :transactions_chart,
-    summary: "Transactions chart data",
-    description: "Returns transaction counts by date for charting.",
+    summary: "Get daily transaction counts",
+    description: "Retrieves time series data of daily transaction counts for rendering charts.",
     parameters: base_params(),
     responses: [
       ok:
-        {"Transactions chart data", "application/json",
+        {"Time series data for transaction count charts.", "application/json",
          %Schema{type: :object, properties: %{chart_data: %Schema{type: :array, items: %Schema{type: :object}}}}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -168,12 +169,13 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   end
 
   operation :market_chart,
-    summary: "Market history chart data",
-    description: "Returns market history (price, market cap, tvl) for charting.",
+    summary: "Get daily closing price and market cap for native coin",
+    description:
+      "Retrieves time series data of market information (daily closing price, market cap) for rendering charts.",
     parameters: base_params(),
     responses: [
       ok:
-        {"Market chart data", "application/json",
+        {"Time series data for market charts and available token supply.", "application/json",
          %Schema{
            type: :object,
            properties: %{
@@ -227,7 +229,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     parameters: base_params(),
     responses: [
       ok:
-        {"Secondary coin market chart data", "application/json",
+        {"Secondary coin market chart data.", "application/json",
          %Schema{type: :object, properties: %{chart_data: %Schema{type: :array, items: %Schema{type: :object}}}}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -249,8 +251,8 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   end
 
   operation :hot_smart_contracts,
-    summary: "Retrieve hot contracts",
-    description: "Retrieves hot contracts",
+    summary: "Retrieve hot smart-contracts",
+    description: "Retrieves paginated list of hot smart-contracts",
     parameters:
       base_params() ++
         [sort_param(["transactions_count", "total_gas_used"]), order_param(), hot_smart_contracts_scale_param()] ++
@@ -262,7 +264,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         ]),
     responses: [
       ok:
-        {"Hot contracts.", "application/json",
+        {"Paginated list of hot smart-contracts.", "application/json",
          paginated_response(
            items: Schemas.Stats.HotContract,
            next_page_params_example: %{
@@ -270,8 +272,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
              "total_gas_used" => "100",
              "contract_address_hash" => "0x01a2A10583675E0e5dF52DE1b62734109201477a",
              "items_count" => 50
-           },
-           title_prefix: "HotSmartContracts"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()

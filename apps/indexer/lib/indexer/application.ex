@@ -20,7 +20,10 @@ defmodule Indexer.Application do
 
   @impl Application
   def start(_type, _args) do
-    Instrumenter.setup()
+    if Explorer.mode() in [:indexer, :all] do
+      Instrumenter.setup()
+    end
+
     memory_monitor_name = Memory.Monitor
 
     json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)

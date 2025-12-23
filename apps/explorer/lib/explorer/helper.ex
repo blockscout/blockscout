@@ -660,7 +660,7 @@ defmodule Explorer.Helper do
   """
   @spec indexer_node?(Node.t()) :: boolean()
   def indexer_node?(node) do
-    (node |> :rpc.call(Application, :get_env, [:explorer, :mode]) |> process_rpc_response(node, nil)) in [
+    (node |> :rpc.call(Explorer, :mode, []) |> process_rpc_response(node, nil)) in [
       :all,
       :indexer
     ]

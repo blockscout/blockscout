@@ -45,11 +45,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   tags(["smart_contracts"])
 
   operation :smart_contract,
-    summary: "Smart contract",
-    description: "Returns details for a smart contract address.",
+    summary: "Retrieve detailed information about a verified smart contract",
+    description:
+      "Retrieves detailed information about a specific verified smart contract, including source code, ABI, and deployment details.",
     parameters: [address_hash_param() | base_params()],
     responses: [
-      ok: {"Smart contract", "application/json", Schemas.SmartContract}
+      ok:
+        {"Detailed information about the specified verified smart contract.", "application/json", Schemas.SmartContract}
     ]
 
   @doc """
@@ -71,9 +73,9 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   end
 
   operation :smart_contracts_list,
-    summary: "Smart contracts list",
+    summary: "List verified smart contracts with optional filtering options",
     description:
-      "Returns a paginated list of verified smart contract addresses. Supports search, filtering and pagination keys.",
+      "Retrieves a paginated list of verified smart contracts with optional filtering by proxy status or programming language.",
     parameters:
       base_params() ++
         [
@@ -97,14 +99,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
         ]),
     responses: [
       ok:
-        {"Smart contracts", "application/json",
+        {"List of verified smart contracts matching the filter criteria, with pagination.", "application/json",
          paginated_response(
            items: Schemas.SmartContract,
            next_page_params_example: %{
              "smart_contract_id" => 1_947_801,
              "items_count" => 50
-           },
-           title_prefix: "SmartContracts"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -155,11 +156,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   end
 
   operation :smart_contracts_counters,
-    summary: "Smart contracts counters",
-    description: "Returns counts for smart contracts and related metrics.",
+    summary: "Get count statistics (new & newly verified) for deployed smart contracts",
+    description:
+      "Retrieves count statistics for smart contracts, including total contracts, verified contracts, and new contracts in the last 24 hours.",
     parameters: base_params(),
     responses: [
-      ok: {"Smart contracts counters", "application/json", Schemas.SmartContract.Counters},
+      ok: {"Count statistics for smart contracts.", "application/json", Schemas.SmartContract.Counters},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -183,7 +185,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     parameters: [address_hash_param() | base_params()],
     responses: [
       ok:
-        {"Audit reports", "application/json",
+        {"Audit reports.", "application/json",
          %Schema{
            description: "List of smart-contract's audit reports",
            type: :object,
@@ -225,7 +227,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
     request_body: audit_report_request_body(),
     responses: [
       ok:
-        {"OK", "application/json",
+        {"Audit report submission is successful.", "application/json",
          %OpenApiSpex.Schema{
            type: :object,
            properties: %{

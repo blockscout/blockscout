@@ -640,7 +640,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
            [ArbitrumEvents.node_created()],
            json_l1_rpc_named_arguments
          ) do
-      {:ok, events} when is_list(events) and length(events) > 0 ->
+      {:ok, events} when is_list(events) and events !== [] ->
         node_created_event = List.last(events)
         # extract L2 block hash from the NodeCreated event
         l2_block_hash = l2_block_hash_from_node_created_event(node_created_event)

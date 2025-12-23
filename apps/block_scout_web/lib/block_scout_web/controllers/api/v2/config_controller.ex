@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     parameters: base_params(),
     responses: [
       ok:
-        {"Backend version", "application/json",
+        {"Backend version.", "application/json",
          %Schema{type: :object, properties: %{backend_version: %Schema{type: :string, nullable: true}}}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -34,7 +34,8 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     parameters: base_params(),
     responses: [
       ok:
-        {"CSV export limits", "application/json", %Schema{type: :object, properties: %{limit: %Schema{type: :integer}}}},
+        {"CSV export limits.", "application/json",
+         %Schema{type: :object, properties: %{limit: %Schema{type: :integer}}}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -46,13 +47,69 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     |> json(%{limit: limit})
   end
 
+  operation :indexer,
+    summary: "Indexer configuration",
+    description: "Returns config of indexer.",
+    parameters: base_params(),
+    responses: [
+      ok:
+        {"Indexer configuration.", "application/json",
+         %Schema{
+           type: :object,
+           properties: %{
+             indexer_enabled: %Schema{type: :boolean},
+             internal_transactions_fetcher_enabled: %Schema{type: :boolean},
+             pending_transactions_fetcher_enabled: %Schema{type: :boolean},
+             token_instance_retry_fetcher_enabled: %Schema{type: :boolean},
+             token_instance_sanitize_fetcher_enabled: %Schema{type: :boolean},
+             block_reward_fetcher_enabled: %Schema{type: :boolean}
+           }
+         }},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  def indexer(conn, _params) do
+    indexer_enabled? = System.get_env("DISABLE_INDEXER") !== "true"
+
+    internal_transactions_fetcher_enabled? =
+      indexer_enabled? &&
+        not Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?]
+
+    pending_transactions_fetcher_enabled? =
+      indexer_enabled? &&
+        not Application.get_env(:indexer, Indexer.Fetcher.PendingTransaction.Supervisor)[:disabled?]
+
+    block_reward_fetcher_enabled? =
+      indexer_enabled? &&
+        not Application.get_env(:indexer, Indexer.Fetcher.BlockReward.Supervisor)[:disabled?]
+
+    token_instance_retry_fetcher_enabled? =
+      indexer_enabled? &&
+        not Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Retry.Supervisor)[:disabled?]
+
+    token_instance_sanitize_fetcher_enabled? =
+      indexer_enabled? &&
+        not Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Sanitize.Supervisor)[:disabled?]
+
+    conn
+    |> put_status(200)
+    |> json(%{
+      indexer_enabled: indexer_enabled?,
+      internal_transactions_fetcher_enabled: internal_transactions_fetcher_enabled?,
+      pending_transactions_fetcher_enabled: pending_transactions_fetcher_enabled?,
+      block_reward_fetcher_enabled: block_reward_fetcher_enabled?,
+      token_instance_retry_fetcher_enabled: token_instance_retry_fetcher_enabled?,
+      token_instance_sanitize_fetcher_enabled: token_instance_sanitize_fetcher_enabled?
+    })
+  end
+
   operation :public_metrics,
     summary: "Public metrics configuration",
     description: "Returns update period / configuration for public metrics.",
     parameters: base_params(),
     responses: [
       ok:
-        {"Public metrics config", "application/json",
+        {"Public metrics config.", "application/json",
          %Schema{type: :object, properties: %{update_period_hours: %Schema{type: :integer}}}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -72,7 +129,7 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     parameters: base_params(),
     responses: [
       ok:
-        {"Celo config", "application/json",
+        {"Celo config.", "application/json",
          %Schema{type: :object, properties: %{l2_migration_block: %Schema{type: :integer, nullable: true}}}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -91,7 +148,7 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     parameters: base_params(),
     responses: [
       ok:
-        {"Smart contract languages", "application/json",
+        {"Smart contract languages.", "application/json",
          %OpenApiSpex.Schema{
            type: :object,
            properties: %{

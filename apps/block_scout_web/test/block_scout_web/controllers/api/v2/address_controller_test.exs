@@ -3228,6 +3228,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
 
     test "get tokens", %{conn: conn} do
+      initial_value = :persistent_term.get(:market_token_fetcher_enabled, false)
+      :persistent_term.put(:market_token_fetcher_enabled, true)
+
+      on_exit(fn ->
+        :persistent_term.put(:market_token_fetcher_enabled, initial_value)
+      end)
+
       address = insert(:address)
 
       ctbs_erc_20 =

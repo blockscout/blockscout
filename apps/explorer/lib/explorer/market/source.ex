@@ -42,6 +42,7 @@ defmodule Explorer.Market.Source do
     CryptoCompare,
     CryptoRank,
     DefiLlama,
+    DIA,
     Mobula
   }
 
@@ -234,7 +235,7 @@ defmodule Explorer.Market.Source do
     Decimal.new(value)
   end
 
-  @sources [CoinGecko, CoinMarketCap, CryptoCompare, CryptoRank, DefiLlama, Mobula]
+  @sources [CoinGecko, CoinMarketCap, CryptoCompare, CryptoRank, DefiLlama, Mobula, DIA]
 
   @doc """
   Returns a module for fetching native coin market data.

@@ -50,7 +50,7 @@ defmodule Explorer.Stats.HotSmartContracts do
       {:ok,
        from_block
        |> aggregate_hot_smart_contracts_for_block_interval_query(to_block)
-       |> Chain.select_repo(options).all()
+       |> Chain.select_repo(options).all(timeout: :infinity)
        |> Enum.map(&Map.put(&1, :date, date))}
     else
       error -> {:error, error}
@@ -80,7 +80,7 @@ defmodule Explorer.Stats.HotSmartContracts do
     __MODULE__
     |> select([hot_smart_contracts_daily], hot_smart_contracts_daily.date)
     |> distinct(true)
-    |> Chain.select_repo(options).all()
+    |> Chain.select_repo(options).all(timeout: :infinity)
   end
 
   @spec delete_older_than(Date.t(), keyword()) :: {non_neg_integer(), nil}
@@ -125,7 +125,7 @@ defmodule Explorer.Stats.HotSmartContracts do
 
     preloads =
       Keyword.get(options, :preloads,
-        contract_address: [:names, proxy_implementations_association(), reputation_association()]
+        contract_address: [:smart_contract, :names, proxy_implementations_association(), reputation_association()]
       )
 
     now = DateTime.utc_now()
@@ -158,7 +158,7 @@ defmodule Explorer.Stats.HotSmartContracts do
 
     preloads =
       Keyword.get(options, :preloads,
-        contract_address: [:names, proxy_implementations_association(), reputation_association()]
+        contract_address: [:smart_contract, :names, proxy_implementations_association(), reputation_association()]
       )
 
     __MODULE__

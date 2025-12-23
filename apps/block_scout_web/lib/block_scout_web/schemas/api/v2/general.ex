@@ -287,9 +287,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: """
       Filter by block type:
-      * reorg - Only show reorgs
-      * uncle - Only show uncle blocks
-      * block - Only show main blocks
+      * block - Standard blocks in the main chain
+      * uncle - Uncle/ommer blocks (valid but not in main chain)
+      * reorg - Blocks from chain reorganizations
       If omitted, default value "block" is used.
       """
     }
@@ -306,9 +306,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{type: :string, enum: ["validated", "pending"]},
       required: false,
       description: """
-      Filter by transaction type:
-      * validated - Only show validated transactions
-      * pending - Only show pending transactions
+      Filter transactions by status:
+      * pending - Transactions waiting to be mined/validated
+      * validated - Confirmed transactions included in blocks
       If omitted, default value "validated" is used.
       """
     }
@@ -387,15 +387,32 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :type,
       in: :query,
+      schema: %Schema{type: :string, enum: ["blob_transaction"]},
+      required: false,
+      description: """
+      Filter by transaction type. Comma-separated list of:
+      * blob_transaction - Only show blob transactions
+      """
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for filtering block transactions by type.
+  """
+  @spec block_transaction_type_param() :: Parameter.t()
+  def block_transaction_type_param do
+    %Parameter{
+      name: :type,
+      in: :query,
       schema: %Schema{type: :string, enum: @allowed_transaction_types},
       required: false,
       description: """
-      Filter transactions by type:
-      * coin_transfer - Only show coin transfer transactions
-      * contract_call - Only show contract call transactions
-      * contract_creation - Only show contract creation transactions
-      * token_transfer - Only show token transfer transactions
-      * token_creation - Only show token creation transactions
+      Filter by transaction type. Comma-separated list of:
+      * token_transfer - Token transfer transactions
+      * contract_creation - Contract deployment transactions
+      * contract_call - Contract method call transactions
+      * coin_transfer - Native coin transfer transactions
+      * token_creation - Token creation transactions
       * blob_transaction - Only show blob transactions (Ethereum only)
       """
     }
@@ -732,10 +749,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   def paginated_response(options) do
     items_schema = Keyword.fetch!(options, :items)
     next_page_params_example = Keyword.fetch!(options, :next_page_params_example)
-    title_prefix = Keyword.fetch!(options, :title_prefix)
 
     %Schema{
-      title: "#{title_prefix}PaginatedResponse",
       type: :object,
       properties: %{
         items: %Schema{type: :array, items: items_schema, nullable: false},

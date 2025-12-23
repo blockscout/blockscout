@@ -17,7 +17,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       token_transfers_next_page_params: 3,
       paging_options: 1,
       split_list_by_page: 1,
-      fetch_scam_token_toggle: 2
+      fetch_scam_token_toggle: 2,
+      transaction_to_internal_transactions: 2
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -53,7 +54,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.Cache.Counters.{NewPendingTransactionsCount, Transactions24hCount}
-  alias Explorer.Chain.{Hash, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
@@ -139,11 +140,10 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   operation :transaction,
     summary: "Retrieve detailed information about a specific transaction",
-    description:
-      "Retrieves detailed information for a specific transaction, including token transfers, internal transactions, and metadata.",
+    description: "Retrieves detailed information for a specific transaction identified by its hash.",
     parameters: [transaction_hash_param() | base_params()],
     responses: [
-      ok: {"Transaction details", "application/json", Schemas.Transaction.Response},
+      ok: {"Detailed information about the specified transaction.", "application/json", Schemas.Transaction.Response},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -215,23 +215,22 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   operation :transactions,
-    summary: "List transactions with optional filtering and sorting",
-    description: "Retrieves a paginated list of transactions with optional filtering and sorting options.",
+    summary: "List blockchain transactions with filtering options for status, type, and method",
+    description: "Retrieves a paginated list of transactions with optional filtering by status, type, and method.",
     parameters:
       base_params() ++
-        [transaction_filter_param()] ++
+        [transaction_filter_param(), transaction_type_param()] ++
         define_paging_params(["block_number", "index", "items_count", "hash", "inserted_at"]),
     responses: [
       ok:
-        {"List of transactions", "application/json",
+        {"List of transactions with pagination information.", "application/json",
          paginated_response(
            items: Schemas.Transaction.Response,
            next_page_params_example: %{
              "block_number" => 23_532_302,
              "index" => 375,
              "items_count" => 50
-           },
-           title_prefix: "Transactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -272,9 +271,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     parameters: [batch_number_param() | base_params()],
     responses: [
       ok:
-        {"Polygon ZkEVM batch transactions", "application/json",
+        {"Polygon ZkEVM batch transactions.", "application/json",
          %Schema{
-           title: "PolygonZkEVMBatchTransactions",
            type: :object,
            properties: %{
              items: %Schema{type: :array, items: Schemas.Transaction.Response}
@@ -317,15 +315,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         [batch_number_param()] ++ define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
-        {"ZkSync batch transactions", "application/json",
+        {"ZkSync batch transactions.", "application/json",
          paginated_response(
            items: Schemas.Transaction.Response,
            next_page_params_example: %{
              "block_number" => 65_361_291,
              "index" => 1,
              "items_count" => 50
-           },
-           title_prefix: "ZkSyncBatchTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -347,15 +344,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         [batch_number_param()] ++ define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
-        {"Arbitrum batch transactions", "application/json",
+        {"Arbitrum batch transactions.", "application/json",
          paginated_response(
            items: Schemas.Transaction.Response,
            next_page_params_example: %{
              "block_number" => 391_483_842,
              "index" => 0,
              "items_count" => 50
-           },
-           title_prefix: "ArbitrumBatchTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -376,7 +372,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     parameters: [transaction_hash_param() | base_params()],
     responses: [
       ok:
-        {"Linked external transactions", "application/json",
+        {"Linked external transactions.", "application/json",
          %Schema{type: :array, items: %Schema{type: :string}, nullable: false}},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
@@ -418,15 +414,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         [batch_number_param()] ++ define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
-        {"Optimism batch transactions", "application/json",
+        {"Optimism batch transactions.", "application/json",
          paginated_response(
            items: Schemas.Transaction.Response,
            next_page_params_example: %{
              "block_number" => 142_678_440,
              "index" => 5,
              "items_count" => 50
-           },
-           title_prefix: "OptimismBatchTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -436,9 +431,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     It renders the list of L2 transactions bound to the specified batch.
   """
   @spec optimism_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def optimism_batch(conn, %{batch_number_param: batch_number_string} = params) do
-    {batch_number, ""} = Integer.parse(batch_number_string)
-
+  def optimism_batch(conn, %{batch_number_param: batch_number} = params) do
     l2_block_number_from = OptimismTransactionBatch.edge_l2_block_number(batch_number, :min, @api_true)
     l2_block_number_to = OptimismTransactionBatch.edge_l2_block_number(batch_number, :max, @api_true)
 
@@ -453,15 +446,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         [batch_number_param()] ++ define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
-        {"Scroll batch transactions", "application/json",
+        {"Scroll batch transactions.", "application/json",
          paginated_response(
            items: Schemas.Transaction.Response,
            next_page_params_example: %{
              "block_number" => 14_127_868,
              "index" => 0,
              "items_count" => 50
-           },
-           title_prefix: "ScrollBatchTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -471,9 +463,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     It renders the list of L2 transactions bound to the specified batch.
   """
   @spec scroll_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def scroll_batch(conn, %{batch_number_param: batch_number_string} = params) do
-    {batch_number, ""} = Integer.parse(batch_number_string)
-
+  def scroll_batch(conn, %{batch_number_param: batch_number} = params) do
     {l2_block_number_from, l2_block_number_to} =
       case ScrollReader.batch(batch_number, @api_true) do
         {:ok, batch} -> {batch.l2_block_range.from, batch.l2_block_range.to}
@@ -583,15 +573,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       [execution_node_hash_param() | base_params()] ++ define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
-        {"List of transactions", "application/json",
+        {"List of transactions.", "application/json",
          paginated_response(
            items: Schemas.Transaction.Response,
            next_page_params_example: %{
              "block_number" => 14_127_868,
              "index" => 0,
              "items_count" => 50
-           },
-           title_prefix: "ExecutionNodeTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -626,12 +615,12 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   operation :raw_trace,
-    summary: "Get raw trace for a transaction",
+    summary: "Get step-by-step execution trace for a specific transaction",
     description:
-      "Retrieves the raw trace for a specific transaction, including internal operations and execution details.",
+      "Retrieves the raw execution trace for a transaction, showing the step-by-step execution path and all contract interactions.",
     parameters: [transaction_hash_param() | base_params()],
     responses: [
-      ok: {"Raw trace for transaction", "application/json", Schemas.Transaction.RawTrace},
+      ok: {"Raw execution trace for the specified transaction.", "application/json", Schemas.Transaction.RawTrace},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -664,8 +653,9 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   operation :token_transfers,
-    summary: "List token transfers for a transaction",
-    description: "Retrieves token transfers for a specific transaction.",
+    summary: "List token transfers within a specific transaction",
+    description:
+      "Retrieves token transfers that occurred within a specific transaction, with optional filtering by token type.",
     parameters:
       base_params() ++
         [transaction_hash_param(), token_type_param()] ++
@@ -679,14 +669,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         ]),
     responses: [
       ok:
-        {"Token transfers for transaction", "application/json",
+        {"Token transfers within the specified transaction, with pagination.", "application/json",
          paginated_response(
            items: Schemas.TokenTransfer,
            next_page_params_example: %{
              "index" => 442,
              "block_number" => 21_307_214
-           },
-           title_prefix: "TransactionTokenTransfers"
+           }
          )},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
@@ -730,14 +719,15 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   operation :internal_transactions,
-    summary: "List internal transactions for a transaction",
-    description: "Retrieves internal transactions for a specific transaction.",
+    summary: "List internal transactions triggered during a specific transaction",
+    description:
+      "Retrieves internal transactions generated during the execution of a specific transaction. Useful for analyzing contract interactions and debugging failed transactions.",
     parameters:
       [transaction_hash_param() | base_params()] ++
         define_paging_params(["index", "block_number", "transaction_index", "items_count"]),
     responses: [
       ok:
-        {"Internal transactions for transaction", "application/json",
+        {"Internal transactions for the specified transaction, with pagination.", "application/json",
          paginated_response(
            items: Schemas.InternalTransaction,
            next_page_params_example: %{
@@ -745,8 +735,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
              "block_number" => 22_133_247,
              "transaction_index" => 68,
              "items_count" => 50
-           },
-           title_prefix: "TransactionInternalTransactions"
+           }
          )},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
@@ -757,14 +746,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   """
   @spec internal_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def internal_transactions(conn, %{transaction_hash_param: transaction_hash_string} = params) do
-    with {:ok, _transaction, transaction_hash} <- validate_transaction(transaction_hash_string, params) do
+    with {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params) do
       full_options =
         @internal_transaction_necessity_by_association
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(@api_true)
 
-      internal_transactions_plus_one =
-        InternalTransaction.transaction_to_internal_transactions(transaction_hash, full_options)
+      internal_transactions_plus_one = transaction_to_internal_transactions(transaction, full_options)
 
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
@@ -782,22 +770,22 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   operation :logs,
-    summary: "List logs for a transaction",
-    description: "Retrieves logs for a specific transaction.",
+    summary: "List event logs emitted during a specific transaction",
+    description:
+      "Retrieves event logs emitted during the execution of a specific transaction. Logs contain information about contract events and state changes.",
     parameters:
       [transaction_hash_param() | base_params()] ++
         define_paging_params(["index", "block_number", "items_count"]),
     responses: [
       ok:
-        {"Logs for transaction", "application/json",
+        {"Event logs for the specified transaction, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Log,
            next_page_params_example: %{
              "index" => 124,
              "block_number" => 21_925_703,
              "items_count" => 50
-           },
-           title_prefix: "TransactionLogs"
+           }
          )},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
@@ -837,21 +825,20 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   operation :state_changes,
-    summary: "List state changes for a transaction",
-    description: "Retrieves state changes for a specific transaction.",
+    summary: "Get on-chain state changes caused by a specific transaction",
+    description: "Retrieves state changes (balance changes, token transfers) caused by a specific transaction.",
     parameters:
       [transaction_hash_param() | base_params()] ++ define_state_changes_paging_params(["state_changes", "items_count"]),
     responses: [
       ok: {
-        "State changes for transaction",
+        "State changes caused by the specified transaction, with pagination.",
         "application/json",
         paginated_response(
           items: Schemas.Transaction.StateChange,
           next_page_params_example: %{
             "state_changes" => nil,
             "items_count" => 50
-          },
-          title_prefix: "TransactionStateChanges"
+          }
         )
       },
       not_found: NotFoundResponse.response(),
@@ -891,15 +878,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     parameters: base_params() ++ define_paging_params(["block_number", "index", "items_count"]),
     responses: [
       ok:
-        {"Watchlist transactions", "application/json",
+        {"Watchlist transactions.", "application/json",
          paginated_response(
            items: Schemas.Transaction.Response,
            next_page_params_example: %{
              "block_number" => 23_617_990,
              "index" => 128,
              "items_count" => 50
-           },
-           title_prefix: "WatchlistTransactions"
+           }
          )},
       forbidden: ForbiddenResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
@@ -935,12 +921,12 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   operation :summary,
-    summary: "Get interpreted summary for a transaction",
-    description: "Retrieves interpreted summary for a specific transaction.",
+    summary: "Get a human-readable, LLM-based transaction summary",
+    description: "Retrieves a human-readable summary of what a transaction did, presented in natural language.",
     parameters: base_params() ++ [transaction_hash_param(), just_request_body_param()],
     responses: [
       ok:
-        {"Transaction summary", "application/json",
+        {"Human-readable summary of the specified transaction.", "application/json",
          %Schema{
            anyOf: [
              Schemas.Transaction.Summary,
@@ -1010,9 +996,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     parameters: [transaction_hash_param() | base_params()],
     responses: [
       ok:
-        {"Blobs for transaction", "application/json",
+        {"Blobs for transaction.", "application/json",
          %Schema{
-           title: "TransactionBlobs",
            type: :object,
            properties: %{
              items: %Schema{type: :array, items: Schemas.Blob.Response}
@@ -1046,7 +1031,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     description: "Retrieves statistics for transactions, including counts and fee summaries for the last 24 hours.",
     responses: [
       ok:
-        {"Transaction statistics", "application/json",
+        {"Transaction statistics.", "application/json",
          %Schema{
            type: :object,
            properties: %{
@@ -1095,14 +1080,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     parameters: [transaction_hash_param() | base_params()] ++ define_paging_params(["index", "items_count"]),
     responses: [
       ok:
-        {"Beacon deposits for transaction", "application/json",
+        {"Beacon deposits for transaction.", "application/json",
          paginated_response(
            items: Schemas.Beacon.Deposit.Response,
            next_page_params_example: %{
              "index" => 2_287_943,
              "items_count" => 50
-           },
-           title_prefix: "Transactions"
+           }
          )},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()

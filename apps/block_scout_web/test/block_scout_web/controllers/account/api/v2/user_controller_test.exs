@@ -21,6 +21,15 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
   end
 
   describe "Test account/api/account/v2/user" do
+    setup do
+      initial_value = :persistent_term.get(:market_token_fetcher_enabled, false)
+      :persistent_term.put(:market_token_fetcher_enabled, true)
+
+      on_exit(fn ->
+        :persistent_term.put(:market_token_fetcher_enabled, initial_value)
+      end)
+    end
+
     test "get user info", %{conn: conn, user: user} do
       result_conn =
         conn

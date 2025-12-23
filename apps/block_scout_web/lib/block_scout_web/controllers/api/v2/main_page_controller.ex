@@ -44,17 +44,16 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   tags(["main_page"])
 
   operation :blocks,
-    summary: "Last 4 blocks on the main page",
-    description: "Retrieves last 4 blocks list.",
+    summary: "Retrieve recent blocks as displayed on Blockscout homepage",
+    description: "Retrieves a limited set of recent blocks for display on the main page or dashboard.",
     parameters: base_params(),
     responses: [
       ok:
-        {"Blocks List on the main page.", "application/json",
+        {"List of recent blocks on the home page.", "application/json",
          %Schema{
            type: :array,
            items: Schemas.Block.Response,
-           nullable: false,
-           additionalProperties: false
+           nullable: false
          }}
     ]
 
@@ -79,17 +78,16 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   end
 
   operation :transactions,
-    summary: "Last 6 transactions on the main page",
-    description: "Retrieves last 6 transactions list.",
+    summary: "Retrieve recent transactions as displayed on Blockscout homepage",
+    description: "Retrieves a limited set of recent transactions displayed on the home page.",
     parameters: base_params(),
     responses: [
       ok:
-        {"Transactions list on the main page.", "application/json",
+        {"List of recent transactions on the home page.", "application/json",
          %Schema{
            type: :array,
            items: Schemas.Transaction.Response,
-           nullable: false,
-           additionalProperties: false
+           nullable: false
          }},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -117,8 +115,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
          %Schema{
            type: :array,
            items: Schemas.Transaction.Response,
-           nullable: false,
-           additionalProperties: false
+           nullable: false
          }},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -142,12 +139,12 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   end
 
   operation :indexing_status,
-    summary: "Get indexing status",
-    description: "Returns current indexing progress and ratios for blocks and internal transactions.",
+    summary: "Check if indexing is finished with indexing ratio",
+    description: "Retrieves the current status of blockchain data indexing by the BlockScout instance.",
     parameters: base_params(),
     responses: [
       ok:
-        {"Indexing status", "application/json",
+        {"Current blockchain indexing status.", "application/json",
          %Schema{
            type: :object,
            properties: %{

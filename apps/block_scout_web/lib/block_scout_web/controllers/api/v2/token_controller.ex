@@ -50,7 +50,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   operation :token,
     summary: "Retrieve detailed information about a specific token",
-    description: "Retrieves detailed information for a specific token, including metadata and statistics.",
+    description: "Retrieves detailed information for a specific token identified by its contract address.",
     parameters: [address_hash_param() | base_params()],
     responses: [
       ok: {"Detailed information about the specified token.", "application/json", Schemas.Token.Response},
@@ -99,11 +99,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :counters,
-    summary: "Get activity count stats for a specific token",
-    description: "Retrieves count statistics for a token, including transfers, holders, and other metrics.",
+    summary: "Get holder and transfer count statistics for a specific token",
+    description: "Retrieves count statistics for a specific token, including holders count and transfers count.",
     parameters: [address_hash_param() | base_params()],
     responses: [
-      ok: {"Count statistics for the specified token", "application/json", Schemas.Token.Counters},
+      ok: {"Count statistics for the specified token.", "application/json", Schemas.Token.Counters},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
@@ -123,8 +123,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :transfers,
-    summary: "List token transfers for a specific token",
-    description: "Retrieves token transfers for a specific token, with optional filtering and pagination.",
+    summary: "List ownership transfer history for a specific NFT",
+    description: "Retrieves transfer history for a specific NFT instance, showing ownership changes over time.",
     parameters:
       base_params() ++
         [address_hash_param()] ++
@@ -138,7 +138,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         ]),
     responses: [
       ok:
-        {"List of token transfers.", "application/json",
+        {"Transfers of the specified token, with pagination.", "application/json",
          paginated_response(
            items: Schemas.TokenTransfer,
            next_page_params_example: %{
@@ -148,8 +148,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
              "batch_block_hash" => "0x789",
              "batch_transaction_hash" => "0xabc",
              "index_in_batch" => 2
-           },
-           title_prefix: "TokenTransfers"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -189,23 +188,23 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :holders,
-    summary: "List holders for a specific token",
-    description: "Retrieves holders for a specific token, with optional filtering and pagination.",
+    summary: "List addresses holding a specific token sorted by balance",
+    description:
+      "Retrieves addresses holding a specific token, sorted by balance. Useful for analyzing token distribution.",
     parameters:
       base_params() ++
         [address_hash_param()] ++
         define_paging_params(["address_hash_param", "value", "items_count"]),
     responses: [
       ok:
-        {"List of token holders.", "application/json",
+        {"Holders of the specified token, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Token.Holder,
            next_page_params_example: %{
              "address_hash" => "0x48bb9b14483e43c7726df702b271d410e7460656",
              "value" => "200000000000000",
              "items_count" => 50
-           },
-           title_prefix: "TokenHolders"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -236,21 +235,21 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :instances,
-    summary: "List all instances of a specific token",
-    description: "Retrieves all instances of a specific token, including holders and balances.",
+    summary: "List individual NFT instances for a token contract",
+    description:
+      "Retrieves instances of NFTs for a specific token contract. This endpoint is primarily for ERC-721 and ERC-1155 tokens.",
     parameters:
       base_params() ++
         [address_hash_param(), holder_address_hash_param()] ++
         define_paging_params(["unique_token"]),
     responses: [
       ok:
-        {"List of token instances.", "application/json",
+        {"NFT instances for the specified token contract, with pagination.", "application/json",
          paginated_response(
            items: Schemas.TokenInstance,
            next_page_params_example: %{
              "unique_token" => 782_098
-           },
-           title_prefix: "TokenInstances"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -334,8 +333,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :instance,
-    summary: "Get details for a specific token instance",
-    description: "Retrieves details for a specific token instance by token address and token ID.",
+    summary: "Retrieve detailed information about a specific NFT",
+    description:
+      "Retrieves detailed information about a specific NFT instance, identified by its token contract address and token ID.",
     parameters:
       base_params() ++
         [
@@ -343,7 +343,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
           token_id_param()
         ],
     responses: [
-      ok: {"Details for the token instance.", "application/json", Schemas.TokenInstance},
+      ok: {"Detailed information about the specified NFT instance.", "application/json", Schemas.TokenInstance},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
@@ -395,15 +395,14 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         define_paging_params(["index", "block_number", "token_id"]),
     responses: [
       ok:
-        {"List of token transfers for the instance.", "application/json",
+        {"Transfer history for the specified NFT instance, with pagination.", "application/json",
          paginated_response(
            items: Schemas.TokenTransfer,
            next_page_params_example: %{
              "index" => 920,
              "block_number" => 23_489_243,
              "token_id" => "4"
-           },
-           title_prefix: "TokenInstanceTransfers"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -447,15 +446,16 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :holders_by_instance,
-    summary: "List holders for a specific token instance",
-    description: "Retrieves holders for a specific token instance (by token address and token ID).",
+    summary: "List current holders of a specific NFT",
+    description:
+      "Retrieves current holders of a specific NFT instance. For ERC-721, this will typically be a single address. For ERC-1155, multiple addresses may hold the same token ID.",
     parameters:
       base_params() ++
         [address_hash_param(), token_id_param()] ++
         define_paging_params(["address_hash_param", "items_count", "token_id", "value"]),
     responses: [
       ok:
-        {"List of token holders for the instance.", "application/json",
+        {"Current holders of the specified NFT instance, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Token.Holder,
            next_page_params_example: %{
@@ -463,8 +463,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
              "items_count" => 50,
              "token_id" => "0",
              "value" => "4217417051704137590935"
-           },
-           title_prefix: "TokenInstanceHolders"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -505,8 +504,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :transfers_count_by_instance,
-    summary: "Get transfer count for a specific token instance",
-    description: "Retrieves the number of transfers for a specific token instance (by token address and token ID).",
+    summary: "Get total number of ownership transfers for a specific NFT",
+    description:
+      "Retrieves the total number of transfers for a specific NFT instance. Useful for determining how frequently an NFT has changed hands.",
     parameters:
       base_params() ++
         [
@@ -515,7 +515,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         ],
     responses: [
       ok:
-        {"Transfer count for the instance.", "application/json",
+        {"Total number of transfers for the specified NFT instance.", "application/json",
          %Schema{type: :object, properties: %{transfers_count: %Schema{type: :integer}}}},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
@@ -543,8 +543,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :tokens_list,
-    summary: "List tokens with optional filtering and sorting",
-    description: "Retrieves a paginated list of tokens with optional filtering and sorting.",
+    summary: "List tokens with optional filtering by name, symbol, or type",
+    description: "Retrieves a paginated list of tokens with optional filtering by name, symbol, or type.",
     parameters:
       base_params() ++
         [
@@ -565,7 +565,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         ]),
     responses: [
       ok:
-        {"List of tokens.", "application/json",
+        {"List of tokens matching the filter criteria, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Token,
            next_page_params_example: %{
@@ -576,8 +576,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
              "market_cap" => "570958125.135513",
              "name" => "Wrapped Staked ETH",
              "items_count" => 50
-           },
-           title_prefix: "Tokens"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -640,8 +639,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
              "market_cap" => "570958125.135513",
              "name" => "Wrapped Staked ETH",
              "items_count" => 50
-           },
-           title_prefix: "BridgedTokens"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -670,8 +668,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   end
 
   operation :refetch_metadata,
-    summary: "Trigger metadata refetch for a specific token instance",
-    description: "Triggers a metadata refetch for a specific token instance (by token address and token ID).",
+    summary: "Trigger a refresh of metadata for a specific NFT",
+    description:
+      "Triggers a refresh of metadata for a specific NFT instance. Useful when the NFT's metadata has been updated but is not yet reflected in the BlockScout database.",
     parameters:
       base_params() ++
         [
@@ -681,7 +680,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         ],
     responses: [
       ok:
-        {"Metadata refetch triggered.", "application/json",
+        {"Metadata refresh has been successfully initiated.", "application/json",
          %Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()

@@ -199,7 +199,7 @@ defmodule Explorer.Chain.Stability.Validator do
     Delete validators by address hashes
   """
   @spec delete_validators_by_address_hashes([binary() | HashAddress.t()]) :: {non_neg_integer(), nil | []} | :ignore
-  def delete_validators_by_address_hashes(list) when is_list(list) and length(list) > 0 do
+  def delete_validators_by_address_hashes(list) when is_list(list) and list !== [] do
     __MODULE__
     |> where([vs], vs.address_hash in ^list)
     |> Repo.delete_all()

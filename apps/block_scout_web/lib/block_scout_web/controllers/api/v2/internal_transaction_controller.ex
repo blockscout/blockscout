@@ -5,13 +5,13 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   alias Explorer.{Chain, PagingOptions}
 
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.InternalTransaction
 
   import BlockScoutWeb.Chain,
     only: [
       split_list_by_page: 1,
       paging_options: 1,
-      next_page_params: 3
+      next_page_params: 3,
+      fetch_internal_transactions: 1
     ]
 
   import Explorer.PagingOptions, only: [default_paging_options: 0]
@@ -25,15 +25,16 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   @api_true [api?: true]
 
   operation :internal_transactions,
-    summary: "List internal transactions",
-    description: "Retrieves internal transactions with optional filtering and pagination.",
+    summary: "List internal transactions generated during smart contract execution",
+    description:
+      "Retrieves a paginated list of internal transactions. Internal transactions are generated during contract execution and not directly recorded on the blockchain.",
     parameters:
       base_params() ++
         [query_transaction_hash_param(), limit_param()] ++
         define_paging_params(["index", "block_number", "transaction_index", "items_count"]),
     responses: [
       ok:
-        {"Internal transactions", "application/json",
+        {"List of internal transactions with pagination information.", "application/json",
          paginated_response(
            items: Schemas.InternalTransaction,
            next_page_params_example: %{
@@ -41,8 +42,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
              "transaction_index" => 68,
              "block_number" => 22_133_247,
              "items_count" => 50
-           },
-           title_prefix: "InternalTransactions"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -61,7 +61,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
 
       result =
         options
-        |> InternalTransaction.fetch()
+        |> fetch_internal_transactions()
         |> split_list_by_page()
 
       {internal_transactions, next_page} = result
