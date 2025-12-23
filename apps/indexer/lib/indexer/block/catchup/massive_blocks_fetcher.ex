@@ -20,13 +20,13 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcher do
   def child_spec([named_arguments, gen_server_options] = start_link_arguments)
       when is_map(named_arguments) and is_list(gen_server_options) do
     Supervisor.child_spec(
-      %{id: __MODULE__, start: {__MODULE__, :start_link, start_link_arguments}, type: :supervisor},
+      %{id: __MODULE__, start: {__MODULE__, :start_link, start_link_arguments}, type: :worker},
       []
     )
   end
 
-  @spec start_link(named_arguments :: map()) :: {:ok, pid}
-  @spec start_link(named_arguments :: %{}, GenServer.options()) :: {:ok, pid}
+  @spec start_link(named_arguments :: map()) :: GenServer.on_start()
+  @spec start_link(named_arguments :: %{}, GenServer.options()) :: GenServer.on_start()
   def start_link(named_arguments, gen_server_options \\ [])
       when is_map(named_arguments) and is_list(gen_server_options) do
     GenServer.start_link(__MODULE__, named_arguments, gen_server_options)
@@ -34,6 +34,10 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcher do
 
   @impl true
   def init(opts) do
+    if !opts[:task_supervisor] do
+      raise ArgumentError, ":task_supervisor must be provided to #{__MODULE__}.start_link/1"
+    end
+
     send_new_task()
 
     {:ok, %{block_fetcher: generate_block_fetcher(opts), low_priority_blocks: []}}

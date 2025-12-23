@@ -2536,7 +2536,9 @@ defmodule Explorer.Chain.Transaction do
       the `block_number` and `index` that are passed.
 
   """
-  @spec recent_collated_transactions(true | false, [Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()]) :: [t()]
+  @spec recent_collated_transactions(true | false, [
+          Chain.paging_options() | Chain.necessity_by_association_option() | Chain.api?()
+        ]) :: [t()]
   def recent_collated_transactions(old_ui?, options \\ [])
       when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
@@ -2544,9 +2546,10 @@ defmodule Explorer.Chain.Transaction do
     method_id_filter = Keyword.get(options, :method)
     type_filter = Keyword.get(options, :type)
 
-    case !paging_options.key && Transactions.atomic_take_enough(paging_options.page_size) do
+    case !paging_options.key && !method_id_filter && !type_filter &&
+           Transactions.atomic_take_enough(paging_options.page_size) do
       transactions when is_list(transactions) ->
-        transactions |> select_repo(options).preload(Map.keys(necessity_by_association))
+        transactions |> Chain.select_repo(options).preload(Map.keys(necessity_by_association))
 
       _ ->
         fetch_recent_collated_transactions(
@@ -2728,9 +2731,6 @@ defmodule Explorer.Chain.Transaction do
     dynamic([transaction], ^dynamic or transaction.type == 3)
   end
 
-
-
-
   @doc """
   Returns the count of available transactions shown in the UI.
 
@@ -2747,45 +2747,6 @@ defmodule Explorer.Chain.Transaction do
     |> limit(^@limit_showing_transactions)
     |> Repo.aggregate(:count, :hash)
   end
-
-  defp handle_random_access_paging_options(query, empty_options) when empty_options in [nil, [], %{}],
-    do: limit(query, ^(@default_page_size + 1))
-
-  defp handle_random_access_paging_options(query, paging_options) do
-    query
-    |> (&if(paging_options |> Map.get(:page_number, 1) |> process_page_number() == 1,
-          do: &1,
-          else: __MODULE__.page_transaction(&1, paging_options)
-        )).()
-    |> handle_page(paging_options)
-  end
-
-  defp handle_page(query, paging_options) do
-    page_number = paging_options |> Map.get(:page_number, 1) |> process_page_number()
-    page_size = Map.get(paging_options, :page_size, @default_page_size)
-
-    cond do
-      page_in_bounds?(page_number, page_size) && page_number == 1 ->
-        query
-        |> limit(^(page_size + 1))
-
-      page_in_bounds?(page_number, page_size) ->
-        query
-        |> limit(^page_size)
-        |> offset(^((page_number - 2) * page_size))
-
-      true ->
-        query
-        |> limit(^(@default_page_size + 1))
-    end
-  end
-
-  defp process_page_number(number) when number < 1, do: 1
-
-  defp process_page_number(number), do: number
-
-  defp page_in_bounds?(page_number, page_size),
-    do: page_size <= @limit_showing_transactions && @limit_showing_transactions - page_number * page_size >= 0
 
   @doc """
   Finds and updates replaced transactions in the database.

@@ -209,8 +209,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   """
   @spec blocks(Plug.Conn.t(), any()) :: Plug.Conn.t()
   def blocks(conn, params) do
-    full_options =
-      params |> select_block_type() |> Keyword.update(:necessity_by_association, %{}, &Map.delete(&1, :transactions))
+    full_options = select_block_type(params)
 
     blocks_plus_one =
       full_options
