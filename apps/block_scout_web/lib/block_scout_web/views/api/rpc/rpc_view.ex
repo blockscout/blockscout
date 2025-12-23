@@ -1,6 +1,8 @@
 defmodule BlockScoutWeb.API.RPC.RPCView do
   use BlockScoutWeb, :view
 
+  alias BlockScoutWeb.API.RPC.AddressView
+
   def render("show.json", %{data: data}) do
     %{
       "status" => "1",
@@ -15,6 +17,16 @@ defmodule BlockScoutWeb.API.RPC.RPCView do
       |> Float.parse()
 
     value
+  end
+
+  def render("pending_internal_transaction.json", %{data: data, message: message}) do
+    data = Enum.map(data, &AddressView.prepare_internal_transaction/1)
+
+    %{
+      "status" => "2",
+      "message" => message,
+      "result" => data
+    }
   end
 
   def render("error.json", %{error: message} = assigns) do
