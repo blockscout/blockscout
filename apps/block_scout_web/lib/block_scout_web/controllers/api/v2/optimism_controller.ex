@@ -36,6 +36,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   @api_true [api?: true]
 
+  operation :transaction_batches, false
+
   @doc """
   Function to handle GET requests to `/api/v2/optimism/txn-batches` and
   `/api/v2/optimism/txn-batches/:l2_block_range_start/:l2_block_range_end` endpoints.
@@ -60,6 +62,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       next_page_params: next_page_params
     })
   end
+
+  operation :transaction_batches_count, false
 
   @doc """
   Function to handle GET requests to `/api/v2/optimism/txn-batches/count` endpoint.
@@ -476,6 +480,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     |> render(:optimism_items_count, %{count: count})
   end
 
+  operation :interop_message, false
+
   @doc """
   Function to handle GET requests to `/api/v2/optimism/interop/messages/:unique_id` endpoint.
   """
@@ -549,6 +555,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     end
   end
 
+  operation :interop_messages, false
+
   @doc """
     Function to handle GET requests to `/api/v2/optimism/interop/messages` endpoint.
   """
@@ -596,6 +604,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       next_page_params: next_page_params
     })
   end
+
+  operation :interop_messages_count, false
 
   @doc """
   Function to handle GET requests to `/api/v2/optimism/interop/messages/count` endpoint.
@@ -669,6 +679,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     items_count(conn, Withdrawal)
   end
 
+  operation :interop_public_key, false
+
   @doc """
   Function to handle GET requests to `/api/v2/optimism/interop/public-key` endpoint.
   """
@@ -691,6 +703,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
         |> render(:message, %{message: "private key is invalid or undefined"})
     end
   end
+
+  operation :interop_import, false
 
   @doc """
   Function to handle POST request to `/api/v2/import/optimism/interop/` endpoint.
