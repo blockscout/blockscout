@@ -241,10 +241,12 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisorTest do
         block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
       )
 
+      start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
+
       Catchup.Supervisor.Case.start_supervised!(%{
         block_fetcher: %Indexer.Block.Fetcher{
           json_rpc_named_arguments: json_rpc_named_arguments,
-          task_supervisor: Indexer.TaskSupervisor
+          task_supervisor: Indexer.Block.Catchup.TaskSupervisor
         }
       })
 

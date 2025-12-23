@@ -121,7 +121,7 @@ defmodule Indexer.Block.Fetcher do
   @doc false
   def default_receipts_concurrency, do: @receipts_concurrency
 
-  @enforce_keys ~w(json_rpc_named_arguments)a
+  @enforce_keys ~w(json_rpc_named_arguments task_supervisor)a
   defstruct broadcast: nil,
             callback_module: nil,
             task_supervisor: nil,
@@ -295,7 +295,7 @@ defmodule Indexer.Block.Fetcher do
       Prometheus.Instrumenter.set_block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
 
-      Task.Supervisor.async_nolink(task_supervisor, fn ->
+      Task.Supervisor.start_child(task_supervisor, fn ->
         update_block_cache(inserted[:blocks], inserted)
         update_transactions_cache(inserted[:transactions], inserted)
         update_addresses_cache(inserted[:addresses])
