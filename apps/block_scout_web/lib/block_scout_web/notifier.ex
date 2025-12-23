@@ -368,7 +368,7 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast(
       "token_instances:#{token_contract_address_hash_string}",
       "fetched_token_instance_metadata",
-      %{token_id: token_id, fetched_metadata: fetched_token_instance_metadata}
+      %{token_id: to_string(token_id), fetched_metadata: fetched_token_instance_metadata}
     )
   end
 
@@ -379,7 +379,7 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast(
       "token_instances:#{token_contract_address_hash_string}",
       "not_fetched_token_instance_metadata",
-      %{token_id: token_id, reason: reason}
+      %{token_id: to_string(token_id), reason: reason}
     )
   end
 
