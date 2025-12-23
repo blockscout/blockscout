@@ -573,4 +573,45 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
       }
     )
   end
+
+  describe "config from env (UNIVERSAL_PROXY_CONFIG)" do
+    test "parse_proxy_params uses inline env config without HTTP fetch" do
+      inline_config = %{
+        "platforms" => %{
+          "test_platform" => %{
+            "base_url" => "https://api.test.com",
+            "endpoints" => %{
+              "base" => %{
+                "path" => "/test",
+                "method" => "get",
+                "params" => []
+              }
+            },
+            "api_key" => %{
+              "location" => "header",
+              "param_name" => "Authorization",
+              "prefix" => "Bearer"
+            }
+          }
+        }
+      }
+
+      Application.put_env(
+        :explorer,
+        Explorer.ThirdPartyIntegrations.UniversalProxy,
+        config_json: Jason.encode!(inline_config),
+        config_url: nil
+      )
+
+      on_exit(fn ->
+        Application.delete_env(:explorer, Explorer.ThirdPartyIntegrations.UniversalProxy)
+      end)
+
+      proxy_params = UniversalProxy.parse_proxy_params(%{"platform_id" => "test_platform"})
+
+      assert proxy_params.url == "https://api.test.com/test"
+      assert proxy_params.method == :get
+      assert proxy_params.headers == [{"Authorization", "Bearer test_api_key"}]
+    end
+  end
 end
