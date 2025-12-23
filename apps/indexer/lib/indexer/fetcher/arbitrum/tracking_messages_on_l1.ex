@@ -185,11 +185,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
   defp handle_check_new(state) do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
-    {:ok, end_block} = NewMessagesToL2.discover_new_messages_to_l2(state)
-
-    updated_state =
-      state
-      |> ArbitrumHelper.update_fetcher_task_data(:check_new, %{start_block: end_block + 1})
+    {:ok, updated_state} = NewMessagesToL2.check_new(state)
 
     next_run_time = now + updated_state.intervals[:check_new]
     BufferedTask.buffer(__MODULE__, [{next_run_time, :check_new}], false)
@@ -200,12 +196,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
   defp handle_check_historical(state) do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
-    {:ok, start_block} = NewMessagesToL2.discover_historical_messages_to_l2(state)
-
-    updated_state =
-      state
-      |> ArbitrumHelper.update_fetcher_task_data(:check_historical, %{end_block: start_block - 1})
-      |> then(&update_completed_tasks(&1, :check_historical, historical_catchup_completed?(&1)))
+    {:ok, updated_state} = NewMessagesToL2.check_historical(state)
 
     if rescheduled?(:check_historical, updated_state) do
       next_run_time = now + updated_state.intervals[:check_historical]
@@ -215,20 +206,10 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     {:ok, updated_state}
   end
 
-  defp historical_catchup_completed?(%{
-         config: %{l1_rollup_init_block: l1_rollup_init_block},
-         task_data: %{check_historical: %{end_block: end_block}}
-       }) do
-    end_block < l1_rollup_init_block
-  end
-
   defp rescheduled?(task_tag, state) when task_tag in @stoppable_tasks do
     not Map.get(state.completed_tasks, task_tag)
   end
 
   defp rescheduled?(_task_tag, _state), do: true
 
-  defp update_completed_tasks(state, task_tag, completed?) do
-    %{state | completed_tasks: Map.put(state.completed_tasks, task_tag, completed?)}
-  end
 end
