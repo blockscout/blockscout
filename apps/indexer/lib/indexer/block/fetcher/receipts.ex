@@ -27,7 +27,7 @@ defmodule Indexer.Block.Fetcher.Receipts do
       and logs with block numbers added where missing
     - `{:error, reason}` - Error occurred during fetch or processing
   """
-  @spec fetch(Block.Fetcher.t(), [map()]) :: {:ok, %{logs: [map()], receipts: [map()]}} | {:error, term()}
+  @spec fetch(Block.Fetcher.t(module()), [map()]) :: {:ok, %{logs: [map()], receipts: [map()]}} | {:error, term()}
   def fetch(state, transaction_params)
 
   def fetch(%Block.Fetcher{} = _state, []), do: {:ok, %{logs: [], receipts: []}}
