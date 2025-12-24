@@ -1,0 +1,28 @@
+{
+  "name": "@luxfi/explorer-docs",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "start": "next start"
+  },
+  "dependencies": {
+    "fumadocs-core": "^16.2.5",
+    "fumadocs-mdx": "^14.1.0",
+    "fumadocs-ui": "^16.2.5",
+    "lucide-react": "^0.468.0",
+    "next": "^16.0.10",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.7.2"
+  }
+}

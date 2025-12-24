@@ -77,3 +77,9 @@ tasks_in_progress
 /temp
 
 openapi.yaml
+
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+GROK.md
+QWEN.md

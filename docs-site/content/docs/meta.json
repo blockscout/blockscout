@@ -1,0 +1,9 @@
+{
+  "title": "Documentation",
+  "pages": [
+    "index",
+    "blockscout-alignment",
+    "multi-chain-setup",
+    "network-template"
+  ]
+}
