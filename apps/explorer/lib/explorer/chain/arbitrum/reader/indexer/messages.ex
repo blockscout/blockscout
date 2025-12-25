@@ -370,4 +370,104 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
 
     Repo.all(query)
   end
+
+  @doc """
+    Retrieves the message IDs of L1-to-L2 messages that have completion transactions
+    but are missing originating transaction information within a specified message ID range.
+
+    This function identifies messages where the completion transaction has been discovered
+    on L2 (indicated by the `:relayed` status), but the corresponding originating transaction
+    on L1 has not yet been indexed.
+
+    ## Parameters
+    - `start_message_id`: The starting message ID of the range (inclusive).
+    - `end_message_id`: The ending message ID of the range (inclusive).
+
+    ## Returns
+    - A list of message IDs for L1-to-L2 messages that have completion transactions
+      but lack originating transaction information, ordered by message ID in ascending order.
+  """
+  @spec messages_to_l2_completed_but_originating_info_missed(non_neg_integer(), non_neg_integer()) :: [
+          non_neg_integer()
+        ]
+  def messages_to_l2_completed_but_originating_info_missed(start_message_id, end_message_id)
+      when is_integer(start_message_id) and start_message_id >= 0 and
+             is_integer(end_message_id) and end_message_id >= 0 and
+             start_message_id <= end_message_id do
+    query =
+      from(msg in Message,
+        where:
+          msg.direction == :to_l2 and
+            msg.message_id >= ^start_message_id and
+            msg.message_id <= ^end_message_id and
+            is_nil(msg.originating_transaction_block_number) and
+            msg.status == :relayed,
+        select: msg.message_id,
+        order_by: [asc: msg.message_id]
+      )
+
+    Repo.all(query, timeout: :infinity)
+  end
+
+  @doc """
+    Retrieves the L1 block number of the closest preceding L1-to-L2 message that has
+    originating transaction information.
+
+    This function finds the nearest message with a lower message ID that contains
+    an originating transaction block number.
+
+    ## Parameters
+    - `message_id`: The message ID to find the closest preceding message for.
+
+    ## Returns
+    - The L1 block number of the closest preceding message with originating information,
+      or `nil` if no such message exists.
+  """
+  @spec l1_block_of_closest_preceding_message_to_l2(non_neg_integer()) :: FullBlock.block_number() | nil
+  def l1_block_of_closest_preceding_message_to_l2(message_id)
+      when is_integer(message_id) and message_id >= 0 do
+    query =
+      from(msg in Message,
+        where:
+          msg.direction == :to_l2 and
+            msg.message_id < ^message_id and
+            not is_nil(msg.originating_transaction_block_number),
+        select: msg.originating_transaction_block_number,
+        order_by: [desc: msg.message_id],
+        limit: 1
+      )
+
+    Repo.one(query, timeout: :infinity)
+  end
+
+  @doc """
+    Retrieves the L1 block number of the closest following L1-to-L2 message that has
+    originating transaction information.
+
+    This function finds the nearest message with a higher message ID that contains
+    an originating transaction block number.
+
+    ## Parameters
+    - `message_id`: The message ID to find the closest following message for.
+
+    ## Returns
+    - The L1 block number of the closest following message with originating information,
+      or `nil` if no such message exists.
+  """
+  @spec l1_block_of_closest_following_message_to_l2(non_neg_integer()) :: FullBlock.block_number() | nil
+  def l1_block_of_closest_following_message_to_l2(message_id)
+      when is_integer(message_id) and message_id >= 0 do
+    query =
+      from(msg in Message,
+        where:
+          msg.direction == :to_l2 and
+            msg.message_id > ^message_id and
+            not is_nil(msg.originating_transaction_block_number),
+        select: msg.originating_transaction_block_number,
+        order_by: [asc: msg.message_id],
+        limit: 1
+      )
+
+    Repo.one(query, timeout: :infinity)
+  end
 end

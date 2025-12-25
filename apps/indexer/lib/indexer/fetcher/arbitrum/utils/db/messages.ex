@@ -279,6 +279,75 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
     Reader.get_uncompleted_l1_to_l2_messages_ids()
   end
 
+  @doc """
+    Retrieves the message IDs of L1-to-L2 messages that have completion transactions
+    but are missing originating transaction information within a specified message ID range.
+
+    This function identifies messages where the completion transaction has been discovered
+    on L2, but the corresponding originating transaction on L1 has not yet been indexed.
+
+    ## Parameters
+    - `start_message_id`: The starting message ID of the range (inclusive).
+    - `end_message_id`: The ending message ID of the range (inclusive).
+
+    ## Returns
+    - A list of message IDs for L1-to-L2 messages that have completion transactions
+      but lack originating transaction information, ordered by message ID in ascending order.
+  """
+  @spec messages_to_l2_completed_but_originating_info_missed(non_neg_integer(), non_neg_integer()) :: [
+          non_neg_integer()
+        ]
+  def messages_to_l2_completed_but_originating_info_missed(start_message_id, end_message_id)
+      when is_integer(start_message_id) and start_message_id >= 0 and
+             is_integer(end_message_id) and end_message_id >= 0 and
+             start_message_id <= end_message_id do
+    Reader.messages_to_l2_completed_but_originating_info_missed(start_message_id, end_message_id)
+  end
+
+  @doc """
+    Determines the L1 block range to search for the originating transaction of an L1-to-L2
+    message with the given message ID.
+
+    The function finds the closest preceding and following messages that have originating
+    transaction information and returns their L1 block numbers as the search range. If either
+    bound cannot be determined from existing messages, the provided fallback values are used.
+
+    ## Parameters
+    - `message_id`: The message ID to find the L1 block range for.
+    - `fallback_min_block`: The fallback L1 block number to use as the lower bound if no
+      preceding message with originating information is found (typically the L1 block where
+      the rollup was initialized).
+    - `fallback_max_block`: The fallback L1 block number to use as the upper bound if no
+      following message with originating information is found (typically the current L1 chain tip).
+
+    ## Returns
+    - A tuple `{min_block, max_block}` representing the L1 block range to search for the
+      originating transaction.
+  """
+  @spec l1_block_range_for_message_to_l2(
+          non_neg_integer(),
+          FullBlock.block_number(),
+          FullBlock.block_number()
+        ) :: {FullBlock.block_number(), FullBlock.block_number()}
+  def l1_block_range_for_message_to_l2(message_id, fallback_min_block, fallback_max_block)
+      when is_integer(message_id) and message_id >= 0 and
+             is_integer(fallback_min_block) and is_integer(fallback_max_block) and
+             fallback_min_block <= fallback_max_block do
+    min_block =
+      case Reader.l1_block_of_closest_preceding_message_to_l2(message_id) do
+        nil -> fallback_min_block
+        block -> block
+      end
+
+    max_block =
+      case Reader.l1_block_of_closest_following_message_to_l2(message_id) do
+        nil -> fallback_max_block
+        block -> block
+      end
+
+    {min_block, max_block}
+  end
+
   @spec message_to_map(Message.t()) :: Message.to_import()
   defp message_to_map(message) do
     [
