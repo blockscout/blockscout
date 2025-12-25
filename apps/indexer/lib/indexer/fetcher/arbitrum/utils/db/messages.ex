@@ -80,26 +80,32 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
   end
 
   @doc """
-    Calculates the next L1 block number to start the search for messages sent to L2
-    that precede the earliest message already discovered.
+    Inspects the earliest discovered L1-to-L2 message and returns its message ID
+    along with the L1 block number to start the search for messages that precede it.
 
     ## Parameters
-    - `value_if_nil`: The default value to return if no L1-to-L2 messages have been discovered.
+    - `value_if_nil`: The default L1 block number to use if no L1-to-L2 messages have been discovered.
 
     ## Returns
-    - The L1 block number immediately preceding the earliest discovered message to L2,
-      or `value_if_nil` if no messages to L2 have been found.
+    - A map containing:
+      - `already_discovered_message_id`: The message ID of the earliest discovered message,
+        or `nil` if no messages have been found.
+      - `l1_block_to_discover_earlier_messages`: The L1 block number immediately preceding
+        the earliest discovered message, or `value_if_nil` if no messages have been found.
   """
-  @spec l1_block_to_discover_earliest_message_to_l2(nil | FullBlock.block_number()) :: nil | FullBlock.block_number()
-  def l1_block_to_discover_earliest_message_to_l2(value_if_nil)
+  @spec inspect_earliest_discovered_message_to_l2(nil | FullBlock.block_number()) :: %{
+          already_discovered_message_id: non_neg_integer() | nil,
+          l1_block_to_discover_earlier_messages: FullBlock.block_number() | nil
+        }
+  def inspect_earliest_discovered_message_to_l2(value_if_nil)
       when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
-    case Reader.l1_block_of_earliest_discovered_message_to_l2() do
+    case Reader.earliest_discovered_message_to_l2() do
       nil ->
         log_warning(@no_messages_warning)
-        value_if_nil
+        %{already_discovered_message_id: nil, l1_block_to_discover_earlier_messages: value_if_nil}
 
-      value ->
-        value - 1
+      {message_id, block_number} ->
+        %{already_discovered_message_id: message_id, l1_block_to_discover_earlier_messages: block_number - 1}
     end
   end
 
@@ -337,8 +343,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
     message with the given message ID.
 
     The function finds the closest preceding and following messages that have originating
-    transaction information and returns their L1 block numbers as the search range. If either
-    bound cannot be determined from existing messages, the provided fallback values are used.
+    transaction information and returns their message IDs and L1 block numbers. If either
+    bound cannot be determined from existing messages, the provided fallback block values
+    are used and the message_id is set to nil.
 
     ## Parameters
     - `message_id`: The message ID to find the L1 block range for.
@@ -349,31 +356,35 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
       following message with originating information is found (typically the current L1 chain tip).
 
     ## Returns
-    - A tuple `{min_block, max_block}` representing the L1 block range to search for the
-      originating transaction.
+    - A map with `:lower` and `:higher` keys, each containing a map with:
+      - `:message_id` - The message ID of the bound (or `nil` if fallback was used)
+      - `:block_number` - The L1 block number of the bound
   """
   @spec l1_block_range_for_message_to_l2(
           non_neg_integer(),
           FullBlock.block_number(),
           FullBlock.block_number()
-        ) :: {FullBlock.block_number(), FullBlock.block_number()}
+        ) :: %{
+          lower: %{message_id: non_neg_integer() | nil, block_number: FullBlock.block_number()},
+          higher: %{message_id: non_neg_integer() | nil, block_number: FullBlock.block_number()}
+        }
   def l1_block_range_for_message_to_l2(message_id, fallback_min_block, fallback_max_block)
       when is_integer(message_id) and message_id >= 0 and
              is_integer(fallback_min_block) and is_integer(fallback_max_block) and
              fallback_min_block <= fallback_max_block do
-    min_block =
+    lower =
       case Reader.l1_block_of_closest_preceding_message_to_l2(message_id) do
-        nil -> fallback_min_block
-        block -> block
+        nil -> %{message_id: nil, block_number: fallback_min_block}
+        {msg_id, block_number} -> %{message_id: msg_id, block_number: block_number}
       end
 
-    max_block =
+    higher =
       case Reader.l1_block_of_closest_following_message_to_l2(message_id) do
-        nil -> fallback_max_block
-        block -> block
+        nil -> %{message_id: nil, block_number: fallback_max_block}
+        {msg_id, block_number} -> %{message_id: msg_id, block_number: block_number}
       end
 
-    {min_block, max_block}
+    %{lower: lower, higher: higher}
   end
 
   @spec message_to_map(Message.t()) :: Message.to_import()

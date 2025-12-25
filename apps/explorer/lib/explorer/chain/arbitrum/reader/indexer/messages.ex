@@ -79,16 +79,18 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
   end
 
   @doc """
-    Retrieves the number of the earliest L1 block where an L1-to-L2 message was discovered.
+    Retrieves the message ID and L1 block number of the earliest L1-to-L2 message that was discovered.
 
     ## Returns
-    - The number of L1 block, or `nil` if no L1-to-L2 messages are found.
+    - A tuple `{message_id, block_number}` for the earliest discovered L1-to-L2 message,
+      or `nil` if no L1-to-L2 messages are found.
   """
-  @spec l1_block_of_earliest_discovered_message_to_l2() :: FullBlock.block_number() | nil
-  def l1_block_of_earliest_discovered_message_to_l2 do
+  @spec earliest_discovered_message_to_l2() ::
+          {non_neg_integer(), FullBlock.block_number()} | nil
+  def earliest_discovered_message_to_l2 do
     query =
       from(msg in Message,
-        select: msg.originating_transaction_block_number,
+        select: {msg.message_id, msg.originating_transaction_block_number},
         where: msg.direction == :to_l2 and not is_nil(msg.originating_transaction_block_number),
         order_by: [asc: msg.message_id],
         limit: 1
@@ -438,8 +440,8 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
   end
 
   @doc """
-    Retrieves the L1 block number of the closest preceding L1-to-L2 message that has
-    originating transaction information.
+    Retrieves the message ID and L1 block number of the closest preceding L1-to-L2 message
+    that has originating transaction information.
 
     This function finds the nearest message with a lower message ID that contains
     an originating transaction block number.
@@ -448,10 +450,11 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
     - `message_id`: The message ID to find the closest preceding message for.
 
     ## Returns
-    - The L1 block number of the closest preceding message with originating information,
+    - A tuple `{message_id, block_number}` for the closest preceding message with originating information,
       or `nil` if no such message exists.
   """
-  @spec l1_block_of_closest_preceding_message_to_l2(non_neg_integer()) :: FullBlock.block_number() | nil
+  @spec l1_block_of_closest_preceding_message_to_l2(non_neg_integer()) ::
+          {non_neg_integer(), FullBlock.block_number()} | nil
   def l1_block_of_closest_preceding_message_to_l2(message_id)
       when is_integer(message_id) and message_id >= 0 do
     query =
@@ -460,7 +463,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
           msg.direction == :to_l2 and
             msg.message_id < ^message_id and
             not is_nil(msg.originating_transaction_block_number),
-        select: msg.originating_transaction_block_number,
+        select: {msg.message_id, msg.originating_transaction_block_number},
         order_by: [desc: msg.message_id],
         limit: 1
       )
@@ -469,8 +472,8 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
   end
 
   @doc """
-    Retrieves the L1 block number of the closest following L1-to-L2 message that has
-    originating transaction information.
+    Retrieves the message ID and L1 block number of the closest following L1-to-L2 message
+    that has originating transaction information.
 
     This function finds the nearest message with a higher message ID that contains
     an originating transaction block number.
@@ -479,10 +482,11 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
     - `message_id`: The message ID to find the closest following message for.
 
     ## Returns
-    - The L1 block number of the closest following message with originating information,
+    - A tuple `{message_id, block_number}` for the closest following message with originating information,
       or `nil` if no such message exists.
   """
-  @spec l1_block_of_closest_following_message_to_l2(non_neg_integer()) :: FullBlock.block_number() | nil
+  @spec l1_block_of_closest_following_message_to_l2(non_neg_integer()) ::
+          {non_neg_integer(), FullBlock.block_number()} | nil
   def l1_block_of_closest_following_message_to_l2(message_id)
       when is_integer(message_id) and message_id >= 0 do
     query =
@@ -491,7 +495,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
           msg.direction == :to_l2 and
             msg.message_id > ^message_id and
             not is_nil(msg.originating_transaction_block_number),
-        select: msg.originating_transaction_block_number,
+        select: {msg.message_id, msg.originating_transaction_block_number},
         order_by: [asc: msg.message_id],
         limit: 1
       )
