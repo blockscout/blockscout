@@ -47,17 +47,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   ## Parameters
   - A map containing:
     - `config`: Configuration settings including JSON RPC arguments for L1, Arbitrum
-                bridge address, RPC block range, and chunk size for RPC calls.
-    - `data`: Contains the starting block number for new L1-to-L2 message discovery.
+      bridge address, RPC block range, and chunk size for RPC calls.
+    - `data`: Contains the starting block number for new L1-to-L2 message discovery
+      and the end block number for historical messages discovery.
 
   ## Returns
-  - `{:ok, end_block}`: On successful discovery and processing, where `end_block`
-                        indicates the necessity to consider next block range in the
-                        following iteration of new message discovery.
-  - `{:ok, start_block - 1}`: when no new blocks on L1 produced from the last
-                              iteration of the new message discovery.
+  - `{:ok, updated_state}` with `task_data.check_new.start_block` moved forward
+    when work was done, or left unchanged when no new blocks were present.
   """
-  @spec discover_new_messages_to_l2(%{
+  @spec check_new(%{
           :config => %{
             :json_l1_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             :l1_bridge_address => binary(),
@@ -65,14 +63,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
             :l1_rpc_chunk_size => non_neg_integer(),
             optional(any()) => any()
           },
-          :data => %{
-            :new_msg_to_l2_start_block => non_neg_integer(),
-            :historical_msg_to_l2_end_block => non_neg_integer(),
+          :task_data => %{
+            :check_new => %{start_block: non_neg_integer()},
+            :check_historical => %{end_block: non_neg_integer()},
             optional(any()) => any()
           },
           optional(any()) => any()
-        }) :: {:ok, non_neg_integer()}
-  def discover_new_messages_to_l2(
+        }) :: {:ok, map()}
+  def check_new(
         %{
           config: %{
             json_l1_rpc_named_arguments: json_rpc_named_arguments,
@@ -80,11 +78,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
             l1_rpc_block_range: rpc_block_range,
             l1_bridge_address: bridge_address
           },
-          data: %{
-            new_msg_to_l2_start_block: start_block,
-            historical_msg_to_l2_end_block: historical_msg_to_l2_end_block
+          task_data: %{
+            check_new: %{start_block: start_block},
+            check_historical: %{end_block: historical_msg_to_l2_end_block}
           }
-        } = _state
+        } = state
       ) do
     # It is necessary to revisit some of the previous blocks to ensure that
     # no information is missed due to reorgs or RPC node inconsistency behind
@@ -100,6 +98,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
     if safe_start_block <= end_block do
       log_info("Block range for discovery new messages from L1: #{safe_start_block}..#{end_block}")
 
+      # Since the block range to discover messages could be wider than `rpc_block_range`
+      # it is required to divide it in smaller chunks.
       # credo:disable-for-lines:16 Credo.Check.Refactor.PipeChainStart
       new_messages_amount =
         ArbitrumHelper.execute_for_block_range_in_chunks(
@@ -122,9 +122,17 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
         Publisher.broadcast(%{new_messages_to_arbitrum_amount: new_messages_amount}, :realtime)
       end
 
-      {:ok, end_block}
+      # Cursor is moved forward for the next iteration of the new messages discovery
+      updated_state =
+        state
+        |> ArbitrumHelper.update_fetcher_task_data(:check_new, %{
+          start_block: end_block + 1
+        })
+
+      # Advance the new-message cursor for the next live run.
+      {:ok, updated_state}
     else
-      {:ok, start_block - 1}
+      {:ok, state}
     end
   end
 
@@ -137,22 +145,23 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   from both the log and the corresponding L1 transaction, and importing them into
   the database.
 
+  It updates the end-block cursor and marks historical work complete when the init
+  block is reached.
+
   ## Parameters
   - A map containing:
     - `config`: Configuration settings including JSON RPC arguments for L1, Arbitrum
-                bridge address, rollup initialization block, block range, and chunk
-                size for RPC calls.
-    - `data`: Contains the end block for historical L1-to-L2 message discovery.
+      bridge address, rollup initialization block, block range, and chunk size for
+      RPC calls.
+    - `task_data`: where `check_historical` contains the end block for historical
+       L1-to-L2 message discovery.
 
   ## Returns
-  - `{:ok, start_block}`: On successful discovery and processing, where `start_block`
-                          indicates the necessity to consider another block range in
-                          the next iteration of message discovery.
-  - `{:ok, l1_rollup_init_block}`: If the discovery process already reached rollup
-                                   initialization block and no discovery action was
-                                   necessary.
+  - `{:ok, updated_state}` with the historical cursor moved backward and
+    `completed_tasks.check_historical` set when the init block boundary is
+    reached.
   """
-  @spec discover_historical_messages_to_l2(%{
+  @spec check_historical(%{
           :config => %{
             :json_l1_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             :l1_bridge_address => binary(),
@@ -161,13 +170,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
             :l1_rpc_chunk_size => non_neg_integer(),
             optional(any()) => any()
           },
-          :data => %{
-            :historical_msg_to_l2_end_block => non_neg_integer(),
-            optional(any()) => any()
-          },
+          :task_data => %{:check_historical => %{end_block: non_neg_integer()}, optional(any()) => any()},
+          :completed_tasks => %{:check_historical => boolean(), optional(any()) => any()},
           optional(any()) => any()
-        }) :: {:ok, non_neg_integer()}
-  def discover_historical_messages_to_l2(
+        }) :: {:ok, map()}
+  def check_historical(
         %{
           config: %{
             json_l1_rpc_named_arguments: json_rpc_named_arguments,
@@ -176,8 +183,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
             l1_bridge_address: bridge_address,
             l1_rollup_init_block: l1_rollup_init_block
           },
-          data: %{historical_msg_to_l2_end_block: end_block}
-        } = _state
+          task_data: %{check_historical: %{end_block: end_block}}
+        } = state
       ) do
     if end_block >= l1_rollup_init_block do
       start_block = max(l1_rollup_init_block, end_block - rpc_block_range + 1)
@@ -192,9 +199,27 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
         chunk_size
       )
 
-      {:ok, start_block}
+      updated_state =
+        state
+        |> ArbitrumHelper.update_fetcher_task_data(:check_historical, %{
+          end_block: start_block - 1
+        })
+        |> set_historical_completion(false)
+
+      # Move the historical cursor backward for the next catchup run.
+      {:ok, updated_state}
     else
-      {:ok, l1_rollup_init_block}
+      # The rollup init block is reached, flag that next iteration of
+      # historical messages discovery is not needed.
+      updated_state =
+        state
+        |> ArbitrumHelper.update_fetcher_task_data(:check_historical, %{
+          end_block: l1_rollup_init_block - 1
+        })
+        |> set_historical_completion(true)
+
+      # Stop scheduling historical checks because the rollup init block was reached.
+      {:ok, updated_state}
     end
   end
 
@@ -376,5 +401,22 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
     message_index = quantity_to_integer(Enum.at(event["topics"], 1))
 
     {message_index, kind, Timex.from_unix(timestamp)}
+  end
+
+  # Marks historical completion status in the state.
+  @spec set_historical_completion(
+          %{:completed_tasks => %{:check_historical => boolean(), optional(any()) => any()}, optional(any()) => any()},
+          boolean()
+        ) :: %{
+          :completed_tasks => %{:check_historical => boolean(), optional(any()) => any()},
+          optional(any()) => any()
+        }
+  defp set_historical_completion(state, completed?) do
+    updated_completed_tasks =
+      state
+      |> Map.get(:completed_tasks, %{})
+      |> Map.put(:check_historical, completed?)
+
+    %{state | completed_tasks: updated_completed_tasks}
   end
 end

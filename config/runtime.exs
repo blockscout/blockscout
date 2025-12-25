@@ -1394,7 +1394,9 @@ config :indexer, Indexer.Fetcher.Arbitrum,
   rollup_chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_ARBITRUM_ROLLUP_CHUNK_SIZE", 20)
 
 config :indexer, Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1,
-  recheck_interval: ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_TRACKING_MESSAGES_ON_L1_RECHECK_INTERVAL", "20s")
+  recheck_interval: ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_TRACKING_MESSAGES_ON_L1_RECHECK_INTERVAL", "20s"),
+  failure_interval_threshold:
+    ConfigHelper.parse_time_env_var("INDEXER_ARBITRUM_MESSAGES_TRACKING_FAILURE_THRESHOLD", "10m")
 
 config :indexer, Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1.Supervisor,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_BRIDGE_MESSAGES_TRACKING_ENABLED")
