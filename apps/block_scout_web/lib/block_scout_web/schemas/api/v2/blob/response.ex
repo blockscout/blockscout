@@ -11,8 +11,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Blob.Response do
     Blob.schema()
     |> Helper.extend_schema(
       title: "BlobResponse",
-      description: "Blob response",
-      additionalProperties: false
+      description: "Blob response"
     )
   )
 end

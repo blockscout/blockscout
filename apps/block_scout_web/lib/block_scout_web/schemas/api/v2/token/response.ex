@@ -11,8 +11,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Response do
     Token.schema()
     |> Helper.extend_schema(
       title: "TokenResponse",
-      description: "Token response",
-      additionalProperties: false
+      description: "Token response"
     )
   )
 end
