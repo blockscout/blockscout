@@ -52,6 +52,34 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
   end
 
   @doc """
+    Retrieves the highest message ID for an L1-to-L2 message that has been fully indexed,
+    meaning both the originating transaction on L1 and the completion transaction on L2
+    have been discovered.
+
+    This function is useful for determining the progress of message indexing and identifying
+    the starting point for discovering messages that are missing originating transaction information.
+
+    ## Parameters
+    - `value_if_nil`: The default value to return if no fully indexed L1-to-L2 messages exist.
+
+    ## Returns
+    - The highest message ID for a fully indexed and relayed L1-to-L2 message,
+      or `value_if_nil` if no such messages are found.
+  """
+  @spec highest_fully_indexed_message_to_l2(nil | non_neg_integer()) :: nil | non_neg_integer()
+  def highest_fully_indexed_message_to_l2(value_if_nil)
+      when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
+    case Reader.highest_fully_indexed_message_to_l2() do
+      nil ->
+        log_warning("No fully indexed messages to L2 found in DB")
+        value_if_nil
+
+      value ->
+        value
+    end
+  end
+
+  @doc """
     Calculates the next L1 block number to start the search for messages sent to L2
     that precede the earliest message already discovered.
 

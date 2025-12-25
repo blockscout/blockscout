@@ -51,6 +51,34 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
   end
 
   @doc """
+    Retrieves the highest message ID for an L1-to-L2 message that has both the
+    originating transaction information and has been relayed on L2.
+
+    This function is useful for tracking the progress of message indexing when both
+    L1 origination and L2 completion have been successfully discovered and indexed.
+
+    ## Returns
+    - The highest message ID for a fully indexed and relayed L1-to-L2 message,
+      or `nil` if no such messages are found.
+  """
+  @spec highest_fully_indexed_message_to_l2() :: non_neg_integer() | nil
+  def highest_fully_indexed_message_to_l2 do
+    query =
+      from(msg in Message,
+        select: msg.message_id,
+        where:
+          msg.direction == :to_l2 and
+            not is_nil(msg.originating_transaction_block_number) and
+            msg.status == :relayed,
+        order_by: [desc: msg.message_id],
+        limit: 1
+      )
+
+    query
+    |> Repo.one(timeout: :infinity)
+  end
+
+  @doc """
     Retrieves the number of the earliest L1 block where an L1-to-L2 message was discovered.
 
     ## Returns
