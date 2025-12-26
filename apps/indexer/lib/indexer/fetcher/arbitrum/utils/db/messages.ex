@@ -52,26 +52,31 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
   end
 
   @doc """
-    Retrieves the highest message ID for an L1-to-L2 message that has been fully indexed,
-    meaning both the originating transaction on L1 and the completion transaction on L2
-    have been discovered.
+    Retrieves the highest message ID for an L1-to-L2 message that has been fully indexed within or before a specified safe L1 block, meaning both the originating transaction on L1 and the completion transaction on L2 have been discovered.
 
-    This function is useful for determining the progress of message indexing and identifying
-    the starting point for discovering messages that are missing originating transaction information.
+    This function is useful for determining the progress of message indexing
+    and identifying the starting point for discovering messages that are
+    missing originating transaction information, while ensuring only finalized
+    L1 data is considered.
 
     ## Parameters
-    - `value_if_nil`: The default value to return if no fully indexed L1-to-L2 messages exist.
+    - `safe_block`: The L1 block number threshold for filtering messages.
+    - `value_if_nil`: The default value to return if no fully indexed L1-to-L2
+      messages exist within the safe block range.
 
     ## Returns
-    - The highest message ID for a fully indexed and relayed L1-to-L2 message,
-      or `value_if_nil` if no such messages are found.
+    - The highest message ID for a fully indexed and relayed L1-to-L2 message
+      within the safe block range, or `value_if_nil` if no such messages are
+      found.
   """
-  @spec highest_fully_indexed_message_to_l2(nil | non_neg_integer()) :: nil | non_neg_integer()
-  def highest_fully_indexed_message_to_l2(value_if_nil)
-      when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
-    case Reader.highest_fully_indexed_message_to_l2() do
+  @spec highest_safe_fully_indexed_message_to_l2(FullBlock.block_number(), nil | non_neg_integer()) ::
+          nil | non_neg_integer()
+  def highest_safe_fully_indexed_message_to_l2(safe_block, value_if_nil)
+      when is_integer(safe_block) and safe_block >= 0 and
+             ((is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil)) do
+    case Reader.highest_safe_fully_indexed_message_to_l2(safe_block) do
       nil ->
-        log_warning("No fully indexed messages to L2 found in DB")
+        log_warning("No fully indexed messages to L2 found in DB within safe block #{safe_block}")
         value_if_nil
 
       value ->

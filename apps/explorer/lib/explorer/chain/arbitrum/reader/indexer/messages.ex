@@ -51,24 +51,31 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
   end
 
   @doc """
-    Retrieves the highest message ID for an L1-to-L2 message that has both the
-    originating transaction information and has been relayed on L2.
+    Retrieves the highest message ID for an L1-to-L2 message that has both the originating transaction information and has been relayed on L2, within or before a specified safe L1 block.
 
-    This function is useful for tracking the progress of message indexing when both
-    L1 origination and L2 completion have been successfully discovered and indexed.
+    This function filters messages to only include those whose originating
+    transaction occurred at or before the safe block number, ensuring that
+    only finalized L1 data is considered.
+
+    ## Parameters
+    - `safe_block`: The L1 block number threshold. Only messages with
+      originating transaction block numbers at or below this value are
+      considered.
 
     ## Returns
-    - The highest message ID for a fully indexed and relayed L1-to-L2 message,
-      or `nil` if no such messages are found.
+    - The highest message ID for a fully indexed and relayed L1-to-L2 message
+      within the safe block range, or `nil` if no such messages are found.
   """
-  @spec highest_fully_indexed_message_to_l2() :: non_neg_integer() | nil
-  def highest_fully_indexed_message_to_l2 do
+  @spec highest_safe_fully_indexed_message_to_l2(FullBlock.block_number()) :: non_neg_integer() | nil
+  def highest_safe_fully_indexed_message_to_l2(safe_block)
+      when is_integer(safe_block) and safe_block >= 0 do
     query =
       from(msg in Message,
         select: msg.message_id,
         where:
           msg.direction == :to_l2 and
             not is_nil(msg.originating_transaction_block_number) and
+            msg.originating_transaction_block_number <= ^safe_block and
             msg.status == :relayed,
         order_by: [desc: msg.message_id],
         limit: 1
