@@ -331,7 +331,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
 
     ## Returns
     - A list of message IDs for L1-to-L2 messages that have completion transactions
-      but lack originating transaction information, ordered by message ID in ascending order.
+      but lack originating transaction information, ordered by message ID in descending
+      order (highest to lowest).
   """
   @spec messages_to_l2_completed_but_originating_info_missed(non_neg_integer(), non_neg_integer()) :: [
           non_neg_integer()

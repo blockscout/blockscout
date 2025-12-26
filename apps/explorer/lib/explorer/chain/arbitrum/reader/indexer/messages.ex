@@ -422,7 +422,8 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
 
     ## Returns
     - A list of message IDs for L1-to-L2 messages that have completion transactions
-      but lack originating transaction information, ordered by message ID in ascending order.
+      but lack originating transaction information, ordered by message ID in descending
+      order (highest to lowest).
   """
   @spec messages_to_l2_completed_but_originating_info_missed(non_neg_integer(), non_neg_integer()) :: [
           non_neg_integer()
@@ -440,7 +441,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
             is_nil(msg.originating_transaction_block_number) and
             msg.status == :relayed,
         select: msg.message_id,
-        order_by: [asc: msg.message_id]
+        order_by: [desc: msg.message_id]
       )
 
     Repo.all(query, timeout: :infinity)
