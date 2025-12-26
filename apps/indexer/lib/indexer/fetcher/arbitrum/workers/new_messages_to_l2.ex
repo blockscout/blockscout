@@ -3,9 +3,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   Manages the discovery and processing of new and historical L1-to-L2 messages initiated on L1 for an Arbitrum rollup.
 
   This module is responsible for identifying and importing messages that are initiated
-  from Layer 1 (L1) to Arbitrum's Layer 2 (L2). It handles both new messages that are
-  currently being sent to L2 and historical messages that were sent in the past but
-  have not yet been processed by the system.
+  from Layer 1 (L1) to Arbitrum's Layer 2 (L2). It handles three discovery scenarios:
+
+    1. **New messages**: Currently being sent to L2 as the chain progresses forward
+    2. **Historical messages**: Sent in the past before indexing started, discovered
+       by working backward from the earliest known message
+    3. **Missing origination**: Messages that have completion information on L2 but
+       lack origination transaction details from L1, typically occurring when L2
+       indexing runs ahead of L1 event discovery
 
   The initiated messages are identified by analyzing logs associated with
   `MessageDelivered` events emitted by the Arbitrum bridge contract. These logs
@@ -21,6 +26,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
 
+  alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
@@ -223,6 +229,202 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
     end
   end
 
+  @doc """
+  Discovers L1-to-L2 messages that have completion transactions on L2 but are missing origination transaction information from L1.
+
+  This function works backward from the most recent fully indexed message,
+  checking ranges of message IDs for those marked as `:relayed` but lacking
+  L1 origination data. For each missing message found, it determines the
+  appropriate L1 block range to search, discovers the originating transaction,
+  and imports it.
+
+  The function processes messages in order from highest to lowest ID within
+  each range. When multiple missing messages are found, each is processed
+  sequentially, with L1 block bounds recalculated after each import to use
+  newly discovered messages as range delimiters.
+
+  The cursor advances by the configured range size with each iteration. The
+  task completes and stops when the next iteration's range would extend below
+  the earliest discovered message ID captured during initialization.
+
+  **Precondition:** This function assumes it is only called when there are
+  fully indexed messages to work from (i.e., `end_message_id` is not nil).
+  The task initialization logic ensures this function is never called when
+  there's no work to do.
+
+  ## Parameters
+  - A map containing:
+    - `config`: Configuration settings including:
+      - JSON RPC arguments for L1
+      - L1 bridge address
+      - L1 rollup initialization block
+      - L1 RPC chunk size for batch requests
+      - Message ID range window size
+    - `task_data`: Contains:
+      - `check_missing_origination.end_message_id`: Upper bound for the next
+        message ID range to check (always a valid non-negative integer when this
+        function is called; task is disabled at init if no fully indexed messages exist)
+      - `check_missing_origination.earliest_discovered_message_id`: Lower bound
+        where discovery should stop (defaults to 0 if no historical messages discovered yet)
+      - `check_missing_origination.safe_l1_block`: Safe L1 block number used
+        as fallback upper bound when determining L1 block ranges
+    - `completed_tasks`: Tracking map for task completion status
+
+  ## Returns
+  - `{:ok, updated_state}` where:
+    - `task_data.check_missing_origination.end_message_id` is moved backward
+      by the range size
+    - `completed_tasks.check_missing_origination` is set to `true` when the
+      next iteration would go below the earliest discovered message boundary
+  """
+  @spec check_missing_origination(%{
+          :config => %{
+            :json_l1_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            :l1_bridge_address => binary(),
+            :l1_rollup_init_block => non_neg_integer(),
+            :l1_rpc_chunk_size => non_neg_integer(),
+            :missed_message_ids_range => non_neg_integer(),
+            optional(any()) => any()
+          },
+          :task_data => %{
+            :check_missing_origination => %{
+              end_message_id: non_neg_integer(),
+              earliest_discovered_message_id: non_neg_integer(),
+              safe_l1_block: non_neg_integer()
+            },
+            optional(any()) => any()
+          },
+          :completed_tasks => %{:check_missing_origination => boolean(), optional(any()) => any()},
+          optional(any()) => any()
+        }) :: {:ok, map()}
+  def check_missing_origination(
+        %{
+          config: %{
+            json_l1_rpc_named_arguments: json_rpc_named_arguments,
+            l1_rpc_chunk_size: chunk_size,
+            l1_bridge_address: bridge_address,
+            l1_rollup_init_block: l1_rollup_init_block,
+            missed_message_ids_range: missed_message_ids_range
+          },
+          task_data: %{
+            check_missing_origination: %{
+              end_message_id: end_message_id,
+              earliest_discovered_message_id: earliest_discovered_message_id,
+              safe_l1_block: safe_l1_block
+            }
+          }
+        } = state
+      ) do
+    # Calculate the message ID range to check: [start_message_id, end_message_id]
+    start_message_id = max(0, end_message_id - missed_message_ids_range + 1)
+
+    log_info("Checking message ID range #{start_message_id}..#{end_message_id} for missing origination information")
+
+    # Query for messages in range that have completion but missing origination
+    missing_origination_message_ids =
+      DbMessages.messages_to_l2_completed_but_originating_info_missed(start_message_id, end_message_id)
+
+    unless Enum.empty?(missing_origination_message_ids) do
+      log_info(
+        "Found #{length(missing_origination_message_ids)} messages with missing origination in range #{start_message_id}..#{end_message_id}"
+      )
+
+      # Process each missing message (already in descending order from highest to lowest ID)
+      missing_origination_message_ids
+      |> Enum.each(fn message_id ->
+        discover_and_import_single_missing_message(
+          message_id,
+          start_message_id,
+          end_message_id,
+          l1_rollup_init_block,
+          safe_l1_block,
+          bridge_address,
+          json_rpc_named_arguments,
+          chunk_size
+        )
+      end)
+    end
+
+    # Move cursor backward for next iteration
+    next_end_message_id = start_message_id - 1
+
+    # Check if next iteration would go below the earliest discovered message
+    should_complete = next_end_message_id < earliest_discovered_message_id
+
+    if should_complete do
+      log_info(
+        "Missing origination discovery complete: next range would extend below earliest discovered message ID #{earliest_discovered_message_id}"
+      )
+    end
+
+    updated_state =
+      state
+      |> ArbitrumHelper.update_fetcher_task_data(:check_missing_origination, %{
+        end_message_id: next_end_message_id
+      })
+      |> set_missing_origination_completion(should_complete)
+
+    {:ok, updated_state}
+  end
+
+  # Discovers and imports origination information for a single L1-to-L2 message
+  # that is missing such information.
+  #
+  # This function determines the appropriate L1 block range to search by finding
+  # the closest preceding and following messages with known origination blocks.
+  # It then fetches L1 logs within that range and filters to find only the
+  # target message, excluding any already-indexed messages.
+  #
+  # ## Parameters
+  # - `message_id`: The ID of the message to discover origination for
+  # - `lower_bound_msg_id`: Lower message ID bound for filtering (exclusive)
+  # - `upper_bound_msg_id`: Upper message ID bound for filtering (exclusive)
+  # - `l1_rollup_init_block`: Fallback minimum L1 block if no preceding message
+  # - `safe_l1_block`: Fallback maximum L1 block if no following message
+  # - `bridge_address`: L1 bridge contract address for log filtering
+  # - `json_rpc_named_arguments`: RPC configuration
+  # - `chunk_size`: Batch size for RPC requests
+  #
+  # ## Returns
+  # - `:ok` after attempting to discover and import the message
+  defp discover_and_import_single_missing_message(
+         message_id,
+         lower_bound_msg_id,
+         upper_bound_msg_id,
+         l1_rollup_init_block,
+         safe_l1_block,
+         bridge_address,
+         json_rpc_named_arguments,
+         chunk_size
+       ) do
+    log_debug("Discovering origination for message ID #{message_id}")
+
+    # Determine L1 block range for this message using database helper
+    %{lower: lower_bound, higher: higher_bound} =
+      DbMessages.l1_block_range_for_message_to_l2(message_id, l1_rollup_init_block, safe_l1_block)
+
+    l1_start_block = lower_bound.block_number
+    l1_end_block = higher_bound.block_number
+
+    log_debug(
+      "Searching L1 blocks #{l1_start_block}..#{l1_end_block} for message ID #{message_id} " <>
+        "(bounded by message IDs #{inspect(lower_bound.message_id)}..#{inspect(higher_bound.message_id)})"
+    )
+
+    # Discover messages in the L1 block range, filtering to only messages
+    # within the specified ID bounds (exclusive)
+    discover(
+      bridge_address,
+      l1_start_block,
+      l1_end_block,
+      json_rpc_named_arguments,
+      chunk_size,
+      %{higher_than: lower_bound_msg_id, lower_than: upper_bound_msg_id}
+    )
+
+    :ok
+  end
+
   # Discovers and imports L1-to-L2 messages initiated on L1 within a specified block range.
   #
   # This function discovers messages initiated on L1 for transferring information from L1 to L2
@@ -231,16 +433,32 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   # details. For information not present in the events, RPC calls are made to fetch additional
   # transaction details. The discovered messages are then imported into the database.
   #
+  # When `only_messages_in_range` is provided, discovered messages are filtered to only
+  # include those with message IDs strictly between the specified bounds (exclusive).
+  # This is used for targeted discovery of specific missing messages.
+  #
   # ## Parameters
   # - `bridge_address`: The address of the Arbitrum bridge contract used to filter the logs.
   # - `start_block`: The starting block number for log retrieval.
   # - `end_block`: The ending block number for log retrieval.
   # - `json_rpc_named_argument`: Configuration parameters for the JSON RPC connection.
   # - `chunk_size`: The size of chunks for processing RPC calls in batches.
+  # - `only_messages_in_range`: Optional map with `:higher_than` and `:lower_than` message
+  #   ID bounds for filtering. When present, only messages with IDs strictly between these
+  #   bounds (exclusive) are imported. Pass `nil` to import all discovered messages.
   #
   # ## Returns
-  # - amount of discovered messages
-  defp discover(bridge_address, start_block, end_block, json_rpc_named_argument, chunk_size) do
+  # - amount of discovered messages that were attempted to be imported
+  defp discover(
+         bridge_address,
+         start_block,
+         end_block,
+         json_rpc_named_argument,
+         chunk_size,
+         only_messages_in_range \\ nil
+       )
+
+  defp discover(bridge_address, start_block, end_block, json_rpc_named_argument, chunk_size, only_messages_in_range) do
     logs =
       get_logs_for_l1_to_l2_messages(
         start_block,
@@ -249,7 +467,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
         json_rpc_named_argument
       )
 
-    messages = get_messages_from_logs(logs, json_rpc_named_argument, chunk_size)
+    messages = get_messages_from_logs(logs, json_rpc_named_argument, chunk_size, only_messages_in_range)
 
     case messages do
       [] ->
@@ -301,10 +519,16 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   # address and setting the status to `:initiated`, making them ready for database
   # import.
   #
+  # When `only_messages_in_range` is provided, messages are filtered to only include
+  # those with message IDs strictly between the specified bounds (exclusive). This
+  # filtering happens after message construction but before database import.
+  #
   # ## Parameters
   # - `logs`: A list of log entries to be processed.
   # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
   # - `chunk_size`: The size of chunks for batch processing transactions.
+  # - `only_messages_in_range`: Optional map with `:higher_than` and `:lower_than`
+  #   message ID bounds for filtering. Pass `nil` to include all messages.
   #
   # ## Returns
   # - A list of maps describing discovered messages compatible with the database
@@ -312,24 +536,66 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   @spec get_messages_from_logs(
           [%{String.t() => any()}],
           EthereumJSONRPC.json_rpc_named_arguments(),
-          non_neg_integer()
+          non_neg_integer(),
+          %{higher_than: non_neg_integer(), lower_than: non_neg_integer()} | nil
         ) :: [Arbitrum.Message.to_import()]
-  defp get_messages_from_logs(logs, json_rpc_named_arguments, chunk_size)
+  defp get_messages_from_logs(logs, json_rpc_named_arguments, chunk_size, only_messages_in_range)
 
-  defp get_messages_from_logs([], _, _), do: []
+  defp get_messages_from_logs([], _, _, _), do: []
 
-  defp get_messages_from_logs(logs, json_rpc_named_arguments, chunk_size) do
+  defp get_messages_from_logs(logs, json_rpc_named_arguments, chunk_size, only_messages_in_range) do
     {messages, transactions_requests} = parse_logs_for_l1_to_l2_messages(logs)
 
     transactions_to_from =
       Rpc.execute_transactions_requests_and_get_from(transactions_requests, json_rpc_named_arguments, chunk_size)
 
-    Enum.map(messages, fn msg ->
-      Map.merge(msg, %{
-        originator_address: transactions_to_from[msg.originating_transaction_hash],
-        status: :initiated
-      })
-    end)
+    complete_messages =
+      Enum.map(messages, fn msg ->
+        Map.merge(msg, %{
+          originator_address: transactions_to_from[msg.originating_transaction_hash],
+          status: :initiated
+        })
+      end)
+
+    filter_messages_by_id_range(complete_messages, only_messages_in_range)
+  end
+
+  # Filters messages to only include those with message IDs strictly between the
+  # specified bounds (exclusive).
+  #
+  # This filtering is used when discovering specific missing messages to ensure
+  # only the target messages are imported, excluding any messages that already
+  # have origination information in the database.
+  #
+  # When `range` is `nil`, returns all messages without filtering.
+  #
+  # ## Parameters
+  # - `messages`: List of message maps to filter
+  # - `range`: Map with `:higher_than` and `:lower_than` message ID bounds, or `nil`
+  #
+  # ## Returns
+  # - Filtered list of messages with IDs in the exclusive range, or all messages if range is `nil`
+  @spec filter_messages_by_id_range(
+          [Arbitrum.Message.to_import()],
+          %{higher_than: non_neg_integer(), lower_than: non_neg_integer()} | nil
+        ) :: [Arbitrum.Message.to_import()]
+  defp filter_messages_by_id_range(messages, range)
+
+  defp filter_messages_by_id_range(messages, nil), do: messages
+
+  defp filter_messages_by_id_range(messages, %{higher_than: lower_bound, lower_than: upper_bound}) do
+    filtered =
+      Enum.filter(messages, fn msg ->
+        msg.message_id > lower_bound and msg.message_id < upper_bound
+      end)
+
+    if length(filtered) < length(messages) do
+      filtered_out_count = length(messages) - length(filtered)
+
+      log_debug("Filtered out #{filtered_out_count} messages outside ID range #{lower_bound + 1}..#{upper_bound - 1}")
+    end
+
+    filtered
   end
 
   # Parses logs to extract L1-to-L2 message details and prepares RPC requests for transaction data.
@@ -416,6 +682,33 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
       state
       |> Map.get(:completed_tasks, %{})
       |> Map.put(:check_historical, completed?)
+
+    %{state | completed_tasks: updated_completed_tasks}
+  end
+
+  # Marks missing origination discovery completion status in the state.
+  #
+  # ## Parameters
+  # - `state`: The current fetcher state
+  # - `completed?`: Boolean indicating if the task has completed
+  #
+  # ## Returns
+  # - Updated state map with the completion flag set
+  @spec set_missing_origination_completion(
+          %{
+            :completed_tasks => %{:check_missing_origination => boolean(), optional(any()) => any()},
+            optional(any()) => any()
+          },
+          boolean()
+        ) :: %{
+          :completed_tasks => %{:check_missing_origination => boolean(), optional(any()) => any()},
+          optional(any()) => any()
+        }
+  defp set_missing_origination_completion(state, completed?) do
+    updated_completed_tasks =
+      state
+      |> Map.get(:completed_tasks, %{})
+      |> Map.put(:check_missing_origination, completed?)
 
     %{state | completed_tasks: updated_completed_tasks}
   end

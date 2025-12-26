@@ -18,12 +18,17 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
       if the message synchronization process did not start from the Arbitrum rollup's
       inception. This task walks backward from the current block until it reaches the
       rollup initialization block, at which point it stops scheduling itself.
+    - `:check_missing_origination`: Discovers L1-to-L2 messages that have completion
+      information on L2 but are missing origination transaction details from L1. This
+      task works backward from the most recent fully indexed message in configurable
+      ranges, filling gaps where L2 indexing ran ahead of L1 event discovery.
 
     Task scheduling behavior:
     The `:check_new` task runs continuously with a standard recheck interval, while
-    the `:check_historical` task uses a shorter catchup interval (2 seconds) to
-    expedite backfilling. Once the historical task completes (reaches the rollup init
-    block), it is no longer scheduled.
+    the `:check_historical` and `:check_missing_origination` tasks use a shorter
+    catchup interval (2 seconds) to expedite backfilling. Once a catchup task
+    completes (historical reaches the rollup init block, missing origination reaches
+    the earliest discovered message), it is no longer scheduled.
 
     Tasks that fail abnormally within a configurable threshold period will enter a
     cooldown state for 10 minutes to prevent resource exhaustion.
@@ -49,7 +54,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
 
   use Indexer.Fetcher, restart: :permanent
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_warning: 1]
 
   alias EthereumJSONRPC.Arbitrum, as: ArbitrumRpc
   alias Indexer.BufferedTask
@@ -79,10 +84,10 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
   # to be configurable.
   @catchup_recheck_interval :timer.seconds(2)
 
-  @stoppable_tasks [:check_historical]
+  @stoppable_tasks [:check_historical, :check_missing_origination]
 
-  @typep fetcher_task :: :check_new | :check_historical
-  @typep rescheduled_tasks :: :check_historical
+  @typep fetcher_task :: :check_new | :check_historical | :check_missing_origination
+  @typep rescheduled_tasks :: :check_historical | :check_missing_origination
   @typep queued_task :: :init_worker | {non_neg_integer(), fetcher_task()}
   @typep completion_status :: %{rescheduled_tasks() => boolean()}
   @typep fetcher_tasks_data :: %{fetcher_task() => map()}
@@ -106,6 +111,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
 
     config_tracker = Application.get_all_env(:indexer)[__MODULE__]
     recheck_interval = config_tracker[:recheck_interval]
+    missed_message_ids_range = config_tracker[:missed_message_ids_range]
 
     failure_interval_threshold =
       config_tracker[:failure_interval_threshold] || min(20 * recheck_interval, :timer.minutes(10))
@@ -113,7 +119,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     # Configure intervals for each task type
     intervals = %{
       check_new: recheck_interval,
-      check_historical: @catchup_recheck_interval
+      check_historical: @catchup_recheck_interval,
+      check_missing_origination: @catchup_recheck_interval
     }
 
     # Set up initial configuration structure
@@ -127,7 +134,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
       l1_rollup_init_block: l1_rollup_init_block,
       recheck_interval: recheck_interval,
       failure_interval_threshold: failure_interval_threshold,
-      catchup_recheck_interval: @catchup_recheck_interval
+      catchup_recheck_interval: @catchup_recheck_interval,
+      missed_message_ids_range: missed_message_ids_range
     }
 
     # Initial state structure
@@ -135,7 +143,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
       config: initial_config,
       intervals: intervals,
       task_data: %{},
-      completed_tasks: %{check_historical: false}
+      completed_tasks: %{}
     }
 
     buffered_task_init_options =
@@ -182,9 +190,28 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     # Get current timestamp for initial task scheduling
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
-    BufferedTask.buffer(__MODULE__, [{now, :check_new}, {now, :check_historical}], false)
+    # Define all possible tasks with their initial timestamps
+    default_tasks_to_run = [
+      {now, :check_new},
+      {now, :check_historical},
+      {now, :check_missing_origination}
+    ]
 
-    {:ok, configured_state}
+    # Define default completion state for stoppable tasks
+    default_completion_state = %{
+      check_historical: false,
+      check_missing_origination: false
+    }
+
+    # Apply conditional disabling logic
+    {tasks_to_run, completion_state} =
+      {default_tasks_to_run, default_completion_state}
+      |> maybe_disable_check_missing_origination(configured_state)
+
+    BufferedTask.buffer(__MODULE__, tasks_to_run, false)
+
+    updated_state = Map.put(configured_state, :completed_tasks, completion_state)
+    {:ok, updated_state}
   end
 
   # Executes or returns a task back to the queue based on its timeout and failure threshold.
@@ -234,7 +261,8 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
   defp task_runners do
     %{
       check_new: &handle_check_new/1,
-      check_historical: &handle_check_historical/1
+      check_historical: &handle_check_historical/1,
+      check_missing_origination: &handle_check_missing_origination/1
     }
   end
 
@@ -255,10 +283,19 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
       )
 
     l1_start_block = Rpc.get_l1_start_block(state.config.l1_start_block, json_l1_rpc_named_arguments)
+
+    {safe_l1_block, _latest_l1_block} =
+      Rpc.get_safe_and_latest_l1_blocks(json_l1_rpc_named_arguments, state.config.l1_rpc_block_range)
+
     new_msg_to_l2_start_block = DbMessages.l1_block_to_discover_latest_message_to_l2(l1_start_block)
 
-    %{l1_block_to_discover_earlier_messages: historical_msg_to_l2_end_block} =
-      DbMessages.inspect_earliest_discovered_message_to_l2(l1_start_block - 1)
+    %{
+      l1_block_to_discover_earlier_messages: historical_msg_to_l2_end_block,
+      already_discovered_message_id: earliest_discovered_msg_id
+    } = DbMessages.inspect_earliest_discovered_message_to_l2(l1_start_block - 1)
+
+    highest_safe_fully_indexed_msg_id =
+      DbMessages.highest_safe_fully_indexed_message_to_l2(safe_l1_block, nil)
 
     updated_config =
       Map.merge(state.config, %{
@@ -272,10 +309,48 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
       },
       check_historical: %{
         end_block: historical_msg_to_l2_end_block
+      },
+      check_missing_origination: %{
+        end_message_id:
+          if(is_nil(highest_safe_fully_indexed_msg_id), do: nil, else: highest_safe_fully_indexed_msg_id - 1),
+        earliest_discovered_message_id: earliest_discovered_msg_id || 0,
+        safe_l1_block: safe_l1_block
       }
     }
 
     %{state | config: updated_config, task_data: task_data}
+  end
+
+  # Conditionally disables missing origination discovery based on whether there
+  # are any fully indexed messages to work backward from. If `end_message_id` in
+  # the task data is nil, it means no fully indexed messages exist yet, so there's
+  # nothing to backfill and the task is disabled.
+  @spec maybe_disable_check_missing_origination({[queued_task()], completion_status()}, %{
+          :task_data => %{
+            :check_missing_origination => %{
+              :end_message_id => non_neg_integer() | nil,
+              optional(any()) => any()
+            },
+            optional(any()) => any()
+          },
+          optional(any()) => any()
+        }) :: {[queued_task()], completion_status()}
+  defp maybe_disable_check_missing_origination({tasks, completion}, state) do
+    if is_nil(state.task_data.check_missing_origination.end_message_id) do
+      log_info("Missing origination discovery is disabled (no fully indexed messages found)")
+      {delete_task_by_tag(tasks, :check_missing_origination), %{completion | check_missing_origination: true}}
+    else
+      {tasks, completion}
+    end
+  end
+
+  # Helper to remove a task from the tasks list by its tag
+  @spec delete_task_by_tag([queued_task()], fetcher_task()) :: [queued_task()]
+  defp delete_task_by_tag(tasks, tag) do
+    Enum.reject(tasks, fn
+      {_timeout, task_tag} -> task_tag == tag
+      _other -> false
+    end)
   end
 
   # Handles the discovery of new L1-to-L2 messages
@@ -299,6 +374,40 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     if rescheduled?(:check_historical, updated_state) do
       next_run_time = now + updated_state.intervals[:check_historical]
       BufferedTask.buffer(__MODULE__, [{next_run_time, :check_historical}], false)
+    end
+
+    {:ok, updated_state}
+  end
+
+  # Handles the discovery of L1-to-L2 messages that have completion information
+  # but are missing origination transaction details.
+  #
+  # This function works backward from the most recent fully indexed message,
+  # checking ranges of message IDs for those that have been relayed on L2 but
+  # lack L1 origination data. It stops when reaching the earliest discovered
+  # message ID that was captured during initialization.
+  #
+  # The function retrieves the current safe L1 block, then calls the worker
+  # module to perform the actual discovery and import. Based on the worker's
+  # response, it either schedules the next iteration or marks the task as
+  # complete.
+  #
+  # ## Parameters
+  # - `state`: Current fetcher state containing configuration, task data, and
+  #   completion tracking.
+  #
+  # ## Returns
+  # - `{:ok, updated_state}` where the state includes:
+  #   - Updated `task_data.check_missing_origination.end_message_id` cursor
+  #   - Updated `completed_tasks.check_missing_origination` flag
+  defp handle_check_missing_origination(state) do
+    now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
+
+    {:ok, updated_state} = NewMessagesToL2.check_missing_origination(state)
+
+    if rescheduled?(:check_missing_origination, updated_state) do
+      next_run_time = now + updated_state.intervals[:check_missing_origination]
+      BufferedTask.buffer(__MODULE__, [{next_run_time, :check_missing_origination}], false)
     end
 
     {:ok, updated_state}
