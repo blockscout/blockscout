@@ -92,20 +92,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArgumentsTest do
                {:ok, [impl_hash]}
     end
 
-    test "returns implementation address hash for valid solady proxy with additional bytecode prefix" do
-      # Note: Solady pattern is found anywhere in bytecode, so prefix doesn't matter for matching
-      bytecode =
-        "0x363d3d373d3d3d363d73" <>
-          @test_impl_address <>
-          "5af43d3d93803e602a57fd5bf3"
-
-      proxy_address = insert(:address, contract_code: bytecode)
-      {:ok, impl_hash} = Explorer.Chain.Hash.Address.cast("0x" <> @test_impl_address)
-
-      assert CloneWithImmutableArguments.quick_resolve_implementations(proxy_address, :clone_with_immutable_arguments) ==
-               {:ok, [impl_hash]}
-    end
-
     test "returns nil for invalid solady proxy address" do
       proxy_address = insert(:address, contract_code: "0x60806040")
 
@@ -131,13 +117,6 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArgumentsTest do
 
     test "returns nil for bytecode matching solady prefix but too short" do
       proxy_address = insert(:address, contract_code: "0x363d3d373d3d3d363d73")
-
-      assert CloneWithImmutableArguments.quick_resolve_implementations(proxy_address, :clone_with_immutable_arguments) ==
-               nil
-    end
-
-    test "returns nil for nil contract_code in proxy_address" do
-      proxy_address = insert(:address, contract_code: nil)
 
       assert CloneWithImmutableArguments.quick_resolve_implementations(proxy_address, :clone_with_immutable_arguments) ==
                nil

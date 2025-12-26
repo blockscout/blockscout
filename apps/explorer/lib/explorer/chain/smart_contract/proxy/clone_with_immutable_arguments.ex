@@ -10,6 +10,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArguments do
 
   @behaviour ResolverBehaviour
 
+  @impl true
   def quick_resolve_implementations(proxy_address, _proxy_type) do
     case proxy_address.contract_code && proxy_address.contract_code.bytes do
       # wighawag variant: https://github.com/wighawag/clones-with-immutable-args/blob/196f1ecc6485c1bf2d41677fa01d3df4927ff9ce/src/ClonesWithImmutableArgs.sol
