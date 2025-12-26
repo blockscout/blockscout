@@ -52,6 +52,7 @@ defmodule BlockScoutWeb.Chain do
     Withdrawal
   }
 
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
   alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
   alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
@@ -836,9 +837,26 @@ defmodule BlockScoutWeb.Chain do
   @spec param_to_block_number(binary()) :: {:ok, integer()} | {:error, :invalid}
   def param_to_block_number(formatted_number) when is_binary(formatted_number) do
     case Integer.parse(formatted_number) do
-      {number, ""} -> {:ok, number}
+      {number, ""} -> validate_block_number(number)
       _ -> {:error, :invalid}
     end
+  end
+
+  @spec param_to_block_number(integer()) :: {:ok, integer()} | {:error, :invalid}
+  def param_to_block_number(number) when is_integer(number), do: validate_block_number(number)
+
+  defp validate_block_number(number) when is_integer(number) and number >= 0 do
+    if number <= allowed_max_block_number() do
+      {:ok, number}
+    else
+      {:error, :invalid}
+    end
+  end
+
+  defp validate_block_number(_), do: {:error, :invalid}
+
+  defp allowed_max_block_number do
+    BlockNumber.get_max()
   end
 
   @doc """
@@ -1216,7 +1234,10 @@ defmodule BlockScoutWeb.Chain do
 
   def parse_block_hash_or_number_param(number)
       when is_integer(number) do
-    {:ok, :number, number}
+    case param_to_block_number(number) do
+      {:ok, number} -> {:ok, :number, number}
+      {:error, :invalid} -> {:error, {:invalid, :number}}
+    end
   end
 
   @doc """

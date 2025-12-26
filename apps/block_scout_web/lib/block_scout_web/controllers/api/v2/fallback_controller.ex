@@ -108,14 +108,27 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
         :celo_election_reward_type -> @invalid_celo_election_reward_type
       end
 
+    pointer =
+      case entity do
+        :celo_election_reward_type -> "/type"
+        _ -> "/block_hash_or_number_param"
+      end
+
     Logger.error(fn ->
       ["#{message}"]
     end)
 
     conn
     |> put_status(:unprocessable_entity)
-    |> put_view(ApiView)
-    |> render(:message, %{message: message})
+    |> json(%{
+      errors: [
+        %{
+          title: "Invalid value",
+          detail: message,
+          source: %{pointer: pointer}
+        }
+      ]
+    })
   end
 
   def call(conn, {:error, :not_found}) do
