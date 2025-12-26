@@ -255,7 +255,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :block_hash_or_number_param,
       in: :path,
-      schema: %Schema{anyOf: [%Schema{type: :integer}, FullHash]},
+      schema: %Schema{anyOf: [%Schema{type: :integer, minimum: 0}, FullHash]},
       required: true,
       description: "Block hash or number in the path"
     }
