@@ -259,6 +259,20 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
              } = json_response(request_2, 422)
     end
 
+    test "return 422 when block number exceeds allowed range", %{conn: conn} do
+      request = get(conn, "/api/v2/blocks/3000000000")
+
+      assert %{
+               "errors" => [
+                 %{
+                   "title" => "Invalid value",
+                   "detail" => "Invalid number",
+                   "source" => %{"pointer" => "/block_hash_or_number_param"}
+                 }
+               ]
+             } = json_response(request, 422)
+    end
+
     test "return 404 on non existing block", %{conn: conn} do
       block = build(:block)
 
