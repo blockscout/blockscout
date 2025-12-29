@@ -42,7 +42,7 @@ queue_target = ConfigHelper.parse_integer_env_var("DATABASE_QUEUE_TARGET", 50)
 
 # Configures the database
 config :explorer, Explorer.Repo,
-  url: System.get_env("DATABASE_URL"),
+  url: ConfigHelper.parse_url_env_var("DATABASE_URL"),
   pool_size: pool_size,
   ssl: ExplorerConfigHelper.ssl_enabled?(),
   queue_target: queue_target
@@ -107,7 +107,7 @@ for repo <- [
       Explorer.Repo.Neon
     ] do
   config :explorer, repo,
-    url: System.get_env("DATABASE_URL"),
+    url: ConfigHelper.parse_url_env_var("DATABASE_URL"),
     pool_size: 1,
     ssl: ExplorerConfigHelper.ssl_enabled?()
 end

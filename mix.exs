@@ -38,7 +38,12 @@ defmodule BlockScout.Mixfile do
 
   defp copy_prod_runtime_config(%Mix.Release{path: path} = release) do
     File.mkdir_p!(Path.join([path, "config", "runtime"]))
-    File.cp!(Path.join(["config", "runtime", "prod.exs"]), Path.join([path, "config", "runtime", "prod.exs"]))
+
+    File.cp!(
+      Path.join(["config", "runtime", "prod.exs"]),
+      Path.join([path, "config", "runtime", "prod.exs"])
+    )
+
     File.mkdir_p!(Path.join([path, "apps", "explorer", "config", "prod"]))
 
     File.cp_r!(
@@ -47,7 +52,11 @@ defmodule BlockScout.Mixfile do
     )
 
     File.mkdir_p!(Path.join([path, "apps", "indexer", "config", "prod"]))
-    File.cp_r!(Path.join(["apps", "indexer", "config", "prod"]), Path.join([path, "apps", "indexer", "config", "prod"]))
+
+    File.cp_r!(
+      Path.join(["apps", "indexer", "config", "prod"]),
+      Path.join([path, "apps", "indexer", "config", "prod"])
+    )
 
     release
   end

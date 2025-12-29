@@ -4,7 +4,6 @@ defmodule ConfigHelper do
   import Bitwise
   alias Explorer.Market.Source
   alias Indexer.Transform.Blocks
-  alias Utils.ConfigHelper
 
   def repos do
     base_repos = [Explorer.Repo, Explorer.Repo.Account]
@@ -165,13 +164,24 @@ defmodule ConfigHelper do
         nil
 
       value ->
-        case ConfigHelper.parse_time_value(value) do
+        case parse_time_value(value) do
           :error ->
             raise "Invalid time format in environment variable #{env_var}: #{value}"
 
           time ->
             time
         end
+    end
+  end
+
+  @spec parse_time_value(String.t()) :: non_neg_integer() | :error
+  defp parse_time_value(value) do
+    case value |> String.downcase() |> Integer.parse() do
+      {milliseconds, "ms"} -> milliseconds
+      {hours, "h"} -> :timer.hours(hours)
+      {minutes, "m"} -> :timer.minutes(minutes)
+      {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
+      _ -> :error
     end
   end
 
@@ -230,16 +240,6 @@ defmodule ConfigHelper do
     else
       nil
     end
-  end
-
-  def safe_get_env(env_var, default_value) do
-    env_var
-    |> System.get_env(default_value)
-    |> case do
-      "" -> default_value
-      value -> value
-    end
-    |> to_string()
   end
 
   @spec parse_bool_env_var(String.t(), String.t()) :: boolean()
@@ -387,7 +387,6 @@ defmodule ConfigHelper do
     end
   end
 
-  @spec parse_url_env_var(String.t(), boolean()) :: String.t() | nil
   def parse_url_env_var(env_var, default_value \\ nil, trailing_slash_needed? \\ false) do
     with url when not is_nil(url) <- safe_get_env(env_var, default_value),
          url <- String.trim_trailing(url, "/"),
@@ -400,10 +399,17 @@ defmodule ConfigHelper do
 
       false ->
         default_value
-
-      nil ->
-        nil
     end
+  end
+
+  def safe_get_env(env_var, default_value) do
+    env_var
+    |> System.get_env(default_value)
+    |> case do
+      "" -> default_value
+      value -> value
+    end
+    |> to_string()
   end
 
   @supported_chain_identities %{

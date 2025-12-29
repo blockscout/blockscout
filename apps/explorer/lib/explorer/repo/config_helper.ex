@@ -7,6 +7,8 @@ defmodule Explorer.Repo.ConfigHelper do
   The priority of vars is postgrex environment vars < DATABASE_URL components, with values being overwritten by higher priority.
   """
 
+  alias Utils.ConfigHelper, as: UtilsConfigHelper
+
   # https://hexdocs.pm/postgrex/Postgrex.html#start_link/1-options
   @postgrex_env_vars [
     username: "PGUSER",
@@ -26,15 +28,23 @@ defmodule Explorer.Repo.ConfigHelper do
     |> Keyword.merge(extract_parameters(url))
   end
 
-  def get_account_db_url, do: System.get_env("ACCOUNT_DATABASE_URL") || System.get_env("DATABASE_URL")
+  def get_account_db_url,
+    do:
+      UtilsConfigHelper.parse_url_env_var("ACCOUNT_DATABASE_URL") || UtilsConfigHelper.parse_url_env_var("DATABASE_URL")
 
-  def get_suave_db_url, do: System.get_env("SUAVE_DATABASE_URL") || System.get_env("DATABASE_URL")
+  def get_suave_db_url,
+    do: UtilsConfigHelper.parse_url_env_var("SUAVE_DATABASE_URL") || UtilsConfigHelper.parse_url_env_var("DATABASE_URL")
 
-  def get_api_db_url, do: System.get_env("DATABASE_READ_ONLY_API_URL") || System.get_env("DATABASE_URL")
+  def get_api_db_url,
+    do:
+      UtilsConfigHelper.parse_url_env_var("DATABASE_READ_ONLY_API_URL") ||
+        UtilsConfigHelper.parse_url_env_var("DATABASE_URL")
 
-  def get_mud_db_url, do: System.get_env("MUD_DATABASE_URL") || System.get_env("DATABASE_URL")
+  def get_mud_db_url,
+    do: UtilsConfigHelper.parse_url_env_var("MUD_DATABASE_URL") || UtilsConfigHelper.parse_url_env_var("DATABASE_URL")
 
-  def get_event_notification_db_url, do: System.get_env("DATABASE_EVENT_URL") || System.get_env("DATABASE_URL")
+  def get_event_notification_db_url,
+    do: UtilsConfigHelper.parse_url_env_var("DATABASE_EVENT_URL") || UtilsConfigHelper.parse_url_env_var("DATABASE_URL")
 
   def init_repo_module(module, opts) do
     db_url = Application.get_env(:explorer, module)[:url]
