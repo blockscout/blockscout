@@ -138,6 +138,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/config" do
+      get("/backend", V2.ConfigController, :backend)
       get("/backend-version", V2.ConfigController, :backend_version)
       get("/csv-export", V2.ConfigController, :csv_export)
       get("/indexer", V2.ConfigController, :indexer)
