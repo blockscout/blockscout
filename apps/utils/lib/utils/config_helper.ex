@@ -29,11 +29,34 @@ defmodule Utils.ConfigHelper do
       "" -> default_value
       value -> value
     end
-    |> to_string()
+    |> then(fn
+      nil -> ""
+      value -> to_string(value)
+    end)
   end
 
   @doc """
-  Safely gets URL - type environment variable.
+  Parses an URL from an environment variable with optional trailing slash handling.
+
+  Retrieves the URL from the specified environment variable, normalizes it by
+  trimming any trailing slash, and optionally appends a trailing slash based
+  on the `trailing_slash_needed?` parameter. If the environment variable is
+  not set or is empty, returns the default value or nil.
+
+  ## Parameters
+  - `env_var`: The name of the environment variable containing the URL.
+  - `default_value`: The value to return if the environment variable is not
+    set or is empty (default: nil).
+  - `trailing_slash_needed?`: Whether to append a trailing slash to non-empty
+    URLs (default: false).
+
+  ## Returns
+  - A normalized URL string (with or without trailing slash based on the
+    `trailing_slash_needed?` parameter) if the environment variable contains
+    a non-empty value.
+  - The `default_value` if the environment variable is not set or is empty.
+  - nil if the environment variable is not set and no default value is
+    provided.
   """
   @spec parse_url_env_var(String.t(), String.t() | nil, boolean()) :: String.t() | nil
   def parse_url_env_var(env_var, default_value \\ nil, trailing_slash_needed? \\ false) do
