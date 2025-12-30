@@ -409,7 +409,10 @@ defmodule ConfigHelper do
       "" -> default_value
       value -> value
     end
-    |> to_string()
+    |> then(fn
+      nil -> ""
+      value -> to_string(value)
+    end)
   end
 
   @supported_chain_identities %{
