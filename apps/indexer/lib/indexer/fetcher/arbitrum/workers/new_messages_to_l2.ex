@@ -243,6 +243,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   sequentially, with L1 block bounds recalculated after each import to use
   newly discovered messages as range delimiters.
 
+  Note: When consecutive messages are missing (no fully indexed message between
+  them), processing one may also import others in the same L1 block range. This
+  results in some messages being imported multiple times, which is harmless due
+  to Chain.import's upsert behavior.
+
   The cursor advances by the configured range size with each iteration. The
   task completes and stops when the next iteration's range would extend below
   the earliest discovered message ID captured during initialization.
@@ -329,13 +334,22 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
         "Found #{length(missing_origination_message_ids)} messages with missing origination in range #{start_message_id}..#{end_message_id}"
       )
 
-      # Process each missing message (already in descending order from highest to lowest ID)
+      # Process each missing message (already in descending order from highest to lowest ID).
+      #
+      # Note on duplicate imports: When consecutive messages are missing (no fully indexed
+      # message between them), processing the higher-ID message may also discover and import
+      # lower-ID messages within the same L1 block range. For example:
+      #   - Messages A(indexed), B(missing), C(missing), D(indexed)
+      #   - Processing C: L1 range spans A..D, both B and C are discovered and imported
+      #   - Processing B: B is imported again (already has origination from previous step)
+      #
+      # This is expected and harmless - Chain.import performs upserts, so reimporting
+      # the same message data is idempotent. Duplicate imports only occur with consecutive
+      # missing messages; alternating indexed/missing patterns naturally prevent this.
       missing_origination_message_ids
       |> Enum.each(fn message_id ->
         discover_and_import_single_missing_message(
           message_id,
-          start_message_id,
-          end_message_id,
           l1_rollup_init_block,
           safe_l1_block,
           bridge_address,
@@ -352,9 +366,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
     should_complete = next_end_message_id < earliest_discovered_message_id
 
     if should_complete do
-      log_info(
-        "Missing origination discovery complete: next range would extend below earliest discovered message ID #{earliest_discovered_message_id}"
-      )
+      log_info("Missing origination discovery complete")
     end
 
     updated_state =
@@ -375,10 +387,19 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   # It then fetches L1 logs within that range and filters to find only the
   # target message, excluding any already-indexed messages.
   #
+  # The filter bounds are derived from the discovered boundary messages:
+  # - `lower_bound.message_id`: May be nil if no preceding message exists; -1 is
+  #   used as fallback (effectively "no lower bound" since all message IDs >= 0)
+  # - `higher_bound.message_id`: Guaranteed to be non-nil because:
+  #   1. check_missing_origination only runs when end_message_id is not nil
+  #   2. end_message_id = highest_safe_fully_indexed_msg_id - 1
+  #   3. highest_safe_fully_indexed_msg_id has BOTH origination AND completion
+  #   4. All missing messages have IDs < highest_safe_fully_indexed_msg_id
+  #   5. l1_block_of_closest_following_message_to_l2 will always find at least
+  #      highest_safe_fully_indexed_msg_id (or something closer)
+  #
   # ## Parameters
   # - `message_id`: The ID of the message to discover origination for
-  # - `lower_bound_msg_id`: Lower message ID bound for filtering (exclusive)
-  # - `upper_bound_msg_id`: Upper message ID bound for filtering (exclusive)
   # - `l1_rollup_init_block`: Fallback minimum L1 block if no preceding message
   # - `safe_l1_block`: Fallback maximum L1 block if no following message
   # - `bridge_address`: L1 bridge contract address for log filtering
@@ -389,8 +410,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   # - `:ok` after attempting to discover and import the message
   defp discover_and_import_single_missing_message(
          message_id,
-         lower_bound_msg_id,
-         upper_bound_msg_id,
          l1_rollup_init_block,
          safe_l1_block,
          bridge_address,
@@ -406,20 +425,29 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
     l1_start_block = lower_bound.block_number
     l1_end_block = higher_bound.block_number
 
-    log_debug(
+    log_info(
       "Searching L1 blocks #{l1_start_block}..#{l1_end_block} for message ID #{message_id} " <>
         "(bounded by message IDs #{inspect(lower_bound.message_id)}..#{inspect(higher_bound.message_id)})"
     )
 
+    # Build filter range from discovered bounds.
+    # - lower_bound.message_id may be nil if no preceding message exists; use -1
+    #   as fallback since message IDs are non-negative, so (msg_id > -1) is always true
+    # - higher_bound.message_id is guaranteed non-nil (see function documentation above)
+    filter_range = %{
+      higher_than: lower_bound.message_id || -1,
+      lower_than: higher_bound.message_id
+    }
+
     # Discover messages in the L1 block range, filtering to only messages
-    # within the specified ID bounds (exclusive)
+    # within the discovered bounds (exclusive)
     discover(
       bridge_address,
       l1_start_block,
       l1_end_block,
       json_rpc_named_arguments,
       chunk_size,
-      %{higher_than: lower_bound_msg_id, lower_than: upper_bound_msg_id}
+      filter_range
     )
 
     :ok
@@ -571,13 +599,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   #
   # ## Parameters
   # - `messages`: List of message maps to filter
-  # - `range`: Map with `:higher_than` and `:lower_than` message ID bounds, or `nil`
+  # - `range`: Map with `:higher_than` and `:lower_than` message ID bounds, or `nil`.
+  #   Note: `higher_than` can be -1 when no preceding message exists (acts as "no lower bound"
+  #   since all message IDs are non-negative).
   #
   # ## Returns
   # - Filtered list of messages with IDs in the exclusive range, or all messages if range is `nil`
   @spec filter_messages_by_id_range(
           [Arbitrum.Message.to_import()],
-          %{higher_than: non_neg_integer(), lower_than: non_neg_integer()} | nil
+          %{higher_than: integer(), lower_than: non_neg_integer()} | nil
         ) :: [Arbitrum.Message.to_import()]
   defp filter_messages_by_id_range(messages, range)
 
