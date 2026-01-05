@@ -44,7 +44,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "is_verified_via_admin_panel" => search_result.is_verified_via_admin_panel,
       "certified" => search_result.certified || false,
       "priority" => search_result.priority,
-      "reputation" => search_result.reputation
+      "reputation" => search_result.reputation,
+      "is_smart_contract_address" => search_result.is_smart_contract_address
     }
   end
 
@@ -58,7 +59,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "ens_info" => search_result[:ens_info],
       "certified" => if(search_result.certified, do: search_result.certified, else: false),
       "priority" => search_result.priority,
-      "reputation" => search_result.reputation
+      "reputation" => search_result.reputation,
+      "is_smart_contract_address" => search_result.is_smart_contract_address
     }
   end
 
@@ -68,12 +70,13 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "type" => search_result.type,
       "name" => search_result.name,
       "address_hash" => search_result.address_hash,
-      "url" => address_path(Endpoint, :show, search_result.address_hash),
+      "url" => search_result.address_hash && address_path(Endpoint, :show, search_result.address_hash),
       "is_smart_contract_verified" => search_result.verified,
       "ens_info" => search_result[:ens_info],
       "certified" => if(search_result.certified, do: search_result.certified, else: false),
       "priority" => search_result.priority,
-      "reputation" => search_result.reputation
+      "reputation" => search_result.reputation,
+      "is_smart_contract_address" => search_result.is_smart_contract_address
     }
   end
 
@@ -88,7 +91,8 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "certified" => if(search_result.certified, do: search_result.certified, else: false),
       "priority" => search_result.priority,
       "metadata" => search_result.metadata,
-      "reputation" => search_result.reputation
+      "reputation" => search_result.reputation,
+      "is_smart_contract_address" => search_result.is_smart_contract_address
     }
   end
 
@@ -169,8 +173,12 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     %{"type" => "address", "parameter" => Address.checksum(item.hash)}
   end
 
-  defp redirect_search_results(%{address_hash: address_hash}) do
+  defp redirect_search_results(%{address_hash: address_hash}) when not is_nil(address_hash) do
     %{"type" => "address", "parameter" => address_hash}
+  end
+
+  defp redirect_search_results(%{name: name, protocol: _protocol}) do
+    %{"type" => "ens_domain", "parameter" => name}
   end
 
   defp redirect_search_results(%Block{} = item) do

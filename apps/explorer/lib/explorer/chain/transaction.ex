@@ -2412,7 +2412,7 @@ defmodule Explorer.Chain.Transaction do
   @doc """
     Return method id used in transaction
   """
-  def method_id(%__MODULE__{
+  def method_id(%{
         created_contract_address_hash: nil,
         input: %{bytes: <<method_id::binary-size(4), _::binary>>}
       }),

@@ -64,7 +64,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
-  alias Explorer.Utility.{MissingBlockRange, MissingRangesManipulator}
+  alias Explorer.Utility.MissingBlockRange
 
   @default_missing_ranges_batch_size 100_000
   @past_check_interval 10
@@ -187,7 +187,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
     ranges
     |> Enum.reverse()
     |> Enum.flat_map(fn f..l//_ -> Chain.missing_block_number_ranges(l..f) end)
-    |> MissingRangesManipulator.save_batch()
+    |> MissingBlockRange.save_batch()
 
     if not is_nil(max_fetched_block_number) do
       schedule_future_check()
@@ -275,7 +275,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
       %{min: nil, max: nil} ->
         max_number = last_block()
         {min_number, first_batch} = fetch_missing_ranges_batch(max_number, false)
-        MissingRangesManipulator.save_batch(first_batch)
+        MissingBlockRange.save_batch(first_batch)
         {min_number, max_number}
 
       %{min: min, max: max} ->
@@ -297,7 +297,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   def handle_info(:update_future, %{max_fetched_block_number: max_number} = state) do
     if continue_future_updating?(max_number) do
       {new_max_number, batch} = fetch_missing_ranges_batch(max_number, true)
-      MissingRangesManipulator.save_batch(batch)
+      MissingBlockRange.save_batch(batch)
       schedule_future_check()
       {:noreply, %{state | max_fetched_block_number: new_max_number}}
     else
@@ -321,7 +321,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   def handle_info(:update_past, %{min_fetched_block_number: min_number} = state) do
     if min_number > first_block() do
       {new_min_number, batch} = fetch_missing_ranges_batch(min_number, false)
-      MissingRangesManipulator.save_batch(batch)
+      MissingBlockRange.save_batch(batch)
       schedule_past_check(state.first_check_completed?)
       {:noreply, %{state | min_fetched_block_number: new_min_number}}
     else
