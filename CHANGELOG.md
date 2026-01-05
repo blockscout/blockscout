@@ -1,5 +1,13 @@
 # Changelog
 
+## 9.3.2
+
+### 🐛 Bug Fixes
+
+- Handle_continue bad return value ([#13769](https://github.com/blockscout/blockscout/issues/13769))
+- Make `find_history_and_token_fetchers` public ([#13768](https://github.com/blockscout/blockscout/issues/13768))
+- Resolve TLS version issue on application startup ([#13767](https://github.com/blockscout/blockscout/issues/13767))
+
 ## 9.3.1
 
 ### 🐛 Bug Fixes
