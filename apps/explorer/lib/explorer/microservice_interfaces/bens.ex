@@ -83,7 +83,8 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     Request for ENS name via GET {{baseUrl}}/api/v1/:chainId/domains:lookup
   """
   @spec ens_domain_name_lookup(binary()) ::
-          nil | %{address_hash: binary(), expiry_date: any(), name: any(), names_count: integer(), protocol: any()}
+          nil
+          | %{address_hash: binary() | nil, expiry_date: any(), name: any(), names_count: integer(), protocol: any()}
   def ens_domain_name_lookup(domain) do
     domain |> ens_domain_lookup() |> parse_lookup_response()
   end
@@ -177,20 +178,21 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
                 %{
                   "name" => name,
                   "expiry_date" => expiry_date,
-                  "resolved_address" => %{"hash" => address_hash_string},
+                  "resolved_address" => resolved_address,
                   "protocol" => protocol
                 }
                 | _other
               ] = items
           }}
        ) do
-    {:ok, hash} = Chain.string_to_address_hash(address_hash_string)
+    hash_or_nil = resolved_address["hash"] && Chain.string_to_address_hash_or_nil(resolved_address["hash"])
+    address_hash = hash_or_nil && Address.checksum(hash_or_nil)
 
     %{
       name: name,
       expiry_date: expiry_date,
       names_count: Enum.count(items),
-      address_hash: Address.checksum(hash),
+      address_hash: address_hash,
       protocol: protocol
     }
   end

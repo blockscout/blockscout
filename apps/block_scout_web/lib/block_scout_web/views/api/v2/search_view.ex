@@ -70,7 +70,7 @@ defmodule BlockScoutWeb.API.V2.SearchView do
       "type" => search_result.type,
       "name" => search_result.name,
       "address_hash" => search_result.address_hash,
-      "url" => address_path(Endpoint, :show, search_result.address_hash),
+      "url" => search_result.address_hash && address_path(Endpoint, :show, search_result.address_hash),
       "is_smart_contract_verified" => search_result.verified,
       "ens_info" => search_result[:ens_info],
       "certified" => if(search_result.certified, do: search_result.certified, else: false),
@@ -173,8 +173,12 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     %{"type" => "address", "parameter" => Address.checksum(item.hash)}
   end
 
-  defp redirect_search_results(%{address_hash: address_hash}) do
+  defp redirect_search_results(%{address_hash: address_hash}) when not is_nil(address_hash) do
     %{"type" => "address", "parameter" => address_hash}
+  end
+
+  defp redirect_search_results(%{name: name, protocol: _protocol}) do
+    %{"type" => "ens_domain", "parameter" => name}
   end
 
   defp redirect_search_results(%Block{} = item) do

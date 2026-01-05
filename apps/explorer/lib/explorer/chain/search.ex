@@ -968,6 +968,11 @@ defmodule Explorer.Chain.Search do
 
   defp search_ens_name(search_query, options) do
     case search_ens_name_in_bens(search_query) do
+      {ens_result, nil} ->
+        [
+          merge_address_search_result_with_ens_info(nil, ens_result)
+        ]
+
       {ens_result, address_hash} ->
         [
           address_hash
@@ -1018,23 +1023,32 @@ defmodule Explorer.Chain.Search do
   @spec search_ens_name_in_bens(binary()) ::
           nil
           | {%{
-               address_hash: binary(),
+               address_hash: binary() | nil,
                expiry_date: any(),
                name: any(),
                names_count: non_neg_integer(),
                protocol: any()
-             }, Hash.Address.t()}
+             }, Hash.Address.t() | nil}
   def search_ens_name_in_bens(search_query) do
     trimmed_query = String.trim(search_query)
 
     with true <- Regex.match?(~r/\w+\.\w+/, trimmed_query),
-         %{address_hash: address_hash_string} = result <- ens_domain_name_lookup(search_query),
-         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string) do
+         %{address_hash: address_hash_string_or_nil} = result <- ens_domain_name_lookup(search_query),
+         address_hash <- address_hash_string_or_nil && Chain.string_to_address_hash_or_nil(address_hash_string_or_nil) do
       {result, address_hash}
     else
       _ ->
         nil
     end
+  end
+
+  defp merge_address_search_result_with_ens_info(nil, ens_info) do
+    search_fields()
+    |> Map.put(:address_hash, nil)
+    |> Map.put(:type, "ens_domain")
+    |> Map.put(:ens_info, ens_info)
+    |> Map.put(:timestamp, nil)
+    |> Map.put(:priority, 4)
   end
 
   defp merge_address_search_result_with_ens_info([], ens_info) do
