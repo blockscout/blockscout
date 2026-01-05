@@ -191,11 +191,11 @@ defmodule EthereumJSONRPC.HTTP do
   """
   @spec standardize_response(map()) :: %{
           :id => nil | non_neg_integer(),
-          :jsonrpc => binary(),
+          optional(:jsonrpc) => binary(),
           optional(:error) => %{:code => integer(), :message => binary(), optional(:data) => any()},
           optional(:result) => any()
         }
-  def standardize_response(%{"jsonrpc" => "2.0" = jsonrpc} = unstandardized) do
+  def standardize_response(unstandardized) do
     # Avoid extracting `id` directly in the function declaration. Some endpoints
     # do not adhere to standards and may omit the `id` in responses related to
     # error scenarios. Consequently, the function call would fail during input
@@ -204,7 +204,7 @@ defmodule EthereumJSONRPC.HTTP do
     # Nethermind return string ids
     id = sanitize_id(unstandardized["id"])
 
-    standardized = %{jsonrpc: jsonrpc, id: id}
+    standardized = %{jsonrpc: unstandardized["jsonrpc"], id: id}
 
     case {id, unstandardized} do
       {_id, %{"result" => _, "error" => _}} ->

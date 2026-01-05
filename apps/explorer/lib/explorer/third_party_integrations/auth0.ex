@@ -106,7 +106,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       {:ok, []} ->
         Internal.send_otp(email, ip)
 
-      {:ok, users} when is_list(users) and length(users) > 0 ->
+      {:ok, users} when is_list(users) and users !== [] ->
         {:error, "Account with this email already exists"}
 
       error ->

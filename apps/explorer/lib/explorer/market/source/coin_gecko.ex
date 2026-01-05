@@ -30,7 +30,7 @@ defmodule Explorer.Market.Source.CoinGecko do
       {:error, _reason} = error ->
         error
 
-      tokens_to_fetch when is_list(tokens_to_fetch) and length(tokens_to_fetch) > 0 ->
+      tokens_to_fetch when is_list(tokens_to_fetch) and tokens_to_fetch !== [] ->
         fetch_tokens(tokens_to_fetch, batch_size)
 
       _ ->

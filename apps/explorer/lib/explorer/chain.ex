@@ -1705,7 +1705,7 @@ defmodule Explorer.Chain do
 
   """
   @spec max_consensus_block_number(Keyword.t()) :: {:ok, Block.block_number()} | {:error, :not_found}
-  def max_consensus_block_number(options \\ []) do
+  def max_consensus_block_number(options \\ [api?: true]) do
     Block
     |> where(consensus: true)
     |> select_repo(options).aggregate(:max, :number)
@@ -3808,7 +3808,9 @@ defmodule Explorer.Chain do
     do: apply_filter_by_method_id_to_transactions(query, [filter])
 
   defp map_name_or_method_id_to_method_id(string) when is_binary(string) do
-    if id = @method_name_to_id_map[string] do
+    id = @method_name_to_id_map[string]
+
+    if id do
       decode_method_id(id)
     else
       trimmed =

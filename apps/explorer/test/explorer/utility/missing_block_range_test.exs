@@ -441,4 +441,44 @@ defmodule Explorer.Utility.MissingBlockRangeTest do
              end)
     end
   end
+
+  describe "clear_batch/1" do
+    setup do
+      # Ensure the database is clean before each test
+      Repo.delete_all(MissingBlockRange)
+
+      on_exit(fn ->
+        # Clean up the database after each test
+        Repo.delete_all(MissingBlockRange)
+      end)
+
+      :ok
+    end
+
+    test "correctly clears the batch" do
+      Repo.insert!(%MissingBlockRange{from_number: 112, to_number: 86, priority: 1})
+      Repo.insert!(%MissingBlockRange{from_number: 45, to_number: 30, priority: 1})
+      Repo.insert!(%MissingBlockRange{from_number: 25, to_number: 20, priority: nil})
+
+      batch = [95..80//-1, 60..58//-1, 42..35//-1, 30..19//-1]
+
+      MissingBlockRange.clear_batch(batch)
+
+      ranges = Repo.all(MissingBlockRange)
+
+      assert length(ranges) == 3
+
+      assert Enum.any?(ranges, fn range ->
+               range.from_number == 112 and range.to_number == 96 and range.priority == 1
+             end)
+
+      assert Enum.any?(ranges, fn range ->
+               range.from_number == 45 and range.to_number == 43 and range.priority == 1
+             end)
+
+      assert Enum.any?(ranges, fn range ->
+               range.from_number == 34 and range.to_number == 31 and range.priority == 1
+             end)
+    end
+  end
 end

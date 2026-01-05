@@ -80,7 +80,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
 
     lifecycle_transactions = Db.lifecycle_unfinalized_transactions(safe_block)
 
-    if length(lifecycle_transactions) > 0 do
+    unless Enum.empty?(lifecycle_transactions) do
       log_info("Discovered #{length(lifecycle_transactions)} lifecycle transaction to be finalized")
 
       updated_lifecycle_transactions =
