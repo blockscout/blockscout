@@ -321,7 +321,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
         } = state
       ) do
     # Calculate the message ID range to check: [start_message_id, end_message_id]
-    start_message_id = max(0, end_message_id - missed_message_ids_range + 1)
+    # Clamp the range to at least 1 to ensure start_message_id <= end_message_id
+    normalized_range = max(1, missed_message_ids_range)
+    start_message_id = max(0, end_message_id - normalized_range + 1)
 
     log_info("Checking message ID range #{start_message_id}..#{end_message_id} for missing origination information")
 
