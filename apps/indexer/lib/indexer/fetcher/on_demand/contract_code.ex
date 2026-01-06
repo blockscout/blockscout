@@ -192,6 +192,17 @@ defmodule Indexer.Fetcher.OnDemand.ContractCode do
     {:reply, result, state}
   end
 
+  @impl true
+  def handle_info({:DOWN, _ref, :process, _pid, :normal}, state) do
+    {:noreply, state}
+  end
+
+  def handle_info(message, state) do
+    Logger.warning("Unexpected message received in handle_info/2: #{inspect(message)}")
+
+    {:noreply, state}
+  end
+
   # An initial threshold to fetch smart-contract bytecode on-demand
   @spec update_threshold_ms() :: non_neg_integer()
   defp update_threshold_ms do
