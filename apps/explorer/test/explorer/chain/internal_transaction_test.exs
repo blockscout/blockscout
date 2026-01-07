@@ -1047,7 +1047,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
     #       transaction: transaction,
     #       block_number: transaction.block_number,
     #       block_hash: block_non_consensus.hash,
-    #       block_index: 1,
     #       transaction_index: transaction.index
     #     )
 
@@ -1057,7 +1056,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
     #         transaction: transaction,
     #         block_number: transaction.block_number,
     #         block_hash: block_consensus.hash,
-    #         block_index: 2,
     #         transaction_index: transaction.index
     #       )
 

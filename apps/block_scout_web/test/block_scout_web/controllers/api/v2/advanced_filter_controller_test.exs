@@ -278,8 +278,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
           block_hash: transaction.block_hash,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          index: i,
-          block_index: i
+          index: i
         )
       end
 
@@ -325,8 +324,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
             block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
-            index: i,
-            block_index: i
+            index: i
           )
         else
           transaction =
@@ -339,8 +337,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
             block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
-            index: i,
-            block_index: i
+            index: i
           )
         end
       end
@@ -390,8 +387,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
             created_contract_address_hash: address.hash,
             to_address_hash: nil,
             to_address: nil,
-            index: i,
-            block_index: i
+            index: i
           )
         else
           transaction =
@@ -408,8 +404,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
             block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
-            index: i,
-            block_index: i
+            index: i
           )
         end
       end
@@ -1013,7 +1008,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         index: 51,
-        block_index: 51,
         from_address: from_address,
         from_address_hash: from_address.hash,
         to_address: to_address,
@@ -1040,7 +1034,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           index: i + 1,
-          block_index: i + 1,
           from_address: from_address,
           from_address_hash: from_address.hash
         )
@@ -1061,7 +1054,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           index: i + 1,
-          block_index: i + 1,
           to_address: to_address,
           to_address_hash: to_address.hash
         )
