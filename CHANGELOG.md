@@ -1,10 +1,18 @@
 # Changelog
 
+## 9.3.5
+
+### 🐛 Bug Fixes
+
+- Fix block reindex condition in ContractCreator on-demand ([#13831](https://github.com/blockscout/blockscout/issues/13831))
+
+
 ## 9.3.4
 
 ### ⚡ Performance
 
 - Fix /token-transfers timeout when filtering scam tokens enabled ([#13973](https://github.com/blockscout/blockscout/pull/13973))
+
 
 ## 9.3.3
 
