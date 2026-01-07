@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2]
 
   alias EthereumJSONRPC.Nonce
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Block}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Utility.MissingBlockRange
 
@@ -97,8 +97,10 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
     :ets.insert(@table_name, {@pending_blocks_cache_key, updated_pending_blocks})
 
-    # Change `1` to specific label when `priority` field becomes `Ecto.Enum`.
-    MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], 1)
+    unless Block.indexed?(contract_creation_block_number) do
+      # Change `1` to specific label when `priority` field becomes `Ecto.Enum`.
+      MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], 1)
+    end
 
     :ok
   end

@@ -123,7 +123,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
       now = Timex.now()
 
       Enum.each(0..4, fn i ->
-        insert(:block, number: i, timestamp: Timex.shift(now, minutes: -i))
+        insert(:block, number: i, refetch_needed: i == 3, timestamp: Timex.shift(now, minutes: -i))
       end)
 
       Explorer.Chain.Cache.BlockNumber.get_max()
@@ -161,7 +161,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
     now = Timex.now()
 
     Enum.each(0..4, fn i ->
-      insert(:block, number: i, timestamp: Timex.shift(now, minutes: -i))
+      insert(:block, number: i, refetch_needed: i == 2, timestamp: Timex.shift(now, minutes: -i))
     end)
 
     Explorer.Chain.Cache.BlockNumber.get_max()
@@ -198,7 +198,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
     now = Timex.now()
 
     Enum.each(0..4, fn i ->
-      insert(:block, number: i, timestamp: Timex.shift(now, minutes: -i))
+      insert(:block, number: i, refetch_needed: i == 1, timestamp: Timex.shift(now, minutes: -i))
     end)
 
     Explorer.Chain.Cache.BlockNumber.get_max()
