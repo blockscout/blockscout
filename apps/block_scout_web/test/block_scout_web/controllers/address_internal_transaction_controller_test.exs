@@ -56,8 +56,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_index: 1
+          block_hash: transaction.block_hash
         )
 
       to_internal_transaction =
@@ -67,8 +66,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           index: 2,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_index: 2
+          block_hash: transaction.block_hash
         )
 
       path = address_internal_transaction_path(conn, :index, Address.checksum(address), %{"type" => "JSON"})
@@ -99,8 +97,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_index: 1
+          block_hash: transaction.block_hash
         )
 
       to_internal_transaction =
@@ -110,8 +107,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           index: 2,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_index: 2
+          block_hash: transaction.block_hash
         )
 
       path =
@@ -150,8 +146,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_index: 1
+          block_hash: transaction.block_hash
         )
 
       to_internal_transaction =
@@ -161,8 +156,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           index: 2,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_index: 2
+          block_hash: transaction.block_hash
         )
 
       path =
@@ -198,8 +192,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_index: 1
+          block_hash: transaction.block_hash
         )
 
       to_internal_transaction =
@@ -210,8 +203,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           index: 2,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_index: 2
+          block_hash: transaction.block_hash
         )
 
       path =
@@ -263,8 +255,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
             index: index,
             block_number: transaction_1.block_number,
             transaction_index: transaction_1.index,
-            block_hash: a_block.hash,
-            block_index: index
+            block_hash: a_block.hash
           )
         end)
 
@@ -278,8 +269,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
             index: index,
             block_number: transaction_2.block_number,
             transaction_index: transaction_2.index,
-            block_hash: a_block.hash,
-            block_index: 20 + index
+            block_hash: a_block.hash
           )
         end)
 
@@ -293,8 +283,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
             index: index,
             block_number: transaction_3.block_number,
             transaction_index: transaction_3.index,
-            block_hash: b_block.hash,
-            block_index: index
+            block_hash: b_block.hash
           )
         end)
 
@@ -308,8 +297,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           index: 11,
           block_number: transaction_3.block_number,
           transaction_index: transaction_3.index,
-          block_hash: b_block.hash,
-          block_index: 11
+          block_hash: b_block.hash
         )
 
       conn =
@@ -361,8 +349,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
             index: index,
             block_number: transaction_1.block_number,
             transaction_index: transaction_1.index,
-            block_hash: a_block.hash,
-            block_index: index
+            block_hash: a_block.hash
           )
         end)
 
@@ -376,8 +363,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
             index: index,
             block_number: transaction_2.block_number,
             transaction_index: transaction_2.index,
-            block_hash: a_block.hash,
-            block_index: 55 + index
+            block_hash: a_block.hash
           )
         end)
 
@@ -391,8 +377,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
             index: index,
             block_number: transaction_3.block_number,
             transaction_index: transaction_3.index,
-            block_hash: b_block.hash,
-            block_index: index
+            block_hash: b_block.hash
           )
         end)
 
@@ -513,8 +498,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           index: index,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_index: index
+          block_hash: transaction.block_hash
         )
       end)
 
@@ -551,9 +535,9 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
           :internal_transaction,
           transaction: transaction,
           from_address: address,
+          transaction_index: transaction.index,
           index: index,
           block_hash: transaction.block_hash,
-          block_index: index,
           block_number: transaction.block_number
         )
       end)

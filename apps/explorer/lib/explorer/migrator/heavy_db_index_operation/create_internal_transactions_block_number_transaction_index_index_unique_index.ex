@@ -1,6 +1,6 @@
-defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockHashTransactionIndexIndexUniqueIndex do
+defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex do
   @moduledoc """
-  Create unique B-tree index `internal_transactions_block_hash_transaction_index_index_index` on `internal_transactions` table for (`block_hash`, `transaction_index`, `index`) columns.
+  Create unique B-tree index `internal_transactions_block_number_transaction_index_index_index` on `internal_transactions` table for (`block_number`, `transaction_index`, `index`) columns.
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
@@ -11,9 +11,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBloc
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :internal_transactions
-  @index_name "internal_transactions_block_hash_transaction_index_index_index"
+  @index_name "internal_transactions_block_number_transaction_index_index_index"
   @operation_type :create
-  @table_columns ["block_hash", "transaction_index", "index"]
+  @table_columns ["block_number", "transaction_index", "index"]
 
   @impl HeavyDbIndexOperation
   def table_name, do: @table_name
