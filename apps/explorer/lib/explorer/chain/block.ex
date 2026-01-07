@@ -686,6 +686,22 @@ defmodule Explorer.Chain.Block do
 
   def aggregate_transactions(block), do: block
 
+  @doc """
+  Checks if block is present in DB
+  """
+  @spec indexed?(non_neg_integer()) :: boolean()
+  def indexed?(block_number) do
+    query =
+      from(
+        block in __MODULE__,
+        where: block.number == ^block_number,
+        where: block.consensus == true,
+        where: block.refetch_needed == false
+      )
+
+    Repo.exists?(query)
+  end
+
   defp transaction_aggregator(transaction, acc, block_base_fee_per_gas) do
     gas_used = Helper.number_to_decimal(transaction.gas_used)
 
