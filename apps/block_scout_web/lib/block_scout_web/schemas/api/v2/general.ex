@@ -735,6 +735,62 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for MUD world address hash.
+  """
+  @spec world_param() :: Parameter.t()
+  def world_param do
+    %Parameter{
+      name: :world,
+      in: :path,
+      schema: AddressHash,
+      required: true,
+      description: "MUD world address hash in the path"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for MUD system address hash.
+  """
+  @spec system_param() :: Parameter.t()
+  def system_param do
+    %Parameter{
+      name: :system,
+      in: :path,
+      schema: AddressHash,
+      required: true,
+      description: "MUD system address hash in the path"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for MUD table ID.
+  """
+  @spec table_id_param() :: Parameter.t()
+  def table_id_param do
+    %Parameter{
+      name: :table_id,
+      in: :path,
+      schema: FullHash,
+      required: true,
+      description: "MUD table ID in the path"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for MUD record ID.
+  """
+  @spec record_id_param() :: Parameter.t()
+  def record_id_param do
+    %Parameter{
+      name: :record_id,
+      in: :path,
+      schema: HexString,
+      required: true,
+      description: "MUD record ID in the path"
+    }
+  end
+
+  @doc """
   Returns a list of base parameters (api_key and key).
   """
   @spec base_params() :: [Parameter.t()]
@@ -1080,6 +1136,41 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{type: :integer, nullable: true},
       required: false,
       description: "State changes for paging"
+    },
+    "world" => %Parameter{
+      name: :world,
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "MUD world address hash for paging"
+    },
+    "table_id" => %Parameter{
+      name: :table_id,
+      in: :query,
+      schema: FullHash,
+      required: false,
+      description: "MUD table ID for paging"
+    },
+    "key_bytes" => %Parameter{
+      name: :key_bytes,
+      in: :query,
+      schema: HexString,
+      required: false,
+      description: "MUD record key_bytes for paging"
+    },
+    "key0" => %Parameter{
+      name: :key0,
+      in: :query,
+      schema: FullHash,
+      required: false,
+      description: "MUD record key0 for paging"
+    },
+    "key1" => %Parameter{
+      name: :key1,
+      in: :query,
+      schema: FullHash,
+      required: false,
+      description: "MUD record key1 for paging"
     }
   }
 
