@@ -687,7 +687,7 @@ defmodule Explorer.Chain.Block do
   def aggregate_transactions(block), do: block
 
   @doc """
-  Checks if block is present in DB
+  Checks if block with consensus and not marked to re-fetch block is present in the DB with the given number
   """
   @spec indexed?(non_neg_integer()) :: boolean()
   def indexed?(block_number) do
