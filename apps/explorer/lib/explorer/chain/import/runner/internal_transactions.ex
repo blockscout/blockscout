@@ -251,7 +251,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
        when is_list(valid_internal_transactions) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    ordered_changes_list = Enum.sort_by(valid_internal_transactions, &{&1.transaction_hash, &1.index})
+    ordered_changes_list =
+      valid_internal_transactions
+      |> Enum.map(fn internal_transaction ->
+        Map.put(internal_transaction, :trace_address, nil)
+      end)
+      |> Enum.sort_by(&{&1.transaction_hash, &1.index})
 
     conflict_target =
       if InternalTransactionHelper.primary_key_updated?() do
@@ -292,7 +297,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
             input: fragment("EXCLUDED.input"),
             output: fragment("EXCLUDED.output"),
             to_address_hash: fragment("EXCLUDED.to_address_hash"),
-            trace_address: fragment("EXCLUDED.trace_address"),
             transaction_hash: fragment("EXCLUDED.transaction_hash"),
             type: fragment("EXCLUDED.type"),
             value: fragment("EXCLUDED.value"),
@@ -306,7 +310,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         # `IS DISTINCT FROM` is used because it allows `NULL` to be equal to itself
         where:
           fragment(
-            "(EXCLUDED.transaction_hash, EXCLUDED.call_type, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.trace_address, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "(EXCLUDED.transaction_hash, EXCLUDED.call_type, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             internal_transaction.transaction_hash,
             internal_transaction.call_type,
             internal_transaction.created_contract_address_hash,
@@ -319,7 +323,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
             internal_transaction.input,
             internal_transaction.output,
             internal_transaction.to_address_hash,
-            internal_transaction.trace_address,
             internal_transaction.type,
             internal_transaction.value
           )
@@ -342,7 +345,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
             input: fragment("EXCLUDED.input"),
             output: fragment("EXCLUDED.output"),
             to_address_hash: fragment("EXCLUDED.to_address_hash"),
-            trace_address: fragment("EXCLUDED.trace_address"),
             transaction_hash: fragment("EXCLUDED.transaction_hash"),
             transaction_index: fragment("EXCLUDED.transaction_index"),
             type: fragment("EXCLUDED.type"),
@@ -356,7 +358,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         # `IS DISTINCT FROM` is used because it allows `NULL` to be equal to itself
         where:
           fragment(
-            "(EXCLUDED.transaction_hash, EXCLUDED.index, EXCLUDED.call_type, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.trace_address, EXCLUDED.transaction_index, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "(EXCLUDED.transaction_hash, EXCLUDED.index, EXCLUDED.call_type, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.transaction_index, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             internal_transaction.transaction_hash,
             internal_transaction.index,
             internal_transaction.call_type,
@@ -370,7 +372,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
             internal_transaction.input,
             internal_transaction.output,
             internal_transaction.to_address_hash,
-            internal_transaction.trace_address,
             internal_transaction.transaction_index,
             internal_transaction.type,
             internal_transaction.value

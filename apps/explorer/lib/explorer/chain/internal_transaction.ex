@@ -413,7 +413,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @call_optional_fields ~w(error gas_used output block_number value)a
-  @call_required_fields ~w(call_type from_address_hash gas input to_address_hash trace_address transaction_hash)a
+  @call_required_fields ~w(call_type from_address_hash gas input to_address_hash transaction_hash)a
   @call_allowed_fields @call_optional_fields ++ @call_required_fields
 
   defp type_changeset(changeset, attrs, :call) do
@@ -428,7 +428,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number value)a
-  @create_required_fields ~w(from_address_hash gas init trace_address transaction_hash)a
+  @create_required_fields ~w(from_address_hash gas init transaction_hash)a
   @create_allowed_fields @create_optional_fields ++ @create_required_fields
 
   defp type_changeset(changeset, attrs, type) when type in [:create, :create2] do
@@ -442,7 +442,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @selfdestruct_optional_fields ~w(block_number value)a
-  @selfdestruct_required_fields ~w(from_address_hash to_address_hash trace_address transaction_hash type)a
+  @selfdestruct_required_fields ~w(from_address_hash to_address_hash transaction_hash type)a
   @selfdestruct_allowed_fields @selfdestruct_optional_fields ++ @selfdestruct_required_fields
 
   defp type_changeset(changeset, attrs, :selfdestruct) do
@@ -452,7 +452,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @stop_optional_fields ~w(from_address_hash gas gas_used error value)a
-  @stop_required_fields ~w(block_number transaction_hash type trace_address)a
+  @stop_required_fields ~w(block_number transaction_hash type)a
   @stop_allowed_fields @stop_optional_fields ++ @stop_required_fields
 
   defp type_changeset(changeset, attrs, :stop) do
