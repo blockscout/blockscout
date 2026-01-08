@@ -406,6 +406,206 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert {:ok, _} = run_internal_transactions([internal_transaction_changes])
     end
+
+    test "empties contract_code for addresses selfdestructed in different transaction than creation" do
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block, status: :ok)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      # Create a contract address with some bytecode
+      contract_address = insert(:address, contract_code: "0x6080604052")
+
+      # Create a selfdestruct internal transaction
+      selfdestruct_changes = %{
+        block_number: block.number,
+        from_address_hash: contract_address.hash,
+        to_address_hash: insert(:address).hash,
+        gas: nil,
+        index: 0,
+        trace_address: [],
+        transaction_hash: transaction.hash,
+        type: :selfdestruct,
+        value: Wei.from(Decimal.new(0), :wei)
+      }
+
+      assert {:ok, _} = run_internal_transactions([selfdestruct_changes])
+
+      # Verify the contract_code was emptied
+      updated_address = Repo.get(Explorer.Chain.Address, contract_address.hash)
+      assert %Data{bytes: <<>>} = updated_address.contract_code
+    end
+
+    test "does not empty contract_code when contract is created and selfdestructed in same transaction" do
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block, status: :ok)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      # Create a contract address
+      contract_address = insert(:address, contract_code: "0x6080604052")
+
+      # Create internal transaction: first create the contract
+      create_changes = %{
+        block_number: block.number,
+        created_contract_address_hash: contract_address.hash,
+        created_contract_code: %Data{bytes: <<0x60, 0x80, 0x60, 0x40, 0x52>>},
+        from_address_hash: insert(:address).hash,
+        gas: 50000,
+        gas_used: 25000,
+        index: 0,
+        init: %Data{bytes: <<1, 2, 3>>},
+        trace_address: [],
+        transaction_hash: transaction.hash,
+        type: :create,
+        value: Wei.from(Decimal.new(0), :wei)
+      }
+
+      # Then selfdestruct it in the same transaction
+      selfdestruct_changes = %{
+        block_number: block.number,
+        from_address_hash: contract_address.hash,
+        to_address_hash: insert(:address).hash,
+        gas: nil,
+        index: 1,
+        trace_address: [],
+        transaction_hash: transaction.hash,
+        type: :selfdestruct,
+        value: Wei.from(Decimal.new(0), :wei)
+      }
+
+      assert {:ok, _} = run_internal_transactions([create_changes, selfdestruct_changes])
+
+      # Verify the contract_code was NOT emptied (contract created and destroyed in same tx)
+      updated_address = Repo.get(Explorer.Chain.Address, contract_address.hash)
+      assert updated_address.contract_code != %Data{bytes: <<>>}
+    end
+
+    test "empties contract_code for multiple selfdestructed contracts" do
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block, status: :ok)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      # Create multiple contract addresses with bytecode
+      contract_address_1 = insert(:address, contract_code: "0x6080604052")
+      contract_address_2 = insert(:address, contract_code: "0x608060405260")
+      contract_address_3 = insert(:address, contract_code: "0x60806040")
+
+      # Create selfdestruct internal transactions for multiple contracts
+      selfdestruct_changes_1 = %{
+        block_number: block.number,
+        from_address_hash: contract_address_1.hash,
+        to_address_hash: insert(:address).hash,
+        gas: nil,
+        index: 0,
+        trace_address: [],
+        transaction_hash: transaction.hash,
+        type: :selfdestruct,
+        value: Wei.from(Decimal.new(0), :wei)
+      }
+
+      selfdestruct_changes_2 = %{
+        block_number: block.number,
+        from_address_hash: contract_address_2.hash,
+        to_address_hash: insert(:address).hash,
+        gas: nil,
+        index: 1,
+        trace_address: [],
+        transaction_hash: transaction.hash,
+        type: :selfdestruct,
+        value: Wei.from(Decimal.new(0), :wei)
+      }
+
+      selfdestruct_changes_3 = %{
+        block_number: block.number,
+        from_address_hash: contract_address_3.hash,
+        to_address_hash: insert(:address).hash,
+        gas: nil,
+        index: 2,
+        trace_address: [],
+        transaction_hash: transaction.hash,
+        type: :selfdestruct,
+        value: Wei.from(Decimal.new(0), :wei)
+      }
+
+      assert {:ok, _} =
+               run_internal_transactions([
+                 selfdestruct_changes_1,
+                 selfdestruct_changes_2,
+                 selfdestruct_changes_3
+               ])
+
+      # Verify all contract_codes were emptied
+      assert %Data{bytes: <<>>} = Repo.get(Explorer.Chain.Address, contract_address_1.hash).contract_code
+      assert %Data{bytes: <<>>} = Repo.get(Explorer.Chain.Address, contract_address_2.hash).contract_code
+      assert %Data{bytes: <<>>} = Repo.get(Explorer.Chain.Address, contract_address_3.hash).contract_code
+    end
+
+    test "does not empty contract_code when only create2 and selfdestruct in same transaction" do
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block, status: :ok)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      # Create a contract address
+      contract_address = insert(:address, contract_code: "0x6080604052")
+
+      # Create internal transaction: first create2 the contract
+      create2_changes = %{
+        block_number: block.number,
+        created_contract_address_hash: contract_address.hash,
+        created_contract_code: %Data{bytes: <<0x60, 0x80, 0x60, 0x40, 0x52>>},
+        from_address_hash: insert(:address).hash,
+        gas: 50000,
+        gas_used: 25000,
+        index: 0,
+        init: %Data{bytes: <<1, 2, 3>>},
+        trace_address: [],
+        transaction_hash: transaction.hash,
+        type: :create2,
+        value: Wei.from(Decimal.new(0), :wei)
+      }
+
+      # Then selfdestruct it in the same transaction
+      selfdestruct_changes = %{
+        block_number: block.number,
+        from_address_hash: contract_address.hash,
+        to_address_hash: insert(:address).hash,
+        gas: nil,
+        index: 1,
+        trace_address: [],
+        transaction_hash: transaction.hash,
+        type: :selfdestruct,
+        value: Wei.from(Decimal.new(0), :wei)
+      }
+
+      assert {:ok, _} = run_internal_transactions([create2_changes, selfdestruct_changes])
+
+      # Verify the contract_code was NOT emptied (contract created and destroyed in same tx)
+      updated_address = Repo.get(Explorer.Chain.Address, contract_address.hash)
+      assert updated_address.contract_code != %Data{bytes: <<>>}
+    end
+
+    test "handles selfdestruct with no matching address gracefully" do
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block, status: :ok)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      # Create a selfdestruct for a non-existent address
+      non_existent_address_hash = insert(:address).hash
+
+      selfdestruct_changes = %{
+        block_number: block.number,
+        from_address_hash: non_existent_address_hash,
+        to_address_hash: insert(:address).hash,
+        gas: nil,
+        index: 0,
+        trace_address: [],
+        transaction_hash: transaction.hash,
+        type: :selfdestruct,
+        value: Wei.from(Decimal.new(0), :wei)
+      }
+
+      # Should not raise an error
+      assert {:ok, _} = run_internal_transactions([selfdestruct_changes])
+    end
   end
 
   defp run_internal_transactions(changes_list, multi \\ Multi.new()) when is_list(changes_list) do
