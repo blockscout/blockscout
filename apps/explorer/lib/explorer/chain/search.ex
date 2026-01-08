@@ -584,11 +584,11 @@ defmodule Explorer.Chain.Search do
         as: :token,
         left_join: smart_contract in SmartContract,
         as: :smart_contract,
-        on: token.contract_address_hash == smart_contract.address_hash,
-        where: fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^term)
+        on: token.contract_address_hash == smart_contract.address_hash
       )
 
     base_query
+    |> Token.apply_fts_filter(term)
     |> apply_sorting([], @token_sorting)
     |> page_search_results(paging_options, "token")
     |> ExplorerHelper.maybe_hide_scam_addresses_for_search(:contract_address_hash, options)
