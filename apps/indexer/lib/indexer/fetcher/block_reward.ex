@@ -62,7 +62,7 @@ defmodule Indexer.Fetcher.BlockReward do
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
-      Chain.stream_blocks_without_rewards(
+      Block.stream_blocks_without_rewards(
         initial,
         fn %{number: number}, acc ->
           reducer.(number, acc)
@@ -111,7 +111,7 @@ defmodule Indexer.Fetcher.BlockReward do
 
   defp hash_string_by_number(numbers) when is_list(numbers) do
     numbers
-    |> Chain.block_hash_by_number()
+    |> Block.block_hash_by_number()
     |> Enum.into(%{}, fn {number, hash} ->
       {number, to_string(hash)}
     end)
@@ -189,7 +189,7 @@ defmodule Indexer.Fetcher.BlockReward do
     timestamp_by_block_hash =
       beneficiaries_params
       |> Enum.map(& &1.block_hash)
-      |> Chain.timestamp_by_block_hash()
+      |> Block.timestamp_by_block_hash()
 
     Enum.map(beneficiaries_params, fn %{block_hash: block_hash_str} = beneficiary ->
       {:ok, block_hash} = Chain.string_to_full_hash(block_hash_str)
@@ -209,7 +209,7 @@ defmodule Indexer.Fetcher.BlockReward do
       beneficiaries_params
       |> Stream.filter(&(&1.address_type == :validator))
       |> Enum.map(& &1.block_hash)
-      |> Chain.gas_payment_by_block_hash()
+      |> Block.gas_payment_by_block_hash()
 
     Enum.map(beneficiaries_params, fn %{block_hash: block_hash, address_type: address_type} = beneficiary ->
       if address_type == :validator do

@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, true} <- {:not_found, Token.by_contract_address_hash_exists?(address_hash, @api_true)} do
-      {transfers_count, holders_count} = Chain.fetch_token_counters(address_hash, 5_000)
+      {transfers_count, holders_count} = Token.fetch_token_counters(address_hash, 5_000)
 
       json(conn, %{transfers_count: to_string(transfers_count), token_holders_count: to_string(holders_count)})
     end

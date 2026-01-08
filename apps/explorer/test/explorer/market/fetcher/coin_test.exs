@@ -7,7 +7,6 @@ defmodule Explorer.Market.Fetcher.CoinTest do
   alias Explorer.Market.Token
   alias Explorer.Market.Fetcher.Coin
   alias Explorer.Market.Source.TestSource
-  alias Plug.Conn
 
   @moduletag :capture_log
 

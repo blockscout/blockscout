@@ -248,7 +248,7 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
 
   defp check_token_types(token_address_hashes) do
     token_address_hashes
-    |> Chain.get_token_types()
+    |> Token.get_token_types()
     |> Enum.reduce(true, fn {token_hash, token_type}, acc ->
       if token_type == "ERC-20" do
         acc

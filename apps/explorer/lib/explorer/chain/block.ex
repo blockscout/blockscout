@@ -217,9 +217,19 @@ defmodule Explorer.Chain.Block do
   use Explorer.Schema
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  alias Explorer.Chain.{Block, Hash, Transaction, Wei}
-  alias Explorer.Chain.Block.{EmissionReward, Reward}
-  alias Explorer.{Helper, Repo}
+  alias Explorer.Chain.{
+    Block,
+    DenormalizationHelper,
+    Hash,
+    PendingBlockOperation,
+    PendingOperationsHelper,
+    PendingTransactionOperation,
+    Transaction,
+    Wei
+  }
+
+  alias Explorer.{Chain, Helper, PagingOptions, Repo}
+  alias Explorer.Chain.Block.{EmissionReward, Reward, SecondDegreeRelation}
   alias Explorer.Utility.MissingBlockRange
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
@@ -310,6 +320,10 @@ defmodule Explorer.Chain.Block do
     |> unique_constraint(:hash, name: :blocks_pkey)
   end
 
+  @doc """
+  Returns a query that fetches consensus blocks that do not have validator rewards.
+  """
+  @spec blocks_without_reward_query() :: Ecto.Query.t()
   def blocks_without_reward_query do
     validator_rewards =
       from(
@@ -754,5 +768,320 @@ defmodule Explorer.Chain.Block do
       burnt_fees: burnt_fees,
       priority_fees: priority_fees
     }
+  end
+
+  @doc """
+  Filters block numbers that do not require refetching.
+  ## Parameters
+    - `block_numbers`: A list of block numbers to check.
+  ## Returns
+    - A list of block numbers that do not need to be refetched.
+  """
+  @spec filter_non_refetch_needed_block_numbers([integer()]) :: [integer()]
+  def filter_non_refetch_needed_block_numbers(block_numbers) do
+    query =
+      from(
+        block in __MODULE__,
+        where: block.number in ^block_numbers,
+        where: block.consensus == true,
+        where: block.refetch_needed == false,
+        select: block.number
+      )
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Combined block reward from all the fees.
+  """
+  @spec block_combined_rewards(__MODULE__.t()) :: Wei.t()
+  def block_combined_rewards(block) do
+    block.rewards
+    |> Enum.reduce(
+      0,
+      fn block_reward, acc ->
+        {:ok, decimal} = Wei.dump(block_reward.reward)
+
+        Decimal.add(decimal, acc)
+      end
+    )
+    |> Wei.cast()
+    |> case do
+      {:ok, value} -> value
+      _ -> %Wei{value: Decimal.new(0)}
+    end
+  end
+
+  @doc """
+    Fetches the lowest block number available in the database.
+
+    Queries the database for the minimum block number among blocks marked as consensus
+    blocks. Returns 0 if no consensus blocks exist or if the query fails.
+
+    ## Returns
+    - `non_neg_integer`: The lowest block number from consensus blocks, or 0 if none found
+  """
+  @spec fetch_min_block_number() :: non_neg_integer
+  def fetch_min_block_number do
+    query =
+      from(block in __MODULE__,
+        select: block.number,
+        where: block.consensus == true,
+        order_by: [asc: block.number],
+        limit: 1
+      )
+
+    Repo.one(query) || 0
+  rescue
+    _ ->
+      0
+  end
+
+  @doc """
+    Fetches the highest block number available in the database.
+
+    Queries the database for the maximum block number among blocks marked as consensus
+    blocks. Returns 0 if no consensus blocks exist or if the query fails.
+
+    ## Returns
+    - `non_neg_integer`: The highest block number from consensus blocks, or 0 if none found
+  """
+  @spec fetch_max_block_number() :: non_neg_integer
+  def fetch_max_block_number do
+    query =
+      from(block in __MODULE__,
+        select: block.number,
+        where: block.consensus == true,
+        order_by: [desc: block.number],
+        limit: 1
+      )
+
+    Repo.one(query) || 0
+  rescue
+    _ ->
+      0
+  end
+
+  @doc """
+  Fetches a block by its hash.
+  """
+  @spec fetch_block_by_hash(Hash.Full.t()) :: Block.t() | nil
+  def fetch_block_by_hash(block_hash) do
+    Repo.get(__MODULE__, block_hash)
+  end
+
+  @default_page_size 50
+  @default_paging_options %PagingOptions{page_size: @default_page_size}
+
+  @doc """
+  Finds all Blocks validated by the address with the given hash.
+
+    ## Options
+      * `:necessity_by_association` - use to load `t:association/0` as `:required` or `:optional`.  If an association is
+          `:required`, and the `t:Explorer.Chain.Block.t/0` has no associated record for that association, then the
+          `t:Explorer.Chain.Block.t/0` will not be included in the page `entries`.
+      * `:paging_options` - a `t:Explorer.PagingOptions.t/0` used to specify the `:page_size` and
+        `:key` (a tuple of the lowest/oldest `{block_number}`) and. Results will be the internal
+        transactions older than the `block_number` that are passed.
+
+  Returns all blocks validated by the address given.
+  """
+  @spec get_blocks_validated_by_address(
+          [Chain.paging_options() | Chain.necessity_by_association_option()],
+          Hash.Address.t()
+        ) :: [Block.t()]
+  def get_blocks_validated_by_address(options \\ [], address_hash) when is_list(options) do
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+
+    case paging_options do
+      %PagingOptions{key: {0}} ->
+        []
+
+      _ ->
+        __MODULE__
+        |> Chain.join_associations(necessity_by_association)
+        |> where(miner_hash: ^address_hash)
+        |> Chain.page_blocks(paging_options)
+        |> limit(^paging_options.page_size)
+        |> order_by(desc: :number)
+        |> Chain.select_repo(options).all()
+    end
+  end
+
+  @doc """
+  Calls `reducer` on a stream of `t:Explorer.Chain.Block.t/0` without `t:Explorer.Chain.Block.Reward.t/0`.
+  """
+  def stream_blocks_without_rewards(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
+    blocks_without_reward_query()
+    |> Chain.add_fetcher_limit(limited?)
+    |> Repo.stream_reduce(initial, reducer)
+  end
+
+  @doc """
+  Returns a stream of all blocks that are marked as unfetched in `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`.
+  For each uncle block a `hash` of nephew block and an `index` of the block in it are returned.
+
+  When a block is fetched, its uncles are transformed into `t:Explorer.Chain.Block.SecondDegreeRelation.t/0` and can be
+  returned.  Once the uncle is imported its corresponding `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`
+  `uncle_fetched_at` will be set and it won't be returned anymore.
+  """
+  @spec stream_unfetched_uncles(
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator),
+          limited? :: boolean()
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_unfetched_uncles(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
+    query =
+      from(bsdr in SecondDegreeRelation,
+        where: is_nil(bsdr.uncle_fetched_at) and not is_nil(bsdr.index),
+        select: [:nephew_hash, :index]
+      )
+
+    query
+    |> Chain.add_fetcher_limit(limited?)
+    |> Repo.stream_reduce(initial, reducer)
+  end
+
+  @doc """
+  Map `block_number`s to their `t:Explorer.Chain.Block.t/0` `hash` `t:Explorer.Chain.Hash.Full.t/0`.
+
+  Does not include non-consensus blocks.
+
+      iex> block = insert(:block, consensus: false)
+      iex> Explorer.Chain.Block.block_hash_by_number([block.number])
+      %{}
+
+  """
+  @spec block_hash_by_number([Block.block_number()]) :: %{Block.block_number() => Hash.Full.t()}
+  def block_hash_by_number(block_numbers) when is_list(block_numbers) do
+    query =
+      from(block in __MODULE__,
+        where: block.consensus == true and block.number in ^block_numbers,
+        select: {block.number, block.hash}
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.into(%{})
+  end
+
+  @doc """
+  Removes pending operations associated with non-consensus blocks.
+  """
+  @spec remove_nonconsensus_blocks_from_pending_ops([Hash.Full.t()]) :: :ok
+  def remove_nonconsensus_blocks_from_pending_ops(block_hashes) do
+    query =
+      case PendingOperationsHelper.pending_operations_type() do
+        "blocks" ->
+          PendingOperationsHelper.block_hash_in_query(block_hashes)
+
+        "transactions" ->
+          from(
+            pto in PendingTransactionOperation,
+            join: t in assoc(pto, :transaction),
+            where: t.block_hash in ^block_hashes
+          )
+      end
+
+    {_, _} = Repo.delete_all(query)
+
+    :ok
+  end
+
+  @doc """
+  Removes pending operations associated with all non-consensus blocks.
+  """
+  @spec remove_nonconsensus_blocks_from_pending_ops() :: :ok
+  def remove_nonconsensus_blocks_from_pending_ops do
+    query =
+      case PendingOperationsHelper.pending_operations_type() do
+        "blocks" ->
+          from(
+            pbo in PendingBlockOperation,
+            inner_join: block in Block,
+            on: block.hash == pbo.block_hash,
+            where: block.consensus == false
+          )
+
+        "transactions" ->
+          from(
+            pto in PendingTransactionOperation,
+            join: t in assoc(pto, :transaction),
+            where: t.block_consensus == false
+          )
+      end
+
+    {_, _} = Repo.delete_all(query)
+
+    :ok
+  end
+
+  @spec nonconsensus_block_by_number(Block.block_number(), [Chain.api?()]) :: {:ok, Block.t()} | {:error, :not_found}
+  def nonconsensus_block_by_number(number, options) do
+    __MODULE__
+    |> where(consensus: false, number: ^number)
+    |> Chain.select_repo(options).one()
+    |> case do
+      nil -> {:error, :not_found}
+      block -> {:ok, block}
+    end
+  end
+
+  @doc """
+  The `t:Explorer.Chain.Wei.t/0` paid to the miners of the `t:Explorer.Chain.Block.t/0`s with `hash`
+  `Explorer.Chain.Hash.Full.t/0` by the signers of the transactions in those blocks to cover the gas fee
+  (`gas_used * gas_price`).
+  """
+  @spec gas_payment_by_block_hash([Hash.Full.t()]) :: %{Hash.Full.t() => Wei.t()}
+  def gas_payment_by_block_hash(block_hashes) when is_list(block_hashes) do
+    query =
+      if DenormalizationHelper.transactions_denormalization_finished?() do
+        from(
+          transaction in Transaction,
+          where: transaction.block_hash in ^block_hashes and transaction.block_consensus == true,
+          group_by: transaction.block_hash,
+          select: {transaction.block_hash, %Wei{value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0)}}
+        )
+      else
+        from(
+          block in __MODULE__,
+          left_join: transaction in assoc(block, :transactions),
+          where: block.hash in ^block_hashes and block.consensus == true,
+          group_by: block.hash,
+          select: {block.hash, %Wei{value: coalesce(sum(transaction.gas_used * transaction.gas_price), 0)}}
+        )
+      end
+
+    initial_gas_payments =
+      block_hashes
+      |> Enum.map(&{&1, %Wei{value: Decimal.new(0)}})
+      |> Enum.into(%{})
+
+    existing_data =
+      query
+      |> Repo.all()
+      |> Enum.into(%{})
+
+    Map.merge(initial_gas_payments, existing_data)
+  end
+
+  @doc """
+  The `timestamp` of the `t:Explorer.Chain.Block.t/0`s with `hash` `Explorer.Chain.Hash.Full.t/0`.
+  """
+  @spec timestamp_by_block_hash([Hash.Full.t()]) :: %{Hash.Full.t() => non_neg_integer()}
+  def timestamp_by_block_hash(block_hashes) when is_list(block_hashes) do
+    query =
+      from(
+        block in __MODULE__,
+        where: block.hash in ^block_hashes and block.consensus == true,
+        group_by: block.hash,
+        select: {block.hash, block.timestamp}
+      )
+
+    query
+    |> Repo.all()
+    |> Enum.into(%{})
   end
 end

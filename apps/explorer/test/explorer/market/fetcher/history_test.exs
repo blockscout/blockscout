@@ -1,7 +1,6 @@
 defmodule Explorer.Market.Fetcher.HistoryTest do
   use Explorer.DataCase, async: false
 
-  import Mox
   import Ecto.Query, only: [limit: 2, order_by: 2]
 
   alias Explorer.Market.{MarketHistory, Source}
@@ -172,7 +171,7 @@ defmodule Explorer.Market.Fetcher.HistoryTest do
     assert get_in(new_state.types_states, [:market_cap_history, :finished?])
     assert get_in(new_state.types_states, [:market_cap_history, :records]) == market_cap_records
 
-    assert {:noreply, final_state} =
+    assert {:noreply, _final_state} =
              History.handle_info({nil, {:tvl_history, {:ok, tvl_records}}}, new_state)
 
     assert record2 = Repo.get_by(MarketHistory, date: Enum.at(price_records, 1).date)
@@ -236,7 +235,7 @@ defmodule Explorer.Market.Fetcher.HistoryTest do
       end
     end)
 
-    {:ok, pid} = History.start_link([])
+    {:ok, _pid} = History.start_link([])
 
     :timer.sleep(500)
 

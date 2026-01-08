@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.AddressValidationController do
 
   alias BlockScoutWeb.{AccessHelper, BlockView, Controller}
   alias Explorer.{Chain, Market}
+  alias Explorer.Chain.Block
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Phoenix.View
 
@@ -33,7 +34,7 @@ defmodule BlockScoutWeb.AddressValidationController do
           paging_options(params)
         )
 
-      blocks_plus_one = Chain.get_blocks_validated_by_address(full_options, address_hash)
+      blocks_plus_one = Block.get_blocks_validated_by_address(full_options, address_hash)
       {blocks, next_page} = split_list_by_page(blocks_plus_one)
 
       next_page_path =
