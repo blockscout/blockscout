@@ -37,8 +37,11 @@ defmodule Explorer.ThirdPartyIntegrations.Dynamic do
   """
   @spec get_auth_from_token(String.t()) :: {:ok, Auth.t()} | {:error, String.t()}
   def get_auth_from_token(token) do
-    case Token.verify_and_validate(token) do
-      {:ok, claims} -> create_auth(claims)
+    with {:enabled, true} <- {:enabled, Application.get_env(:explorer, __MODULE__)[:enabled]},
+         {:ok, claims} <- Token.verify_and_validate(token) do
+      create_auth(claims)
+    else
+      {:enabled, false} -> {:error, "Dynamic integration is disabled"}
       {:error, reason} -> {:error, inspect(reason)}
     end
   end
@@ -65,7 +68,7 @@ defmodule Explorer.ThirdPartyIntegrations.Dynamic do
       end)
 
     %Auth{
-      uid: claims["sub"],
+      uid: claims["metadata"]["auth0UserId"] || claims["sub"],
       provider: :dynamic,
       info: %Info{
         email: claims["email"],

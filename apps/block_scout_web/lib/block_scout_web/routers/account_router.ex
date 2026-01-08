@@ -51,6 +51,7 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
     plug(:fetch_session)
     plug(:protect_from_forgery)
     plug(CheckAccountAPI)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.Specs.Private)
   end
 
   pipeline :api_v2 do
@@ -65,6 +66,7 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
 
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.Specs.Private)
   end
 
   scope "/auth", BlockScoutWeb do

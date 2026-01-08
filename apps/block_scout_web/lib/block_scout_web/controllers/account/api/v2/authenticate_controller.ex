@@ -1,11 +1,20 @@
 defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.Account.API.V2.UserView
-  alias BlockScoutWeb.API.V2.ApiView
+
+  alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.{
+    ForbiddenResponse,
+    NotFoundResponse,
+    UnauthorizedResponse
+  }
+
+  alias BlockScoutWeb.Schemas.API.V2.Account, as: AccountSchemas
+
   alias Explorer.Account.Identity
   alias Explorer.Chain
   alias Explorer.Chain.Address
@@ -14,18 +23,48 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
 
   action_fallback(BlockScoutWeb.Account.API.V2.FallbackController)
 
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags(["authentication"])
+
+  operation :authenticate_get,
+    summary: "Authenticate API Key",
+    description: "Authenticate using an API key passed as a query parameter.",
+    parameters: [admin_api_key_param_query()],
+    responses: %{
+      ok: {"User session.", "application/json", AccountSchemas.Session},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response(),
+      unauthorized: UnauthorizedResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    }
+
+  @spec authenticate_get(Conn.t(), map()) :: Conn.t() | {:error, any()}
   def authenticate_get(conn, params) do
     authenticate(conn, params)
   end
 
+  operation :authenticate_post,
+    summary: "Authenticate API Key",
+    description: "Authenticate using an API key passed in a request body.",
+    request_body: admin_api_key_request_body(),
+    responses: %{
+      ok: {"User session.", "application/json", AccountSchemas.Session},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response(),
+      unauthorized: UnauthorizedResponse.response(),
+      forbidden: ForbiddenResponse.response()
+    }
+
+  @spec authenticate_post(Conn.t(), map()) :: Conn.t() | {:error, any()}
   def authenticate_post(conn, params) do
-    authenticate(conn, params)
+    authenticate(conn, params |> Map.merge(conn.body_params))
   end
 
   defp authenticate(conn, params) do
     with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
            {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
-         {:api_key, ^api_key} <- {:api_key, params["api_key"]},
+         {:api_key, ^api_key} <- {:api_key, params[:api_key]},
          {:auth, %{id: uid} = current_user} <- {:auth, current_user(conn)},
          {:identity, %Identity{}} <- {:identity, Identity.find_identity(uid)} do
       conn
@@ -34,6 +73,17 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
     end
   end
 
+  operation :send_otp,
+    summary: "Send One-Time Password (OTP)",
+    description: "Sends a one-time password (OTP) to the specified email address.",
+    request_body: AccountSchemas.send_otp_request_body(),
+    responses: %{
+      ok: {"Success message.", "application/json", message_response_schema()},
+      unprocessable_entity: JsonErrorResponse.response(),
+      internal_server_error: {"Error message", "application/json", message_response_schema()},
+      too_many_requests: {"Error message", "application/json", message_response_schema()}
+    }
+
   @doc """
   Sends a one-time password (OTP) to the specified email address.
 
@@ -41,8 +91,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   with different behaviors based on the current user's authentication status
   and the relationship between the provided email and existing accounts.
 
-  The function first verifies the reCAPTCHA response to prevent abuse. Then,
-  it checks the current user's status and proceeds accordingly:
+  The function checks the current user's status and proceeds accordingly:
 
   1. If no user is logged in, it sends an OTP for a new account.
   2. If a user is logged in and the email matches their account, it returns an error.
@@ -53,13 +102,12 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   - `conn`: The `Plug.Conn` struct representing the current connection.
   - `params`: A map containing:
     - `"email"`: The email address to which the OTP should be sent.
-    - `"recaptcha_v3_response"` or `"recaptcha_response"`: The reCAPTCHA response token.
 
   ## Returns
   - `:error`: If there's an unexpected error during the process.
   - `{:error, String.t()}`: If there's a specific error (e.g., email already linked).
+  - `{:format, :email}`: If the provided email format is invalid.
   - `{:interval, integer()}`: If an OTP was recently sent and the cooldown period hasn't elapsed.
-  - `{:recaptcha, false}`: If the reCAPTCHA verification fails.
   - `Plug.Conn.t()`: A modified connection struct with a 200 status and success message
     if the OTP is successfully sent.
 
@@ -71,10 +119,13 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   @spec send_otp(Conn.t(), map()) ::
           :error
           | {:error, String.t()}
+          | {:format, :email}
           | {:interval, integer()}
           | Conn.t()
-  def send_otp(conn, %{"email" => email}) do
-    case conn |> Conn.fetch_session() |> current_user() do
+  def send_otp(conn, _params) do
+    email = Map.get(conn.body_params, :email)
+
+    case conn |> current_user() do
       nil ->
         with :ok <- Auth0.send_otp(email, AccessHelper.conn_to_ip_string(conn)) do
           conn |> put_status(200) |> json(%{message: "Success"})
@@ -88,10 +139,20 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
       %{} ->
         conn
         |> put_status(500)
-        |> put_view(ApiView)
+        |> put_view(UserView)
         |> render(:message, %{message: "This account already has an email"})
     end
   end
+
+  operation :confirm_otp,
+    summary: "Confirm One-Time Password (OTP)",
+    description: "Confirms a one-time password (OTP) for a given email and updates the session.",
+    request_body: AccountSchemas.confirm_otp_request_body(),
+    responses: %{
+      ok: {"User info.", "application/json", AccountSchemas.User},
+      unprocessable_entity: JsonErrorResponse.response(),
+      internal_server_error: {"Error message", "application/json", message_response_schema()}
+    }
 
   @doc """
   Confirms a one-time password (OTP) for a given email and updates the session.
@@ -129,11 +190,29 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
     information.
   """
   @spec confirm_otp(Conn.t(), map()) :: :error | {:error, any()} | Conn.t()
-  def confirm_otp(conn, %{"email" => email, "otp" => otp}) do
+  def confirm_otp(conn, %{email: email, otp: otp}) do
     with {:ok, auth} <- Auth0.confirm_otp_and_get_auth(email, otp, AccessHelper.conn_to_ip_string(conn)) do
       put_auth_to_session(conn, auth)
     end
   end
+
+  operation :siwe_message,
+    summary: "Generate SIWE Message",
+    description: "Generates a Sign-In with Ethereum (SIWE) message for a given Ethereum address.",
+    parameters: [
+      %OpenApiSpex.Parameter{
+        name: :address,
+        in: :query,
+        schema: Schemas.General.AddressHash,
+        required: true,
+        description: "Address hash in the query"
+      }
+    ],
+    responses: %{
+      ok: {"SIWE message.", "application/json", AccountSchemas.siwe_message_response_schema()},
+      unprocessable_entity: JsonErrorResponse.response(),
+      internal_server_error: {"Error message", "application/json", message_response_schema()}
+    }
 
   @doc """
   Generates a Sign-In with Ethereum (SIWE) message for a given Ethereum address.
@@ -172,12 +251,22 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   - The SIWE message expires after 300 seconds from generation.
   """
   @spec siwe_message(Conn.t(), map()) :: {:error, String.t()} | {:format, :error} | Conn.t()
-  def siwe_message(conn, %{"address" => address}) do
+  def siwe_message(conn, %{address: address}) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address)},
          {:ok, message} <- Auth0.generate_siwe_message(Address.checksum(address_hash)) do
       conn |> put_status(200) |> json(%{siwe_message: message})
     end
   end
+
+  operation :authenticate_via_wallet,
+    summary: "Authenticate via Ethereum Wallet",
+    description: "Authenticates a user using a signed Ethereum message (SIWE).",
+    request_body: AccountSchemas.authenticate_via_wallet_request_body(),
+    responses: %{
+      ok: {"User info.", "application/json", AccountSchemas.User},
+      unprocessable_entity: JsonErrorResponse.response(),
+      internal_server_error: {"Error message", "application/json", message_response_schema()}
+    }
 
   @doc """
   Authenticates a user via their Ethereum wallet using a signed message.
@@ -213,11 +302,24 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
     information.
   """
   @spec authenticate_via_wallet(Conn.t(), map()) :: :error | {:error, any()} | Conn.t()
-  def authenticate_via_wallet(conn, %{"message" => message, "signature" => signature}) do
+  def authenticate_via_wallet(conn, _params) do
+    message = Map.get(conn.body_params, :message)
+    signature = Map.get(conn.body_params, :signature)
+
     with {:ok, auth} <- Auth0.get_auth_with_web3(message, signature) do
       put_auth_to_session(conn, auth)
     end
   end
+
+  operation :authenticate_via_dynamic,
+    summary: "Authenticate via Dynamic JWT",
+    description: "Authenticates a user using a Dynamic JWT token from the Authorization header.",
+    security: [%{"dynamic_jwt" => []}],
+    responses: %{
+      ok: {"User info.", "application/json", AccountSchemas.User},
+      unauthorized: UnauthorizedResponse.response(),
+      internal_server_error: {"Error message", "application/json", message_response_schema()}
+    }
 
   @doc """
   Authenticates a request using a Dynamic JWT token from the Authorization header.
@@ -243,7 +345,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   ## Notes
   - Errors are handled by `BlockScoutWeb.Account.API.V2.FallbackController`.
   """
-  @spec authenticate_via_dynamic(Conn.t(), map()) :: {:error, any()} | Conn.t()
+  @spec authenticate_via_dynamic(Conn.t(), map()) :: {:error, any()} | {:token, nil} | Conn.t()
   def authenticate_via_dynamic(conn, _params) do
     token =
       case get_req_header(conn, "authorization") do

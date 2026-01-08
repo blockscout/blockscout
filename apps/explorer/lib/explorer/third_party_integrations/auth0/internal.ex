@@ -113,8 +113,9 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Internal do
   ## Returns
   - `:ok`: If the OTP was successfully sent
   - `:error`: If there was an error sending the OTP
+  - `{:format, :email}`: If the email format is invalid
   """
-  @spec send_otp(String.t(), String.t()) :: :ok | :error
+  @spec send_otp(String.t(), String.t()) :: :ok | :error | {:format, :email}
   def send_otp(email, ip) do
     client = OAuth.client()
 
@@ -131,6 +132,9 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Internal do
     case Client.post(client, "/passwordless/start", body, headers) do
       {:ok, %OAuth2.Response{status_code: 200}} ->
         :ok
+
+      {:error, %OAuth2.Response{status_code: 400, body: %{"error" => "bad.email"}}} ->
+        {:format, :email}
 
       other ->
         Logger.error("Error while sending otp: ", inspect(other))
