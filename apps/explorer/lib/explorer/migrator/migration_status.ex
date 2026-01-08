@@ -169,4 +169,19 @@ defmodule Explorer.Migrator.MigrationStatus do
     |> fetch_migration_statuses_query()
     |> Repo.all()
   end
+
+  @doc """
+  Fetches all uncompleted migrations (status != 'completed').
+
+  ## Returns
+
+    - A list of uncompleted migration status structs.
+
+  """
+  @spec fetch_uncompleted_migrations() :: list(__MODULE__.t())
+  def fetch_uncompleted_migrations do
+    __MODULE__
+    |> where([ms], ms.status != "completed")
+    |> Repo.all()
+  end
 end

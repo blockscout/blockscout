@@ -62,4 +62,57 @@ defmodule BlockScoutWeb.API.V2.ConfigControllerTest do
         end
     end
   end
+
+  describe "/config/db-background-migrations" do
+    test "returns empty list when there are no uncompleted migrations", %{conn: conn} do
+      request = get(conn, "/api/v2/config/db-background-migrations")
+      assert %{"migrations" => migrations} = json_response(request, 200)
+      assert is_list(migrations)
+    end
+
+    test "returns list of uncompleted migrations", %{conn: conn} do
+      insert(:migration_status, migration_name: "test_migration", status: "started")
+
+      request = get(conn, "/api/v2/config/db-background-migrations")
+      assert %{"migrations" => migrations} = json_response(request, 200)
+
+      assert Enum.any?(migrations, fn m -> m["migration_name"] == "test_migration" and m["status"] == "started" end)
+    end
+
+    test "does not return completed migrations", %{conn: conn} do
+      insert(:migration_status, migration_name: "completed_migration", status: "completed")
+      insert(:migration_status, migration_name: "started_migration", status: "started")
+
+      request = get(conn, "/api/v2/config/db-background-migrations")
+      assert %{"migrations" => migrations} = json_response(request, 200)
+
+      assert Enum.all?(migrations, fn m -> m["status"] != "completed" end)
+      assert Enum.any?(migrations, fn m -> m["migration_name"] == "started_migration" end)
+    end
+
+    test "returns migration with meta data", %{conn: conn} do
+      insert(:migration_status,
+        migration_name: "test_migration",
+        status: "started",
+        meta: %{"max_block_number" => 8_151_758}
+      )
+
+      request = get(conn, "/api/v2/config/db-background-migrations")
+      assert %{"migrations" => migrations} = json_response(request, 200)
+
+      migration = Enum.find(migrations, fn m -> m["migration_name"] == "test_migration" end)
+      assert migration["meta"]["max_block_number"] == 8_151_758
+    end
+
+    test "returns migration timestamps", %{conn: conn} do
+      insert(:migration_status, migration_name: "test_migration", status: "started")
+
+      request = get(conn, "/api/v2/config/db-background-migrations")
+      assert %{"migrations" => migrations} = json_response(request, 200)
+
+      migration = Enum.find(migrations, fn m -> m["migration_name"] == "test_migration" end)
+      assert Map.has_key?(migration, "inserted_at")
+      assert Map.has_key?(migration, "updated_at")
+    end
+  end
 end
