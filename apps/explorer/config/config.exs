@@ -142,7 +142,8 @@ for migrator <- [
       Explorer.Migrator.MergeAdjacentMissingBlockRanges,
       Explorer.Migrator.UnescapeQuotesInTokens,
       Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources,
-      Explorer.Migrator.EmptyInternalTransactionsZeroValues
+      Explorer.Migrator.EmptyInternalTransactionsZeroValues,
+      Explorer.Migrator.EmptyInternalTransactionsTraceAddress
     ] do
   config :explorer, migrator, enabled: true
 end
