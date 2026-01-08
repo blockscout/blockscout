@@ -2,7 +2,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction}
-  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.PagingOptions
 
   doctest InternalTransaction
@@ -1087,6 +1086,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
       assert {actual.transaction_hash, actual.index} == {expected.transaction_hash, expected.index}
     end
   end
+<<<<<<< HEAD
 
   describe "fetch/1" do
     test "with consensus transactions only" do
@@ -1176,4 +1176,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
     #              |> Enum.map(&{&1.transaction_hash, &1.index, &1.block_hash})
     #   end
   end
+=======
+>>>>>>> 62e513c53e (chore: remove unused aliases and functions)
 end
