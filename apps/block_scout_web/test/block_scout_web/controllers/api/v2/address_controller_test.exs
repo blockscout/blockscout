@@ -2272,6 +2272,35 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(internal_transaction_to, Enum.at(response["items"], 0))
     end
 
+    test "returns gas_limit as 0 for selfdestruct without gas", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      internal_transaction =
+        insert(:internal_transaction_selfdestruct,
+          transaction: transaction,
+          index: 1,
+          block_index: 1,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
+          from_address: address,
+          to_address: insert(:address),
+          gas: nil,
+          gas_used: nil
+        )
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+      assert %{"items" => [item], "next_page_params" => nil} = json_response(request, 200)
+      assert "0" == to_string(item["gas_limit"])
+      assert item["index"] == internal_transaction.index
+    end
+
     test "internal transactions can paginate", %{conn: conn} do
       address = insert(:address)
 
