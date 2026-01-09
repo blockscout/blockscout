@@ -478,7 +478,19 @@ defmodule Indexer.Transform.TokenTransfersTest do
 
       expected = %{token_transfers: [], tokens: []}
 
+      env = Application.get_env(:explorer, Explorer.Chain.TokenTransfer)
+
+      Application.put_env(
+        :explorer,
+        Explorer.Chain.TokenTransfer,
+        env
+        |> Keyword.put(:weth_token_transfers_filtering_enabled, true)
+        |> Keyword.put(:whitelisted_weth_contracts, [])
+      )
+
       assert TokenTransfers.parse(logs) == expected
+
+      Application.put_env(:explorer, Explorer.Chain.TokenTransfer, env)
     end
 
     test "Filters duplicates WETH transfers" do

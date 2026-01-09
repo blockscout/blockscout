@@ -615,7 +615,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
         fn requests, _opts ->
           {:ok,
            Enum.map(requests, fn
-             %{id: id, method: "eth_call", params: [%{data: "0x313ce567", to: _}, "latest"]} ->
+             %{id: id, method: "eth_call", params: [%{data: _, to: _}, "latest"]} ->
                %{
                  id: id,
                  error: %{code: -32015, data: "something", message: "network error"},
