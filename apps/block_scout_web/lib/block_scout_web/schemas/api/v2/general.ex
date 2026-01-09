@@ -791,12 +791,26 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Block number for paging"
     },
+    "l1_block_number" => %Parameter{
+      name: :l1_block_number,
+      in: :query,
+      schema: %Schema{type: :integer, minimum: 0},
+      required: false,
+      description: "L1 block number for paging"
+    },
     "epoch_number" => %Parameter{
       name: :epoch_number,
       in: :query,
       schema: IntegerString,
       required: false,
       description: "Epoch number for paging"
+    },
+    "nonce" => %Parameter{
+      name: :nonce,
+      in: :query,
+      schema: IntegerString,
+      required: false,
+      description: "Nonce for paging"
     },
     "index" => %Parameter{
       name: :index,
@@ -828,6 +842,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     },
     "hash" => %Parameter{
       name: :hash,
+      in: :query,
+      schema: FullHash,
+      required: false,
+      description: "Transaction hash for paging"
+    },
+    "transaction_hash" => %Parameter{
+      name: :transaction_hash,
       in: :query,
       schema: FullHash,
       required: false,
