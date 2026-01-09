@@ -220,23 +220,13 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
     end
 
     defp parse_time_env_var(env_var, default_value) do
-      case env_var |> safe_get_env(default_value) |> String.downcase() |> Integer.parse() do
+      case env_var |> Utils.ConfigHelper.safe_get_env(default_value) |> String.downcase() |> Integer.parse() do
         {milliseconds, "ms"} -> milliseconds
         {hours, "h"} -> :timer.hours(hours)
         {minutes, "m"} -> :timer.minutes(minutes)
         {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
         _ -> 0
       end
-    end
-
-    defp safe_get_env(env_var, default_value) do
-      env_var
-      |> System.get_env(default_value)
-      |> case do
-        "" -> default_value
-        value -> value
-      end
-      |> to_string()
     end
   end
 

@@ -65,7 +65,7 @@ queue_target = ConfigHelper.parse_integer_env_var("DATABASE_QUEUE_TARGET", 50)
 config :explorer, Explorer.Repo,
   database: database,
   hostname: hostname,
-  url: System.get_env("DATABASE_URL"),
+  url: ConfigHelper.parse_url_env_var("DATABASE_URL"),
   pool_size: pool_size,
   queue_target: queue_target
 
@@ -147,7 +147,7 @@ for repo <- [
   config :explorer, repo,
     database: database,
     hostname: hostname,
-    url: System.get_env("DATABASE_URL"),
+    url: ConfigHelper.parse_url_env_var("DATABASE_URL"),
     pool_size: 1
 end
 
