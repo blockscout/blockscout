@@ -61,6 +61,7 @@ defmodule Utils.ConfigHelper do
   @spec parse_url_env_var(String.t(), String.t() | nil, boolean()) :: String.t() | nil
   def parse_url_env_var(env_var, default_value \\ nil, trailing_slash_needed? \\ false) do
     with url when not is_nil(url) <- safe_get_env(env_var, default_value),
+         true <- valid_url?(url),
          url <- String.trim_trailing(url, "/"),
          true <- url != "",
          {url, true} <- {url, trailing_slash_needed?} do
@@ -73,4 +74,16 @@ defmodule Utils.ConfigHelper do
         default_value
     end
   end
+
+  @doc """
+  Checks if input string is a valid URL
+  """
+  @spec valid_url?(String.t()) :: boolean()
+  def valid_url?(string) when is_binary(string) do
+    uri = URI.parse(string)
+
+    !is_nil(uri.scheme) && !is_nil(uri.host)
+  end
+
+  def valid_url?(_), do: false
 end

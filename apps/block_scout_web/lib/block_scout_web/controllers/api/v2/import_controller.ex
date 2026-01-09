@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
   alias Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand
   alias Explorer.SmartContract.EthBytecodeDBInterface
   alias Indexer.Fetcher.TokenUpdater
+  alias Utils.ConfigHelper, as: UtilsConfigHelper
 
   import Explorer.SmartContract.Helper, only: [prepare_bytecode_for_microservice: 3, fetch_data_for_verification: 2]
 
@@ -186,15 +187,8 @@ defmodule BlockScoutWeb.API.V2.ImportController do
 
   defp params_to_contract_search_options(_), do: []
 
-  defp valid_url?(url) when is_binary(url) do
-    uri = URI.parse(url)
-    uri.scheme != nil && uri.host =~ "."
-  end
-
-  defp valid_url?(_url), do: false
-
   defp put_icon_url(changeset, icon_url) do
-    if valid_url?(icon_url) do
+    if UtilsConfigHelper.valid_url?(icon_url) do
       Map.put(changeset, :icon_url, icon_url)
     else
       changeset
