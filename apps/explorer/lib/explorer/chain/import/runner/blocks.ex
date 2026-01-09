@@ -21,6 +21,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     Import,
     PendingBlockOperation,
     PendingOperationsHelper,
+    SmartContract,
     Token,
     Token.Instance,
     TokenTransfer,
@@ -610,6 +611,37 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         where: token_transfer.block_hash not in ^hashes
       ),
       [set: [block_consensus: false, updated_at: updated_at]],
+      timeout: timeout
+    )
+
+    # Query to find addresses created in lost consensus blocks
+    created_contract_addresses_query =
+      from(
+        t in Transaction,
+        join: s in subquery(acquire_query),
+        on: t.block_hash == s.hash,
+        # we don't want to remove contract code from blocks that will be upserted
+        where: t.block_hash not in ^hashes,
+        where: not is_nil(t.created_contract_address_hash),
+        select: t.created_contract_address_hash
+      )
+
+    # Delete smart contracts for addresses created in lost consensus blocks
+    repo.delete_all(
+      from(
+        sc in SmartContract,
+        where: sc.address_hash in subquery(created_contract_addresses_query)
+      ),
+      timeout: timeout
+    )
+
+    # Clear contract code from addresses created in lost consensus blocks
+    repo.update_all(
+      from(
+        address in Address,
+        where: address.hash in subquery(created_contract_addresses_query)
+      ),
+      [set: [contract_code: nil, updated_at: updated_at]],
       timeout: timeout
     )
 
