@@ -1679,4 +1679,12 @@ defmodule Explorer.Factory do
       transaction: transaction
     }
   end
+
+  def migration_status_factory do
+    %MigrationStatus{
+      migration_name: sequence("migration_", &"migration_#{&1}"),
+      status: "started",
+      meta: nil
+    }
+  end
 end
