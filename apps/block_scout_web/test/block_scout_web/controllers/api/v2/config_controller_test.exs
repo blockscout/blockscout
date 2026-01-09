@@ -1,6 +1,29 @@
 defmodule BlockScoutWeb.API.V2.ConfigControllerTest do
   use BlockScoutWeb.ConnCase
 
+  @chain_type Application.compile_env(:explorer, :chain_type)
+
+  describe "/config/backend" do
+    test "returns chain_type when configured", %{conn: conn} do
+      request = get(conn, "/api/v2/config/backend")
+      response = json_response(request, 200)
+
+      assert %{"chain_type" => chain_type} = response
+      assert is_binary(chain_type)
+    end
+
+    test "returns the configured chain type value", %{conn: conn} do
+      request = get(conn, "/api/v2/config/backend")
+      response = json_response(request, 200)
+
+      assert %{"chain_type" => chain_type} = response
+
+      # Compare string representations
+      expected_chain_type = if is_atom(@chain_type), do: Atom.to_string(@chain_type), else: @chain_type
+      assert chain_type == expected_chain_type
+    end
+  end
+
   describe "/config/backend-version" do
     test "get json rps url if set", %{conn: conn} do
       version = "v6.3.0-beta"
