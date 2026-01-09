@@ -84,6 +84,10 @@ defmodule BlockScoutWeb.Tokens.HolderView do
     end
   end
 
+  def format_token_balance_value(_value, _id, %Token{type: "ERC-7984"}) do
+    "*confidential*"
+  end
+
   def format_token_balance_value(value, _id, _token) do
     value
   end
