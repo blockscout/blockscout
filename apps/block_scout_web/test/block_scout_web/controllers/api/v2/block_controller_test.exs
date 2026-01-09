@@ -259,6 +259,12 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
              } = json_response(request_2, 422)
     end
 
+    test "return 404 when block number exceeds allowed range", %{conn: conn} do
+      request = get(conn, "/api/v2/blocks/3000000000")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
     test "return 404 on non existing block", %{conn: conn} do
       block = build(:block)
 
@@ -271,6 +277,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
 
     test "get 'Block lost consensus' message", %{conn: conn} do
       block = insert(:block, consensus: false)
+      insert(:block, consensus: true)
       hash = to_string(block.hash)
 
       request_1 = get(conn, "/api/v2/blocks/#{block.number}")
