@@ -3,7 +3,7 @@ defmodule Explorer.Utility.Microservice do
   Module is responsible for common utils related to microservices.
   """
 
-  alias Explorer.Helper
+  alias Utils.ConfigHelper, as: UtilsConfigHelper
 
   @doc """
     Returns base url of the microservice or nil if it is invalid or not set
@@ -13,7 +13,7 @@ defmodule Explorer.Utility.Microservice do
     url = Application.get_env(application, module)[:service_url]
 
     cond do
-      not Helper.valid_url?(url) ->
+      not UtilsConfigHelper.valid_url?(url) ->
         nil
 
       String.ends_with?(url, "/") ->

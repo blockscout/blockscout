@@ -5,9 +5,10 @@ defmodule Explorer.Chain.Blackfort.Validator do
 
   use Explorer.Schema
 
-  alias Explorer.{Chain, Helper, HttpClient, Repo, SortingHelper}
+  alias Explorer.{Chain, HttpClient, Repo, SortingHelper}
   alias Explorer.Chain.{Address, Import}
   alias Explorer.Chain.Hash.Address, as: HashAddress
+  alias Utils.ConfigHelper, as: UtilsConfigHelper
 
   require Logger
 
@@ -147,7 +148,7 @@ defmodule Explorer.Chain.Blackfort.Validator do
   def fetch_validators_list do
     url = validator_url()
 
-    with {:url, true} <- {:url, Helper.valid_url?(url)},
+    with {:url, true} <- {:url, UtilsConfigHelper.valid_url?(url)},
          {:ok, %{status_code: 200, body: body}} <- HttpClient.get(validator_url(), [], follow_redirect: true) do
       body |> Jason.decode() |> parse_validators_info()
     else
