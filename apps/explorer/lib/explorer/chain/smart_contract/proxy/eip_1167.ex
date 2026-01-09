@@ -10,6 +10,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1167 do
 
   @behaviour ResolverBehaviour
 
+  @impl true
   def quick_resolve_implementations(proxy_address, _proxy_type) do
     case proxy_address.contract_code && proxy_address.contract_code.bytes do
       <<0x363D3D373D3D3D363D73::10-unit(8), template_address::20-bytes, 0x5AF43D82803E903D91602B57FD5BF3::15-unit(8)>> ->
