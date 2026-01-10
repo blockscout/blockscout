@@ -33,7 +33,6 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       base_params() ++
         [
           address_hash_param(),
-          address_id_param(),
           from_period_param(),
           to_period_param(),
           filter_type_param(),
@@ -127,7 +126,6 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       base_params() ++
         [
           address_hash_param(),
-          address_id_param(),
           from_period_param(),
           to_period_param(),
           filter_type_param(),
@@ -166,7 +164,6 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       base_params() ++
         [
           address_hash_param(),
-          address_id_param(),
           from_period_param(),
           to_period_param(),
           filter_type_param(),
@@ -205,7 +202,6 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       base_params() ++
         [
           address_hash_param(),
-          address_id_param(),
           from_period_param(),
           to_period_param(),
           filter_type_param(),
@@ -244,7 +240,6 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       base_params() ++
         [
           address_hash_param(),
-          address_id_param(),
           from_period_param(),
           to_period_param(),
           filter_type_param(),
@@ -284,7 +279,6 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       base_params() ++
         [
           address_hash_param(),
-          address_id_param(),
           from_period_param(),
           to_period_param(),
           filter_type_param(),
