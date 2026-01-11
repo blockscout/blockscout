@@ -93,6 +93,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   defp options(paging_options, params) do
     paging_options
     |> Keyword.put(:transaction_hash, params.transaction_hash)
+    |> Keyword.put(:exclude_origin_internal_transaction, true)
     |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
                                                                       page_size: page_size
                                                                     } = paging_options ->
