@@ -164,24 +164,13 @@ defmodule ConfigHelper do
         nil
 
       value ->
-        case parse_time_value(value) do
+        case Utils.ConfigHelper.parse_time_value(value) do
           :error ->
             raise "Invalid time format in environment variable #{env_var}: #{value}"
 
           time ->
             time
         end
-    end
-  end
-
-  @spec parse_time_value(String.t()) :: non_neg_integer() | :error
-  defp parse_time_value(value) do
-    case value |> String.downcase() |> Integer.parse() do
-      {milliseconds, "ms"} -> milliseconds
-      {hours, "h"} -> :timer.hours(hours)
-      {minutes, "m"} -> :timer.minutes(minutes)
-      {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
-      _ -> :error
     end
   end
 
