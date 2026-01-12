@@ -1,6 +1,7 @@
-defmodule Explorer.Migrator.EmptyInternalTransactionsZeroValues do
+defmodule Explorer.Migrator.EmptyInternalTransactionsData do
   @moduledoc """
-  Searches for all internal transactions with zero `value` and empties it.
+  Searches for all internal transactions with non-empty trace_address and empties it.
+  Also searches for all internal transactions with zero `value` and empties it.
   """
 
   use Explorer.Migrator.FillingMigration
@@ -12,7 +13,7 @@ defmodule Explorer.Migrator.EmptyInternalTransactionsZeroValues do
   alias Explorer.Migrator.FillingMigration
   alias Explorer.Repo
 
-  @migration_name "empty_internal_transactions_zero_values"
+  @migration_name "empty_internal_transactions_data"
 
   @fields ~w(block_hash transaction_index index)a
 
@@ -36,7 +37,7 @@ defmodule Explorer.Migrator.EmptyInternalTransactionsZeroValues do
   def unprocessed_data_query do
     from(
       internal_transaction in InternalTransaction,
-      where: internal_transaction.value == ^0
+      where: not is_nil(internal_transaction.trace_address) or internal_transaction.value == ^0
     )
   end
 
@@ -51,14 +52,18 @@ defmodule Explorer.Migrator.EmptyInternalTransactionsZeroValues do
       |> Enum.reduce(Multi.new(), fn {internal_transaction, ind}, acc ->
         acc
         |> Multi.update_all(
-          String.to_atom("update_internal_transactions_value_#{ind}"),
+          String.to_atom("update_internal_transactions_data_#{ind}"),
           from(
             it in InternalTransaction,
             where: it.block_hash == ^internal_transaction.block_hash,
             where: it.transaction_index == ^internal_transaction.transaction_index,
             where: it.index == ^internal_transaction.index
           ),
-          set: [value: nil, updated_at: now]
+          set: [
+            trace_address: nil,
+            value: nil,
+            updated_at: now
+          ]
         )
       end)
 

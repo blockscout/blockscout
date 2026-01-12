@@ -58,7 +58,7 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:init, Data)
     field(:input, Data)
     field(:output, Data)
-    field(:trace_address, {:array, :integer}, null: false)
+    field(:trace_address, {:array, :integer})
     # todo: consider using enum
     field(:type, Type, null: false)
     field(:value, Wei)
