@@ -378,21 +378,21 @@ defmodule ConfigHelper do
 
   @spec parse_url_env_var(String.t(), String.t() | nil, boolean()) :: String.t() | nil
   def parse_url_env_var(env_var, default_value \\ nil, trailing_slash_needed? \\ false) do
-    with url when not is_nil(url) <- safe_get_env(env_var, default_value),
+    with url when url != "" <- safe_get_env(env_var, default_value),
          true <- valid_url?(url),
          url <- String.trim_trailing(url, "/"),
-         true <- url != "",
          {url, true} <- {url, trailing_slash_needed?} do
       url <> "/"
     else
       {url, false} ->
         url
 
-      false ->
+      _ ->
         default_value
     end
   end
 
+  @spec safe_get_env(String.t(), any()) :: String.t()
   def safe_get_env(env_var, default_value) do
     env_var
     |> System.get_env(default_value)
@@ -538,36 +538,9 @@ defmodule ConfigHelper do
     end
   end
 
-  @doc """
-    Parses and validates a microservice URL from an environment variable, removing any trailing slash.
-
-    ## Parameters
-    - `env_name`: The name of the environment variable containing the URL
-
-    ## Returns
-    - The validated URL string with any trailing slash removed
-    - `nil` if the URL is invalid or missing required components
-  """
-  @spec parse_microservice_url(String.t()) :: String.t() | nil
-  def parse_microservice_url(env_name) do
-    url = System.get_env(env_name)
-
-    cond do
-      not valid_url?(url) ->
-        nil
-
-      String.ends_with?(url, "/") ->
-        url
-        |> String.slice(0..(String.length(url) - 2))
-
-      true ->
-        url
-    end
-  end
-
   # Validates if the given string is a valid URL by checking if it has both scheme (like http,
   # https, ftp) and host components.
-  @spec valid_url?(String.t()) :: boolean()
+  @spec valid_url?(term()) :: boolean()
   defp valid_url?(string) when is_binary(string) do
     uri = URI.parse(string)
 

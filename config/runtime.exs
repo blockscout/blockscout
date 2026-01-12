@@ -644,11 +644,7 @@ type = System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")
 
 config :explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
   service_url:
-    ConfigHelper.parse_url_env_var(
-      "MICROSERVICE_SC_VERIFIER_URL",
-      "https://eth-bytecode-db.services.blockscout.com",
-      true
-    ),
+    ConfigHelper.parse_url_env_var("MICROSERVICE_SC_VERIFIER_URL", "https://eth-bytecode-db.services.blockscout.com"),
   enabled: enabled?,
   type: type,
   eth_bytecode_db?: enabled? && type == "eth_bytecode_db",
@@ -676,7 +672,7 @@ config :explorer, Explorer.MicroserviceInterfaces.Metadata,
   proxy_requests_timeout: ConfigHelper.parse_time_env_var("MICROSERVICE_METADATA_PROXY_REQUESTS_TIMEOUT", "30s")
 
 config :explorer, Explorer.SmartContract.StylusVerifierInterface,
-  service_url: ConfigHelper.parse_microservice_url("MICROSERVICE_STYLUS_VERIFIER_URL")
+  service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_STYLUS_VERIFIER_URL")
 
 config :explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
   api_key: System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_API_KEY"),
@@ -889,7 +885,7 @@ config :explorer, Explorer.Chain.Filecoin.NativeAddress,
 
 config :explorer, Explorer.Chain.Blackfort.Validator, api_url: System.get_env("BLACKFORT_VALIDATOR_API_URL")
 
-addresses_blacklist_url = ConfigHelper.parse_microservice_url("ADDRESSES_BLACKLIST_URL")
+addresses_blacklist_url = ConfigHelper.parse_url_env_var("ADDRESSES_BLACKLIST_URL")
 
 config :explorer, Explorer.Chain.Fetcher.AddressesBlacklist,
   url: addresses_blacklist_url,

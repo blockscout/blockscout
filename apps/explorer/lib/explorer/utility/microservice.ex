@@ -8,21 +8,11 @@ defmodule Explorer.Utility.Microservice do
   @doc """
     Returns base url of the microservice or nil if it is invalid or not set
   """
-  @spec base_url(atom(), atom()) :: false | nil | binary()
+  @spec base_url(atom(), atom()) :: nil | binary()
   def base_url(application \\ :explorer, module) do
     url = Application.get_env(application, module)[:service_url]
 
-    cond do
-      not UtilsConfigHelper.valid_url?(url) ->
-        nil
-
-      String.ends_with?(url, "/") ->
-        url
-        |> String.slice(0..(String.length(url) - 2))
-
-      true ->
-        url
-    end
+    if UtilsConfigHelper.valid_url?(url), do: url, else: nil
   end
 
   @doc """
