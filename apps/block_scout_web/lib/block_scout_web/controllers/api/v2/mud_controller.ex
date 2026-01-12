@@ -22,6 +22,8 @@ defmodule BlockScoutWeb.API.V2.MudController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  tags(["mud"])
+
   operation :worlds,
     summary: "List of MUD worlds.",
     description: "Retrieves a paginated list of MUD worlds with basic stats.",

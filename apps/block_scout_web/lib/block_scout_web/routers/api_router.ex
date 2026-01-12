@@ -22,7 +22,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     graphql_max_complexity: [:block_scout_web, [Api.GraphQL, :max_complexity]],
     graphql_token_limit: [:block_scout_web, [Api.GraphQL, :token_limit]],
     reading_enabled: [:block_scout_web, [__MODULE__, :reading_enabled]],
-    writing_enabled: [:block_scout_web, [__MODULE__, :writing_enabled]]
+    writing_enabled: [:block_scout_web, [__MODULE__, :writing_enabled]],
+    mud_enabled_compile_time?: [:explorer, [Explorer.Chain.Mud, :enabled]]
 
   use Utils.RuntimeEnvHelper,
     mud_enabled?: [:explorer, [Explorer.Chain.Mud, :enabled]]
@@ -458,17 +459,19 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       end
     end
 
-    scope "/mud" do
-      pipe_through(:mud)
-      get("/worlds", V2.MudController, :worlds)
-      get("/worlds/count", V2.MudController, :worlds_count)
-      get("/worlds/:world/tables", V2.MudController, :world_tables)
-      get("/worlds/:world/systems", V2.MudController, :world_systems)
-      get("/worlds/:world/systems/:system", V2.MudController, :world_system)
-      get("/worlds/:world/tables/count", V2.MudController, :world_tables_count)
-      get("/worlds/:world/tables/:table_id/records", V2.MudController, :world_table_records)
-      get("/worlds/:world/tables/:table_id/records/count", V2.MudController, :world_table_records_count)
-      get("/worlds/:world/tables/:table_id/records/:record_id", V2.MudController, :world_table_record)
+    if @mud_enabled_compile_time? do
+      scope "/mud" do
+        pipe_through(:mud)
+        get("/worlds", V2.MudController, :worlds)
+        get("/worlds/count", V2.MudController, :worlds_count)
+        get("/worlds/:world/tables", V2.MudController, :world_tables)
+        get("/worlds/:world/systems", V2.MudController, :world_systems)
+        get("/worlds/:world/systems/:system", V2.MudController, :world_system)
+        get("/worlds/:world/tables/count", V2.MudController, :world_tables_count)
+        get("/worlds/:world/tables/:table_id/records", V2.MudController, :world_table_records)
+        get("/worlds/:world/tables/:table_id/records/count", V2.MudController, :world_table_records_count)
+        get("/worlds/:world/tables/:table_id/records/:record_id", V2.MudController, :world_table_record)
+      end
     end
 
     scope "/arbitrum" do
