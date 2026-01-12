@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.MudController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
     only: [
@@ -13,12 +14,37 @@ defmodule BlockScoutWeb.API.V2.MudController do
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
+  alias BlockScoutWeb.Schemas.Helper, as: SchemasHelper
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Data, Hash, Mud, Mud.Schema.FieldSchema, Mud.Table}
 
   @api_true [api?: true]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
+
+  tags(["mud"])
+
+  operation :worlds,
+    summary: "List of MUD worlds.",
+    description: "Retrieves a paginated list of MUD worlds with basic stats.",
+    parameters:
+      base_params() ++
+        define_paging_params([
+          "world",
+          "items_count"
+        ]),
+    responses: [
+      ok:
+        {"List of MUD worlds.", "application/json",
+         paginated_response(
+           items: Schemas.MUD.World,
+           next_page_params_example: %{
+             "world" => "0x82cb040ff4463bff3395d52b558fd77c61583b27",
+             "items_count" => 50
+           },
+           title_prefix: "Worlds"
+         )}
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/mud/worlds` endpoint.
@@ -60,6 +86,14 @@ defmodule BlockScoutWeb.API.V2.MudController do
     })
   end
 
+  operation :worlds_count,
+    summary: "Number of known MUD worlds.",
+    description: "Retrieves the total number of known MUD worlds.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Number of known MUD worlds.", "application/json", %Schema{type: :integer}}
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/mud/worlds/count` endpoint.
   """
@@ -71,6 +105,30 @@ defmodule BlockScoutWeb.API.V2.MudController do
     |> put_status(200)
     |> render(:count, %{count: count})
   end
+
+  operation :world_tables,
+    summary: "List of MUD world tables.",
+    description: "Retrieves a paginated list of MUD tables in the specific MUD world.",
+    parameters:
+      base_params() ++
+        [world_param()] ++
+        define_paging_params([
+          "table_id",
+          "items_count"
+        ]),
+    responses: [
+      ok:
+        {"List of MUD tables.", "application/json",
+         paginated_response(
+           items: Schemas.MUD.TableWithSchema,
+           next_page_params_example: %{
+             "table_id" => "0x746243484553545f5641554c5400000043686573744163636573730000000000",
+             "items_count" => 50
+           },
+           title_prefix: "Tables"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/mud/worlds/:world/tables` endpoint.
@@ -96,6 +154,15 @@ defmodule BlockScoutWeb.API.V2.MudController do
     end
   end
 
+  operation :world_systems,
+    summary: "List of MUD world systems.",
+    description: "Retrieves a list of MUD systems registered in the specific MUD world.",
+    parameters: [world_param() | base_params()],
+    responses: [
+      ok: {"List of MUD systems.", "application/json", %Schema{type: :array, items: Schemas.MUD.System}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/mud/worlds/:world/systems` endpoint.
   """
@@ -110,6 +177,15 @@ defmodule BlockScoutWeb.API.V2.MudController do
     end
   end
 
+  operation :world_system,
+    summary: "List of MUD world system ABI methods.",
+    description: "Retrieves a list of MUD system ABI methods registered in the specific MUD world.",
+    parameters: base_params() ++ [world_param(), system_param()],
+    responses: [
+      ok: {"List of MUD world system ABI methods.", "application/json", Schemas.MUD.SystemDetails},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/mud/worlds/:world/systems/:system` endpoint.
   """
@@ -123,6 +199,15 @@ defmodule BlockScoutWeb.API.V2.MudController do
       |> render(:system, %{system_id: system_id, abi: abi})
     end
   end
+
+  operation :world_tables_count,
+    summary: "Number of known MUD world tables.",
+    description: "Retrieves the total number of known MUD tables in the specific MUD world.",
+    parameters: [world_param() | base_params()],
+    responses: [
+      ok: {"Number of known MUD world tables.", "application/json", %Schema{type: :integer}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/mud/worlds/:world/tables/count` endpoint.
@@ -139,6 +224,40 @@ defmodule BlockScoutWeb.API.V2.MudController do
       |> render(:count, %{count: count})
     end
   end
+
+  operation :world_table_records,
+    summary: "List of MUD world table records.",
+    description: "Retrieves a paginated list of records in the specific MUD world table.",
+    parameters:
+      base_params() ++
+        [world_param(), table_id_param()] ++
+        define_paging_params([
+          "key_bytes",
+          "key0",
+          "key1",
+          "items_count"
+        ]),
+    responses: [
+      ok:
+        {"List of MUD world table records.", "application/json",
+         SchemasHelper.extend_schema(
+           paginated_response(
+             items: Schemas.MUD.Record,
+             next_page_params_example: %{
+               "key_bytes" => "0x73796269746c7900000000000000000043686573743332000000000000000000",
+               "key0" => "0x73796269746c7900000000000000000043686573743332000000000000000000",
+               "items_count" => 50
+             },
+             title_prefix: "Records"
+           ),
+           properties: %{
+             table: Schemas.MUD.Table,
+             schema: Schemas.MUD.TableSchema
+           },
+           required: [:table, :schema]
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/mud/worlds/:world/tables/:table_id/records` endpoint.
@@ -176,6 +295,15 @@ defmodule BlockScoutWeb.API.V2.MudController do
     end
   end
 
+  operation :world_table_records_count,
+    summary: "Number of known MUD world table records.",
+    description: "Retrieves the total number of records in the specific MUD world table.",
+    parameters: base_params() ++ [world_param(), table_id_param()],
+    responses: [
+      ok: {"Number of known MUD world table records.", "application/json", %Schema{type: :integer}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/mud/worlds/:world/tables/:table_id/records/count` endpoint.
   """
@@ -193,6 +321,21 @@ defmodule BlockScoutWeb.API.V2.MudController do
       |> render(:count, %{count: count})
     end
   end
+
+  operation :world_table_record,
+    summary: "Single MUD world table record.",
+    description: "Retrieves a single record in the specific MUD world table.",
+    parameters: base_params() ++ [world_param(), table_id_param(), record_id_param()],
+    responses: [
+      ok:
+        {"Single MUD world table record.", "application/json",
+         Schemas.MUD.TableWithSchema.schema()
+         |> SchemasHelper.extend_schema(
+           properties: %{record: Schemas.MUD.Record},
+           required: [:record]
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/mud/worlds/:world/tables/:table_id/records/:record_id` endpoint.
