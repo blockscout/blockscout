@@ -15,7 +15,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
@@ -452,7 +452,7 @@ defmodule Indexer.Block.Fetcher do
 
   defp update_withdrawals_cache([_ | _] = withdrawals) do
     %{index: index} = List.last(withdrawals)
-    Chain.upsert_count_withdrawals(index)
+    Withdrawal.upsert_count_withdrawals(index)
   end
 
   defp update_withdrawals_cache(_) do

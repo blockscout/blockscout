@@ -2,12 +2,38 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias Explorer.Chain.SmartContract
+  alias Explorer.Migrator.MigrationStatus
   alias OpenApiSpex.Schema
 
   plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
 
   tags(["config"])
+
+  operation :backend,
+    summary: "Get backend environment configuration",
+    description: "Returns non-secret backend environment variables in the snake case (e.g., chain_type).",
+    parameters: base_params(),
+    responses: [
+      ok:
+        {"Backend environment configuration.", "application/json",
+         %Schema{type: :object, properties: %{chain_type: %Schema{type: :string, nullable: true}}}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+    Function to handle GET requests to `/api/v2/config/backend` endpoint.
+  """
+  @spec backend(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def backend(conn, _params) do
+    chain_type = chain_type()
+
+    conn
+    |> put_status(200)
+    |> json(%{"chain_type" => chain_type})
+  end
 
   operation :backend_version,
     summary: "Get backend version",
@@ -169,5 +195,56 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     conn
     |> put_status(200)
     |> json(%{languages: SmartContract.language_strings()})
+  end
+
+  operation :db_background_migrations,
+    summary: "Uncompleted background migrations",
+    description: "Returns list of background migrations that are not yet completed.",
+    parameters: base_params(),
+    responses: [
+      ok:
+        {"Uncompleted background migrations.", "application/json",
+         %Schema{
+           type: :object,
+           properties: %{
+             migrations: %Schema{
+               type: :array,
+               items: %Schema{
+                 type: :object,
+                 properties: %{
+                   migration_name: %Schema{type: :string},
+                   status: %Schema{type: :string},
+                   inserted_at: %Schema{type: :string, format: "date-time"},
+                   updated_at: %Schema{type: :string, format: "date-time"},
+                   meta: %Schema{type: :object, nullable: true}
+                 }
+               }
+             }
+           }
+         }},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+    Function to handle GET requests to `/api/v2/config/db_background_migrations` endpoint.
+  """
+  @spec db_background_migrations(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def db_background_migrations(conn, _params) do
+    migrations = MigrationStatus.fetch_uncompleted_migrations()
+
+    conn
+    |> put_status(200)
+    |> json(%{
+      migrations:
+        Enum.map(migrations, fn migration ->
+          %{
+            migration_name: migration.migration_name,
+            status: migration.status,
+            inserted_at: migration.inserted_at,
+            updated_at: migration.updated_at,
+            meta: migration.meta
+          }
+        end)
+    })
   end
 end

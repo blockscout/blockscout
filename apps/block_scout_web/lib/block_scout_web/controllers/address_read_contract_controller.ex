@@ -45,7 +45,7 @@ defmodule BlockScoutWeb.AddressReadContractController do
     ]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_contract_address(address_hash, address_options),
+         {:ok, address} <- Address.find_contract_address(address_hash, address_options),
          false <- is_nil(address.smart_contract),
          need_wallet? <- Reader.read_functions_required_wallet_from_abi(address.smart_contract.abi) != [],
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.AddressReadContractController do
       _ ->
         if custom_abi? do
           with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-               {:ok, address} <- Chain.find_contract_address(address_hash, address_options),
+               {:ok, address} <- Address.find_contract_address(address_hash, address_options),
                {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
             render(
               conn,

@@ -534,7 +534,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     else
       Enum.reduce(block_numbers, [], fn block_number, acc_list ->
         block_number
-        |> Chain.get_transactions_of_block_number()
+        |> Transaction.get_transactions_of_block_number()
         |> InternalTransactionFetcher.filter_non_traceable_transactions()
         |> Enum.map(
           &%{

@@ -4,7 +4,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   """
 
   alias EthereumJSONRPC.NFT
-  alias Explorer.Chain
+  alias Explorer.Chain.Token
   alias Explorer.Chain.Token.Instance
   alias Explorer.Token.MetadataRetriever
   alias Indexer.NFTMediaHandler.Queue
@@ -86,7 +86,7 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
       other
       |> Enum.map(fn {contract_address_hash, _token_id} -> contract_address_hash end)
       |> Enum.uniq()
-      |> Chain.get_token_types()
+      |> Token.get_token_types()
       |> Map.new(fn {hash, type} -> {hash.bytes, type} end)
 
     other

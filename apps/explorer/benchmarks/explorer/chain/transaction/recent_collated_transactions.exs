@@ -2,13 +2,13 @@ path = "benchmarks/explorer/chain/recent_collated_transactions.benchee"
 
 import Explorer.Factory
 
-alias Explorer.{Chain, Repo}
-alias Explorer.Chain.Block
+alias Explorer.Repo
+alias Explorer.Chain.{Block, Transaction}
 
 Benchee.run(
   %{
-    "Explorer.Chain.recent_collated_transactions" => fn _ ->
-      Chain.recent_collated_transactions(true)
+    "Explorer.Chain.Transaction.recent_collated_transactions" => fn _ ->
+      Transaction.recent_collated_transactions(true)
     end
   },
   inputs: %{

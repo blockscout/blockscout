@@ -1681,6 +1681,7 @@ defmodule Explorer.Factory do
     }
   end
 
+
   def fhe_operation_factory do
     transaction = insert(:transaction) |> with_block()
     block = transaction.block
@@ -1703,6 +1704,13 @@ defmodule Explorer.Factory do
         "lhs" => "0x" <> Base.encode16(<<1::256>>, case: :lower),
         "rhs" => "0x" <> Base.encode16(<<2::256>>, case: :lower)
       }
+
+  def migration_status_factory do
+    %MigrationStatus{
+      migration_name: sequence("migration_", &"migration_#{&1}"),
+      status: "started",
+      meta: nil
+
     }
   end
 end

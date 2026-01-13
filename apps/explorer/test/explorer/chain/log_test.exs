@@ -5,7 +5,6 @@ defmodule Explorer.Chain.LogTest do
 
   alias Ecto.Changeset
   alias Explorer.Chain.{Log, SmartContract}
-  alias Explorer.TestHelper
 
   @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
 

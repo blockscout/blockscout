@@ -8,8 +8,7 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
 
   require Logger
 
-  alias Explorer.Chain
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Hash, Transaction}
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.ReplacedTransaction.Supervisor, as: ReplacedTransactionSupervisor
 
@@ -58,7 +57,7 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
   def init(initial, reducer, _) do
     {:ok, final} =
       [:block_hash, :nonce, :from_address_hash, :hash]
-      |> Chain.stream_pending_transactions(
+      |> Transaction.stream_pending_transactions(
         initial,
         fn transaction_fields, acc ->
           transaction_fields
@@ -119,11 +118,11 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
 
       pending
       |> Enum.map(&pending_params/1)
-      |> Chain.find_and_update_replaced_transactions()
+      |> Transaction.find_and_update_replaced_transactions()
 
       realtime
       |> Enum.map(&params/1)
-      |> Chain.update_replaced_transactions()
+      |> Transaction.update_replaced_transactions()
 
       :ok
     rescue

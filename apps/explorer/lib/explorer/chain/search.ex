@@ -537,6 +537,7 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:name, dynamic([address_tag: at], at.display_name))
       |> Map.put(:inserted_at, dynamic([address_to_tag: att], att.inserted_at))
       |> Map.put(:verified, dynamic([smart_contract: smart_contract], not is_nil(smart_contract)))
+      |> Map.put(:is_smart_contract_address, dynamic([address: address], not is_nil(address.contract_code)))
       |> Map.put(:priority, 3)
 
     inner_query =
@@ -554,6 +555,9 @@ defmodule Explorer.Chain.Search do
         left_join: smart_contract in SmartContract,
         as: :smart_contract,
         on: att.address_hash == smart_contract.address_hash,
+        left_join: address in Address,
+        as: :address,
+        on: att.address_hash == address.hash,
         select: ^label_search_fields
       )
 
@@ -615,6 +619,7 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:inserted_at, dynamic([smart_contract: smart_contract], smart_contract.inserted_at))
       |> Map.put(:certified, dynamic([smart_contract: smart_contract], smart_contract.certified))
       |> Map.put(:verified, true)
+      |> Map.put(:is_smart_contract_address, true)
       |> Map.put(:priority, 0)
       |> add_reputation_to_search_fields(options)
 
@@ -640,6 +645,7 @@ defmodule Explorer.Chain.Search do
       |> Map.put(:inserted_at, dynamic([address: address], address.inserted_at))
       |> Map.put(:verified, dynamic([address: address], address.verified))
       |> Map.put(:certified, dynamic([smart_contract: smart_contract], smart_contract.certified))
+      |> Map.put(:is_smart_contract_address, dynamic([address: address], not is_nil(address.contract_code)))
 
     base_address_query()
     |> where([address: address], address.hash == ^address_hash)
@@ -962,6 +968,11 @@ defmodule Explorer.Chain.Search do
 
   defp search_ens_name(search_query, options) do
     case search_ens_name_in_bens(search_query) do
+      {ens_result, nil} ->
+        [
+          merge_address_search_result_with_ens_info(nil, ens_result)
+        ]
+
       {ens_result, address_hash} ->
         [
           address_hash
@@ -1012,23 +1023,32 @@ defmodule Explorer.Chain.Search do
   @spec search_ens_name_in_bens(binary()) ::
           nil
           | {%{
-               address_hash: binary(),
+               address_hash: binary() | nil,
                expiry_date: any(),
                name: any(),
                names_count: non_neg_integer(),
                protocol: any()
-             }, Hash.Address.t()}
+             }, Hash.Address.t() | nil}
   def search_ens_name_in_bens(search_query) do
     trimmed_query = String.trim(search_query)
 
     with true <- Regex.match?(~r/\w+\.\w+/, trimmed_query),
-         %{address_hash: address_hash_string} = result <- ens_domain_name_lookup(search_query),
-         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string) do
+         %{address_hash: address_hash_string_or_nil} = result <- ens_domain_name_lookup(search_query),
+         address_hash <- address_hash_string_or_nil && Chain.string_to_address_hash_or_nil(address_hash_string_or_nil) do
       {result, address_hash}
     else
       _ ->
         nil
     end
+  end
+
+  defp merge_address_search_result_with_ens_info(nil, ens_info) do
+    search_fields()
+    |> Map.put(:address_hash, nil)
+    |> Map.put(:type, "ens_domain")
+    |> Map.put(:ens_info, ens_info)
+    |> Map.put(:timestamp, nil)
+    |> Map.put(:priority, 4)
   end
 
   defp merge_address_search_result_with_ens_info([], ens_info) do
@@ -1074,7 +1094,8 @@ defmodule Explorer.Chain.Search do
       order: 0,
       metadata: dynamic(type(^nil, :map)),
       addresses_index: 0,
-      reputation: "ok"
+      reputation: "ok",
+      is_smart_contract_address: dynamic(type(^nil, :boolean))
     }
   end
 
@@ -1094,6 +1115,7 @@ defmodule Explorer.Chain.Search do
     |> Map.put(:is_verified_via_admin_panel, dynamic([token: token], token.is_verified_via_admin_panel))
     |> Map.put(:verified, dynamic([smart_contract: smart_contract], not is_nil(smart_contract)))
     |> Map.put(:certified, dynamic([smart_contract: smart_contract], smart_contract.certified))
+    |> Map.put(:is_smart_contract_address, true)
     |> Map.put(:priority, 2)
   end
 
@@ -1106,6 +1128,7 @@ defmodule Explorer.Chain.Search do
     |> Map.put(:order, dynamic([metadata_tag: tag], tag.id))
     |> Map.put(:addresses_index, dynamic([metadata_tag: tag], tag.addresses_index))
     |> Map.put(:verified, dynamic([address: address], address.verified))
+    |> Map.put(:is_smart_contract_address, dynamic([address: address], not is_nil(address.contract_code)))
     |> Map.put(:priority, 1)
   end
 
@@ -1390,6 +1413,7 @@ defmodule Explorer.Chain.Search do
         |> Map.put(:inserted_at, dynamic([address: address], address.inserted_at))
         |> Map.put(:verified, dynamic([address: address], address.verified))
         |> Map.put(:certified, dynamic([smart_contract: smart_contract], smart_contract.certified))
+        |> Map.put(:is_smart_contract_address, dynamic([address: address], not is_nil(address.contract_code)))
 
       base_address_query()
       |> join(

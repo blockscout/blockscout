@@ -461,7 +461,7 @@ defmodule Explorer.Etherscan do
     |> Enum.map(fn direction ->
       query
       |> where_address_match(address_hash, direction)
-      |> Chain.pending_transactions_query()
+      |> Transaction.pending_transactions_query()
       |> order_by([transaction], desc: transaction.inserted_at, desc: transaction.hash)
       |> Chain.wrapped_union_subquery()
     end)

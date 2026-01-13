@@ -52,6 +52,7 @@ defmodule BlockScoutWeb.Chain do
     Withdrawal
   }
 
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
   alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
   alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
@@ -833,13 +834,32 @@ defmodule BlockScoutWeb.Chain do
     %PagingOptions{options | page_number: new_page_number, page_size: new_page_size}
   end
 
-  @spec param_to_block_number(binary()) :: {:ok, integer()} | {:error, :invalid}
-  def param_to_block_number(formatted_number) when is_binary(formatted_number) do
+  @spec param_to_block_number(binary(), boolean()) :: {:ok, integer()} | {:error, :invalid} | {:error, :not_found}
+  def param_to_block_number(_number, validate_max_block_number? \\ true)
+
+  def param_to_block_number(formatted_number, validate_max_block_number?) when is_binary(formatted_number) do
     case Integer.parse(formatted_number) do
-      {number, ""} -> {:ok, number}
-      _ -> {:error, :invalid}
+      {number, ""} ->
+        validate_block_number(number, validate_max_block_number?)
+
+      _ ->
+        {:error, :invalid}
     end
   end
+
+  @spec param_to_block_number(integer(), boolean()) :: {:ok, integer()} | {:error, :invalid} | {:error, :not_found}
+  def param_to_block_number(number, validate_max_block_number?) when is_integer(number),
+    do: validate_block_number(number, validate_max_block_number?)
+
+  defp validate_block_number(number, validate_max_block_number?) when is_integer(number) and number >= 0 do
+    if not validate_max_block_number? or (validate_max_block_number? and number <= BlockNumber.get_max()) do
+      {:ok, number}
+    else
+      {:error, :not_found}
+    end
+  end
+
+  defp validate_block_number(_, _), do: {:error, :invalid}
 
   @doc """
   Converts a timestamp string to a `DateTime.t()` struct for block timestamp
@@ -1211,12 +1231,18 @@ defmodule BlockScoutWeb.Chain do
 
       {:error, :invalid} ->
         {:error, {:invalid, :number}}
+
+      {:error, :not_found} ->
+        {:error, :not_found}
     end
   end
 
   def parse_block_hash_or_number_param(number)
       when is_integer(number) do
-    {:ok, :number, number}
+    case param_to_block_number(number) do
+      {:ok, number} -> {:ok, :number, number}
+      {:error, :not_found} -> {:error, :not_found}
+    end
   end
 
   @doc """

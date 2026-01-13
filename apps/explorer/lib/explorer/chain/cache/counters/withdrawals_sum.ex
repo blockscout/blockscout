@@ -11,9 +11,9 @@ defmodule Explorer.Chain.Cache.Counters.WithdrawalsSum do
     enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]],
     update_interval_in_milliseconds: [:explorer, [__MODULE__, :update_interval_in_milliseconds]]
 
-  alias Explorer.Chain
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.{Wei, Withdrawal}
+  alias Explorer.Repo
 
   @counter_type "withdrawals_sum"
 
@@ -66,7 +66,7 @@ defmodule Explorer.Chain.Cache.Counters.WithdrawalsSum do
   Consolidates the info by populating the `last_fetched_counters` table with the current database information.
   """
   def consolidate do
-    withdrawals_sum = Chain.sum_withdrawals()
+    withdrawals_sum = sum_withdrawals()
 
     params = %{
       counter_type: @counter_type,
@@ -89,4 +89,8 @@ defmodule Explorer.Chain.Cache.Counters.WithdrawalsSum do
   `config :explorer, #{__MODULE__}, enable_consolidation: false`
   """
   def enable_consolidation?, do: @enable_consolidation
+
+  defp sum_withdrawals do
+    Repo.aggregate(Withdrawal, :sum, :amount, timeout: :infinity)
+  end
 end

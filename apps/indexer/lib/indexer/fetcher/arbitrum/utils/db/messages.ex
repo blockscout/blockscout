@@ -52,26 +52,65 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
   end
 
   @doc """
-    Calculates the next L1 block number to start the search for messages sent to L2
-    that precede the earliest message already discovered.
+    Retrieves the highest message ID for an L1-to-L2 message that has been fully indexed within or before a specified safe L1 block, meaning both the originating transaction on L1 and the completion transaction on L2 have been discovered.
+
+    This function is useful for determining the progress of message indexing
+    and identifying the starting point for discovering messages that are
+    missing originating transaction information, while ensuring only finalized
+    L1 data is considered.
 
     ## Parameters
-    - `value_if_nil`: The default value to return if no L1-to-L2 messages have been discovered.
+    - `safe_block`: The L1 block number threshold for filtering messages.
+    - `value_if_nil`: The default value to return if no fully indexed L1-to-L2
+      messages exist within the safe block range.
 
     ## Returns
-    - The L1 block number immediately preceding the earliest discovered message to L2,
-      or `value_if_nil` if no messages to L2 have been found.
+    - The highest message ID for a fully indexed and relayed L1-to-L2 message
+      within the safe block range, or `value_if_nil` if no such messages are
+      found.
   """
-  @spec l1_block_to_discover_earliest_message_to_l2(nil | FullBlock.block_number()) :: nil | FullBlock.block_number()
-  def l1_block_to_discover_earliest_message_to_l2(value_if_nil)
-      when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
-    case Reader.l1_block_of_earliest_discovered_message_to_l2() do
+  @spec highest_safe_fully_indexed_message_to_l2(FullBlock.block_number(), nil | non_neg_integer()) ::
+          nil | non_neg_integer()
+  def highest_safe_fully_indexed_message_to_l2(safe_block, value_if_nil)
+      when is_integer(safe_block) and safe_block >= 0 and
+             ((is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil)) do
+    case Reader.highest_safe_fully_indexed_message_to_l2(safe_block) do
       nil ->
-        log_warning(@no_messages_warning)
+        log_warning("No fully indexed messages to L2 found in DB within safe block #{safe_block}")
         value_if_nil
 
       value ->
-        value - 1
+        value
+    end
+  end
+
+  @doc """
+    Inspects the earliest discovered L1-to-L2 message and returns its message ID
+    along with the L1 block number to start the search for messages that precede it.
+
+    ## Parameters
+    - `value_if_nil`: The default L1 block number to use if no L1-to-L2 messages have been discovered.
+
+    ## Returns
+    - A map containing:
+      - `already_discovered_message_id`: The message ID of the earliest discovered message,
+        or `nil` if no messages have been found.
+      - `l1_block_to_discover_earlier_messages`: The L1 block number immediately preceding
+        the earliest discovered message, or `value_if_nil` if no messages have been found.
+  """
+  @spec inspect_earliest_discovered_message_to_l2(nil | FullBlock.block_number()) :: %{
+          already_discovered_message_id: non_neg_integer() | nil,
+          l1_block_to_discover_earlier_messages: FullBlock.block_number() | nil
+        }
+  def inspect_earliest_discovered_message_to_l2(value_if_nil)
+      when (is_integer(value_if_nil) and value_if_nil >= 0) or is_nil(value_if_nil) do
+    case Reader.earliest_discovered_message_to_l2() do
+      nil ->
+        log_warning(@no_messages_warning)
+        %{already_discovered_message_id: nil, l1_block_to_discover_earlier_messages: value_if_nil}
+
+      {message_id, block_number} ->
+        %{already_discovered_message_id: message_id, l1_block_to_discover_earlier_messages: block_number - 1}
     end
   end
 
@@ -277,6 +316,81 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
   @spec get_uncompleted_l1_to_l2_messages_ids() :: [non_neg_integer()]
   def get_uncompleted_l1_to_l2_messages_ids do
     Reader.get_uncompleted_l1_to_l2_messages_ids()
+  end
+
+  @doc """
+    Retrieves the message IDs of L1-to-L2 messages that have completion transactions
+    but are missing originating transaction information within a specified message ID range.
+
+    This function identifies messages where the completion transaction has been discovered
+    on L2, but the corresponding originating transaction on L1 has not yet been indexed.
+
+    ## Parameters
+    - `start_message_id`: The starting message ID of the range (inclusive).
+    - `end_message_id`: The ending message ID of the range (inclusive).
+
+    ## Returns
+    - A list of message IDs for L1-to-L2 messages that have completion transactions
+      but lack originating transaction information, ordered by message ID in descending
+      order (highest to lowest).
+  """
+  @spec messages_to_l2_completed_but_originating_info_missed(non_neg_integer(), non_neg_integer()) :: [
+          non_neg_integer()
+        ]
+  def messages_to_l2_completed_but_originating_info_missed(start_message_id, end_message_id)
+      when is_integer(start_message_id) and start_message_id >= 0 and
+             is_integer(end_message_id) and end_message_id >= 0 and
+             start_message_id <= end_message_id do
+    Reader.messages_to_l2_completed_but_originating_info_missed(start_message_id, end_message_id)
+  end
+
+  @doc """
+    Determines the L1 block range to search for the originating transaction of an L1-to-L2
+    message with the given message ID.
+
+    The function finds the closest preceding and following messages that have originating
+    transaction information and returns their message IDs and L1 block numbers. If either
+    bound cannot be determined from existing messages, the provided fallback block values
+    are used and the message_id is set to nil.
+
+    ## Parameters
+    - `message_id`: The message ID to find the L1 block range for.
+    - `fallback_min_block`: The fallback L1 block number to use as the lower bound if no
+      preceding message with originating information is found (typically the L1 block where
+      the rollup was initialized).
+    - `fallback_max_block`: The fallback L1 block number to use as the upper bound if no
+      following message with originating information is found (typically the current L1 chain tip).
+
+    ## Returns
+    - A map with `:lower` and `:higher` keys, each containing a map with:
+      - `:message_id` - The message ID of the bound (or `nil` if fallback was used)
+      - `:block_number` - The L1 block number of the bound
+  """
+  @spec l1_block_range_for_message_to_l2(
+          non_neg_integer(),
+          FullBlock.block_number(),
+          FullBlock.block_number()
+        ) :: %{
+          lower: %{message_id: non_neg_integer() | nil, block_number: FullBlock.block_number()},
+          higher: %{message_id: non_neg_integer() | nil, block_number: FullBlock.block_number()}
+        }
+  def l1_block_range_for_message_to_l2(message_id, fallback_min_block, fallback_max_block)
+      when is_integer(message_id) and message_id >= 0 and
+             is_integer(fallback_min_block) and is_integer(fallback_max_block) and
+             fallback_min_block <= fallback_max_block do
+    lower =
+      case Reader.l1_block_of_closest_preceding_message_to_l2(message_id) do
+        nil -> %{message_id: nil, block_number: fallback_min_block}
+        {msg_id, block_number} -> %{message_id: msg_id, block_number: block_number}
+      end
+
+    higher =
+      case Reader.l1_block_of_closest_following_message_to_l2(message_id) do
+        nil -> %{message_id: nil, block_number: fallback_max_block}
+        {msg_id, block_number} -> %{message_id: msg_id, block_number: block_number}
+      end
+
+    %{lower: lower, higher: higher}
   end
 
   @spec message_to_map(Message.t()) :: Message.to_import()
