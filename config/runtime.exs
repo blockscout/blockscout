@@ -19,7 +19,7 @@ config :logger, :api, metadata: ConfigHelper.logger_metadata(), metadata_filter:
 
 config :logger, :api_v2, metadata: ConfigHelper.logger_metadata(), metadata_filter: [application: :api_v2]
 
-microservice_multichain_search_url = System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")
+microservice_multichain_search_url = ConfigHelper.parse_url_env_var("MICROSERVICE_MULTICHAIN_SEARCH_URL")
 transactions_stats_enabled = ConfigHelper.parse_bool_env_var("TXS_STATS_ENABLED", "true")
 
 ######################
@@ -34,8 +34,8 @@ config :block_scout_web,
   show_percentage: ConfigHelper.parse_bool_env_var("SHOW_ADDRESS_MARKETCAP_PERCENTAGE", "true"),
   checksum_address_hashes: ConfigHelper.parse_bool_env_var("CHECKSUM_ADDRESS_HASHES", "true"),
   other_networks: System.get_env("SUPPORTED_CHAINS"),
-  webapp_url: System.get_env("WEBAPP_URL"),
-  api_url: System.get_env("API_URL"),
+  webapp_url: ConfigHelper.parse_url_env_var("WEBAPP_URL"),
+  api_url: ConfigHelper.parse_url_env_var("API_URL"),
   apps_menu: ConfigHelper.parse_bool_env_var("APPS_MENU"),
   apps: System.get_env("APPS") || System.get_env("EXTERNAL_APPS"),
   gas_price: System.get_env("GAS_PRICE"),
@@ -164,7 +164,7 @@ config :block_scout_web, :api_rate_limit,
       do: BlockScoutWeb.RateLimit.Hammer.ETS,
       else: BlockScoutWeb.RateLimit.Hammer.Redis
     ),
-  config_url: System.get_env("API_RATE_LIMIT_CONFIG_URL")
+  config_url: ConfigHelper.parse_url_env_var("API_RATE_LIMIT_CONFIG_URL")
 
 config :block_scout_web, :remote_ip,
   is_blockscout_behind_proxy: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_IS_BLOCKSCOUT_BEHIND_PROXY"),
@@ -216,7 +216,7 @@ config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
 config :block_scout_web, BlockScoutWeb.API.V2, enabled: ConfigHelper.parse_bool_env_var("API_V2_ENABLED", "true")
 
 config :block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
-  service_url: System.get_env("MICROSERVICE_TRANSACTION_INTERPRETATION_URL"),
+  service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_TRANSACTION_INTERPRETATION_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_TRANSACTION_INTERPRETATION_ENABLED")
 
 # Configures Ueberauth's Auth0 auth provider
@@ -449,11 +449,11 @@ config :explorer, Explorer.Market.Source,
 config :explorer, Explorer.Market.Source.CoinGecko,
   platform: System.get_env("MARKET_COINGECKO_PLATFORM_ID") || System.get_env("EXCHANGE_RATES_COINGECKO_PLATFORM_ID"),
   base_url:
-    System.get_env("MARKET_COINGECKO_BASE_URL") ||
-      System.get_env("EXCHANGE_RATES_COINGECKO_BASE_URL", "https://api.coingecko.com/api/v3"),
+    ConfigHelper.parse_url_env_var("MARKET_COINGECKO_BASE_URL") ||
+      ConfigHelper.parse_url_env_var("EXCHANGE_RATES_COINGECKO_BASE_URL", "https://api.coingecko.com/api/v3"),
   base_pro_url:
-    System.get_env("MARKET_COINGECKO_BASE_PRO_URL") ||
-      System.get_env("EXCHANGE_RATES_COINGECKO_BASE_PRO_URL", "https://pro-api.coingecko.com/api/v3"),
+    ConfigHelper.parse_url_env_var("MARKET_COINGECKO_BASE_PRO_URL") ||
+      ConfigHelper.parse_url_env_var("EXCHANGE_RATES_COINGECKO_BASE_PRO_URL", "https://pro-api.coingecko.com/api/v3"),
   api_key: System.get_env("MARKET_COINGECKO_API_KEY") || System.get_env("EXCHANGE_RATES_COINGECKO_API_KEY"),
   coin_id: System.get_env("MARKET_COINGECKO_COIN_ID") || System.get_env("EXCHANGE_RATES_COINGECKO_COIN_ID"),
   secondary_coin_id:
@@ -462,8 +462,8 @@ config :explorer, Explorer.Market.Source.CoinGecko,
 
 config :explorer, Explorer.Market.Source.CoinMarketCap,
   base_url:
-    System.get_env("MARKET_COINMARKETCAP_BASE_URL") ||
-      System.get_env("EXCHANGE_RATES_COINMARKETCAP_BASE_URL", "https://pro-api.coinmarketcap.com/v2"),
+    ConfigHelper.parse_url_env_var("MARKET_COINMARKETCAP_BASE_URL") ||
+      ConfigHelper.parse_url_env_var("EXCHANGE_RATES_COINMARKETCAP_BASE_URL", "https://pro-api.coinmarketcap.com/v2"),
   api_key: System.get_env("MARKET_COINMARKETCAP_API_KEY") || System.get_env("EXCHANGE_RATES_COINMARKETCAP_API_KEY"),
   coin_id: System.get_env("MARKET_COINMARKETCAP_COIN_ID") || System.get_env("EXCHANGE_RATES_COINMARKETCAP_COIN_ID"),
   secondary_coin_id:
@@ -472,7 +472,7 @@ config :explorer, Explorer.Market.Source.CoinMarketCap,
   currency_id: "2781"
 
 config :explorer, Explorer.Market.Source.CryptoCompare,
-  base_url: System.get_env("MARKET_CRYPTOCOMPARE_BASE_URL", "https://min-api.cryptocompare.com"),
+  base_url: ConfigHelper.parse_url_env_var("MARKET_CRYPTOCOMPARE_BASE_URL", "https://min-api.cryptocompare.com"),
   coin_symbol: System.get_env("MARKET_CRYPTOCOMPARE_COIN_SYMBOL", coin),
   secondary_coin_symbol:
     System.get_env("MARKET_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL") ||
@@ -484,8 +484,8 @@ config :explorer, Explorer.Market.Source.CryptoRank,
     ConfigHelper.parse_integer_or_nil_env_var("MARKET_CRYPTORANK_PLATFORM_ID") ||
       ConfigHelper.parse_integer_or_nil_env_var("EXCHANGE_RATES_CRYPTORANK_PLATFORM_ID"),
   base_url:
-    System.get_env("MARKET_CRYPTORANK_BASE_URL") ||
-      System.get_env("EXCHANGE_RATES_CRYPTORANK_BASE_URL", "https://api.cryptorank.io/v1/"),
+    ConfigHelper.parse_url_env_var("MARKET_CRYPTORANK_BASE_URL") ||
+      ConfigHelper.parse_url_env_var("EXCHANGE_RATES_CRYPTORANK_BASE_URL", "https://api.cryptorank.io/v1"),
   api_key: System.get_env("MARKET_CRYPTORANK_API_KEY") || System.get_env("EXCHANGE_RATES_CRYPTORANK_API_KEY"),
   coin_id:
     System.get_env("MARKET_CRYPTORANK_COIN_ID") ||
@@ -502,8 +502,8 @@ config :explorer, Explorer.Market.Source.DefiLlama,
 config :explorer, Explorer.Market.Source.Mobula,
   platform: System.get_env("MARKET_MOBULA_PLATFORM_ID") || System.get_env("EXCHANGE_RATES_MOBULA_CHAIN_ID"),
   base_url:
-    System.get_env("MARKET_MOBULA_BASE_URL") ||
-      System.get_env("EXCHANGE_RATES_MOBULA_BASE_URL", "https://api.mobula.io/api/1"),
+    ConfigHelper.parse_url_env_var("MARKET_MOBULA_BASE_URL") ||
+      ConfigHelper.parse_url_env_var("EXCHANGE_RATES_MOBULA_BASE_URL", "https://api.mobula.io/api/1"),
   api_key: System.get_env("MARKET_MOBULA_API_KEY") || System.get_env("EXCHANGE_RATES_MOBULA_API_KEY"),
   coin_id: System.get_env("MARKET_MOBULA_COIN_ID") || System.get_env("EXCHANGE_RATES_MOBULA_COIN_ID"),
   secondary_coin_id:
@@ -511,7 +511,7 @@ config :explorer, Explorer.Market.Source.Mobula,
 
 config :explorer, Explorer.Market.Source.DIA,
   blockchain: System.get_env("MARKET_DIA_BLOCKCHAIN"),
-  base_url: System.get_env("MARKET_DIA_BASE_URL", "https://api.diadata.org/v1"),
+  base_url: ConfigHelper.parse_url_env_var("MARKET_DIA_BASE_URL", "https://api.diadata.org/v1"),
   coin_address_hash: System.get_env("MARKET_DIA_COIN_ADDRESS_HASH"),
   secondary_coin_address_hash: System.get_env("MARKET_DIA_SECONDARY_COIN_ADDRESS_HASH")
 
@@ -619,10 +619,10 @@ config :explorer, Explorer.Chain.Cache.CeloCoreContracts,
   contracts: ConfigHelper.parse_json_env_var("CELO_CORE_CONTRACTS")
 
 config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
-  server_url: System.get_env("SOURCIFY_SERVER_URL") || "https://sourcify.dev/server",
+  server_url: ConfigHelper.parse_url_env_var("SOURCIFY_SERVER_URL", "https://sourcify.dev/server"),
   enabled: ConfigHelper.parse_bool_env_var("SOURCIFY_INTEGRATION_ENABLED"),
   chain_id: System.get_env("CHAIN_ID"),
-  repo_url: System.get_env("SOURCIFY_REPO_URL") || "https://repo.sourcify.dev/contracts"
+  repo_url: ConfigHelper.parse_url_env_var("SOURCIFY_REPO_URL", "https://repo.sourcify.dev/contracts")
 
 config :explorer, Explorer.ThirdPartyIntegrations.SolidityScan,
   platform_id: System.get_env("SOLIDITYSCAN_PLATFORM_ID", "16"),
@@ -630,12 +630,12 @@ config :explorer, Explorer.ThirdPartyIntegrations.SolidityScan,
   api_key: System.get_env("SOLIDITYSCAN_API_TOKEN")
 
 config :explorer, Explorer.ThirdPartyIntegrations.NovesFi,
-  service_url: System.get_env("NOVES_FI_BASE_API_URL") || "https://blockscout.noves.fi",
+  service_url: ConfigHelper.parse_url_env_var("NOVES_FI_BASE_API_URL", "https://blockscout.noves.fi"),
   chain_name: System.get_env("NOVES_FI_CHAIN_NAME"),
   api_key: System.get_env("NOVES_FI_API_TOKEN")
 
 config :explorer, Explorer.ThirdPartyIntegrations.Xname,
-  service_url: System.get_env("XNAME_BASE_API_URL", "https://gateway.xname.app"),
+  service_url: ConfigHelper.parse_url_env_var("XNAME_BASE_API_URL", "https://gateway.xname.app"),
   api_key: System.get_env("XNAME_API_TOKEN")
 
 enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED", "true")
@@ -643,35 +643,36 @@ enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED", "
 type = System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")
 
 config :explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
-  service_url: System.get_env("MICROSERVICE_SC_VERIFIER_URL") || "https://eth-bytecode-db.services.blockscout.com/",
+  service_url:
+    ConfigHelper.parse_url_env_var("MICROSERVICE_SC_VERIFIER_URL", "https://eth-bytecode-db.services.blockscout.com"),
   enabled: enabled?,
   type: type,
   eth_bytecode_db?: enabled? && type == "eth_bytecode_db",
   api_key: System.get_env("MICROSERVICE_SC_VERIFIER_API_KEY")
 
 config :explorer, Explorer.Visualize.Sol2uml,
-  service_url: System.get_env("MICROSERVICE_VISUALIZE_SOL2UML_URL"),
+  service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_VISUALIZE_SOL2UML_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_VISUALIZE_SOL2UML_ENABLED")
 
 config :explorer, Explorer.SmartContract.SigProviderInterface,
-  service_url: System.get_env("MICROSERVICE_SIG_PROVIDER_URL"),
+  service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_SIG_PROVIDER_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_SIG_PROVIDER_ENABLED")
 
 config :explorer, Explorer.MicroserviceInterfaces.BENS,
-  service_url: System.get_env("MICROSERVICE_BENS_URL"),
+  service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_BENS_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_BENS_ENABLED")
 
 config :explorer, Explorer.MicroserviceInterfaces.AccountAbstraction,
-  service_url: System.get_env("MICROSERVICE_ACCOUNT_ABSTRACTION_URL"),
+  service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_ACCOUNT_ABSTRACTION_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_ACCOUNT_ABSTRACTION_ENABLED")
 
 config :explorer, Explorer.MicroserviceInterfaces.Metadata,
-  service_url: System.get_env("MICROSERVICE_METADATA_URL"),
+  service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_METADATA_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_METADATA_ENABLED"),
   proxy_requests_timeout: ConfigHelper.parse_time_env_var("MICROSERVICE_METADATA_PROXY_REQUESTS_TIMEOUT", "30s")
 
 config :explorer, Explorer.SmartContract.StylusVerifierInterface,
-  service_url: ConfigHelper.parse_microservice_url("MICROSERVICE_STYLUS_VERIFIER_URL")
+  service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_STYLUS_VERIFIER_URL")
 
 config :explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
   api_key: System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_API_KEY"),
@@ -684,7 +685,7 @@ config :explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
 
 config :explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_TAC_OPERATION_LIFECYCLE_ENABLED", "true"),
-  service_url: System.get_env("MICROSERVICE_TAC_OPERATION_LIFECYCLE_URL")
+  service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_TAC_OPERATION_LIFECYCLE_URL")
 
 audit_reports_table_url = System.get_env("CONTRACT_AUDIT_REPORTS_AIRTABLE_URL")
 audit_reports_api_key = System.get_env("CONTRACT_AUDIT_REPORTS_AIRTABLE_API_KEY")
@@ -884,7 +885,7 @@ config :explorer, Explorer.Chain.Filecoin.NativeAddress,
 
 config :explorer, Explorer.Chain.Blackfort.Validator, api_url: System.get_env("BLACKFORT_VALIDATOR_API_URL")
 
-addresses_blacklist_url = ConfigHelper.parse_microservice_url("ADDRESSES_BLACKLIST_URL")
+addresses_blacklist_url = ConfigHelper.parse_url_env_var("ADDRESSES_BLACKLIST_URL")
 
 config :explorer, Explorer.Chain.Fetcher.AddressesBlacklist,
   url: addresses_blacklist_url,
@@ -893,7 +894,7 @@ config :explorer, Explorer.Chain.Fetcher.AddressesBlacklist,
   retry_interval: ConfigHelper.parse_time_env_var("ADDRESSES_BLACKLIST_RETRY_INTERVAL", "5s"),
   provider: ConfigHelper.parse_catalog_value("ADDRESSES_BLACKLIST_PROVIDER", ["blockaid"], false, "blockaid")
 
-rate_limiter_redis_url = System.get_env("RATE_LIMITER_REDIS_URL")
+rate_limiter_redis_url = ConfigHelper.parse_url_env_var("RATE_LIMITER_REDIS_URL")
 
 config :explorer, Explorer.Utility.RateLimiter,
   storage: (rate_limiter_redis_url && :redis) || :ets,
@@ -910,7 +911,7 @@ config :explorer, Explorer.Utility.RateLimiter,
 
 config :explorer, Explorer.ThirdPartyIntegrations.UniversalProxy,
   config_url:
-    System.get_env(
+    ConfigHelper.parse_url_env_var(
       "UNIVERSAL_PROXY_CONFIG_URL",
       "https://raw.githubusercontent.com/blockscout/backend-configs/refs/heads/main/universal-proxy-config.json"
     )
@@ -976,12 +977,12 @@ config :indexer,
     ConfigHelper.parse_catalog_value("INDEXER_INTERNAL_TRANSACTIONS_FETCH_ORDER", ["asc", "desc"], true, "asc")
 
 config :indexer, :ipfs,
-  gateway_url: System.get_env("IPFS_GATEWAY_URL", "https://ipfs.io/ipfs"),
+  gateway_url: ConfigHelper.parse_url_env_var("IPFS_GATEWAY_URL", "https://ipfs.io/ipfs"),
   gateway_url_param_key: System.get_env("IPFS_GATEWAY_URL_PARAM_KEY"),
   gateway_url_param_value: System.get_env("IPFS_GATEWAY_URL_PARAM_VALUE"),
   gateway_url_param_location:
     ConfigHelper.parse_catalog_value("IPFS_GATEWAY_URL_PARAM_LOCATION", ["query", "header"], true),
-  public_gateway_url: System.get_env("IPFS_PUBLIC_GATEWAY_URL", "https://ipfs.io/ipfs")
+  public_gateway_url: ConfigHelper.parse_url_env_var("IPFS_PUBLIC_GATEWAY_URL", "https://ipfs.io/ipfs")
 
 config :indexer, :arc,
   arc_native_token_decimals: ConfigHelper.parse_integer_env_var("INDEXER_ARC_NATIVE_TOKEN_DECIMALS", 6),
@@ -1561,11 +1562,11 @@ config :indexer, Indexer.Fetcher.Celo.Legacy.Account.Supervisor,
   disabled?: not (ConfigHelper.chain_identity() == {:optimism, :celo})
 
 config :indexer, Indexer.Fetcher.Filecoin.BeryxAPI,
-  base_url: ConfigHelper.safe_get_env("BERYX_API_BASE_URL", "https://api.zondax.ch/fil/data/v3/mainnet"),
+  base_url: ConfigHelper.parse_url_env_var("BERYX_API_BASE_URL", "https://api.zondax.ch/fil/data/v3/mainnet"),
   api_token: System.get_env("BERYX_API_TOKEN")
 
 config :indexer, Indexer.Fetcher.Filecoin.FilfoxAPI,
-  base_url: ConfigHelper.safe_get_env("FILFOX_API_BASE_URL", "https://filfox.info/api/v1")
+  base_url: ConfigHelper.parse_url_env_var("FILFOX_API_BASE_URL", "https://filfox.info/api/v1")
 
 config :indexer, Indexer.Fetcher.Filecoin.AddressInfo.Supervisor,
   disabled?:

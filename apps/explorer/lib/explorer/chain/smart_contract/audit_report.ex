@@ -8,6 +8,7 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
   alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.Hash
   alias Explorer.ThirdPartyIntegrations.AirTableAuditReport
+  alias Utils.ConfigHelper, as: UtilsConfigHelper
 
   @max_reports_per_day_for_contract 5
 
@@ -86,7 +87,7 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
   end
 
   defp valid_url?(field, url) do
-    if Helper.valid_url?(url) do
+    if UtilsConfigHelper.valid_url?(url) do
       []
     else
       [{field, "invalid url"}]

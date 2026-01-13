@@ -226,18 +226,6 @@ defmodule Explorer.Helper do
   def validate_url(_), do: :error
 
   @doc """
-    Validate url
-  """
-  @spec valid_url?(String.t()) :: boolean()
-  def valid_url?(string) when is_binary(string) do
-    uri = URI.parse(string)
-
-    !is_nil(uri.scheme) && !is_nil(uri.host)
-  end
-
-  def valid_url?(_), do: false
-
-  @doc """
   Compare two values and returns either :lt, :eq or :gt.
 
   Please be careful: this function compares arguments using `<` and `>`,
