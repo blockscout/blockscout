@@ -5,7 +5,7 @@ defmodule Explorer.Validator.MetadataRetriever do
 
   alias Explorer.SmartContract.Reader
 
-  @spec fetch_data() :: [%{address_hash: String.t(), name: String.t(), metadata: map()}]
+  @spec fetch_data() :: [%{address_hash: String.t(), primary: true, name: String.t(), metadata: map()}]
   def fetch_data do
     fetch_validators_list()
     |> Enum.map(fn validator ->
