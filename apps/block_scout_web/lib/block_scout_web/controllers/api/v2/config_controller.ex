@@ -19,7 +19,13 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     responses: [
       ok:
         {"Backend environment configuration.", "application/json",
-         %Schema{type: :object, properties: %{chain_type: %Schema{type: :string, nullable: true}}}},
+         %Schema{
+           type: :object,
+           properties: %{
+             chain_type: %Schema{type: :string, nullable: true},
+             openapi_spec_folder_name: %Schema{type: :string, nullable: true}
+           }
+         }},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -32,7 +38,19 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
 
     conn
     |> put_status(200)
-    |> json(%{"chain_type" => chain_type})
+    |> json(%{
+      "chain_type" => chain_type,
+      "openapi_spec_folder_name" => chain_type_translate_to_openapi_spec_folder_name()
+    })
+  end
+
+  @spec chain_type_translate_to_openapi_spec_folder_name() :: String.t()
+  defp chain_type_translate_to_openapi_spec_folder_name do
+    if Application.get_env(:explorer, Explorer.Chain.Mud)[:enabled] do
+      "mud"
+    else
+      chain_type() || "default"
+    end
   end
 
   operation :backend_version,
