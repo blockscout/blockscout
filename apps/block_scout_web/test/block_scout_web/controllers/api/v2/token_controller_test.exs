@@ -1139,7 +1139,12 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> insert()
         |> with_block()
 
-      instance = insert(:token_instance, token_id: 0, token_contract_address_hash: token.contract_address_hash)
+      instance =
+        insert(:token_instance,
+          token_id: 0,
+          token_contract_address_hash: token.contract_address_hash,
+          skip_metadata_url: true
+        )
 
       _transfer =
         insert(:token_transfer,
@@ -1175,6 +1180,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       insert(:token_instance,
         token_id: 0,
         token_contract_address_hash: token.contract_address_hash,
+        skip_metadata_url: true,
         metadata: %{
           "image_url" => "ipfs://QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/gm%20gm%20feelin%20blue%204k.png"
         }
@@ -1211,6 +1217,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       insert(:token_instance,
         token_id: 0,
         token_contract_address_hash: token.contract_address_hash,
+        skip_metadata_url: true,
         metadata: %{
           "image_url" => "ipfs://QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/123.png"
         }
