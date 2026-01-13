@@ -139,7 +139,8 @@ for migrator <- [
       Explorer.Migrator.ReindexDuplicatedInternalTransactions,
       Explorer.Migrator.MergeAdjacentMissingBlockRanges,
       Explorer.Migrator.UnescapeQuotesInTokens,
-      Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources
+      Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources,
+      Explorer.Migrator.FillInternalTransactionToAddressHash
     ] do
   config :explorer, migrator, enabled: true
 end

@@ -179,6 +179,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           index: index,
           transaction: transaction,
           created_contract_address: address,
+          to_address: nil,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
           block_index: index,

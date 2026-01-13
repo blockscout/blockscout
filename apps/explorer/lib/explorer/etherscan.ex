@@ -10,6 +10,7 @@ defmodule Explorer.Etherscan do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, InternalTransaction, TokenTransfer, Transaction}
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Etherscan.Logs
 
@@ -167,6 +168,15 @@ defmodule Explorer.Etherscan do
 
     options
     |> options_to_directions()
+    |> then(fn directions ->
+      if BackgroundMigrations.get_fill_internal_transaction_to_address_hash_finished() do
+        directions
+        |> Kernel.--([:created_contract_address_hash, :to_address_hash])
+        |> Enum.concat([:to])
+      else
+        directions
+      end
+    end)
     |> Enum.map(fn direction ->
       options
       |> consensus_internal_transactions_with_transactions_and_blocks_query()

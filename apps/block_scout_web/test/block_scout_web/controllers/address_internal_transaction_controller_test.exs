@@ -388,6 +388,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
             :internal_transaction,
             transaction: transaction_3,
             created_contract_address: address,
+            to_address: nil,
             index: index,
             block_number: transaction_3.block_number,
             transaction_index: transaction_3.index,

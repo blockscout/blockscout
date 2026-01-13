@@ -7,6 +7,7 @@ defmodule Explorer.Chain.InternalTransaction do
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address, Block, Data, Hash, PendingBlockOperation, Transaction, Wei}
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.Cache.Counters.Helper, as: CacheCountersHelper
   alias Explorer.Chain.DenormalizationHelper
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
@@ -534,12 +535,16 @@ defmodule Explorer.Chain.InternalTransaction do
     from_address_hash, created_contract_address_hash from internal_transactions' table.
   """
   def where_address_fields_match(query, address_hash, :to) do
-    where(
-      query,
-      [t],
-      t.to_address_hash == ^address_hash or
-        (is_nil(t.to_address_hash) and t.created_contract_address_hash == ^address_hash)
-    )
+    if BackgroundMigrations.get_fill_internal_transaction_to_address_hash_finished() do
+      where(query, [t], t.to_address_hash == ^address_hash)
+    else
+      where(
+        query,
+        [t],
+        t.to_address_hash == ^address_hash or
+          (is_nil(t.to_address_hash) and t.created_contract_address_hash == ^address_hash)
+      )
+    end
   end
 
   def where_address_fields_match(query, address_hash, :from) do
@@ -547,7 +552,11 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   def where_address_fields_match(query, address_hash, :to_address_hash) do
-    where(query, [it], it.to_address_hash == ^address_hash)
+    if BackgroundMigrations.get_fill_internal_transaction_to_address_hash_finished() do
+      where(query, [it], it.to_address_hash == ^address_hash and is_nil(it.created_contract_address_hash))
+    else
+      where(query, [it], it.to_address_hash == ^address_hash)
+    end
   end
 
   def where_address_fields_match(query, address_hash, :from_address_hash) do
@@ -790,7 +799,7 @@ defmodule Explorer.Chain.InternalTransaction do
       query_to_address_hash_wrapped =
         __MODULE__
         |> where_nonpending_block()
-        |> where_address_fields_match(hash, :to_address_hash)
+        |> where_address_fields_match(hash, :to)
         |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
         |> where_is_different_from_parent_transaction()
         |> common_where_limit_order(paging_options)
@@ -805,18 +814,8 @@ defmodule Explorer.Chain.InternalTransaction do
         |> common_where_limit_order(paging_options)
         |> Chain.wrapped_union_subquery()
 
-      query_created_contract_address_hash_wrapped =
-        __MODULE__
-        |> where_nonpending_block()
-        |> where_address_fields_match(hash, :created_contract_address_hash)
-        |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
-        |> where_is_different_from_parent_transaction()
-        |> common_where_limit_order(paging_options)
-        |> Chain.wrapped_union_subquery()
-
       query_to_address_hash_wrapped
       |> union_all(^query_from_address_hash_wrapped)
-      |> union_all(^query_created_contract_address_hash_wrapped)
       |> Chain.wrapped_union_subquery()
       |> common_where_and_order(paging_options)
       |> preload(:block)
