@@ -88,7 +88,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
           Address.checksum(internal_transaction.created_contract_address_hash),
           internal_transaction.type,
           internal_transaction.call_type,
-          internal_transaction.gas,
+          internal_transaction.gas || "0",
           internal_transaction.gas_used,
           Wei.to(internal_transaction.value, :wei),
           internal_transaction.input,
