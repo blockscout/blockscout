@@ -78,7 +78,7 @@ defmodule EthereumJSONRPC.Geth.Call do
         gas_used: 1225,
         input: "0xa83627de",
         output: nil,
-        value: 0
+        value: nil
       }
 
   A call can reach the stack limit (1024):
@@ -116,7 +116,7 @@ defmodule EthereumJSONRPC.Geth.Call do
         error: "stack limit reached 1024 (1024)",
         gas: 1445580,
         gas_used: 1445580,
-        value: 0,
+        value: nil,
       }
 
   A contract creation:
@@ -151,7 +151,7 @@ defmodule EthereumJSONRPC.Geth.Call do
         init: "0x",
         created_contract_code: "0x",
         trace_address: [],
-        value: 0
+        value: nil
       }
 
   A contract creation can fail:
@@ -221,7 +221,7 @@ defmodule EthereumJSONRPC.Geth.Call do
         gas_used: 6111,
         input: "0xeb9d50e46930b3227102b442f93b4aed3dead4ed76f850a76ee7f8b2cbe763428f2790530000000000000000000000000000000000000000000000000926708dfd7272e3",
         output: "0x",
-        value: 0
+        value: nil
       }
 
   A static call calls another contract, but no state can change.  This includes no value transfer, so the value for the
@@ -259,7 +259,7 @@ defmodule EthereumJSONRPC.Geth.Call do
         gas_used: 1040,
         input: "0x0f370699",
         output: "0x",
-        value: 0
+        value: nil
       }
 
   A selfdestruct destroys the calling contract and sends any left over balance to the to address.
@@ -290,7 +290,7 @@ defmodule EthereumJSONRPC.Geth.Call do
         to_address_hash: "0xff77830c100623316736b45c4983df970423aaf4",
         gas: 742088,
         gas_used: 718517,
-        value: 0
+        value: nil
       }
 
   """
@@ -356,7 +356,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       gas_used: gas_used,
       input: input,
       output: params["output"],
-      value: value
+      value: if(value == 0, do: nil, else: value)
     }
     |> put_if_present(params, [
       {"error", :error}
@@ -390,7 +390,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       gas: gas,
       gas_used: gas_used,
       init: init,
-      value: value,
+      value: if(value == 0, do: nil, else: value),
       error: error
     }
   end
@@ -422,7 +422,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       gas: gas,
       gas_used: gas_used,
       init: init,
-      value: value
+      value: if(value == 0, do: nil, else: value)
     }
     |> put_if_present(params, [
       {"error", :error},
@@ -455,7 +455,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       to_address_hash: to_address_hash,
       gas: gas,
       gas_used: gas_used,
-      value: value
+      value: if(value == 0, do: nil, else: value)
     }
   end
 
@@ -483,7 +483,7 @@ defmodule EthereumJSONRPC.Geth.Call do
       input: input,
       gas: gas,
       gas_used: gas_used,
-      value: value,
+      value: if(value == 0, do: nil, else: value),
       error: "execution stopped"
     }
   end
