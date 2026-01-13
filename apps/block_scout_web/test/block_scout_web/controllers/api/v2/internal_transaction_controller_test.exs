@@ -32,8 +32,8 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
         transaction_index: 0,
         block_number: tx.block_number,
         block_hash: tx.block_hash,
-        index: 0,
-        block_index: 0
+        index: 1,
+        block_index: 1
       )
 
       request = get(conn, "/api/v2/internal-transactions")
@@ -52,14 +52,14 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
           transaction_index: 0,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          index: 0,
+          index: 1,
           block_index: 0
         )
 
       transaction_2 = insert(:transaction) |> with_block()
 
       internal_transactions =
-        for i <- 0..49 do
+        for i <- 1..50 do
           insert(:internal_transaction,
             transaction: transaction_2,
             transaction_index: 0,
@@ -79,6 +79,109 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, internal_transactions)
+    end
+
+    test "excludes zero index internal transaction when querying by transaction_hash", %{conn: conn} do
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      # Insert internal transaction with index 0 (origin sender transaction) - should be excluded
+      insert(:internal_transaction,
+        transaction: tx,
+        transaction_index: 0,
+        block_number: tx.block_number,
+        block_hash: tx.block_hash,
+        index: 0,
+        block_index: 0,
+        type: :call
+      )
+
+      # Insert internal transaction with index 1 - should be included
+      it_1 =
+        insert(:internal_transaction,
+          transaction: tx,
+          transaction_index: 0,
+          block_number: tx.block_number,
+          block_hash: tx.block_hash,
+          index: 1,
+          block_index: 1,
+          type: :call
+        )
+
+      # Insert internal transaction with index 2 - should be included
+      it_2 =
+        insert(:internal_transaction,
+          transaction: tx,
+          transaction_index: 0,
+          block_number: tx.block_number,
+          block_hash: tx.block_hash,
+          index: 2,
+          block_index: 2,
+          type: :call
+        )
+
+      request = get(conn, "/api/v2/internal-transactions", %{"transaction_hash" => to_string(tx.hash)})
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 2
+      assert response["next_page_params"] == nil
+
+      # Verify that only index 1 and 2 are returned, not index 0
+      returned_indices = Enum.map(response["items"], & &1["index"])
+      assert 1 in returned_indices
+      assert 2 in returned_indices
+      refute 0 in returned_indices
+    end
+
+    test "pagination works correctly with zero index filtering", %{conn: conn} do
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      # Insert internal transaction with index 0 - should be excluded
+      insert(:internal_transaction,
+        transaction: tx,
+        transaction_index: 0,
+        block_number: tx.block_number,
+        block_hash: tx.block_hash,
+        index: 0,
+        block_index: 0,
+        type: :call
+      )
+
+      # Insert 51 internal transactions with index 1-51
+      for i <- 1..51 do
+        insert(:internal_transaction,
+          transaction: tx,
+          transaction_index: 0,
+          block_number: tx.block_number,
+          block_hash: tx.block_hash,
+          index: i,
+          block_index: i,
+          type: :call
+        )
+      end
+
+      request = get(conn, "/api/v2/internal-transactions", %{"transaction_hash" => to_string(tx.hash)})
+      assert response = json_response(request, 200)
+
+      # Should return 50 items (excluding index 0)
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+
+      # First item should be index 1, not 0
+      assert List.first(response["items"])["index"] == 1
+
+      # Get second page
+      request_2nd_page = get(conn, "/api/v2/internal-transactions", response["next_page_params"])
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      # Second page should have 1 item
+      assert Enum.count(response_2nd_page["items"]) == 1
+      assert response_2nd_page["next_page_params"] == nil
     end
   end
 

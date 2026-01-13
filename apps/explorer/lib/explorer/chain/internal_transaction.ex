@@ -989,10 +989,17 @@ defmodule Explorer.Chain.InternalTransaction do
 
   @doc """
   Returns the ordered paginated list of internal transactions (consensus blocks only) from the DB with address, block preloads
+
+  ## Options
+    * `:exclude_origin_internal_transaction` - when `true`, filters out the origin sender transaction (index 0 with type :call)
+    * `:paging_options` - a `t:Explorer.PagingOptions.t/0` for pagination
+    * `:transaction_hash` - optional transaction hash to filter by
+    * `:api?` - whether this is an API request
   """
   @spec fetch([paging_options | api?]) :: []
   def fetch(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    exclude_zero_index_internal_transaction = Keyword.get(options, :exclude_origin_internal_transaction, false)
 
     case paging_options do
       %PagingOptions{key: {0, 0}} ->
@@ -1008,6 +1015,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
         __MODULE__
         |> where_nonpending_block()
+        |> maybe_filter_origin_transaction(exclude_zero_index_internal_transaction)
         |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
         |> where_internal_transactions_by_transaction_hash(Keyword.get(options, :transaction_hash))
         |> where_consensus_transactions()
@@ -1059,6 +1067,9 @@ defmodule Explorer.Chain.InternalTransaction do
     query
     |> where([internal_transaction], internal_transaction.transaction_hash == ^transaction_hash)
   end
+
+  defp maybe_filter_origin_transaction(query, true), do: where_is_different_from_parent_transaction(query)
+  defp maybe_filter_origin_transaction(query, false), do: query
 
   @doc """
   Conditionally filters internal transactions to include or exclude zero-value transfers.
