@@ -118,7 +118,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a size of the batch list.",
     parameters: base_params(),
     responses: [
-      ok: {"Number of items in the batch list.", "application/json", %Schema{type: :integer, nullable: true}},
+      ok: {"Number of items in the batch list.", "application/json", %Schema{type: :integer, nullable: false}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -269,7 +269,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a size of the output roots list.",
     parameters: base_params(),
     responses: [
-      ok: {"Number of items in the output roots list.", "application/json", %Schema{type: :integer, nullable: true}},
+      ok: {"Number of items in the output roots list.", "application/json", %Schema{type: :integer, nullable: false}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -427,7 +427,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a size of the deposits list.",
     parameters: base_params(),
     responses: [
-      ok: {"Number of items in the deposits list.", "application/json", %Schema{type: :integer, nullable: true}},
+      ok: {"Number of items in the deposits list.", "application/json", %Schema{type: :integer, nullable: false}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -630,7 +630,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a size of the withdrawals list.",
     parameters: base_params(),
     responses: [
-      ok: {"Number of items in the withdrawals list.", "application/json", %Schema{type: :integer, nullable: true}},
+      ok: {"Number of items in the withdrawals list.", "application/json", %Schema{type: :integer, nullable: false}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
