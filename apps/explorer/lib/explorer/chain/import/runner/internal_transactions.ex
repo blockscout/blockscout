@@ -467,6 +467,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         |> Map.put(:block_hash, block_hash)
         |> Map.put(:block_index, index)
         |> sanitize_error()
+        |> shift_created_contract_address_hash()
       end)
     else
       []
@@ -519,6 +520,20 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       end
 
     Map.put(entry, :error, sanitized_error)
+  end
+
+  # Shifts the `created_contract_address_hash` value to `to_address_hash` when applicable.
+
+  # This function handles the migration of contract creation data by copying the
+  # `created_contract_address_hash` to `to_address_hash` field when:
+  # - `created_contract_address_hash` is present (not nil)
+  # - `to_address_hash` is nil
+  @spec shift_created_contract_address_hash(map()) :: map()
+  defp shift_created_contract_address_hash(entry) do
+    case {Map.get(entry, :created_contract_address_hash), Map.get(entry, :to_address_hash)} do
+      {hash, nil} when not is_nil(hash) -> Map.put(entry, :to_address_hash, hash)
+      _ -> entry
+    end
   end
 
   def defer_internal_transactions_primary_key(repo) do

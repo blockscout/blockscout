@@ -326,6 +326,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         index: 2,
         transaction: transaction_3,
         created_contract_address: address,
+        to_address: nil,
         block_number: transaction_3.block_number,
         block_hash: transaction_3.block_hash,
         block_index: 2,

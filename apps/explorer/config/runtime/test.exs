@@ -76,6 +76,7 @@ for migrator <- [
       Explorer.Migrator.UnescapeQuotesInTokens,
       Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources,
       Explorer.Migrator.DeleteZeroValueInternalTransactions,
+      Explorer.Migrator.FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
 
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,

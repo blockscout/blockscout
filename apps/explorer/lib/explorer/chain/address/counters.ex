@@ -228,7 +228,7 @@ defmodule Explorer.Chain.Address.Counters do
     query_to_address_hash_wrapped =
       InternalTransaction
       |> InternalTransaction.where_nonpending_block()
-      |> InternalTransaction.where_address_fields_match(address_hash, :to_address_hash)
+      |> InternalTransaction.where_address_fields_match(address_hash, :to)
       |> InternalTransaction.where_is_different_from_parent_transaction()
       |> limit(@counters_limit)
       |> wrapped_union_subquery()
@@ -241,17 +241,8 @@ defmodule Explorer.Chain.Address.Counters do
       |> limit(@counters_limit)
       |> wrapped_union_subquery()
 
-    query_created_contract_address_hash_wrapped =
-      InternalTransaction
-      |> InternalTransaction.where_nonpending_block()
-      |> InternalTransaction.where_address_fields_match(address_hash, :created_contract_address_hash)
-      |> InternalTransaction.where_is_different_from_parent_transaction()
-      |> limit(@counters_limit)
-      |> wrapped_union_subquery()
-
     query_to_address_hash_wrapped
     |> union_all(^query_from_address_hash_wrapped)
-    |> union_all(^query_created_contract_address_hash_wrapped)
     |> wrapped_union_subquery()
   end
 
