@@ -121,7 +121,11 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
   defp unprocessed_identifiers("delete_erc_1155") do
     TokenTransfer
     |> select([tt], {tt.transaction_hash, tt.block_hash, tt.log_index})
-    |> where([tt], tt.token_type == ^"ERC-1155" and is_nil(tt.amount) and (is_nil(tt.amounts) or tt.amounts == []) and (is_nil(tt.token_ids) or tt.token_ids == []))
+    |> where(
+      [tt],
+      tt.token_type == ^"ERC-1155" and is_nil(tt.amount) and (is_nil(tt.amounts) or tt.amounts == []) and
+        (is_nil(tt.token_ids) or tt.token_ids == [])
+    )
   end
 
   defp unprocessed_identifiers("refetch") do
