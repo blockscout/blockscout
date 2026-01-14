@@ -1,4 +1,4 @@
-defmodule Explorer.Migrator.FillInternalTransactionToAddressHash do
+defmodule Explorer.Migrator.FillInternalTransactionToAddressHashWithCreatedContractAddressHash do
   @moduledoc """
   Fills `to_address_hash` column with the data from `created_contract_address_hash`
   """
@@ -12,7 +12,7 @@ defmodule Explorer.Migrator.FillInternalTransactionToAddressHash do
   alias Explorer.Migrator.FillingMigration
   alias Explorer.Repo
 
-  @migration_name "fill_internal_transaction_to_address_hash"
+  @migration_name "fill_internal_transaction_to_address_hash_with_created_contract_address_hash"
 
   @impl FillingMigration
   def migration_name, do: @migration_name
@@ -61,6 +61,6 @@ defmodule Explorer.Migrator.FillInternalTransactionToAddressHash do
 
   @impl FillingMigration
   def update_cache do
-    BackgroundMigrations.set_fill_internal_transaction_to_address_hash_finished(true)
+    BackgroundMigrations.set_fill_internal_transaction_to_address_hash_with_created_contract_address_hash_finished(true)
   end
 end

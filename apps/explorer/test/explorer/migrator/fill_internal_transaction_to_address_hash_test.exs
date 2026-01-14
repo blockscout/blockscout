@@ -2,20 +2,20 @@ defmodule Explorer.Migrator.FillInternalTransactionToAddressHashTest do
   use Explorer.DataCase, async: false
 
   alias Explorer.Chain.InternalTransaction
-  alias Explorer.Migrator.{MigrationStatus, FillInternalTransactionToAddressHash}
+  alias Explorer.Migrator.{MigrationStatus, FillInternalTransactionToAddressHashWithCreatedContractAddressHash}
   alias Explorer.Repo
 
   setup_all do
-    opts = Application.get_env(:explorer, FillInternalTransactionToAddressHash)
+    opts = Application.get_env(:explorer, FillInternalTransactionToAddressHashWithCreatedContractAddressHash)
 
-    Application.put_env(:explorer, FillInternalTransactionToAddressHash,
+    Application.put_env(:explorer, FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
       batch_size: 1,
       concurrency: 1,
       timeout: 0
     )
 
     on_exit(fn ->
-      Application.put_env(:explorer, FillInternalTransactionToAddressHash, opts)
+      Application.put_env(:explorer, FillInternalTransactionToAddressHashWithCreatedContractAddressHash, opts)
     end)
   end
 
@@ -63,14 +63,17 @@ defmodule Explorer.Migrator.FillInternalTransactionToAddressHashTest do
              is_nil(it.to_address_hash) and not is_nil(it.created_contract_address_hash)
            end) == 4
 
-    assert MigrationStatus.get_status("fill_internal_transaction_to_address_hash") == nil
+    assert MigrationStatus.get_status("fill_internal_transaction_to_address_hash_with_created_contract_address_hash") ==
+             nil
 
-    FillInternalTransactionToAddressHash.start_link([])
+    FillInternalTransactionToAddressHashWithCreatedContractAddressHash.start_link([])
 
     wait_for_results(fn ->
       Repo.one!(
         from(ms in MigrationStatus,
-          where: ms.migration_name == ^"fill_internal_transaction_to_address_hash" and ms.status == "completed"
+          where:
+            ms.migration_name == ^"fill_internal_transaction_to_address_hash_with_created_contract_address_hash" and
+              ms.status == "completed"
         )
       )
     end)
