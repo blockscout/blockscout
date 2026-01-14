@@ -669,7 +669,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(
               necessity_by_association: %{
                 [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional,
-                :block => :required
+                :block => :optional
               }
             )
             |> Keyword.merge(@api_true)
