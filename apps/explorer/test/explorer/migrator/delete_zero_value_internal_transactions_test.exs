@@ -175,4 +175,136 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
              p.address_id == address_3_id and p.block_number == block.number and p.count_tos == 4 and p.count_froms == 5
            end)
   end
+
+  describe "ShrinkInternalTransactions migration dependency handling" do
+    setup do
+      original_shrink_config = Application.get_env(:explorer, Explorer.Migrator.ShrinkInternalTransactions)
+      original_delete_config = Application.get_env(:explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions)
+
+      # Set a short dependency check interval for tests
+      Application.put_env(:explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions,
+        dependency_check_interval: 100
+      )
+
+      on_exit(fn ->
+        if original_shrink_config do
+          Application.put_env(:explorer, Explorer.Migrator.ShrinkInternalTransactions, original_shrink_config)
+        else
+          Application.delete_env(:explorer, Explorer.Migrator.ShrinkInternalTransactions)
+        end
+
+        if original_delete_config do
+          Application.put_env(:explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions, original_delete_config)
+        else
+          Application.delete_env(:explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions)
+        end
+      end)
+    end
+
+    test "Waits for ShrinkInternalTransactions migration to complete before starting" do
+      address_1 = insert(:address)
+      address_2 = insert(:address)
+
+      block = insert(:block, timestamp: Timex.shift(Timex.now(), days: -40))
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        index: 10,
+        transaction: transaction,
+        block_hash: transaction.block_hash,
+        block_number: transaction.block_number,
+        from_address: address_1,
+        to_address: address_2,
+        block_index: 1,
+        type: :call,
+        value: 0
+      )
+
+      assert MigrationStatus.get_status("delete_zero_value_internal_transactions") == nil
+      assert MigrationStatus.get_status("shrink_internal_transactions") == nil
+
+      # Configure ShrinkInternalTransactions as enabled
+      Application.put_env(:explorer, Explorer.Migrator.ShrinkInternalTransactions, enabled: true)
+
+      # Start the migration without ShrinkInternalTransactions being completed
+      DeleteZeroValueInternalTransactions.start_link([])
+
+      # Give it time to check for the dependency
+      Process.sleep(100)
+
+      # Migration should not be initialized yet
+      migration_status = MigrationStatus.fetch("delete_zero_value_internal_transactions")
+      assert is_nil(migration_status)
+
+      # Internal transactions should still exist (not deleted)
+      all_internal_transactions = Repo.all(InternalTransaction)
+      assert Enum.count(all_internal_transactions) == 1
+
+      # Now mark ShrinkInternalTransactions as completed
+      MigrationStatus.set_status("shrink_internal_transactions", "completed")
+
+      # Wait for DeleteZeroValueInternalTransactions to detect completion and start
+      wait_for_results(fn ->
+        Repo.one!(
+          from(ms in MigrationStatus,
+            where: ms.migration_name == ^"delete_zero_value_internal_transactions" and ms.status == "completed"
+          )
+        )
+      end)
+
+      # Now the internal transaction should be deleted
+      remaining_internal_transactions = Repo.all(InternalTransaction)
+      assert Enum.count(remaining_internal_transactions) == 0
+    end
+
+    test "Starts immediately when ShrinkInternalTransactions is disabled/not configured" do
+      address_1 = insert(:address)
+      address_2 = insert(:address)
+
+      block = insert(:block, timestamp: Timex.shift(Timex.now(), days: -40))
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        index: 10,
+        transaction: transaction,
+        block_hash: transaction.block_hash,
+        block_number: transaction.block_number,
+        from_address: address_1,
+        to_address: address_2,
+        block_index: 1,
+        type: :call,
+        value: 0
+      )
+
+      assert MigrationStatus.get_status("delete_zero_value_internal_transactions") == nil
+      assert MigrationStatus.get_status("shrink_internal_transactions") == nil
+
+      # Configure ShrinkInternalTransactions as disabled
+      Application.put_env(:explorer, Explorer.Migrator.ShrinkInternalTransactions, enabled: false)
+
+      # Start the migration
+      DeleteZeroValueInternalTransactions.start_link([])
+
+      # Wait for DeleteZeroValueInternalTransactions to start and complete
+      wait_for_results(fn ->
+        Repo.one!(
+          from(ms in MigrationStatus,
+            where: ms.migration_name == ^"delete_zero_value_internal_transactions" and ms.status == "completed"
+          )
+        )
+      end)
+
+      # Internal transaction should be deleted
+      remaining_internal_transactions = Repo.all(InternalTransaction)
+      assert Enum.count(remaining_internal_transactions) == 0
+    end
+  end
 end
