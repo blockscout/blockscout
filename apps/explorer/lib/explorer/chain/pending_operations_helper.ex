@@ -200,7 +200,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
   A block is considered pending if there exists a corresponding entry in the `PendingBlockOperation`
   table.
   """
-  @spec blocks_pending?(non_neg_integer(), non_neg_integer()) :: boolean()
+  @spec blocks_pending?(non_neg_integer() | nil, non_neg_integer() | nil) :: boolean()
   def blocks_pending?(min_block_number, max_block_number) do
     min_block_number
     |> block_range_in_query(max_block_number)

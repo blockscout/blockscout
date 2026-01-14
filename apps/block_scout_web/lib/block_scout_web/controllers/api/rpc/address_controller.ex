@@ -244,12 +244,13 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
+  @spec parse_block_param(map(), String.t()) :: non_neg_integer() | nil
   defp parse_block_param(params, block_key) do
     params
     |> Map.get(block_key, "")
     |> Integer.parse()
     |> case do
-      {num, ""} -> num
+      {num, ""} when num >= 0 -> num
       _ -> nil
     end
   end

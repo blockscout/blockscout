@@ -74,8 +74,9 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     EthRPCView.render("error.json", %{error: message, id: 0})
   end
 
-  def render("pending_internal_transaction.json", assigns) do
-    RPCView.render("pending_internal_transaction.json", assigns)
+  def render("pending_internal_transaction.json", %{data: data} = assigns) do
+    prepared_internal_transactions = Enum.map(data, &prepare_internal_transaction/1)
+    RPCView.render("pending_internal_transaction.json", Map.put(assigns, :data, prepared_internal_transactions))
   end
 
   def render("error.json", assigns) do
@@ -138,11 +139,9 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     }
   end
 
-  @doc """
-  Prepares an internal transaction for API response.
-  """
+  # Prepares an internal transaction for API response.
   @spec prepare_internal_transaction(InternalTransaction.t()) :: map()
-  def prepare_internal_transaction(internal_transaction) do
+  defp prepare_internal_transaction(internal_transaction) do
     %{
       "blockNumber" => "#{internal_transaction.block_number}",
       "timeStamp" => "#{DateTime.to_unix(internal_transaction.block_timestamp)}",
