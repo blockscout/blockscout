@@ -217,9 +217,9 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
         transaction: transaction,
         block_hash: transaction.block_hash,
         block_number: transaction.block_number,
+        transaction_index: transaction.index,
         from_address: address_1,
         to_address: address_2,
-        block_index: 1,
         type: :call,
         value: 0
       )
@@ -277,9 +277,9 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
         transaction: transaction,
         block_hash: transaction.block_hash,
         block_number: transaction.block_number,
+        transaction_index: transaction.index,
         from_address: address_1,
         to_address: address_2,
-        block_index: 1,
         type: :call,
         value: 0
       )

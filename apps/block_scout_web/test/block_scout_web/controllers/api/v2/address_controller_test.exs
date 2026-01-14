@@ -2282,7 +2282,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         insert(:internal_transaction_selfdestruct,
           transaction: transaction,
           index: 1,
-          block_index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,

@@ -194,6 +194,7 @@ defmodule EthereumJSONRPC.NethermindTest do
                      transaction_index: transaction_index
                    },
                    block_hash: block_hash,
+                   block_number: block_number,
                    json_rpc_named_arguments: [
                      transport: EthereumJSONRPC.Mox,
                      transport_options: [],

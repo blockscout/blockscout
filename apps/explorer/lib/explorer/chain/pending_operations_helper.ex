@@ -11,7 +11,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
 
   def pending_operations_type do
     if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.Geth and
-         not Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)[:block_traceable?],
+         !Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)[:block_traceable?],
        do: "transactions",
        else: "blocks"
   end

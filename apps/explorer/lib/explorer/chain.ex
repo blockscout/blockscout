@@ -43,6 +43,7 @@ defmodule Explorer.Chain do
     InternalTransaction,
     Log,
     PendingOperationsHelper,
+    PendingTransactionOperation,
     SmartContract,
     Token,
     TokenTransfer,

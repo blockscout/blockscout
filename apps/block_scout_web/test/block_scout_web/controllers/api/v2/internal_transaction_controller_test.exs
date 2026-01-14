@@ -91,7 +91,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
         block_number: tx.block_number,
         block_hash: tx.block_hash,
         index: 0,
-        block_index: 0,
         type: :call
       )
 
@@ -103,7 +102,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
           block_number: tx.block_number,
           block_hash: tx.block_hash,
           index: 1,
-          block_index: 1,
           type: :call
         )
 
@@ -115,7 +113,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
           block_number: tx.block_number,
           block_hash: tx.block_hash,
           index: 2,
-          block_index: 2,
           type: :call
         )
 
@@ -145,7 +142,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
         block_number: tx.block_number,
         block_hash: tx.block_hash,
         index: 0,
-        block_index: 0,
         type: :call
       )
 
@@ -157,7 +153,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
           block_number: tx.block_number,
           block_hash: tx.block_hash,
           index: i,
-          block_index: i,
           type: :call
         )
       end

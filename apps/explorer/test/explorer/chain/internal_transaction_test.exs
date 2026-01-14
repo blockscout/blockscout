@@ -1148,7 +1148,6 @@ defmodule Explorer.Chain.InternalTransactionTest do
                :ok,
                [
                  %{
-                   block_index: 0,
                    block_number: block_number,
                    block_hash: block_hash,
                    call_type: nil,
