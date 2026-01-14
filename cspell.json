@@ -29,6 +29,7 @@
     ],
     // words - list of words to be always considered correct
     "words": [
+        "AABB",
         "aave",
         "absname",
         "acbs",
@@ -119,6 +120,7 @@
         "capturelog",
         "cattributes",
         "CBOR",
+        "CCDD",
         "Celestia",
         "cellspacing",
         "celo",
@@ -601,6 +603,7 @@
         "sobelow",
         "Sockex",
         "Sokol",
+        "solady",
         "solana",
         "SOLIDITYSCAN",
         "soljson",
@@ -748,6 +751,7 @@
         "whereis",
         "whiler",
         "WHISTLEBLOWER",
+        "wighawag",
         "WITHDRAWABILITY",
         "wobserver",
         "wysdvjkizxonu",
