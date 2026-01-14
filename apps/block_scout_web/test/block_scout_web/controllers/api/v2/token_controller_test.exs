@@ -1776,8 +1776,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -1819,8 +1821,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -1887,8 +1891,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -1950,8 +1956,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, "error"]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, reason: "error"},
+                       payload: %{token_id: ^token_id_string, reason: "error"},
                        event: "not_fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -2019,8 +2027,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -2058,8 +2068,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },
