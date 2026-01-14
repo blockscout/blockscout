@@ -69,6 +69,7 @@ defmodule Explorer.Chain.Token do
   * ERC-1155
   * ERC-404
   * ZRC-2 (for Zilliqa chain type)
+  * ERC-7984
 
   ## Token Specifications
 
@@ -78,6 +79,7 @@ defmodule Explorer.Chain.Token do
   * [ERC-1155](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md)
   * [ERC-404](https://github.com/Pandora-Labs-Org/erc404)
   * [ZRC-2](https://github.com/Zilliqa/ZRC/blob/main/zrcs/zrc-2.md)
+  * [ERC-7984](https://github.com/ethereum/ERCs/blob/39197cde3e32d8fc7fde74c7d0ce5e67ad4de409/ERCS/erc-7984.md)
   """
   require Logger
 
