@@ -390,26 +390,38 @@ defmodule Explorer.Chain.Token do
     |> Chain.select_repo(options).all()
   end
 
+  @doc """
+  Applies full-text search filtering to a token query.
+
+  This function handles tokens with and without symbols differently:
+  - For tokens with a symbol, it searches across both symbol and name.
+  - For tokens without a symbol (e.g., ERC-1155), it searches only the name field.
+
+  ## Parameters
+  - `query`: The Ecto query to filter.
+  - `filter_term`: The prepared search term (from Search.prepare_search_term/1).
+
+  ## Returns
+  - An Ecto query with FTS filtering applied.
+  """
+  @spec apply_fts_filter(Ecto.Query.t(), String.t()) :: Ecto.Query.t()
   def apply_fts_filter(query, filter_term) do
     query
     |> where(
       [token],
       (not is_nil(token.symbol) and
-        fragment(
-          "to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)",
-          token.symbol,
-          token.name,
-          ^filter_term
-        )
-      )
-      or
-      (is_nil(token.symbol) and
-        fragment(
-          "to_tsvector('english', ?) @@ to_tsquery(?)",
-          token.name,
-          ^filter_term
-        )
-      )
+         fragment(
+           "to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)",
+           token.symbol,
+           token.name,
+           ^filter_term
+         )) or
+        (is_nil(token.symbol) and
+           fragment(
+             "to_tsvector('english', ?) @@ to_tsquery(?)",
+             token.name,
+             ^filter_term
+           ))
     )
   end
 
