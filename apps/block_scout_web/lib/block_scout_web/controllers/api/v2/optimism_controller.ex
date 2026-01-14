@@ -36,43 +36,6 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   @api_true [api?: true]
 
-  operation :transaction_batches, false
-
-  @doc """
-  Function to handle GET requests to `/api/v2/optimism/txn-batches` and
-  `/api/v2/optimism/txn-batches/:l2_block_range_start/:l2_block_range_end` endpoints.
-  """
-  @spec transaction_batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def transaction_batches(conn, params) do
-    {batches, next_page} =
-      params
-      |> paging_options()
-      |> Keyword.put(:api?, true)
-      |> Keyword.put(:l2_block_range_start, Map.get(params, "l2_block_range_start"))
-      |> Keyword.put(:l2_block_range_end, Map.get(params, "l2_block_range_end"))
-      |> TransactionBatch.list()
-      |> split_list_by_page()
-
-    next_page_params = next_page_params(next_page, batches, params)
-
-    conn
-    |> put_status(200)
-    |> render(:optimism_transaction_batches, %{
-      batches: batches,
-      next_page_params: next_page_params
-    })
-  end
-
-  operation :transaction_batches_count, false
-
-  @doc """
-  Function to handle GET requests to `/api/v2/optimism/txn-batches/count` endpoint.
-  """
-  @spec transaction_batches_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def transaction_batches_count(conn, _params) do
-    items_count(conn, TransactionBatch)
-  end
-
   operation :batches,
     summary: "List batches.",
     description: "Retrieves a paginated list of batches.",
