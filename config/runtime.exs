@@ -926,12 +926,21 @@ config :explorer, Explorer.Utility.RateLimiter,
   hammer_backend_module:
     if(rate_limiter_redis_url, do: Explorer.Utility.Hammer.Redis, else: Explorer.Utility.Hammer.ETS)
 
+universal_proxy_config_url =
+  ConfigHelper.parse_url_env_var(
+    "UNIVERSAL_PROXY_CONFIG_URL",
+    "https://raw.githubusercontent.com/blockscout/backend-configs/refs/heads/main/universal-proxy-config.json"
+  )
+
+universal_proxy_config = System.get_env("UNIVERSAL_PROXY_CONFIG")
+
+if System.get_env("UNIVERSAL_PROXY_CONFIG_URL") && universal_proxy_config do
+  raise "UNIVERSAL_PROXY_CONFIG_URL and UNIVERSAL_PROXY_CONFIG are both set; choose only one"
+end
+
 config :explorer, Explorer.ThirdPartyIntegrations.UniversalProxy,
-  config_url:
-    ConfigHelper.parse_url_env_var(
-      "UNIVERSAL_PROXY_CONFIG_URL",
-      "https://raw.githubusercontent.com/blockscout/backend-configs/refs/heads/main/universal-proxy-config.json"
-    )
+  config_url: universal_proxy_config_url,
+  config_json: universal_proxy_config
 
 config :explorer, Explorer.Chain.Mud, enabled: ConfigHelper.parse_bool_env_var("MUD_INDEXER_ENABLED")
 
