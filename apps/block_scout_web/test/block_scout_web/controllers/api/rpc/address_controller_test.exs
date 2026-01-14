@@ -2553,6 +2553,22 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
     end
 
+    test "doesn't raise when startblock exceeds postgres integer range", %{conn: conn} do
+      address = insert(:address)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "address" => "#{address.hash}",
+        "startblock" => "2147483648",
+        "endblock" => "7483099"
+      }
+
+      conn
+      |> get("/api", params)
+      |> json_response(200)
+    end
+
     test "response includes all the expected fields", %{conn: conn} do
       address = insert(:address)
       contract_address = insert(:contract_address)
@@ -5089,18 +5105,5 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     }
     |> put_in(["properties", "result"], result)
     |> ExJsonSchema.Schema.resolve()
-  end
-
-  defp eth_get_block_by_number_expectation(latest_block_number_hex, res) do
-    expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
-                                                   %{
-                                                     id: 0,
-                                                     method: "eth_getBlockByNumber",
-                                                     params: [^latest_block_number_hex, true]
-                                                   }
-                                                 ],
-                                                 _ ->
-      {:ok, [res]}
-    end)
   end
 end

@@ -184,12 +184,10 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   def txlistinternal(conn, params, address_param, :address) do
     with {:params, {:ok, options}} <- {:params, optional_params(params)},
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
-         start_block_number = parse_block_param(params, "startblock"),
-         end_block_number = parse_block_param(params, "endblock"),
          {:address, :ok} <- {:address, Address.check_address_exists(address_hash, @api_true)},
          {{:ok, internal_transactions}, _, _} <-
-           {list_internal_transactions(address_hash, options), start_block_number, end_block_number} do
-      render_internal_transactions(conn, internal_transactions, start_block_number, end_block_number)
+           {list_internal_transactions(address_hash, options), options[:startblock], options[:endblock]} do
+      render_internal_transactions(conn, internal_transactions, options[:startblock], options[:endblock])
     else
       {:format, :error} ->
         render(conn, :error, error: @invalid_address_message)
@@ -206,13 +204,10 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   end
 
   def txlistinternal(conn, params, :no_param) do
-    start_block_number = parse_block_param(params, "startblock")
-    end_block_number = parse_block_param(params, "endblock")
-
     with {:ok, options} <- optional_params(params),
          {{:ok, internal_transactions}, _, _} <-
-           {list_internal_transactions(:all, options), start_block_number, end_block_number} do
-      render_internal_transactions(conn, internal_transactions, start_block_number, end_block_number)
+           {list_internal_transactions(:all, options), options[:startblock], options[:endblock]} do
+      render_internal_transactions(conn, internal_transactions, options[:startblock], options[:endblock])
     else
       {:error, :results_window_too_large} ->
         render(conn, :error, error: @results_window_too_large_message, data: nil)
@@ -241,17 +236,6 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
       )
     else
       render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
-    end
-  end
-
-  @spec parse_block_param(map(), String.t()) :: non_neg_integer() | nil
-  defp parse_block_param(params, block_key) do
-    params
-    |> Map.get(block_key, "")
-    |> Integer.parse()
-    |> case do
-      {num, ""} when num >= 0 -> num
-      _ -> nil
     end
   end
 
