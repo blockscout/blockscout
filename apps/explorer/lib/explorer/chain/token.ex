@@ -90,7 +90,7 @@ defmodule Explorer.Chain.Token do
   alias Ecto.{Changeset, Multi}
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{Address, BridgedToken, Hash, Search, Token}
-  alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Cache.{BackgroundMigrations, BlockNumber}
   alias Explorer.Chain.Cache.Counters.{TokenHoldersCount, TokenTransfersCount}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Helper, as: ExplorerHelper
@@ -406,23 +406,31 @@ defmodule Explorer.Chain.Token do
   """
   @spec apply_fts_filter(Ecto.Query.t(), String.t()) :: Ecto.Query.t()
   def apply_fts_filter(query, filter_term) do
-    query
-    |> where(
-      [token],
-      (not is_nil(token.symbol) and
-         fragment(
-           "to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)",
-           token.symbol,
-           token.name,
-           ^filter_term
-         )) or
-        (is_nil(token.symbol) and
+    if BackgroundMigrations.get_heavy_indexes_create_tokens_name_partial_fts_index_finished() |> dbg() do
+      query
+      |> where(
+        [token],
+        (not is_nil(token.symbol) and
            fragment(
-             "to_tsvector('english', ?) @@ to_tsquery(?)",
+             "to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)",
+             token.symbol,
              token.name,
              ^filter_term
-           ))
-    )
+           )) or
+          (is_nil(token.symbol) and
+             fragment(
+               "to_tsvector('english', ?) @@ to_tsquery(?)",
+               token.name,
+               ^filter_term
+             ))
+      )
+    else
+      query
+      |> where(
+        [token],
+        fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^filter_term)
+      )
+    end
   end
 
   defp apply_filter(query, empty_type) when empty_type in [nil, []], do: query
