@@ -406,7 +406,7 @@ defmodule Explorer.Chain.Token do
   """
   @spec apply_fts_filter(Ecto.Query.t(), String.t()) :: Ecto.Query.t()
   def apply_fts_filter(query, filter_term) do
-    if BackgroundMigrations.get_heavy_indexes_create_tokens_name_partial_fts_index_finished() |> dbg() do
+    if BackgroundMigrations.get_heavy_indexes_create_tokens_name_partial_fts_index_finished() do
       query
       |> where(
         [token],

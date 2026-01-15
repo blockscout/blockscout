@@ -1,6 +1,6 @@
 defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTokensNamePartialFtsIndex do
   @moduledoc """
-  Creates partial index on the `transactions` table filtering by `operator_fee_constant IS NULL`.
+  Creates partial full-text search index on the `tokens` table with filtering by `symbol IS NULL`.
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
@@ -65,6 +65,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTokensNamePartialFtsInde
 
   @impl HeavyDbIndexOperation
   def update_cache do
-    BackgroundMigrations.set_heavy_indexes_drop_token_transfers_block_number_asc_log_index_asc_index_finished(true)
+    BackgroundMigrations.set_heavy_indexes_create_tokens_name_partial_fts_index_finished(true)
   end
 end
