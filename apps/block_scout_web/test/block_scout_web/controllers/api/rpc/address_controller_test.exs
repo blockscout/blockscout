@@ -1880,6 +1880,74 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
     end
 
+    test "returns status = 2 for internal transactions not yet processed", %{conn: conn, params: params} do
+      address = insert(:address)
+      address_2 = insert(:address)
+
+      block = insert(:block)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address, to_address: address_2)
+        |> with_block(block)
+
+      :internal_transaction
+      |> insert(
+        transaction: transaction,
+        index: 0,
+        value: 1,
+        from_address: address,
+        to_address: address_2,
+        block_hash: transaction.block_hash,
+        block_index: 0,
+        block_number: block.number
+      )
+
+      internal_transaction =
+        :internal_transaction
+        |> insert(
+          transaction: transaction,
+          index: 1,
+          value: 2,
+          from_address: address,
+          to_address: address_2,
+          block_hash: transaction.block_hash,
+          block_index: 1,
+          block_number: block.number
+        )
+
+      expected_result = [
+        %{
+          "blockNumber" => "#{transaction.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "from" => "#{internal_transaction.from_address_hash}",
+          "to" => "#{internal_transaction.to_address_hash}",
+          "value" => "#{internal_transaction.value.value}",
+          "contractAddress" => "",
+          "input" => "#{internal_transaction.input}",
+          "type" => "#{internal_transaction.type}",
+          "callType" => "#{internal_transaction.call_type}",
+          "gas" => "#{internal_transaction.gas}",
+          "gasUsed" => "#{internal_transaction.gas_used}",
+          "index" => "#{internal_transaction.index}",
+          "transactionHash" => "#{transaction.hash}",
+          "isError" => "0",
+          "errCode" => "#{internal_transaction.error}"
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "2"
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
     test "returns only non zero value internal transactions by default", %{conn: conn, params: params} do
       address = insert(:address)
       address_2 = insert(:address)
@@ -2157,6 +2225,51 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
+    test "status = 2 if the block is pending", %{conn: conn} do
+      address = insert(:address)
+      contract_address = insert(:contract_address)
+
+      block = insert(:block)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address, to_address: nil)
+        |> with_contract_creation(contract_address)
+        |> with_block(block)
+
+      _internal_transaction =
+        :internal_transaction_create
+        |> insert(
+          transaction: transaction,
+          index: 0,
+          value: 1,
+          from_address: address,
+          block_hash: transaction.block_hash,
+          block_index: 0,
+          block_number: transaction.block_number
+        )
+        |> with_contract_creation(contract_address)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "txhash" => "#{transaction.hash}"
+      }
+
+      expected_result = []
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "2"
+      assert response["message"] == "Internal transactions for this transaction have not been processed yet"
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
     end
 
@@ -2438,6 +2551,22 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["status"] == "0"
       assert response["message"] == "No internal transactions found"
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
+    test "doesn't raise when startblock exceeds postgres integer range", %{conn: conn} do
+      address = insert(:address)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "address" => "#{address.hash}",
+        "startblock" => "2147483648",
+        "endblock" => "7483099"
+      }
+
+      conn
+      |> get("/api", params)
+      |> json_response(200)
     end
 
     test "response includes all the expected fields", %{conn: conn} do
@@ -4976,18 +5105,5 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     }
     |> put_in(["properties", "result"], result)
     |> ExJsonSchema.Schema.resolve()
-  end
-
-  defp eth_get_block_by_number_expectation(latest_block_number_hex, res) do
-    expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn [
-                                                   %{
-                                                     id: 0,
-                                                     method: "eth_getBlockByNumber",
-                                                     params: [^latest_block_number_hex, true]
-                                                   }
-                                                 ],
-                                                 _ ->
-      {:ok, [res]}
-    end)
   end
 end
