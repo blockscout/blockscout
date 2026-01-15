@@ -21,7 +21,7 @@ defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
 
   @typedoc """
     * `key` - A unique id (key) of the blob.
-    * `type` - A type of the blob (`celestia`, `eigenda`, `eip4844`, or `alt_da`).
+    * `type` - A type of the blob (`celestia`, `eip4844`, `alt_da`, or `eigenda`).
     * `metadata` - A map containing metadata of the blob.
     * `l1_transaction_hash` - The corresponding L1 transaction hash which point to the blob.
     * `l1_timestamp` - The timestamp of the L1 transaction.
@@ -31,7 +31,7 @@ defmodule Explorer.Chain.Optimism.FrameSequenceBlob do
   @primary_key {:id, :integer, autogenerate: false}
   typed_schema "op_frame_sequence_blobs" do
     field(:key, :binary)
-    field(:type, Ecto.Enum, values: [:celestia, :eigenda, :eip4844, :alt_da])
+    field(:type, Ecto.Enum, values: [:celestia, :eip4844, :alt_da, :eigenda])
     field(:metadata, :map)
     field(:l1_transaction_hash, Hash.Full)
     field(:l1_timestamp, :utc_datetime_usec)
