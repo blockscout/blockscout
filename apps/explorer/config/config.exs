@@ -179,7 +179,8 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractAdditionalSourcesUniqueIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTokenInstancesTokenIdIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateTokensNamePartialFtsIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey
+      Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey,
+      Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsBlockHashTransactionIndexIndexIndex
     ] do
   config :explorer, index_operation, enabled: true
 end

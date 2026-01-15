@@ -177,6 +177,24 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   end
 
   @doc """
+  Cancels currently active index creating query.
+  """
+  @spec cancel_index_creating_query(String.t()) :: :ok | :error
+  # sobelow_skip ["SQL"]
+  def cancel_index_creating_query(raw_index_name) do
+    index_name = sanitize_index_name(raw_index_name)
+
+    case SQL.query(Repo, cancel_index_query_string(index_name), [], timeout: :infinity) do
+      {:ok, _} ->
+        :ok
+
+      {:error, error} ->
+        Logger.error("Failed to cancel creating DB index '#{index_name}': #{inspect(error)}")
+        :error
+    end
+  end
+
+  @doc """
   Returns the prefix used for naming heavy database operation migrations.
 
   ## Examples
@@ -212,6 +230,22 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   def drop_index_query_string(raw_index_name) do
     index_name = sanitize_index_name(raw_index_name)
     "DROP INDEX #{add_concurrently_flag?()} IF EXISTS \"#{index_name}\";"
+  end
+
+  @doc """
+  Generates a SQL query string to cancel a currently active `CREATE INDEX` query.
+  """
+  @spec cancel_index_query_string(String.t()) :: String.t()
+  def cancel_index_query_string(raw_index_name) do
+    index_name = sanitize_index_name(raw_index_name)
+
+    """
+    SELECT pg_cancel_backend(pid)
+    FROM pg_stat_activity
+    WHERE query ILIKE '%create%index%'
+      AND query ILIKE '%#{index_name}%'
+      AND state = 'active';
+    """
   end
 
   @doc """
