@@ -12,12 +12,21 @@ config :logger, :default_handler,
     (if config_env() == :prod do
        LoggerJSON.Formatters.Basic.new(metadata: ConfigHelper.logger_backend_metadata())
      else
-       Logger.Formatter.new(metadata: ConfigHelper.logger_backend_metadata())
+       Logger.Formatter.new(
+         format: "$dateT$time $metadata[$level] $message\n",
+         metadata: ConfigHelper.logger_backend_metadata()
+       )
      end)
 
-config :logger, :api, metadata: ConfigHelper.logger_metadata(), metadata_filter: [application: :api]
+config :logger, :api,
+  format: "$dateT$time $metadata[$level] $message\n",
+  metadata: ConfigHelper.logger_metadata(),
+  metadata_filter: [application: :api]
 
-config :logger, :api_v2, metadata: ConfigHelper.logger_metadata(), metadata_filter: [application: :api_v2]
+config :logger, :api_v2,
+  format: "$dateT$time $metadata[$level] $message\n",
+  metadata: ConfigHelper.logger_metadata(),
+  metadata_filter: [application: :api_v2]
 
 microservice_multichain_search_url = System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")
 transactions_stats_enabled = ConfigHelper.parse_bool_env_var("TXS_STATS_ENABLED", "true")
