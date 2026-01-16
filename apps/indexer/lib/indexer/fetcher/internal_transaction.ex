@@ -287,8 +287,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
   defp safe_import_internal_transaction(internal_transactions_params, block_numbers, data_type) do
     import_internal_transaction(internal_transactions_params, block_numbers, data_type)
   rescue
-    Postgrex.Error ->
-      handle_foreign_key_violation(internal_transactions_params, block_numbers, data_type)
+    exception in Postgrex.Error ->
+      handle_foreign_key_violation(exception, internal_transactions_params, block_numbers, data_type)
       {:retry, block_numbers}
   end
 
@@ -437,7 +437,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   defp handle_unique_key_violation(_reason, _identifiers, _data_type), do: :ok
 
-  defp handle_foreign_key_violation(internal_transactions_params, block_numbers_or_transactions, data_type) do
+  defp handle_foreign_key_violation(reason, internal_transactions_params, block_numbers_or_transactions, data_type) do
     block_numbers = data_to_block_numbers(block_numbers_or_transactions, data_type)
 
     Block.set_refetch_needed(block_numbers)
@@ -449,7 +449,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     Logger.error(fn ->
       [
-        "foreign_key_violation on internal transactions import, foreign transactions hashes: ",
+        "foreign_key_violation on internal transactions import: #{inspect(reason)}, foreign transactions hashes: ",
         Enum.join(transaction_hashes, ", ")
       ]
     end)

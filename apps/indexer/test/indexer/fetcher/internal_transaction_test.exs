@@ -483,7 +483,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
         end)
 
       assert %{consensus: true, refetch_needed: true} = Repo.reload(block)
-      assert logs =~ "foreign_key_violation on internal transactions import, foreign transactions hashes:"
+      assert logs =~ "foreign_key_violation on internal transactions import"
     end
   end
 
