@@ -1895,12 +1895,12 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       :internal_transaction
       |> insert(
         transaction: transaction,
+        transaction_index: transaction.index,
         index: 0,
         value: 1,
         from_address: address,
         to_address: address_2,
         block_hash: transaction.block_hash,
-        block_index: 0,
         block_number: block.number
       )
 
@@ -1908,12 +1908,12 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         :internal_transaction
         |> insert(
           transaction: transaction,
+          transaction_index: transaction.index,
           index: 1,
           value: 2,
           from_address: address,
           to_address: address_2,
           block_hash: transaction.block_hash,
-          block_index: 1,
           block_number: block.number
         )
 
@@ -2245,11 +2245,11 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         :internal_transaction_create
         |> insert(
           transaction: transaction,
+          transaction_index: transaction.index,
           index: 0,
           value: 1,
           from_address: address,
           block_hash: transaction.block_hash,
-          block_index: 0,
           block_number: transaction.block_number
         )
         |> with_contract_creation(contract_address)

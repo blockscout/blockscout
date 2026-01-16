@@ -64,7 +64,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrim
       drop_pk_constraint_query_string(),
       rename_index_query_string(),
       add_new_pk_query_string(),
-      drop_block_index_not_null_query_string()
+      drop_block_index_not_null_query_string(),
+      drop_block_hash_not_null_query_string()
     ]
 
     Enum.reduce_while(all_operations, :finished_or_not_started, fn operation, acc ->

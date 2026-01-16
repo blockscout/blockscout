@@ -757,8 +757,7 @@ defmodule Explorer.EtherscanTest do
           index: index,
           value: index + 1,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          transaction_index: transaction.index
+          block_hash: transaction.block_hash
         )
       end
 
@@ -769,8 +768,7 @@ defmodule Explorer.EtherscanTest do
           index: index,
           value: 0,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          transaction_index: transaction.index
+          block_hash: transaction.block_hash
         )
       end
 
@@ -792,8 +790,7 @@ defmodule Explorer.EtherscanTest do
           index: index,
           value: index + 1,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          transaction_index: transaction.index
+          block_hash: transaction.block_hash
         )
       end
 
@@ -804,8 +801,7 @@ defmodule Explorer.EtherscanTest do
           index: index,
           value: 0,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          transaction_index: transaction.index
+          block_hash: transaction.block_hash
         )
       end
 
@@ -1071,8 +1067,7 @@ defmodule Explorer.EtherscanTest do
           value: 0,
           from_address: address,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          transaction_index: transaction.index
+          block_hash: transaction.block_hash
         }
 
         insert(:internal_transaction, internal_transaction_details)
@@ -1086,8 +1081,7 @@ defmodule Explorer.EtherscanTest do
           value: index,
           from_address: address,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          transaction_index: transaction.index
+          block_hash: transaction.block_hash
         }
 
         insert(:internal_transaction, internal_transaction_details)
@@ -1114,8 +1108,7 @@ defmodule Explorer.EtherscanTest do
           value: 0,
           from_address: address,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          transaction_index: transaction.index
+          block_hash: transaction.block_hash
         }
 
         insert(:internal_transaction, internal_transaction_details)
@@ -1129,8 +1122,7 @@ defmodule Explorer.EtherscanTest do
           value: index,
           from_address: address,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          transaction_index: transaction.index
+          block_hash: transaction.block_hash
         }
 
         insert(:internal_transaction, internal_transaction_details)
@@ -1173,8 +1165,7 @@ defmodule Explorer.EtherscanTest do
           value: 0,
           from_address: address,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          transaction_index: transaction.index
+          block_hash: transaction.block_hash
         }
 
         insert(:internal_transaction, internal_transaction_details)
@@ -1188,8 +1179,7 @@ defmodule Explorer.EtherscanTest do
           value: index,
           from_address: address,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          transaction_index: transaction.index
+          block_hash: transaction.block_hash
         }
 
         insert(:internal_transaction, internal_transaction_details)
@@ -1216,8 +1206,7 @@ defmodule Explorer.EtherscanTest do
           value: 0,
           from_address: address,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          transaction_index: transaction.index
+          block_hash: transaction.block_hash
         }
 
         insert(:internal_transaction, internal_transaction_details)
@@ -1231,8 +1220,7 @@ defmodule Explorer.EtherscanTest do
           value: index,
           from_address: address,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          transaction_index: transaction.index
+          block_hash: transaction.block_hash
         }
 
         insert(:internal_transaction, internal_transaction_details)
