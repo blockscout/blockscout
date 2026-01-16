@@ -3,7 +3,7 @@ defmodule Explorer.Repo.Migrations.ReRunSanitizeIncorrectNftMigration do
 
   def change do
     execute(
-      "UPDATE migrations_status SET status = 'started', meta = '{\"step\": \"delete_erc_1155\"}' WHERE migration_name = 'sanitize_incorrect_nft'"
+      "UPDATE migrations_status SET status = 'started', meta = '{\"step\": \"delete_erc_1155\"}' WHERE migration_name = 'sanitize_incorrect_nft' AND (meta IS NULL OR meta != '{\"step\": \"delete_erc_721\"}')"
     )
   end
 end
