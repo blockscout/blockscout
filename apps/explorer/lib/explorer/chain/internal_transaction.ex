@@ -72,6 +72,7 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:value, Wei, null: false)
     field(:block_number, :integer, primary_key: true)
     field(:transaction_index, :integer, primary_key: true, null: false)
+    # TODO: remove field after update PK migration is completed
     field(:block_index, :integer)
 
     timestamps()
@@ -108,6 +109,7 @@ defmodule Explorer.Chain.InternalTransaction do
       null: false
     )
 
+    # TODO: remove field after update PK migration is completed
     belongs_to(:block, Block,
       foreign_key: :block_hash,
       references: :hash,
