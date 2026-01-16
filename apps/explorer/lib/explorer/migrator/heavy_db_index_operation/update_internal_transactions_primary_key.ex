@@ -41,6 +41,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrim
              {:ok, _} <- Repo.query(add_new_pk_query_string()),
              {:ok, _} <- Repo.query(drop_block_index_not_null_query_string()),
              {:ok, _} <- Repo.query(drop_block_hash_not_null_query_string()) do
+          update_cache()
           :ok
         else
           {:error, error} ->
