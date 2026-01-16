@@ -242,7 +242,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
     """
     SELECT pg_cancel_backend(pid)
     FROM pg_stat_activity
-    WHERE query ILIKE '%create%index%'
+    WHERE pid <> pg_backend_pid()
+      AND query ILIKE '%create%index%'
       AND query ILIKE '%#{index_name}%'
       AND state = 'active';
     """
