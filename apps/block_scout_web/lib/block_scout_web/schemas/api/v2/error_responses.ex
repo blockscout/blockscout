@@ -10,16 +10,15 @@ defmodule BlockScoutWeb.Schemas.API.V2.ErrorResponses do
     @moduledoc false
     OpenApiSpex.schema(%{
       title: "ForbiddenResponse",
-      description: "Response returned when the user is not authorized to access the resource",
+      description: "Response returned when the user is forbidden to access the resource",
       type: :object,
       properties: %{
         message: %Schema{
           type: :string,
-          description: "Error message indicating the user is not authorized to access the resource",
-          example: "Restricted access"
+          description: "Error message indicating the user is forbidden to access the resource",
+          example: "Unverified email"
         }
-      },
-      additionalProperties: false
+      }
     })
 
     @spec response() :: {String.t(), String.t(), module()}
@@ -46,6 +45,27 @@ defmodule BlockScoutWeb.Schemas.API.V2.ErrorResponses do
     @spec response() :: {String.t(), String.t(), module()}
     def response do
       {"Not Found", "application/json", __MODULE__}
+    end
+  end
+
+  defmodule UnauthorizedResponse do
+    @moduledoc false
+    OpenApiSpex.schema(%{
+      title: "UnauthorizedResponse",
+      description: "Response returned when the user is not authorized to access the resource",
+      type: :object,
+      properties: %{
+        message: %Schema{
+          type: :string,
+          description: "Error message indicating the user is not authorized to access the resource",
+          example: "Unauthorized"
+        }
+      }
+    })
+
+    @spec response() :: {String.t(), String.t(), module()}
+    def response do
+      {"Unauthorized", "application/json", __MODULE__}
     end
   end
 end

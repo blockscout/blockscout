@@ -73,22 +73,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
-  # todo: It should be removed when the frontend stops sending the address_id parameter with the request
-  # https://github.com/blockscout/frontend/issues/3090
-  @doc """
-  Returns a parameter definition for an address hash in the path.
-  """
-  @spec address_id_param() :: Parameter.t()
-  def address_id_param do
-    %Parameter{
-      name: :address_id,
-      in: :query,
-      schema: AddressHash,
-      required: false,
-      description: "Address hash in the query"
-    }
-  end
-
   @doc """
   Returns a parameter definition for the start of the time period.
   """
@@ -678,6 +662,28 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for API key for sensitive endpoints in the request body.
+  """
+  @spec admin_api_key_request_body() :: OpenApiSpex.RequestBody.t()
+  def admin_api_key_request_body do
+    %OpenApiSpex.RequestBody{
+      content: %{
+        "application/json" => %OpenApiSpex.MediaType{
+          schema: %OpenApiSpex.Schema{
+            type: :object,
+            properties: %{
+              api_key: %Schema{type: :string}
+            },
+            required: [
+              :api_key
+            ]
+          }
+        }
+      }
+    }
+  end
+
+  @doc """
   Returns a parameter definition for reCAPTCHA response token.
   """
   @spec recaptcha_response_param() :: Parameter.t()
@@ -817,6 +823,22 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
         }
       },
       required: [:items, :next_page_params],
+      nullable: false,
+      additionalProperties: false
+    }
+  end
+
+  @doc """
+  Returns a schema definition for a simple message response.
+  """
+  @spec message_response_schema :: Schema.t()
+  def message_response_schema do
+    %Schema{
+      type: :object,
+      properties: %{
+        message: %Schema{type: :string}
+      },
+      required: [:message],
       nullable: false,
       additionalProperties: false
     }

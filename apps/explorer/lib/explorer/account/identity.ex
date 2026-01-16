@@ -335,6 +335,10 @@ defmodule Explorer.Account.Identity do
   - A string representation of the Ethereum address hash, or nil if not found.
   """
   @spec address_hash_from_auth(Auth.t()) :: String.t() | nil
+  def address_hash_from_auth(%Auth{provider: :dynamic, extra: %Extra{raw_info: %{address_hash: address_hash}}}) do
+    address_hash
+  end
+
   def address_hash_from_auth(%Auth{
         extra: %Extra{raw_info: %{user: %{"user_metadata" => %{"web3_address_hash" => address_hash}}}}
       }) do
