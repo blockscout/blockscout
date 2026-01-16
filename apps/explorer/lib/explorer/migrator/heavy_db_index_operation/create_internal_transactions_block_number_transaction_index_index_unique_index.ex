@@ -7,7 +7,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBloc
 
   require Logger
 
-  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus, ReindexDuplicatedInternalTransactions}
+  alias Explorer.Migrator.{
+    FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
+    HeavyDbIndexOperation,
+    MigrationStatus,
+    ReindexDuplicatedInternalTransactions
+  }
+
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :internal_transactions
@@ -27,7 +33,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBloc
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
     do: [
-      ReindexDuplicatedInternalTransactions.migration_name()
+      ReindexDuplicatedInternalTransactions.migration_name(),
+      FillInternalTransactionToAddressHashWithCreatedContractAddressHash.migration_name()
     ]
 
   @impl HeavyDbIndexOperation

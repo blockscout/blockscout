@@ -5,7 +5,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsBlockH
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.{
+    FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
+    HeavyDbIndexOperation,
+    MigrationStatus
+  }
+
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :internal_transactions
@@ -23,7 +28,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsBlockH
 
   @impl HeavyDbIndexOperation
   def dependent_from_migrations do
-    []
+    [
+      FillInternalTransactionToAddressHashWithCreatedContractAddressHash.migration_name()
+    ]
   end
 
   @impl HeavyDbIndexOperation
