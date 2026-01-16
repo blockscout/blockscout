@@ -322,7 +322,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                Fetcher.task(%Fetcher{
                  block_fetcher: %Block.Fetcher{
                    callback_module: Fetcher,
-                   json_rpc_named_arguments: json_rpc_named_arguments
+                   json_rpc_named_arguments: json_rpc_named_arguments,
+                   task_supervisor: Indexer.Block.Catchup.TaskSupervisor
                  }
                })
 
@@ -476,7 +477,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                Fetcher.task(%Fetcher{
                  block_fetcher: %Block.Fetcher{
                    callback_module: Fetcher,
-                   json_rpc_named_arguments: json_rpc_named_arguments
+                   json_rpc_named_arguments: json_rpc_named_arguments,
+                   task_supervisor: Indexer.Block.Catchup.TaskSupervisor
                  }
                })
 
@@ -625,7 +627,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                Fetcher.task(%Fetcher{
                  block_fetcher: %Block.Fetcher{
                    callback_module: Fetcher,
-                   json_rpc_named_arguments: json_rpc_named_arguments
+                   json_rpc_named_arguments: json_rpc_named_arguments,
+                   task_supervisor: Indexer.Block.Catchup.TaskSupervisor
                  }
                })
 
@@ -680,7 +683,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                Fetcher.task(%Fetcher{
                  block_fetcher: %Block.Fetcher{
                    callback_module: Fetcher,
-                   json_rpc_named_arguments: json_rpc_named_arguments
+                   json_rpc_named_arguments: json_rpc_named_arguments,
+                   task_supervisor: Indexer.Block.Catchup.TaskSupervisor
                  }
                })
 
@@ -836,7 +840,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                  Fetcher.task(%Fetcher{
                    block_fetcher: %Block.Fetcher{
                      callback_module: Fetcher,
-                     json_rpc_named_arguments: json_rpc_named_arguments
+                     json_rpc_named_arguments: json_rpc_named_arguments,
+                     task_supervisor: Indexer.Block.Catchup.TaskSupervisor
                    }
                  })
 

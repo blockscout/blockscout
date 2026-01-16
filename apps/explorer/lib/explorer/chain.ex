@@ -1150,7 +1150,7 @@ defmodule Explorer.Chain do
         elements
 
       blocks ->
-        blocks |> Repo.preload(Map.keys(necessity_by_association))
+        blocks |> select_repo(options).preload(Map.keys(necessity_by_association))
     end
   end
 
