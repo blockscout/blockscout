@@ -373,7 +373,10 @@ config :explorer, Explorer.Chain.Cache.Counters.TransactionsCount,
   global_ttl: ConfigHelper.parse_time_env_var("CACHE_TXS_COUNT_PERIOD", "2h")
 
 config :explorer, Explorer.Chain.Cache.Counters.PendingBlockOperationCount,
-  global_ttl: ConfigHelper.parse_time_env_var("CACHE_PBO_COUNT_PERIOD", "20m")
+  global_ttl: ConfigHelper.parse_time_env_var("CACHE_PENDING_OPERATIONS_COUNT_PERIOD", "5m")
+
+config :explorer, Explorer.Chain.Cache.Counters.PendingTransactionOperationCount,
+  global_ttl: ConfigHelper.parse_time_env_var("CACHE_PENDING_OPERATIONS_COUNT_PERIOD", "5m")
 
 config :explorer, Explorer.Chain.Cache.GasPriceOracle,
   global_ttl: ConfigHelper.parse_time_env_var("GAS_PRICE_ORACLE_CACHE_PERIOD", "30s"),
@@ -1225,7 +1228,7 @@ config :indexer, Indexer.Fetcher.InternalTransaction,
 config :indexer, Indexer.Fetcher.InternalTransaction.DeleteQueue,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_DELETE_QUEUE_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_DELETE_QUEUE_CONCURRENCY", 1),
-  threshold: ConfigHelper.parse_time_env_var("INDEXER_INTERNAL_TRANSACTIONS_DELETE_QUEUE_THRESHOLD", "10m")
+  threshold: ConfigHelper.parse_time_env_var("INDEXER_INTERNAL_TRANSACTIONS_DELETE_QUEUE_THRESHOLD", "0s")
 
 coin_balances_batch_size = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_BATCH_SIZE", 100)
 coin_balances_concurrency = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_CONCURRENCY", 4)

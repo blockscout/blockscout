@@ -24,7 +24,14 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.Cache.Counters.{BlocksCount, TransactionsCount, PendingBlockOperationCount}
+
+  alias Explorer.Chain.Cache.Counters.{
+    BlocksCount,
+    TransactionsCount,
+    PendingBlockOperationCount,
+    PendingTransactionOperationCount
+  }
+
   alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue}
 
   alias Explorer.Chain.Supply.ProofOfAuthority
@@ -518,7 +525,13 @@ defmodule Explorer.ChainTest do
     setup do
       Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCount.child_id())
       Supervisor.restart_child(Explorer.Supervisor, PendingBlockOperationCount.child_id())
-      on_exit(fn -> Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCount.child_id()) end)
+      Supervisor.terminate_child(Explorer.Supervisor, PendingTransactionOperationCount.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, PendingTransactionOperationCount.child_id())
+
+      on_exit(fn ->
+        Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCount.child_id())
+        Supervisor.terminate_child(Explorer.Supervisor, PendingTransactionOperationCount.child_id())
+      end)
     end
 
     test "finished indexing" do
@@ -547,8 +560,12 @@ defmodule Explorer.ChainTest do
       configuration = Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)
       Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: false)
 
+      geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(geth_config, :block_traceable?, true))
+
       on_exit(fn ->
         Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, configuration)
+        Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, geth_config)
       end)
 
       refute Chain.finished_indexing_internal_transactions?()
@@ -649,7 +666,6 @@ defmodule Explorer.ChainTest do
         index: 0,
         block_number: transaction.block_number,
         block_hash: transaction.block_hash,
-        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -659,7 +675,6 @@ defmodule Explorer.ChainTest do
           index: index,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
-          block_index: index,
           transaction_index: transaction.index
         )
       end)
@@ -821,6 +836,8 @@ defmodule Explorer.ChainTest do
     setup do
       Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCount.child_id())
       Supervisor.restart_child(Explorer.Supervisor, PendingBlockOperationCount.child_id())
+      Supervisor.terminate_child(Explorer.Supervisor, PendingTransactionOperationCount.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, PendingTransactionOperationCount.child_id())
       configuration = Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)
       Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: false)
 
@@ -828,10 +845,11 @@ defmodule Explorer.ChainTest do
         Application.put_env(:indexer, :trace_first_block, 0)
         Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor, configuration)
         Supervisor.terminate_child(Explorer.Supervisor, PendingBlockOperationCount.child_id())
+        Supervisor.terminate_child(Explorer.Supervisor, PendingTransactionOperationCount.child_id())
       end)
     end
 
-    test "returns indexed ratio" do
+    test "returns indexed ratio (pending_block_operation)" do
       for index <- 0..9 do
         block = insert(:block, number: index)
 
@@ -842,6 +860,31 @@ defmodule Explorer.ChainTest do
 
       config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
       Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+
+      Chain.indexed_ratio_internal_transactions()
+
+      assert Decimal.compare(Chain.indexed_ratio_internal_transactions(), Decimal.from_float(0.7)) == :eq
+    end
+
+    test "returns indexed ratio (pending_transaction_operation)" do
+      for index <- 0..9 do
+        block = insert(:block, number: index)
+
+        transaction_hashes =
+          2
+          |> insert_list(:transaction)
+          |> with_block(block)
+          |> Enum.map(& &1.hash)
+
+        if index === 0 || index === 5 || index === 7 do
+          insert(:pending_transaction_operation, transaction_hash: List.first(transaction_hashes))
+        end
+      end
+
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, false))
 
       on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
 
@@ -1025,6 +1068,7 @@ defmodule Explorer.ChainTest do
           %{
             block_number: 37,
             transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            transaction_index: 1,
             # transaction with index 0 is ignored in Nethermind JSON RPC Variant and not ignored in case of Geth
             index: 1,
             trace_address: [],
@@ -1227,8 +1271,7 @@ defmodule Explorer.ChainTest do
                     trace_address: [],
                     type: :call,
                     block_number: 37,
-                    transaction_index: nil,
-                    block_index: 0,
+                    transaction_index: 1,
                     created_contract_address_hash: nil,
                     from_address_hash: %Explorer.Chain.Hash{
                       byte_count: 20,
@@ -2073,7 +2116,6 @@ defmodule Explorer.ChainTest do
         created_contract_code: smart_contract_bytecode,
         block_number: transaction.block_number,
         block_hash: transaction.block_hash,
-        block_index: 0,
         transaction_index: transaction.index
       )
 

@@ -76,9 +76,16 @@ defmodule EthereumJSONRPC.Geth do
              json_rpc_named_arguments_corrected_timeout
            ) do
       case {traces, transactions_params} do
-        {[%{} = first_trace | _], [%{block_hash: block_hash} | _]} ->
+        {[%{} = first_trace | _], [%{block_hash: block_hash, block_number: block_number} | _]} ->
           {:ok,
-           [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]}
+           [
+             %{
+               first_trace: first_trace,
+               block_hash: block_hash,
+               block_number: block_number,
+               json_rpc_named_arguments: json_rpc_named_arguments
+             }
+           ]}
 
         _ ->
           {:error, :not_found}

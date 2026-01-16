@@ -10,6 +10,19 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueueTest do
   setup :verify_on_exit!
   setup :set_mox_global
 
+  setup do
+    geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+    Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(geth_config, :block_traceable?, true))
+
+    fetcher_config = Application.get_env(:indexer, DeleteQueueFetcher)
+    Application.put_env(:indexer, DeleteQueueFetcher, Keyword.put(fetcher_config, :threshold, :timer.minutes(10)))
+
+    on_exit(fn ->
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, geth_config)
+      Application.put_env(:indexer, DeleteQueueFetcher, fetcher_config)
+    end)
+  end
+
   test "deletes internal transactions and inserts pending operations" do
     transaction_1 =
       :transaction
@@ -34,16 +47,16 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueueTest do
       transaction: transaction_1,
       index: 0,
       block_hash: transaction_1.block_hash,
-      block_index: 0,
-      block_number: fresh_block_number
+      block_number: fresh_block_number,
+      transaction_index: transaction_1.index
     )
 
     insert(:internal_transaction,
       transaction: transaction_2,
       index: 0,
       block_hash: transaction_2.block_hash,
-      block_index: 0,
-      block_number: expired_block_number
+      block_number: expired_block_number,
+      transaction_index: transaction_2.index
     )
 
     pid = DeleteQueueFetcher.Supervisor.Case.start_supervised!()

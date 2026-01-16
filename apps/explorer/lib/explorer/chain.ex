@@ -43,6 +43,7 @@ defmodule Explorer.Chain do
     InternalTransaction,
     Log,
     PendingOperationsHelper,
+    PendingTransactionOperation,
     SmartContract,
     Token,
     TokenTransfer,
@@ -64,6 +65,8 @@ defmodule Explorer.Chain do
     ContractsCount,
     NewContractsCount,
     NewVerifiedContractsCount,
+    PendingBlockOperationCount,
+    PendingTransactionOperationCount,
     VerifiedContractsCount
   }
 
@@ -564,11 +567,21 @@ defmodule Explorer.Chain do
         |> Decimal.to_integer()
 
       query =
-        from(
-          block in Block,
-          join: pending_ops in assoc(block, :pending_operations),
-          where: block.consensus and block.number == ^min_block_number
-        )
+        case PendingOperationsHelper.pending_operations_type() do
+          "blocks" ->
+            from(
+              block in Block,
+              join: pending_ops in assoc(block, :pending_operations),
+              where: block.consensus and block.number == ^min_block_number
+            )
+
+          "transactions" ->
+            from(
+              pto in PendingTransactionOperation,
+              join: t in assoc(pto, :transaction),
+              where: t.block_consensus and t.block_number == ^min_block_number
+            )
+        end
 
       if select_repo(options).exists?(query) do
         false
@@ -582,14 +595,13 @@ defmodule Explorer.Chain do
   end
 
   defp check_indexing_internal_transactions_threshold do
-    min_blockchain_trace_block_number =
-      RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :trace_block_ranges))
+    pending_ops_count =
+      case PendingOperationsHelper.pending_operations_type() do
+        "blocks" -> PendingBlockOperationCount.get()
+        "transactions" -> PendingTransactionOperationCount.get()
+      end
 
-    %{max: max_saved_block_number} = BlockNumber.get_all()
-    pending_ops_entity = PendingOperationsHelper.actual_entity()
-    pbo_count = pending_ops_entity.blocks_count_in_range(min_blockchain_trace_block_number, max_saved_block_number)
-
-    if pbo_count <
+    if pending_ops_count <
          Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction)[:indexing_finished_threshold] do
       true
     else
@@ -1056,6 +1068,12 @@ defmodule Explorer.Chain do
     if indexer_running?() and internal_transactions_fetcher_running?() do
       %{max: max_saved_block_number} = BlockNumber.get_all()
 
+      pending_ops_count =
+        case PendingOperationsHelper.pending_operations_type() do
+          "blocks" -> PendingBlockOperationCount.get()
+          "transactions" -> PendingTransactionOperationCount.get()
+        end
+
       min_blockchain_trace_block_number = Application.get_env(:indexer, :trace_first_block)
 
       case max_saved_block_number do
@@ -1066,12 +1084,7 @@ defmodule Explorer.Chain do
           full_blocks_range =
             max_saved_block_number - min_blockchain_trace_block_number - BlockNumberHelper.null_rounds_count() + 1
 
-          pending_ops_entity = PendingOperationsHelper.actual_entity()
-
-          pbo_count =
-            pending_ops_entity.blocks_count_in_range(min_blockchain_trace_block_number, max_saved_block_number)
-
-          processed_int_transactions_for_blocks_count = max(0, full_blocks_range - pbo_count)
+          processed_int_transactions_for_blocks_count = max(0, full_blocks_range - pending_ops_count)
 
           ratio = get_ratio(processed_int_transactions_for_blocks_count, full_blocks_range)
 
