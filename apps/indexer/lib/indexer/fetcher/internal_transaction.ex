@@ -57,7 +57,11 @@ defmodule Indexer.Fetcher.InternalTransaction do
     if InternalTransactionSupervisor.disabled?() do
       :ok
     else
-      data = data_for_buffer(block_numbers, transactions)
+      data =
+        block_numbers
+        |> data_for_buffer(transactions)
+        |> RangesHelper.filter_traceable_block_numbers()
+
       BufferedTask.buffer(__MODULE__, data, realtime?, timeout)
     end
   end
