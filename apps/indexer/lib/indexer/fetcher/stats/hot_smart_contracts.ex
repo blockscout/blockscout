@@ -132,8 +132,7 @@ defmodule Indexer.Fetcher.Stats.HotSmartContracts do
           :ok
         else
           # Calculate delay until chain reaches 30 days old, or next day if that's sooner
-          days_remaining = @min_chain_age_days - age_days
-          target_date = DateTime.add(block.timestamp, days_remaining, :day)
+          target_date = DateTime.add(block.timestamp, @min_chain_age_days, :day)
           next_day = Date.utc_today() |> Date.add(1) |> DateTime.new!(~T[00:00:00], "Etc/UTC")
 
           delay_target = DateTime.diff(target_date, now, :millisecond)
