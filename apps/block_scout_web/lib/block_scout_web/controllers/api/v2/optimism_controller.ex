@@ -34,6 +34,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
   @api_true [api?: true]
 
   operation :batches,
@@ -161,7 +163,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   Function to handle GET requests to `/api/v2/optimism/batches/da/celestia/:height/:commitment` endpoint.
   """
   @spec batch_by_celestia_blob(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def batch_by_celestia_blob(conn, %{"height" => height, "commitment" => commitment}) do
+  def batch_by_celestia_blob(conn, %{height: height, commitment: commitment}) do
     {height, ""} = Integer.parse(height)
 
     commitment =
@@ -205,7 +207,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   Function to handle GET requests to `/api/v2/optimism/batches/:number` endpoint.
   """
   @spec batch_by_number(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def batch_by_number(conn, %{"number" => number}) do
+  def batch_by_number(conn, %{number: number}) do
     {number, ""} = Integer.parse(number)
 
     batch = FrameSequence.batch_by_number(number, api?: true)
