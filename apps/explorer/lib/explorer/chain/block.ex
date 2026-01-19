@@ -1084,4 +1084,24 @@ defmodule Explorer.Chain.Block do
     |> Repo.all()
     |> Enum.into(%{})
   end
+
+  @doc """
+  Fetches the second block in the database ordered by number in ascending order.
+  """
+  @spec fetch_second_block_in_database() :: {:ok, __MODULE__.t()} | {:error, :not_found}
+  def fetch_second_block_in_database do
+    query =
+      from(block in __MODULE__,
+        where: block.consensus == true,
+        order_by: [asc: block.number],
+        offset: 1,
+        limit: 1,
+        select: block
+      )
+
+    case Repo.one(query) do
+      nil -> {:error, :not_found}
+      block -> {:ok, block}
+    end
+  end
 end
