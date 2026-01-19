@@ -7,6 +7,7 @@ defmodule Explorer.Chain.PendingBlockOperation do
 
   import Explorer.Chain, only: [add_fetcher_limit: 2]
 
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Repo
 
@@ -92,8 +93,11 @@ defmodule Explorer.Chain.PendingBlockOperation do
         order_by: [{^direction, po.block_number}]
       )
 
+    # Wrap the reducer to filter out non-traceable blocks based on TRACE_BLOCK_RANGES
+    traceable_reducer = RangesHelper.stream_reducer_traceable(reducer)
+
     query
     |> add_fetcher_limit(limited?)
-    |> Repo.stream_reduce(initial, reducer)
+    |> Repo.stream_reduce(initial, traceable_reducer)
   end
 end
