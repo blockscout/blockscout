@@ -883,10 +883,20 @@ defmodule Explorer.ChainTest do
         end
       end
 
-      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
-      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, false))
+      geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      json_rpc_config = Application.get_env(:explorer, :json_rpc_named_arguments)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(geth_config, :block_traceable?, false))
 
-      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+      Application.put_env(
+        :explorer,
+        :json_rpc_named_arguments,
+        Keyword.put(json_rpc_config, :variant, EthereumJSONRPC.Geth)
+      )
+
+      on_exit(fn ->
+        Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, geth_config)
+        Application.put_env(:explorer, :json_rpc_named_arguments, json_rpc_config)
+      end)
 
       Chain.indexed_ratio_internal_transactions()
 
