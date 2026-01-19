@@ -176,6 +176,11 @@ defmodule EthereumJSONRPC.Geth do
     end)
   end
 
+  defp extract_transactions_params(block_number, _transaction_result, counter) do
+    Logger.info("Processing block_number: #{block_number}")
+    {[], 0, counter}
+  end
+
   @doc """
   Fetches the pending transactions from the Geth node.
   """
