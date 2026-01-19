@@ -32,8 +32,7 @@ defmodule Explorer.Migrator.FillInternalTransactionToAddressHashTest do
         index: index,
         block_number: transaction.block_number,
         transaction_index: transaction.index,
-        block_hash: transaction.block_hash,
-        block_index: index
+        block_hash: transaction.block_hash
       )
     end)
 
@@ -48,8 +47,7 @@ defmodule Explorer.Migrator.FillInternalTransactionToAddressHashTest do
         index: index,
         block_hash: transaction.block_hash,
         block_number: transaction.block_number,
-        transaction_index: transaction.index,
-        block_index: index
+        transaction_index: transaction.index
       )
     end)
 

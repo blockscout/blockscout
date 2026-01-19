@@ -1,4 +1,3 @@
-# credo:disable-for-this-file
 defmodule Indexer.Fetcher.InternalTransaction do
   @moduledoc """
   Fetches and indexes `t:Explorer.Chain.InternalTransaction.t/0`.
@@ -28,8 +27,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Explorer.Chain.Zilliqa.Helper, as: ZilliqaHelper
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
-  alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
   alias Indexer.Transform.{AddressCoinBalances, Addresses, AddressTokenBalances}
+  alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
 
   @behaviour BufferedTask
 
@@ -174,7 +173,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
         block_numbers_or_transactions
         |> check_and_filter_block_numbers()
-        |> fetch_block_internal_transactions(json_rpc_named_arguments)
+        |> EthereumJSONRPC.fetch_block_internal_transactions(json_rpc_named_arguments)
 
       :transaction_params ->
         Logger.debug("fetching internal transactions by transactions")
@@ -187,42 +186,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
           error ->
             {:error, error, __STACKTRACE__}
         end
-    end
-  end
-
-  # TODO: remove this function after the migration of internal transactions PK to [:block_hash, :transaction_index, :index]
-  defp fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) do
-    variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
-
-    if variant in block_traceable_variants() do
-      EthereumJSONRPC.fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments)
-    else
-      Enum.reduce(block_numbers, {:ok, []}, fn
-        block_number, {:ok, acc_list} ->
-          block_number
-          |> Transaction.get_transactions_of_block_number()
-          |> filter_non_traceable_transactions()
-          |> Enum.map(&params/1)
-          |> case do
-            [] ->
-              {:ok, []}
-
-            transactions ->
-              try do
-                EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
-              catch
-                :exit, error ->
-                  {:error, error, __STACKTRACE__}
-              end
-          end
-          |> case do
-            {:ok, internal_transactions} -> {:ok, internal_transactions ++ acc_list}
-            error_or_ignore -> error_or_ignore
-          end
-
-        _, error_or_ignore ->
-          error_or_ignore
-      end)
     end
   end
 
@@ -255,27 +218,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
       end
     else
       block_numbers
-    end
-  end
-
-  def import_first_trace(internal_transactions_params) do
-    imports =
-      Chain.import(%{
-        internal_transactions: %{params: internal_transactions_params, with: :blockless_changeset},
-        timeout: :infinity
-      })
-
-    case imports do
-      {:error, step, reason, _changes_so_far} ->
-        Logger.error(
-          fn ->
-            [
-              "failed to import first trace for transaction: ",
-              inspect(reason)
-            ]
-          end,
-          step: step
-        )
     end
   end
 
@@ -349,8 +291,8 @@ defmodule Indexer.Fetcher.InternalTransaction do
   defp safe_import_internal_transaction(internal_transactions_params, block_numbers, data_type) do
     import_internal_transaction(internal_transactions_params, block_numbers, data_type)
   rescue
-    Postgrex.Error ->
-      handle_foreign_key_violation(internal_transactions_params, block_numbers, data_type)
+    exception in Postgrex.Error ->
+      handle_foreign_key_violation(exception, internal_transactions_params, block_numbers, data_type)
       {:retry, block_numbers}
   end
 
@@ -499,7 +441,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   defp handle_unique_key_violation(_reason, _identifiers, _data_type), do: :ok
 
-  defp handle_foreign_key_violation(internal_transactions_params, block_numbers_or_transactions, data_type) do
+  defp handle_foreign_key_violation(reason, internal_transactions_params, block_numbers_or_transactions, data_type) do
     block_numbers = data_to_block_numbers(block_numbers_or_transactions, data_type)
 
     Block.set_refetch_needed(block_numbers)
@@ -511,7 +453,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     Logger.error(fn ->
       [
-        "foreign_key_violation on internal transactions import, foreign transactions hashes: ",
+        "foreign_key_violation on internal transactions import: #{inspect(reason)}, foreign transactions hashes: ",
         Enum.join(transaction_hashes, ", ")
       ]
     end)
@@ -538,20 +480,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   defp invalidate_block_from_error(_error_data), do: :ok
 
-  defp queue_data_type(_json_rpc_named_arguments) do
-    # TODO: bring back after the migration of internal transactions PK to [:block_hash, :transaction_index, :index]
-    # variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
+  defp queue_data_type(json_rpc_named_arguments) do
+    variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
-    # if variant in block_traceable_variants() do
-    #   :block_number
-    # else
-    #   :transaction_params
-    # end
-
-    if Application.get_env(:explorer, :non_existing_variable, false) do
-      :transaction_params
-    else
+    if variant in block_traceable_variants() do
       :block_number
+    else
+      :transaction_params
     end
   end
 

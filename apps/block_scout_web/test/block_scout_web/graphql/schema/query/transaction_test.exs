@@ -132,11 +132,12 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
 
       internal_transaction_attributes = %{
         transaction: transaction,
+        transaction_index: transaction.index,
         index: 0,
         from_address: address,
         call_type: :call,
         block_hash: transaction.block_hash,
-        block_index: 0
+        block_number: transaction.block_number
       }
 
       internal_transaction =
@@ -265,23 +266,26 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
 
       insert(:internal_transaction,
         transaction: transaction,
+        transaction_index: transaction.index,
         index: 2,
         block_hash: transaction.block_hash,
-        block_index: 2
+        block_number: transaction.block_number
       )
 
       insert(:internal_transaction,
         transaction: transaction,
+        transaction_index: transaction.index,
         index: 0,
         block_hash: transaction.block_hash,
-        block_index: 0
+        block_number: transaction.block_number
       )
 
       insert(:internal_transaction,
         transaction: transaction,
+        transaction_index: transaction.index,
         index: 1,
         block_hash: transaction.block_hash,
-        block_index: 1
+        block_number: transaction.block_number
       )
 
       query = """
@@ -393,23 +397,26 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
 
       insert(:internal_transaction,
         transaction: transaction,
+        transaction_index: transaction.index,
         index: 2,
         block_hash: transaction.block_hash,
-        block_index: 2
+        block_number: transaction.block_number
       )
 
       insert(:internal_transaction,
         transaction: transaction,
+        transaction_index: transaction.index,
         index: 0,
         block_hash: transaction.block_hash,
-        block_index: 0
+        block_number: transaction.block_number
       )
 
       insert(:internal_transaction,
         transaction: transaction,
+        transaction_index: transaction.index,
         index: 1,
         block_hash: transaction.block_hash,
-        block_index: 1
+        block_number: transaction.block_number
       )
 
       query = """
@@ -448,9 +455,10 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
       for index <- 0..5 do
         insert(:internal_transaction_create,
           transaction: transaction,
+          transaction_index: transaction.index,
           index: index,
           block_hash: transaction.block_hash,
-          block_index: index
+          block_number: transaction.block_number
         )
       end
 

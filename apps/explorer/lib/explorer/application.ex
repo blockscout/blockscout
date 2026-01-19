@@ -28,6 +28,7 @@ defmodule Explorer.Application do
     BlocksCount,
     GasUsageSum,
     PendingBlockOperationCount,
+    PendingTransactionOperationCount,
     TransactionsCount
   }
 
@@ -85,6 +86,7 @@ defmodule Explorer.Application do
       GasPriceOracle,
       GasUsageSum,
       PendingBlockOperationCount,
+      PendingTransactionOperationCount,
       TransactionsCount,
       StateChanges,
       Transactions,
@@ -313,7 +315,7 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockHashTransactionIndexIndexUniqueIndex,
+          Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex,
           :indexer
         ),
         configure_mode_dependent_process(
@@ -334,6 +336,14 @@ defmodule Explorer.Application do
         ),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateTokensNamePartialFtsIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsBlockHashTransactionIndexIndexIndex,
           :indexer
         ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),

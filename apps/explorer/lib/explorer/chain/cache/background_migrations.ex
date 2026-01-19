@@ -59,7 +59,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_token_instances_token_id_index_finished,
     key: :fill_internal_transaction_to_address_hash_with_created_contract_address_hash_finished,
     key: :heavy_indexes_drop_internal_transactions_created_contract_address_hash_partial_index_finished,
-    key: :heavy_indexes_create_tokens_name_partial_fts_index_finished
+    key: :heavy_indexes_create_tokens_name_partial_fts_index_finished,
+    key: :heavy_indexes_update_internal_transactions_primary_key_finished
 
   @dialyzer :no_match
 
@@ -103,7 +104,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
     DropTransactionsCreatedContractAddressHashWithPendingIndex,
     DropTransactionsFromAddressHashWithPendingIndex,
-    DropTransactionsToAddressHashWithPendingIndex
+    DropTransactionsToAddressHashWithPendingIndex,
+    UpdateInternalTransactionsPrimaryKey
   }
 
   defp handle_fallback(:transactions_denormalization_finished) do
@@ -366,6 +368,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       CreateTokensNamePartialFtsIndex,
       &set_heavy_indexes_create_tokens_name_partial_fts_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_update_internal_transactions_primary_key_finished) do
+    set_and_return_migration_status(
+      UpdateInternalTransactionsPrimaryKey,
+      &set_heavy_indexes_update_internal_transactions_primary_key_finished/1
     )
   end
 
