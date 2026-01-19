@@ -538,7 +538,6 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       block = insert(:block, number: 1)
       transaction = :transaction |> insert() |> with_block(block)
       block_number = block.number
-      block_hash = block.hash
       insert(:pending_transaction_operation, transaction_hash: transaction.hash)
 
       EthereumJSONRPC.Mox
@@ -622,7 +621,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
       assert nil == Repo.get(PendingTransactionOperation, transaction.hash)
 
-      internal_transactions = Repo.all(from(i in Chain.InternalTransaction, where: i.block_hash == ^block_hash))
+      internal_transactions = Repo.all(from(i in Chain.InternalTransaction, where: i.block_number == ^block_number))
 
       assert Enum.count(internal_transactions) > 0
 
