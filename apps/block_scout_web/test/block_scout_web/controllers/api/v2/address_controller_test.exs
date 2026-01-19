@@ -5624,6 +5624,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert to_string(log.transaction_hash) == json["transaction_hash"]
     assert json["block_number"] == log.block_number
     assert json["block_hash"] == to_string(log.block_hash)
+    assert json["block_timestamp"] != nil
   end
 
   defp compare_item(%Withdrawal{} = withdrawal, json) do
