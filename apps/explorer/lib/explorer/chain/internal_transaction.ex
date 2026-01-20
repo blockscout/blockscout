@@ -12,6 +12,7 @@ defmodule Explorer.Chain.InternalTransaction do
     Hash,
     PendingOperationsHelper,
     Transaction,
+    TransactionError,
     Wei
   }
 
@@ -34,6 +35,7 @@ defmodule Explorer.Chain.InternalTransaction do
    * `call_type` - the type of call.  `nil` when `type` is not `:call`.
    * `created_contract_code` - the code of the contract that was created when `type` is `:create`.
    * `error` - error message when `:call` or `:create` `type` errors
+   * `error_id` - foreign key for `t:Explorer.Chain.TransactionError.t/0`
    * `from_address` - the source of the `value`
    * `from_address_hash` - hash of the source of the `value`
    * `gas` - the amount of gas allowed
@@ -61,6 +63,7 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:call_type_enum, Ecto.Enum, values: [:call, :callcode, :delegatecall, :staticcall, :invalid])
     field(:created_contract_code, Data)
     field(:error, :string)
+    field(:error_id, :integer)
     field(:gas, :decimal)
     field(:gas_used, :decimal)
     field(:index, :integer, primary_key: true, null: false)
@@ -413,7 +416,7 @@ defmodule Explorer.Chain.InternalTransaction do
     type_changeset(changeset, attrs, type)
   end
 
-  @call_optional_fields ~w(error gas_used output block_number value)a
+  @call_optional_fields ~w(error error_id gas_used output block_number value)a
   @call_required_fields ~w(call_type_enum from_address_hash gas input to_address_hash transaction_hash)a
   @call_allowed_fields @call_optional_fields ++ @call_required_fields
 
@@ -431,7 +434,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> foreign_key_constraint(:transaction_hash)
   end
 
-  @create_optional_fields ~w(error created_contract_code created_contract_address_hash gas_used block_number value)a
+  @create_optional_fields ~w(error error_id created_contract_code created_contract_address_hash gas_used block_number value)a
   @create_required_fields ~w(from_address_hash gas init transaction_hash)a
   @create_allowed_fields @create_optional_fields ++ @create_required_fields
 
@@ -455,7 +458,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> validate_required(@selfdestruct_required_fields)
   end
 
-  @stop_optional_fields ~w(from_address_hash gas gas_used error value)a
+  @stop_optional_fields ~w(from_address_hash gas gas_used error error_id value)a
   @stop_required_fields ~w(block_number transaction_hash type)a
   @stop_allowed_fields @stop_optional_fields ++ @stop_required_fields
 
@@ -492,8 +495,8 @@ defmodule Explorer.Chain.InternalTransaction do
 
   # Validates that :call `type` changeset either has an `error` or both `gas_used` and `output`
   defp validate_call_error_or_result(changeset) do
-    case get_field(changeset, :error) do
-      nil ->
+    case {get_field(changeset, :error), get_field(changeset, :error_id)} do
+      {nil, nil} ->
         validate_required(changeset, [:gas_used, :output], message: "can't be blank for successful call")
 
       _ ->
@@ -509,8 +512,8 @@ defmodule Explorer.Chain.InternalTransaction do
   # Validates that :create `type` changeset either has an `:error` or both `:created_contract_code` and
   # `:created_contract_address_hash`
   defp validate_create_error_or_result(changeset) do
-    case get_field(changeset, :error) do
-      nil ->
+    case {get_field(changeset, :error), get_field(changeset, :error_id)} do
+      {nil, nil} ->
         validate_required(changeset, @create_success_fields, message: "can't be blank for successful create")
 
       _ ->
@@ -648,6 +651,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
     |> Chain.select_repo(options).all()
+    |> preload_error(options)
   end
 
   @spec transaction_to_internal_transactions(Hash.Full.t(), [
@@ -670,6 +674,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> order_by([internal_transaction], asc: internal_transaction.index)
     |> preload(:block)
     |> Chain.select_repo(options).all()
+    |> preload_error(options)
   end
 
   @spec block_to_internal_transactions(non_neg_integer(), [
@@ -695,6 +700,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.transaction_index, asc: internal_transaction.index)
     |> Chain.select_repo(options).all()
+    |> preload_error(options)
   end
 
   @doc """
@@ -824,6 +830,7 @@ defmodule Explorer.Chain.InternalTransaction do
       |> Chain.join_associations(necessity_by_association)
       |> Chain.select_repo(options).all()
       |> deduplicate_and_trim_internal_transactions(paging_options)
+      |> preload_error(options)
     else
       __MODULE__
       |> where_nonpending_operation()
@@ -834,6 +841,7 @@ defmodule Explorer.Chain.InternalTransaction do
       |> preload(:block)
       |> Chain.join_associations(necessity_by_association)
       |> Chain.select_repo(options).all()
+      |> preload_error(options)
     end
   end
 
@@ -1029,6 +1037,7 @@ defmodule Explorer.Chain.InternalTransaction do
         |> limit(^paging_options.page_size)
         |> preload(^preloads)
         |> Chain.select_repo(options).all()
+        |> preload_error(options)
     end
   end
 
@@ -1216,5 +1225,39 @@ defmodule Explorer.Chain.InternalTransaction do
     else
       call_type_enum || call_type
     end
+  end
+
+  @doc """
+  Fills internal transaction `error` field based on `error_id`
+  """
+  @spec preload_error(__MODULE__.t() | [__MODULE__.t()], Keyword.t()) :: __MODULE__.t() | [__MODULE__.t()]
+  def preload_error(internal_transactions, options \\ [api?: true])
+
+  def preload_error(internal_transactions, options) when is_list(internal_transactions) do
+    error_ids =
+      internal_transactions
+      |> Enum.filter(&is_nil(&1.error))
+      |> Enum.map(& &1.error_id)
+      |> Enum.uniq()
+      |> Enum.reject(&is_nil/1)
+
+    if error_ids == [] do
+      internal_transactions
+    else
+      error_id_to_error_map =
+        TransactionError
+        |> where([te], te.id in ^error_ids)
+        |> select([te], {te.id, te.message})
+        |> Chain.select_repo(options).all()
+        |> Map.new()
+
+      Enum.map(internal_transactions, &Map.put(&1, :error, &1.error || error_id_to_error_map[&1.error_id]))
+    end
+  end
+
+  def preload_error(internal_transaction, options) do
+    [internal_transaction]
+    |> preload_error(options)
+    |> List.first()
   end
 end

@@ -198,6 +198,8 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
         |> insert()
         |> with_block()
 
+      transaction_error = insert(:transaction_error, message: "reverted")
+
       internal_transaction =
         insert(:internal_transaction,
           index: 1,
@@ -207,6 +209,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           block_hash: transaction.block_hash,
           transaction_index: transaction.index,
           error: "reverted",
+          error_id: transaction_error.id,
           gas_used: nil,
           output: nil
         )

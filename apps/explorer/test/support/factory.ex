@@ -51,6 +51,7 @@ defmodule Explorer.Factory do
     TokenTransfer,
     Token.Instance,
     Transaction,
+    TransactionError,
     Wei,
     Withdrawal
   }
@@ -875,6 +876,12 @@ defmodule Explorer.Factory do
       # transaction
       type: :selfdestruct,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
+    }
+  end
+
+  def transaction_error_factory do
+    %TransactionError{
+      message: "error_#{sequence("transaction_error_message", & &1)}"
     }
   end
 

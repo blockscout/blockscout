@@ -13,7 +13,15 @@ defmodule Explorer.Migrator.EmptyInternalTransactionsDataTest do
     _value_internal_transactions = insert_batch_of_internal_transactions(value: 0)
     _call_type_internal_transactions = insert_batch_of_internal_transactions(call_type: :call)
     %{id: transaction_error_id} = insert(:transaction_error, message: "error")
-    _error_internal_transactions = insert_batch_of_internal_transactions(error: "error")
+    %{id: fake_transaction_error_id} = insert(:transaction_error)
+
+    _error_internal_transactions =
+      insert_batch_of_internal_transactions(
+        error: "error",
+        error_id: fake_transaction_error_id,
+        gas_used: nil,
+        output: nil
+      )
 
     assert MigrationStatus.get_status("empty_internal_transactions_data") == nil
 
