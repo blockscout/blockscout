@@ -17,7 +17,6 @@ defmodule Explorer.Application do
     MinMissingBlockNumber,
     StateChanges,
     Transactions,
-    TransactionsApiV2,
     Uncles
   }
 
@@ -90,7 +89,6 @@ defmodule Explorer.Application do
       TransactionsCount,
       StateChanges,
       Transactions,
-      TransactionsApiV2,
       Uncles,
       AddressTabsElementsCount,
       con_cache_child_spec(MarketHistoryCache.cache_name()),

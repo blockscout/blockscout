@@ -34,7 +34,12 @@ defmodule BlockScoutWeb.Routers.ChainTypeScopeTest do
 
     test "blackfort validators counters are accessible when chain type is blackfort and stability is not",
          %{conn: conn} do
+      chain_type = Application.get_env(:explorer, :chain_type)
       Application.put_env(:explorer, :chain_type, :blackfort)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :chain_type, chain_type)
+      end)
 
       assert conn
              |> get("/api/v2/validators/blackfort/counters")
