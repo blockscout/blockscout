@@ -873,7 +873,8 @@ defmodule Explorer.EtherscanTest do
         call_type: internal_transaction.call_type,
         gas: internal_transaction.gas,
         gas_used: internal_transaction.gas_used,
-        error: internal_transaction.error
+        error: internal_transaction.error,
+        error_id: internal_transaction.error_id
       }
 
       assert found_internal_transaction == expected

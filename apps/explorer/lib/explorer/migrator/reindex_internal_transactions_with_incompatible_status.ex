@@ -59,7 +59,9 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
     it_error_query =
       from(
         it in InternalTransaction,
-        where: parent_as(:transaction).hash == it.transaction_hash and not is_nil(it.error) and it.index > 0,
+        where:
+          parent_as(:transaction).hash == it.transaction_hash and it.index > 0 and
+            (not is_nil(it.error) or not is_nil(it.error_id)),
         select: 1
       )
 

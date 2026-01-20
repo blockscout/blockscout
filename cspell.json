@@ -595,6 +595,7 @@
         "siwe",
         "SJONRPC",
         "smallint",
+        "smallserial",
         "smth",
         "snapshotted",
         "snapshotting",

@@ -852,7 +852,7 @@ defmodule Explorer.Chain.Address do
       it in InternalTransaction,
       where: it.index > 0,
       order_by: [
-        asc_nulls_first: it.error,
+        asc_nulls_first: coalesce(it.error, type(it.error_id, :string)),
         desc: it.block_number,
         desc: it.transaction_index,
         desc: it.index
