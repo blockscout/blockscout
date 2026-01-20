@@ -11,6 +11,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias EthereumJSONRPC.Utility.RangesHelper
 
   alias Explorer.Chain.{
+    Address,
     Block,
     Hash,
     Import,
@@ -199,6 +200,17 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         :block_pending,
         :internal_transactions,
         :save_zero_value_to_delete
+      )
+    end)
+    |> Multi.run(:empty_selfdestructed_contracts_bytecode, fn repo,
+                                                              %{
+                                                                valid_internal_transactions: valid_internal_transactions
+                                                              } ->
+      Instrumenter.block_import_stage_runner(
+        fn -> empty_selfdestructed_contracts_bytecode(repo, valid_internal_transactions, timestamps) end,
+        :block_pending,
+        :internal_transactions,
+        :empty_selfdestructed_contracts_bytecode
       )
     end)
   end
@@ -981,6 +993,54 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       end
     else
       _ -> {:ok, []}
+    end
+  end
+
+  defp empty_selfdestructed_contracts_bytecode(repo, valid_internal_transactions, timestamps) do
+    # Find all selfdestruct internal transactions
+    selfdestruct_addresses =
+      valid_internal_transactions
+      |> Enum.filter(&(&1.type == :selfdestruct))
+      |> Enum.map(&{&1.transaction_hash, &1.from_address_hash})
+      |> MapSet.new()
+
+    # Find all create/create2 internal transactions in the same transactions
+    created_addresses =
+      valid_internal_transactions
+      |> Enum.filter(&(&1.type in [:create, :create2]))
+      |> Enum.map(&{&1.transaction_hash, Map.get(&1, :created_contract_address_hash)})
+      |> Enum.reject(fn {_tx_hash, address_hash} -> is_nil(address_hash) end)
+      |> MapSet.new()
+
+    # Filter to find addresses that were selfdestructed but NOT created in the same transaction
+    addresses_to_empty =
+      selfdestruct_addresses
+      |> Enum.reject(fn {tx_hash, address_hash} ->
+        MapSet.member?(created_addresses, {tx_hash, address_hash})
+      end)
+      |> Enum.map(fn {_tx_hash, address_hash} -> address_hash end)
+      |> Enum.uniq()
+
+    if Enum.empty?(addresses_to_empty) do
+      {:ok, []}
+    else
+      # Update the addresses to have empty contract_code
+      empty_contract_code = %Explorer.Chain.Data{bytes: <<>>}
+
+      update_query =
+        from(
+          address in Address,
+          where: address.hash in ^addresses_to_empty,
+          update: [set: [contract_code: ^empty_contract_code, updated_at: ^timestamps.updated_at]]
+        )
+
+      {count, _} = repo.update_all(update_query, [])
+
+      Logger.info(
+        "Emptied contract_code for #{count} selfdestructed contracts: #{inspect(addresses_to_empty, limit: :infinity)}"
+      )
+
+      {:ok, count}
     end
   end
 
