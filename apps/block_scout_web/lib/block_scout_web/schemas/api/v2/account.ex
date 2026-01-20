@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Account do
           schema: %OpenApiSpex.Schema{
             type: :object,
             properties: %{
-              email: %OpenApiSpex.Schema{type: :string},
+              email: %OpenApiSpex.Schema{type: :string, format: :email},
               otp: %OpenApiSpex.Schema{type: :string}
             },
             required: [
