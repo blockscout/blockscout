@@ -576,6 +576,32 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
       Application.put_env(:explorer, Explorer.Account, old_env)
     end
 
+    test "can't insert contract watchlist address", %{conn: conn} do
+      address = insert(:contract_address)
+
+      response =
+        conn
+        |> post(
+          "/api/account/v2/user/watchlist",
+          build(:watchlist_address) |> Map.put("address_hash", to_string(address.hash))
+        )
+        |> json_response(422)
+
+      assert response == %{"errors" => %{"address_hash" => ["This address isn't EOA"]}}
+    end
+
+    test "can insert EOA with code watchlist address", %{conn: conn, user: user} do
+      address = insert(:contract_address, contract_code: "0xef01000000000000000000000000000000000000000123")
+
+      response =
+        conn
+        |> post(
+          "/api/account/v2/user/watchlist",
+          build(:watchlist_address) |> Map.put("address_hash", to_string(address.hash))
+        )
+        |> json_response(200)
+    end
+
     test "check watchlist tags pagination", %{conn: conn, user: user} do
       tags_address =
         for _ <- 0..50 do
