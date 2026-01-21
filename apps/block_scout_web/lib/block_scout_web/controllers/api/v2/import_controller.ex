@@ -233,13 +233,13 @@ defmodule BlockScoutWeb.API.V2.ImportController do
           |> put_view(ApiView)
           |> render(:message, %{message: "Success"})
 
-        error ->
-          Logger.warning(fn -> ["Error on importing audit report: ", inspect(error)] end)
+        {:error, changeset} ->
+          Logger.warning(fn -> ["Error on importing audit report: ", inspect(changeset)] end)
 
           conn
           |> put_view(ApiView)
           |> put_status(:bad_request)
-          |> render(:message, %{message: "Error"})
+          |> render(:changeset_errors, changeset: changeset)
       end
     end
   end
