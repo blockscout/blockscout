@@ -797,6 +797,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for a user operation hash in the path.
+  """
+  @spec operation_hash_param() :: Parameter.t()
+  def operation_hash_param do
+    %Parameter{
+      name: :operation_hash_param,
+      in: :path,
+      schema: FullHash,
+      required: true,
+      description: "User operation hash in the path"
+    }
+  end
+
+  @doc """
   Returns a list of base parameters (api_key and key).
   """
   @spec base_params() :: [Parameter.t()]
@@ -1214,6 +1228,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: FullHash,
       required: false,
       description: "MUD record key1 for paging"
+    },
+    "page_size" => %Parameter{
+      name: :page_size,
+      in: :query,
+      schema: %Schema{type: :integer, minimum: 1, maximum: 50},
+      required: false,
+      description: "Number of items returned per page"
+    },
+    "page_token" => %Parameter{
+      name: :page_token,
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Page token for paging"
     }
   }
 

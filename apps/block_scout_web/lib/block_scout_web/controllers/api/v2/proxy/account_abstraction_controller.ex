@@ -1,14 +1,29 @@
 defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
+  alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.{BadRequestResponse, NotFoundResponse, NotImplementedResponse}
   alias Explorer.Chain
   alias Explorer.MicroserviceInterfaces.AccountAbstraction
 
   @address_fields ["bundler", "entry_point", "sender", "address", "factory", "paymaster", "execute_target"]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
+
+  tags(["account_abstraction"])
+
+  operation :operation,
+    summary: "Get a user operation by hash",
+    description: "Retrieves a user operation by its hash.",
+    parameters: [operation_hash_param() | base_params()],
+    responses: [
+      ok: {"User operation", "application/json", Schemas.Proxy.AccountAbstraction.UserOperation},
+      not_found: NotFoundResponse.response(),
+      bad_request: BadRequestResponse.response(),
+      not_implemented: NotImplementedResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/operations/:user_operation_hash_param` endpoint.
@@ -19,6 +34,24 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     |> AccountAbstraction.get_user_ops_by_hash()
     |> process_response(conn)
   end
+
+  operation :summary,
+    summary: "Get a human-readable, LLM-based user operation summary",
+    description: "Retrieves a human-readable summary of what a user operation did, presented in natural language.",
+    parameters: base_params() ++ [operation_hash_param(), just_request_body_param()],
+    responses: [
+      ok:
+        {"Human-readable summary of the specified user operation.", "application/json",
+         %Schema{
+           anyOf: [
+             Schemas.Transaction.Summary,
+             Schemas.Transaction.SummaryJustRequestBody
+           ]
+         }},
+      not_found: NotFoundResponse.response(),
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_implemented: NotImplementedResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/operations/:user_operation_hash_param/summary` endpoint.
@@ -53,6 +86,17 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     end
   end
 
+  operation :bundler,
+    summary: "Get a bundler by address hash",
+    description: "Retrieves a bundler by its address hash.",
+    parameters: [address_hash_param() | base_params()],
+    responses: [
+      ok: {"Bundler", "application/json", Schemas.Proxy.AccountAbstraction.Bundler},
+      not_found: NotFoundResponse.response(),
+      bad_request: BadRequestResponse.response(),
+      not_implemented: NotImplementedResponse.response()
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/bundlers/:address_hash_param` endpoint.
   """
@@ -62,6 +106,24 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     |> AccountAbstraction.get_bundler_by_hash()
     |> process_response(conn)
   end
+
+  operation :bundlers,
+    summary: "List of top bundlers",
+    description: "Retrieves a list of top bundlers.",
+    parameters: base_params() ++ define_paging_params(["page_size", "page_token"]),
+    responses: [
+      ok:
+        {"List of bundlers with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Proxy.AccountAbstraction.Bundler,
+           next_page_params_example: %{
+             "page_size" => 50,
+             "page_token" => "5,0x9B67A24A474e9EC7372c23B023f36ab28831e4C4"
+           }
+         )},
+      bad_request: BadRequestResponse.response(),
+      not_implemented: NotImplementedResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/bundlers` endpoint.
@@ -73,6 +135,17 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     |> process_response(conn)
   end
 
+  operation :factory,
+    summary: "Get a factory by address hash",
+    description: "Retrieves a factory by its address hash.",
+    parameters: [address_hash_param() | base_params()],
+    responses: [
+      ok: {"Factory", "application/json", Schemas.Proxy.AccountAbstraction.Factory},
+      not_found: NotFoundResponse.response(),
+      bad_request: BadRequestResponse.response(),
+      not_implemented: NotImplementedResponse.response()
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/factories/:address_hash_param` endpoint.
   """
@@ -82,6 +155,24 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     |> AccountAbstraction.get_factory_by_hash()
     |> process_response(conn)
   end
+
+  operation :factories,
+    summary: "List of top wallet factories",
+    description: "Retrieves a list of top wallet factories.",
+    parameters: base_params() ++ define_paging_params(["page_size", "page_token"]),
+    responses: [
+      ok:
+        {"List of factories with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Proxy.AccountAbstraction.Factory,
+           next_page_params_example: %{
+             "page_size" => 50,
+             "page_token" => "3,0xC23957e7Fea98eBD017abe15a4e7770797ff6D8d"
+           }
+         )},
+      bad_request: BadRequestResponse.response(),
+      not_implemented: NotImplementedResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/factories` endpoint.
@@ -93,6 +184,17 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     |> process_response(conn)
   end
 
+  operation :paymaster,
+    summary: "Get a paymaster by address hash",
+    description: "Retrieves a paymaster by its address hash.",
+    parameters: [address_hash_param() | base_params()],
+    responses: [
+      ok: {"Paymaster", "application/json", Schemas.Proxy.AccountAbstraction.Paymaster},
+      not_found: NotFoundResponse.response(),
+      bad_request: BadRequestResponse.response(),
+      not_implemented: NotImplementedResponse.response()
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/paymasters/:address_hash_param` endpoint.
   """
@@ -102,6 +204,24 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     |> AccountAbstraction.get_paymaster_by_hash()
     |> process_response(conn)
   end
+
+  operation :paymasters,
+    summary: "List of top paymasters",
+    description: "Retrieves a list of top paymasters.",
+    parameters: base_params() ++ define_paging_params(["page_size", "page_token"]),
+    responses: [
+      ok:
+        {"List of paymasters with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Proxy.AccountAbstraction.Paymaster,
+           next_page_params_example: %{
+             "page_size" => 50,
+             "page_token" => "19,0xB98Cb1dA4F9BD640879F0bBCb30A541c84163406"
+           }
+         )},
+      bad_request: BadRequestResponse.response(),
+      not_implemented: NotImplementedResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/paymasters` endpoint.
@@ -113,6 +233,17 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     |> process_response(conn)
   end
 
+  operation :account,
+    summary: "Get an account abstraction wallet by address hash",
+    description: "Retrieves an account abstraction wallet by its address hash.",
+    parameters: [address_hash_param() | base_params()],
+    responses: [
+      ok: {"Account", "application/json", Schemas.Proxy.AccountAbstraction.Account},
+      not_found: NotFoundResponse.response(),
+      bad_request: BadRequestResponse.response(),
+      not_implemented: NotImplementedResponse.response()
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/accounts/:address_hash_param` endpoint.
   """
@@ -122,6 +253,24 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     |> AccountAbstraction.get_account_by_hash()
     |> process_response(conn)
   end
+
+  operation :accounts,
+    summary: "List of account abstraction wallets",
+    description: "Retrieves a list of account abstraction wallets.",
+    parameters: base_params() ++ define_paging_params(["page_size", "page_token"]),
+    responses: [
+      ok:
+        {"List of account abstraction wallets with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Proxy.AccountAbstraction.Account,
+           next_page_params_example: %{
+             "page_size" => 50,
+             "page_token" => "0x29cB129476609bBa26372b23427Af3b87cB23aF6"
+           }
+         )},
+      bad_request: BadRequestResponse.response(),
+      not_implemented: NotImplementedResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/accounts` endpoint.
@@ -133,6 +282,24 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     |> process_response(conn)
   end
 
+  operation :bundles,
+    summary: "List of recent bundles",
+    description: "Retrieves a list of recent bundles.",
+    parameters: base_params() ++ define_paging_params(["page_size", "page_token"]),
+    responses: [
+      ok:
+        {"List of bundles with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Proxy.AccountAbstraction.Bundle,
+           next_page_params_example: %{
+             "page_size" => 50,
+             "page_token" => "3949699,0x275f7110df7d73e530f3381daa9d422dea80f036b514e56427d2d7e492c8a81f,0"
+           }
+         )},
+      bad_request: BadRequestResponse.response(),
+      not_implemented: NotImplementedResponse.response()
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/bundles` endpoint.
   """
@@ -143,6 +310,24 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     |> process_response(conn)
   end
 
+  operation :operations,
+    summary: "List of recent user operations",
+    description: "Retrieves a list of recent user operations.",
+    parameters: base_params() ++ define_paging_params(["page_size", "page_token"]),
+    responses: [
+      ok:
+        {"List of user operations with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Proxy.AccountAbstraction.UserOperationInList,
+           next_page_params_example: %{
+             "page_size" => 50,
+             "page_token" => "3937439,0xbb680271614883525ac8056c388489e80b3518ec12ec46e1b910c7238c46b565"
+           }
+         )},
+      bad_request: BadRequestResponse.response(),
+      not_implemented: NotImplementedResponse.response()
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/operations` endpoint.
   """
@@ -152,6 +337,15 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     |> AccountAbstraction.get_operations()
     |> process_response(conn)
   end
+
+  operation :status,
+    summary: "Get the status of the account abstraction microservice",
+    description: "Retrieves the status of the account abstraction microservice.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Status", "application/json", Schemas.Proxy.AccountAbstraction.Status},
+      not_implemented: NotImplementedResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/status` endpoint.
