@@ -206,6 +206,7 @@ defmodule Explorer.Application do
           Explorer.Migrator.FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
           :indexer
         ),
+        configure_mode_dependent_process(Explorer.Migrator.EmptyInternalTransactionsData, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
           :indexer

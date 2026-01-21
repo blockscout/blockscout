@@ -60,7 +60,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :fill_internal_transaction_to_address_hash_with_created_contract_address_hash_finished,
     key: :heavy_indexes_drop_internal_transactions_created_contract_address_hash_partial_index_finished,
     key: :heavy_indexes_create_tokens_name_partial_fts_index_finished,
-    key: :heavy_indexes_update_internal_transactions_primary_key_finished
+    key: :heavy_indexes_update_internal_transactions_primary_key_finished,
+    key: :empty_internal_transactions_data_finished
 
   @dialyzer :no_match
 
@@ -69,6 +70,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     AddressTokenBalanceTokenType,
     ArbitrumDaRecordsNormalization,
     BackfillMultichainSearchDB,
+    EmptyInternalTransactionsData,
     FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
     SanitizeDuplicatedLogIndexLogs,
     SmartContractLanguage,
@@ -375,6 +377,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       UpdateInternalTransactionsPrimaryKey,
       &set_heavy_indexes_update_internal_transactions_primary_key_finished/1
+    )
+  end
+
+  defp handle_fallback(:empty_internal_transactions_data_finished) do
+    set_and_return_migration_status(
+      EmptyInternalTransactionsData,
+      &set_empty_internal_transactions_data_finished/1
     )
   end
 
