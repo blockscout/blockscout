@@ -12,6 +12,8 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
   tags(["account_abstraction"])
 
   operation :operation,
@@ -29,7 +31,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/operations/:user_operation_hash_param` endpoint.
   """
   @spec operation(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
-  def operation(conn, %{"operation_hash_param" => operation_hash_string}) do
+  def operation(conn, %{operation_hash_param: operation_hash_string}) do
     operation_hash_string
     |> AccountAbstraction.get_user_ops_by_hash()
     |> process_response(conn)
@@ -58,7 +60,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
   """
   @spec summary(Plug.Conn.t(), map()) ::
           {:error | :format | :transaction_interpreter_enabled | non_neg_integer(), any()} | Plug.Conn.t()
-  def summary(conn, %{"operation_hash_param" => operation_hash_string, "just_request_body" => "true"}) do
+  def summary(conn, %{operation_hash_param: operation_hash_string, just_request_body: true}) do
     with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_full_hash(operation_hash_string)},
          {:transaction_interpreter_enabled, true} <-
            {:transaction_interpreter_enabled, TransactionInterpretationService.enabled?()},
@@ -68,7 +70,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     end
   end
 
-  def summary(conn, %{"operation_hash_param" => operation_hash_string}) do
+  def summary(conn, %{operation_hash_param: operation_hash_string}) do
     with {:format, {:ok, _operation_hash}} <- {:format, Chain.string_to_full_hash(operation_hash_string)},
          {:transaction_interpreter_enabled, true} <-
            {:transaction_interpreter_enabled, TransactionInterpretationService.enabled?()},
@@ -101,7 +103,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/bundlers/:address_hash_param` endpoint.
   """
   @spec bundler(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
-  def bundler(conn, %{"address_hash_param" => address_hash_string}) do
+  def bundler(conn, %{address_hash_param: address_hash_string}) do
     address_hash_string
     |> AccountAbstraction.get_bundler_by_hash()
     |> process_response(conn)
@@ -150,7 +152,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/factories/:address_hash_param` endpoint.
   """
   @spec factory(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
-  def factory(conn, %{"address_hash_param" => address_hash_string}) do
+  def factory(conn, %{address_hash_param: address_hash_string}) do
     address_hash_string
     |> AccountAbstraction.get_factory_by_hash()
     |> process_response(conn)
@@ -199,7 +201,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/paymasters/:address_hash_param` endpoint.
   """
   @spec paymaster(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
-  def paymaster(conn, %{"address_hash_param" => address_hash_string}) do
+  def paymaster(conn, %{address_hash_param: address_hash_string}) do
     address_hash_string
     |> AccountAbstraction.get_paymaster_by_hash()
     |> process_response(conn)
@@ -248,7 +250,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
     Function to handle GET requests to `/api/v2/proxy/account-abstraction/accounts/:address_hash_param` endpoint.
   """
   @spec account(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
-  def account(conn, %{"address_hash_param" => address_hash_string}) do
+  def account(conn, %{address_hash_param: address_hash_string}) do
     address_hash_string
     |> AccountAbstraction.get_account_by_hash()
     |> process_response(conn)
