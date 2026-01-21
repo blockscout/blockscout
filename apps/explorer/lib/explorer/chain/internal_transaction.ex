@@ -1211,7 +1211,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
   @spec call_type(map()) :: atom() | nil
   def call_type(%{call_type: call_type, call_type_enum: call_type_enum}) do
-    if BackgroundMigrations.get_backfill_call_type_enum_finished() do
+    if BackgroundMigrations.get_empty_internal_transactions_data_finished() do
       call_type_enum
     else
       call_type_enum || call_type

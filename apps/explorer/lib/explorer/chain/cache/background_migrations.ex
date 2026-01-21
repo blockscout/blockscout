@@ -70,7 +70,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     AddressCurrentTokenBalanceTokenType,
     AddressTokenBalanceTokenType,
     ArbitrumDaRecordsNormalization,
-    BackfillCallTypeEnum,
     BackfillMultichainSearchDB,
     EmptyInternalTransactionsData,
     FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
@@ -151,13 +150,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       BackfillMultichainSearchDB,
       &set_backfill_multichain_search_db_finished/1
-    )
-  end
-
-  defp handle_fallback(:backfill_call_type_enum_finished) do
-    set_and_return_migration_status(
-      BackfillCallTypeEnum,
-      &set_backfill_call_type_enum_finished/1
     )
   end
 
