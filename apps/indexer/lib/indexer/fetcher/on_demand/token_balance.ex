@@ -126,7 +126,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   defp prepare_ctb_params(current_token_balances, initial_acc, block_number) do
     Enum.reduce(current_token_balances, initial_acc, fn %{token_id: token_id} = stale_current_token_balance, acc ->
       prepared_ctb = %{
-        token_contract_address_hash: to_string(stale_current_token_balance.token.contract_address_hash),
+        token_contract_address_hash: to_string(stale_current_token_balance.token_contract_address_hash),
         address_hash: to_string(stale_current_token_balance.address_hash),
         block_number: block_number,
         token_id: token_id && Decimal.to_integer(token_id),
@@ -136,7 +136,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
       updated_tokens =
         Map.put_new(
           acc[:tokens],
-          stale_current_token_balance.token.contract_address_hash.bytes,
+          stale_current_token_balance.token_contract_address_hash.bytes,
           stale_current_token_balance.token
         )
 
