@@ -473,17 +473,18 @@ defmodule BlockScoutWeb.Notifier do
     %{view: view, compiler: compiler}
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp broadcast_token_balances(address_hash, token_type, balances) do
     sorted =
       Enum.sort_by(
         balances,
         fn ctb ->
           value =
-            if ctb.token.decimals,
+            if ctb.token && ctb.token.decimals,
               do: Decimal.div(ctb.value, Decimal.new(Integer.pow(10, Decimal.to_integer(ctb.token.decimals)))),
               else: ctb.value
 
-          {(ctb.token.fiat_value && Decimal.mult(value, ctb.token.fiat_value)) || Decimal.new(0), value}
+          {(ctb.token && ctb.token.fiat_value && Decimal.mult(value, ctb.token.fiat_value)) || Decimal.new(0), value}
         end,
         fn {fiat_value_1, value_1}, {fiat_value_2, value_2} ->
           case {Decimal.compare(fiat_value_1, fiat_value_2), Decimal.compare(value_1, value_2)} do
