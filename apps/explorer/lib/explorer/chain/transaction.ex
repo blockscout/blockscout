@@ -2178,6 +2178,29 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
+  Calculates burnt fees for a transaction as `base_fee_per_gas * gas_used`.
+
+  ## Parameters
+  - `gas_used`: Gas used by the transaction.
+  - `max_fee_per_gas`: Max fee per gas in Wei.
+  - `base_fee_per_gas`: Base fee per gas in Wei.
+
+  ## Returns
+  - The calculated amount of the burnt fees.
+  - `nil` if any parameter is `nil`.
+  """
+  @spec burnt_fees(Decimal.t() | nil, Wei.t() | nil, Wei.t() | nil) :: Wei.t() | nil
+  def burnt_fees(gas_used, max_fee_per_gas, base_fee_per_gas) do
+    if !is_nil(max_fee_per_gas) and !is_nil(gas_used) and !is_nil(base_fee_per_gas) do
+      if Decimal.compare(max_fee_per_gas.value, 0) == :eq do
+        Wei.zero()
+      else
+        Wei.mult(base_fee_per_gas, gas_used)
+      end
+    end
+  end
+
+  @doc """
   Wrapper around `effective_gas_price/2`
   """
   @spec effective_gas_price(Transaction.t()) :: Wei.t() | nil

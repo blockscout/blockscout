@@ -217,6 +217,9 @@ defmodule Explorer.Chain.Block do
   use Explorer.Schema
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
+  use Utils.RuntimeEnvHelper,
+    miner_gets_burnt_fees?: [:explorer, [Explorer.Chain.Transaction, :block_miner_gets_burnt_fees?]]
+
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
   alias Explorer.Chain.Block.{EmissionReward, Reward}
   alias Explorer.{Helper, Repo}
@@ -414,7 +417,7 @@ defmodule Explorer.Chain.Block do
   """
   @spec burnt_fees(list(), Decimal.t() | nil) :: Decimal.t()
   def burnt_fees(transactions, base_fee_per_gas) do
-    if is_nil(base_fee_per_gas) do
+    if is_nil(base_fee_per_gas) or miner_gets_burnt_fees?() do
       Decimal.new(0)
     else
       transactions
@@ -450,7 +453,7 @@ defmodule Explorer.Chain.Block do
           where: fragment("int8range(?, ?) <@ ?", ^block_number, ^(block_number + 1), er.block_range),
           select: er.reward
         )
-      ) || %Wei{value: Decimal.new(0)}
+      ) || Wei.zero()
 
     uncles_count = if is_list(block.uncles), do: Enum.count(block.uncles), else: 0
 
@@ -714,7 +717,7 @@ defmodule Explorer.Chain.Block do
       end
 
     burnt_fees =
-      if is_nil(block_base_fee_per_gas) do
+      if is_nil(block_base_fee_per_gas) or miner_gets_burnt_fees?() do
         acc.burnt_fees
       else
         transaction.gas_used
