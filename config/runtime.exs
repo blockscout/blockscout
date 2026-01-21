@@ -563,7 +563,11 @@ config :explorer, Explorer.Market.Fetcher.History,
       ConfigHelper.parse_integer_env_var("EXCHANGE_RATES_HISTORY_FIRST_FETCH_DAY_COUNT", 365)
     )
 
-config :explorer, Explorer.Chain.Transaction, suave_bid_contracts: System.get_env("SUAVE_BID_CONTRACTS", "")
+config :explorer, Explorer.Chain.Transaction,
+  block_miner_gets_burnt_fees?: ConfigHelper.parse_bool_env_var("BLOCK_MINER_GETS_BURNT_FEES"),
+  suave_bid_contracts: System.get_env("SUAVE_BID_CONTRACTS", ""),
+  rootstock_remasc_address: System.get_env("ROOTSTOCK_REMASC_ADDRESS"),
+  rootstock_bridge_address: System.get_env("ROOTSTOCK_BRIDGE_ADDRESS")
 
 config :explorer, Explorer.Chain.Transaction.History.Historian,
   enabled: transactions_stats_enabled,
@@ -747,10 +751,6 @@ config :explorer, Explorer.Chain.Cache.TransactionActionTokensData,
 config :explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand,
   fetch_interval: ConfigHelper.parse_time_env_var("MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS", "10m"),
   max_concurrency: ConfigHelper.parse_integer_env_var("MICROSERVICE_ETH_BYTECODE_DB_MAX_LOOKUPS_CONCURRENCY", 10)
-
-config :explorer, Explorer.Chain.Transaction,
-  rootstock_remasc_address: System.get_env("ROOTSTOCK_REMASC_ADDRESS"),
-  rootstock_bridge_address: System.get_env("ROOTSTOCK_BRIDGE_ADDRESS")
 
 config :explorer, Explorer.Chain.Cache.Counters.AddressTabsElementsCount,
   ttl: ConfigHelper.parse_time_env_var("ADDRESSES_TABS_COUNTERS_TTL", "10m")
