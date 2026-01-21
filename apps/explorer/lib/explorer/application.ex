@@ -173,7 +173,6 @@ defmodule Explorer.Application do
         Explorer.Migrator.BackfillMultichainSearchDB
         |> configure_mode_dependent_process(:indexer)
         |> configure_multichain_search_microservice(),
-        configure_mode_dependent_process(Explorer.Migrator.BackfillCallTypeEnum, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.ArbitrumDaRecordsNormalization, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.ShrinkInternalTransactions, :indexer),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.Counters.Blackfort.ValidatorsCount, :blackfort),
