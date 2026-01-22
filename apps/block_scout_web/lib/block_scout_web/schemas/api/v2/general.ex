@@ -797,6 +797,48 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for MUD tables namespace filter.
+  """
+  @spec filter_namespace_param() :: Parameter.t()
+  def filter_namespace_param do
+    %Parameter{
+      name: :filter_namespace,
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Filter by namespace"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for MUD table records key0 filter.
+  """
+  @spec filter_key0_param() :: Parameter.t()
+  def filter_key0_param do
+    %Parameter{
+      name: :filter_key0,
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Filter by key0"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for MUD table records key1 filter.
+  """
+  @spec filter_key1_param() :: Parameter.t()
+  def filter_key1_param do
+    %Parameter{
+      name: :filter_key1,
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Filter by key1"
+    }
+  end
+
+  @doc """
   Returns a parameter definition for a user operation hash in the path.
   """
   @spec operation_hash_param() :: Parameter.t()
