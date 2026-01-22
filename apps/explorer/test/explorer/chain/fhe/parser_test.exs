@@ -178,48 +178,203 @@ defmodule Explorer.Chain.Fhe.ParserTest do
 
   describe "extract_fhe_type/2" do
     test "extracts type from TrivialEncrypt to_type" do
-      operation_data = %{to_type: 1, result: <<0::256>>}
+      operation_data = %{to_type: 2, result: <<0::256>>}
       assert "Uint8" == Parser.extract_fhe_type(operation_data, "TrivialEncrypt")
+    end
+
+    test "extracts all types from TrivialEncrypt to_type" do
+      # Test all main types
+      test_cases = [
+        {0, "Bool"},
+        {1, "Uint4"},
+        {2, "Uint8"},
+        {3, "Uint16"},
+        {4, "Uint32"},
+        {5, "Uint64"},
+        {6, "Uint128"},
+        {7, "Uint160"},
+        {8, "Uint256"}
+      ]
+
+      Enum.each(test_cases, fn {type_index, expected_type} ->
+        operation_data = %{to_type: type_index, result: <<0::256>>}
+        assert expected_type == Parser.extract_fhe_type(operation_data, "TrivialEncrypt"),
+          "Failed for type_index #{type_index}, expected #{expected_type}"
+      end)
     end
 
     test "extracts type from Cast input handle (ct)" do
       # Cast extracts type from input handle (ct), not to_type parameter
       # Type byte at position 30 (0-indexed) in the ct handle
-      ct = <<0::240, 2::8, 0::8>>
+      # ct handle with type 3 (Uint16) at byte 30
+      ct = <<0::240, 3::8, 0::8>>
       operation_data = %{ct: ct, to_type: 5, result: <<0::256>>}
       assert "Uint16" == Parser.extract_fhe_type(operation_data, "Cast")
     end
 
+    test "extracts all types from Cast input handle" do
+      # Test all main types in Cast
+      test_cases = [
+        {0, "Bool"},
+        {1, "Uint4"},
+        {2, "Uint8"},
+        {3, "Uint16"},
+        {4, "Uint32"},
+        {5, "Uint64"},
+        {6, "Uint128"},
+        {7, "Uint160"},
+        {8, "Uint256"}
+      ]
+
+      Enum.each(test_cases, fn {type_index, expected_type} ->
+        ct = <<0::240, type_index::8, 0::8>>
+        operation_data = %{ct: ct, to_type: 0, result: <<0::256>>}
+        assert expected_type == Parser.extract_fhe_type(operation_data, "Cast"),
+          "Failed for type_index #{type_index}, expected #{expected_type}"
+      end)
+    end
+
     test "extracts type from comparison operations LHS handle" do
       # Comparison operations (FheEq, FheNe, etc.) extract type from LHS handle, not result
-      lhs = <<0::240, 1::8, 0::8>>
-      operation_data = %{lhs: lhs, rhs: <<0::256>>, result: <<0::240, 5::8, 0::8>>}
+      # LHS handle with type 2 (Uint8) at byte 30
+      lhs = <<0::240, 2::8, 0::8>>
+      operation_data = %{lhs: lhs, rhs: <<0::256>>, result: <<0::240, 6::8, 0::8>>}
       assert "Uint8" == Parser.extract_fhe_type(operation_data, "FheEq")
+    end
+
+    test "extracts all types from comparison operations LHS handle" do
+      # Test all main types in comparison operations
+      test_cases = [
+        {0, "Bool"},
+        {1, "Uint4"},
+        {2, "Uint8"},
+        {3, "Uint16"},
+        {4, "Uint32"},
+        {5, "Uint64"},
+        {6, "Uint128"},
+        {7, "Uint160"},
+        {8, "Uint256"}
+      ]
+
+      Enum.each(test_cases, fn {type_index, expected_type} ->
+        lhs = <<0::240, type_index::8, 0::8>>
+        operation_data = %{lhs: lhs, rhs: <<0::256>>, result: <<0::256>>}
+        assert expected_type == Parser.extract_fhe_type(operation_data, "FheEq"),
+          "Failed for type_index #{type_index}, expected #{expected_type}"
+      end)
     end
 
     test "extracts type from result handle for most operations" do
       # Most operations extract type from result handle
       # Type byte at position 30 (0-indexed)
-      result = <<0::240, 1::8, 0::8>>
+      # Result handle with type 2 (Uint8) at byte 30
+      result = <<0::240, 2::8, 0::8>>
       operation_data = %{result: result}
       assert "Uint8" == Parser.extract_fhe_type(operation_data, "FheAdd")
     end
 
+    test "extracts all types from result handle for binary operations" do
+      # Test all main types in result handle
+      test_cases = [
+        {0, "Bool"},
+        {1, "Uint4"},
+        {2, "Uint8"},
+        {3, "Uint16"},
+        {4, "Uint32"},
+        {5, "Uint64"},
+        {6, "Uint128"},
+        {7, "Uint160"},
+        {8, "Uint256"}
+      ]
+
+      Enum.each(test_cases, fn {type_index, expected_type} ->
+        result = <<0::240, type_index::8, 0::8>>
+        operation_data = %{result: result}
+        assert expected_type == Parser.extract_fhe_type(operation_data, "FheAdd"),
+          "Failed for type_index #{type_index}, expected #{expected_type}"
+      end)
+    end
+
     test "extracts type from unary operation input handle" do
       # Unary operations (Cast, FheNot, FheNeg) extract type from input handle (ct)
-      ct = <<0::240, 3::8, 0::8>>
+      # ct handle with type 4 (Uint32) at byte 30
+      ct = <<0::240, 4::8, 0::8>>
       operation_data = %{ct: ct, result: <<0::256>>}
       assert "Uint32" == Parser.extract_fhe_type(operation_data, "FheNeg")
     end
 
+    test "extracts all types from unary operation input handle" do
+      # Test all main types in unary operations
+      test_cases = [
+        {0, "Bool"},
+        {1, "Uint4"},
+        {2, "Uint8"},
+        {3, "Uint16"},
+        {4, "Uint32"},
+        {5, "Uint64"},
+        {6, "Uint128"},
+        {7, "Uint160"},
+        {8, "Uint256"}
+      ]
+
+      Enum.each(test_cases, fn {type_index, expected_type} ->
+        ct = <<0::240, type_index::8, 0::8>>
+        operation_data = %{ct: ct, result: <<0::256>>}
+        assert expected_type == Parser.extract_fhe_type(operation_data, "FheNeg"),
+          "Failed for type_index #{type_index}, expected #{expected_type}"
+      end)
+    end
+
     test "extracts type from FheRand randType parameter" do
-      operation_data = %{rand_type: 1, seed: <<0::128>>, result: <<0::256>>}
+      # rand_type: 2 = Uint8
+      operation_data = %{rand_type: 2, seed: <<0::128>>, result: <<0::256>>}
       assert "Uint8" == Parser.extract_fhe_type(operation_data, "FheRand")
+    end
+
+    test "extracts all types from FheRand randType parameter" do
+      # Test all main types in FheRand
+      test_cases = [
+        {0, "Bool"},
+        {1, "Uint4"},
+        {2, "Uint8"},
+        {3, "Uint16"},
+        {4, "Uint32"},
+        {5, "Uint64"},
+        {6, "Uint128"},
+        {7, "Uint160"},
+        {8, "Uint256"}
+      ]
+
+      Enum.each(test_cases, fn {type_index, expected_type} ->
+        operation_data = %{rand_type: type_index, seed: <<0::128>>, result: <<0::256>>}
+        assert expected_type == Parser.extract_fhe_type(operation_data, "FheRand"),
+          "Failed for type_index #{type_index}, expected #{expected_type}"
+      end)
+    end
+
+    test "extracts type from FheRandBounded randType parameter" do
+      # rand_type: 2 = Uint8
+      operation_data = %{rand_type: 2, upper_bound: 100, seed: <<0::128>>, result: <<0::256>>}
+      assert "Uint8" == Parser.extract_fhe_type(operation_data, "FheRandBounded")
     end
 
     test "returns Unknown for invalid result" do
       operation_data = %{result: <<>>}
       assert "Unknown" == Parser.extract_fhe_type(operation_data, "FheAdd")
+    end
+
+    test "returns Unknown for missing required data" do
+      # TrivialEncrypt without to_type
+      assert "Unknown" == Parser.extract_fhe_type(%{}, "TrivialEncrypt")
+      
+      # Cast without ct
+      assert "Unknown" == Parser.extract_fhe_type(%{}, "Cast")
+      
+      # Comparison without lhs
+      assert "Unknown" == Parser.extract_fhe_type(%{}, "FheEq")
+      
+      # FheRand without rand_type
+      assert "Unknown" == Parser.extract_fhe_type(%{}, "FheRand")
     end
   end
 
@@ -276,22 +431,131 @@ defmodule Explorer.Chain.Fhe.ParserTest do
       
       assert scalar_cost != non_scalar_cost
     end
+
+    test "calculates HCU cost for all types in FheAdd" do
+      # Test all main types for FheAdd non-scalar
+      test_cases = [
+        {"Uint8", 88_000},
+        {"Uint16", 93_000},
+        {"Uint32", 125_000},
+        {"Uint64", 162_000},
+        {"Uint128", 259_000}
+      ]
+
+      Enum.each(test_cases, fn {type, expected_cost} ->
+        cost = Parser.calculate_hcu_cost("FheAdd", type, false)
+        assert cost == expected_cost,
+          "FheAdd non-scalar #{type} should cost #{expected_cost}, got #{cost}"
+      end)
+
+      # Test all main types for FheAdd scalar
+      scalar_cases = [
+        {"Uint8", 84_000},
+        {"Uint16", 93_000},
+        {"Uint32", 95_000},
+        {"Uint64", 133_000},
+        {"Uint128", 172_000}
+      ]
+
+      Enum.each(scalar_cases, fn {type, expected_cost} ->
+        cost = Parser.calculate_hcu_cost("FheAdd", type, true)
+        assert cost == expected_cost,
+          "FheAdd scalar #{type} should cost #{expected_cost}, got #{cost}"
+      end)
+    end
+
+    test "calculates HCU cost for FheGe all types" do
+      # Test FheGe non-scalar for all types
+      test_cases = [
+        {"Uint8", 63_000},
+        {"Uint16", 84_000},
+        {"Uint32", 118_000},
+        {"Uint64", 152_000},
+        {"Uint128", 210_000}
+      ]
+
+      Enum.each(test_cases, fn {type, expected_cost} ->
+        cost = Parser.calculate_hcu_cost("FheGe", type, false)
+        assert cost == expected_cost,
+          "FheGe non-scalar #{type} should cost #{expected_cost}, got #{cost}"
+      end)
+    end
+
+    test "calculates HCU cost for FheIfThenElse all types" do
+      # Test FheIfThenElse for all types
+      test_cases = [
+        {"Bool", 55_000},
+        {"Uint8", 55_000},
+        {"Uint16", 55_000},
+        {"Uint32", 55_000},
+        {"Uint64", 55_000},
+        {"Uint128", 57_000}
+      ]
+
+      Enum.each(test_cases, fn {type, expected_cost} ->
+        cost = Parser.calculate_hcu_cost("FheIfThenElse", type, false)
+        assert cost == expected_cost,
+          "FheIfThenElse #{type} should cost #{expected_cost}, got #{cost}"
+      end)
+    end
+
+    test "calculates HCU cost for TrivialEncrypt all types" do
+      # Test TrivialEncrypt for all types
+      test_cases = [
+        {"Bool", 32},
+        {"Uint8", 32},
+        {"Uint16", 32},
+        {"Uint32", 32},
+        {"Uint64", 32},
+        {"Uint128", 32}
+      ]
+
+      Enum.each(test_cases, fn {type, expected_cost} ->
+        cost = Parser.calculate_hcu_cost("TrivialEncrypt", type, false)
+        assert cost == expected_cost,
+          "TrivialEncrypt #{type} should cost #{expected_cost}, got #{cost}"
+      end)
+    end
+
+    test "returns 0 for unknown operation" do
+      cost = Parser.calculate_hcu_cost("UnknownOperation", "Uint8", false)
+      assert cost == 0
+    end
+
+    test "returns 0 for unknown type" do
+      cost = Parser.calculate_hcu_cost("FheAdd", "UnknownType", false)
+      assert cost == 0
+    end
   end
 
   describe "get_operation_type/1" do
     test "returns arithmetic for arithmetic operations" do
       assert "arithmetic" == Parser.get_operation_type("FheAdd")
+      assert "arithmetic" == Parser.get_operation_type("FheSub")
       assert "arithmetic" == Parser.get_operation_type("FheMul")
+      assert "arithmetic" == Parser.get_operation_type("FheDiv")
+      assert "arithmetic" == Parser.get_operation_type("FheRem")
     end
 
     test "returns bitwise for bitwise operations" do
       assert "bitwise" == Parser.get_operation_type("FheBitAnd")
+      assert "bitwise" == Parser.get_operation_type("FheBitOr")
+      assert "bitwise" == Parser.get_operation_type("FheBitXor")
       assert "bitwise" == Parser.get_operation_type("FheShl")
+      assert "bitwise" == Parser.get_operation_type("FheShr")
+      assert "bitwise" == Parser.get_operation_type("FheRotl")
+      assert "bitwise" == Parser.get_operation_type("FheRotr")
     end
 
     test "returns comparison for comparison operations" do
       assert "comparison" == Parser.get_operation_type("FheEq")
+      assert "comparison" == Parser.get_operation_type("FheNe")
+      assert "comparison" == Parser.get_operation_type("FheGe")
+      assert "comparison" == Parser.get_operation_type("FheGt")
+      assert "comparison" == Parser.get_operation_type("FheLe")
+      assert "comparison" == Parser.get_operation_type("FheLt")
       assert "comparison" == Parser.get_operation_type("FheMin")
+      assert "comparison" == Parser.get_operation_type("FheMax")
     end
 
     test "returns unary for unary operations" do
@@ -314,7 +578,34 @@ defmodule Explorer.Chain.Fhe.ParserTest do
     end
 
     test "returns other for unknown operations" do
-      assert "other" == Parser.get_operation_type("Unknown")
+      assert "other" == Parser.get_operation_type("UnknownOperation")
+    end
+  end
+
+  describe "FheOperatorPrices.get_type_name/1" do
+    test "returns correct type name for all main types" do
+      test_cases = [
+        {0, "Bool"},
+        {1, "Uint4"},
+        {2, "Uint8"},
+        {3, "Uint16"},
+        {4, "Uint32"},
+        {5, "Uint64"},
+        {6, "Uint128"},
+        {7, "Uint160"},
+        {8, "Uint256"}
+      ]
+
+      Enum.each(test_cases, fn {type_index, expected_type} ->
+        type_name = Explorer.Chain.FheOperatorPrices.get_type_name(type_index)
+        assert type_name == expected_type,
+          "Type index #{type_index} should map to #{expected_type}, got #{type_name}"
+      end)
+    end
+
+    test "returns Unknown for invalid type index" do
+      assert "Unknown" == Explorer.Chain.FheOperatorPrices.get_type_name(999)
+      assert "Unknown" == Explorer.Chain.FheOperatorPrices.get_type_name(-1)
     end
   end
 
