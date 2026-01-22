@@ -182,16 +182,39 @@ defmodule Explorer.Chain.Fhe.ParserTest do
       assert "Uint8" == Parser.extract_fhe_type(operation_data, "TrivialEncrypt")
     end
 
-    test "extracts type from Cast to_type" do
-      operation_data = %{to_type: 2, result: <<0::256>>}
+    test "extracts type from Cast input handle (ct)" do
+      # Cast extracts type from input handle (ct), not to_type parameter
+      # Type byte at position 30 (0-indexed) in the ct handle
+      ct = <<0::240, 2::8, 0::8>>
+      operation_data = %{ct: ct, to_type: 5, result: <<0::256>>}
       assert "Uint16" == Parser.extract_fhe_type(operation_data, "Cast")
     end
 
-    test "extracts type from result handle when to_type not present" do
+    test "extracts type from comparison operations LHS handle" do
+      # Comparison operations (FheEq, FheNe, etc.) extract type from LHS handle, not result
+      lhs = <<0::240, 1::8, 0::8>>
+      operation_data = %{lhs: lhs, rhs: <<0::256>>, result: <<0::240, 5::8, 0::8>>}
+      assert "Uint8" == Parser.extract_fhe_type(operation_data, "FheEq")
+    end
+
+    test "extracts type from result handle for most operations" do
+      # Most operations extract type from result handle
       # Type byte at position 30 (0-indexed)
       result = <<0::240, 1::8, 0::8>>
       operation_data = %{result: result}
       assert "Uint8" == Parser.extract_fhe_type(operation_data, "FheAdd")
+    end
+
+    test "extracts type from unary operation input handle" do
+      # Unary operations (Cast, FheNot, FheNeg) extract type from input handle (ct)
+      ct = <<0::240, 3::8, 0::8>>
+      operation_data = %{ct: ct, result: <<0::256>>}
+      assert "Uint32" == Parser.extract_fhe_type(operation_data, "FheNeg")
+    end
+
+    test "extracts type from FheRand randType parameter" do
+      operation_data = %{rand_type: 1, seed: <<0::128>>, result: <<0::256>>}
+      assert "Uint8" == Parser.extract_fhe_type(operation_data, "FheRand")
     end
 
     test "returns Unknown for invalid result" do
@@ -298,8 +321,8 @@ defmodule Explorer.Chain.Fhe.ParserTest do
   describe "build_hcu_depth_map/1" do
     test "calculates depth for independent operations" do
       operations = [
-        %{result: <<1::256>>, inputs: %{lhs: "0x00", rhs: "0x00"}, hcu_cost: 100},
-        %{result: <<2::256>>, inputs: %{lhs: "0x00", rhs: "0x00"}, hcu_cost: 200}
+        %{result: <<1::256>>, inputs: %{lhs: "0x00", rhs: "0x00"}, hcu_cost: 100, is_scalar: false},
+        %{result: <<2::256>>, inputs: %{lhs: "0x00", rhs: "0x00"}, hcu_cost: 200, is_scalar: false}
       ]
       
       depth_map = Parser.build_hcu_depth_map(operations)
@@ -316,14 +339,67 @@ defmodule Explorer.Chain.Fhe.ParserTest do
       result2 = Base.encode16(<<2::256>>, case: :lower)
       
       operations = [
-        %{result: <<1::256>>, inputs: %{lhs: "0x00", rhs: "0x00"}, hcu_cost: 100},
-        %{result: <<2::256>>, inputs: %{lhs: result1, rhs: "0x00"}, hcu_cost: 200}
+        %{result: <<1::256>>, inputs: %{lhs: "0x00", rhs: "0x00"}, hcu_cost: 100, is_scalar: false},
+        %{result: <<2::256>>, inputs: %{lhs: result1, rhs: "0x00"}, hcu_cost: 200, is_scalar: false}
       ]
       
       depth_map = Parser.build_hcu_depth_map(operations)
       
       assert depth_map[result1] == 100
       assert depth_map[result2] == 300  # 100 (from result1) + 200 (current)
+    end
+
+    test "calculates depth for scalar operations (only LHS depth)" do
+      result1 = Base.encode16(<<1::256>>, case: :lower)
+      result2 = Base.encode16(<<2::256>>, case: :lower)
+      
+      operations = [
+        %{result: <<1::256>>, inputs: %{lhs: "0x00", rhs: "0x00"}, hcu_cost: 100, is_scalar: false},
+        # Scalar operation: RHS is plain value, so only use LHS depth
+        %{result: <<2::256>>, inputs: %{lhs: result1, rhs: "plain_value"}, hcu_cost: 200, is_scalar: true}
+      ]
+      
+      depth_map = Parser.build_hcu_depth_map(operations)
+      
+      assert depth_map[result1] == 100
+      # Scalar: lhs_depth (100) + cost (200) = 300 (not max of lhs and rhs)
+      assert depth_map[result2] == 300
+    end
+
+    test "calculates depth for non-scalar operations (max of LHS and RHS)" do
+      result1 = Base.encode16(<<1::256>>, case: :lower)
+      result2 = Base.encode16(<<2::256>>, case: :lower)
+      result3 = Base.encode16(<<3::256>>, case: :lower)
+      
+      operations = [
+        %{result: <<1::256>>, inputs: %{lhs: "0x00", rhs: "0x00"}, hcu_cost: 100, is_scalar: false},
+        %{result: <<2::256>>, inputs: %{lhs: "0x00", rhs: "0x00"}, hcu_cost: 200, is_scalar: false},
+        # Non-scalar: use max of both input depths
+        %{result: <<3::256>>, inputs: %{lhs: result1, rhs: result2}, hcu_cost: 300, is_scalar: false}
+      ]
+      
+      depth_map = Parser.build_hcu_depth_map(operations)
+      
+      assert depth_map[result1] == 100
+      assert depth_map[result2] == 200
+      # Non-scalar: max(100, 200) + 300 = 500
+      assert depth_map[result3] == 500
+    end
+
+    test "calculates depth for unary operations" do
+      result1 = Base.encode16(<<1::256>>, case: :lower)
+      result2 = Base.encode16(<<2::256>>, case: :lower)
+      
+      operations = [
+        %{result: <<1::256>>, inputs: %{}, hcu_cost: 100},
+        %{result: <<2::256>>, inputs: %{ct: result1}, hcu_cost: 200}
+      ]
+      
+      depth_map = Parser.build_hcu_depth_map(operations)
+      
+      assert depth_map[result1] == 100
+      # Unary: ct_depth (100) + cost (200) = 300
+      assert depth_map[result2] == 300
     end
 
     test "calculates depth for FheIfThenElse" do
@@ -342,6 +418,19 @@ defmodule Explorer.Chain.Fhe.ParserTest do
       depth_map = Parser.build_hcu_depth_map(operations)
       
       assert depth_map[result] == 350  # max(50, 100, 150) + 200
+    end
+
+    test "calculates depth for operations with no inputs" do
+      result1 = Base.encode16(<<1::256>>, case: :lower)
+      
+      operations = [
+        %{result: <<1::256>>, inputs: %{}, hcu_cost: 100}
+      ]
+      
+      depth_map = Parser.build_hcu_depth_map(operations)
+      
+      # Operations with no inputs (TrivialEncrypt, FheRand, etc.) have depth = cost only
+      assert depth_map[result1] == 100
     end
   end
 

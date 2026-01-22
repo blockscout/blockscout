@@ -227,24 +227,58 @@ defmodule Explorer.Chain.Fhe.Parser do
   end
 
   @doc """
-  Extract FHE type from result handle or to_type.
+  Type extraction rules (matching TypeScript implementation):
+  - FheAdd, FheSub, FheMul, FheDiv, FheRem, FheBitAnd, FheBitOr, FheBitXor,
+    FheShl, FheShr, FheRotl, FheRotr, FheMin, FheMax, FheIfThenElse: from result handle
+  - FheEq, FheNe, FheGe, FheGt, FheLe, FheLt: from LHS handle (not result!)
+  - Cast, FheNot, FheNeg: from input handle (ct)
+  - TrivialEncrypt: from toType parameter
+  - FheRand: from randType parameter
+  - FheRandBounded: from randType parameter
   """
   def extract_fhe_type(operation_data, event_name) do
     case event_name do
+      event_name when event_name in ["FheEq", "FheNe", "FheGe", "FheGt", "FheLe", "FheLt"] ->
+        if operation_data[:lhs] do
+          extract_fhe_type_from_result(operation_data.lhs)
+        else
+          "Unknown"
+        end
+      
+      event_name when event_name in ["Cast", "FheNot", "FheNeg"] ->
+        if operation_data[:ct] do
+          extract_fhe_type_from_result(operation_data.ct)
+        else
+          "Unknown"
+        end
+      
       "TrivialEncrypt" ->
         if operation_data[:to_type] do
           FheOperatorPrices.get_type_name(operation_data.to_type)
         else
-          extract_fhe_type_from_result(operation_data.result)
+          "Unknown"
         end
-      "Cast" ->
-        if operation_data[:to_type] do
-          FheOperatorPrices.get_type_name(operation_data.to_type)
+      
+      "FheRand" ->
+        if operation_data[:rand_type] do
+          FheOperatorPrices.get_type_name(operation_data.rand_type)
         else
-          extract_fhe_type_from_result(operation_data.result)
+          "Unknown"
         end
+      
+      "FheRandBounded" ->
+        if operation_data[:rand_type] do
+          FheOperatorPrices.get_type_name(operation_data.rand_type)
+        else
+          "Unknown"
+        end
+
       _ ->
-        extract_fhe_type_from_result(operation_data.result)
+        if operation_data[:result] do
+          extract_fhe_type_from_result(operation_data.result)
+        else
+          "Unknown"
+        end
     end
   end
 
@@ -353,12 +387,20 @@ defmodule Explorer.Chain.Fhe.Parser do
       if is_nil(result_handle) do
         acc
       else
-        # For binary operations, depth is max of input depths + current cost
+        # For binary operations, depth depends on whether it's scalar or not
+        # Scalar operations: RHS is a plain value (not a handle), so only use LHS depth
+        # Non-scalar operations: both LHS and RHS are handles, use max of both depths
         depth = case op.inputs do
         %{lhs: lhs, rhs: rhs} ->
           lhs_depth = Map.get(acc, lhs, 0)
-          rhs_depth = Map.get(acc, rhs, 0)
-          max(lhs_depth, rhs_depth) + op.hcu_cost
+          # For scalar operations, RHS is a plain value (not a handle), so it has no depth
+          # Only use RHS depth if the operation is non-scalar
+          if Map.get(op, :is_scalar, false) do
+            lhs_depth + op.hcu_cost
+          else
+            rhs_depth = Map.get(acc, rhs, 0)
+            max(lhs_depth, rhs_depth) + op.hcu_cost
+          end
         
         %{control: control, if_true: if_true, if_false: if_false} ->
             control_depth = Map.get(acc, control, 0)

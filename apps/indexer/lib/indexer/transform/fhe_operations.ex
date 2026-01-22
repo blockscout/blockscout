@@ -60,8 +60,11 @@ defmodule Indexer.Transform.FheOperations do
     block_hash = first_log.block_hash
     block_number = first_log.block_number
 
+    # Sort logs by index to ensure correct HCU depth calculation order
+    sorted_logs = Enum.sort_by(tx_logs, & &1.index)
+
     # Parse operations using shared Parser logic
-    operations = Enum.map(tx_logs, &parse_single_log/1)
+    operations = Enum.map(sorted_logs, &parse_single_log/1)
 
     # Build HCU depth map
     hcu_depth_map = Parser.build_hcu_depth_map(operations)
