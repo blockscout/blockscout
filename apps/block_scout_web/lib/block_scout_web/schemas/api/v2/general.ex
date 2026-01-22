@@ -73,22 +73,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
-  # todo: It should be removed when the frontend stops sending the address_id parameter with the request
-  # https://github.com/blockscout/frontend/issues/3090
-  @doc """
-  Returns a parameter definition for an address hash in the path.
-  """
-  @spec address_id_param() :: Parameter.t()
-  def address_id_param do
-    %Parameter{
-      name: :address_id,
-      in: :query,
-      schema: AddressHash,
-      required: false,
-      description: "Address hash in the query"
-    }
-  end
-
   @doc """
   Returns a parameter definition for the start of the time period.
   """
@@ -678,6 +662,28 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for API key for sensitive endpoints in the request body.
+  """
+  @spec admin_api_key_request_body() :: OpenApiSpex.RequestBody.t()
+  def admin_api_key_request_body do
+    %OpenApiSpex.RequestBody{
+      content: %{
+        "application/json" => %OpenApiSpex.MediaType{
+          schema: %OpenApiSpex.Schema{
+            type: :object,
+            properties: %{
+              api_key: %Schema{type: :string}
+            },
+            required: [
+              :api_key
+            ]
+          }
+        }
+      }
+    }
+  end
+
+  @doc """
   Returns a parameter definition for reCAPTCHA response token.
   """
   @spec recaptcha_response_param() :: Parameter.t()
@@ -822,6 +828,22 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @doc """
+  Returns a schema definition for a simple message response.
+  """
+  @spec message_response_schema :: Schema.t()
+  def message_response_schema do
+    %Schema{
+      type: :object,
+      properties: %{
+        message: %Schema{type: :string}
+      },
+      required: [:message],
+      nullable: false,
+      additionalProperties: false
+    }
+  end
+
   # `%Schema{anyOf: [%Schema{type: :integer}, EmptyString]}` is used because,
   # `allowEmptyValue: true` does not allow empty string for some reasons (at least in this case)
 
@@ -847,12 +869,26 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Block number for paging"
     },
+    "l1_block_number" => %Parameter{
+      name: :l1_block_number,
+      in: :query,
+      schema: %Schema{type: :integer, minimum: 0},
+      required: false,
+      description: "L1 block number for paging"
+    },
     "epoch_number" => %Parameter{
       name: :epoch_number,
       in: :query,
       schema: IntegerString,
       required: false,
       description: "Epoch number for paging"
+    },
+    "nonce" => %Parameter{
+      name: :nonce,
+      in: :query,
+      schema: IntegerString,
+      required: false,
+      description: "Nonce for paging"
     },
     "index" => %Parameter{
       name: :index,
@@ -884,6 +920,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     },
     "hash" => %Parameter{
       name: :hash,
+      in: :query,
+      schema: FullHash,
+      required: false,
+      description: "Transaction hash for paging"
+    },
+    "transaction_hash" => %Parameter{
+      name: :transaction_hash,
       in: :query,
       schema: FullHash,
       required: false,

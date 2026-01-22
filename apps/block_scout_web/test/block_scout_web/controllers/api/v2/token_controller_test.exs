@@ -1139,7 +1139,12 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> insert()
         |> with_block()
 
-      instance = insert(:token_instance, token_id: 0, token_contract_address_hash: token.contract_address_hash)
+      instance =
+        insert(:token_instance,
+          token_id: 0,
+          token_contract_address_hash: token.contract_address_hash,
+          skip_metadata_url: true
+        )
 
       _transfer =
         insert(:token_transfer,
@@ -1175,6 +1180,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       insert(:token_instance,
         token_id: 0,
         token_contract_address_hash: token.contract_address_hash,
+        skip_metadata_url: true,
         metadata: %{
           "image_url" => "ipfs://QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/gm%20gm%20feelin%20blue%204k.png"
         }
@@ -1211,6 +1217,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       insert(:token_instance,
         token_id: 0,
         token_contract_address_hash: token.contract_address_hash,
+        skip_metadata_url: true,
         metadata: %{
           "image_url" => "ipfs://QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/123.png"
         }
@@ -1769,8 +1776,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -1812,8 +1821,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -1880,8 +1891,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -1943,8 +1956,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, "error"]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, reason: "error"},
+                       payload: %{token_id: ^token_id_string, reason: "error"},
                        event: "not_fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -2012,8 +2027,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -2051,8 +2068,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },

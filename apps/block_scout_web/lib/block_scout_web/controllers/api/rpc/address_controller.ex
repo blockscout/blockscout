@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   alias BlockScoutWeb.API.RPC.Helper
   alias BlockScoutWeb.Chain, as: BlockScoutWebChain
   alias Explorer.{Chain, Etherscan}
-  alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.{Address, PendingOperationsHelper, Wei}
   alias Explorer.Etherscan.{Addresses, Blocks}
   alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
   @invalid_address_message "Invalid address format"
   @invalid_contract_address_message "Invalid contract address format"
+  @no_internal_transactions_message "No internal transactions found"
   @no_token_transfers_message "No token transfers found"
   @results_window 10000
   @results_window_too_large_message "Result window is too large, PageNo x Offset size must be less than or equal to #{@results_window}"
@@ -156,6 +157,8 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   def txlistinternal(conn, params, transaction_param, :transaction) do
     with {:params, {:ok, options}} <- {:params, optional_params(params)},
          {:format, {:ok, transaction_hash}} <- to_transaction_hash(transaction_param),
+         {:ok, transaction} <- Chain.hash_to_transaction(transaction_hash),
+         {:pending, false} <- {:pending, PendingOperationsHelper.block_pending?(transaction.block_hash)},
          {:ok, internal_transactions} <- list_internal_transactions(transaction_hash, options) do
       render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
     else
@@ -163,41 +166,76 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
         render(conn, :error, error: "Invalid txhash format")
 
       {:error, :not_found} ->
-        render(conn, :error, error: "No internal transactions found", data: [])
+        render(conn, :error, error: @no_internal_transactions_message, data: [])
 
       {:params, {:error, :results_window_too_large}} ->
         render(conn, :error, error: @results_window_too_large_message, data: nil)
+
+      {:pending, true} ->
+        render(conn, :pending_internal_transaction,
+          message: "Internal transactions for this transaction have not been processed yet",
+          data: []
+        )
     end
   end
+
+  @block_range_not_yet_processed_message "Some internal transactions within this block range have not yet been processed"
 
   def txlistinternal(conn, params, address_param, :address) do
     with {:params, {:ok, options}} <- {:params, optional_params(params)},
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
          {:address, :ok} <- {:address, Address.check_address_exists(address_hash, @api_true)},
-         {:ok, internal_transactions} <- list_internal_transactions(address_hash, options) do
-      render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
+         {{:ok, internal_transactions}, _, _} <-
+           {list_internal_transactions(address_hash, options), options[:startblock], options[:endblock]} do
+      render_internal_transactions(conn, internal_transactions, options[:startblock], options[:endblock])
     else
       {:format, :error} ->
         render(conn, :error, error: @invalid_address_message)
 
       {_, :not_found} ->
-        render(conn, :error, error: "No internal transactions found", data: [])
+        render(conn, :error, error: @no_internal_transactions_message, data: [])
 
       {:params, {:error, :results_window_too_large}} ->
         render(conn, :error, error: @results_window_too_large_message, data: nil)
+
+      {{:error, :not_found}, start_block_number, end_block_number} ->
+        render_internal_transactions(conn, [], start_block_number, end_block_number)
     end
   end
 
   def txlistinternal(conn, params, :no_param) do
-    with {:params, {:ok, options}} <- {:params, optional_params(params)},
-         {:ok, internal_transactions} <- list_internal_transactions(:all, options) do
-      render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
+    with {:ok, options} <- optional_params(params),
+         {{:ok, internal_transactions}, _, _} <-
+           {list_internal_transactions(:all, options), options[:startblock], options[:endblock]} do
+      render_internal_transactions(conn, internal_transactions, options[:startblock], options[:endblock])
     else
-      {:error, :not_found} ->
-        render(conn, :error, error: "No internal transactions found", data: [])
-
-      {:params, {:error, :results_window_too_large}} ->
+      {:error, :results_window_too_large} ->
         render(conn, :error, error: @results_window_too_large_message, data: nil)
+
+      {{:error, :not_found}, start_block_number, end_block_number} ->
+        render_internal_transactions(conn, [], start_block_number, end_block_number)
+    end
+  end
+
+  defp render_internal_transactions(conn, [], start_block_number, end_block_number) do
+    if PendingOperationsHelper.blocks_pending?(start_block_number, end_block_number) do
+      render(conn, :pending_internal_transaction,
+        message: @block_range_not_yet_processed_message,
+        data: []
+      )
+    else
+      render(conn, :error, error: @no_internal_transactions_message, data: [])
+    end
+  end
+
+  defp render_internal_transactions(conn, internal_transactions, start_block_number, end_block_number) do
+    if PendingOperationsHelper.blocks_pending?(start_block_number, end_block_number) do
+      render(conn, :pending_internal_transaction,
+        message: @block_range_not_yet_processed_message,
+        data: internal_transactions
+      )
+    else
+      render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
     end
   end
 

@@ -124,7 +124,7 @@ jobs:
 
       - name: mix openapi.spec.yaml
         run: |
-          mix openapi.spec.yaml --spec BlockScoutWeb.ApiSpec openapi.${{ matrix.chain-type }}.yaml --start-app=false
+          mix openapi.spec.yaml --spec BlockScoutWeb.Specs.Public openapi.${{ matrix.chain-type }}.yaml --start-app=false
         env:
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
           MUD_INDEXER_ENABLED: false
@@ -132,7 +132,7 @@ jobs:
       - name: Generate MUD-enabled spec for Optimism
         if: matrix.chain-type == 'optimism'
         run: |
-          mix openapi.spec.yaml --spec BlockScoutWeb.ApiSpec openapi.mud.yaml --start-app=false
+          mix openapi.spec.yaml --spec BlockScoutWeb.Specs.Public openapi.mud.yaml --start-app=false
         env:
           CHAIN_TYPE: optimism
           MUD_INDEXER_ENABLED: true

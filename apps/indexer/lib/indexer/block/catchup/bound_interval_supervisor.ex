@@ -12,7 +12,7 @@ defmodule Indexer.Block.Catchup.BoundIntervalSupervisor do
   alias Indexer.Block.Catchup
 
   @type named_arguments :: %{
-          required(:block_fetcher) => Block.Fetcher.t(),
+          required(:block_fetcher) => Block.Fetcher.t(Catchup.Fetcher),
           optional(:block_interval) => pos_integer,
           optional(:memory_monitor) => GenServer.server()
         }

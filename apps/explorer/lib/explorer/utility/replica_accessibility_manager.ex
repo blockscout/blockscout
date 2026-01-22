@@ -6,6 +6,7 @@ defmodule Explorer.Utility.ReplicaAccessibilityManager do
   use GenServer
 
   alias Explorer.Repo
+  alias Utils.ConfigHelper
 
   @interval :timer.seconds(10)
 
@@ -15,7 +16,7 @@ defmodule Explorer.Utility.ReplicaAccessibilityManager do
   end
 
   def init(_) do
-    if System.get_env("DATABASE_READ_ONLY_API_URL") do
+    if ConfigHelper.parse_url_env_var("DATABASE_READ_ONLY_API_URL") do
       schedule_next_check(0)
 
       {:ok, %{}}

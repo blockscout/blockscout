@@ -357,17 +357,17 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
   end
 
   defp config do
-    case :persistent_term.get(@cache_name, nil) do
-      config_string when not is_nil(config_string) ->
+    case config_json() do
+      config_string when is_binary(config_string) ->
         safe_parse_config_string(config_string)
 
-      nil ->
-        case HttpClient.get(config_url()) do
-          {:ok, %{status_code: 200, body: config_string}} ->
-            safe_parse_config_string(config_string, true)
+      _ ->
+        case :persistent_term.get(@cache_name, nil) do
+          config_string when not is_nil(config_string) ->
+            safe_parse_config_string(config_string)
 
-          _ ->
-            %{}
+          nil ->
+            fetch_config_from_url()
         end
     end
   end
@@ -381,6 +381,20 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
       {:error, _} ->
         %{}
     end
+  end
+
+  defp fetch_config_from_url do
+    case HttpClient.get(config_url()) do
+      {:ok, %{status_code: 200, body: config_string}} ->
+        safe_parse_config_string(config_string, true)
+
+      _ ->
+        %{}
+    end
+  end
+
+  defp config_json do
+    Application.get_env(:explorer, __MODULE__)[:config_json]
   end
 
   defp config_url do

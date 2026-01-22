@@ -251,7 +251,7 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
       full_text = Enum.join(items)
 
       assert(length(items) == 3)
-      assert(String.contains?(full_text, format_wei_value(%Wei{value: Decimal.new(0)}, :ether)))
+      assert(String.contains?(full_text, format_wei_value(Wei.zero(), :ether)))
 
       1 |> :timer.seconds() |> :timer.sleep()
       conn = get(conn, transaction_state_path(conn, :index, transaction), %{type: "JSON"})

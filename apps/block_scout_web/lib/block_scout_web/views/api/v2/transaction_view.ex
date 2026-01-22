@@ -3,7 +3,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   use Utils.RuntimeEnvHelper,
     chain_type: [:explorer, :chain_type],
-    chain_identity: [:explorer, :chain_identity]
+    chain_identity: [:explorer, :chain_identity],
+    miner_gets_burnt_fees?: [:explorer, [Explorer.Chain.Transaction, :block_miner_gets_burnt_fees?]]
 
   alias BlockScoutWeb.API.V2.{ApiView, Helper, InternalTransactionView, TokenTransferView, TokenView}
 
@@ -366,7 +367,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "decoded" => decoded,
       "smart_contract" => smart_contract_info(transaction_or_hash),
       "block_number" => log.block_number,
-      "block_hash" => log.block_hash
+      "block_hash" => log.block_hash,
+      "block_timestamp" =>
+        case log.block do
+          %Block{timestamp: timestamp} -> timestamp
+          _ -> nil
+        end
     }
   end
 
@@ -456,8 +462,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     priority_fee_per_gas = Transaction.priority_fee_per_gas(max_priority_fee_per_gas, base_fee_per_gas, max_fee_per_gas)
 
-    burnt_fees = burnt_fees(transaction, max_fee_per_gas, base_fee_per_gas)
-
     status = transaction |> Chain.transaction_to_status() |> format_status()
 
     revert_reason = revert_reason(status, transaction, single_transaction?)
@@ -506,7 +510,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "max_priority_fee_per_gas" => transaction.max_priority_fee_per_gas,
       "base_fee_per_gas" => base_fee_per_gas,
       "priority_fee" => priority_fee_per_gas && Wei.mult(priority_fee_per_gas, transaction.gas_used),
-      "transaction_burnt_fee" => burnt_fees,
+      "transaction_burnt_fee" => burnt_fees(transaction, base_fee_per_gas),
       "nonce" => transaction.nonce,
       "position" => transaction.index,
       "revert_reason" => revert_reason,
@@ -530,6 +534,24 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     result
     |> with_chain_type_fields(transaction, single_transaction?, conn, watchlist_names)
+  end
+
+  # Calculates burnt fees for a transaction.
+  #
+  # ## Parameters
+  # - `transaction`: The transaction entity containing info needed to calculate the fees.
+  # - `base_fee_per_gas`: Base fee per gas in Wei.
+  #
+  # ## Returns
+  # - The calculated amount of the burnt fees.
+  # - `nil` if the fees cannot be calculated.
+  @spec burnt_fees(Transaction.t(), Wei.t() | nil) :: Wei.t() | nil
+  defp burnt_fees(transaction, base_fee_per_gas) do
+    if miner_gets_burnt_fees?() do
+      Wei.zero()
+    else
+      Transaction.burnt_fees(transaction.gas_used, transaction.max_fee_per_gas, base_fee_per_gas)
+    end
   end
 
   def token_transfers(_, _conn, false), do: nil
@@ -572,18 +594,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def authorization_list(signed_authorizations) do
     render("authorization_list.json", %{signed_authorizations: signed_authorizations})
-  end
-
-  defp burnt_fees(transaction, max_fee_per_gas, base_fee_per_gas) do
-    if !is_nil(max_fee_per_gas) and !is_nil(transaction.gas_used) and !is_nil(base_fee_per_gas) do
-      if Decimal.compare(max_fee_per_gas.value, 0) == :eq do
-        %Wei{value: Decimal.new(0)}
-      else
-        Wei.mult(base_fee_per_gas, transaction.gas_used)
-      end
-    else
-      nil
-    end
   end
 
   defp revert_reason(status, transaction, single_transaction?) do
