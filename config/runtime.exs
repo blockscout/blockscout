@@ -168,6 +168,7 @@ config :block_scout_web, :api_rate_limit,
   api_v2_token_ttl: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_UI_V2_TOKEN_TTL", "30m"),
   eth_json_rpc_max_batch_size: ConfigHelper.parse_integer_env_var("ETH_JSON_RPC_MAX_BATCH_SIZE", 5),
   redis_url: if(api_rate_limit_redis_url == "", do: nil, else: api_rate_limit_redis_url),
+  redis_ssl: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_HAMMER_REDIS_SSL_ENABLED", "false"),
   rate_limit_backend:
     if(api_rate_limit_redis_url == "",
       do: BlockScoutWeb.RateLimit.Hammer.ETS,
@@ -938,6 +939,7 @@ rate_limiter_redis_url = ConfigHelper.parse_url_env_var("RATE_LIMITER_REDIS_URL"
 config :explorer, Explorer.Utility.RateLimiter,
   storage: (rate_limiter_redis_url && :redis) || :ets,
   redis_url: rate_limiter_redis_url,
+  redis_ssl: ConfigHelper.parse_bool_env_var("RATE_LIMITER_REDIS_SSL_ENABLED", "false"),
   on_demand: [
     time_interval_limit: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_TIME_INTERVAL", "5s"),
     limit_by_ip: ConfigHelper.parse_integer_env_var("RATE_LIMITER_ON_DEMAND_LIMIT_BY_IP", 50),

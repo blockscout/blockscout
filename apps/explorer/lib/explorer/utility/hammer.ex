@@ -34,7 +34,7 @@ defmodule Explorer.Utility.Hammer do
     config = Application.get_env(:explorer, Explorer.Utility.RateLimiter)
 
     case config[:storage] do
-      :redis -> {Explorer.Utility.Hammer.Redis, [url: config[:redis_url]]}
+      :redis -> {Explorer.Utility.Hammer.Redis, [url: config[:redis_url], ssl: config[:redis_ssl]]}
       :ets -> {Explorer.Utility.Hammer.ETS, []}
     end
   end

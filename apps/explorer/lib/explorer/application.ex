@@ -519,7 +519,8 @@ defmodule Explorer.Application do
   end
 
   defp redix_opts do
-    {ConfigHelper.parse_url_env_var("ACCOUNT_REDIS_URL", "redis://127.0.0.1:6379"), [name: :redix]}
+    ssl = String.downcase(ConfigHelper.safe_get_env("ACCOUNT_REDIS_SSL_ENABLED", "false")) == "true"
+    {ConfigHelper.parse_url_env_var("ACCOUNT_REDIS_URL", "redis://127.0.0.1:6379"), [name: :redix, ssl: ssl]}
   end
 
   defp configure_libcluster do

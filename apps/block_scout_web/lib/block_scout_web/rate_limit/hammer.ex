@@ -27,10 +27,10 @@ defmodule BlockScoutWeb.RateLimit.Hammer do
   end
 
   def child_for_supervisor do
-    redis_url = Application.get_env(:block_scout_web, :api_rate_limit)[:redis_url]
+    config = Application.get_env(:block_scout_web, :api_rate_limit)
 
-    if redis_url do
-      {BlockScoutWeb.RateLimit.Hammer.Redis, [url: redis_url]}
+    if config[:redis_url] do
+      {BlockScoutWeb.RateLimit.Hammer.Redis, [url: config[:redis_url], ssl: config[:redis_ssl]]}
     else
       {BlockScoutWeb.RateLimit.Hammer.ETS, []}
     end
