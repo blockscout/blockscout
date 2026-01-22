@@ -374,9 +374,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         from_address_hash: contract_address.hash,
         to_address_hash: insert(:address).hash,
         gas: nil,
-        index: 0,
         trace_address: [],
         transaction_hash: transaction.hash,
+        transaction_index: transaction.index,
+        index: 0,
         type: :selfdestruct,
         value: Wei.from(Decimal.new(0), :wei)
       }
@@ -404,10 +405,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         from_address_hash: insert(:address).hash,
         gas: 50000,
         gas_used: 25000,
-        index: 0,
         init: %Data{bytes: <<1, 2, 3>>},
         trace_address: [],
         transaction_hash: transaction.hash,
+        transaction_index: transaction.index,
+        index: 0,
         type: :create,
         value: Wei.from(Decimal.new(0), :wei)
       }
@@ -418,9 +420,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         from_address_hash: contract_address.hash,
         to_address_hash: insert(:address).hash,
         gas: nil,
-        index: 1,
         trace_address: [],
         transaction_hash: transaction.hash,
+        transaction_index: transaction.index,
+        index: 1,
         type: :selfdestruct,
         value: Wei.from(Decimal.new(0), :wei)
       }
@@ -448,9 +451,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         from_address_hash: contract_address_1.hash,
         to_address_hash: insert(:address).hash,
         gas: nil,
-        index: 0,
         trace_address: [],
         transaction_hash: transaction.hash,
+        transaction_index: transaction.index,
+        index: 0,
         type: :selfdestruct,
         value: Wei.from(Decimal.new(0), :wei)
       }
@@ -460,9 +464,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         from_address_hash: contract_address_2.hash,
         to_address_hash: insert(:address).hash,
         gas: nil,
-        index: 1,
         trace_address: [],
         transaction_hash: transaction.hash,
+        transaction_index: transaction.index,
+        index: 1,
         type: :selfdestruct,
         value: Wei.from(Decimal.new(0), :wei)
       }
@@ -472,9 +477,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         from_address_hash: contract_address_3.hash,
         to_address_hash: insert(:address).hash,
         gas: nil,
-        index: 2,
         trace_address: [],
         transaction_hash: transaction.hash,
+        transaction_index: transaction.index,
+        index: 2,
         type: :selfdestruct,
         value: Wei.from(Decimal.new(0), :wei)
       }
@@ -509,9 +515,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         gas: 50000,
         gas_used: 25000,
         index: 0,
-        init: %Data{bytes: <<1, 2, 3>>},
         trace_address: [],
         transaction_hash: transaction.hash,
+        transaction_index: transaction.index,
+        init: %Data{bytes: <<1, 2, 3>>},
         type: :create2,
         value: Wei.from(Decimal.new(0), :wei)
       }
@@ -522,9 +529,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         from_address_hash: contract_address.hash,
         to_address_hash: insert(:address).hash,
         gas: nil,
-        index: 1,
         trace_address: [],
         transaction_hash: transaction.hash,
+        transaction_index: transaction.index,
+        index: 1,
         type: :selfdestruct,
         value: Wei.from(Decimal.new(0), :wei)
       }
@@ -549,9 +557,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         from_address_hash: non_existent_address_hash,
         to_address_hash: insert(:address).hash,
         gas: nil,
-        index: 0,
         trace_address: [],
         transaction_hash: transaction.hash,
+        transaction_index: transaction.index,
+        index: 0,
         type: :selfdestruct,
         value: Wei.from(Decimal.new(0), :wei)
       }

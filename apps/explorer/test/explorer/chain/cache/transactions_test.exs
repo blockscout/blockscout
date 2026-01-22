@@ -6,6 +6,13 @@ defmodule Explorer.Chain.Cache.TransactionsTest do
 
   @size 51
 
+  setup do
+    old_value = Application.get_env(:explorer, :mode)
+    Application.put_env(:explorer, :mode, :all)
+    on_exit(fn -> Application.put_env(:explorer, :mode, old_value) end)
+    :ok
+  end
+
   describe "update/1" do
     test "adds a new value to a new cache with preloads" do
       transaction = insert(:transaction) |> preload_all()
@@ -86,10 +93,7 @@ defmodule Explorer.Chain.Cache.TransactionsTest do
       :block,
       created_contract_address: :names,
       from_address: :names,
-      to_address: :names,
-      token_transfers: :token,
-      token_transfers: :from_address,
-      token_transfers: :to_address
+      to_address: :names
     ])
   end
 end

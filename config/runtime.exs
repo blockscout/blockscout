@@ -597,24 +597,20 @@ config :explorer, Explorer.Chain.Cache.BlockNumber,
   global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
 
 config :explorer, Explorer.Chain.Cache.Blocks,
-  ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
-  global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
+  ttl_check_interval: false,
+  global_ttl: nil
 
 config :explorer, Explorer.Chain.Cache.Transactions,
-  ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
-  global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
-
-config :explorer, Explorer.Chain.Cache.TransactionsApiV2,
-  ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
-  global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
+  ttl_check_interval: false,
+  global_ttl: nil
 
 config :explorer, Explorer.Chain.Cache.Accounts,
   ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
   global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
 
 config :explorer, Explorer.Chain.Cache.Uncles,
-  ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
-  global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
+  ttl_check_interval: false,
+  global_ttl: nil
 
 celo_l2_migration_block = ConfigHelper.parse_integer_or_nil_env_var("CELO_L2_MIGRATION_BLOCK")
 celo_epoch_manager_contract_address = System.get_env("CELO_EPOCH_MANAGER_CONTRACT")
@@ -649,6 +645,15 @@ config :explorer, Explorer.ThirdPartyIntegrations.NovesFi,
 config :explorer, Explorer.ThirdPartyIntegrations.Xname,
   service_url: ConfigHelper.parse_url_env_var("XNAME_BASE_API_URL", "https://gateway.xname.app"),
   api_key: System.get_env("XNAME_API_TOKEN")
+
+dynamic_env_id = System.get_env("ACCOUNT_DYNAMIC_ENV_ID")
+
+config :explorer, Explorer.ThirdPartyIntegrations.Dynamic,
+  enabled: !is_nil(dynamic_env_id),
+  env_id: dynamic_env_id,
+  url: "https://app.dynamic.xyz/api/v0/sdk/#{dynamic_env_id}/.well-known/jwks"
+
+config :explorer, Explorer.ThirdPartyIntegrations.Dynamic.Strategy, enabled: !is_nil(dynamic_env_id)
 
 enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED", "true")
 # or "eth_bytecode_db"

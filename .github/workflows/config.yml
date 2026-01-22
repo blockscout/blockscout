@@ -827,3 +827,4 @@ jobs:
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
           WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
           BRIDGED_TOKENS_ENABLED: ${{ matrix.bridged-tokens }}
+          DISABLE_WEBAPP: "false"

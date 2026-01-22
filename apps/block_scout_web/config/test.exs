@@ -22,6 +22,8 @@ config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: f
 
 config :block_scout_web, BlockScoutWeb.Counters.InternalTransactionsIndexedCounter, enabled: false
 
+config :oauth2, adapter: Explorer.Mock.TeslaAdapter
+
 config :tesla, adapter: Explorer.Mock.TeslaAdapter
 
 config :ueberauth, Ueberauth,

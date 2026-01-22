@@ -42,10 +42,13 @@ defmodule Indexer.Block.Realtime.FetcherTest do
         trace_block: "http://54.144.107.14:8545"
       )
 
+    start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+
     block_fetcher = %Indexer.Block.Fetcher{
       broadcast: false,
       callback_module: Realtime.Fetcher,
-      json_rpc_named_arguments: core_json_rpc_named_arguments
+      json_rpc_named_arguments: core_json_rpc_named_arguments,
+      task_supervisor: Indexer.TaskSupervisor
     }
 
     TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
@@ -91,9 +94,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      UncleBlock.Supervisor.Case.start_supervised!(
-        block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
-      )
+      UncleBlock.Supervisor.Case.start_supervised!(block_fetcher: block_fetcher)
 
       ReplacedTransaction.Supervisor.Case.start_supervised!()
 
@@ -602,9 +603,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      UncleBlock.Supervisor.Case.start_supervised!(
-        block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
-      )
+      UncleBlock.Supervisor.Case.start_supervised!(block_fetcher: block_fetcher)
 
       Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!(
         json_rpc_named_arguments: json_rpc_named_arguments
@@ -863,9 +862,7 @@ defmodule Indexer.Block.Realtime.FetcherTest do
 
         InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-        UncleBlock.Supervisor.Case.start_supervised!(
-          block_fetcher: %Indexer.Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}
-        )
+        UncleBlock.Supervisor.Case.start_supervised!(block_fetcher: block_fetcher)
 
         ReplacedTransaction.Supervisor.Case.start_supervised!()
 

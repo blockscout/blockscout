@@ -139,6 +139,13 @@ defmodule BlockScoutWeb.Account.API.V2.FallbackController do
     |> render(:message, %{message: "Invalid reCAPTCHA response"})
   end
 
+  def call(conn, {:token, nil}) do
+    conn
+    |> put_status(:unauthorized)
+    |> put_view(UserView)
+    |> render(:message, %{message: "No Bearer token"})
+  end
+
   defp unauthorized_error(%{email_verified: false, email: email}) do
     %{message: "Unverified email", email: email}
   end

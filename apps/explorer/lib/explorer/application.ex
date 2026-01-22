@@ -17,7 +17,6 @@ defmodule Explorer.Application do
     MinMissingBlockNumber,
     StateChanges,
     Transactions,
-    TransactionsApiV2,
     Uncles
   }
 
@@ -90,7 +89,6 @@ defmodule Explorer.Application do
       TransactionsCount,
       StateChanges,
       Transactions,
-      TransactionsApiV2,
       Uncles,
       AddressTabsElementsCount,
       con_cache_child_spec(MarketHistoryCache.cache_name()),
@@ -351,6 +349,7 @@ defmodule Explorer.Application do
         Explorer.Migrator.SwitchPendingOperations,
         configure_mode_dependent_process(Explorer.Utility.RateLimiter, :api),
         Hammer.child_for_supervisor() |> configure_mode_dependent_process(:api),
+        configure_mode_dependent_process(Explorer.ThirdPartyIntegrations.Dynamic.Strategy, :api),
         # keep at the end
         configure_libcluster()
       ]
