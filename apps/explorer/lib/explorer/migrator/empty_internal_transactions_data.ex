@@ -64,38 +64,6 @@ defmodule Explorer.Migrator.EmptyInternalTransactionsData do
             lock: "FOR UPDATE"
           )
 
-        trace_address_query =
-          from(it in InternalTransaction,
-            inner_join: locked_it in subquery(lock_query),
-            on: join_on_ctid(it, locked_it),
-            where: not is_nil(it.trace_address),
-            update: [set: [trace_address: nil]]
-          )
-
-        Repo.update_all(trace_address_query, [], timeout: :infinity)
-
-        value_query =
-          from(it in InternalTransaction,
-            inner_join: locked_it in subquery(lock_query),
-            on: join_on_ctid(it, locked_it),
-            where: it.value == ^0,
-            update: [set: [value: nil]]
-          )
-
-        Repo.update_all(value_query, [], timeout: :infinity)
-
-        call_type_query =
-          from(it in InternalTransaction,
-            inner_join: locked_it in subquery(lock_query),
-            on: join_on_ctid(it, locked_it),
-            where: is_nil(it.call_type_enum) and not is_nil(it.call_type),
-            update: [
-              set: [call_type_enum: fragment("?::internal_transactions_call_type", it.call_type), call_type: nil]
-            ]
-          )
-
-        Repo.update_all(call_type_query, [], timeout: :infinity)
-
         extract_error_query =
           from(it in InternalTransaction,
             where: it.block_number in ^block_numbers,
@@ -118,6 +86,38 @@ defmodule Explorer.Migrator.EmptyInternalTransactionsData do
           )
 
         Repo.update_all(error_update_query, [], timeout: :infinity)
+
+        call_type_query =
+          from(it in InternalTransaction,
+            inner_join: locked_it in subquery(lock_query),
+            on: join_on_ctid(it, locked_it),
+            where: is_nil(it.call_type_enum) and not is_nil(it.call_type),
+            update: [
+              set: [call_type_enum: fragment("?::internal_transactions_call_type", it.call_type), call_type: nil]
+            ]
+          )
+
+        Repo.update_all(call_type_query, [], timeout: :infinity)
+
+        trace_address_query =
+          from(it in InternalTransaction,
+            inner_join: locked_it in subquery(lock_query),
+            on: join_on_ctid(it, locked_it),
+            where: not is_nil(it.trace_address),
+            update: [set: [trace_address: nil]]
+          )
+
+        Repo.update_all(trace_address_query, [], timeout: :infinity)
+
+        value_query =
+          from(it in InternalTransaction,
+            inner_join: locked_it in subquery(lock_query),
+            on: join_on_ctid(it, locked_it),
+            where: it.value == ^0,
+            update: [set: [value: nil]]
+          )
+
+        Repo.update_all(value_query, [], timeout: :infinity)
       end,
       timeout: :infinity
     )
