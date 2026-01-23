@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.RateLimit.Hammer do
   def child_for_supervisor do
     config = Application.get_env(:block_scout_web, :api_rate_limit)
 
-    if config[:redis_url] do
+    if config[:redis_url] || config[:redis_sentinel_urls] do
       {BlockScoutWeb.RateLimit.Hammer.Redis,
        Helper.redix_opts(
          config[:redis_url],

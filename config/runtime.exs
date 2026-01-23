@@ -943,7 +943,7 @@ rate_limiter_redis_url = ConfigHelper.parse_url_env_var("RATE_LIMITER_REDIS_URL"
 rate_limiter_redis_sentinel_urls = ConfigHelper.safe_get_env("RATE_LIMITER_REDIS_SENTINEL_URLS", "")
 
 config :explorer, Explorer.Utility.RateLimiter,
-  storage: if(rate_limiter_redis_url or rate_limiter_redis_sentinel_urls != "", do: :redis, else: :ets),
+  storage: if(rate_limiter_redis_url || rate_limiter_redis_sentinel_urls != "", do: :redis, else: :ets),
   redis_url: rate_limiter_redis_url,
   redis_ssl: ConfigHelper.parse_bool_env_var("RATE_LIMITER_REDIS_SSL_ENABLED", "false"),
   redis_sentinel_urls: rate_limiter_redis_sentinel_urls,
@@ -956,7 +956,7 @@ config :explorer, Explorer.Utility.RateLimiter,
     limitation_period: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_LIMITATION_PERIOD", "1h")
   ],
   hammer_backend_module:
-    if(rate_limiter_redis_url or rate_limiter_redis_sentinel_urls != "",
+    if(rate_limiter_redis_url || rate_limiter_redis_sentinel_urls != "",
       do: Explorer.Utility.Hammer.Redis,
       else: Explorer.Utility.Hammer.ETS
     )

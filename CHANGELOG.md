@@ -34,7 +34,7 @@
 - Skip hot contracts fetching if last 30 days not indexed ([#13873](https://github.com/blockscout/blockscout/issues/13873))
 - Add block range filtering to TokenBalance fetcher ([#13874](https://github.com/blockscout/blockscout/issues/13874))
 - Filter traceable data in InternalTransaction.async_fetch ([#13872](https://github.com/blockscout/blockscout/issues/13872))
-- Take into account empty arrays in Explorer.Migrator.SanitizeIncorectNFTTokenTransfers ([#13852](https://github.com/blockscout/blockscout/issues/13852))
+- Take into account empty arrays in Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers ([#13852](https://github.com/blockscout/blockscout/issues/13852))
 - Fix search for ERC-1155 with null symbol ([#13632](https://github.com/blockscout/blockscout/issues/13632))
 - Return date to logs ([#13858](https://github.com/blockscout/blockscout/issues/13858))
 - Convert token id to string from refetch metadata in the socket ([#13762](https://github.com/blockscout/blockscout/issues/13762))
