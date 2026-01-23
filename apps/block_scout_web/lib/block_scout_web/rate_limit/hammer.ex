@@ -12,7 +12,9 @@ defmodule BlockScoutWeb.RateLimit.Hammer do
   @moduledoc """
     Wrapper for the rate limit functions. Defines union of all functions from `BlockScoutWeb.RateLimit.Hammer.ETS` and `BlockScoutWeb.RateLimit.Hammer.Redis`. Resolves the backend to use based on `Application.get_env(:block_scout_web, :rate_limit_backend)` in runtime.
   """
+
   alias BlockScoutWeb.RateLimit.Hammer.{ETS, Redis}
+  alias Explorer.Helper
 
   functions =
     (ETS.__info__(:functions) ++ Redis.__info__(:functions))
@@ -30,7 +32,13 @@ defmodule BlockScoutWeb.RateLimit.Hammer do
     config = Application.get_env(:block_scout_web, :api_rate_limit)
 
     if config[:redis_url] do
-      {BlockScoutWeb.RateLimit.Hammer.Redis, [url: config[:redis_url], ssl: config[:redis_ssl]]}
+      {BlockScoutWeb.RateLimit.Hammer.Redis,
+       Helper.redix_opts(
+         config[:redis_url],
+         config[:redis_ssl],
+         config[:redis_sentinel_urls],
+         config[:redis_sentinel_master_name]
+       )}
     else
       {BlockScoutWeb.RateLimit.Hammer.ETS, []}
     end
