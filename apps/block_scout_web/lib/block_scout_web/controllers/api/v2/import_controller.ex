@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
   use BlockScoutWeb, :controller
 
   alias BlockScoutWeb.API.V2.ApiView
+  alias BlockScoutWeb.AuthenticationHelper
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Data, Token}
   alias Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand
@@ -111,7 +112,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
           | {:sensitive_endpoints_api_key, any()}
           | Plug.Conn.t()
   def try_to_search_contract(conn, %{"address_hash_param" => address_hash_string} = params) do
-    with :ok <- validate_api_key_header(conn),
+    with :ok <- AuthenticationHelper.validate_sensitive_endpoints_api_key(get_api_key_header(conn)),
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:not_found, {:ok, address}} <-
            {:not_found,
@@ -211,7 +212,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
           "audit_company_name" => audit_company_name
         }
       ) do
-    with :ok <- validate_api_key_header(conn),
+    with :ok <- AuthenticationHelper.validate_sensitive_endpoints_api_key(get_api_key_header(conn)),
          {:format_address, {:ok, address_hash}} <-
            {:format_address, Chain.string_to_address_hash(address_hash_string)},
          {:not_found, {:ok, %{smart_contract: smart_contract}}} when not is_nil(smart_contract) <-
@@ -284,18 +285,8 @@ defmodule BlockScoutWeb.API.V2.ImportController do
     end
   end
 
-  defp validate_api_key_header(conn) do
-    with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
-           {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
-         {:api_key, ^api_key} <- {:api_key, get_api_key_header(conn)} do
-      :ok
-    end
-  end
-
   defp validate_api_key_address_hash_and_token(token_address_hash_string, provided_api_key) do
-    with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
-           {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
-         {:api_key, ^api_key} <- {:api_key, provided_api_key},
+    with :ok <- AuthenticationHelper.validate_sensitive_endpoints_api_key(provided_api_key),
          {:format_address, {:ok, address_hash}} <-
            {:format_address, Chain.string_to_address_hash(token_address_hash_string)},
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do

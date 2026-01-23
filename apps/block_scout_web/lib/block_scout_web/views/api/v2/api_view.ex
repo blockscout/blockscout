@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.V2.ApiView do
     }
   end
 
-  def render("changeset_errors.json", %{changeset: changeset}) do
+  def render("smart_contract_audit_report_changeset_errors.json", %{changeset: changeset}) do
     %{
       "errors" => ErrorHelper.changeset_to_errors(changeset),
       "message" => "Error on inserting audit report"
