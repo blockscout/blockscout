@@ -7,6 +7,7 @@ defmodule Explorer.Helper do
   alias ABI.TypeDecoder
   alias Explorer.Chain
   alias Explorer.Chain.{Address.Reputation, Address.ScamBadgeToAddress, Data, Hash, Wei}
+  alias Utils.ConfigHelper
 
   import Ecto.Query
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
@@ -681,4 +682,22 @@ defmodule Explorer.Helper do
   end
 
   def process_rpc_response(response, _node, _fallback), do: response
+
+  def redix_opts(url, use_ssl?, sentinel_urls, sentinel_master_name) do
+    ssl_opts = if use_ssl?, do: [ssl: true, socket_opts: [verify: :verify_none]], else: []
+
+    case sentinel_urls do
+      sentinel_urls when sentinel_urls in [nil, ""] ->
+        url |> Redix.URI.to_start_options() |> Keyword.merge(ssl_opts)
+
+      sentinel_urls_str ->
+        sentinel_urls = String.split(sentinel_urls_str, ",")
+
+        if sentinel_master_name in [nil, ""] do
+          raise "sentinel_master_name is required when sentinel_urls is set"
+        end
+
+        [sentinel: [sentinels: sentinel_urls, group: sentinel_master_name]] |> Keyword.merge(ssl_opts)
+    end
+  end
 end
