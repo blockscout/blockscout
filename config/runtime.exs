@@ -842,6 +842,11 @@ config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
 
 config :explorer, Explorer.Migrator.CeloAccounts, enabled: ConfigHelper.chain_identity() == {:optimism, :celo}
 
+config :explorer, Explorer.Migrator.EmptyInternalTransactionsData,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_EMPTY_INTERNAL_TRANSACTIONS_DATA_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_EMPTY_INTERNAL_TRANSACTIONS_DATA_CONCURRENCY", 1),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_EMPTY_INTERNAL_TRANSACTIONS_DATA_TIMEOUT", "0s")
+
 config :explorer, Explorer.Migrator.CeloAggregatedElectionRewards,
   enabled: ConfigHelper.chain_identity() == {:optimism, :celo}
 

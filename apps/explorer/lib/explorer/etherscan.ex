@@ -93,9 +93,11 @@ defmodule Explorer.Etherscan do
     input
     type
     call_type
+    call_type_enum
     gas
     gas_used
     error
+    error_id
   )a
 
   @doc """
@@ -158,6 +160,7 @@ defmodule Explorer.Etherscan do
     |> InternalTransaction.where_nonpending_operation()
     |> InternalTransaction.include_zero_value(options.include_zero_value)
     |> Repo.replica().all()
+    |> InternalTransaction.preload_error()
   end
 
   def list_internal_transactions(
@@ -204,6 +207,7 @@ defmodule Explorer.Etherscan do
     |> offset(^options_to_offset(options))
     |> limit(^options.page_size)
     |> Repo.replica().all()
+    |> InternalTransaction.preload_error()
   end
 
   def list_internal_transactions(
@@ -221,6 +225,7 @@ defmodule Explorer.Etherscan do
     |> where_start_block_match_internal_transaction(options)
     |> where_end_block_match_internal_transaction(options)
     |> Repo.replica().all()
+    |> InternalTransaction.preload_error()
   end
 
   defp consensus_internal_transactions_with_transactions_and_blocks_query(options) do
