@@ -1,5 +1,101 @@
 # Changelog
 
+## 10.0.0
+
+### 🚀 Features
+
+- Re-architect internal transaction format with call-type enum, error dictionary, and normalization ([#13893](https://github.com/blockscout/blockscout/issues/13893))
+- Add audit-reports import endpoint ([#13884](https://github.com/blockscout/blockscout/issues/13884))
+- Solady smart-contract proxy with immutable arguments support ([#13794](https://github.com/blockscout/blockscout/issues/13794))
+- Optionally accrue burnt fees to the block miner ([#13894](https://github.com/blockscout/blockscout/issues/13894))
+- Allow adding EOA with code to watchlist ([#13885](https://github.com/blockscout/blockscout/issues/13885))
+- Add Dynamic provider for account ([#13786](https://github.com/blockscout/blockscout/issues/13786))
+- Distributed cache ([#13698](https://github.com/blockscout/blockscout/issues/13698))
+- Return timestamps in the event logs list API endpoints ([#13779](https://github.com/blockscout/blockscout/issues/13779))
+- Support EigenDA blobs by Optimism batch indexer ([#13709](https://github.com/blockscout/blockscout/issues/13709))
+- `txlistinternal` API endpoint pending item status ([#13758](https://github.com/blockscout/blockscout/issues/13758))
+- Setup universal proxy config from the JSON content in ENV variable ([#13787](https://github.com/blockscout/blockscout/issues/13787))
+- Missed L1-to-L2 messages catchup on Arbitrum rollups ([#13792](https://github.com/blockscout/blockscout/issues/13792))
+- Expose CHAIN_TYPE in the REST API ([#13805](https://github.com/blockscout/blockscout/issues/13805))
+- REST API endpoint to list uncompleted DB migrations ([#13835](https://github.com/blockscout/blockscout/issues/13835))
+- Show ENS domains without resolved address in search ([#13638](https://github.com/blockscout/blockscout/issues/13638))
+- Mark contract addresses in search results ([#13636](https://github.com/blockscout/blockscout/issues/13636))
+
+### 🐛 Bug Fixes
+
+- Fix token balances broadcasting function ([#13902](https://github.com/blockscout/blockscout/issues/13902))
+- Wrong `next_page_params` in OP Deposits ([#13870](https://github.com/blockscout/blockscout/issues/13870))
+- Fix error on loading thumbnails when public_r2_url is missed ([#13895](https://github.com/blockscout/blockscout/issues/13895))
+- Check token presence in address current token balance ([#13892](https://github.com/blockscout/blockscout/issues/13892))
+- Fix swagger generation for Mud chain
+- Fix error in Indexer.Fetcher.OnDemand.TokenBalance module ([#13890](https://github.com/blockscout/blockscout/issues/13890))
+- Actualize indexer tests ([#13887](https://github.com/blockscout/blockscout/issues/13887))
+- Clear bytecode for smart-contracts self destructed in a separate transaction ([#13834](https://github.com/blockscout/blockscout/issues/13834))
+- Skip hot contracts fetching if last 30 days not indexed ([#13873](https://github.com/blockscout/blockscout/issues/13873))
+- Add block range filtering to TokenBalance fetcher ([#13874](https://github.com/blockscout/blockscout/issues/13874))
+- Filter traceable data in InternalTransaction.async_fetch ([#13872](https://github.com/blockscout/blockscout/issues/13872))
+- Take into account empty arrays in Explorer.Migrator.SanitizeIncorectNFTTokenTransfers ([#13852](https://github.com/blockscout/blockscout/issues/13852))
+- Fix search for ERC-1155 with null symbol ([#13632](https://github.com/blockscout/blockscout/issues/13632))
+- Return date to logs ([#13858](https://github.com/blockscout/blockscout/issues/13858))
+- Convert token id to string from refetch metadata in the socket ([#13762](https://github.com/blockscout/blockscout/issues/13762))
+- Prevent DeleteZeroValueInternalTransactions from running while ShrinkInternalTransactions is in progress ([#13847](https://github.com/blockscout/blockscout/issues/13847))
+- Remove contract code and verified data on lose consensus ([#13829](https://github.com/blockscout/blockscout/issues/13829))
+- Exclude 0 index internal transactions from /api/v2/internal-transactions endpoint ([#13841](https://github.com/blockscout/blockscout/issues/13841))
+- Fix NaN gas limit for `selfdestruct` internal transaction in the REST API ([#13827](https://github.com/blockscout/blockscout/issues/13827))
+- Handle normal termination of Indexer.Fetcher.OnDemand.ContractCode process ([#13828](https://github.com/blockscout/blockscout/issues/13828))
+- Validate block number in the api/v2/blocks/:block_number API endpoint ([#13795](https://github.com/blockscout/blockscout/issues/13795))
+- Fix block reindex condition in ContractCreator on-demand ([#13831](https://github.com/blockscout/blockscout/issues/13831))
+- Fix methodId detection ([#13811](https://github.com/blockscout/blockscout/issues/13811))
+- Improve Arbitrum L1->L2 message discovery for reorg and RPC consistency ([#13770](https://github.com/blockscout/blockscout/issues/13770))
+
+### 🚜 Refactor
+
+- Improve error handling in `EthereumJSONRPC.execute_contract_function/3` ([#13764](https://github.com/blockscout/blockscout/issues/13764))
+
+### ⚙️ Miscellaneous Tasks
+
+- Add swagger spec for account abstraction endpoints ([#13897](https://github.com/blockscout/blockscout/issues/13897))
+- Clear token "skip_metadata" property ([#13891](https://github.com/blockscout/blockscout/issues/13891))
+- Refactor internal transaction logic from "block_index" to "transaction_index" and "index" ([#12474](https://github.com/blockscout/blockscout/issues/12474))
+- Cover Optimism API endpoints with swagger docs ([#13672](https://github.com/blockscout/blockscout/issues/13672))
+- Duplicate internal transaction created_contract_address_hash to to_address_hash ([#13846](https://github.com/blockscout/blockscout/issues/13846))
+- Add "openapi_spec_folder_name" to the response of api/v2/config/backend endpoint ([#13845](https://github.com/blockscout/blockscout/issues/13845))
+- Re-use parse_url_env_var/3 function for all *_URL env variables ([#13800](https://github.com/blockscout/blockscout/issues/13800))
+- Add swagger spec for MUD endpoints ([#13793](https://github.com/blockscout/blockscout/issues/13793))
+- Set unique block numbers in handle_partially_imported_blocks/1 ([#13657](https://github.com/blockscout/blockscout/issues/13657))
+- Disband 37% of Explorer.Chain module ([#13755](https://github.com/blockscout/blockscout/issues/13755))
+- Disable MissingRangesManipulator ([#13359](https://github.com/blockscout/blockscout/issues/13359))
+- Improve replica usage ([#13344](https://github.com/blockscout/blockscout/issues/13344))
+- Make "jsonrpc" field in response optional ([#13724](https://github.com/blockscout/blockscout/issues/13724))
+
+### New ENV variables
+
+| Variable              | Description                                                                                                                                                      | Parameters                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `BLOCK_MINER_GETS_BURNT_FEES`                           | If `true`, the Burnt fees are added to block miner profit and displayed in UI as zero. Implemented in [#13894](https://github.com/blockscout/blockscout/pull/13894).                                                                                                                                                                                                                                                                               | Version: v10.0.0\+ <br />Default: `false` <br />Applications: API                                                                                                                                                                                                                                                                                                                  |
+| `UNIVERSAL_PROXY_CONFIG`                               | JSON-encoded configuration string used to define settings for the universal proxy. Implemented in [#13787](https://github.com/blockscout/blockscout/pull/13787).                                                                                                                                                                                                                                                                                   | Version: v10.0.0\+ <br />Default: (empty) <br />Applications: API                                                                                                                                                                                                                                                                                                                  |
+| `MIGRATION_FILL_INTERNAL_TRANSACTION_TO_ADDRESS_HASH_WITH_CREATED_CONTRACT_ADDRESS_HASH_BATCH_SIZE` | Specifies the block batch size selected for the fill internal transaction `to_address_hash` migration. Implemented in [#13846](https://github.com/blockscout/blockscout/pull/13846).                                                                                                                                                | Version: v10.0.0\+ <br />Default: `100` <br />Applications: Indexer |
+| `MIGRATION_FILL_INTERNAL_TRANSACTION_TO_ADDRESS_HASH_WITH_CREATED_CONTRACT_ADDRESS_HASH_CONCURRENCY` | Specifies how many concurrent processes can handle the fill internal transaction `to_address_hash` migration. Implemented in [#13846](https://github.com/blockscout/blockscout/pull/13846).                                                                                                                                        | Version: v10.0.0\+ <br />Default: `1` <br />Applications: Indexer |
+| `MIGRATION_FILL_INTERNAL_TRANSACTION_TO_ADDRESS_HASH_WITH_CREATED_CONTRACT_ADDRESS_HASH_TIMEOUT` | Defines the timeout between processing each batch (`batch_size` \* `concurrency`) in the fill internal transaction `to_address_hash` migration. Implemented in [#13846](https://github.com/blockscout/blockscout/pull/13846).                                                                                                          | Version: v10.0.0\+ <br />Default: `0s` <br />Applications: Indexer |
+| `MIGRATION_EMPTY_INTERNAL_TRANSACTIONS_DATA_BATCH_SIZE`  | Number of internal transactions to clear their data in the batch. Implemented in [#13893](https://github.com/blockscout/blockscout/pull/13893).                                                                                                                                                                                                                                | Version: v10.0.0\+ <br />Default: `100` <br />Applications: Indexer        |
+| `MIGRATION_EMPTY_INTERNAL_TRANSACTIONS_DATA_CONCURRENCY` | Number of parallel clearing internal transaction data batches processing. Implemented in [#13893](https://github.com/blockscout/blockscout/pull/13893).                                                                                                                                                                                                                        | Version: v10.0.0\+ <br />Default: `1` <br />Applications: Indexer          |
+| `MIGRATION_EMPTY_INTERNAL_TRANSACTIONS_DATA_TIMEOUT`     | Timeout between clearing internal transaction data batches processing. Implemented in [#13893](https://github.com/blockscout/blockscout/pull/13893).                                                                                                                                                                                                                           | Version: v10.0.0\+ <br />Default: `0` <br />Applications: Indexer          |
+| `CACHE_PENDING_OPERATIONS_COUNT_PERIOD`               | Time interval to restart the task which calculates the total pending operations count.  Introduced in [#12474](https://github.com/blockscout/blockscout/pull/12474).                                                                                                                                                                                          | Version: v10.0.0\+ <br />Default: `5m` <br />Applications: API, Indexer    |
+| `ACCOUNT_DYNAMIC_ENV_ID`                            | Dynamic Environment ID, can be found here https://app.dynamic.xyz/dashboard/developer/api. Implemented in [#13786](https://github.com/blockscout/blockscout/pull/13786).                                 | Version: v10.0.0\+ <br />Default: (empty) <br />Applications: API                              |
+| `INDEXER_OPTIMISM_L1_BATCH_EIGENDA_BLOBS_API_URL`    | Defines a URL to DA indexer supporting EigenDA layer to retrieve L1 blobs from that. Example: `https://da-indexer-dev.k8s-prod-3.blockscout.com/api/v1/eigenda/v2/blobs`. Implemented in [#13709](https://github.com/blockscout/blockscout/pull/13709).                                                                                                                                                                                                                                                                                                                       | Version: v10.0.0+ <br />Default: (empty) <br />Applications: Indexer                                       |
+| `INDEXER_OPTIMISM_L1_BATCH_EIGENDA_PROXY_BASE_URL`   | Defines a URL to EigenDA proxy node which is used by the DA indexer (planned to be optional in the future). Example for MegaETH: `http://megaeth-eigenda-proxy.node.blockscout.com:3100`. Implemented in [#13709](https://github.com/blockscout/blockscout/pull/13709).                                                                                                                                                                                                                                                                                                       | Version: v10.0.0+ <br />Default: (empty) <br />Applications: Indexer                                       |
+| `INDEXER_ARBITRUM_MESSAGES_TRACKING_FAILURE_THRESHOLD`             | The time threshold for L1 message tracking tasks. If a task has not run successfully within this threshold, it is marked as failed and enters a cooldown period before retrying. Implemented in [#13792](https://github.com/blockscout/blockscout/pull/13792).                                                                                                                                                 | Version: v10.0.0+ <br />Default: `10m` <br />Applications: Indexer                                      |
+| `INDEXER_ARBITRUM_MISSED_MESSAGE_IDS_RANGE`                        | Size of each message ID range inspected when discovering L1-to-L2 messages with missing L1 origination information. Implemented in [#13792](https://github.com/blockscout/blockscout/pull/13792).                                                                                                                                                                                                              | Version: v10.0.0+ <br />Default: `10000` <br />Applications: Indexer                                      |
+
+
+### Deprecated ENV variables
+
+| Variable                                              | Description                                                                                                                                                                                                                                                                                                                                        | Default                                                                                       | Version  | Deprecated in Version |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------------- | --------------------- |
+| `CACHE_PBO_COUNT_PERIOD`  | Time interval to restart the task which calculates the total pending_block_operations count.  | `20m` | v5.2.0+ |  | v10.0.0 |
+
+
+
 ## 9.3.2
 
 ### 🐛 Bug Fixes
