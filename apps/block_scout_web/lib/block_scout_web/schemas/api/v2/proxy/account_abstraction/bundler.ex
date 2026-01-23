@@ -12,8 +12,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.Bundler do
     type: :object,
     properties: %{
       address: Address,
-      total_bundles: %Schema{type: :integer, nullable: false},
-      total_ops: %Schema{type: :integer, nullable: false}
+      total_bundles: %Schema{type: :integer, nullable: false, minimum: 0},
+      total_ops: %Schema{type: :integer, nullable: false, minimum: 0}
     },
     required: [
       :address,

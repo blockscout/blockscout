@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.Paymaster do
     type: :object,
     properties: %{
       address: Address,
-      total_ops: %Schema{type: :integer, nullable: false}
+      total_ops: %Schema{type: :integer, nullable: false, minimum: 0}
     },
     required: [
       :address,

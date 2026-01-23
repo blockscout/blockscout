@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.Factory do
     type: :object,
     properties: %{
       address: Address,
-      total_accounts: %Schema{type: :integer, nullable: false}
+      total_accounts: %Schema{type: :integer, nullable: false, minimum: 0}
     },
     required: [
       :address,

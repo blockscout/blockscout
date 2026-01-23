@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.Account do
       creation_transaction_hash: General.FullHashNullable,
       creation_timestamp: General.TimestampNullable,
       factory: AddressNullable,
-      total_ops: %Schema{type: :integer, nullable: false}
+      total_ops: %Schema{type: :integer, nullable: false, minimum: 0}
     },
     required: [
       :address,

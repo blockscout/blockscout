@@ -14,9 +14,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.Bundle do
       transaction_hash: General.FullHash,
       bundler: Address,
       block_number: General.IntegerString,
-      bundle_index: %Schema{type: :integer, nullable: false},
+      bundle_index: %Schema{type: :integer, nullable: false, minimum: 0},
       timestamp: General.Timestamp,
-      total_ops: %Schema{type: :integer, nullable: false}
+      total_ops: %Schema{type: :integer, nullable: false, minimum: 0}
     },
     required: [
       :transaction_hash,
