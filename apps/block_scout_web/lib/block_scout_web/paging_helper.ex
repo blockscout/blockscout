@@ -412,10 +412,8 @@ defmodule BlockScoutWeb.PagingHelper do
 
   defp do_validators_stability_sorting(_, _), do: []
 
-  @spec mud_records_sorting(%{required(String.t()) => String.t()}) :: [
-          {:sorting, SortingHelper.sorting_params()}
-        ]
-  def mud_records_sorting(%{"sort" => sort_field, "order" => order}) do
+  @spec mud_records_sorting(map()) :: [{:sorting, SortingHelper.sorting_params()}]
+  def mud_records_sorting(%{sort: sort_field, order: order}) do
     [sorting: do_mud_records_sorting(sort_field, order)]
   end
 

@@ -395,12 +395,12 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         type: 0,
         value: "0",
         method: Transaction.method_name(mock_transaction, Transaction.format_decoded_input(decoded_input), true),
-        status: user_op["status"],
-        actions: [],
+        status: (user_op["status"] && :ok) || :error,
         transaction_types: [],
         raw_input: user_op_call_data,
         decoded_input: decoded_input_json,
-        token_transfers: prepared_token_transfers
+        token_transfers: prepared_token_transfers,
+        internal_transactions: []
       },
       logs_data: %{items: prepared_logs},
       chain_id: :block_scout_web |> Application.get_env(:chain_id) |> ExplorerHelper.parse_integer()
