@@ -240,7 +240,7 @@ defmodule BlockScoutWeb.API.V2.ImportController do
           conn
           |> put_view(ApiView)
           |> put_status(:bad_request)
-          |> render(:changeset_errors, changeset: changeset)
+          |> render(:smart_contract_audit_report_changeset_errors, changeset: changeset)
       end
     end
   end
