@@ -122,6 +122,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     delete("/token-info", V2.ImportController, :delete_token_info)
 
     get("/smart-contracts/:address_hash_param", V2.ImportController, :try_to_search_contract)
+    post("/smart-contracts/:address_hash_param/audit-reports", V2.ImportController, :import_audit_report)
 
     if @chain_type == :optimism do
       post("/optimism/interop/", V2.OptimismController, :interop_import)

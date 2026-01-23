@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
-  alias BlockScoutWeb.AccessHelper
+  alias BlockScoutWeb.{AccessHelper, AuthenticationHelper}
   alias BlockScoutWeb.Account.API.V2.UserView
 
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.{
@@ -62,9 +62,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   end
 
   defp authenticate(conn, params) do
-    with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
-           {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
-         {:api_key, ^api_key} <- {:api_key, params[:api_key]},
+    with :ok <- AuthenticationHelper.validate_sensitive_endpoints_api_key(params[:api_key]),
          {:auth, %{id: uid} = current_user} <- {:auth, current_user(conn)},
          {:identity, %Identity{}} <- {:identity, Identity.find_identity(uid)} do
       conn
