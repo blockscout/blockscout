@@ -122,7 +122,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:number, "~> 1.0.1"},
-      {:phoenix, "== 1.6.16"},
+      {:phoenix, "== 1.8.3"},
       {:phoenix_ecto, "~> 4.1"},
       {:phoenix_html, "== 4.2.1"},
       {:phoenix_html_helpers, "~> 1.0"},
