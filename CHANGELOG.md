@@ -55,6 +55,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Disable Auth0 when Dynamic enabled ([#13912](https://github.com/blockscout/blockscout/pull/13912))
 - Add swagger spec for account abstraction endpoints ([#13897](https://github.com/blockscout/blockscout/issues/13897))
 - Clear token "skip_metadata" property ([#13891](https://github.com/blockscout/blockscout/issues/13891))
 - Refactor internal transaction logic from "block_index" to "transaction_index" and "index" ([#12474](https://github.com/blockscout/blockscout/issues/12474))

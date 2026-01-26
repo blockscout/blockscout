@@ -117,13 +117,14 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   @spec send_otp(Conn.t(), map()) ::
           :error
           | {:error, String.t()}
+          | {:enabled, false}
           | {:format, :email}
           | {:interval, integer()}
           | Conn.t()
   def send_otp(conn, _params) do
     email = Map.get(conn.body_params, :email)
 
-    case conn |> current_user() do
+    case Auth0.enabled?() && conn |> current_user() do
       nil ->
         with :ok <- Auth0.send_otp(email, AccessHelper.conn_to_ip_string(conn)) do
           conn |> put_status(200) |> json(%{message: "Success"})
@@ -139,6 +140,9 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
         |> put_status(500)
         |> put_view(UserView)
         |> render(:message, %{message: "This account already has an email"})
+
+      false ->
+        {:enabled, false}
     end
   end
 
@@ -187,9 +191,10 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
     perform additional operations such as setting cookies or rendering user
     information.
   """
-  @spec confirm_otp(Conn.t(), map()) :: :error | {:error, any()} | Conn.t()
+  @spec confirm_otp(Conn.t(), map()) :: :error | {:error, any()} | {:enabled, false} | Conn.t()
   def confirm_otp(conn, %{email: email, otp: otp}) do
-    with {:ok, auth} <- Auth0.confirm_otp_and_get_auth(email, otp, AccessHelper.conn_to_ip_string(conn)) do
+    with {:enabled, true} <- {:enabled, Auth0.enabled?()},
+         {:ok, auth} <- Auth0.confirm_otp_and_get_auth(email, otp, AccessHelper.conn_to_ip_string(conn)) do
       put_auth_to_session(conn, auth)
     end
   end
@@ -248,9 +253,10 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   - The nonce is cached for the address to prevent replay attacks.
   - The SIWE message expires after 300 seconds from generation.
   """
-  @spec siwe_message(Conn.t(), map()) :: {:error, String.t()} | {:format, :error} | Conn.t()
+  @spec siwe_message(Conn.t(), map()) :: {:error, String.t()} | {:enabled, false} | {:format, :error} | Conn.t()
   def siwe_message(conn, %{address: address}) do
-    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address)},
+    with {:enabled, true} <- {:enabled, Auth0.enabled?()},
+         {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address)},
          {:ok, message} <- Auth0.generate_siwe_message(Address.checksum(address_hash)) do
       conn |> put_status(200) |> json(%{siwe_message: message})
     end
@@ -299,12 +305,13 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
     perform additional operations such as setting cookies or rendering user
     information.
   """
-  @spec authenticate_via_wallet(Conn.t(), map()) :: :error | {:error, any()} | Conn.t()
+  @spec authenticate_via_wallet(Conn.t(), map()) :: :error | {:error, any()} | {:enabled, false} | Conn.t()
   def authenticate_via_wallet(conn, _params) do
     message = Map.get(conn.body_params, :message)
     signature = Map.get(conn.body_params, :signature)
 
-    with {:ok, auth} <- Auth0.get_auth_with_web3(message, signature) do
+    with {:enabled, true} <- {:enabled, Auth0.enabled?()},
+         {:ok, auth} <- Auth0.get_auth_with_web3(message, signature) do
       put_auth_to_session(conn, auth)
     end
   end
