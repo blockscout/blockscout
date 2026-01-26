@@ -5,7 +5,7 @@ defmodule Explorer.Application do
 
   use Application
 
-  alias Explorer.Admin
+  alias Explorer.{Admin, Helper}
 
   alias Explorer.Chain.Cache.{
     Accounts,
@@ -519,7 +519,14 @@ defmodule Explorer.Application do
   end
 
   defp redix_opts do
-    {ConfigHelper.parse_url_env_var("ACCOUNT_REDIS_URL", "redis://127.0.0.1:6379"), [name: :redix]}
+    "ACCOUNT_REDIS_URL"
+    |> ConfigHelper.parse_url_env_var("redis://127.0.0.1:6379")
+    |> Helper.redix_opts(
+      String.downcase(ConfigHelper.safe_get_env("ACCOUNT_REDIS_SSL_ENABLED", "false")) == "true",
+      ConfigHelper.safe_get_env("ACCOUNT_REDIS_SENTINEL_URLS", ""),
+      ConfigHelper.safe_get_env("ACCOUNT_REDIS_SENTINEL_MASTER_NAME", "")
+    )
+    |> Keyword.merge(name: :redix)
   end
 
   defp configure_libcluster do

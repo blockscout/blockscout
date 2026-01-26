@@ -12,6 +12,8 @@ defmodule Explorer.Utility.Hammer do
   @moduledoc """
     Wrapper for the rate limit functions. Defines union of all functions from `Explorer.Utility.Hammer.ETS` and `Explorer.Utility.Hammer.Redis`. Resolves the backend to use based on `Application.get_env(:explorer, Explorer.Utility.RateLimiter)[:hammer_backend_module]` in runtime.
   """
+
+  alias Explorer.Helper
   alias Explorer.Utility.Hammer.{ETS, Redis}
 
   functions =
@@ -34,8 +36,17 @@ defmodule Explorer.Utility.Hammer do
     config = Application.get_env(:explorer, Explorer.Utility.RateLimiter)
 
     case config[:storage] do
-      :redis -> {Explorer.Utility.Hammer.Redis, [url: config[:redis_url]]}
-      :ets -> {Explorer.Utility.Hammer.ETS, []}
+      :redis ->
+        {Explorer.Utility.Hammer.Redis,
+         Helper.redix_opts(
+           config[:redis_url],
+           config[:redis_ssl],
+           config[:redis_sentinel_urls],
+           config[:redis_sentinel_master_name]
+         )}
+
+      :ets ->
+        {Explorer.Utility.Hammer.ETS, []}
     end
   end
 end

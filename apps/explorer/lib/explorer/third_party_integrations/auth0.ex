@@ -4,7 +4,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   """
   require Logger
 
-  alias Explorer.{Account, Helper, HttpClient}
+  alias Explorer.{Account, Helper, HttpClient, Vault}
   alias Explorer.Account.Identity
   alias Explorer.ThirdPartyIntegrations.Auth0.Internal
   alias Ueberauth.Auth
@@ -30,9 +30,9 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
     get_m2m_jwt_inner(Redix.command(:redix, ["GET", Internal.redis_key()]))
   end
 
-  def get_m2m_jwt_inner({:ok, token}) when not is_nil(token), do: token
+  defp get_m2m_jwt_inner({:ok, token}) when not is_nil(token), do: Vault.decrypt!(token)
 
-  def get_m2m_jwt_inner(_) do
+  defp get_m2m_jwt_inner(_) do
     config = Application.get_env(:ueberauth, OAuth)
 
     body = %{
@@ -46,7 +46,8 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       {:ok, %{status_code: 200, body: body}} ->
         case Jason.decode!(body) do
           %{"access_token" => token, "expires_in" => ttl} ->
-            cache_token(token, ttl - 1)
+            cache_token(Vault.encrypt!(token), ttl - 1)
+            token
 
           _ ->
             nil
@@ -82,7 +83,6 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
 
   defp cache_token(token, ttl) do
     Redix.command(:redix, ["SET", Internal.redis_key(), token, "EX", ttl])
-    token
   end
 
   @doc """

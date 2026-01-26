@@ -7,6 +7,7 @@ defmodule Explorer.Helper do
   alias ABI.TypeDecoder
   alias Explorer.Chain
   alias Explorer.Chain.{Address.Reputation, Address.ScamBadgeToAddress, Data, Hash, Wei}
+  alias Redix.URI, as: RedixURI
 
   import Ecto.Query
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
@@ -681,4 +682,50 @@ defmodule Explorer.Helper do
   end
 
   def process_rpc_response(response, _node, _fallback), do: response
+
+  @doc """
+  Builds Redix connection options for either direct Redis URL or Redis Sentinel configuration.
+
+  This function supports two connection modes:
+  - **Direct connection**: When `sentinel_urls` is `nil` or empty, parses the
+    provided Redis URL into Redix start options.
+  - **Sentinel connection**: When `sentinel_urls` is provided, configures Redix
+    to connect through Redis Sentinel for high availability. In this mode, the
+    `sentinel_master_name` is required.
+
+  ## Parameters
+  - `url`: Redis connection URL (e.g., `redis://host:port/db`). Used only in
+    direct connection mode.
+  - `use_ssl?`: When `true`, adds SSL options with certificate verification
+    disabled.
+  - `sentinel_urls`: Comma-separated list of Sentinel node URLs. When provided,
+    enables Sentinel connection mode.
+  - `sentinel_master_name`: The name of the master group monitored by Sentinel.
+    Required when `sentinel_urls` is provided.
+
+  ## Returns
+  - A keyword list of Redix connection options.
+
+  ## Raises
+  - `RuntimeError` if `sentinel_urls` is provided but `sentinel_master_name` is
+    `nil` or empty.
+  """
+  @spec redix_opts(String.t() | nil, boolean(), String.t() | nil, String.t() | nil) :: keyword()
+  def redix_opts(url, use_ssl?, sentinel_urls, sentinel_master_name) do
+    ssl_opts = if use_ssl?, do: [ssl: true, socket_opts: [verify: :verify_none]], else: []
+
+    case sentinel_urls do
+      sentinel_urls when sentinel_urls in [nil, ""] ->
+        url |> RedixURI.to_start_options() |> Keyword.merge(ssl_opts)
+
+      sentinel_urls_str ->
+        sentinel_urls = String.split(sentinel_urls_str, ",")
+
+        if sentinel_master_name in [nil, ""] do
+          raise "sentinel_master_name is required when sentinel_urls is set"
+        end
+
+        [sentinel: [sentinels: sentinel_urls, group: sentinel_master_name]] |> Keyword.merge(ssl_opts)
+    end
+  end
 end
