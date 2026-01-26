@@ -23,6 +23,7 @@
 
 ### 🐛 Bug Fixes
 
+- Handle nil in update_transactions_cache/2 ([#13911](https://github.com/blockscout/blockscout/pull/13911))
 - Fix token balances broadcasting function ([#13902](https://github.com/blockscout/blockscout/issues/13902))
 - Wrong `next_page_params` in OP Deposits ([#13870](https://github.com/blockscout/blockscout/issues/13870))
 - Fix error on loading thumbnails when public_r2_url is missed ([#13895](https://github.com/blockscout/blockscout/issues/13895))

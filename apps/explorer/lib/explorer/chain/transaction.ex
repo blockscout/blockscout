@@ -2569,7 +2569,7 @@ defmodule Explorer.Chain.Transaction do
     method_id_filter = Keyword.get(options, :method)
     type_filter = Keyword.get(options, :type)
 
-    case !paging_options.key && !method_id_filter && !type_filter &&
+    case !paging_options.key && method_id_filter in [nil, []] && type_filter in [nil, []] &&
            Transactions.atomic_take_enough(paging_options.page_size) do
       transactions when is_list(transactions) ->
         transactions |> Chain.select_repo(options).preload(Map.keys(necessity_by_association))
