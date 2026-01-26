@@ -33,7 +33,7 @@ defmodule Utils.MixProject do
       {:credo, "~> 1.5", only: [:test, :dev], runtime: false},
       {:httpoison, "~> 2.0"},
       {:mime, "~> 2.0"},
-      {:tesla, "~> 1.15.3"}
+      {:tesla, "~> 1.16.0"}
     ]
   end
 
