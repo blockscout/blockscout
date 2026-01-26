@@ -463,7 +463,9 @@ defmodule Indexer.Block.Fetcher do
 
   defp update_block_cache(_, _), do: :ok
 
-  defp update_transactions_cache(transactions, inserted) do
+  defp update_transactions_cache([], _), do: :ok
+
+  defp update_transactions_cache(transactions, inserted) when is_list(transactions) do
     blocks_map = Map.new(Map.get(inserted, :blocks, []), fn block -> {block.hash, [block]} end)
     token_transfers_transaction_hashes_set = MapSet.new(Map.get(inserted, :token_transfers, []), & &1.transaction_hash)
 
@@ -482,6 +484,8 @@ defmodule Indexer.Block.Fetcher do
     end)
     |> Transactions.update()
   end
+
+  defp update_transactions_cache(_, _), do: :ok
 
   defp update_addresses_cache(addresses), do: Accounts.drop(addresses)
 
