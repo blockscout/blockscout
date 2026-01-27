@@ -72,7 +72,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     ArbitrumDaRecordsNormalization,
     BackfillMultichainSearchDB,
     EmptyInternalTransactionsData,
-    FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
     SanitizeDuplicatedLogIndexLogs,
     SmartContractLanguage,
     TokenTransferTokenType,
@@ -350,13 +349,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       DropTokenInstancesTokenIdIndex,
       &set_heavy_indexes_drop_token_instances_token_id_index_finished/1
-    )
-  end
-
-  defp handle_fallback(:fill_internal_transaction_to_address_hash_with_created_contract_address_hash_finished) do
-    set_and_return_migration_status(
-      FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
-      &set_fill_internal_transaction_to_address_hash_with_created_contract_address_hash_finished/1
     )
   end
 

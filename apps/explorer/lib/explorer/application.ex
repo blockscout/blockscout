@@ -202,10 +202,6 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.ReindexBlocksWithMissingTransactions, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.DeleteZeroValueInternalTransactions, :indexer),
-        configure_mode_dependent_process(
-          Explorer.Migrator.FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
-          :indexer
-        ),
         configure_mode_dependent_process(Explorer.Migrator.EmptyInternalTransactionsData, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
