@@ -172,7 +172,7 @@ defmodule Explorer.Etherscan do
     options
     |> options_to_directions()
     |> then(fn directions ->
-      if BackgroundMigrations.get_fill_internal_transaction_to_address_hash_with_created_contract_address_hash_finished() and
+      if BackgroundMigrations.get_empty_internal_transactions_data_finished() and
            Enum.member?(directions, :to_address_hash) do
         directions
         |> Kernel.--([:created_contract_address_hash, :to_address_hash])

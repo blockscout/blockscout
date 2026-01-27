@@ -542,7 +542,7 @@ defmodule Explorer.Chain.InternalTransaction do
     from_address_hash, created_contract_address_hash from internal_transactions' table.
   """
   def where_address_fields_match(query, address_hash, :to) do
-    if BackgroundMigrations.get_fill_internal_transaction_to_address_hash_with_created_contract_address_hash_finished() do
+    if BackgroundMigrations.get_empty_internal_transactions_data_finished() do
       where(query, [t], t.to_address_hash == ^address_hash)
     else
       where(
@@ -559,7 +559,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   def where_address_fields_match(query, address_hash, :to_address_hash) do
-    if BackgroundMigrations.get_fill_internal_transaction_to_address_hash_with_created_contract_address_hash_finished() do
+    if BackgroundMigrations.get_empty_internal_transactions_data_finished() do
       where(query, [it], it.to_address_hash == ^address_hash and is_nil(it.created_contract_address_hash))
     else
       where(query, [it], it.to_address_hash == ^address_hash)
