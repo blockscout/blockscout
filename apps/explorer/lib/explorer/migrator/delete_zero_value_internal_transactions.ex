@@ -11,7 +11,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
 
   alias Explorer.Chain.{Block, InternalTransaction}
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
-  alias Explorer.Chain.InternalTransaction.ZeroValueDeleteQueue
   alias Explorer.Migrator.MigrationStatus
   alias Explorer.Repo
   alias Explorer.Utility.{AddressIdToAddressHash, InternalTransactionsAddressPlaceholder}
@@ -56,8 +55,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
     border_number = get_border_number()
     to_number = border_number && min(max_number + batch_size(), border_number)
     clear_internal_transactions(max_number, to_number)
-    clear_from_delete_queue()
-    completed? = to_number == border_number
+    completed? = not is_nil(border_number) and to_number == border_number
     new_max_number = (to_number && to_number + 1) || max_number
 
     new_state =
@@ -69,7 +67,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
       end
 
     MigrationStatus.update_meta(@migration_name, new_state)
-    schedule_check(completed?)
+    schedule_check(completed? or is_nil(border_number))
     {:noreply, new_state}
   end
 
@@ -99,17 +97,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
     end
   end
 
-  defp clear_from_delete_queue do
-    batch_size = batch_size()
-
-    ZeroValueDeleteQueue
-    |> order_by([z], z.block_number)
-    |> select([z], z.block_number)
-    |> limit(^batch_size)
-    |> Repo.all()
-    |> clear_internal_transactions()
-  end
-
   defp clear_internal_transactions(from_number, to_number)
        when is_integer(from_number) and is_integer(to_number) and from_number < to_number do
     dynamic_condition = dynamic([it], it.block_number >= ^from_number and it.block_number <= ^to_number)
@@ -118,12 +105,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   end
 
   defp clear_internal_transactions(_from, _to), do: :ok
-
-  defp clear_internal_transactions(block_numbers) when is_list(block_numbers) do
-    dynamic_condition = dynamic([it], it.block_number in ^block_numbers)
-
-    do_clear_internal_transactions(dynamic_condition)
-  end
 
   @smallint_max_value 32767
   defp do_clear_internal_transactions(dynamic_condition) do
@@ -154,10 +135,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
           )
 
         {_count, deleted_internal_transactions} = Repo.delete_all(delete_query, timeout: :infinity)
-
-        ZeroValueDeleteQueue
-        |> where([it], ^dynamic_condition)
-        |> Repo.delete_all(timeout: :infinity)
 
         address_hashes =
           deleted_internal_transactions

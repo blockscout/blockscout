@@ -24,7 +24,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import.Runner
-  alias Explorer.Chain.InternalTransaction.ZeroValueDeleteQueue
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
@@ -149,14 +148,27 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         :maybe_shrink_internal_transactions_params
       )
     end)
+    |> Multi.run(:maybe_reject_zero_value, fn _,
+                                              %{
+                                                maybe_shrink_internal_transactions_params:
+                                                  maybe_shrink_internal_transactions_params
+                                              } ->
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          maybe_reject_zero_value(maybe_shrink_internal_transactions_params)
+        end,
+        :block_pending,
+        :internal_transactions,
+        :maybe_reject_zero_value
+      )
+    end)
     |> Multi.run(:internal_transactions, fn repo,
                                             %{
-                                              maybe_shrink_internal_transactions_params:
-                                                shrink_internal_transactions_params
+                                              maybe_reject_zero_value: internal_transactions_params
                                             } ->
       Instrumenter.block_import_stage_runner(
         fn ->
-          insert(repo, shrink_internal_transactions_params, insert_options)
+          insert(repo, internal_transactions_params, insert_options)
         end,
         :block_pending,
         :internal_transactions,
@@ -195,14 +207,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         :update_pending_blocks_status
       )
     end)
-    |> Multi.run(:save_zero_value_to_delete, fn repo, %{internal_transactions: internal_transactions} ->
-      Instrumenter.block_import_stage_runner(
-        fn -> save_zero_value_to_delete(repo, internal_transactions, insert_options) end,
-        :block_pending,
-        :internal_transactions,
-        :save_zero_value_to_delete
-      )
-    end)
     |> Multi.run(:empty_selfdestructed_contracts_bytecode, fn repo,
                                                               %{
                                                                 valid_internal_transactions: valid_internal_transactions
@@ -230,8 +234,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     with {:ok, data} <-
            Multi.new()
-           |> Multi.run(:internal_transactions, fn repo, _ ->
-             insert(repo, internal_transactions_params, insert_options)
+           |> Multi.run(:maybe_reject_zero_value, fn _, _ ->
+             maybe_reject_zero_value(internal_transactions_params)
+           end)
+           |> Multi.run(:internal_transactions, fn repo, %{maybe_reject_zero_value: maybe_reject_zero_value} ->
+             insert(repo, maybe_reject_zero_value, insert_options)
            end)
            |> ExplorerRepo.transaction() do
       Publisher.broadcast(data, :on_demand)
@@ -610,6 +617,16 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
+  defp maybe_reject_zero_value(internal_transactions) do
+    with true <- Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled],
+         border_number when is_integer(border_number) <- DeleteZeroValueInternalTransactions.border_number() do
+      {:ok,
+       Enum.reject(internal_transactions, &(&1.block_number <= border_number and &1.type == :call and &1.value == 0))}
+    else
+      _ -> {:ok, internal_transactions}
+    end
+  end
+
   defp sanitize_error(entry) do
     error = Map.get(entry, :error)
 
@@ -983,36 +1000,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     rescue
       postgrex_error in Postgrex.Error ->
         {:error, %{exception: postgrex_error, pending_hashes: pending_hashes}}
-    end
-  end
-
-  defp save_zero_value_to_delete(repo, internal_transactions, %{timeout: timeout, timestamps: timestamps}) do
-    with true <- Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled],
-         border_number when is_integer(border_number) <- DeleteZeroValueInternalTransactions.border_number() do
-      internal_transactions
-      |> Enum.map(& &1.block_number)
-      |> Enum.uniq()
-      |> Enum.filter(&(not is_nil(&1) and &1 <= border_number))
-      |> Enum.map(&Map.put(timestamps, :block_number, &1))
-      |> case do
-        [] ->
-          {:ok, []}
-
-        insert_params ->
-          {_total, result} =
-            repo.insert_all(
-              ZeroValueDeleteQueue,
-              insert_params,
-              conflict_target: [:block_number],
-              on_conflict: {:replace, [:updated_at]},
-              returning: [:block_number],
-              timeout: timeout
-            )
-
-          {:ok, result}
-      end
-    else
-      _ -> {:ok, []}
     end
   end
 
