@@ -93,9 +93,10 @@ defmodule Indexer.Fetcher.MultichainSearchDb.CountersFetcher do
     daily_transactions_number = number_of_transactions
 
     total_transactions_number =
-      Repo.aggregate(from(t in Transaction, where: t.block_timestamp <= ^yesterday_dt), :count, :hash,
-        timeout: :infinity
-      )
+      Repo.aggregate(
+        from(t in Transaction, where: t.block_timestamp <= ^yesterday_dt and t.block_consensus == true),
+        :count,
+        :hash, timeout: :infinity)
 
     total_addresses_number =
       Repo.aggregate(from(a in Address, where: a.inserted_at <= ^yesterday_dt), :count, timeout: :infinity)
@@ -124,7 +125,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.CountersFetcher do
 
   defp calculate_delay_until_next_midnight do
     now = DateTime.utc_now()
-    tomorrow = DateTime.new!(Date.add(Date.utc_today(), 1), Time.new!(0, 0, 0, 0), now.time_zone)
+    tomorrow = DateTime.new!(Date.add(Date.utc_today(), 1), Time.new!(0, 0, 1, 0), now.time_zone)
 
     DateTime.diff(tomorrow, now, :millisecond)
   end
