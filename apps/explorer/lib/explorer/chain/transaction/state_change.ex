@@ -101,36 +101,41 @@ defmodule Explorer.Chain.Transaction.StateChange do
   end
 
   defp token_transfers_balances_reducer(transfer, state_balances_map, include_transfers) do
-    from = transfer.from_address
-    to = transfer.to_address
-    token = transfer.token_contract_address_hash
+    # Skip ERC-7984 (confidential) transfers - we can't track encrypted balances
+    if transfer.token && transfer.token.type == "ERC-7984" do
+      state_balances_map
+    else
+      from = transfer.from_address
+      to = transfer.to_address
+      token = transfer.token_contract_address_hash
 
-    state_balances_map
-    |> case do
-      # from address is needed to be updated in our map
-      %{^from => %{^token => values}} = balances_map ->
-        put_in(
-          balances_map,
-          Enum.map([from, token], &Access.key(&1, %{})),
-          do_update_balance(values, :from, transfer, include_transfers)
-        )
+      state_balances_map
+      |> case do
+        # from address is needed to be updated in our map
+        %{^from => %{^token => values}} = balances_map ->
+          put_in(
+            balances_map,
+            Enum.map([from, token], &Access.key(&1, %{})),
+            do_update_balance(values, :from, transfer, include_transfers)
+          )
 
-      # we are not interested in this address
-      balances_map ->
-        balances_map
-    end
-    |> case do
-      # to address is needed to be updated in our map
-      %{^to => %{^token => values}} = balances_map ->
-        put_in(
-          balances_map,
-          Enum.map([to, token], &Access.key(&1, %{})),
-          do_update_balance(values, :to, transfer, include_transfers)
-        )
+        # we are not interested in this address
+        balances_map ->
+          balances_map
+      end
+      |> case do
+        # to address is needed to be updated in our map
+        %{^to => %{^token => values}} = balances_map ->
+          put_in(
+            balances_map,
+            Enum.map([to, token], &Access.key(&1, %{})),
+            do_update_balance(values, :to, transfer, include_transfers)
+          )
 
-      # we are not interested in this address
-      balances_map ->
-        balances_map
+        # we are not interested in this address
+        balances_map ->
+          balances_map
+      end
     end
   end
 

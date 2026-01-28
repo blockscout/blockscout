@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       request =
         conn
         |> put_req_cookie("show_scam_tokens", "true")
-        |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+        |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155,ERC-7984"})
 
       response = json_response(request, 200)
 
@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       assert response ==
                conn
-               |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+               |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155,ERC-7984"})
                |> json_response(200)
     end
 
@@ -43,13 +43,15 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       request =
         conn
         |> put_req_cookie("show_scam_tokens", "true")
-        |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+        |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155,ERC-7984"})
 
       response = json_response(request, 200)
 
       assert List.first(response["items"])["token"]["reputation"] == "scam"
 
-      request = conn |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+      request =
+        conn |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155,ERC-7984"})
+
       response = json_response(request, 200)
 
       assert response["items"] == []
@@ -64,7 +66,9 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       insert(:token_transfer, transaction: transaction)
 
-      request = conn |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+      request =
+        conn |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155,ERC-7984"})
+
       response = json_response(request, 200)
 
       assert List.first(response["items"])["token"]["reputation"] == "ok"
@@ -79,7 +83,9 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       tt = insert(:token_transfer, transaction: transaction)
       insert(:scam_badge_to_address, address_hash: tt.token_contract_address_hash)
 
-      request = conn |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155"})
+      request =
+        conn |> get("/api/v2/advanced-filters", %{"transaction_types" => "ERC-20,ERC-404,ERC-721,ERC-1155,ERC-7984"})
+
       response = json_response(request, 200)
 
       assert List.first(response["items"])["token"]["reputation"] == "ok"
@@ -212,7 +218,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       transaction = insert(:transaction) |> with_block()
 
-      for token_type <- ~w(ERC-20 ERC-404 ERC-721 ERC-1155),
+      for token_type <- ~w(ERC-20 ERC-404 ERC-721 ERC-1155 ERC-7984),
           token = insert(:token, type: token_type),
           _ <- 0..4 do
         insert(:token_transfer,
@@ -237,7 +243,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       end
 
       for transaction_type_filter_string <-
-            ~w(COIN_TRANSFER COIN_TRANSFER,ERC-404 ERC-721,ERC-1155 ERC-20,COIN_TRANSFER,ERC-1155) do
+            ~w(COIN_TRANSFER COIN_TRANSFER,ERC-404 ERC-721,ERC-1155 ERC-20,COIN_TRANSFER,ERC-1155 ERC-7984) do
         transaction_type_filter = transaction_type_filter_string |> String.split(",")
         request = get(conn, "/api/v2/advanced-filters", %{"transaction_types" => transaction_type_filter_string})
         assert response = json_response(request, 200)

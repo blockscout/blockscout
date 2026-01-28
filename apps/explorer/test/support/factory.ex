@@ -921,6 +921,18 @@ defmodule Explorer.Factory do
     Map.replace(token_factory(), :name, sequence("Infinite Token"))
   end
 
+  def erc7984_token_factory do
+    %Token{
+      name: "Confidential Token",
+      symbol: "CT",
+      total_supply: 1_000_000_000,
+      decimals: 18,
+      contract_address: build(:address),
+      type: "ERC-7984",
+      cataloged: true
+    }
+  end
+
   def token_transfer_log_factory do
     to_address = build(:address)
     from_address = build(:address)
@@ -1004,6 +1016,57 @@ defmodule Explorer.Factory do
       token_type: token.type,
       transaction: log.transaction,
       log_index: log.index,
+      block_consensus: true
+    }
+  end
+
+  def erc7984_token_transfer_log_factory do
+    from_address = build(:address)
+    to_address = build(:address)
+    token_address = insert(:contract_address)
+    transaction = build(:transaction)
+
+    # ConfidentialTransfer(address indexed from, address indexed to, bytes32 indexed amount)
+    # Event signature: 0x67500e8d0ed826d2194f514dd0d8124f35648ab6e3fb5e6ed867134cffe661e9
+    amount_pointer =
+      sequence("erc7984_amount_pointer", &("0x" <> String.pad_leading(Integer.to_string(&1, 16), 64, "0")))
+
+    log_params = %{
+      first_topic: "0x67500e8d0ed826d2194f514dd0d8124f35648ab6e3fb5e6ed867134cffe661e9",
+      second_topic: zero_padded_address_hash_string(from_address.hash),
+      third_topic: zero_padded_address_hash_string(to_address.hash),
+      fourth_topic: amount_pointer,
+      address_hash: token_address.hash,
+      address: token_address,
+      data: "0x",
+      transaction: transaction
+    }
+
+    build(:log, log_params)
+  end
+
+  def erc7984_token_transfer_factory do
+    log = build(:erc7984_token_transfer_log)
+    to_address_hash = address_hash_from_zero_padded_hash_string(log.third_topic)
+    from_address_hash = address_hash_from_zero_padded_hash_string(log.second_topic)
+
+    to_address = build(:address, hash: to_address_hash)
+    from_address = build(:address, hash: from_address_hash)
+
+    _token = insert(:erc7984_token, contract_address: log.address)
+    block = build(:block)
+
+    %TokenTransfer{
+      block: block,
+      amount: nil,
+      block_number: block.number,
+      from_address: from_address,
+      to_address: to_address,
+      token_contract_address: log.address,
+      token_type: "ERC-7984",
+      transaction: log.transaction,
+      log_index: log.index,
+      token_ids: nil,
       block_consensus: true
     }
   end

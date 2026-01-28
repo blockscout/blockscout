@@ -744,10 +744,16 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           insert(:token, type: "ERC-404")
         end
 
+      erc_7984_tokens =
+        for _i <- 0..50 do
+          insert(:token, type: "ERC-7984")
+        end
+
       check_tokens_pagination(erc_20_tokens, conn, %{"type" => "ERC-20"})
       check_tokens_pagination(erc_721_tokens |> Enum.reverse(), conn, %{"type" => "ERC-721"})
       check_tokens_pagination(erc_1155_tokens |> Enum.reverse(), conn, %{"type" => "ERC-1155"})
       check_tokens_pagination(erc_404_tokens |> Enum.reverse(), conn, %{"type" => "ERC-404"})
+      check_tokens_pagination(erc_7984_tokens |> Enum.reverse(), conn, %{"type" => "ERC-7984"})
     end
 
     test "tokens are filtered by multiple type", %{conn: conn} do
@@ -771,6 +777,11 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           insert(:token, type: "ERC-404")
         end
 
+      erc_7984_tokens =
+        for _i <- 0..24 do
+          insert(:token, type: "ERC-7984")
+        end
+
       check_tokens_pagination(
         erc_721_tokens |> Kernel.++(erc_1155_tokens) |> Enum.reverse(),
         conn,
@@ -792,6 +803,14 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         conn,
         %{
           "type" => "[erc-20,ERC-404]"
+        }
+      )
+
+      check_tokens_pagination(
+        erc_7984_tokens |> Enum.reverse() |> Kernel.++(erc_20_tokens),
+        conn,
+        %{
+          "type" => "[erc-20,ERC-7984]"
         }
       )
     end
