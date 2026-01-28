@@ -96,7 +96,9 @@ defmodule Indexer.Fetcher.MultichainSearchDb.CountersFetcher do
       Repo.aggregate(
         from(t in Transaction, where: t.block_timestamp <= ^yesterday_dt and t.block_consensus == true),
         :count,
-        :hash, timeout: :infinity)
+        :hash,
+        timeout: :infinity
+      )
 
     total_addresses_number =
       Repo.aggregate(from(a in Address, where: a.inserted_at <= ^yesterday_dt), :count, timeout: :infinity)
