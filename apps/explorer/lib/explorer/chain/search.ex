@@ -1095,7 +1095,7 @@ defmodule Explorer.Chain.Search do
       metadata: dynamic(type(^nil, :map)),
       addresses_index: 0,
       reputation: "ok",
-      is_smart_contract_address: dynamic(type(^nil, :boolean))
+      is_smart_contract_address: nil
     }
   end
 
