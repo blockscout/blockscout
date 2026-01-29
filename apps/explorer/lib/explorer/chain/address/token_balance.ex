@@ -149,4 +149,27 @@ defmodule Explorer.Chain.Address.TokenBalance do
     |> where([tb], is_nil(tb.value_fetched_at) or is_nil(tb.value))
     |> Repo.delete_all()
   end
+
+  @doc """
+  Returns a stream of all token balances that weren't fetched values.
+  """
+  @spec stream_unfetched_token_balances(
+          initial :: accumulator,
+          reducer :: (entry :: __MODULE__.t(), accumulator -> accumulator),
+          limited? :: boolean()
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_unfetched_token_balances(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
+    __MODULE__.unfetched_token_balances()
+    |> add_token_balances_fetcher_limit(limited?)
+    |> Repo.stream_reduce(initial, reducer)
+  end
+
+  def add_token_balances_fetcher_limit(query, false), do: query
+
+  def add_token_balances_fetcher_limit(query, true) do
+    token_balances_fetcher_limit = Application.get_env(:indexer, :token_balances_fetcher_init_limit)
+
+    limit(query, ^token_balances_fetcher_limit)
+  end
 end

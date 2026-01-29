@@ -18,13 +18,13 @@ defmodule Indexer.Block.FetcherTest do
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
+  alias Indexer.Fetcher.TokenBalance.Historical, as: TokenBalanceHistorical
 
   alias Indexer.Fetcher.{
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
     Token,
-    TokenBalance,
     UncleBlock
   }
 
@@ -71,7 +71,7 @@ defmodule Indexer.Block.FetcherTest do
       ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       ReplacedTransaction.Supervisor.Case.start_supervised!()
       {:ok, _pid} = ContractCreatorOnDemand.start_link([[], []])
 
@@ -731,7 +731,7 @@ defmodule Indexer.Block.FetcherTest do
         ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
         InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
         Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-        TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+        TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
         ReplacedTransaction.Supervisor.Case.start_supervised!()
         {:ok, _pid} = ContractCreatorOnDemand.start_link([[], []])
 

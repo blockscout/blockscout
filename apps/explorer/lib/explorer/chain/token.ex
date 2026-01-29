@@ -535,4 +535,19 @@ defmodule Explorer.Chain.Token do
       _ -> false
     end
   end
+
+  @doc """
+  Gets the token types for a list of contract address hashes.
+  """
+  @spec get_token_types([Hash.Address.t()]) :: [{Hash.Address.t(), String.t()}]
+  def get_token_types(hashes) do
+    query =
+      from(
+        token in __MODULE__,
+        where: token.contract_address_hash in ^hashes,
+        select: {token.contract_address_hash, token.type}
+      )
+
+    Repo.all(query)
+  end
 end
