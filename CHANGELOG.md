@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.3.3
+
+### ⚙️ Miscellaneous Tasks
+
+- Replace ZeroValueDeleteQueue with filtering on import ([#13921](https://github.com/blockscout/blockscout/pull/13921))
+
 ## 9.3.2
 
 ### 🐛 Bug Fixes
