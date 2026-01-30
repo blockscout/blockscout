@@ -128,7 +128,7 @@ defmodule Explorer.Application do
         configure(Explorer.Chain.Cache.TransactionActionTokensData),
         configure(Explorer.Chain.Cache.TransactionActionUniswapPools),
         configure(Explorer.Chain.Cache.Counters.WithdrawalsSum),
-        configure(Explorer.Chain.Transaction.History.Historian),
+        configure_mode_dependent_process(Explorer.Chain.Transaction.History.Historian, :indexer),
         configure(Explorer.Chain.Events.Listener),
         configure(Explorer.Chain.Cache.Counters.AddressesCount),
         configure(Explorer.Chain.Cache.Counters.AddressTransactionsCount),

@@ -460,11 +460,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
          {nonce, ""} <- Integer.parse(nonce_string, 16),
          msg = InteropMessage.get_message(init_chain_id, nonce),
          false <- is_nil(msg) do
-      current_chain_id =
-        case ChainId.get_id() do
-          nil -> Application.get_env(:block_scout_web, :chain_id)
-          chain_id -> chain_id
-        end
+      current_chain_id = ChainId.get_id()
 
       relay_chain_id = msg.relay_chain_id
 
@@ -527,11 +523,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   """
   @spec interop_messages(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def interop_messages(conn, params) do
-    current_chain_id =
-      case ChainId.get_id() do
-        nil -> Application.get_env(:block_scout_web, :chain_id)
-        chain_id -> chain_id
-      end
+    current_chain_id = ChainId.get_id()
 
     {messages, next_page} =
       params
