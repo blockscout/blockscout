@@ -20,6 +20,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
       async_import_replaced_transactions: 2,
       async_import_signed_authorizations_statuses: 2,
       async_import_token_balances: 2,
+      async_import_current_token_balances: 2,
       async_import_token_instances: 1,
       async_import_tokens: 2,
       async_import_uncles: 2,
@@ -142,6 +143,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
     async_import_internal_transactions(imported, realtime?)
     async_import_tokens(imported, realtime?)
     async_import_token_balances(imported, realtime?)
+    async_import_current_token_balances(imported, realtime?)
     async_import_uncles(imported, realtime?)
     async_import_replaced_transactions(imported, realtime?)
     async_import_token_instances(imported)

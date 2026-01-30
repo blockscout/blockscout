@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.TokenBalanceTest do
+defmodule Indexer.Fetcher.TokenBalance.HistoricalTest do
   use EthereumJSONRPC.Case
   use Explorer.DataCase
 
@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Repo
   alias Explorer.Utility.MissingBalanceOfToken
-  alias Indexer.Fetcher.TokenBalance
+  alias Indexer.Fetcher.TokenBalance.Historical, as: TokenBalanceHistorical
 
   @moduletag :capture_log
 
@@ -25,7 +25,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
 
       insert(:token_balance, value_fetched_at: DateTime.utc_now())
 
-      assert TokenBalance.init([], &[&1 | &2], nil) == [
+      assert TokenBalanceHistorical.init([], &[&1 | &2], nil) == [
                {address_hash_bytes, token_contract_address_hash_bytes, 1000, "ERC-20", nil, 0}
              ]
     end
@@ -41,7 +41,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
 
       insert(:token_balance, refetch_after: Timex.shift(Timex.now(), hours: 1))
 
-      assert TokenBalance.init([], &[&1 | &2], nil) == [
+      assert TokenBalanceHistorical.init([], &[&1 | &2], nil) == [
                {address_hash_bytes, token_contract_address_hash_bytes, block_number, "ERC-20", nil, 0}
              ]
     end
@@ -49,7 +49,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
 
   describe "run/3" do
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       :ok
     end
@@ -78,7 +78,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
         end
       )
 
-      assert TokenBalance.run(
+      assert TokenBalanceHistorical.run(
                [{address_hash_bytes, token_contract_address_hash_bytes, block_number, "ERC-20", nil, 0}],
                nil
              ) == :ok
@@ -88,18 +88,6 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
       expected_value = Decimal.new(1_000_000_000_000_000_000_000_000)
       assert token_balance_updated.value == expected_value
       assert token_balance_updated.value_fetched_at != nil
-
-      address_hash_string = to_string(address_hash)
-
-      assert_receive(
-        {:chain_event, :address_current_token_balances, :realtime,
-         %{
-           address_hash: ^address_hash_string,
-           address_current_token_balances: [
-             %{value: ^expected_value, token_contract_address_hash: ^token_contract_address_hash}
-           ]
-         }}
-      )
     end
 
     test "fetches duplicate params only once" do
@@ -124,7 +112,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
         end
       )
 
-      assert TokenBalance.run(
+      assert TokenBalanceHistorical.run(
                [
                  {address_hash_bytes, token_contract_address_hash_bytes, block_number, "ERC-20", nil, 0},
                  {address_hash_bytes, token_contract_address_hash_bytes, block_number, "ERC-20", nil, 0}
@@ -141,7 +129,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
       address = insert(:address)
       missing_balance_of_token = insert(:missing_balance_of_token, currently_implemented: true)
 
-      assert TokenBalance.run(
+      assert TokenBalanceHistorical.run(
                [
                  {address.hash.bytes, missing_balance_of_token.token_contract_address_hash.bytes,
                   missing_balance_of_token.block_number, "ERC-20", nil, 0}
@@ -174,7 +162,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
 
       refute missing_balance_of_token.currently_implemented
 
-      assert TokenBalance.run(
+      assert TokenBalanceHistorical.run(
                [
                  {address.hash.bytes, missing_balance_of_token.token_contract_address_hash.bytes,
                   missing_balance_of_token.block_number + window_size + 1, "ERC-20", nil, 0}
@@ -212,7 +200,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
         end
       )
 
-      assert TokenBalance.run(
+      assert TokenBalanceHistorical.run(
                [
                  {address.hash.bytes, token_contract_address_hash.bytes, 1, "ERC-20", nil, 0}
                ],
@@ -254,7 +242,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
         end
       )
 
-      assert TokenBalance.run(
+      assert TokenBalanceHistorical.run(
                [
                  {address.hash.bytes, token_contract_address_hash.bytes, 1, "ERC-20", nil, 0}
                ],
@@ -268,7 +256,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
 
   describe "import_token_balances/1" do
     test "ignores when it receives a empty list" do
-      assert TokenBalance.import_token_balances([]) == :ok
+      assert TokenBalanceHistorical.import_token_balances([]) == :ok
     end
 
     test "returns :error when the token balances has invalid data" do
@@ -286,7 +274,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
         }
       ]
 
-      assert TokenBalance.import_token_balances(token_balances_params) == :error
+      assert TokenBalanceHistorical.import_token_balances(token_balances_params) == :error
     end
 
     test "insert the missing address, import the token balances and return :ok when the address does not exist yet" do
@@ -304,7 +292,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
       ]
 
       {:ok, address_hash} = Explorer.Chain.string_to_address_hash("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
-      assert TokenBalance.import_token_balances(token_balances_params) == :ok
+      assert TokenBalanceHistorical.import_token_balances(token_balances_params) == :ok
       assert {:ok, _} = Explorer.Chain.hash_to_address(address_hash)
     end
 
@@ -330,7 +318,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
         }
       ]
 
-      assert TokenBalance.import_token_balances(token_balances_params) == :ok
+      assert TokenBalanceHistorical.import_token_balances(token_balances_params) == :ok
     end
 
     test "import the token balances and return :ok when there are multiple balances for the same address on the batch (ERC-1155)" do
@@ -356,7 +344,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
         }
       ]
 
-      assert TokenBalance.import_token_balances(token_balances_params) == :ok
+      assert TokenBalanceHistorical.import_token_balances(token_balances_params) == :ok
     end
 
     test "import ERC-404 token balances and return :ok" do
@@ -381,7 +369,7 @@ defmodule Indexer.Fetcher.TokenBalanceTest do
         }
       ]
 
-      assert TokenBalance.import_token_balances(token_balances_params) == :ok
+      assert TokenBalanceHistorical.import_token_balances(token_balances_params) == :ok
     end
   end
 end

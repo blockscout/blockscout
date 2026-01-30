@@ -1,5 +1,5 @@
-defmodule Indexer.Fetcher.TokenBalance.Supervisor.Case do
-  alias Indexer.Fetcher.TokenBalance
+defmodule Indexer.Fetcher.TokenBalance.Historical.Supervisor.Case do
+  alias Indexer.Fetcher.TokenBalance.Historical, as: TokenBalanceHistorical
 
   def start_supervised!(fetcher_arguments \\ []) when is_list(fetcher_arguments) do
     merged_fetcher_arguments =
@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.TokenBalance.Supervisor.Case do
       )
 
     [merged_fetcher_arguments]
-    |> TokenBalance.Supervisor.child_spec()
+    |> TokenBalanceHistorical.Supervisor.child_spec()
     |> ExUnit.Callbacks.start_supervised!()
   end
 end

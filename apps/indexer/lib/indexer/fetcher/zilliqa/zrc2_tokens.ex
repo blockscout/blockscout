@@ -43,6 +43,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   import Indexer.Block.Fetcher,
     only: [
       async_import_token_balances: 2,
+      async_import_current_token_balances: 2,
       async_import_tokens: 2
     ]
 
@@ -360,6 +361,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
 
     async_import_tokens(imported, calling_module == Indexer.Block.Realtime.Fetcher)
     async_import_token_balances(imported, calling_module == Indexer.Block.Realtime.Fetcher)
+    async_import_current_token_balances(imported, calling_module == Indexer.Block.Realtime.Fetcher)
 
     fetch_zrc2_token_adapters(
       logs,
@@ -554,6 +556,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
 
       async_import_tokens(imported, false)
       async_import_token_balances(imported, false)
+      async_import_current_token_balances(imported, false)
     end
 
     Enum.each(token_transfers, fn tt ->

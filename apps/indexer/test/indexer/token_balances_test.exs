@@ -5,7 +5,7 @@ defmodule Indexer.TokenBalancesTest do
   doctest Indexer.TokenBalances
 
   alias Indexer.TokenBalances
-  alias Indexer.Fetcher.TokenBalance
+  alias Indexer.Fetcher.TokenBalance.Historical, as: TokenBalanceHistorical
   alias Explorer.Chain.Hash
 
   import Mox
@@ -16,7 +16,7 @@ defmodule Indexer.TokenBalancesTest do
 
   describe "fetch_token_balances_from_blockchain/2" do
     setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
-      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       :ok
     end

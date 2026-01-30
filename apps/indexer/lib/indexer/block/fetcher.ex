@@ -30,6 +30,8 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
   alias Indexer.Fetcher.Filecoin.AddressInfo, as: FilecoinAddressInfo
   alias Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens, as: PolygonZkevmBridgeL1Tokens
+  alias Indexer.Fetcher.TokenBalance.Current, as: TokenBalanceCurrent
+  alias Indexer.Fetcher.TokenBalance.Historical, as: TokenBalanceHistorical
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Indexer.Fetcher.Zilliqa.Zrc2Tokens
 
@@ -44,7 +46,6 @@ defmodule Indexer.Block.Fetcher do
     ReplacedTransaction,
     SignedAuthorizationStatus,
     Token,
-    TokenBalance,
     UncleBlock
   }
 
@@ -613,7 +614,7 @@ defmodule Indexer.Block.Fetcher do
   def async_import_tokens(_, _), do: :ok
 
   @doc """
-  Triggers async import of token balances just inserted into the database by the realtime or catchup indexer
+  Triggers async import of historical token balances just inserted into the database by the realtime or catchup indexer
   or internal transactions fetcher.
 
   ## Parameters
@@ -629,10 +630,34 @@ defmodule Indexer.Block.Fetcher do
   def async_import_token_balances(%{address_token_balances: []}, _realtime?), do: :ok
 
   def async_import_token_balances(%{address_token_balances: token_balances}, realtime?) do
-    TokenBalance.async_fetch(token_balances, realtime?)
+    TokenBalanceHistorical.async_fetch(token_balances, realtime?)
   end
 
   def async_import_token_balances(_, _), do: :ok
+
+  @doc """
+  Triggers async import of current token balances just inserted into the database by the realtime or catchup indexer.
+
+  ## Parameters
+  - `%{address_current_token_balances: current_token_balances}`: A map returned by the `Chain.import` function containing
+                                                 the list of inserted current token balances.
+  - `realtime?`: A boolean flag indicating whether to insert the items to the beginning (true)
+                 or to the end (false) of the import queue.
+
+  ## Returns
+  - :ok
+  """
+  @spec async_import_current_token_balances(
+          %{:address_current_token_balances => list(), optional(any()) => any()},
+          boolean()
+        ) :: :ok
+  def async_import_current_token_balances(%{address_current_token_balances: []}, _realtime?), do: :ok
+
+  def async_import_current_token_balances(%{address_current_token_balances: current_token_balances}, realtime?) do
+    TokenBalanceCurrent.async_fetch(current_token_balances, realtime?)
+  end
+
+  def async_import_current_token_balances(_, _), do: :ok
 
   def async_import_uncles(%{block_second_degree_relations: block_second_degree_relations}, realtime?) do
     UncleBlock.async_fetch_blocks(block_second_degree_relations, realtime?)
