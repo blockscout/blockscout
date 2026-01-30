@@ -72,14 +72,9 @@ defmodule Indexer.Fetcher.TokenBalance.Helper do
   end
 
   def format_and_filter_token_balance_params(token_balances_params) do
-    token_balances_params
-    |> Enum.map(fn token_balance ->
-      if token_balance.token_type do
-        token_balance
-      else
-        put_token_type_to_balance_object(token_balance)
-      end
-    end)
+    {params_without_type, params_with_type} = Enum.split_with(token_balances_params, &is_nil(&1.token_type))
+
+    params_with_type ++ put_token_type_to_balance_objects(params_without_type)
   end
 
   def fetch_token_balances(entries) do
@@ -96,14 +91,16 @@ defmodule Indexer.Fetcher.TokenBalance.Helper do
     |> fetch_from_blockchain(missing_balance_of_tokens)
   end
 
-  defp put_token_type_to_balance_object(token_balance) do
-    token_type = Token.get_token_type(token_balance.token_contract_address_hash)
+  defp put_token_type_to_balance_objects([]), do: []
 
-    if token_type do
-      Map.put(token_balance, :token_type, token_type)
-    else
-      token_balance
-    end
+  defp put_token_type_to_balance_objects(token_balances) do
+    token_types_map =
+      token_balances
+      |> Enum.map(& &1.token_contract_address_hash)
+      |> Token.get_token_types()
+      |> Map.new()
+
+    Enum.map(token_balances, &Map.put(&1, :token_type, token_types_map[&1.token_contract_address_hash]))
   end
 
   defp fetch_from_blockchain(params_list, missing_balance_of_tokens) do
