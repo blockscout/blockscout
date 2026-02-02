@@ -856,8 +856,8 @@ config :explorer, Explorer.Migrator.MergeAdjacentMissingBlockRanges,
 config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions,
   enabled: ConfigHelper.parse_bool_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_ENABLED", "false"),
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_BATCH_SIZE", 100),
-  storage_period_days:
-    ConfigHelper.parse_integer_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_STORAGE_PERIOD_DAYS", 30),
+  storage_period:
+    ConfigHelper.parse_time_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_STORAGE_PERIOD", "30d"),
   check_interval:
     ConfigHelper.parse_time_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_CHECK_INTERVAL", "1m")
 

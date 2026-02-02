@@ -1,7 +1,7 @@
 defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   @moduledoc """
   Continuously deletes all zero-value calls older than
-  `MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_STORAGE_PERIOD_DAYS` from DB.
+  `MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_STORAGE_PERIOD` from DB.
   """
 
   use GenServer
@@ -20,7 +20,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   @not_completed_check_interval 10
   @default_check_interval :timer.minutes(1)
   @default_batch_size 100
-  @default_storage_period_days 30
+  @default_storage_period :timer.hours(24) * 30
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
@@ -194,8 +194,8 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   end
 
   defp get_border_number do
-    storage_period = Application.get_env(:explorer, __MODULE__)[:storage_period_days] || @default_storage_period_days
-    border_timestamp = Timex.shift(Timex.now(), days: -storage_period)
+    storage_period = Application.get_env(:explorer, __MODULE__)[:storage_period] || @default_storage_period
+    border_timestamp = Timex.shift(Timex.now(), milliseconds: -storage_period)
 
     Block
     |> where([b], b.timestamp < ^border_timestamp)
