@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- Move current token balances into a separate fetcher ([#13923](https://github.com/blockscout/blockscout/issues/13923))
 - Re-architect internal transaction format with call-type enum, error dictionary, and normalization ([#13893](https://github.com/blockscout/blockscout/issues/13893))
 - Add audit-reports import endpoint ([#13884](https://github.com/blockscout/blockscout/issues/13884))
 - Solady smart-contract proxy with immutable arguments support ([#13794](https://github.com/blockscout/blockscout/issues/13794))
@@ -23,6 +24,8 @@
 
 ### 🐛 Bug Fixes
 
+- Multichain counter starting time and small fixes ([#13920](https://github.com/blockscout/blockscout/pull/13920))
+- Fix 500 on empty ens domain search ([#13928](https://github.com/blockscout/blockscout/pull/13928))
 - Limit `getlogs` after filtering consensus ([#13934](https://github.com/blockscout/blockscout/pull/13934))
 - Handle nil in update_transactions_cache/2 ([#13911](https://github.com/blockscout/blockscout/pull/13911))
 - Fix token balances broadcasting function ([#13902](https://github.com/blockscout/blockscout/issues/13902))
@@ -56,6 +59,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Improve EmptyInternalTransactionsData migration ([#13918](https://github.com/blockscout/blockscout/pull/13918))
 - Disable Auth0 when Dynamic enabled ([#13912](https://github.com/blockscout/blockscout/pull/13912))
 - Add swagger spec for account abstraction endpoints ([#13897](https://github.com/blockscout/blockscout/issues/13897))
 - Clear token "skip_metadata" property ([#13891](https://github.com/blockscout/blockscout/issues/13891))
