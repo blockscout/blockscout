@@ -31,6 +31,8 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue, as: MultichainSearchDbTokenInfoExportQueue
   alias Indexer.Fetcher.Stability.Validator, as: ValidatorStability
   alias Indexer.Fetcher.Stats.HotSmartContracts
+  alias Indexer.Fetcher.TokenBalance.Current, as: TokenBalanceCurrent
+  alias Indexer.Fetcher.TokenBalance.Historical, as: TokenBalanceHistorical
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Indexer.Fetcher.TokenInstance.Retry, as: TokenInstanceRetry
   alias Indexer.Fetcher.TokenInstance.Sanitize, as: TokenInstanceSanitize
@@ -48,7 +50,6 @@ defmodule Indexer.Supervisor do
     ReplacedTransaction,
     RootstockData,
     Token,
-    TokenBalance,
     TokenCountersUpdater,
     TokenTotalSupplyUpdater,
     TokenUpdater,
@@ -153,7 +154,9 @@ defmodule Indexer.Supervisor do
         configure(TransactionAction.Supervisor, [[memory_monitor: memory_monitor]]),
         {ContractCode.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
-        {TokenBalance.Supervisor,
+        {TokenBalanceHistorical.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        {TokenBalanceCurrent.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {TokenUpdater.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},

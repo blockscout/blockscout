@@ -1051,11 +1051,15 @@ config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor,
 
 config :indexer, Indexer.Fetcher.Token, concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_CONCURRENCY", 10)
 
-config :indexer, Indexer.Fetcher.TokenBalance,
+config :indexer, Indexer.Fetcher.TokenBalance.Historical,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_CONCURRENCY", 10),
   max_refetch_interval: ConfigHelper.parse_time_env_var("INDEXER_TOKEN_BALANCES_MAX_REFETCH_INTERVAL", "168h"),
   exp_timeout_coeff: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_EXPONENTIAL_TIMEOUT_COEFF", 100)
+
+config :indexer, Indexer.Fetcher.TokenBalance.Current,
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_CURRENT_TOKEN_BALANCES_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_CURRENT_TOKEN_BALANCES_CONCURRENCY", 10)
 
 config :indexer, Indexer.Fetcher.TokenCountersUpdater,
   milliseconds_interval: ConfigHelper.parse_time_env_var("TOKEN_COUNTERS_UPDATE_INTERVAL", "3h")
