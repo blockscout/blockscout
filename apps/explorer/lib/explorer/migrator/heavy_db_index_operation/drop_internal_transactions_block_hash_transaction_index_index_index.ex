@@ -6,7 +6,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsBlockH
   use Explorer.Migrator.HeavyDbIndexOperation
 
   alias Explorer.Migrator.{
-    FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
+    EmptyInternalTransactionsData,
     HeavyDbIndexOperation,
     MigrationStatus
   }
@@ -29,7 +29,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsBlockH
   @impl HeavyDbIndexOperation
   def dependent_from_migrations do
     [
-      FillInternalTransactionToAddressHashWithCreatedContractAddressHash.migration_name()
+      EmptyInternalTransactionsData.migration_name()
     ]
   end
 

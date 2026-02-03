@@ -12,7 +12,7 @@ defmodule Explorer.Repo.Migrations.CreateTransactionErrors do
     create(unique_index(:transaction_errors, [:message]))
 
     alter table(:internal_transactions) do
-      add(:error_id, references(:transaction_errors, column: :id, type: :smallint))
+      add(:error_id, :smallint)
     end
 
     drop_if_exists(
