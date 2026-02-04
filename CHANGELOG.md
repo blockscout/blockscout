@@ -24,6 +24,7 @@
 
 ### 🐛 Bug Fixes
 
+- `HttpClient.get` usage in genesis data module ([#13945](https://github.com/blockscout/blockscout/pull/13945))
 - Multichain counter starting time and small fixes ([#13920](https://github.com/blockscout/blockscout/pull/13920))
 - Fix 500 on empty ens domain search ([#13928](https://github.com/blockscout/blockscout/pull/13928))
 - Limit `getlogs` after filtering consensus ([#13934](https://github.com/blockscout/blockscout/pull/13934))

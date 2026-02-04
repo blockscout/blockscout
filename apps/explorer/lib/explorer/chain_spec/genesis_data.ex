@@ -174,7 +174,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   # Fetches JSON data from a provided URL.
   @spec fetch_from_url(binary()) :: {:ok, list() | map()} | {:error, Jason.DecodeError.t() | any()}
   defp fetch_from_url(url) do
-    case HttpClient.get(url, timeout: 60_000, recv_timeout: 60_000) do
+    case HttpClient.get(url, [], timeout: 60_000, recv_timeout: 60_000) do
       {:ok, %{body: body, status_code: 200}} ->
         {:ok, Jason.decode!(body)}
 
