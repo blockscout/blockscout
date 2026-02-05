@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
       )
 
       # Insert internal transaction with index 1 - should be included
-      it_1 =
+      _it_1 =
         insert(:internal_transaction,
           transaction: tx,
           transaction_index: 0,
@@ -106,7 +106,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
         )
 
       # Insert internal transaction with index 2 - should be included
-      it_2 =
+      _it_2 =
         insert(:internal_transaction,
           transaction: tx,
           transaction_index: 0,
