@@ -517,7 +517,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     with true <- Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled],
          border_number when is_integer(border_number) <- DeleteZeroValueInternalTransactions.border_number() do
       {:ok,
-       Enum.reject(internal_transactions, &(&1.block_number <= border_number and &1.type == :call and &1.value == 0))}
+       Enum.reject(
+         internal_transactions,
+         &(&1.block_number <= border_number and &1.type == :call and Decimal.eq?(&1.value.value, 0))
+       )}
     else
       _ -> {:ok, internal_transactions}
     end
