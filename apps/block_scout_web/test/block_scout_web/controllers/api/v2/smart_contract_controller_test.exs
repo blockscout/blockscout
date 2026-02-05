@@ -1151,9 +1151,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         bypass: bypass
       } do
         eth_bytecode_response =
-          File.read!(
-            "./test/support/fixture/smart_contract/eth_bytecode_db_search_response_with_libs_priority.json"
-          )
+          File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_response_with_libs_priority.json")
 
         address = insert(:contract_address)
 
