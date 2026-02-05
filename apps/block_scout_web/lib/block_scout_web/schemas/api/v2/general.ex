@@ -1122,6 +1122,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Smart-contract ID for paging"
     },
+    "number" => %Parameter{
+      name: :number,
+      in: :query,
+      schema: %Schema{type: :integer},
+      required: false,
+      description: "Number for paging"
+    },
     "fetched_coin_balance" => %Parameter{
       name: :fetched_coin_balance,
       in: :query,

@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.ScrollController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
     only: [
@@ -8,7 +9,10 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
       split_list_by_page: 1
     ]
 
+  alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.Chain.Scroll.Reader
+
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
 
   @api_true [api?: true]
 
@@ -16,11 +20,30 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
 
   @batch_necessity_by_association %{:bundle => :optional}
 
+  operation :batch,
+    summary: "Batch by its number.",
+    description: "Retrieves batch info by the given number.",
+    parameters: [
+      %OpenApiSpex.Parameter{
+        name: :number,
+        in: :path,
+        schema: Schemas.General.IntegerString,
+        required: true,
+        description: "Batch number in the path."
+      }
+      | base_params()
+    ],
+    responses: [
+      ok: {"Batch info.", "application/json", Schemas.Scroll.Batch},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/scroll/batches/:number` endpoint.
   """
   @spec batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def batch(conn, %{"number" => number}) do
+  def batch(conn, %{number: number}) do
     {number, ""} = Integer.parse(number)
 
     options =
@@ -37,6 +60,29 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
       |> render(:scroll_batch, %{batch: batch})
     end
   end
+
+  operation :batches,
+    summary: "List batches.",
+    description: "Retrieves a paginated list of batches.",
+    parameters:
+      base_params() ++
+        define_paging_params([
+          "items_count",
+          "number"
+        ]),
+    responses: [
+      ok:
+        {"List of batches.", "application/json",
+         paginated_response(
+           items: Schemas.Scroll.Batch,
+           next_page_params_example: %{
+             "items_count" => 50,
+             "number" => 502_655
+           },
+           title_prefix: "Batches"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/scroll/batches` endpoint.
@@ -60,6 +106,15 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     })
   end
 
+  operation :batches_count,
+    summary: "Number of batches in the list.",
+    description: "Retrieves a size of the batch list.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Number of items in the batch list.", "application/json", %Schema{type: :integer, nullable: false}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/scroll/batches/count` endpoint.
   """
@@ -69,6 +124,29 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     |> put_status(200)
     |> render(:scroll_batches_count, %{count: batch_latest_number() + 1})
   end
+
+  operation :deposits,
+    summary: "List deposits.",
+    description: "Retrieves a paginated list of deposits.",
+    parameters:
+      base_params() ++
+        define_paging_params([
+          "items_count",
+          "id"
+        ]),
+    responses: [
+      ok:
+        {"List of deposits.", "application/json",
+         paginated_response(
+           items: Schemas.Scroll.Bridge,
+           next_page_params_example: %{
+             "items_count" => 50,
+             "id" => 986_043
+           },
+           title_prefix: "Deposits"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/scroll/deposits` endpoint.
@@ -93,6 +171,15 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     })
   end
 
+  operation :deposits_count,
+    summary: "Number of deposits in the list.",
+    description: "Retrieves a size of the deposits list.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Number of items in the deposits list.", "application/json", %Schema{type: :integer, nullable: true}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
     Function to handle GET requests to `/api/v2/scroll/deposits/count` endpoint.
   """
@@ -104,6 +191,29 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     |> put_status(200)
     |> render(:scroll_bridge_items_count, %{count: count})
   end
+
+  operation :withdrawals,
+    summary: "List withdrawals.",
+    description: "Retrieves a paginated list of withdrawals.",
+    parameters:
+      base_params() ++
+        define_paging_params([
+          "items_count",
+          "id"
+        ]),
+    responses: [
+      ok:
+        {"List of withdrawals.", "application/json",
+         paginated_response(
+           items: Schemas.Scroll.Bridge,
+           next_page_params_example: %{
+             "items_count" => 50,
+             "id" => 220_243
+           },
+           title_prefix: "Withdrawals"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/scroll/withdrawals` endpoint.
@@ -127,6 +237,15 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
       type: :withdrawals
     })
   end
+
+  operation :withdrawals_count,
+    summary: "Number of withdrawals in the list.",
+    description: "Retrieves a size of the withdrawals list.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Number of items in the withdrawals list.", "application/json", %Schema{type: :integer, nullable: true}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/scroll/withdrawals/count` endpoint.

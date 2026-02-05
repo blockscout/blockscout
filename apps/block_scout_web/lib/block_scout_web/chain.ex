@@ -585,6 +585,10 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {number}}]
   end
 
+  def paging_options(%{number: number}) do
+    [paging_options: %{@default_paging_options | key: {number}}]
+  end
+
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string})
       when is_binary(inserted_at_string) and is_binary(hash_string) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
@@ -1054,7 +1058,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%ScrollBridge{index: id}) do
-    %{"id" => id}
+    %{id: id}
   end
 
   defp paging_params(%Instance{token_id: token_id}) do
