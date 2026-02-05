@@ -8,6 +8,6 @@ unzip -j chromedriver-linux64.zip
 sudo chmod +x chromedriver
 sudo mv chromedriver /usr/local/bin
 wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-sudo apt install ./google-chrome-stable_current_amd64.deb
 sudo apt-get update
 sudo apt-get install libstdc++6
+sudo apt install ./google-chrome-stable_current_amd64.deb
