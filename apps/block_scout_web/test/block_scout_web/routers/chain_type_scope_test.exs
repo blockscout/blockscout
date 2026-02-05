@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.Routers.ChainTypeScopeTest do
       test "stability validators counters are accessible when chain type is stability", %{conn: conn} do
         Application.put_env(:explorer, :chain_type, :stability)
 
-        assert response =
+        assert _response =
                  conn
                  |> get("/api/v2/validators/stability/counters")
                  |> json_response(200)

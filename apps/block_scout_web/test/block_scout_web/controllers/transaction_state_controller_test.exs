@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
   alias Explorer.Chain.Wei
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
-  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   setup :set_mox_global
 
