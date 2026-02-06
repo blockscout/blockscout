@@ -103,6 +103,25 @@
 | `CACHE_PBO_COUNT_PERIOD`  | Time interval to restart the task which calculates the total pending_block_operations count.  | `20m` | v5.2.0+ |  | v10.0.0 |
 
 
+## 9.3.3
+
+### ⚙️ Miscellaneous Tasks
+
+- Replace ZeroValueDeleteQueue with filtering on import ([#13921](https://github.com/blockscout/blockscout/pull/13921), [#13947](https://github.com/blockscout/blockscout/pull/13947))
+- Allow to set IT storage period not only in days ([#13932](https://github.com/blockscout/blockscout/pull/13932))
+
+### New ENV variables
+
+| Variable                                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|---------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_STORAGE_PERIOD`  | Specifies the period for which recent zero-value calls won't be deleted in delete zero-value calls migration. Implemented in [#13932](https://github.com/blockscout/blockscout/pull/13932).     | Version: v9.3.3\+ <br />Default: `30d` <br />Applications: Indexer  |
+
+### Deprecated ENV variables
+
+| Variable                                                                 | Description                                                                                                    | Default | Version   | Deprecated in Version |
+|--------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|---------|-----------|-----------------------|
+| `MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_STORAGE_PERIOD_DAYS`  | Specifies the period for which recent zero-value calls won't be deleted in delete zero-value calls migration.  | `30`    | v9.3.0+   | v9.3.3                |
+
 
 ## 9.3.2
 
