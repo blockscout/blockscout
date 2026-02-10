@@ -468,12 +468,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     decoded_input_data = decoded_input(decoded_input)
 
+    block_timestamp = block_timestamp(transaction)
+
     result = %{
       "hash" => transaction.hash,
       "result" => status,
       "status" => transaction.status,
       "block_number" => transaction.block_number,
-      "timestamp" => block_timestamp(transaction),
+      "timestamp" => block_timestamp,
       "from" =>
         Helper.address_with_info(
           single_transaction? && conn,
@@ -520,8 +522,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "token_transfers_overflow" => token_transfers_overflow(transaction.token_transfers, single_transaction?),
       "actions" => transaction_actions(transaction.transaction_actions),
       "exchange_rate" => Market.get_coin_exchange_rate().fiat_value,
-      "historic_exchange_rate" =>
-        Market.get_coin_exchange_rate_at_date(block_timestamp(transaction), @api_true).fiat_value,
+      "historic_exchange_rate" => historic_exchange_rate(block_timestamp),
       "method" => Transaction.method_name(transaction, decoded_input),
       "transaction_types" => transaction_types(transaction),
       "transaction_tag" =>
@@ -847,7 +848,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   @doc """
   Returns block's timestamp from Block/Transaction
   """
-  @spec block_timestamp(any()) :: :utc_datetime_usec | nil
+  @spec block_timestamp(any()) :: DateTime.t() | nil
   def block_timestamp(%Transaction{block_timestamp: block_ts}) when not is_nil(block_ts), do: block_ts
   def block_timestamp(%Transaction{block: %Block{} = block}), do: block.timestamp
   def block_timestamp(%Block{} = block), do: block.timestamp
@@ -901,6 +902,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       end
 
     Map.merge(map, %{"change" => change})
+  end
+
+  defp historic_exchange_rate(nil), do: nil
+
+  defp historic_exchange_rate(block_timestamp) do
+    if DateTime.before?(block_timestamp, DateTime.shift(DateTime.utc_now(), day: -1)) do
+      Market.get_coin_exchange_rate_at_date(block_timestamp, @api_true).fiat_value
+    end
   end
 
   defp with_chain_type_transformations(transactions) do
