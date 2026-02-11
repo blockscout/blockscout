@@ -29,9 +29,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @hex_string_pattern ~r"^0x([A-Fa-f0-9]*)$"
 
   if @chain_type == :zilliqa do
-    @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2)(,(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2))*\]?$/i
+    @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2|ERC-7984)(,(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2|ERC-7984))*\]?$/i
   else
-    @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404)(,(ERC-20|ERC-721|ERC-1155|ERC-404))*\]?$/i
+    @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404|ERC-7984)(,(ERC-20|ERC-721|ERC-1155|ERC-404|ERC-7984))*\]?$/i
   end
 
   # Matches ISO-like datetime strings where separators between time fields can be ':' or percent-encoded '%3A'.
@@ -797,6 +797,62 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for MUD tables namespace filter.
+  """
+  @spec filter_namespace_param() :: Parameter.t()
+  def filter_namespace_param do
+    %Parameter{
+      name: :filter_namespace,
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Filter by namespace"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for MUD table records key0 filter.
+  """
+  @spec filter_key0_param() :: Parameter.t()
+  def filter_key0_param do
+    %Parameter{
+      name: :filter_key0,
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Filter by key0"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for MUD table records key1 filter.
+  """
+  @spec filter_key1_param() :: Parameter.t()
+  def filter_key1_param do
+    %Parameter{
+      name: :filter_key1,
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Filter by key1"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a user operation hash in the path.
+  """
+  @spec operation_hash_param() :: Parameter.t()
+  def operation_hash_param do
+    %Parameter{
+      name: :operation_hash_param,
+      in: :path,
+      schema: FullHash,
+      required: true,
+      description: "User operation hash in the path"
+    }
+  end
+
+  @doc """
   Returns a list of base parameters (api_key and key).
   """
   @spec base_params() :: [Parameter.t()]
@@ -1214,6 +1270,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: FullHash,
       required: false,
       description: "MUD record key1 for paging"
+    },
+    "page_size" => %Parameter{
+      name: :page_size,
+      in: :query,
+      schema: %Schema{type: :integer, minimum: 1, maximum: 50},
+      required: false,
+      description: "Number of items returned per page"
+    },
+    "page_token" => %Parameter{
+      name: :page_token,
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Page token for paging"
     }
   }
 

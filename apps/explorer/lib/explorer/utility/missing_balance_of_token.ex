@@ -89,7 +89,7 @@ defmodule Explorer.Utility.MissingBalanceOfToken do
 
     params =
       token_balance_params
-      |> Enum.reject(&(&1.token_type == "ERC-404"))
+      |> Enum.reject(&(&1.token_type in ["ERC-404", "ERC-7984"]))
       |> Enum.group_by(& &1.token_contract_address_hash, & &1.block_number)
       |> Enum.map(fn {token_contract_address_hash, block_numbers} ->
         {:ok, token_contract_address_hash_casted} = Hash.Address.cast(token_contract_address_hash)

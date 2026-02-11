@@ -1,7 +1,7 @@
 defmodule BlockScoutWeb.AddressViewTest do
   use BlockScoutWeb.ConnCase, async: true
 
-  alias Explorer.Chain.{Address, Data, Hash, Transaction}
+  alias Explorer.Chain.{Address, Hash, Transaction}
   alias BlockScoutWeb.{AddressView, Endpoint}
 
   describe "address_partial_selector/4" do

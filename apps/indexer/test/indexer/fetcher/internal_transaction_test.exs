@@ -628,7 +628,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       last_internal_transaction = List.last(internal_transactions)
 
       assert last_internal_transaction.type == :call
-      assert last_internal_transaction.call_type == :invalid
+      assert last_internal_transaction.call_type_enum == :invalid
     end
   end
 

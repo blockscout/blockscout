@@ -113,6 +113,38 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
     |> Repo.insert()
   end
 
+  @doc """
+    Import a new audit report from admin panel.
+  """
+  @spec import(map()) :: {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
+  def import(%{
+        address_hash: address_hash,
+        audit_report_url: audit_report_url,
+        audit_publish_date: audit_publish_date,
+        audit_company_name: audit_company_name
+      }) do
+    attrs = %{
+      address_hash: address_hash,
+      audit_report_url: audit_report_url,
+      audit_publish_date: audit_publish_date,
+      audit_company_name: audit_company_name,
+      is_approved: true,
+      submitter_name: "api",
+      submitter_email: "api",
+      is_project_owner: true,
+      project_name: "api",
+      project_url: "api"
+    }
+
+    %__MODULE__{}
+    |> cast(attrs, @optional_fields ++ @required_fields)
+    |> unique_constraint([:address_hash, :audit_report_url, :audit_publish_date, :audit_company_name],
+      message: "the report was submitted before",
+      name: :audit_report_unique_index
+    )
+    |> Repo.insert()
+  end
+
   defp get_reports_count_by_day_for_address_hash_by_day(address_hash) do
     __MODULE__
     |> where(

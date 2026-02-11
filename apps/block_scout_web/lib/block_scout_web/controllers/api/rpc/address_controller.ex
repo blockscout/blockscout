@@ -255,6 +255,10 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     do_tokentx(conn, params, :erc404)
   end
 
+  def token7984tx(conn, params) do
+    do_tokentx(conn, params, :erc7984)
+  end
+
   defp do_tokentx(conn, params, transfers_type) do
     with {:params, {:ok, options}} <- {:params, optional_params(params)},
          {:address, {:ok, address_hash}} <- {:address, to_address_hash_optional(params["address"])},

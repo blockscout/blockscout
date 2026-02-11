@@ -1,53 +1,21 @@
-defmodule Indexer.Fetcher.TokenBalance do
+defmodule Indexer.Fetcher.TokenBalance.Helper do
   @moduledoc """
-  Fetches token balances and sends the ones that were fetched to be imported in `Address.CurrentTokenBalance` and
-  `Address.TokenBalance`.
-
-  The module responsible for fetching token balances in the Smart Contract is the `Indexer.TokenBalances`. This module
-  only prepares the params, sends them to `Indexer.TokenBalances` and relies on its return.
-
-  It behaves as a `BufferedTask`, so we can configure the `max_batch_size` and the `max_concurrency` to control how many
-  token balances will be fetched at the same time.
-
-  Also, this module set a `refetch_after` for each token balance in case of failure to avoid fetching the ones
-  that always raise errors interacting with the Smart Contract.
+  Common functions for `Indexer.Fetcher.TokenBalance.Historical` and `Indexer.Fetcher.TokenBalance.Current` modules
   """
-
-  use Indexer.Fetcher, restart: :permanent
-  use Spandex.Decorators
 
   require Logger
 
   alias EthereumJSONRPC.Utility.RangesHelper
-  alias Explorer.Chain
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
-  alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.Utility.MissingBalanceOfToken
-  alias Indexer.{BufferedTask, TokenBalances, Tracer}
-  alias Indexer.Fetcher.TokenBalance.Supervisor, as: TokenBalanceSupervisor
-
-  @behaviour BufferedTask
+  alias Indexer.{BufferedTask, TokenBalances}
 
   @default_max_batch_size 100
   @default_max_concurrency 10
 
-  @timeout :timer.minutes(10)
-
-  @spec async_fetch(
-          [
-            %{
-              token_contract_address_hash: Hash.Address.t(),
-              address_hash: Hash.Address.t(),
-              block_number: non_neg_integer(),
-              token_type: String.t(),
-              token_id: non_neg_integer()
-            }
-          ],
-          boolean()
-        ) :: :ok
-  def async_fetch(token_balances, realtime?) do
-    if TokenBalanceSupervisor.disabled?() do
+  def async_fetch(module, token_balances, realtime?) do
+    if Module.concat(module, Supervisor).disabled?() do
       :ok
     else
       filtered_balances =
@@ -57,30 +25,30 @@ defmodule Indexer.Fetcher.TokenBalance do
 
       formatted_params = Enum.map(filtered_balances, &entry/1)
 
-      BufferedTask.buffer(__MODULE__, formatted_params, realtime?, :infinity)
+      BufferedTask.buffer(module, formatted_params, realtime?, :infinity)
     end
   end
 
   @doc false
-  def child_spec([init_options, gen_server_options]) do
+  def child_spec([init_options, gen_server_options], module) do
     {state, mergeable_init_options} = Keyword.pop(init_options, :json_rpc_named_arguments)
 
     if !state do
       raise ArgumentError,
-            ":json_rpc_named_arguments must be provided to `#{__MODULE__}.child_spec " <>
+            ":json_rpc_named_arguments must be provided to `#{module}.child_spec " <>
               "to allow for json_rpc calls when running."
     end
 
     merged_init_opts =
-      defaults()
+      module
+      |> defaults()
       |> Keyword.merge(mergeable_init_options)
       |> Keyword.put(:state, state)
 
-    Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_opts}, gen_server_options]}, id: __MODULE__)
+    Supervisor.child_spec({BufferedTask, [{module, merged_init_opts}, gen_server_options]}, id: module)
   end
 
-  @impl BufferedTask
-  def init(initial, reducer, _) do
+  def init(reducer, stream_func) do
     entry_reducer = fn token_balance, acc ->
       token_balance
       |> entry()
@@ -92,25 +60,24 @@ defmodule Indexer.Fetcher.TokenBalance do
       |> RangesHelper.stream_reducer_by_block_ranges()
       |> RangesHelper.stream_reducer_traceable()
 
-    {:ok, final} =
-      TokenBalance.stream_unfetched_token_balances(
-        initial,
-        stream_reducer,
-        true
-      )
+    {:ok, final} = stream_func.(stream_reducer)
 
     final
   end
 
-  @doc """
-  Fetches the given entries (token_balances) from the Smart Contract and import them in our database.
+  def format_and_filter_address_params(token_balances_params) do
+    token_balances_params
+    |> Enum.map(&%{hash: &1.address_hash})
+    |> Enum.uniq()
+  end
 
-  It also set the `refetch_after` in case of failure to avoid fetching token balances that always raise errors
-  when reading their balance in the Smart Contract.
-  """
-  @impl BufferedTask
-  @decorate trace(name: "fetch", resource: "Indexer.Fetcher.TokenBalance.run/2", tracer: Tracer, service: :indexer)
-  def run(entries, _json_rpc_named_arguments) do
+  def format_and_filter_token_balance_params(token_balances_params) do
+    {params_without_type, params_with_type} = Enum.split_with(token_balances_params, &is_nil(&1.token_type))
+
+    params_with_type ++ put_token_type_to_balance_objects(params_without_type)
+  end
+
+  def fetch_token_balances(entries) do
     params = Enum.map(entries, &format_params/1)
 
     missing_balance_of_tokens =
@@ -119,20 +86,24 @@ defmodule Indexer.Fetcher.TokenBalance do
       |> Enum.uniq()
       |> MissingBalanceOfToken.get_by_hashes()
 
-    result =
-      params
-      |> MissingBalanceOfToken.filter_token_balances_params(true, missing_balance_of_tokens)
-      |> fetch_from_blockchain(missing_balance_of_tokens)
-      |> import_token_balances()
-
-    if result == :ok do
-      :ok
-    else
-      {:retry, entries}
-    end
+    params
+    |> MissingBalanceOfToken.filter_token_balances_params(true, missing_balance_of_tokens)
+    |> fetch_from_blockchain(missing_balance_of_tokens)
   end
 
-  def fetch_from_blockchain(params_list, missing_balance_of_tokens) do
+  defp put_token_type_to_balance_objects([]), do: []
+
+  defp put_token_type_to_balance_objects(token_balances) do
+    token_types_map =
+      token_balances
+      |> Enum.map(& &1.token_contract_address_hash)
+      |> Token.get_token_types()
+      |> Map.new()
+
+    Enum.map(token_balances, &Map.put(&1, :token_type, token_types_map[&1.token_contract_address_hash]))
+  end
+
+  defp fetch_from_blockchain(params_list, missing_balance_of_tokens) do
     params_list =
       Enum.uniq_by(params_list, &Map.take(&1, [:token_contract_address_hash, :token_id, :address_hash, :block_number]))
 
@@ -205,7 +176,7 @@ defmodule Indexer.Fetcher.TokenBalance do
   end
 
   defp define_refetch_after(retries_count) do
-    config = Application.get_env(:indexer, __MODULE__)
+    config = Application.get_env(:indexer, Indexer.Fetcher.TokenBalance.Historical)
 
     coef = config[:exp_timeout_coeff]
     max_refetch_interval = config[:max_refetch_interval]
@@ -214,74 +185,6 @@ defmodule Indexer.Fetcher.TokenBalance do
     value = floor(coef * :math.exp(min(retries_count, max_retries_count)))
 
     Timex.shift(Timex.now(), seconds: value)
-  end
-
-  def import_token_balances(token_balances_params) do
-    addresses_params = format_and_filter_address_params(token_balances_params)
-    formatted_token_balances_params = format_and_filter_token_balance_params(token_balances_params)
-
-    import_params = %{
-      addresses: %{params: addresses_params},
-      address_token_balances: %{params: formatted_token_balances_params},
-      address_current_token_balances: %{
-        params: TokenBalances.to_address_current_token_balances(formatted_token_balances_params)
-      },
-      timeout: @timeout
-    }
-
-    case Chain.import(import_params) do
-      {:ok, %{address_current_token_balances: imported_ctbs}} ->
-        imported_ctbs
-        |> Enum.group_by(& &1.address_hash)
-        |> Enum.each(fn {address_hash, ctbs} ->
-          Publisher.broadcast(
-            %{
-              address_current_token_balances: %{
-                address_hash: to_string(address_hash),
-                address_current_token_balances: ctbs
-              }
-            },
-            :realtime
-          )
-        end)
-
-      {:ok, _} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.debug(fn -> ["failed to import token balances: ", inspect(reason)] end,
-          error_count: Enum.count(token_balances_params)
-        )
-
-        :error
-    end
-  end
-
-  defp format_and_filter_address_params(token_balances_params) do
-    token_balances_params
-    |> Enum.map(&%{hash: &1.address_hash})
-    |> Enum.uniq()
-  end
-
-  defp format_and_filter_token_balance_params(token_balances_params) do
-    token_balances_params
-    |> Enum.map(fn token_balance ->
-      if token_balance.token_type do
-        token_balance
-      else
-        put_token_type_to_balance_object(token_balance)
-      end
-    end)
-  end
-
-  defp put_token_type_to_balance_object(token_balance) do
-    token_type = Token.get_token_type(token_balance.token_contract_address_hash)
-
-    if token_type do
-      Map.put(token_balance, :token_type, token_type)
-    else
-      token_balance
-    end
   end
 
   defp entry(
@@ -326,12 +229,12 @@ defmodule Indexer.Fetcher.TokenBalance do
     }
   end
 
-  defp defaults do
+  defp defaults(module) do
     [
       flush_interval: 300,
-      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
-      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
-      task_supervisor: Indexer.Fetcher.TokenBalance.TaskSupervisor
+      max_batch_size: Application.get_env(:indexer, module)[:batch_size] || @default_max_batch_size,
+      max_concurrency: Application.get_env(:indexer, module)[:concurrency] || @default_max_concurrency,
+      task_supervisor: Module.concat(module, TaskSupervisor)
     ]
   end
 end

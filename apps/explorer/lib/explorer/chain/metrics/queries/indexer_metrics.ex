@@ -5,6 +5,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
 
   import Ecto.Query
   alias Ecto.Adapters.SQL
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.MultichainSearchDb.BalancesExportQueue, as: MultichainSearchDbBalancesExportQueue
   alias Explorer.Chain.MultichainSearchDb.CountersExportQueue, as: MultichainSearchDbCountersExportQueue
@@ -20,9 +21,11 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   # sobelow_skip ["SQL"]
   @spec missing_blocks_count() :: integer()
   def missing_blocks_count do
+    first_block = RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
+
     sql_string = """
     SELECT COUNT(DISTINCT b1.number) AS missing_blocks_count
-    FROM generate_series(0, (SELECT MAX(number) FROM blocks)) AS b1(number)
+    FROM generate_series($1, (SELECT MAX(number) FROM blocks)) AS b1(number)
     WHERE NOT EXISTS (
       SELECT 1 FROM blocks b2
       WHERE b2.number=b1.number
@@ -30,7 +33,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
     );
     """
 
-    case SQL.query(Repo, sql_string, [], timeout: :infinity) do
+    case SQL.query(Repo, sql_string, [first_block], timeout: :infinity) do
       {:ok, %Postgrex.Result{command: :select, columns: ["missing_blocks_count"], rows: [[missing_blocks_count]]}} ->
         missing_blocks_count
 

@@ -14,7 +14,7 @@ defmodule Indexer.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "9.3.2",
+      version: "10.0.0",
       xref: [
         exclude: [
           Explorer.Chain.Optimism.Deposit,
@@ -60,7 +60,7 @@ defmodule Indexer.MixProject do
       # Importing to database
       {:explorer, in_umbrella: true},
       # ex_secp256k1 crypto functions
-      {:ex_secp256k1, "~> 0.7.0"},
+      {:ex_secp256k1, "~> 0.8.0"},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
       {:logger_json, "~> 7.0"},

@@ -30,6 +30,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :arbitrum_da_records_normalization_finished,
     key: :sanitize_verified_addresses_finished,
     key: :smart_contract_language_finished,
+    key: :backfill_call_type_enum_finished,
     key: :heavy_indexes_create_logs_block_hash_index_finished,
     key: :heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished,
     key: :heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished,
@@ -60,7 +61,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :fill_internal_transaction_to_address_hash_with_created_contract_address_hash_finished,
     key: :heavy_indexes_drop_internal_transactions_created_contract_address_hash_partial_index_finished,
     key: :heavy_indexes_create_tokens_name_partial_fts_index_finished,
-    key: :heavy_indexes_update_internal_transactions_primary_key_finished
+    key: :heavy_indexes_update_internal_transactions_primary_key_finished,
+    key: :empty_internal_transactions_data_finished
 
   @dialyzer :no_match
 
@@ -69,7 +71,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     AddressTokenBalanceTokenType,
     ArbitrumDaRecordsNormalization,
     BackfillMultichainSearchDB,
-    FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
+    EmptyInternalTransactionsData,
     SanitizeDuplicatedLogIndexLogs,
     SmartContractLanguage,
     TokenTransferTokenType,
@@ -350,13 +352,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     )
   end
 
-  defp handle_fallback(:fill_internal_transaction_to_address_hash_with_created_contract_address_hash_finished) do
-    set_and_return_migration_status(
-      FillInternalTransactionToAddressHashWithCreatedContractAddressHash,
-      &set_fill_internal_transaction_to_address_hash_with_created_contract_address_hash_finished/1
-    )
-  end
-
   defp handle_fallback(:heavy_indexes_drop_internal_transactions_created_contract_address_hash_partial_index_finished) do
     set_and_return_migration_status(
       DropInternalTransactionsCreatedContractAddressHashPartialIndex,
@@ -375,6 +370,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       UpdateInternalTransactionsPrimaryKey,
       &set_heavy_indexes_update_internal_transactions_primary_key_finished/1
+    )
+  end
+
+  defp handle_fallback(:empty_internal_transactions_data_finished) do
+    set_and_return_migration_status(
+      EmptyInternalTransactionsData,
+      &set_empty_internal_transactions_data_finished/1
     )
   end
 

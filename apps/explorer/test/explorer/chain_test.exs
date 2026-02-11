@@ -1265,7 +1265,7 @@ defmodule Explorer.ChainTest do
                 ],
                 internal_transactions: [
                   %InternalTransaction{
-                    call_type: :call,
+                    call_type_enum: :call,
                     created_contract_code: nil,
                     error: nil,
                     gas: ^gas_int,
@@ -1278,7 +1278,7 @@ defmodule Explorer.ChainTest do
                           231, 234, 137, 179, 40, 255, 234, 134, 26, 179, 239>>
                     },
                     output: %Data{bytes: ""},
-                    trace_address: [],
+                    trace_address: nil,
                     type: :call,
                     block_number: 37,
                     transaction_index: 1,

@@ -590,10 +590,10 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
       assert response == %{"errors" => %{"address_hash" => ["This address isn't EOA"]}}
     end
 
-    test "can insert EOA with code watchlist address", %{conn: conn, user: user} do
+    test "can insert EOA with code watchlist address", %{conn: conn, user: _user} do
       address = insert(:contract_address, contract_code: "0xef01000000000000000000000000000000000000000123")
 
-      response =
+      _response =
         conn
         |> post(
           "/api/account/v2/user/watchlist",

@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.PagingHelper do
   @page_size 50
   @default_paging_options %PagingOptions{page_size: @page_size + 1}
   @allowed_filter_labels ["validated", "pending"]
-  @allowed_base_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
+  @allowed_base_token_transfer_type_labels ["ERC-20", "ERC-721", "ERC-1155", "ERC-404", "ERC-7984"]
   if @chain_type == :zilliqa do
     @allowed_chain_type_token_transfer_type_labels ["ZRC-2"]
   else
@@ -412,10 +412,8 @@ defmodule BlockScoutWeb.PagingHelper do
 
   defp do_validators_stability_sorting(_, _), do: []
 
-  @spec mud_records_sorting(%{required(String.t()) => String.t()}) :: [
-          {:sorting, SortingHelper.sorting_params()}
-        ]
-  def mud_records_sorting(%{"sort" => sort_field, "order" => order}) do
+  @spec mud_records_sorting(map()) :: [{:sorting, SortingHelper.sorting_params()}]
+  def mud_records_sorting(%{sort: sort_field, order: order}) do
     [sorting: do_mud_records_sorting(sort_field, order)]
   end
 

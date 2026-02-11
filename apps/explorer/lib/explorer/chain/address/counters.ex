@@ -180,7 +180,7 @@ defmodule Explorer.Chain.Address.Counters do
     from(
       tb in CurrentTokenBalance,
       where: tb.address_hash == ^address_hash,
-      where: tb.value > 0
+      where: tb.value > 0 or tb.token_type == "ERC-7984"
     )
   end
 

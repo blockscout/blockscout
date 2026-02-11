@@ -153,7 +153,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "index" => to_string(internal_transaction.index),
       "input" => "#{internal_transaction.input}",
       "type" => "#{internal_transaction.type}",
-      "callType" => "#{internal_transaction.call_type}",
+      "callType" => "#{InternalTransaction.call_type(internal_transaction)}",
       "gas" => to_string(internal_transaction.gas || 0),
       "gasUsed" => "#{internal_transaction.gas_used}",
       "isError" => if(internal_transaction.error, do: "1", else: "0"),
@@ -234,6 +234,12 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     token_transfer
     |> prepare_common_token_transfer(max_block_number, decoded_input)
     |> Map.put_new(:value, to_string(token_transfer.amount))
+  end
+
+  defp prepare_token_transfer(%{token_type: "ERC-7984"} = token_transfer, max_block_number, decoded_input) do
+    token_transfer
+    |> prepare_common_token_transfer(max_block_number, decoded_input)
+    |> Map.put_new(:value, nil)
   end
 
   defp prepare_token_transfer(token_transfer, max_block_number, decoded_input) do

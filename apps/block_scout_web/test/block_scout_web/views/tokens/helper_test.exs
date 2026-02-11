@@ -32,6 +32,13 @@ defmodule BlockScoutWeb.Tokens.HelperTest do
       assert Helper.token_transfer_amount(token_transfer) == {:ok, :erc721_instance}
     end
 
+    test "returns '*confidential*' with ERC-7984 token" do
+      token = build(:token, type: "ERC-7984", decimals: Decimal.new(18))
+      token_transfer = build(:token_transfer, token: token, amount: Decimal.new(1_000_000), token_type: "ERC-7984")
+
+      assert Helper.token_transfer_amount(token_transfer) == {:ok, "*confidential*"}
+    end
+
     test "returns nothing for unknown token's type" do
       token = build(:token, type: "unknown")
       token_transfer = build(:token_transfer, token: token, token_type: "unknown")

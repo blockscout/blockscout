@@ -871,9 +871,11 @@ defmodule Explorer.EtherscanTest do
         transaction_index: internal_transaction.transaction_index,
         type: internal_transaction.type,
         call_type: internal_transaction.call_type,
+        call_type_enum: internal_transaction.call_type_enum,
         gas: internal_transaction.gas,
         gas_used: internal_transaction.gas_used,
-        error: internal_transaction.error
+        error: internal_transaction.error,
+        error_id: internal_transaction.error_id
       }
 
       assert found_internal_transaction == expected

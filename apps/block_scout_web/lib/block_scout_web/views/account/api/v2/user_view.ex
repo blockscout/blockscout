@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
 
   alias BlockScoutWeb.Account.API.V2.AccountView
   alias BlockScoutWeb.API.V2.Helper
-  alias Ecto.Changeset
+  alias BlockScoutWeb.ErrorHelper
   alias Explorer.Account.WatchlistAddress
   alias Explorer.Chain
   alias Explorer.Chain.Address
@@ -86,12 +86,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserView do
 
   def render("changeset_errors.json", %{changeset: changeset}) do
     %{
-      "errors" =>
-        Changeset.traverse_errors(changeset, fn {msg, opts} ->
-          Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
-            opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
-          end)
-        end)
+      "errors" => ErrorHelper.changeset_to_errors(changeset)
     }
   end
 

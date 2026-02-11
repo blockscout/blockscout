@@ -16,6 +16,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, CurrencyHelper, Hash, Token}
   alias Explorer.Chain.Address.TokenBalance
+  alias Explorer.Chain.Cache.BackgroundMigrations
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -28,6 +29,8 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
    *  `value` - The value that's represents the balance.
    *  `token_id` - The token_id of the transferred token (applicable for ERC-1155)
    *  `token_type` - The type of the token
+   *  `refetch_after` - when to refetch the balance
+   *  `retries_count` - number of times the balance has been retried
   """
   typed_schema "address_current_token_balances" do
     field(:value, :decimal)
@@ -40,6 +43,8 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     field(:distinct_token_instances_count, :integer, virtual: true)
     field(:token_ids, {:array, :decimal}, virtual: true)
     field(:preloaded_token_instances, {:array, :any}, virtual: true)
+    field(:refetch_after, :utc_datetime_usec)
+    field(:retries_count, :integer)
 
     # A transient field for deriving token holder count deltas during address_current_token_balances upserts
     field(:old_value, :decimal)
@@ -58,7 +63,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     timestamps()
   end
 
-  @optional_fields ~w(value value_fetched_at token_id)a
+  @optional_fields ~w(value value_fetched_at token_id refetch_after retries_count)a
   @required_fields ~w(address_hash block_number token_contract_address_hash token_type)a
   @allowed_fields @optional_fields ++ @required_fields
 
@@ -162,7 +167,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       ctb in __MODULE__,
       where: ctb.token_contract_address_hash == ^token_contract_address_hash,
       where: ctb.address_hash != ^@burn_address_hash,
-      where: ctb.value > 0
+      where: ctb.value > 0 or ctb.token_type == "ERC-7984"
     )
   end
 
@@ -198,7 +203,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     from(
       ctb in __MODULE__,
       where: ctb.address_hash == ^address_hash,
-      where: ctb.value > 0,
+      where: ctb.value > 0 or ctb.token_type == "ERC-7984",
       left_join: t in assoc(ctb, :token),
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       preload: [token: t],
@@ -216,7 +221,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     from(
       ctb in __MODULE__,
       where: ctb.address_hash == ^address_hash,
-      where: ctb.value > 0,
+      where: ctb.value > 0 or ctb.token_type == "ERC-7984",
       left_join: t in assoc(ctb, :token),
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       preload: [token: t],
@@ -303,14 +308,14 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   @doc """
   Builds an `t:Ecto.Query.t/0` to fetch addresses that hold the token.
 
-  Token holders cannot be the burn address (#{@burn_address_hash}) and must have a non-zero value.
+  Token holders cannot be the burn address (#{@burn_address_hash}) and must have a non-zero value or be an ERC-7984 token.
   """
   def token_holders_query(token_contract_address_hash) do
     from(
       tb in __MODULE__,
       where: tb.token_contract_address_hash == ^token_contract_address_hash,
       where: tb.address_hash != ^@burn_address_hash,
-      where: tb.value > 0
+      where: tb.value > 0 or tb.token_type == "ERC-7984"
     )
   end
 
@@ -353,5 +358,53 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
       end)
 
     Stream.concat([row_names], holders_list)
+  end
+
+  @doc """
+  Returns a stream of all current token balances that weren't fetched values.
+  """
+  @spec stream_unfetched_current_token_balances(
+          initial :: accumulator,
+          reducer :: (entry :: __MODULE__.t(), accumulator -> accumulator),
+          limited? :: boolean()
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_unfetched_current_token_balances(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
+    unfetched_current_token_balances()
+    |> TokenBalance.add_token_balances_fetcher_limit(limited?)
+    |> Repo.stream_reduce(initial, reducer)
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch the unfetched current token balances.
+
+  Unfetched current token balances are the ones that have the column `value_fetched_at` nil or the value is null. This query also
+  ignores the burn_address for tokens ERC-721 since the most tokens ERC-721 don't allow get the
+  balance for burn_address.
+  """
+  # credo:disable-for-next-line /Complexity/
+  def unfetched_current_token_balances do
+    if BackgroundMigrations.get_ctb_token_type_finished() do
+      from(
+        ctb in __MODULE__,
+        where:
+          ((ctb.address_hash != ^@burn_address_hash and ctb.token_type == "ERC-721") or ctb.token_type == "ERC-20" or
+             ctb.token_type == "ZRC-2" or
+             ctb.token_type == "ERC-1155" or ctb.token_type == "ERC-404") and
+            (is_nil(ctb.value_fetched_at) or is_nil(ctb.value)) and
+            (is_nil(ctb.refetch_after) or ctb.refetch_after < ^Timex.now())
+      )
+    else
+      from(
+        ctb in __MODULE__,
+        join: t in Token,
+        on: ctb.token_contract_address_hash == t.contract_address_hash,
+        where:
+          ((ctb.address_hash != ^@burn_address_hash and t.type == "ERC-721") or t.type == "ERC-20" or t.type == "ZRC-2" or
+             t.type == "ERC-1155" or t.type == "ERC-404") and
+            (is_nil(ctb.value_fetched_at) or is_nil(ctb.value)) and
+            (is_nil(ctb.refetch_after) or ctb.refetch_after < ^Timex.now())
+      )
+    end
   end
 end

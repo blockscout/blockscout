@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Type do
 
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  @token_types ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
+  @token_types ["ERC-20", "ERC-721", "ERC-1155", "ERC-404", "ERC-7984"]
 
   if @chain_type == :zilliqa do
     @chain_type_token_types ["ZRC-2"]

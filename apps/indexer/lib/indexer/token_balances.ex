@@ -49,7 +49,9 @@ defmodule Indexer.TokenBalances do
       token_balances
       |> Enum.filter(fn token_balance ->
         if Map.has_key?(token_balance, :token_type) do
-          token_balance.token_type !== "ERC-1155" && !(token_balance.token_type == "ERC-404" && token_balance.token_id)
+          token_balance.token_type !== "ERC-1155" &&
+            token_balance.token_type !== "ERC-7984" &&
+            !(token_balance.token_type == "ERC-404" && token_balance.token_id)
         else
           true
         end
