@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- ERC-7984 Confidential Tokens ([#13593](https://github.com/blockscout/blockscout/pull/13593))
 - Move current token balances into a separate fetcher ([#13923](https://github.com/blockscout/blockscout/issues/13923))
 - Re-architect internal transaction format with call-type enum, error dictionary, and normalization ([#13893](https://github.com/blockscout/blockscout/issues/13893))
 - Add audit-reports import endpoint ([#13884](https://github.com/blockscout/blockscout/issues/13884))
