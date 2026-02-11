@@ -7,6 +7,8 @@ defmodule Indexer.Fetcher.CurrentTokenBalanceImporter do
 
   require Logger
 
+  import Indexer.Block.Fetcher, only: [async_import_current_token_balances: 2]
+
   alias Explorer.Chain
 
   @default_update_interval :timer.minutes(1)
@@ -81,8 +83,9 @@ defmodule Indexer.Fetcher.CurrentTokenBalanceImporter do
     ctb_params = Map.values(ctb_map)
 
     case Chain.import(%{address_current_token_balances: %{params: ctb_params}, timeout: :infinity}) do
-      {:ok, _imported} ->
+      {:ok, imported} ->
         Logger.info("[CurrentTokenBalanceImporter] imported #{Enum.count(ctb_params)} balances")
+        async_import_current_token_balances(imported, true)
 
         %{}
 

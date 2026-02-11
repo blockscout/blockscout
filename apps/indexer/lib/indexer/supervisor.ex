@@ -52,6 +52,7 @@ defmodule Indexer.Supervisor do
     RootstockData,
     Token,
     TokenCountersUpdater,
+    TokenHoldersCountUpdater,
     TokenInstanceImporter,
     TokenTotalSupplyUpdater,
     TokenUpdater,
@@ -282,6 +283,7 @@ defmodule Indexer.Supervisor do
         {TokenTotalSupplyUpdater, [[]]},
         AddressImporter,
         TokenInstanceImporter,
+        TokenHoldersCountUpdater,
         CurrentTokenBalanceImporter,
 
         # Notifications cleaner
