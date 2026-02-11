@@ -3009,6 +3009,68 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(tokentx_schema(), response)
     end
 
+    test "returns ERC-7984 transfers with confidential amounts", %{conn: conn} do
+      transaction =
+        %{block: block} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      erc7984_token = insert(:token, %{type: "ERC-7984"})
+
+      token_transfer =
+        insert(:token_transfer,
+          block: transaction.block,
+          transaction: transaction,
+          block_number: block.number,
+          token_contract_address: erc7984_token.contract_address,
+          token_type: "ERC-7984",
+          amount: nil
+        )
+
+      params = %{
+        "module" => "account",
+        "action" => "token7984tx",
+        "address" => to_string(token_transfer.from_address.hash)
+      }
+
+      expected_result = [
+        %{
+          "blockNumber" => to_string(transaction.block_number),
+          "timeStamp" => to_string(DateTime.to_unix(block.timestamp)),
+          "hash" => to_string(token_transfer.transaction_hash),
+          "nonce" => to_string(transaction.nonce),
+          "blockHash" => to_string(block.hash),
+          "from" => to_string(token_transfer.from_address_hash),
+          "contractAddress" => to_string(token_transfer.token_contract_address_hash),
+          "to" => to_string(token_transfer.to_address_hash),
+          "value" => nil,
+          "tokenName" => erc7984_token.name,
+          "tokenSymbol" => erc7984_token.symbol,
+          "tokenDecimal" => to_string(erc7984_token.decimals),
+          "transactionIndex" => to_string(transaction.index),
+          "gas" => to_string(transaction.gas),
+          "gasPrice" => to_string(transaction.gas_price.value),
+          "gasUsed" => to_string(transaction.gas_used),
+          "cumulativeGasUsed" => to_string(transaction.cumulative_gas_used),
+          "input" => to_string(transaction.input),
+          "confirmations" => "0",
+          "functionName" => "",
+          "methodId" => ""
+        }
+      ]
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == expected_result
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(token7984tx_schema(), response)
+    end
+
     test "returns all the required fields", %{conn: conn} do
       transaction =
         %{block: block} =
@@ -5048,6 +5110,38 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "to" => %{"type" => "string"},
           "logIndex" => %{"type" => "string"},
           "value" => %{"type" => "string"},
+          "tokenName" => %{"type" => "string"},
+          "tokenID" => %{"type" => "string"},
+          "tokenSymbol" => %{"type" => "string"},
+          "tokenDecimal" => %{"type" => "string"},
+          "transactionIndex" => %{"type" => "string"},
+          "gas" => %{"type" => "string"},
+          "gasPrice" => %{"type" => "string"},
+          "gasUsed" => %{"type" => "string"},
+          "cumulativeGasUsed" => %{"type" => "string"},
+          "input" => %{"type" => "string"},
+          "confirmations" => %{"type" => "string"}
+        }
+      }
+    })
+  end
+
+  defp token7984tx_schema do
+    resolve_schema(%{
+      "type" => ["array", "null"],
+      "items" => %{
+        "type" => "object",
+        "properties" => %{
+          "blockNumber" => %{"type" => "string"},
+          "timeStamp" => %{"type" => "string"},
+          "hash" => %{"type" => "string"},
+          "nonce" => %{"type" => "string"},
+          "blockHash" => %{"type" => "string"},
+          "from" => %{"type" => "string"},
+          "contractAddress" => %{"type" => "string"},
+          "to" => %{"type" => "string"},
+          "logIndex" => %{"type" => "string"},
+          "value" => %{"type" => "null"},
           "tokenName" => %{"type" => "string"},
           "tokenID" => %{"type" => "string"},
           "tokenSymbol" => %{"type" => "string"},

@@ -112,6 +112,10 @@ defmodule BlockScoutWeb.Tokens.Helper do
     end
   end
 
+  defp do_token_transfer_amount(%Token{decimals: _decimals}, "ERC-7984", _amount, _amounts, _token_ids) do
+    {:ok, "*confidential*"}
+  end
+
   defp do_token_transfer_amount(_token, _token_type, _amount, _amounts, _token_ids) do
     nil
   end
@@ -228,6 +232,10 @@ defmodule BlockScoutWeb.Tokens.Helper do
     else
       {:ok, :erc1155_erc404_instance, amounts, token_ids, decimals}
     end
+  end
+
+  defp do_token_transfer_amount_for_api(%Token{decimals: decimals}, "ERC-7984", _amount, _amounts, _token_ids) do
+    {:ok, nil, decimals}
   end
 
   defp do_token_transfer_amount_for_api(_token, _token_type, _amount, _amounts, _token_ids) do

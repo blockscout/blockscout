@@ -341,6 +341,9 @@ defmodule Explorer.Etherscan do
 
       :zrc2 ->
         list_zrc2_token_transfers(address_hash, contract_address_hash, options)
+
+      :erc7984 ->
+        list_erc7984_token_transfers(address_hash, contract_address_hash, options)
     end
   end
 
@@ -622,6 +625,12 @@ defmodule Explorer.Etherscan do
 
   defp list_erc404_token_transfers(address_hash, contract_address_hash, options) do
     "ERC-404"
+    |> base_token_transfers_query(address_hash, contract_address_hash, options)
+    |> Repo.replica().all()
+  end
+
+  defp list_erc7984_token_transfers(address_hash, contract_address_hash, options) do
+    "ERC-7984"
     |> base_token_transfers_query(address_hash, contract_address_hash, options)
     |> Repo.replica().all()
   end
