@@ -951,7 +951,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       in: :query,
       schema: %Schema{type: :integer},
       required: false,
-      description: "Transaction index for paging"
+      description: "Item index for paging"
     },
     "index_nullable" => %Parameter{
       name: :index,
