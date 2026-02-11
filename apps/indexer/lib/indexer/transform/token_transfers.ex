@@ -41,7 +41,7 @@ defmodule Indexer.Transform.TokenTransfers do
 
     erc20_and_erc721_token_transfers =
       erc20_and_erc721_token_transfers_filtered
-      |> Enum.reduce(initial_acc, &do_parse/2)
+      |> Enum.reduce(initial_acc, &do_parse(&1, &2, :erc20_erc721))
 
     weth_transfers =
       logs
@@ -50,7 +50,7 @@ defmodule Indexer.Transform.TokenTransfers do
            log.first_topic == TokenTransfer.weth_withdrawal_signature()) &&
           TokenTransfer.whitelisted_weth_contract?(log.address_hash)
       end)
-      |> Enum.reduce(initial_acc, &do_parse/2)
+      |> Enum.reduce(initial_acc, &do_parse(&1, &2, :erc20_erc721))
       |> drop_repeated_token_transfers(erc20_and_erc721_token_transfers.token_transfers)
 
     erc1155_token_transfers =
@@ -210,7 +210,7 @@ defmodule Indexer.Transform.TokenTransfers do
     Enum.find_index(@token_types_priority_order, &(&1 == token_type))
   end
 
-  defp do_parse(log, %{tokens: tokens, token_transfers: token_transfers} = acc, type \\ :erc20_erc721) do
+  defp do_parse(log, %{tokens: tokens, token_transfers: token_transfers} = acc, type) do
     parse_result =
       case type do
         :erc1155 -> parse_erc1155_params(log)

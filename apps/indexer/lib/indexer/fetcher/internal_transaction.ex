@@ -22,7 +22,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
-  alias Explorer.Chain.{Block, Hash, PendingBlockOperation, PendingTransactionOperation, Transaction}
+  alias Explorer.Chain.{Block, Hash, Import, PendingBlockOperation, PendingTransactionOperation, Transaction}
   alias Explorer.Chain.Cache.{Accounts, Blocks}
   alias Explorer.Chain.Zilliqa.Helper, as: ZilliqaHelper
   alias Indexer.{BufferedTask, Tracer}
@@ -430,6 +430,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     block_numbers = data_to_block_numbers(transactions_params_or_unique_numbers, data_type)
 
     Block.set_refetch_needed(block_numbers)
+    Import.Runner.Blocks.process_blocks_consensus(block_numbers)
 
     Logger.error(fn ->
       [

@@ -569,15 +569,18 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           on: block.hash == s.hash,
           # we don't want to remove consensus from blocks that will be upserted
           where: block.hash not in ^hashes,
+          where: block.consensus == true,
           select: {block.number, block.hash}
         ),
         [set: [consensus: false, updated_at: updated_at]],
         timeout: timeout
       )
 
-    removed_consensus_block_numbers =
+    {removed_consensus_block_numbers, removed_consensus_block_hashes} =
       removed_consensus_blocks
-      |> Enum.map(fn {number, _hash} -> number end)
+      |> Enum.reduce({[], []}, fn {number, hash}, {numbers, hashes} ->
+        {[number | numbers], [hash | hashes]}
+      end)
 
     maximum_block_number = BlockNumber.get_max()
 
@@ -595,8 +598,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         transaction in Transaction,
         join: s in subquery(acquire_query),
         on: transaction.block_hash == s.hash,
-        # we don't want to remove consensus from blocks that will be upserted
-        where: transaction.block_hash not in ^hashes
+        where: transaction.block_hash in ^removed_consensus_block_hashes,
+        where: transaction.block_consensus == true
       ),
       [set: [block_consensus: false, updated_at: updated_at]],
       timeout: timeout
@@ -607,8 +610,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         token_transfer in TokenTransfer,
         join: s in subquery(acquire_query),
         on: token_transfer.block_number == s.number,
-        # we don't want to remove consensus from blocks that will be upserted
-        where: token_transfer.block_hash not in ^hashes
+        where: token_transfer.block_hash in ^removed_consensus_block_hashes,
+        where: token_transfer.block_consensus == true
       ),
       [set: [block_consensus: false, updated_at: updated_at]],
       timeout: timeout
@@ -620,8 +623,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         t in Transaction,
         join: s in subquery(acquire_query),
         on: t.block_hash == s.hash,
-        # we don't want to remove contract code from blocks that will be upserted
-        where: t.block_hash not in ^hashes,
+        where: t.block_hash in ^removed_consensus_block_hashes,
         where: not is_nil(t.created_contract_address_hash),
         select: t.created_contract_address_hash
       )
@@ -651,7 +653,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           zrc2_token_transfer in Zrc2TokenTransfer,
           join: s in subquery(acquire_query),
           on: zrc2_token_transfer.block_number == s.number,
-          where: zrc2_token_transfer.block_hash not in ^hashes
+          where: zrc2_token_transfer.block_hash in ^removed_consensus_block_hashes
         ),
         timeout: timeout
       )
@@ -668,19 +670,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   end
 
   @doc """
-    Processes consensus for blocks that failed to import completely.
-
-    This function handles the consistency updates needed when a block import fails,
-    ensuring that the chain's consensus state remains valid.
-
     ## Parameters
-    - `blocks_changes`: List of block changes to process
+    - `blocks_changes`: List of block changes to process or list of block numbers to query
 
     ## Returns
     - `{:ok, removed_consensus_blocks}`: List of tuples {number, hash} for blocks that lost consensus
     - `{:error, reason}`: The error encountered during processing
   """
-  @spec process_blocks_consensus([map()], module(), map() | nil) ::
+  @spec process_blocks_consensus([map()] | [non_neg_integer()], module(), map() | nil) ::
           {:ok, [{non_neg_integer(), binary()}]} | {:error, map()}
   def process_blocks_consensus(blocks_changes, repo \\ ExplorerRepo, insert_options \\ nil) do
     opts =
@@ -690,7 +687,31 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           timestamps: %{updated_at: DateTime.utc_now()}
         }
 
-    lose_consensus(repo, blocks_changes, opts)
+    enriched_blocks_changes =
+      if is_list(blocks_changes) and Enum.all?(blocks_changes, &is_integer/1) do
+        # blocks_changes contains block numbers, enrich with Block objects
+        consensus_blocks =
+          repo.all(
+            from(b in Block,
+              where: b.number in ^blocks_changes and b.consensus == true,
+              select: b
+            )
+          )
+
+        Enum.map(consensus_blocks, fn block ->
+          %{
+            hash: block.hash,
+            number: block.number,
+            parent_hash: block.parent_hash,
+            consensus: false
+          }
+        end)
+      else
+        # blocks_changes already contains block change maps
+        blocks_changes
+      end
+
+    lose_consensus(repo, enriched_blocks_changes, opts)
   end
 
   defp new_pending_block_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
