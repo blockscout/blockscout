@@ -25,6 +25,9 @@ defmodule Explorer.Factory do
   alias Explorer.Admin.Administrator
   alias Explorer.Chain.Beacon.{Blob, BlobTransaction, Deposit}
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
+  alias Explorer.Chain.Scroll.Batch, as: ScrollBatch
+  alias Explorer.Chain.Scroll.BatchBundle, as: ScrollBatchBundle
+  alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
 
   alias Explorer.Chain.{
@@ -1471,6 +1474,39 @@ defmodule Explorer.Factory do
       |> Hash.Full.cast()
 
     hash
+  end
+
+  def scroll_bridge_factory do
+    %ScrollBridge{
+      type: :deposit,
+      index: sequence("scroll_bridge_index", & &1),
+      l1_transaction_hash: transaction_hash(),
+      l2_transaction_hash: transaction_hash(),
+      amount: Enum.random(1..100_000),
+      block_number: block_number(),
+      block_timestamp: DateTime.utc_now(),
+      message_hash: transaction_hash()
+    }
+  end
+
+  def scroll_batch_factory do
+    %ScrollBatch{
+      number: sequence("scroll_batch_index", & &1),
+      commit_transaction_hash: transaction_hash(),
+      commit_block_number: block_number(),
+      commit_timestamp: DateTime.utc_now(),
+      bundle_id: 0,
+      container: :in_calldata
+    }
+  end
+
+  def scroll_batch_bundle_factory do
+    %ScrollBatchBundle{
+      final_batch_number: 50,
+      finalize_transaction_hash: transaction_hash(),
+      finalize_block_number: block_number(),
+      finalize_timestamp: DateTime.utc_now()
+    }
   end
 
   def random_bool, do: Enum.random([true, false])
