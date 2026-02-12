@@ -147,7 +147,7 @@ defmodule Explorer.Chain.Address.TokenBalance do
     |> where([tb], tb.token_contract_address_hash == ^token_contract_address_hash)
     |> where([tb], tb.block_number <= ^block_number)
     |> where([tb], is_nil(tb.value_fetched_at) or is_nil(tb.value))
-    |> Repo.delete_all()
+    |> Repo.delete_all(timeout: :infinity)
   end
 
   @doc """
