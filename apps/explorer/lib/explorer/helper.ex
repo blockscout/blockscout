@@ -305,6 +305,7 @@ defmodule Explorer.Helper do
 
   @doc """
   Conditionally hides scam addresses in the given query for token transfers.
+  If query already has a named binding :token, it MUST be an inner join with the token table.
 
   Rationale of inner join with token table:
 
