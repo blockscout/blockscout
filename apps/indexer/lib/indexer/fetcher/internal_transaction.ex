@@ -446,6 +446,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
     block_numbers = data_to_block_numbers(block_numbers_or_transactions, data_type)
 
     Block.set_refetch_needed(block_numbers)
+    Import.Runner.Blocks.process_blocks_consensus(block_numbers)
 
     transaction_hashes =
       internal_transactions_params
@@ -473,11 +474,15 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end
   end
 
-  defp invalidate_block_from_error(%{"blockNumber" => block_number}),
-    do: Block.set_refetch_needed([block_number])
+  defp invalidate_block_from_error(%{"blockNumber" => block_number}) do
+    Block.set_refetch_needed([block_number])
+    Import.Runner.Blocks.process_blocks_consensus([block_number])
+  end
 
-  defp invalidate_block_from_error(%{block_number: block_number}),
-    do: Block.set_refetch_needed([block_number])
+  defp invalidate_block_from_error(%{block_number: block_number}) do
+    Block.set_refetch_needed([block_number])
+    Import.Runner.Blocks.process_blocks_consensus([block_number])
+  end
 
   defp invalidate_block_from_error(_error_data), do: :ok
 
