@@ -332,7 +332,13 @@ defmodule Explorer.Helper do
     cond do
       Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] ->
         query
-        |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
+        |> then(fn q ->
+          if Ecto.Query.has_named_binding?(q, :token) do
+            q
+          else
+            join(q, :inner, [tt], token in assoc(tt, :token), as: :token)
+          end
+        end)
         |> join(:left, [token: token], sabm in ScamBadgeToAddress,
           as: :sabm,
           on: sabm.address_hash == token.contract_address_hash
