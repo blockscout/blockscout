@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.TokenHoldersCountUpdater do
 
   alias Explorer.Chain.Import
   alias Explorer.Chain.Import.Runner.Tokens
+  alias Explorer.Repo
 
   @default_update_interval :timer.minutes(1)
 
