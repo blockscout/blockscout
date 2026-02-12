@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.3.4
+
+### ⚡ Performance
+
+- Fix /token-transfers timeout when filtering scam tokens enabled ([#13973](https://github.com/blockscout/blockscout/pull/13973))
+
 ## 9.3.3
 
 ### ⚙️ Miscellaneous Tasks

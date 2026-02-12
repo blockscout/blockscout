@@ -21,7 +21,7 @@ jobs:
     name: Push Docker image to GitHub Container Registry
     runs-on: build
     env:
-      RELEASE_VERSION: 9.3.3
+      RELEASE_VERSION: 9.3.4
       API_GRAPHQL_MAX_COMPLEXITY: 10400
     steps:
       - uses: actions/checkout@v5
