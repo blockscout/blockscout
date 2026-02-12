@@ -105,6 +105,13 @@
 | `CACHE_PBO_COUNT_PERIOD`  | Time interval to restart the task which calculates the total pending_block_operations count.  | `20m` | v5.2.0+ |  | v10.0.0 |
 
 
+## 9.3.4
+
+### ⚡ Performance
+
+- Fix /token-transfers timeout when filtering scam tokens enabled ([#13973](https://github.com/blockscout/blockscout/pull/13973))
+
+
 ## 9.3.3
 
 ### ⚙️ Miscellaneous Tasks
