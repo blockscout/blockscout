@@ -335,7 +335,7 @@ defmodule Explorer.Helper do
         |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
         |> join(:left, [token: token], sabm in ScamBadgeToAddress,
           as: :sabm,
-          on: sabm.address_hash == token.address_hash
+          on: sabm.address_hash == token.contract_address_hash
         )
         |> where([sabm: sabm], is_nil(sabm.address_hash))
 
