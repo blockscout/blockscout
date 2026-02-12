@@ -624,7 +624,6 @@ defmodule Explorer.Chain.Block do
     query =
       from(block in Block,
         where: block.number in ^block_numbers,
-        where: block.consensus == true,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: block.hash],
         lock: "FOR NO KEY UPDATE"
