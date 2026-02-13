@@ -51,7 +51,6 @@
 - Fix NaN gas limit for `selfdestruct` internal transaction in the REST API ([#13827](https://github.com/blockscout/blockscout/issues/13827))
 - Handle normal termination of Indexer.Fetcher.OnDemand.ContractCode process ([#13828](https://github.com/blockscout/blockscout/issues/13828))
 - Validate block number in the api/v2/blocks/:block_number API endpoint ([#13795](https://github.com/blockscout/blockscout/issues/13795))
-- Fix block reindex condition in ContractCreator on-demand ([#13831](https://github.com/blockscout/blockscout/issues/13831))
 - Fix methodId detection ([#13811](https://github.com/blockscout/blockscout/issues/13811))
 - Improve Arbitrum L1->L2 message discovery for reorg and RPC consistency ([#13770](https://github.com/blockscout/blockscout/issues/13770))
 
@@ -103,6 +102,13 @@
 | Variable                                              | Description                                                                                                                                                                                                                                                                                                                                        | Default                                                                                       | Version  | Deprecated in Version |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------------- | --------------------- |
 | `CACHE_PBO_COUNT_PERIOD`  | Time interval to restart the task which calculates the total pending_block_operations count.  | `20m` | v5.2.0+ |  | v10.0.0 |
+
+
+## 9.3.5
+
+### 🐛 Bug Fixes
+
+- Fix block reindex condition in ContractCreator on-demand ([#13831](https://github.com/blockscout/blockscout/issues/13831))
 
 
 ## 9.3.4
