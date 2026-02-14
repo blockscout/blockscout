@@ -11,8 +11,9 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   alias Explorer.Chain.MultichainSearchDb.CountersExportQueue, as: MultichainSearchDbCountersExportQueue
   alias Explorer.Chain.MultichainSearchDb.MainExportQueue, as: MultichainSearchDbMainExportQueue
   alias Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue, as: MultichainSearchDbTokenInfoExportQueue
-  alias Explorer.Chain.PendingBlockOperation
+  alias Explorer.Chain.{PendingBlockOperation, PendingOperationsHelper, PendingTransactionOperation}
   alias Explorer.Chain.Token.Instance
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Repo
 
   @doc """
@@ -21,33 +22,74 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   # sobelow_skip ["SQL"]
   @spec missing_blocks_count() :: integer()
   def missing_blocks_count do
-    first_block = RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :block_ranges))
+    block_ranges = RangesHelper.get_block_ranges()
 
-    sql_string = """
-    SELECT COUNT(DISTINCT b1.number) AS missing_blocks_count
-    FROM generate_series($1, (SELECT MAX(number) FROM blocks)) AS b1(number)
-    WHERE NOT EXISTS (
-      SELECT 1 FROM blocks b2
-      WHERE b2.number=b1.number
-      AND b2.consensus
-    );
-    """
+    if block_ranges == [] do
+      0
+    else
+      {sql_parts, params} =
+        Enum.reduce(block_ranges, {[], []}, fn
+          first..last//_, {parts, acc_params} ->
+            from = min(first, last)
+            to = max(first, last)
+            param_index_from = length(acc_params) + 1
+            param_index_to = length(acc_params) + 2
 
-    case SQL.query(Repo, sql_string, [first_block], timeout: :infinity) do
-      {:ok, %Postgrex.Result{command: :select, columns: ["missing_blocks_count"], rows: [[missing_blocks_count]]}} ->
-        missing_blocks_count
+            part = """
+            SELECT COUNT(*) AS missing_count
+            FROM generate_series($#{param_index_from}::bigint, $#{param_index_to}::bigint) AS num(number)
+            WHERE NOT EXISTS (
+              SELECT 1 FROM blocks b WHERE b.number = num.number AND b.consensus
+            )
+            """
 
-      _ ->
-        0
+            {[part | parts], [to, from | acc_params]}
+
+          start_from, {parts, acc_params} ->
+            param_index = length(acc_params) + 1
+
+            part = """
+            SELECT COUNT(*) AS missing_count
+            FROM generate_series(
+              $#{param_index}::bigint,
+              (SELECT COALESCE(MAX(number), $#{param_index}) FROM blocks)::bigint
+            ) AS num(number)
+            WHERE NOT EXISTS (
+              SELECT 1 FROM blocks b WHERE b.number = num.number AND b.consensus
+            )
+            """
+
+            {[part | parts], [start_from | acc_params]}
+        end)
+
+      sql_string =
+        sql_parts
+        |> Enum.reverse()
+        |> Enum.join("\n  UNION ALL\n  ")
+        |> then(&"SELECT SUM(missing_count) AS missing_blocks_count FROM (\n  #{&1}\n) AS counts(missing_count)")
+
+      case SQL.query(Repo, sql_string, Enum.reverse(params), timeout: :infinity) do
+        {:ok, %Postgrex.Result{command: :select, columns: ["missing_blocks_count"], rows: [[missing_blocks_count]]}} ->
+          normalize_missing_blocks_count(missing_blocks_count)
+
+        _ ->
+          0
+      end
     end
   end
+
+  defp normalize_missing_blocks_count(%Decimal{} = value), do: Decimal.to_integer(value)
+  defp normalize_missing_blocks_count(value), do: value
 
   @doc """
   Query to get the number of missing internal transactions in the DB
   """
   @spec missing_internal_transactions_count() :: integer()
   def missing_internal_transactions_count do
-    Repo.aggregate(PendingBlockOperation, :count, :block_hash, timeout: :infinity)
+    case PendingOperationsHelper.pending_operations_type() do
+      "blocks" -> Repo.aggregate(PendingBlockOperation, :count, :block_hash, timeout: :infinity)
+      "transactions" -> Repo.aggregate(PendingTransactionOperation, :count, :block_hash, timeout: :infinity)
+    end
   end
 
   @doc """
@@ -88,14 +130,24 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   """
   @spec missing_archival_token_balances_count() :: integer()
   def missing_archival_token_balances_count do
-    query =
-      from(
-        token_balance in TokenBalance,
-        where: is_nil(token_balance.value_fetched_at)
-      )
+    if archival_token_balances_fetcher_disabled?() do
+      0
+    else
+      query =
+        from(
+          token_balance in TokenBalance,
+          where: is_nil(token_balance.value_fetched_at)
+        )
 
-    query
-    |> Repo.aggregate(:count, :id, timeout: :infinity)
+      query
+      |> Repo.aggregate(:count, :id, timeout: :infinity)
+    end
+  end
+
+  defp archival_token_balances_fetcher_disabled? do
+    :indexer
+    |> Application.get_env(Indexer.Fetcher.TokenBalance.Historical.Supervisor, [])
+    |> Keyword.get(:disabled?)
   end
 
   @doc """
@@ -185,7 +237,11 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   """
   @spec multichain_search_db_export_balances_queue_count() :: integer()
   def multichain_search_db_export_balances_queue_count do
-    Repo.aggregate(MultichainSearchDbBalancesExportQueue, :count, :id, timeout: :infinity)
+    if multichain_search_enabled?() and not multichain_search_balances_export_queue_disabled?() do
+      Repo.aggregate(MultichainSearchDbBalancesExportQueue, :count, :id, timeout: :infinity)
+    else
+      0
+    end
   end
 
   @doc """
@@ -193,7 +249,11 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   """
   @spec multichain_search_db_export_counters_queue_count() :: integer()
   def multichain_search_db_export_counters_queue_count do
-    Repo.aggregate(MultichainSearchDbCountersExportQueue, :count, :timestamp, timeout: :infinity)
+    if multichain_search_enabled?() and not multichain_search_counters_export_queue_disabled?() do
+      Repo.aggregate(MultichainSearchDbCountersExportQueue, :count, :timestamp, timeout: :infinity)
+    else
+      0
+    end
   end
 
   @doc """
@@ -201,7 +261,11 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   """
   @spec multichain_search_db_export_token_info_queue_count() :: integer()
   def multichain_search_db_export_token_info_queue_count do
-    Repo.aggregate(MultichainSearchDbTokenInfoExportQueue, :count, :address_hash, timeout: :infinity)
+    if multichain_search_enabled?() and not multichain_search_token_info_export_queue_disabled?() do
+      Repo.aggregate(MultichainSearchDbTokenInfoExportQueue, :count, :address_hash, timeout: :infinity)
+    else
+      0
+    end
   end
 
   @doc """
@@ -209,6 +273,38 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   """
   @spec multichain_search_db_main_export_queue_count() :: integer()
   def multichain_search_db_main_export_queue_count do
-    Repo.aggregate(MultichainSearchDbMainExportQueue, :count, :hash, timeout: :infinity)
+    if multichain_search_enabled?() and not multichain_search_main_export_queue_disabled?() do
+      Repo.aggregate(MultichainSearchDbMainExportQueue, :count, :hash, timeout: :infinity)
+    else
+      0
+    end
+  end
+
+  defp multichain_search_enabled? do
+    MultichainSearch.enabled?()
+  end
+
+  defp multichain_search_main_export_queue_disabled? do
+    :indexer
+    |> Application.get_env(Indexer.Fetcher.MultichainSearchDb.MainExportQueue.Supervisor, [])
+    |> Keyword.get(:disabled?)
+  end
+
+  defp multichain_search_balances_export_queue_disabled? do
+    :indexer
+    |> Application.get_env(Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue.Supervisor, [])
+    |> Keyword.get(:disabled?)
+  end
+
+  defp multichain_search_token_info_export_queue_disabled? do
+    :indexer
+    |> Application.get_env(Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue.Supervisor, [])
+    |> Keyword.get(:disabled?)
+  end
+
+  defp multichain_search_counters_export_queue_disabled? do
+    :indexer
+    |> Application.get_env(Indexer.Fetcher.MultichainSearchDb.CountersExportQueue.Supervisor, [])
+    |> Keyword.get(:disabled?)
   end
 end
