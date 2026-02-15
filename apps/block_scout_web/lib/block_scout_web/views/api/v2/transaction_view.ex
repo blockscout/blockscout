@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     Address,
     Block,
     DecodingHelper,
+    FheOperation,
     Log,
     SignedAuthorization,
     SmartContract,
@@ -235,6 +236,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     signed_authorizations
     |> Enum.sort_by(& &1.index, :asc)
     |> Enum.map(&prepare_signed_authorization/1)
+  end
+
+  def render("fhe_operations.json", %{
+        operations: operations,
+        total_hcu: total_hcu,
+        max_depth_hcu: max_depth_hcu,
+        operation_count: operation_count
+      }) do
+    %{
+      "items" => Enum.map(operations, &prepare_fhe_operation/1),
+      "total_hcu" => total_hcu,
+      "max_depth_hcu" => max_depth_hcu,
+      "operation_count" => operation_count
+    }
   end
 
   @doc """
@@ -1010,20 +1025,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     result
   end
 
-  @doc """
-  Renders FHE operations for a transaction.
-  """
-  def render("fhe_operations.json", %{operations: operations, total_hcu: total_hcu, max_depth_hcu: max_depth_hcu, operation_count: operation_count}) do
-    %{
-      "items" => Enum.map(operations, &prepare_fhe_operation/1),
-      "total_hcu" => total_hcu,
-      "max_depth_hcu" => max_depth_hcu,
-      "operation_count" => operation_count
-    }
-  end
-
-
-
   defp prepare_fhe_operation(operation) do
     caller_info =
       if operation.caller do
@@ -1052,7 +1053,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   # Returns the count of FHE operations for a transaction.
   # Returns 0 if no operations exist.
   defp fhe_operations_count(transaction_hash) do
-    metrics = Explorer.Chain.FheOperation.transaction_metrics(transaction_hash)
+    metrics = FheOperation.transaction_metrics(transaction_hash)
     metrics.operation_count || 0
   end
 end

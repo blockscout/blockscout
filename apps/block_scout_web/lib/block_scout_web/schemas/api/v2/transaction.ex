@@ -479,7 +479,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         fhe_operations_count: %Schema{
           type: :integer,
           description: "Number of FHE (Fully Homomorphic Encryption) operations in the transaction",
-          nullable: false,
+          nullable: false
         }
       },
       required: [

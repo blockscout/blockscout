@@ -274,4 +274,3 @@ defmodule Explorer.Chain.FheOperationTest do
     end
   end
 end
-

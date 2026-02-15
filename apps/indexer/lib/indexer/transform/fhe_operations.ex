@@ -26,16 +26,17 @@ defmodule Indexer.Transform.FheOperations do
     %{fhe_operations: fhe_operations}
   end
 
-  @doc """
-  Filters logs to only include FHE-related events.
-  """
   defp filter_fhe_logs(logs) do
     all_events = Parser.all_fhe_events()
 
     Enum.filter(logs, fn log ->
       case log.first_topic do
-        nil -> false
-        "" -> false
+        nil ->
+          false
+
+        "" ->
+          false
+
         topic ->
           normalized = sanitize_first_topic(topic)
           normalized in all_events
@@ -53,7 +54,7 @@ defmodule Indexer.Transform.FheOperations do
     end)
   end
 
-  defp parse_transaction_logs(tx_logs) when is_list(tx_logs) and length(tx_logs) > 0 do
+  defp parse_transaction_logs(tx_logs) when is_list(tx_logs) and tx_logs != [] do
     # Get first log to extract common fields
     first_log = hd(tx_logs)
     transaction_hash = first_log.transaction_hash
@@ -97,11 +98,11 @@ defmodule Indexer.Transform.FheOperations do
     event_name = Parser.get_event_name(log.first_topic)
     caller = extract_caller_binary(log.second_topic)
     operation_data = Parser.decode_event_data(log, event_name)
-    
+
     fhe_type = Parser.extract_fhe_type(operation_data, event_name)
     is_scalar = Map.get(operation_data, :scalar_byte) == <<0x01>>
     hcu_cost = Parser.calculate_hcu_cost(event_name, fhe_type, is_scalar)
-    
+
     %{
       log_index: log.index,
       operation: event_name,

@@ -55,6 +55,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.Cache.Counters.{NewPendingTransactionsCount, Transactions24hCount}
+  alias Explorer.Chain.FheOperation
   alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
@@ -866,8 +867,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def fhe_operations(conn, %{transaction_hash_param: transaction_hash_string} = params) do
     with {:ok, _transaction, transaction_hash} <- validate_transaction(transaction_hash_string, params) do
       # Fetch pre-parsed FHE operations from database
-      operations = Explorer.Chain.FheOperation.by_transaction_hash(transaction_hash)
-      metrics = Explorer.Chain.FheOperation.transaction_metrics(transaction_hash)
+      operations = FheOperation.by_transaction_hash(transaction_hash)
+      metrics = FheOperation.transaction_metrics(transaction_hash)
 
       conn
       |> put_status(200)
@@ -879,8 +880,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       )
     end
   end
-
-
 
   @doc """
     Function to handle GET requests to `/api/v2/transactions/:transaction_hash_param/state-changes` endpoint.

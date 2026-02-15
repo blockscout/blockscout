@@ -62,17 +62,18 @@ defmodule Explorer.Chain.FheOperatorPricesTest do
 
   describe "get_type_name/1" do
     test "returns correct type name for type bytes" do
+      # Mapping matches fhevm ALL_FHE_TYPE_INFOS (fheTypeInfos.ts)
       assert "Bool" == FheOperatorPrices.get_type_name(0)
-      assert "Uint8" == FheOperatorPrices.get_type_name(1)
-      assert "Uint16" == FheOperatorPrices.get_type_name(2)
-      assert "Uint32" == FheOperatorPrices.get_type_name(3)
-      assert "Uint64" == FheOperatorPrices.get_type_name(4)
-      assert "Uint128" == FheOperatorPrices.get_type_name(5)
-      assert "Uint160" == FheOperatorPrices.get_type_name(6)
-      assert "Uint256" == FheOperatorPrices.get_type_name(7)
-      assert "Bytes64" == FheOperatorPrices.get_type_name(8)
-      assert "Bytes128" == FheOperatorPrices.get_type_name(9)
-      assert "Bytes256" == FheOperatorPrices.get_type_name(10)
+      assert "Uint4" == FheOperatorPrices.get_type_name(1)
+      assert "Uint8" == FheOperatorPrices.get_type_name(2)
+      assert "Uint16" == FheOperatorPrices.get_type_name(3)
+      assert "Uint32" == FheOperatorPrices.get_type_name(4)
+      assert "Uint64" == FheOperatorPrices.get_type_name(5)
+      assert "Uint128" == FheOperatorPrices.get_type_name(6)
+      assert "Uint160" == FheOperatorPrices.get_type_name(7)
+      assert "Uint256" == FheOperatorPrices.get_type_name(8)
+      assert "Uint512" == FheOperatorPrices.get_type_name(9)
+      assert "Uint1024" == FheOperatorPrices.get_type_name(10)
     end
 
     test "returns Unknown for invalid type byte" do
@@ -81,4 +82,3 @@ defmodule Explorer.Chain.FheOperatorPricesTest do
     end
   end
 end
-

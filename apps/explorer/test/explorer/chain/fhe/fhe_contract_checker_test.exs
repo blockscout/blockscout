@@ -10,7 +10,7 @@ defmodule Explorer.Chain.FheContractCheckerTest do
   setup :verify_on_exit!
   setup :set_mox_global
 
-  describe "is_fhe_contract?/1" do
+  describe "fhe_contract?/1" do
     test "returns true for FHE contract with non-zero protocol ID" do
       address_hash = build(:address).hash
 
@@ -20,7 +20,7 @@ defmodule Explorer.Chain.FheContractCheckerTest do
         {:ok, "0x0000000000000000000000000000000000000000000000000000000000000001"}
       end)
 
-      assert {:ok, true} = FheContractChecker.is_fhe_contract?(address_hash)
+      assert {:ok, true} = FheContractChecker.fhe_contract?(address_hash)
     end
 
     test "returns false for non-FHE contract with zero protocol ID" do
@@ -32,7 +32,7 @@ defmodule Explorer.Chain.FheContractCheckerTest do
         {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
       end)
 
-      assert {:ok, false} = FheContractChecker.is_fhe_contract?(address_hash)
+      assert {:ok, false} = FheContractChecker.fhe_contract?(address_hash)
     end
 
     test "returns false for RPC error" do
@@ -43,7 +43,7 @@ defmodule Explorer.Chain.FheContractCheckerTest do
         {:error, :timeout}
       end)
 
-      assert {:ok, false} = FheContractChecker.is_fhe_contract?(address_hash)
+      assert {:ok, false} = FheContractChecker.fhe_contract?(address_hash)
     end
 
     test "returns false for invalid response format" do
@@ -54,7 +54,7 @@ defmodule Explorer.Chain.FheContractCheckerTest do
         {:ok, []}
       end)
 
-      assert {:ok, false} = FheContractChecker.is_fhe_contract?(address_hash)
+      assert {:ok, false} = FheContractChecker.fhe_contract?(address_hash)
     end
 
     test "handles string address hash" do
@@ -65,11 +65,11 @@ defmodule Explorer.Chain.FheContractCheckerTest do
         {:ok, "0x0000000000000000000000000000000000000000000000000000000000000000"}
       end)
 
-      assert {:ok, false} = FheContractChecker.is_fhe_contract?(address_string)
+      assert {:ok, false} = FheContractChecker.fhe_contract?(address_string)
     end
 
     test "returns error for invalid address string" do
-      assert {:error, :invalid_hash} = FheContractChecker.is_fhe_contract?("invalid")
+      assert {:error, :invalid_hash} = FheContractChecker.fhe_contract?("invalid")
     end
   end
 
@@ -114,6 +114,7 @@ defmodule Explorer.Chain.FheContractCheckerTest do
 
       # Verify address is tagged
       tag_id = AddressTag.get_id_by_label("fhe")
+
       assert Repo.exists?(
                from(att in AddressToTag,
                  where: att.address_hash == ^Hash.to_string(address.hash) and att.tag_id == ^tag_id
@@ -162,6 +163,4 @@ defmodule Explorer.Chain.FheContractCheckerTest do
       assert :ok = FheContractChecker.check_and_save_fhe_status(address.hash, [])
     end
   end
-
 end
-

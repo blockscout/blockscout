@@ -68,7 +68,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.FheOperation do
       caller: %Schema{allOf: [Address], nullable: true},
       inputs: @fhe_operation_inputs_schema,
       result: General.HexString,
-      block_number: %Schema{type: :integer, nullable: false, example: 12345678}
+      block_number: %Schema{type: :integer, nullable: false, example: 12_345_678}
     },
     required: [
       :log_index,
@@ -129,4 +129,3 @@ defmodule BlockScoutWeb.Schemas.API.V2.FheOperationsResponse do
     additionalProperties: false
   })
 end
-

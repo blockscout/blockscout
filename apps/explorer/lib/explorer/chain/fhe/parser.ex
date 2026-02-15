@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Fhe.Parser do
 
   require Logger
 
-  alias Explorer.Chain.{Hash, FheOperatorPrices, Log}
+  alias Explorer.Chain.{FheOperatorPrices, Hash, Log}
   alias Explorer.Helper
 
   # FHE Event Signatures (Keccak-256 hashes)
@@ -38,19 +38,39 @@ defmodule Explorer.Chain.Fhe.Parser do
   @fhe_rand_bounded_event "0x5222d96b836727a1d6fe1ee9aef27f9bb507bd41794defa376ff6c648aaf8ff1"
 
   @binary_operations [
-    @fhe_add_event, @fhe_sub_event, @fhe_mul_event, @fhe_div_event, @fhe_rem_event,
-    @fhe_bit_and_event, @fhe_bit_or_event, @fhe_bit_xor_event,
-    @fhe_shl_event, @fhe_shr_event, @fhe_rotl_event, @fhe_rotr_event,
-    @fhe_eq_event, @fhe_ne_event, @fhe_ge_event, @fhe_gt_event,
-    @fhe_le_event, @fhe_lt_event, @fhe_min_event, @fhe_max_event
+    @fhe_add_event,
+    @fhe_sub_event,
+    @fhe_mul_event,
+    @fhe_div_event,
+    @fhe_rem_event,
+    @fhe_bit_and_event,
+    @fhe_bit_or_event,
+    @fhe_bit_xor_event,
+    @fhe_shl_event,
+    @fhe_shr_event,
+    @fhe_rotl_event,
+    @fhe_rotr_event,
+    @fhe_eq_event,
+    @fhe_ne_event,
+    @fhe_ge_event,
+    @fhe_gt_event,
+    @fhe_le_event,
+    @fhe_lt_event,
+    @fhe_min_event,
+    @fhe_max_event
   ]
 
   @unary_operations [@fhe_neg_event, @fhe_not_event]
 
-  @all_fhe_events @binary_operations ++ @unary_operations ++ [
-    @trivial_encrypt_event, @cast_event, @fhe_if_then_else_event,
-    @fhe_rand_event, @fhe_rand_bounded_event
-  ]
+  @all_fhe_events @binary_operations ++
+                    @unary_operations ++
+                    [
+                      @trivial_encrypt_event,
+                      @cast_event,
+                      @fhe_if_then_else_event,
+                      @fhe_rand_event,
+                      @fhe_rand_bounded_event
+                    ]
 
   @event_names %{
     @fhe_add_event => "FheAdd",
@@ -111,7 +131,7 @@ defmodule Explorer.Chain.Fhe.Parser do
         else
           nil
         end
-      
+
       binary when is_binary(binary) ->
         if byte_size(binary) >= 32 do
           <<_::binary-size(12), address_bytes::binary-size(20)>> = binary
@@ -119,31 +139,48 @@ defmodule Explorer.Chain.Fhe.Parser do
         else
           nil
         end
-      
+
       _ ->
-        topic_str = to_string(topic) |> String.downcase()
-        if String.starts_with?(topic_str, "0x") do
-          "0x" <> String.slice(topic_str, -40, 40)
-        else
-          if String.length(topic_str) >= 40 do
-            "0x" <> String.slice(topic_str, -40, 40)
-          else
-            topic_str
-          end
-        end
+        extract_caller_from_topic_str(topic)
+    end
+  end
+
+  defp extract_caller_from_topic_str(topic) do
+    topic_str = topic |> to_string() |> String.downcase()
+
+    cond do
+      String.starts_with?(topic_str, "0x") -> "0x" <> String.slice(topic_str, -40, 40)
+      String.length(topic_str) >= 40 -> "0x" <> String.slice(topic_str, -40, 40)
+      true -> topic_str
     end
   end
 
   @doc """
   Decode event data based on event type.
   """
-  def decode_event_data(%{data: data} = _log, event_name) when event_name in [
-    "FheAdd", "FheSub", "FheMul", "FheDiv", "FheRem",
-    "FheBitAnd", "FheBitOr", "FheBitXor",
-    "FheShl", "FheShr", "FheRotl", "FheRotr",
-    "FheEq", "FheNe", "FheGe", "FheGt", "FheLe", "FheLt",
-    "FheMin", "FheMax"
-  ] do
+  def decode_event_data(%{data: data} = _log, event_name)
+      when event_name in [
+             "FheAdd",
+             "FheSub",
+             "FheMul",
+             "FheDiv",
+             "FheRem",
+             "FheBitAnd",
+             "FheBitOr",
+             "FheBitXor",
+             "FheShl",
+             "FheShr",
+             "FheRotl",
+             "FheRotr",
+             "FheEq",
+             "FheNe",
+             "FheGe",
+             "FheGt",
+             "FheLe",
+             "FheLt",
+             "FheMin",
+             "FheMax"
+           ] do
     # Binary operations: (bytes32 lhs, bytes32 rhs, bytes1 scalarByte, bytes32 result)
     [lhs, rhs, scalar_byte, result] = Helper.decode_data(data, [{:bytes, 32}, {:bytes, 32}, {:bytes, 1}, {:bytes, 32}])
 
@@ -189,7 +226,8 @@ defmodule Explorer.Chain.Fhe.Parser do
 
   def decode_event_data(%{data: data} = _log, "FheIfThenElse") do
     # FheIfThenElse(address indexed caller, bytes32 control, bytes32 ifTrue, bytes32 ifFalse, bytes32 result)
-    [control, if_true, if_false, result] = Helper.decode_data(data, [{:bytes, 32}, {:bytes, 32}, {:bytes, 32}, {:bytes, 32}])
+    [control, if_true, if_false, result] =
+      Helper.decode_data(data, [{:bytes, 32}, {:bytes, 32}, {:bytes, 32}, {:bytes, 32}])
 
     %{
       control: control,
@@ -212,7 +250,8 @@ defmodule Explorer.Chain.Fhe.Parser do
 
   def decode_event_data(%{data: data} = _log, "FheRandBounded") do
     # FheRandBounded(address indexed caller, uint256 upperBound, uint8 randType, bytes16 seed, bytes32 result)
-    [upper_bound, rand_type, seed, result] = Helper.decode_data(data, [{:uint, 256}, {:uint, 8}, {:bytes, 16}, {:bytes, 32}])
+    [upper_bound, rand_type, seed, result] =
+      Helper.decode_data(data, [{:uint, 256}, {:uint, 8}, {:bytes, 16}, {:bytes, 32}])
 
     %{
       upper_bound: upper_bound,
@@ -239,52 +278,36 @@ defmodule Explorer.Chain.Fhe.Parser do
   def extract_fhe_type(operation_data, event_name) do
     case event_name do
       event_name when event_name in ["FheEq", "FheNe", "FheGe", "FheGt", "FheLe", "FheLt"] ->
-        if operation_data[:lhs] do
-          extract_fhe_type_from_result(operation_data.lhs)
-        else
-          "Unknown"
-        end
-      
+        extract_fhe_type_from_handle(operation_data[:lhs], &extract_fhe_type_from_result/1)
+
       event_name when event_name in ["Cast", "FheNot", "FheNeg"] ->
-        if operation_data[:ct] do
-          extract_fhe_type_from_result(operation_data.ct)
-        else
-          "Unknown"
-        end
-      
+        extract_fhe_type_from_handle(operation_data[:ct], &extract_fhe_type_from_result/1)
+
       "TrivialEncrypt" ->
-        if operation_data[:to_type] do
-          FheOperatorPrices.get_type_name(operation_data.to_type)
-        else
-          "Unknown"
-        end
-      
+        extract_fhe_type_from_param(operation_data[:to_type])
+
       "FheRand" ->
-        if operation_data[:rand_type] do
-          FheOperatorPrices.get_type_name(operation_data.rand_type)
-        else
-          "Unknown"
-        end
-      
+        extract_fhe_type_from_param(operation_data[:rand_type])
+
       "FheRandBounded" ->
-        if operation_data[:rand_type] do
-          FheOperatorPrices.get_type_name(operation_data.rand_type)
-        else
-          "Unknown"
-        end
+        extract_fhe_type_from_param(operation_data[:rand_type])
 
       _ ->
-        if operation_data[:result] do
-          extract_fhe_type_from_result(operation_data.result)
-        else
-          "Unknown"
-        end
+        extract_fhe_type_from_handle(operation_data[:result], &extract_fhe_type_from_result/1)
     end
   end
 
+  defp extract_fhe_type_from_handle(nil, _extractor), do: "Unknown"
+
+  defp extract_fhe_type_from_handle(handle, extractor), do: extractor.(handle)
+
+  defp extract_fhe_type_from_param(nil), do: "Unknown"
+
+  defp extract_fhe_type_from_param(param), do: FheOperatorPrices.get_type_name(param)
+
   defp extract_fhe_type_from_result(result) when is_binary(result) do
     result_size = byte_size(result)
-    
+
     if result_size >= 32 do
       # Extract byte 30 (0-indexed, second to last byte)
       <<_prefix::binary-size(30), type_byte::8, _suffix::binary-size(1)>> = result
@@ -383,41 +406,40 @@ defmodule Explorer.Chain.Fhe.Parser do
   def build_hcu_depth_map(operations) do
     Enum.reduce(operations, %{}, fn op, acc ->
       result_handle = if is_binary(op.result), do: Base.encode16(op.result, case: :lower), else: nil
-      
+
       if is_nil(result_handle) do
         acc
       else
-        # For binary operations, depth depends on whether it's scalar or not
-        # Scalar operations: RHS is a plain value (not a handle), so only use LHS depth
-        # Non-scalar operations: both LHS and RHS are handles, use max of both depths
-        depth = case op.inputs do
-        %{lhs: lhs, rhs: rhs} ->
-          lhs_depth = Map.get(acc, lhs, 0)
-          # For scalar operations, RHS is a plain value (not a handle), so it has no depth
-          # Only use RHS depth if the operation is non-scalar
-          if Map.get(op, :is_scalar, false) do
-            lhs_depth + op.hcu_cost
-          else
-            rhs_depth = Map.get(acc, rhs, 0)
-            max(lhs_depth, rhs_depth) + op.hcu_cost
-          end
-        
-        %{control: control, if_true: if_true, if_false: if_false} ->
-            control_depth = Map.get(acc, control, 0)
-            true_depth = Map.get(acc, if_true, 0)
-            false_depth = Map.get(acc, if_false, 0)
-            max(control_depth, max(true_depth, false_depth)) + op.hcu_cost
-        
-        %{ct: ct} ->
-            ct_depth = Map.get(acc, ct, 0)
-            ct_depth + op.hcu_cost
-
-         _ ->
-            op.hcu_cost
-        end
-
+        depth = calculate_op_depth(op, acc)
         Map.put(acc, result_handle, depth)
       end
     end)
+  end
+
+  defp calculate_op_depth(op, acc) do
+    case op.inputs do
+      %{lhs: lhs, rhs: rhs} ->
+        lhs_depth = Map.get(acc, lhs, 0)
+
+        if Map.get(op, :is_scalar, false) do
+          lhs_depth + op.hcu_cost
+        else
+          rhs_depth = Map.get(acc, rhs, 0)
+          max(lhs_depth, rhs_depth) + op.hcu_cost
+        end
+
+      %{control: control, if_true: if_true, if_false: if_false} ->
+        control_depth = Map.get(acc, control, 0)
+        true_depth = Map.get(acc, if_true, 0)
+        false_depth = Map.get(acc, if_false, 0)
+        max(control_depth, max(true_depth, false_depth)) + op.hcu_cost
+
+      %{ct: ct} ->
+        ct_depth = Map.get(acc, ct, 0)
+        ct_depth + op.hcu_cost
+
+      _ ->
+        op.hcu_cost
+    end
   end
 end

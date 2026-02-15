@@ -87,7 +87,8 @@ defmodule Explorer.Chain.Import.Runner.FheOperationsTest do
           is_scalar: false,
           hcu_cost: 200,
           hcu_depth: 1,
-          caller: nil, # Include caller field (nil) to avoid KeyError
+          # Include caller field (nil) to avoid KeyError
+          caller: nil,
           result_handle: <<1::256>>,
           input_handles: %{}
         }
@@ -221,8 +222,6 @@ defmodule Explorer.Chain.Import.Runner.FheOperationsTest do
                Multi.new()
                |> FheOperations.run(changes_list, options)
                |> Repo.transaction()
-
     end
   end
 end
-
