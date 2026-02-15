@@ -48,6 +48,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       }) do
     block_height = Chain.block_height(@api_true)
     decoded_transactions = Transaction.decode_transactions(transactions, true, @api_true)
+    fhe_counts = FheOperation.transaction_operation_counts(Enum.map(transactions, & &1.hash))
 
     %{
       "items" =>
@@ -55,7 +56,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         |> with_chain_type_transformations()
         |> Enum.zip(decoded_transactions)
         |> Enum.map(fn {transaction, decoded_input} ->
-          prepare_transaction(transaction, conn, false, block_height, watchlist_names, decoded_input)
+          prepare_transaction(transaction, conn, false, block_height, decoded_input, watchlist_names, fhe_counts)
         end),
       "next_page_params" => next_page_params
     }
@@ -68,18 +69,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       }) do
     block_height = Chain.block_height(@api_true)
     decoded_transactions = Transaction.decode_transactions(transactions, true, @api_true)
+    fhe_counts = FheOperation.transaction_operation_counts(Enum.map(transactions, & &1.hash))
 
     transactions
     |> with_chain_type_transformations()
     |> Enum.zip(decoded_transactions)
     |> Enum.map(fn {transaction, decoded_input} ->
-      prepare_transaction(transaction, conn, false, block_height, watchlist_names, decoded_input)
+      prepare_transaction(transaction, conn, false, block_height, watchlist_names, decoded_input, fhe_counts)
     end)
   end
 
   def render("transactions.json", %{transactions: transactions, next_page_params: next_page_params, conn: conn}) do
     block_height = Chain.block_height(@api_true)
     decoded_transactions = Transaction.decode_transactions(transactions, true, @api_true)
+    fhe_counts = FheOperation.transaction_operation_counts(Enum.map(transactions, & &1.hash))
 
     %{
       "items" =>
@@ -87,7 +90,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         |> with_chain_type_transformations()
         |> Enum.zip(decoded_transactions)
         |> Enum.map(fn {transaction, decoded_input} ->
-          prepare_transaction(transaction, conn, false, block_height, decoded_input)
+          prepare_transaction(transaction, conn, false, block_height, decoded_input, nil, fhe_counts)
         end),
       "next_page_params" => next_page_params
     }
@@ -102,12 +105,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def render("transactions.json", %{transactions: transactions, conn: conn}) do
     block_height = Chain.block_height(@api_true)
     decoded_transactions = Transaction.decode_transactions(transactions, true, @api_true)
+    fhe_counts = FheOperation.transaction_operation_counts(Enum.map(transactions, & &1.hash))
 
     transactions
     |> with_chain_type_transformations()
     |> Enum.zip(decoded_transactions)
     |> Enum.map(fn {transaction, decoded_input} ->
-      prepare_transaction(transaction, conn, false, block_height, decoded_input)
+      prepare_transaction(transaction, conn, false, block_height, decoded_input, nil, fhe_counts)
     end)
   end
 
@@ -239,6 +243,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> Enum.map(&prepare_signed_authorization/1)
   end
 
+  @doc """
+  Renders FHE operations for a transaction as JSON.
+
+  Returns a map with items (list of operation objects), total_hcu, max_depth_hcu,
+  and operation_count. Each item includes log_index, operation, type, fhe_type,
+  is_scalar, hcu_cost, hcu_depth, caller, inputs, result, and block_number.
+
+  ## Parameters
+  - `assigns` - Map with `:operations` (list of FheOperation.t()), `:total_hcu`,
+    `:max_depth_hcu`, and `:operation_count`.
+
+  ## Returns
+  - Map with "items", "total_hcu", "max_depth_hcu", "operation_count" keys.
+  """
   def render("fhe_operations.json", %{
         operations: operations,
         total_hcu: total_hcu,
@@ -432,15 +450,16 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  defp prepare_transaction(transaction, conn, single_transaction?, block_height, watchlist_names \\ nil, decoded_input)
+  defp prepare_transaction(transaction, conn, single_transaction?, block_height, decoded_input, watchlist_names \\ nil, fhe_operations_counts \\ nil)
 
   defp prepare_transaction(
          {%Reward{} = emission_reward, %Reward{} = validator_reward},
          conn,
          single_transaction?,
          _block_height,
+         _decoded_input,
          _watchlist_names,
-         _decoded_input
+         _fhe_operations_counts
        ) do
     %{
       "emission_reward" => emission_reward.reward,
@@ -468,8 +487,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
          conn,
          single_transaction?,
          block_height,
+         decoded_input,
          watchlist_names,
-         decoded_input
+         fhe_operations_counts
        ) do
     base_fee_per_gas = transaction.block && transaction.block.base_fee_per_gas
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
@@ -545,7 +565,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "has_error_in_internal_transactions" => transaction.has_error_in_internal_transactions,
       "authorization_list" => authorization_list(transaction.signed_authorizations),
       "is_pending_update" => transaction.block && transaction.block.refetch_needed,
-      "fhe_operations_count" => fhe_operations_count(transaction.hash)
+      "fhe_operations_count" => fhe_operations_count(transaction.hash, fhe_operations_counts)
     }
 
     result
@@ -1070,9 +1090,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   # Returns the count of FHE operations for a transaction.
-  # Returns 0 if no operations exist.
-  defp fhe_operations_count(transaction_hash) do
-    metrics = FheOperation.transaction_metrics(transaction_hash)
-    metrics.operation_count
+  # Uses precomputed map when provided, otherwise queries the database.
+  defp fhe_operations_count(transaction_hash, precomputed) do
+    if precomputed do
+      Map.get(precomputed, transaction_hash, 0)
+    else
+      metrics = FheOperation.transaction_metrics(transaction_hash)
+      metrics.operation_count
+    end
   end
 end

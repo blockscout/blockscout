@@ -103,12 +103,24 @@ defmodule Explorer.Chain.Fhe.Parser do
   }
 
   @doc """
-  Returns the list of all FHE event topics.
+  Returns the list of all FHE event topic signatures.
+
+  ## Parameters
+  - None.
+
+  ## Returns
+  - List of binary event topic hashes (Keccak-256 of event signatures).
   """
   def all_fhe_events, do: @all_fhe_events
 
   @doc """
-  Get event name from event signature hash.
+  Maps an event topic hash to its human-readable event name.
+
+  ## Parameters
+  - `topic` - Event topic (binary or Hash struct).
+
+  ## Returns
+  - `String.t()` - Event name (e.g. "FheAdd"), or "Unknown" if not found.
   """
   def get_event_name(topic) do
     normalized_topic = String.downcase(to_string(topic))
@@ -116,7 +128,16 @@ defmodule Explorer.Chain.Fhe.Parser do
   end
 
   @doc """
-  Extract caller address from indexed topic.
+  Extracts the caller address from an indexed topic (32-byte padded address).
+
+  Parses the last 20 bytes of a 32-byte topic as an Ethereum address. Returns nil
+  for invalid or too-short input.
+
+  ## Parameters
+  - `topic` - Topic value (binary, Hash struct, or string).
+
+  ## Returns
+  - `String.t()` - "0x" prefixed hex address, or nil if extraction fails.
   """
   def extract_caller(nil), do: nil
 
@@ -156,7 +177,17 @@ defmodule Explorer.Chain.Fhe.Parser do
   end
 
   @doc """
-  Decode event data based on event type.
+  Decodes FHE event log data based on event type.
+
+  Parses the `data` field of a log according to the event's ABI structure
+  (binary ops: lhs, rhs, scalar_byte, result; unary ops: ct, result; etc.).
+
+  ## Parameters
+  - `log` - Log struct with `:data` field.
+  - `event_name` - Event name string (e.g. "FheAdd", "FheNeg").
+
+  ## Returns
+  - Map with decoded fields (e.g. `%{lhs: _, rhs: _, result: _}`).
   """
   def decode_event_data(%{data: data} = _log, event_name)
       when event_name in [

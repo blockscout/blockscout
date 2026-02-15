@@ -862,7 +862,19 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     ]
 
   @doc """
-    Function to handle GET requests to `/api/v2/transactions/:transaction_hash_param/fhe-operations` endpoint.
+  Lists FHE operations for a specific transaction.
+
+  Retrieves Fully Homomorphic Encryption (FHE) operations parsed from transaction
+  logs. Returns operation details, HCU (Homomorphic Compute Unit) costs, operation
+  types, and transaction-level metrics (total HCU, max depth, operation count).
+
+  ## Parameters
+  - `conn` - The Plug.Conn.
+  - `params` - Map containing `:transaction_hash_param` (transaction hash string).
+
+  ## Returns
+  - `Plug.Conn.t()` with 200 and JSON body on success.
+  - `{atom(), any()}` error tuple on validation failure (e.g. invalid hash).
   """
   @spec fhe_operations(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def fhe_operations(conn, %{transaction_hash_param: transaction_hash_string} = params) do

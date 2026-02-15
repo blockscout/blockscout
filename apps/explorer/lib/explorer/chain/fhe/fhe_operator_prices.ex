@@ -511,14 +511,18 @@ defmodule Explorer.Chain.FheOperatorPrices do
   }
 
   @doc """
-  Get HCU price for an operation.
+  Returns the HCU price for an FHE operation.
 
-  ## Examples
-      iex> get_price("fheAdd", "Uint8", true)
-      84_000
+  Looks up the operation in the price table by operation name, FHE type, and
+  scalar flag. Returns 0 if not found.
 
-      iex> get_price("fheAdd", "Uint8", false)
-      88_000
+  ## Parameters
+  - `operation_name` - Operation name (e.g. "fheAdd", "fheSub").
+  - `fhe_type` - FHE type string (e.g. "Uint8", "Uint16").
+  - `is_scalar` - Whether the operation is scalar (default false).
+
+  ## Returns
+  - `non_neg_integer()` - HCU cost, or 0 if unknown.
   """
   @spec get_price(String.t() | atom(), String.t() | atom(), boolean()) :: non_neg_integer()
   def get_price(operation_name, fhe_type, is_scalar \\ false) do
@@ -539,11 +543,13 @@ defmodule Explorer.Chain.FheOperatorPrices do
   end
 
   @doc """
-  Convert type index to type name.
+  Converts a type index to its FHE type name string.
 
-  ## Examples
-      iex> get_type_name(1)
-      "Uint8"
+  ## Parameters
+  - `type_index` - Integer type index (e.g. 1 for Uint8).
+
+  ## Returns
+  - `String.t()` - Type name (e.g. "Uint8"), or "Unknown" if not found.
   """
   @spec get_type_name(integer()) :: String.t()
   def get_type_name(type_index) when is_integer(type_index) do
@@ -551,13 +557,25 @@ defmodule Explorer.Chain.FheOperatorPrices do
   end
 
   @doc """
-  Get all operator prices.
+  Returns the full operator price map.
+
+  ## Parameters
+  - None.
+
+  ## Returns
+  - `map()` - Map of operation names to price structures (scalar/non_scalar).
   """
   @spec all_prices() :: map()
   def all_prices, do: @operator_prices
 
   @doc """
-  Get type mapping.
+  Returns the mapping from type index to type name.
+
+  ## Parameters
+  - None.
+
+  ## Returns
+  - `%{integer() => String.t()}` - Map of type index to type name string.
   """
   @spec type_mapping() :: %{integer() => String.t()}
   def type_mapping, do: @type_mapping

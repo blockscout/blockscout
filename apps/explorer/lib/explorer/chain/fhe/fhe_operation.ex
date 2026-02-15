@@ -103,6 +103,33 @@ defmodule Explorer.Chain.FheOperation do
   end
 
   @doc """
+  Returns transaction-level metrics for multiple transactions in a single query.
+
+  ## Parameters
+  - `transaction_hashes` - List of `Hash.Full.t()` transaction hashes.
+
+  ## Returns
+  - Map of `transaction_hash => operation_count` (non_neg_integer). Missing
+    hashes default to 0.
+  """
+  @spec transaction_operation_counts([Hash.Full.t()]) :: %{Hash.Full.t() => non_neg_integer()}
+  def transaction_operation_counts([]), do: %{}
+
+  def transaction_operation_counts(transaction_hashes) do
+    query =
+      from(
+        op in __MODULE__,
+        where: op.transaction_hash in ^transaction_hashes,
+        group_by: op.transaction_hash,
+        select: {op.transaction_hash, count(op.log_index)}
+      )
+
+    query
+    |> Repo.all()
+    |> Map.new(fn {hash, count} -> {hash, count} end)
+  end
+
+  @doc """
   Returns all unique FHE contract addresses (callers) ordered by total HCU usage.
   """
   @spec top_fhe_callers(non_neg_integer()) :: [
