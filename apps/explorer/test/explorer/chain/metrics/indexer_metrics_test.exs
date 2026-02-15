@@ -32,4 +32,352 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetricsTest do
       assert IndexerMetrics.missing_blocks_count() == 1
     end
   end
+
+  describe "missing_archival_token_balances_count/0" do
+    test "returns 0 when archival token balances fetcher is disabled" do
+      previous_config =
+        Application.get_env(:indexer, Indexer.Fetcher.TokenBalance.Historical.Supervisor)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.TokenBalance.Historical.Supervisor, previous_config)
+      end)
+
+      Application.put_env(:indexer, Indexer.Fetcher.TokenBalance.Historical.Supervisor, disabled?: true)
+
+      insert(:token_balance, value_fetched_at: nil)
+      insert(:token_balance, value_fetched_at: nil)
+
+      assert IndexerMetrics.missing_archival_token_balances_count() == 0
+    end
+
+    test "counts token balances with missing values when fetcher is enabled" do
+      previous_config =
+        Application.get_env(:indexer, Indexer.Fetcher.TokenBalance.Historical.Supervisor)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.TokenBalance.Historical.Supervisor, previous_config)
+      end)
+
+      Application.put_env(:indexer, Indexer.Fetcher.TokenBalance.Historical.Supervisor, disabled?: false)
+
+      insert(:token_balance, value_fetched_at: nil)
+      insert(:token_balance, value_fetched_at: nil)
+      insert(:token_balance, value_fetched_at: DateTime.utc_now())
+
+      assert IndexerMetrics.missing_archival_token_balances_count() == 2
+    end
+
+    test "returns 0 when all token balances are fetched" do
+      previous_config =
+        Application.get_env(:indexer, Indexer.Fetcher.TokenBalance.Historical.Supervisor)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.TokenBalance.Historical.Supervisor, previous_config)
+      end)
+
+      Application.put_env(:indexer, Indexer.Fetcher.TokenBalance.Historical.Supervisor, disabled?: false)
+
+      insert(:token_balance, value_fetched_at: DateTime.utc_now())
+      insert(:token_balance, value_fetched_at: DateTime.utc_now())
+
+      assert IndexerMetrics.missing_archival_token_balances_count() == 0
+    end
+  end
+
+  describe "multichain_search_db_export_balances_queue_count/0" do
+    test "returns 0 when multichain search is disabled" do
+      previous_enabled =
+        Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, previous_enabled)
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, service_url: nil)
+
+      insert(:multichain_search_db_export_balances_queue)
+      insert(:multichain_search_db_export_balances_queue)
+
+      assert IndexerMetrics.multichain_search_db_export_balances_queue_count() == 0
+    end
+
+    test "returns 0 when balances export queue supervisor is disabled" do
+      previous_enabled =
+        Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      previous_supervisor_config =
+        Application.get_env(:indexer, Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue.Supervisor)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, previous_enabled)
+
+        Application.put_env(
+          :indexer,
+          Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue.Supervisor,
+          previous_supervisor_config
+        )
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+        service_url: "http://localhost:8080"
+      )
+
+      Application.put_env(:indexer, Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue.Supervisor, disabled?: true)
+
+      insert(:multichain_search_db_export_balances_queue)
+      insert(:multichain_search_db_export_balances_queue)
+
+      assert IndexerMetrics.multichain_search_db_export_balances_queue_count() == 0
+    end
+
+    test "counts queue entries when both enabled" do
+      previous_enabled =
+        Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      previous_supervisor_config =
+        Application.get_env(:indexer, Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue.Supervisor)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, previous_enabled)
+
+        Application.put_env(
+          :indexer,
+          Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue.Supervisor,
+          previous_supervisor_config
+        )
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+        service_url: "http://localhost:8080"
+      )
+
+      Application.put_env(:indexer, Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue.Supervisor, disabled?: false)
+
+      insert(:multichain_search_db_export_balances_queue)
+      insert(:multichain_search_db_export_balances_queue)
+
+      assert IndexerMetrics.multichain_search_db_export_balances_queue_count() == 2
+    end
+  end
+
+  describe "multichain_search_db_export_counters_queue_count/0" do
+    test "returns 0 when multichain search is disabled" do
+      previous_enabled =
+        Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, previous_enabled)
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, service_url: nil)
+
+      insert(:multichain_search_db_export_counters_queue)
+
+      assert IndexerMetrics.multichain_search_db_export_counters_queue_count() == 0
+    end
+
+    test "returns 0 when counters export queue supervisor is disabled" do
+      previous_enabled =
+        Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      previous_supervisor_config =
+        Application.get_env(:indexer, Indexer.Fetcher.MultichainSearchDb.CountersExportQueue.Supervisor)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, previous_enabled)
+
+        Application.put_env(
+          :indexer,
+          Indexer.Fetcher.MultichainSearchDb.CountersExportQueue.Supervisor,
+          previous_supervisor_config
+        )
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+        service_url: "http://localhost:8080"
+      )
+
+      Application.put_env(:indexer, Indexer.Fetcher.MultichainSearchDb.CountersExportQueue.Supervisor, disabled?: true)
+
+      insert(:multichain_search_db_export_counters_queue)
+
+      assert IndexerMetrics.multichain_search_db_export_counters_queue_count() == 0
+    end
+
+    test "counts queue entries when both enabled" do
+      previous_enabled =
+        Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      previous_supervisor_config =
+        Application.get_env(:indexer, Indexer.Fetcher.MultichainSearchDb.CountersExportQueue.Supervisor)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, previous_enabled)
+
+        Application.put_env(
+          :indexer,
+          Indexer.Fetcher.MultichainSearchDb.CountersExportQueue.Supervisor,
+          previous_supervisor_config
+        )
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+        service_url: "http://localhost:8080"
+      )
+
+      Application.put_env(:indexer, Indexer.Fetcher.MultichainSearchDb.CountersExportQueue.Supervisor, disabled?: false)
+
+      insert(:multichain_search_db_export_counters_queue)
+
+      assert IndexerMetrics.multichain_search_db_export_counters_queue_count() == 1
+    end
+  end
+
+  describe "multichain_search_db_export_token_info_queue_count/0" do
+    test "returns 0 when multichain search is disabled" do
+      previous_enabled =
+        Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, previous_enabled)
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, service_url: nil)
+
+      insert(:multichain_search_db_export_token_info_queue)
+
+      assert IndexerMetrics.multichain_search_db_export_token_info_queue_count() == 0
+    end
+
+    test "returns 0 when token info export queue supervisor is disabled" do
+      previous_enabled =
+        Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      previous_supervisor_config =
+        Application.get_env(:indexer, Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue.Supervisor)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, previous_enabled)
+
+        Application.put_env(
+          :indexer,
+          Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue.Supervisor,
+          previous_supervisor_config
+        )
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+        service_url: "http://localhost:8080"
+      )
+
+      Application.put_env(:indexer, Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue.Supervisor, disabled?: true)
+
+      insert(:multichain_search_db_export_token_info_queue)
+
+      assert IndexerMetrics.multichain_search_db_export_token_info_queue_count() == 0
+    end
+
+    test "counts queue entries when both enabled" do
+      previous_enabled =
+        Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      previous_supervisor_config =
+        Application.get_env(:indexer, Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue.Supervisor)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, previous_enabled)
+
+        Application.put_env(
+          :indexer,
+          Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue.Supervisor,
+          previous_supervisor_config
+        )
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+        service_url: "http://localhost:8080"
+      )
+
+      Application.put_env(:indexer, Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue.Supervisor,
+        disabled?: false
+      )
+
+      insert(:multichain_search_db_export_token_info_queue)
+
+      assert IndexerMetrics.multichain_search_db_export_token_info_queue_count() == 1
+    end
+  end
+
+  describe "multichain_search_db_main_export_queue_count/0" do
+    test "returns 0 when multichain search is disabled" do
+      previous_enabled =
+        Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, previous_enabled)
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, service_url: nil)
+
+      insert(:multichain_search_db_main_export_queue)
+
+      assert IndexerMetrics.multichain_search_db_main_export_queue_count() == 0
+    end
+
+    test "returns 0 when main export queue supervisor is disabled" do
+      previous_enabled =
+        Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      previous_supervisor_config =
+        Application.get_env(:indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue.Supervisor)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, previous_enabled)
+
+        Application.put_env(
+          :indexer,
+          Indexer.Fetcher.MultichainSearchDb.MainExportQueue.Supervisor,
+          previous_supervisor_config
+        )
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+        service_url: "http://localhost:8080"
+      )
+
+      Application.put_env(:indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue.Supervisor, disabled?: true)
+
+      insert(:multichain_search_db_main_export_queue)
+
+      assert IndexerMetrics.multichain_search_db_main_export_queue_count() == 0
+    end
+
+    test "counts queue entries when both enabled" do
+      previous_enabled =
+        Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      previous_supervisor_config =
+        Application.get_env(:indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue.Supervisor)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, previous_enabled)
+
+        Application.put_env(
+          :indexer,
+          Indexer.Fetcher.MultichainSearchDb.MainExportQueue.Supervisor,
+          previous_supervisor_config
+        )
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+        service_url: "http://localhost:8080"
+      )
+
+      Application.put_env(:indexer, Indexer.Fetcher.MultichainSearchDb.MainExportQueue.Supervisor, disabled?: false)
+
+      insert(:multichain_search_db_main_export_queue)
+
+      assert IndexerMetrics.multichain_search_db_main_export_queue_count() == 1
+    end
+  end
 end
