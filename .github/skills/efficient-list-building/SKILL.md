@@ -34,7 +34,8 @@ def build_list([head | tail], acc) do
 end
 def build_list([], acc), do: acc
 
-# ❌ BAD: String concatenation with ++
+# ❌ BAD: Binary string concatenation with ++
+# ++ is for lists (charlists), not binaries like ""
 Enum.reduce(fragments, "", fn frag, acc ->
   acc ++ frag
 end)
@@ -68,10 +69,17 @@ def build_list(items) do
   |> Enum.reverse()
 end
 
-# ✅ GOOD: Use IO lists for string building
+# ✅ GOOD: Use IO lists for binary/string building
+# Prepend fragments, then convert to binary (proper iolist structure)
 fragments
-|> Enum.reduce([], fn frag, acc -> [acc | frag] end)
+|> Enum.reduce([], fn frag, acc -> [frag | acc] end)
+|> Enum.reverse()
 |> IO.iodata_to_binary()
+
+# ✅ GOOD: Binary concatenation with <>
+Enum.reduce(fragments, "", fn frag, acc ->
+  acc <> frag
+end)
 ```
 
 ## Example Fix
@@ -170,10 +178,42 @@ defp recursive_build_helper([h | t], acc), do: recursive_build_helper(t, [transf
 defp recursive_build_helper([], acc), do: acc
 ```
 
+### String/Binary Building
+
+```elixir
+# ❌ BAD: ++ doesn't work for binaries, only lists
+fragments |> Enum.reduce("", fn frag, acc -> acc ++ frag end)
+
+# ✅ GOOD: Use <> for binaries
+fragments |> Enum.reduce("", fn frag, acc -> acc <> frag end)
+
+# ✅ BETTER: Use IO lists (more efficient for many fragments)
+fragments
+|> Enum.reduce([], fn frag, acc -> [frag | acc] end)
+|> Enum.reverse()
+|> IO.iodata_to_binary()
+```
+
+## Important Note on iolist Structure
+
+When building IO lists (used for efficient binary/string construction), ensure proper structure:
+
+```elixir
+# ❌ WRONG: [acc | frag] doesn't create a proper iolist
+# This conses acc as the head with frag as the tail - fails when frag is binary
+Enum.reduce(fragments, [], fn frag, acc -> [acc | frag] end)
+
+# ✅ CORRECT: [frag | acc] - proper cons structure
+# Then reverse to get correct order or use Enum.reverse()
+Enum.reduce(fragments, [], fn frag, acc -> [frag | acc] end)
+|> Enum.reverse()
+|> IO.iodata_to_binary()
+```
+
 ## Notes
 
 - If order doesn't matter, you can skip `Enum.reverse/1` entirely
-- For string building, prefer IO lists over list concatenation
+- For string/binary building, `<>` works but can be O(n²) in a loop; IO lists are better
 - `Enum.map/2` already handles this efficiently internally
 - When prepending multiple items, add them in reverse order: `[item2, item1 | acc]`
 

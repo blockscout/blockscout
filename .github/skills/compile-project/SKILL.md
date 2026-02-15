@@ -153,11 +153,21 @@ elixir --version
 
 ### Permission Issues with Rebar
 
+If `mix local.rebar --force` fails with permission errors, ensure proper ownership and permissions:
+
 ```bash
+# Fix ownership of Mix home directory
+chown -R $(whoami) ~/.mix ~/.hex $MIX_HOME $HEX_HOME 2>/dev/null || true
+
+# Or explicitly set Mix/Hex home directories if needed
+export MIX_HOME=~/.mix
+export HEX_HOME=~/.hex
+
+# Then try again
 mix local.rebar --force
-# If that fails, try with elevated permissions
-sudo mix local.rebar --force
 ```
+
+**Note:** Running Mix as root (with `sudo`) is **strongly discouraged** as it commonly causes permission/ownership issues in `_build`, `deps`, and `~/.mix`. It can also create security/operational risks. Use proper file ownership and environment variables instead.
 
 ## CI/CD Integration
 
@@ -176,6 +186,7 @@ This compilation step is typically part of the CI/CD pipeline. Ensure your chang
 - **Clean builds when in doubt** - Removes stale artifacts
 - **Compilation success ≠ correctness** - Still need tests and manual verification
 - **Fast feedback loop** - Run frequently during development
+- **Avoid running Mix as root** - Use proper permissions instead
 
 ## Additional Commands
 
