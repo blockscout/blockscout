@@ -53,6 +53,7 @@ defmodule Indexer.Block.Fetcher do
     AddressCoinBalances,
     Addresses,
     AddressTokenBalances,
+    FheOperations,
     MintTransfers,
     SignedAuthorizations,
     TokenInstances,
@@ -194,7 +195,7 @@ defmodule Indexer.Block.Fetcher do
          celo_pending_account_operations = parse_celo_pending_account_operations(logs),
          tokens = Enum.uniq(tokens ++ celo_tokens),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
-         %{fhe_operations: fhe_operations} = Indexer.Transform.FheOperations.parse(logs),
+         %{fhe_operations: fhe_operations} = FheOperations.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          optimism_withdrawals =
            if(callback_module == Indexer.Block.Realtime.Fetcher, do: OptimismWithdrawals.parse(logs), else: []),
