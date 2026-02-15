@@ -100,7 +100,7 @@ end
 | `length(list) > 0` | O(n) | Traverses entire list |
 | `list == []` | O(1) | Immediate comparison |
 | `[_ \| _] = list` | O(1) | Pattern match first element |
-| `Enum.empty?(list)` | O(1) | Optimized check |
+| `Enum.empty?(enumerable)` | O(1) for lists; short-circuits for many enumerables | May evaluate enumerable until first element; can trigger side effects |
 
 ## Common Use Cases
 

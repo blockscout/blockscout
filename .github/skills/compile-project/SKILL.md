@@ -22,22 +22,24 @@ The compile-project skill ensures that all Elixir code, dependencies, and config
 Run the following command from the workspace root:
 
 ```bash
-mix do deps.get, local.rebar --force, deps.compile
+mix do deps.get, local.hex --force, local.rebar --force, deps.compile, compile
 ```
 
 ### Command Breakdown
 
 1. **`mix do`** - Executes multiple Mix tasks in sequence
 2. **`deps.get`** - Fetches all project dependencies from Hex and Git
-3. **`local.rebar --force`** - Installs/updates Rebar (Erlang build tool), forcing reinstall
-4. **`deps.compile`** - Compiles all dependencies before compiling the main project
+3. **`local.hex --force`** - Installs/updates Hex (package manager), forcing reinstall
+4. **`local.rebar --force`** - Installs/updates Rebar (Erlang build tool), forcing reinstall
+5. **`deps.compile`** - Compiles all dependencies
+6. **`compile`** - Compiles the project itself
 
-### Full Compilation (including project code)
+### Dependencies-Only Compilation
 
-If you need to compile both dependencies and the project code:
+If you only need to compile dependencies without the project code:
 
 ```bash
-mix do deps.get, local.rebar --force, deps.compile, compile
+mix do deps.get, local.hex --force, local.rebar --force, deps.compile
 ```
 
 ## Example Usage
@@ -45,7 +47,7 @@ mix do deps.get, local.rebar --force, deps.compile, compile
 ### After Making Code Changes
 
 ```bash
-mix do deps.get, local.rebar --force, deps.compile, compile
+mix do deps.get, local.hex --force, local.rebar --force, deps.compile, compile
 ```
 
 ### Expected Output
@@ -81,7 +83,7 @@ mix deps.get
 **Solution:**
 ```bash
 mix deps.clean --all
-mix do deps.get, local.rebar --force, deps.compile, compile
+mix do deps.get, local.hex --force, local.rebar --force, deps.compile, compile
 ```
 
 #### 3. Compilation Warnings
@@ -95,7 +97,7 @@ warning: variable "foo" is unused
 ### Recommended Pre-Commit Checklist
 
 1. ✅ Run `mix format` - Fix formatting issues
-2. ✅ Run `mix do deps.get, local.rebar --force, deps.compile, compile` - Verify compilation
+2. ✅ Run `mix do deps.get, local.hex --force, local.rebar --force, deps.compile, compile` - Verify compilation
 3. ✅ Run `mix test` - Execute test suite (if applicable)
 4. ✅ Run `mix credo` - Check code quality (if available)
 5. ✅ Review git diff - Confirm changes are intentional
@@ -105,7 +107,7 @@ warning: variable "foo" is unused
 
 ```bash
 # Format, compile, and verify in one go
-mix format && mix do deps.get, local.rebar --force, deps.compile, compile
+mix format && mix do deps.get, local.hex --force, local.rebar --force, deps.compile, compile
 ```
 
 ## Performance Notes
@@ -131,7 +133,7 @@ However, new code should aim for **zero warnings**.
 ```bash
 # Nuclear option: clean everything and start fresh
 rm -rf _build deps
-mix do deps.get, local.rebar --force, deps.compile, compile
+mix do deps.get, local.hex --force, local.rebar --force, deps.compile, compile
 ```
 
 ### Erlang/Elixir Version Mismatch
@@ -140,7 +142,7 @@ Check required versions in `mix.exs`:
 ```elixir
 def project do
   [
-    elixir: "~> 1.14",
+    elixir: "~> 1.19",
     # ...
   ]
 end
@@ -181,7 +183,7 @@ This compilation step is typically part of the CI/CD pipeline. Ensure your chang
 ## Key Takeaways
 
 - **Always compile before committing** - Catch errors early
-- **Use the full command** - Ensures dependencies are up to date
+- **Use the full command** - Ensures dependencies are up-to-date
 - **Monitor compilation warnings** - They often indicate real issues
 - **Clean builds when in doubt** - Removes stale artifacts
 - **Compilation success ≠ correctness** - Still need tests and manual verification
