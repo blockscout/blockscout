@@ -78,6 +78,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
     end
   end
 
+  defp normalize_missing_blocks_count(nil), do: 0
   defp normalize_missing_blocks_count(%Decimal{} = value), do: Decimal.to_integer(value)
   defp normalize_missing_blocks_count(value), do: value
 

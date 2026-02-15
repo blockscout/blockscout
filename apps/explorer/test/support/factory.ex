@@ -817,7 +817,7 @@ defmodule Explorer.Factory do
 
   def multichain_search_db_main_export_queue_factory do
     %MultichainSearchDb.MainExportQueue{
-      hash: <<0::256>>,
+      hash: address_hash().bytes,
       hash_type: :address
     }
   end
