@@ -288,24 +288,24 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   defp multichain_search_main_export_queue_disabled? do
     :indexer
     |> Application.get_env(Indexer.Fetcher.MultichainSearchDb.MainExportQueue.Supervisor, [])
-    |> Keyword.get(:disabled?)
+    |> Keyword.get(:disabled?) == true
   end
 
   defp multichain_search_balances_export_queue_disabled? do
     :indexer
     |> Application.get_env(Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue.Supervisor, [])
-    |> Keyword.get(:disabled?)
+    |> Keyword.get(:disabled?) == true
   end
 
   defp multichain_search_token_info_export_queue_disabled? do
     :indexer
     |> Application.get_env(Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueue.Supervisor, [])
-    |> Keyword.get(:disabled?)
+    |> Keyword.get(:disabled?) == true
   end
 
   defp multichain_search_counters_export_queue_disabled? do
     :indexer
     |> Application.get_env(Indexer.Fetcher.MultichainSearchDb.CountersExportQueue.Supervisor, [])
-    |> Keyword.get(:disabled?)
+    |> Keyword.get(:disabled?) == true
   end
 end
