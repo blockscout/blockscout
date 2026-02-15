@@ -40,7 +40,6 @@ defmodule Explorer.Chain.FheContractChecker do
     case fhe_contract?(address_hash) do
       {:ok, true} -> save_fhe_tag(address_hash, options)
       {:ok, false} -> :ok
-      _error -> :error
     end
   end
 
@@ -68,9 +67,6 @@ defmodule Explorer.Chain.FheContractChecker do
 
       {:error, _reason} ->
         # Treat RPC error as false to avoid crashing/retrying loop, or return error?
-        {:ok, false}
-
-      _other ->
         {:ok, false}
     end
   end
@@ -150,7 +146,6 @@ defmodule Explorer.Chain.FheContractChecker do
 
   defp decode_uint256("0x" <> hex), do: decode_hex(hex)
   defp decode_uint256(hex) when is_binary(hex), do: decode_hex(hex)
-  defp decode_uint256(_), do: 0
 
   defp decode_hex(""), do: 0
 

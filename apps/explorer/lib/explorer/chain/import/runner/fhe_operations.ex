@@ -23,6 +23,8 @@ defmodule Explorer.Chain.Import.Runner.FheOperations do
 
   @timeout 60_000
 
+  @type imported :: [FheOperation.t()]
+
   # Required by Import.Runner behaviour
   @impl Import.Runner
   def ecto_schema_module, do: FheOperation
@@ -54,7 +56,7 @@ defmodule Explorer.Chain.Import.Runner.FheOperations do
   @impl Import.Runner
   def timeout, do: @timeout
 
-  @spec insert(Repo.t(), [map()], %{
+  @spec insert(Ecto.Repo.t(), [map()], %{
           required(:timeout) => timeout(),
           required(:timestamps) => Import.timestamps()
         }) :: {:ok, [FheOperation.t()]} | {:error, [Changeset.t()]}
@@ -97,8 +99,6 @@ defmodule Explorer.Chain.Import.Runner.FheOperations do
 
     :ok
   end
-
-  defp tag_contracts_from_fhe_operations(_), do: :ok
 
   # Gets all unique contract addresses from FHE operations:
   # 1. Caller addresses from FHE operation logs (contracts that called FHE operations)

@@ -1073,6 +1073,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   # Returns 0 if no operations exist.
   defp fhe_operations_count(transaction_hash) do
     metrics = FheOperation.transaction_metrics(transaction_hash)
-    metrics.operation_count || 0
+    metrics.operation_count
   end
 end

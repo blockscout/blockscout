@@ -3,7 +3,11 @@ defmodule Explorer.Repo.Migrations.CreateFheOperations do
 
   def change do
     create table(:fhe_operations, primary_key: false) do
-      add(:transaction_hash, references(:transactions, column: :hash, on_delete: :delete_all, type: :bytea), null: false, primary_key: true)
+      add(:transaction_hash, references(:transactions, column: :hash, on_delete: :delete_all, type: :bytea),
+        null: false,
+        primary_key: true
+      )
+
       add(:log_index, :integer, null: false, primary_key: true)
       add(:block_hash, references(:blocks, column: :hash, on_delete: :delete_all, type: :bytea), null: false)
       add(:block_number, :bigint, null: false)
