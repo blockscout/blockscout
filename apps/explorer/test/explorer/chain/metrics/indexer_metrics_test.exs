@@ -33,6 +33,53 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetricsTest do
     end
   end
 
+  describe "missing_internal_transactions_count/0" do
+    test "counts pending block operations when pending_operations_type is blocks" do
+      previous_explorer_config = Application.get_env(:explorer, :json_rpc_named_arguments)
+      previous_geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :json_rpc_named_arguments, previous_explorer_config)
+        Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, previous_geth_config)
+      end)
+
+      # Set configuration to use "blocks" mode (non-Geth or Geth with block_traceable)
+      Application.put_env(:explorer, :json_rpc_named_arguments, variant: EthereumJSONRPC.Nethermind)
+
+      block1 = insert(:block)
+      block2 = insert(:block)
+      block3 = insert(:block)
+
+      insert(:pending_block_operation, block_hash: block1.hash, block_number: block1.number)
+      insert(:pending_block_operation, block_hash: block2.hash, block_number: block2.number)
+      insert(:pending_block_operation, block_hash: block3.hash, block_number: block3.number)
+
+      assert IndexerMetrics.missing_internal_transactions_count() == 3
+    end
+
+    test "counts pending transaction operations when pending_operations_type is transactions" do
+      previous_explorer_config = Application.get_env(:explorer, :json_rpc_named_arguments)
+      previous_geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :json_rpc_named_arguments, previous_explorer_config)
+        Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, previous_geth_config)
+      end)
+
+      # Set configuration to use "transactions" mode (Geth with block_traceable? = false)
+      Application.put_env(:explorer, :json_rpc_named_arguments, variant: EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, block_traceable?: false)
+
+      transaction1 = insert(:transaction)
+      transaction2 = insert(:transaction)
+
+      insert(:pending_transaction_operation, transaction_hash: transaction1.hash)
+      insert(:pending_transaction_operation, transaction_hash: transaction2.hash)
+
+      assert IndexerMetrics.missing_internal_transactions_count() == 2
+    end
+  end
+
   describe "missing_archival_token_balances_count/0" do
     test "returns 0 when archival token balances fetcher is disabled" do
       previous_config =

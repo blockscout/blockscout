@@ -89,7 +89,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   def missing_internal_transactions_count do
     case PendingOperationsHelper.pending_operations_type() do
       "blocks" -> Repo.aggregate(PendingBlockOperation, :count, :block_hash, timeout: :infinity)
-      "transactions" -> Repo.aggregate(PendingTransactionOperation, :count, :block_hash, timeout: :infinity)
+      "transactions" -> Repo.aggregate(PendingTransactionOperation, :count, :transaction_hash, timeout: :infinity)
     end
   end
 
