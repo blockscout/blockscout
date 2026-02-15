@@ -56,7 +56,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         |> with_chain_type_transformations()
         |> Enum.zip(decoded_transactions)
         |> Enum.map(fn {transaction, decoded_input} ->
-          prepare_transaction(transaction, conn, false, block_height, decoded_input, watchlist_names, fhe_counts)
+          prepare_transaction(transaction, conn, false, block_height, watchlist_names, decoded_input, fhe_counts)
         end),
       "next_page_params" => next_page_params
     }
@@ -90,7 +90,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         |> with_chain_type_transformations()
         |> Enum.zip(decoded_transactions)
         |> Enum.map(fn {transaction, decoded_input} ->
-          prepare_transaction(transaction, conn, false, block_height, decoded_input, nil, fhe_counts)
+          prepare_transaction(transaction, conn, false, block_height, nil, decoded_input, fhe_counts)
         end),
       "next_page_params" => next_page_params
     }
@@ -111,7 +111,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> with_chain_type_transformations()
     |> Enum.zip(decoded_transactions)
     |> Enum.map(fn {transaction, decoded_input} ->
-      prepare_transaction(transaction, conn, false, block_height, decoded_input, nil, fhe_counts)
+      prepare_transaction(transaction, conn, false, block_height, nil, decoded_input, fhe_counts)
     end)
   end
 
@@ -121,7 +121,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     transaction
     |> with_chain_type_transformations()
-    |> prepare_transaction(conn, true, block_height, decoded_input)
+    |> prepare_transaction(conn, true, block_height, nil, decoded_input)
   end
 
   def render("raw_trace.json", %{raw_traces: raw_traces}) do
@@ -450,15 +450,23 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  defp prepare_transaction(transaction, conn, single_transaction?, block_height, decoded_input, watchlist_names \\ nil, fhe_operations_counts \\ nil)
+  defp prepare_transaction(
+         transaction,
+         conn,
+         single_transaction?,
+         block_height,
+         watchlist_names \\ nil,
+         decoded_input \\ nil,
+         fhe_operations_counts \\ nil
+       )
 
   defp prepare_transaction(
          {%Reward{} = emission_reward, %Reward{} = validator_reward},
          conn,
          single_transaction?,
          _block_height,
-         _decoded_input,
          _watchlist_names,
+         _decoded_input,
          _fhe_operations_counts
        ) do
     %{
@@ -487,8 +495,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
          conn,
          single_transaction?,
          block_height,
-         decoded_input,
          watchlist_names,
+         decoded_input,
          fhe_operations_counts
        ) do
     base_fee_per_gas = transaction.block && transaction.block.base_fee_per_gas
