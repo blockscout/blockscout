@@ -38,6 +38,7 @@ defmodule BlockScoutWeb.Notifier do
     BlockNumberHelper,
     DenormalizationHelper,
     InternalTransaction,
+    Token,
     Token.Instance,
     Transaction
   }
@@ -254,7 +255,7 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :internal_transactions, :realtime, internal_transactions}) do
     internal_transactions
     |> Stream.map(
-      &(InternalTransaction.where_nonpending_block()
+      &(InternalTransaction.where_nonpending_operation()
         |> Repo.get_by(transaction_hash: &1.transaction_hash, index: &1.index)
         |> Repo.preload([:from_address, :to_address, :block]))
     )
@@ -339,7 +340,7 @@ defmodule BlockScoutWeb.Notifier do
 
   def handle_event(
         {:chain_event, :token_total_supply, :on_demand,
-         [%Explorer.Chain.Token{contract_address_hash: contract_address_hash, total_supply: total_supply} = token]}
+         [%Token{contract_address_hash: contract_address_hash, total_supply: total_supply} = token]}
       )
       when not is_nil(total_supply) do
     # TODO: delete duplicated event when old UI becomes deprecated
@@ -368,7 +369,7 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast(
       "token_instances:#{token_contract_address_hash_string}",
       "fetched_token_instance_metadata",
-      %{token_id: token_id, fetched_metadata: fetched_token_instance_metadata}
+      %{token_id: to_string(token_id), fetched_metadata: fetched_token_instance_metadata}
     )
   end
 
@@ -379,7 +380,7 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast(
       "token_instances:#{token_contract_address_hash_string}",
       "not_fetched_token_instance_metadata",
-      %{token_id: token_id, reason: reason}
+      %{token_id: to_string(token_id), reason: reason}
     )
   end
 
@@ -473,17 +474,20 @@ defmodule BlockScoutWeb.Notifier do
     %{view: view, compiler: compiler}
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp broadcast_token_balances(address_hash, token_type, balances) do
     sorted =
       Enum.sort_by(
         balances,
         fn ctb ->
-          value =
-            if ctb.token.decimals,
-              do: Decimal.div(ctb.value, Decimal.new(Integer.pow(10, Decimal.to_integer(ctb.token.decimals)))),
-              else: ctb.value
+          case ctb.token do
+            %Token{decimals: decimals, fiat_value: fiat_value} when not is_nil(decimals) ->
+              value = Decimal.div(ctb.value, Decimal.new(Integer.pow(10, Decimal.to_integer(decimals))))
+              {(fiat_value && Decimal.mult(value, fiat_value)) || Decimal.new(0), value}
 
-          {(ctb.token.fiat_value && Decimal.mult(value, ctb.token.fiat_value)) || Decimal.new(0), value}
+            _ ->
+              {Decimal.new(0), ctb.value}
+          end
         end,
         fn {fiat_value_1, value_1}, {fiat_value_2, value_2} ->
           case {Decimal.compare(fiat_value_1, fiat_value_2), Decimal.compare(value_1, value_2)} do

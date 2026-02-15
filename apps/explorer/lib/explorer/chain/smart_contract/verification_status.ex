@@ -13,20 +13,20 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   alias Que.Persistence, as: QuePersistence
 
   @typedoc """
-  * `address_hash` - address of the contract which was tried to verify
+  * `contract_address_hash` - address of the contract which was tried to verify
   * `status` - try status: :pending | :pass | :fail
   * `uid` - unique verification try identifier
   """
   @primary_key false
-  typed_schema "contract_verification_status" do
+  typed_schema "smart_contract_verification_statuses" do
     field(:uid, :string, primary_key: true, null: false)
     field(:status, :integer, null: false)
-    field(:address_hash, Hash.Address, null: false)
+    field(:contract_address_hash, Hash.Address, null: false)
 
     timestamps()
   end
 
-  @required_fields ~w(uid status address_hash)a
+  @required_fields ~w(uid status contract_address_hash)a
 
   def changeset(%__MODULE__{} = struct, params \\ %{}) do
     casted_params = encode_status(params)
@@ -74,7 +74,7 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
     {:ok, hash} = if is_binary(address_hash), do: Chain.string_to_address_hash(address_hash), else: address_hash
 
     %__MODULE__{}
-    |> changeset(%{uid: uid, status: status, address_hash: hash})
+    |> changeset(%{uid: uid, status: status, contract_address_hash: hash})
     |> Repo.insert()
   end
 

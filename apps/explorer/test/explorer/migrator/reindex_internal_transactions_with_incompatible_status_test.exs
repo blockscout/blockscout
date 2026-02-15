@@ -22,14 +22,16 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatusTes
           insert(:internal_transaction,
             index: 10,
             transaction: transaction,
+            transaction_index: transaction.index,
             block: block,
             block_number: block.number,
-            block_index: i,
             error: nil
           )
 
           block.number
         end)
+
+      transaction_error = insert(:transaction_error, message: "error")
 
       Enum.each(1..5, fn i ->
         block = insert(:block)
@@ -38,10 +40,11 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatusTes
         insert(:internal_transaction,
           index: 10,
           transaction: transaction,
+          transaction_index: transaction.index,
           block: block,
           block_number: block.number,
-          block_index: i,
           error: "error",
+          error_id: transaction_error.id,
           output: nil
         )
       end)
@@ -53,9 +56,9 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatusTes
         insert(:internal_transaction,
           index: 10,
           transaction: transaction,
+          transaction_index: transaction.index,
           block: block,
           block_number: block.number,
-          block_index: i,
           error: nil
         )
       end)

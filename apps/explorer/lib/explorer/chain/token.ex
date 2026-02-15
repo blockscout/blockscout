@@ -69,6 +69,7 @@ defmodule Explorer.Chain.Token do
   * ERC-1155
   * ERC-404
   * ZRC-2 (for Zilliqa chain type)
+  * ERC-7984
 
   ## Token Specifications
 
@@ -78,6 +79,7 @@ defmodule Explorer.Chain.Token do
   * [ERC-1155](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md)
   * [ERC-404](https://github.com/Pandora-Labs-Org/erc404)
   * [ZRC-2](https://github.com/Zilliqa/ZRC/blob/main/zrcs/zrc-2.md)
+  * [ERC-7984](https://github.com/ethereum/ERCs/blob/39197cde3e32d8fc7fde74c7d0ce5e67ad4de409/ERCS/erc-7984.md)
   """
   require Logger
 
@@ -90,7 +92,7 @@ defmodule Explorer.Chain.Token do
   alias Ecto.{Changeset, Multi}
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{Address, BridgedToken, Hash, Search, Token}
-  alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Cache.{BackgroundMigrations, BlockNumber}
   alias Explorer.Chain.Cache.Counters.{TokenHoldersCount, TokenTransfersCount}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Helper, as: ExplorerHelper
@@ -380,7 +382,7 @@ defmodule Explorer.Chain.Token do
       case filter && filter !== "" && Search.prepare_search_term(filter) do
         {:some, filter_term} ->
           sorted_paginated_query
-          |> where(fragment("to_tsvector('english', symbol || ' ' || name) @@ to_tsquery(?)", ^filter_term))
+          |> apply_fts_filter(filter_term)
 
         _ ->
           sorted_paginated_query
@@ -388,6 +390,49 @@ defmodule Explorer.Chain.Token do
 
     filtered_query
     |> Chain.select_repo(options).all()
+  end
+
+  @doc """
+  Applies full-text search filtering to a token query.
+
+  This function handles tokens with and without symbols differently:
+  - For tokens with a symbol, it searches across both symbol and name.
+  - For tokens without a symbol (e.g., ERC-1155), it searches only the name field.
+
+  ## Parameters
+  - `query`: The Ecto query to filter.
+  - `filter_term`: The prepared search term (from Search.prepare_search_term/1).
+
+  ## Returns
+  - An Ecto query with FTS filtering applied.
+  """
+  @spec apply_fts_filter(Ecto.Query.t(), String.t()) :: Ecto.Query.t()
+  def apply_fts_filter(query, filter_term) do
+    if BackgroundMigrations.get_heavy_indexes_create_tokens_name_partial_fts_index_finished() do
+      query
+      |> where(
+        [token],
+        (not is_nil(token.symbol) and
+           fragment(
+             "to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)",
+             token.symbol,
+             token.name,
+             ^filter_term
+           )) or
+          (is_nil(token.symbol) and
+             fragment(
+               "to_tsvector('english', ?) @@ to_tsquery(?)",
+               token.name,
+               ^filter_term
+             ))
+      )
+    else
+      query
+      |> where(
+        [token],
+        fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^filter_term)
+      )
+    end
   end
 
   defp apply_filter(query, empty_type) when empty_type in [nil, []], do: query

@@ -17,7 +17,8 @@ defmodule BlockScoutWeb.Account.API.V2.EmailController do
   plug(:fetch_cookies, signed: [@invalid_session_key])
 
   def resend_email(conn, _params) do
-    with user <- conn.cookies[@invalid_session_key],
+    with {:enabled, true} <- {:enabled, Auth0.enabled?()},
+         user <- conn.cookies[@invalid_session_key],
          {:auth, false} <- {:auth, is_nil(user)},
          {:email_verified, false} <- {:email_verified, user[:email_verified]},
          {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(user[:id])},

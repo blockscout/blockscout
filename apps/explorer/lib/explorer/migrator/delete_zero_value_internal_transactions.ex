@@ -1,7 +1,7 @@
 defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   @moduledoc """
   Continuously deletes all zero-value calls older than
-  `MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_STORAGE_PERIOD_DAYS` from DB.
+  `MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_STORAGE_PERIOD` from DB.
   """
 
   use GenServer
@@ -11,17 +11,17 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
 
   alias Explorer.Chain.{Block, InternalTransaction}
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
-  alias Explorer.Chain.InternalTransaction.ZeroValueDeleteQueue
   alias Explorer.Migrator.MigrationStatus
   alias Explorer.Repo
   alias Explorer.Utility.{AddressIdToAddressHash, InternalTransactionsAddressPlaceholder}
   alias Timex.Duration
 
   @migration_name "delete_zero_value_internal_transactions"
+  @shrink_internal_transactions_migration_name "shrink_internal_transactions"
   @not_completed_check_interval 10
   @default_check_interval :timer.minutes(1)
   @default_batch_size 100
-  @default_storage_period_days 30
+  @default_storage_period :timer.hours(24) * 30
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
@@ -41,22 +41,13 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   end
 
   @impl true
-  def handle_continue(:ok, _state) do
-    state =
-      case MigrationStatus.fetch(@migration_name) do
-        nil ->
-          state = %{"max_block_number" => -1}
-          MigrationStatus.set_status(@migration_name, "started")
-          MigrationStatus.update_meta(@migration_name, state)
-          state
+  def handle_continue(:ok, state) do
+    check_dependency_and_start(state)
+  end
 
-        %{meta: meta} ->
-          meta
-      end
-
-    schedule_check()
-
-    {:noreply, state}
+  @impl true
+  def handle_info(:check_dependency, state) do
+    check_dependency_and_start(state)
   end
 
   @impl true
@@ -64,8 +55,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
     border_number = get_border_number()
     to_number = border_number && min(max_number + batch_size(), border_number)
     clear_internal_transactions(max_number, to_number)
-    clear_from_delete_queue()
-    completed? = to_number == border_number
+    completed? = not is_nil(border_number) and to_number == border_number
     new_max_number = (to_number && to_number + 1) || max_number
 
     new_state =
@@ -77,19 +67,34 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
       end
 
     MigrationStatus.update_meta(@migration_name, new_state)
-    schedule_check(completed?)
+    schedule_check(completed? or is_nil(border_number))
     {:noreply, new_state}
   end
 
-  defp clear_from_delete_queue do
-    batch_size = batch_size()
+  defp check_dependency_and_start(state) do
+    shrink_config = Application.get_env(:explorer, Explorer.Migrator.ShrinkInternalTransactions) || []
+    shrink_enabled? = shrink_config[:enabled] != false
+    shrink_status = MigrationStatus.get_status(@shrink_internal_transactions_migration_name)
 
-    ZeroValueDeleteQueue
-    |> order_by([z], z.block_number)
-    |> select([z], z.block_number)
-    |> limit(^batch_size)
-    |> Repo.all()
-    |> clear_internal_transactions()
+    if shrink_enabled? && shrink_status != "completed" do
+      schedule_dependency_check()
+      {:noreply, state}
+    else
+      state =
+        case MigrationStatus.fetch(@migration_name) do
+          nil ->
+            state = %{"max_block_number" => -1}
+            MigrationStatus.set_status(@migration_name, "started")
+            MigrationStatus.update_meta(@migration_name, state)
+            state
+
+          %{meta: meta} ->
+            meta
+        end
+
+      schedule_check()
+      {:noreply, state}
+    end
   end
 
   defp clear_internal_transactions(from_number, to_number)
@@ -100,12 +105,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   end
 
   defp clear_internal_transactions(_from, _to), do: :ok
-
-  defp clear_internal_transactions(block_numbers) when is_list(block_numbers) do
-    dynamic_condition = dynamic([it], it.block_number in ^block_numbers)
-
-    do_clear_internal_transactions(dynamic_condition)
-  end
 
   @smallint_max_value 32767
   defp do_clear_internal_transactions(dynamic_condition) do
@@ -136,10 +135,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
           )
 
         {_count, deleted_internal_transactions} = Repo.delete_all(delete_query, timeout: :infinity)
-
-        ZeroValueDeleteQueue
-        |> where([it], ^dynamic_condition)
-        |> Repo.delete_all(timeout: :infinity)
 
         address_hashes =
           deleted_internal_transactions
@@ -217,8 +212,8 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   end
 
   defp get_border_number do
-    storage_period = Application.get_env(:explorer, __MODULE__)[:storage_period_days] || @default_storage_period_days
-    border_timestamp = Timex.shift(Timex.now(), days: -storage_period)
+    storage_period = Application.get_env(:explorer, __MODULE__)[:storage_period] || @default_storage_period
+    border_timestamp = Timex.shift(Timex.now(), milliseconds: -storage_period)
 
     Block
     |> where([b], b.timestamp < ^border_timestamp)
@@ -230,6 +225,11 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
 
   defp schedule_check(completed? \\ false) do
     Process.send_after(self(), :update, (completed? && completed_check_interval()) || @not_completed_check_interval)
+  end
+
+  defp schedule_dependency_check do
+    interval = Application.get_env(:explorer, __MODULE__)[:dependency_check_interval] || :timer.hours(1)
+    Process.send_after(self(), :check_dependency, interval)
   end
 
   defp completed_check_interval do

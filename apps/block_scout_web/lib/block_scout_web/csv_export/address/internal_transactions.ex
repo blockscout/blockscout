@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
 
   import BlockScoutWeb.Chain, only: [address_to_internal_transactions: 2]
 
-  alias Explorer.Chain.{Address, Hash, Transaction, Wei}
+  alias Explorer.Chain.{Address, Hash, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.CsvExport.Helper
 
   @spec export(Hash.Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
@@ -49,9 +49,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
       "TxHash",
       "Index",
       "BlockNumber",
-      "BlockHash",
       "TxIndex",
-      "BlockIndex",
       "UnixTimestamp",
       "FromAddress",
       "ToAddress",
@@ -79,15 +77,13 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
           to_string(internal_transaction.transaction_hash),
           internal_transaction.index,
           internal_transaction.block_number,
-          internal_transaction.block_hash,
-          internal_transaction.block_index,
           internal_transaction.transaction_index,
           internal_transaction.block.timestamp,
           Address.checksum(internal_transaction.from_address_hash),
           Address.checksum(internal_transaction.to_address_hash),
           Address.checksum(internal_transaction.created_contract_address_hash),
           internal_transaction.type,
-          internal_transaction.call_type,
+          InternalTransaction.call_type(internal_transaction),
           internal_transaction.gas || "0",
           internal_transaction.gas_used,
           Wei.to(internal_transaction.value, :wei),

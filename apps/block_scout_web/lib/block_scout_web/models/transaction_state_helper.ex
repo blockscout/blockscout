@@ -118,7 +118,14 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
     )
   end
 
-  defp internal_transaction_to_coin_balances(%InternalTransaction{call_type: :delegatecall}, _, _, acc), do: acc
+  defp internal_transaction_to_coin_balances(
+         %InternalTransaction{call_type: call_type, call_type_enum: call_type_enum},
+         _,
+         _,
+         acc
+       )
+       when :delegatecall in [call_type, call_type_enum],
+       do: acc
 
   defp internal_transaction_to_coin_balances(internal_transaction, previous_block_number, options, acc) do
     if internal_transaction.value |> Wei.to(:wei) |> Decimal.positive?() do
@@ -137,7 +144,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
   end
 
   defp coin_balance(address_hash, _block_number, _options) when is_nil(address_hash) do
-    %Wei{value: Decimal.new(0)}
+    Wei.zero()
   end
 
   defp coin_balance(address_hash, block_number, options) do
@@ -147,7 +154,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
 
       _ ->
         CoinBalanceOnDemand.trigger_historic_fetch(options[:ip], address_hash, block_number)
-        %Wei{value: Decimal.new(0)}
+        Wei.zero()
     end
   end
 

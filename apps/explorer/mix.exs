@@ -20,7 +20,7 @@ defmodule Explorer.Mixfile do
       lockfile: "../../mix.lock",
       package: package(),
       start_permanent: Mix.env() == :prod,
-      version: "9.3.2",
+      version: "10.0.0",
       xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper, Indexer.Fetcher.InternalTransaction]]
     ]
   end
@@ -115,7 +115,7 @@ defmodule Explorer.Mixfile do
       # `Timex.Duration` for `Explorer.Chain.Cache.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},
-      {:tesla, "~> 1.15.3"},
+      {:tesla, "~> 1.16.0"},
       {:cbor, "~> 1.0"},
       {:cloak_ecto, "~> 1.3.0"},
       {:redix, "~> 1.1"},
@@ -129,6 +129,7 @@ defmodule Explorer.Mixfile do
       {:oauth2, "~> 2.0"},
       {:siwe, github: "royal-markets/siwe-ex", ref: "51c9c08240eb7eea3c35693011f8d260cd9bb3be"},
       {:joken, "~> 2.6"},
+      {:joken_jwks, "~> 1.7.0"},
       {:utils, in_umbrella: true},
       {:dns, "~> 2.4.0"},
       {:inet_cidr, "~> 1.0.0"},

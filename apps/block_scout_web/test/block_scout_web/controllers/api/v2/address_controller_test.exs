@@ -1822,8 +1822,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       check_paginated_response(response, response_2nd_page, erc_1155_tt)
       # -- ------ --
 
-      # two filters simultaneously
-      filter = %{"type" => "ERC-1155,ERC-20"}
+      # two filters simultaneously (includes ERC-7984 but no ERC-7984 transfers created in this test)
+      filter = %{"type" => "ERC-1155,ERC-20,ERC-7984"}
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers", filter)
       assert response = json_response(request, 200)
 
@@ -2232,7 +2232,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,
-          block_index: 1,
           from_address: address
         )
 
@@ -2243,7 +2242,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,
-          block_index: 2,
           to_address: address
         )
 
@@ -2284,7 +2282,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         insert(:internal_transaction_selfdestruct,
           transaction: transaction,
           index: 1,
-          block_index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,
@@ -2317,7 +2314,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             block_hash: transaction.block_hash,
-            block_index: i,
             from_address: address
           )
         end
@@ -2340,7 +2336,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             block_hash: transaction.block_hash,
-            block_index: i,
             to_address: address
           )
         end
@@ -2621,12 +2616,12 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         type: "call",
         call_type: "call",
         transaction: transaction,
+        transaction_index: transaction.index,
         block: transaction.block,
         to_address: address,
         value: 123,
         block_number: transaction.block_number,
-        index: 1,
-        block_index: 1
+        index: 1
       )
 
       insert(:address_coin_balance)
@@ -3888,7 +3883,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,
-          block_index: x,
           to_address: address
         )
       end
@@ -3932,7 +3926,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,
-          block_index: x,
           from_address: address
         )
       end
@@ -3986,7 +3979,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,
-          block_index: x,
           from_address: address
         )
       end
@@ -4034,7 +4026,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           block_hash: transaction.block_hash,
-          block_index: x,
           from_address: address
         )
       end
@@ -5633,6 +5624,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert to_string(log.transaction_hash) == json["transaction_hash"]
     assert json["block_number"] == log.block_number
     assert json["block_hash"] == to_string(log.block_hash)
+    assert json["block_timestamp"] != nil
   end
 
   defp compare_item(%Withdrawal{} = withdrawal, json) do

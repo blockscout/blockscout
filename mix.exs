@@ -7,7 +7,7 @@ defmodule BlockScout.Mixfile do
     [
       # app: :block_scout,
       # aliases: aliases(config_env()),
-      version: "9.3.2",
+      version: "10.0.0",
       apps_path: "apps",
       deps: deps(),
       dialyzer: dialyzer(),
@@ -38,7 +38,12 @@ defmodule BlockScout.Mixfile do
 
   defp copy_prod_runtime_config(%Mix.Release{path: path} = release) do
     File.mkdir_p!(Path.join([path, "config", "runtime"]))
-    File.cp!(Path.join(["config", "runtime", "prod.exs"]), Path.join([path, "config", "runtime", "prod.exs"]))
+
+    File.cp!(
+      Path.join(["config", "runtime", "prod.exs"]),
+      Path.join([path, "config", "runtime", "prod.exs"])
+    )
+
     File.mkdir_p!(Path.join([path, "apps", "explorer", "config", "prod"]))
 
     File.cp_r!(
@@ -47,7 +52,11 @@ defmodule BlockScout.Mixfile do
     )
 
     File.mkdir_p!(Path.join([path, "apps", "indexer", "config", "prod"]))
-    File.cp_r!(Path.join(["apps", "indexer", "config", "prod"]), Path.join([path, "apps", "indexer", "config", "prod"]))
+
+    File.cp_r!(
+      Path.join(["apps", "indexer", "config", "prod"]),
+      Path.join([path, "apps", "indexer", "config", "prod"])
+    )
 
     release
   end
@@ -96,10 +105,10 @@ defmodule BlockScout.Mixfile do
     [
       {:prometheus_ex, "~> 5.0.0", override: true},
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.8", override: true},
-      {:tesla, "~> 1.15.3"},
+      {:tesla, "~> 1.16.0"},
       {:mint, "~> 1.7.1"},
       # Documentation
-      {:ex_doc, "~> 0.39.1", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.40.1", only: :dev, runtime: false},
       {:number, "~> 1.0.3"}
     ]
   end

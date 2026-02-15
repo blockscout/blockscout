@@ -5,7 +5,7 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
-  import Ecto.Query, only: [from: 2, limit: 2, where: 3, subquery: 1, order_by: 3]
+  import Ecto.Query, only: [from: 2, where: 3, subquery: 1, order_by: 3]
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{DenormalizationHelper, Log, Transaction}
@@ -81,7 +81,6 @@ defmodule Explorer.Etherscan.Logs do
       |> where([log], log.address_hash == ^address_hash)
       |> where([log], log.block_number >= ^prepared_filter.from_block)
       |> where([log], log.block_number <= ^prepared_filter.to_block)
-      |> limit(1000)
       |> page_logs(paging_options)
 
     if DenormalizationHelper.transactions_denormalization_finished?() do
@@ -99,7 +98,8 @@ defmodule Explorer.Etherscan.Logs do
             block_number: transaction.block_number,
             block_timestamp: transaction.block_timestamp,
             block_consensus: transaction.block_consensus
-          }
+          },
+          limit: 1000
         )
 
       all_transaction_logs_query
@@ -122,7 +122,8 @@ defmodule Explorer.Etherscan.Logs do
             block_number: transaction.block_number,
             block_timestamp: block.timestamp,
             block_consensus: block.consensus
-          }
+          },
+          limit: 1000
         )
 
       all_transaction_logs_query

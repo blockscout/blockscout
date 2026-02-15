@@ -14,7 +14,7 @@ defmodule Indexer.Block.Fetcher do
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
@@ -30,6 +30,8 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
   alias Indexer.Fetcher.Filecoin.AddressInfo, as: FilecoinAddressInfo
   alias Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens, as: PolygonZkevmBridgeL1Tokens
+  alias Indexer.Fetcher.TokenBalance.Current, as: TokenBalanceCurrent
+  alias Indexer.Fetcher.TokenBalance.Historical, as: TokenBalanceHistorical
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Indexer.Fetcher.Zilliqa.Zrc2Tokens
 
@@ -44,7 +46,6 @@ defmodule Indexer.Block.Fetcher do
     ReplacedTransaction,
     SignedAuthorizationStatus,
     Token,
-    TokenBalance,
     UncleBlock
   }
 
@@ -78,13 +79,20 @@ defmodule Indexer.Block.Fetcher do
 
   @type address_hash_to_fetched_balance_block_number :: %{String.t() => Block.block_number()}
 
-  @type t :: %__MODULE__{}
+  @type t(callback_module) :: %__MODULE__{
+          broadcast: term(),
+          task_supervisor: module(),
+          callback_module: callback_module,
+          json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments(),
+          receipts_batch_size: pos_integer(),
+          receipts_concurrency: pos_integer()
+        }
 
   @doc """
   Calculates the balances and internal transactions and imports those with the given data.
   """
   @callback import(
-              t,
+              t(module()),
               %{
                 address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
                 addresses: Import.Runner.options(),
@@ -114,9 +122,10 @@ defmodule Indexer.Block.Fetcher do
   @doc false
   def default_receipts_concurrency, do: @receipts_concurrency
 
-  @enforce_keys ~w(json_rpc_named_arguments)a
+  @enforce_keys ~w(json_rpc_named_arguments task_supervisor)a
   defstruct broadcast: nil,
             callback_module: nil,
+            task_supervisor: nil,
             json_rpc_named_arguments: nil,
             receipts_batch_size: @receipts_batch_size,
             receipts_concurrency: @receipts_concurrency
@@ -141,7 +150,7 @@ defmodule Indexer.Block.Fetcher do
   end
 
   @decorate span(tracer: Tracer)
-  @spec fetch_and_import_range(t, Range.t(), map) ::
+  @spec fetch_and_import_range(t(module()), Range.t(), map) ::
           {:ok, %{inserted: %{}, errors: [EthereumJSONRPC.Transport.error()]}}
           | {:error,
              {step :: atom(), reason :: [Ecto.Changeset.t()] | term()}
@@ -150,7 +159,8 @@ defmodule Indexer.Block.Fetcher do
         %__MODULE__{
           broadcast: _broadcast,
           callback_module: callback_module,
-          json_rpc_named_arguments: json_rpc_named_arguments
+          json_rpc_named_arguments: json_rpc_named_arguments,
+          task_supervisor: task_supervisor
         } = state,
         _.._//_ = range,
         additional_options \\ %{}
@@ -287,11 +297,14 @@ defmodule Indexer.Block.Fetcher do
       inserted = Map.merge(inserted, inserted_transaction_actions)
       Prometheus.Instrumenter.set_block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
-      update_block_cache(inserted[:blocks])
-      update_transactions_cache(inserted[:transactions])
-      update_addresses_cache(inserted[:addresses])
-      update_uncles_cache(inserted[:block_second_degree_relations])
-      update_withdrawals_cache(inserted[:withdrawals])
+
+      Task.Supervisor.start_child(task_supervisor, fn ->
+        update_block_cache(inserted[:blocks], inserted)
+        update_transactions_cache(inserted[:transactions], inserted)
+        update_addresses_cache(inserted[:addresses])
+        update_uncles_cache(inserted[:block_second_degree_relations])
+        update_withdrawals_cache(inserted[:withdrawals])
+      end)
 
       async_match_arbitrum_messages_to_l2(arbitrum_transactions_for_further_handling)
 
@@ -428,21 +441,54 @@ defmodule Indexer.Block.Fetcher do
     })
   end
 
-  defp update_block_cache([]), do: :ok
+  defp update_block_cache([], _), do: :ok
 
-  defp update_block_cache(blocks) when is_list(blocks) do
+  defp update_block_cache(blocks, inserted) when is_list(blocks) do
     {min_block, max_block} = Enum.min_max_by(blocks, & &1.number)
 
     BlockNumber.update_all(max_block.number)
     BlockNumber.update_all(min_block.number)
-    BlocksCache.update(blocks)
+
+    transactions_by_block = Enum.group_by(Map.get(inserted, :transactions, []), & &1.block_hash)
+    rewards_by_block = Enum.group_by(Map.get(inserted, :block_rewards, []), & &1.block_hash)
+
+    blocks
+    |> Repo.preload(
+      transactions: fn block_hashes ->
+        Enum.flat_map(block_hashes, &Map.get(transactions_by_block, &1, []))
+      end,
+      rewards: fn block_hashes ->
+        Enum.flat_map(block_hashes, &Map.get(rewards_by_block, &1, []))
+      end
+    )
+    |> BlocksCache.update()
   end
 
-  defp update_block_cache(_), do: :ok
+  defp update_block_cache(_, _), do: :ok
 
-  defp update_transactions_cache(transactions) do
-    Transactions.update(transactions)
+  defp update_transactions_cache([], _), do: :ok
+
+  defp update_transactions_cache(transactions, inserted) when is_list(transactions) do
+    blocks_map = Map.new(Map.get(inserted, :blocks, []), fn block -> {block.hash, [block]} end)
+    token_transfers_transaction_hashes_set = MapSet.new(Map.get(inserted, :token_transfers, []), & &1.transaction_hash)
+
+    transactions
+    |> Repo.preload(
+      block: fn transaction_block_hashes ->
+        Enum.flat_map(transaction_block_hashes, &Map.get(blocks_map, &1, []))
+      end
+    )
+    |> Enum.map(fn transaction ->
+      Map.put(
+        transaction,
+        :has_token_transfers,
+        MapSet.member?(token_transfers_transaction_hashes_set, transaction.hash)
+      )
+    end)
+    |> Transactions.update()
   end
+
+  defp update_transactions_cache(_, _), do: :ok
 
   defp update_addresses_cache(addresses), do: Accounts.drop(addresses)
 
@@ -570,7 +616,7 @@ defmodule Indexer.Block.Fetcher do
   def async_import_tokens(_, _), do: :ok
 
   @doc """
-  Triggers async import of token balances just inserted into the database by the realtime or catchup indexer
+  Triggers async import of historical token balances just inserted into the database by the realtime or catchup indexer
   or internal transactions fetcher.
 
   ## Parameters
@@ -586,10 +632,34 @@ defmodule Indexer.Block.Fetcher do
   def async_import_token_balances(%{address_token_balances: []}, _realtime?), do: :ok
 
   def async_import_token_balances(%{address_token_balances: token_balances}, realtime?) do
-    TokenBalance.async_fetch(token_balances, realtime?)
+    TokenBalanceHistorical.async_fetch(token_balances, realtime?)
   end
 
   def async_import_token_balances(_, _), do: :ok
+
+  @doc """
+  Triggers async import of current token balances just inserted into the database by the realtime or catchup indexer.
+
+  ## Parameters
+  - `%{address_current_token_balances: current_token_balances}`: A map returned by the `Chain.import` function containing
+                                                 the list of inserted current token balances.
+  - `realtime?`: A boolean flag indicating whether to insert the items to the beginning (true)
+                 or to the end (false) of the import queue.
+
+  ## Returns
+  - :ok
+  """
+  @spec async_import_current_token_balances(
+          %{:address_current_token_balances => list(), optional(any()) => any()},
+          boolean()
+        ) :: :ok
+  def async_import_current_token_balances(%{address_current_token_balances: []}, _realtime?), do: :ok
+
+  def async_import_current_token_balances(%{address_current_token_balances: current_token_balances}, realtime?) do
+    TokenBalanceCurrent.async_fetch(current_token_balances, realtime?)
+  end
+
+  def async_import_current_token_balances(_, _), do: :ok
 
   def async_import_uncles(%{block_second_degree_relations: block_second_degree_relations}, realtime?) do
     UncleBlock.async_fetch_blocks(block_second_degree_relations, realtime?)

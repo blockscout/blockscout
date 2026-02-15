@@ -3,7 +3,7 @@ import Config
 # Lower hashing rounds for faster tests
 config :bcrypt_elixir, log_rounds: 4
 
-database_url = System.get_env("TEST_DATABASE_URL")
+database_url = ConfigHelper.parse_url_env_var("TEST_DATABASE_URL")
 database = if database_url, do: nil, else: "explorer_test"
 hostname = if database_url, do: nil, else: "localhost"
 
@@ -113,5 +113,6 @@ config :logger, :explorer, path: Path.absname("logs/test/explorer.log")
 
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: false
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: false
+config :explorer, Explorer.Tags.AddressTag.Cataloger, enabled: false
 
 config :tesla, adapter: Explorer.Mock.TeslaAdapter

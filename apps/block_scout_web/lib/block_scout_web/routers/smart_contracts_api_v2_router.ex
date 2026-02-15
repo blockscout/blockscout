@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
-    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.ApiSpec)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.Specs.Public)
   end
 
   pipeline :api_v2_no_forgery_protect do
@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.Routers.SmartContractsApiV2Router do
     plug(:accepts, ["json"])
     plug(CheckApiV2)
     plug(:fetch_session)
-    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.ApiSpec)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.Specs.Public)
   end
 
   scope "/", as: :api_v2 do

@@ -52,6 +52,7 @@ defmodule Explorer.Factory do
     TokenTransfer,
     Token.Instance,
     Transaction,
+    TransactionError,
     Wei,
     Withdrawal
   }
@@ -60,6 +61,8 @@ defmodule Explorer.Factory do
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
   alias Explorer.Chain.Zilliqa.Staker, as: ZilliqaStaker
+
+  alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
 
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
   alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
@@ -834,11 +837,10 @@ defmodule Explorer.Factory do
       input: %Data{bytes: <<1>>},
       output: %Data{bytes: <<2>>},
       # caller MUST supply `index`
-      trace_address: [],
+      trace_address: nil,
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
       # caller MUST supply `block_hash` (usually the same as the transaction's)
-      # caller MUST supply `block_index`
       type: :call,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
@@ -858,11 +860,10 @@ defmodule Explorer.Factory do
       gas_used: gas_used,
       # caller MUST supply `index`
       init: data(:internal_transaction_init),
-      trace_address: [],
+      trace_address: nil,
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
       # caller MUST supply `block_hash` (usually the same as the transaction's)
-      # caller MUST supply `block_index`
       type: :create,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
@@ -871,11 +872,17 @@ defmodule Explorer.Factory do
   def internal_transaction_selfdestruct_factory() do
     %InternalTransaction{
       from_address: build(:address),
-      trace_address: [],
+      trace_address: nil,
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
       type: :selfdestruct,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
+    }
+  end
+
+  def transaction_error_factory do
+    %TransactionError{
+      message: "error_#{sequence("transaction_error_message", & &1)}"
     }
   end
 
@@ -913,6 +920,18 @@ defmodule Explorer.Factory do
 
   def unique_token_factory do
     Map.replace(token_factory(), :name, sequence("Infinite Token"))
+  end
+
+  def erc7984_token_factory do
+    %Token{
+      name: "Confidential Token",
+      symbol: "CT",
+      total_supply: 1_000_000_000,
+      decimals: 18,
+      contract_address: build(:address),
+      type: "ERC-7984",
+      cataloged: true
+    }
   end
 
   def token_transfer_log_factory do
@@ -998,6 +1017,57 @@ defmodule Explorer.Factory do
       token_type: token.type,
       transaction: log.transaction,
       log_index: log.index,
+      block_consensus: true
+    }
+  end
+
+  def erc7984_token_transfer_log_factory do
+    from_address = build(:address)
+    to_address = build(:address)
+    token_address = insert(:contract_address)
+    transaction = build(:transaction)
+
+    # ConfidentialTransfer(address indexed from, address indexed to, bytes32 indexed amount)
+    # Event signature: 0x67500e8d0ed826d2194f514dd0d8124f35648ab6e3fb5e6ed867134cffe661e9
+    amount_pointer =
+      sequence("erc7984_amount_pointer", &("0x" <> String.pad_leading(Integer.to_string(&1, 16), 64, "0")))
+
+    log_params = %{
+      first_topic: "0x67500e8d0ed826d2194f514dd0d8124f35648ab6e3fb5e6ed867134cffe661e9",
+      second_topic: zero_padded_address_hash_string(from_address.hash),
+      third_topic: zero_padded_address_hash_string(to_address.hash),
+      fourth_topic: amount_pointer,
+      address_hash: token_address.hash,
+      address: token_address,
+      data: "0x",
+      transaction: transaction
+    }
+
+    build(:log, log_params)
+  end
+
+  def erc7984_token_transfer_factory do
+    log = build(:erc7984_token_transfer_log)
+    to_address_hash = address_hash_from_zero_padded_hash_string(log.third_topic)
+    from_address_hash = address_hash_from_zero_padded_hash_string(log.second_topic)
+
+    to_address = build(:address, hash: to_address_hash)
+    from_address = build(:address, hash: from_address_hash)
+
+    _token = insert(:erc7984_token, contract_address: log.address)
+    block = build(:block)
+
+    %TokenTransfer{
+      block: block,
+      amount: nil,
+      block_number: block.number,
+      from_address: from_address,
+      to_address: to_address,
+      token_contract_address: log.address,
+      token_type: "ERC-7984",
+      transaction: log.transaction,
+      log_index: log.index,
+      token_ids: nil,
       block_consensus: true
     }
   end
@@ -1414,6 +1484,31 @@ defmodule Explorer.Factory do
       l1_timestamp: DateTime.utc_now(),
       l1_block_number: op_output_root_l1_block_number(),
       output_root: op_output_root_hash()
+    }
+  end
+
+  def op_deposit_factory do
+    block = insert(:block)
+    gas_used = Enum.random(21_000..100_000)
+
+    l2_transaction =
+      insert(
+        :transaction,
+        block_number: block.number,
+        block_hash: block.hash,
+        cumulative_gas_used: gas_used,
+        gas_used: gas_used,
+        index: 0,
+        status: :ok
+      )
+
+    %OptimismDeposit{
+      l1_block_number: block_number(),
+      l1_block_timestamp: DateTime.utc_now(),
+      l1_transaction_hash: transaction_hash(),
+      l1_transaction_origin: address_hash(),
+      l2_transaction_hash: l2_transaction.hash,
+      l2_transaction: l2_transaction
     }
   end
 

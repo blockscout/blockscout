@@ -22,6 +22,8 @@ defmodule BlockScoutWeb.API.V2.MudController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
   tags(["mud"])
 
   operation :worlds,
@@ -53,7 +55,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
   def worlds(conn, params) do
     {worlds, next_page} =
       params
-      |> mud_paging_options(["world"], [Hash.Address])
+      |> mud_paging_options([:world], [Hash.Address])
       |> Mud.worlds_list()
       |> split_list_by_page()
 
@@ -111,7 +113,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
     description: "Retrieves a paginated list of MUD tables in the specific MUD world.",
     parameters:
       base_params() ++
-        [world_param()] ++
+        [world_param(), q_param(), filter_namespace_param()] ++
         define_paging_params([
           "table_id",
           "items_count"
@@ -134,9 +136,9 @@ defmodule BlockScoutWeb.API.V2.MudController do
     Function to handle GET requests to `/api/v2/mud/worlds/:world/tables` endpoint.
   """
   @spec world_tables(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def world_tables(conn, %{"world" => world_param} = params) do
+  def world_tables(conn, %{world: world_param} = params) do
     with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)} do
-      options = params |> mud_paging_options(["table_id"], [Hash.Full]) |> Keyword.merge(mud_tables_filter(params))
+      options = params |> mud_paging_options([:table_id], [Hash.Full]) |> Keyword.merge(mud_tables_filter(params))
 
       {tables, next_page} =
         world
@@ -167,7 +169,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
     Function to handle GET requests to `/api/v2/mud/worlds/:world/systems` endpoint.
   """
   @spec world_systems(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def world_systems(conn, %{"world" => world_param} = _params) do
+  def world_systems(conn, %{world: world_param} = _params) do
     with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)} do
       systems = world |> Mud.world_systems()
 
@@ -190,7 +192,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
     Function to handle GET requests to `/api/v2/mud/worlds/:world/systems/:system` endpoint.
   """
   @spec world_system(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def world_system(conn, %{"world" => world_param, "system" => system_param} = _params) do
+  def world_system(conn, %{world: world_param, system: system_param} = _params) do
     with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)},
          {:format, {:ok, system}} <- {:format, Hash.Address.cast(system_param)},
          {:ok, system_id, abi} <- Mud.world_system(world, system, @api_true) do
@@ -203,7 +205,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
   operation :world_tables_count,
     summary: "Number of known MUD world tables.",
     description: "Retrieves the total number of known MUD tables in the specific MUD world.",
-    parameters: [world_param() | base_params()],
+    parameters: base_params() ++ [world_param(), q_param(), filter_namespace_param()],
     responses: [
       ok: {"Number of known MUD world tables.", "application/json", %Schema{type: :integer}},
       unprocessable_entity: JsonErrorResponse.response()
@@ -213,7 +215,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
     Function to handle GET requests to `/api/v2/mud/worlds/:world/tables/count` endpoint.
   """
   @spec world_tables_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def world_tables_count(conn, %{"world" => world_param} = params) do
+  def world_tables_count(conn, %{world: world_param} = params) do
     with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)} do
       options = params |> mud_tables_filter()
 
@@ -230,7 +232,14 @@ defmodule BlockScoutWeb.API.V2.MudController do
     description: "Retrieves a paginated list of records in the specific MUD world table.",
     parameters:
       base_params() ++
-        [world_param(), table_id_param()] ++
+        [
+          world_param(),
+          table_id_param(),
+          filter_key0_param(),
+          filter_key1_param(),
+          sort_param(["key_bytes", "key0", "key1"]),
+          order_param()
+        ] ++
         define_paging_params([
           "key_bytes",
           "key0",
@@ -263,13 +272,13 @@ defmodule BlockScoutWeb.API.V2.MudController do
     Function to handle GET requests to `/api/v2/mud/worlds/:world/tables/:table_id/records` endpoint.
   """
   @spec world_table_records(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def world_table_records(conn, %{"world" => world_param, "table_id" => table_id_param} = params) do
+  def world_table_records(conn, %{world: world_param, table_id: table_id_param} = params) do
     with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)},
          {:format, {:ok, table_id}} <- {:format, Hash.Full.cast(table_id_param)},
          {:ok, schema} <- Mud.world_table_schema(world, table_id) do
       options =
         params
-        |> mud_paging_options(["key_bytes", "key0", "key1"], [Data, Hash.Full, Hash.Full])
+        |> mud_paging_options([:key_bytes, :key0, :key1], [Data, Hash.Full, Hash.Full])
         |> Keyword.merge(mud_records_filter(params, schema))
         |> Keyword.merge(mud_records_sorting(params))
 
@@ -298,7 +307,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
   operation :world_table_records_count,
     summary: "Number of known MUD world table records.",
     description: "Retrieves the total number of records in the specific MUD world table.",
-    parameters: base_params() ++ [world_param(), table_id_param()],
+    parameters: base_params() ++ [world_param(), table_id_param(), filter_key0_param(), filter_key1_param()],
     responses: [
       ok: {"Number of known MUD world table records.", "application/json", %Schema{type: :integer}},
       unprocessable_entity: JsonErrorResponse.response()
@@ -308,7 +317,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
     Function to handle GET requests to `/api/v2/mud/worlds/:world/tables/:table_id/records/count` endpoint.
   """
   @spec world_table_records_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def world_table_records_count(conn, %{"world" => world_param, "table_id" => table_id_param} = params) do
+  def world_table_records_count(conn, %{world: world_param, table_id: table_id_param} = params) do
     with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)},
          {:format, {:ok, table_id}} <- {:format, Hash.Full.cast(table_id_param)},
          {:ok, schema} <- Mud.world_table_schema(world, table_id) do
@@ -343,7 +352,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
   @spec world_table_record(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def world_table_record(
         conn,
-        %{"world" => world_param, "table_id" => table_id_param, "record_id" => record_id_param} = _params
+        %{world: world_param, table_id: table_id_param, record_id: record_id_param} = _params
       ) do
     with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)},
          {:format, {:ok, table_id}} <- {:format, Hash.Full.cast(table_id_param)},
@@ -361,10 +370,10 @@ defmodule BlockScoutWeb.API.V2.MudController do
   defp mud_tables_filter(params) do
     Enum.reduce(params, [], fn {key, value}, acc ->
       case key do
-        "filter_namespace" ->
+        :filter_namespace ->
           Keyword.put(acc, :filter_namespace, parse_namespace_string(value))
 
-        "q" ->
+        :q ->
           Keyword.put(acc, :filter_search, parse_search_string(value))
 
         _ ->
@@ -405,8 +414,8 @@ defmodule BlockScoutWeb.API.V2.MudController do
   defp mud_records_filter(params, schema) do
     Enum.reduce(params, [], fn {key, value}, acc ->
       case key do
-        "filter_key0" -> Keyword.put(acc, :filter_key0, encode_filter(value, schema, 0))
-        "filter_key1" -> Keyword.put(acc, :filter_key1, encode_filter(value, schema, 1))
+        :filter_key0 -> Keyword.put(acc, :filter_key0, encode_filter(value, schema, 0))
+        :filter_key1 -> Keyword.put(acc, :filter_key1, encode_filter(value, schema, 1))
         _ -> acc
       end
     end)
@@ -444,7 +453,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
       |> Enum.reduce(%{}, fn {key, type}, acc ->
         with param when param != nil <- Map.get(params, key),
              {:ok, val} <- type.cast(param) do
-          acc |> Map.put(String.to_existing_atom(key), val)
+          acc |> Map.put(key, val)
         else
           _ -> acc
         end

@@ -29,6 +29,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     mud_enabled?: [:explorer, [Explorer.Chain.Mud, :enabled]]
 
   alias BlockScoutWeb.Routers.{
+    AccountRouter,
     AddressBadgesApiV2Router,
     APIKeyV2Router,
     SmartContractsApiV2Router,
@@ -37,7 +38,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   }
 
   alias BlockScoutWeb.Plug.{CheckApiV2, CheckFeature}
-  alias BlockScoutWeb.Routers.AccountRouter
 
   @max_query_string_length 5_000
 
@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
-    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.ApiSpec)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.Specs.Public)
   end
 
   pipeline :api_v2_no_session do
@@ -122,6 +122,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     delete("/token-info", V2.ImportController, :delete_token_info)
 
     get("/smart-contracts/:address_hash_param", V2.ImportController, :try_to_search_contract)
+    post("/smart-contracts/:address_hash_param/audit-reports", V2.ImportController, :import_audit_report)
 
     if @chain_type == :optimism do
       post("/optimism/interop/", V2.OptimismController, :interop_import)
@@ -309,9 +310,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     if @chain_type == :optimism do
       scope "/optimism" do
-        get("/txn-batches", V2.OptimismController, :transaction_batches)
-        get("/txn-batches/count", V2.OptimismController, :transaction_batches_count)
-        get("/txn-batches/:l2_block_range_start/:l2_block_range_end", V2.OptimismController, :transaction_batches)
         get("/batches", V2.OptimismController, :batches)
         get("/batches/count", V2.OptimismController, :batches_count)
         get("/batches/da/celestia/:height/:commitment", V2.OptimismController, :batch_by_celestia_blob)

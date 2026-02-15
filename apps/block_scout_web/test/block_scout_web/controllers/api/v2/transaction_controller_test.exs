@@ -16,8 +16,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   require Logger
 
   setup do
-    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.TransactionsApiV2.child_id())
-    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.TransactionsApiV2.child_id())
+    Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())
 
     :ok
   end
@@ -606,8 +606,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         index: 0,
         block_number: transaction.block_number,
         transaction_index: transaction.index,
-        block_hash: transaction.block_hash,
-        block_index: 0
+        block_hash: transaction.block_hash
       )
 
       internal_transaction =
@@ -616,8 +615,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_index: 1
+          block_hash: transaction.block_hash
         )
 
       transaction_1 =
@@ -632,8 +630,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           index: index,
           block_number: transaction_1.block_number,
           transaction_index: transaction_1.index,
-          block_hash: transaction_1.block_hash,
-          block_index: index
+          block_hash: transaction_1.block_hash
         )
       end)
 
@@ -656,20 +653,18 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         index: 0,
         block_number: transaction.block_number,
         transaction_index: transaction.index,
-        block_hash: transaction.block_hash,
-        block_index: 0
+        block_hash: transaction.block_hash
       )
 
       internal_transactions =
-        51..1
+        51..1//-1
         |> Enum.map(fn index ->
           insert(:internal_transaction,
             transaction: transaction,
             index: index,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
-            block_hash: transaction.block_hash,
-            block_index: index
+            block_hash: transaction.block_hash
           )
         end)
 
@@ -768,7 +763,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         |> with_block()
 
       logs =
-        50..0
+        50..0//-1
         |> Enum.map(fn index ->
           insert(:log,
             transaction: transaction,
@@ -1115,7 +1110,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       # -- ------ --
 
       # two filters simultaneously
-      filter = %{"type" => "ERC-1155,ERC-20"}
+      filter = %{"type" => "ERC-1155,ERC-20,ERC-7984"}
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/token-transfers", filter)
       assert response = json_response(request, 200)
 
@@ -1128,6 +1123,8 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
+      # Note: filter now includes ERC-7984, but we didn't create any ERC-7984 transfers in this test
+      # So the pagination behavior remains the same as before
       assert Enum.count(response["items"]) == 50
       assert response["next_page_params"] != nil
       compare_item(Enum.at(erc_1155_tt, 50), Enum.at(response["items"], 0))
@@ -1633,7 +1630,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         block_hash: transaction.block_hash,
-        block_index: 0,
         value: %Wei{value: Decimal.new(7)},
         from_address_hash: internal_transaction_from.hash,
         from_address: internal_transaction_from,
@@ -1698,7 +1694,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         block_hash: transaction.block_hash,
-        block_index: 0,
         value: %Wei{value: Decimal.new(7)},
         from_address_hash: internal_transaction_from.hash,
         from_address: internal_transaction_from,
@@ -1714,7 +1709,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         block_hash: transaction.block_hash,
-        block_index: 1,
         value: %Wei{value: Decimal.new(7)},
         from_address_hash: internal_transaction_from_delegatecall.hash,
         from_address: internal_transaction_from_delegatecall,
@@ -1729,7 +1723,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         block_hash: transaction.block_hash,
-        block_index: 2,
         value: %Wei{value: Decimal.new(7)},
         from_address_hash: internal_transaction_from.hash,
         from_address: internal_transaction_from,
@@ -2373,6 +2366,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     assert Address.checksum(log.address_hash) == json["address"]["hash"]
     assert to_string(log.transaction_hash) == json["transaction_hash"]
     assert json["block_number"] == log.block_number
+    assert json["block_timestamp"] != nil
   end
 
   defp compare_item(%TokenTransfer{} = token_transfer, json) do
@@ -2629,7 +2623,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         block_hash: transaction.block_hash,
-        block_index: 1,
         type: :reward
       )
 
@@ -2771,8 +2764,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           index: index,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_index: index
+          block_hash: transaction.block_hash
         )
       end
 
