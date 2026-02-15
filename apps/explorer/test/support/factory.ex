@@ -816,11 +816,29 @@ defmodule Explorer.Factory do
   end
 
   def multichain_search_db_main_export_queue_factory do
-    %MultichainSearchDb.MainExportQueue{}
+    %MultichainSearchDb.MainExportQueue{
+      hash: address_hash().bytes,
+      hash_type: :address
+    }
   end
 
   def multichain_search_db_export_balances_queue_factory do
-    %MultichainSearchDb.BalancesExportQueue{}
+    %MultichainSearchDb.BalancesExportQueue{
+      address_hash: address_hash().bytes,
+      token_contract_address_hash_or_native: "native"
+    }
+  end
+
+  def multichain_search_db_export_counters_queue_factory do
+    %MultichainSearchDb.CountersExportQueue{
+      timestamp: DateTime.utc_now(),
+      counter_type: :global,
+      data: %{
+        "daily_transactions_count" => 100,
+        "total_transactions_count" => 10000,
+        "total_addresses_count" => 5000
+      }
+    }
   end
 
   def internal_transaction_factory() do
