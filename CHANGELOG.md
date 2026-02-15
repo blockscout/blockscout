@@ -60,6 +60,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Enhance indexer metrics calculation ([#13985](https://github.com/blockscout/blockscout/pull/13985))
 - Don't send historic rate for recent txs ([#13960](https://github.com/blockscout/blockscout/pull/13960))
 - Increase default for MIGRATION_EMPTY_INTERNAL_TRANSACTIONS_DATA_BATCH_SIZE to 1000 ([#13953](https://github.com/blockscout/blockscout/pull/13953))
 - Improve EmptyInternalTransactionsData migration ([#13918](https://github.com/blockscout/blockscout/pull/13918))
