@@ -121,7 +121,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     transaction
     |> with_chain_type_transformations()
-    |> prepare_transaction(conn, true, block_height, nil, decoded_input)
+    |> prepare_transaction(conn, true, block_height, nil, decoded_input, nil)
   end
 
   def render("raw_trace.json", %{raw_traces: raw_traces}) do
@@ -455,9 +455,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
          conn,
          single_transaction?,
          block_height,
-         watchlist_names \\ nil,
-         decoded_input \\ nil,
-         fhe_operations_counts \\ nil
+         watchlist_names,
+         decoded_input,
+         fhe_operations_counts
        )
 
   defp prepare_transaction(
