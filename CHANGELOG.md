@@ -25,6 +25,8 @@
 
 ### 🐛 Bug Fixes
 
+- Handle maybe_reject_zero_value for missing value ([#13990](https://github.com/blockscout/blockscout/pull/13990))
+- Handle internal transactions nil value([#13974](https://github.com/blockscout/blockscout/pull/13974))
 - `HttpClient.get` usage in genesis data module ([#13945](https://github.com/blockscout/blockscout/pull/13945))
 - Multichain counter starting time and small fixes ([#13920](https://github.com/blockscout/blockscout/pull/13920))
 - Fix 500 on empty ens domain search ([#13928](https://github.com/blockscout/blockscout/pull/13928))
@@ -60,6 +62,8 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add internal transactions not null constraints ([#13976](https://github.com/blockscout/blockscout/pull/13976), [#13995](https://github.com/blockscout/blockscout/pull/13995))
+- Change 429 error text ([#13989](https://github.com/blockscout/blockscout/pull/13989))
 - Enhance indexer metrics calculation ([#13985](https://github.com/blockscout/blockscout/pull/13985))
 - Don't send historic rate for recent txs ([#13960](https://github.com/blockscout/blockscout/pull/13960))
 - Increase default for MIGRATION_EMPTY_INTERNAL_TRANSACTIONS_DATA_BATCH_SIZE to 1000 ([#13953](https://github.com/blockscout/blockscout/pull/13953))
