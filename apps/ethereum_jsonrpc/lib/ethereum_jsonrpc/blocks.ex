@@ -551,4 +551,45 @@ defmodule EthereumJSONRPC.Blocks do
   def to_elixir(blocks) when is_list(blocks) do
     Enum.map(blocks, &Block.to_elixir/1)
   end
+
+  @doc """
+  Filters out all data related to provided block numbers
+  """
+  @spec reject_data_by_block_numbers(t(), [non_neg_integer()]) :: t()
+  def reject_data_by_block_numbers(blocks_data, []), do: blocks_data
+
+  def reject_data_by_block_numbers(%{blocks_params: blocks_params} = blocks_data, block_numbers) do
+    {filtered_blocks_params_reversed, block_hashes} =
+      Enum.reduce(blocks_params, {[], []}, fn block_params, {params_acc, hashes_acc} ->
+        if block_params.number in block_numbers do
+          {params_acc, [block_params.hash | hashes_acc]}
+        else
+          {[block_params | params_acc], hashes_acc}
+        end
+      end)
+
+    filtered_blocks_params = Enum.reverse(filtered_blocks_params_reversed)
+
+    filtered_data =
+      blocks_data
+      |> Map.from_struct()
+      |> Map.drop([:errors, :blocks_params])
+      |> Enum.map(fn {data_type, data_list} ->
+        filtered_data_list =
+          Enum.filter(data_list, fn data ->
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+            cond do
+              Map.has_key?(data, :block_number) -> data.block_number not in block_numbers
+              Map.has_key?(data, :block_hash) -> data.block_hash not in block_hashes
+              true -> true
+            end
+          end)
+
+        {data_type, filtered_data_list}
+      end)
+      |> Map.new()
+      |> Map.put(:blocks_params, filtered_blocks_params)
+
+    Map.merge(blocks_data, filtered_data)
+  end
 end

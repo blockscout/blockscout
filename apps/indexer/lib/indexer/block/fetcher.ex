@@ -21,6 +21,7 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
   alias Explorer.Chain.Celo.Legacy.Accounts, as: CeloAccountsTransform
   alias Explorer.Chain.Filecoin.PendingAddressOperation, as: FilecoinPendingAddressOperation
+  alias Indexer.Block.Catchup.Fetcher, as: CatchupFetcher
   alias Indexer.Block.Fetcher.Receipts
   alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher, as: ArbitrumMessagesToL2Matcher
   alias Indexer.Fetcher.Celo.EpochBlockOperations, as: CeloEpochBlockOperations
@@ -169,15 +170,14 @@ defmodule Indexer.Block.Fetcher do
     {fetch_time, fetch_result} =
       :timer.tc(fn -> EthereumJSONRPC.fetch_blocks_by_range(range, json_rpc_named_arguments) end)
 
-    with {:blocks,
-          {:ok,
-           %Blocks{
-             blocks_params: blocks_params,
-             transactions_params: transactions_params_without_receipts,
-             withdrawals_params: withdrawals_params,
-             block_second_degree_relations_params: block_second_degree_relations_params,
-             errors: blocks_errors
-           } = fetched_blocks}} <- {:blocks, fetch_result},
+    with {:blocks, {:ok, fetched_blocks}} <- {:blocks, fetch_result},
+         %Blocks{
+           blocks_params: blocks_params,
+           transactions_params: transactions_params_without_receipts,
+           withdrawals_params: withdrawals_params,
+           block_second_degree_relations_params: block_second_degree_relations_params,
+           errors: blocks_errors
+         } = filtered_fetched_blocks = process_massive_blocks(fetched_blocks),
          blocks = TransformBlocks.transform_blocks(blocks_params),
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
          %{logs: receipt_logs, receipts: receipts} = receipt_params,
@@ -280,7 +280,7 @@ defmodule Indexer.Block.Fetcher do
              arbitrum_messages: arbitrum_xlevel_messages,
              stability_validators: stability_validators
            }
-           |> extend_with_zilliqa_import_options(fetched_blocks),
+           |> extend_with_zilliqa_import_options(filtered_fetched_blocks),
          {:ok, inserted} <-
            __MODULE__.import(
              state,
@@ -317,6 +317,30 @@ defmodule Indexer.Block.Fetcher do
       {step, {:error, reason}} -> {:error, {step, reason}}
       {:import, {:error, step, failed_value, changes_so_far}} -> {:error, {step, failed_value, changes_so_far}}
     end
+  end
+
+  defp process_massive_blocks(fetched_blocks) do
+    massive_block_threshold = Application.get_env(:indexer, :massive_block_threshold, 1000)
+
+    massive_block_numbers =
+      fetched_blocks
+      |> Map.get(:transactions_params, [])
+      |> Enum.reduce(%{}, fn %{block_number: number}, acc ->
+        Map.update(acc, number, 1, &(&1 + 1))
+      end)
+      |> Enum.reduce([], fn {number, transactions_count}, acc ->
+        if transactions_count > massive_block_threshold do
+          Logger.warning("Marking block #{number} as massive by transactions count: #{transactions_count}")
+          [number | acc]
+        else
+          acc
+        end
+      end)
+
+    # realtime fetcher intentionally filters and defers massive blocks to the catchup pipeline
+    CatchupFetcher.add_range_to_massive_blocks(massive_block_numbers)
+
+    Blocks.reject_data_by_block_numbers(fetched_blocks, massive_block_numbers)
   end
 
   defp import_options(basic_import_options, chain_specific_import_options) do
