@@ -159,6 +159,14 @@ defmodule Explorer.Etherscan do
     |> InternalTransaction.where_is_different_from_parent_transaction()
     |> InternalTransaction.where_nonpending_operation()
     |> InternalTransaction.include_zero_value(options.include_zero_value)
+    |> order_by(
+      [q],
+      [
+        {^options.order_by_direction, q.block_number},
+        {^options.order_by_direction, q.transaction_index},
+        {^options.order_by_direction, q.index}
+      ]
+    )
     |> Repo.replica().all()
     |> InternalTransaction.preload_error()
   end
