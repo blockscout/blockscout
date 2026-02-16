@@ -2463,23 +2463,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       expected_result = [
         %{
-          "blockNumber" => "#{transaction.block_number}",
-          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{internal_transaction_a.from_address_hash}",
-          "to" => "#{internal_transaction_a.to_address_hash}",
-          "value" => "#{internal_transaction_a.value.value}",
-          "contractAddress" => "",
-          "input" => "#{internal_transaction_a.input}",
-          "type" => "#{internal_transaction_a.type}",
-          "callType" => "#{internal_transaction_a.call_type}",
-          "gas" => "#{internal_transaction_a.gas}",
-          "gasUsed" => "#{internal_transaction_a.gas_used}",
-          "index" => "#{internal_transaction_a.index}",
-          "transactionHash" => "#{transaction.hash}",
-          "isError" => "0",
-          "errCode" => "#{internal_transaction_a.error}"
-        },
-        %{
           "blockNumber" => "#{internal_transaction_b.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
           "from" => "#{internal_transaction_b.from_address_hash}",
@@ -2495,6 +2478,23 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "transactionHash" => "#{transaction.hash}",
           "isError" => "0",
           "errCode" => "#{internal_transaction_b.error}"
+        },
+        %{
+          "blockNumber" => "#{transaction.block_number}",
+          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
+          "from" => "#{internal_transaction_a.from_address_hash}",
+          "to" => "#{internal_transaction_a.to_address_hash}",
+          "value" => "#{internal_transaction_a.value.value}",
+          "contractAddress" => "",
+          "input" => "#{internal_transaction_a.input}",
+          "type" => "#{internal_transaction_a.type}",
+          "callType" => "#{internal_transaction_a.call_type}",
+          "gas" => "#{internal_transaction_a.gas}",
+          "gasUsed" => "#{internal_transaction_a.gas_used}",
+          "index" => "#{internal_transaction_a.index}",
+          "transactionHash" => "#{transaction.hash}",
+          "isError" => "0",
+          "errCode" => "#{internal_transaction_a.error}"
         }
       ]
 
