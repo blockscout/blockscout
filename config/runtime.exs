@@ -999,6 +999,7 @@ config :indexer,
   receipts_concurrency: ConfigHelper.parse_integer_env_var("INDEXER_RECEIPTS_CONCURRENCY", 10),
   hide_indexing_progress_alert: ConfigHelper.parse_bool_env_var("INDEXER_HIDE_INDEXING_PROGRESS_ALERT"),
   fetcher_init_limit: ConfigHelper.parse_integer_env_var("INDEXER_FETCHER_INIT_QUERY_LIMIT", 100),
+  massive_block_threshold: ConfigHelper.parse_integer_env_var("INDEXER_MASSIVE_BLOCK_THRESHOLD", 1000),
   token_balances_fetcher_init_limit:
     ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 100_000),
   coin_balances_fetcher_init_limit:
