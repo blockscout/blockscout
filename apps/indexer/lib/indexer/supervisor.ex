@@ -63,6 +63,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.Arbitrum.RollupMessagesCatchup, as: ArbitrumRollupMessagesCatchup
   alias Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses, as: ArbitrumTrackingBatchesStatuses
   alias Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1, as: ArbitrumTrackingMessagesOnL1
+  alias Indexer.Fetcher.Signet.OrdersFetcher, as: SignetOrdersFetcher
   alias Indexer.Fetcher.ZkSync.BatchesStatusTracker, as: ZkSyncBatchesStatusTracker
   alias Indexer.Fetcher.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
 
@@ -250,6 +251,9 @@ defmodule Indexer.Supervisor do
         {ArbitrumMessagesToL2Matcher.Supervisor, [[memory_monitor: memory_monitor]]},
         {ArbitrumDataBackfill.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
+        configure(SignetOrdersFetcher.Supervisor, [
+          [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
+        ]),
         configure(Indexer.Fetcher.Celo.ValidatorGroupVotes.Supervisor, [
           [json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]
         ]),

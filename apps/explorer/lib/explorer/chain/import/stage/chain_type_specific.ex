@@ -68,6 +68,10 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
     ],
     stability: [
       Runner.Stability.Validators
+    ],
+    signet: [
+      Runner.Signet.Orders,
+      Runner.Signet.Fills
     ]
   }
 
