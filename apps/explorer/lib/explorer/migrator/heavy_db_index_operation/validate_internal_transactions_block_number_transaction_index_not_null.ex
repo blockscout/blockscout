@@ -34,17 +34,20 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateInternalTransactionsBl
   # sobelow_skip ["SQL"]
   def db_index_operation do
     result =
-      Repo.transaction(fn ->
-        with {:ok, _} <- Repo.query(validate_constraint_query_string("block_number")),
-             {:ok, _} <- Repo.query(validate_constraint_query_string("transaction_index")),
-             {:ok, _} <- Repo.query(set_not_null_query_string("block_number")),
-             {:ok, _} <- Repo.query(set_not_null_query_string("transaction_index")) do
-          :ok
-        else
-          {:error, error} ->
-            Repo.rollback(error)
-        end
-      end)
+      Repo.transaction(
+        fn ->
+          with {:ok, _} <- Repo.query(validate_constraint_query_string("block_number"), [], timeout: :infinity),
+               {:ok, _} <- Repo.query(validate_constraint_query_string("transaction_index"), [], timeout: :infinity),
+               {:ok, _} <- Repo.query(set_not_null_query_string("block_number")),
+               {:ok, _} <- Repo.query(set_not_null_query_string("transaction_index")) do
+            :ok
+          else
+            {:error, error} ->
+              Repo.rollback(error)
+          end
+        end,
+        timeout: :infinity
+      )
 
     case result do
       {:ok, :ok} ->
