@@ -57,6 +57,7 @@ defmodule Explorer.Factory do
   }
 
   alias Explorer.Chain.Optimism.{InteropMessage, OutputRoot}
+  alias Explorer.Chain.Signet.{Order, Fill}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
   alias Explorer.Chain.Zilliqa.Staker, as: ZilliqaStaker
@@ -1798,6 +1799,46 @@ defmodule Explorer.Factory do
       migration_name: sequence("migration_", &"migration_#{&1}"),
       status: "started",
       meta: nil
+    }
+  end
+
+  def signet_order_factory do
+    %Order{
+      transaction_hash: transaction_hash(),
+      log_index: Enum.random(0..100),
+      deadline: DateTime.to_unix(DateTime.utc_now()) + 3600,
+      block_number: block_number(),
+      inputs_json:
+        Jason.encode!([
+          %{"token" => "0x" <> String.duplicate("aa", 20), "amount" => "1000000000000000000"}
+        ]),
+      outputs_json:
+        Jason.encode!([
+          %{
+            "token" => "0x" <> String.duplicate("bb", 20),
+            "amount" => "1000000000000000000",
+            "recipient" => "0x" <> String.duplicate("cc", 20),
+            "chainId" => 1
+          }
+        ])
+    }
+  end
+
+  def signet_fill_factory do
+    %Fill{
+      chain_type: :rollup,
+      transaction_hash: transaction_hash(),
+      log_index: Enum.random(0..100),
+      block_number: block_number(),
+      outputs_json:
+        Jason.encode!([
+          %{
+            "token" => "0x" <> String.duplicate("bb", 20),
+            "amount" => "1000000000000000000",
+            "recipient" => "0x" <> String.duplicate("cc", 20),
+            "chainId" => 1
+          }
+        ])
     }
   end
 end
