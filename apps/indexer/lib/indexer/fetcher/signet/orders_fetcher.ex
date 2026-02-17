@@ -46,32 +46,13 @@ defmodule Indexer.Fetcher.Signet.OrdersFetcher do
   alias Explorer.Chain
   alias Explorer.Chain.Signet.{Order, Fill}
   alias Indexer.BufferedTask
-  alias Indexer.Fetcher.Signet.{EventParser, ReorgHandler}
+  alias Indexer.Fetcher.Signet.{Abi, EventParser, ReorgHandler}
   alias Indexer.Helper, as: IndexerHelper
 
   @behaviour BufferedTask
 
-  # Event topic hashes (keccak256 of event signatures)
-  # Order(uint256,tuple[],tuple[])
-  @order_event_topic "0x" <>
-                       Base.encode16(
-                         ExKeccak.hash_256("Order(uint256,(address,uint256)[],(address,address,uint256)[])"),
-                         case: :lower
-                       )
-
-  # Filled(tuple[])
-  @filled_event_topic "0x" <>
-                        Base.encode16(
-                          ExKeccak.hash_256("Filled((address,address,uint256)[])"),
-                          case: :lower
-                        )
-
-  # Sweep(address,address,uint256)
-  @sweep_event_topic "0x" <>
-                       Base.encode16(
-                         ExKeccak.hash_256("Sweep(address,address,uint256)"),
-                         case: :lower
-                       )
+  # Event topic hashes are computed from @signet-sh/sdk ABIs
+  # See Indexer.Fetcher.Signet.Abi for event signature definitions
 
   # 250ms interval between processing buffered entries
   @idle_interval 250
@@ -328,7 +309,7 @@ defmodule Indexer.Fetcher.Signet.OrdersFetcher do
              config.host_orders_address,
              start_block,
              end_block,
-             [@filled_event_topic]
+             Abi.host_orders_event_topics()
            ),
          {:ok, fills} <- EventParser.parse_host_filled_logs(logs),
          :ok <- import_fills(fills, :host) do
@@ -370,7 +351,7 @@ defmodule Indexer.Fetcher.Signet.OrdersFetcher do
   end
 
   defp fetch_logs(json_rpc_named_arguments, contract_address, from_block, to_block, topics \\ nil) do
-    topics = topics || [@order_event_topic, @filled_event_topic, @sweep_event_topic]
+    topics = topics || Abi.rollup_orders_event_topics()
 
     request = %{
       id: 1,

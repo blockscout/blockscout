@@ -1,0 +1,462 @@
+[
+  {
+    "contract": "rollup_orders",
+    "name": "Filled",
+    "signature": "Filled(tuple[])",
+    "inputs": [
+      {
+        "name": "outputs",
+        "type": "tuple[]",
+        "indexed": false,
+        "internalType": "struct IOrders.Output[]",
+        "components": [
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "recipient",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "chainId",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "contract": "rollup_orders",
+    "name": "Order",
+    "signature": "Order(uint256,tuple[],tuple[])",
+    "inputs": [
+      {
+        "name": "deadline",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "inputs",
+        "type": "tuple[]",
+        "indexed": false,
+        "internalType": "struct IOrders.Input[]",
+        "components": [
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      },
+      {
+        "name": "outputs",
+        "type": "tuple[]",
+        "indexed": false,
+        "internalType": "struct IOrders.Output[]",
+        "components": [
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "recipient",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "chainId",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "contract": "rollup_orders",
+    "name": "Sweep",
+    "signature": "Sweep(address,address,uint256)",
+    "inputs": [
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "contract": "host_orders",
+    "name": "Filled",
+    "signature": "Filled(tuple[])",
+    "inputs": [
+      {
+        "name": "outputs",
+        "type": "tuple[]",
+        "indexed": false,
+        "internalType": "struct IOrders.Output[]",
+        "components": [
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "amount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "recipient",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "chainId",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "contract": "passage",
+    "name": "Enter",
+    "signature": "Enter(uint256,address,uint256)",
+    "inputs": [
+      {
+        "name": "rollupChainId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "rollupRecipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "contract": "passage",
+    "name": "EnterConfigured",
+    "signature": "EnterConfigured(address,bool)",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "canEnter",
+        "type": "bool",
+        "indexed": true,
+        "internalType": "bool"
+      }
+    ]
+  },
+  {
+    "contract": "passage",
+    "name": "EnterToken",
+    "signature": "EnterToken(uint256,address,address,uint256)",
+    "inputs": [
+      {
+        "name": "rollupChainId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "rollupRecipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "contract": "passage",
+    "name": "Withdrawal",
+    "signature": "Withdrawal(address,address,uint256)",
+    "inputs": [
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "contract": "rollup_passage",
+    "name": "Exit",
+    "signature": "Exit(address,uint256)",
+    "inputs": [
+      {
+        "name": "hostRecipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "contract": "rollup_passage",
+    "name": "ExitToken",
+    "signature": "ExitToken(address,address,uint256)",
+    "inputs": [
+      {
+        "name": "hostRecipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "contract": "weth",
+    "name": "Deposit",
+    "signature": "Deposit(address,uint256)",
+    "inputs": [
+      {
+        "name": "dst",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "wad",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "contract": "weth",
+    "name": "Withdrawal",
+    "signature": "Withdrawal(address,uint256)",
+    "inputs": [
+      {
+        "name": "src",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "wad",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "contract": "zenith",
+    "name": "BlockSubmitted",
+    "signature": "BlockSubmitted(address,uint256,uint256,address,bytes32)",
+    "inputs": [
+      {
+        "name": "sequencer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "rollupChainId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "gasLimit",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "rewardAddress",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "blockDataHash",
+        "type": "bytes32",
+        "indexed": false,
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "contract": "zenith",
+    "name": "SequencerSet",
+    "signature": "SequencerSet(address,bool)",
+    "inputs": [
+      {
+        "name": "sequencer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "permissioned",
+        "type": "bool",
+        "indexed": true,
+        "internalType": "bool"
+      }
+    ]
+  },
+  {
+    "contract": "transactor",
+    "name": "GasConfigured",
+    "signature": "GasConfigured(uint256,uint256)",
+    "inputs": [
+      {
+        "name": "perBlock",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "perTransact",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "contract": "transactor",
+    "name": "Transact",
+    "signature": "Transact(uint256,address,address,bytes,uint256,uint256,uint256)",
+    "inputs": [
+      {
+        "name": "rollupChainId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "sender",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "data",
+        "type": "bytes",
+        "indexed": false,
+        "internalType": "bytes"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "gas",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxFeePerGas",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ]
+  }
+]

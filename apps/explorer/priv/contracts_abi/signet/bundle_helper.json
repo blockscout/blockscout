@@ -1,0 +1,184 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "_zenith",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_orders",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "orders",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract HostOrders"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "submit",
+    "inputs": [
+      {
+        "name": "fills",
+        "type": "tuple[]",
+        "internalType": "struct BundleHelper.FillPermit2[]",
+        "components": [
+          {
+            "name": "outputs",
+            "type": "tuple[]",
+            "internalType": "struct IOrders.Output[]",
+            "components": [
+              {
+                "name": "token",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "amount",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "recipient",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "chainId",
+                "type": "uint32",
+                "internalType": "uint32"
+              }
+            ]
+          },
+          {
+            "name": "permit2",
+            "type": "tuple",
+            "internalType": "struct UsesPermit2.Permit2Batch",
+            "components": [
+              {
+                "name": "permit",
+                "type": "tuple",
+                "internalType": "struct ISignatureTransfer.PermitBatchTransferFrom",
+                "components": [
+                  {
+                    "name": "permitted",
+                    "type": "tuple[]",
+                    "internalType": "struct ISignatureTransfer.TokenPermissions[]",
+                    "components": [
+                      {
+                        "name": "token",
+                        "type": "address",
+                        "internalType": "address"
+                      },
+                      {
+                        "name": "amount",
+                        "type": "uint256",
+                        "internalType": "uint256"
+                      }
+                    ]
+                  },
+                  {
+                    "name": "nonce",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                  },
+                  {
+                    "name": "deadline",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                  }
+                ]
+              },
+              {
+                "name": "owner",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "signature",
+                "type": "bytes",
+                "internalType": "bytes"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "header",
+        "type": "tuple",
+        "internalType": "struct Zenith.BlockHeader",
+        "components": [
+          {
+            "name": "rollupChainId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "hostBlockNumber",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "gasLimit",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "rewardAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "blockDataHash",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      },
+      {
+        "name": "v",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "r",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "s",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "zenith",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract Zenith"
+      }
+    ],
+    "stateMutability": "view"
+  }
+]

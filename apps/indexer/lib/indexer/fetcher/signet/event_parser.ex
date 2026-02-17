@@ -2,36 +2,38 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   @moduledoc """
   Parses Signet Order and Filled events from transaction logs.
 
-  Handles ABI decoding for:
-  - Order(uint256 deadline, Input[] inputs, Output[] outputs)
-  - Filled(Output[] outputs)
-  - Sweep(address recipient, address token, uint256 amount)
+  Event signatures and ABI types are sourced from @signet-sh/sdk.
+  See `Indexer.Fetcher.Signet.Abi` for topic hash computation.
 
+  ## Event Structures (from @signet-sh/sdk)
+
+  ### Order Event
+  ```
+  Order(uint256 deadline, Input[] inputs, Output[] outputs)
+  ```
   Where:
   - Input = (address token, uint256 amount)
-  - Output = (address recipient, address token, uint256 amount)
+  - Output = (address token, uint256 amount, address recipient, uint32 chainId)
+
+  ### Filled Event
+  ```
+  Filled(Output[] outputs)
+  ```
+
+  ### Sweep Event
+  ```
+  Sweep(address indexed recipient, address indexed token, uint256 amount)
+  ```
+
+  ## Cross-Chain Correlation
+
+  Orders are correlated with fills across chains using the `outputs_witness_hash`,
+  computed as: keccak256(concat(keccak256(abi.encode(output)) for each output))
   """
 
   require Logger
 
-  # Event topic hashes
-  @order_event_topic "0x" <>
-                       Base.encode16(
-                         ExKeccak.hash_256("Order(uint256,(address,uint256)[],(address,address,uint256)[])"),
-                         case: :lower
-                       )
-
-  @filled_event_topic "0x" <>
-                        Base.encode16(
-                          ExKeccak.hash_256("Filled((address,address,uint256)[])"),
-                          case: :lower
-                        )
-
-  @sweep_event_topic "0x" <>
-                       Base.encode16(
-                         ExKeccak.hash_256("Sweep(address,address,uint256)"),
-                         case: :lower
-                       )
+  alias Indexer.Fetcher.Signet.Abi
 
   @doc """
   Parse logs from the RollupOrders contract.
@@ -41,12 +43,16 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   """
   @spec parse_rollup_logs([map()]) :: {:ok, {[map()], [map()]}}
   def parse_rollup_logs(logs) when is_list(logs) do
+    order_topic = Abi.order_event_topic()
+    filled_topic = Abi.filled_event_topic()
+    sweep_topic = Abi.sweep_event_topic()
+
     {orders, fills, sweeps} =
       Enum.reduce(logs, {[], [], []}, fn log, {orders_acc, fills_acc, sweeps_acc} ->
         topic = get_topic(log, 0)
 
         cond do
-          topic == @order_event_topic ->
+          topic == order_topic ->
             case parse_order_event(log) do
               {:ok, order} -> {[order | orders_acc], fills_acc, sweeps_acc}
               {:error, reason} ->
@@ -54,7 +60,7 @@ defmodule Indexer.Fetcher.Signet.EventParser do
                 {orders_acc, fills_acc, sweeps_acc}
             end
 
-          topic == @filled_event_topic ->
+          topic == filled_topic ->
             case parse_filled_event(log) do
               {:ok, fill} -> {orders_acc, [fill | fills_acc], sweeps_acc}
               {:error, reason} ->
@@ -62,7 +68,7 @@ defmodule Indexer.Fetcher.Signet.EventParser do
                 {orders_acc, fills_acc, sweeps_acc}
             end
 
-          topic == @sweep_event_topic ->
+          topic == sweep_topic ->
             case parse_sweep_event(log) do
               {:ok, sweep} -> {orders_acc, fills_acc, [sweep | sweeps_acc]}
               {:error, reason} ->
@@ -88,9 +94,11 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   """
   @spec parse_host_filled_logs([map()]) :: {:ok, [map()]}
   def parse_host_filled_logs(logs) when is_list(logs) do
+    filled_topic = Abi.filled_event_topic()
+
     fills =
       logs
-      |> Enum.filter(fn log -> get_topic(log, 0) == @filled_event_topic end)
+      |> Enum.filter(fn log -> get_topic(log, 0) == filled_topic end)
       |> Enum.map(&parse_filled_event/1)
       |> Enum.filter(fn
         {:ok, _} -> true
@@ -107,19 +115,28 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   Compute the outputs_witness_hash for a list of outputs.
 
   The hash is computed as: keccak256(concat(keccak256(abi_encode(output)) for output in outputs))
+
+  Output struct (from @signet-sh/sdk):
+  - token: address
+  - amount: uint256
+  - recipient: address
+  - chainId: uint32
   """
-  @spec compute_outputs_witness_hash([{binary(), binary(), non_neg_integer()}]) :: binary()
+  @spec compute_outputs_witness_hash([{binary(), non_neg_integer(), binary(), non_neg_integer()}]) :: binary()
   def compute_outputs_witness_hash(outputs) do
     output_hashes =
       outputs
-      |> Enum.map(fn {recipient, token, amount} ->
-        # ABI-encode each output as (address, address, uint256)
+      |> Enum.map(fn {token, amount, recipient, chain_id} ->
+        # ABI-encode each output as (address token, uint256 amount, address recipient, uint32 chainId)
+        # Padded to 32 bytes each
         encoded =
           <<0::size(96)>> <>
-          normalize_address(recipient) <>
-          <<0::size(96)>> <>
           normalize_address(token) <>
-          <<amount::unsigned-big-integer-size(256)>>
+          <<amount::unsigned-big-integer-size(256)>> <>
+          <<0::size(96)>> <>
+          normalize_address(recipient) <>
+          <<0::size(224)>> <>
+          <<chain_id::unsigned-big-integer-size(32)>>
 
         ExKeccak.hash_256(encoded)
       end)
@@ -129,6 +146,7 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   end
 
   # Parse Order event
+  # Order(uint256 deadline, Input[] inputs, Output[] outputs)
   defp parse_order_event(log) do
     data = get_log_data(log)
 
@@ -152,6 +170,7 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   end
 
   # Parse Filled event
+  # Filled(Output[] outputs)
   defp parse_filled_event(log) do
     data = get_log_data(log)
 
@@ -171,10 +190,16 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   end
 
   # Parse Sweep event
+  # Sweep(address indexed recipient, address indexed token, uint256 amount)
+  # Note: recipient and token are indexed (in topics), amount is in data
   defp parse_sweep_event(log) do
     data = get_log_data(log)
 
-    with {:ok, {recipient, token, amount}} <- decode_sweep_data(data) do
+    with {:ok, amount} <- decode_sweep_data(data) do
+      # recipient is in topic[1], token is in topic[2]
+      recipient = get_indexed_address(log, 1)
+      token = get_indexed_address(log, 2)
+
       sweep = %{
         transaction_hash: get_transaction_hash(log),
         recipient: recipient,
@@ -189,18 +214,16 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   # Decode Order event data
   # Order(uint256 deadline, Input[] inputs, Output[] outputs)
   # Input = (address token, uint256 amount)
-  # Output = (address recipient, address token, uint256 amount)
+  # Output = (address token, uint256 amount, address recipient, uint32 chainId)
   defp decode_order_data(data) when is_binary(data) do
     try do
-      # ABI decode: uint256, (address,uint256)[], (address,address,uint256)[]
-      # For dynamic arrays, we have offsets first, then the actual data
-
+      # ABI decode: uint256, dynamic array offset, dynamic array offset
       <<deadline::unsigned-big-integer-size(256),
         inputs_offset::unsigned-big-integer-size(256),
         outputs_offset::unsigned-big-integer-size(256),
         rest::binary>> = data
 
-      # Parse inputs array
+      # Parse inputs array - offset is from start of data (after first 32 bytes)
       inputs_data = binary_part(rest, inputs_offset - 96, byte_size(rest) - inputs_offset + 96)
       inputs = decode_input_array(inputs_data)
 
@@ -235,16 +258,11 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   defp decode_filled_data(_), do: {:error, :invalid_data}
 
   # Decode Sweep event data
-  # Sweep(address recipient, address token, uint256 amount)
+  # Only amount is in data (recipient and token are indexed)
   defp decode_sweep_data(data) when is_binary(data) do
     try do
-      <<_padding1::binary-size(12),
-        recipient::binary-size(20),
-        _padding2::binary-size(12),
-        token::binary-size(20),
-        amount::unsigned-big-integer-size(256)>> = data
-
-      {:ok, {recipient, token, amount}}
+      <<amount::unsigned-big-integer-size(256)>> = data
+      {:ok, amount}
     rescue
       e ->
         Logger.error("Error decoding Sweep data: #{inspect(e)}")
@@ -255,6 +273,7 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   defp decode_sweep_data(_), do: {:error, :invalid_data}
 
   # Decode array of Input tuples
+  # Input = (address token, uint256 amount)
   defp decode_input_array(<<length::unsigned-big-integer-size(256), rest::binary>>) do
     decode_inputs(rest, length, [])
   end
@@ -270,6 +289,7 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   end
 
   # Decode array of Output tuples
+  # Output = (address token, uint256 amount, address recipient, uint32 chainId)
   defp decode_output_array(<<length::unsigned-big-integer-size(256), rest::binary>>) do
     decode_outputs(rest, length, [])
   end
@@ -277,12 +297,15 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   defp decode_outputs(_data, 0, acc), do: Enum.reverse(acc)
 
   defp decode_outputs(<<_padding1::binary-size(12),
-                        recipient::binary-size(20),
-                        _padding2::binary-size(12),
                         token::binary-size(20),
                         amount::unsigned-big-integer-size(256),
+                        _padding2::binary-size(12),
+                        recipient::binary-size(20),
+                        _padding3::binary-size(28),
+                        chain_id::unsigned-big-integer-size(32),
                         rest::binary>>, count, acc) do
-    output = {recipient, token, amount}
+    # Output struct order: token, amount, recipient, chainId
+    output = {token, amount, recipient, chain_id}
     decode_outputs(rest, count - 1, [output | acc])
   end
 
@@ -316,12 +339,14 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   end
 
   # Format outputs for JSON storage
+  # Output = (token, amount, recipient, chainId)
   defp format_outputs(outputs) do
-    Enum.map(outputs, fn {recipient, token, amount} ->
+    Enum.map(outputs, fn {token, amount, recipient, chain_id} ->
       %{
-        "recipient" => format_address(recipient),
         "token" => format_address(token),
-        "amount" => Integer.to_string(amount)
+        "amount" => Integer.to_string(amount),
+        "recipient" => format_address(recipient),
+        "chainId" => chain_id
       }
     end)
   end
@@ -339,6 +364,25 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   defp get_topic(log, index) do
     topics = Map.get(log, "topics") || Map.get(log, :topics) || []
     Enum.at(topics, index)
+  end
+
+  # Get an indexed address from topics (topics contain 32-byte padded addresses)
+  defp get_indexed_address(log, topic_index) do
+    topic = get_topic(log, topic_index)
+
+    case topic do
+      "0x" <> hex ->
+        # Take last 40 chars (20 bytes) of the 64-char hex string
+        address_hex = String.slice(hex, -40, 40)
+        Base.decode16!(address_hex, case: :mixed)
+
+      bytes when is_binary(bytes) and byte_size(bytes) == 32 ->
+        # Take last 20 bytes
+        binary_part(bytes, 12, 20)
+
+      _ ->
+        nil
+    end
   end
 
   defp get_log_data(log) do

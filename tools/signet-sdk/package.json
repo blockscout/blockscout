@@ -1,0 +1,13 @@
+{
+  "name": "signet-sdk-extractor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Extract ABIs from @signet-sh/sdk for use in Blockscout",
+  "type": "module",
+  "scripts": {
+    "extract": "node extract-abis.mjs"
+  },
+  "dependencies": {
+    "@signet-sh/sdk": "^0.3.0"
+  }
+}
