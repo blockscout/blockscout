@@ -84,6 +84,7 @@ defmodule Explorer.Chain.Import.Runner.FheOperations do
            ) do
         {:ok, inserted} ->
           tag_contracts_from_fhe_operations(ordered_changes_list)
+          update_transaction_fhe_counts(repo, ordered_changes_list)
           {:ok, inserted}
       end
     end
@@ -121,6 +122,7 @@ defmodule Explorer.Chain.Import.Runner.FheOperations do
       from(
         t in Transaction,
         where: t.hash in ^transaction_hashes,
+        where: t.block_consensus == true,
         where: not is_nil(t.to_address_hash),
         select: t.to_address_hash,
         distinct: true
@@ -130,5 +132,24 @@ defmodule Explorer.Chain.Import.Runner.FheOperations do
 
     # Combine and deduplicate
     (caller_addresses ++ to_addresses) |> Enum.uniq()
+  end
+
+  # Updates fhe_operations_count on transactions table for precomputed list API performance
+  defp update_transaction_fhe_counts(repo, fhe_operations) when is_list(fhe_operations) do
+    counts_by_hash =
+      fhe_operations
+      |> Enum.group_by(& &1.transaction_hash, & &1.log_index)
+      |> Enum.map(fn {hash, log_indices} -> {hash, length(log_indices)} end)
+
+    if counts_by_hash != [] do
+      Enum.each(counts_by_hash, fn {transaction_hash, count} ->
+        repo.update_all(
+          from(t in Transaction, where: t.hash == ^transaction_hash),
+          set: [fhe_operations_count: count]
+        )
+      end)
+    end
+
+    :ok
   end
 end

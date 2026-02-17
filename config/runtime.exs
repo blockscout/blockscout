@@ -1024,6 +1024,9 @@ config :indexer, :arc,
 
 config :indexer, Indexer.Supervisor, enabled: !disable_indexer?
 
+config :indexer, Indexer.Transform.FheOperations,
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_FHE_OPERATIONS_ENABLED", "false")
+
 config :indexer, Indexer.Fetcher.TransactionAction.Supervisor,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_TX_ACTIONS_ENABLE")
 

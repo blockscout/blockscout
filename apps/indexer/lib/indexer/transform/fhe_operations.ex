@@ -15,15 +15,19 @@ defmodule Indexer.Transform.FheOperations do
   """
   @spec parse(list()) :: %{fhe_operations: list()}
   def parse(logs) do
-    filtered_logs = filter_fhe_logs(logs)
+    if Application.get_env(:indexer, __MODULE__)[:enabled] do
+      filtered_logs = filter_fhe_logs(logs)
 
-    fhe_operations =
-      filtered_logs
-      |> group_by_transaction()
-      |> parse_all_transactions()
-      |> List.flatten()
+      fhe_operations =
+        filtered_logs
+        |> group_by_transaction()
+        |> parse_all_transactions()
+        |> List.flatten()
 
-    %{fhe_operations: fhe_operations}
+      %{fhe_operations: fhe_operations}
+    else
+      %{fhe_operations: []}
+    end
   end
 
   defp filter_fhe_logs(logs) do

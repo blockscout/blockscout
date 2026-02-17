@@ -31,10 +31,16 @@ defmodule Explorer.Repo.Migrations.CreateFheOperations do
     end
 
     # Indexes for efficient queries
-    create(index(:fhe_operations, ["block_number DESC"]))
+    create(index(:fhe_operations, [:transaction_hash]))
+    create(index(:fhe_operations, [:log_index]))
     create(index(:fhe_operations, [:caller], where: "caller IS NOT NULL"))
     create(index(:fhe_operations, [:operation_type]))
     create(index(:fhe_operations, [:fhe_type]))
     create(index(:fhe_operations, [:operation]))
+
+    # Precomputed FHE operations count on transactions for list API performance
+    alter table(:transactions) do
+      add(:fhe_operations_count, :integer, default: 0, null: false)
+    end
   end
 end
