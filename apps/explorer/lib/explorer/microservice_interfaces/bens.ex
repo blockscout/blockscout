@@ -34,8 +34,9 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   end
 
   @doc """
-    Request for ENS name via GET {{baseUrl}}/api/v1/addresses:lookup.
-    In multiprotocol mode, adds protocols query parameter.
+    Request for address ENS name via GET.
+    In multiprotocol mode: {{baseUrl}}/api/v1/addresses:lookup with protocols query parameter.
+    In legacy mode: {{baseUrl}}/api/v1/:chainId/addresses:lookup
   """
   @spec address_lookup(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def address_lookup(address) do
@@ -55,23 +56,24 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   end
 
   @doc """
-    Request for ENS name via GET {{baseUrl}}/api/v1/addresses/{address_hash}.
-    In multiprotocol mode, adds protocol_id query parameter (first protocol).
+    Request for address ENS name via GET.
+    In multiprotocol mode: {{baseUrl}}/api/v1/addresses/{address_hash} with protocol_id query parameter (first protocol).
+    In legacy mode: {{baseUrl}}/api/v1/:chainId/addresses/{address_hash}
   """
   @spec get_address(binary()) :: map() | nil
   def get_address(address) do
     result =
       with :ok <- Microservice.check_enabled(__MODULE__) do
-        query_params = maybe_put_protocol_id_param(nil)
-        http_get_request(get_address_url(address), query_params)
+        http_get_request(get_address_url(address), maybe_protocol_id_param())
       end
 
     parse_get_address_response(result)
   end
 
   @doc """
-    Lookup for ENS domain name via GET {{baseUrl}}/api/v1/domains:lookup.
-    In multiprotocol mode, adds protocols query parameter.
+    Lookup for ENS domain name via GET.
+    In multiprotocol mode: {{baseUrl}}/api/v1/domains:lookup with protocols query parameter.
+    In legacy mode: {{baseUrl}}/api/v1/:chainId/domains:lookup
   """
   @spec ens_domain_lookup(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def ens_domain_lookup(domain) do
@@ -90,7 +92,9 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   end
 
   @doc """
-    Request for ENS name via GET {{baseUrl}}/api/v1/domains:lookup
+    Request for ENS name via GET.
+    In multiprotocol mode: {{baseUrl}}/api/v1/domains:lookup
+    In legacy mode: {{baseUrl}}/api/v1/:chainId/domains:lookup
   """
   @spec ens_domain_name_lookup(binary()) ::
           nil
@@ -148,18 +152,18 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
 
   defp batch_resolve_name_url do
     # workaround for https://github.com/PSPDFKit-labs/bypass/issues/122
-    if multiprotocol?() do
-      if Mix.env() == :test do
+    cond do
+      Mix.env() == :test and multiprotocol?() ->
         "#{addresses_url()}:batch_resolve"
-      else
-        "#{addresses_url()}:batch-resolve"
-      end
-    else
-      if Mix.env() == :test do
+
+      Mix.env() == :test ->
         "#{addresses_url()}:batch_resolve_names"
-      else
+
+      multiprotocol?() ->
+        "#{addresses_url()}:batch-resolve"
+
+      true ->
         "#{addresses_url()}:batch-resolve-names"
-      end
     end
   end
 
@@ -216,11 +220,9 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     end
   end
 
-  defp maybe_put_protocol_id_param(query_params) do
+  defp maybe_protocol_id_param do
     if multiprotocol?() do
       %{"protocol_id" => main_protocol()}
-    else
-      query_params
     end
   end
 

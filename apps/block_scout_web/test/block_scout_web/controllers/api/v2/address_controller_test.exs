@@ -2933,6 +2933,14 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         enabled: true
       )
 
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_env_bens)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_env_metadata)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        Bypass.down(bypass)
+      end)
+
       Bypass.expect_once(bypass, "POST", "api/v1/addresses:batch_resolve", fn conn ->
         {:ok, body, conn} = Plug.Conn.read_body(conn)
         decoded = Jason.decode!(body)
@@ -2981,12 +2989,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       log = Enum.at(response["items"], 0)
       assert log["address"]["ens_domain_name"] == "test.eth"
-
-      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_env_bens)
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_env_metadata)
-      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      Bypass.down(bypass)
     end
 
     test "logs can be filtered by topic", %{conn: conn} do
