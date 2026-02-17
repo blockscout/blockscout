@@ -171,4 +171,8 @@ defmodule Explorer.Chain.CsvExport.Helper do
         true
     end
   end
+
+  def async_enabled? do
+    Application.get_env(:explorer, Explorer.Chain.CsvExport)[:async?]
+  end
 end

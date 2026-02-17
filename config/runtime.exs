@@ -959,6 +959,21 @@ config :explorer, Explorer.Chain.Scroll.L1FeeParam,
   l1_base_fee_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BASE_FEE_INIT", 0),
   l1_blob_base_fee_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BLOB_BASE_FEE_INIT", 0)
 
+async_csv_export_enabled? = ConfigHelper.parse_bool_env_var("CSV_EXPORT_ASYNC_ENABLED")
+
+config :explorer, Oban, enabled: async_csv_export_enabled?
+
+config :explorer, Explorer.Chain.CsvExport,
+  async?: async_csv_export_enabled?,
+  max_pending_tasks_per_ip: ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_MAX_PENDING_TASKS_PER_IP", 3),
+  chunk_size: ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_CHUNK_SIZE", 47_185_920),
+  tmp_dir: ConfigHelper.safe_get_env("CSV_EXPORT_ASYNC_TMP_DIR", "./tmp"),
+  gokapi_url: ConfigHelper.parse_url_env_var("CSV_EXPORT_ASYNC_GOKAPI_URL"),
+  gokapi_api_key: System.get_env("CSV_EXPORT_ASYNC_GOKAPI_API_KEY"),
+  gokapi_upload_expiry_days: ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_GOKAPI_UPLOAD_EXPIRY_DAYS", 1),
+  gokapi_upload_allowed_downloads:
+    ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_GOKAPI_UPLOAD_ALLOWED_DOWNLOADS", 1)
+
 ###############
 ### Indexer ###
 ###############

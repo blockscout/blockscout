@@ -15,10 +15,14 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   alias Explorer.Chain.CsvExport.Address.Celo.ElectionRewards,
     as: AddressCeloElectionRewardsCsvExporter
 
+  alias Explorer.Chain.CsvExport.AsyncHelper, as: AsyncCsvHelper
   alias Explorer.Chain.CsvExport.Helper, as: CsvHelper
+  alias Explorer.Chain.CsvExport.Request, as: AsyncCsvExportRequest
   alias Plug.Conn
 
   import BlockScoutWeb.Chain, only: [fetch_scam_token_toggle: 2]
+
+  require Logger
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -26,6 +30,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
 
   @api_true [api?: true]
 
+  # todo: wrap it into csv_export_module format
   operation :export_token_holders,
     summary: "Export token holders as CSV",
     description: "Exports the holders of a specific token as a CSV file.",
@@ -86,28 +91,23 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
          conn,
          %{
            address_hash_param: address_hash_string,
-           from_period: from_period,
-           to_period: to_period
+           from_period: _from_period,
+           to_period: _to_period
          } = params,
          csv_export_module
        )
        when is_binary(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:address_exists, true} <- {:address_exists, Address.address_exists?(address_hash)} do
-      filter_type = Map.get(params, :filter_type)
-      filter_value = Map.get(params, :filter_value)
-
-      address_hash
-      |> csv_export_module.export(from_period, to_period, fetch_scam_token_toggle([], conn), filter_type, filter_value)
-      |> Enum.reduce_while(put_resp_params(conn), fn chunk, conn ->
-        case Conn.chunk(conn, chunk) do
-          {:ok, conn} ->
-            {:cont, conn}
-
-          {:error, :closed} ->
-            {:halt, conn}
-        end
-      end)
+      do_async_csv?(
+        CsvHelper.async_enabled?(),
+        conn,
+        Map.merge(params, %{
+          address_hash: address_hash,
+          show_scam_tokens?: fetch_scam_token_toggle([], conn)[:show_scam_tokens?]
+        }),
+        csv_export_module
+      )
     else
       :error ->
         unprocessable_entity(conn)
@@ -118,6 +118,47 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   end
 
   defp items_csv(conn, _, _), do: not_found(conn)
+
+  defp do_async_csv?(true, conn, params, csv_export_module) do
+    params =
+      params
+      |> Map.take([:address_hash, :from_period, :to_period, :filter_type, :filter_value, :show_scam_tokens?])
+      |> Map.put(:module, to_string(csv_export_module))
+
+    case AsyncCsvExportRequest.create(AccessHelper.conn_to_ip_string(conn), params) do
+      {:ok, %{request: request}} ->
+        conn |> put_status(:accepted) |> json(%{request_id: request.id})
+
+      {:error, :too_many_pending_requests} ->
+        conn
+        |> put_status(:too_many_requests)
+        |> json(%{error: "You can only have #{AsyncCsvHelper.max_pending_tasks_per_ip()} pending requests at a time"})
+
+      {:error, error} ->
+        Logger.error("Failed to create CSV export request: #{inspect(error)}")
+        conn |> put_status(:internal_server_error) |> json(%{error: "Failed to create CSV export request"})
+    end
+  end
+
+  defp do_async_csv?(false, conn, params, csv_export_module) do
+    params[:address_hash]
+    |> csv_export_module.export(
+      params[:from_period],
+      params[:to_period],
+      [show_scam_tokens?: params[:show_scam_tokens?]],
+      params[:filter_type],
+      params[:filter_value]
+    )
+    |> Enum.reduce_while(put_resp_params(conn), fn chunk, conn ->
+      case Conn.chunk(conn, chunk) do
+        {:ok, conn} ->
+          {:cont, conn}
+
+        {:error, :closed} ->
+          {:halt, conn}
+      end
+    end)
+  end
 
   operation :token_transfers_csv,
     summary: "Export token transfers as CSV",
@@ -167,7 +208,8 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
           from_period_param(),
           to_period_param(),
           filter_type_param(),
-          filter_value_param()
+          filter_value_param(),
+          recaptcha_response_param()
         ],
     responses: [
       ok: {"CSV file of transactions.", "application/csv", nil},
@@ -205,7 +247,8 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
           from_period_param(),
           to_period_param(),
           filter_type_param(),
-          filter_value_param()
+          filter_value_param(),
+          recaptcha_response_param()
         ],
     responses: [
       ok: {"CSV file of internal transactions.", "application/csv", nil},
@@ -309,5 +352,27 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   @spec celo_election_rewards_csv(Conn.t(), map()) :: Conn.t()
   def celo_election_rewards_csv(conn, params) do
     items_csv(conn, params, AddressCeloElectionRewardsCsvExporter)
+  end
+
+  operation :get_csv_export,
+    summary: "Get CSV export",
+    description: "Gets a CSV export by UUID",
+    parameters: [uuid_param() | base_params()],
+    responses: [
+      ok: {"Status of CSV export.", "application/json", Schemas.CSVExport.Response},
+      not_found: NotFoundResponse.response()
+    ],
+    tags: ["csv-export"]
+
+  @doc """
+  Gets a CSV export by UUID.
+  """
+  @spec get_csv_export(Conn.t(), map()) :: Conn.t()
+  def get_csv_export(conn, %{uuid: uuid}) do
+    with {:not_found, request} when not is_nil(request) <-
+           {:not_found,
+            uuid |> AsyncCsvExportRequest.get_by_uuid(api?: true) |> AsyncCsvHelper.actualize_csv_export_request()} do
+      conn |> put_status(200) |> render(:csv_export, %{request: request})
+    end
   end
 end
