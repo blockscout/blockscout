@@ -8,8 +8,12 @@ The Signet protocol enables cross-chain orders between a rollup (L2) and its hos
 
 1. **Parses Order events** from the RollupOrders contract on L2
 2. **Parses Filled events** from both RollupOrders (L2) and HostOrders (L1) contracts
-3. **Computes outputs_witness_hash** for correlating orders with their fills
+3. **Stores events independently** for querying and analytics
 4. **Handles chain reorgs** gracefully by removing invalidated data
+
+**Note:** Orders and fills are indexed independently. Direct correlation between orders
+and their corresponding fills is not possible at the indexer level — only block-level
+coordination is available. This is a protocol-level constraint.
 
 ## Event Types
 
@@ -51,13 +55,12 @@ Stores Order events with their inputs, outputs, and any associated Sweep data.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| outputs_witness_hash | bytea | Primary key, keccak256 of outputs |
+| transaction_hash | bytea | Primary key (part 1), transaction containing the order |
+| log_index | integer | Primary key (part 2), log index within transaction |
 | deadline | bigint | Order deadline timestamp |
 | block_number | bigint | Block where order was created |
-| transaction_hash | bytea | Transaction containing the order |
-| log_index | integer | Log index within transaction |
 | inputs_json | text | JSON array of inputs |
-| outputs_json | text | JSON array of outputs |
+| outputs_json | text | JSON array of outputs (includes chainId) |
 | sweep_recipient | bytea | Sweep recipient (if any) |
 | sweep_token | bytea | Sweep token (if any) |
 | sweep_amount | numeric | Sweep amount (if any) |
@@ -68,22 +71,20 @@ Stores Filled events from both chains.
 
 | Column | Type | Description |
 |--------|------|-------------|
-| outputs_witness_hash | bytea | Part of composite primary key |
-| chain_type | enum | 'rollup' or 'host' |
+| chain_type | enum | Primary key (part 1), 'rollup' or 'host' |
+| transaction_hash | bytea | Primary key (part 2), transaction containing the fill |
+| log_index | integer | Primary key (part 3), log index within transaction |
 | block_number | bigint | Block where fill occurred |
-| transaction_hash | bytea | Transaction containing the fill |
-| log_index | integer | Log index within transaction |
-| outputs_json | text | JSON array of filled outputs |
+| outputs_json | text | JSON array of filled outputs (includes chainId) |
 
-## Cross-Chain Correlation
+## chainId Semantics
 
-Orders and fills are correlated using `outputs_witness_hash`:
+The Output struct includes a `chainId` field with different semantics depending on context:
 
-```
-outputs_witness_hash = keccak256(concat(keccak256(abi_encode(output)) for output in outputs))
-```
+- **In Order events (origin chain):** `chainId` is the **destination chain** where assets should be delivered
+- **In Filled events (destination chain):** `chainId` is the **origin chain** where the order was created
 
-This allows matching fills to their original orders even across different chains.
+This semantic difference is inherent to the protocol and must be considered when interpreting the data.
 
 ## Reorg Handling
 
