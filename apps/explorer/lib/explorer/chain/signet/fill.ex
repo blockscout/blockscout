@@ -30,7 +30,9 @@ defmodule Explorer.Chain.Signet.Fill do
     * `transaction_hash` - The hash of the transaction containing the fill (primary key)
     * `log_index` - The index of the log within the transaction (primary key)
     * `block_number` - The block number where the fill was executed
-    * `outputs_json` - JSON-encoded array of filled outputs
+    * `outputs_json` - JSON-encoded array of filled outputs (token, amount, recipient, chainId).
+      NOTE: In Filled events, the `chainId` field represents the ORIGIN chain
+      (where the order was created), not the chain where the fill occurred.
   """
   @type to_import :: %{
           chain_type: :rollup | :host,

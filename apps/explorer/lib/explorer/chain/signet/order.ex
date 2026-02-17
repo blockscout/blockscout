@@ -31,7 +31,9 @@ defmodule Explorer.Chain.Signet.Order do
     * `deadline` - The deadline timestamp for the order
     * `block_number` - The block number where the order was created
     * `inputs_json` - JSON-encoded array of input tokens and amounts
-    * `outputs_json` - JSON-encoded array of output tokens, amounts, recipients, and chainIds
+    * `outputs_json` - JSON-encoded array of output tokens, amounts, recipients, and chainIds.
+      NOTE: In Order events, the `chainId` field represents the DESTINATION chain
+      (where assets should be delivered), not the chain where the order was created.
     * `sweep_recipient` - Recipient address from Sweep event (if any)
     * `sweep_token` - Token address from Sweep event (if any)
     * `sweep_amount` - Amount from Sweep event (if any)
