@@ -605,7 +605,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       from(
         token_transfer in TokenTransfer,
         join: s in subquery(acquire_query),
-        on: token_transfer.block_number == s.number,
+        on: token_transfer.block_number == s.number and token_transfer.block_hash == s.hash,
         # we don't want to remove consensus from blocks that will be upserted
         where: token_transfer.block_hash not in ^hashes
       ),
