@@ -62,6 +62,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add support for new BENS api ([#13992](https://github.com/blockscout/blockscout/pull/13992))
 - Add internal transactions not null constraints ([#13976](https://github.com/blockscout/blockscout/pull/13976), [#13995](https://github.com/blockscout/blockscout/pull/13995))
 - Change 429 error text ([#13989](https://github.com/blockscout/blockscout/pull/13989))
 - Enhance indexer metrics calculation ([#13985](https://github.com/blockscout/blockscout/pull/13985))
