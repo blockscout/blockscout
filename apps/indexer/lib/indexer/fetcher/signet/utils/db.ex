@@ -38,54 +38,53 @@ defmodule Indexer.Fetcher.Signet.Utils.Db do
   end
 
   @doc """
-  Get an order by its outputs_witness_hash.
+  Get an order by its transaction hash and log index.
   """
-  @spec get_order_by_witness_hash(binary()) :: Order.t() | nil
-  def get_order_by_witness_hash(witness_hash) do
+  @spec get_order_by_tx_and_log(binary(), non_neg_integer()) :: Order.t() | nil
+  def get_order_by_tx_and_log(transaction_hash, log_index) do
     Repo.one(
       from(o in Order,
-        where: o.outputs_witness_hash == ^witness_hash
+        where: o.transaction_hash == ^transaction_hash and o.log_index == ^log_index
       )
     )
   end
 
   @doc """
-  Get all fills for a specific order by witness hash.
+  Get all orders for a specific transaction.
   """
-  @spec get_fills_for_order(binary()) :: [Fill.t()]
-  def get_fills_for_order(witness_hash) do
-    Repo.all(
-      from(f in Fill,
-        where: f.outputs_witness_hash == ^witness_hash,
-        order_by: [asc: f.chain_type, asc: f.block_number]
-      )
-    )
-  end
-
-  @doc """
-  Check if an order has been filled on a specific chain.
-  """
-  @spec order_filled_on_chain?(binary(), :rollup | :host) :: boolean()
-  def order_filled_on_chain?(witness_hash, chain_type) do
-    Repo.exists?(
-      from(f in Fill,
-        where: f.outputs_witness_hash == ^witness_hash and f.chain_type == ^chain_type
-      )
-    )
-  end
-
-  @doc """
-  Get unfilled orders (orders without any corresponding fills).
-  """
-  @spec get_unfilled_orders(non_neg_integer()) :: [Order.t()]
-  def get_unfilled_orders(limit \\ 100) do
+  @spec get_orders_for_transaction(binary()) :: [Order.t()]
+  def get_orders_for_transaction(transaction_hash) do
     Repo.all(
       from(o in Order,
-        left_join: f in Fill,
-        on: o.outputs_witness_hash == f.outputs_witness_hash,
-        where: is_nil(f.outputs_witness_hash),
-        limit: ^limit,
-        order_by: [desc: o.block_number]
+        where: o.transaction_hash == ^transaction_hash,
+        order_by: [asc: o.log_index]
+      )
+    )
+  end
+
+  @doc """
+  Get a fill by its composite primary key.
+  """
+  @spec get_fill(atom(), binary(), non_neg_integer()) :: Fill.t() | nil
+  def get_fill(chain_type, transaction_hash, log_index) do
+    Repo.one(
+      from(f in Fill,
+        where: f.chain_type == ^chain_type and
+               f.transaction_hash == ^transaction_hash and
+               f.log_index == ^log_index
+      )
+    )
+  end
+
+  @doc """
+  Get all fills for a specific transaction.
+  """
+  @spec get_fills_for_transaction(binary()) :: [Fill.t()]
+  def get_fills_for_transaction(transaction_hash) do
+    Repo.all(
+      from(f in Fill,
+        where: f.transaction_hash == ^transaction_hash,
+        order_by: [asc: f.chain_type, asc: f.log_index]
       )
     )
   end
@@ -108,13 +107,13 @@ defmodule Indexer.Fetcher.Signet.Utils.Db do
   """
   @spec get_order_fill_counts() :: %{orders: non_neg_integer(), rollup_fills: non_neg_integer(), host_fills: non_neg_integer()}
   def get_order_fill_counts do
-    orders_count = Repo.one(from(o in Order, select: count(o.outputs_witness_hash)))
+    orders_count = Repo.one(from(o in Order, select: count(o.transaction_hash)))
 
     rollup_fills_count =
-      Repo.one(from(f in Fill, where: f.chain_type == :rollup, select: count(f.outputs_witness_hash)))
+      Repo.one(from(f in Fill, where: f.chain_type == :rollup, select: count(f.transaction_hash)))
 
     host_fills_count =
-      Repo.one(from(f in Fill, where: f.chain_type == :host, select: count(f.outputs_witness_hash)))
+      Repo.one(from(f in Fill, where: f.chain_type == :host, select: count(f.transaction_hash)))
 
     %{
       orders: orders_count || 0,
