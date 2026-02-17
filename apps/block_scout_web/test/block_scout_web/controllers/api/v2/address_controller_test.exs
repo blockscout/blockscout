@@ -2892,6 +2892,105 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       Bypass.down(bypass)
     end
 
+    # https://github.com/blockscout/blockscout/issues/13763
+    test "BENS multiprotocol: batch resolve uses protocol-based URL without chain_id", %{conn: conn} do
+      address = insert(:address, hash: "0x036cec1a199234fC02f72d29e596a09440825f1C")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      log =
+        insert(:log,
+          transaction: transaction,
+          index: 1,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          address: address
+        )
+
+      bypass = Bypass.open()
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+
+      old_env_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true,
+        protocols: ["ens"]
+      )
+
+      old_env_metadata = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_env_bens)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_env_metadata)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        Bypass.down(bypass)
+      end)
+
+      Bypass.expect_once(bypass, "POST", "api/v1/addresses:batch_resolve", fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        decoded = Jason.decode!(body)
+        assert decoded["protocols"] == "ens"
+
+        Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{
+            "names" => %{
+              to_string(address) => "test.eth"
+            }
+          })
+        )
+      end)
+
+      Bypass.expect_once(bypass, "GET", "api/v1/metadata", fn conn ->
+        Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{
+            "addresses" => %{
+              to_string(address) => %{
+                "tags" => [
+                  %{
+                    "name" => "Proposer Fee Recipient",
+                    "ordinal" => 0,
+                    "slug" => "proposer-fee-recipient",
+                    "tagType" => "generic",
+                    "meta" => "{\"styles\":\"danger_high\"}"
+                  }
+                ]
+              }
+            }
+          })
+        )
+      end)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/logs")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+
+      compare_item(log, Enum.at(response["items"], 0))
+
+      log = Enum.at(response["items"], 0)
+      assert log["address"]["ens_domain_name"] == "test.eth"
+    end
+
     test "logs can be filtered by topic", %{conn: conn} do
       address = insert(:address)
 

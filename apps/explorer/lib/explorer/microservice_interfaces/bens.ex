@@ -18,69 +18,83 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   @request_error_msg "Error while sending request to BENS microservice"
 
   @doc """
-    Batch request for ENS names via POST {{baseUrl}}/api/v1/:chainId/addresses:batch-resolve-names
+    Batch request for ENS names via POST.
+    In multiprotocol mode: {{baseUrl}}/api/v1/addresses:batch-resolve with protocols in body.
+    In legacy mode: {{baseUrl}}/api/v1/:chainId/addresses:batch-resolve-names
   """
   @spec ens_names_batch_request([binary()]) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def ens_names_batch_request(addresses) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
-      body = %{
-        addresses: Enum.map(addresses, &to_string/1)
-      }
+      body =
+        %{addresses: Enum.map(addresses, &to_string/1)}
+        |> maybe_put_protocols_in_body()
 
       http_post_request(batch_resolve_name_url(), body)
     end
   end
 
   @doc """
-    Request for ENS name via GET {{baseUrl}}/api/v1/:chainId/addresses:lookup
+    Request for address ENS name via GET.
+    In multiprotocol mode: {{baseUrl}}/api/v1/addresses:lookup with protocols query parameter.
+    In legacy mode: {{baseUrl}}/api/v1/:chainId/addresses:lookup
   """
   @spec address_lookup(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def address_lookup(address) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
-      query_params = %{
-        "address" => to_string(address),
-        "resolved_to" => true,
-        "owned_by" => false,
-        "only_active" => true,
-        "order" => "ASC"
-      }
+      query_params =
+        %{
+          "address" => to_string(address),
+          "resolved_to" => true,
+          "owned_by" => false,
+          "only_active" => true,
+          "order" => "ASC"
+        }
+        |> maybe_put_protocols_param()
 
       http_get_request(address_lookup_url(), query_params)
     end
   end
 
   @doc """
-    Request for ENS name via GET {{baseUrl}}/api/v1/:chainId/addresses/{address_hash}
+    Request for address ENS name via GET.
+    In multiprotocol mode: {{baseUrl}}/api/v1/addresses/{address_hash} with protocol_id query parameter (first protocol).
+    In legacy mode: {{baseUrl}}/api/v1/:chainId/addresses/{address_hash}
   """
   @spec get_address(binary()) :: map() | nil
   def get_address(address) do
     result =
       with :ok <- Microservice.check_enabled(__MODULE__) do
-        http_get_request(get_address_url(address), nil)
+        http_get_request(get_address_url(address), maybe_protocol_id_param())
       end
 
     parse_get_address_response(result)
   end
 
   @doc """
-    Lookup for ENS domain name via GET {{baseUrl}}/api/v1/:chainId/domains:lookup
+    Lookup for ENS domain name via GET.
+    In multiprotocol mode: {{baseUrl}}/api/v1/domains:lookup with protocols query parameter.
+    In legacy mode: {{baseUrl}}/api/v1/:chainId/domains:lookup
   """
   @spec ens_domain_lookup(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
   def ens_domain_lookup(domain) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
-      query_params = %{
-        "name" => domain,
-        "only_active" => true,
-        "sort" => "registration_date",
-        "order" => "DESC"
-      }
+      query_params =
+        %{
+          "name" => domain,
+          "only_active" => true,
+          "sort" => "registration_date",
+          "order" => "DESC"
+        }
+        |> maybe_put_protocols_param()
 
       http_get_request(domain_lookup_url(), query_params)
     end
   end
 
   @doc """
-    Request for ENS name via GET {{baseUrl}}/api/v1/:chainId/domains:lookup
+    Request for ENS name via GET.
+    In multiprotocol mode: {{baseUrl}}/api/v1/domains:lookup
+    In legacy mode: {{baseUrl}}/api/v1/:chainId/domains:lookup
   """
   @spec ens_domain_name_lookup(binary()) ::
           nil
@@ -138,10 +152,18 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
 
   defp batch_resolve_name_url do
     # workaround for https://github.com/PSPDFKit-labs/bypass/issues/122
-    if Mix.env() == :test do
-      "#{addresses_url()}:batch_resolve_names"
-    else
-      "#{addresses_url()}:batch-resolve-names"
+    cond do
+      Mix.env() == :test and multiprotocol?() ->
+        "#{addresses_url()}:batch_resolve"
+
+      Mix.env() == :test ->
+        "#{addresses_url()}:batch_resolve_names"
+
+      multiprotocol?() ->
+        "#{addresses_url()}:batch-resolve"
+
+      true ->
+        "#{addresses_url()}:batch-resolve-names"
     end
   end
 
@@ -166,8 +188,50 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   end
 
   defp base_url do
-    chain_id = Application.get_env(:block_scout_web, :chain_id)
-    "#{Microservice.base_url(__MODULE__)}/api/v1/#{chain_id}"
+    if multiprotocol?() do
+      "#{Microservice.base_url(__MODULE__)}/api/v1"
+    else
+      chain_id = Application.get_env(:block_scout_web, :chain_id)
+      "#{Microservice.base_url(__MODULE__)}/api/v1/#{chain_id}"
+    end
+  end
+
+  defp protocols do
+    Application.get_env(:explorer, __MODULE__)[:protocols] || []
+  end
+
+  defp multiprotocol? do
+    protocols() != []
+  end
+
+  defp main_protocol do
+    List.first(protocols())
+  end
+
+  defp protocols_string do
+    Enum.join(protocols(), ",")
+  end
+
+  defp maybe_put_protocols_param(query_params) do
+    if multiprotocol?() do
+      Map.put(query_params, "protocols", protocols_string())
+    else
+      query_params
+    end
+  end
+
+  defp maybe_protocol_id_param do
+    if multiprotocol?() do
+      %{"protocol_id" => main_protocol()}
+    end
+  end
+
+  defp maybe_put_protocols_in_body(body) do
+    if multiprotocol?() do
+      Map.put(body, :protocols, protocols_string())
+    else
+      body
+    end
   end
 
   defp parse_lookup_response(
