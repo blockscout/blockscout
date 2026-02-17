@@ -62,13 +62,17 @@ defmodule Explorer.Chain.Import.Runner.Signet.Orders do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Order ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.outputs_witness_hash)
+    # Sort by composite primary key: transaction_hash, then log_index
+    ordered_changes_list =
+      Enum.sort_by(changes_list, fn change ->
+        {change.transaction_hash, change.log_index}
+      end)
 
     {:ok, inserted} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        conflict_target: [:outputs_witness_hash],
+        conflict_target: [:transaction_hash, :log_index],
         on_conflict: on_conflict,
         for: Order,
         returning: true,
@@ -84,11 +88,9 @@ defmodule Explorer.Chain.Import.Runner.Signet.Orders do
       o in Order,
       update: [
         set: [
-          # Don't update outputs_witness_hash as it's the primary key
+          # Don't update primary key fields (transaction_hash, log_index)
           deadline: fragment("COALESCE(EXCLUDED.deadline, ?)", o.deadline),
           block_number: fragment("COALESCE(EXCLUDED.block_number, ?)", o.block_number),
-          transaction_hash: fragment("COALESCE(EXCLUDED.transaction_hash, ?)", o.transaction_hash),
-          log_index: fragment("COALESCE(EXCLUDED.log_index, ?)", o.log_index),
           inputs_json: fragment("COALESCE(EXCLUDED.inputs_json, ?)", o.inputs_json),
           outputs_json: fragment("COALESCE(EXCLUDED.outputs_json, ?)", o.outputs_json),
           sweep_recipient: fragment("COALESCE(EXCLUDED.sweep_recipient, ?)", o.sweep_recipient),
@@ -100,11 +102,9 @@ defmodule Explorer.Chain.Import.Runner.Signet.Orders do
       ],
       where:
         fragment(
-          "(EXCLUDED.deadline, EXCLUDED.block_number, EXCLUDED.transaction_hash, EXCLUDED.log_index, EXCLUDED.sweep_recipient, EXCLUDED.sweep_token, EXCLUDED.sweep_amount) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.deadline, EXCLUDED.block_number, EXCLUDED.sweep_recipient, EXCLUDED.sweep_token, EXCLUDED.sweep_amount) IS DISTINCT FROM (?, ?, ?, ?, ?)",
           o.deadline,
           o.block_number,
-          o.transaction_hash,
-          o.log_index,
           o.sweep_recipient,
           o.sweep_token,
           o.sweep_amount

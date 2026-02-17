@@ -25,10 +25,12 @@ defmodule Indexer.Fetcher.Signet.EventParser do
   Sweep(address indexed recipient, address indexed token, uint256 amount)
   ```
 
-  ## Cross-Chain Correlation
+  ## Architecture Note
 
-  Orders are correlated with fills across chains using the `outputs_witness_hash`,
-  computed as: keccak256(concat(keccak256(abi.encode(output)) for each output))
+  Orders and fills are indexed independently. Direct correlation between orders
+  and their fills is not possible at the indexer level - only block-level
+  coordination is available. The data is stored separately for querying and
+  analytics purposes.
   """
 
   require Logger
@@ -111,40 +113,6 @@ defmodule Indexer.Fetcher.Signet.EventParser do
     {:ok, fills}
   end
 
-  @doc """
-  Compute the outputs_witness_hash for a list of outputs.
-
-  The hash is computed as: keccak256(concat(keccak256(abi_encode(output)) for output in outputs))
-
-  Output struct (from @signet-sh/sdk):
-  - token: address
-  - amount: uint256
-  - recipient: address
-  - chainId: uint32
-  """
-  @spec compute_outputs_witness_hash([{binary(), non_neg_integer(), binary(), non_neg_integer()}]) :: binary()
-  def compute_outputs_witness_hash(outputs) do
-    output_hashes =
-      outputs
-      |> Enum.map(fn {token, amount, recipient, chain_id} ->
-        # ABI-encode each output as (address token, uint256 amount, address recipient, uint32 chainId)
-        # Padded to 32 bytes each
-        encoded =
-          <<0::size(96)>> <>
-          normalize_address(token) <>
-          <<amount::unsigned-big-integer-size(256)>> <>
-          <<0::size(96)>> <>
-          normalize_address(recipient) <>
-          <<0::size(224)>> <>
-          <<chain_id::unsigned-big-integer-size(32)>>
-
-        ExKeccak.hash_256(encoded)
-      end)
-      |> Enum.join()
-
-    ExKeccak.hash_256(output_hashes)
-  end
-
   # Parse Order event
   # Order(uint256 deadline, Input[] inputs, Output[] outputs)
   defp parse_order_event(log) do
@@ -153,10 +121,7 @@ defmodule Indexer.Fetcher.Signet.EventParser do
     with {:ok, decoded} <- decode_order_data(data) do
       {deadline, inputs, outputs} = decoded
 
-      outputs_witness_hash = compute_outputs_witness_hash(outputs)
-
       order = %{
-        outputs_witness_hash: outputs_witness_hash,
         deadline: deadline,
         block_number: parse_block_number(log),
         transaction_hash: get_transaction_hash(log),
@@ -175,10 +140,7 @@ defmodule Indexer.Fetcher.Signet.EventParser do
     data = get_log_data(log)
 
     with {:ok, outputs} <- decode_filled_data(data) do
-      outputs_witness_hash = compute_outputs_witness_hash(outputs)
-
       fill = %{
-        outputs_witness_hash: outputs_witness_hash,
         block_number: parse_block_number(log),
         transaction_hash: get_transaction_hash(log),
         log_index: parse_log_index(log),
@@ -353,12 +315,6 @@ defmodule Indexer.Fetcher.Signet.EventParser do
 
   defp format_address(bytes) when is_binary(bytes) and byte_size(bytes) == 20 do
     "0x" <> Base.encode16(bytes, case: :lower)
-  end
-
-  defp normalize_address(bytes) when is_binary(bytes) and byte_size(bytes) == 20, do: bytes
-
-  defp normalize_address("0x" <> hex) when byte_size(hex) == 40 do
-    Base.decode16!(hex, case: :mixed)
   end
 
   defp get_topic(log, index) do

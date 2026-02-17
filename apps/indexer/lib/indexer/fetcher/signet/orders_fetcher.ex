@@ -2,12 +2,15 @@ defmodule Indexer.Fetcher.Signet.OrdersFetcher do
   @moduledoc """
   Fetcher for Signet Order and Filled events from RollupOrders and HostOrders contracts.
 
-  This module tracks cross-chain orders in the Signet protocol by:
+  This module indexes Signet protocol events:
   1. Parsing Order events from the RollupOrders contract on L2
   2. Parsing Filled events from both RollupOrders (L2) and HostOrders (L1) contracts
   3. Parsing Sweep events from RollupOrders contract
-  4. Computing outputs_witness_hash for cross-chain correlation
-  5. Inserting events into signet_orders / signet_fills tables
+  4. Inserting events into signet_orders / signet_fills tables
+
+  Note: Orders and fills are indexed independently. Direct correlation between
+  orders and their fills is not possible at the indexer level - only block-level
+  coordination is available.
 
   ## Event Signatures
 

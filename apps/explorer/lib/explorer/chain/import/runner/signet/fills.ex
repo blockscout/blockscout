@@ -62,13 +62,17 @@ defmodule Explorer.Chain.Import.Runner.Signet.Fills do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Fill ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, &{&1.outputs_witness_hash, &1.chain_type})
+    # Sort by composite primary key: chain_type, transaction_hash, log_index
+    ordered_changes_list =
+      Enum.sort_by(changes_list, fn change ->
+        {change.chain_type, change.transaction_hash, change.log_index}
+      end)
 
     {:ok, inserted} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        conflict_target: [:outputs_witness_hash, :chain_type],
+        conflict_target: [:chain_type, :transaction_hash, :log_index],
         on_conflict: on_conflict,
         for: Fill,
         returning: true,
@@ -84,10 +88,8 @@ defmodule Explorer.Chain.Import.Runner.Signet.Fills do
       f in Fill,
       update: [
         set: [
-          # Don't update composite primary key fields
+          # Don't update primary key fields (chain_type, transaction_hash, log_index)
           block_number: fragment("COALESCE(EXCLUDED.block_number, ?)", f.block_number),
-          transaction_hash: fragment("COALESCE(EXCLUDED.transaction_hash, ?)", f.transaction_hash),
-          log_index: fragment("COALESCE(EXCLUDED.log_index, ?)", f.log_index),
           outputs_json: fragment("COALESCE(EXCLUDED.outputs_json, ?)", f.outputs_json),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", f.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", f.updated_at)
@@ -95,10 +97,8 @@ defmodule Explorer.Chain.Import.Runner.Signet.Fills do
       ],
       where:
         fragment(
-          "(EXCLUDED.block_number, EXCLUDED.transaction_hash, EXCLUDED.log_index, EXCLUDED.outputs_json) IS DISTINCT FROM (?, ?, ?, ?)",
+          "(EXCLUDED.block_number, EXCLUDED.outputs_json) IS DISTINCT FROM (?, ?)",
           f.block_number,
-          f.transaction_hash,
-          f.log_index,
           f.outputs_json
         )
     )
