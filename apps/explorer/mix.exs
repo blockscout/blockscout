@@ -135,7 +135,8 @@ defmodule Explorer.Mixfile do
       {:inet_cidr, "~> 1.0.0"},
       {:hammer, "~> 7.0"},
       {:ton, "~> 0.5.0"},
-      {:mint, "~> 1.0"}
+      {:mint, "~> 1.0"},
+      {:oban, "~> 2.19"}
     ]
   end
 

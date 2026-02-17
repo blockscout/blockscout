@@ -1674,6 +1674,7 @@ defmodule Explorer.Chain.Transaction do
             Chain.paging_options()
             | Chain.necessity_by_association_option()
             | {:sorting, SortingHelper.sorting_params()}
+            | Chain.timeout_option()
           ],
           boolean()
         ) :: [__MODULE__.t()]
@@ -1693,6 +1694,7 @@ defmodule Explorer.Chain.Transaction do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     old_ui? = old_ui? || is_tuple(Keyword.get(options, :paging_options, Chain.default_paging_options()).key)
     sorting_options = Keyword.get(options, :sorting, [])
+    timeout = Keyword.get(options, :timeout)
 
     options
     |> address_to_transactions_tasks_query(false, old_ui?)
@@ -1700,7 +1702,11 @@ defmodule Explorer.Chain.Transaction do
     |> Chain.join_associations(necessity_by_association)
     |> put_has_token_transfers_to_transaction(old_ui?)
     |> matching_address_queries_list(direction, address_hash, sorting_options)
-    |> Enum.map(fn query -> Task.async(fn -> Chain.select_repo(options).all(query) end) end)
+    |> Enum.map(fn query ->
+      Task.async(fn ->
+        Chain.select_repo(options).all(query, Helper.maybe_timeout(timeout))
+      end)
+    end)
   end
 
   @doc """

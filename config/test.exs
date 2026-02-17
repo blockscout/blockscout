@@ -1,4 +1,5 @@
 import Config
+config :explorer, Oban, testing: :manual
 
 # Print only warnings and errors during test
 config :logger, level: :warn

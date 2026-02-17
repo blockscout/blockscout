@@ -1,0 +1,109 @@
+defmodule Explorer.Chain.CsvExport.Worker do
+  @moduledoc """
+  Oban worker for asynchronous CSV export jobs.
+
+  Processes export requests in the background when the requested period exceeds
+  the async threshold, streaming results to a temp file and uploading to storage.
+  """
+  use Oban.Worker, queue: :csv_export, max_attempts: 1
+
+  alias Explorer.Chain
+  alias Explorer.Chain.CsvExport.{AdvancedFilter, AsyncHelper, Request}
+
+  require Logger
+
+  @impl Oban.Worker
+  def perform(
+        %Job{
+          args: %{
+            "request_id" => request_id,
+            "advanced_filters_params" => advanced_filters_params
+          }
+        } = job
+      ) do
+    run_with_failure_handling(job, request_id, fn ->
+      filename = "advanced_filters_#{request_id}.csv"
+
+      advanced_filters_params
+      |> Base.decode64!()
+      |> :erlang.binary_to_term([:safe])
+      |> AdvancedFilter.export()
+      |> AsyncHelper.stream_to_temp_file(request_id)
+      |> AsyncHelper.upload_file(filename, request_id)
+      |> process_upload_result(request_id)
+    end)
+  end
+
+  @impl Oban.Worker
+  def perform(
+        %Job{
+          args:
+            %{
+              "request_id" => request_id,
+              "address_hash" => address_hash_string,
+              "from_period" => from_period,
+              "to_period" => to_period,
+              "show_scam_tokens?" => show_scam_tokens?,
+              "module" => module
+            } = args
+        } = job
+      ) do
+    run_with_failure_handling(job, request_id, fn ->
+      csv_export_module = String.to_existing_atom(module)
+      filename = "#{address_hash_string}_#{from_period}_#{to_period}.csv"
+
+      {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
+
+      address_hash
+      |> csv_export_module.export(
+        from_period,
+        to_period,
+        [show_scam_tokens?: show_scam_tokens?],
+        args["filter_type"],
+        args["filter_value"]
+      )
+      |> AsyncHelper.stream_to_temp_file(request_id)
+      |> AsyncHelper.upload_file(filename, request_id)
+      |> process_upload_result(request_id)
+    end)
+  end
+
+  defp run_with_failure_handling(%Job{attempt: attempt, max_attempts: max_attempts}, request_id, fun) do
+    case fun.() do
+      :ok ->
+        :ok
+
+      {:error, _reason} = error ->
+        if attempt >= max_attempts do
+          Request.mark_failed(request_id)
+        end
+
+        error
+    end
+  rescue
+    exception ->
+      if attempt >= max_attempts do
+        Request.mark_failed(request_id)
+      end
+
+      reraise exception, __STACKTRACE__
+  end
+
+  defp process_upload_result(result, request_id) do
+    case result do
+      {:ok, file_id} ->
+        case Request.update_file_id(request_id, file_id) do
+          {0, _} ->
+            Logger.warning(
+              "CSV export request #{request_id} was deleted before file_id could be set. Uploaded file #{file_id} may be orphaned."
+            )
+
+          {_count, _} ->
+            :ok
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+end
