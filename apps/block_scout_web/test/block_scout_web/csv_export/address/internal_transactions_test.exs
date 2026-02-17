@@ -30,7 +30,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
 
       res =
         address.hash
-        |> AddressInternalTransactionsCsvExporter.export(from_period, to_period, [])
+        |> AddressInternalTransactionsCsvExporter.export(from_period, to_period, [], nil, nil)
         |> Enum.to_list()
         |> Enum.drop(1)
 
@@ -184,7 +184,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
 
       result =
         address.hash
-        |> AddressInternalTransactionsCsvExporter.export(from_period, to_period, [])
+        |> AddressInternalTransactionsCsvExporter.export(from_period, to_period, [], nil, nil)
         |> Enum.to_list()
         |> Enum.drop(1)
 
@@ -222,7 +222,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
 
       res =
         address.hash
-        |> AddressInternalTransactionsCsvExporter.export(from_period, to_period, [])
+        |> AddressInternalTransactionsCsvExporter.export(from_period, to_period, [], nil, nil)
         |> Enum.to_list()
         |> Enum.drop(1)
 

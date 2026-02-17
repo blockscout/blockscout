@@ -758,4 +758,8 @@ defmodule Explorer.Helper do
       key
     end
   end
+
+  @spec maybe_timeout(timeout() | nil) :: keyword()
+  def maybe_timeout(nil), do: []
+  def maybe_timeout(timeout), do: [timeout: timeout]
 end
