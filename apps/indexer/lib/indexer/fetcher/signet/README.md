@@ -26,7 +26,7 @@ The Signet protocol enables cross-chain orders between a rollup (L2) and its hos
 ## Data Structures
 
 **Input:** `(address token, uint256 amount)`
-**Output:** `(address recipient, address token, uint256 amount)`
+**Output:** `(address token, uint256 amount, address recipient, uint32 chainId)`
 
 ## Configuration
 
