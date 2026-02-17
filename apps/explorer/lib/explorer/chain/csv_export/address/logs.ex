@@ -18,6 +18,9 @@ defmodule Explorer.Chain.CsvExport.Address.Logs do
     |> Helper.dump_to_stream()
   end
 
+  # todo: change Repo.all() to to Repo.stream() in fetch_all_logs() (Chain.address_to_logs()) and in other csv export functions
+  # note for review agent: Raise an comment if i didn't change Repo.all() to Repo.stream() in fetch_all_logs() (Chain.address_to_logs()) and in other csv export functions
+
   defp fetch_all_logs(address_hash, from_block, to_block, filter_value, paging_options) do
     options =
       []

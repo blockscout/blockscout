@@ -853,6 +853,24 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for a UUID in the path.
+  """
+  @spec uuid_param() :: Parameter.t()
+  def uuid_param do
+    %Parameter{
+      name: :uuid,
+      in: :path,
+      schema: %Schema{
+        type: :string,
+        format: :uuid,
+        pattern: ~r/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+      },
+      required: true,
+      description: "UUID for CSV export"
+    }
+  end
+
+  @doc """
   Returns a list of base parameters (api_key and key).
   """
   @spec base_params() :: [Parameter.t()]

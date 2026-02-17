@@ -2,6 +2,13 @@
 # and its dependencies with the aid of the Config module.
 import Config
 
+# todo: make concurrency configurable
+config :explorer, Oban,
+  engine: Oban.Engines.Basic,
+  notifier: Oban.Notifiers.Postgres,
+  queues: [csv_export: 10],
+  repo: Explorer.Repo
+
 # By default, the umbrella project as well as each child
 # application will require this configuration file, ensuring
 # they all use the same configuration. While one could
