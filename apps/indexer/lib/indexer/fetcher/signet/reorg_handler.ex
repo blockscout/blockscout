@@ -46,25 +46,28 @@ defmodule Indexer.Fetcher.Signet.ReorgHandler do
   # Handle reorg on the rollup (L2) chain
   # This affects both orders and rollup fills
   defp handle_rollup_reorg(from_block) do
-    # Delete orders at or after the reorg block
-    {deleted_orders, _} =
-      Repo.delete_all(
-        from(o in Order,
-          where: o.block_number >= ^from_block
+    # Wrap in transaction to ensure atomicity
+    Repo.transaction(fn ->
+      # Delete orders at or after the reorg block
+      {deleted_orders, _} =
+        Repo.delete_all(
+          from(o in Order,
+            where: o.block_number >= ^from_block
+          )
         )
-      )
 
-    # Delete rollup fills at or after the reorg block
-    {deleted_fills, _} =
-      Repo.delete_all(
-        from(f in Fill,
-          where: f.chain_type == :rollup and f.block_number >= ^from_block
+      # Delete rollup fills at or after the reorg block
+      {deleted_fills, _} =
+        Repo.delete_all(
+          from(f in Fill,
+            where: f.chain_type == :rollup and f.block_number >= ^from_block
+          )
         )
-      )
 
-    Logger.info(
-      "Rollup reorg cleanup: deleted #{deleted_orders} orders, #{deleted_fills} fills from block #{from_block}"
-    )
+      Logger.info(
+        "Rollup reorg cleanup: deleted #{deleted_orders} orders, #{deleted_fills} fills from block #{from_block}"
+      )
+    end)
   end
 
   # Handle reorg on the host (L1) chain

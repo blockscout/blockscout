@@ -1482,6 +1482,21 @@ config :indexer, Indexer.Fetcher.Arbitrum.DataBackfill.Supervisor,
     ConfigHelper.chain_type() != :arbitrum ||
       not ConfigHelper.parse_bool_env_var("INDEXER_ARBITRUM_DATA_BACKFILL_ENABLED")
 
+# Signet Orders Indexer configuration
+config :indexer, Indexer.Fetcher.Signet.OrdersFetcher,
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_SIGNET_ORDERS_ENABLED", "false"),
+  rollup_orders_address: System.get_env("INDEXER_SIGNET_ROLLUP_ORDERS_ADDRESS"),
+  host_orders_address: System.get_env("INDEXER_SIGNET_HOST_ORDERS_ADDRESS"),
+  l1_rpc: System.get_env("INDEXER_SIGNET_L1_RPC"),
+  l1_rpc_block_range: ConfigHelper.parse_integer_env_var("INDEXER_SIGNET_L1_RPC_BLOCK_RANGE", 1_000),
+  l2_rpc_block_range: ConfigHelper.parse_integer_env_var("INDEXER_SIGNET_L2_RPC_BLOCK_RANGE", 1_000),
+  recheck_interval: ConfigHelper.parse_time_env_var("INDEXER_SIGNET_RECHECK_INTERVAL", "15s"),
+  start_block: ConfigHelper.parse_integer_env_var("INDEXER_SIGNET_START_BLOCK", 0),
+  failure_interval_threshold: ConfigHelper.parse_time_env_var("INDEXER_SIGNET_FAILURE_THRESHOLD", "10m")
+
+config :indexer, Indexer.Fetcher.Signet.OrdersFetcher.Supervisor,
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_SIGNET_ORDERS_ENABLED", "false")
+
 config :indexer, Indexer.Fetcher.RootstockData.Supervisor,
   disabled?:
     ConfigHelper.chain_type() != :rsk || ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ROOTSTOCK_DATA_FETCHER")

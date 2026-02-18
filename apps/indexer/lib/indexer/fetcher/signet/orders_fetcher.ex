@@ -32,7 +32,10 @@ defmodule Indexer.Fetcher.Signet.OrdersFetcher do
         host_orders_address: "0x...",
         l1_rpc: "https://...",
         l1_rpc_block_range: 1000,
-        recheck_interval: 15_000
+        l2_rpc_block_range: 1000,
+        recheck_interval: 15_000,
+        start_block: 0,
+        failure_interval_threshold: 600_000
 
   ## Architecture
 
@@ -45,6 +48,8 @@ defmodule Indexer.Fetcher.Signet.OrdersFetcher do
   use Indexer.Fetcher, restart: :permanent
 
   require Logger
+
+  import Ecto.Query
 
   alias Explorer.Chain
   alias Explorer.Chain.Signet.{Order, Fill}
@@ -80,6 +85,7 @@ defmodule Indexer.Fetcher.Signet.OrdersFetcher do
     host_orders_address = config[:host_orders_address]
     l1_rpc = config[:l1_rpc]
     l1_rpc_block_range = config[:l1_rpc_block_range] || 1000
+    l2_rpc_block_range = config[:l2_rpc_block_range] || 1000
     recheck_interval = config[:recheck_interval] || 15_000
     start_block = config[:start_block] || 0
 
@@ -97,6 +103,7 @@ defmodule Indexer.Fetcher.Signet.OrdersFetcher do
       rollup_orders_address: rollup_orders_address,
       host_orders_address: host_orders_address,
       l1_rpc_block_range: l1_rpc_block_range,
+      l2_rpc_block_range: l2_rpc_block_range,
       recheck_interval: recheck_interval,
       failure_interval_threshold: failure_interval_threshold,
       start_block: start_block
@@ -281,21 +288,23 @@ defmodule Indexer.Fetcher.Signet.OrdersFetcher do
     start_block = state.task_data.check_new_rollup.start_block
 
     with {:ok, latest_block} <- get_latest_block(config.json_l2_rpc_named_arguments),
+         # Bound the block range to avoid unbounded eth_getLogs calls
+         end_block = min(start_block + config.l2_rpc_block_range, latest_block),
          {:ok, logs} <-
            fetch_logs(
              config.json_l2_rpc_named_arguments,
              config.rollup_orders_address,
              start_block,
-             latest_block
+             end_block
            ),
          {:ok, {orders, fills}} <- EventParser.parse_rollup_logs(logs),
          :ok <- import_orders(orders),
          :ok <- import_fills(fills, :rollup) do
       Logger.info(
-        "Processed rollup events: #{length(orders)} orders, #{length(fills)} fills (blocks #{start_block}-#{latest_block})"
+        "Processed rollup events: #{length(orders)} orders, #{length(fills)} fills (blocks #{start_block}-#{end_block})"
       )
 
-      updated_task_data = put_in(state.task_data.check_new_rollup.start_block, latest_block + 1)
+      updated_task_data = put_in(state.task_data.check_new_rollup.start_block, end_block + 1)
       {:ok, %{state | task_data: updated_task_data}}
     end
   end
