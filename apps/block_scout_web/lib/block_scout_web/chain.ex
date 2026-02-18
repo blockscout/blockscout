@@ -1007,7 +1007,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%Transaction{block_number: block_number, index: index}) do
-    %{"block_number" => block_number, "index" => index}
+    %{block_number: block_number, index: index}
   end
 
   defp paging_params(%TokenTransfer{block_number: block_number, log_index: index}) do
