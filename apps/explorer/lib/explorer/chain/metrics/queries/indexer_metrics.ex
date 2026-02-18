@@ -103,13 +103,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
       """
       SELECT COUNT(1) as missing_current_token_balances_count
       FROM address_current_token_balances ctb
-      WHERE (ctb.value_fetched_at is NULL OR ctb.value is NULL)
-      AND NOT EXISTS(
-        SELECT 1 FROM address_token_balances tb
-        WHERE tb.address_hash = ctb.address_hash
-        AND tb.token_contract_address_hash = ctb.token_contract_address_hash
-        AND tb.retries_count is not null
-      );
+      WHERE (ctb.value_fetched_at is NULL OR ctb.value is NULL);
       """
 
     case SQL.query(Repo, sql_string, [], timeout: :infinity) do
