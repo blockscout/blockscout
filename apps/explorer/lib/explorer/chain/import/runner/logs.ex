@@ -67,18 +67,34 @@ defmodule Explorer.Chain.Import.Runner.Logs do
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
+    # Add compressed data fields to changes
+    changes_list_with_compression =
+      Enum.map(changes_list, fn changes ->
+        case Map.get(changes, :data) do
+          %{bytes: data_bytes} when is_binary(data_bytes) ->
+            changes
+            |> Map.put(:compressed_data_gzip, compress_gzip(data_bytes))
+            |> Map.put(:compressed_data_lz4, compress_lz4(data_bytes))
+            |> Map.put(:compressed_data_brotli, compress_brotli(data_bytes))
+            |> Map.put(:compressed_data_zstd, compress_zstd(data_bytes))
+
+          _ ->
+            changes
+        end
+      end)
+
     # Enforce Log ShareLocks order (see docs: sharelocks.md)
     {ordered_changes_list, conflict_target} =
       case chain_identity() do
         {:optimism, :celo} ->
           {
-            Enum.sort_by(changes_list, &{&1.block_hash, &1.index}),
+            Enum.sort_by(changes_list_with_compression, &{&1.block_hash, &1.index}),
             [:index, :block_hash]
           }
 
         _ ->
           {
-            Enum.sort_by(changes_list, &{&1.transaction_hash, &1.block_hash, &1.index}),
+            Enum.sort_by(changes_list_with_compression, &{&1.transaction_hash, &1.block_hash, &1.index}),
             [:transaction_hash, :index, :block_hash]
           }
       end
@@ -109,6 +125,10 @@ defmodule Explorer.Chain.Import.Runner.Logs do
               second_topic: fragment("EXCLUDED.second_topic"),
               third_topic: fragment("EXCLUDED.third_topic"),
               fourth_topic: fragment("EXCLUDED.fourth_topic"),
+              compressed_data_gzip: fragment("EXCLUDED.compressed_data_gzip"),
+              compressed_data_lz4: fragment("EXCLUDED.compressed_data_lz4"),
+              compressed_data_brotli: fragment("EXCLUDED.compressed_data_brotli"),
+              compressed_data_zstd: fragment("EXCLUDED.compressed_data_zstd"),
               # Don't update `index` as it is part of the composite primary key and used for the conflict target
               transaction_hash: fragment("EXCLUDED.transaction_hash"),
               inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", log.inserted_at),
@@ -139,6 +159,10 @@ defmodule Explorer.Chain.Import.Runner.Logs do
               second_topic: fragment("EXCLUDED.second_topic"),
               third_topic: fragment("EXCLUDED.third_topic"),
               fourth_topic: fragment("EXCLUDED.fourth_topic"),
+              compressed_data_gzip: fragment("EXCLUDED.compressed_data_gzip"),
+              compressed_data_lz4: fragment("EXCLUDED.compressed_data_lz4"),
+              compressed_data_brotli: fragment("EXCLUDED.compressed_data_brotli"),
+              compressed_data_zstd: fragment("EXCLUDED.compressed_data_zstd"),
               # Don't update `index` as it is part of the composite primary key and used for the conflict target
               # Don't update `transaction_hash` as it is part of the composite primary key and used for the conflict target
               inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", log.inserted_at),
@@ -158,4 +182,39 @@ defmodule Explorer.Chain.Import.Runner.Logs do
         )
     end
   end
+
+  # Compress data using gzip
+  defp compress_gzip(data) when is_binary(data) do
+    :zlib.gzip(data)
+  end
+
+  defp compress_gzip(_), do: nil
+
+  # Compress data using Brotli
+  defp compress_brotli(data) when is_binary(data) do
+    case ExBrotli.compress(data) do
+      {:ok, compressed} -> compressed
+      {:error, _} -> nil
+    end
+  end
+
+  defp compress_brotli(_), do: nil
+
+  # Compress data using LZ4 (via lz4_erl)
+  defp compress_lz4(data) when is_binary(data) do
+    case :lz4.compress(data) do
+      {:ok, compressed} -> compressed
+      {:error, _} -> nil
+      compressed when is_binary(compressed) -> compressed
+    end
+  end
+
+  # Compress data using Zstd (via ezstd)
+  defp compress_zstd(data) when is_binary(data) do
+    :ezstd.compress(data)
+  rescue
+    _ -> nil
+  end
+
+  defp compress_zstd(_), do: nil
 end

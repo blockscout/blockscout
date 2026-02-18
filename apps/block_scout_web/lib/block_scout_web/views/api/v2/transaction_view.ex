@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Explorer.Chain.{
     Address,
     Block,
+    Data,
     DecodingHelper,
     Log,
     SignedAuthorization,
@@ -353,6 +354,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def prepare_log(log, transaction_or_hash, decoded_log, tags_for_address_needed? \\ false) do
     decoded = process_decoded_log(decoded_log)
 
+    IO.inspect(log.data, label: "log.data")
+    IO.inspect(log.compressed_data_lz4, label: "log.compressed_data_lz4")
+
+    decompressed = decompress_lz4(log.compressed_data_lz4)
+    IO.inspect(decompressed, label: "decompress_lz4(log.compressed_data_lz4)")
+
     %{
       "transaction_hash" => get_transaction_hash(transaction_or_hash),
       "address" => Helper.address_with_info(nil, log.address, log.address_hash, tags_for_address_needed?),
@@ -362,7 +369,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         log.third_topic,
         log.fourth_topic
       ],
-      "data" => log.data,
+      "data" => decompressed,
       "index" => log.index,
       "decoded" => decoded,
       "smart_contract" => smart_contract_info(transaction_or_hash),
@@ -406,6 +413,46 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     do: Helper.address_with_info(nil, transaction.to_address, transaction.to_address_hash, false)
 
   defp smart_contract_info(_), do: nil
+
+  # Decompresses LZ4 compressed data and wraps it in Data struct
+  defp decompress_lz4(nil), do: nil
+
+  defp decompress_lz4(compressed_data) when is_binary(compressed_data) do
+    # lz4_erl's uncompress/2 requires maximum uncompressed size
+    # Try with increasing buffer sizes to handle various compression ratios
+    compressed_size = byte_size(compressed_data)
+
+    decompressed =
+      Enum.find_value([10, 50, 100, 500], fn multiplier ->
+        try do
+          case :lz4.uncompress(compressed_data, compressed_size * multiplier) do
+            {:ok, decompressed} -> decompressed
+            decompressed when is_binary(decompressed) -> decompressed
+            _ -> nil
+          end
+        rescue
+          _ -> nil
+        end
+      end)
+
+    if decompressed, do: %Data{bytes: decompressed}, else: nil
+  end
+
+  defp decompress_lz4(_), do: nil
+
+  # Decompresses Zstd compressed data and wraps it in Data struct
+  defp decompress_zstd(nil), do: nil
+
+  defp decompress_zstd(compressed_data) when is_binary(compressed_data) do
+    try do
+      decompressed = :ezstd.decompress(compressed_data)
+      if decompressed, do: %Data{bytes: decompressed}, else: nil
+    rescue
+      _ -> nil
+    end
+  end
+
+  defp decompress_zstd(_), do: nil
 
   defp process_decoded_log(decoded_log) do
     case decoded_log do

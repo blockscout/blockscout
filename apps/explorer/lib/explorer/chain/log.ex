@@ -58,6 +58,10 @@ defmodule Explorer.Chain.Log.Schema do
         field(:fourth_topic, Hash.Full)
         field(:index, :integer, primary_key: true, null: false)
         field(:block_number, :integer)
+        field(:compressed_data_gzip, :binary)
+        field(:compressed_data_lz4, :binary)
+        field(:compressed_data_brotli, :binary)
+        field(:compressed_data_zstd, :binary)
 
         timestamps()
 

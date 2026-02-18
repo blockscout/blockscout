@@ -82,6 +82,10 @@ defmodule Explorer.Mixfile do
       {:ex_machina, "~> 2.3", only: [:test]},
       # ZSTD compression/decompression
       {:ezstd, "~> 1.2"},
+      # Brotli compression for benchmarking
+      {:ex_brotli, "~> 0.5.0"},
+      # LZ4 compression for benchmarking
+      {:lz4, "~> 0.2", hex: :lz4_erl},
       {:exvcr, "~> 0.10", only: :test},
       {:httpoison, "~> 2.0"},
       {:jason, "~> 1.3"},
