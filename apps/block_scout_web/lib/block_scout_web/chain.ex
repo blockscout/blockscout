@@ -55,6 +55,7 @@ defmodule BlockScoutWeb.Chain do
   alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
   alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
+  alias Explorer.Chain.Scroll.Batch, as: ScrollBatch
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
   alias Explorer.{Etherscan, PagingOptions}
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
@@ -1057,6 +1058,10 @@ defmodule BlockScoutWeb.Chain do
     }
   end
 
+  defp paging_params(%ScrollBatch{number: number}) do
+    %{number: number}
+  end
+
   defp paging_params(%ScrollBridge{index: id}) do
     %{id: id}
   end
@@ -1074,7 +1079,7 @@ defmodule BlockScoutWeb.Chain do
     %{index: index}
   end
 
-  # clause for zkEVM & Scroll batches pagination
+  # clause for zkEVM batches pagination
   defp paging_params(%{number: number}) do
     %{"number" => number}
   end
