@@ -17,10 +17,9 @@ defmodule BlockScoutWeb.API.RPC.LogsView do
   defp prepare_log(log) do
     IO.inspect(log.data, label: "log.data")
     IO.inspect(log.compressed_data_lz4, label: "log.compressed_data_lz4")
-    IO.inspect(log.compressed_data_zstd, label: "log.compressed_data_zstd")
 
-    decompressed = decompress_zstd(log.compressed_data_zstd) || decompress_lz4(log.compressed_data_lz4)
-    IO.inspect(decompressed, label: "decompressed (zstd or lz4)")
+    decompressed = decompress_lz4(log.compressed_data_lz4)
+    IO.inspect(decompressed, label: "decompressed_lz4")
 
     %{
       "address" => "#{log.address_hash}",
@@ -46,9 +45,12 @@ defmodule BlockScoutWeb.API.RPC.LogsView do
   end
 
   # Decompresses LZ4 compressed data and wraps it in Data struct
+  # Also measures decompression overhead (time taken to decompress)
   defp decompress_lz4(nil), do: nil
 
   defp decompress_lz4(compressed_data) when is_binary(compressed_data) do
+    start_time = System.monotonic_time(:microsecond)
+
     # lz4_erl's uncompress/2 requires maximum uncompressed size
     # Try with increasing buffer sizes to handle various compression ratios
     compressed_size = byte_size(compressed_data)
@@ -66,22 +68,30 @@ defmodule BlockScoutWeb.API.RPC.LogsView do
         end
       end)
 
-    if decompressed, do: %Data{bytes: decompressed}, else: nil
-  end
+    end_time = System.monotonic_time(:microsecond)
+    decompression_time_us = end_time - start_time
 
-  defp decompress_lz4(_), do: nil
+    if decompressed do
+      original_size = byte_size(decompressed)
+      compressed_ratio = original_size / max(byte_size(compressed_data), 1)
 
-  # Decompresses Zstd compressed data and wraps it in Data struct
-  defp decompress_zstd(nil), do: nil
+      IO.inspect(
+        %{
+          compressed_size_bytes: byte_size(compressed_data),
+          decompressed_size_bytes: original_size,
+          compression_ratio: Float.round(compressed_ratio, 2),
+          decompression_time_us: decompression_time_us,
+          decompression_overhead_percent:
+            Float.round((decompression_time_us / max(original_size, 1)) * 100, 2)
+        },
+        label: "LZ4 Decompression Metrics"
+      )
 
-  defp decompress_zstd(compressed_data) when is_binary(compressed_data) do
-    try do
-      decompressed = :ezstd.decompress(compressed_data)
-      if decompressed, do: %Data{bytes: decompressed}, else: nil
-    rescue
-      _ -> nil
+      %Data{bytes: decompressed}
+    else
+      nil
     end
   end
 
-  defp decompress_zstd(_), do: nil
+  defp decompress_lz4(_), do: nil
 end
