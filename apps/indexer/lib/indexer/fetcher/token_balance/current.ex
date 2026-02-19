@@ -23,6 +23,7 @@ defmodule Indexer.Fetcher.TokenBalance.Current do
   alias Explorer.Chain.Hash
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.TokenBalance.Helper
+  alias Indexer.Fetcher.TokenHoldersCountUpdater
 
   @behaviour BufferedTask
 
@@ -89,6 +90,8 @@ defmodule Indexer.Fetcher.TokenBalance.Current do
 
     case Chain.import(import_params) do
       {:ok, %{address_current_token_balances: imported_ctbs}} ->
+        TokenHoldersCountUpdater.add(imported_ctbs)
+
         imported_ctbs
         |> Enum.group_by(& &1.address_hash)
         |> Enum.each(fn {address_hash, ctbs} ->
