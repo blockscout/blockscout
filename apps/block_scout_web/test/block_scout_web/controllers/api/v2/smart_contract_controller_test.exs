@@ -1146,6 +1146,70 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
                  additional_sources |> Enum.sort_by(fn x -> x["file_path"] end)
       end
 
+      test "top-level libraries field takes precedence over compilerSettings.libraries", %{
+        conn: conn,
+        bypass: bypass
+      } do
+        eth_bytecode_response =
+          File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_response_with_libs_priority.json")
+
+        address = insert(:contract_address)
+
+        insert(:transaction,
+          created_contract_address_hash: address.hash,
+          input:
+            "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029"
+        )
+        |> with_block(status: :ok)
+
+        topic = "addresses:#{address.hash}"
+
+        {:ok, _reply, _socket} =
+          BlockScoutWeb.V2.UserSocket
+          |> socket("no_id", %{})
+          |> subscribe_and_join(topic)
+
+        Bypass.expect_once(bypass, "POST", "/api/v2/bytecodes/sources_search_all", fn conn ->
+          Conn.resp(conn, 200, eth_bytecode_response)
+        end)
+
+        EthereumJSONRPC.Mox
+        |> TestHelper.mock_generic_proxy_requests()
+
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "eth_bytecode_db_lookup_started",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        assert_receive %Phoenix.Socket.Message{
+                         payload: %{},
+                         event: "smart_contract_was_verified",
+                         topic: ^topic
+                       },
+                       :timer.seconds(1)
+
+        _response = json_response(request, 200)
+
+        request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
+        assert response = json_response(request, 200)
+        assert %{"is_verified" => true} = response
+        assert %{"is_fully_verified" => true} = response
+
+        # Verify that top-level libraries field is used instead of compilerSettings.libraries
+        # Top-level has: "contracts/Library.sol:NewLibrary" => "0x1234567890123456789012345678901234567890"
+        # compilerSettings has: "Test.sol" => {"OldLibrary" => "0x0000000000000000000000000000000000000001"}
+        assert response["external_libraries"] == [
+                 %{
+                   "address_hash" => Address.checksum("0x1234567890123456789012345678901234567890"),
+                   "name" => "contracts/Library.sol:NewLibrary"
+                 }
+               ]
+      end
+
       test "automatically verify contract using search-all (allianceSources) endpoint", %{conn: conn, bypass: bypass} do
         eth_bytecode_response =
           File.read!("./test/support/fixture/smart_contract/eth_bytecode_db_search_all_alliance_sources_response.json")
