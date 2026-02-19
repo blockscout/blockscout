@@ -144,7 +144,8 @@
         {Credo.Check.Consistency.MultiAliasImportRequireUse},
 
         # Custom checks can be created using `mix credo.gen.check`.
-        {Utils.Credo.Checks.CompileEnvUsage}
+        {Utils.Credo.Checks.CompileEnvUsage},
+        {Utils.Credo.Checks.ModuleNamesPreferredCasing}
         #
       ]
     }

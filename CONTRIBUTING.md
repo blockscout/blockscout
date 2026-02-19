@@ -83,6 +83,30 @@ When contributing to the codebase, please adhere to the following naming convent
 
 By following these conventions, we can maintain a clean and understandable codebase.
 
+### Acronyms in Module Names
+
+To improve readability and align with common Elixir community practices, keep
+well-known acronyms fully uppercase when they appear as words in module names.
+
+- Examples from the ecosystem: `URI`, `HTTPoison`, `Ecto.UUID`, `Absinthe.Plug.GraphiQL`.
+- Apply the same idea in our codebase. Prefer:
+  - `CSVHelper` over `CsvHelper`
+  - `DBTools` over `DbTools`
+  - `JSONParser` over `JsonParser`
+  - `RPCClient` over `RpcClient`
+  - `UUIDFormatter` over `UuidFormatter`
+
+Notes:
+- This rule targets module names (aliases). Regular variables/functions should
+  continue following standard `snake_case`/`CamelCase` conventions.
+- If you introduce a new acronym commonly used in the domain, add it to the
+  allowlist in `apps/utils/lib/credo/checks/module_names_preferred_casing.ex`
+  under `@default_acronyms`.
+
+References: Elixir style guides discussing acronyms and module naming —
+[christopheradams/elixir_style_guide](https://github.com/christopheradams/elixir_style_guide),
+[rrrene/elixir-style-guide](https://github.com/rrrene/elixir-style-guide).
+
 ### API V2 Naming Convention
 
 When contributing to the API v2, please adhere to the following naming conventions for response fields to ensure clarity and consistency:
