@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Holder do
     properties: %{
       address: Address.schema(),
       token_id: General.IntegerStringNullable,
-      value: General.IntegerString
+      value: General.IntegerStringNullable
     },
     required: [:address, :token_id, :value],
     additionalProperties: false,
