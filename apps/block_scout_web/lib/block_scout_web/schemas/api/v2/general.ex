@@ -1013,7 +1013,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     "value" => %Parameter{
       name: :value,
       in: :query,
-      schema: IntegerString,
+      schema: %Schema{anyOf: [IntegerString, EmptyString, NullString]},
       required: false,
       description: "Transaction value for paging"
     },

@@ -184,6 +184,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     from(
       ctb in __MODULE__,
       where: ctb.address_hash in ^address_hashes,
+      where: ctb.token_type != "ERC-7984",
       left_join: t in assoc(ctb, :token),
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       preload: [token: t],

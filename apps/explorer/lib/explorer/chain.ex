@@ -1698,7 +1698,7 @@ defmodule Explorer.Chain do
         |> join(:inner, [tt], token in assoc(tt, :token), as: :token)
         |> preload([token: token], [{:token, token}])
         |> TokenTransfer.filter_by_type(token_type)
-        |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
+        |> ExplorerHelper.maybe_hide_scam_addresses_for_token_transfers(options)
         |> TokenTransfer.page_token_transfer(paging_options)
         |> limit(^paging_options.page_size)
         |> order_by([token_transfer], asc: token_transfer.log_index)
@@ -2060,11 +2060,22 @@ defmodule Explorer.Chain do
 
   def page_token_balances(query, %PagingOptions{key: nil}), do: query
 
+  # case for ERC-7984 token types
+  def page_token_balances(query, %PagingOptions{key: {nil, address_hash}}) do
+    where(
+      query,
+      [tb],
+      # case for ERC-7984 token types
+      is_nil(tb.value) and tb.address_hash < ^address_hash
+    )
+  end
+
   def page_token_balances(query, %PagingOptions{key: {value, address_hash}}) do
     where(
       query,
       [tb],
-      tb.value < ^value or (tb.value == ^value and tb.address_hash < ^address_hash)
+      tb.value < ^value or
+        (tb.value == ^value and tb.address_hash < ^address_hash)
     )
   end
 

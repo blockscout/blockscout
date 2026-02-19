@@ -616,6 +616,14 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {value, address_hash}}]
   end
 
+  def paging_options(%{value: "", address_hash: address_hash}) do
+    [paging_options: %{@default_paging_options | key: {nil, address_hash}}]
+  end
+
+  def paging_options(%{value: "null", address_hash: address_hash}) do
+    [paging_options: %{@default_paging_options | key: {nil, address_hash}}]
+  end
+
   def paging_options(%{value: value, address_hash: address_hash}) do
     [paging_options: %{@default_paging_options | key: {value, address_hash}}]
   end
@@ -1007,7 +1015,7 @@ defmodule BlockScoutWeb.Chain do
   end
 
   defp paging_params(%Transaction{block_number: block_number, index: index}) do
-    %{"block_number" => block_number, "index" => index}
+    %{block_number: block_number, index: index}
   end
 
   defp paging_params(%TokenTransfer{block_number: block_number, log_index: index}) do
@@ -1020,8 +1028,8 @@ defmodule BlockScoutWeb.Chain do
     %{"token_name" => name, "token_type" => type, "token_inserted_at" => inserted_at_datetime}
   end
 
-  defp paging_params(%CurrentTokenBalance{address_hash: address_hash, value: nil}) do
-    %{address_hash: to_string(address_hash), value: "0"}
+  defp paging_params(%CurrentTokenBalance{address_hash: address_hash, value: value}) when is_nil(value) do
+    %{address_hash: to_string(address_hash), value: nil}
   end
 
   defp paging_params(%CurrentTokenBalance{address_hash: address_hash, value: value}) do

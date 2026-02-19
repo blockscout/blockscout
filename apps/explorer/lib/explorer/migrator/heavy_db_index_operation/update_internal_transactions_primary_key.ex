@@ -9,7 +9,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrim
 
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
-  alias Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex
+
+  alias Explorer.Migrator.HeavyDbIndexOperation.{
+    CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex,
+    ValidateInternalTransactionsBlockNumberTransactionIndexNotNull
+  }
+
   alias Explorer.Repo
 
   @table_name :internal_transactions
@@ -28,7 +33,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrim
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
     do: [
-      CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex.migration_name()
+      ValidateInternalTransactionsBlockNumberTransactionIndexNotNull.migration_name()
     ]
 
   @impl HeavyDbIndexOperation

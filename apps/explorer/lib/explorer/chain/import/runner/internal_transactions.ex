@@ -623,7 +623,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       {:ok,
        Enum.reject(
          internal_transactions,
-         &(&1.block_number <= border_number and &1.type == :call and Decimal.eq?(&1.value.value, 0))
+         &(&1.block_number <= border_number and &1.type == :call and
+             (is_nil(Map.get(&1, :value)) || Decimal.eq?(&1.value.value, 0)))
        )}
     else
       _ -> {:ok, internal_transactions}

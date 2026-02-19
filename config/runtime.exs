@@ -681,7 +681,8 @@ config :explorer, Explorer.SmartContract.SigProviderInterface,
 
 config :explorer, Explorer.MicroserviceInterfaces.BENS,
   service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_BENS_URL"),
-  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_BENS_ENABLED")
+  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_BENS_ENABLED"),
+  protocols: ConfigHelper.parse_list_env_var("MICROSERVICE_BENS_PROTOCOLS")
 
 config :explorer, Explorer.MicroserviceInterfaces.AccountAbstraction,
   service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_ACCOUNT_ABSTRACTION_URL"),
@@ -999,6 +1000,7 @@ config :indexer,
   receipts_concurrency: ConfigHelper.parse_integer_env_var("INDEXER_RECEIPTS_CONCURRENCY", 10),
   hide_indexing_progress_alert: ConfigHelper.parse_bool_env_var("INDEXER_HIDE_INDEXING_PROGRESS_ALERT"),
   fetcher_init_limit: ConfigHelper.parse_integer_env_var("INDEXER_FETCHER_INIT_QUERY_LIMIT", 100),
+  fetcher_init_delay: ConfigHelper.parse_time_env_var("INDEXER_FETCHER_INIT_DELAY", "10m"),
   token_balances_fetcher_init_limit:
     ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 100_000),
   coin_balances_fetcher_init_limit:

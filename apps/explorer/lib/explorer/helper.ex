@@ -304,6 +304,59 @@ defmodule Explorer.Helper do
   end
 
   @doc """
+  Conditionally hides scam addresses in the given query for token transfers.
+  If query already has a named binding :token, it MUST be an inner join with the token table.
+
+  Rationale of inner join with token table:
+
+  PostgreSQL query planner misestimates anti-join selectivity when
+  scam_address_badge_mappings has more unique addresses (50k) than
+  token_transfers.token_contract_address_hash n_distinct (10k).
+  The planner assumes nearly all contracts are covered by the scam table,
+  estimates rows=1 after anti-join, and chooses a full sequential scan
+  instead of using the (block_number DESC, log_index DESC) index with
+  early LIMIT termination.
+
+  Workaround: adding an INNER JOIN to the tokens table changes the
+  intermediate n_distinct estimate — the join with tokens produces a much
+  higher row/distinct estimate, making the planner correctly recognize that
+  the anti-join will filter out only a small fraction. This allows it to
+  choose Nested Loop Anti Join + Index Scan with early termination (~5ms
+  instead of ~1500s).
+  """
+  @spec maybe_hide_scam_addresses_for_token_transfers(nil | Ecto.Query.t(), [
+          Chain.paging_options() | Chain.api?() | Chain.show_scam_tokens?()
+        ]) :: Ecto.Query.t()
+  def maybe_hide_scam_addresses_for_token_transfers(nil, _options), do: nil
+
+  def maybe_hide_scam_addresses_for_token_transfers(query, options) do
+    cond do
+      Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] ->
+        query
+        |> maybe_join_token_table()
+        |> join(:left, [token: token], sabm in ScamBadgeToAddress,
+          as: :sabm,
+          on: sabm.address_hash == token.contract_address_hash
+        )
+        |> where([sabm: sabm], is_nil(sabm.address_hash))
+
+      Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?] ->
+        query
+
+      true ->
+        query
+    end
+  end
+
+  defp maybe_join_token_table(query) do
+    if has_named_binding?(query, :token) do
+      query
+    else
+      join(query, :inner, [tt], token in assoc(tt, :token), as: :token)
+    end
+  end
+
+  @doc """
   Conditionally hides scam addresses in the given query, does not select the reputation field.
   """
   @spec maybe_hide_scam_addresses_for_search(nil | Ecto.Query.t(), atom(), [

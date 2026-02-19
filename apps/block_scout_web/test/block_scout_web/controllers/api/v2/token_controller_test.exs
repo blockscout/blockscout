@@ -2153,7 +2153,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> put_req_header("scoped-recaptcha-bypass-token", "wrong_scoped_token")
         |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
-      assert %{"message" => "Too Many Requests"} = json_response(request, 429)
+      assert %{"message" => "Too many requests. Increase limits now at https://dev.blockscout.com"} =
+               json_response(request, 429)
 
       :timer.sleep(100)
 
@@ -2247,7 +2248,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> put_req_header("scoped-recaptcha-bypass-token", "some_token_that_does_not_exist")
         |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
-      assert %{"message" => "Too Many Requests"} = json_response(request, 429)
+      assert %{"message" => "Too many requests. Increase limits now at https://dev.blockscout.com"} =
+               json_response(request, 429)
 
       request =
         Phoenix.ConnTest.build_conn()
@@ -2255,7 +2257,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> put_req_header("scoped-recaptcha-bypass-token", "")
         |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
-      assert %{"message" => "Too Many Requests"} = json_response(request, 429)
+      assert %{"message" => "Too many requests. Increase limits now at https://dev.blockscout.com"} =
+               json_response(request, 429)
 
       :timer.sleep(100)
 
