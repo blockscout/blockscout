@@ -616,6 +616,14 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {value, address_hash}}]
   end
 
+  def paging_options(%{value: "", address_hash: address_hash}) do
+    [paging_options: %{@default_paging_options | key: {nil, address_hash}}]
+  end
+
+  def paging_options(%{value: "null", address_hash: address_hash}) do
+    [paging_options: %{@default_paging_options | key: {nil, address_hash}}]
+  end
+
   def paging_options(%{value: value, address_hash: address_hash}) do
     [paging_options: %{@default_paging_options | key: {value, address_hash}}]
   end
