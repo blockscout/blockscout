@@ -95,7 +95,8 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
         |> maybe_filter_by_trace_first_block(trace_first_block)
         |> Repo.aggregate(:count, :block_hash, timeout: :infinity)
 
-      "transactions" -> Repo.aggregate(PendingTransactionOperation, :count, :transaction_hash, timeout: :infinity)
+      "transactions" ->
+        Repo.aggregate(PendingTransactionOperation, :count, :transaction_hash, timeout: :infinity)
     end
   end
 
