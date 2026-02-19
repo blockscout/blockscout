@@ -63,6 +63,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add initial_stream delay to BufferedTask ([#14018](https://github.com/blockscout/blockscout/pull/14018))
 - Adjust query for "missing_current_token_balances_count" indexer metric ([#14009](https://github.com/blockscout/blockscout/pull/14009))
 - Add support for new BENS api ([#13992](https://github.com/blockscout/blockscout/pull/13992))
 - Add internal transactions not null constraints ([#13976](https://github.com/blockscout/blockscout/pull/13976), [#13995](https://github.com/blockscout/blockscout/pull/13995))
