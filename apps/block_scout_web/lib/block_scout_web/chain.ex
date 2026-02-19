@@ -1020,6 +1020,10 @@ defmodule BlockScoutWeb.Chain do
     %{"token_name" => name, "token_type" => type, "token_inserted_at" => inserted_at_datetime}
   end
 
+  defp paging_params(%CurrentTokenBalance{address_hash: address_hash, value: value}) when is_nil(value) do
+    %{address_hash: to_string(address_hash), value: nil}
+  end
+
   defp paging_params(%CurrentTokenBalance{address_hash: address_hash, value: value}) do
     %{address_hash: to_string(address_hash), value: to_string(Decimal.to_integer(value))}
   end

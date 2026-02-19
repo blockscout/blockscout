@@ -2060,11 +2060,22 @@ defmodule Explorer.Chain do
 
   def page_token_balances(query, %PagingOptions{key: nil}), do: query
 
+  # case for ERC-7984 token types
+  def page_token_balances(query, %PagingOptions{key: {nil, address_hash}}) do
+    where(
+      query,
+      [tb],
+      # case for ERC-7984 token types
+      is_nil(tb.value) and tb.address_hash < ^address_hash
+    )
+  end
+
   def page_token_balances(query, %PagingOptions{key: {value, address_hash}}) do
     where(
       query,
       [tb],
-      tb.value < ^value or (tb.value == ^value and tb.address_hash < ^address_hash)
+      tb.value < ^value or
+        (tb.value == ^value and tb.address_hash < ^address_hash)
     )
   end
 

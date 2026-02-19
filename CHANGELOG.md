@@ -4,7 +4,7 @@
 
 ### 🚀 Features
 
-- ERC-7984 Confidential Tokens ([#13593](https://github.com/blockscout/blockscout/pull/13593))
+- ERC-7984 Confidential Tokens ([#13593](https://github.com/blockscout/blockscout/pull/13593), [#14019](https://github.com/blockscout/blockscout/pull/14019))
 - Move current token balances into a separate fetcher ([#13923](https://github.com/blockscout/blockscout/issues/13923))
 - Re-architect internal transaction format with call-type enum, error dictionary, and normalization ([#13893](https://github.com/blockscout/blockscout/issues/13893))
 - Add audit-reports import endpoint ([#13884](https://github.com/blockscout/blockscout/issues/13884))
@@ -63,6 +63,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add initial_stream delay to BufferedTask ([#14018](https://github.com/blockscout/blockscout/pull/14018), [#14020](https://github.com/blockscout/blockscout/pull/14020))
 - Adjust query for "missing_current_token_balances_count" indexer metric ([#14009](https://github.com/blockscout/blockscout/pull/14009))
 - Add support for new BENS api ([#13992](https://github.com/blockscout/blockscout/pull/13992))
 - Add internal transactions not null constraints ([#13976](https://github.com/blockscout/blockscout/pull/13976), [#13995](https://github.com/blockscout/blockscout/pull/13995))
