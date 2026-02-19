@@ -774,8 +774,15 @@ config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_NFT_CONCURRENCY", 1),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_SANITIZE_INCORRECT_NFT_TIMEOUT", "0s")
 
-config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
+config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersDuplicates,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_BATCH_SIZE", 100),
+  batch_pages_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_BATCH_PAGES_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_CONCURRENCY", 1),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_TIMEOUT", "0s")
+
+config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersNotWhitelisted,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_BATCH_SIZE", 100),
+  batch_pages_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_BATCH_PAGES_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_CONCURRENCY", 1),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_TIMEOUT", "0s")
 
