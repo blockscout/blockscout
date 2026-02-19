@@ -103,7 +103,8 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
       """
       SELECT COUNT(1) as missing_current_token_balances_count
       FROM address_current_token_balances ctb
-      WHERE (ctb.value_fetched_at is NULL OR ctb.value is NULL);
+      WHERE (ctb.value_fetched_at is NULL OR ctb.value is NULL)
+      AND ctb.token_type != 'ERC-7984';
       """
 
     case SQL.query(Repo, sql_string, [], timeout: :infinity) do
@@ -131,7 +132,8 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
       query =
         from(
           token_balance in TokenBalance,
-          where: is_nil(token_balance.value_fetched_at)
+          where: is_nil(token_balance.value_fetched_at),
+          where: token_balance.token_type != "ERC-7984"
         )
 
       query
