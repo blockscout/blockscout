@@ -37,10 +37,12 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetricsTest do
     test "counts pending block operations when pending_operations_type is blocks" do
       previous_explorer_config = Application.get_env(:explorer, :json_rpc_named_arguments)
       previous_geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      previous_trace_first_block = Application.get_env(:indexer, :trace_first_block)
 
       on_exit(fn ->
         Application.put_env(:explorer, :json_rpc_named_arguments, previous_explorer_config)
         Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, previous_geth_config)
+        Application.put_env(:indexer, :trace_first_block, previous_trace_first_block)
       end)
 
       # Set configuration to use "blocks" mode (non-Geth or Geth with block_traceable)
@@ -57,13 +59,40 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetricsTest do
       assert IndexerMetrics.missing_internal_transactions_count() == 3
     end
 
-    test "counts pending transaction operations when pending_operations_type is transactions" do
+    test "respects trace_first_block when counting pending block operations" do
       previous_explorer_config = Application.get_env(:explorer, :json_rpc_named_arguments)
       previous_geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      previous_trace_first_block = Application.get_env(:indexer, :trace_first_block)
 
       on_exit(fn ->
         Application.put_env(:explorer, :json_rpc_named_arguments, previous_explorer_config)
         Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, previous_geth_config)
+        Application.put_env(:indexer, :trace_first_block, previous_trace_first_block)
+      end)
+
+      Application.put_env(:explorer, :json_rpc_named_arguments, variant: EthereumJSONRPC.Nethermind)
+      Application.put_env(:indexer, :trace_first_block, 10)
+
+      block1 = insert(:block, number: 8)
+      block2 = insert(:block, number: 10)
+      block3 = insert(:block, number: 12)
+
+      insert(:pending_block_operation, block_hash: block1.hash, block_number: block1.number)
+      insert(:pending_block_operation, block_hash: block2.hash, block_number: block2.number)
+      insert(:pending_block_operation, block_hash: block3.hash, block_number: block3.number)
+
+      assert IndexerMetrics.missing_internal_transactions_count() == 2
+    end
+
+    test "counts pending transaction operations when pending_operations_type is transactions" do
+      previous_explorer_config = Application.get_env(:explorer, :json_rpc_named_arguments)
+      previous_geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      previous_trace_first_block = Application.get_env(:indexer, :trace_first_block)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :json_rpc_named_arguments, previous_explorer_config)
+        Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, previous_geth_config)
+        Application.put_env(:indexer, :trace_first_block, previous_trace_first_block)
       end)
 
       # Set configuration to use "transactions" mode (Geth with block_traceable? = false)

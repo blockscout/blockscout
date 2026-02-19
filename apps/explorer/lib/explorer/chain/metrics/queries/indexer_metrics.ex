@@ -87,11 +87,25 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   """
   @spec missing_internal_transactions_count() :: integer()
   def missing_internal_transactions_count do
+    trace_first_block = Application.get_env(:indexer, :trace_first_block)
+
     case PendingOperationsHelper.pending_operations_type() do
-      "blocks" -> Repo.aggregate(PendingBlockOperation, :count, :block_hash, timeout: :infinity)
-      "transactions" -> Repo.aggregate(PendingTransactionOperation, :count, :transaction_hash, timeout: :infinity)
+      "blocks" ->
+        PendingBlockOperation
+        |> maybe_filter_by_trace_first_block(trace_first_block)
+        |> Repo.aggregate(:count, :block_hash, timeout: :infinity)
+
+      "transactions" ->
+        Repo.aggregate(PendingTransactionOperation, :count, :transaction_hash, timeout: :infinity)
     end
   end
+
+  defp maybe_filter_by_trace_first_block(query, trace_first_block)
+       when is_integer(trace_first_block) and trace_first_block > 0 do
+    where(query, [pbo], pbo.block_number >= ^trace_first_block)
+  end
+
+  defp maybe_filter_by_trace_first_block(query, _trace_first_block), do: query
 
   @doc """
   Query to get the count of current token balances with missing values

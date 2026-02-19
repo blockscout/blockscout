@@ -7,6 +7,8 @@ description: Fixes code formatting in the Blockscout Elixir project using mix fo
 
 The code-formatting skill ensures all Elixir code in the Blockscout project adheres to the project's code style guidelines using the Mix formatter. **Note:** `mix format` handles code formatting only; for linting and code quality issues, use `mix credo`.
 
+Always run `mix format` after making any code changes in this repository.
+
 ## When to Use
 
 - After making code changes (especially across multiple files)
