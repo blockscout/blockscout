@@ -759,13 +759,12 @@ defmodule Indexer.BufferedTask do
   # Handles the normal termination of the initial streaming task, marking it as complete.
   def handle_info(
         {:DOWN, ref, :process, _pid, :normal},
-        %__MODULE__{init_task: ref, bound_queue: %{size: size}, task_ref_to_batch: tasks} = state
+        %__MODULE__{init_task: ref, bound_queue: %{size: size}} = state
       ) do
     init_task_delay =
-      if size == 0 and tasks == %{} do
-        increased_delay()
-      else
-        0
+      case size do
+        0 -> increased_delay()
+        _ -> 0
       end
 
     {:noreply, %__MODULE__{state | init_task: :complete, init_task_delay: init_task_delay}}
