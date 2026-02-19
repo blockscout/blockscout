@@ -2064,7 +2064,10 @@ defmodule Explorer.Chain do
     where(
       query,
       [tb],
-      tb.value < ^value or (tb.value == ^value and tb.address_hash < ^address_hash)
+      # case for ERC-7984 token types
+      tb.value < ^value or
+        (tb.value == ^value and tb.address_hash < ^address_hash) or
+        (is_nil(tb.value) and tb.address_hash < ^address_hash)
     )
   end
 
