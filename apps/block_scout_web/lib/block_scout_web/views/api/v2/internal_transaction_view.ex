@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.V2.Helper
-  alias Explorer.Chain.{Block, InternalTransaction}
+  alias Explorer.Chain.{Block, InternalTransaction, Wei}
 
   def render("internal_transaction.json", %{internal_transaction: nil}) do
     nil
@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionView do
           internal_transaction.created_contract_address_hash,
           false
         ),
-      "value" => internal_transaction.value,
+      "value" => internal_transaction.value || Wei.zero(),
       "block_number" => internal_transaction.block_number,
       "timestamp" => (block && block.timestamp) || (internal_transaction.block && internal_transaction.block.timestamp),
       "index" => internal_transaction.index,
