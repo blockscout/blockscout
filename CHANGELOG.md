@@ -63,6 +63,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Claim storage space from multichain - related queues tables ([#14025](https://github.com/blockscout/blockscout/pull/14025))
 - Improve pending block operations count metric ([#14024](https://github.com/blockscout/blockscout/pull/14024))
 - Add initial_stream delay to BufferedTask ([#14018](https://github.com/blockscout/blockscout/pull/14018), [#14020](https://github.com/blockscout/blockscout/pull/14020))
 - Adjust query for "missing_current_token_balances_count" indexer metric ([#14009](https://github.com/blockscout/blockscout/pull/14009))
