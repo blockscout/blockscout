@@ -38,7 +38,7 @@ defmodule Explorer.Chain.CsvExport.Request do
   or `{:error, :too_many_pending_requests}` if the IP already has `max_pending_tasks`
   requests with `file_id` still `nil`.
   """
-  @spec create(String.t(), Map.t()) :: {:ok, t()} | {:error, :too_many_pending_requests} | {:error, Ecto.Changeset.t()}
+  @spec create(String.t(), map()) :: {:ok, t()} | {:error, any()}
   def create(remote_ip, args) do
     remote_ip_hash = hash_ip(remote_ip)
     max_pending = AsyncHelper.max_pending_tasks_per_ip()
@@ -49,22 +49,20 @@ defmodule Explorer.Chain.CsvExport.Request do
       |> select([r], count(r.id))
       |> Repo.one()
 
-    if pending_count >= max_pending do
-      {:error, :too_many_pending_requests}
+    with {:pending_requests_count_overflow, false} <- {:pending_requests_count_overflow, pending_count >= max_pending},
+         {:ok, request} <-
+           %__MODULE__{remote_ip_hash: remote_ip_hash}
+           |> changeset()
+           |> Repo.insert(),
+         {:ok, _job} <-
+           args
+           |> Map.put(:request_id, request.id)
+           |> Worker.new()
+           |> Oban.insert() do
+      {:ok, request}
     else
-      with {:ok, request} <-
-             %__MODULE__{}
-             |> changeset(%{remote_ip_hash: remote_ip_hash})
-             |> Repo.insert(),
-           {:ok, job} <-
-             args
-             |> Map.put(:request_id, request.id)
-             |> Worker.new()
-             |> Oban.insert() do
-        {:ok, %{request: request, job: job}}
-      else
-        {:error, error} -> {:error, error}
-      end
+      {:pending_requests_count_overflow, true} -> {:error, :too_many_pending_requests}
+      {:error, error} -> {:error, error}
     end
   end
 

@@ -7,10 +7,10 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.Chain
   alias Explorer.Chain.Address
-  alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.CsvExport.Address.Logs, as: AddressLogsCsvExporter
   alias Explorer.Chain.CsvExport.Address.TokenTransfers, as: AddressTokenTransfersCsvExporter
   alias Explorer.Chain.CsvExport.Address.Transactions, as: AddressTransactionsCsvExporter
+  alias Explorer.Chain.CsvExport.Token.Holders, as: TokenHoldersCsvExporter
 
   alias Explorer.Chain.CsvExport.Address.Celo.ElectionRewards,
     as: AddressCeloElectionRewardsCsvExporter
@@ -58,21 +58,22 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   def export_token_holders(conn, %{address_hash_param: address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
-      token_holders = Chain.fetch_token_holders_from_token_hash_for_csv(address_hash, options())
+         {:not_found, {:ok, _token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
+      opts = %{
+        address_hash: address_hash,
+        from_period: nil,
+        to_period: nil,
+        filter_type: nil,
+        filter_value: nil,
+        show_scam_tokens?: nil
+      }
 
-      token_holders
-      |> CurrentTokenBalance.to_csv_format(token)
-      |> CsvHelper.dump_to_stream()
-      |> Enum.reduce_while(put_resp_params(conn), fn chunk, conn ->
-        case Conn.chunk(conn, chunk) do
-          {:ok, conn} ->
-            {:cont, conn}
-
-          {:error, :closed} ->
-            {:halt, conn}
-        end
-      end)
+      do_async_csv?(
+        CsvHelper.async_enabled?(),
+        conn,
+        opts,
+        TokenHoldersCsvExporter
+      )
     end
   end
 
@@ -84,8 +85,6 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
     |> put_resp_cookie("csv-downloaded", "true", max_age: 86_400, http_only: false)
     |> send_chunked(200)
   end
-
-  defp options, do: [paging_options: CsvHelper.paging_options(), api?: true]
 
   defp items_csv(
          conn,
@@ -119,6 +118,9 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
 
   defp items_csv(conn, _, _), do: not_found(conn)
 
+  @spec do_async_csv?(boolean(), Conn.t(), map(), module()) :: Conn.t()
+  defp do_async_csv?(async?, conn, params, csv_export_module)
+
   defp do_async_csv?(true, conn, params, csv_export_module) do
     params =
       params
@@ -126,7 +128,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       |> Map.put(:module, to_string(csv_export_module))
 
     case AsyncCsvExportRequest.create(AccessHelper.conn_to_ip_string(conn), params) do
-      {:ok, %{request: request}} ->
+      {:ok, request} ->
         conn |> put_status(:accepted) |> json(%{request_id: request.id})
 
       {:error, :too_many_pending_requests} ->

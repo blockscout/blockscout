@@ -14,7 +14,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Block, CurrencyHelper, Hash, Token}
+  alias Explorer.Chain.{Address, Block, Hash, Token}
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.Cache.BackgroundMigrations
 
@@ -337,28 +337,6 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   @spec delete_placeholders_below(Hash.Address.t(), Block.block_number()) :: {non_neg_integer(), nil | [term()]}
   def delete_placeholders_below(token_contract_address_hash, block_number) do
     TokenBalance.delete_token_balance_placeholders_below(__MODULE__, token_contract_address_hash, block_number)
-  end
-
-  @doc """
-  Converts CurrentTokenBalances to CSV format. Used in `BlockScoutWeb.API.V2.CsvExportController.export_token_holders/2`
-  """
-  @spec to_csv_format([t()], Token.t()) :: (any(), any() -> {:halted, any()} | {:suspended, any(), (any() -> any())})
-  def to_csv_format(holders, token) do
-    row_names = [
-      "HolderAddress",
-      "Balance"
-    ]
-
-    holders_list =
-      holders
-      |> Stream.map(fn ctb ->
-        [
-          Address.checksum(ctb.address_hash),
-          ctb.value |> CurrencyHelper.divide_decimals(token.decimals) |> Decimal.to_string(:xsd)
-        ]
-      end)
-
-    Stream.concat([row_names], holders_list)
   end
 
   @doc """
