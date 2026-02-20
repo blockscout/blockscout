@@ -12,6 +12,7 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
   @doc """
   Uploads a file to Gokapi.
   """
+  # sobelow_skip ["Traversal.FileModule"]
   @spec upload_file(String.t(), String.t(), String.t()) :: {:ok, String.t()} | {:error, any()}
   def upload_file(file_path, filename, uuid) do
     file_size = File.stat!(file_path).size
@@ -133,6 +134,7 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
     end
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
   @spec stream_to_temp_file(Enumerable.t(), String.t()) :: String.t()
   def stream_to_temp_file(stream, uuid) do
     tmp_dir = tmp_dir()
@@ -140,15 +142,17 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
     File.mkdir_p!(tmp_dir)
 
     File.open!(file_path, [:write, :binary], fn file ->
-      Enum.each(stream, fn chunk ->
-        case :file.write(file, chunk) do
-          :ok -> :ok
-          {:error, reason} -> raise "Failed to write CSV chunk: #{inspect(reason)}"
-        end
-      end)
+      Enum.each(stream, &write_chunk(file, &1))
     end)
 
     file_path
+  end
+
+  defp write_chunk(file, chunk) do
+    case :file.write(file, chunk) do
+      :ok -> :ok
+      {:error, reason} -> raise "Failed to write CSV chunk: #{inspect(reason)}"
+    end
   end
 
   @spec max_pending_tasks_per_ip() :: integer()
