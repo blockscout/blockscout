@@ -12,7 +12,7 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
   @doc """
   Uploads a file to Gokapi.
   """
-  @spec upload_file(String.t(), String.t(), String.t()) :: :ok | {:error, any()}
+  @spec upload_file(String.t(), String.t(), String.t()) :: {:ok, String.t()} | {:error, any()}
   def upload_file(file_path, filename, uuid) do
     file_size = File.stat!(file_path).size
     chunk_size = chunk_size()
@@ -130,7 +130,7 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
     end
   end
 
-  @spec stream_to_temp_file(Stream.t(), String.t()) :: String.t()
+  @spec stream_to_temp_file(Enumerable.t(), String.t()) :: String.t()
   def stream_to_temp_file(stream, uuid) do
     tmp_dir = tmp_dir()
     file_path = Path.join(tmp_dir, "csv_export_#{uuid}.csv")
