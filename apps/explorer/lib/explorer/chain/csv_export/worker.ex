@@ -5,7 +5,7 @@ defmodule Explorer.Chain.CsvExport.Worker do
   Processes export requests in the background when the requested period exceeds
   the async threshold, streaming results to a temp file and uploading to storage.
   """
-  use Oban.Worker, queue: :csv_export
+  use Oban.Worker, queue: :csv_export, max_attempts: 3
 
   alias Explorer.Chain.CsvExport.{AsyncHelper, Request}
 

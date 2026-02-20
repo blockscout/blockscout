@@ -30,7 +30,6 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
 
   @api_true [api?: true]
 
-  # todo: wrap it into csv_export_module format
   operation :export_token_holders,
     summary: "Export token holders as CSV",
     description: "Exports the holders of a specific token as a CSV file.",
