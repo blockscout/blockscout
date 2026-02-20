@@ -172,6 +172,7 @@ defmodule Explorer.Chain.CsvExport.Helper do
     end
   end
 
+  @spec async_enabled?() :: boolean()
   def async_enabled? do
     Application.get_env(:explorer, Explorer.Chain.CsvExport)[:async?]
   end

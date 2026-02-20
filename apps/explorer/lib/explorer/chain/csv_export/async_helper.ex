@@ -48,6 +48,8 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
   - The actualized CSV export request or nil if the request was deleted.
   """
   @spec actualize_csv_export_request(CsvExportRequest.t() | nil) :: CsvExportRequest.t() | nil
+  def actualize_csv_export_request(%CsvExportRequest{file_id: nil} = request), do: request
+
   def actualize_csv_export_request(%CsvExportRequest{} = request) do
     case file_exists?(request.file_id) do
       {:ok, true} ->
@@ -85,7 +87,8 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
            []
          ) do
       {:ok, %{status_code: 200}} -> :ok
-      error -> {:error, error}
+      {:ok, resp} -> {:error, {:unexpected_status, resp.status_code}}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -137,11 +140,12 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
     File.mkdir_p!(tmp_dir)
 
     File.open!(file_path, [:write, :binary], fn file ->
-      stream
-      |> Stream.each(fn chunk ->
-        :file.write(file, chunk)
+      Enum.each(stream, fn chunk ->
+        case :file.write(file, chunk) do
+          :ok -> :ok
+          {:error, reason} -> raise "Failed to write CSV chunk: #{inspect(reason)}"
+        end
       end)
-      |> Stream.run()
     end)
 
     file_path

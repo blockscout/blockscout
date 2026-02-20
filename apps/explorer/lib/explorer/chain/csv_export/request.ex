@@ -43,27 +43,31 @@ defmodule Explorer.Chain.CsvExport.Request do
     remote_ip_hash = hash_ip(remote_ip)
     max_pending = AsyncHelper.max_pending_tasks_per_ip()
 
-    pending_count =
-      __MODULE__
-      |> where([r], r.remote_ip_hash == ^remote_ip_hash and is_nil(r.file_id))
-      |> select([r], count(r.id))
-      |> Repo.one()
+    Repo.transact(fn ->
+      pending_count =
+        __MODULE__
+        |> where([r], r.remote_ip_hash == ^remote_ip_hash and is_nil(r.file_id))
+        |> select([r], count(r.id))
+        |> Repo.one()
 
-    with {:pending_requests_count_overflow, false} <- {:pending_requests_count_overflow, pending_count >= max_pending},
-         {:ok, request} <-
-           %__MODULE__{remote_ip_hash: remote_ip_hash}
-           |> changeset()
-           |> Repo.insert(),
-         {:ok, _job} <-
-           args
-           |> Map.put(:request_id, request.id)
-           |> Worker.new()
-           |> Oban.insert() do
-      {:ok, request}
-    else
-      {:pending_requests_count_overflow, true} -> {:error, :too_many_pending_requests}
-      {:error, error} -> {:error, error}
-    end
+      if pending_count >= max_pending do
+        Repo.rollback(:too_many_pending_requests)
+      else
+        with {:ok, request} <-
+               %__MODULE__{remote_ip_hash: remote_ip_hash}
+               |> changeset()
+               |> Repo.insert(),
+             {:ok, _job} <-
+               args
+               |> Map.put(:request_id, request.id)
+               |> Worker.new()
+               |> Oban.insert() do
+          {:ok, request}
+        else
+          {:error, error} -> Repo.rollback(error)
+        end
+      end
+    end)
   end
 
   @doc """
@@ -107,6 +111,7 @@ defmodule Explorer.Chain.CsvExport.Request do
   ```elixir
   iex> get_by_uuid("123e4567-e89b-12d3-a456-426614174000")
   %Explorer.Chain.CsvExport.Request{id: "123e4567-e89b-12d3-a456-426614174000"}
+  ```
   """
   @spec get_by_uuid(Ecto.UUID.t(), [Chain.api?()]) :: __MODULE__.t() | nil
   def get_by_uuid(uuid, options \\ []) do
@@ -128,6 +133,7 @@ defmodule Explorer.Chain.CsvExport.Request do
   ```elixir
   iex> delete("123e4567-e89b-12d3-a456-426614174000")
   {1, nil}
+  ```
   """
   @spec delete(Ecto.UUID.t()) :: {non_neg_integer(), nil}
   def delete(request_id) do
