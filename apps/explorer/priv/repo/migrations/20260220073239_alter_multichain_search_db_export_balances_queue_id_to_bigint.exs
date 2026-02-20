@@ -21,10 +21,10 @@ defmodule Explorer.Repo.Migrations.AlterMultichainSearchDbExportBalancesQueueIdT
     if row_count < 10_000 do
       execute("ALTER TABLE #{@table_name} ALTER COLUMN id TYPE bigint")
       execute("ALTER SEQUENCE #{@table_name}_id_seq AS bigint")
-    end
 
-    # Run VACUUM FULL on the table
-    execute("VACUUM FULL #{@table_name}")
+      # Run VACUUM FULL on the table
+      execute("VACUUM FULL #{@table_name}")
+    end
   end
 
   def down do
