@@ -15,7 +15,7 @@ defmodule Explorer.Repo.Migrations.AlterMultichainSearchDbExportBalancesQueueIdT
       WHERE c.oid = '#{@table_name}'::regclass
       """)
 
-    row_count = result.rows |> List.first() |> List.first()
+    row_count = result.rows |> List.first() |> List.first() || 0
 
     # Only alter id column and sequence if row count is less than 10000
     if row_count < 10_000 do

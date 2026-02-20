@@ -1,4 +1,4 @@
-defmodule Explorer.Repo.Migrations.AlterMultichainSearchDbExportCountersQueueIdToBigint do
+defmodule Explorer.Repo.Migrations.VacuumFullMultichainSearchDbExportCountersQueue do
   use Ecto.Migration
 
   @disable_ddl_transaction true
@@ -15,7 +15,7 @@ defmodule Explorer.Repo.Migrations.AlterMultichainSearchDbExportCountersQueueIdT
       WHERE c.oid = '#{@table_name}'::regclass
       """)
 
-    row_count = result.rows |> List.first() |> List.first()
+    row_count = result.rows |> List.first() |> List.first() || 0
 
     # Only run VACUUM FULL if row count is less than 10000
     if row_count < 10_000 do
