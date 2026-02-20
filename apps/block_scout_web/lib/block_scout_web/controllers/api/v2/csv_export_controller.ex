@@ -210,8 +210,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
           from_period_param(),
           to_period_param(),
           filter_type_param(),
-          filter_value_param(),
-          recaptcha_response_param()
+          filter_value_param()
         ],
     responses: [
       ok: {"CSV file of transactions.", "application/csv", nil},
@@ -249,8 +248,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
           from_period_param(),
           to_period_param(),
           filter_type_param(),
-          filter_value_param(),
-          recaptcha_response_param()
+          filter_value_param()
         ],
     responses: [
       ok: {"CSV file of internal transactions.", "application/csv", nil},
