@@ -587,7 +587,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     ]
 
   @doc """
-    Function to handle GET requests to `/api/v2/transactions/:execution_node_hash_param/execution-node` endpoint.
+    Function to handle GET requests to `/api/v2/transactions/execution-node/:execution_node_hash_param` endpoint.
     It renders the list of transactions that were executed on the specified execution node.
   """
   @spec execution_node(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}

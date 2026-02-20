@@ -55,6 +55,7 @@ defmodule BlockScoutWeb.Chain do
   alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
   alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
+  alias Explorer.Chain.Scroll.Batch, as: ScrollBatch
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
   alias Explorer.{Etherscan, PagingOptions}
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
@@ -585,6 +586,10 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {number}}]
   end
 
+  def paging_options(%{number: number}) do
+    [paging_options: %{@default_paging_options | key: {number}}]
+  end
+
   def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string})
       when is_binary(inserted_at_string) and is_binary(hash_string) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
@@ -1065,8 +1070,12 @@ defmodule BlockScoutWeb.Chain do
     }
   end
 
+  defp paging_params(%ScrollBatch{number: number}) do
+    %{number: number}
+  end
+
   defp paging_params(%ScrollBridge{index: id}) do
-    %{"id" => id}
+    %{id: id}
   end
 
   defp paging_params(%Instance{token_id: token_id}) do
@@ -1082,7 +1091,7 @@ defmodule BlockScoutWeb.Chain do
     %{index: index}
   end
 
-  # clause for zkEVM & Scroll batches pagination
+  # clause for zkEVM batches pagination
   defp paging_params(%{number: number}) do
     %{"number" => number}
   end
