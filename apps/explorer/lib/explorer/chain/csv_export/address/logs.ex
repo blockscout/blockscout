@@ -9,7 +9,7 @@ defmodule Explorer.Chain.CsvExport.Address.Logs do
 
   @spec export(Hash.Address.t(), String.t(), String.t(), Keyword.t(), String.t() | nil, String.t() | nil) ::
           Enumerable.t()
-  def export(address_hash, from_period, to_period, _options, _filter_type \\ nil, filter_value \\ nil) do
+  def export(address_hash, from_period, to_period, _options, _filter_type, filter_value) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
 
     address_hash
