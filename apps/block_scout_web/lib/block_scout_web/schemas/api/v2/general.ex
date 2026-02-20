@@ -858,12 +858,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @spec uuid_param() :: Parameter.t()
   def uuid_param do
     %Parameter{
-      name: :uuid,
+      name: :uuid_param,
       in: :path,
       schema: %Schema{
         type: :string,
         format: :uuid,
-        pattern: ~r/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+        pattern: ~r/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
       },
       required: true,
       description: "UUID for CSV export"

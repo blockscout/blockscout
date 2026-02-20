@@ -36,9 +36,7 @@ defmodule Explorer.Chain.CsvExport.Token.Holders do
   @doc """
   Converts CurrentTokenBalances to CSV format. Used in `BlockScoutWeb.API.V2.CsvExportController.export_token_holders/2`
   """
-  @spec to_csv_format([CurrentTokenBalance.t()], Token.t()) :: (any(), any() ->
-                                                                  {:halted, any()}
-                                                                  | {:suspended, any(), (any() -> any())})
+  @spec to_csv_format([CurrentTokenBalance.t()], Token.t()) :: Enumerable.t()
   def to_csv_format(holders, token) do
     row_names = [
       "HolderAddress",

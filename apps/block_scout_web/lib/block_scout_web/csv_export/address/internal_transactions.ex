@@ -8,7 +8,8 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.CsvExport.Helper
 
-  @spec export(Hash.Address.t(), String.t(), String.t(), Keyword.t(), String.t(), String.t()) :: Enumerable.t()
+  @spec export(Hash.Address.t(), String.t(), String.t(), Keyword.t(), String.t() | nil, String.t() | nil) ::
+          Enumerable.t()
   def export(address_hash, from_period, to_period, _options, filter_type, filter_value) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
 

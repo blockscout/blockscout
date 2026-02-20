@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
         show_scam_tokens?: nil
       }
 
-      do_async_csv?(
+      do_csv_export(
         CsvHelper.async_enabled?(),
         conn,
         opts,
@@ -97,7 +97,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
        when is_binary(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:address_exists, true} <- {:address_exists, Address.address_exists?(address_hash)} do
-      do_async_csv?(
+      do_csv_export(
         CsvHelper.async_enabled?(),
         conn,
         Map.merge(params, %{
@@ -117,10 +117,10 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
 
   defp items_csv(conn, _, _), do: not_found(conn)
 
-  @spec do_async_csv?(boolean(), Conn.t(), map(), module()) :: Conn.t()
-  defp do_async_csv?(async?, conn, params, csv_export_module)
+  @spec do_csv_export(boolean(), Conn.t(), map(), module()) :: Conn.t()
+  defp do_csv_export(async?, conn, params, csv_export_module)
 
-  defp do_async_csv?(true, conn, params, csv_export_module) do
+  defp do_csv_export(true, conn, params, csv_export_module) do
     params =
       params
       |> Map.take([:address_hash, :from_period, :to_period, :filter_type, :filter_value, :show_scam_tokens?])
@@ -141,7 +141,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
     end
   end
 
-  defp do_async_csv?(false, conn, params, csv_export_module) do
+  defp do_csv_export(false, conn, params, csv_export_module) do
     params[:address_hash]
     |> csv_export_module.export(
       params[:from_period],
@@ -367,7 +367,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   Gets a CSV export by UUID.
   """
   @spec get_csv_export(Conn.t(), map()) :: Conn.t()
-  def get_csv_export(conn, %{uuid: uuid}) do
+  def get_csv_export(conn, %{uuid_param: uuid}) do
     with {:not_found, request} when not is_nil(request) <-
            {:not_found,
             uuid |> AsyncCsvExportRequest.get_by_uuid(api?: true) |> AsyncCsvHelper.actualize_csv_export_request()} do

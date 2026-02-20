@@ -6,7 +6,6 @@ import Config
 config :explorer, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,
-  queues: [csv_export: 10, csv_export_sanitize: 1],
   repo: Explorer.Repo,
   plugins: [
     {Oban.Plugins.Cron,

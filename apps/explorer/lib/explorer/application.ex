@@ -47,7 +47,7 @@ defmodule Explorer.Application do
     PrometheusLogger.setup()
     Instrumenter.setup()
 
-    if Application.get_env(:explorer, Oban)[:enabled] && Explorer.mode() in [:api, :all] do
+    if Application.get_env(:explorer, Oban, [])[:enabled] && Explorer.mode() in [:api, :all] do
       ObanTelemetry.attach_default_logger()
     end
 

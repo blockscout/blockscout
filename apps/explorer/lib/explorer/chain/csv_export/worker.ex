@@ -9,7 +9,8 @@ defmodule Explorer.Chain.CsvExport.Worker do
 
   alias Explorer.Chain.CsvExport.{AsyncHelper, Request}
 
-  # todo: mb add time metrics for csv export and upload
+  require Logger
+
   @impl Oban.Worker
   def perform(%Job{
         args:
@@ -22,10 +23,10 @@ defmodule Explorer.Chain.CsvExport.Worker do
             "module" => module
           } = args
       }) do
-    csv_export_module = String.to_atom(module)
+    csv_export_module = String.to_existing_atom(module)
     filename = "#{address_hash}_#{from_period}_#{to_period}.csv"
 
-    {:ok, file_id} =
+    result =
       address_hash
       |> csv_export_module.export(
         from_period,
@@ -37,8 +38,20 @@ defmodule Explorer.Chain.CsvExport.Worker do
       |> AsyncHelper.stream_to_temp_file(request_id)
       |> AsyncHelper.upload_file(filename, request_id)
 
-    Request.update_file_id(request_id, file_id)
+    case result do
+      {:ok, file_id} ->
+        case Request.update_file_id(request_id, file_id) do
+          {0, _} ->
+            Logger.warning(
+              "CSV export request #{request_id} was deleted before file_id could be set. Uploaded file #{file_id} may be orphaned."
+            )
 
-    :ok
+          {_count, _} ->
+            :ok
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 end

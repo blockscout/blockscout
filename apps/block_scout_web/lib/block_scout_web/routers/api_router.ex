@@ -153,7 +153,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       end
     end
 
-    get("/csv-export/:uuid", V2.CsvExportController, :get_csv_export)
+    get("/csv-exports/:uuid_param", V2.CsvExportController, :get_csv_export)
 
     scope "/transactions" do
       get("/", V2.TransactionController, :transactions)
