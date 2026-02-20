@@ -88,7 +88,7 @@ defmodule Explorer.Chain.CsvExport.Request do
   def update_file_id(request_id, file_id) do
     __MODULE__
     |> where([r], r.id == ^request_id)
-    |> Repo.update_all(set: [file_id: file_id])
+    |> Repo.update_all(set: [file_id: file_id, updated_at: DateTime.utc_now()])
   end
 
   @doc """

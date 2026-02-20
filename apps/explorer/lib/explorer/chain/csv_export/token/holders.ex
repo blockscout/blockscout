@@ -28,8 +28,8 @@ defmodule Explorer.Chain.CsvExport.Token.Holders do
 
   defp fetch_token_holders(address_hash) do
     Chain.fetch_token_holders_from_token_hash_for_csv(address_hash,
-      [paging_options: CsvHelper.paging_options(),
-      api?: true]
+      paging_options: CsvHelper.paging_options(),
+      api?: true
     )
   end
 
