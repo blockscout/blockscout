@@ -223,7 +223,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
           to_address: address,
           transaction_index: transaction.index,
           index: 1,
-          block_number: 7000,
+          block_number: transaction.block_number,
           block_hash: transaction.block_hash
         )
 
@@ -232,7 +232,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
         from_address: address,
         transaction_index: transaction.index,
         index: 2,
-        block_number: 8000,
+        block_number: transaction.block_number,
         block_hash: transaction.block_hash
       )
 
