@@ -128,7 +128,7 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
        do: acc
 
   defp internal_transaction_to_coin_balances(internal_transaction, previous_block_number, options, acc) do
-    if internal_transaction.value |> Wei.to(:wei) |> Decimal.positive?() do
+    if not is_nil(internal_transaction.value) and Decimal.positive?(Wei.to(internal_transaction.value, :wei)) do
       acc
       |> Map.put_new_lazy(internal_transaction.from_address_hash, fn ->
         {internal_transaction.from_address,
