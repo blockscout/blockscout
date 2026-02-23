@@ -58,7 +58,8 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
          true <- start_block_l2 > 0,
          {last_l2_block_number, last_l2_transaction_hash, last_l2_transaction} <-
            get_last_l2_item(json_rpc_named_arguments),
-         {safe_block, safe_block_is_latest} = Helper.get_safe_block(json_rpc_named_arguments),
+         {:ok, block_check_interval, safe_block, safe_block_is_latest} =
+           Helper.get_block_check_interval(json_rpc_named_arguments),
          {:start_block_l2_valid, true} <-
            {:start_block_l2_valid,
             (start_block_l2 <= last_l2_block_number || last_l2_block_number == 0) && start_block_l2 <= safe_block},
@@ -72,6 +73,7 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
          start_block_l2: start_block_l2,
          safe_block: safe_block,
          safe_block_is_latest: safe_block_is_latest,
+         block_check_interval: block_check_interval,
          message_passer: env[:message_passer],
          json_rpc_named_arguments: json_rpc_named_arguments,
          eth_get_logs_range_size:
@@ -130,6 +132,7 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
           start_block: start_block,
           safe_block: safe_block,
           safe_block_is_latest: safe_block_is_latest,
+          block_check_interval: block_check_interval,
           message_passer: message_passer,
           json_rpc_named_arguments: json_rpc_named_arguments,
           eth_get_logs_range_size: eth_get_logs_range_size
@@ -139,13 +142,35 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     # the "safe" block can be "latest" (when safe_block_is_latest == true)
     fill_block_range(start_block, safe_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size)
 
-    if not safe_block_is_latest do
-      # find and fill all events between "safe" and "latest" block (excluding "safe")
-      {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments)
-      fill_block_range(safe_block + 1, latest_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size)
-    end
+    new_start_block =
+      if safe_block_is_latest do
+        safe_block + 1
+      else
+        # find and fill all events between "safe" and "latest" block (excluding "safe")
+        {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments)
 
-    {:stop, :normal, state}
+        fill_block_range(
+          safe_block + 1,
+          latest_block,
+          message_passer,
+          json_rpc_named_arguments,
+          eth_get_logs_range_size
+        )
+
+        latest_block + 1
+      end
+
+    {:ok, new_latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments)
+
+    delay =
+      if new_start_block > new_latest_block do
+        block_check_interval
+      else
+        0
+      end
+
+    Process.send_after(self(), :find_new_events, delay)
+    {:noreply, %{state | start_block: new_start_block, safe_block: new_latest_block, safe_block_is_latest: true}}
   end
 
   @impl GenServer
@@ -158,7 +183,7 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     Repo.delete_all(from(w in OptimismWithdrawal, where: w.l2_block_number >= ^starting_block))
   end
 
-  def event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number) do
+  defp event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number) do
     [_value, _gas_limit, _data, hash] = decode_data(data, [{:uint, 256}, {:uint, 256}, :bytes, {:bytes, 32}])
 
     msg_nonce =
@@ -316,17 +341,22 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
   defp fill_block_range(start_block, end_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size) do
     if start_block <= end_block do
       fill_block_range(start_block, end_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size, true)
-      fill_msg_nonce_gaps(start_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size, false)
-      {last_l2_block_number, _, _} = get_last_l2_item()
 
-      fill_block_range(
-        max(start_block, last_l2_block_number),
-        end_block,
-        message_passer,
-        json_rpc_named_arguments,
-        eth_get_logs_range_size,
-        false
-      )
+      last_l2_block_number =
+        start_block
+        |> fill_msg_nonce_gaps(message_passer, json_rpc_named_arguments, eth_get_logs_range_size, false)
+        |> l2_block_number_by_msg_nonce()
+
+      if last_l2_block_number < end_block do
+        fill_block_range(
+          last_l2_block_number + 1,
+          end_block,
+          message_passer,
+          json_rpc_named_arguments,
+          eth_get_logs_range_size,
+          false
+        )
+      end
 
       Optimism.set_last_block_hash_by_number(end_block, @counter_type, json_rpc_named_arguments)
     end
@@ -372,7 +402,11 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
 
       if scan_db do
         fill_msg_nonce_gaps(start_block_l2, message_passer, json_rpc_named_arguments, eth_get_logs_range_size, false)
+      else
+        nonce_max
       end
+    else
+      _ -> nonce_max
     end
   end
 
@@ -383,17 +417,16 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
   # ## Parameters
   # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
   #                               Used to get transaction info by its hash from the RPC node.
-  #                               Can be `nil` if the transaction info is not needed.
   #
   # ## Returns
   # - A tuple `{last_block_number, last_transaction_hash, last_transaction}` where
   #   `last_block_number` is the last block number found in the corresponding table (0 if not found),
   #   `last_transaction_hash` is the last transaction hash found in the corresponding table (nil if not found),
-  #   `last_transaction` is the transaction info got from the RPC (nil if not found or not needed).
+  #   `last_transaction` is the transaction info got from the RPC (nil if not found).
   # - A tuple `{:error, message}` in case the `eth_getTransactionByHash` RPC request failed.
-  @spec get_last_l2_item(EthereumJSONRPC.json_rpc_named_arguments() | nil) ::
+  @spec get_last_l2_item(EthereumJSONRPC.json_rpc_named_arguments()) ::
           {non_neg_integer(), binary() | nil, map() | nil} | {:error, any()}
-  defp get_last_l2_item(json_rpc_named_arguments \\ nil) do
+  defp get_last_l2_item(json_rpc_named_arguments) do
     Optimism.get_last_item(
       :L2,
       &OptimismWithdrawal.last_withdrawal_l2_block_number_query/0,
@@ -410,6 +443,8 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
       "Filled gaps between L2 blocks #{l2_block_start} and #{l2_block_end}. #{withdrawals_count} event(s) were found #{find_place} and written to op_withdrawals table."
     )
   end
+
+  defp l2_block_number_by_msg_nonce(nil), do: nil
 
   defp l2_block_number_by_msg_nonce(nonce) do
     Repo.one(from(w in OptimismWithdrawal, select: w.l2_block_number, where: w.msg_nonce == ^nonce))
