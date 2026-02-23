@@ -6,7 +6,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsCreate
   use Explorer.Migrator.HeavyDbIndexOperation
 
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.{EmptyInternalTransactionsData, HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :internal_transactions
@@ -24,7 +24,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsCreate
 
   @impl HeavyDbIndexOperation
   def dependent_from_migrations do
-    []
+    [EmptyInternalTransactionsData.migration_name()]
   end
 
   @impl HeavyDbIndexOperation
