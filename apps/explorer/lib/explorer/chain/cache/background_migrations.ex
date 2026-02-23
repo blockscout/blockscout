@@ -58,7 +58,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_create_addresses_transactions_count_desc_partial_index_finished,
     key: :heavy_indexes_create_addresses_transactions_count_asc_coin_balance_desc_hash_partial_index_finished,
     key: :heavy_indexes_drop_token_instances_token_id_index_finished,
-    key: :fill_internal_transaction_to_address_hash_with_created_contract_address_hash_finished,
     key: :heavy_indexes_drop_internal_transactions_created_contract_address_hash_partial_index_finished,
     key: :heavy_indexes_create_tokens_name_partial_fts_index_finished,
     key: :heavy_indexes_update_internal_transactions_primary_key_finished,
