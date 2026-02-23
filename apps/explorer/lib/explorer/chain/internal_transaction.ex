@@ -74,7 +74,8 @@ defmodule Explorer.Chain.InternalTransaction do
     # todo: consider using enum
     field(:type, Type, null: false)
     field(:value, Wei)
-    field(:block_number, :integer, primary_key: true)
+    # TODO: remove field after update PK migration is completed
+    field(:block_hash, Hash.Full)
     field(:transaction_index, :integer, primary_key: true, null: false)
     # TODO: remove field after update PK migration is completed
     field(:block_index, :integer)
@@ -113,12 +114,12 @@ defmodule Explorer.Chain.InternalTransaction do
       null: false
     )
 
-    # TODO: remove field after update PK migration is completed
     belongs_to(:block, Block,
-      foreign_key: :block_hash,
-      references: :hash,
-      type: Hash.Full,
-      null: false
+      foreign_key: :block_number,
+      references: :number,
+      primary_key: true,
+      type: :integer,
+      where: [consensus: true]
     )
   end
 
