@@ -77,7 +77,7 @@
 - Disable Auth0 when Dynamic enabled ([#13912](https://github.com/blockscout/blockscout/pull/13912))
 - Add swagger spec for account abstraction endpoints ([#13897](https://github.com/blockscout/blockscout/issues/13897))
 - Clear token "skip_metadata" property ([#13891](https://github.com/blockscout/blockscout/issues/13891))
-- Refactor internal transaction logic from "block_index" to "transaction_index" and "index" ([#12474](https://github.com/blockscout/blockscout/issues/12474))
+- Refactor internal transaction logic from "block_index" to "transaction_index" and "index" ([#12474](https://github.com/blockscout/blockscout/issues/12474), [#14029](https://github.com/blockscout/blockscout/pull/14029))
 - Cover Optimism API endpoints with swagger docs ([#13672](https://github.com/blockscout/blockscout/issues/13672))
 - Duplicate internal transaction created_contract_address_hash to to_address_hash ([#13846](https://github.com/blockscout/blockscout/issues/13846))
 - Add "openapi_spec_folder_name" to the response of api/v2/config/backend endpoint ([#13845](https://github.com/blockscout/blockscout/issues/13845))
