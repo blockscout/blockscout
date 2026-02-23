@@ -8,8 +8,26 @@ defmodule Explorer.Chain.CsvExport.Worker do
   use Oban.Worker, queue: :csv_export, max_attempts: 3
 
   alias Explorer.Chain.CsvExport.{AsyncHelper, Request}
-
+  alias Explorer.Chain.CsvExport.AdvancedFilter
   require Logger
+
+  @impl Oban.Worker
+  def perform(%Job{
+        args: %{
+          "request_id" => request_id,
+          "advanced_filters_params" => advanced_filters_params
+        }
+      }) do
+    filename = "advanced_filters_#{request_id}.csv"
+
+    advanced_filters_params
+    |> Base.decode64!()
+    |> :erlang.binary_to_term([:safe])
+    |> AdvancedFilter.export()
+    |> AsyncHelper.stream_to_temp_file(request_id)
+    |> AsyncHelper.upload_file(filename, request_id)
+    |> process_upload_result(request_id)
+  end
 
   @impl Oban.Worker
   def perform(%Job{
@@ -26,18 +44,20 @@ defmodule Explorer.Chain.CsvExport.Worker do
     csv_export_module = String.to_existing_atom(module)
     filename = "#{address_hash}_#{from_period}_#{to_period}.csv"
 
-    result =
-      address_hash
-      |> csv_export_module.export(
-        from_period,
-        to_period,
-        [show_scam_tokens?: show_scam_tokens?],
-        args["filter_type"],
-        args["filter_value"]
-      )
-      |> AsyncHelper.stream_to_temp_file(request_id)
-      |> AsyncHelper.upload_file(filename, request_id)
+    address_hash
+    |> csv_export_module.export(
+      from_period,
+      to_period,
+      [show_scam_tokens?: show_scam_tokens?],
+      args["filter_type"],
+      args["filter_value"]
+    )
+    |> AsyncHelper.stream_to_temp_file(request_id)
+    |> AsyncHelper.upload_file(filename, request_id)
+    |> process_upload_result(request_id)
+  end
 
+  defp process_upload_result(result, request_id) do
     case result do
       {:ok, file_id} ->
         case Request.update_file_id(request_id, file_id) do

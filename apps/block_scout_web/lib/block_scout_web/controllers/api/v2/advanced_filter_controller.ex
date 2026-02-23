@@ -5,11 +5,17 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 5, fetch_scam_token_toggle: 2]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
-  alias BlockScoutWeb.API.V2.{AdvancedFilterView, CsvExportController}
+  alias BlockScoutWeb.API.V2.CsvExportController
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address.Reputation, AdvancedFilter, ContractMethod, Data, Token, Transaction}
   alias Explorer.Chain.CsvExport.Helper, as: CsvHelper
+  alias Explorer.Chain.CsvExport.AdvancedFilter, as: CsvExportAdvancedFilter
   alias Plug.Conn
+  alias Explorer.Chain.CsvExport.Request, as: AsyncCsvExportRequest
+  alias Explorer.Chain.CsvExport.AsyncHelper, as: AsyncCsvHelper
+  alias BlockScoutWeb.AccessHelper
+
+  require Logger
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -99,19 +105,35 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       end)
       |> Keyword.put(:timeout, :timer.minutes(5))
 
-    full_options
-    |> AdvancedFilter.list()
-    |> AdvancedFilterView.to_csv_format()
-    |> CsvHelper.dump_to_stream()
-    |> Enum.reduce_while(CsvExportController.put_resp_params(conn), fn chunk, conn ->
-      case Conn.chunk(conn, chunk) do
-        {:ok, conn} ->
-          {:cont, conn}
+    if CsvHelper.async_enabled?() do
+      case AsyncCsvExportRequest.create(AccessHelper.conn_to_ip_string(conn), %{
+             advanced_filters_params: :erlang.term_to_binary(full_options) |> Base.encode64()
+           }) do
+        {:ok, request} ->
+          conn |> put_status(:accepted) |> json(%{request_id: request.id})
 
-        {:error, :closed} ->
-          {:halt, conn}
+        {:error, :too_many_pending_requests} ->
+          conn
+          |> put_status(:too_many_requests)
+          |> json(%{error: "You can only have #{AsyncCsvHelper.max_pending_tasks_per_ip()} pending requests at a time"})
+
+        {:error, error} ->
+          Logger.error("Failed to create CSV export request: #{inspect(error)}")
+          conn |> put_status(:internal_server_error) |> json(%{error: "Failed to create CSV export request"})
       end
-    end)
+    else
+      full_options
+      |> CsvExportAdvancedFilter.export()
+      |> Enum.reduce_while(CsvExportController.put_resp_params(conn), fn chunk, conn ->
+        case Conn.chunk(conn, chunk) do
+          {:ok, conn} ->
+            {:cont, conn}
+
+          {:error, :closed} ->
+            {:halt, conn}
+        end
+      end)
+    end
   end
 
   @doc """

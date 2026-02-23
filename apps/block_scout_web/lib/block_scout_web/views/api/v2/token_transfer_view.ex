@@ -2,7 +2,6 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
-  alias BlockScoutWeb.Tokens.Helper, as: TokensHelper
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
   alias Explorer.Chain.{TokenTransfer, Transaction}
@@ -66,11 +65,12 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
 
   @doc """
     Prepares token transfer total value/id transferred to be returned in the API v2 endpoints.
+    Duplicated with `token_instance` reduction in Explorer.Chain.CsvExport.AdvancedFilter
   """
   @spec prepare_token_transfer_total(TokenTransfer.t()) :: map()
   # credo:disable-for-next-line /Complexity/
   def prepare_token_transfer_total(token_transfer) do
-    case TokensHelper.token_transfer_amount_for_api(token_transfer) do
+    case TokenTransfer.token_transfer_amount_for_api(token_transfer) do
       {:ok, :erc721_instance} ->
         %{
           "token_id" => token_transfer.token_ids && List.first(token_transfer.token_ids),
