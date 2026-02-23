@@ -92,7 +92,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
     token_transfers =
       internal_transactions
       |> Enum.filter(fn internal_transaction ->
-        internal_transaction.value > 0 &&
+        not is_nil(internal_transaction.value) && internal_transaction.value > 0 &&
           internal_transaction.index > 0 &&
           not Map.has_key?(internal_transaction, :error) &&
           (not Map.has_key?(internal_transaction, :call_type) || internal_transaction.call_type != "delegatecall")
