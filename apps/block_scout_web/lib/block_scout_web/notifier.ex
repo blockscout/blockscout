@@ -574,7 +574,7 @@ defmodule BlockScoutWeb.Notifier do
   defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
     coin_balance = CoinBalance.get_coin_balance(address_hash, block_number, @api_true)
 
-    if coin_balance.delta && !Decimal.eq?(coin_balance.delta, Decimal.new(0)) do
+    if coin_balance && coin_balance.delta && !Decimal.eq?(coin_balance.delta, Decimal.new(0)) do
       # TODO: delete duplicated event when old UI becomes deprecated
       Endpoint.broadcast("addresses_old:#{address_hash}", "coin_balance", %{
         block_number: block_number,
@@ -582,7 +582,7 @@ defmodule BlockScoutWeb.Notifier do
       })
     end
 
-    if coin_balance.value && coin_balance.delta && !Decimal.eq?(coin_balance.delta, Decimal.new(0)) do
+    if coin_balance && coin_balance.value && coin_balance.delta && !Decimal.eq?(coin_balance.delta, Decimal.new(0)) do
       rendered_coin_balance = AddressView.render("coin_balance.json", %{coin_balance: coin_balance})
 
       Endpoint.broadcast("addresses:#{address_hash}", "coin_balance", %{
