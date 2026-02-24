@@ -4,8 +4,8 @@ defmodule Explorer.Chain.CsvExport.AdvancedFilter do
   """
 
   alias Explorer.Chain.Address
-  alias Explorer.Chain.CsvExport.Helper
-  alias Explorer.Chain.{AdvancedFilter, TokenTransfer, MethodIdentifier}
+  alias Explorer.Chain.{AdvancedFilter, MethodIdentifier, TokenTransfer}
+  alias Explorer.Chain.CsvExport.{AsyncHelper, Helper}
   alias Explorer.Market
   alias Explorer.Market.MarketHistory
 
@@ -13,6 +13,7 @@ defmodule Explorer.Chain.CsvExport.AdvancedFilter do
           Enumerable.t()
   def export(full_options) do
     full_options
+    |> Keyword.put(:timeout, AsyncHelper.db_timeout())
     |> AdvancedFilter.list()
     |> to_csv_format()
     |> Helper.dump_to_stream()
@@ -156,23 +157,13 @@ defmodule Explorer.Chain.CsvExport.AdvancedFilter do
   defp prepare_token_transfer_total(token_transfer) do
     case TokenTransfer.token_transfer_amount_for_api(token_transfer) do
       {:ok, :erc721_instance} ->
-        %{
-          "token_id" => token_transfer.token_ids && List.first(token_transfer.token_ids)
-        }
+        token_transfer_map_erc721(token_transfer)
 
       {:ok, :erc1155_erc404_instance, value, decimals} ->
-        %{
-          "token_id" => token_transfer.token_ids && List.first(token_transfer.token_ids),
-          "value" => value,
-          "decimals" => decimals
-        }
+        token_transfer_map_erc1155_single(token_transfer, value, decimals)
 
       {:ok, :erc1155_erc404_instance, values, token_ids, decimals} ->
-        %{
-          "token_id" => token_ids && List.first(token_ids),
-          "value" => values && List.first(values),
-          "decimals" => decimals
-        }
+        token_transfer_map_erc1155_multi(values, token_ids, decimals)
 
       {:ok, value, decimals} ->
         %{"value" => value, "decimals" => decimals}
@@ -180,5 +171,25 @@ defmodule Explorer.Chain.CsvExport.AdvancedFilter do
       _ ->
         nil
     end
+  end
+
+  defp token_transfer_map_erc721(token_transfer) do
+    %{"token_id" => token_transfer.token_ids && List.first(token_transfer.token_ids)}
+  end
+
+  defp token_transfer_map_erc1155_single(token_transfer, value, decimals) do
+    %{
+      "token_id" => token_transfer.token_ids && List.first(token_transfer.token_ids),
+      "value" => value,
+      "decimals" => decimals
+    }
+  end
+
+  defp token_transfer_map_erc1155_multi(values, token_ids, decimals) do
+    %{
+      "token_id" => token_ids && List.first(token_ids),
+      "value" => values && List.first(values),
+      "decimals" => decimals
+    }
   end
 end

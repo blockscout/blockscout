@@ -6,6 +6,7 @@ defmodule Explorer.Chain.CsvExport.Token.Holders do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, CurrencyHelper, Hash, Token}
   alias Explorer.Chain.Address.CurrentTokenBalance
+  alias Explorer.Chain.CsvExport.AsyncHelper
   alias Explorer.Chain.CsvExport.Helper, as: CsvHelper
 
   @spec export(Hash.Address.t(), any(), any(), any(), any(), any()) ::
@@ -29,7 +30,8 @@ defmodule Explorer.Chain.CsvExport.Token.Holders do
   defp fetch_token_holders(address_hash) do
     Chain.fetch_token_holders_from_token_hash_for_csv(address_hash,
       paging_options: CsvHelper.paging_options(),
-      api?: true
+      api?: true,
+      timeout: AsyncHelper.db_timeout()
     )
   end
 

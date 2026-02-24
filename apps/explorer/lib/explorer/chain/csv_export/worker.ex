@@ -7,8 +7,7 @@ defmodule Explorer.Chain.CsvExport.Worker do
   """
   use Oban.Worker, queue: :csv_export, max_attempts: 3
 
-  alias Explorer.Chain.CsvExport.{AsyncHelper, Request}
-  alias Explorer.Chain.CsvExport.AdvancedFilter
+  alias Explorer.Chain.CsvExport.{AdvancedFilter, AsyncHelper, Request}
   require Logger
 
   @impl Oban.Worker

@@ -5,7 +5,7 @@ defmodule Explorer.Chain.CsvExport.Address.Logs do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash}
-  alias Explorer.Chain.CsvExport.Helper
+  alias Explorer.Chain.CsvExport.{AsyncHelper, Helper}
 
   @spec export(Hash.Address.t(), String.t(), String.t(), Keyword.t(), String.t() | nil, String.t() | nil) ::
           Enumerable.t()
@@ -25,6 +25,7 @@ defmodule Explorer.Chain.CsvExport.Address.Logs do
       |> Keyword.put(:from_block, from_block)
       |> Keyword.put(:to_block, to_block)
       |> Keyword.put(:topic, filter_value)
+      |> Keyword.put(:timeout, AsyncHelper.db_timeout())
 
     Chain.address_to_logs(address_hash, true, options)
   end

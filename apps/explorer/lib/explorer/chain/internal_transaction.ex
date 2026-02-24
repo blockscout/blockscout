@@ -3,7 +3,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
   use Explorer.Schema
 
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.{Chain, Helper, PagingOptions}
 
   alias Explorer.Chain.{
     Address,
@@ -798,6 +798,7 @@ defmodule Explorer.Chain.InternalTransaction do
   def fetch_from_db_by_address(hash, options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     direction = Keyword.get(options, :direction)
+    timeout = Keyword.get(options, :timeout)
 
     from_block = Chain.from_block(options)
     to_block = Chain.to_block(options)
@@ -829,7 +830,7 @@ defmodule Explorer.Chain.InternalTransaction do
       |> common_where_and_order(paging_options)
       |> preload(:block)
       |> Chain.join_associations(necessity_by_association)
-      |> Chain.select_repo(options).all()
+      |> Chain.select_repo(options).all(Helper.maybe_timeout(timeout))
       |> deduplicate_and_trim_internal_transactions(paging_options)
       |> preload_error(options)
     else
@@ -841,7 +842,7 @@ defmodule Explorer.Chain.InternalTransaction do
       |> common_where_limit_order(paging_options)
       |> preload(:block)
       |> Chain.join_associations(necessity_by_association)
-      |> Chain.select_repo(options).all()
+      |> Chain.select_repo(options).all(Helper.maybe_timeout(timeout))
       |> preload_error(options)
     end
   end

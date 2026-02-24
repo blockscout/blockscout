@@ -4,7 +4,7 @@ defmodule Explorer.Chain.CsvExport.Address.Transactions do
   """
 
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, Transaction, Wei}
-  alias Explorer.Chain.CsvExport.Helper
+  alias Explorer.Chain.CsvExport.{AsyncHelper, Helper}
   alias Explorer.Market
   alias Explorer.Market.MarketHistory
 
@@ -33,6 +33,7 @@ defmodule Explorer.Chain.CsvExport.Address.Transactions do
       |> Keyword.put(:paging_options, paging_options)
       |> Keyword.put(:from_block, from_block)
       |> Keyword.put(:to_block, to_block)
+      |> Keyword.put(:timeout, AsyncHelper.db_timeout())
       |> (&if(Helper.valid_filter?(filter_type, filter_value, "transactions"),
             do: &1 |> Keyword.put(:direction, String.to_atom(filter_value)),
             else: &1

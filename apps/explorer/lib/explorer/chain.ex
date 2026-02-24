@@ -138,6 +138,7 @@ defmodule Explorer.Chain do
   @type api? :: {:api?, true | false}
   @type ip :: {:ip, String.t()}
   @type show_scam_tokens? :: {:show_scam_tokens?, true | false}
+  @type timeout_option :: {:timeout, timeout() | nil}
 
   def wrapped_union_subquery(query) do
     from(
@@ -194,10 +195,12 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
-  @spec address_to_logs(Hash.Address.t(), [paging_options | necessity_by_association_option | api?]) :: [Log.t()]
+  @spec address_to_logs(Hash.Address.t(), [paging_options | necessity_by_association_option | api? | timeout_option]) ::
+          [Log.t()]
   def address_to_logs(address_hash, csv_export?, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    timeout = Keyword.get(options, :timeout)
 
     case paging_options do
       %PagingOptions{key: {0, 0}} ->
@@ -236,7 +239,7 @@ defmodule Explorer.Chain do
         |> filter_topic(Keyword.get(options, :topic))
         |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
         |> join_associations(necessity_by_association)
-        |> select_repo(options).all()
+        |> select_repo(options).all(ExplorerHelper.maybe_timeout(timeout))
         |> Enum.take(paging_options.page_size)
     end
   end
@@ -2330,14 +2333,18 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
-  @spec fetch_token_holders_from_token_hash_for_csv(Hash.Address.t(), [paging_options | api?]) :: [TokenBalance.t()]
+  @spec fetch_token_holders_from_token_hash_for_csv(Hash.Address.t(), [paging_options | api? | timeout_option]) :: [
+          TokenBalance.t()
+        ]
   def fetch_token_holders_from_token_hash_for_csv(contract_address_hash, options \\ []) do
+    timeout = Keyword.get(options, :timeout)
+
     query =
       contract_address_hash
       |> CurrentTokenBalance.token_holders_ordered_by_value_query_without_address_preload(options)
 
     query
-    |> select_repo(options).all()
+    |> select_repo(options).all(ExplorerHelper.maybe_timeout(timeout))
   end
 
   def fetch_token_holders_from_token_hash_and_token_id(contract_address_hash, token_id, options \\ []) do

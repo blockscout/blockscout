@@ -160,6 +160,11 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
     csv_export_config()[:max_pending_tasks_per_ip]
   end
 
+  @spec db_timeout() :: non_neg_integer()
+  def db_timeout do
+    csv_export_config()[:db_timeout]
+  end
+
   @spec csv_export_config() :: list()
   defp csv_export_config do
     Application.get_env(:explorer, Explorer.Chain.CsvExport)
