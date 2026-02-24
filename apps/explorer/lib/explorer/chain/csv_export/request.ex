@@ -17,12 +17,13 @@ defmodule Explorer.Chain.CsvExport.Request do
     field(:id, Ecto.UUID, primary_key: true, autogenerate: true)
     field(:remote_ip_hash, :binary, null: false)
     field(:file_id, :string)
+    field(:status, Ecto.Enum, values: [:pending, :completed, :failed], default: :pending)
 
     timestamps()
   end
 
   @required_attrs ~w(remote_ip_hash)a
-  @optional_attrs ~w(file_id)a
+  @optional_attrs ~w(file_id status)a
 
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = request, attrs \\ %{}) do
@@ -46,7 +47,7 @@ defmodule Explorer.Chain.CsvExport.Request do
     Repo.transact(fn ->
       pending_count =
         __MODULE__
-        |> where([r], r.remote_ip_hash == ^remote_ip_hash and is_nil(r.file_id))
+        |> where([r], r.remote_ip_hash == ^remote_ip_hash and r.status == :pending)
         |> select([r], count(r.id))
         |> Repo.one()
 
@@ -92,7 +93,19 @@ defmodule Explorer.Chain.CsvExport.Request do
   def update_file_id(request_id, file_id) do
     __MODULE__
     |> where([r], r.id == ^request_id)
-    |> Repo.update_all(set: [file_id: file_id, updated_at: DateTime.utc_now()])
+    |> Repo.update_all(set: [file_id: file_id, status: :completed, updated_at: DateTime.utc_now()])
+  end
+
+  @doc """
+  Marks a request as failed.
+
+  Called when the Oban job exhausts all attempts without successfully completing.
+  """
+  @spec mark_failed(Ecto.UUID.t()) :: {non_neg_integer(), nil}
+  def mark_failed(request_id) do
+    __MODULE__
+    |> where([r], r.id == ^request_id)
+    |> Repo.update_all(set: [status: :failed, updated_at: DateTime.utc_now()])
   end
 
   @doc """
