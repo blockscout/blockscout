@@ -2,7 +2,6 @@
 # and its dependencies with the aid of the Config module.
 import Config
 
-# todo: make concurrency configurable
 config :explorer, Oban,
   engine: Oban.Engines.Basic,
   notifier: Oban.Notifiers.Postgres,

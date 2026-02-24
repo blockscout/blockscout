@@ -37,8 +37,8 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       base_params() ++
         [
           address_hash_param(),
-          from_period_param(),
-          to_period_param(),
+          optional_from_period_param(),
+          optional_to_period_param(),
           filter_type_param(),
           filter_value_param()
         ],

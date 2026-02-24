@@ -106,6 +106,24 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns an optional parameter definition for the start of the time period.
+  Used for endpoints like token holders CSV that don't require a time range.
+  """
+  @spec optional_from_period_param() :: Parameter.t()
+  def optional_from_period_param do
+    %{from_period_param() | required: false}
+  end
+
+  @doc """
+  Returns an optional parameter definition for the end of the time period.
+  Used for endpoints like token holders CSV that don't require a time range.
+  """
+  @spec optional_to_period_param() :: Parameter.t()
+  def optional_to_period_param do
+    %{to_period_param() | required: false}
+  end
+
+  @doc """
   Returns a parameter definition for chain IDs in the query.
   """
   @spec chain_ids_param() :: Parameter.t()
