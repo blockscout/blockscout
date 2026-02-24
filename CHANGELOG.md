@@ -25,6 +25,7 @@
 
 ### 🐛 Bug Fixes
 
+- Handle nil coin balance in "broadcast_address_coin_balance/1" function ([#14044](https://github.com/blockscout/blockscout/pull/14044))
 - Fix duplicating paging params ([#14010](https://github.com/blockscout/blockscout/pull/14010))
 - Handle maybe_reject_zero_value for missing value ([#13990](https://github.com/blockscout/blockscout/pull/13990))
 - Handle internal transactions nil value([#13974](https://github.com/blockscout/blockscout/pull/13974))
