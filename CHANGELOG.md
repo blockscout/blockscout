@@ -1,5 +1,12 @@
 # Changelog
 
+## 9.3.6
+
+### ⚡ Performance
+
+- Fix /advanced-filters timeout when scam filtering enabled ([#14047](https://github.com/blockscout/blockscout/pull/14047))
+
+
 ## 9.3.5
 
 ### 🐛 Bug Fixes
