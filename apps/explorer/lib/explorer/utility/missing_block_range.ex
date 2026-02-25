@@ -5,6 +5,7 @@ defmodule Explorer.Utility.MissingBlockRange do
   """
   use Explorer.Schema
 
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain.{Block, BlockNumberHelper}
   alias Explorer.Repo
 
@@ -110,6 +111,7 @@ defmodule Explorer.Utility.MissingBlockRange do
   @spec add_ranges_by_block_numbers([Block.block_number()], integer() | nil) :: :ok
   def add_ranges_by_block_numbers(numbers, priority \\ nil) do
     numbers
+    |> RangesHelper.filter_by_block_ranges()
     |> numbers_to_ranges()
     |> save_batch(priority)
 
