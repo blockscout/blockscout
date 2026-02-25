@@ -4,7 +4,7 @@ defmodule NFTMediaHandler.MixProject do
   def project do
     [
       app: :nft_media_handler,
-      version: "10.0.0",
+      version: "10.0.1",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
       deps_path: "../../deps",
