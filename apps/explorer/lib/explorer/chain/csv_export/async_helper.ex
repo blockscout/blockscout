@@ -11,6 +11,19 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
 
   @doc """
   Uploads a file to Gokapi.
+
+  Streams the file in chunks, uploads each chunk via the Gokapi chunk API, then completes the upload. The local file is removed after upload (success or failure).
+
+  ## Parameters
+
+  - `file_path`: Path to the local file to upload.
+  - `filename`: Filename to use for the uploaded file on Gokapi.
+  - `uuid`: Upload session identifier for the chunked upload.
+
+  ## Returns
+
+  - `{:ok, file_id}` on success, where `file_id` is the Gokapi file ID.
+  - `{:error, reason}` on failure (e.g. chunk upload or complete request error).
   """
   # sobelow_skip ["Traversal.FileModule"]
   @spec upload_file(String.t(), String.t(), String.t()) :: {:ok, String.t()} | {:error, any()}
@@ -85,7 +98,7 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
            gokapi_chunk_upload_url(),
            body,
            [api_key_header(), {"Content-Type", "multipart/form-data; boundary=#{multipart.boundary}"}],
-           []
+           timeout_options()
          ) do
       {:ok, %{status_code: 200}} -> :ok
       {:ok, resp} -> {:error, {:unexpected_status, resp.status_code}}
@@ -109,7 +122,7 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
           {"expiryDays", to_string(gokapi_upload_expiry_days())},
           {"nonblocking", "false"}
         ],
-        []
+        timeout_options()
       )
 
     with {:ok, %{status_code: 200, body: body}} <- result,
@@ -122,7 +135,7 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
 
   @spec file_exists?(String.t()) :: {:ok, boolean()} | {:error, any()}
   defp file_exists?(file_id) do
-    case HttpClient.get(gokapi_file_metadata_url(file_id), [api_key_header()], []) do
+    case HttpClient.get(gokapi_file_metadata_url(file_id), [api_key_header()], timeout_options()) do
       {:ok, %{status_code: 200}} ->
         {:ok, true}
 
@@ -182,7 +195,7 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
 
   @spec gokapi_url() :: String.t()
   defp gokapi_url do
-    csv_export_config()[:gokapi_url] <> "/api"
+    "#{csv_export_config()[:gokapi_url]}/api"
   end
 
   @spec gokapi_api_key() :: String.t()
@@ -223,5 +236,10 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
   @spec api_key_header() :: {String.t(), String.t()}
   defp api_key_header do
     {"apikey", gokapi_api_key()}
+  end
+
+  defp timeout_options do
+    timeout = csv_export_config()[:gokapi_timeout]
+    [timeout: timeout, recv_timeout: timeout]
   end
 end

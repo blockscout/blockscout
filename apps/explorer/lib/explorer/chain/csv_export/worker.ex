@@ -8,6 +8,7 @@ defmodule Explorer.Chain.CsvExport.Worker do
   use Oban.Worker, queue: :csv_export, max_attempts: 1
 
   alias Explorer.Chain.CsvExport.{AdvancedFilter, AsyncHelper, Request}
+  alias Explorer.Chain
   require Logger
 
   @impl Oban.Worker
@@ -38,7 +39,7 @@ defmodule Explorer.Chain.CsvExport.Worker do
           args:
             %{
               "request_id" => request_id,
-              "address_hash" => address_hash,
+              "address_hash" => address_hash_string,
               "from_period" => from_period,
               "to_period" => to_period,
               "show_scam_tokens?" => show_scam_tokens?,
@@ -48,7 +49,9 @@ defmodule Explorer.Chain.CsvExport.Worker do
       ) do
     run_with_failure_handling(job, request_id, fn ->
       csv_export_module = String.to_existing_atom(module)
-      filename = "#{address_hash}_#{from_period}_#{to_period}.csv"
+      filename = "#{address_hash_string}_#{from_period}_#{to_period}.csv"
+
+      {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
 
       address_hash
       |> csv_export_module.export(
@@ -65,26 +68,24 @@ defmodule Explorer.Chain.CsvExport.Worker do
   end
 
   defp run_with_failure_handling(%Job{attempt: attempt, max_attempts: max_attempts}, request_id, fun) do
-    try do
-      case fun.() do
-        :ok ->
-          :ok
+    case fun.() do
+      :ok ->
+        :ok
 
-        {:error, _reason} = error ->
-          if attempt >= max_attempts do
-            Request.mark_failed(request_id)
-          end
-
-          error
-      end
-    rescue
-      exception ->
+      {:error, _reason} = error ->
         if attempt >= max_attempts do
           Request.mark_failed(request_id)
         end
 
-        reraise exception, __STACKTRACE__
+        error
     end
+  rescue
+    exception ->
+      if attempt >= max_attempts do
+        Request.mark_failed(request_id)
+      end
+
+      reraise exception, __STACKTRACE__
   end
 
   defp process_upload_result(result, request_id) do

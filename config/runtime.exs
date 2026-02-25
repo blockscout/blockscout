@@ -982,6 +982,7 @@ config :explorer, Explorer.Chain.CsvExport,
   tmp_dir: ConfigHelper.safe_get_env("CSV_EXPORT_ASYNC_TMP_DIR", "/tmp/csv_export"),
   gokapi_url: gokapi_url,
   gokapi_api_key: gokapi_api_key,
+  gokapi_timeout: ConfigHelper.parse_time_env_var("CSV_EXPORT_ASYNC_GOKAPI_TIMEOUT", "60s"),
   gokapi_upload_expiry_days: ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_GOKAPI_UPLOAD_EXPIRY_DAYS", 1),
   gokapi_upload_allowed_downloads:
     ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_GOKAPI_UPLOAD_ALLOWED_DOWNLOADS", 1)

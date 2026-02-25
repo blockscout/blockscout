@@ -153,7 +153,7 @@ defmodule Explorer.Chain.CsvExport.AdvancedFilter do
   defp decimal_to_string(nil, _), do: nil
   defp decimal_to_string(decimal, type), do: Decimal.to_string(decimal, type)
 
-  # duplicate of BlockScoutWeb.API.V2.TokenTransferView.prepare_token_transfer_total/1 but without the token_instance
+  # NOTE: duplicate of BlockScoutWeb.API.V2.TokenTransferView.prepare_token_transfer_total/1 but without the token_instance
   defp prepare_token_transfer_total(token_transfer) do
     case TokenTransfer.token_transfer_amount_for_api(token_transfer) do
       {:ok, :erc721_instance} ->

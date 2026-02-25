@@ -63,9 +63,11 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
     }
   end
 
+  # NOTE: Duplicated with `token_instance` reduction in
+  # Explorer.Chain.CsvExport.AdvancedFilter
   @doc """
-    Prepares token transfer total value/id transferred to be returned in the API v2 endpoints.
-    Duplicated with `token_instance` reduction in Explorer.Chain.CsvExport.AdvancedFilter
+  Prepares token transfer total value/id transferred to be returned in the
+  API v2 endpoints.
   """
   @spec prepare_token_transfer_total(TokenTransfer.t()) :: map()
   # credo:disable-for-next-line /Complexity/
