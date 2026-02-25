@@ -76,6 +76,16 @@ defmodule Explorer.Chain.Cache.Counters.LastFetchedCounter do
     )
   end
 
+  @spec delete(binary()) :: any()
+  def delete(type) do
+    query =
+      from(counter in __MODULE__,
+        where: counter.counter_type == ^type
+      )
+
+    Repo.delete_all(query)
+  end
+
   @doc """
   Fetches the last fetched counter value for the given `type`.
 
