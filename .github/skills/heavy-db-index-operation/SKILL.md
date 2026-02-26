@@ -404,7 +404,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RenameTransactions2ndCreatedCo
   def db_index_operation do
     case Repo.query(rename_index_query_string(), [], timeout: :infinity) do
       {:ok, _} ->
-        update_cache()
         :ok
 
       {:error, error} ->
