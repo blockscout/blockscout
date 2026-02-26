@@ -570,24 +570,17 @@ defmodule EthereumJSONRPC.Blocks do
 
     filtered_blocks_params = Enum.reverse(filtered_blocks_params_reversed)
 
+    keep? = fn
+      %{block_number: block_number} -> block_number not in block_numbers
+      %{block_hash: block_hash} -> block_hash not in block_hashes
+      _ -> true
+    end
+
     filtered_data =
       blocks_data
       |> Map.from_struct()
       |> Map.drop([:errors, :blocks_params])
-      |> Enum.map(fn {data_type, data_list} ->
-        filtered_data_list =
-          Enum.filter(data_list, fn data ->
-            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-            cond do
-              Map.has_key?(data, :block_number) -> data.block_number not in block_numbers
-              Map.has_key?(data, :block_hash) -> data.block_hash not in block_hashes
-              true -> true
-            end
-          end)
-
-        {data_type, filtered_data_list}
-      end)
-      |> Map.new()
+      |> Map.new(fn {data_type, data_list} -> {data_type, Enum.filter(data_list, keep?)} end)
       |> Map.put(:blocks_params, filtered_blocks_params)
 
     Map.merge(blocks_data, filtered_data)
