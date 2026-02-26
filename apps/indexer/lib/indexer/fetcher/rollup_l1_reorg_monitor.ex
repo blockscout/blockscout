@@ -115,7 +115,7 @@ defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
 
       json_rpc_named_arguments = Helper.json_rpc_named_arguments(l1_rpc)
 
-      {:ok, block_check_interval, _, _} = Helper.get_block_check_interval(json_rpc_named_arguments)
+      {:ok, block_check_interval, _} = Helper.get_block_check_interval(json_rpc_named_arguments)
 
       Process.send(self(), :reorg_monitor, [])
 

@@ -62,6 +62,8 @@ defmodule Indexer.Block.Fetcher do
 
   alias Indexer.Transform.Stability.Validators, as: StabilityValidators
 
+  alias Indexer.Transform.Optimism.Withdrawals, as: OptimismWithdrawals
+
   alias Indexer.Transform.Scroll.L1FeeParams, as: ScrollL1FeeParams
 
   alias Indexer.Transform.Arbitrum.Messaging, as: ArbitrumMessaging
@@ -193,6 +195,8 @@ defmodule Indexer.Block.Fetcher do
          tokens = Enum.uniq(tokens ++ celo_tokens),
          %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
+         optimism_withdrawals =
+           if(callback_module == Indexer.Block.Realtime.Fetcher, do: OptimismWithdrawals.parse(logs), else: []),
          scroll_l1_fee_params =
            if(callback_module == Indexer.Block.Realtime.Fetcher,
              do: ScrollL1FeeParams.parse(logs),
@@ -266,6 +270,7 @@ defmodule Indexer.Block.Fetcher do
          chain_type_import_options =
            %{
              transactions_with_receipts: transactions_with_receipts,
+             optimism_withdrawals: optimism_withdrawals,
              polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
              scroll_l1_fee_params: scroll_l1_fee_params,
              shibarium_bridge_operations: shibarium_bridge_operations,
@@ -331,8 +336,20 @@ defmodule Indexer.Block.Fetcher do
     })
   end
 
-  defp do_import_options(:optimism, basic_import_options, chain_specific_import_options) do
-    do_chain_identity_import_options(chain_identity(), basic_import_options, chain_specific_import_options)
+  defp do_import_options(
+         :optimism,
+         basic_import_options,
+         %{optimism_withdrawals: optimism_withdrawals} = chain_specific_import_options
+       ) do
+    import_options =
+      basic_import_options
+      |> Map.put_new(:optimism_withdrawals, %{params: optimism_withdrawals})
+
+    do_chain_identity_import_options(
+      chain_identity(),
+      import_options,
+      chain_specific_import_options
+    )
   end
 
   defp do_import_options(:polygon_zkevm, basic_import_options, %{

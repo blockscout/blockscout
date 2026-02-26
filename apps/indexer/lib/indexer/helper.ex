@@ -121,15 +121,14 @@ defmodule Indexer.Helper do
   - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
 
   ## Returns
-  `{:ok, block_check_interval, last_safe_block, safe_block_is_latest}`: A tuple where
+  `{:ok, block_check_interval, last_safe_block}`: A tuple where
     - `block_check_interval` is the calculated interval in milliseconds.
     - `last_safe_block` is the safe or latest block number.
-    - `safe_block_is_latest` is a boolean, where `true` indicates that `block_number` is the latest block number fetched using the tag `latest`.
   In case of error returns the `{:error, description}` tuple.
   """
-  @spec get_block_check_interval(list()) :: {:ok, non_neg_integer(), non_neg_integer(), boolean()} | {:error, any()}
+  @spec get_block_check_interval(list()) :: {:ok, non_neg_integer(), non_neg_integer()} | {:error, any()}
   def get_block_check_interval(json_rpc_named_arguments) do
-    {last_safe_block, safe_block_is_latest} = get_safe_block(json_rpc_named_arguments)
+    {last_safe_block, _} = get_safe_block(json_rpc_named_arguments)
 
     first_block = max(last_safe_block - @block_check_interval_range_size, 1)
 
@@ -141,7 +140,7 @@ defmodule Indexer.Helper do
         ceil((last_safe_block_timestamp - first_block_timestamp) / (last_safe_block - first_block) * 1000 / 2)
 
       Logger.info("Block check interval is calculated as #{block_check_interval} ms.")
-      {:ok, block_check_interval, last_safe_block, safe_block_is_latest}
+      {:ok, block_check_interval, last_safe_block}
     else
       {:error, error} ->
         {:error, "Failed to calculate block check interval due to #{inspect(error)}"}

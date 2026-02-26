@@ -126,7 +126,7 @@ defmodule Indexer.Fetcher.Optimism do
            {:start_block_l1_valid, start_block_l1 <= last_l1_block_number || last_l1_block_number == 0},
          {:l1_transaction_not_found, false} <-
            {:l1_transaction_not_found, !is_nil(last_l1_transaction_hash) && is_nil(last_l1_transaction)},
-         {:ok, block_check_interval, last_safe_block, _} <- Helper.get_block_check_interval(json_rpc_named_arguments) do
+         {:ok, block_check_interval, last_safe_block} <- Helper.get_block_check_interval(json_rpc_named_arguments) do
       contract_address =
         if caller == Indexer.Fetcher.Optimism.OutputRoot do
           output_oracle

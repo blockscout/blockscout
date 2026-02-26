@@ -42,7 +42,24 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     {:ok, %{}, {:continue, args[:json_rpc_named_arguments]}}
   end
 
+  # Initialization function which is used instead of `init` to avoid Supervisor's stop in case of any critical issues
+  # during initialization. It checks the values of env variables, gets last L2 block number to start the scanning from,
+  # and calculates an average block check interval (for realtime part of the logic).
+  #
+  # When the initialization succeeds, the `:continue` message is sent to GenServer to start the catchup loop
+  # retrieving and saving the withdrawal events.
+  #
+  # ## Parameters
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection to L2 RPC node.
+  # - `state`: Initial state of the fetcher (empty map when starting).
+  #
+  # ## Returns
+  # - `{:noreply, state}` when the initialization is successful and the fetching can start. The `state` contains
+  #                       necessary parameters needed for the fetching.
+  # - `{:stop, :normal, %{}}` in case of error.
   @impl GenServer
+  @spec handle_continue(EthereumJSONRPC.json_rpc_named_arguments(), map()) ::
+          {:noreply, map()} | {:stop, :normal, map()}
   def handle_continue(json_rpc_named_arguments, state) do
     Logger.metadata(fetcher: @fetcher_name)
 
@@ -58,8 +75,7 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
          true <- start_block_l2 > 0,
          {last_l2_block_number, last_l2_transaction_hash, last_l2_transaction} <-
            get_last_l2_item(json_rpc_named_arguments),
-         {:ok, block_check_interval, safe_block, safe_block_is_latest} =
-           Helper.get_block_check_interval(json_rpc_named_arguments),
+         {safe_block, safe_block_is_latest} = Helper.get_safe_block(json_rpc_named_arguments),
          {:start_block_l2_valid, true} <-
            {:start_block_l2_valid,
             (start_block_l2 <= last_l2_block_number || last_l2_block_number == 0) && start_block_l2 <= safe_block},
@@ -72,7 +88,6 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
          start_block: max(start_block_l2, last_l2_block_number),
          safe_block: safe_block,
          safe_block_is_latest: safe_block_is_latest,
-         block_check_interval: block_check_interval,
          message_passer: env[:message_passer],
          json_rpc_named_arguments: json_rpc_named_arguments,
          eth_get_logs_range_size:
@@ -109,6 +124,15 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     end
   end
 
+  # Performs the catchup handling loop for the specified block range. The block range is split into chunks.
+  # Max size of a chunk is defined by INDEXER_OPTIMISM_L2_ETH_GET_LOGS_RANGE_SIZE env variable.
+  #
+  # ## Parameters
+  # - `:continue`: The GenServer message.
+  # - `state`: The current state of the fetcher containing block range, max chunk size, etc.
+  #
+  # ## Returns
+  # - `{:stop, :normal, state}` tuple.
   @impl GenServer
   def handle_info(
         :continue,
@@ -116,7 +140,6 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
           start_block: start_block,
           safe_block: safe_block,
           safe_block_is_latest: safe_block_is_latest,
-          block_check_interval: block_check_interval,
           message_passer: message_passer,
           json_rpc_named_arguments: json_rpc_named_arguments,
           eth_get_logs_range_size: eth_get_logs_range_size
@@ -126,35 +149,20 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     # the "safe" block can be "latest" (when safe_block_is_latest == true)
     fill_block_range(start_block, safe_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size)
 
-    new_start_block =
-      if safe_block_is_latest do
-        safe_block + 1
-      else
-        # find and fill all events between "safe" and "latest" block (excluding "safe")
-        {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments)
+    if not safe_block_is_latest do
+      # find and fill all events between "safe" and "latest" block (excluding "safe")
+      {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments)
 
-        fill_block_range(
-          safe_block + 1,
-          latest_block,
-          message_passer,
-          json_rpc_named_arguments,
-          eth_get_logs_range_size
-        )
+      fill_block_range(
+        safe_block + 1,
+        latest_block,
+        message_passer,
+        json_rpc_named_arguments,
+        eth_get_logs_range_size
+      )
+    end
 
-        latest_block + 1
-      end
-
-    {:ok, new_latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments)
-
-    delay =
-      if new_start_block > new_latest_block do
-        block_check_interval
-      else
-        0
-      end
-
-    Process.send_after(self(), :continue, delay)
-    {:noreply, %{state | start_block: new_start_block, safe_block: new_latest_block, safe_block_is_latest: true}}
+    {:stop, :normal, state}
   end
 
   @impl GenServer
@@ -163,12 +171,22 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     {:noreply, state}
   end
 
+  @doc """
+  Removes all withdrawals created starting from the given block.
+
+  ## Parameters
+  - `starting_block`: The starting block number.
+
+  ## Returns
+  - Nothing.
+  """
+  @spec remove(non_neg_integer()) :: any()
   def remove(starting_block) do
     Repo.delete_all(from(w in OptimismWithdrawal, where: w.l2_block_number >= ^starting_block))
     LastFetchedCounter.delete(@counter_type)
   end
 
-  defp event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number) do
+  def event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number) do
     [_value, _gas_limit, _data, hash] = decode_data(data, [{:uint, 256}, {:uint, 256}, :bytes, {:bytes, 32}])
 
     msg_nonce =
