@@ -59,7 +59,6 @@ For rename operations, you don't use `@query_string` or `@table_columns`. Instea
 def db_index_operation do
   case Repo.query("ALTER INDEX #{@old_index_name} RENAME TO #{@new_index_name};", [], timeout: :infinity) do
     {:ok, _} ->
-      update_cache()
       :ok
     {:error, error} ->
       Logger.error("Failed to rename index: #{inspect(error)}")
@@ -137,7 +136,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RenameMyTable2ndColumnIndex do
   def db_index_operation do
     case Repo.query("ALTER INDEX #{@old_index_name} RENAME TO #{@new_index_name};", [], timeout: :infinity) do
       {:ok, _} -> 
-        update_cache()
         :ok
       {:error, error} -> 
         Logger.error("Failed to rename: #{inspect(error)}")

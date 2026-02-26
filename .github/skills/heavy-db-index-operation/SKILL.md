@@ -590,7 +590,7 @@ The setter function name follows: `set_heavy_indexes_{operation}_{index_name}_fi
 - [ ] File name is snake_case version of module name
 - [ ] `@moduledoc` describes the index and its columns
 - [ ] `use Explorer.Migrator.HeavyDbIndexOperation` declared near module top
-- [ ] All 10 callbacks implemented
+- [ ] All required callbacks implemented
 - [ ] `@table_name`, `@index_name`, `@operation_type` module attributes defined
 - [ ] Index definition uses `@table_columns` OR `@query_string` (or custom for rename)
 - [ ] Dependencies specified via `dependent_from_migrations/0`

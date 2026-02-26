@@ -63,8 +63,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_update_internal_transactions_primary_key_finished,
     key: :empty_internal_transactions_data_finished,
     key: :heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished,
-    key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished,
-    key: :heavy_indexes_rename_transactions_created_contract_address_hash_w_pending_index
+    key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished
 
   @dialyzer :no_match
 
