@@ -121,7 +121,7 @@ defmodule Explorer.Chain.SmartContract do
   }
 
   alias Explorer.Chain.Address.Name, as: AddressName
-  alias Explorer.Chain.SmartContract.{JoinBasedQuery, Proxy}
+  alias Explorer.Chain.SmartContract.{Proxy, VerifiedContractAddressesQuery}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Helper
@@ -1419,8 +1419,8 @@ defmodule Explorer.Chain.SmartContract do
 
   This function fetches verified smart contracts from the database and applies
   filtering, searching, sorting, and pagination based on the provided options.
-  It implements different query strategies depending on whether database
-  migrations have completed or are still in progress.
+  It implements different query strategies depending on whether custom sorting
+  is provided.
 
   ## Options
 
@@ -1449,89 +1449,8 @@ defmodule Explorer.Chain.SmartContract do
           | Chain.api?()
           | Chain.show_scam_tokens?()
         ]) :: [__MODULE__.t()]
-  def verified_contract_addresses(options \\ []) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
-
-    # If no sorting options are provided, we sort by `:id` descending only. If
-    # there are some sorting options supplied, we sort by `:hash` ascending as a
-    # secondary key.
-    {sorting_options, default_sorting_options} =
-      options
-      |> Keyword.get(:sorting)
-      |> case do
-        nil ->
-          {[], [{:desc, :id, :smart_contract}]}
-
-        sorting_options ->
-          {sorting_options, [asc: :hash]}
-      end
-
-    # Use lateral join for default id-based pagination (efficient).
-    # Use join-based approach for custom sorting (works reliably with all sorting options).
-    addresses_query =
-      if Keyword.get(options, :sorting) == nil do
-        verified_addresses_query(options)
-      else
-        JoinBasedQuery.verified_addresses_query(options)
-      end
-
-    addresses_query
-    |> ExplorerHelper.maybe_hide_scam_addresses_with_select(:hash, options)
-    |> SortingHelper.apply_sorting(sorting_options, default_sorting_options)
-    |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting_options)
-    |> Chain.join_associations(necessity_by_association)
-    |> Chain.select_repo(options).all()
-  end
-
-  defp verified_addresses_query(options) do
-    filter = Keyword.get(options, :filter, nil)
-    search_string = Keyword.get(options, :search, nil)
-
-    smart_contracts_by_address_hash_query =
-      from(
-        contract in __MODULE__,
-        where: contract.address_hash == parent_as(:address).hash
-      )
-
-    smart_contracts_subquery =
-      smart_contracts_by_address_hash_query
-      |> filter_contracts(filter)
-      |> search_contracts(search_string)
-      |> limit(1)
-      |> subquery()
-
-    from(
-      address in Address,
-      as: :address,
-      where: address.verified == true,
-      inner_lateral_join: contract in ^smart_contracts_subquery,
-      as: :smart_contract,
-      on: true,
-      select: address,
-      preload: [smart_contract: contract]
-    )
-  end
-
-  @spec search_contracts(Ecto.Query.t(), String.t() | nil) :: Ecto.Query.t()
-  defp search_contracts(basic_query, nil), do: basic_query
-
-  defp search_contracts(basic_query, search_string) do
-    from(contract in basic_query,
-      where:
-        ilike(contract.name, ^"%#{search_string}%") or
-          ilike(fragment("'0x' || encode(?, 'hex')", contract.address_hash), ^"%#{search_string}%")
-    )
-  end
-
-  # Applies filtering to the given query based on a specified contract language.
-  # If `nil` is provided, no additional filtering is applied.
-  @spec filter_contracts(Ecto.Query.t(), language() | nil) :: Ecto.Query.t()
-  defp filter_contracts(basic_query, nil), do: basic_query
-
-  defp filter_contracts(basic_query, language) do
-    basic_query |> where(language: ^language)
-  end
+  def verified_contract_addresses(options \\ []),
+    do: VerifiedContractAddressesQuery.verified_contract_addresses(options)
 
   @doc """
   Retrieves the constructor arguments for a zkSync smart contract.
