@@ -62,9 +62,9 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_create_tokens_name_partial_fts_index_finished,
     key: :heavy_indexes_update_internal_transactions_primary_key_finished,
     key: :empty_internal_transactions_data_finished,
-    key: :heavy_indexes_create_transactions_2nd_created_contract_address_hash_with_pending_ind_finished,
+    key: :heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished,
     key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished,
-    key: :heavy_indexes_rename_transactions_2nd_created_contract_address_hash_with_pending_ind_finished
+    key: :heavy_indexes_rename_transactions_created_contract_address_hash_w_pending_index
 
   @dialyzer :no_match
 
@@ -94,7 +94,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateLogsDepositsWithdrawalsIndex,
     CreateSmartContractsLanguageIndex,
     CreateTokensNamePartialFtsIndex,
-    CreateTransactions2ndCreatedContractAddressHashWithPendingIndexA,
+    CreateTransactionsCreatedContractAddressHashWPendingIndex,
     DropInternalTransactionsCreatedContractAddressHashPartialIndex,
     DropInternalTransactionsFromAddressHashIndex,
     DropLogsAddressHashIndex,
@@ -111,7 +111,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     DropTransactionsCreatedContractAddressHashWithPendingIndexA,
     DropTransactionsFromAddressHashWithPendingIndex,
     DropTransactionsToAddressHashWithPendingIndex,
-    RenameTransactions2ndCreatedContractAddressHashWithPendingInd,
     UpdateInternalTransactionsPrimaryKey
   }
 
@@ -385,12 +384,10 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     )
   end
 
-  defp handle_fallback(
-         :heavy_indexes_create_transactions_2nd_created_contract_address_hash_with_pending_ind_finished
-       ) do
+  defp handle_fallback(:heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished) do
     set_and_return_migration_status(
-      CreateTransactions2ndCreatedContractAddressHashWithPendingIndexA,
-      &set_heavy_indexes_create_transactions_2nd_created_contract_address_hash_with_pending_ind_finished/1
+      CreateTransactionsCreatedContractAddressHashWPendingIndex,
+      &set_heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished/1
     )
   end
 
@@ -398,15 +395,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       DropTransactionsCreatedContractAddressHashWithPendingIndexA,
       &set_heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished/1
-    )
-  end
-
-  defp handle_fallback(
-         :heavy_indexes_rename_transactions_2nd_created_contract_address_hash_with_pending_ind_finished
-       ) do
-    set_and_return_migration_status(
-      RenameTransactions2ndCreatedContractAddressHashWithPendingInd,
-      &set_heavy_indexes_rename_transactions_2nd_created_contract_address_hash_with_pending_ind_finished/1
     )
   end
 

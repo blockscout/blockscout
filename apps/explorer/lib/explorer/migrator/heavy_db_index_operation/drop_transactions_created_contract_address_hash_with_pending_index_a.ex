@@ -7,8 +7,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContrac
 
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContractAddressHashWPendingIndex
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
-  alias Explorer.Migrator.HeavyDbIndexOperation.CreateTransactions2ndCreatedContractAddressHashWithPendingIndexA
 
   @table_name :transactions
   @index_name "transactions_created_contract_address_hash_with_pending_index_a"
@@ -25,7 +25,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContrac
 
   @impl HeavyDbIndexOperation
   def dependent_from_migrations do
-    [CreateTransactions2ndCreatedContractAddressHashWithPendingIndexA.migration_name()]
+    [CreateTransactionsCreatedContractAddressHashWPendingIndex.migration_name()]
   end
 
   @impl HeavyDbIndexOperation

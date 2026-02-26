@@ -136,6 +136,9 @@ defmodule Explorer.Migrator.MigrationStatus do
     heavy_migrations_create_prefix =
       "#{HeavyDbIndexOperationHelper.heavy_db_operation_migration_name_prefix()}create_#{to_string(table_name)}%"
 
+    heavy_migrations_rename_prefix =
+      "#{HeavyDbIndexOperationHelper.heavy_db_operation_migration_name_prefix()}rename_#{to_string(table_name)}%"
+
     heavy_migrations_drop_prefix =
       "#{HeavyDbIndexOperationHelper.heavy_db_operation_migration_name_prefix()}drop_#{to_string(table_name)}%"
 
@@ -143,6 +146,7 @@ defmodule Explorer.Migrator.MigrationStatus do
       from(ms in query,
         where:
           ilike(ms.migration_name, ^heavy_migrations_create_prefix) or
+            ilike(ms.migration_name, ^heavy_migrations_rename_prefix) or
             ilike(ms.migration_name, ^heavy_migrations_drop_prefix),
         where: ms.migration_name != ^migration_name,
         where: ms.status == ^"started"

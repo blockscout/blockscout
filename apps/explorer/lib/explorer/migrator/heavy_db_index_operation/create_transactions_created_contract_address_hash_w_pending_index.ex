@@ -1,6 +1,6 @@
-defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactions2ndCreatedContractAddressHashWithPendingIndexA do
+defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContractAddressHashWPendingIndex do
   @moduledoc """
-  Creates partial index "transactions_2nd_created_contract_address_hash_with_pending_ind" on transactions (created_contract_address_hash, block_number, index, inserted_at, hash DESC) WHERE created_contract_address_hash IS NOT NULL.
+  Creates partial index "transactions_created_contract_address_hash_w_pending_index" on transactions (created_contract_address_hash, block_number, index, inserted_at, hash DESC) WHERE created_contract_address_hash IS NOT NULL.
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
@@ -12,7 +12,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactions2ndCreatedCo
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :transactions
-  @index_name "transactions_2nd_created_contract_address_hash_with_pending_ind"
+  @index_name "transactions_created_contract_address_hash_w_pending_index"
   @operation_type :create
 
   @impl HeavyDbIndexOperation
@@ -60,7 +60,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactions2ndCreatedCo
 
   @impl HeavyDbIndexOperation
   def update_cache do
-    BackgroundMigrations.set_heavy_indexes_create_transactions_2nd_created_contract_address_hash_with_pending_ind_finished(
+    BackgroundMigrations.set_heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished(
       true
     )
   end

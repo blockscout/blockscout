@@ -30,9 +30,9 @@ Each heavy index operation module must implement the `Explorer.Migrator.HeavyDbI
 
 ### Required Callbacks
 
-1. **`migration_name/0`** - Automatically generated from module name
+1. **`migration_name/0`** - Automatically generated from `operation_type` and `index_name`. Format: `heavy_indexes_{operation_type}_{lowercase_index_name}`
 2. **`table_name/0`** - Returns the table atom (`:logs`, `:internal_transactions`, `:addresses`, etc.)
-3. **`operation_type/0`** - Returns `:create` or `:drop` (use `:create` for rename operations)
+3. **`operation_type/0`** - Returns `:create`, `:drop`, or `:rename`
 4. **`index_name/0`** - Returns the index name as a string (for renames, return the final/new index name)
 5. **`dependent_from_migrations/0`** - Returns list of migration names this depends on (or `[]`)
 6. **`db_index_operation/0`** - Executes the actual index creation/deletion/rename
@@ -380,7 +380,10 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RenameTransactions2ndCreatedCo
   @table_name :transactions
   @old_index_name "transactions_2nd_created_contract_address_hash_with_pending_index_a"
   @new_index_name "transactions_created_contract_address_hash_with_pending_index_a"
-  @operation_type :create  # Rename is conceptually a "create" operation
+  @operation_type :rename
+
+  # Note: migration_name will be:
+  # "heavy_indexes_rename_transactions_created_contract_address_hash_with_pending_index_a"
 
   @impl HeavyDbIndexOperation
   def table_name, do: @table_name
@@ -455,7 +458,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RenameTransactions2ndCreatedCo
 
   @impl HeavyDbIndexOperation
   def update_cache do
-    BackgroundMigrations.set_heavy_indexes_rename_transactions_2nd_created_contract_address_hash_with_pending_index_a_finished(
+    BackgroundMigrations.set_heavy_indexes_rename_transactions_created_contract_address_hash_with_pending_index_a_finished(
       true
     )
   end
@@ -475,6 +478,12 @@ end
 - To swap temporary index names with permanent ones
 - Part of a create → drop → rename workflow for index replacement
 
+**Important notes for rename operations:**
+- Use `@operation_type :rename` (not `:create`)
+- `index_name/0` should return the **new** (final) index name
+- The migration name will be `heavy_indexes_rename_{new_index_name_lowercase}`
+- Example: For `index_name` = "transactions_created_contract_address_hash_with_pending_index_a", the migration name is "heavy_indexes_rename_transactions_created_contract_address_hash_with_pending_index_a"
+
 ## Updating BackgroundMigrations Cache
 
 After creating migration modules, you must update the cache tracking in 
@@ -490,7 +499,7 @@ use Explorer.Chain.MapCache,
   # ... existing keys ...
   key: :heavy_indexes_create_transactions_2nd_created_contract_address_hash_with_pending_index_a_finished,
   key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished,
-  key: :heavy_indexes_rename_transactions_2nd_created_contract_address_hash_with_pending_index_a_finished
+  key: :heavy_indexes_rename_transactions_created_contract_address_hash_with_pending_index_a_finished
 ```
 
 ### Step 2: Add Module Aliases
@@ -525,10 +534,10 @@ defp handle_fallback(:heavy_indexes_drop_transactions_created_contract_address_h
   )
 end
 
-defp handle_fallback(:heavy_indexes_rename_transactions_2nd_created_contract_address_hash_with_pending_index_a_finished) do
+defp handle_fallback(:heavy_indexes_rename_transactions_created_contract_address_hash_with_pending_index_a_finished) do
   set_and_return_migration_status(
     RenameTransactions2ndCreatedContractAddressHashWithPendingIndexA,
-    &set_heavy_indexes_rename_transactions_2nd_created_contract_address_hash_with_pending_index_a_finished/1
+    &set_heavy_indexes_rename_transactions_created_contract_address_hash_with_pending_index_a_finished/1
   )
 end
 ```
