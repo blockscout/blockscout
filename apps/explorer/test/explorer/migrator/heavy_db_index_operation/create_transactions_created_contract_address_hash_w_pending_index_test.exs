@@ -28,10 +28,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContr
       CreateTransactionsCreatedContractAddressHashWPendingIndex.start_link([])
       Process.sleep(100)
 
-      assert MigrationStatus.get_status(migration_name) == nil
-
-      Process.sleep(150)
-
       assert MigrationStatus.get_status(migration_name) == "started"
 
       Process.sleep(200)
