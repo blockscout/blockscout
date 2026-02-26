@@ -105,7 +105,7 @@
           <div class="d-flex justify-content-between align-items-baseline">
             <h3><%= target_contract.file_path || gettext "Contract source code" %></h3>
             <div class="buttons">
-              <%= if visualize_sol2uml_enabled && !target_contract.is_vyper_contract && !is_nil(target_contract.abi) do %>
+              <%= if visualize_sol2uml_enabled && target_contract.language == :solidity && !is_nil(target_contract.abi) do %>
                 <span data-original-title="Visualize contract code using Sol2Uml JS library" data-placement="top" data-toggle="tooltip">
                   <a class="button button-primary button-sm" href="<%= visualize_sol2uml_path(@conn, :index, address: @address) %>">
                       <div class="d-flex align-items-center">

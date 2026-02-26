@@ -51,7 +51,6 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:verified_via_verifier_alliance, :boolean)
         field(:partially_verified, :boolean)
         field(:file_path, :string)
-        field(:is_vyper_contract, :boolean)
         field(:is_changed_bytecode, :boolean, default: false)
         field(:bytecode_checked_at, :utc_datetime_usec, default: DateTime.add(DateTime.utc_now(), -86400, :second))
         field(:contract_code_md5, :string, null: false)
@@ -122,9 +121,7 @@ defmodule Explorer.Chain.SmartContract do
   }
 
   alias Explorer.Chain.Address.Name, as: AddressName
-
-  alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.SmartContract.{LegacyHelper, Proxy}
+  alias Explorer.Chain.SmartContract.{JoinBasedQuery, Proxy}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Helper
@@ -142,7 +139,7 @@ defmodule Explorer.Chain.SmartContract do
                               end)
   @required_attrs @default_required_attrs ++ @chain_type_required_attrs
 
-  @optional_common_attrs ~w(name contract_source_code evm_version optimization_runs constructor_arguments verified_via_sourcify verified_via_eth_bytecode_db verified_via_verifier_alliance partially_verified file_path is_vyper_contract is_changed_bytecode bytecode_checked_at autodetect_constructor_args license_type certified is_blueprint)a
+  @optional_common_attrs ~w(name contract_source_code evm_version optimization_runs constructor_arguments verified_via_sourcify verified_via_eth_bytecode_db verified_via_verifier_alliance partially_verified file_path is_changed_bytecode bytecode_checked_at autodetect_constructor_args license_type certified is_blueprint)a
 
   @optional_changeset_attrs ~w(abi compiler_settings)a
   @optional_invalid_contract_changeset_attrs ~w(autodetect_constructor_args)a
@@ -486,7 +483,6 @@ defmodule Explorer.Chain.SmartContract do
   * `verified_via_eth_bytecode_db` - whether contract automatically verified via eth-bytecode-db or not.
   * `verified_via_verifier_alliance` - whether contract automatically verified via Verifier Alliance or not.
   * `partially_verified` - whether contract verified using partial matched source code or not.
-  * `is_vyper_contract` - boolean flag, determines if contract is Vyper or not
   * `file_path` - show the filename or path to the file of the contract source file
   * `is_changed_bytecode` - boolean flag, determines if contract's bytecode was modified
   * `bytecode_checked_at` - timestamp of the last check of contract's bytecode matching (DB and BlockChain)
@@ -496,9 +492,7 @@ defmodule Explorer.Chain.SmartContract do
   * `is_yul` - field was added for storing user's choice
   * `certified` - boolean flag, which can be set for set of smart-contracts via runtime env variable to prioritize those smart-contracts in the search.
   * `is_blueprint` - boolean flag, determines if contract is ERC-5202 compatible blueprint contract or not.
-  * `language` - Specifies the programming language of this smart contract. Do
-     not access this field directly, use
-     `Explorer.Chain.SmartContract.language/1` instead.
+  * `language` - Specifies the programming language of this smart contract.
   """
   Explorer.Chain.SmartContract.Schema.generate()
 
@@ -619,7 +613,7 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   def merge_twin_vyper_contract_with_changeset(
-        %__MODULE__{is_vyper_contract: true} = twin_contract,
+        %__MODULE__{language: :vyper} = twin_contract,
         %Changeset{} = changeset
       ) do
     %__MODULE__{}
@@ -627,11 +621,7 @@ defmodule Explorer.Chain.SmartContract do
     |> Changeset.force_change(:address_hash, Changeset.get_field(changeset, :address_hash))
   end
 
-  def merge_twin_vyper_contract_with_changeset(%__MODULE__{is_vyper_contract: false}, %Changeset{} = changeset) do
-    merge_twin_vyper_contract_with_changeset(nil, changeset)
-  end
-
-  def merge_twin_vyper_contract_with_changeset(%__MODULE__{is_vyper_contract: nil}, %Changeset{} = changeset) do
+  def merge_twin_vyper_contract_with_changeset(%__MODULE__{}, %Changeset{} = changeset) do
     merge_twin_vyper_contract_with_changeset(nil, changeset)
   end
 
@@ -1466,27 +1456,24 @@ defmodule Explorer.Chain.SmartContract do
     # If no sorting options are provided, we sort by `:id` descending only. If
     # there are some sorting options supplied, we sort by `:hash` ascending as a
     # secondary key.
-    {sorting_options, default_sorting_options, use_legacy_query?} =
+    {sorting_options, default_sorting_options} =
       options
       |> Keyword.get(:sorting)
       |> case do
         nil ->
-          {[], [{:desc, :id, :smart_contract}], true}
+          {[], [{:desc, :id, :smart_contract}]}
 
-        options ->
-          {options, [asc: :hash], false}
+        sorting_options ->
+          {sorting_options, [asc: :hash]}
       end
 
-    # We don't use alias so the mock of background_migrations_finished?/0 in
-    # tests is working properly
-    #
-    # credo:disable-for-lines:2 Credo.Check.Design.AliasUsage
+    # Use lateral join for default id-based pagination (efficient).
+    # Use join-based approach for custom sorting (works reliably with all sorting options).
     addresses_query =
-      if Explorer.Chain.SmartContract.background_migrations_finished?() and not use_legacy_query? do
+      if Keyword.get(options, :sorting) == nil do
         verified_addresses_query(options)
       else
-        # Legacy query approach - will be removed in future releases
-        LegacyHelper.verified_addresses_query(options)
+        JoinBasedQuery.verified_addresses_query(options)
       end
 
     addresses_query
@@ -1495,23 +1482,6 @@ defmodule Explorer.Chain.SmartContract do
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting_options)
     |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).all()
-  end
-
-  @doc """
-  Checks if all background migrations are finished. Kept public for mocking in
-  tests.
-  """
-  @spec background_migrations_finished? :: boolean()
-  def background_migrations_finished? do
-    [
-      BackgroundMigrations.get_smart_contract_language_finished(),
-      BackgroundMigrations.get_sanitize_verified_addresses_finished(),
-      BackgroundMigrations.get_heavy_indexes_create_addresses_verified_hash_index_finished(),
-      BackgroundMigrations.get_heavy_indexes_create_addresses_verified_transactions_count_desc_hash_index_finished(),
-      BackgroundMigrations.get_heavy_indexes_create_addresses_verified_fetched_coin_balance_desc_hash_index_finished(),
-      BackgroundMigrations.get_heavy_indexes_create_smart_contracts_language_index_finished()
-    ]
-    |> Enum.all?(& &1)
   end
 
   defp verified_addresses_query(options) do
@@ -1584,42 +1554,6 @@ defmodule Explorer.Chain.SmartContract do
 
       _ ->
         nil
-    end
-  end
-
-  @doc """
-  Retrieves the smart contract language, taking legacy fields into account for
-  compatibility. It first tries to retrieve the language from the `language`
-  field; if not present, it falls back to legacy boolean fields.
-
-  ## TODO
-  This function is a temporary measure during background migration of the
-  `language` field and should be removed in the future releases. Afterward, the
-  language will be retrieved directly from the `language` field. Tracked in
-  [#11822](https://github.com/blockscout/blockscout/issues/11822).
-
-  ## Parameters
-
-    - `SmartContract.t()`: The smart contract.
-
-  ## Returns
-
-    - `language()`: An atom representing the language of the smart contract.
-  """
-  @spec language(SmartContract.t()) :: language()
-  def language(smart_contract) do
-    cond do
-      not is_nil(smart_contract.language) ->
-        smart_contract.language
-
-      smart_contract.is_vyper_contract ->
-        :vyper
-
-      is_nil(smart_contract.abi) ->
-        :yul
-
-      true ->
-        :solidity
     end
   end
 
