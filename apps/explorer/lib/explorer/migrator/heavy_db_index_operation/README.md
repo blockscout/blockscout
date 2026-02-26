@@ -57,7 +57,7 @@ For rename operations, you don't use `@query_string` or `@table_columns`. Instea
 @operation_type :rename
 
 def db_index_operation do
-  case Repo.query("ALTER INDEX #{@old_index_name} RENAME TO #{@new_index_name};", [], timeout: :infinity) do
+  case Repo.query("ALTER INDEX \"#{@old_index_name}\" RENAME TO \"#{@new_index_name}\";", [], timeout: :infinity) do
     {:ok, _} ->
       :ok
     {:error, error} ->
@@ -134,7 +134,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RenameMyTable2ndColumnIndex do
   end
   
   def db_index_operation do
-    case Repo.query("ALTER INDEX #{@old_index_name} RENAME TO #{@new_index_name};", [], timeout: :infinity) do
+    case Repo.query("ALTER INDEX \"#{@old_index_name}\" RENAME TO \"#{@new_index_name}\";", [], timeout: :infinity) do
       {:ok, _} -> 
         :ok
       {:error, error} -> 
@@ -162,7 +162,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RenameMyTable2ndColumnIndex do
   
   def restart_db_index_operation do
     # Rename back to old name to retry
-    case Repo.query("ALTER INDEX #{@new_index_name} RENAME TO #{@old_index_name};", [], timeout: :infinity) do
+    case Repo.query("ALTER INDEX \"#{@new_index_name}\" RENAME TO \"#{@old_index_name}\";", [], timeout: :infinity) do
       {:ok, _} -> :ok
       {:error, error} -> 
         Logger.error("Failed to reverse rename: #{inspect(error)}")

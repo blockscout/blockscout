@@ -1,6 +1,6 @@
 defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndexA do
   @moduledoc """
-  Drops index "transactions_created_contract_address_hash_with_pending_index_a" btree (created_contract_address_hash, block_number, index, inserted_at, hash DESC).
+  Drops index "transactions_created_contract_address_hash_with_pending_index_a" btree (created_contract_address_hash, block_number ASC NULLS LAST, index ASC NULLS LAST, inserted_at ASC, hash DESC).
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation

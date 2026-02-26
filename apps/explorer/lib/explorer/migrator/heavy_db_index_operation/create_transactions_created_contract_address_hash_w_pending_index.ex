@@ -1,6 +1,6 @@
 defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContractAddressHashWPendingIndex do
   @moduledoc """
-  Creates partial index "transactions_created_contract_address_hash_w_pending_index" on transactions (created_contract_address_hash, block_number, index, inserted_at, hash DESC) WHERE created_contract_address_hash IS NOT NULL.
+  Creates partial index "transactions_created_contract_address_hash_w_pending_index" on transactions (created_contract_address_hash, block_number ASC NULLS LAST, index ASC NULLS LAST, inserted_at ASC, hash DESC) WHERE created_contract_address_hash IS NOT NULL.
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
@@ -29,7 +29,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContr
 
   @query_string """
   CREATE INDEX #{HeavyDbIndexOperationHelper.add_concurrently_flag?()} IF NOT EXISTS "#{@index_name}"
-  ON #{@table_name} (created_contract_address_hash, block_number, index, inserted_at, hash DESC)
+  ON #{@table_name} (created_contract_address_hash, block_number ASC NULLS LAST, "index" ASC NULLS LAST, inserted_at ASC, hash DESC)
   WHERE created_contract_address_hash IS NOT NULL;
   """
 
