@@ -27,7 +27,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RenameTransactions do
 end
 
 # In the above, "Helper" comes after "DropTransactionsIndex" 
-# alphabetically, but it's listed after it. Correct order should be:
+# alphabetically, but it's listed before it. Correct order should be:
 # - DropTransactionsIndex (D < H)
 # - Helper (H)
 ```
@@ -41,7 +41,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RenameTransactions do
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   
   # Within same group, ordered alphabetically:
-  # C comes before H comes before R
+  # D comes before H comes before R
   alias Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsIndex
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper
   alias Explorer.Repo
@@ -123,4 +123,4 @@ alias Explorer.Repo
 ## References
 
 - [Credo Readability.AliasOrder](https://hexdocs.pm/credo/Credo.Check.Readability.AliasOrder.html)
-- [Elixir Style Guide - Aliases](https://hexdocs.pm/elixir/master/case-and-cond.html)
+- [Elixir Naming Conventions](https://hexdocs.pm/elixir/naming-conventions.html)
