@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
+  alias Explorer.Chain.{Data, Hash}
   alias Explorer.Chain.Optimism.Withdrawal, as: OptimismWithdrawal
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
@@ -186,6 +187,29 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     LastFetchedCounter.delete(@counter_type)
   end
 
+  @doc """
+  Prepares a Withdrawal map to write into database.
+
+  ## Parameters
+  - `second_topic`: The second topic of the MessagePassed event containing the withdrawal message nonce.
+  - `data`: The data of the MessagePassed event. The data encodes the withdrawal value, gas limit, data, and hash.
+  - `l2_transaction_hash`: The hash of the transaction containing the MessagePassed event.
+  - `l2_block_number`: The number of the block containing the MessagePassed event.
+
+  ## Returns
+  - The Withdrawal map ready to be imported to the database.
+  """
+  @spec event_to_withdrawal(
+          Hash.t() | String.t(),
+          Data.t() | String.t(),
+          Hash.t() | String.t(),
+          non_neg_integer() | String.t()
+        ) :: %{
+          :msg_nonce => Decimal.t(),
+          :hash => String.t(),
+          :l2_transaction_hash => Hash.t() | String.t(),
+          :l2_block_number => non_neg_integer()
+        }
   def event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number) do
     [_value, _gas_limit, _data, hash] = decode_data(data, [{:uint, 256}, {:uint, 256}, :bytes, {:bytes, 32}])
 
@@ -203,6 +227,23 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     }
   end
 
+  # Scans the given block range for the MessagePassed events using RPC node and
+  # records the found withdrawal messages into the database.
+  #
+  # ## Parameters
+  # - `message_passer`: The L2 address of the L2ToL1MessagePasser contract to scan the events of.
+  # - `block_start`: The start block of the block range.
+  # - `block_end`: The end block of the block range.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection to L2 RPC node.
+  #
+  # ## Returns
+  # - The number of withdrawals found in the given block range.
+  @spec find_and_save_withdrawals(
+          binary(),
+          non_neg_integer(),
+          non_neg_integer(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: non_neg_integer()
   defp find_and_save_withdrawals(message_passer, block_start, block_end, json_rpc_named_arguments) do
     message_passed_event = OptimismWithdrawal.message_passed_event()
 
@@ -236,6 +277,26 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     Enum.count(withdrawals)
   end
 
+  # Scans the given block range for the MessagePassed events using RPC node and
+  # records the found withdrawal messages into the database. The process prints the progress logs.
+  # The block range is split into chunks that have a size limited by the given parameter.
+  #
+  # ## Parameters
+  # - `l2_block_start`: The start block of the block range.
+  # - `l2_block_end`: The end block of the block range.
+  # - `message_passer`: The L2 address of the L2ToL1MessagePasser contract to scan the events of.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection to L2 RPC node.
+  # - `eth_get_logs_range_size`: Max size of the block chunk.
+  #
+  # ## Returns
+  # - Nothing.
+  @spec fill_block_range(
+          non_neg_integer(),
+          non_neg_integer(),
+          binary(),
+          EthereumJSONRPC.json_rpc_named_arguments(),
+          non_neg_integer()
+        ) :: any()
   defp fill_block_range(
          l2_block_start,
          l2_block_end,
