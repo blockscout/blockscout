@@ -56,7 +56,6 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:contract_code_md5, :string, null: false)
         field(:compiler_settings, :map)
         field(:autodetect_constructor_args, :boolean, virtual: true)
-        field(:is_yul, :boolean, virtual: true)
         field(:metadata_from_verified_bytecode_twin, :boolean, virtual: true)
         field(:verified_bytecode_twin_address_hash, Hash.Address, virtual: true)
         field(:license_type, Ecto.Enum, values: @license_enum, default: :none)
@@ -489,7 +488,6 @@ defmodule Explorer.Chain.SmartContract do
   * `contract_code_md5` - md5(`t:Explorer.Chain.Address.t/0` `contract_code`)
   * `compiler_settings` - raw compilation parameters
   * `autodetect_constructor_args` - field was added for storing user's choice
-  * `is_yul` - field was added for storing user's choice
   * `certified` - boolean flag, which can be set for set of smart-contracts via runtime env variable to prioritize those smart-contracts in the search.
   * `is_blueprint` - boolean flag, determines if contract is ERC-5202 compatible blueprint contract or not.
   * `language` - Specifies the programming language of this smart contract.
@@ -587,7 +585,6 @@ defmodule Explorer.Chain.SmartContract do
     %__MODULE__{}
     |> changeset(Map.from_struct(twin_contract))
     |> Changeset.put_change(:autodetect_constructor_args, true)
-    |> Changeset.put_change(:is_yul, false)
     |> Changeset.force_change(:address_hash, Changeset.get_field(changeset, :address_hash))
   end
 
@@ -605,7 +602,6 @@ defmodule Explorer.Chain.SmartContract do
     |> Changeset.put_change(:compiler_version, "latest")
     |> Changeset.put_change(:contract_source_code, "")
     |> Changeset.put_change(:autodetect_constructor_args, true)
-    |> Changeset.put_change(:is_yul, false)
     |> (&if(Application.get_env(:explorer, :chain_type) == :zksync,
           do: Changeset.put_change(&1, :zk_compiler_version, "latest"),
           else: &1
