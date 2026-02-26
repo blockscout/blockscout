@@ -864,11 +864,6 @@ config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SHRINK_INTERNAL_TRANSACTIONS_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SHRINK_INTERNAL_TRANSACTIONS_CONCURRENCY", 10)
 
-config :explorer, Explorer.Migrator.SmartContractLanguage,
-  enabled: !ConfigHelper.parse_bool_env_var("MIGRATION_SMART_CONTRACT_LANGUAGE_DISABLED"),
-  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SMART_CONTRACT_LANGUAGE_BATCH_SIZE", 100),
-  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SMART_CONTRACT_LANGUAGE_CONCURRENCY", 1)
-
 config :explorer, Explorer.Migrator.BackfillMetadataURL,
   enabled: !ConfigHelper.parse_bool_env_var("MIGRATION_BACKFILL_METADATA_URL_DISABLED"),
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_METADATA_URL_BATCH_SIZE", 100),
