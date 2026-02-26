@@ -19,6 +19,7 @@ defmodule BlockScoutWeb.NFTHelperTest do
         "animation_url" => "https://example.com/animation.mp4",
         "image_url" => "https://example.com/image.png"
       }
+
       assert NFTHelper.get_media_src(metadata, false) == "https://example.com/image.png"
     end
 
@@ -27,6 +28,7 @@ defmodule BlockScoutWeb.NFTHelperTest do
         "animation_url" => "https://example.com/animation.mp4",
         "image" => "https://example.com/static.png"
       }
+
       assert NFTHelper.get_media_src(metadata, false) == "https://example.com/static.png"
     end
 
@@ -47,6 +49,7 @@ defmodule BlockScoutWeb.NFTHelperTest do
           "image" => %{"description" => "https://example.com/props-image.png"}
         }
       }
+
       assert NFTHelper.get_media_src(metadata, true) == "https://example.com/props-image.png"
     end
 
@@ -54,6 +57,7 @@ defmodule BlockScoutWeb.NFTHelperTest do
       metadata = %{
         "properties" => %{"image" => "https://example.com/props-string.png"}
       }
+
       assert NFTHelper.get_media_src(metadata, true) == "https://example.com/props-string.png"
     end
 
