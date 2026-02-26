@@ -1,18 +1,26 @@
 ---
 name: heavy-db-index-operation
-description: Generate background migration modules for creating or dropping database indexes on large tables (logs, internal_transactions, token_transfers, addresses, etc.) using the Explorer.Migrator.HeavyDbIndexOperation framework. These migrations run in the background with progress tracking.
+description: Generate background migration modules for creating, dropping, or renaming database indexes on large tables using the Explorer.Migrator.HeavyDbIndexOperation framework. Automatically updates the BackgroundMigrations cache module with proper tracking. These migrations run in the background with progress tracking and dependency management. Use this skill for requests on creating background migrations to delete / create / rename indexes on large tables (logs, internal_transactions, token_transfers, addresses, transactions, blocks, etc.) to avoid blocking the database.
 ---
 
 ## Overview
 
-The heavy-db-index-operation skill helps you generate migration modules that create or drop database indexes on large tables in a controlled, non-blocking manner. These operations use the `Explorer.Migrator.HeavyDbIndexOperation` behavior and are tracked via `Explorer.Migrator.MigrationStatus`.
+The heavy-db-index-operation skill helps you generate migration modules that create, drop, or rename database indexes on large tables in a controlled, non-blocking manner. These operations use the `Explorer.Migrator.HeavyDbIndexOperation` behavior and are tracked via `Explorer.Migrator.MigrationStatus`.
+
+**What this skill generates:**
+1. Migration module files (create/drop/rename) in `apps/explorer/lib/explorer/migrator/heavy_db_index_operation/`
+2. Updates to `apps/explorer/lib/explorer/chain/cache/background_migrations.ex`:
+   - Cache keys for tracking completion status
+   - Module aliases
+   - Fallback handlers for cache population
 
 ## When to Use
 
 - When creating new indexes on large tables (logs, internal_transactions, token_transfers, addresses, transactions, blocks, etc.)
 - When dropping existing indexes as part of schema optimization
+- When renaming indexes (typically as the final step in a create → drop → rename workflow)
 - When the index operation might take significant time and should run in the background
-- When you need to track the progress of index creation/deletion
+- When you need to track the progress of index creation/deletion/rename
 - When index operations need to depend on other completed migrations
 - When you want CONCURRENT index operations on PostgreSQL
 
@@ -24,14 +32,15 @@ Each heavy index operation module must implement the `Explorer.Migrator.HeavyDbI
 
 1. **`migration_name/0`** - Automatically generated from module name
 2. **`table_name/0`** - Returns the table atom (`:logs`, `:internal_transactions`, `:addresses`, etc.)
-3. **`operation_type/0`** - Returns `:create` or `:drop`
-4. **`index_name/0`** - Returns the index name as a string
+3. **`operation_type/0`** - Returns `:create` or `:drop` (use `:create` for rename operations)
+4. **`index_name/0`** - Returns the index name as a string (for renames, return the final/new index name)
 5. **`dependent_from_migrations/0`** - Returns list of migration names this depends on (or `[]`)
-6. **`db_index_operation/0`** - Executes the actual index creation/deletion
+6. **`db_index_operation/0`** - Executes the actual index creation/deletion/rename
 7. **`check_db_index_operation_progress/0`** - Checks operation progress
 8. **`db_index_operation_status/0`** - Returns operation status
 9. **`restart_db_index_operation/0`** - Restarts the operation if needed
 10. **`running_other_heavy_migration_exists?/1`** - Checks for conflicting migrations
+11. **`update_cache/0`** - Updates the BackgroundMigrations cache when migration completes
 
 ## Index Definition Methods
 
@@ -88,6 +97,9 @@ end
 - **Deletion**: `DropTableNameIndexName`
   - Example: `DropInternalTransactionsCreatedContractAddressHashPartialIndex`
   - Example: `DropLogsAddressHashIndex`
+
+- **Renaming**: `RenameOldIndexNameToNewIndexName` or `RenameTableNameIndexDescriptor`
+  - Example: `RenameTransactions2ndCreatedContractAddressHashWithPendingIndexA`
 
 ### Index Names
 
@@ -196,8 +208,11 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumb
     MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, migration_name)
   end
 
-  defimpl Enumerable do
-    # Standard enumerable implementation...
+  @impl HeavyDbIndexOperation
+  def update_cache do
+    BackgroundMigrations.set_heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished(
+      true
+    )
   end
 end
 ```
@@ -261,8 +276,11 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsCreate
     MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, migration_name)
   end
 
-  defimpl Enumerable do
-    # Standard enumerable implementation...
+  @impl HeavyDbIndexOperation
+  def update_cache do
+    BackgroundMigrations.set_heavy_indexes_drop_internal_transactions_created_contract_address_hash_partial_index_finished(
+      true
+    )
   end
 end
 ```
@@ -338,27 +356,264 @@ def restart_db_index_operation do
 end
 ```
 
+## Complete Example: Renaming an Index
+
+For rename operations (typically used after create + drop to swap indexes):
+
+```elixir
+defmodule Explorer.Migrator.HeavyDbIndexOperation.RenameTransactions2ndCreatedContractAddressHashWithPendingIndexA do
+  @moduledoc """
+  Renames index "transactions_2nd_created_contract_address_hash_with_pending_index_a" 
+  to "transactions_created_contract_address_hash_with_pending_index_a".
+  """
+
+  use Explorer.Migrator.HeavyDbIndexOperation
+
+  require Logger
+
+  alias Explorer.Chain.Cache.BackgroundMigrations
+  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
+  alias Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndexA
+  alias Explorer.Repo
+
+  @table_name :transactions
+  @old_index_name "transactions_2nd_created_contract_address_hash_with_pending_index_a"
+  @new_index_name "transactions_created_contract_address_hash_with_pending_index_a"
+  @operation_type :create  # Rename is conceptually a "create" operation
+
+  @impl HeavyDbIndexOperation
+  def table_name, do: @table_name
+
+  @impl HeavyDbIndexOperation
+  def operation_type, do: @operation_type
+
+  @impl HeavyDbIndexOperation
+  def index_name, do: @new_index_name
+
+  @impl HeavyDbIndexOperation
+  def dependent_from_migrations do
+    [DropTransactionsCreatedContractAddressHashWithPendingIndexA.migration_name()]
+  end
+
+  @impl HeavyDbIndexOperation
+  # sobelow_skip ["SQL"]
+  def db_index_operation do
+    case Repo.query(rename_index_query_string(), [], timeout: :infinity) do
+      {:ok, _} ->
+        update_cache()
+        :ok
+
+      {:error, error} ->
+        Logger.error("Failed to rename index from #{@old_index_name} to #{@new_index_name}: #{inspect(error)}")
+        :error
+    end
+  end
+
+  @impl HeavyDbIndexOperation
+  def check_db_index_operation_progress do
+    HeavyDbIndexOperationHelper.check_db_index_operation_progress(@new_index_name, rename_index_query_string())
+  end
+
+  @impl HeavyDbIndexOperation
+  def db_index_operation_status do
+    old_index_status = HeavyDbIndexOperationHelper.db_index_exists_and_valid?(@old_index_name)
+    new_index_status = HeavyDbIndexOperationHelper.db_index_exists_and_valid?(@new_index_name)
+
+    cond do
+      # Rename completed: old index doesn't exist, new index exists and is valid
+      old_index_status == %{exists?: false, valid?: nil} and new_index_status == %{exists?: true, valid?: true} ->
+        :completed
+
+      # Rename not started: old index exists, new index doesn't exist
+      old_index_status == %{exists?: true, valid?: true} and new_index_status == %{exists?: false, valid?: nil} ->
+        :not_initialized
+
+      # Unknown state
+      true ->
+        :unknown
+    end
+  end
+
+  @impl HeavyDbIndexOperation
+  def restart_db_index_operation do
+    # To restart, we need to rename back to the old name
+    case Repo.query(reverse_rename_index_query_string(), [], timeout: :infinity) do
+      {:ok, _} ->
+        :ok
+
+      {:error, error} ->
+        Logger.error("Failed to reverse rename index from #{@new_index_name} to #{@old_index_name}: #{inspect(error)}")
+        :error
+    end
+  end
+
+  @impl HeavyDbIndexOperation
+  def running_other_heavy_migration_exists?(migration_name) do
+    MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, migration_name)
+  end
+
+  @impl HeavyDbIndexOperation
+  def update_cache do
+    BackgroundMigrations.set_heavy_indexes_rename_transactions_2nd_created_contract_address_hash_with_pending_index_a_finished(
+      true
+    )
+  end
+
+  defp rename_index_query_string do
+    "ALTER INDEX #{@old_index_name} RENAME TO #{@new_index_name};"
+  end
+
+  defp reverse_rename_index_query_string do
+    "ALTER INDEX #{@new_index_name} RENAME TO #{@old_index_name};"
+  end
+end
+```
+
+**When to use rename operations:**
+- After creating a new index and dropping an old one
+- To swap temporary index names with permanent ones
+- Part of a create → drop → rename workflow for index replacement
+
+## Updating BackgroundMigrations Cache
+
+After creating migration modules, you must update the cache tracking in 
+`apps/explorer/lib/explorer/chain/cache/background_migrations.ex`:
+
+### Step 1: Add Cache Keys
+
+Add keys for each new migration at the top of the module:
+
+```elixir
+use Explorer.Chain.MapCache,
+  name: :background_migrations_status,
+  # ... existing keys ...
+  key: :heavy_indexes_create_transactions_2nd_created_contract_address_hash_with_pending_index_a_finished,
+  key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished,
+  key: :heavy_indexes_rename_transactions_2nd_created_contract_address_hash_with_pending_index_a_finished
+```
+
+### Step 2: Add Module Aliases
+
+Add aliases in the `HeavyDbIndexOperation` alias block:
+
+```elixir
+alias Explorer.Migrator.HeavyDbIndexOperation.{
+  # ... existing aliases ...
+  CreateTransactions2ndCreatedContractAddressHashWithPendingIndexA,
+  DropTransactionsCreatedContractAddressHashWithPendingIndexA,
+  RenameTransactions2ndCreatedContractAddressHashWithPendingIndexA
+}
+```
+
+### Step 3: Add Fallback Handlers
+
+Add `handle_fallback/1` functions for each migration:
+
+```elixir
+defp handle_fallback(:heavy_indexes_create_transactions_2nd_created_contract_address_hash_with_pending_index_a_finished) do
+  set_and_return_migration_status(
+    CreateTransactions2ndCreatedContractAddressHashWithPendingIndexA,
+    &set_heavy_indexes_create_transactions_2nd_created_contract_address_hash_with_pending_index_a_finished/1
+  )
+end
+
+defp handle_fallback(:heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished) do
+  set_and_return_migration_status(
+    DropTransactionsCreatedContractAddressHashWithPendingIndexA,
+    &set_heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished/1
+  )
+end
+
+defp handle_fallback(:heavy_indexes_rename_transactions_2nd_created_contract_address_hash_with_pending_index_a_finished) do
+  set_and_return_migration_status(
+    RenameTransactions2ndCreatedContractAddressHashWithPendingIndexA,
+    &set_heavy_indexes_rename_transactions_2nd_created_contract_address_hash_with_pending_index_a_finished/1
+  )
+end
+```
+
+**Cache key naming convention:**
+- Format: `heavy_indexes_{operation}_{snake_case_index_name}_finished`
+- Operation: `create`, `drop`, `rename`, etc.
+- Always ends with `_finished`
+
+### Step 4: Add to Application Supervisor
+
+Add each migration module to the application supervisor in 
+`apps/explorer/lib/explorer/application.ex`:
+
+Find the section with other heavy DB index operations and add:
+
+```elixir
+configure_mode_dependent_process(
+  Explorer.Migrator.HeavyDbIndexOperation.CreateTransactions2ndCreatedContractAddressHashWithPendingIndexA,
+  :indexer
+),
+configure_mode_dependent_process(
+  Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndexA,
+  :indexer
+),
+configure_mode_dependent_process(
+  Explorer.Migrator.HeavyDbIndexOperation.RenameTransactions2ndCreatedContractAddressHashWithPendingIndexA,
+  :indexer
+),
+```
+
+**Important:** These entries must be added to start the migration processes during application startup.
+
+## Update Cache Implementation
+
+Each migration module must implement `update_cache/0`:
+
+```elixir
+@impl HeavyDbIndexOperation
+def update_cache do
+  BackgroundMigrations.set_heavy_indexes_create_my_index_finished(true)
+end
+```
+
+The setter function name follows: `set_heavy_indexes_{operation}_{index_name}_finished/1`
+
 ## Checklist for New Modules
 
-- [ ] Module name follows `Create*/Drop*` convention
+- [ ] Module name follows `Create*/Drop*/Rename*` convention
 - [ ] File name is snake_case version of module name
 - [ ] `@moduledoc` describes the index and its columns
+- [ ] `use Explorer.Migrator.HeavyDbIndexOperation` declared near module top
 - [ ] All 10 callbacks implemented
 - [ ] `@table_name`, `@index_name`, `@operation_type` module attributes defined
-- [ ] Index definition uses `@table_columns` OR `@query_string`
+- [ ] Index definition uses `@table_columns` OR `@query_string` (or custom for rename)
 - [ ] Dependencies specified via `dependent_from_migrations/0`
 - [ ] Proper aliases added at module top
 - [ ] File saved in `apps/explorer/lib/explorer/migrator/heavy_db_index_operation/`
-- [ ] `Enumerable` protocol implemented (use existing examples as template)
+- [ ] `update_cache/0` implemented with correct setter name
+- [ ] **BackgroundMigrations cache updated** with key, alias, and fallback handler
+- [ ] **Application.ex updated** with `configure_mode_dependent_process` entry
 
 ## Common Pitfalls
 
-❌ **Incorrect table name** - Must be one of the supported atoms
-❌ **Missing dependencies** - If index depends on other migrations, specify them
-❌ **Wrong helper function** - Use creation helpers for `:create`, dropping helpers for `:drop`
-❌ **Inconsistent naming** - Index name should match module name semantically
-❌ **Missing CONCURRENT** - Use `add_concurrently_flag?()` in query strings
-❌ **No progress tracking** - Always implement `check_db_index_operation_progress/0`
+❌ **Incorrect table name** - Must be one of the supported atoms  
+❌ **Missing dependencies** - If index depends on other migrations, specify them  
+❌ **Wrong helper function** - Use creation helpers for `:create`, dropping helpers for `:drop`  
+❌ **Inconsistent naming** - Index name should match module name semantically  
+❌ **Missing CONCURRENT** - Use `add_concurrently_flag?()` in query strings  
+❌ **No progress tracking** - Always implement `check_db_index_operation_progress/0`  
+❌ **Forgot cache updates** - Must update BackgroundMigrations cache module  
+❌ **Missing update_cache/0** - Every module must implement this callback
+
+## Workflow for Index Replacement (Create → Drop → Rename)
+
+When replacing an existing index with a new version (e.g., adding a WHERE clause):
+
+1. **Create** the new index with a temporary name (e.g., `_2nd_` prefix)
+   - Depends on: latest heavy DB operation on the table
+2. **Drop** the old index  
+   - Depends on: the create operation completing
+3. **Rename** the new index to the old index name
+   - Depends on: the drop operation completing
+
+This ensures zero downtime - the old index remains available until the new one is ready.
 
 ## References
 
