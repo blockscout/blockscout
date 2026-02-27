@@ -157,6 +157,54 @@ defmodule Indexer.Fetcher.ContractCodeTest do
       updated_transaction = Repo.get!(Transaction, transaction.hash)
       assert updated_transaction.created_contract_code_indexed_at
     end
+
+    test "handles RPC errors from node properly", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      block = insert(:block, number: 1000)
+      address = insert(:address)
+      
+      transaction =
+        insert(:transaction,
+          block_hash: block.hash,
+          block_number: block.number,
+          created_contract_address_hash: address.hash,
+          cumulative_gas_used: 21000,
+          gas_used: 21000,
+          index: 0,
+          status: :ok
+        )
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        block_quantity = integer_to_quantity(block.number)
+        address_string = to_string(address.hash)
+
+        # Mock the RPC call to return errors (like "missing trie node")
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [%{id: id, method: "eth_getCode", params: [^address_string, ^block_quantity]}], _options ->
+          {:ok, [%{id: id, error: %{code: -32000, message: "missing trie node", data: %{address: address_string, block_quantity: block_quantity}}}]}
+        end)
+      end
+
+      # Start contract code fetcher
+      ContractCode.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      # This should handle the error gracefully and retry instead of crashing
+      assert :ok =
+               ContractCode.async_fetch(
+                 [transaction],
+                 false
+               )
+
+      # Wait a bit to ensure processing attempt is made
+      Process.sleep(100)
+
+      # The address should not have been updated due to the error
+      updated_address = Repo.get!(Address, address.hash)
+      assert updated_address.contract_code == nil
+
+      # The transaction should not be marked as indexed
+      updated_transaction = Repo.get!(Transaction, transaction.hash)
+      refute updated_transaction.created_contract_code_indexed_at
+    end
   end
 
   defp wait(producer) do

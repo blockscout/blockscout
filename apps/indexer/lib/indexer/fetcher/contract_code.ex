@@ -195,6 +195,9 @@ defmodule Indexer.Fetcher.ContractCode do
         code_addresses_params = Addresses.extract_addresses(%{codes: params})
         {:ok, code_addresses_params}
 
+      {:ok, %{errors: errors}} when length(errors) > 0 ->
+        {:error, errors}
+
       error ->
         error
     end
