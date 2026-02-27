@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   import BlockScoutWeb.Chain,
     only: [
       next_page_params: 3,
-      next_page_params: 5,
+      next_page_params: 4,
       paging_options: 1,
       param_to_block_number: 1,
       put_key_value_to_paging_options: 3,
@@ -178,15 +178,14 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     parameters:
       base_params() ++
         [block_type_param()] ++
-        define_paging_params(["block_number", "items_count"]),
+        define_paging_params(["block_number"]),
     responses: [
       ok:
         {"List of blocks with pagination information.", "application/json",
          paginated_response(
            items: Schemas.Block,
            next_page_params_example: %{
-             "block_number" => 22_566_361,
-             "items_count" => 50
+             "block_number" => 22_566_361
            }
          )}
     ]
@@ -222,15 +221,14 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     parameters:
       base_params() ++
         [batch_number_param()] ++
-        define_paging_params(["block_number", "items_count"]),
+        define_paging_params(["block_number"]),
     responses: [
       ok:
         {"L2 blocks in the specified Arbitrum batch.", "application/json",
          paginated_response(
            items: Schemas.Block,
            next_page_params_example: %{
-             "block_number" => 22_566_361,
-             "items_count" => 50
+             "block_number" => 22_566_361
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
@@ -269,15 +267,14 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     parameters:
       base_params() ++
         [batch_number_param()] ++
-        define_paging_params(["block_number", "items_count"]),
+        define_paging_params(["block_number"]),
     responses: [
       ok:
         {"L2 blocks in the specified Optimism batch.", "application/json",
          paginated_response(
            items: Schemas.Block,
            next_page_params_example: %{
-             "block_number" => 22_566_361,
-             "items_count" => 50
+             "block_number" => 22_566_361
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
@@ -317,15 +314,14 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     parameters:
       base_params() ++
         [batch_number_param()] ++
-        define_paging_params(["block_number", "items_count"]),
+        define_paging_params(["block_number"]),
     responses: [
       ok:
         {"L2 blocks in the specified Scroll batch.", "application/json",
          paginated_response(
            items: Schemas.Block,
            next_page_params_example: %{
-             "block_number" => 22_566_361,
-             "items_count" => 50
+             "block_number" => 22_566_361
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
@@ -365,7 +361,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     parameters:
       base_params() ++
         [block_hash_or_number_param(), block_transaction_type_param()] ++
-        define_paging_params(["block_number", "index", "items_count"]),
+        define_paging_params(["block_number", "index"]),
     responses: [
       ok:
         {"Transactions in the specified block, with pagination.", "application/json",
@@ -373,8 +369,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            items: Schemas.Transaction,
            next_page_params_example: %{
              "block_number" => 12_345_678,
-             "index" => 103,
-             "items_count" => 50
+             "index" => 103
            }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -421,7 +416,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     parameters:
       base_params() ++
         [block_hash_or_number_param(), internal_transaction_type_param(), internal_transaction_call_type_param()] ++
-        define_paging_params(["transaction_index", "index", "items_count"]),
+        define_paging_params(["transaction_index", "index"]),
     responses: [
       ok:
         {"Internal transactions in the specified block.", "application/json",
@@ -429,8 +424,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
            items: Schemas.InternalTransaction,
            next_page_params_example: %{
              "transaction_index" => 3,
-             "index" => 8,
-             "items_count" => 50
+             "index" => 8
            }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -466,7 +460,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         |> next_page_params(
           internal_transactions,
           params,
-          false,
           &InternalTransaction.internal_transaction_to_block_paging_options/1
         )
 
@@ -487,7 +480,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     parameters:
       base_params() ++
         [block_hash_or_number_param()] ++
-        define_paging_params(["index", "items_count"]),
+        define_paging_params(["index"]),
     responses: [
       ok:
         {"Withdrawals in the specified block, with pagination. Note that block_number and timestamp fields are not included in this endpoint.",
@@ -495,8 +488,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
          paginated_response(
            items: Schemas.Withdrawal,
            next_page_params_example: %{
-             "index" => 88_192_653,
-             "items_count" => 50
+             "index" => 88_192_653
            }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -591,15 +583,14 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     parameters:
       base_params() ++
         [block_hash_or_number_param()] ++
-        define_paging_params(["index", "items_count"]),
+        define_paging_params(["index"]),
     responses: [
       ok:
         {"Beacon deposits in the specified block.", "application/json",
          paginated_response(
            items: Schemas.Beacon.Deposit,
            next_page_params_example: %{
-             "index" => 123,
-             "items_count" => 50
+             "index" => 123
            }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -659,7 +650,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         |> next_page_params(
           deposits,
           params,
-          false,
           DepositController.paging_function()
         )
 

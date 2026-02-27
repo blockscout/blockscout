@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 5,
+      next_page_params: 4,
       split_list_by_page: 1
     ]
 
@@ -82,7 +82,6 @@ defmodule BlockScoutWeb.API.V2.CeloController do
         next_page,
         epochs,
         filtered_params,
-        false,
         &%{number: &1.number}
       )
 
@@ -222,7 +221,6 @@ defmodule BlockScoutWeb.API.V2.CeloController do
           next_page,
           rewards,
           filtered_params,
-          false,
           &%{
             amount: &1.amount,
             account_address_hash: &1.account_address_hash,
