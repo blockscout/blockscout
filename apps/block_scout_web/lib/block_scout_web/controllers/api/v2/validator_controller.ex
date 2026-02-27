@@ -1,15 +1,16 @@
 defmodule BlockScoutWeb.API.V2.ValidatorController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   alias BlockScoutWeb.API.V2.ApiView
+  alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.{BadRequestResponse, NotFoundResponse}
   alias Explorer.Chain.Blackfort.Validator, as: ValidatorBlackfort
   alias Explorer.Chain.Cache.Counters.{Blackfort, Stability}
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
   alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
   alias Explorer.Chain.Zilliqa.Staker, as: ValidatorZilliqa
-  alias Explorer.Helper
 
   import BlockScoutWeb.PagingHelper,
     only: [
@@ -28,6 +29,10 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
   @api_true api?: true
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
+
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  operation :stability_validators_list, false
 
   @doc """
     Function to handle GET requests to `/api/v2/validators/stability` endpoint.
@@ -60,6 +65,8 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     |> render(:stability_validators, %{validators: validators, next_page_params: next_page_params})
   end
 
+  operation :stability_validators_counters, false
+
   @doc """
     Function to handle GET requests to `/api/v2/validators/stability/counters` endpoint.
   """
@@ -80,6 +87,8 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
         calculate_active_validators_percentage(active_validators_counter, validators_counter)
     })
   end
+
+  operation :blackfort_validators_list, false
 
   @doc """
     Function to handle GET requests to `/api/v2/validators/blackfort` endpoint.
@@ -111,6 +120,8 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     |> render(:blackfort_validators, %{validators: validators, next_page_params: next_page_params})
   end
 
+  operation :blackfort_validators_counters, false
+
   @doc """
     Function to handle GET requests to `/api/v2/validators/blackfort/counters` endpoint.
   """
@@ -138,23 +149,65 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     end
   end
 
+  tags(["zilliqa"])
+
+  operation :zilliqa_validators_list,
+    summary: "Zilliqa validators list.",
+    description: "Retrieves the list of Zilliqa validators.",
+    parameters:
+      base_params() ++
+        define_paging_params(["index", "items_count"]) ++
+        [
+          %OpenApiSpex.Parameter{
+            name: :sort,
+            in: :query,
+            schema: %OpenApiSpex.Schema{
+              type: :string,
+              enum: ["index"],
+              nullable: false
+            },
+            required: false
+          },
+          %OpenApiSpex.Parameter{
+            name: :order,
+            in: :query,
+            schema: %OpenApiSpex.Schema{
+              type: :string,
+              enum: ["asc", "desc"],
+              nullable: false
+            },
+            required: false
+          }
+        ],
+    responses: [
+      ok:
+        {"List of validators.", "application/json",
+         paginated_response(
+           items: Schemas.Zilliqa.Staker,
+           next_page_params_example: %{
+             "index" => 55,
+             "items_count" => 50
+           },
+           title_prefix: "Validators"
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
   Function to handle GET requests to `/api/v2/validators/zilliqa` endpoint.
   """
   @spec zilliqa_validators_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def zilliqa_validators_list(conn, params) do
     paging_options =
-      with {:ok, index} <- Map.fetch(params, "index"),
-           {:ok, index} <- Helper.safe_parse_non_negative_integer(index) do
-        %{default_paging_options() | key: %{index: index}}
-      else
+      case Map.fetch(params, :index) do
+        {:ok, index} -> %{default_paging_options() | key: %{index: index}}
         _ -> default_paging_options()
       end
 
     sorting_options =
       case params do
-        %{"sort" => "index", "order" => "asc"} -> [asc_nulls_first: :index]
-        %{"sort" => "index", "order" => "desc"} -> [desc_nulls_last: :index]
+        %{sort: "index", order: "asc"} -> [asc_nulls_first: :index]
+        %{sort: "index", order: "desc"} -> [desc_nulls_last: :index]
         _ -> []
       end
 
@@ -184,11 +237,30 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     })
   end
 
+  operation :zilliqa_validator,
+    summary: "Zilliqa validator by its BLS public key.",
+    description: "Retrieves Zilliqa validator detailed info by the given BLS public key.",
+    parameters: [
+      %OpenApiSpex.Parameter{
+        name: :bls_public_key,
+        in: :path,
+        schema: Schemas.General.HexString,
+        required: true
+      }
+      | base_params()
+    ],
+    responses: [
+      ok: {"Validator detailed info.", "application/json", Schemas.Zilliqa.Staker.Detailed},
+      unprocessable_entity: JsonErrorResponse.response(),
+      bad_request: BadRequestResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
   @doc """
   Function to handle GET requests to `/api/v2/validators/zilliqa/:bls_public_key` endpoint.
   """
   @spec zilliqa_validator(Plug.Conn.t(), map()) :: Plug.Conn.t() | :error | {:error, :not_found}
-  def zilliqa_validator(conn, %{"bls_public_key" => bls_public_key_string}) do
+  def zilliqa_validator(conn, %{bls_public_key: bls_public_key_string}) do
     options =
       [
         necessity_by_association: %{
