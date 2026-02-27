@@ -80,6 +80,7 @@ defmodule Explorer.Factory do
     AddressIdToAddressHash,
     EventNotification,
     InternalTransactionsAddressPlaceholder,
+    MassiveBlock,
     MissingBalanceOfToken,
     MissingBlockRange
   }
@@ -940,6 +941,12 @@ defmodule Explorer.Factory do
 
   def unique_token_factory do
     Map.replace(token_factory(), :name, sequence("Infinite Token"))
+  end
+
+  def massive_block_factory do
+    %MassiveBlock{
+      number: block_number()
+    }
   end
 
   def erc7984_token_factory do
