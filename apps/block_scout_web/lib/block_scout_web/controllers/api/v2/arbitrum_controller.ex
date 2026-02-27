@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 5,
+      next_page_params: 4,
       paging_options: 1,
       split_list_by_page: 1,
       parse_block_hash_or_number_param: 1
@@ -42,7 +42,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
         next_page,
         messages,
         params,
-        false,
         fn %Message{message_id: message_id} -> %{"id" => message_id} end
       )
 
@@ -261,7 +260,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
         next_page,
         batches,
         params,
-        false,
         fn %L1Batch{number: number} -> %{"number" => number} end
       )
 

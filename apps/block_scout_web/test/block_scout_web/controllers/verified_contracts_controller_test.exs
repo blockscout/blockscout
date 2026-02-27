@@ -63,11 +63,7 @@ defmodule BlockScoutWeb.VerifiedContractsControllerTest do
 
       conn = get(conn, verified_contracts_path(conn, :index), %{"type" => "JSON"})
 
-      expected_path =
-        verified_contracts_path(conn, :index,
-          id: id,
-          items_count: "50"
-        )
+      expected_path = verified_contracts_path(conn, :index, id: id)
 
       assert Map.get(json_response(conn, 200), "next_page_path") == expected_path
     end

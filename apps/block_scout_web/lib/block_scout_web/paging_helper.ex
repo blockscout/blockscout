@@ -292,13 +292,6 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def delete_parameters_from_next_page_params(_), do: nil
 
-  def delete_items_count_from_next_page_params(params) when is_map(params) do
-    params
-    |> Map.drop(["items_count"])
-  end
-
-  def delete_items_count_from_next_page_params(other), do: other
-
   # todo: it is used in the old UI only, consider removing it later
   def current_filter(%{"filter" => language_string}) do
     SmartContract.language_string_to_atom()

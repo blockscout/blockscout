@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   import BlockScoutWeb.Chain,
     only: [
       next_page_params: 3,
-      next_page_params: 5,
+      next_page_params: 4,
       token_transfers_next_page_params: 3,
       paging_options: 1,
       split_list_by_page: 1,
@@ -364,8 +364,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           "inserted_at",
           "hash",
           "value",
-          "fee",
-          "items_count"
+          "fee"
         ]),
     responses: [
       ok:
@@ -378,7 +377,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "hash" => "0xe38d616dade747097354b0731b5560f581536dacf22121feb4bb4a0b776018aa",
              "index" => 103,
              "inserted_at" => "2025-05-26T10:26:51.474448Z",
-             "items_count" => 50,
              "value" => "24741049597737"
            }
          )},
@@ -419,7 +417,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> next_page_params(
               transactions,
               params,
-              false,
               &Transaction.address_transactions_next_page_params/1
             )
 
@@ -453,7 +450,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         define_paging_params([
           "block_number",
           "index",
-          "items_count",
           "batch_log_index",
           "batch_block_hash",
           "batch_transaction_hash",
@@ -466,8 +462,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
            items: Schemas.TokenTransfer,
            next_page_params_example: %{
              "block_number" => 12_345_678,
-             "index" => 0,
-             "items_count" => 50
+             "index" => 0
            }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -550,7 +545,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param(), direction_filter_param()] ++
-        define_paging_params(["block_number", "index", "items_count", "transaction_index"]),
+        define_paging_params(["block_number", "index", "transaction_index"]),
     responses: [
       ok:
         {"All internal transactions for the specified address.", "application/json",
@@ -559,7 +554,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
            next_page_params_example: %{
              "block_number" => 22_530_770,
              "index" => 8,
-             "items_count" => 50,
              "transaction_index" => 8
            }
          )},
@@ -631,13 +625,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     description: "Retrieves event logs emitted by or involving a specific address.",
     parameters:
       base_params() ++
-        [address_hash_param(), topic_param()] ++ define_paging_params(["block_number", "index", "items_count"]),
+        [address_hash_param(), topic_param()] ++ define_paging_params(["block_number", "index"]),
     responses: [
       ok:
         {"Event logs for the specified address, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Log,
-           next_page_params_example: %{"block_number" => 22_546_398, "index" => 268, "items_count" => 50}
+           next_page_params_example: %{"block_number" => 22_546_398, "index" => 268}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -705,13 +699,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "List blocks validated (mined) by a specific validator/miner address",
     description:
       "Retrieves blocks that were validated (mined) by a specific address. Useful for tracking validator/miner performance.",
-    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["block_number", "items_count"]),
+    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["block_number"]),
     responses: [
       ok:
         {"Blocks validated by the specified address, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Block,
-           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50}
+           next_page_params_example: %{"block_number" => 22_546_398}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -772,13 +766,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "Get native coin balance history for an address showing all balance changes",
     description:
       "Retrieves historical native coin balance changes for a specific address, tracking how an address's balance has changed over time.",
-    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["block_number", "items_count"]),
+    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["block_number"]),
     responses: [
       ok:
         {"Historical coin balance changes for the specified address, with pagination.", "application/json",
          paginated_response(
            items: Schemas.CoinBalance,
-           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50}
+           next_page_params_example: %{"block_number" => 22_546_398}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -888,7 +882,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param(), token_type_param()] ++
-        define_paging_params(["fiat_value_nullable", "id", "items_count", "value"]),
+        define_paging_params(["fiat_value_nullable", "id", "value"]),
     responses: [
       ok:
         {"Token balances for the specified address with pagination.", "application/json",
@@ -897,7 +891,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
            next_page_params_example: %{
              "fiat_value" => nil,
              "id" => 12_519_063_346,
-             "items_count" => 50,
              "value" => "3750000000000000000000"
            }
          )},
@@ -946,7 +939,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> next_page_params(
               tokens,
               params,
-              false,
               &paging_params_with_fiat_value/1
             )
 
@@ -966,14 +958,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "List validator withdrawals involving a specific address",
     description:
       "Retrieves withdrawals involving a specific address, typically for proof-of-stake networks supporting validator withdrawals.",
-    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["index", "items_count"]),
+    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["index"]),
     responses: [
       ok:
         {"Withdrawals for the specified address, with pagination. Note that receiver field is not included in this endpoint.",
          "application/json",
          paginated_response(
            items: Schemas.Withdrawal,
-           next_page_params_example: %{"index" => 88_192_653, "items_count" => 50}
+           next_page_params_example: %{"index" => 88_192_653}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -1030,7 +1022,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [sort_param(["balance", "transactions_count"]), order_param()] ++
-        define_paging_params(["fetched_coin_balance", "address_hash", "items_count", "transactions_count"]),
+        define_paging_params(["fetched_coin_balance", "address_hash", "transactions_count"]),
     responses: [
       ok:
         {"List of native coin holders with their balances, with pagination.", "application/json",
@@ -1055,7 +1047,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              next_page_params_example: %{
                "fetched_coin_balance" => "124355417998347240251800",
                "hash" => "0x59708733fbbf64378d9293ec56b977c011a08fd2",
-               "items_count" => 50,
                "transactions_count" => nil
              }
            ),
@@ -1187,14 +1178,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param(), nft_token_type_param()] ++
-        define_paging_params(["items_count", "token_contract_address_hash", "token_id", "token_type"]),
+        define_paging_params(["token_contract_address_hash", "token_id", "token_type"]),
     responses: [
       ok:
         {"NFTs owned by the specified address, with pagination.", "application/json",
          paginated_response(
            items: Schemas.TokenInstanceInList,
            next_page_params_example: %{
-             "items_count" => 50,
              "token_contract_address_hash" => "0x1ffe11b9fb7f6ff1b153ab8608cf403ecaf9d44a",
              "token_id" => "24950",
              "token_type" => "ERC-721"
@@ -1241,7 +1231,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> next_page_params(
               nfts,
               params,
-              false,
               &Instance.nft_list_next_page_params/1
             )
 
@@ -1264,14 +1253,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param(), nft_token_type_param()] ++
-        define_paging_params(["items_count", "token_contract_address_hash", "token_type"]),
+        define_paging_params(["token_contract_address_hash", "token_type"]),
     responses: [
       ok:
         {"NFTs owned by the specified address, grouped by collection, with pagination.", "application/json",
          paginated_response(
            items: Schemas.NFTCollection,
            next_page_params_example: %{
-             "items_count" => 50,
              "token_contract_address_hash" => "0x1ffe11b9fb7f6ff1b153ab8608cf403ecaf9d44a",
              "token_type" => "ERC-721"
            }
@@ -1317,7 +1305,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> next_page_params(
               collections,
               params,
-              false,
               &Instance.nft_collections_next_page_params/1
             )
 
@@ -1339,7 +1326,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param()] ++
-        define_paging_params(["items_count", "epoch_number", "amount", "associated_account_address_hash", "type"]),
+        define_paging_params(["epoch_number", "amount", "associated_account_address_hash", "type"]),
     responses: [
       ok:
         {"Celo election rewards for the specified address.", "application/json",
@@ -1349,8 +1336,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "epoch_number" => 100,
              "amount" => "1000000000000000000",
              "associated_account_address_hash" => "0x1234567890123456789012345678901234567890",
-             "type" => "validator",
-             "items_count" => 50
+             "type" => "validator"
            }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -1389,7 +1375,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           next_page,
           rewards,
           filtered_params,
-          false,
           &%{
             epoch_number: &1.epoch_number,
             amount: &1.amount,
@@ -1451,15 +1436,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param()] ++
-        define_paging_params(["deposit_index", "items_count"]),
+        define_paging_params(["deposit_index"]),
     responses: [
       ok:
         {"Beacon deposits for the specified address.", "application/json",
          paginated_response(
            items: Schemas.Beacon.Deposit,
            next_page_params_example: %{
-             "index" => 123,
-             "items_count" => 50
+             "index" => 123
            }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -1512,7 +1496,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> next_page_params(
           deposits,
           params,
-          false,
           DepositController.paging_function()
         )
 
