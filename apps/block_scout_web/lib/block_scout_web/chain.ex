@@ -702,11 +702,7 @@ defmodule BlockScoutWeb.Chain do
 
   # clause for pagination of entities:
   # - Account's entities
-  # - Optimism frame sequences
-  # - Polygon Edge Deposits
-  # - Polygon Edge Withdrawals
-  # - Arbitrum cross chain messages
-  # - Scroll cross chain messages
+  # - Arbitrum cross chain messagess
   def paging_options(%{"id" => id_string}) when is_binary(id_string) do
     case Integer.parse(id_string) do
       {id, ""} ->
@@ -721,6 +717,9 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {id}}]
   end
 
+  # clause for pagination of entities:
+  # - Optimism frame sequences
+  # - Scroll cross chain messages
   def paging_options(%{id: id}) do
     [paging_options: %{@default_paging_options | key: {id}}]
   end
