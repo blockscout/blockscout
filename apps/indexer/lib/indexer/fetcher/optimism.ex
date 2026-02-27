@@ -404,17 +404,16 @@ defmodule Indexer.Fetcher.Optimism do
                           created due to reorg from the corresponding table.
     - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
                                   Used to get transaction info by its hash from the RPC node.
-                                  Can be `nil` if the transaction info is not needed.
     - `counter_type`: Name of a record in the `last_fetched_counters` table to read the last known block hash from.
 
     ## Returns
     - A tuple `{last_block_number, last_transaction_hash, last_transaction}` where
       `last_block_number` is the last block number found in the corresponding table (0 if not found),
       `last_transaction_hash` is the last transaction hash found in the corresponding table (nil if not found),
-      `last_transaction` is the transaction info got from the RPC (nil if not found or not needed).
+      `last_transaction` is the transaction info got from the RPC (nil if not found).
     - A tuple `{:error, message}` in case the `eth_getTransactionByHash` RPC request failed.
   """
-  @spec get_last_item(:L1 | :L2, function(), function(), EthereumJSONRPC.json_rpc_named_arguments() | nil, binary()) ::
+  @spec get_last_item(:L1 | :L2, function(), function(), EthereumJSONRPC.json_rpc_named_arguments(), binary()) ::
           {non_neg_integer(), binary() | nil, map() | nil} | {:error, any()}
   def get_last_item(layer, last_block_number_query_fun, remove_query_fun, json_rpc_named_arguments, counter_type)
       when is_function(last_block_number_query_fun, 0) and is_function(remove_query_fun, 1) do
@@ -427,17 +426,12 @@ defmodule Indexer.Fetcher.Optimism do
         |> Kernel.||({0, nil})
 
       with {:empty_hash, false} <- {:empty_hash, is_nil(last_transaction_hash)},
-           {:empty_json_rpc_named_arguments, false} <-
-             {:empty_json_rpc_named_arguments, is_nil(json_rpc_named_arguments)},
            {:ok, last_transaction} <- Helper.get_transaction_by_hash(last_transaction_hash, json_rpc_named_arguments),
            {:empty_transaction, false} <- {:empty_transaction, is_nil(last_transaction)} do
         {last_block_number, last_transaction_hash, last_transaction}
       else
         {:empty_hash, true} ->
           {last_block_number, nil, nil}
-
-        {:empty_json_rpc_named_arguments, true} ->
-          {last_block_number, last_transaction_hash, nil}
 
         {:error, _} = error ->
           error

@@ -77,6 +77,28 @@ defmodule Explorer.Chain.Cache.Counters.LastFetchedCounter do
   end
 
   @doc """
+  Deletes a record of the given type.
+
+  ## Parameters
+  - `type`: The type of the counter to delete.
+
+  ## Returns
+  - `true` if the record was successfully deleted.
+  - `false` if the record is not found.
+  """
+  @spec delete(binary()) :: boolean()
+  def delete(type) do
+    query =
+      from(counter in __MODULE__,
+        where: counter.counter_type == ^type
+      )
+
+    {count, _} = Repo.delete_all(query)
+
+    count > 0
+  end
+
+  @doc """
   Fetches the last fetched counter value for the given `type`.
 
   ## Parameters
