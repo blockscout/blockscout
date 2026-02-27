@@ -22,6 +22,7 @@ defmodule Indexer.Block.Fetcher do
   alias Explorer.Chain.Celo.Legacy.Accounts, as: CeloAccountsTransform
   alias Explorer.Chain.Filecoin.PendingAddressOperation, as: FilecoinPendingAddressOperation
   alias Indexer.Block.Catchup.Fetcher, as: CatchupFetcher
+  alias Indexer.Block.Catchup.MassiveBlocksFetcher
   alias Indexer.Block.Fetcher.Receipts
   alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher, as: ArbitrumMessagesToL2Matcher
   alias Indexer.Fetcher.Celo.EpochBlockOperations, as: CeloEpochBlockOperations
@@ -177,7 +178,7 @@ defmodule Indexer.Block.Fetcher do
            withdrawals_params: withdrawals_params,
            block_second_degree_relations_params: block_second_degree_relations_params,
            errors: blocks_errors
-         } = filtered_fetched_blocks = process_massive_blocks(fetched_blocks),
+         } = filtered_fetched_blocks = process_massive_blocks(fetched_blocks, callback_module),
          blocks = TransformBlocks.transform_blocks(blocks_params),
          {:receipts, {:ok, receipt_params}} <- {:receipts, Receipts.fetch(state, transactions_params_without_receipts)},
          %{logs: receipt_logs, receipts: receipts} = receipt_params,
@@ -319,7 +320,9 @@ defmodule Indexer.Block.Fetcher do
     end
   end
 
-  defp process_massive_blocks(fetched_blocks) do
+  defp process_massive_blocks(fetched_blocks, MassiveBlocksFetcher), do: fetched_blocks
+
+  defp process_massive_blocks(fetched_blocks, _callback_module) do
     massive_block_threshold = Application.get_env(:indexer, :massive_block_threshold, 1000)
 
     massive_block_numbers =
