@@ -69,7 +69,6 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     parameters:
       base_params() ++
         define_paging_params([
-          "items_count",
           "number"
         ]),
     responses: [
@@ -78,7 +77,6 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
          paginated_response(
            items: Schemas.Scroll.Batch,
            next_page_params_example: %{
-             "items_count" => 50,
              "number" => 502_655
            },
            title_prefix: "Batches"
@@ -133,7 +131,6 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     parameters:
       base_params() ++
         define_paging_params([
-          "items_count",
           "id"
         ]),
     responses: [
@@ -142,7 +139,6 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
          paginated_response(
            items: Schemas.Scroll.Bridge,
            next_page_params_example: %{
-             "items_count" => 50,
              "id" => 986_043
            },
            title_prefix: "Deposits"
@@ -200,7 +196,6 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
     parameters:
       base_params() ++
         define_paging_params([
-          "items_count",
           "id"
         ]),
     responses: [
@@ -209,7 +204,6 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
          paginated_response(
            items: Schemas.Scroll.Bridge,
            next_page_params_example: %{
-             "items_count" => 50,
              "id" => 220_243
            },
            title_prefix: "Withdrawals"
