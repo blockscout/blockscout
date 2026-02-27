@@ -230,7 +230,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     description: "Retrieves the list of Zilliqa validators.",
     parameters:
       base_params() ++
-        define_paging_params(["index", "items_count"]) ++
+        define_paging_params(["index"]) ++
         [
           sort_param(["index"]),
           order_param()
@@ -241,8 +241,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
          paginated_response(
            items: Schemas.Zilliqa.Staker,
            next_page_params_example: %{
-             "index" => 55,
-             "items_count" => 50
+             "index" => 55
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
