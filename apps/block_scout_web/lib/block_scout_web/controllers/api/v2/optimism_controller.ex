@@ -36,6 +36,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
 
+  tags(["optimism"])
+
   @api_true [api?: true]
 
   operation :batches,

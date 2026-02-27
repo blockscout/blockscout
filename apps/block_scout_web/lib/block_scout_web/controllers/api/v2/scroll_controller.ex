@@ -14,6 +14,8 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
 
   plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
 
+  tags(["scroll"])
+
   @api_true [api?: true]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)

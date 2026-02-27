@@ -149,6 +149,8 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     end
   end
 
+  tags(["zilliqa"])
+
   operation :zilliqa_validators_list,
     summary: "Zilliqa validators list.",
     description: "Retrieves the list of Zilliqa validators.",
