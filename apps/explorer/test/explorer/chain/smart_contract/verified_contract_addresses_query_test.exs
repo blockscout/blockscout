@@ -4,11 +4,11 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQueryTest do
   alias Explorer.Chain.SmartContract.VerifiedContractAddressesQuery
   alias Explorer.PagingOptions
 
-  describe "verified_contract_addresses/1" do
+  describe "list/1" do
     test "uses default strategy and orders by smart_contract id desc when sorting is absent" do
       contracts = insert_list(4, :smart_contract)
 
-      addresses = VerifiedContractAddressesQuery.verified_contract_addresses()
+      addresses = VerifiedContractAddressesQuery.list()
 
       assert Enum.map(addresses, & &1.smart_contract.id) ==
                contracts |> Enum.map(& &1.id) |> Enum.sort(:desc)
@@ -24,7 +24,7 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQueryTest do
       page_size = 3
 
       first_page =
-        VerifiedContractAddressesQuery.verified_contract_addresses(
+        VerifiedContractAddressesQuery.list(
           sorting: sorting,
           paging_options: %PagingOptions{page_size: page_size}
         )
@@ -32,7 +32,7 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQueryTest do
       cursor = List.last(first_page)
 
       second_page =
-        VerifiedContractAddressesQuery.verified_contract_addresses(
+        VerifiedContractAddressesQuery.list(
           sorting: sorting,
           paging_options: %PagingOptions{
             page_size: page_size,
@@ -53,10 +53,10 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQueryTest do
       name_contract = insert(:smart_contract, name: target_name)
       hash_contract = insert(:smart_contract)
 
-      [name_result] = VerifiedContractAddressesQuery.verified_contract_addresses(search: target_name)
+      [name_result] = VerifiedContractAddressesQuery.list(search: target_name)
 
       [hash_result] =
-        VerifiedContractAddressesQuery.verified_contract_addresses(
+        VerifiedContractAddressesQuery.list(
           search: String.downcase(to_string(hash_contract.address_hash))
         )
 

@@ -13,8 +13,8 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQuery do
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Helper, as: ExplorerHelper
 
-  @spec verified_contract_addresses(keyword()) :: [Address.t()]
-  def verified_contract_addresses(options \\ []) do
+  @spec list(keyword()) :: [Address.t()]
+  def list(options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
     sorting = Keyword.get(options, :sorting)

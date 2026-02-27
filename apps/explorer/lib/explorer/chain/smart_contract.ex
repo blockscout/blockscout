@@ -1446,7 +1446,7 @@ defmodule Explorer.Chain.SmartContract do
           | Chain.show_scam_tokens?()
         ]) :: [Address.t()]
   def verified_contract_addresses(options \\ []),
-    do: VerifiedContractAddressesQuery.verified_contract_addresses(options)
+    do: VerifiedContractAddressesQuery.list(options)
 
   @doc """
   Retrieves the constructor arguments for a zkSync smart contract.

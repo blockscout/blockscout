@@ -423,7 +423,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         "solidity"
 
       _ ->
-        if parse_boolean(Map.get(params, "is_yul_contract", false)),
+        if parse_boolean(Map.get(params, "is_yul_contract", Map.get(params, :is_yul_contract, false))),
           do: "yul",
           else: "solidity"
     end
