@@ -122,6 +122,12 @@ config :explorer,
 
 config :indexer, Indexer.Fetcher.TokenInstance.Helper, host_filtering_enabled?: false
 
+# Enable Oban for async CSV export controller tests (testing: :manual from config/test.exs
+# ensures jobs are not auto-executed)
+config :explorer, Oban,
+  enabled: true,
+  queues: [csv_export: 1, csv_export_sanitize: 1]
+
 variant = Variant.get()
 
 Code.require_file("#{variant}.exs", "#{__DIR__}/../../../explorer/config/test")

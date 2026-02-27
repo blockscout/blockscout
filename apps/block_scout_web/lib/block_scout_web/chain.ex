@@ -137,7 +137,7 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  @spec next_page_params(any, list(), map(), bool(), (any -> map())) :: nil | map
+  @spec next_page_params(any(), list(), map(), boolean(), (any() -> map())) :: nil | map
   def next_page_params(next_page, list, params, increment_items_count? \\ false, paging_function \\ &paging_params/1)
 
   def next_page_params([], _list, _params, _increment_items_count?, _), do: nil

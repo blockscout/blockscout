@@ -734,4 +734,8 @@ defmodule Explorer.Helper do
   end
 
   def process_rpc_response(response, _node, _fallback), do: response
+
+  @spec maybe_timeout(timeout() | nil) :: keyword()
+  def maybe_timeout(nil), do: []
+  def maybe_timeout(timeout), do: [timeout: timeout]
 end

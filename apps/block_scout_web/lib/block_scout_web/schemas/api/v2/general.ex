@@ -106,6 +106,24 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns an optional parameter definition for the start of the time period.
+  Used for endpoints like token holders CSV that don't require a time range.
+  """
+  @spec optional_from_period_param() :: Parameter.t()
+  def optional_from_period_param do
+    %{from_period_param() | required: false}
+  end
+
+  @doc """
+  Returns an optional parameter definition for the end of the time period.
+  Used for endpoints like token holders CSV that don't require a time range.
+  """
+  @spec optional_to_period_param() :: Parameter.t()
+  def optional_to_period_param do
+    %{to_period_param() | required: false}
+  end
+
+  @doc """
   Returns a parameter definition for chain IDs in the query.
   """
   @spec chain_ids_param() :: Parameter.t()
@@ -849,6 +867,24 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: FullHash,
       required: true,
       description: "User operation hash in the path"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a UUID in the path.
+  """
+  @spec uuid_param() :: Parameter.t()
+  def uuid_param do
+    %Parameter{
+      name: :uuid_param,
+      in: :path,
+      schema: %Schema{
+        type: :string,
+        format: :uuid,
+        pattern: ~r/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      },
+      required: true,
+      description: "UUID for CSV export"
     }
   end
 

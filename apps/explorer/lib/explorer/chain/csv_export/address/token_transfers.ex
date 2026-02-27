@@ -12,13 +12,13 @@ defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
     ]
 
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, TokenTransfer, Transaction}
-  alias Explorer.Chain.CsvExport.Helper
+  alias Explorer.Chain.CsvExport.{AsyncHelper, Helper}
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.{PagingOptions, Repo}
 
   @spec export(Hash.Address.t(), String.t(), String.t(), Keyword.t(), String.t() | nil, String.t() | nil) ::
           Enumerable.t()
-  def export(address_hash, from_period, to_period, options, filter_type \\ nil, filter_value \\ nil) do
+  def export(address_hash, from_period, to_period, options, filter_type, filter_value) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
 
     paging_options = %PagingOptions{Helper.paging_options() | asc_order: true}
@@ -45,6 +45,7 @@ defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
       |> Keyword.put(:to_block, to_block)
       |> Keyword.put(:filter_type, filter_type)
       |> Keyword.put(:filter_value, filter_value)
+      |> Keyword.put(:timeout, AsyncHelper.db_timeout())
 
     address_hash_to_token_transfers_including_contract(address_hash, options)
   end
@@ -111,6 +112,7 @@ defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
   @spec address_hash_to_token_transfers_including_contract(Hash.Address.t(), Keyword.t()) :: [TokenTransfer.t()]
   def address_hash_to_token_transfers_including_contract(address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Helper.default_paging_options())
+    timeout = Keyword.get(options, :timeout)
 
     case paging_options do
       %PagingOptions{key: {0, 0}} ->
@@ -132,7 +134,7 @@ defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
         |> handle_token_transfer_paging_options(paging_options)
         |> preload(^DenormalizationHelper.extend_transaction_preload([:transaction]))
         |> preload(:token)
-        |> Repo.replica().all()
+        |> Repo.replica().all(ExplorerHelper.maybe_timeout(timeout))
     end
   end
 
