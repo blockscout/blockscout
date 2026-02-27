@@ -218,7 +218,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         ],
         "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
-        "language" => target_contract |> SmartContract.language() |> to_string(),
+        "language" => target_contract.language |> to_string(),
         "license_type" => "none",
         "certified" => false,
         "is_blueprint" => false,
@@ -326,7 +326,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "implementations" => [],
         "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
-        "language" => target_contract |> SmartContract.language() |> to_string(),
+        "language" => target_contract.language |> to_string(),
         "license_type" => "gnu_agpl_v3",
         "certified" => false,
         "is_blueprint" => false,
@@ -432,7 +432,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "implementations" => [],
         "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
-        "language" => target_contract |> SmartContract.language() |> to_string(),
+        "language" => target_contract.language |> to_string(),
         "license_type" => "none",
         "certified" => false,
         "is_blueprint" => false,
@@ -592,7 +592,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "implementations" => [],
         "is_verified_via_eth_bytecode_db" => target_contract.verified_via_eth_bytecode_db,
         "is_verified_via_verifier_alliance" => target_contract.verified_via_verifier_alliance,
-        "language" => target_contract |> SmartContract.language() |> to_string(),
+        "language" => target_contract.language |> to_string(),
         "license_type" => "none",
         "certified" => false,
         "is_blueprint" => true,
@@ -1615,284 +1615,267 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     end
   end
 
-  for {state_name, migrations_finished?} <- [
-        {"completed migrations", true},
-        {"migrations in progress", false}
-      ] do
-    describe "/smart-contracts" <> " (with #{state_name})" do
-      setup do
-        :meck.expect(
-          Explorer.Chain.SmartContract,
-          :background_migrations_finished?,
-          fn ->
-            unquote(migrations_finished?)
-          end
-        )
+  describe "/smart-contracts" do
+    test "get smart-contract with ok reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
 
-        :ok
+      insert(:smart_contract)
+
+      request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/smart-contracts")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+
+      assert response == conn |> get("/api/v2/smart-contracts") |> json_response(200)
+    end
+
+    test "get smart-contract with scam reputation", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      target_contract = insert(:smart_contract)
+      insert(:scam_badge_to_address, address_hash: target_contract.address_hash)
+
+      request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/smart-contracts")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "scam"
+
+      request = conn |> get("/api/v2/smart-contracts")
+      response = json_response(request, 200)
+
+      assert response["items"] == []
+    end
+
+    test "get smart-contract with ok reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      insert(:smart_contract)
+
+      request = conn |> get("/api/v2/smart-contracts")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
+    test "get smart-contract with scam reputation with hide_scam_addresses=false", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      target_contract = insert(:smart_contract)
+      insert(:scam_badge_to_address, address_hash: target_contract.address_hash)
+
+      request = conn |> get("/api/v2/smart-contracts")
+      response = json_response(request, 200)
+
+      assert List.first(response["items"])["reputation"] == "ok"
+    end
+
+    test "get [] on empty db", %{conn: conn} do
+      request = get(conn, "/api/v2/smart-contracts")
+
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
+    test "get correct smart contract", %{conn: conn} do
+      smart_contract = insert(:smart_contract)
+      request = get(conn, "/api/v2/smart-contracts")
+
+      assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+      compare_item(smart_contract, sc)
+      assert sc["address"]["is_verified"] == true
+      assert sc["address"]["is_contract"] == true
+    end
+
+    test "get filtered smart contracts by language", %{conn: conn} do
+      smart_contracts = [
+        {"solidity", insert(:smart_contract, language: :solidity)},
+        {"vyper", insert(:smart_contract, language: :vyper)},
+        {"yul", insert(:smart_contract, abi: nil, language: :yul)}
+      ]
+
+      for {filter, smart_contract} <- smart_contracts do
+        request = get(conn, "/api/v2/smart-contracts", %{"filter" => filter})
+
+        assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+        compare_item(smart_contract, sc)
+        assert sc["address"]["is_verified"] == true
+        assert sc["address"]["is_contract"] == true
       end
+    end
 
-      test "get smart-contract with ok reputation", %{conn: conn} do
-        init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
-        Application.put_env(:block_scout_web, :hide_scam_addresses, true)
-        on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+    test "get filtered vyper smart contracts", %{conn: conn} do
+      smart_contract = insert(:smart_contract, language: :vyper)
+      insert(:smart_contract, language: :solidity)
+      request = get(conn, "/api/v2/smart-contracts", %{"filter" => "vyper"})
 
+      assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+      compare_item(smart_contract, sc)
+      assert sc["address"]["is_verified"] == true
+      assert sc["address"]["is_contract"] == true
+    end
+
+    test "get filtered yul smart contracts", %{conn: conn} do
+      smart_contract = insert(:smart_contract, abi: nil, language: :yul)
+      insert(:smart_contract, language: :vyper)
+      insert(:smart_contract, language: :solidity)
+      request = get(conn, "/api/v2/smart-contracts", %{"filter" => "yul"})
+
+      assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+      compare_item(smart_contract, sc)
+      assert sc["address"]["is_verified"] == true
+      assert sc["address"]["is_contract"] == true
+    end
+
+    if Application.compile_env(:explorer, :chain_type) == :zilliqa do
+      test "get filtered scilla smart contracts when language is set", %{conn: conn} do
+        smart_contract = insert(:smart_contract, language: :scilla, abi: nil)
         insert(:smart_contract)
+        request = get(conn, "/api/v2/smart-contracts", %{"filter" => "scilla"})
 
-        request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/smart-contracts")
-        response = json_response(request, 200)
-
-        assert List.first(response["items"])["reputation"] == "ok"
-
-        assert response == conn |> get("/api/v2/smart-contracts") |> json_response(200)
+        assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
+        compare_item(smart_contract, sc)
+        assert sc["address"]["is_verified"] == true
+        assert sc["address"]["is_contract"] == true
       end
 
-      test "get smart-contract with scam reputation", %{conn: conn} do
-        init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
-        Application.put_env(:block_scout_web, :hide_scam_addresses, true)
-        on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
-
-        target_contract = insert(:smart_contract)
-        insert(:scam_badge_to_address, address_hash: target_contract.address_hash)
-
-        request = conn |> put_req_cookie("show_scam_tokens", "true") |> get("/api/v2/smart-contracts")
-        response = json_response(request, 200)
-
-        assert List.first(response["items"])["reputation"] == "scam"
-
-        request = conn |> get("/api/v2/smart-contracts")
-        response = json_response(request, 200)
-
-        assert response["items"] == []
-      end
-
-      test "get smart-contract with ok reputation with hide_scam_addresses=false", %{conn: conn} do
-        init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
-        Application.put_env(:block_scout_web, :hide_scam_addresses, false)
-        on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
-
-        insert(:smart_contract)
-
-        request = conn |> get("/api/v2/smart-contracts")
-        response = json_response(request, 200)
-
-        assert List.first(response["items"])["reputation"] == "ok"
-      end
-
-      test "get smart-contract with scam reputation with hide_scam_addresses=false", %{conn: conn} do
-        init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
-        Application.put_env(:block_scout_web, :hide_scam_addresses, false)
-        on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
-
-        target_contract = insert(:smart_contract)
-        insert(:scam_badge_to_address, address_hash: target_contract.address_hash)
-
-        request = conn |> get("/api/v2/smart-contracts")
-        response = json_response(request, 200)
-
-        assert List.first(response["items"])["reputation"] == "ok"
-      end
-
-      test "get [] on empty db", %{conn: conn} do
-        request = get(conn, "/api/v2/smart-contracts")
+      test "scilla contracts are not returned when yul filter is applied", %{conn: conn} do
+        insert(:smart_contract, language: :scilla, abi: nil)
+        request = get(conn, "/api/v2/smart-contracts", %{"filter" => "yul"})
 
         assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
       end
+    end
 
-      test "get correct smart contract", %{conn: conn} do
-        smart_contract = insert(:smart_contract)
-        request = get(conn, "/api/v2/smart-contracts")
-
-        assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
-        compare_item(smart_contract, sc)
-        assert sc["address"]["is_verified"] == true
-        assert sc["address"]["is_contract"] == true
-      end
-
-      test "get filtered smart contracts when flag is set and language is not set", %{conn: conn} do
-        smart_contracts = [
-          {"solidity", insert(:smart_contract, is_vyper_contract: false, language: nil)},
-          {"vyper", insert(:smart_contract, is_vyper_contract: true, language: nil)},
-          {"yul", insert(:smart_contract, abi: nil, is_vyper_contract: false, language: nil)}
-        ]
-
-        for {filter, smart_contract} <- smart_contracts do
-          request = get(conn, "/api/v2/smart-contracts", %{"filter" => filter})
-
-          assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
-          compare_item(smart_contract, sc)
-          assert sc["address"]["is_verified"] == true
-          assert sc["address"]["is_contract"] == true
-        end
-      end
-
-      test "get filtered smart contracts when flag is set and language is set", %{conn: conn} do
-        smart_contract = insert(:smart_contract, is_vyper_contract: true, language: :vyper)
-        insert(:smart_contract, is_vyper_contract: false, language: :solidity)
-        request = get(conn, "/api/v2/smart-contracts", %{"filter" => "vyper"})
-
-        assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
-        compare_item(smart_contract, sc)
-        assert sc["address"]["is_verified"] == true
-        assert sc["address"]["is_contract"] == true
-      end
-
-      test "get filtered smart contracts when flag is not set and language is set", %{conn: conn} do
-        smart_contract = insert(:smart_contract, is_vyper_contract: nil, abi: nil, language: :yul)
-        insert(:smart_contract, is_vyper_contract: nil, language: :vyper)
-        insert(:smart_contract, is_vyper_contract: nil, language: :solidity)
-        request = get(conn, "/api/v2/smart-contracts", %{"filter" => "yul"})
-
-        assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
-        compare_item(smart_contract, sc)
-        assert sc["address"]["is_verified"] == true
-        assert sc["address"]["is_contract"] == true
-      end
-
-      if Application.compile_env(:explorer, :chain_type) == :zilliqa do
-        test "get filtered scilla smart contracts when language is set", %{conn: conn} do
-          smart_contract = insert(:smart_contract, language: :scilla, abi: nil)
-          insert(:smart_contract)
-          request = get(conn, "/api/v2/smart-contracts", %{"filter" => "scilla"})
-
-          assert %{"items" => [sc], "next_page_params" => nil} = json_response(request, 200)
-          compare_item(smart_contract, sc)
-          assert sc["address"]["is_verified"] == true
-          assert sc["address"]["is_contract"] == true
-        end
-
-        test "scilla contracts are not returned when yul filter is applied", %{conn: conn} do
-          insert(:smart_contract, language: :scilla, abi: nil)
-          request = get(conn, "/api/v2/smart-contracts", %{"filter" => "yul"})
-
-          assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
-        end
-      end
-
-      test "check pagination", %{conn: conn} do
-        smart_contracts =
-          for _ <- 0..50 do
-            insert(:smart_contract)
-          end
-          |> Enum.sort_by(& &1.id)
-
-        request = get(conn, "/api/v2/smart-contracts")
-        assert response = json_response(request, 200)
-
-        request_2nd_page = get(conn, "/api/v2/smart-contracts", response["next_page_params"])
-
-        assert response_2nd_page = json_response(request_2nd_page, 200)
-
-        check_paginated_response(response, response_2nd_page, smart_contracts)
-      end
-
-      test "Returns error with wrong ordering params", %{conn: conn} do
+    test "check pagination", %{conn: conn} do
+      smart_contracts =
         for _ <- 0..50 do
           insert(:smart_contract)
         end
         |> Enum.sort_by(& &1.id)
 
-        ordering_params = %{"sort" => "foo", "order" => "bar"}
+      request = get(conn, "/api/v2/smart-contracts")
+      assert response = json_response(request, 200)
 
-        request = get(conn, "/api/v2/smart-contracts", ordering_params)
+      request_2nd_page = get(conn, "/api/v2/smart-contracts", response["next_page_params"])
 
-        assert %{
-                 "errors" => [
-                   %{
-                     "detail" => "Invalid value for enum",
-                     "source" => %{"pointer" => "/sort"},
-                     "title" => "Invalid value"
-                   },
-                   %{
-                     "detail" => "Invalid value for enum",
-                     "source" => %{"pointer" => "/order"},
-                     "title" => "Invalid value"
-                   }
-                 ]
-               } = json_response(request, 422)
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, smart_contracts)
+    end
+
+    test "Returns error with wrong ordering params", %{conn: conn} do
+      for _ <- 0..50 do
+        insert(:smart_contract)
       end
+      |> Enum.sort_by(& &1.id)
 
-      test "can order by balance ascending", %{conn: conn} do
-        smart_contracts =
-          for i <- 0..50 do
-            address = insert(:address, fetched_coin_balance: i, verified: true)
-            insert(:smart_contract, address_hash: address.hash, address: address)
-          end
-          |> Enum.reverse()
+      ordering_params = %{"sort" => "foo", "order" => "bar"}
 
-        ordering_params = %{"sort" => "balance", "order" => "asc"}
+      request = get(conn, "/api/v2/smart-contracts", ordering_params)
 
-        request = get(conn, "/api/v2/smart-contracts", ordering_params)
-        assert response = json_response(request, 200)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid value for enum",
+                   "source" => %{"pointer" => "/sort"},
+                   "title" => "Invalid value"
+                 },
+                 %{
+                   "detail" => "Invalid value for enum",
+                   "source" => %{"pointer" => "/order"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
+    end
 
-        request_2nd_page =
-          get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+    test "can order by balance ascending", %{conn: conn} do
+      smart_contracts =
+        for i <- 0..50 do
+          address = insert(:address, fetched_coin_balance: i, verified: true)
+          insert(:smart_contract, address_hash: address.hash, address: address)
+        end
+        |> Enum.reverse()
 
-        assert response_2nd_page = json_response(request_2nd_page, 200)
+      ordering_params = %{"sort" => "balance", "order" => "asc"}
 
-        check_paginated_response(response, response_2nd_page, smart_contracts)
-      end
+      request = get(conn, "/api/v2/smart-contracts", ordering_params)
+      assert response = json_response(request, 200)
 
-      test "can order by balance descending", %{conn: conn} do
-        smart_contracts =
-          for i <- 0..50 do
-            address = insert(:address, fetched_coin_balance: i, verified: true)
-            insert(:smart_contract, address_hash: address.hash, address: address)
-          end
+      request_2nd_page =
+        get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
 
-        ordering_params = %{"sort" => "balance", "order" => "desc"}
+      assert response_2nd_page = json_response(request_2nd_page, 200)
 
-        request = get(conn, "/api/v2/smart-contracts", ordering_params)
-        assert response = json_response(request, 200)
+      check_paginated_response(response, response_2nd_page, smart_contracts)
+    end
 
-        request_2nd_page =
-          get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+    test "can order by balance descending", %{conn: conn} do
+      smart_contracts =
+        for i <- 0..50 do
+          address = insert(:address, fetched_coin_balance: i, verified: true)
+          insert(:smart_contract, address_hash: address.hash, address: address)
+        end
 
-        assert response_2nd_page = json_response(request_2nd_page, 200)
+      ordering_params = %{"sort" => "balance", "order" => "desc"}
 
-        check_paginated_response(response, response_2nd_page, smart_contracts)
-      end
+      request = get(conn, "/api/v2/smart-contracts", ordering_params)
+      assert response = json_response(request, 200)
 
-      test "can order by transaction count ascending", %{conn: conn} do
-        smart_contracts =
-          for i <- 0..50 do
-            address = insert(:address, transactions_count: i, verified: true)
-            insert(:smart_contract, address_hash: address.hash, address: address)
-          end
-          |> Enum.reverse()
+      request_2nd_page =
+        get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
 
-        ordering_params = %{"sort" => "transactions_count", "order" => "asc"}
+      assert response_2nd_page = json_response(request_2nd_page, 200)
 
-        request = get(conn, "/api/v2/smart-contracts", ordering_params)
-        assert response = json_response(request, 200)
+      check_paginated_response(response, response_2nd_page, smart_contracts)
+    end
 
-        request_2nd_page =
-          get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+    test "can order by transaction count ascending", %{conn: conn} do
+      smart_contracts =
+        for i <- 0..50 do
+          address = insert(:address, transactions_count: i, verified: true)
+          insert(:smart_contract, address_hash: address.hash, address: address)
+        end
+        |> Enum.reverse()
 
-        assert response_2nd_page = json_response(request_2nd_page, 200)
+      ordering_params = %{"sort" => "transactions_count", "order" => "asc"}
 
-        check_paginated_response(response, response_2nd_page, smart_contracts)
-      end
+      request = get(conn, "/api/v2/smart-contracts", ordering_params)
+      assert response = json_response(request, 200)
 
-      test "can order by transaction count descending", %{conn: conn} do
-        smart_contracts =
-          for i <- 0..50 do
-            address = insert(:address, transactions_count: i, verified: true)
-            insert(:smart_contract, address_hash: address.hash, address: address)
-          end
+      request_2nd_page =
+        get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
 
-        ordering_params = %{"sort" => "transactions_count", "order" => "desc"}
+      assert response_2nd_page = json_response(request_2nd_page, 200)
 
-        request = get(conn, "/api/v2/smart-contracts", ordering_params)
-        assert response = json_response(request, 200)
+      check_paginated_response(response, response_2nd_page, smart_contracts)
+    end
 
-        request_2nd_page =
-          get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+    test "can order by transaction count descending", %{conn: conn} do
+      smart_contracts =
+        for i <- 0..50 do
+          address = insert(:address, transactions_count: i, verified: true)
+          insert(:smart_contract, address_hash: address.hash, address: address)
+        end
 
-        assert response_2nd_page = json_response(request_2nd_page, 200)
+      ordering_params = %{"sort" => "transactions_count", "order" => "desc"}
 
-        check_paginated_response(response, response_2nd_page, smart_contracts)
-      end
+      request = get(conn, "/api/v2/smart-contracts", ordering_params)
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/smart-contracts", ordering_params |> Map.merge(response["next_page_params"]))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, smart_contracts)
     end
   end
 
@@ -1914,7 +1897,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
 
     assert smart_contract.optimization == json["optimization_enabled"]
 
-    assert json["language"] == smart_contract |> SmartContract.language() |> to_string()
+    assert json["language"] == smart_contract.language |> to_string()
     assert json["verified_at"]
     assert !is_nil(smart_contract.constructor_arguments) == json["has_constructor_args"]
     assert Address.checksum(smart_contract.address_hash) == json["address"]["hash"]

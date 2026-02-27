@@ -165,7 +165,6 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.TokenTransferBlockConsensus, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.RestoreOmittedWETHTransfers, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.FilecoinPendingAddressOperations, :indexer),
-        configure_mode_dependent_process(Explorer.Migrator.SmartContractLanguage, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.CeloL2Epochs, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.CeloAccounts, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.CeloAggregatedElectionRewards, :indexer),

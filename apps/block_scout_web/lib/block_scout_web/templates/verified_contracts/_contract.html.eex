@@ -25,7 +25,11 @@
     <!-- Compiler -->
     <td class="stakes-td">
         <span>
-            <%= if @contract.is_vyper_contract, do: gettext("Vyper"), else: gettext("Solidity") %>
+            <%= case @contract.language do %>
+              <% :vyper -> %><%= gettext("Vyper") %>
+              <% :yul -> %><%= gettext("Yul") %>
+              <% _ -> %><%= gettext("Solidity") %>
+            <% end %>
         </span>
     </td>
     <!-- Version -->

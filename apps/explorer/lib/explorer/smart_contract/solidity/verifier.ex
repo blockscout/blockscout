@@ -52,8 +52,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     %{}
     |> prepare_bytecode_for_microservice(creation_transaction_input, deployed_bytecode)
     |> Map.put("sourceFiles", %{
-      "#{params["name"]}.#{smart_contract_source_file_extension(parse_boolean(params["is_yul"]))}" =>
-        params["contract_source_code"]
+      "#{params["name"]}.#{smart_contract_source_file_extension(params)}" => params["contract_source_code"]
     })
     |> Map.put("libraries", params["external_libraries"])
     |> Map.put("optimizationRuns", prepare_optimization_runs(params["optimization"], params["optimization_runs"]))
@@ -90,8 +89,21 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     end
   end
 
-  defp smart_contract_source_file_extension(true), do: "yul"
-  defp smart_contract_source_file_extension(_), do: "sol"
+  defp smart_contract_source_file_extension(params) do
+    if yul_contract?(params), do: "yul", else: "sol"
+  end
+
+  defp yul_contract?(params) do
+    case Map.get(params, "language", Map.get(params, :language)) do
+      value when value in ["yul", :yul] ->
+        true
+
+      _ ->
+        params
+        |> Map.get("is_yul", Map.get(params, :is_yul, false))
+        |> parse_boolean()
+    end
+  end
 
   defp prepare_optimization_runs(false_, _) when false_ in [false, "false"], do: nil
 
