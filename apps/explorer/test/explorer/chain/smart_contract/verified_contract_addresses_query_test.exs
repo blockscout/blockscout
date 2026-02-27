@@ -56,9 +56,7 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQueryTest do
       [name_result] = VerifiedContractAddressesQuery.list(search: target_name)
 
       [hash_result] =
-        VerifiedContractAddressesQuery.list(
-          search: String.downcase(to_string(hash_contract.address_hash))
-        )
+        VerifiedContractAddressesQuery.list(search: String.downcase(to_string(hash_contract.address_hash)))
 
       assert name_result.smart_contract.id == name_contract.id
       assert name_result.smart_contract.name == target_name
