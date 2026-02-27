@@ -702,7 +702,7 @@ defmodule BlockScoutWeb.Chain do
 
   # clause for pagination of entities:
   # - Account's entities
-  # - Arbitrum cross chain messagess
+  # - Arbitrum cross chain messages
   def paging_options(%{"id" => id_string}) when is_binary(id_string) do
     case Integer.parse(id_string) do
       {id, ""} ->
