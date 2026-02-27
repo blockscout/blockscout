@@ -19,15 +19,14 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
       "Retrieves a paginated list of withdrawals, typically for proof-of-stake networks supporting validator withdrawals.",
     parameters:
       base_params() ++
-        define_paging_params(["index", "items_count"]),
+        define_paging_params(["index"]),
     responses: [
       ok:
         {"List of withdrawals with pagination.", "application/json",
          paginated_response(
            items: Schemas.Withdrawal,
            next_page_params_example: %{
-             "index" => 50,
-             "items_count" => 50
+             "index" => 50
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()

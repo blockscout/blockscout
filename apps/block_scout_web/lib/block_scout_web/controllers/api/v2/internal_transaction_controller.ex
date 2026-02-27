@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
     parameters:
       base_params() ++
         [query_transaction_hash_param(), limit_param()] ++
-        define_paging_params(["index", "block_number", "transaction_index", "items_count"]),
+        define_paging_params(["index", "block_number", "transaction_index"]),
     responses: [
       ok:
         {"List of internal transactions with pagination information.", "application/json",
@@ -40,8 +40,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
            next_page_params_example: %{
              "index" => 50,
              "transaction_index" => 68,
-             "block_number" => 22_133_247,
-             "items_count" => 50
+             "block_number" => 22_133_247
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()

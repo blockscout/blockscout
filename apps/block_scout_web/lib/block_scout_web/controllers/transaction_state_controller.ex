@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.TransactionStateController do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
   import BlockScoutWeb.Models.GetTransactionTags, only: [get_transaction_with_addresses_tags: 2]
-  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params_for_state_changes: 3, split_list_by_page: 1]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
@@ -41,7 +41,7 @@ defmodule BlockScoutWeb.TransactionStateController do
       {state_changes, next_page} = split_list_by_page(state_changes_plus_next_page)
 
       next_page_url =
-        case next_page_params(next_page, state_changes, params) do
+        case next_page_params_for_state_changes(next_page, state_changes, params) do
           nil ->
             nil
 
