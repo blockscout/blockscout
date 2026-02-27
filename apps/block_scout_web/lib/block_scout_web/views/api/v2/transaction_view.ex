@@ -86,7 +86,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         |> with_chain_type_transformations()
         |> Enum.zip(decoded_transactions)
         |> Enum.map(fn {transaction, decoded_input} ->
-          prepare_transaction(transaction, conn, false, block_height, decoded_input)
+          prepare_transaction(transaction, conn, false, block_height, nil, decoded_input)
         end),
       "next_page_params" => next_page_params
     }
@@ -106,7 +106,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> with_chain_type_transformations()
     |> Enum.zip(decoded_transactions)
     |> Enum.map(fn {transaction, decoded_input} ->
-      prepare_transaction(transaction, conn, false, block_height, decoded_input)
+      prepare_transaction(transaction, conn, false, block_height, nil, decoded_input)
     end)
   end
 
@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     transaction
     |> with_chain_type_transformations()
-    |> prepare_transaction(conn, true, block_height, decoded_input)
+    |> prepare_transaction(conn, true, block_height, nil, decoded_input)
   end
 
   def render("raw_trace.json", %{raw_traces: raw_traces}) do
@@ -236,6 +236,34 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     signed_authorizations
     |> Enum.sort_by(& &1.index, :asc)
     |> Enum.map(&prepare_signed_authorization/1)
+  end
+
+  @doc """
+  Renders FHE operations for a transaction as JSON.
+
+  Returns a map with items (list of operation objects), total_hcu, max_depth_hcu,
+  and operation_count. Each item includes log_index, operation, type, fhe_type,
+  is_scalar, hcu_cost, hcu_depth, caller, inputs, result, and block_number.
+
+  ## Parameters
+  - `assigns` - Map with `:operations` (list of FheOperation.t()), `:total_hcu`,
+    `:max_depth_hcu`, and `:operation_count`.
+
+  ## Returns
+  - Map with "items", "total_hcu", "max_depth_hcu", "operation_count" keys.
+  """
+  def render("fhe_operations.json", %{
+        operations: operations,
+        total_hcu: total_hcu,
+        max_depth_hcu: max_depth_hcu,
+        operation_count: operation_count
+      }) do
+    %{
+      "items" => Enum.map(operations, &prepare_fhe_operation/1),
+      "total_hcu" => total_hcu,
+      "max_depth_hcu" => max_depth_hcu,
+      "operation_count" => operation_count
+    }
   end
 
   @doc """
@@ -417,7 +445,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     end
   end
 
-  defp prepare_transaction(transaction, conn, single_transaction?, block_height, watchlist_names \\ nil, decoded_input)
+  defp prepare_transaction(
+         transaction,
+         conn,
+         single_transaction?,
+         block_height,
+         watchlist_names,
+         decoded_input
+       )
 
   defp prepare_transaction(
          {%Reward{} = emission_reward, %Reward{} = validator_reward},
@@ -456,7 +491,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
          watchlist_names,
          decoded_input
        ) do
-    base_fee_per_gas = transaction.block && transaction.block.base_fee_per_gas
+    base_fee_per_gas = base_fee_per_gas(transaction)
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
 
@@ -504,14 +539,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "confirmation_duration" => processing_time_duration(transaction),
       "value" => transaction.value,
       "fee" => transaction |> Transaction.fee(:wei) |> format_fee(),
-      "gas_price" => transaction.gas_price || Transaction.effective_gas_price(transaction),
+      "gas_price" => gas_price_for_display(transaction),
       "type" => transaction.type,
       "gas_used" => transaction.gas_used,
       "gas_limit" => transaction.gas,
       "max_fee_per_gas" => transaction.max_fee_per_gas,
       "max_priority_fee_per_gas" => transaction.max_priority_fee_per_gas,
       "base_fee_per_gas" => base_fee_per_gas,
-      "priority_fee" => priority_fee_per_gas && Wei.mult(priority_fee_per_gas, transaction.gas_used),
+      "priority_fee" => priority_fee_display(priority_fee_per_gas, transaction),
       "transaction_burnt_fee" => burnt_fees(transaction, base_fee_per_gas),
       "nonce" => transaction.nonce,
       "position" => transaction.index,
@@ -529,11 +564,32 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_transaction? && conn)),
       "has_error_in_internal_transactions" => transaction.has_error_in_internal_transactions,
       "authorization_list" => authorization_list(transaction.signed_authorizations),
-      "is_pending_update" => transaction.block && transaction.block.refetch_needed
+      "is_pending_update" => transaction_pending_update?(transaction),
+      "fhe_operations_count" => fhe_operations_count_display(transaction)
     }
 
     result
     |> with_chain_type_fields(transaction, single_transaction?, conn, watchlist_names)
+  end
+
+  defp base_fee_per_gas(transaction) do
+    transaction.block && transaction.block.base_fee_per_gas
+  end
+
+  defp gas_price_for_display(transaction) do
+    transaction.gas_price || Transaction.effective_gas_price(transaction)
+  end
+
+  defp priority_fee_display(priority_fee_per_gas, transaction) do
+    priority_fee_per_gas && Wei.mult(priority_fee_per_gas, transaction.gas_used)
+  end
+
+  defp transaction_pending_update?(transaction) do
+    transaction.block && transaction.block.refetch_needed
+  end
+
+  defp fhe_operations_count_display(transaction) do
+    transaction.fhe_operations_count || 0
   end
 
   # Calculates burnt fees for a transaction.
@@ -1026,5 +1082,30 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
          _watchlist_names
        ) do
     result
+  end
+
+  defp prepare_fhe_operation(operation) do
+    caller_info =
+      if operation.caller do
+        # operation.caller is an Explorer.Chain.Hash struct
+        address_hash = operation.caller
+        Helper.address_with_info(nil, %{hash: address_hash}, address_hash, false)
+      else
+        nil
+      end
+
+    %{
+      "log_index" => operation.log_index,
+      "operation" => operation.operation,
+      "type" => operation.operation_type,
+      "fhe_type" => operation.fhe_type,
+      "is_scalar" => operation.is_scalar,
+      "hcu_cost" => operation.hcu_cost,
+      "hcu_depth" => operation.hcu_depth,
+      "caller" => caller_info,
+      "inputs" => operation.input_handles,
+      "result" => "0x" <> Base.encode16(operation.result_handle, case: :lower),
+      "block_number" => operation.block_number
+    }
   end
 end

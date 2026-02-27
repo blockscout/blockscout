@@ -1,0 +1,155 @@
+defmodule Explorer.Chain.Import.Runner.FheOperations do
+  @moduledoc """
+  Bulk imports FHE operations parsed from transaction logs.
+
+  This runner handles the database insertion of FHE operations that were parsed
+  during block indexing. It follows the standard Blockscout import runner pattern
+  with proper conflict resolution and error handling.
+
+  Also checks and sets FHE contract tags.
+  """
+
+  require Ecto.Query
+  require Logger
+
+  alias Ecto.{Changeset, Multi}
+  alias Explorer.Chain.FheContractChecker
+  alias Explorer.Chain.{FheOperation, Import, Transaction}
+  alias Explorer.Repo
+
+  import Ecto.Query, only: [from: 2]
+
+  @behaviour Import.Runner
+
+  @timeout 60_000
+
+  @type imported :: [FheOperation.t()]
+
+  # Required by Import.Runner behaviour
+  @impl Import.Runner
+  def ecto_schema_module, do: FheOperation
+
+  @impl Import.Runner
+  def option_key, do: :fhe_operations
+
+  @impl Import.Runner
+  def imported_table_row do
+    %{
+      value_type: "[#{ecto_schema_module()}.t()]",
+      value_description: "List of `t:#{ecto_schema_module()}.t/0`s"
+    }
+  end
+
+  @impl Import.Runner
+  def run(multi, changes_list, %{timestamps: timestamps} = options) do
+    insert_options =
+      options
+      |> Map.get(option_key(), %{})
+      |> Map.put_new(:timeout, timeout())
+      |> Map.put(:timestamps, timestamps)
+
+    Multi.run(multi, :insert_fhe_operations, fn repo, _ ->
+      insert(repo, changes_list, insert_options)
+    end)
+  end
+
+  @impl Import.Runner
+  def timeout, do: @timeout
+
+  @spec insert(Ecto.Repo.t(), [map()], %{
+          required(:timeout) => timeout(),
+          required(:timestamps) => Import.timestamps()
+        }) :: {:ok, [FheOperation.t()]} | {:error, [Changeset.t()]}
+  defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps}) when is_list(changes_list) do
+    # Return early if no FHE operations to insert
+    if Enum.empty?(changes_list) do
+      {:ok, []}
+    else
+      # Order by transaction_hash and log_index for deterministic insertion
+      ordered_changes_list =
+        changes_list
+        |> Enum.sort_by(&{&1.transaction_hash, &1.log_index})
+
+      # Insert with conflict resolution
+      # If the same operation exists (same transaction_hash + log_index), replace it
+      case Import.insert_changes_list(
+             repo,
+             ordered_changes_list,
+             conflict_target: [:transaction_hash, :log_index],
+             on_conflict: :replace_all,
+             for: FheOperation,
+             returning: true,
+             timeout: timeout,
+             timestamps: timestamps
+           ) do
+        {:ok, inserted} ->
+          tag_contracts_from_fhe_operations(ordered_changes_list)
+          update_transaction_fhe_counts(repo, ordered_changes_list)
+          {:ok, inserted}
+      end
+    end
+  end
+
+  # Tags contracts that were called in transactions with FHE operations
+  defp tag_contracts_from_fhe_operations(fhe_operations) when is_list(fhe_operations) do
+    contract_addresses = get_all_contract_addresses_from_fhe_operations(fhe_operations)
+
+    Enum.each(contract_addresses, fn address_hash ->
+      FheContractChecker.check_and_save_fhe_status(address_hash, [])
+    end)
+
+    :ok
+  end
+
+  # Gets all unique contract addresses from FHE operations:
+  # 1. Caller addresses from FHE operation logs (contracts that called FHE operations)
+  # 2. Transaction to_addresses (contracts that were called in transactions with FHE operations)
+  defp get_all_contract_addresses_from_fhe_operations(fhe_operations) do
+    # Get caller addresses from FHE operation logs
+    caller_addresses =
+      fhe_operations
+      |> Enum.map(&Map.get(&1, :caller))
+      |> Enum.filter(&(not is_nil(&1)))
+      |> Enum.uniq()
+
+    # Get transaction to_addresses from transactions with FHE operations
+    transaction_hashes =
+      fhe_operations
+      |> Enum.map(& &1.transaction_hash)
+      |> Enum.uniq()
+
+    query =
+      from(
+        t in Transaction,
+        where: t.hash in ^transaction_hashes,
+        where: t.block_consensus == true,
+        where: not is_nil(t.to_address_hash),
+        select: t.to_address_hash,
+        distinct: true
+      )
+
+    to_addresses = Repo.all(query)
+
+    # Combine and deduplicate
+    (caller_addresses ++ to_addresses) |> Enum.uniq()
+  end
+
+  # Updates fhe_operations_count on transactions table for precomputed list API performance
+  defp update_transaction_fhe_counts(repo, fhe_operations) when is_list(fhe_operations) do
+    counts_by_hash =
+      fhe_operations
+      |> Enum.group_by(& &1.transaction_hash, & &1.log_index)
+      |> Enum.map(fn {hash, log_indices} -> {hash, length(log_indices)} end)
+
+    if counts_by_hash != [] do
+      Enum.each(counts_by_hash, fn {transaction_hash, count} ->
+        repo.update_all(
+          from(t in Transaction, where: t.hash == ^transaction_hash),
+          set: [fhe_operations_count: count]
+        )
+      end)
+    end
+
+    :ok
+  end
+end
