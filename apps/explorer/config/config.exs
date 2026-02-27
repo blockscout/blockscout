@@ -141,6 +141,7 @@ for migrator <- [
       Explorer.Migrator.ReindexDuplicatedInternalTransactions,
       Explorer.Migrator.MergeAdjacentMissingBlockRanges,
       Explorer.Migrator.UnescapeQuotesInTokens,
+      Explorer.Migrator.UnescapeAmpersandsInTokens,
       Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources,
       Explorer.Migrator.EmptyInternalTransactionsData
     ] do
