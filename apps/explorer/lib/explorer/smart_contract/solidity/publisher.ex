@@ -175,7 +175,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           "compilerSettings" => compiler_settings_string,
           "runtimeMatch" => %{"type" => match_type},
           "zkCompiler" => %{"version" => zk_compiler_version}
-        },
+        } = source,
         address_hash,
         initial_params,
         is_standard_json?,
@@ -207,7 +207,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("zk_compiler_version", zk_compiler_version)
       |> Map.put("constructor_arguments", constructor_arguments)
       |> Map.put("contract_source_code", contract_source_code)
-      |> Map.put("external_libraries", cast_libraries(compiler_settings["libraries"] || %{}))
+      |> Map.put("external_libraries", source["libraries"] || cast_libraries(compiler_settings["libraries"] || %{}))
       |> Map.put("name", contract_name)
       |> Map.put("file_path", if(save_file_path?, do: file_name))
       |> Map.put("secondary_sources", secondary_sources)
@@ -260,7 +260,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("compiler_version", compiler_version)
       |> Map.put("constructor_arguments", constructor_arguments)
       |> Map.put("contract_source_code", contract_source_code)
-      |> Map.put("external_libraries", cast_libraries(compiler_settings["libraries"] || %{}))
+      |> Map.put("external_libraries", source["libraries"] || cast_libraries(compiler_settings["libraries"] || %{}))
       |> Map.put("name", contract_name)
       |> Map.put("file_path", if(save_file_path?, do: file_name))
       |> Map.put("secondary_sources", secondary_sources)
