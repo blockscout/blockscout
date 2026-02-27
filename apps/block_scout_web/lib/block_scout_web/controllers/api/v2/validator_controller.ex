@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     only: [
       split_list_by_page: 1,
       paging_options: 1,
-      next_page_params: 5
+      next_page_params: 4
     ]
 
   @api_true api?: true
@@ -126,7 +126,6 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       |> next_page_params(
         validators,
         params,
-        false,
         &ValidatorStability.next_page_params/1
       )
 
@@ -188,7 +187,6 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       |> next_page_params(
         validators,
         params,
-        false,
         &ValidatorBlackfort.next_page_params/1
       )
 
@@ -283,7 +281,6 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       |> next_page_params(
         validators,
         params,
-        false,
         &ValidatorZilliqa.next_page_params/1
       )
 

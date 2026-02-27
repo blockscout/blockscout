@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   import BlockScoutWeb.Chain,
     only: [
       fetch_scam_token_toggle: 2,
-      next_page_params: 5,
+      next_page_params: 4,
       split_list_by_page: 1
     ]
 
@@ -95,8 +95,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
           "smart_contract_id",
           "coin_balance",
           "address_hash",
-          "transactions_count",
-          "items_count"
+          "transactions_count"
         ]),
     responses: [
       ok:
@@ -104,8 +103,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          paginated_response(
            items: Schemas.SmartContract,
            next_page_params_example: %{
-             "smart_contract_id" => 1_947_801,
-             "items_count" => 50
+             "smart_contract_id" => 1_947_801
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
@@ -144,7 +142,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       |> next_page_params(
         addresses,
         params,
-        false,
         pager
       )
 
