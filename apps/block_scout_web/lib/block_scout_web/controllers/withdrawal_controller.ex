@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.WithdrawalController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
-    only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1, fetch_page_number: 1]
+    only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
 
   alias BlockScoutWeb.{Controller, WithdrawalView}
   alias Explorer.Chain
@@ -31,10 +31,10 @@ defmodule BlockScoutWeb.WithdrawalController do
     json(conn, %{items: items, next_page_path: next_page_path})
   end
 
-  def index(conn, params) do
+  def index(conn, _params) do
     render(conn, "index.html",
       current_path: Controller.current_full_path(conn),
-      page_number: params |> fetch_page_number() |> Integer.to_string(),
+      page_number: 1,
       withdrawals_count: Withdrawal.count_withdrawals_from_cache(),
       withdrawals_sum: Withdrawal.sum_withdrawals_from_cache() |> Wei.from(:wei)
     )

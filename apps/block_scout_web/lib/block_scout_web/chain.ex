@@ -46,7 +46,6 @@ defmodule BlockScoutWeb.Chain do
     Token.Instance,
     TokenTransfer,
     Transaction,
-    Transaction.StateChange,
     UserOperation,
     Wei
   }
@@ -137,70 +136,31 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
-  @spec next_page_params(any, list(), map(), bool(), (any -> map())) :: nil | map
-  def next_page_params(next_page, list, params, increment_items_count? \\ false, paging_function \\ &paging_params/1)
+  @spec next_page_params(list(), list(), map(), (any -> map())) :: nil | map
+  def next_page_params(next_page, list, params, paging_function \\ &paging_params/1)
 
-  def next_page_params([], _list, _params, _increment_items_count?, _), do: nil
+  def next_page_params([], _list, _params, _), do: nil
 
-  def next_page_params(_, list, params, increment_items_count?, paging_function) do
+  def next_page_params(_, list, params, paging_function) do
     paging_params = paging_function.(List.last(list))
 
     string_keys = map_to_string_keys(paging_params)
 
-    next_page_params =
-      params
-      |> delete_parameters_from_next_page_params()
-      |> Map.drop(string_keys)
-      |> Map.merge(paging_params)
-
-    items_count = next_items_count(next_page_params, list, increment_items_count?)
-
-    cond do
-      Map.has_key?(next_page_params, "items_count") ->
-        Map.put(next_page_params, "items_count", items_count)
-
-      Map.has_key?(next_page_params, :items_count) ->
-        Map.put(next_page_params, :items_count, items_count)
-
-      true ->
-        Map.put(next_page_params, :items_count, items_count)
-    end
+    params
+    |> delete_parameters_from_next_page_params()
+    |> Map.drop(string_keys)
+    |> Map.merge(paging_params)
   end
 
-  defp get_items_count_from_next_page_params(next_page_params) do
-    cond do
-      Map.has_key?(next_page_params, "items_count") ->
-        Map.get(next_page_params, "items_count")
+  @spec next_page_params_for_state_changes(any, list(), map()) :: nil | map
+  def next_page_params_for_state_changes(next_page, list, params)
 
-      Map.has_key?(next_page_params, :items_count) ->
-        Map.get(next_page_params, :items_count)
+  def next_page_params_for_state_changes([], _list, _params), do: nil
 
-      true ->
-        nil
-    end
-  end
+  def next_page_params_for_state_changes(_, list, params) do
+    current_count = params[:state_changes_count] || params["state_changes_count"] || 0
 
-  defp next_items_count(_next_page_params, list, false) do
-    Enum.count(list)
-  end
-
-  defp next_items_count(next_page_params, list, true) do
-    current_items_count_object = get_items_count_from_next_page_params(next_page_params)
-
-    current_items_count =
-      cond do
-        is_binary(current_items_count_object) ->
-          {current_items_count, _} = Integer.parse(current_items_count_object)
-          current_items_count
-
-        is_integer(current_items_count_object) ->
-          current_items_count_object
-
-        true ->
-          0
-      end
-
-    current_items_count + Enum.count(list)
+    %{state_changes_count: current_count + Enum.count(list)}
   end
 
   @doc """
@@ -677,15 +637,16 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {nil, value, id}}]
   end
 
-  def paging_options(%{"items_count" => items_count_string, "state_changes" => _}) when is_binary(items_count_string) do
-    case Integer.parse(items_count_string) do
+  def paging_options(%{"state_changes_count" => state_changes_count_string})
+      when is_binary(state_changes_count_string) do
+    case Integer.parse(state_changes_count_string) do
       {count, ""} -> [paging_options: %{@default_paging_options | key: {count}}]
       _ -> @default_paging_options
     end
   end
 
-  def paging_options(%{items_count: items_count, state_changes: _}) when is_integer(items_count) do
-    [paging_options: %{@default_paging_options | key: {items_count}}]
+  def paging_options(%{state_changes_count: state_changes_count}) when is_integer(state_changes_count) do
+    [paging_options: %{@default_paging_options | key: {state_changes_count}}]
   end
 
   def paging_options(%{"l1_block_number" => block_number, "transaction_hash" => transaction_hash}) do
@@ -831,23 +792,6 @@ defmodule BlockScoutWeb.Chain do
   def put_key_value_to_paging_options([paging_options: paging_options], key, value) do
     [paging_options: Map.put(paging_options, key, value)]
   end
-
-  def fetch_page_number(%{"page_number" => page_number_string}) do
-    case Integer.parse(page_number_string) do
-      {number, ""} ->
-        number
-
-      _ ->
-        1
-    end
-  end
-
-  def fetch_page_number(%{"items_count" => items_count_str}) do
-    {items_count, _} = Integer.parse(items_count_str)
-    div(items_count, @page_size) + 1
-  end
-
-  def fetch_page_number(_), do: 1
 
   def update_page_parameters(new_page_number, new_page_size, %PagingOptions{} = options) do
     %PagingOptions{options | page_number: new_page_number, page_size: new_page_size}
@@ -1079,11 +1023,6 @@ defmodule BlockScoutWeb.Chain do
 
   defp paging_params(%Instance{token_id: token_id}) do
     %{"unique_token" => Decimal.to_integer(token_id)}
-  end
-
-  defp paging_params(%StateChange{}) do
-    # todo: remove in the future as this param is unused in the pagination of state changes
-    %{state_changes: nil}
   end
 
   defp paging_params(%{index: index}) do

@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.VerifiedContractsController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
-    only: [next_page_params: 5, split_list_by_page: 1, fetch_page_number: 1]
+    only: [next_page_params: 4, split_list_by_page: 1]
 
   import BlockScoutWeb.PagingHelper, only: [current_filter: 1, search_query: 1]
 
@@ -48,7 +48,6 @@ defmodule BlockScoutWeb.VerifiedContractsController do
              next_page,
              verified_contracts,
              params,
-             false,
              &%{id: &1.id}
            ) do
         nil -> nil
@@ -62,7 +61,7 @@ defmodule BlockScoutWeb.VerifiedContractsController do
     render(conn, "index.html",
       current_path: Controller.current_full_path(conn),
       filter: params["filter"],
-      page_number: params |> fetch_page_number() |> Integer.to_string(),
+      page_number: 1,
       contracts_count: Chain.count_contracts_from_cache(),
       verified_contracts_count: Chain.count_verified_contracts_from_cache(),
       new_contracts_count: Chain.count_new_contracts_from_cache(),
