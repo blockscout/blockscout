@@ -1444,7 +1444,7 @@ defmodule Explorer.Chain.SmartContract do
           | {:sorting, SortingHelper.sorting_params()}
           | Chain.api?()
           | Chain.show_scam_tokens?()
-        ]) :: [__MODULE__.t()]
+        ]) :: [Address.t()]
   def verified_contract_addresses(options \\ []),
     do: VerifiedContractAddressesQuery.verified_contract_addresses(options)
 
