@@ -180,6 +180,71 @@ jobs:
           merge-multiple: true
           path: temp-specs
 
+      - name: Merge all OpenAPI specs into all-in-one spec
+        run: |
+          npm install js-yaml
+          cat > merge-specs.js << 'SCRIPT_EOF'
+          const fs = require('fs');
+          const path = require('path');
+          const yaml = require('js-yaml');
+
+          const specDir = './temp-specs';
+          const outputFile = path.join(specDir, 'openapi.all.yaml');
+
+          const files = fs.readdirSync(specDir)
+            .filter(f => f.endsWith('.yaml'))
+            .sort();
+
+          let merged = null;
+
+          for (const file of files) {
+            const content = yaml.load(fs.readFileSync(path.join(specDir, file), 'utf8'));
+            if (!merged) {
+              merged = JSON.parse(JSON.stringify(content));
+              continue;
+            }
+            // Union merge paths (first definition wins for duplicates)
+            if (content.paths) {
+              merged.paths = merged.paths || {};
+              for (const [p, def] of Object.entries(content.paths)) {
+                if (!merged.paths[p]) {
+                  merged.paths[p] = def;
+                }
+              }
+            }
+            // Union merge components (first definition wins for duplicates)
+            if (content.components) {
+              merged.components = merged.components || {};
+              for (const [section, defs] of Object.entries(content.components)) {
+                if (!merged.components[section]) {
+                  merged.components[section] = defs;
+                } else {
+                  for (const [name, def] of Object.entries(defs)) {
+                    if (!merged.components[section][name]) {
+                      merged.components[section][name] = def;
+                    }
+                  }
+                }
+              }
+            }
+            // Union merge tags (by name)
+            if (content.tags) {
+              merged.tags = merged.tags || [];
+              const existingTagNames = new Set(merged.tags.map(t => t.name));
+              for (const tag of content.tags) {
+                if (!existingTagNames.has(tag.name)) {
+                  merged.tags.push(tag);
+                  existingTagNames.add(tag.name);
+                }
+              }
+            }
+          }
+
+          fs.writeFileSync(outputFile, yaml.dump(merged, { lineWidth: -1 }));
+          console.log(`Merged ${files.length} specs into ${outputFile}`);
+          SCRIPT_EOF
+          node merge-specs.js
+
       - name: Create specs directory structure
         run: |
           VERSION=${{ github.event_name == 'release' && env.RELEASE_VERSION || 'master' }}
