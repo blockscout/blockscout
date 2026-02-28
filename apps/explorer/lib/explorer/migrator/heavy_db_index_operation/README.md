@@ -8,10 +8,11 @@ The modules under `Explorer.Migrator.HeavyDbIndexOperation` provide a standardiz
 
 ## Operation Types
 
-The framework supports two types of operations (`@operation_type`):
+The framework supports three types of operations (`@operation_type`):
 
 - `:create` - Creates a new index on a table
 - `:drop` - Removes an existing index from a table
+- `:rename` - Renames an existing index (typically used as the final step in a create → drop → rename workflow for zero-downtime index replacement)
 
 ## Index Creation Methods
 
@@ -45,6 +46,144 @@ This approach is simpler and more suitable when:
 - No special conditions or expressions are needed
 - The index is not partial
 - Default column ordering is acceptable
+
+### 3. Rename Operations
+
+For rename operations, you don't use `@query_string` or `@table_columns`. Instead, you define the old and new index names and implement custom SQL:
+
+```elixir
+@old_index_name "transactions_2nd_created_contract_address_hash_with_pending_index_a"
+@new_index_name "transactions_created_contract_address_hash_with_pending_index_a"
+@operation_type :rename
+
+def db_index_operation do
+  case Repo.query("ALTER INDEX \"#{@old_index_name}\" RENAME TO \"#{@new_index_name}\";", [], timeout: :infinity) do
+    {:ok, _} ->
+      :ok
+    {:error, error} ->
+      Logger.error("Failed to rename index: #{inspect(error)}")
+      :error
+  end
+end
+```
+
+**Note:** For rename operations:
+- `index_name/0` should return the **new** (final) index name
+- The migration name will be `heavy_indexes_rename_{new_index_name_lowercase}`
+- Rename operations are typically dependent on a drop operation completing first
+- `db_index_operation_status/0` should check both old and new index existence to determine status
+
+## Zero-Downtime Index Replacement Workflow
+
+When you need to replace an existing index with a modified version (different columns, sort order, WHERE clause, etc.), use the create → drop → rename workflow to ensure zero downtime:
+
+### Workflow Steps
+
+1. **Create** - Build a new index with a temporary name (e.g., using `_2nd_` prefix)
+2. **Drop** - Remove the old index (queries can now use the new index)
+3. **Rename** - Rename the temporary index to the original name (restores the original index name)
+
+### Example: Replacing `my_table_column_index`
+
+```elixir
+# Step 1: Create new index with temporary name
+defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateMyTable2ndColumnIndex do
+  use Explorer.Migrator.HeavyDbIndexOperation
+  
+  @table_name :my_table
+  @index_name "my_table_2nd_column_index"  # Temporary name with _2nd_ prefix
+  @operation_type :create
+  
+  @query_string """
+  CREATE INDEX CONCURRENTLY IF NOT EXISTS "#{@index_name}"
+  ON #{@table_name} (column_a, column_b DESC)
+  WHERE column_a IS NOT NULL;
+  """
+  
+  def dependent_from_migrations, do: []  # Or depend on previous migrations
+end
+
+# Step 2: Drop old index
+defmodule Explorer.Migrator.HeavyDbIndexOperation.DropMyTableColumnIndex do
+  use Explorer.Migrator.HeavyDbIndexOperation
+  
+  @table_name :my_table
+  @index_name "my_table_column_index"  # Original index name
+  @operation_type :drop
+  
+  def dependent_from_migrations do
+    # Wait for new index to be created
+    [CreateMyTable2ndColumnIndex.migration_name()]
+  end
+end
+
+# Step 3: Rename temporary index to original name
+defmodule Explorer.Migrator.HeavyDbIndexOperation.RenameMyTable2ndColumnIndex do
+  use Explorer.Migrator.HeavyDbIndexOperation
+  
+  @table_name :my_table
+  @old_index_name "my_table_2nd_column_index"
+  @new_index_name "my_table_column_index"  # Restore original name
+  @operation_type :rename
+  
+  def index_name, do: @new_index_name  # Return the final name
+  
+  def dependent_from_migrations do
+    # Wait for old index to be dropped
+    [DropMyTableColumnIndex.migration_name()]
+  end
+  
+  def db_index_operation do
+    case Repo.query("ALTER INDEX \"#{@old_index_name}\" RENAME TO \"#{@new_index_name}\";", [], timeout: :infinity) do
+      {:ok, _} -> 
+        :ok
+      {:error, error} -> 
+        Logger.error("Failed to rename: #{inspect(error)}")
+        :error
+    end
+  end
+  
+  def db_index_operation_status do
+    old_exists = HeavyDbIndexOperationHelper.db_index_exists_and_valid?(@old_index_name)
+    new_exists = HeavyDbIndexOperationHelper.db_index_exists_and_valid?(@new_index_name)
+    
+    cond do
+      # Completed: old gone, new exists
+      old_exists == %{exists?: false, valid?: nil} and 
+      new_exists == %{exists?: true, valid?: true} -> :completed
+      
+      # Not started: old exists, new doesn't
+      old_exists == %{exists?: true, valid?: true} and 
+      new_exists == %{exists?: false, valid?: nil} -> :not_initialized
+      
+      true -> :unknown
+    end
+  end
+  
+  def restart_db_index_operation do
+    # Rename back to old name to retry
+    case Repo.query("ALTER INDEX \"#{@new_index_name}\" RENAME TO \"#{@old_index_name}\";", [], timeout: :infinity) do
+      {:ok, _} -> :ok
+      {:error, error} -> 
+        Logger.error("Failed to reverse rename: #{inspect(error)}")
+        :error
+    end
+  end
+end
+```
+
+### Benefits of This Approach
+
+- **Zero Downtime** - The database always has an index available (either old or new)
+- **Safe Rollback** - If the new index is invalid, the old index is still available
+- **Query Compatibility** - Queries continue working throughout the migration
+- **Progressive Migration** - Each step completes independently with dependency tracking
+
+**Note:** For rename operations:
+- `index_name/0` should return the **new** (final) index name
+- The migration name will be `heavy_indexes_rename_{new_index_name_lowercase}`
+- Rename operations are typically dependent on a drop operation completing first
+- `db_index_operation_status/0` should check both old and new index existence to determine status
 
 ## Cache Management
 
@@ -99,8 +238,8 @@ end
 
    Basic callbacks (usually just return module attributes):
    - `table_name/0` - Returns the table name (usually returns `@table_name`)
-   - `operation_type/0` - Returns `:create` or `:drop` (usually returns `@operation_type`)
-   - `index_name/0` - Returns the index name (usually returns `@index_name`)
+   - `operation_type/0` - Returns `:create`, `:drop`, or `:rename` (usually returns `@operation_type`)
+   - `index_name/0` - Returns the index name (usually returns `@index_name`). For `:rename` operations, this should return the **new** index name
    
    Operation-specific callbacks:
    - `dependent_from_migrations/0` - Returns list of migration names that must complete before this one

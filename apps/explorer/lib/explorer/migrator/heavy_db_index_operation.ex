@@ -7,7 +7,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   @doc """
   Returns the name of the migration. The name is used to track the operation's status in
   `Explorer.Migrator.MigrationStatus`.
-  Heavy DB migration is either `heavy_indexes_create_{lower_case_index_name}` or `heavy_indexes_drop_{lower_case_index_name}`
+  Heavy DB migration is either `heavy_indexes_create_{lower_case_index_name}`, `heavy_indexes_drop_{lower_case_index_name}`, or `heavy_indexes_rename_{lower_case_index_name}`
   """
   @callback migration_name :: String.t()
 
@@ -39,8 +39,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   ## Returns
   - `:create` - Indicates that the operation is to add a new index.
   - `:drop` - Indicates that the operation is to drop an existing index.
+  - `:rename` - Indicates that the operation is to rename an existing index.
   """
-  @callback operation_type :: :create | :drop
+  @callback operation_type :: :create | :drop | :rename
 
   @doc """
   Returns the name of the index as a string.

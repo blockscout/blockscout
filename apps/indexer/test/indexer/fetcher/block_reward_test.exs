@@ -445,7 +445,6 @@ defmodule Indexer.Fetcher.BlockRewardTest do
   defp wait_for_tasks(buffered_task) do
     wait_until(:timer.seconds(10), fn ->
       counts = BufferedTask.debug_count(buffered_task, false)
-      IO.inspect("wait_for_tasks counts: #{inspect(counts)}")
       counts.buffer == 0 and counts.tasks == 0
     end)
   end
