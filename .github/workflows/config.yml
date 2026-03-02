@@ -525,7 +525,7 @@ jobs:
       - matrix-builder
     services:
       postgres:
-        image: postgres:17
+        image: ghcr.io/hanzoai/sql:17-alpine
         env:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
           POSTGRES_DB: explorer_test
@@ -590,7 +590,7 @@ jobs:
       - matrix-builder
     services:
       postgres:
-        image: postgres:17
+        image: ghcr.io/hanzoai/sql:17-alpine
         env:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
           POSTGRES_DB: explorer_test
@@ -667,7 +667,7 @@ jobs:
       - matrix-builder
     services:
       postgres:
-        image: postgres:17
+        image: ghcr.io/hanzoai/sql:17-alpine
         env:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
           POSTGRES_DB: explorer_test
@@ -741,7 +741,7 @@ jobs:
           - 6379:6379
 
       postgres:
-        image: postgres:17
+        image: ghcr.io/hanzoai/sql:17-alpine
         env:
           # Match apps/explorer/config/test.exs config :explorer, Explorer.Repo, database
           POSTGRES_DB: explorer_test
