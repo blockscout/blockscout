@@ -835,7 +835,7 @@ config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
   enabled: ConfigHelper.chain_type() == :arbitrum
 
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsOperatorFeeConstantIndex,
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsOperatorFeeConstantIndex,
   enabled: ConfigHelper.chain_type() == :optimism
 
 config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,

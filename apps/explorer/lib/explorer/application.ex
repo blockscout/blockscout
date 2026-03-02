@@ -322,7 +322,7 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsOperatorFeeConstantIndex,
+          Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsOperatorFeeConstantIndex,
           :indexer
         ),
         configure_mode_dependent_process(
