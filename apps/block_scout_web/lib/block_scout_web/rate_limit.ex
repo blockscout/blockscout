@@ -38,7 +38,7 @@ defmodule BlockScoutWeb.RateLimit do
     user_api_key = get_api_key(conn)
 
     with {:api_key, false} <- {:api_key, valid_api_key?(user_api_key) && user_api_key == static_api_key},
-         {:plan, plan} when plan in [false, nil] <- {:plan, valid_api_key?(user_api_key) && get_plan(conn.query_params)} do
+         {:plan, plan} when plan in [false, nil] <- {:plan, valid_api_key?(user_api_key) && get_plan(conn)} do
       ip_result =
         rate_limit("graphql_#{ip_string}", config[:time_interval_limit_by_ip], config[:limit_by_ip], multiplier)
 
