@@ -19,7 +19,7 @@ services:
       - "host.docker.internal:host-gateway"
 
   postgres:
-    image: ghcr.io/hanzoai/sql:17-alpine
+    image: ghcr.io/hanzoai/sql:latest
     environment:
       POSTGRES_DB: blockscout_lux_testnet
       POSTGRES_USER: blockscout

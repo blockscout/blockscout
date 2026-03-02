@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   db-init:
-    image: ghcr.io/hanzoai/sql:17-alpine
+    image: ghcr.io/hanzoai/sql:latest
     volumes:
       - ./blockscout-db-data:/var/lib/postgresql/data
     entrypoint:
@@ -12,7 +12,7 @@ services:
         chown -R 2000:2000 /var/lib/postgresql/data
 
   db:
-    image: ghcr.io/hanzoai/sql:17-alpine
+    image: ghcr.io/hanzoai/sql:latest
     user: 2000:2000
     shm_size: 256m
     restart: always
