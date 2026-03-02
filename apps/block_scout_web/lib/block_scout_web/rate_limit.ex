@@ -238,7 +238,7 @@ defmodule BlockScoutWeb.RateLimit do
           :skip | {:allow, -1} | {:deny, integer(), integer(), integer()} | {:allow, integer(), integer(), integer()}
   defp rate_limit_by_account_api_key(conn, route_config, global_config, bucket_key_prefix) do
     config = config_or_default(route_config, global_config)
-    plan = get_plan(conn.query_params)
+    plan = get_plan(conn)
 
     if plan do
       {plan, api_key} = plan
@@ -377,13 +377,13 @@ defmodule BlockScoutWeb.RateLimit do
         api_key
 
       _ ->
-        Map.get(conn.query_params, "apikey")
+        Map.get(conn.query_params, :apikey) || Map.get(conn.query_params, "apikey")
     end
   end
 
-  defp get_plan(query_params) do
-    with true <- query_params && Map.has_key?(query_params, "apikey"),
-         api_key_value <- Map.get(query_params, "apikey"),
+  defp get_plan(conn) do
+    with true <- Application.get_env(:explorer, Explorer.Account)[:enabled],
+         api_key_value when not is_nil(api_key_value) <- get_api_key(conn),
          api_key when not is_nil(api_key) <- ApiKey.api_key_with_plan_by_value(api_key_value) do
       {api_key.identity.plan, to_string(api_key.value)}
     else
