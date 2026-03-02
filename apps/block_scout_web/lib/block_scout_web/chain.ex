@@ -641,7 +641,7 @@ defmodule BlockScoutWeb.Chain do
       when is_binary(state_changes_count_string) do
     case Integer.parse(state_changes_count_string) do
       {count, ""} -> [paging_options: %{@default_paging_options | key: {count}}]
-      _ -> @default_paging_options
+      _ -> [paging_options: @default_paging_options]
     end
   end
 
