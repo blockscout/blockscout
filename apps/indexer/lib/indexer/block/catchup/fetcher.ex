@@ -271,7 +271,13 @@ defmodule Indexer.Block.Catchup.Fetcher do
     String.match?(error_message, ~r/due to a timeout/) or String.match?(error_message, ~r/due to user request/)
   end
 
-  defp add_range_to_massive_blocks(range) do
+  @doc """
+  Adds block numbers or block numbers range into `massive_blocks` and clears them from `missing_block_ranges`
+  """
+  @spec add_range_to_massive_blocks(Range.t() | [non_neg_integer()]) :: any()
+  def add_range_to_massive_blocks([]), do: :ok
+
+  def add_range_to_massive_blocks(range) do
     clear_missing_ranges(range)
 
     range
