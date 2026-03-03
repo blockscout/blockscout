@@ -31,7 +31,7 @@ defmodule Explorer.Account.Identity do
   typed_schema "account_identities" do
     field(:uid_hash, Cloak.Ecto.SHA256) :: binary() | nil
     field(:uid, Explorer.Encrypted.Binary, null: false)
-    field(:email, Explorer.Encrypted.Binary, null: false)
+    field(:email, Explorer.Encrypted.Binary, null: true)
     field(:name, :string, virtual: true)
     field(:nickname, :string, virtual: true)
     field(:address_hash, Hash.Address, virtual: true)
@@ -138,7 +138,8 @@ defmodule Explorer.Account.Identity do
     |> Repo.account_repo().update()
   end
 
-  defp new_identity(auth) do
+  @spec new_identity(Auth.t()) :: t()
+  def new_identity(auth) do
     %__MODULE__{
       uid: auth.uid,
       uid_hash: auth.uid,
@@ -335,7 +336,8 @@ defmodule Explorer.Account.Identity do
   - A string representation of the Ethereum address hash, or nil if not found.
   """
   @spec address_hash_from_auth(Auth.t()) :: String.t() | nil
-  def address_hash_from_auth(%Auth{provider: :dynamic, extra: %Extra{raw_info: %{address_hash: address_hash}}}) do
+  def address_hash_from_auth(%Auth{provider: provider, extra: %Extra{raw_info: %{address_hash: address_hash}}})
+      when provider in ~w(dynamic keycloak)a do
     address_hash
   end
 
