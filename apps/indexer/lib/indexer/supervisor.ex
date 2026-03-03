@@ -106,7 +106,7 @@ defmodule Indexer.Supervisor do
       |> Application.get_all_env()
       |> Keyword.take(
         ~w(blocks_batch_size blocks_concurrency block_interval json_rpc_named_arguments receipts_batch_size
-           receipts_concurrency subscribe_named_arguments realtime_overrides)a
+           receipts_concurrency receipts_by_block subscribe_named_arguments realtime_overrides)a
       )
       |> Enum.into(%{})
       |> Map.put(:memory_monitor, memory_monitor)

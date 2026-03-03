@@ -85,7 +85,8 @@ defmodule Indexer.Block.Fetcher do
           callback_module: callback_module,
           json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments(),
           receipts_batch_size: pos_integer(),
-          receipts_concurrency: pos_integer()
+          receipts_concurrency: pos_integer(),
+          receipts_by_block: boolean()
         }
 
   @doc """
@@ -128,7 +129,8 @@ defmodule Indexer.Block.Fetcher do
             task_supervisor: nil,
             json_rpc_named_arguments: nil,
             receipts_batch_size: @receipts_batch_size,
-            receipts_concurrency: @receipts_concurrency
+            receipts_concurrency: @receipts_concurrency,
+            receipts_by_block: false
 
   @doc """
   Required named arguments

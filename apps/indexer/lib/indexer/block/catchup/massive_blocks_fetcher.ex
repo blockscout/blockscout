@@ -94,6 +94,7 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcher do
   defp generate_block_fetcher(opts) do
     receipts_batch_size = Application.get_env(:indexer, :receipts_batch_size)
     receipts_concurrency = Application.get_env(:indexer, :receipts_concurrency)
+    receipts_by_block = Application.get_env(:indexer, :receipts_by_block, false)
     json_rpc_named_arguments = Application.get_env(:indexer, :json_rpc_named_arguments)
 
     %Fetcher{
@@ -102,6 +103,7 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcher do
       json_rpc_named_arguments: json_rpc_named_arguments,
       receipts_batch_size: receipts_batch_size,
       receipts_concurrency: receipts_concurrency,
+      receipts_by_block: receipts_by_block,
       task_supervisor: opts[:task_supervisor]
     }
   end

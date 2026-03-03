@@ -33,6 +33,40 @@ defmodule Indexer.Block.Fetcher.Receipts do
   def fetch(%Block.Fetcher{} = _state, []), do: {:ok, %{logs: [], receipts: []}}
 
   def fetch(
+        %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments, receipts_by_block: true} = state,
+        transaction_params
+      ) do
+    Logger.debug("fetching transaction receipts by block number", count: Enum.count(transaction_params))
+    stream_opts = [max_concurrency: state.receipts_concurrency, timeout: :infinity]
+
+    block_numbers =
+      transaction_params
+      |> Enum.map(& &1[:block_number])
+      |> Enum.uniq()
+
+    block_numbers
+    |> Enum.chunk_every(state.receipts_batch_size)
+    |> Task.async_stream(
+      &EthereumJSONRPC.Receipts.fetch_by_block_numbers(&1, json_rpc_named_arguments),
+      stream_opts
+    )
+    |> Enum.reduce_while({:ok, %{logs: [], receipts: []}}, fn
+      {:ok, {:ok, %{logs: logs, receipts: receipts}}}, {:ok, %{logs: acc_logs, receipts: acc_receipts}} ->
+        {:cont, {:ok, %{logs: acc_logs ++ logs, receipts: acc_receipts ++ receipts}}}
+
+      {:ok, {:error, reason}}, {:ok, _acc} ->
+        {:halt, {:error, reason}}
+
+      {:error, reason}, {:ok, _acc} ->
+        {:halt, {:error, reason}}
+    end)
+    |> case do
+      {:ok, receipt_params} -> {:ok, set_block_number_to_logs(receipt_params, transaction_params)}
+      other -> other
+    end
+  end
+
+  def fetch(
         %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = state,
         transaction_params
       ) do
