@@ -7,7 +7,8 @@ on:
       - 'v*'
 
 env:
-  RELEASE_VERSION: '2.6.1'
+  RELEASE_VERSION: '10.0.0'
+  LUX_VERSION: '2.6.1'
 
 permissions:
   contents: read
@@ -41,8 +42,8 @@ jobs:
           push: true
           tags: |
             ghcr.io/luxfi/blockscout-lux:latest
-            ghcr.io/luxfi/blockscout-lux:v${{ env.RELEASE_VERSION }}
-            ghcr.io/luxfi/blockscout-lux:v${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
+            ghcr.io/luxfi/blockscout-lux:v${{ env.LUX_VERSION }}
+            ghcr.io/luxfi/blockscout-lux:v${{ env.LUX_VERSION }}.commit.${{ env.SHORT_SHA }}
           platforms: linux/amd64
           build-args: |
             DECODE_NOT_A_CONTRACT_CALLS=false
