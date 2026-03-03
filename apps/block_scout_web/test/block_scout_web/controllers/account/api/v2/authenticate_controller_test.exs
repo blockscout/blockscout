@@ -654,9 +654,9 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateControllerTest do
           "Bearer some_token"
         )
         |> get("/api/account/v2/authenticate_via_dynamic")
-        |> json_response(500)
+        |> json_response(404)
 
-      assert response == %{"message" => "Dynamic integration is disabled"}
+      assert response == %{"message" => "This endpoint is not configured"}
     end
   end
 

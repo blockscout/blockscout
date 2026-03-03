@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Account.API.V2.AddressController do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
   alias BlockScoutWeb.Account.API.V2.AuthenticateController
-  alias Explorer.ThirdPartyIntegrations.Auth0
+  alias Explorer.Account.Authentication
   alias Plug.Conn
 
   action_fallback(BlockScoutWeb.Account.API.V2.FallbackController)
@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.Account.API.V2.AddressController do
   @spec link_address(Plug.Conn.t(), map()) :: :error | {:error, any()} | Conn.t()
   def link_address(conn, %{"message" => message, "signature" => signature}) do
     with %{uid: id} <- conn |> current_user(),
-         {:ok, auth} <- Auth0.link_address(id, message, signature) do
+         {:ok, auth} <- Authentication.link_address(id, message, signature) do
       AuthenticateController.put_auth_to_session(conn, auth)
     end
   end
