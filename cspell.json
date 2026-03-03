@@ -518,6 +518,7 @@
         "Posix",
         "postgrex",
         "Postrge",
+        "postwalk",
         "predeploy",
         "prederive",
         "prederived",

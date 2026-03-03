@@ -15,10 +15,8 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
 
   alias BlockScoutWeb.Schemas.API.V2.Account, as: AccountSchemas
 
-  alias Explorer.Account.Identity
+  alias Explorer.Account.{Authentication, Identity}
   alias Explorer.Chain
-  alias Explorer.Chain.Address
-  alias Explorer.ThirdPartyIntegrations.{Auth0, Dynamic}
   alias Plug.Conn
 
   action_fallback(BlockScoutWeb.Account.API.V2.FallbackController)
@@ -122,16 +120,17 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
           | {:interval, integer()}
           | Conn.t()
   def send_otp(conn, _params) do
+    conn = Conn.fetch_session(conn)
     email = Map.get(conn.body_params, :email)
 
-    case Auth0.enabled?() && conn |> current_user() do
+    case current_user(conn) do
       nil ->
-        with :ok <- Auth0.send_otp(email, AccessHelper.conn_to_ip_string(conn)) do
+        with :ok <- Authentication.send_otp(email, AccessHelper.conn_to_ip_string(conn)) do
           conn |> put_status(200) |> json(%{message: "Success"})
         end
 
       %{email: nil} ->
-        with :ok <- Auth0.send_otp_for_linking(email, AccessHelper.conn_to_ip_string(conn)) do
+        with :ok <- Authentication.send_otp_for_linking(email, AccessHelper.conn_to_ip_string(conn)) do
           conn |> put_status(200) |> json(%{message: "Success"})
         end
 
@@ -140,9 +139,6 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
         |> put_status(500)
         |> put_view(UserView)
         |> render(:message, %{message: "This account already has an email"})
-
-      false ->
-        {:enabled, false}
     end
   end
 
@@ -192,9 +188,11 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
     information.
   """
   @spec confirm_otp(Conn.t(), map()) :: :error | {:error, any()} | {:enabled, false} | Conn.t()
-  def confirm_otp(conn, %{email: email, otp: otp}) do
-    with {:enabled, true} <- {:enabled, Auth0.enabled?()},
-         {:ok, auth} <- Auth0.confirm_otp_and_get_auth(email, otp, AccessHelper.conn_to_ip_string(conn)) do
+  def confirm_otp(conn, _params) do
+    email = Map.get(conn.body_params, :email)
+    otp = Map.get(conn.body_params, :otp)
+
+    with {:ok, auth} <- Authentication.confirm_otp(email, otp, AccessHelper.conn_to_ip_string(conn)) do
       put_auth_to_session(conn, auth)
     end
   end
@@ -255,9 +253,8 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   """
   @spec siwe_message(Conn.t(), map()) :: {:error, String.t()} | {:enabled, false} | {:format, :error} | Conn.t()
   def siwe_message(conn, %{address: address}) do
-    with {:enabled, true} <- {:enabled, Auth0.enabled?()},
-         {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address)},
-         {:ok, message} <- Auth0.generate_siwe_message(Address.checksum(address_hash)) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address)},
+         {:ok, message} <- Authentication.generate_siwe_message(address_hash) do
       conn |> put_status(200) |> json(%{siwe_message: message})
     end
   end
@@ -310,8 +307,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
     message = Map.get(conn.body_params, :message)
     signature = Map.get(conn.body_params, :signature)
 
-    with {:enabled, true} <- {:enabled, Auth0.enabled?()},
-         {:ok, auth} <- Auth0.get_auth_with_web3(message, signature) do
+    with {:ok, auth} <- Authentication.verify_siwe_message(message, signature) do
       put_auth_to_session(conn, auth)
     end
   end
@@ -360,7 +356,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
       end
 
     with {:token, not_nil_token} when not is_nil(not_nil_token) <- {:token, token},
-         {:ok, auth} <- Dynamic.get_auth_from_token(not_nil_token) do
+         {:ok, auth} <- Authentication.authenticate_via_dynamic(not_nil_token) do
       put_auth_to_session(conn, auth)
     end
   end
