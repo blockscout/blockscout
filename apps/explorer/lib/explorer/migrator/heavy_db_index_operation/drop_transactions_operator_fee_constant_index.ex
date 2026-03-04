@@ -1,22 +1,16 @@
-defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsOperatorFeeConstantIndex do
+defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsOperatorFeeConstantIndex do
   @moduledoc """
-  Creates partial index on the `transactions` table filtering by `operator_fee_constant IS NULL`.
+  Drops index "transactions_operator_fee_constant_index" btree (operator_fee_constant IS NULL).
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  require Logger
-
-  alias Explorer.Migrator.{
-    HeavyDbIndexOperation,
-    MigrationStatus
-  }
-
+  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :transactions
   @index_name "transactions_operator_fee_constant_index"
-  @operation_type :create
+  @operation_type :drop
 
   @impl HeavyDbIndexOperation
   def table_name, do: @table_name
@@ -30,25 +24,20 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsOperatorFeeC
   @impl HeavyDbIndexOperation
   def dependent_from_migrations, do: []
 
-  @query_string """
-  CREATE INDEX #{HeavyDbIndexOperationHelper.add_concurrently_flag?()} IF NOT EXISTS "#{@index_name}"
-  ON #{@table_name} (operator_fee_constant)
-  WHERE operator_fee_constant IS NULL;
-  """
-
   @impl HeavyDbIndexOperation
   def db_index_operation do
-    HeavyDbIndexOperationHelper.create_db_index(@query_string)
+    HeavyDbIndexOperationHelper.safely_drop_db_index(@index_name)
   end
 
   @impl HeavyDbIndexOperation
   def check_db_index_operation_progress do
-    HeavyDbIndexOperationHelper.check_db_index_operation_progress(@index_name, @query_string)
+    operation = HeavyDbIndexOperationHelper.drop_index_query_string(@index_name)
+    HeavyDbIndexOperationHelper.check_db_index_operation_progress(@index_name, operation)
   end
 
   @impl HeavyDbIndexOperation
   def db_index_operation_status do
-    HeavyDbIndexOperationHelper.db_index_creation_status(@index_name)
+    HeavyDbIndexOperationHelper.db_index_dropping_status(@index_name)
   end
 
   @impl HeavyDbIndexOperation
