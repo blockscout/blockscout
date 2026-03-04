@@ -1,6 +1,6 @@
 ---
 name: code-formatting
-description: Fixes code formatting in the Blockscout Elixir project using mix format. Use when you need to fix formatting violations, code style inconsistencies, or ensure consistent code formatting. For linting issues, use `mix credo`.
+description: Fixes code formatting in the Blockscout Elixir project using mix format. Use when you need to fix formatting violations, code style inconsistencies, or ensure consistent code formatting. For linting issues, use `mix credo`. Use this skill for every change made.
 ---
 
 ## Overview
