@@ -90,8 +90,13 @@ jobs:
           for dep in explorer-mainnet explorer-zoo explorer-hanzo explorer-spc explorer-pars; do
             kubectl rollout restart deployment/$dep -n lux-mainnet || true
           done
-          # Testnet & devnet explorers
-          kubectl rollout restart deployment/explorer-testnet -n lux-testnet || true
-          kubectl rollout restart deployment/explorer-devnet -n lux-devnet || true
+          # Testnet explorers
+          for dep in explorer-testnet explorer-zoo-testnet explorer-hanzo-testnet explorer-spc-testnet explorer-pars-testnet; do
+            kubectl rollout restart deployment/$dep -n lux-testnet || true
+          done
+          # Devnet explorers
+          for dep in explorer-devnet explorer-zoo-devnet explorer-hanzo-devnet explorer-spc-devnet explorer-pars-devnet; do
+            kubectl rollout restart deployment/$dep -n lux-devnet || true
+          done
           # Wait for mainnet rollout
           kubectl rollout status deployment/explorer-mainnet -n lux-mainnet --timeout=300s
