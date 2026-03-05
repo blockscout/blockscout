@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   alias Explorer.Token.BalanceReader
   alias Explorer.Utility.RateLimiter
   alias Indexer.BufferedTask
+  alias Indexer.Fetcher.TokenHoldersCountUpdater
   alias Timex.Duration
 
   require Logger
@@ -199,6 +200,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
           },
           broadcast: false
         })
+
+      TokenHoldersCountUpdater.add(imported_ctbs)
 
       imported_ctbs
       |> filter_imported_ctbs(balances_map)

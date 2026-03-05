@@ -426,7 +426,7 @@ defmodule Indexer.Block.FetcherTest do
             end)
             # async requests need to be grouped in one expect because the order is non-deterministic while multiple expect
             # calls on the same name/arity are used in order
-            |> expect(:json_rpc, 9, fn json, _options ->
+            |> expect(:json_rpc, 5, fn json, _options ->
               [request] = json
 
               case request do
@@ -531,35 +531,6 @@ defmodule Indexer.Block.FetcherTest do
 
           assert {:ok,
                   %{
-                    addresses: [
-                      %Explorer.Chain.Hash{
-                        byte_count: 20,
-                        bytes:
-                          <<55, 52, 203, 24, 116, 145, 237, 231, 19, 174, 91, 59, 45, 18, 40, 74, 244, 107, 129, 1>>
-                      } = first_address_hash,
-                      %Explorer.Chain.Hash{
-                        byte_count: 20,
-                        bytes:
-                          <<89, 47, 120, 202, 98, 102, 132, 20, 109, 56, 18, 133, 202, 0, 221, 145, 179, 117, 253, 17>>
-                      } = second_address_hash,
-                      %Explorer.Chain.Hash{
-                        byte_count: 20,
-                        bytes:
-                          <<187, 123, 130, 135, 243, 240, 169, 51, 71, 74, 121, 234, 228, 44, 188, 169, 119, 121, 17,
-                            113>>
-                      } = third_address_hash,
-                      %Explorer.Chain.Hash{
-                        byte_count: 20,
-                        bytes:
-                          <<210, 193, 91, 230, 52, 135, 86, 246, 145, 187, 152, 246, 13, 254, 190, 97, 230, 190, 59,
-                            86>>
-                      } = fourth_address_hash,
-                      %Explorer.Chain.Hash{
-                        byte_count: 20,
-                        bytes:
-                          <<221, 47, 30, 110, 73, 130, 2, 232, 109, 143, 84, 66, 175, 89, 101, 128, 164, 240, 60, 44>>
-                      } = fifth_address_hash
-                    ],
                     blocks: [
                       %Explorer.Chain.Hash{
                         byte_count: 32,
@@ -601,55 +572,10 @@ defmodule Indexer.Block.FetcherTest do
           assert Repo.aggregate(Log, :count, :id) == 0
           assert Repo.aggregate(Transaction, :count, :hash) == 2
 
-          first_address = Repo.get!(Address, first_address_hash)
-
-          assert first_address.fetched_coin_balance == %Wei{value: Decimal.new(1_999_953_415_287_753_599_000)}
-          assert first_address.fetched_coin_balance_block_number == block_number
-
-          second_address = Repo.get!(Address, second_address_hash)
-
-          assert second_address.fetched_coin_balance == %Wei{value: Decimal.new(50_000_000_000_000_000)}
-          assert second_address.fetched_coin_balance_block_number == block_number
-
-          third_address = Repo.get!(Address, third_address_hash)
-
-          assert third_address.fetched_coin_balance == %Wei{value: Decimal.new(30_827_986_037_499_360_709_544)}
-          assert third_address.fetched_coin_balance_block_number == block_number
-
-          fourth_address = Repo.get!(Address, fourth_address_hash)
-
-          assert fourth_address.fetched_coin_balance == %Wei{value: Decimal.new(500_000_000_001_437_727_304)}
-          assert fourth_address.fetched_coin_balance_block_number == block_number
-
-          fifth_address = Repo.get!(Address, fifth_address_hash)
-
-          assert fifth_address.fetched_coin_balance == %Wei{value: Decimal.new(930_417_572_224_879_702_000)}
-          assert fifth_address.fetched_coin_balance_block_number == block_number
-
         EthereumJSONRPC.Nethermind ->
           assert {:ok,
                   %{
                     inserted: %{
-                      addresses: [
-                        %Address{
-                          hash:
-                            %Explorer.Chain.Hash{
-                              byte_count: 20,
-                              bytes:
-                                <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179,
-                                  223, 65, 91>>
-                            } = first_address_hash
-                        },
-                        %Address{
-                          hash:
-                            %Explorer.Chain.Hash{
-                              byte_count: 20,
-                              bytes:
-                                <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152,
-                                  122, 202>>
-                            } = second_address_hash
-                        }
-                      ],
                       blocks: [
                         %Chain.Block{
                           hash: %Explorer.Chain.Hash{
@@ -694,16 +620,6 @@ defmodule Indexer.Block.FetcherTest do
           assert Repo.aggregate(Address, :count, :hash) == 2
           assert Repo.aggregate(Log, :count) == 1
           assert Repo.aggregate(Transaction, :count, :hash) == 1
-
-          first_address = Repo.get!(Address, first_address_hash)
-
-          assert first_address.fetched_coin_balance == %Wei{value: Decimal.new(1)}
-          assert first_address.fetched_coin_balance_block_number == block_number
-
-          second_address = Repo.get!(Address, second_address_hash)
-
-          assert second_address.fetched_coin_balance == %Wei{value: Decimal.new(252_460_837_000_000_000_000_000_000)}
-          assert second_address.fetched_coin_balance_block_number == block_number
 
         variant ->
           raise ArgumentError, "Unsupported variant (#{variant})"
@@ -1156,27 +1072,6 @@ defmodule Indexer.Block.FetcherTest do
             assert {:ok,
                     %{
                       inserted: %{
-                        addresses: [
-                          %Address{hash: ^accounts_contract_address},
-                          %Address{
-                            hash:
-                              %Explorer.Chain.Hash{
-                                byte_count: 20,
-                                bytes:
-                                  <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179,
-                                    223, 65, 91>>
-                              } = first_address_hash
-                          },
-                          %Address{
-                            hash:
-                              %Explorer.Chain.Hash{
-                                byte_count: 20,
-                                bytes:
-                                  <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94,
-                                    152, 122, 202>>
-                              } = second_address_hash
-                          }
-                        ],
                         blocks: [
                           %Chain.Block{
                             hash: %Explorer.Chain.Hash{
@@ -1255,16 +1150,6 @@ defmodule Indexer.Block.FetcherTest do
             assert Repo.aggregate(Log, :count) == 2
             assert Repo.aggregate(Transaction, :count, :hash) == 1
             assert Repo.aggregate(PendingAccountOperation, :count, :address_hash) == 1
-
-            first_address = Repo.get!(Address, first_address_hash)
-
-            assert first_address.fetched_coin_balance == %Wei{value: Decimal.new(1)}
-            assert first_address.fetched_coin_balance_block_number == block_number
-
-            second_address = Repo.get!(Address, second_address_hash)
-
-            assert second_address.fetched_coin_balance == %Wei{value: Decimal.new(252_460_837_000_000_000_000_000_000)}
-            assert second_address.fetched_coin_balance_block_number == block_number
 
           variant ->
             raise ArgumentError, "Unsupported variant (#{variant})"

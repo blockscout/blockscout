@@ -40,9 +40,10 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.TokenInstance.SanitizeERC721, as: TokenInstanceSanitizeERC721
 
   alias Indexer.Fetcher.{
-    AddressNonceUpdater,
+    AddressImporter,
     BlockReward,
     ContractCode,
+    CurrentTokenBalanceImporter,
     EmptyBlocksSanitizer,
     InternalTransaction,
     PendingBlockOperationsSanitizer,
@@ -51,6 +52,8 @@ defmodule Indexer.Supervisor do
     RootstockData,
     Token,
     TokenCountersUpdater,
+    TokenHoldersCountUpdater,
+    TokenInstanceImporter,
     TokenTotalSupplyUpdater,
     TokenUpdater,
     TransactionAction,
@@ -278,7 +281,10 @@ defmodule Indexer.Supervisor do
         {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {TokenTotalSupplyUpdater, [[]]},
-        AddressNonceUpdater,
+        AddressImporter,
+        TokenInstanceImporter,
+        TokenHoldersCountUpdater,
+        CurrentTokenBalanceImporter,
 
         # Notifications cleaner
         configure(EventNotificationsCleaner, [[]]),
