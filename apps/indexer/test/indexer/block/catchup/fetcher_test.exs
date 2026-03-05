@@ -15,6 +15,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.{BlockReward, InternalTransaction, Token, UncleBlock}
   alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
+  alias Indexer.Fetcher.TokenBalance.Current, as: TokenBalanceCurrent
   alias Indexer.Fetcher.TokenBalance.Historical, as: TokenBalanceHistorical
 
   @moduletag capture_log: true
@@ -55,6 +56,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceCurrent.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!(
         json_rpc_named_arguments: json_rpc_named_arguments
@@ -187,6 +189,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceCurrent.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       MissingRangesCollector.start_link([])
 
       latest_block_number = 2
@@ -347,6 +350,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceCurrent.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       MissingRangesCollector.start_link([])
 
       latest_block_number = 2
@@ -504,6 +508,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceCurrent.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       MissingRangesCollector.start_link([])
 
       latest_block_number = 2
@@ -708,6 +713,7 @@ defmodule Indexer.Block.Catchup.FetcherTest do
         InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
         Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
         TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+        TokenBalanceCurrent.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
         MissingRangesCollector.start_link([])
 
         latest_block_number = 3
