@@ -115,6 +115,8 @@ config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions, enabled
 
 config :explorer, Explorer.Chain.Mud, enabled: ConfigHelper.parse_bool_env_var("MUD_INDEXER_ENABLED")
 
+config :explorer, Explorer.Utility.VersionConstantsUpdater, enabled: true
+
 for migrator <- [
       # Background migrations
       Explorer.Migrator.TransactionsDenormalization,
