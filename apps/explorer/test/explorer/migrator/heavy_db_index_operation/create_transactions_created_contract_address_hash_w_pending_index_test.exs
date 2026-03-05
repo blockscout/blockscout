@@ -39,5 +39,38 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContr
       assert BackgroundMigrations.get_heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished() ==
                true
     end
+
+    if Application.compile_env(:explorer, :chain_type) == :optimism do
+      test "waits for DropTransactionsOperatorFeeConstantIndex completion on optimism" do
+        [dependent_migration_name] =
+          CreateTransactionsCreatedContractAddressHashWPendingIndex.dependent_from_migrations()
+
+        migration_name = "heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index"
+        index_name = "transactions_created_contract_address_hash_w_pending_index"
+
+        assert MigrationStatus.get_status(migration_name) == nil
+        assert Helper.db_index_exists_and_valid?(index_name) == %{exists?: false, valid?: nil}
+
+        CreateTransactionsCreatedContractAddressHashWPendingIndex.start_link([])
+        Process.sleep(100)
+
+        # Should not start until dependency is completed.
+        assert MigrationStatus.get_status(migration_name) == nil
+
+        insert(:db_migration_status, migration_name: dependent_migration_name, status: "completed")
+
+        Process.sleep(150)
+
+        assert MigrationStatus.get_status(migration_name) == "started"
+
+        Process.sleep(200)
+
+        assert MigrationStatus.get_status(migration_name) == "completed"
+        assert Helper.db_index_exists_and_valid?(index_name) == %{exists?: true, valid?: true}
+
+        assert BackgroundMigrations.get_heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished() ==
+                 true
+      end
+    end
   end
 end
