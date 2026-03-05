@@ -1,10 +1,19 @@
 # Changelog
 
+## 10.0.2
+
+### ⚙️ Miscellaneous Tasks
+
+- Add missing TokenBalance.Current launch in tests ([#14076](https://github.com/blockscout/blockscout/issues/14076))
+- Put backend versions into constants on launch ([#14072](https://github.com/blockscout/blockscout/issues/14072))
+
+
 ## 10.0.1
 
 ### ⚡ Performance
 
 - Fix /advanced-filters timeout when scam filtering enabled ([#14047](https://github.com/blockscout/blockscout/issues/14047))
+
 
 ## 10.0.0
 
