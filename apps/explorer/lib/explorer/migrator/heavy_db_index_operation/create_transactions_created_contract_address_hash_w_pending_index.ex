@@ -4,6 +4,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContr
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require Logger
 
@@ -24,8 +25,18 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContr
   @impl HeavyDbIndexOperation
   def index_name, do: @index_name
 
-  @impl HeavyDbIndexOperation
-  def dependent_from_migrations, do: []
+  if @chain_type == :optimism do
+    alias Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsOperatorFeeConstantIndex
+    @impl HeavyDbIndexOperation
+    def dependent_from_migrations do
+      [DropTransactionsOperatorFeeConstantIndex.migration_name()]
+    end
+  else
+    @impl HeavyDbIndexOperation
+    def dependent_from_migrations do
+      []
+    end
+  end
 
   @query_string """
   CREATE INDEX #{HeavyDbIndexOperationHelper.add_concurrently_flag?()} IF NOT EXISTS "#{@index_name}"
