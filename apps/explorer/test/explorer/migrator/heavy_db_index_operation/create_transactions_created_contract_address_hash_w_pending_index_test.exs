@@ -18,26 +18,28 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContr
       :ok
     end
 
-    test "Creates heavy DB index with no dependencies" do
-      migration_name = "heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index"
-      index_name = "transactions_created_contract_address_hash_w_pending_index"
+    if Application.compile_env(:explorer, :chain_type) != :optimism do
+      test "Creates heavy DB index with no dependencies" do
+        migration_name = "heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index"
+        index_name = "transactions_created_contract_address_hash_w_pending_index"
 
-      assert MigrationStatus.get_status(migration_name) == nil
-      assert Helper.db_index_exists_and_valid?(index_name) == %{exists?: false, valid?: nil}
+        assert MigrationStatus.get_status(migration_name) == nil
+        assert Helper.db_index_exists_and_valid?(index_name) == %{exists?: false, valid?: nil}
 
-      CreateTransactionsCreatedContractAddressHashWPendingIndex.start_link([])
-      Process.sleep(100)
+        CreateTransactionsCreatedContractAddressHashWPendingIndex.start_link([])
+        Process.sleep(100)
 
-      assert MigrationStatus.get_status(migration_name) == "started"
+        assert MigrationStatus.get_status(migration_name) == "started"
 
-      Process.sleep(200)
+        Process.sleep(200)
 
-      assert MigrationStatus.get_status(migration_name) == "completed"
+        assert MigrationStatus.get_status(migration_name) == "completed"
 
-      assert Helper.db_index_exists_and_valid?(index_name) == %{exists?: true, valid?: true}
+        assert Helper.db_index_exists_and_valid?(index_name) == %{exists?: true, valid?: true}
 
-      assert BackgroundMigrations.get_heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished() ==
-               true
+        assert BackgroundMigrations.get_heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished() ==
+                 true
+      end
     end
 
     if Application.compile_env(:explorer, :chain_type) == :optimism do
