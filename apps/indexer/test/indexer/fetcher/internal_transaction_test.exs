@@ -13,7 +13,9 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   alias Explorer.Chain.{Block, PendingBlockOperation, PendingTransactionOperation}
   alias Explorer.Chain.Import.Runner.Blocks
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
-  alias Indexer.Fetcher.{InternalTransaction, PendingTransaction, TokenBalance}
+  alias Indexer.Fetcher.{InternalTransaction, PendingTransaction}
+  alias Indexer.Fetcher.TokenBalance.Current, as: TokenBalanceCurrent
+  alias Indexer.Fetcher.TokenBalance.Historical, as: TokenBalanceHistorical
 
   # MUST use global mode because we aren't guaranteed to get PendingTransactionFetcher's pid back fast enough to `allow`
   # it to use expectations and stubs from test's pid.
@@ -637,7 +639,8 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   # parsing the internal transactions
   if @chain_identity == {:optimism, :celo} do
     defp start_token_balance_fetcher(json_rpc_named_arguments) do
-      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceCurrent.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     end
   else
     defp start_token_balance_fetcher(_json_rpc_named_arguments), do: :ok
