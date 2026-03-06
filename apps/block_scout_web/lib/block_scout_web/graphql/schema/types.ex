@@ -127,7 +127,7 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
 
   # TODO: leverage `Ecto.Enum.values(SmartContract, :language)` to deduplicate
   # language definitions
-  @default_languages ~w(solidity vyper yul)a
+  @default_languages ~w(solidity vyper yul geas)a
 
   case @chain_type do
     :arbitrum ->
