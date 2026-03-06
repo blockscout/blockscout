@@ -203,6 +203,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
     constructor_arguments =
       if initial_params["constructor_arguments"] !== "0x", do: initial_params["constructor_arguments"], else: nil
 
+    verification_language = parse_solidity_verification_language(initial_params)
+
     prepared_params =
       %{}
       |> Map.put("optimization", optimization)
@@ -223,6 +225,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("verified_via_verifier_alliance", false)
       |> Map.put("license_type", initial_params["license_type"])
       |> Map.put("is_blueprint", false)
+      |> Map.put("language", verification_language)
 
     publish_smart_contract(address_hash, prepared_params, abi, save_file_path?)
   end
@@ -257,6 +260,8 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
     optimization_runs = parse_optimization_runs(compiler_settings, optimization)
 
+    verification_language = parse_solidity_verification_language(initial_params)
+
     prepared_params =
       %{}
       |> Map.put("optimization", optimization)
@@ -276,6 +281,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("verified_via_verifier_alliance", source["verifier_alliance?"])
       |> Map.put("license_type", initial_params["license_type"])
       |> Map.put("is_blueprint", source["isBlueprint"])
+      |> Map.put("language", verification_language)
 
     publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"), save_file_path?)
   end
