@@ -585,44 +585,49 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
        ) do
     blob_versioned_hashes
     |> Enum.reduce([], fn blob_hash, inputs_acc ->
-      with {:ok, response} <- Helper.http_get_request(blobs_api_url <> "/" <> blob_hash),
-           blob_data = Map.get(response, "blob_data"),
-           false <- is_nil(blob_data) do
-        # read the data from Blockscout API
-        decoded =
-          blob_data
-          |> hash_to_binary()
-          |> OptimismTransactionBatch.decode_eip4844_blob()
-
-        if is_nil(decoded) do
-          Logger.warning("Cannot decode the blob #{blob_hash} taken from the Blockscout Blobs API.")
-
-          inputs_acc
-        else
-          Logger.info(
-            "The input for transaction #{transaction_hash} is taken from the Blockscout Blobs API. Blob hash: #{blob_hash}"
-          )
-
-          input = %{
-            bytes: decoded,
-            eip4844_blob_hash: blob_hash
-          }
-
-          [input | inputs_acc]
-        end
-      else
-        _ ->
-          # read the data from the fallback source (beacon node)
-          eip4844_blobs_to_inputs_from_fallback(
-            transaction_hash,
-            blob_hash,
-            block_timestamp,
-            inputs_acc,
-            chain_id_l1
-          )
-      end
+      process_blob(blob_hash, transaction_hash, block_timestamp, inputs_acc, blobs_api_url, chain_id_l1)
     end)
     |> Enum.reverse()
+  end
+
+  defp process_blob(blob_hash, transaction_hash, block_timestamp, inputs_acc, blobs_api_url, chain_id_l1) do
+    with {:ok, response} <- Helper.http_get_request(blobs_api_url <> "/" <> blob_hash),
+         blob_data = Map.get(response, "blob_data"),
+         false <- is_nil(blob_data) do
+      decode_and_process_blob(blob_data, blob_hash, transaction_hash, inputs_acc)
+    else
+      _ ->
+        eip4844_blobs_to_inputs_from_fallback(
+          transaction_hash,
+          blob_hash,
+          block_timestamp,
+          inputs_acc,
+          chain_id_l1
+        )
+    end
+  end
+
+  defp decode_and_process_blob(blob_data, blob_hash, transaction_hash, inputs_acc) do
+    decoded =
+      blob_data
+      |> hash_to_binary()
+      |> OptimismTransactionBatch.decode_eip4844_blob()
+
+    if is_nil(decoded) do
+      Logger.warning("Cannot decode the blob #{blob_hash} taken from the Blockscout Blobs API.")
+      inputs_acc
+    else
+      Logger.info(
+        "The input for transaction #{transaction_hash} is taken from the Blockscout Blobs API. Blob hash: #{blob_hash}"
+      )
+
+      input = %{
+        bytes: decoded,
+        eip4844_blob_hash: blob_hash
+      }
+
+      [input | inputs_acc]
+    end
   end
 
   defp eip4844_blobs_to_inputs_from_fallback(

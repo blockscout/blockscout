@@ -1194,23 +1194,27 @@ defmodule Explorer.EthRPC do
         from_block = Map.get(filters, "fromBlock", "latest")
         to_block = Map.get(filters, "toBlock", "latest")
 
-        if from_block == "latest" || to_block == "latest" || from_block == "pending" || to_block == "pending" do
-          max_block_number = max_consensus_block_number()
-
-          if is_nil(max_block_number) do
-            {:error, :empty}
-          else
-            to_block_numbers(from_block, to_block, max_block_number)
-          end
-        else
-          to_block_numbers(from_block, to_block, nil)
-        end
+        resolve_logs_blocks_range(from_block, to_block)
 
       {:block, _} ->
         {:error, "Invalid Block Hash"}
 
       {:block_hash, _} ->
         {:error, "Invalid Block Hash"}
+    end
+  end
+
+  defp resolve_logs_blocks_range(from_block, to_block) do
+    if from_block == "latest" || to_block == "latest" || from_block == "pending" || to_block == "pending" do
+      max_block_number = max_consensus_block_number()
+
+      if is_nil(max_block_number) do
+        {:error, :empty}
+      else
+        to_block_numbers(from_block, to_block, max_block_number)
+      end
+    else
+      to_block_numbers(from_block, to_block, nil)
     end
   end
 

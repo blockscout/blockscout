@@ -167,39 +167,48 @@ defmodule Explorer.Market.Source.CoinGecko do
              headers()
            ) do
       tokens
-      |> Enum.reduce([], fn
-        %{
-          "id" => id,
-          "symbol" => symbol,
-          "name" => name,
-          "platforms" => %{
-            ^platform => token_contract_address_hash_string
-          }
-        },
-        acc ->
-          case Hash.Address.cast(token_contract_address_hash_string) do
-            {:ok, token_contract_address_hash} ->
-              token = %{
-                id: id,
-                symbol: symbol,
-                name: name,
-                contract_address_hash: token_contract_address_hash,
-                type: "ERC-20"
-              }
-
-              [token | acc]
-
-            _ ->
-              acc
-          end
-
-        _, acc ->
-          acc
-      end)
+      |> Enum.reduce([], &reduce_coingecko_token(&1, &2, platform))
     else
       nil -> {:error, "Platform not specified"}
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  defp reduce_coingecko_token(
+         %{
+           "id" => id,
+           "symbol" => symbol,
+           "name" => name,
+           "platforms" => platforms
+         },
+         acc,
+         platform
+       ) do
+    case Map.get(platforms, platform) do
+      nil ->
+        acc
+
+      token_contract_address_hash_string ->
+        case Hash.Address.cast(token_contract_address_hash_string) do
+          {:ok, token_contract_address_hash} ->
+            [build_coingecko_token(id, symbol, name, token_contract_address_hash) | acc]
+
+          _ ->
+            acc
+        end
+    end
+  end
+
+  defp reduce_coingecko_token(_, acc, _platform), do: acc
+
+  defp build_coingecko_token(id, symbol, name, token_contract_address_hash) do
+    %{
+      id: id,
+      symbol: symbol,
+      name: name,
+      contract_address_hash: token_contract_address_hash,
+      type: "ERC-20"
+    }
   end
 
   defp put_market_data_to_tokens(tokens, market_data) do
