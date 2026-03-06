@@ -576,7 +576,7 @@ defmodule Explorer.Chain.AdvancedFilter do
 
     filtered_and_paginated_query =
       token_transfer_query
-      |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
+      |> ExplorerHelper.maybe_hide_scam_addresses_for_token_transfers(options)
       |> limit_query(paging_options)
       |> query_function.(false)
       |> limit_query(paging_options)

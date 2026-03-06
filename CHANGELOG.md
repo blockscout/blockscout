@@ -1,5 +1,11 @@
 # Changelog
 
+## 10.0.1
+
+### ⚡ Performance
+
+- Fix /advanced-filters timeout when scam filtering enabled ([#14047](https://github.com/blockscout/blockscout/issues/14047))
+
 ## 10.0.0
 
 ### 🚀 Features
@@ -25,6 +31,7 @@
 
 ### 🐛 Bug Fixes
 
+- Handle nil coin balance in "broadcast_address_coin_balance/1" function ([#14044](https://github.com/blockscout/blockscout/pull/14044))
 - Fix duplicating paging params ([#14010](https://github.com/blockscout/blockscout/pull/14010))
 - Handle maybe_reject_zero_value for missing value ([#13990](https://github.com/blockscout/blockscout/pull/13990))
 - Handle internal transactions nil value([#13974](https://github.com/blockscout/blockscout/pull/13974))
@@ -113,6 +120,13 @@
 | Variable                                              | Description                                                                                                                                                                                                                                                                                                                                        | Default                                                                                       | Version  | Deprecated in Version |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------------- | --------------------- |
 | `CACHE_PBO_COUNT_PERIOD`  | Time interval to restart the task which calculates the total pending_block_operations count.  | `20m` | v5.2.0+ |  | v10.0.0 |
+
+
+## 9.3.6
+
+### ⚡ Performance
+
+- Fix /advanced-filters timeout when scam filtering enabled ([#14047](https://github.com/blockscout/blockscout/pull/14047))
 
 
 ## 9.3.5

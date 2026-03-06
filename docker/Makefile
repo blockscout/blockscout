@@ -10,7 +10,7 @@ STATS_CONTAINER_NAME := stats
 STATS_DB_CONTAINER_NAME := stats-db
 PROXY_CONTAINER_NAME := proxy
 PG_CONTAINER_NAME := postgres
-RELEASE_VERSION ?= '10.0.0'
+RELEASE_VERSION ?= '10.0.1'
 TAG := $(RELEASE_VERSION)-commit-$(shell git log -1 --pretty=format:"%h")
 STABLE_TAG := $(RELEASE_VERSION)
 

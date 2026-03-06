@@ -29,7 +29,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :backfill_multichain_search_db_finished,
     key: :arbitrum_da_records_normalization_finished,
     key: :sanitize_verified_addresses_finished,
-    key: :smart_contract_language_finished,
     key: :backfill_call_type_enum_finished,
     key: :heavy_indexes_create_logs_block_hash_index_finished,
     key: :heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished,
@@ -61,7 +60,9 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_internal_transactions_created_contract_address_hash_partial_index_finished,
     key: :heavy_indexes_create_tokens_name_partial_fts_index_finished,
     key: :heavy_indexes_update_internal_transactions_primary_key_finished,
-    key: :empty_internal_transactions_data_finished
+    key: :empty_internal_transactions_data_finished,
+    key: :heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished,
+    key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished
 
   @dialyzer :no_match
 
@@ -72,7 +73,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     BackfillMultichainSearchDB,
     EmptyInternalTransactionsData,
     SanitizeDuplicatedLogIndexLogs,
-    SmartContractLanguage,
     TokenTransferTokenType,
     TransactionsDenormalization
   }
@@ -91,6 +91,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateLogsDepositsWithdrawalsIndex,
     CreateSmartContractsLanguageIndex,
     CreateTokensNamePartialFtsIndex,
+    CreateTransactionsCreatedContractAddressHashWPendingIndex,
     DropInternalTransactionsCreatedContractAddressHashPartialIndex,
     DropInternalTransactionsFromAddressHashIndex,
     DropLogsAddressHashIndex,
@@ -104,6 +105,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     DropTokenTransfersToAddressHashTransactionHashIndex,
     DropTokenTransfersTokenContractAddressHashTransactionHashIndex,
     DropTransactionsCreatedContractAddressHashWithPendingIndex,
+    DropTransactionsCreatedContractAddressHashWithPendingIndexA,
     DropTransactionsFromAddressHashWithPendingIndex,
     DropTransactionsToAddressHashWithPendingIndex,
     UpdateInternalTransactionsPrimaryKey
@@ -314,13 +316,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     )
   end
 
-  defp handle_fallback(:smart_contract_language_finished) do
-    set_and_return_migration_status(
-      SmartContractLanguage,
-      &set_smart_contract_language_finished/1
-    )
-  end
-
   defp handle_fallback(:heavy_indexes_create_arbitrum_batch_l2_blocks_unconfirmed_blocks_index_finished) do
     set_and_return_migration_status(
       CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
@@ -376,6 +371,20 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       EmptyInternalTransactionsData,
       &set_empty_internal_transactions_data_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished) do
+    set_and_return_migration_status(
+      CreateTransactionsCreatedContractAddressHashWPendingIndex,
+      &set_heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished) do
+    set_and_return_migration_status(
+      DropTransactionsCreatedContractAddressHashWithPendingIndexA,
+      &set_heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished/1
     )
   end
 

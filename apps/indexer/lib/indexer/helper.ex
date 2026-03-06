@@ -116,9 +116,15 @@ defmodule Indexer.Helper do
   @doc """
   Calculates average block time in milliseconds (based on the latest 100 blocks) divided by 2.
   Sends corresponding requests to the RPC node.
-  Returns a tuple {:ok, block_check_interval, last_safe_block}
-  where `last_safe_block` is the number of the recent `safe` or `latest` block (depending on which one is available).
-  Returns {:error, description} in case of error.
+
+  ## Parameters
+  - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
+
+  ## Returns
+  `{:ok, block_check_interval, last_safe_block}`: A tuple where
+    - `block_check_interval` is the calculated interval in milliseconds.
+    - `last_safe_block` is the safe or latest block number.
+  In case of error returns the `{:error, description}` tuple.
   """
   @spec get_block_check_interval(list()) :: {:ok, non_neg_integer(), non_neg_integer()} | {:error, any()}
   def get_block_check_interval(json_rpc_named_arguments) do

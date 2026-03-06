@@ -251,7 +251,9 @@ config :ethereum_jsonrpc,
   ipc_path: System.get_env("IPC_PATH"),
   disable_archive_balances?:
     trace_url_missing? or ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_DISABLE_ARCHIVE_BALANCES"),
-  archive_balances_window: ConfigHelper.parse_integer_env_var("ETHEREUM_JSONRPC_ARCHIVE_BALANCES_WINDOW", 200)
+  archive_balances_window: ConfigHelper.parse_integer_env_var("ETHEREUM_JSONRPC_ARCHIVE_BALANCES_WINDOW", 200),
+  receipts_by_block?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_RECEIPTS_BY_BLOCK", "false"),
+  max_receipts_by_block: ConfigHelper.parse_integer_env_var("ETHEREUM_JSONRPC_MAX_RECEIPTS_BY_BLOCK", 1000)
 
 config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
   headers:
@@ -833,7 +835,7 @@ config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
   enabled: ConfigHelper.chain_type() == :arbitrum
 
-config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsOperatorFeeConstantIndex,
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsOperatorFeeConstantIndex,
   enabled: ConfigHelper.chain_type() == :optimism
 
 config :explorer, Explorer.Migrator.FilecoinPendingAddressOperations,
@@ -863,11 +865,6 @@ config :explorer, Explorer.Migrator.ShrinkInternalTransactions,
   enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SHRINK_INTERNAL_TRANSACTIONS_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SHRINK_INTERNAL_TRANSACTIONS_CONCURRENCY", 10)
-
-config :explorer, Explorer.Migrator.SmartContractLanguage,
-  enabled: !ConfigHelper.parse_bool_env_var("MIGRATION_SMART_CONTRACT_LANGUAGE_DISABLED"),
-  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SMART_CONTRACT_LANGUAGE_BATCH_SIZE", 100),
-  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SMART_CONTRACT_LANGUAGE_CONCURRENCY", 1)
 
 config :explorer, Explorer.Migrator.BackfillMetadataURL,
   enabled: !ConfigHelper.parse_bool_env_var("MIGRATION_BACKFILL_METADATA_URL_DISABLED"),
@@ -1002,6 +999,7 @@ config :indexer,
   hide_indexing_progress_alert: ConfigHelper.parse_bool_env_var("INDEXER_HIDE_INDEXING_PROGRESS_ALERT"),
   fetcher_init_limit: ConfigHelper.parse_integer_env_var("INDEXER_FETCHER_INIT_QUERY_LIMIT", 100),
   fetcher_init_delay: ConfigHelper.parse_time_env_var("INDEXER_FETCHER_INIT_DELAY", "10m"),
+  massive_block_threshold: ConfigHelper.parse_integer_env_var("INDEXER_MASSIVE_BLOCK_THRESHOLD", 1000),
   token_balances_fetcher_init_limit:
     ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_BALANCES_FETCHER_INIT_QUERY_LIMIT", 100_000),
   coin_balances_fetcher_init_limit:

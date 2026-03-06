@@ -1,14 +1,22 @@
-name: Publish Lux Docker image
+name: Build and Deploy Lux Explorer Backend
 
 on:
-  workflow_dispatch:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  workflow_dispatch:
+
+concurrency:
+  group: lux-explorer-build-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-  RELEASE_VERSION: '10.0.0'
-  LUX_VERSION: '2.6.1'
+  RELEASE_VERSION: '10.0.2'
 
 permissions:
   contents: read
@@ -16,7 +24,7 @@ permissions:
 
 jobs:
   build_and_push:
-    name: Build and push Lux Blockscout image
+    name: Build and push image
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -41,10 +49,11 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: |
-            ghcr.io/luxfi/blockscout-lux:latest
-            ghcr.io/luxfi/blockscout-lux:v${{ env.LUX_VERSION }}
-            ghcr.io/luxfi/blockscout-lux:v${{ env.LUX_VERSION }}.commit.${{ env.SHORT_SHA }}
+            ghcr.io/luxfi/explorer:latest
+            ghcr.io/luxfi/explorer:${{ github.sha }}
           platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           build-args: |
             DECODE_NOT_A_CONTRACT_CALLS=false
             MIXPANEL_URL=
@@ -53,3 +62,31 @@ jobs:
             AMPLITUDE_API_KEY=
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
+
+  deploy:
+    name: Deploy to production
+    needs: build_and_push
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to lux-k8s
+        env:
+          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+        run: |
+          INSTALL_DIR="$HOME/.local/bin"
+          mkdir -p "$INSTALL_DIR"
+          export PATH="$INSTALL_DIR:$PATH"
+          if ! command -v doctl &>/dev/null; then
+            DOCTL_VERSION=$(curl -sI https://github.com/digitalocean/doctl/releases/latest | grep -i '^location:' | sed 's|.*/v||;s/\r//')
+            curl -sL "https://github.com/digitalocean/doctl/releases/download/v${DOCTL_VERSION}/doctl-${DOCTL_VERSION}-linux-amd64.tar.gz" | tar xz -C "$INSTALL_DIR"
+          fi
+          if ! command -v kubectl &>/dev/null; then
+            curl -sLO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+            chmod +x kubectl && mv kubectl "$INSTALL_DIR/kubectl"
+          fi
+          doctl auth init -t "$DIGITALOCEAN_ACCESS_TOKEN"
+          doctl kubernetes cluster kubeconfig save lux-k8s
+          for dep in explorer-mainnet explorer-devnet explorer-testnet explorer-hanzo explorer-spc explorer-pars explorer-zoo; do
+            kubectl rollout restart deployment/$dep -n lux-explorer || true
+          done
+          kubectl rollout status deployment/explorer-mainnet -n lux-explorer --timeout=300s

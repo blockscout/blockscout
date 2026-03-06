@@ -116,6 +116,7 @@ defmodule Explorer.Application do
   defp configurable_children do
     configurable_children_set =
       [
+        configure_mode_dependent_process(Explorer.Utility.VersionConstantsUpdater, :indexer),
         configure_mode_dependent_process(Explorer.Market.Fetcher.Coin, :api),
         configure_mode_dependent_process(Explorer.Market.Fetcher.Token, :indexer),
         configure_mode_dependent_process(Explorer.Market.Fetcher.History, :indexer),
@@ -165,7 +166,6 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.TokenTransferBlockConsensus, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.RestoreOmittedWETHTransfers, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.FilecoinPendingAddressOperations, :indexer),
-        configure_mode_dependent_process(Explorer.Migrator.SmartContractLanguage, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.CeloL2Epochs, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.CeloAccounts, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.CeloAggregatedElectionRewards, :indexer),
@@ -199,6 +199,7 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.ReindexDuplicatedInternalTransactions, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.MergeAdjacentMissingBlockRanges, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.UnescapeQuotesInTokens, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.UnescapeAmpersandsInTokens, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.ReindexBlocksWithMissingTransactions, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.DeleteZeroValueInternalTransactions, :indexer),
@@ -322,7 +323,7 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsOperatorFeeConstantIndex,
+          Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsOperatorFeeConstantIndex,
           :indexer
         ),
         configure_mode_dependent_process(
@@ -343,6 +344,14 @@ defmodule Explorer.Application do
         ),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsBlockHashTransactionIndexIndexIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContractAddressHashWPendingIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndexA,
           :indexer
         ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),
