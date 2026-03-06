@@ -5,7 +5,12 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
   require Logger
 
-  import Explorer.SmartContract.Helper, only: [cast_libraries: 1, prepare_license_type: 1]
+  import Explorer.SmartContract.Helper,
+    only: [
+      cast_libraries: 1,
+      parse_solidity_verification_language: 1,
+      prepare_license_type: 1
+    ]
 
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{CompilerVersion, Helper}
@@ -396,7 +401,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       compiler_settings: clean_compiler_settings,
       license_type: prepare_license_type(params["license_type"]) || :none,
       is_blueprint: params["is_blueprint"] || false,
-      language: contract_language(params, abi)
+      language: parse_solidity_verification_language(params)
     }
 
     base_attributes
@@ -404,14 +409,6 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
           do: Map.put(&1, :zk_compiler_version, params["zk_compiler_version"]),
           else: &1
         )).()
-  end
-
-  defp contract_language(params, abi) do
-    case Map.get(params, "language", Map.get(params, :language)) do
-      value when value in ["yul", :yul] -> :yul
-      value when value in ["solidity", :solidity] -> :solidity
-      _ -> (is_nil(abi) && :yul) || :solidity
-    end
   end
 
   @doc """

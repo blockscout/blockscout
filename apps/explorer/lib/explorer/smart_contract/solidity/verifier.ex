@@ -12,6 +12,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     only: [
       cast_libraries: 1,
       fetch_data_for_verification: 1,
+      parse_solidity_verification_language: 1,
       prepare_bytecode_for_microservice: 3
     ]
 
@@ -90,19 +91,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   end
 
   defp smart_contract_source_file_extension(params) do
-    if yul_contract?(params), do: "yul", else: "sol"
-  end
-
-  defp yul_contract?(params) do
-    case Map.get(params, "language", Map.get(params, :language)) do
-      value when value in ["yul", :yul] ->
-        true
-
-      _ ->
-        params
-        |> Map.get("is_yul", Map.get(params, :is_yul, false))
-        |> parse_boolean()
-    end
+    if parse_solidity_verification_language(params) == :yul, do: "yul", else: "sol"
   end
 
   defp prepare_optimization_runs(false_, _) when false_ in [false, "false"], do: nil

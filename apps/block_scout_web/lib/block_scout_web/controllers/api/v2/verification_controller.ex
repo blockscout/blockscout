@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{CompilerVersion, RustVerifierInterface, Solidity.CodeCompiler, StylusVerifierInterface}
+  alias Explorer.SmartContract.Helper
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.SmartContract.Stylus.PublisherWorker, as: StylusPublisherWorker
@@ -415,18 +416,9 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   end
 
   defp verification_language(params) do
-    case Map.get(params, "language", Map.get(params, :language)) do
-      value when value in ["yul", :yul] ->
-        "yul"
-
-      value when value in ["solidity", :solidity] ->
-        "solidity"
-
-      _ ->
-        if parse_boolean(Map.get(params, "is_yul_contract", Map.get(params, :is_yul_contract, false))),
-          do: "yul",
-          else: "solidity"
-    end
+    params
+    |> Helper.parse_solidity_verification_language()
+    |> Atom.to_string()
   end
 
   defp log_sc_verification_started(address_hash_string) do
