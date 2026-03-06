@@ -167,8 +167,7 @@ defmodule NFTMediaHandler do
                "/" <> resource_id <- path do
             resource_id
           else
-            _ ->
-              if is_nil(path), do: host, else: host <> path
+            _ -> build_ipfs_resource_id(host, path)
           end
 
         {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
@@ -197,5 +196,9 @@ defmodule NFTMediaHandler do
             {uri, []}
         end
     end
+  end
+
+  defp build_ipfs_resource_id(host, path) do
+    if is_nil(path), do: host, else: host <> path
   end
 end

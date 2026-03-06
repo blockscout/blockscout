@@ -112,32 +112,25 @@ defmodule Explorer.Chain.Transaction.History.Historian do
               select: {min(block.number), max(block.number)}
             )
 
-          case Repo.one(min_max_block_query, timeout: :infinity) do
-            {min_block, max_block} when not is_nil(min_block) and not is_nil(max_block) ->
-              # Collects stats for the block range determining the given day and add
-              # the date determining the day to the record.
-              record =
-                min_block
-                |> compile_records_in_range(max_block)
-                |> Map.put(:date, day_to_fetch)
-
-              records = [
-                record
-                | records
-              ]
-
-              # By making recursive calls to collect stats for every next day, eventually
-              # all stats for the specified number of days will be collected.
-              compile_records(num_days - 1, records)
-
-            _ ->
-              # If it is not possible to identify the block range for the given day,
-              # the stats for the day are set to zero.
-              Logger.warning("tx/per day chart: failed to get min/max blocks through a fallback option}")
-              records = [%{date: day_to_fetch, number_of_transactions: 0, gas_used: 0, total_fee: 0} | records]
-              compile_records(num_days - 1, records)
-          end
+          compile_records_with_fallback_range(min_max_block_query, day_to_fetch, num_days, records)
       end
+    end
+  end
+
+  defp compile_records_with_fallback_range(min_max_block_query, day_to_fetch, num_days, records) do
+    case Repo.one(min_max_block_query, timeout: :infinity) do
+      {min_block, max_block} when not is_nil(min_block) and not is_nil(max_block) ->
+        record =
+          min_block
+          |> compile_records_in_range(max_block)
+          |> Map.put(:date, day_to_fetch)
+
+        compile_records(num_days - 1, [record | records])
+
+      _ ->
+        Logger.warning("tx/per day chart: failed to get min/max blocks through a fallback option}")
+        records = [%{date: day_to_fetch, number_of_transactions: 0, gas_used: 0, total_fee: 0} | records]
+        compile_records(num_days - 1, records)
     end
   end
 

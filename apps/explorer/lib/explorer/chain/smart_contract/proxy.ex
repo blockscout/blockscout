@@ -267,15 +267,19 @@ defmodule Explorer.Chain.SmartContract.Proxy do
            |> fetch_values(address_hash),
          resolvers_and_fetched_values when is_list(resolvers_and_fetched_values) <-
            Enum.reduce_while(resolvers_and_requirements, [], fn {resolver, reqs}, acc ->
-             values = Enum.into(reqs, %{}, fn {name, req} -> {name, Map.get(fetched_values, req, :error)} end)
-
-             if Enum.any?(values, &(elem(&1, 1) == :error)) do
-               {:halt, :error}
-             else
-               {:cont, [{resolver, values} | acc]}
-             end
+             reduce_prefetched_resolver_values(resolver, reqs, fetched_values, acc)
            end) do
       {:ok, Enum.reverse(resolvers_and_fetched_values)}
+    end
+  end
+
+  defp reduce_prefetched_resolver_values(resolver, reqs, fetched_values, acc) do
+    values = Enum.into(reqs, %{}, fn {name, req} -> {name, Map.get(fetched_values, req, :error)} end)
+
+    if Enum.any?(values, &(elem(&1, 1) == :error)) do
+      {:halt, :error}
+    else
+      {:cont, [{resolver, values} | acc]}
     end
   end
 
@@ -304,18 +308,22 @@ defmodule Explorer.Chain.SmartContract.Proxy do
            |> json_rpc(json_rpc_named_arguments),
          fetched_values when is_map(fetched_values) <-
            Enum.reduce_while(responses, %{}, fn result, acc ->
-             with %{id: id} <- result,
-                  {:ok, req} = Map.fetch(id_to_params, id),
-                  {:ok, value} <- handle_response(req, result) do
-               {:cont, Map.put(acc, req, value)}
-             else
-               _ ->
-                 {:halt, :error}
-             end
+             reduce_fetched_value(result, id_to_params, acc)
            end) do
       {:ok, fetched_values}
     else
       _ -> :error
+    end
+  end
+
+  defp reduce_fetched_value(result, id_to_params, acc) do
+    with %{id: id} <- result,
+         {:ok, req} = Map.fetch(id_to_params, id),
+         {:ok, value} <- handle_response(req, result) do
+      {:cont, Map.put(acc, req, value)}
+    else
+      _ ->
+        {:halt, :error}
     end
   end
 

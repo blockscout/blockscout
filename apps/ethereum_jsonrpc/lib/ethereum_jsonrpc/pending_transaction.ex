@@ -15,27 +15,26 @@ defmodule EthereumJSONRPC.PendingTransaction do
     with {:ok, transaction_data} <-
            %{id: 1, method: "txpool_content", params: []} |> request() |> json_rpc(json_rpc_named_arguments),
          {:transaction_data_is_map, true} <- {:transaction_data_is_map, is_map(transaction_data)} do
-      transactions_params =
-        transaction_data["pending"]
-        |> Enum.flat_map(fn {_address, nonce_transactions_map} ->
-          nonce_transactions_map
-          |> Enum.map(fn {_nonce, transaction} ->
-            transaction
-          end)
-        end)
-        |> Transactions.to_elixir()
-        |> Transactions.elixir_to_params()
-        |> Enum.map(fn params ->
-          # txpool_content always returns transaction with 0x0000000000000000000000000000000000000000000000000000000000000000 value in block hash and index is null.
-          # https://github.com/ethereum/go-ethereum/issues/19897
-          %{params | block_hash: nil, index: nil}
-        end)
+      transactions_params = geth_pending_transactions_to_params(transaction_data["pending"])
 
       {:ok, transactions_params}
     else
       {:error, _} = error -> error
       {:transaction_data_is_map, false} -> {:ok, []}
     end
+  end
+
+  defp geth_pending_transactions_to_params(pending_transactions_map) do
+    pending_transactions_map
+    |> Enum.flat_map(fn {_address, nonce_transactions_map} -> Map.values(nonce_transactions_map) end)
+    |> Transactions.to_elixir()
+    |> Transactions.elixir_to_params()
+    |> Enum.map(&normalize_geth_pending_params/1)
+  end
+
+  defp normalize_geth_pending_params(params) do
+    # txpool_content always returns transaction with a zero block hash and null index.
+    %{params | block_hash: nil, index: nil}
   end
 
   @doc """

@@ -260,24 +260,27 @@ defmodule Explorer.Token.MetadataRetriever do
 
       case erc_1155_name_uri do
         %{:name => name} when is_binary(name) ->
-          sanitized_name = String.trim(name)
-          uri = {:ok, [sanitized_name]}
-
-          with {:ok, %{metadata: metadata}} <- uri |> fetch_json(nil, nil, false) |> parse_fetch_json_response(),
-               true <- Map.has_key?(metadata, "name"),
-               false <- is_nil(metadata["name"]) do
-            name_metadata = %{:name => metadata["name"]}
-
-            Map.merge(base_metadata, name_metadata)
-          else
-            _ -> base_metadata
-          end
+          fetch_erc1155_name_metadata(name, base_metadata)
 
         _ ->
           base_metadata
       end
     else
       base_metadata
+    end
+  end
+
+  defp fetch_erc1155_name_metadata(name, base_metadata) do
+    sanitized_name = String.trim(name)
+    uri = {:ok, [sanitized_name]}
+
+    with {:ok, %{metadata: metadata}} <- uri |> fetch_json(nil, nil, false) |> parse_fetch_json_response(),
+         true <- Map.has_key?(metadata, "name"),
+         false <- is_nil(metadata["name"]) do
+      name_metadata = %{:name => metadata["name"]}
+      Map.merge(base_metadata, name_metadata)
+    else
+      _ -> base_metadata
     end
   end
 

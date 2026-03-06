@@ -516,20 +516,22 @@ defmodule Indexer.Fetcher.InternalTransaction do
       address_token_balances =
         %{token_transfers_params: token_transfers_with_token}
         |> AddressTokenBalances.params_set()
-        |> Enum.map(fn %{address_hash: address_hash, token_contract_address_hash: token_contract_address_hash} = entry ->
-          with {:ok, address_hash} <- Hash.Address.cast(address_hash),
-               {:ok, token_contract_address_hash} <- Hash.Address.cast(token_contract_address_hash) do
-            entry
-            |> Map.put(:address_hash, address_hash)
-            |> Map.put(:token_contract_address_hash, token_contract_address_hash)
-          else
-            error -> Logger.error("Failed to cast string to hash: #{inspect(error)}")
-          end
-        end)
+        |> Enum.map(&cast_address_hashes_for_token_balance/1)
 
       async_import_token_balances(%{address_token_balances: address_token_balances}, false)
     else
       :ok
+    end
+  end
+
+  defp cast_address_hashes_for_token_balance(entry) do
+    with {:ok, address_hash} <- Hash.Address.cast(entry.address_hash),
+         {:ok, token_contract_address_hash} <- Hash.Address.cast(entry.token_contract_address_hash) do
+      entry
+      |> Map.put(:address_hash, address_hash)
+      |> Map.put(:token_contract_address_hash, token_contract_address_hash)
+    else
+      error -> Logger.error("Failed to cast string to hash: #{inspect(error)}")
     end
   end
 end
