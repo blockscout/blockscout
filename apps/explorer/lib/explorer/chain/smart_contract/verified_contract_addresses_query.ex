@@ -13,6 +13,10 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQuery do
   alias Explorer.Chain.{Address, SmartContract}
   alias Explorer.Helper, as: ExplorerHelper
 
+  @doc """
+  Returns verified contract addresses with optional filtering, search, sorting,
+  pagination, and association preloads.
+  """
   @spec list(keyword()) :: [Address.t()]
   def list(options \\ []) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
