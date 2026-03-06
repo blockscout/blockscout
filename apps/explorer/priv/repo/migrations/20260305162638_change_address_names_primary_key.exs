@@ -39,6 +39,7 @@ defmodule Explorer.Repo.Migrations.ChangeAddressNamesPrimaryKey do
     # Restore the original id-based primary key
     execute("ALTER TABLE address_names ADD PRIMARY KEY (id)")
 
-    # Note: The unique_address_names index will still exist
+    # Recreate the unique index for (address_hash, name) that was used in upsert operations
+    create(unique_index(:address_names, [:address_hash, :name], name: :unique_address_names))
   end
 end
