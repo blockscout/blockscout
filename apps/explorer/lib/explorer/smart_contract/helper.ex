@@ -247,6 +247,23 @@ defmodule Explorer.SmartContract.Helper do
   def prepare_license_type(_), do: nil
 
   @doc """
+  Parses contract language for the Solidity verification flow.
+
+  Accepts `"language"` or `:language` set to `"yul"` or `:yul` and returns
+  `:yul`. For all other values, defaults to `:solidity`.
+  """
+  @spec parse_solidity_verification_language(map()) :: :solidity | :yul
+  def parse_solidity_verification_language(params) do
+    language = params["language"] || params[:language]
+
+    if language in ["yul", :yul] do
+      :yul
+    else
+      :solidity
+    end
+  end
+
+  @doc """
   Pre-fetches implementation for unverified smart-contract or verified proxy smart-contract
   """
   @spec pre_fetch_implementations(Address.t()) :: Implementation.t() | nil
