@@ -25,10 +25,16 @@ defmodule Explorer.Repo.Migrations.ChangeAddressNamesPrimaryKey do
     # Drop the composite primary key
     execute("ALTER TABLE address_names DROP CONSTRAINT address_names_pkey")
 
-    # Re-add the id column
+    # Recreate the sequence for the id column (mimicking original SERIAL behavior)
+    execute("CREATE SEQUENCE address_names_id_seq")
+
+    # Re-add the id column with sequence backing and NOT NULL
     alter table(:address_names) do
-      add(:id, :integer, null: false)
+      add(:id, :integer, null: false, default: fragment("nextval('address_names_id_seq'::regclass)"))
     end
+
+    # Set sequence ownership to the id column
+    execute("ALTER SEQUENCE address_names_id_seq OWNED BY address_names.id")
 
     # Restore the original id-based primary key
     execute("ALTER TABLE address_names ADD PRIMARY KEY (id)")
