@@ -64,5 +64,61 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQueryTest do
       assert hash_result.smart_contract.id == hash_contract.id
       assert hash_result.hash == hash_contract.address_hash
     end
+
+    test "treats %, _ and \\ literally in search with default strategy" do
+      target_percent = insert(:smart_contract, name: "literal%percent-contract")
+      decoy_percent = insert(:smart_contract, name: "literalXpercent-contract")
+
+      target_underscore = insert(:smart_contract, name: "literal_under_contract")
+      decoy_underscore = insert(:smart_contract, name: "literalXunder_contract")
+
+      target_backslash = insert(:smart_contract, name: "literal\\backslash-contract")
+      decoy_backslash = insert(:smart_contract, name: "literalbackslash-contract")
+
+      assert_search_matches_only("literal%percent-contract", target_percent.id, decoy_percent.id)
+      assert_search_matches_only("literal_under_contract", target_underscore.id, decoy_underscore.id)
+      assert_search_matches_only("literal\\backslash-contract", target_backslash.id, decoy_backslash.id)
+    end
+
+    test "treats %, _ and \\ literally in search with sorting strategy" do
+      target_percent = insert(:smart_contract, name: "sorted-literal%percent-contract")
+      decoy_percent = insert(:smart_contract, name: "sorted-literalXpercent-contract")
+
+      target_underscore = insert(:smart_contract, name: "sorted-literal_under_contract")
+      decoy_underscore = insert(:smart_contract, name: "sorted-literalXunder_contract")
+
+      target_backslash = insert(:smart_contract, name: "sorted-literal\\backslash-contract")
+      decoy_backslash = insert(:smart_contract, name: "sorted-literalbackslash-contract")
+
+      options = [sorting: []]
+
+      assert_search_matches_only(
+        "sorted-literal%percent-contract",
+        target_percent.id,
+        decoy_percent.id,
+        options
+      )
+
+      assert_search_matches_only(
+        "sorted-literal_under_contract",
+        target_underscore.id,
+        decoy_underscore.id,
+        options
+      )
+
+      assert_search_matches_only(
+        "sorted-literal\\backslash-contract",
+        target_backslash.id,
+        decoy_backslash.id,
+        options
+      )
+    end
+  end
+
+  defp assert_search_matches_only(search_string, expected_contract_id, unexpected_contract_id, options \\ []) do
+    [result] = VerifiedContractAddressesQuery.list(Keyword.merge(options, search: search_string))
+
+    assert result.smart_contract.id == expected_contract_id
+    refute result.smart_contract.id == unexpected_contract_id
   end
 end

@@ -104,19 +104,42 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQuery do
   defp search_contracts(query, nil, _strategy), do: query
 
   defp search_contracts(query, search_string, :lateral) do
+    search_pattern = escape_search_pattern(search_string)
+
     from(contract in query,
       where:
-        ilike(contract.name, ^"%#{search_string}%") or
-          ilike(fragment("'0x' || encode(?, 'hex')", contract.address_hash), ^"%#{search_string}%")
+        fragment("? ILIKE ? ESCAPE '\\'", contract.name, ^search_pattern) or
+          fragment(
+            "? ILIKE ? ESCAPE '\\'",
+            fragment("'0x' || encode(?, 'hex')", contract.address_hash),
+            ^search_pattern
+          )
     )
   end
 
   defp search_contracts(query, search_string, :join) do
+    search_pattern = escape_search_pattern(search_string)
+
     from([_address, contract] in query,
       where:
-        ilike(contract.name, ^"%#{search_string}%") or
-          ilike(fragment("'0x' || encode(?, 'hex')", contract.address_hash), ^"%#{search_string}%")
+        fragment("? ILIKE ? ESCAPE '\\'", contract.name, ^search_pattern) or
+          fragment(
+            "? ILIKE ? ESCAPE '\\'",
+            fragment("'0x' || encode(?, 'hex')", contract.address_hash),
+            ^search_pattern
+          )
     )
+  end
+
+  @spec escape_search_pattern(String.t()) :: String.t()
+  defp escape_search_pattern(search_string) do
+    escaped_search_string =
+      search_string
+      |> String.replace("\\", "\\\\")
+      |> String.replace("%", "\\%")
+      |> String.replace("_", "\\_")
+
+    "%#{escaped_search_string}%"
   end
 
   @spec filter_contracts(Ecto.Query.t(), atom() | nil, :lateral | :join) :: Ecto.Query.t()
