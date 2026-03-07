@@ -31,7 +31,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   import Explorer.PagingOptions, only: [default_paging_options: 0]
   import Ecto.Query, only: [from: 2, where: 3]
 
-  alias Explorer.{Chain, SortingHelper}
+  alias Explorer.{Chain, Helper, SortingHelper}
   alias Explorer.Chain.{Address, Address.Reputation, Celo.Epoch, Hash, Token, Wei}
   alias Explorer.Chain.Cache.CeloCoreContracts
 
@@ -243,6 +243,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     sorting_options = Keyword.get(options, :sorting, [])
     from_epoch = Keyword.get(options, :from_epoch)
     to_epoch = Keyword.get(options, :to_epoch)
+    timeout = Keyword.get(options, :timeout)
 
     address_hash
     |> address_hash_to_rewards_query()
@@ -251,7 +252,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     |> SortingHelper.apply_sorting(sorting_options, default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
     |> Chain.join_associations(necessity_by_association)
-    |> Chain.select_repo(options).all()
+    |> Chain.select_repo(options).all(Helper.maybe_timeout(timeout))
     |> with_loaded_token_reputations()
   end
 
