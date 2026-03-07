@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   use BlockScoutWeb, :controller
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 5, fetch_scam_token_toggle: 2]
+  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 4, fetch_scam_token_toggle: 2]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   alias BlockScoutWeb.API.V2.{AdvancedFilterView, CsvExportController}
@@ -71,7 +71,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       |> Transaction.decode_transactions(true, @api_true)
 
     next_page_params =
-      next_page |> next_page_params(advanced_filters, Map.take(params, ["items_count"]), false, &paging_params/1)
+      next_page |> next_page_params(advanced_filters, %{}, &paging_params/1)
 
     render(conn, :advanced_filters,
       advanced_filters: advanced_filters,

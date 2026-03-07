@@ -1398,7 +1398,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         |> with_block(status: :ok)
 
       request =
-        get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes?items_count=50&state_changes=null")
+        get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes?state_changes_count=50")
 
       assert %{} = json_response(request, 200)
     end

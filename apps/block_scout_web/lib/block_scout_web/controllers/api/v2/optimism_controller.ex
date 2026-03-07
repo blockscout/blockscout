@@ -45,18 +45,14 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a paginated list of batches.",
     parameters:
       base_params() ++
-        define_paging_params([
-          "id",
-          "items_count"
-        ]),
+        define_paging_params(["id"]),
     responses: [
       ok:
         {"List of batches.", "application/json",
          paginated_response(
            items: Schemas.Optimism.Batch,
            next_page_params_example: %{
-             "id" => 394_591,
-             "items_count" => 50
+             "id" => 394_591
            },
            title_prefix: "Batches"
          )},
@@ -228,18 +224,14 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a paginated list of output roots.",
     parameters:
       base_params() ++
-        define_paging_params([
-          "index",
-          "items_count"
-        ]),
+        define_paging_params(["index"]),
     responses: [
       ok:
         {"List of output roots.", "application/json",
          paginated_response(
            items: Schemas.Optimism.OutputRoot,
            next_page_params_example: %{
-             "index" => 8829,
-             "items_count" => 50
+             "index" => 8829
            },
            title_prefix: "OutputRoots"
          )},
@@ -290,18 +282,14 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a paginated list of games.",
     parameters:
       base_params() ++
-        define_paging_params([
-          "index",
-          "items_count"
-        ]),
+        define_paging_params(["index"]),
     responses: [
       ok:
         {"List of games.", "application/json",
          paginated_response(
            items: Schemas.Optimism.Game,
            next_page_params_example: %{
-             "index" => 12967,
-             "items_count" => 50
+             "index" => 12967
            },
            title_prefix: "Games"
          )},
@@ -356,18 +344,13 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a paginated list of deposits.",
     parameters:
       base_params() ++
-        define_paging_params([
-          "items_count",
-          "l1_block_number",
-          "transaction_hash"
-        ]),
+        define_paging_params(["l1_block_number", "transaction_hash"]),
     responses: [
       ok:
         {"List of deposits.", "application/json",
          paginated_response(
            items: Schemas.Optimism.Deposit,
            next_page_params_example: %{
-             "items_count" => 50,
              "l1_block_number" => 23_937_283,
              "transaction_hash" => "0x5dc155c382d95353c5876e735d675d284e3b29b1379e5859dc35cfd4a1dd5188"
            },
@@ -536,7 +519,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
       |> InteropMessage.list()
       |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, messages, Map.take(params, ["items_count"]))
+    next_page_params = next_page_params(next_page, messages, %{})
 
     messages_extended =
       messages
@@ -581,17 +564,13 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a paginated list of withdrawals.",
     parameters:
       base_params() ++
-        define_paging_params([
-          "items_count",
-          "nonce"
-        ]),
+        define_paging_params(["nonce"]),
     responses: [
       ok:
         {"List of withdrawals.", "application/json",
          paginated_response(
            items: Schemas.Optimism.Withdrawal,
            next_page_params_example: %{
-             "items_count" => 50,
              "nonce" => "1766847064778384329583297500742918515827483896875618958121606201292650102"
            },
            title_prefix: "Withdrawals"

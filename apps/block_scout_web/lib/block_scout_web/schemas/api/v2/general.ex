@@ -1031,13 +1031,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Transaction fee for paging"
     },
-    "items_count" => %Parameter{
-      name: :items_count,
-      in: :query,
-      schema: %Schema{type: :integer, minimum: 1, maximum: 50},
-      required: false,
-      description: "Number of items returned per page"
-    },
     "holders_count" => %Parameter{
       name: :holders_count,
       in: :query,
@@ -1291,26 +1284,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{type: :string},
       required: false,
       description: "Page token for paging"
-    }
-  }
-
-  @state_changes_paging_params %{
-    # "items_count" is used for pagination for the list of transactions's state changes and it can be higher than 50.
-    # Thus, we extracted it to a separate map.
-    "items_count" => %Parameter{
-      name: :items_count,
-      in: :query,
-      schema: %Schema{type: :integer, minimum: 1},
-      required: false,
-      description: "Cumulative number of items to skip for keyset-based pagination of state changes"
     },
-    # todo: remove in the future as this param is unused in the pagination of state changes
-    "state_changes" => %Parameter{
-      name: :state_changes,
+    "state_changes_count" => %Parameter{
+      name: :state_changes_count,
       in: :query,
-      schema: %Schema{type: :string, nullable: true},
+      schema: %Schema{type: :integer, minimum: 0},
       required: false,
-      description: "State changes for paging"
+      description: "Cumulative number of state changes to skip for keyset-based pagination"
     }
   }
 
@@ -1408,16 +1388,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   def define_paging_params(fields) do
     Enum.map(fields, fn field ->
       Map.get(@paging_params, field) || raise "Unknown paging param: #{field}"
-    end)
-  end
-
-  @doc """
-  Returns a list of pagination parameters for `/api/v2/transactions/:transaction_hash_param/state-changes` API endpoint
-  """
-  @spec define_state_changes_paging_params([String.t()]) :: [Parameter.t()]
-  def define_state_changes_paging_params(fields) do
-    Enum.map(fields, fn field ->
-      Map.get(@state_changes_paging_params, field) || raise "Unknown paging param: #{field}"
     end)
   end
 

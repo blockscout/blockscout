@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 5,
+      next_page_params: 4,
       split_list_by_page: 1
     ]
 
@@ -31,18 +31,14 @@ defmodule BlockScoutWeb.API.V2.MudController do
     description: "Retrieves a paginated list of MUD worlds with basic stats.",
     parameters:
       base_params() ++
-        define_paging_params([
-          "world",
-          "items_count"
-        ]),
+        define_paging_params(["world"]),
     responses: [
       ok:
         {"List of MUD worlds.", "application/json",
          paginated_response(
            items: Schemas.MUD.World,
            next_page_params_example: %{
-             "world" => "0x82cb040ff4463bff3395d52b558fd77c61583b27",
-             "items_count" => 50
+             "world" => "0x82cb040ff4463bff3395d52b558fd77c61583b27"
            },
            title_prefix: "Worlds"
          )}
@@ -72,7 +68,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
       |> Enum.into(%{}, &{&1.hash, &1})
 
     next_page_params =
-      next_page_params(next_page, worlds, conn.query_params, false, fn item ->
+      next_page_params(next_page, worlds, conn.query_params, fn item ->
         %{"world" => item}
       end)
 
@@ -114,18 +110,14 @@ defmodule BlockScoutWeb.API.V2.MudController do
     parameters:
       base_params() ++
         [world_param(), q_param(), filter_namespace_param()] ++
-        define_paging_params([
-          "table_id",
-          "items_count"
-        ]),
+        define_paging_params(["table_id"]),
     responses: [
       ok:
         {"List of MUD tables.", "application/json",
          paginated_response(
            items: Schemas.MUD.TableWithSchema,
            next_page_params_example: %{
-             "table_id" => "0x746243484553545f5641554c5400000043686573744163636573730000000000",
-             "items_count" => 50
+             "table_id" => "0x746243484553545f5641554c5400000043686573744163636573730000000000"
            },
            title_prefix: "Tables"
          )},
@@ -146,7 +138,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
         |> split_list_by_page()
 
       next_page_params =
-        next_page_params(next_page, tables, conn.query_params, false, fn item ->
+        next_page_params(next_page, tables, conn.query_params, fn item ->
           %{"table_id" => item |> elem(0)}
         end)
 
@@ -240,12 +232,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
           sort_param(["key_bytes", "key0", "key1"]),
           order_param()
         ] ++
-        define_paging_params([
-          "key_bytes",
-          "key0",
-          "key1",
-          "items_count"
-        ]),
+        define_paging_params(["key_bytes", "key0", "key1"]),
     responses: [
       ok:
         {"List of MUD world table records.", "application/json",
@@ -254,8 +241,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
              items: Schemas.MUD.Record,
              next_page_params_example: %{
                "key_bytes" => "0x73796269746c7900000000000000000043686573743332000000000000000000",
-               "key0" => "0x73796269746c7900000000000000000043686573743332000000000000000000",
-               "items_count" => 50
+               "key0" => "0x73796269746c7900000000000000000043686573743332000000000000000000"
              },
              title_prefix: "Records"
            ),
@@ -287,7 +273,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
       blocks = Mud.preload_records_timestamps(records, @api_true)
 
       next_page_params =
-        next_page_params(next_page, records, conn.query_params, false, fn item ->
+        next_page_params(next_page, records, conn.query_params, fn item ->
           keys = [item.key_bytes, item.key0, item.key1] |> Enum.filter(&(!is_nil(&1)))
           ["key_bytes", "key0", "key1"] |> Enum.zip(keys) |> Enum.into(%{})
         end)

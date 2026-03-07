@@ -65,16 +65,6 @@ defmodule BlockScoutWeb.AddressController do
     exchange_rate = Market.get_coin_exchange_rate()
     total_supply = Chain.total_supply()
 
-    items_count_str = Map.get(params, "items_count")
-
-    items_count =
-      if items_count_str do
-        {items_count, _} = Integer.parse(items_count_str)
-        items_count
-      else
-        0
-      end
-
     items =
       addresses_page
       |> Enum.with_index(1)
@@ -83,7 +73,7 @@ defmodule BlockScoutWeb.AddressController do
           AddressView,
           "_tile.html",
           address: address,
-          index: items_count + index,
+          index: index,
           exchange_rate: exchange_rate,
           total_supply: total_supply,
           transaction_count: address.transactions_count
