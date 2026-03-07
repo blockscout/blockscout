@@ -335,7 +335,8 @@ defmodule Explorer.Account.Identity do
   - A string representation of the Ethereum address hash, or nil if not found.
   """
   @spec address_hash_from_auth(Auth.t()) :: String.t() | nil
-  def address_hash_from_auth(%Auth{provider: :dynamic, extra: %Extra{raw_info: %{address_hash: address_hash}}}) do
+  def address_hash_from_auth(%Auth{provider: provider, extra: %Extra{raw_info: %{address_hash: address_hash}}})
+      when provider in ~w(dynamic keycloak)a do
     address_hash
   end
 
