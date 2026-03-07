@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  RELEASE_VERSION: '10.0.2'
+  RELEASE_VERSION: '10.0.1'
 
 permissions:
   contents: read
