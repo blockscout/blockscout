@@ -474,6 +474,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   defp valid_zrc2_transfer_log?(log, transaction_by_hash, adapter_address_hash_by_zrc2_address_hash, _logs) do
     with false <- is_nil(log.first_topic),
          true <- Hash.to_string(log.first_topic) == @zrc2_transfer_success_event,
+         # only ZRC-2 is supported
          params = zrc2_event_params(log.data),
          true <- Map.has_key?(params, :sender) && Map.has_key?(params, :recipient) && Map.has_key?(params, :amount),
          true <- is_nil(zrc2_log_adapter_address_hash(log, adapter_address_hash_by_zrc2_address_hash)) do
@@ -498,12 +499,14 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     transaction_hash = log.transaction_hash
     to_address_hash = transaction_by_hash[transaction_hash].to_address_hash
 
+    # are there any `Transfer` logs emitted by the `to_address_hash` in this transaction?
     erc20_transfer_event_found =
       has_erc20_transfer_for_address?(logs, transaction_hash, to_address_hash)
 
     if erc20_transfer_event_found do
       acc
     else
+      # if the `Transfer` log is not found, this is ERC-20 adapter contract address
       [
         %{
           adapter_address_hash: Hash.to_string(to_address_hash),

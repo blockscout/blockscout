@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.VisualizeSol2umlController do
     with true <- Sol2uml.enabled?(),
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Address.find_contract_address(address_hash, address_options),
+         # check that contract is verified. partial and bytecode twin verification is ok for this case
          false <- is_nil(address.smart_contract) do
       render_visualize_json(conn, address)
     else

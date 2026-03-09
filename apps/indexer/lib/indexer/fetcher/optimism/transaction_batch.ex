@@ -597,6 +597,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
       decode_and_process_blob(blob_data, blob_hash, transaction_hash, inputs_acc)
     else
       _ ->
+        # read the data from the fallback source (beacon node)
         eip4844_blobs_to_inputs_from_fallback(
           transaction_hash,
           blob_hash,
@@ -608,6 +609,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   end
 
   defp decode_and_process_blob(blob_data, blob_hash, transaction_hash, inputs_acc) do
+    # read the data from Blockscout API
     decoded =
       blob_data
       |> hash_to_binary()

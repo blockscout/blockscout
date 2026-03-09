@@ -261,6 +261,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
 
     case status do
       :error -> {:error, []}
+      # updated_rollup_blocks will contain either [] if the previous batch
+      # already confirmed or list of unconfirmed blocks of all previous
+      # unconfirmed batches
       :ok -> {:ok, unconfirmed_rollup_blocks ++ updated_rollup_blocks}
     end
   end

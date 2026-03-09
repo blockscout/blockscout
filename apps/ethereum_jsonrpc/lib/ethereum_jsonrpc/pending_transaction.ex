@@ -33,7 +33,8 @@ defmodule EthereumJSONRPC.PendingTransaction do
   end
 
   defp normalize_geth_pending_params(params) do
-    # txpool_content always returns transaction with a zero block hash and null index.
+    # txpool_content always returns transaction with 0x0000000000000000000000000000000000000000000000000000000000000000 value in block hash and index is null.
+    # https://github.com/ethereum/go-ethereum/issues/19897
     %{params | block_hash: nil, index: nil}
   end
 
