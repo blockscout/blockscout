@@ -156,10 +156,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   @spec contract_address_preloads() :: [keyword()]
   defp contract_address_preloads do
+    include_internal_tx =
+      !Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false)
+
     chain_type_associations =
       case chain_type() do
-        :filecoin -> Address.contract_creation_transaction_with_from_address_associations()
-        _ -> Address.contract_creation_transaction_associations()
+        :filecoin -> Address.contract_creation_transaction_with_from_address_associations(include_internal_tx)
+        _ -> Address.contract_creation_transaction_associations(include_internal_tx)
       end
 
     [:smart_contract | chain_type_associations]

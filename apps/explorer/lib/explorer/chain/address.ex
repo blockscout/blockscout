@@ -956,59 +956,57 @@ defmodule Explorer.Chain.Address do
   end
 
   @doc """
-  Returns both contract creation transaction and internal transaction
-  associations.
+  Returns contract creation transaction associations.
 
-  This is a convenience function that combines both types of contract creation
-  associations.
+  By default, includes both the regular transaction association and the internal
+  transaction association. Can be customized via the `include_internal_transaction`
+  parameter.
 
-  Can be disabled via the `API_DISABLE_CONTRACT_CREATION_INTERNAL_TRANSACTION_ASSOCIATION`
-  environment variable. When set to "true", only the transaction association is returned.
+  ## Parameters
+
+    - `include_internal_transaction`: Whether to include the internal transaction
+      association. Defaults to `true`. Set to `false` to return only the regular
+      transaction association.
 
   ## Returns
 
-  A list containing both contract creation transaction and internal transaction
-  associations, or only the transaction association if the internal transaction
-  association is disabled.
+  A list containing the contract creation transaction associations.
   """
-  @spec contract_creation_transaction_associations() :: [keyword()]
-  def contract_creation_transaction_associations do
-    disable_internal_tx_assoc =
-      Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false)
-
-    case disable_internal_tx_assoc do
-      true ->
-        [contract_creation_transaction_association()]
-
-      false ->
-        [
-          contract_creation_transaction_association(),
-          contract_creation_internal_transaction_association()
-        ]
+  @spec contract_creation_transaction_associations(boolean()) :: [keyword()]
+  def contract_creation_transaction_associations(include_internal_transaction \\ true) do
+    if include_internal_transaction do
+      [
+        contract_creation_transaction_association(),
+        contract_creation_internal_transaction_association()
+      ]
+    else
+      [contract_creation_transaction_association()]
     end
   end
 
   @doc """
-  Same as `contract_creation_transaction_associations/0`, but preloads a nested
+  Same as `contract_creation_transaction_associations/1`, but preloads a nested
   association for the `from_address` field. Used for Filecoin chain type.
 
-  Can be disabled via the `API_DISABLE_CONTRACT_CREATION_INTERNAL_TRANSACTION_ASSOCIATION`
-  environment variable. When set to "true", only the transaction association is returned.
+  ## Parameters
+
+    - `include_internal_transaction`: Whether to include the internal transaction
+      association. Defaults to `true`. Set to `false` to return only the regular
+      transaction association.
+
+  ## Returns
+
+  A list containing the contract creation transaction associations with from_address.
   """
-  @spec contract_creation_transaction_with_from_address_associations() :: [keyword()]
-  def contract_creation_transaction_with_from_address_associations do
-    disable_internal_tx_assoc =
-      Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false)
-
-    case disable_internal_tx_assoc do
-      true ->
-        [contract_creation_transaction_with_from_address_association()]
-
-      false ->
-        [
-          contract_creation_transaction_with_from_address_association(),
-          contract_creation_internal_transaction_with_from_address_association()
-        ]
+  @spec contract_creation_transaction_with_from_address_associations(boolean()) :: [keyword()]
+  def contract_creation_transaction_with_from_address_associations(include_internal_transaction \\ true) do
+    if include_internal_transaction do
+      [
+        contract_creation_transaction_with_from_address_association(),
+        contract_creation_internal_transaction_with_from_address_association()
+      ]
+    else
+      [contract_creation_transaction_with_from_address_association()]
     end
   end
 
