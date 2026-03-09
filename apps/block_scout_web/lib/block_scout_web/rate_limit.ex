@@ -184,7 +184,10 @@ defmodule BlockScoutWeb.RateLimit do
     recaptcha_response = get_header_or_nil(conn, "recaptcha-v2-response")
     recaptcha_v3_response = get_header_or_nil(conn, "recaptcha-v3-response")
     recaptcha_bypass_token = get_header_or_nil(conn, "recaptcha-bypass-token")
-    scoped_recaptcha_bypass_token = get_header_or_nil(conn, "scoped-recaptcha-bypass-token")
+
+    scoped_recaptcha_bypass_token =
+      get_header_or_nil(conn, "scoped-recaptcha-bypass-token") ||
+        get_query_param_or_nil(conn, "scoped_recaptcha_bypass_token")
 
     cond do
       recaptcha_response ->
@@ -216,6 +219,18 @@ defmodule BlockScoutWeb.RateLimit do
     case Conn.get_req_header(conn, header_name) do
       [response] ->
         response
+
+      _ ->
+        nil
+    end
+  end
+
+  defp get_query_param_or_nil(conn, param_name) do
+    conn = Conn.fetch_query_params(conn)
+
+    case Map.get(conn.query_params, param_name) do
+      value when is_binary(value) ->
+        value
 
       _ ->
         nil

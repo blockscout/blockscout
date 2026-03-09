@@ -2035,7 +2035,11 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> subscribe_and_join(topic)
 
       request =
-        patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
+        patch(
+          conn,
+          "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata?scoped_recaptcha_bypass_token=#{scoped_bypass_token}",
+          %{}
+        )
 
       assert %{"message" => "OK"} = json_response(request, 200)
 
@@ -2075,8 +2079,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       request =
         Phoenix.ConnTest.build_conn()
         |> put_req_header("user-agent", "test-agent")
-        |> put_req_header("scoped-recaptcha-bypass-token", scoped_bypass_token)
-        |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
+        |> patch(
+          "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata?scoped_recaptcha_bypass_token=#{scoped_bypass_token}",
+          %{}
+        )
 
       assert %{"message" => "OK"} = json_response(request, 200)
 
