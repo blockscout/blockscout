@@ -186,8 +186,8 @@ defmodule BlockScoutWeb.RateLimit do
     recaptcha_bypass_token = get_header_or_nil(conn, "recaptcha-bypass-token")
 
     scoped_recaptcha_bypass_token =
-      get_header_or_nil(conn, "scoped-recaptcha-bypass-token") ||
-        get_query_param_or_nil(conn, "scoped_recaptcha_bypass_token")
+      normalize_blank_to_nil(get_header_or_nil(conn, "scoped-recaptcha-bypass-token")) ||
+        normalize_blank_to_nil(get_query_param_or_nil(conn, "scoped_recaptcha_bypass_token"))
 
     cond do
       recaptcha_response ->
@@ -212,6 +212,22 @@ defmodule BlockScoutWeb.RateLimit do
 
       true ->
         %{}
+    end
+  end
+
+  defp normalize_blank_to_nil(value) do
+    case value do
+      nil ->
+        nil
+
+      binary when is_binary(binary) ->
+        case String.trim(binary) do
+          "" -> nil
+          trimmed -> trimmed
+        end
+
+      other ->
+        other
     end
   end
 
