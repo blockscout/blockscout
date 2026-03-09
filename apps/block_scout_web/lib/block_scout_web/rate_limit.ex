@@ -225,9 +225,6 @@ defmodule BlockScoutWeb.RateLimit do
           "" -> nil
           trimmed -> trimmed
         end
-
-      other ->
-        other
     end
   end
 
