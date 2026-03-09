@@ -172,4 +172,39 @@ defmodule Explorer.Chain.AddressTest do
       assert response == {:ok, address}
     end
   end
+
+  describe "contract_creation_transaction_associations/0" do
+    setup do
+      key = :api_disable_contract_creation_internal_transaction_association
+      previous_value = Application.get_env(:explorer, key)
+
+      on_exit(fn ->
+        if is_nil(previous_value) do
+          Application.delete_env(:explorer, key)
+        else
+          Application.put_env(:explorer, key, previous_value)
+        end
+      end)
+
+      :ok
+    end
+
+    test "includes internal transaction association when feature flag is false" do
+      Application.put_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false)
+
+      associations = Address.contract_creation_transaction_associations()
+
+      assert Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_transaction))
+      assert Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_internal_transaction))
+    end
+
+    test "excludes internal transaction association when feature flag is true" do
+      Application.put_env(:explorer, :api_disable_contract_creation_internal_transaction_association, true)
+
+      associations = Address.contract_creation_transaction_associations()
+
+      assert Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_transaction))
+      refute Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_internal_transaction))
+    end
+  end
 end

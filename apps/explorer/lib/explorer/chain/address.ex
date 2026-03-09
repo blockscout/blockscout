@@ -974,7 +974,7 @@ defmodule Explorer.Chain.Address do
   @spec contract_creation_transaction_associations() :: [keyword()]
   def contract_creation_transaction_associations do
     disable_internal_tx_assoc =
-      Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association)
+      Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false)
 
     case disable_internal_tx_assoc do
       true ->
@@ -998,7 +998,7 @@ defmodule Explorer.Chain.Address do
   @spec contract_creation_transaction_with_from_address_associations() :: [keyword()]
   def contract_creation_transaction_with_from_address_associations do
     disable_internal_tx_assoc =
-      Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association)
+      Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false)
 
     case disable_internal_tx_assoc do
       true ->
