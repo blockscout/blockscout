@@ -71,8 +71,10 @@ defmodule BlockScoutWeb.TransactionController do
   end
 
   defp render_transaction_page(conn, id, transaction_hash, params) do
+    show_token_transfers? = Chain.transaction_has_token_transfers?(transaction_hash)
+
     template =
-      if Chain.transaction_has_token_transfers?(transaction_hash) do
+      if show_token_transfers? do
         "show_token_transfers.html"
       else
         "show_internal_transactions.html"
@@ -89,7 +91,7 @@ defmodule BlockScoutWeb.TransactionController do
         block_height: Chain.block_height(),
         current_path: Controller.current_full_path(conn),
         current_user: current_user(conn),
-        show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),
+        show_token_transfers: show_token_transfers?,
         transaction: transaction,
         from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
         to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),

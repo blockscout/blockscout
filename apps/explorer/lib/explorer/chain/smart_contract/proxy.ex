@@ -318,7 +318,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
   defp reduce_fetched_value(result, id_to_params, acc) do
     with %{id: id} <- result,
-         {:ok, req} = Map.fetch(id_to_params, id),
+         {:ok, req} <- Map.fetch(id_to_params, id),
          {:ok, value} <- handle_response(req, result) do
       {:cont, Map.put(acc, req, value)}
     else

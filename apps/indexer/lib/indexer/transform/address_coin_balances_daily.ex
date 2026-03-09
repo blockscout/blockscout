@@ -70,8 +70,10 @@ defmodule Indexer.Transform.AddressCoinBalancesDaily do
            %{id: 1, number: block_number}
            |> ByNumber.request(false)
            |> json_rpc(json_rpc_named_arguments) do
-      timestamp = quantity_to_integer(timestamp_raw)
-      DateTime.from_unix!(timestamp)
+      timestamp_raw
+      |> quantity_to_integer()
+      |> DateTime.from_unix!()
+      |> DateTime.to_date()
     end
   end
 end
