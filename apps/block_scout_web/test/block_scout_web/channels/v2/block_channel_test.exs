@@ -49,6 +49,7 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
     old_chain_id = Application.get_env(:block_scout_web, :chain_id)
     old_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
     old_metadata = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+    old_tesla_adapter = Application.get_env(:tesla, :adapter)
 
     Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
@@ -71,7 +72,7 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
       Application.put_env(:block_scout_web, :chain_id, old_chain_id)
       Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_bens)
       Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_metadata)
-      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      Application.put_env(:tesla, :adapter, old_tesla_adapter)
     end)
 
     miner = insert(:address)
