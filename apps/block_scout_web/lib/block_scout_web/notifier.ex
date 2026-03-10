@@ -56,7 +56,6 @@ defmodule BlockScoutWeb.Notifier do
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   @check_broadcast_sequence_period 500
-  @default_block_broadcast_enrichment_timeout 200
   @api_true [api?: true]
 
   case @chain_type do
@@ -682,12 +681,11 @@ defmodule BlockScoutWeb.Notifier do
 
   defp preload_enrichment_for_broadcast(block) do
     timeout =
-      :block_scout_web
-      |> Application.get_env(__MODULE__, [])
-      |> Keyword.get(
-        :block_broadcast_enrichment_timeout,
-        @default_block_broadcast_enrichment_timeout
-      )
+      Application.get_env(
+        :block_scout_web,
+        __MODULE__,
+        []
+      )[:block_broadcast_enrichment_timeout]
 
     results =
       Task.Supervisor.async_stream_nolink(
@@ -713,7 +711,7 @@ defmodule BlockScoutWeb.Notifier do
   defp merge_enriched_miner_field(%{miner: %{} = miner} = block, %{miner: %{} = enriched_miner}, field) do
     case Map.fetch(enriched_miner, field) do
       {:ok, nil} -> block
-      {:ok, value} -> %{block | miner: Map.put(miner, field, value)}
+      {:ok, value} -> %{block | miner: Map.replace(miner, field, value)}
       :error -> block
     end
   end
