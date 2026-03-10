@@ -722,6 +722,8 @@ defmodule Explorer.Chain do
       Address.contract_creation_transaction_with_from_address_associations(false)
     )
     |> Map.delete(:contract_creation_internal_transaction)
+    |> Map.delete(Address.contract_creation_internal_transaction_association())
+    |> Map.delete(Address.contract_creation_internal_transaction_with_from_address_association())
   end
 
   defp replace_association_key(necessity_by_association, old_key, new_key) do
