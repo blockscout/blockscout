@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
 
   alias BlockScoutWeb.Notifier
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
+  alias Plug.Conn
 
   test "subscribed user is notified of new_block event" do
     topic = "blocks:new_block"
@@ -37,5 +38,88 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
                |> socket("no_id", %{})
                |> subscribe_and_join("blocks:#{channel}")
     end)
+  end
+
+  test "new_block payload includes miner ENS and metadata when microservices are enabled" do
+    topic = "blocks:new_block"
+    @endpoint.subscribe(topic)
+
+    bypass = Bypass.open()
+
+    old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+    old_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+    old_metadata = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+    chain_id = 1
+    Application.put_env(:block_scout_web, :chain_id, chain_id)
+
+    Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+      service_url: "http://localhost:#{bypass.port}",
+      enabled: true,
+      protocols: []
+    )
+
+    Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+      service_url: "http://localhost:#{bypass.port}",
+      enabled: true
+    )
+
+    on_exit(fn ->
+      Bypass.down(bypass)
+      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_bens)
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_metadata)
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+    end)
+
+    miner = insert(:address)
+
+    Bypass.expect_once(bypass, "POST", "api/v1/#{chain_id}/addresses:batch_resolve_names", fn conn ->
+      Conn.resp(
+        conn,
+        200,
+        Jason.encode!(%{
+          "names" => %{
+            to_string(miner.hash) => "miner.eth"
+          }
+        })
+      )
+    end)
+
+    Bypass.expect_once(bypass, "GET", "api/v1/metadata", fn conn ->
+      Conn.resp(
+        conn,
+        200,
+        Jason.encode!(%{
+          "addresses" => %{
+            to_string(miner.hash) => %{
+              "tags" => []
+            }
+          }
+        })
+      )
+    end)
+
+    block = insert(:block, number: 1, miner: miner)
+
+    start_supervised!(AverageBlockTime)
+    Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
+    end)
+
+    Notifier.handle_event({:chain_event, :blocks, :realtime, [block]})
+
+    receive do
+      %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_block", payload: %{block: block_payload}} ->
+        assert block_payload["miner"]["ens_domain_name"] == "miner.eth"
+        assert block_payload["miner"]["metadata"] == %{"tags" => []}
+    after
+      :timer.seconds(5) ->
+        assert false, "Expected message received nothing."
+    end
   end
 end

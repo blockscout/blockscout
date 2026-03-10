@@ -50,6 +50,8 @@ defmodule BlockScoutWeb.Notifier do
   alias Phoenix.View
   alias Timex.Duration
 
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens_to_block: 1]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata_to_block: 1]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   @check_broadcast_sequence_period 500
@@ -637,6 +639,8 @@ defmodule BlockScoutWeb.Notifier do
         :transactions,
         :rewards
       ])
+      |> maybe_preload_ens_to_block()
+      |> maybe_preload_metadata_to_block()
 
     average_block_time = AverageBlockTime.average_block_time()
 
