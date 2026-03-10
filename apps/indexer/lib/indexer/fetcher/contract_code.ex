@@ -271,6 +271,8 @@ defmodule Indexer.Fetcher.ContractCode do
   # Imports addresses into the database
   @spec import_addresses([Address.t()]) ::
           {:ok, [Address.t()]} | {:error, any()}
+  defp import_addresses([]), do: {:ok, []}
+
   defp import_addresses(addresses_params) do
     case Chain.import(%{
            addresses: %{params: addresses_params},
@@ -279,6 +281,9 @@ defmodule Indexer.Fetcher.ContractCode do
       {:ok, %{addresses: addresses}} ->
         Accounts.drop(addresses)
         {:ok, addresses}
+
+      {:ok, %{}} ->
+        {:ok, []}
 
       {:error, step, reason, _changes_so_far} ->
         Logger.error(
