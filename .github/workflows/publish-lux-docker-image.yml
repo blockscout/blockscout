@@ -49,8 +49,8 @@ jobs:
           file: ./docker/Dockerfile
           push: true
           tags: |
-            ghcr.io/luxfi/blockscout-lux:latest
-            ghcr.io/luxfi/blockscout-lux:${{ github.sha }}
+            ghcr.io/luxfi/explorer:latest
+            ghcr.io/luxfi/explorer:${{ github.sha }}
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
