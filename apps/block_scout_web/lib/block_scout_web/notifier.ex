@@ -681,7 +681,13 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp preload_enrichment_for_broadcast(block) do
-    timeout = @default_block_broadcast_enrichment_timeout
+    timeout =
+      :block_scout_web
+      |> Application.get_env(__MODULE__, [])
+      |> Keyword.get(
+        :block_broadcast_enrichment_timeout,
+        @default_block_broadcast_enrichment_timeout
+      )
 
     results =
       Task.Supervisor.async_stream_nolink(
@@ -704,8 +710,13 @@ defmodule BlockScoutWeb.Notifier do
     end)
   end
 
-  defp merge_enriched_miner_field(%{miner: %{} = miner} = block, %{miner: %{} = enriched_miner}, field),
-    do: %{block | miner: Map.put(miner, field, Map.get(enriched_miner, field))}
+  defp merge_enriched_miner_field(%{miner: %{} = miner} = block, %{miner: %{} = enriched_miner}, field) do
+    case Map.fetch(enriched_miner, field) do
+      {:ok, nil} -> block
+      {:ok, value} -> %{block | miner: Map.put(miner, field, value)}
+      :error -> block
+    end
+  end
 
   defp merge_enriched_miner_field(block, _enriched_block, _field), do: block
 

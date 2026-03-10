@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
 
     miner = insert(:address)
 
-    Bypass.expect_once(bypass, "POST", "api/v1/#{chain_id}/addresses:batch_resolve_names", fn conn ->
+    Bypass.expect_once(bypass, "POST", "/api/v1/#{chain_id}/addresses:batch_resolve_names", fn conn ->
       Conn.resp(
         conn,
         200,
@@ -89,7 +89,7 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
       )
     end)
 
-    Bypass.expect_once(bypass, "GET", "api/v1/metadata", fn conn ->
+    Bypass.expect_once(bypass, "GET", "/api/v1/metadata", fn conn ->
       Conn.resp(
         conn,
         200,
@@ -171,8 +171,12 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
       Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
     end)
 
+    timeout =
+      Application.get_env(:block_scout_web, Notifier, [])
+      |> Keyword.get(:block_broadcast_enrichment_timeout, 200)
+
     Notifier.handle_event({:chain_event, :blocks, :realtime, [block]})
 
-    assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_block", payload: %{block: _}}, 1_000
+    assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_block", payload: %{block: _}}, timeout + 200
   end
 end
