@@ -73,7 +73,8 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
         api?: Keyword.get(options, :api?, false)
       )
       |> Enum.filter(&(&1.index <= transaction.index))
-      |> Repo.preload([:token_transfers, :internal_transactions])
+      |> Repo.preload([:token_transfers])
+      |> Transaction.preload_internal_transactions()
 
     transaction =
       block_transactions

@@ -117,7 +117,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
             it in InternalTransaction,
             select: select_ctid(it),
             where: ^condition,
-            order_by: [asc: it.transaction_hash, asc: it.index],
+            order_by: [asc: it.block_number, asc: it.transaction_index, asc: it.index],
             lock: "FOR UPDATE"
           )
 

@@ -98,7 +98,7 @@ defmodule Explorer.Migrator.ReindexDuplicatedInternalTransactions do
             it in InternalTransaction,
             select: select_ctid(it),
             where: field(it, ^it_field) in ^block_numbers_or_hashes,
-            order_by: [asc: it.transaction_hash, asc: it.index],
+            order_by: [asc: it.block_number, asc: it.transaction_index, asc: it.index],
             lock: "FOR UPDATE"
           )
 
