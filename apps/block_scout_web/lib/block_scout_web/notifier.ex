@@ -634,7 +634,8 @@ defmodule BlockScoutWeb.Notifier do
 
   defp broadcast_block(block) do
     preloaded_block =
-      Repo.preload(block, [
+      block
+      |> Repo.preload([
         [miner: [:names, :smart_contract, proxy_implementations_association()]],
         :transactions,
         :rewards
