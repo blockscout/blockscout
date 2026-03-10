@@ -1,5 +1,12 @@
 # Changelog
 
+## 9.3.7
+
+### ⚙️ Miscellaneous Tasks
+
+- Allow disabling contract creation internal transaction association ([#14090](https://github.com/blockscout/blockscout/issues/14090))
+
+
 ## 9.3.6
 
 ### ⚡ Performance
