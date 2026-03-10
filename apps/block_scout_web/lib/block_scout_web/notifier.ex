@@ -44,9 +44,9 @@ defmodule BlockScoutWeb.Notifier do
   }
 
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime, Helper}
-  alias Explorer.MicroserviceInterfaces.{BENS, Metadata}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
+  alias Explorer.MicroserviceInterfaces.{BENS, Metadata}
   alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
   alias Phoenix.View
   alias Timex.Duration
