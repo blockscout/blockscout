@@ -473,13 +473,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
           _ -> nil
         end
 
-      transfer_token =
-        if not is_nil(msg.transfer_token_address_hash) do
-          case Token.get_by_contract_address_hash(msg.transfer_token_address_hash, @api_true) do
-            nil -> %{contract_address_hash: msg.transfer_token_address_hash, symbol: nil, decimals: nil}
-            t -> %{contract_address_hash: t.contract_address_hash, symbol: t.symbol, decimals: t.decimals}
-          end
-        end
+      transfer_token = fetch_transfer_token(msg.transfer_token_address_hash)
 
       message =
         msg
@@ -498,6 +492,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
         |> put_view(ApiView)
         |> put_status(:not_found)
         |> render(:message, %{message: "Invalid message id or the message with such id is not found"})
+    end
+  end
+
+  defp fetch_transfer_token(nil), do: nil
+
+  defp fetch_transfer_token(transfer_token_address_hash) do
+    case Token.get_by_contract_address_hash(transfer_token_address_hash, @api_true) do
+      nil -> %{contract_address_hash: transfer_token_address_hash, symbol: nil, decimals: nil}
+      t -> %{contract_address_hash: t.contract_address_hash, symbol: t.symbol, decimals: t.decimals}
     end
   end
 

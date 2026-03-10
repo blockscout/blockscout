@@ -730,21 +730,25 @@ defmodule Explorer.Chain.BridgedToken do
             |> Decimal.mult(home_token_total_supply)
             |> Decimal.div(token_decimals_divider)
 
-          token = Token.get_by_contract_address_hash(token_hash_str, [])
-
-          token_cap_usd =
-            if token && token.fiat_value do
-              token.fiat_value
-              |> Decimal.mult(token_cap)
-            else
-              0
-            end
-
-          {:ok, token_cap_usd}
+          compute_token_cap_usd(token_hash_str, token_cap)
         else
           _ -> :error
         end
     end
+  end
+
+  defp compute_token_cap_usd(token_hash_str, token_cap) do
+    token = Token.get_by_contract_address_hash(token_hash_str, [])
+
+    token_cap_usd =
+      if token && token.fiat_value do
+        token.fiat_value
+        |> Decimal.mult(token_cap)
+      else
+        0
+      end
+
+    {:ok, token_cap_usd}
   end
 
   defp parse_contract_response(abi_encoded_value, types) when is_list(types) do

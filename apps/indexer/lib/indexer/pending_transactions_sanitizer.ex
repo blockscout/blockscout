@@ -75,16 +75,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
         %{id: id, result: result} ->
           pending_transaction = Map.fetch!(id_to_params, id)
 
-          if result do
-            fetch_block_and_invalidate_wrapper(pending_transaction, to_string(pending_transaction.hash), result)
-          else
-            Logger.debug(
-              "Transaction with hash #{pending_transaction.hash} doesn't exist in the node anymore. We should remove it from Blockscout DB.",
-              fetcher: :pending_transactions_to_refetch
-            )
-
-            fetch_pending_transaction_and_delete(pending_transaction)
-          end
+          handle_pending_transaction_result(pending_transaction, result)
 
         error ->
           Logger.error("Error while fetching pending transaction receipt: #{inspect(error)}")
@@ -94,6 +85,19 @@ defmodule Indexer.PendingTransactionsSanitizer do
     Logger.debug("Pending transactions are sanitized",
       fetcher: :pending_transactions_to_refetch
     )
+  end
+
+  defp handle_pending_transaction_result(pending_transaction, result) do
+    if result do
+      fetch_block_and_invalidate_wrapper(pending_transaction, to_string(pending_transaction.hash), result)
+    else
+      Logger.debug(
+        "Transaction with hash #{pending_transaction.hash} doesn't exist in the node anymore. We should remove it from Blockscout DB.",
+        fetcher: :pending_transactions_to_refetch
+      )
+
+      fetch_pending_transaction_and_delete(pending_transaction)
+    end
   end
 
   defp get_transaction_receipt_requests(id_to_params) do
