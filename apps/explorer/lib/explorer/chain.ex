@@ -676,12 +676,7 @@ defmodule Explorer.Chain do
   def hash_to_address(
         hash,
         options \\ [
-          necessity_by_association: %{
-            :names => :optional,
-            :smart_contract => :optional,
-            :token => :optional,
-            Address.contract_creation_transaction_associations() => :optional
-          }
+          necessity_by_association: default_hash_to_address_necessity_by_association()
         ]
       ) do
     include_internal_transaction_association? =
@@ -689,7 +684,7 @@ defmodule Explorer.Chain do
 
     necessity_by_association =
       options
-      |> Keyword.get(:necessity_by_association, %{})
+      |> Keyword.get(:necessity_by_association, default_hash_to_address_necessity_by_association())
       |> maybe_remove_internal_transaction_association(include_internal_transaction_association?)
 
     query = Address.address_query(hash)
@@ -702,6 +697,15 @@ defmodule Explorer.Chain do
       nil -> {:error, :not_found}
       address -> {:ok, address}
     end
+  end
+
+  defp default_hash_to_address_necessity_by_association do
+    %{
+      :names => :optional,
+      :smart_contract => :optional,
+      :token => :optional,
+      Address.contract_creation_transaction_associations() => :optional
+    }
   end
 
   defp maybe_remove_internal_transaction_association(necessity_by_association, true),
