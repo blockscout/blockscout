@@ -27,6 +27,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Explorer.Chain.Zilliqa.Helper, as: ZilliqaHelper
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
+  alias Indexer.Fetcher.RpcErrorHelper
   alias Indexer.Transform.{AddressCoinBalances, Addresses, AddressTokenBalances}
   alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
 
@@ -128,36 +129,56 @@ defmodule Indexer.Fetcher.InternalTransaction do
         safe_import_internal_transaction(internal_transactions_params, filtered_data, data_type)
 
       {:error, reason} ->
-        Logger.error(
-          fn ->
-            [
-              "failed to fetch internal transactions for #{data_type} #{inspect(filtered_data)}: ",
-              Exception.format(:error, reason)
-            ]
-          end,
-          error_count: Enum.count(filtered_data)
-        )
+        if RpcErrorHelper.non_retryable_error?(reason) do
+          Logger.warning(fn ->
+            ["skipping internal transactions for #{data_type} — non-retryable RPC error (pruned state): ",
+             inspect(reason)]
+          end)
 
-        handle_not_found_transaction(reason)
+          handle_not_found_transaction(reason)
+          :ok
+        else
+          Logger.error(
+            fn ->
+              [
+                "failed to fetch internal transactions for #{data_type} #{inspect(filtered_data)}: ",
+                Exception.format(:error, reason)
+              ]
+            end,
+            error_count: Enum.count(filtered_data)
+          )
 
-        # re-queue the de-duped entries
-        {:retry, filtered_data}
+          handle_not_found_transaction(reason)
+
+          # re-queue the de-duped entries
+          {:retry, filtered_data}
+        end
 
       {:error, reason, stacktrace} ->
-        Logger.error(
-          fn ->
-            [
-              "failed to fetch internal transactions for #{data_type} #{inspect(filtered_data)}: ",
-              Exception.format(:error, reason, stacktrace)
-            ]
-          end,
-          error_count: Enum.count(filtered_data)
-        )
+        if RpcErrorHelper.non_retryable_error?(reason) do
+          Logger.warning(fn ->
+            ["skipping internal transactions for #{data_type} — non-retryable RPC error (pruned state): ",
+             inspect(reason)]
+          end)
 
-        handle_not_found_transaction(reason)
+          handle_not_found_transaction(reason)
+          :ok
+        else
+          Logger.error(
+            fn ->
+              [
+                "failed to fetch internal transactions for #{data_type} #{inspect(filtered_data)}: ",
+                Exception.format(:error, reason, stacktrace)
+              ]
+            end,
+            error_count: Enum.count(filtered_data)
+          )
 
-        # re-queue the de-duped entries
-        {:retry, filtered_data}
+          handle_not_found_transaction(reason)
+
+          # re-queue the de-duped entries
+          {:retry, filtered_data}
+        end
 
       :ignore ->
         :ok

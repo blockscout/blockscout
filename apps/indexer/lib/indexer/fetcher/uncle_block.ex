@@ -16,6 +16,7 @@ defmodule Indexer.Fetcher.UncleBlock do
   alias Explorer.Chain.Cache.{Accounts, Uncles}
   alias Explorer.Chain.Hash
   alias Indexer.{Block, BufferedTask, Tracer}
+  alias Indexer.Fetcher.RpcErrorHelper
   alias Indexer.Fetcher.UncleBlock
   alias Indexer.Fetcher.UncleBlock.Supervisor, as: UncleBlockSupervisor
   alias Indexer.Transform.Addresses
@@ -100,14 +101,22 @@ defmodule Indexer.Fetcher.UncleBlock do
         run_blocks(blocks, block_fetcher, unique_entries)
 
       {:error, reason} ->
-        Logger.error(
-          fn ->
-            ["failed to fetch: ", inspect(reason)]
-          end,
-          error_count: entry_count
-        )
+        if RpcErrorHelper.non_retryable_error?(reason) do
+          Logger.warning(fn ->
+            ["skipping uncle block fetch — non-retryable RPC error (pruned state): ", inspect(reason)]
+          end)
 
-        {:retry, unique_entries}
+          :ok
+        else
+          Logger.error(
+            fn ->
+              ["failed to fetch: ", inspect(reason)]
+            end,
+            error_count: entry_count
+          )
+
+          {:retry, unique_entries}
+        end
     end
   end
 

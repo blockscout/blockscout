@@ -23,6 +23,7 @@ defmodule Indexer.Fetcher.ContractCode do
   alias Explorer.Chain.Zilliqa.Helper, as: ZilliqaHelper
   alias Indexer.{BufferedTask, Tracer}
   alias Indexer.Fetcher.CoinBalance.Helper, as: CoinBalanceHelper
+  alias Indexer.Fetcher.RpcErrorHelper
   alias Indexer.Fetcher.Zilliqa.ScillaSmartContracts, as: ZilliqaScillaSmartContractsFetcher
   alias Indexer.Transform.Addresses
 
@@ -167,11 +168,19 @@ defmodule Indexer.Fetcher.ContractCode do
       :ok
     else
       {:error, reason} ->
-        Logger.error(fn -> ["failed to fetch contract codes: ", inspect(reason)] end,
-          error_count: Enum.count(entries)
-        )
+        if RpcErrorHelper.non_retryable_error?(reason) do
+          Logger.warning(fn ->
+            ["skipping contract code fetch — non-retryable RPC error (pruned state): ", inspect(reason)]
+          end)
 
-        {:retry, entries}
+          :ok
+        else
+          Logger.error(fn -> ["failed to fetch contract codes: ", inspect(reason)] end,
+            error_count: Enum.count(entries)
+          )
+
+          {:retry, entries}
+        end
     end
   end
 
@@ -195,8 +204,22 @@ defmodule Indexer.Fetcher.ContractCode do
         code_addresses_params = Addresses.extract_addresses(%{codes: params})
         {:ok, code_addresses_params}
 
-      error ->
-        error
+      {:ok, %{params_list: params, errors: errors}} ->
+        # Partial success — use what we got, skip non-retryable errors
+        {_retryable, non_retryable} = RpcErrorHelper.partition_errors(errors)
+
+        if non_retryable != [] do
+          Logger.warning(fn ->
+            ["skipping #{length(non_retryable)} contract code fetches — pruned state: ",
+             inspect(Enum.take(non_retryable, 3))]
+          end)
+        end
+
+        code_addresses_params = Addresses.extract_addresses(%{codes: params})
+        {:ok, code_addresses_params}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -217,15 +240,31 @@ defmodule Indexer.Fetcher.ContractCode do
     |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments, BlockNumber.get_max())
     |> case do
       {:ok, fetched_balances} ->
+        if fetched_balances.errors != [] do
+          {_retryable, non_retryable} = RpcErrorHelper.partition_errors(fetched_balances.errors)
+
+          if non_retryable != [] do
+            Logger.warning(fn ->
+              ["skipping #{length(non_retryable)} balance fetches — pruned state: ",
+               inspect(Enum.take(non_retryable, 3))]
+            end)
+          end
+        end
+
         balance_addresses_params = CoinBalanceHelper.balances_params_to_address_params(fetched_balances.params_list)
         {:ok, balance_addresses_params}
 
       {:error, reason} ->
-        Logger.error(fn -> ["failed to fetch contract balances: ", inspect(reason)] end,
-          error_count: Enum.count(entries)
-        )
+        if RpcErrorHelper.non_retryable_error?(reason) do
+          Logger.warning(fn -> ["skipping contract balance fetch — pruned state: ", inspect(reason)] end)
+          {:ok, []}
+        else
+          Logger.error(fn -> ["failed to fetch contract balances: ", inspect(reason)] end,
+            error_count: Enum.count(entries)
+          )
 
-        {:error, reason}
+          {:error, reason}
+        end
     end
   end
 

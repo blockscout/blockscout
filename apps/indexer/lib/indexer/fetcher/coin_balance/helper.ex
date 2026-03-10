@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
   alias Explorer.Chain.Cache.{Accounts, BlockNumber}
   alias Explorer.Chain.Hash
   alias Indexer.BufferedTask
+  alias Indexer.Fetcher.RpcErrorHelper
 
   @doc false
   # credo:disable-for-next-line Credo.Check.Design.DuplicatedCode
@@ -61,14 +62,22 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
         run_fetched_balances(fetched_balances, fetcher_type)
 
       {:error, reason} ->
-        Logger.error(
-          fn ->
-            ["failed to fetch: ", inspect(reason)]
-          end,
-          error_count: unique_entry_count
-        )
+        if RpcErrorHelper.non_retryable_error?(reason) do
+          Logger.warning(fn ->
+            ["skipping coin balance fetch — non-retryable RPC error (pruned state): ", inspect(reason)]
+          end)
 
-        {:retry, unique_filtered_entries}
+          :ok
+        else
+          Logger.error(
+            fn ->
+              ["failed to fetch: ", inspect(reason)]
+            end,
+            error_count: unique_entry_count
+          )
+
+          {:retry, unique_filtered_entries}
+        end
     end
   end
 
@@ -141,19 +150,34 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
   defp retry([]), do: :ok
 
   defp retry(errors) when is_list(errors) do
-    retried_entries = fetched_balances_errors_to_entries(errors)
+    {retryable_errors, non_retryable_errors} = RpcErrorHelper.partition_errors(errors)
 
-    Logger.error(
-      fn ->
-        [
-          "failed to fetch: ",
-          fetched_balance_errors_to_iodata(errors)
-        ]
-      end,
-      error_count: Enum.count(retried_entries)
-    )
+    if non_retryable_errors != [] do
+      Logger.warning(fn ->
+        ["skipping #{length(non_retryable_errors)} coin balance fetches — pruned state: ",
+         fetched_balance_errors_to_iodata(non_retryable_errors)]
+      end)
+    end
 
-    {:retry, retried_entries}
+    case retryable_errors do
+      [] ->
+        :ok
+
+      _ ->
+        retried_entries = fetched_balances_errors_to_entries(retryable_errors)
+
+        Logger.error(
+          fn ->
+            [
+              "failed to fetch: ",
+              fetched_balance_errors_to_iodata(retryable_errors)
+            ]
+          end,
+          error_count: Enum.count(retried_entries)
+        )
+
+        {:retry, retried_entries}
+    end
   end
 
   defp fetched_balances_errors_to_entries(errors) when is_list(errors) do
