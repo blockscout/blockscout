@@ -1,5 +1,12 @@
 # Changelog
 
+## 10.0.4
+
+### 🐛 Bug Fixes
+
+- `confirm_otp` after `OpenApiSpex` integration ([#14098](https://github.com/blockscout/blockscout/issues/14098))
+
+
 ## 10.0.3
 
 ### ⚙️ Miscellaneous Tasks
