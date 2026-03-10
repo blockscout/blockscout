@@ -5,10 +5,20 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Plug.Conn
 
-  test "subscribed user is notified of new_block event" do
+  setup do
+    old_notifier = Application.get_env(:block_scout_web, Notifier, [])
     topic = "blocks:new_block"
     @endpoint.subscribe(topic)
 
+    on_exit(fn ->
+      Application.put_env(:block_scout_web, Notifier, old_notifier)
+      Phoenix.PubSub.unsubscribe(BlockScoutWeb.PubSub, topic)
+    end)
+
+    {:ok, topic: topic}
+  end
+
+  test "subscribed user is notified of new_block event", %{topic: topic} do
     block = insert(:block, number: 1)
 
     start_supervised!(AverageBlockTime)
@@ -29,7 +39,7 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
     end
   end
 
-  test "user is able to join to common channels" do
+  test "user is able to join to common channels", %{topic: topic} do
     common_channels = ["new_block", "indexing", "indexing_internal_transactions"]
 
     Enum.each(common_channels, fn channel ->
@@ -40,10 +50,7 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
     end)
   end
 
-  test "new_block payload includes miner ENS and metadata when microservices are enabled" do
-    topic = "blocks:new_block"
-    @endpoint.subscribe(topic)
-
+  test "new_block payload includes miner ENS and metadata when microservices are enabled", %{topic: topic} do
     bypass = Bypass.open()
 
     old_chain_id = Application.get_env(:block_scout_web, :chain_id)
@@ -124,16 +131,11 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
     end
   end
 
-  test "new_block broadcast falls back quickly when enrichment services are unavailable" do
-    topic = "blocks:new_block"
-    @endpoint.subscribe(topic)
-
+  test "new_block broadcast falls back quickly when enrichment services are unavailable", %{topic: topic} do
     old_chain_id = Application.get_env(:block_scout_web, :chain_id)
     old_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
     old_metadata = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
     old_tesla_adapter = Application.get_env(:tesla, :adapter)
-    old_notifier = Application.get_env(:block_scout_web, Notifier)
-
     Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
     chain_id = 1
@@ -154,7 +156,6 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
 
     on_exit(fn ->
       Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-      Application.put_env(:block_scout_web, Notifier, old_notifier)
       Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_bens)
       Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_metadata)
       Application.put_env(:tesla, :adapter, old_tesla_adapter)
