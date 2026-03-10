@@ -298,6 +298,8 @@ config :explorer,
   chain_identity: ConfigHelper.chain_identity(),
   coin: coin,
   coin_name: System.get_env("COIN_NAME") || "ETH",
+  api_disable_contract_creation_internal_transaction_association:
+    ConfigHelper.parse_bool_env_var("API_DISABLE_CONTRACT_CREATION_INTERNAL_TRANSACTION_ASSOCIATION"),
   allowed_solidity_evm_versions:
     System.get_env("CONTRACT_VERIFICATION_ALLOWED_SOLIDITY_EVM_VERSIONS") ||
       "homestead,tangerineWhistle,spuriousDragon,byzantium,constantinople,petersburg,istanbul,berlin,london,paris,shanghai,cancun,prague,osaka,default",
