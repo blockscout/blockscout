@@ -4,7 +4,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- Allow disabling contract creation internal transaction association ([#14090](https://github.com/blockscout/blockscout/issues/14090))
+- Allow disabling contract creation internal transaction association ([#14090](https://github.com/blockscout/blockscout/issues/14090), [#14097](https://github.com/blockscout/blockscout/pull/14097))
 
 
 ## 10.0.2
@@ -141,7 +141,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- Allow disabling contract creation internal transaction association ([#14090](https://github.com/blockscout/blockscout/issues/14090))
+- Allow disabling contract creation internal transaction association ([#14090](https://github.com/blockscout/blockscout/issues/14090), [#14097](https://github.com/blockscout/blockscout/pull/14097))
 
 
 ## 9.3.6
