@@ -123,4 +123,56 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
         assert false, "Expected message received nothing."
     end
   end
+
+  test "new_block broadcast falls back quickly when enrichment services are unavailable" do
+    topic = "blocks:new_block"
+    @endpoint.subscribe(topic)
+
+    old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+    old_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+    old_metadata = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+    old_tesla_adapter = Application.get_env(:tesla, :adapter)
+    old_notifier = Application.get_env(:block_scout_web, Notifier)
+
+    Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+    chain_id = 1
+    Application.put_env(:block_scout_web, :chain_id, chain_id)
+
+    Application.put_env(:block_scout_web, Notifier, block_broadcast_enrichment_timeout: 50)
+
+    Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+      service_url: "http://127.0.0.1:9",
+      enabled: true,
+      protocols: []
+    )
+
+    Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+      service_url: "http://127.0.0.1:9",
+      enabled: true
+    )
+
+    on_exit(fn ->
+      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+      Application.put_env(:block_scout_web, Notifier, old_notifier)
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_bens)
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_metadata)
+      Application.put_env(:tesla, :adapter, old_tesla_adapter)
+    end)
+
+    miner = insert(:address)
+
+    block = insert(:block, number: 1, miner: miner)
+
+    start_supervised!(AverageBlockTime)
+    Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
+    end)
+
+    Notifier.handle_event({:chain_event, :blocks, :realtime, [block]})
+
+    assert_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_block", payload: %{block: _}}, 1_000
+  end
 end

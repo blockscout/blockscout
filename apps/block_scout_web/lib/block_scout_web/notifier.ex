@@ -44,6 +44,7 @@ defmodule BlockScoutWeb.Notifier do
   }
 
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime, Helper}
+  alias Explorer.MicroserviceInterfaces.{BENS, Metadata}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
@@ -55,6 +56,7 @@ defmodule BlockScoutWeb.Notifier do
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   @check_broadcast_sequence_period 500
+  @default_block_broadcast_enrichment_timeout 200
   @api_true [api?: true]
 
   case @chain_type do
@@ -640,8 +642,9 @@ defmodule BlockScoutWeb.Notifier do
         :transactions,
         :rewards
       ])
-      |> maybe_preload_ens_to_block()
-      |> maybe_preload_metadata_to_block()
+      # TODO: theoretically might introduce performance issues,
+      # consider async broadcast of enrichment data
+      |> maybe_preload_enrichment_for_broadcast()
 
     average_block_time = AverageBlockTime.average_block_time()
 
@@ -668,6 +671,43 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("blocks:new_block", "new_block", block_params_v2)
     Endpoint.broadcast("blocks:#{to_string(block.miner_hash)}", "new_block", block_params_v2)
   end
+
+  defp maybe_preload_enrichment_for_broadcast(block) do
+    if BENS.enabled?() or Metadata.enabled?() do
+      preload_enrichment_for_broadcast(block)
+    else
+      block
+    end
+  end
+
+  defp preload_enrichment_for_broadcast(block) do
+    timeout = @default_block_broadcast_enrichment_timeout
+
+    results =
+      Task.Supervisor.async_stream_nolink(
+        Explorer.TaskSupervisor,
+        [
+          {:ens_domain_name, &maybe_preload_ens_to_block/1},
+          {:metadata, &maybe_preload_metadata_to_block/1}
+        ],
+        fn {field, preload_fun} ->
+          {field, preload_fun.(block)}
+        end,
+        timeout: timeout,
+        on_timeout: :kill_task,
+        ordered: false
+      )
+
+    Enum.reduce(results, block, fn
+      {:ok, {field, enriched_block}}, acc -> merge_enriched_miner_field(acc, enriched_block, field)
+      _, acc -> acc
+    end)
+  end
+
+  defp merge_enriched_miner_field(%{miner: %{} = miner} = block, %{miner: %{} = enriched_miner}, field),
+    do: %{block | miner: Map.put(miner, field, Map.get(enriched_miner, field))}
+
+  defp merge_enriched_miner_field(block, _enriched_block, _field), do: block
 
   defp broadcast_rewards(rewards) do
     preloaded_rewards = Repo.preload(rewards, [:address, :block])
