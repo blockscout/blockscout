@@ -1,5 +1,20 @@
 # Changelog
 
+## 10.0.3
+
+### ⚙️ Miscellaneous Tasks
+
+- Allow disabling contract creation internal transaction association ([#14090](https://github.com/blockscout/blockscout/issues/14090))
+
+
+## 10.0.2
+
+### ⚙️ Miscellaneous Tasks
+
+- Add missing TokenBalance.Current launch in tests ([#14076](https://github.com/blockscout/blockscout/issues/14076))
+- Put backend versions into constants on launch ([#14072](https://github.com/blockscout/blockscout/issues/14072))
+
+
 ## 10.0.1
 
 ### ⚡ Performance
@@ -120,6 +135,13 @@
 | Variable                                              | Description                                                                                                                                                                                                                                                                                                                                        | Default                                                                                       | Version  | Deprecated in Version |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------------- | --------------------- |
 | `CACHE_PBO_COUNT_PERIOD`  | Time interval to restart the task which calculates the total pending_block_operations count.  | `20m` | v5.2.0+ |  | v10.0.0 |
+
+
+## 9.3.7
+
+### ⚙️ Miscellaneous Tasks
+
+- Allow disabling contract creation internal transaction association ([#14090](https://github.com/blockscout/blockscout/issues/14090))
 
 
 ## 9.3.6
