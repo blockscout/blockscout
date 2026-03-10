@@ -249,9 +249,13 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event(
-        {:chain_event, :internal_transactions, :on_demand,
-         [%InternalTransaction{index: 0, transaction_hash: transaction_hash}]}
+        {:chain_event, :internal_transactions, :on_demand, [%InternalTransaction{index: 0} = internal_transaction]}
       ) do
+    transaction_hash =
+      internal_transaction
+      |> InternalTransaction.preload_transaction()
+      |> Map.get(:hash)
+
     # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("transactions_old:#{transaction_hash}", "raw_trace", %{raw_trace_origin: transaction_hash})
 

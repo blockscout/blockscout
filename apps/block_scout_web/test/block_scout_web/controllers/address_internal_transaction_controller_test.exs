@@ -76,7 +76,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       assert Enum.all?([from_internal_transaction, to_internal_transaction], fn internal_transaction ->
                Enum.any?(internal_transaction_tiles, fn tile ->
-                 String.contains?(tile, to_string(internal_transaction.transaction_hash)) &&
+                 String.contains?(tile, to_string(internal_transaction.transaction.hash)) &&
                    String.contains?(tile, "data-internal-transaction-index=\"#{internal_transaction.index}\"")
                end)
              end)
@@ -121,12 +121,12 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
       internal_transaction_tiles = json_response(conn, 200)["items"]
 
       assert Enum.any?(internal_transaction_tiles, fn tile ->
-               String.contains?(tile, to_string(from_internal_transaction.transaction_hash)) &&
+               String.contains?(tile, to_string(from_internal_transaction.transaction.hash)) &&
                  String.contains?(tile, "data-internal-transaction-index=\"#{from_internal_transaction.index}\"")
              end)
 
       refute Enum.any?(internal_transaction_tiles, fn tile ->
-               String.contains?(tile, to_string(to_internal_transaction.transaction_hash)) &&
+               String.contains?(tile, to_string(to_internal_transaction.transaction.hash)) &&
                  String.contains?(tile, "data-internal-transaction-index=\"#{to_internal_transaction.index}\"")
              end)
     end
@@ -167,12 +167,12 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
       internal_transaction_tiles = json_response(conn, 200)["items"]
 
       assert Enum.any?(internal_transaction_tiles, fn tile ->
-               String.contains?(tile, to_string(to_internal_transaction.transaction_hash)) &&
+               String.contains?(tile, to_string(to_internal_transaction.transaction.hash)) &&
                  String.contains?(tile, "data-internal-transaction-index=\"#{to_internal_transaction.index}\"")
              end)
 
       refute Enum.any?(internal_transaction_tiles, fn tile ->
-               String.contains?(tile, to_string(from_internal_transaction.transaction_hash)) &&
+               String.contains?(tile, to_string(from_internal_transaction.transaction.hash)) &&
                  String.contains?(tile, "data-internal-transaction-index=\"#{from_internal_transaction.index}\"")
              end)
     end
@@ -214,12 +214,12 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
       internal_transaction_tiles = json_response(conn, 200)["items"]
 
       assert Enum.any?(internal_transaction_tiles, fn tile ->
-               String.contains?(tile, to_string(to_internal_transaction.transaction_hash)) &&
+               String.contains?(tile, to_string(to_internal_transaction.transaction.hash)) &&
                  String.contains?(tile, "data-internal-transaction-index=\"#{to_internal_transaction.index}\"")
              end)
 
       refute Enum.any?(internal_transaction_tiles, fn tile ->
-               String.contains?(tile, to_string(from_internal_transaction.transaction_hash)) &&
+               String.contains?(tile, to_string(from_internal_transaction.transaction.hash)) &&
                  String.contains?(tile, "data-internal-transaction-index=\"#{from_internal_transaction.index}\"")
              end)
     end
@@ -312,7 +312,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       assert Enum.all?(second_page, fn internal_transaction ->
                Enum.any?(internal_transaction_tiles, fn tile ->
-                 String.contains?(tile, to_string(internal_transaction.transaction_hash)) &&
+                 String.contains?(tile, to_string(internal_transaction.transaction.hash)) &&
                    String.contains?(tile, "data-internal-transaction-index=\"#{internal_transaction.index}\"")
                end)
              end)
@@ -447,7 +447,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       assert Enum.all?(first_page_items, fn internal_transaction ->
                Enum.any?(first_page_response, fn tile ->
-                 String.contains?(tile, to_string(internal_transaction.transaction_hash)) &&
+                 String.contains?(tile, to_string(internal_transaction.transaction.hash)) &&
                    String.contains?(tile, "data-internal-transaction-index=\"#{internal_transaction.index}\"")
                end)
              end)
@@ -456,7 +456,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       assert Enum.all?(second_page_items, fn internal_transaction ->
                Enum.any?(second_page_response, fn tile ->
-                 String.contains?(tile, to_string(internal_transaction.transaction_hash)) &&
+                 String.contains?(tile, to_string(internal_transaction.transaction.hash)) &&
                    String.contains?(tile, "data-internal-transaction-index=\"#{internal_transaction.index}\"")
                end)
              end)
@@ -465,7 +465,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       assert Enum.all?(third_page_items, fn internal_transaction ->
                Enum.any?(third_page_response, fn tile ->
-                 String.contains?(tile, to_string(internal_transaction.transaction_hash)) &&
+                 String.contains?(tile, to_string(internal_transaction.transaction.hash)) &&
                    String.contains?(tile, "data-internal-transaction-index=\"#{internal_transaction.index}\"")
                end)
              end)
@@ -474,7 +474,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       assert Enum.all?(fourth_page_items, fn internal_transaction ->
                Enum.any?(fourth_page_response, fn tile ->
-                 String.contains?(tile, to_string(internal_transaction.transaction_hash)) &&
+                 String.contains?(tile, to_string(internal_transaction.transaction.hash)) &&
                    String.contains?(tile, "data-internal-transaction-index=\"#{internal_transaction.index}\"")
                end)
              end)

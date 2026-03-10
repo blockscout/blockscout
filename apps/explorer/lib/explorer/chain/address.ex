@@ -1094,14 +1094,12 @@ defmodule Explorer.Chain.Address do
   """
   @spec creation_internal_transaction_query(binary() | Hash.t()) :: Ecto.Query.t()
   def creation_internal_transaction_query(address_hash) do
-    from(
-      it in InternalTransaction,
-      inner_join: t in assoc(it, :transaction),
-      where: it.created_contract_address_hash == ^address_hash,
-      where: t.status == ^1,
-      order_by: [desc: it.block_number],
-      limit: 1
-    )
+    InternalTransaction
+    |> InternalTransaction.join_transaction_query()
+    |> where([it], it.created_contract_address_hash == ^address_hash)
+    |> where(as(:transaction).status == ^1)
+    |> order_by([it], desc: it.block_number)
+    |> limit(1)
   end
 
   @doc """

@@ -304,7 +304,7 @@ defmodule Explorer.Chain.BridgedToken do
          mediator
        ) do
     omni_bridge_mediator = Application.get_env(:explorer, __MODULE__)[mediator]
-    %{transaction_hash: transaction_hash} = created_from_internal_transaction_success
+    %{block_number: block_number, transaction_index: transaction_index} = created_from_internal_transaction_success
 
     if omni_bridge_mediator && omni_bridge_mediator !== "" do
       {:ok, omni_bridge_mediator_hash} = Chain.string_to_address_hash(omni_bridge_mediator)
@@ -312,7 +312,8 @@ defmodule Explorer.Chain.BridgedToken do
       created_by_amb_mediator_query =
         from(
           it in InternalTransaction,
-          where: it.transaction_hash == ^transaction_hash,
+          where: it.block_number == ^block_number,
+          where: it.transaction_index == ^transaction_index,
           where: it.to_address_hash == ^omni_bridge_mediator_hash
         )
 

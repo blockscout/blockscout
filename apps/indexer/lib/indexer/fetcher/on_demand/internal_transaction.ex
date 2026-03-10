@@ -127,6 +127,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         |> Enum.take(paging_options.page_size)
         |> Repo.preload(:block)
         |> InternalTransaction.preload_error()
+        |> InternalTransaction.maybe_preload_transaction(options)
 
       :ignore ->
         [transaction.block_number]
@@ -141,6 +142,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         |> Enum.take(paging_options.page_size)
         |> Repo.preload(:block)
         |> InternalTransaction.preload_error()
+        |> InternalTransaction.maybe_preload_transaction(options)
 
       error ->
         Logger.error(
@@ -194,6 +196,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> add_block_hashes(block.hash)
     |> join_associations(necessity_by_association)
     |> InternalTransaction.preload_error()
+    |> InternalTransaction.maybe_preload_transaction(options)
   end
 
   @doc """
@@ -274,6 +277,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> join_associations(necessity_by_association)
     |> Repo.preload(:block)
     |> InternalTransaction.preload_error()
+    |> InternalTransaction.maybe_preload_transaction(options)
   end
 
   defp do_fetch_for_address(address_id, to_block, from_block, limit, sum_mode, sort_direction, acc \\ [])

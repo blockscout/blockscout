@@ -93,7 +93,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           }
         end)
 
-      assert result.transaction_hash == to_string(internal_transaction.transaction_hash)
+      assert result.transaction_hash == to_string(internal_transaction.transaction.hash)
       assert result.index == to_string(internal_transaction.index)
       assert result.block_number == to_string(internal_transaction.block_number)
       assert result.transaction_index == to_string(internal_transaction.transaction_index)
@@ -284,7 +284,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           }
         end)
 
-      assert result.transaction_hash == to_string(internal_transaction.transaction_hash)
+      assert result.transaction_hash == to_string(internal_transaction.transaction.hash)
       assert result.index == to_string(internal_transaction.index)
       assert result.block_number == to_string(internal_transaction.block_number)
       assert result.transaction_index == to_string(internal_transaction.transaction_index)

@@ -130,28 +130,28 @@ defmodule Explorer.Etherscan do
 
     query =
       if DenormalizationHelper.transactions_denormalization_finished?() do
-        from(
-          it in InternalTransaction,
-          inner_join: transaction in assoc(it, :transaction),
-          where: not is_nil(transaction.block_hash),
-          where: it.transaction_hash == ^transaction_hash,
-          limit: 10_000,
-          select:
-            merge(map(it, ^@internal_transaction_fields), %{
-              block_timestamp: transaction.block_timestamp
-            })
+        InternalTransaction
+        |> InternalTransaction.join_transaction_query()
+        |> where(not is_nil(as(:transaction).block_hash))
+        |> where(as(:transaction).hash == ^transaction_hash)
+        |> limit(10_000)
+        |> select(
+          [it],
+          merge(map(it, ^@internal_transaction_fields), %{
+            block_timestamp: as(:transaction).block_timestamp
+          })
         )
       else
-        from(
-          it in InternalTransaction,
-          inner_join: t in assoc(it, :transaction),
-          inner_join: b in assoc(t, :block),
-          where: it.transaction_hash == ^transaction_hash,
-          limit: 10_000,
-          select:
-            merge(map(it, ^@internal_transaction_fields), %{
-              block_timestamp: b.timestamp
-            })
+        InternalTransaction
+        |> InternalTransaction.join_transaction_query()
+        |> join(:inner, [it, t], b in assoc(t, :block), as: :block)
+        |> where(as(:transaction).hash == ^transaction_hash)
+        |> limit(10_000)
+        |> select(
+          [it],
+          merge(map(it, ^@internal_transaction_fields), %{
+            block_timestamp: as(:block).timestamp
+          })
         )
       end
 
@@ -238,40 +238,46 @@ defmodule Explorer.Etherscan do
 
   defp consensus_internal_transactions_with_transactions_and_blocks_query(options) do
     if DenormalizationHelper.transactions_denormalization_finished?() do
-      from(
-        it in InternalTransaction,
-        as: :internal_transaction,
-        inner_join: transaction in assoc(it, :transaction),
-        where: not is_nil(transaction.block_hash),
-        where: transaction.block_consensus == true,
-        order_by: [
+      InternalTransaction
+      |> from(as: :internal_transaction)
+      |> InternalTransaction.join_transaction_query()
+      |> where(not is_nil(as(:transaction).block_hash))
+      |> where(as(:transaction).block_consensus == true)
+      |> order_by(
+        [it],
+        [
           {^options.order_by_direction, it.block_number},
           {^options.order_by_direction, it.transaction_index},
           {^options.order_by_direction, it.index}
-        ],
-        limit: ^options_to_limit_for_inner_query(options),
-        select:
-          merge(map(it, ^@internal_transaction_fields), %{
-            block_timestamp: transaction.block_timestamp
-          })
+        ]
+      )
+      |> limit(^options_to_limit_for_inner_query(options))
+      |> select(
+        [it, transaction],
+        merge(map(it, ^@internal_transaction_fields), %{
+          block_timestamp: transaction.block_timestamp
+        })
       )
     else
-      from(
-        it in InternalTransaction,
-        as: :internal_transaction,
-        inner_join: t in assoc(it, :transaction),
-        inner_join: b in assoc(t, :block),
-        where: b.consensus == true,
-        order_by: [
+      InternalTransaction
+      |> from(as: :internal_transaction)
+      |> InternalTransaction.join_transaction_query()
+      |> join(:inner, [_it, t], b in assoc(t, :block))
+      |> where(as(:block).consensus == true)
+      |> order_by(
+        [it],
+        [
           {^options.order_by_direction, it.block_number},
           {^options.order_by_direction, it.transaction_index},
           {^options.order_by_direction, it.index}
-        ],
-        limit: ^options_to_limit_for_inner_query(options),
-        select:
-          merge(map(it, ^@internal_transaction_fields), %{
-            block_timestamp: b.timestamp
-          })
+        ]
+      )
+      |> limit(^options_to_limit_for_inner_query(options))
+      |> select(
+        [it],
+        merge(map(it, ^@internal_transaction_fields), %{
+          block_timestamp: as(:block).timestamp
+        })
       )
     end
   end

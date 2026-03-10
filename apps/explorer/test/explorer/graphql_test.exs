@@ -107,7 +107,7 @@ defmodule Explorer.GraphQLTest do
 
       {:ok, found_internal_transaction} = GraphQL.get_internal_transaction(clauses)
 
-      assert found_internal_transaction.transaction_hash == transaction.hash
+      assert found_internal_transaction.transaction.hash == transaction.hash
       assert found_internal_transaction.index == internal_transaction.index
     end
 
@@ -149,7 +149,7 @@ defmodule Explorer.GraphQLTest do
         |> GraphQL.transaction_to_internal_transactions_query()
         |> Repo.replica().all()
 
-      assert found_internal_transaction.transaction_hash == transaction1.hash
+      assert found_internal_transaction.transaction.hash == transaction1.hash
       assert found_internal_transaction.index == internal_transaction.index
     end
 
@@ -183,7 +183,7 @@ defmodule Explorer.GraphQLTest do
       assert length(found_internal_transactions) == 3
 
       for found_internal_transaction <- found_internal_transactions do
-        assert found_internal_transaction.transaction_hash == transaction1.hash
+        assert found_internal_transaction.transaction.hash == transaction1.hash
       end
     end
 

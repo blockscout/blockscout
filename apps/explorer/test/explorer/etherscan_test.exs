@@ -867,7 +867,7 @@ defmodule Explorer.EtherscanTest do
         created_contract_address_hash: internal_transaction.created_contract_address_hash,
         input: internal_transaction.input,
         index: internal_transaction.index,
-        transaction_hash: internal_transaction.transaction_hash,
+        transaction_hash: internal_transaction.transaction.hash,
         transaction_index: internal_transaction.transaction_index,
         type: internal_transaction.type,
         call_type: internal_transaction.call_type,

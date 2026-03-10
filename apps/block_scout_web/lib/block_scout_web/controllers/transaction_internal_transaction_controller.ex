@@ -28,12 +28,12 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
             [to_address: :names] => :optional,
             [created_contract_address: :smart_contract] => :optional,
             [from_address: :smart_contract] => :optional,
-            [to_address: :smart_contract] => :optional,
-            :transaction => :optional
+            [to_address: :smart_contract] => :optional
           }
         ]
         |> DenormalizationHelper.extend_transaction_block_necessity(:optional)
         |> Keyword.merge(paging_options(params))
+        |> Keyword.put(:preload_transaction?, true)
 
       internal_transactions_plus_one = transaction_to_internal_transactions(transaction, full_options)
 
