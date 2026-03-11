@@ -72,10 +72,18 @@ jobs:
       - name: Fetch deploy credentials from KMS
         id: kms
         env:
+          KMS_CLIENT_ID: ${{ secrets.KMS_CLIENT_ID }}
+          KMS_CLIENT_SECRET: ${{ secrets.KMS_CLIENT_SECRET }}
           HANZO_API_KEY: ${{ secrets.HANZO_API_KEY }}
           KMS_ENDPOINT: ${{ vars.KMS_ENDPOINT || 'https://kms.hanzo.ai' }}
         run: |
-          response=$(curl -sf "${KMS_ENDPOINT}/api/v1/secrets/raw?secretPath=/deploy&environment=production" \
+          # Auth: Universal Auth (preferred) or legacy API key
+          if [ -n "${KMS_CLIENT_ID}" ] && [ -n "${KMS_CLIENT_SECRET}" ]; then
+            HANZO_API_KEY=$(curl -sf "${KMS_ENDPOINT}/api/v1/auth/universal-auth/login" \
+              -H "Content-Type: application/json" \
+              -d "{\"clientId\":\"${KMS_CLIENT_ID}\",\"clientSecret\":\"${KMS_CLIENT_SECRET}\"}" | jq -r '.accessToken')
+          fi
+          response=$(curl -sf "${KMS_ENDPOINT}/api/v3/secrets/raw?workspaceId=e1359bf4-31b4-4dfa-bb90-323e2c298ad8&secretPath=/deploy&environment=prod" \
             -H "Authorization: Bearer ${HANZO_API_KEY}" 2>/dev/null || echo "")
           if [ -n "$response" ]; then
             token=$(echo "$response" | jq -r '.secrets[] | select(.secretKey=="DO_API_TOKEN") | .secretValue // empty')
