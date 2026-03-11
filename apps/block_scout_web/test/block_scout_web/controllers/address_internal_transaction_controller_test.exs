@@ -51,7 +51,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       from_internal_transaction =
         insert(:internal_transaction,
-          transaction: transaction,
           from_address: address,
           index: 1,
           block_number: transaction.block_number,
@@ -61,7 +60,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       to_internal_transaction =
         insert(:internal_transaction,
-          transaction: transaction,
           to_address: address,
           index: 2,
           block_number: transaction.block_number,
@@ -76,7 +74,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       assert Enum.all?([from_internal_transaction, to_internal_transaction], fn internal_transaction ->
                Enum.any?(internal_transaction_tiles, fn tile ->
-                 String.contains?(tile, to_string(internal_transaction.transaction.hash)) &&
+                 String.contains?(tile, to_string(transaction.hash)) &&
                    String.contains?(tile, "data-internal-transaction-index=\"#{internal_transaction.index}\"")
                end)
              end)
@@ -92,7 +90,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       from_internal_transaction =
         insert(:internal_transaction,
-          transaction: transaction,
           from_address: address,
           index: 1,
           block_number: transaction.block_number,
@@ -102,7 +99,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       to_internal_transaction =
         insert(:internal_transaction,
-          transaction: transaction,
           to_address: address,
           index: 2,
           block_number: transaction.block_number,
@@ -121,12 +117,12 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
       internal_transaction_tiles = json_response(conn, 200)["items"]
 
       assert Enum.any?(internal_transaction_tiles, fn tile ->
-               String.contains?(tile, to_string(from_internal_transaction.transaction.hash)) &&
+               String.contains?(tile, to_string(transaction.hash)) &&
                  String.contains?(tile, "data-internal-transaction-index=\"#{from_internal_transaction.index}\"")
              end)
 
       refute Enum.any?(internal_transaction_tiles, fn tile ->
-               String.contains?(tile, to_string(to_internal_transaction.transaction.hash)) &&
+               String.contains?(tile, to_string(transaction.hash)) &&
                  String.contains?(tile, "data-internal-transaction-index=\"#{to_internal_transaction.index}\"")
              end)
     end
@@ -141,7 +137,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       from_internal_transaction =
         insert(:internal_transaction,
-          transaction: transaction,
           from_address: address,
           index: 1,
           block_number: transaction.block_number,
@@ -151,7 +146,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       to_internal_transaction =
         insert(:internal_transaction,
-          transaction: transaction,
           to_address: address,
           index: 2,
           block_number: transaction.block_number,
@@ -167,12 +161,12 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
       internal_transaction_tiles = json_response(conn, 200)["items"]
 
       assert Enum.any?(internal_transaction_tiles, fn tile ->
-               String.contains?(tile, to_string(to_internal_transaction.transaction.hash)) &&
+               String.contains?(tile, to_string(transaction.hash)) &&
                  String.contains?(tile, "data-internal-transaction-index=\"#{to_internal_transaction.index}\"")
              end)
 
       refute Enum.any?(internal_transaction_tiles, fn tile ->
-               String.contains?(tile, to_string(from_internal_transaction.transaction.hash)) &&
+               String.contains?(tile, to_string(transaction.hash)) &&
                  String.contains?(tile, "data-internal-transaction-index=\"#{from_internal_transaction.index}\"")
              end)
     end
@@ -187,7 +181,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       from_internal_transaction =
         insert(:internal_transaction,
-          transaction: transaction,
           from_address: address,
           index: 1,
           block_number: transaction.block_number,
@@ -197,7 +190,6 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
 
       to_internal_transaction =
         insert(:internal_transaction,
-          transaction: transaction,
           to_address: nil,
           created_contract_address: address,
           index: 2,
@@ -214,12 +206,12 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
       internal_transaction_tiles = json_response(conn, 200)["items"]
 
       assert Enum.any?(internal_transaction_tiles, fn tile ->
-               String.contains?(tile, to_string(to_internal_transaction.transaction.hash)) &&
+               String.contains?(tile, to_string(transaction.hash)) &&
                  String.contains?(tile, "data-internal-transaction-index=\"#{to_internal_transaction.index}\"")
              end)
 
       refute Enum.any?(internal_transaction_tiles, fn tile ->
-               String.contains?(tile, to_string(from_internal_transaction.transaction.hash)) &&
+               String.contains?(tile, to_string(transaction.hash)) &&
                  String.contains?(tile, "data-internal-transaction-index=\"#{from_internal_transaction.index}\"")
              end)
     end

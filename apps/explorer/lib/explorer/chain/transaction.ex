@@ -3025,23 +3025,32 @@ defmodule Explorer.Chain.Transaction do
     |> Repo.all()
   end
 
-  def preload_internal_transactions(transactions) when is_list(transactions) do
+  def preload_internal_transactions(transactions, preloads \\ [], repo \\ Repo)
+
+  def preload_internal_transactions(transactions, preloads, repo) when is_list(transactions) do
     block_number_index_to_internal_transactions_map =
       transactions
       |> Enum.map(&{&1.block_number, &1.index})
       |> Enum.uniq()
-      |> InternalTransaction.get_by_block_number_transaction_index()
+      |> InternalTransaction.by_block_number_transaction_index_query()
+      |> repo.all()
+      |> repo.preload(preloads)
+      |> InternalTransaction.preload_transaction(repo, transactions)
       |> Enum.group_by(&{&1.block_number, &1.transaction_index})
 
     Enum.map(
       transactions,
-      &Map.put(&1, :internal_transactions, block_number_index_to_internal_transactions_map[{&1.block_number, &1.index}])
+      &Map.put(
+        &1,
+        :internal_transactions,
+        block_number_index_to_internal_transactions_map[{&1.block_number, &1.index}] || []
+      )
     )
   end
 
-  def preload_transaction(internal_transaction) do
-    [internal_transaction]
-    |> preload_transaction()
+  def preload_internal_transactions(transaction, preloads, repo) do
+    [transaction]
+    |> preload_internal_transactions(preloads, repo)
     |> List.first()
   end
 

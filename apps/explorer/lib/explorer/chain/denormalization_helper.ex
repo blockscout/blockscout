@@ -14,20 +14,6 @@ defmodule Explorer.Chain.DenormalizationHelper do
     end
   end
 
-  @spec extend_transaction_block_necessity(keyword(), :optional | :required) :: keyword()
-  def extend_transaction_block_necessity(opts, necessity \\ :optional) do
-    if transactions_denormalization_finished?() do
-      opts
-    else
-      Keyword.update(
-        opts,
-        :necessity_by_association,
-        %{[transaction: :block] => necessity},
-        &(&1 |> Map.delete(:transaction) |> Map.put([transaction: :block], necessity))
-      )
-    end
-  end
-
   @spec extend_transaction_preload(list()) :: list()
   def extend_transaction_preload(preloads) do
     if transactions_denormalization_finished?() do

@@ -33,7 +33,6 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
       |> Keyword.put(:paging_options, paging_options)
       |> Keyword.put(:from_block, from_block)
       |> Keyword.put(:to_block, to_block)
-      |> Keyword.put(:preload_transaction?, true)
       |> (&if(Helper.valid_filter?(filter_type, filter_value, "internal_transactions"),
             do: &1 |> Keyword.put(:direction, String.to_atom(filter_value)),
             else: &1
@@ -72,7 +71,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
                Transaction.effective_gas_price(internal_transaction.transaction, internal_transaction.block))
 
         [
-          to_string(internal_transaction.transaction.hash),
+          to_string(internal_transaction.transaction_hash),
           internal_transaction.index,
           internal_transaction.block_number,
           internal_transaction.transaction_index,
