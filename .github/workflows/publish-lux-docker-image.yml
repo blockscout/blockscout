@@ -69,9 +69,27 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
+      - name: Fetch deploy credentials from KMS
+        id: kms
+        env:
+          HANZO_API_KEY: ${{ secrets.HANZO_API_KEY }}
+          KMS_ENDPOINT: ${{ vars.KMS_ENDPOINT || 'https://kms.hanzo.ai' }}
+        run: |
+          response=$(curl -sf "${KMS_ENDPOINT}/api/v1/secrets/raw?secretPath=/deploy&environment=production" \
+            -H "Authorization: Bearer ${HANZO_API_KEY}" 2>/dev/null || echo "")
+          if [ -n "$response" ]; then
+            token=$(echo "$response" | jq -r '.secrets[] | select(.secretKey=="DO_API_TOKEN") | .secretValue // empty')
+          fi
+          if [ -z "${token:-}" ]; then
+            echo "::error::Deploy credentials not found. Set HANZO_API_KEY with KMS access."
+            exit 1
+          fi
+          echo "::add-mask::${token}"
+          echo "token=${token}" >> "$GITHUB_OUTPUT"
+
       - name: Deploy to lux-k8s
         env:
-          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          DO_TOKEN: ${{ steps.kms.outputs.token }}
         run: |
           INSTALL_DIR="$HOME/.local/bin"
           mkdir -p "$INSTALL_DIR"
@@ -84,7 +102,7 @@ jobs:
             curl -sLO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
             chmod +x kubectl && mv kubectl "$INSTALL_DIR/kubectl"
           fi
-          doctl auth init -t "$DIGITALOCEAN_ACCESS_TOKEN"
+          doctl auth init -t "$DO_TOKEN"
           doctl kubernetes cluster kubeconfig save lux-k8s
           # Mainnet explorers
           for dep in explorer-mainnet explorer-zoo explorer-hanzo explorer-spc explorer-pars; do
