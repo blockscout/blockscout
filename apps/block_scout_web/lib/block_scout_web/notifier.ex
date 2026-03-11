@@ -254,7 +254,7 @@ defmodule BlockScoutWeb.Notifier do
     transaction_hash =
       internal_transaction
       |> InternalTransaction.preload_transaction()
-      |> Map.get(:hash)
+      |> Map.get(:transaction_hash)
 
     # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("transactions_old:#{transaction_hash}", "raw_trace", %{raw_trace_origin: transaction_hash})
@@ -273,7 +273,7 @@ defmodule BlockScoutWeb.Notifier do
     internal_transactions
     |> Stream.map(
       &(InternalTransaction.where_nonpending_operation()
-        |> Repo.get_by(transaction_hash: &1.transaction_hash, index: &1.index)
+        |> Repo.get_by(block_number: &1.block_number, transaction_index: &1.transaction_index, index: &1.index)
         |> Repo.preload([:from_address, :to_address, :block]))
     )
     |> Enum.each(&broadcast_internal_transaction/1)

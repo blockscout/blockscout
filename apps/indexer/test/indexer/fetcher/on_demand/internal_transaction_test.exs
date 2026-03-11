@@ -52,19 +52,13 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
 
     Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, tracer: "call_tracer", debug_trace_timeout: "5s")
 
-    opts = [
-      necessity_by_association: %{
-        [transaction: [:from_address]] => :required
-      }
-    ]
-
     assert [
              %InternalTransaction{
                created_contract_address_hash: created_contract_address_hash,
                from_address_hash: from_address_hash,
-               transaction: %{from_address: %{}, block_hash: ^block_hash}
+               transaction: %{block_hash: ^block_hash}
              }
-           ] = InternalTransactionOnDemand.fetch_by_transaction(transaction, opts)
+           ] = InternalTransactionOnDemand.fetch_by_transaction(transaction)
 
     assert to_string(created_contract_address_hash) == "0x205a6b72ce16736c9d87172568a9c0cb9304de0d"
     assert to_string(from_address_hash) == "0x117b358218da5a4f647072ddb50ded038ed63d17"

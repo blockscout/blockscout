@@ -149,7 +149,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "to" => "#{internal_transaction.to_address_hash}",
       "value" => "#{(internal_transaction.value && internal_transaction.value.value) || 0}",
       "contractAddress" => "#{internal_transaction.created_contract_address_hash}",
-      "transactionHash" => to_string(internal_transaction.transaction.hash),
+      "transactionHash" => to_string(internal_transaction.transaction_hash),
       "index" => to_string(internal_transaction.index),
       "input" => "#{internal_transaction.input}",
       "type" => "#{internal_transaction.type}",

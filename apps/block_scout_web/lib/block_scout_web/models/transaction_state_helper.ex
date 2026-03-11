@@ -85,11 +85,11 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
           from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
           to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
         ],
-        internal_transactions: [
-          from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
-          to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
-        ],
         block: [miner: [:names, :smart_contract, proxy_implementations_association()]],
+        from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+        to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
+      )
+      |> Transaction.preload_internal_transactions(
         from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
         to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
       )

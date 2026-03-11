@@ -18,7 +18,6 @@ defmodule Explorer.Chain.InternalTransaction do
 
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.DenormalizationHelper
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
   alias Explorer.Utility.InternalTransactionHelper
@@ -80,6 +79,7 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:block_index, :integer)
 
     field(:transaction, :map, virtual: true)
+    field(:transaction_hash, Hash.Full, virtual: true)
 
     timestamps()
 
@@ -396,8 +396,8 @@ defmodule Explorer.Chain.InternalTransaction do
     type_changeset(changeset, attrs, type)
   end
 
-  @call_optional_fields ~w(error error_id gas_used output block_number value)a
-  @call_required_fields ~w(call_type_enum from_address_hash gas input to_address_hash)a
+  @call_optional_fields ~w(error error_id gas_used output value)a
+  @call_required_fields ~w(block_number call_type_enum from_address_hash gas input to_address_hash)a
   @call_allowed_fields @call_optional_fields ++ @call_required_fields
 
   defp type_changeset(changeset, attrs, :call) do
@@ -413,8 +413,8 @@ defmodule Explorer.Chain.InternalTransaction do
     |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_input)
   end
 
-  @create_optional_fields ~w(error error_id created_contract_code created_contract_address_hash gas_used block_number value)a
-  @create_required_fields ~w(from_address_hash gas init)a
+  @create_optional_fields ~w(error error_id created_contract_code created_contract_address_hash gas_used value)a
+  @create_required_fields ~w(block_number from_address_hash gas init)a
   @create_allowed_fields @create_optional_fields ++ @create_required_fields
 
   defp type_changeset(changeset, attrs, type) when type in [:create, :create2] do
@@ -426,8 +426,8 @@ defmodule Explorer.Chain.InternalTransaction do
     |> check_constraint(:init, message: ~S|can't be blank when type is 'create'|, name: :create_has_init)
   end
 
-  @selfdestruct_optional_fields ~w(block_number value)a
-  @selfdestruct_required_fields ~w(from_address_hash to_address_hash type)a
+  @selfdestruct_optional_fields ~w(value)a
+  @selfdestruct_required_fields ~w(block_number from_address_hash to_address_hash type)a
   @selfdestruct_allowed_fields @selfdestruct_optional_fields ++ @selfdestruct_required_fields
 
   defp type_changeset(changeset, attrs, :selfdestruct) do
@@ -591,7 +591,7 @@ defmodule Explorer.Chain.InternalTransaction do
         query
         |> join_transaction_query()
         |> where(
-          [it, t],
+          [transaction: t],
           fragment(
             "(SELECT 1 FROM pending_transaction_operations WHERE transaction_hash = ? LIMIT 1) IS NULL",
             t.hash
@@ -631,7 +631,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> order_by([internal_transaction], asc: internal_transaction.index)
     |> Chain.select_repo(options).all()
     |> preload_error(options)
-    |> maybe_preload_transaction(options)
+    |> preload_transaction()
   end
 
   @spec transaction_to_internal_transactions(Hash.Full.t(), [
@@ -654,8 +654,8 @@ defmodule Explorer.Chain.InternalTransaction do
     |> order_by([internal_transaction], asc: internal_transaction.index)
     |> preload(:block)
     |> Chain.select_repo(options).all()
-    |> maybe_preload_transaction(options)
     |> preload_error(options)
+    |> preload_transaction()
   end
 
   @spec block_to_internal_transactions(non_neg_integer(), [
@@ -682,7 +682,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> order_by([internal_transaction], asc: internal_transaction.transaction_index, asc: internal_transaction.index)
     |> Chain.select_repo(options).all()
     |> preload_error(options)
-    |> maybe_preload_transaction(options)
+    |> preload_transaction()
   end
 
   @doc """
@@ -723,7 +723,7 @@ defmodule Explorer.Chain.InternalTransaction do
   def deduplicate_and_trim_internal_transactions(internal_transactions, paging_options) do
     internal_transactions
     |> Enum.uniq_by(fn internal_transaction ->
-      {internal_transaction.transaction_index, internal_transaction.index}
+      {internal_transaction.block_number, internal_transaction.transaction_index, internal_transaction.index}
     end)
     |> Enum.take(paging_options.page_size)
   end
@@ -813,7 +813,7 @@ defmodule Explorer.Chain.InternalTransaction do
       |> Chain.select_repo(options).all()
       |> deduplicate_and_trim_internal_transactions(paging_options)
       |> preload_error(options)
-      |> maybe_preload_transaction(options)
+      |> preload_transaction()
     else
       __MODULE__
       |> where_nonpending_operation()
@@ -825,15 +825,17 @@ defmodule Explorer.Chain.InternalTransaction do
       |> Chain.join_associations(necessity_by_association)
       |> Chain.select_repo(options).all()
       |> preload_error(options)
-      |> maybe_preload_transaction(options)
+      |> preload_transaction()
     end
   end
 
   def join_transaction_query(query) do
-    join(query, :inner, [it], t in Transaction,
-      on: it.block_number == t.block_number and it.transaction_index == t.index,
-      as: :transaction
-    )
+    with_named_binding(query, :transaction, fn query, binding ->
+      join(query, :inner, [it], t in Transaction,
+        on: it.block_number == t.block_number and it.transaction_index == t.index and t.block_consensus == true,
+        as: ^binding
+      )
+    end)
   end
 
   defp common_where_limit_order(query, paging_options) do
@@ -964,7 +966,7 @@ defmodule Explorer.Chain.InternalTransaction do
   defp for_parent_transaction(query, %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash) do
     query
     |> join_transaction_query()
-    |> where([_child, transaction], transaction.hash == ^hash)
+    |> where(as(:transaction).hash == ^hash)
   end
 
   # filter by `type` is automatically ignored if `call_type_filter` is not empty,
@@ -1007,11 +1009,11 @@ defmodule Explorer.Chain.InternalTransaction do
 
       _ ->
         preloads =
-          DenormalizationHelper.extend_transaction_preload([
+          [
             :block,
             [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]],
             [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
-          ])
+          ]
 
         __MODULE__
         |> where_nonpending_operation()
@@ -1027,6 +1029,7 @@ defmodule Explorer.Chain.InternalTransaction do
         |> preload(^preloads)
         |> Chain.select_repo(options).all()
         |> preload_error(options)
+        |> preload_transaction()
     end
   end
 
@@ -1063,7 +1066,7 @@ defmodule Explorer.Chain.InternalTransaction do
   defp where_internal_transactions_by_transaction_hash(query, transaction_hash) do
     query
     |> join_transaction_query()
-    |> where([internal_transaction, transaction], transaction.hash == ^transaction_hash)
+    |> where(as(:transaction).hash == ^transaction_hash)
   end
 
   defp maybe_filter_origin_transaction(query, true), do: where_is_different_from_parent_transaction(query)
@@ -1156,6 +1159,8 @@ defmodule Explorer.Chain.InternalTransaction do
         {:ok, nil}
       end
 
+    {:ok, transaction_hash} = Chain.string_to_full_hash(first_trace.transaction_hash)
+
     {:ok, call_type} =
       if Map.has_key?(first_trace, :call_type) do
         CallType.load(first_trace.call_type)
@@ -1209,6 +1214,7 @@ defmodule Explorer.Chain.InternalTransaction do
         output: output,
         created_contract_code: created_contract_code,
         init: init,
+        transaction_hash: transaction_hash,
         type: type,
         value: value
       })
@@ -1269,31 +1275,39 @@ defmodule Explorer.Chain.InternalTransaction do
     |> List.first()
   end
 
-  def maybe_preload_transaction(internal_transactions, options) do
-    if Keyword.get(options, :preload_transaction?) do
-      preload_transaction(internal_transactions)
-    else
-      internal_transactions
-    end
+  def preload_transaction(internal_transactions, repo \\ Repo, transactions \\ nil)
+
+  def preload_transaction(nil, _repo, _transactions), do: nil
+
+  def preload_transaction(internal_transactions, repo, existing_transactions) when is_list(internal_transactions) do
+    transactions =
+      case existing_transactions do
+        nil ->
+          internal_transactions
+          |> Enum.map(&{&1.block_number, &1.transaction_index})
+          |> Enum.uniq()
+          |> Transaction.by_block_number_index_query()
+          |> repo.all()
+
+        transactions ->
+          transactions
+      end
+
+    block_number_index_to_transaction_map = Map.new(transactions, &{{&1.block_number, &1.index}, &1})
+
+    Enum.map(internal_transactions, fn it ->
+      transaction = block_number_index_to_transaction_map[{it.block_number, it.transaction_index}]
+
+      Map.merge(it, %{
+        transaction: transaction,
+        transaction_hash: (transaction && transaction.hash) || it.transaction_hash
+      })
+    end)
   end
 
-  def preload_transaction(internal_transactions) when is_list(internal_transactions) do
-    block_number_index_to_transaction_map =
-      internal_transactions
-      |> Enum.map(&{&1.block_number, &1.transaction_index})
-      |> Enum.uniq()
-      |> Transaction.get_transactions_by_block_number_index()
-      |> Map.new(&{{&1.block_number, &1.index}, &1})
-
-    Enum.map(
-      internal_transactions,
-      &Map.put(&1, :transaction, block_number_index_to_transaction_map[{&1.block_number, &1.transaction_index}])
-    )
-  end
-
-  def preload_transaction(internal_transaction) do
+  def preload_transaction(internal_transaction, repo, transactions) do
     [internal_transaction]
-    |> preload_transaction()
+    |> preload_transaction(repo, transactions)
     |> List.first()
   end
 end

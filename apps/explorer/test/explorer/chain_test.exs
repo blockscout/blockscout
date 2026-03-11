@@ -1121,7 +1121,7 @@ defmodule Explorer.ChainTest do
             gas_price: 100_000_000_000,
             gas_used: 50450,
             hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-            index: 0,
+            index: 1,
             input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
             nonce: 4,
             public_key:
@@ -1328,7 +1328,7 @@ defmodule Explorer.ChainTest do
                 transactions: [
                   %Transaction{
                     block_number: 37,
-                    index: 0,
+                    index: 1,
                     hash: %Hash{
                       byte_count: 32,
                       bytes:

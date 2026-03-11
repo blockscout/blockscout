@@ -85,7 +85,6 @@ defmodule Explorer.Etherscan do
     block_number
     from_address_hash
     to_address_hash
-    transaction_hash
     transaction_index
     index
     value
@@ -138,7 +137,8 @@ defmodule Explorer.Etherscan do
         |> select(
           [it],
           merge(map(it, ^@internal_transaction_fields), %{
-            block_timestamp: as(:transaction).block_timestamp
+            block_timestamp: as(:transaction).block_timestamp,
+            transaction_hash: as(:transaction).hash
           })
         )
       else
@@ -150,7 +150,8 @@ defmodule Explorer.Etherscan do
         |> select(
           [it],
           merge(map(it, ^@internal_transaction_fields), %{
-            block_timestamp: as(:block).timestamp
+            block_timestamp: as(:block).timestamp,
+            transaction_hash: as(:transaction).hash
           })
         )
       end
@@ -216,6 +217,7 @@ defmodule Explorer.Etherscan do
     |> limit(^options.page_size)
     |> Repo.replica().all()
     |> InternalTransaction.preload_error()
+    |> InternalTransaction.preload_transaction()
   end
 
   def list_internal_transactions(
@@ -234,6 +236,7 @@ defmodule Explorer.Etherscan do
     |> where_end_block_match_internal_transaction(options)
     |> Repo.replica().all()
     |> InternalTransaction.preload_error()
+    |> InternalTransaction.preload_transaction()
   end
 
   defp consensus_internal_transactions_with_transactions_and_blocks_query(options) do
@@ -255,14 +258,15 @@ defmodule Explorer.Etherscan do
       |> select(
         [it, transaction],
         merge(map(it, ^@internal_transaction_fields), %{
-          block_timestamp: transaction.block_timestamp
+          block_timestamp: transaction.block_timestamp,
+          transaction_hash: transaction.hash
         })
       )
     else
       InternalTransaction
       |> from(as: :internal_transaction)
       |> InternalTransaction.join_transaction_query()
-      |> join(:inner, [_it, t], b in assoc(t, :block))
+      |> join(:inner, [_it, t], b in assoc(t, :block), as: :block)
       |> where(as(:block).consensus == true)
       |> order_by(
         [it],
@@ -276,29 +280,34 @@ defmodule Explorer.Etherscan do
       |> select(
         [it],
         merge(map(it, ^@internal_transaction_fields), %{
-          block_timestamp: as(:block).timestamp
+          block_timestamp: as(:block).timestamp,
+          transaction_hash: as(:transaction).hash
         })
       )
     end
   end
 
   defp internal_transactions_query(options, consensus_blocks) do
-    from(
-      it in InternalTransaction,
-      as: :internal_transaction,
-      inner_join: block in subquery(consensus_blocks),
-      on: it.block_number == block.number,
-      order_by: [
+    InternalTransaction
+    |> from(as: :internal_transaction)
+    |> InternalTransaction.join_transaction_query()
+    |> join(:inner, [it], block in subquery(consensus_blocks), on: it.block_number == block.number, as: :block)
+    |> order_by(
+      [it],
+      [
         {^options.order_by_direction, it.block_number},
         {^options.order_by_direction, it.transaction_index},
         {^options.order_by_direction, it.index}
-      ],
-      limit: ^options.page_size,
-      offset: ^options_to_offset(options),
-      select:
-        merge(map(it, ^@internal_transaction_fields), %{
-          block_timestamp: block.timestamp
-        })
+      ]
+    )
+    |> limit(^options.page_size)
+    |> offset(^options_to_offset(options))
+    |> select(
+      [it],
+      merge(map(it, ^@internal_transaction_fields), %{
+        block_timestamp: as(:block).timestamp,
+        transaction_hash: as(:transaction).hash
+      })
     )
   end
 

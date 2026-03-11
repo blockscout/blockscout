@@ -434,9 +434,12 @@ defmodule Explorer.Chain.AdvancedFilter do
         )
       end)
       |> limit_query(paging_options)
-      |> preload([:transaction])
 
-    fn repo, repo_options -> repo.all(filtered_and_paginated_query, repo_options) end
+    fn repo, repo_options ->
+      filtered_and_paginated_query
+      |> repo.all(repo_options)
+      |> InternalTransaction.preload_transaction(repo)
+    end
   end
 
   defp page_internal_transactions(query, %PagingOptions{

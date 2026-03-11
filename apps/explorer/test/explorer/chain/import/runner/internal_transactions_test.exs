@@ -172,11 +172,19 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert {:ok, _} = run_internal_transactions([transaction_changes, pending_changes])
 
-      assert Repo.exists?(from(i in InternalTransaction, where: i.transaction_hash == ^transaction.hash))
+      assert Repo.exists?(
+               from(i in InternalTransaction,
+                 where: i.block_number == ^transaction.block_number and i.transaction_index == ^transaction.index
+               )
+             )
 
       assert PendingBlockOperation |> Repo.get(transaction.block_hash) |> is_nil()
 
-      assert from(i in InternalTransaction, where: i.transaction_hash == ^pending.hash) |> Repo.one() |> is_nil()
+      assert InternalTransaction
+             |> InternalTransaction.join_transaction_query()
+             |> where([_it, t], t.hash == ^pending.hash)
+             |> Repo.one()
+             |> is_nil()
 
       assert is_nil(Repo.get(Transaction, pending.hash).block_hash)
     end
@@ -207,9 +215,17 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert {:ok, _} = run_internal_transactions([pending_transaction_changes, transaction_changes])
 
-      assert from(i in InternalTransaction, where: i.transaction_hash == ^pending.hash) |> Repo.one() |> is_nil()
+      assert InternalTransaction
+             |> InternalTransaction.join_transaction_query()
+             |> where([_it, t], t.hash == ^pending.hash)
+             |> Repo.one()
+             |> is_nil()
 
-      assert from(i in InternalTransaction, where: i.transaction_hash == ^inserted.hash) |> Repo.one() |> is_nil() ==
+      assert from(i in InternalTransaction,
+               where: i.block_number == ^inserted.block_number and i.transaction_index == ^inserted.index
+             )
+             |> Repo.one()
+             |> is_nil() ==
                false
 
       assert %{consensus: true} = Repo.get(Block, full_block.hash)
@@ -228,11 +244,15 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
         assert {:ok, _} = run_internal_transactions([transaction_a_changes])
 
-        assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_a.hash)
+        assert from(i in InternalTransaction,
+                 where: i.block_number == ^transaction_a.block_number and i.transaction_index == ^transaction_a.index
+               )
                |> Repo.one()
                |> is_nil()
 
-        assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_b.hash)
+        assert from(i in InternalTransaction,
+                 where: i.block_number == ^transaction_b.block_number and i.transaction_index == ^transaction_b.index
+               )
                |> Repo.one()
                |> is_nil()
 
@@ -255,11 +275,15 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
         assert {:ok, _} = run_internal_transactions([transaction_a_changes])
 
-        assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_a.hash)
+        assert from(i in InternalTransaction,
+                 where: i.block_number == ^transaction_a.block_number and i.transaction_index == ^transaction_a.index
+               )
                |> Repo.one()
                |> is_nil()
 
-        assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction_b.hash)
+        assert from(i in InternalTransaction,
+                 where: i.block_number == ^transaction_b.block_number and i.transaction_index == ^transaction_b.index
+               )
                |> Repo.one()
                |> is_nil()
 
@@ -287,7 +311,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
         assert {:ok, _} = run_internal_transactions([transaction_changes])
 
-        assert from(i in InternalTransaction, where: i.transaction_hash == ^transaction.hash) |> Repo.one() |> is_nil()
+        assert from(i in InternalTransaction,
+                 where: i.block_number == ^transaction.block_number and i.transaction_index == ^transaction.index
+               )
+               |> Repo.one()
+               |> is_nil()
 
         assert %{consensus: true, refetch_needed: false} = Repo.get(Block, full_block.hash)
 
@@ -318,12 +346,18 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert %{consensus: true} = Repo.get(Block, empty_block.hash)
       assert PendingBlockOperation |> Repo.get(empty_block.hash) |> is_nil()
 
-      assert from(i in InternalTransaction, where: i.transaction_hash == ^inserted.hash, where: i.index == 1)
+      assert from(i in InternalTransaction,
+               where: i.block_number == ^inserted.block_number and i.transaction_index == ^inserted.index,
+               where: i.index == 1
+             )
              |> Repo.one()
              |> is_nil() ==
                false
 
-      assert from(i in InternalTransaction, where: i.transaction_hash == ^inserted.hash, where: i.index == 2)
+      assert from(i in InternalTransaction,
+               where: i.block_number == ^inserted.block_number and i.transaction_index == ^inserted.index,
+               where: i.index == 2
+             )
              |> Repo.one()
              |> is_nil() ==
                false
@@ -351,7 +385,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         index: 0,
         input: input,
         trace_address: [],
-        transaction_hash: transaction.hash,
         transaction_index: 0,
         type: :stop,
         value: Wei.from(Decimal.new(0), :wei)
@@ -375,7 +408,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         to_address_hash: insert(:address).hash,
         gas: nil,
         trace_address: [],
-        transaction_hash: transaction.hash,
         transaction_index: transaction.index,
         index: 0,
         type: :selfdestruct,
@@ -407,7 +439,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         gas_used: 25000,
         init: %Data{bytes: <<1, 2, 3>>},
         trace_address: [],
-        transaction_hash: transaction.hash,
         transaction_index: transaction.index,
         index: 0,
         type: :create,
@@ -421,7 +452,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         to_address_hash: insert(:address).hash,
         gas: nil,
         trace_address: [],
-        transaction_hash: transaction.hash,
         transaction_index: transaction.index,
         index: 1,
         type: :selfdestruct,
@@ -452,7 +482,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         to_address_hash: insert(:address).hash,
         gas: nil,
         trace_address: [],
-        transaction_hash: transaction.hash,
         transaction_index: transaction.index,
         index: 0,
         type: :selfdestruct,
@@ -465,7 +494,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         to_address_hash: insert(:address).hash,
         gas: nil,
         trace_address: [],
-        transaction_hash: transaction.hash,
         transaction_index: transaction.index,
         index: 1,
         type: :selfdestruct,
@@ -478,7 +506,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         to_address_hash: insert(:address).hash,
         gas: nil,
         trace_address: [],
-        transaction_hash: transaction.hash,
         transaction_index: transaction.index,
         index: 2,
         type: :selfdestruct,
@@ -516,7 +543,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         gas_used: 25000,
         index: 0,
         trace_address: [],
-        transaction_hash: transaction.hash,
         transaction_index: transaction.index,
         init: %Data{bytes: <<1, 2, 3>>},
         type: :create2,
@@ -530,7 +556,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         to_address_hash: insert(:address).hash,
         gas: nil,
         trace_address: [],
-        transaction_hash: transaction.hash,
         transaction_index: transaction.index,
         index: 1,
         type: :selfdestruct,
@@ -558,7 +583,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         to_address_hash: insert(:address).hash,
         gas: nil,
         trace_address: [],
-        transaction_hash: transaction.hash,
         transaction_index: transaction.index,
         index: 0,
         type: :selfdestruct,
@@ -602,7 +626,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         end,
       index: index,
       trace_address: [],
-      transaction_hash: transaction.hash,
       transaction_index: transaction.index,
       type: :call,
       value: Wei.from(Decimal.new(1), :wei),
@@ -632,7 +655,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         end,
       index: index,
       trace_address: [],
-      transaction_hash: transaction.hash,
       transaction_index: transaction.index,
       type: :call,
       value: Wei.from(Decimal.new(1), :wei),

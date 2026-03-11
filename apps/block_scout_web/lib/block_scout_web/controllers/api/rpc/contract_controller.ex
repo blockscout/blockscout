@@ -51,10 +51,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         case validate_address(address_hash_string, params) do
           {:ok, _address_hash, address} ->
             contract_creation_internal_transaction_with_transaction_association = [
-              contract_creation_internal_transaction: {
-                Address.contract_creation_internal_transaction_preload_query(),
-                :transaction
-              }
+              contract_creation_internal_transaction: Address.contract_creation_internal_transaction_preload_query()
             ]
 
             Address.maybe_preload_smart_contract_associations(

@@ -421,9 +421,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       "transactions" ->
         transaction_hashes =
           changes_list
+          |> Enum.reject(&is_nil(Map.get(&1, :transaction_index)))
           |> Enum.map(&{&1.block_number, &1.transaction_index})
           |> Enum.uniq()
-          |> Transaction.get_transactions_by_block_number_index()
+          |> Transaction.by_block_number_index_query()
+          |> repo.all()
           |> Enum.map(& &1.hash)
 
         query =
@@ -451,7 +453,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       from(
         t in Transaction,
         where: ^dynamic_condition,
-        select: map(t, [:hash, :block_hash, :block_number, :cumulative_gas_used, :status]),
+        select: map(t, [:hash, :block_hash, :block_number, :cumulative_gas_used, :status, :index]),
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: t.hash],
         lock: "FOR NO KEY UPDATE"
@@ -675,7 +677,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           %{
             block_number: Map.get(trace, :block_number),
             gas_used: Map.get(trace, :gas_used),
-            transaction_hash: block_number_index_to_hash_map[{trace[:block_number], trace[:transaction_index]}],
+            transaction_hash:
+              Map.fetch!(block_number_index_to_hash_map, {trace[:block_number], trace[:transaction_index]}),
             created_contract_address_hash: Map.get(trace, :created_contract_address_hash),
             error: Map.get(trace, :error),
             status: if(is_nil(Map.get(trace, :error)), do: :ok, else: :error)
@@ -691,6 +694,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
       json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
 
+      valid_internal_transactions_with_hashes =
+        Enum.map(valid_internal_transactions, fn it ->
+          transaction_hash = Map.fetch!(block_number_index_to_hash_map, {it[:block_number], it[:transaction_index]})
+          Map.put(it, :transaction_hash, transaction_hash)
+        end)
+
       result =
         Enum.reduce_while(params, 0, fn first_trace, transaction_hashes_iterator ->
           transaction_hash = Map.get(first_trace, :transaction_hash)
@@ -700,7 +709,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           update_transactions_inner_wrapper(
             transaction_from_db,
             repo,
-            valid_internal_transactions,
+            valid_internal_transactions_with_hashes,
             transaction_hash,
             json_rpc_named_arguments,
             transaction_hashes,
@@ -1003,24 +1012,24 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     selfdestruct_addresses =
       valid_internal_transactions
       |> Enum.filter(&(&1.type == :selfdestruct))
-      |> Enum.map(&{&1.transaction_index, &1.index, &1.from_address_hash})
+      |> Enum.map(&{&1.block_number, &1.transaction_index, &1.from_address_hash})
       |> MapSet.new()
 
     # Find all create/create2 internal transactions in the same transactions
     created_addresses =
       valid_internal_transactions
       |> Enum.filter(&(&1.type in [:create, :create2]))
-      |> Enum.map(&{&1.transaction_index, &1.index, Map.get(&1, :created_contract_address_hash)})
-      |> Enum.reject(fn {_tx_index, _index, address_hash} -> is_nil(address_hash) end)
+      |> Enum.map(&{&1.block_number, &1.transaction_index, Map.get(&1, :created_contract_address_hash)})
+      |> Enum.reject(fn {_block_number, _tx_index, address_hash} -> is_nil(address_hash) end)
       |> MapSet.new()
 
     # Filter to find addresses that were selfdestructed but NOT created in the same transaction
     addresses_to_empty =
       selfdestruct_addresses
-      |> Enum.reject(fn {tx_index, index, address_hash} ->
-        MapSet.member?(created_addresses, {tx_index, index, address_hash})
+      |> Enum.reject(fn {block_number, tx_index, address_hash} ->
+        MapSet.member?(created_addresses, {block_number, tx_index, address_hash})
       end)
-      |> Enum.map(fn {_tx_index, _index, address_hash} -> address_hash end)
+      |> Enum.map(fn {_block_number, _tx_index, address_hash} -> address_hash end)
       |> Enum.uniq()
 
     if Enum.empty?(addresses_to_empty) do
