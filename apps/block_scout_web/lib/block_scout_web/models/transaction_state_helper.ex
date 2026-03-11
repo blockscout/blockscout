@@ -195,36 +195,41 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
   end
 
   defp token_transfers_to_balances_reducer(transfer, balances, prev_block, options) do
-    from = transfer.from_address
-    to = transfer.to_address
-    token_hash = transfer.token_contract_address_hash
+    # Skip ERC-7984 (confidential) transfers - we can't track encrypted balances
+    if transfer.token && transfer.token.type == "ERC-7984" do
+      balances
+    else
+      from = transfer.from_address
+      to = transfer.to_address
+      token_hash = transfer.token_contract_address_hash
 
-    balances
-    |> case do
-      # from address already in the map
-      %{^from => %{^token_hash => _}} = balances ->
-        balances
+      balances
+      |> case do
+        # from address already in the map
+        %{^from => %{^token_hash => _}} = balances ->
+          balances
 
-      # we need to add from address into the map
-      balances ->
-        put_in(
-          balances,
-          Enum.map([from, token_hash], &Access.key(&1, %{})),
-          token_balances(from.hash, transfer, prev_block, options)
-        )
-    end
-    |> case do
-      # to address already in the map
-      %{^to => %{^token_hash => _}} = balances ->
-        balances
+        # we need to add from address into the map
+        balances ->
+          put_in(
+            balances,
+            Enum.map([from, token_hash], &Access.key(&1, %{})),
+            token_balances(from.hash, transfer, prev_block, options)
+          )
+      end
+      |> case do
+        # to address already in the map
+        %{^to => %{^token_hash => _}} = balances ->
+          balances
 
-      # we need to add to address into the map
-      balances ->
-        put_in(
-          balances,
-          Enum.map([to, token_hash], &Access.key(&1, %{})),
-          token_balances(to.hash, transfer, prev_block, options)
-        )
+        # we need to add to address into the map
+        balances ->
+          put_in(
+            balances,
+            Enum.map([to, token_hash], &Access.key(&1, %{})),
+            token_balances(to.hash, transfer, prev_block, options)
+          )
+      end
     end
   end
 end

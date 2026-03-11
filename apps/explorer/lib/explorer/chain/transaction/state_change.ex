@@ -201,7 +201,7 @@ defmodule Explorer.Chain.Transaction.StateChange do
   end
 
   def from_loss(%InternalTransaction{} = transaction) do
-    transaction.value
+    transaction.value || Wei.zero()
   end
 
   @doc """
@@ -211,14 +211,14 @@ defmodule Explorer.Chain.Transaction.StateChange do
   @spec to_profit(Transaction.t() | InternalTransaction.t()) :: Wei.t()
   def to_profit(%Transaction{} = transaction) do
     if error?(transaction) do
-      %Wei{value: 0}
+      Wei.zero()
     else
       transaction.value
     end
   end
 
   def to_profit(%InternalTransaction{} = transaction) do
-    transaction.value
+    transaction.value || Wei.zero()
   end
 
   # Calculates block miner profit for the given transaction.
