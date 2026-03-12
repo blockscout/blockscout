@@ -71,7 +71,7 @@ end
 # will be used by default
 
 release :blockscout do
-  set version: "10.0.4"
+  set version: "10.0.5"
   set applications: [
     :runtime_tools,
     block_scout_web: :permanent,

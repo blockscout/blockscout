@@ -1,5 +1,13 @@
 # Changelog
 
+## 10.0.5
+
+### 🐛 Bug Fixes
+
+- Add missing query params in user ops swagger spec ([#14104](https://github.com/blockscout/blockscout/issues/14104))
+- State changes handle ERC-7984;  nil tx.value ([#14101](https://github.com/blockscout/blockscout/issues/14101))
+
+
 ## 10.0.4
 
 ### 🐛 Bug Fixes
