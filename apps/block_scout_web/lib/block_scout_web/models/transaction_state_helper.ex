@@ -9,7 +9,16 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address.CoinBalance, BlockNumberHelper, InternalTransaction, Transaction, Wei}
+
+  alias Explorer.Chain.{
+    Address.CoinBalance,
+    BlockNumberHelper,
+    DenormalizationHelper,
+    InternalTransaction,
+    Transaction,
+    Wei
+  }
+
   alias Explorer.Chain.Cache.StateChanges
   alias Explorer.Chain.Transaction.StateChange
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
@@ -195,8 +204,15 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
   end
 
   defp token_transfers_to_balances_reducer(transfer, balances, prev_block, options) do
+    token_type =
+      if DenormalizationHelper.tt_denormalization_finished?() do
+        transfer.token_type
+      else
+        transfer.token && transfer.token.type
+      end
+
     # Skip ERC-7984 (confidential) transfers - we can't track encrypted balances
-    if transfer.token && transfer.token.type == "ERC-7984" do
+    if token_type == "ERC-7984" do
       balances
     else
       from = transfer.from_address

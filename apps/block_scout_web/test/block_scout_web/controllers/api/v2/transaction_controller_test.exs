@@ -1953,6 +1953,149 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert token_data["name"] == "Scam Token"
       assert token_data["address_hash"] == to_string(token.contract_address)
     end
+
+    test "return state changes with null value internal transaction", %{conn: conn} do
+      block_before = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      internal_transaction =
+        insert(:internal_transaction,
+          call_type: :call,
+          transaction_hash: transaction.hash,
+          transaction: transaction,
+          index: 1,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
+          value: %Wei{value: Decimal.new(1000)}
+        )
+
+      insert(:internal_transaction,
+        call_type: :call,
+        transaction_hash: transaction.hash,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        block_hash: transaction.block_hash,
+        value: nil,
+        from_address_hash: internal_transaction.from_address_hash,
+        from_address: internal_transaction.from_address,
+        to_address_hash: internal_transaction.to_address_hash,
+        to_address: internal_transaction.to_address
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.from_address,
+        address_hash: transaction.from_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.to_address,
+        address_hash: transaction.to_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.block.miner,
+        address_hash: transaction.block.miner_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: internal_transaction.from_address,
+        address_hash: internal_transaction.from_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: internal_transaction.to_address,
+        address_hash: internal_transaction.to_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 5
+    end
+
+    test "return state changes with ERC-7984 token transfer", %{conn: conn} do
+      block_before = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      confidential_token = insert(:token, type: "ERC-7984", symbol: "CT", name: "Confidential Token")
+      erc20_token = insert(:token, type: "ERC-20", symbol: "ERC20", name: "ERC20 Token")
+
+      erc20_token_transfer =
+        insert(:token_transfer,
+          token_type: "ERC-20",
+          transaction: transaction,
+          transaction_hash: transaction.hash,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          token_contract_address: erc20_token.contract_address,
+          amount: Decimal.new(100),
+          token_ids: nil
+        )
+
+      from_address = erc20_token_transfer.from_address
+      to_address = erc20_token_transfer.to_address
+
+      # Create ERC-7984 token transfer - should be skipped in state changes
+      insert(:token_transfer,
+        token_type: "ERC-7984",
+        transaction: transaction,
+        transaction_hash: transaction.hash,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: confidential_token.contract_address,
+        from_address: from_address,
+        to_address: to_address,
+        amount: nil,
+        token_ids: nil
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.from_address,
+        address_hash: transaction.from_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.to_address,
+        address_hash: transaction.to_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.block.miner,
+        address_hash: transaction.block.miner_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 5
+    end
   end
 
   if @chain_identity == {:optimism, :celo} do

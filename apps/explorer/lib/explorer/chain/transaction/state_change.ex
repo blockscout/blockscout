@@ -112,8 +112,15 @@ defmodule Explorer.Chain.Transaction.StateChange do
   end
 
   defp token_transfers_balances_reducer(transfer, state_balances_map, include_transfers) do
+    token_type =
+      if DenormalizationHelper.tt_denormalization_finished?() do
+        transfer.token_type
+      else
+        transfer.token && transfer.token.type
+      end
+
     # Skip ERC-7984 (confidential) transfers - we can't track encrypted balances
-    if transfer.token && transfer.token.type == "ERC-7984" do
+    if token_type == "ERC-7984" do
       state_balances_map
     else
       from = transfer.from_address
