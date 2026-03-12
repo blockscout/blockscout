@@ -853,6 +853,104 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for a user operation sender address hash in the query.
+  """
+  @spec sender_address_hash_param() :: Parameter.t()
+  def sender_address_hash_param do
+    %Parameter{
+      name: :sender,
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "User operation sender address hash"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a user operation bundler address hash in the query.
+  """
+  @spec bundler_address_hash_param() :: Parameter.t()
+  def bundler_address_hash_param do
+    %Parameter{
+      name: :bundler,
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "User operation bundler address hash"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a user operation paymaster address hash in the query.
+  """
+  @spec paymaster_address_hash_param() :: Parameter.t()
+  def paymaster_address_hash_param do
+    %Parameter{
+      name: :paymaster,
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "User operation paymaster address hash"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a user operation factory address hash in the query.
+  """
+  @spec factory_address_hash_param() :: Parameter.t()
+  def factory_address_hash_param do
+    %Parameter{
+      name: :factory,
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "User operation factory address hash"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a user operation entry point address hash in the query.
+  """
+  @spec entry_point_address_hash_param() :: Parameter.t()
+  def entry_point_address_hash_param do
+    %Parameter{
+      name: :entry_point,
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "User operation entry point address hash"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a user operation bundle index in the query.
+  """
+  @spec bundle_index_param() :: Parameter.t()
+  def bundle_index_param do
+    %Parameter{
+      name: :bundle_index,
+      in: :query,
+      schema: %Schema{type: :integer, minimum: 0},
+      required: false,
+      description: "User operation bundle index"
+    }
+  end
+
+  @doc """
+  Returns a parameter definition for a user operation block number in the query.
+  """
+  @spec query_block_number_param() :: Parameter.t()
+  def query_block_number_param do
+    %Parameter{
+      name: :block_number,
+      in: :query,
+      schema: %Schema{type: :integer, minimum: 0},
+      required: false,
+      description: "User operation block number"
+    }
+  end
+
+  @doc """
   Returns a list of base parameters (api_key and key).
   """
   @spec base_params() :: [Parameter.t()]
