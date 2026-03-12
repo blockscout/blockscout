@@ -31,6 +31,6 @@ _If you have any Incompatible Changes in the above Changelog, outline how users 
   - [ ] General docs: submitted PR to [docs repository](https://github.com/blockscout/docs).
   - [ ] ENV vars: updated [env vars list](https://github.com/blockscout/docs/tree/main/setup/env-variables) and set version parameter to `master`.
   - [ ] Deprecated vars: added to [deprecated env vars list](https://github.com/blockscout/docs/tree/main/setup/env-variables/deprecated-env-variables).
-- [ ] If I modified API endpoints, I updated the Swagger/OpenAPI schemas accordingly and checked that schemas are asserted in tests.
+- [ ] If I modified API endpoints, I updated the Swagger/OpenAPI schemas accordingly and checked that schemas are asserted in tests, and highlighted the change in the PR description.
 - [ ] If I added new DB indices, I checked, that they are not redundant, with PGHero or other tools.
 - [ ] If I added/removed chain type, I modified the Github CI matrix and PR labels accordingly.
