@@ -186,5 +186,34 @@ defmodule Explorer.Chain.TokenTest do
 
       assert Enum.all?(market_data, fn token -> is_nil(token.fiat_value) end)
     end
+
+    test "finds token by contract address hash" do
+      token = insert(:token, name: "Address Token", symbol: "ATK")
+      address_hash_string = to_string(token.contract_address_hash)
+
+      results = Token.list_top(address_hash_string)
+
+      assert length(results) == 1
+      assert hd(results).contract_address_hash == token.contract_address_hash
+    end
+
+    test "returns empty when searching with a valid address hash format that has no token" do
+      insert(:token, name: "Some Token", symbol: "STK")
+      non_existent_hash = "0x0000000000000000000000000000000000000000"
+
+      results = Token.list_top(non_existent_hash)
+
+      assert Enum.empty?(results)
+    end
+
+    test "falls back to full-text search for invalid address hash format" do
+      token = insert(:token, name: "0xINVALIDHEX Token", symbol: "IHT")
+
+      # This query matches the FTS query structure but is not a valid 40-character hex address format
+      results = Token.list_top("0xINVALIDHEX")
+
+      assert length(results) == 1
+      assert hd(results).contract_address_hash == token.contract_address_hash
+    end
   end
 end
