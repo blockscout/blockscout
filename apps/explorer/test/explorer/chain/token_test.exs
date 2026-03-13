@@ -197,6 +197,14 @@ defmodule Explorer.Chain.TokenTest do
       assert hd(results).contract_address_hash == token.contract_address_hash
     end
 
+    test "finds token by contract address hash when given mixed-case address" do
+      token = insert(:token)
+      mixed_case_address = token.contract_address_hash |> to_string() |> String.upcase()
+      results = Token.list_top(mixed_case_address)
+      assert length(results) == 1
+      assert hd(results).contract_address_hash == token.contract_address_hash
+    end
+
     test "returns empty when searching with a valid address hash format that has no token" do
       insert(:token, name: "Some Token", symbol: "STK")
       non_existent_hash = "0x0000000000000000000000000000000000000000"
