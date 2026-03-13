@@ -1,5 +1,12 @@
 # Changelog
 
+## 10.0.6
+
+### 🐛 Bug Fixes
+
+- Add dependency between heavy internal transactions migrations ([#14107](https://github.com/blockscout/blockscout/issues/14107))
+
+
 ## 10.0.5
 
 ### 🐛 Bug Fixes
