@@ -1,5 +1,27 @@
 # Changelog
 
+## 10.0.6
+
+### 🐛 Bug Fixes
+
+- Add dependency between heavy internal transactions migrations ([#14107](https://github.com/blockscout/blockscout/issues/14107))
+
+
+## 10.0.5
+
+### 🐛 Bug Fixes
+
+- Add missing query params in user ops swagger spec ([#14104](https://github.com/blockscout/blockscout/issues/14104))
+- State changes handle ERC-7984;  nil tx.value ([#14101](https://github.com/blockscout/blockscout/issues/14101))
+
+
+## 10.0.4
+
+### 🐛 Bug Fixes
+
+- `confirm_otp` after `OpenApiSpex` integration ([#14098](https://github.com/blockscout/blockscout/issues/14098))
+
+
 ## 10.0.3
 
 ### ⚙️ Miscellaneous Tasks
