@@ -1,4 +1,4 @@
-{
+{https://docs.blockscout.com/llms.txt
 	"name": "Blockscout Elixir",
 	"dockerComposeFile": "docker-compose.yml",
 	"service": "elixir",
