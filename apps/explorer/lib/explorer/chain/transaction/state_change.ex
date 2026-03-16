@@ -7,7 +7,18 @@ defmodule Explorer.Chain.Transaction.StateChange do
     miner_gets_burnt_fees?: [:explorer, [Explorer.Chain.Transaction, :block_miner_gets_burnt_fees?]]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, TokenTransfer, Transaction, Wei}
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    DenormalizationHelper,
+    Hash,
+    InternalTransaction,
+    TokenTransfer,
+    Transaction,
+    Wei
+  }
+
   alias Explorer.Chain.Transaction.StateChange
 
   defstruct [:coin_or_token_transfers, :address, :token_id, :balance_before, :balance_after, :balance_diff, :miner?]
