@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.Mixfile do
       lockfile: "../../mix.lock",
       package: package(),
       start_permanent: Mix.env() == :prod,
-      version: "10.0.7",
+      version: "10.0.8",
       xref: [
         exclude: [
           Explorer.Chain.PolygonZkevm.Reader,

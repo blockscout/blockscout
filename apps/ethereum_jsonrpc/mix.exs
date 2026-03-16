@@ -19,7 +19,7 @@ defmodule EthereumJSONRPC.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "10.0.7"
+      version: "10.0.8"
     ]
   end
 

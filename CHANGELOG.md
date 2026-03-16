@@ -1,5 +1,12 @@
 # Changelog
 
+## 10.0.8
+
+### 🐛 Bug Fixes
+
+- Zetachain internal txs fetching error ([#14122](https://github.com/blockscout/blockscout/issues/14122))
+
+
 ## 10.0.7
 
 ### 🐛 Bug Fixes
