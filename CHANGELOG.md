@@ -1,5 +1,12 @@
 # Changelog
 
+## 10.0.7
+
+### 🐛 Bug Fixes
+
+- Add missing DenormalizationHelper alias in state changes ([#14119](https://github.com/blockscout/blockscout/issues/14119))
+
+
 ## 10.0.6
 
 ### 🐛 Bug Fixes
