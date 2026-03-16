@@ -80,7 +80,7 @@ defmodule Explorer.Chain.PendingTransactionOperation do
       from(
         po in __MODULE__,
         join: t in assoc(po, :transaction),
-        select: %{block_number: t.block_number, hash: t.hash, index: t.index},
+        select: %{block_number: t.block_number, hash: t.hash, index: t.index, type: t.type},
         order_by: [{^direction, t.block_number}]
       )
 
