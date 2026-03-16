@@ -70,7 +70,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
     case queue_data_type(json_rpc_named_arguments) do
       :block_number -> block_numbers
-      :transaction_params -> Enum.map(transactions, &Map.take(&1, [:block_number, :hash, :index]))
+      :transaction_params -> Enum.map(transactions, &Map.take(&1, [:block_number, :hash, :index, :type]))
     end
   end
 
@@ -279,10 +279,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
   @doc """
   Filters out transactions that are known to not have traceable internal transactions.
   """
-  @spec filter_non_traceable_transactions([Transaction.t()]) :: [Transaction.t()]
+  @spec filter_non_traceable_transactions([Transaction.t() | map()]) :: [Transaction.t() | map()]
   def filter_non_traceable_transactions(transactions) do
     case Application.get_env(:explorer, :chain_type) do
-      :zetachain -> Enum.reject(transactions, &(&1.type == @zetachain_non_traceable_type))
+      :zetachain -> Enum.reject(transactions, &(Map.get(&1, :type) == @zetachain_non_traceable_type))
       :zilliqa -> Enum.reject(transactions, &ZilliqaHelper.scilla_transaction?/1)
       _ -> transactions
     end
