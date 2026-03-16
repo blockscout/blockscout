@@ -6,7 +6,7 @@ networks:
 
 services:
   backend:
-    image: ghcr.io/blockscout/blockscout:${DOCKER_TAG:-latest}
+    image: ghcr.io/luxfi/explorer:${DOCKER_TAG:-latest}
     container_name: 'hanzonet-backend'
     restart: always
     stop_grace_period: 5m
@@ -28,7 +28,7 @@ services:
       DISABLE_MIGRATE: 'false'
 
   frontend:
-    image: ghcr.io/blockscout/frontend:${FRONTEND_TAG:-latest}
+    image: ghcr.io/luxfi/explore:${FRONTEND_TAG:-latest}
     container_name: 'hanzonet-frontend'
     restart: always
     networks:
@@ -49,7 +49,7 @@ services:
       NEXT_PUBLIC_IS_TESTNET: 'false'
 
   visualizer:
-    image: ghcr.io/blockscout/visualizer:${VISUALIZER_VERSION:-latest}
+    image: ghcr.io/luxfi/explorer-visualizer:${VISUALIZER_VERSION:-latest}
     container_name: 'luxnet-visualizer'
     restart: always
     networks:
@@ -60,7 +60,7 @@ services:
       - "8050:8050"
 
   sig-provider:
-    image: ghcr.io/blockscout/sig-provider:${SIG_PROVIDER_VERSION:-latest}
+    image: ghcr.io/luxfi/explorer-sig-provider:${SIG_PROVIDER_VERSION:-latest}
     container_name: 'luxnet-sig-provider'
     restart: always
     networks:
@@ -69,7 +69,7 @@ services:
       - "8051:8050"
 
   stats:
-    image: ghcr.io/blockscout/stats:${STATS_VERSION:-latest}
+    image: ghcr.io/luxfi/explorer-stats:${STATS_VERSION:-latest}
     container_name: 'luxnet-stats'
     restart: always
     networks:
