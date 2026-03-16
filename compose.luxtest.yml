@@ -28,27 +28,45 @@ services:
       CHAIN_ID: '96368'
       DATABASE_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@host-postgres:5432/explorer_luxtest?sslmode=disable
       DISABLE_MIGRATE: 'true'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.luxtest-backend.rule=Host(`api-explore-testnet.lux.network`)"
+      - "traefik.http.routers.luxtest-backend.entrypoints=websecure"
+      - "traefik.http.routers.luxtest-backend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.luxtest-backend.loadbalancer.server.port=4000"
+      - "traefik.docker.network=hanzo-network"
 
-  frontend:
-    image: ghcr.io/luxfi/explore:${FRONTEND_TAG:-latest}
-    container_name: 'luxtest-frontend'
+  stats:
+    image: ghcr.io/luxfi/explorer-stats:${STATS_VERSION:-latest}
+    container_name: 'luxtest-stats'
     restart: always
     networks:
       - hanzo-network
     depends_on:
       - backend
-    ports:
-      - "3010:3000"
+    extra_hosts:
+      - "k8s-host:192.168.1.99"
+      - "host-postgres:192.168.1.99"
     env_file:
-      - ./docker-compose/envs/common-frontend.env
+      - ./docker-compose/envs/common-stats.env
     environment:
-      NEXT_PUBLIC_API_HOST: localhost:4010
-      NEXT_PUBLIC_NETWORK_NAME: "LUX Testnet"
-      NEXT_PUBLIC_NETWORK_ID: 96368
-      NEXT_PUBLIC_NETWORK_SHORT_NAME: LUX
-      NEXT_PUBLIC_NETWORK_CURRENCY_NAME: LUX
-      NEXT_PUBLIC_NETWORK_CURRENCY_SYMBOL: LUX
-      NEXT_PUBLIC_IS_TESTNET: 'true'
+      STATS__DB_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@host-postgres:5432/stats_luxtest?sslmode=disable
+      STATS__BLOCKSCOUT_DB_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@host-postgres:5432/explorer_luxtest?sslmode=disable
+      STATS__CREATE_DATABASE: 'true'
+      STATS__RUN_MIGRATIONS: 'true'
+      STATS__BLOCKSCOUT_API_URL: http://luxtest-backend:4000
+    ports:
+      - "8153:8050"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.luxtest-stats.rule=Host(`api-explore-testnet.lux.network`) && PathPrefix(`/api/stats`)"
+      - "traefik.http.routers.luxtest-stats.entrypoints=websecure"
+      - "traefik.http.routers.luxtest-stats.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.luxtest-stats.priority=10"
+      - "traefik.http.middlewares.luxtest-stats-strip.stripprefix.prefixes=/api/stats"
+      - "traefik.http.routers.luxtest-stats.middlewares=luxtest-stats-strip"
+      - "traefik.http.services.luxtest-stats.loadbalancer.server.port=8050"
+      - "traefik.docker.network=hanzo-network"
 
   visualizer:
     image: ghcr.io/luxfi/explorer-visualizer:${VISUALIZER_VERSION:-latest}
@@ -69,25 +87,3 @@ services:
       - hanzo-network
     ports:
       - "8151:8050"
-
-  stats:
-    image: ghcr.io/luxfi/explorer-stats:${STATS_VERSION:-latest}
-    container_name: 'luxtest-stats'
-    restart: always
-    networks:
-      - hanzo-network
-    depends_on:
-      - backend
-    extra_hosts:
-      - "k8s-host:192.168.1.99"
-      - "host-postgres:192.168.1.99"
-      - "host-redis:192.168.1.99"
-    env_file:
-      - ./docker-compose/envs/common-stats.env
-    environment:
-      STATS__DB_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@host-postgres:5432/stats_luxtest?sslmode=disable
-      STATS__BLOCKSCOUT_DB_URL: postgresql://blockscout:ceWb1MeLBEeOIfk65gU8EjF8@host-postgres:5432/explorer_luxtest?sslmode=disable
-      STATS__CREATE_DATABASE: 'false'
-      STATS__RUN_MIGRATIONS: 'false'
-    ports:
-      - "8153:8050"
