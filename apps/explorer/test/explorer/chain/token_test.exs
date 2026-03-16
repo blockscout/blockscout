@@ -188,26 +188,33 @@ defmodule Explorer.Chain.TokenTest do
     end
 
     test "finds token by contract address hash" do
-      token = insert(:token, name: "Address Token", symbol: "ATK")
+      token = insert(:token, name: "Token that we search for", symbol: "ATK")
+      insert(:token)
+      insert(:token)
+      insert(:token)
+
       address_hash_string = to_string(token.contract_address_hash)
 
       results = Token.list_top(address_hash_string)
 
-      assert length(results) == 1
-      assert hd(results).contract_address_hash == token.contract_address_hash
+      assert [%{name: "Token that we search for"}] = results
     end
 
     test "finds token by contract address hash when given mixed-case address" do
-      token = insert(:token)
-      mixed_case_address = token.contract_address_hash |> to_string() |> String.upcase()
-      results = Token.list_top(mixed_case_address)
-      assert length(results) == 1
-      assert hd(results).contract_address_hash == token.contract_address_hash
+      contract_address = insert(:contract_address, hash: "0xdAC17F958D2ee523a2206206994597C13D831ec7")
+      insert(:token, contract_address: contract_address, name: "Token that we search for", symbol: "ATK")
+      insert(:token)
+      insert(:token)
+      insert(:token)
+
+      results = Token.list_top("0xDAC17F958D2EE523A2206206994597C13D831EC7")
+
+      assert [%{name: "Token that we search for"}] = results
     end
 
     test "returns empty when searching with a valid address hash format that has no token" do
       insert(:token, name: "Some Token", symbol: "STK")
-      non_existent_hash = "0x0000000000000000000000000000000000000000"
+      non_existent_hash = "0xf000000000000000000000000000000000000000"
 
       results = Token.list_top(non_existent_hash)
 
@@ -215,13 +222,14 @@ defmodule Explorer.Chain.TokenTest do
     end
 
     test "falls back to full-text search for invalid address hash format" do
-      token = insert(:token, name: "0xINVALIDHEX Token", symbol: "IHT")
+      insert(:token, name: "0xINVALID_HEX Token", symbol: "IHT")
+      insert(:token)
+      insert(:token)
+      insert(:token)
 
-      # This query matches the FTS query structure but is not a valid 40-character hex address format
-      results = Token.list_top("0xINVALIDHEX")
+      results = Token.list_top("0xINVALID_HEX")
 
-      assert length(results) == 1
-      assert hd(results).contract_address_hash == token.contract_address_hash
+      assert [%{name: "0xINVALID_HEX Token"}] = results
     end
   end
 end
