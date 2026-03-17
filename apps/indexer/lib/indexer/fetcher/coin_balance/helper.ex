@@ -59,15 +59,15 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
     |> EthereumJSONRPC.fetch_balances(json_rpc_named_arguments, BlockNumber.get_max())
     |> case do
       {:ok, fetched_balances} ->
-        run_fetched_balances(fetched_balances, fetcher_type)
+        run_fetched_balances(fetched_balances, fetcher_type, json_rpc_named_arguments)
 
       {:error, reason} ->
         if RpcErrorHelper.non_retryable_error?(reason) do
           Logger.warning(fn ->
-            ["skipping coin balance fetch — non-retryable RPC error (pruned state): ", inspect(reason)]
+            ["coin balance fetch failed for pruned historical state, falling back to latest block: ", inspect(reason)]
           end)
 
-          :ok
+          fallback_fetch_at_latest(unique_filtered_entries, json_rpc_named_arguments, fetcher_type)
         else
           Logger.error(
             fn ->
@@ -88,6 +88,53 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
   defp entry_to_params({address_hash_bytes, block_number}) when is_integer(block_number) do
     {:ok, address_hash} = Hash.Address.cast(address_hash_bytes)
     %{block_quantity: integer_to_quantity(block_number), hash_data: to_string(address_hash)}
+  end
+
+  # When a historical balance fetch fails due to pruned state, retry each address
+  # at the "latest" block. This gives us the current balance rather than storing 0
+  # or leaving the balance unfetched.
+  defp fallback_fetch_at_latest([], _json_rpc_named_arguments, _fetcher_type), do: :ok
+
+  defp fallback_fetch_at_latest(entries, json_rpc_named_arguments, fetcher_type) do
+    latest_params =
+      Enum.map(entries, fn {address_hash_bytes, _block_number} ->
+        {:ok, address_hash} = Hash.Address.cast(address_hash_bytes)
+        %{block_quantity: "latest", hash_data: to_string(address_hash)}
+      end)
+
+    case EthereumJSONRPC.fetch_balances(latest_params, json_rpc_named_arguments, BlockNumber.get_max()) do
+      {:ok, %FetchedBalances{params_list: params_list, errors: errors}} when params_list != [] ->
+        Logger.info(fn ->
+          ["fetched #{length(params_list)} balances at latest block as fallback for pruned historical state"]
+        end)
+
+        if errors != [] do
+          Logger.warning(fn ->
+            ["#{length(errors)} addresses still failed at latest block: ",
+             fetched_balance_errors_to_iodata(errors)]
+          end)
+        end
+
+        with {:ok, imported} <- import_fetched_balances(params_list, fetcher_type) do
+          Accounts.drop(imported[:addresses])
+        end
+
+        :ok
+
+      {:ok, %FetchedBalances{params_list: []}} ->
+        Logger.warning(fn ->
+          ["fallback fetch at latest block returned no results for #{length(entries)} addresses"]
+        end)
+
+        :ok
+
+      {:error, latest_reason} ->
+        Logger.error(fn ->
+          ["fallback fetch at latest block also failed: ", inspect(latest_reason)]
+        end)
+
+        :ok
+    end
   end
 
   # We want to record all historical balances for an address, but have the address itself have balance from the
@@ -139,24 +186,28 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
     })
   end
 
-  defp run_fetched_balances(%FetchedBalances{errors: errors, params_list: params_list}, fetcher_type) do
+  defp run_fetched_balances(%FetchedBalances{errors: errors, params_list: params_list}, fetcher_type, json_rpc_named_arguments) do
     with {:ok, imported} <- import_fetched_balances(params_list, fetcher_type) do
       Accounts.drop(imported[:addresses])
     end
 
-    retry(errors)
+    retry(errors, fetcher_type, json_rpc_named_arguments)
   end
 
-  defp retry([]), do: :ok
+  defp retry([], _fetcher_type, _json_rpc_named_arguments), do: :ok
 
-  defp retry(errors) when is_list(errors) do
+  defp retry(errors, fetcher_type, json_rpc_named_arguments) when is_list(errors) do
     {retryable_errors, non_retryable_errors} = RpcErrorHelper.partition_errors(errors)
 
     if non_retryable_errors != [] do
+      pruned_entries = fetched_balances_errors_to_entries(non_retryable_errors)
+
       Logger.warning(fn ->
-        ["skipping #{length(non_retryable_errors)} coin balance fetches — pruned state: ",
+        ["#{length(non_retryable_errors)} coin balance fetches failed for pruned state, falling back to latest block: ",
          fetched_balance_errors_to_iodata(non_retryable_errors)]
       end)
+
+      fallback_fetch_at_latest(pruned_entries, json_rpc_named_arguments, fetcher_type)
     end
 
     case retryable_errors do
