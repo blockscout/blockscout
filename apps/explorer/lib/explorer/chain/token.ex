@@ -379,13 +379,15 @@ defmodule Explorer.Chain.Token do
       |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
 
     filtered_query =
-      case filter && filter !== "" && Search.prepare_search_term(filter) do
-        {:some, filter_term} ->
-          sorted_paginated_query
-          |> apply_fts_filter(filter_term)
+      case filter && Chain.string_to_address_hash(filter) do
+        {:ok, address_hash} ->
+          from(t in sorted_paginated_query, where: t.contract_address_hash == ^address_hash)
 
         _ ->
-          sorted_paginated_query
+          case filter && filter !== "" && Search.prepare_search_term(filter) do
+            {:some, filter_term} -> apply_fts_filter(sorted_paginated_query, filter_term)
+            _ -> sorted_paginated_query
+          end
       end
 
     filtered_query
