@@ -99,5 +99,46 @@ defmodule Explorer.Account.IdentityTest do
                 watchlist_id: ^watchlist_id
               }} = user_data
     end
+  describe "update_nickname_changeset/2" do
+    test "accepts valid nickname" do
+      identity = %Identity{nickname: "old_nickname"}
+      changeset = Identity.update_nickname_changeset(identity, %{nickname: "new_nickname"})
+
+      assert changeset.valid?
+      assert get_change(changeset, :nickname) == "new_nickname"
+    end
+
+    test "rejects nickname shorter than 3 characters" do
+      identity = %Identity{}
+      changeset = Identity.update_nickname_changeset(identity, %{nickname: "ab"})
+
+      refute changeset.valid?
+      assert %{nickname: ["should be at least 3 character(s)"]} = errors_on(changeset)
+    end
+
+    test "rejects nickname longer than 50 characters" do
+      identity = %Identity{}
+      nickname = String.duplicate("a", 51)
+      changeset = Identity.update_nickname_changeset(identity, %{nickname: nickname})
+
+      refute changeset.valid?
+      assert %{nickname: ["should be at most 50 character(s)"]} = errors_on(changeset)
+    end
+
+    test "rejects nickname with spaces" do
+      identity = %Identity{}
+      changeset = Identity.update_nickname_changeset(identity, %{nickname: "new nickname"})
+
+      refute changeset.valid?
+      assert %{nickname: ["has invalid format"]} = errors_on(changeset)
+    end
+
+    test "rejects nickname with special characters like @" do
+      identity = %Identity{}
+      changeset = Identity.update_nickname_changeset(identity, %{nickname: "new@nickname"})
+
+      refute changeset.valid?
+      assert %{nickname: ["has invalid format"]} = errors_on(changeset)
+    end
   end
 end
