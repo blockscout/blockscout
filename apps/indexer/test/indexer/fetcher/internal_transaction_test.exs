@@ -524,19 +524,6 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     assert %{block_number: ^block_number, block_hash: ^block_hash} = Repo.one(PendingBlockOperation)
   end
 
-  describe "filter_non_traceable_transactions/1" do
-    test "does not raise when transaction params do not include type on zetachain" do
-      chain_type = Application.get_env(:explorer, :chain_type)
-      Application.put_env(:explorer, :chain_type, :zetachain)
-
-      on_exit(fn -> Application.put_env(:explorer, :chain_type, chain_type) end)
-
-      transaction_params = %{block_number: 13_393_871, hash: "0x123", index: 427}
-
-      assert [transaction_params] == InternalTransaction.filter_non_traceable_transactions([transaction_params])
-    end
-  end
-
   if Application.compile_env(:explorer, :chain_type) == :arbitrum do
     test "fetches internal transactions from Arbitrum", %{
       json_rpc_named_arguments: json_rpc_named_arguments

@@ -363,6 +363,8 @@ defmodule Explorer.Chain.Transaction do
 
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
 
+  alias Explorer.Chain.Zilliqa.Helper, as: ZilliqaHelper
+
   alias Explorer.SmartContract.SigProviderInterface
 
   @optional_attrs ~w(max_priority_fee_per_gas max_fee_per_gas block_hash block_number
@@ -2336,6 +2338,19 @@ defmodule Explorer.Chain.Transaction do
         smart_contract_full_abi_map
       )
     )
+  end
+
+  @zetachain_non_traceable_type 88
+  @doc """
+  Filters out transactions that are known to not have traceable internal transactions.
+  """
+  @spec filter_non_traceable_transactions([__MODULE__.t() | map()]) :: [__MODULE__.t() | map()]
+  def filter_non_traceable_transactions(transactions) do
+    case Application.get_env(:explorer, :chain_type) do
+      :zetachain -> Enum.reject(transactions, &(Map.get(&1, :type) == @zetachain_non_traceable_type))
+      :zilliqa -> Enum.reject(transactions, &ZilliqaHelper.scilla_transaction?(Map.get(&1, :type)))
+      _ -> transactions
+    end
   end
 
   if @chain_identity == {:optimism, :celo} do
