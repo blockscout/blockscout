@@ -18,6 +18,10 @@ defmodule Explorer.Account do
 
   alias Explorer.Repo
 
+  @doc """
+  Returns whether the account module is enabled.
+  """
+  @spec enabled?() :: boolean()
   def enabled? do
     Application.get_env(:explorer, __MODULE__)[:enabled]
   end
@@ -82,5 +86,31 @@ defmodule Explorer.Account do
 
   def merge([]) do
     {{:ok, 0}, nil}
+  end
+
+  @doc """
+  Updates the nickname for an account identity.
+  Returns {:ok, Identity.t()} on success or {:error, Ecto.Changeset.t()} on failure.
+  """
+  @spec update_nickname(Identity.t() | map(), String.t()) :: {:ok, Identity.t()} | {:error, Ecto.Changeset.t()}
+  def update_nickname(identity, nickname) do
+    identity_struct =
+      if is_map(identity) and not is_struct(identity) do
+        Repo.account_repo().get(Identity, identity.id)
+      else
+        identity
+      end
+
+    if identity_struct do
+      identity_struct
+      |> Identity.update_nickname_changeset(%{nickname: nickname})
+      |> Repo.account_repo().update()
+    else
+      changeset =
+        Identity.update_nickname_changeset(%Identity{}, %{nickname: nickname})
+        |> Ecto.Changeset.add_error(:identity, "not found")
+
+      {:error, changeset}
+    end
   end
 end

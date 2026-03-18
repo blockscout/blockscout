@@ -33,7 +33,7 @@ defmodule Explorer.Account.Identity do
     field(:uid, Explorer.Encrypted.Binary, null: false)
     field(:email, Explorer.Encrypted.Binary, null: false)
     field(:name, :string, virtual: true)
-    field(:nickname, :string, virtual: true)
+    field(:nickname, :string)
     field(:address_hash, Hash.Address, virtual: true)
     field(:avatar, Explorer.Encrypted.Binary)
     field(:verification_email_sent_at, :utc_datetime_usec)
@@ -53,6 +53,26 @@ defmodule Explorer.Account.Identity do
     |> cast(attrs, [:uid, :email, :name, :nickname, :avatar, :verification_email_sent_at, :otp_sent_at])
     |> validate_required([:uid])
     |> put_hashed_fields()
+  end
+
+  @doc """
+  Creates a changeset for updating an identity's nickname.
+  Validates length (3-50 chars), format (alphanumeric, underscore, hyphen), and uniqueness.
+  """
+  @spec update_nickname_changeset(t(), map()) :: Ecto.Changeset.t()
+  def update_nickname_changeset(identity, attrs) do
+    identity
+    |> cast(attrs, [:nickname])
+    |> validate_required([:nickname])
+    |> validate_length(:nickname, min: 3, max: 50)
+    |> validate_format(:nickname, ~r/^[a-zA-Z0-9_-]+$/)
+    |> validate_unique_nickname()
+  end
+
+  defp validate_unique_nickname(changeset) do
+    changeset
+    |> unsafe_validate_unique(:nickname, Repo.account_repo())
+    |> unique_constraint(:nickname)
   end
 
   defp put_hashed_fields(changeset) do
@@ -265,7 +285,7 @@ defmodule Explorer.Account.Identity do
         uid: auth.uid,
         email: email_from_auth(auth),
         name: name_from_auth(auth),
-        nickname: nickname_from_auth(auth),
+        nickname: identity.nickname || nickname_from_auth(auth),
         avatar: avatar_from_auth(auth),
         address_hash: address_hash_from_auth(auth),
         watchlist_id: watchlist.id,
@@ -276,7 +296,7 @@ defmodule Explorer.Account.Identity do
         id: identity.id,
         uid: auth.uid,
         email: email_from_auth(auth),
-        nickname: nickname_from_auth(auth),
+        nickname: identity.nickname || nickname_from_auth(auth),
         avatar: avatar_from_auth(auth),
         address_hash: address_hash_from_auth(auth),
         email_verified: false
@@ -288,7 +308,6 @@ defmodule Explorer.Account.Identity do
     %{
       email: email_from_auth(auth),
       name: name_from_auth(auth),
-      nickname: nickname_from_auth(auth),
       avatar: avatar_from_auth(auth),
       address_hash: address_hash_from_auth(auth)
     }

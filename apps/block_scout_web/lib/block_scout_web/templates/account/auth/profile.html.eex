@@ -20,7 +20,15 @@
             <div class="mb-4 row">
               <label for="static-nickname" class="col-sm-6 col-form-label label-account">Nickname</label>
               <div class="col-sm">
-                <input type="text" readonly class="form-control-plaintext profile-item" id="static-nickname" value="<%= @user.nickname %>">
+                <%= form_for @changeset, "/account/settings/nickname", [method: :patch], fn f -> %>
+                  <div class="input-group">
+                    <%= text_input f, :nickname, class: "form-control profile-item", id: "static-nickname" %>
+                    <div class="input-group-append">
+                      <%= submit "Save nickname", class: "btn btn-primary" %>
+                    </div>
+                  </div>
+                  <%= error_tag f, :nickname %>
+                <% end %>
               </div>
             </div>
             <div class="mb-4 row">
@@ -33,4 +41,5 @@
         </div>
       </div>
     </div>
+  </div>
 </section>

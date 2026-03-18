@@ -8,25 +8,65 @@ defmodule BlockScoutWeb.Account.AuthController do
 
   plug(Ueberauth)
 
+  @doc """
+  Handles OAuth login request.
+  """
   def request(conn, _) do
     not_found(conn)
   end
 
+  @doc """
+  Handles user logout.
+  """
   def logout(conn, _params) do
     conn
     |> configure_session(drop: true)
     |> redirect(to: root())
   end
 
+  @doc """
+  Displays the user profile page.
+  """
   def profile(conn, _params),
     do: conn |> get_session(:current_user) |> do_profile(conn)
 
-  defp do_profile(nil, conn),
+  @doc """
+  Updates the user's account nickname.
+  """
+  def update_nickname(conn, %{"identity" => %{"nickname" => nickname}}) do
+    user = get_session(conn, :current_user)
+
+    case Account.update_nickname(user, nickname) do
+      {:ok, user_struct} ->
+        new_user = Map.put(user, :nickname, user_struct.nickname)
+
+        conn
+        |> put_session(:current_user, new_user)
+        |> put_flash(:info, "Nickname updated successfully")
+        |> redirect(to: "/account/auth/profile")
+
+      {:error, changeset} ->
+        do_profile(user, conn, changeset)
+    end
+  end
+
+  defp do_profile(nil, conn, _changeset),
     do: redirect(conn, to: root())
 
-  defp do_profile(%{} = user, conn),
-    do: render(conn, :profile, user: user)
+  defp do_profile(%{} = user, conn, changeset \\ nil) do
+    changeset =
+      changeset ||
+        Identity.update_nickname_changeset(
+          %Identity{id: user.id, nickname: user.nickname},
+          %{}
+        )
 
+    render(conn, :profile, user: user, changeset: changeset)
+  end
+
+  @doc """
+  Handles OAuth callback from Ueberauth.
+  """
   def callback(%{assigns: %{ueberauth_failure: _fails}} = conn, _params) do
     conn
     |> put_flash(:error, "Failed to authenticate.")

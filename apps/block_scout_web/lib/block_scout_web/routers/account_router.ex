@@ -111,6 +111,8 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
       only: [:new, :create, :edit, :update, :delete, :index],
       as: :custom_abi
     )
+
+    patch("/settings/nickname", Account.AuthController, :update_nickname)
   end
 
   scope "/v2", as: :account_v2 do

@@ -99,6 +99,8 @@ defmodule Explorer.Account.IdentityTest do
                 watchlist_id: ^watchlist_id
               }} = user_data
     end
+  end
+
   describe "update_nickname_changeset/2" do
     test "accepts valid nickname" do
       identity = %Identity{nickname: "old_nickname"}
@@ -139,6 +141,18 @@ defmodule Explorer.Account.IdentityTest do
 
       refute changeset.valid?
       assert %{nickname: ["has invalid format"]} = errors_on(changeset)
+    end
+    test "rejects duplicate nickname" do
+      # UseRepo.account_repo().insert to create the first one since factory might not be loaded in all environments
+      Repo.account_repo().insert!(%Identity{uid: "user1", email: "user1@example.com", nickname: "taken_nickname"})
+
+      identity2 = %Identity{}
+      changeset = Identity.update_nickname_changeset(identity2, %{nickname: "taken_nickname"})
+
+      # Since it's a unique_constraint, we need to try to insert it to trigger the error if it was just unique_constraint
+      # But unsafe_validate_unique handles it before insert.
+      refute changeset.valid?
+      assert %{nickname: ["has already been taken"]} = errors_on(changeset)
     end
   end
 end

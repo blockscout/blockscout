@@ -33,8 +33,14 @@ defmodule BlockScoutWeb.Account.AuthControllerTest do
       assert get_flash(conn, :info) == "Nickname updated successfully"
 
       # Verify DB update
-      user = Repo.account_repo().one(Identity)
-      assert user.nickname == "new_nickname"
+      user_in_db = Repo.account_repo().one(Identity)
+      assert user_in_db.nickname == "new_nickname"
+
+      # Verify session update (must be a map, not a struct)
+      updated_user = get_session(conn, :current_user)
+      assert is_map(updated_user)
+      refute is_struct(updated_user)
+      assert updated_user.nickname == "new_nickname"
     end
 
     test "re-renders form with errors on invalid input", %{conn: conn} do
