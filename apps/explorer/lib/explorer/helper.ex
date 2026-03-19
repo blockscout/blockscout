@@ -2,14 +2,15 @@ defmodule Explorer.Helper do
   @moduledoc """
   Auxiliary common functions.
   """
-  require Logger
+
+  import Ecto.Query
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias ABI.TypeDecoder
   alias Explorer.Chain
   alias Explorer.Chain.{Address.Reputation, Address.ScamBadgeToAddress, Data, Hash, Wei}
 
-  import Ecto.Query
-  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  require Logger
 
   @max_safe_integer round(:math.pow(2, 63)) - 1
 
@@ -693,4 +694,27 @@ defmodule Explorer.Helper do
   end
 
   def process_rpc_response(response, _node, _fallback), do: response
+
+  @doc """
+  Generates a key from chain_id and a given string for storing in Redis.
+
+  This function combines the chain_id (if available) with the provided string to
+  create a unique key for Redis storage.
+
+  ## Parameters
+  - `string`: The string to be combined with the chain_id
+
+  ## Returns
+  - `String.t()` representing the generated key
+  """
+  @spec redis_key(String.t()) :: String.t()
+  def redis_key(key) do
+    chain_id = Application.get_env(:block_scout_web, :chain_id)
+
+    if chain_id do
+      chain_id <> "_" <> key
+    else
+      key
+    end
+  end
 end

@@ -38,8 +38,20 @@ defmodule Utils.RuntimeEnvHelper do
     # Generate the runtime env module name
     sibling_module = Module.concat(caller_module, "__RuntimeEnvs__")
 
+    # Resolve __MODULE__ in paths before injecting into sibling module
+    resolved_env_vars =
+      Enum.map(env_vars, fn {var_name, path} ->
+        resolved_path =
+          Macro.postwalk(path, fn
+            {:__MODULE__, _, _} -> caller_module
+            node -> node
+          end)
+
+        {var_name, resolved_path}
+      end)
+
     sibling_module_body =
-      for {var_name, path} <- env_vars do
+      for {var_name, path} <- resolved_env_vars do
         quote do
           def unquote(var_name)() do
             # credo:disable-for-next-line Credo.Check.Design.AliasUsage
