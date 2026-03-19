@@ -5,11 +5,11 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.Account.API.V2.UserView
+
   alias BlockScoutWeb.API.V2.ApiView
-  alias Explorer.Account.Identity
+  alias Explorer.Account.{Authentication, Identity}
   alias Explorer.Chain
   alias Explorer.Chain.Address
-  alias Explorer.ThirdPartyIntegrations.Auth0
   alias Plug.Conn
 
   action_fallback(BlockScoutWeb.Account.API.V2.FallbackController)
@@ -76,12 +76,12 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   def send_otp(conn, %{"email" => email}) do
     case conn |> Conn.fetch_session() |> current_user() do
       nil ->
-        with :ok <- Auth0.send_otp(email, AccessHelper.conn_to_ip_string(conn)) do
+        with :ok <- Authentication.send_otp(email, AccessHelper.conn_to_ip_string(conn)) do
           conn |> put_status(200) |> json(%{message: "Success"})
         end
 
       %{email: nil} ->
-        with :ok <- Auth0.send_otp_for_linking(email, AccessHelper.conn_to_ip_string(conn)) do
+        with :ok <- Authentication.send_otp_for_linking(email, AccessHelper.conn_to_ip_string(conn)) do
           conn |> put_status(200) |> json(%{message: "Success"})
         end
 
@@ -130,7 +130,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   """
   @spec confirm_otp(Conn.t(), map()) :: :error | {:error, any()} | Conn.t()
   def confirm_otp(conn, %{"email" => email, "otp" => otp}) do
-    with {:ok, auth} <- Auth0.confirm_otp_and_get_auth(email, otp, AccessHelper.conn_to_ip_string(conn)) do
+    with {:ok, auth} <- Authentication.confirm_otp(email, otp, AccessHelper.conn_to_ip_string(conn)) do
       put_auth_to_session(conn, auth)
     end
   end
@@ -174,7 +174,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   @spec siwe_message(Conn.t(), map()) :: {:error, String.t()} | {:format, :error} | Conn.t()
   def siwe_message(conn, %{"address" => address}) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address)},
-         {:ok, message} <- Auth0.generate_siwe_message(Address.checksum(address_hash)) do
+         {:ok, message} <- Authentication.generate_siwe_message(address_hash) do
       conn |> put_status(200) |> json(%{siwe_message: message})
     end
   end
@@ -214,7 +214,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   """
   @spec authenticate_via_wallet(Conn.t(), map()) :: :error | {:error, any()} | Conn.t()
   def authenticate_via_wallet(conn, %{"message" => message, "signature" => signature}) do
-    with {:ok, auth} <- Auth0.get_auth_with_web3(message, signature) do
+    with {:ok, auth} <- Authentication.verify_siwe_message(message, signature) do
       put_auth_to_session(conn, auth)
     end
   end
