@@ -22,6 +22,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
   @table_name :contract_creator_lookup
   @pending_blocks_cache_key "pending_blocks"
+  @max_json_rpc_retries 5
 
   def start_link(_) do
     :ets.new(@table_name, [
@@ -66,47 +67,52 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   defp fetch_contract_creator_address_hash(address_hash) do
     max_block_number = BlockNumber.get_max()
 
+    :ets.insert(@table_name, {address_cache_name(address_hash), :in_progress})
+
     initial_block_ranges = %{
       left: 0,
       right: max_block_number,
       previous_nonce: nil
     }
 
-    contract_creation_block_number = find_contract_creation_block_number(initial_block_ranges, address_hash)
+    case find_contract_creation_block_number(initial_block_ranges, address_hash, @max_json_rpc_retries) do
+      contract_creation_block_number when is_integer(contract_creation_block_number) ->
+        address_hash_string = to_string(address_hash)
 
-    pending_blocks =
-      case pending_blocks_cache() do
-        [] ->
-          []
+        pending_blocks =
+          case pending_blocks_cache() do
+            [] ->
+              []
 
-        [{_, pending_blocks}] ->
-          pending_blocks
-      end
+            [{_, pending_blocks}] ->
+              pending_blocks
+          end
 
-    updated_pending_blocks =
-      case Enum.member?(pending_blocks, contract_creation_block_number) do
-        true ->
-          pending_blocks
+        updated_pending_blocks = [
+          %{block_number: contract_creation_block_number, address_hash_string: address_hash_string}
+          | Enum.reject(pending_blocks, fn %{address_hash_string: addr} -> addr == address_hash_string end)
+        ]
 
-        false ->
-          [
-            %{block_number: contract_creation_block_number, address_hash_string: to_string(address_hash)}
-            | pending_blocks
-          ]
-      end
+        :ets.insert(@table_name, {address_cache_name(address_hash), contract_creation_block_number})
+        :ets.insert(@table_name, {@pending_blocks_cache_key, updated_pending_blocks})
 
-    :ets.insert(@table_name, {@pending_blocks_cache_key, updated_pending_blocks})
+        unless Block.indexed?(contract_creation_block_number) do
+          # Change `1` to specific label when `priority` field becomes `Ecto.Enum`.
+          MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], 1)
+        end
 
-    unless Block.indexed?(contract_creation_block_number) do
-      # Change `1` to specific label when `priority` field becomes `Ecto.Enum`.
-      MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], 1)
+      unexpected_value ->
+        Logger.error(
+          "Unexpected contract creation block number for address #{to_string(address_hash)}: #{inspect(unexpected_value)}"
+        )
+
+        :ets.delete(@table_name, address_cache_name(address_hash))
     end
 
     :ok
   end
 
-  defp find_contract_creation_block_number(block_ranges, address_hash) do
-    :ets.insert(@table_name, {address_cache_name(address_hash), :in_progress})
+  defp find_contract_creation_block_number(block_ranges, address_hash, retries_left) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
     medium = trunc((block_ranges.right - block_ranges.left) / 2)
     medium_position = block_ranges.left + medium
@@ -115,30 +121,47 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
     id_to_params = id_to_params([params])
 
-    with {:ok, response} <-
-           params
-           |> Map.merge(%{id: 0})
-           |> Nonce.request()
-           |> json_rpc(json_rpc_named_arguments) do
-      case Nonce.from_response(%{id: 0, result: response}, id_to_params) do
-        {:ok, %{nonce: 0}} ->
-          left_new = new_left_position(medium, medium_position)
-          block_ranges = Map.put(block_ranges, :left, left_new)
+    case params
+         |> Map.merge(%{id: 0})
+         |> Nonce.request()
+         |> json_rpc(json_rpc_named_arguments) do
+      {:ok, response} ->
+        case Nonce.from_response(%{id: 0, result: response}, id_to_params) do
+          {:ok, %{nonce: 0}} ->
+            left_new = new_left_position(medium, medium_position)
+            block_ranges = Map.put(block_ranges, :left, left_new)
 
-          maybe_continue_binary_search(block_ranges, address_hash, 0)
+            maybe_continue_binary_search(block_ranges, address_hash, 0, retries_left)
 
-        {:ok, %{nonce: nonce}} when nonce > 0 ->
-          right_new = new_right_position(medium, medium_position)
-          block_ranges = Map.put(block_ranges, :right, right_new)
+          {:ok, %{nonce: nonce}} when nonce > 0 ->
+            right_new = new_right_position(medium, medium_position)
+            block_ranges = Map.put(block_ranges, :right, right_new)
 
-          maybe_continue_binary_search(block_ranges, address_hash, nonce)
+            maybe_continue_binary_search(block_ranges, address_hash, nonce, retries_left)
 
-        _ ->
-          Logger.error("Error while fetching 'eth_getTransactionCount' for address #{to_string(address_hash)}")
-          :timer.sleep(1000)
-          find_contract_creation_block_number(block_ranges, address_hash)
-      end
+          _ ->
+            Logger.error("Error while fetching 'eth_getTransactionCount' for address #{to_string(address_hash)}")
+            retry_find_contract_creation_block_number(block_ranges, address_hash, retries_left)
+        end
+
+      {:error, reason} ->
+        Logger.error(
+          "Error while fetching 'eth_getTransactionCount' for address #{to_string(address_hash)}: #{inspect(reason)}"
+        )
+
+        retry_find_contract_creation_block_number(block_ranges, address_hash, retries_left)
     end
+  end
+
+  defp retry_find_contract_creation_block_number(_block_ranges, address_hash, 0) do
+    Logger.error("Reached max retry attempts for 'eth_getTransactionCount' for address #{to_string(address_hash)}")
+
+    :error
+  end
+
+  defp retry_find_contract_creation_block_number(block_ranges, address_hash, retries_left) do
+    :timer.sleep(1000)
+    find_contract_creation_block_number(block_ranges, address_hash, retries_left - 1)
   end
 
   defp new_left_position(medium, medium_position) do
@@ -149,7 +172,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     if medium == 0, do: medium_position - 1, else: medium_position
   end
 
-  defp maybe_continue_binary_search(block_ranges, address_hash, nonce) do
+  defp maybe_continue_binary_search(block_ranges, address_hash, nonce, retries_left) do
     cond do
       block_ranges.left == block_ranges.right ->
         block_ranges.left
@@ -159,7 +182,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
       true ->
         block_ranges = Map.put(block_ranges, :previous_nonce, nonce)
-        find_contract_creation_block_number(block_ranges, address_hash)
+        find_contract_creation_block_number(block_ranges, address_hash, retries_left)
     end
   end
 
