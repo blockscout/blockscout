@@ -15,6 +15,8 @@ defmodule Explorer.ThirdPartyIntegrations.Dynamic do
   alias Ueberauth.Auth
   alias Ueberauth.Auth.{Extra, Info}
 
+  require Logger
+
   @doc """
   Authenticates a user by verifying a JWT token and extracting identity information from its claims.
 
@@ -35,14 +37,18 @@ defmodule Explorer.ThirdPartyIntegrations.Dynamic do
   - `{:error, String.t()}` if token verification fails or additional
     authentication is required.
   """
-  @spec get_auth_from_token(String.t()) :: {:ok, Auth.t()} | {:error, String.t()}
+  @spec get_auth_from_token(String.t()) :: {:ok, Auth.t()} | {:error, String.t()} | {:enabled, false}
   def get_auth_from_token(token) do
     with {:enabled, true} <- {:enabled, Application.get_env(:explorer, __MODULE__)[:enabled]},
          {:ok, claims} <- Token.verify_and_validate(token) do
       create_auth(claims)
     else
-      {:enabled, false} -> {:error, "Dynamic integration is disabled"}
-      {:error, reason} -> {:error, inspect(reason)}
+      {:error, reason} ->
+        Logger.error("Error while verifying token: #{inspect(reason)}")
+        {:error, "Invalid token"}
+
+      not_enabled ->
+        not_enabled
     end
   end
 

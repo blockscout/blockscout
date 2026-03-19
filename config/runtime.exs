@@ -663,6 +663,13 @@ config :explorer, Explorer.ThirdPartyIntegrations.Dynamic,
 
 config :explorer, Explorer.ThirdPartyIntegrations.Dynamic.Strategy, enabled: !is_nil(dynamic_env_id)
 
+config :explorer, Explorer.ThirdPartyIntegrations.Keycloak,
+  domain: ConfigHelper.parse_url_env_var("ACCOUNT_KEYCLOAK_DOMAIN", nil, true),
+  realm: System.get_env("ACCOUNT_KEYCLOAK_REALM"),
+  client_id: System.get_env("ACCOUNT_KEYCLOAK_CLIENT_ID"),
+  client_secret: System.get_env("ACCOUNT_KEYCLOAK_CLIENT_SECRET"),
+  email_webhook_url: ConfigHelper.parse_url_env_var("ACCOUNT_KEYCLOAK_EMAIL_WEBHOOK_URL")
+
 enabled? = ConfigHelper.parse_bool_env_var("MICROSERVICE_SC_VERIFIER_ENABLED", "true")
 # or "eth_bytecode_db"
 type = System.get_env("MICROSERVICE_SC_VERIFIER_TYPE", "sc_verifier")
@@ -729,7 +736,8 @@ config :explorer, Explorer.Account,
   enabled: ConfigHelper.parse_bool_env_var("ACCOUNT_ENABLED"),
   sendgrid: [
     sender: System.get_env("ACCOUNT_SENDGRID_SENDER"),
-    template: System.get_env("ACCOUNT_SENDGRID_TEMPLATE")
+    template: System.get_env("ACCOUNT_SENDGRID_TEMPLATE"),
+    otp_template: System.get_env("ACCOUNT_SENDGRID_OTP_TEMPLATE")
   ],
   verification_email_resend_interval:
     ConfigHelper.parse_time_env_var("ACCOUNT_VERIFICATION_EMAIL_RESEND_INTERVAL", "5m"),
