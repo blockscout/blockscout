@@ -1,5 +1,22 @@
 # Changelog
 
+## 10.1.0
+
+### 🚀 Features
+
+- KeyCloak integration ([#14068](https://github.com/blockscout/blockscout/issues/14068))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `ACCOUNT_SENDGRID_OTP_TEMPLATE`                     | Sendgrid email OTP template for login with email functionality. Implemented in [#14068](https://github.com/blockscout/blockscout/pull/14068).                                                   | Version: v9.4.0\+ <br />Default: (empty) <br />Applications: API    |
+| `ACCOUNT_KEYCLOAK_DOMAIN`                           | Domain for [Keycloak](https://www.keycloak.org/). Implemented in [#14068](https://github.com/blockscout/blockscout/pull/14068).                                                                 | Version: v9.4.0\+ <br />Default: (empty) <br />Applications: API    |
+| `ACCOUNT_KEYCLOAK_REALM`                            | Realm for [Keycloak](https://www.keycloak.org/). Implemented in [#14068](https://github.com/blockscout/blockscout/pull/14068).                                                                  | Version: v9.4.0\+ <br />Default: (empty) <br />Applications: API    |
+| `ACCOUNT_KEYCLOAK_CLIENT_ID`                        | [Keycloak](https://www.keycloak.org/) client ID. Implemented in [#14068](https://github.com/blockscout/blockscout/pull/14068).                                                                  | Version: v9.4.0\+ <br />Default: (empty) <br />Applications: API    |
+| `ACCOUNT_KEYCLOAK_CLIENT_SECRET`                    | [Keycloak](https://www.keycloak.org/) client secret. Implemented in [#14068](https://github.com/blockscout/blockscout/pull/14068).                                                              | Version: v9.4.0\+ <br />Default: (empty) <br />Applications: API    |
+| `ACCOUNT_KEYCLOAK_EMAIL_WEBHOOK_URL`                | URL address where new email users are reported. Implemented in [#14068](https://github.com/blockscout/blockscout/pull/14068).                                                                   | Version: v9.4.0\+ <br />Default: (empty) <br />Applications: API    |
+
 ## 10.0.8
 
 ### 🐛 Bug Fixes
