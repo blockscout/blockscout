@@ -102,9 +102,13 @@ defmodule Explorer.Chain.PendingOperationsHelper do
   end
 
   defp from_blocks_to_transactions_function do
+    from_blocks_to_transactions_function(@blocks_batch_size)
+  end
+
+  defp from_blocks_to_transactions_function(blocks_batch_size) do
     pbo_block_numbers_query =
       PendingBlockOperation
-      |> limit(@blocks_batch_size)
+      |> limit(^blocks_batch_size)
       |> select([pbo], pbo.block_number)
 
     case Repo.all(pbo_block_numbers_query) do
@@ -119,15 +123,49 @@ defmodule Explorer.Chain.PendingOperationsHelper do
           |> Repo.all()
           |> Helper.add_timestamps()
 
-        Repo.insert_all(PendingTransactionOperation, pto_params, on_conflict: :nothing)
+        case insert_pending_transaction_operations(pto_params) do
+          :ok ->
+            delete_pending_block_operations(pbo_block_numbers)
 
-        PendingBlockOperation
-        |> where([pbo], pbo.block_number in ^pbo_block_numbers)
-        |> Repo.delete_all()
+            :continue
 
-        :continue
+          {:error, :too_many_parameters} when blocks_batch_size > 1 ->
+            from_blocks_to_transactions_function(max(div(blocks_batch_size, 2), 1))
+
+          {:error, :too_many_parameters} ->
+            Repo.safe_insert_all(PendingTransactionOperation, pto_params, on_conflict: :nothing)
+            delete_pending_block_operations(pbo_block_numbers)
+
+            :continue
+        end
     end
   end
+
+  defp insert_pending_transaction_operations([]), do: :ok
+
+  defp insert_pending_transaction_operations(pto_params) do
+    Repo.insert_all(PendingTransactionOperation, pto_params, on_conflict: :nothing)
+    :ok
+  rescue
+    error in Postgrex.QueryError ->
+      if too_many_parameters_error?(error) do
+        {:error, :too_many_parameters}
+      else
+        reraise error, __STACKTRACE__
+      end
+  end
+
+  defp delete_pending_block_operations(pbo_block_numbers) do
+    PendingBlockOperation
+    |> where([pbo], pbo.block_number in ^pbo_block_numbers)
+    |> Repo.delete_all()
+  end
+
+  defp too_many_parameters_error?(%Postgrex.QueryError{message: message}) when is_binary(message) do
+    Regex.match?(~r/postgresql protocol can not handle \d+ parameters, the maximum is \d+/i, message)
+  end
+
+  defp too_many_parameters_error?(_), do: false
 
   @doc """
   Generates a query to find pending block operations that match any of the given block hashes.

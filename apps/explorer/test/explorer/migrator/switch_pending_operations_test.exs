@@ -48,6 +48,56 @@ defmodule Explorer.Migrator.SwitchPendingOperationsTest do
       assert [_, _, _, _, _] = Repo.all(PendingTransactionOperation)
     end
 
+    test "from pbo to pto handles parameter overflow and still completes" do
+      block = insert(:block)
+      insert(:pending_block_operation, block_number: block.number, block_hash: block.hash)
+
+      5
+      |> insert_list(:transaction)
+      |> with_block(block)
+
+      json_rpc_config = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+      Application.put_env(
+        :explorer,
+        :json_rpc_named_arguments,
+        Keyword.put(json_rpc_config, :variant, EthereumJSONRPC.Geth)
+      )
+
+      geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(geth_config, :block_traceable?, false))
+
+      overflow_raised? = :atomics.new(1, [])
+
+      :meck.new(Repo, [:passthrough])
+
+      :meck.expect(Repo, :insert_all, fn kind, elements, opts ->
+        if kind == PendingTransactionOperation and :atomics.get(overflow_raised?, 1) == 0 do
+          :atomics.put(overflow_raised?, 1, 1)
+
+          raise Postgrex.QueryError,
+            message: "postgresql protocol can not handle 135090 parameters, the maximum is 65535"
+        else
+          :meck.passthrough([kind, elements, opts])
+        end
+      end)
+
+      on_exit(fn ->
+        try do
+          :meck.unload(Repo)
+        catch
+          _, _ -> :ok
+        end
+      end)
+
+      SwitchPendingOperations.start_link([])
+      Process.sleep(100)
+
+      assert :atomics.get(overflow_raised?, 1) == 1
+      assert [] = Repo.all(PendingBlockOperation)
+      assert [_, _, _, _, _] = Repo.all(PendingTransactionOperation)
+    end
+
     test "from pto to pbo" do
       first_block = insert(:block)
       second_block = insert(:block)
