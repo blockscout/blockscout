@@ -119,8 +119,10 @@ defmodule Explorer.Chain.PendingOperationsHelper do
         pto_params =
           Transaction
           |> where([t], t.block_number in ^pbo_block_numbers)
-          |> select([t], %{transaction_hash: t.hash})
+          |> select([t], %{hash: t.hash, type: t.type})
           |> Repo.all()
+          |> Transaction.filter_non_traceable_transactions()
+          |> Enum.map(&%{transaction_hash: &1.hash})
           |> Helper.add_timestamps()
 
         case insert_pending_transaction_operations(pto_params) do
