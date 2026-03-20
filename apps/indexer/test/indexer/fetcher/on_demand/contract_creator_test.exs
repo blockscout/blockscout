@@ -235,6 +235,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
     |> eth_get_transaction_count_mock(contract_address_hash, "0x2", "0x0")
     |> eth_get_transaction_count_mock(contract_address_hash, "0x3", "0x1")
 
+    pid = Process.whereis(ContractCreatorOnDemand)
+
     assert :ok =
              ContractCreatorOnDemand.trigger_fetch(
                contract_address
@@ -243,7 +245,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
 
     :timer.sleep(1200)
 
-    assert Process.alive?(Process.whereis(ContractCreatorOnDemand))
+    assert Process.whereis(ContractCreatorOnDemand) == pid
     assert [%{from_number: 3, to_number: 3, priority: 1}] = Repo.all(MissingBlockRange)
   end
 
@@ -264,6 +266,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
     EthereumJSONRPC.Mox
     |> eth_get_transaction_count_error_mock_times(contract_address_hash, "0x2", 6)
 
+    pid = Process.whereis(ContractCreatorOnDemand)
+
     assert :ok =
              ContractCreatorOnDemand.trigger_fetch(
                contract_address
@@ -272,7 +276,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
 
     :timer.sleep(5400)
 
-    assert Process.alive?(Process.whereis(ContractCreatorOnDemand))
+    assert Process.whereis(ContractCreatorOnDemand) == pid
     assert [] == Repo.all(MissingBlockRange)
     assert [] == :ets.lookup(:contract_creator_lookup, contract_address_hash)
   end

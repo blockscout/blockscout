@@ -193,7 +193,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
   @impl true
   def handle_cast({:fetch, address}, state) do
-    fetch_contract_creator_address_hash(address.hash)
+    Task.Supervisor.start_child(Indexer.TaskSupervisor, fn ->
+      fetch_contract_creator_address_hash(address.hash)
+    end)
 
     {:noreply, state}
   end
