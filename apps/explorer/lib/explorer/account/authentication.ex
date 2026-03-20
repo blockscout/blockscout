@@ -6,7 +6,7 @@ defmodule Explorer.Account.Authentication do
   alias Explorer.{Account, Helper}
   alias Explorer.Account.Identity
   alias Explorer.Chain.{Address, Hash}
-  alias Explorer.ThirdPartyIntegrations.{Auth0, Dynamic, Keycloak}
+  alias Explorer.ThirdPartyIntegrations.{Auth0, Keycloak}
   alias Ueberauth.Auth
 
   require Logger
@@ -261,23 +261,6 @@ defmodule Explorer.Account.Authentication do
       {_step, error} ->
         error
     end
-  end
-
-  @doc """
-  Authenticates a user using a Dynamic-issued JWT token.
-
-  ## Parameters
-  - `token`: A JWT token issued by the Dynamic authentication service
-
-  ## Returns
-  - `{:ok, Auth.t()}` if the token is valid and the user was found or created
-    successfully
-  - `{:error, String.t()}` if token validation or user lookup failed
-  - `:error` if there was an unexpected error
-  """
-  @spec authenticate_via_dynamic(String.t()) :: {:ok, Auth.t()} | {:error, String.t()} | :error | {:enabled, false}
-  def authenticate_via_dynamic(token) do
-    Dynamic.get_auth_from_token(token)
   end
 
   defp cache_nonce_for_address(nonce, address_hash) do

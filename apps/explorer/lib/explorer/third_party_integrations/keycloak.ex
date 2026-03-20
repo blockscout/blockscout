@@ -307,7 +307,7 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
     end
   end
 
-  defp admin_token_key, do: "keycloak:#{client_id()}:admin_token"
+  defp admin_token_key, do: Helper.redis_key("keycloak:#{client_id()}:admin_token")
 
   defp handle_error({:ok, response}, error_message) do
     Logger.error("#{error_message}: status=#{response.status_code} body=#{response.body}")
