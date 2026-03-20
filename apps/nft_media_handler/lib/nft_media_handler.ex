@@ -163,42 +163,49 @@ defmodule NFTMediaHandler do
     case URI.parse(uri) do
       %URI{scheme: "ipfs", host: host, path: path} ->
         resource_id =
-          with "ipfs" <- host,
-               "/" <> resource_id <- path do
-            resource_id
-          else
-            _ -> build_ipfs_resource_id(host, path)
+          cond do
+            host == "ipfs" and is_binary(path) and String.starts_with?(path, "/") ->
+              String.replace_leading(path, "/", "")
+
+            is_binary(host) and host != "" ->
+              build_ipfs_resource_id(host, path)
+
+            true ->
+              path
           end
 
-        {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
+        maybe_fetch_ipfs_url(resource_id, uri)
 
       %URI{scheme: "ar", host: _host, path: resource_id} ->
         {TokenMetadataRetriever.arweave_link(resource_id), TokenMetadataRetriever.ar_headers()}
 
       %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
-        {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
+        maybe_fetch_ipfs_url(resource_id, uri)
 
       %URI{scheme: _, path: "ipfs/" <> resource_id} ->
-        {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
+        maybe_fetch_ipfs_url(resource_id, uri)
 
       %URI{scheme: scheme} when not is_nil(scheme) ->
         {uri, []}
 
       %URI{path: path} ->
-        case path do
-          "Qm" <> <<_::binary-size(44)>> = resource_id ->
-            {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
-
-          "bafybe" <> _ = resource_id ->
-            {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
-
-          _ ->
-            {uri, []}
+        if is_binary(path) and TokenMetadataRetriever.valid_ipfs_path?("ipfs://" <> path) do
+          {TokenMetadataRetriever.ipfs_link(path), TokenMetadataRetriever.ipfs_headers()}
+        else
+          {uri, []}
         end
     end
   end
 
   defp build_ipfs_resource_id(host, path) do
     if is_nil(path), do: host, else: host <> path
+  end
+
+  defp maybe_fetch_ipfs_url(resource_id, uri) do
+    if is_binary(resource_id) and TokenMetadataRetriever.valid_ipfs_path?("ipfs://" <> resource_id) do
+      {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
+    else
+      {uri, []}
+    end
   end
 end

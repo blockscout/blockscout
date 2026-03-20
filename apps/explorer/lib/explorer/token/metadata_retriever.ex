@@ -13,6 +13,7 @@ defmodule Explorer.Token.MetadataRetriever do
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
   @invalid_base64_data "invalid data:application/json;base64"
+  @invalid_ipfs_path "invalid ipfs path"
   @default_headers [{"User-Agent", "blockscout-10.0.6"}]
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
@@ -713,41 +714,41 @@ defmodule Explorer.Token.MetadataRetriever do
     case URI.parse(token_uri_string) do
       %URI{scheme: "ipfs", host: host, path: path} ->
         resource_id =
-          if host == "ipfs" do
-            "/" <> resource_id = path
-            resource_id
-          else
-            # credo:disable-for-next-line
-            if is_nil(path), do: host, else: host <> path
+          cond do
+            host == "ipfs" and is_binary(path) and String.starts_with?(path, "/") ->
+              String.replace_leading(path, "/", "")
+
+            is_binary(host) and is_binary(path) ->
+              host <> path
+
+            is_binary(host) and is_nil(path) ->
+              host
+
+            true ->
+              nil
           end
 
-        fetch_from_ipfs(resource_id, hex_token_id)
+        fetch_from_ipfs_if_valid_path(resource_id, hex_token_id)
 
       %URI{scheme: "ar", host: _host, path: resource_id} ->
         fetch_from_arweave(resource_id, hex_token_id)
 
       %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
-        fetch_from_ipfs(resource_id, hex_token_id)
+        fetch_from_ipfs_if_valid_path(resource_id, hex_token_id)
 
       %URI{scheme: _, path: "ipfs/" <> resource_id} ->
-        fetch_from_ipfs(resource_id, hex_token_id)
+        fetch_from_ipfs_if_valid_path(resource_id, hex_token_id)
 
       %URI{scheme: scheme} when not is_nil(scheme) ->
         fetch_metadata_inner(token_uri_string, ipfs_params, token_id, hex_token_id, from_base_uri?)
 
       %URI{path: path} ->
-        case path do
-          "Qm" <> <<_::binary-size(44)>> = resource_id ->
-            fetch_from_ipfs(resource_id, hex_token_id)
+        if is_binary(path) and valid_ipfs_path?(public_ipfs_link(path)) do
+          fetch_from_ipfs(path, hex_token_id)
+        else
+          json = ExplorerHelper.decode_json(token_uri_string, true)
 
-          # todo: rewrite for strict CID v1 support
-          "bafybe" <> _ = resource_id ->
-            fetch_from_ipfs(resource_id, hex_token_id)
-
-          _ ->
-            json = ExplorerHelper.decode_json(token_uri_string, true)
-
-            check_type(json, hex_token_id)
+          check_type(json, hex_token_id)
         end
     end
   rescue
@@ -986,6 +987,24 @@ defmodule Explorer.Token.MetadataRetriever do
 
   defp substitute_token_id_to_token_uri(token_uri, _token_id, hex_token_id, _from_base_uri?) do
     String.replace(token_uri, @erc1155_token_id_placeholder, hex_token_id)
+  end
+
+  def valid_ipfs_path?(path) when is_binary(path) do
+    # CIDv0: ipfs://Qm[1-9A-HJ-NP-Za-km-z]{44}
+    # CIDv1: ipfs://b[a-z2-7]{7,}
+    # Path format: ipfs://[CID]/optional/path
+    ipfs_path_regular_expression = ~r/^ipfs:\/\/(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{7,})(\/.*)?$/
+    String.match?(path, ipfs_path_regular_expression)
+  end
+
+  def valid_ipfs_path?(_), do: false
+
+  defp fetch_from_ipfs_if_valid_path(resource_id, hex_token_id) do
+    if is_binary(resource_id) and valid_ipfs_path?(public_ipfs_link(resource_id)) do
+      fetch_from_ipfs(resource_id, hex_token_id)
+    else
+      {:error, @invalid_ipfs_path}
+    end
   end
 
   @doc """
