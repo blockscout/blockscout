@@ -5,7 +5,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   require Logger
 
   alias Explorer.Account.{Authentication, Identity}
-  alias Explorer.HttpClient
+  alias Explorer.{Helper, HttpClient}
   alias Explorer.ThirdPartyIntegrations.Auth0.Internal
   alias Ueberauth.Auth
   alias Ueberauth.Strategy.Auth0.OAuth
@@ -31,7 +31,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   """
   @spec get_m2m_jwt() :: nil | String.t()
   def get_m2m_jwt do
-    get_m2m_jwt_inner(Redix.command(:redix, ["GET", Internal.redis_key()]))
+    get_m2m_jwt_inner(Redix.command(:redix, ["GET", m2m_jwt_key()]))
   end
 
   def get_m2m_jwt_inner({:ok, token}) when not is_nil(token), do: token
@@ -62,9 +62,11 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   end
 
   defp cache_token(token, ttl) do
-    Redix.command(:redix, ["SET", Internal.redis_key(), token, "EX", ttl])
+    Redix.command(:redix, ["SET", m2m_jwt_key(), token, "EX", ttl])
     token
   end
+
+  defp m2m_jwt_key, do: Helper.redis_key(Internal.redis_key())
 
   @doc """
   Sends a one-time password (OTP) for linking an email to an existing account.
