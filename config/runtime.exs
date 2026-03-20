@@ -119,7 +119,9 @@ config :block_scout_web, BlockScoutWeb.Chain,
   enable_testnet_label: ConfigHelper.parse_bool_env_var("SHOW_TESTNET_LABEL"),
   testnet_label_text: System.get_env("TESTNET_LABEL_TEXT", "Testnet")
 
-config :block_scout_web, BlockScoutWeb.Notifier, block_broadcast_enrichment_timeout: 200
+config :block_scout_web, BlockScoutWeb.Notifier,
+  block_broadcast_enrichment_timeout: 200,
+  block_broadcast_enrichment_disabled: ConfigHelper.parse_bool_env_var("BLOCK_BROADCAST_ENRICHMENT_DISABLED")
 
 config :block_scout_web, :footer,
   logo: System.get_env("FOOTER_LOGO"),

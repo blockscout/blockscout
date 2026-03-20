@@ -6,6 +6,16 @@ defmodule BlockScoutWeb.Notifier do
     chain_type: [:explorer, :chain_type],
     chain_identity: [:explorer, :chain_identity]
 
+  use Utils.RuntimeEnvHelper,
+    block_broadcast_enrichment_disabled?: [
+      :block_scout_web,
+      [BlockScoutWeb.Notifier, :block_broadcast_enrichment_disabled]
+    ],
+    block_broadcast_enrichment_timeout: [
+      :block_scout_web,
+      [BlockScoutWeb.Notifier, :block_broadcast_enrichment_timeout]
+    ]
+
   require Logger
 
   alias Absinthe.Subscription
@@ -672,7 +682,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp maybe_preload_enrichment_for_broadcast(block) do
-    if BENS.enabled?() or Metadata.enabled?() do
+    if !block_broadcast_enrichment_disabled?() and (BENS.enabled?() or Metadata.enabled?()) do
       preload_enrichment_for_broadcast(block)
     else
       block
@@ -680,12 +690,7 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp preload_enrichment_for_broadcast(block) do
-    timeout =
-      Application.get_env(
-        :block_scout_web,
-        __MODULE__,
-        []
-      )[:block_broadcast_enrichment_timeout]
+    timeout = block_broadcast_enrichment_timeout()
 
     results =
       Task.Supervisor.async_stream_nolink(

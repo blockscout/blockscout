@@ -131,6 +131,59 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
     end
   end
 
+  test "new_block broadcast skips enrichment when BLOCK_BROADCAST_ENRICHMENT_DISABLED is set", %{topic: topic} do
+    bypass = Bypass.open()
+
+    old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+    old_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+    old_metadata = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+
+    Application.put_env(:block_scout_web, :chain_id, 1)
+
+    Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+      service_url: "http://localhost:#{bypass.port}",
+      enabled: true,
+      protocols: []
+    )
+
+    Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+      service_url: "http://localhost:#{bypass.port}",
+      enabled: true
+    )
+
+    Application.put_env(:block_scout_web, Notifier, block_broadcast_enrichment_disabled: true)
+
+    on_exit(fn ->
+      Bypass.down(bypass)
+      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_bens)
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_metadata)
+    end)
+
+    # No Bypass.expect calls — any HTTP call to the microservices would cause Bypass to raise
+    Bypass.pass(bypass)
+
+    miner = insert(:address)
+    block = insert(:block, number: 1, miner: miner)
+
+    start_supervised!(AverageBlockTime)
+    Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
+    end)
+
+    Notifier.handle_event({:chain_event, :blocks, :realtime, [block]})
+
+    receive do
+      %Phoenix.Socket.Broadcast{topic: ^topic, event: "new_block", payload: %{block: block_payload}} ->
+        assert is_nil(block_payload["miner"]["ens_domain_name"])
+    after
+      :timer.seconds(5) ->
+        assert false, "Expected message received nothing."
+    end
+  end
+
   test "new_block broadcast falls back quickly when enrichment services are unavailable", %{topic: topic} do
     old_chain_id = Application.get_env(:block_scout_web, :chain_id)
     old_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
