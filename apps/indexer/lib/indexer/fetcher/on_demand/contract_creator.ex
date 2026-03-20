@@ -63,11 +63,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     end
   end
 
-  @spec fetch_contract_creator_address_hash(Explorer.Chain.Hash.Address.t()) :: :ok
+  @spec fetch_contract_creator_address_hash(Explorer.Chain.Hash.Address.t()) :: non_neg_integer() | :error
   defp fetch_contract_creator_address_hash(address_hash) do
     max_block_number = BlockNumber.get_max()
-
-    :ets.insert(@table_name, {address_cache_name(address_hash), :in_progress})
 
     initial_block_ranges = %{
       left: 0,
@@ -75,41 +73,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
       previous_nonce: nil
     }
 
-    case find_contract_creation_block_number(initial_block_ranges, address_hash, @max_json_rpc_retries) do
-      contract_creation_block_number when is_integer(contract_creation_block_number) ->
-        address_hash_string = to_string(address_hash)
-
-        pending_blocks =
-          case pending_blocks_cache() do
-            [] ->
-              []
-
-            [{_, pending_blocks}] ->
-              pending_blocks
-          end
-
-        updated_pending_blocks = [
-          %{block_number: contract_creation_block_number, address_hash_string: address_hash_string}
-          | Enum.reject(pending_blocks, fn %{address_hash_string: addr} -> addr == address_hash_string end)
-        ]
-
-        :ets.insert(@table_name, {address_cache_name(address_hash), contract_creation_block_number})
-        :ets.insert(@table_name, {@pending_blocks_cache_key, updated_pending_blocks})
-
-        unless Block.indexed?(contract_creation_block_number) do
-          # Change `1` to specific label when `priority` field becomes `Ecto.Enum`.
-          MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], 1)
-        end
-
-      unexpected_value ->
-        Logger.error(
-          "Unexpected contract creation block number for address #{to_string(address_hash)}: #{inspect(unexpected_value)}"
-        )
-
-        :ets.delete(@table_name, address_cache_name(address_hash))
-    end
-
-    :ok
+    find_contract_creation_block_number(initial_block_ranges, address_hash, @max_json_rpc_retries)
   end
 
   defp find_contract_creation_block_number(block_ranges, address_hash, retries_left) do
@@ -193,9 +157,54 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
   @impl true
   def handle_cast({:fetch, address}, state) do
+    address_hash = address.hash
+    :ets.insert(@table_name, {address_cache_name(address_hash), :in_progress})
+
     Task.Supervisor.start_child(Indexer.TaskSupervisor, fn ->
-      fetch_contract_creator_address_hash(address.hash)
+      result = fetch_contract_creator_address_hash(address_hash)
+      GenServer.cast(__MODULE__, {:fetch_result, address_hash, result})
     end)
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:fetch_result, address_hash, contract_creation_block_number}, state)
+      when is_integer(contract_creation_block_number) do
+    address_hash_string = to_string(address_hash)
+
+    pending_blocks =
+      case pending_blocks_cache() do
+        [] ->
+          []
+
+        [{_, pending_blocks}] ->
+          pending_blocks
+      end
+
+    updated_pending_blocks = [
+      %{block_number: contract_creation_block_number, address_hash_string: address_hash_string}
+      | Enum.reject(pending_blocks, fn %{address_hash_string: addr} -> addr == address_hash_string end)
+    ]
+
+    :ets.insert(@table_name, {address_cache_name(address_hash), contract_creation_block_number})
+    :ets.insert(@table_name, {@pending_blocks_cache_key, updated_pending_blocks})
+
+    unless Block.indexed?(contract_creation_block_number) do
+      # Change `1` to specific label when `priority` field becomes `Ecto.Enum`.
+      MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], 1)
+    end
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:fetch_result, address_hash, unexpected_value}, state) do
+    Logger.error(
+      "Unexpected contract creation block number for address #{to_string(address_hash)}: #{inspect(unexpected_value)}"
+    )
+
+    :ets.delete(@table_name, address_cache_name(address_hash))
 
     {:noreply, state}
   end
@@ -220,26 +229,34 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   Asynchronously updates value of ETS cache :contract_creator_lookup for key "pending_blocks":
   removes block from the cache since the block has been imported.
   """
-  @spec async_update_cache_of_contract_creator_on_demand(map()) :: Task.t()
+  @spec async_update_cache_of_contract_creator_on_demand(map()) :: :ok
   def async_update_cache_of_contract_creator_on_demand(imported) do
-    Task.async(fn ->
-      imported_block_numbers =
-        imported
-        |> Map.get(:blocks, [])
-        |> Enum.map(&Map.get(&1, :number))
+    GenServer.cast(__MODULE__, {:update_pending_contract_creator_cache, imported})
+    :ok
+  end
 
-      if !Enum.empty?(imported_block_numbers) do
-        cache_key = @pending_blocks_cache_key
-        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-        case pending_blocks_cache() do
-          [{^cache_key, pending_blocks}] ->
-            update_pending_contract_creator_blocks(pending_blocks, imported_block_numbers, imported)
+  @impl true
+  def handle_cast({:update_pending_contract_creator_cache, imported}, state) do
+    imported_block_numbers =
+      imported
+      |> Map.get(:blocks, [])
+      |> Enum.map(&Map.get(&1, :number))
 
-          [] ->
-            :ok
-        end
-      end
-    end)
+    maybe_update_pending_contract_creator_cache(imported, imported_block_numbers)
+
+    {:noreply, state}
+  end
+
+  defp maybe_update_pending_contract_creator_cache(_imported, []), do: :ok
+
+  defp maybe_update_pending_contract_creator_cache(imported, imported_block_numbers) do
+    case pending_blocks_cache() do
+      [{@pending_blocks_cache_key, pending_blocks}] ->
+        update_pending_contract_creator_blocks(pending_blocks, imported_block_numbers, imported)
+
+      [] ->
+        :ok
+    end
   end
 
   defp update_pending_contract_creator_blocks([], _imported_block_numbers, _imported), do: []
