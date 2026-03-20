@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.4.1
+
+### 🐛 Bug Fixes
+
+- Authentication provider token redis key ([#14137](https://github.com/blockscout/blockscout/issues/14137))
+
 ## 9.4.0
 
 ### 🚀 Features
