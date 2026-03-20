@@ -385,10 +385,17 @@ defmodule Explorer.Utility.MissingBlockRange do
 
   # Inserts a new missing block range record with the provided parameters
   @spec insert_range(map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  defp insert_range(params) do
-    params
-    |> changeset()
-    |> Repo.insert()
+  defp insert_range(%{from_number: from, to_number: to} = params) do
+    exists? =
+      __MODULE__
+      |> where([r], r.from_number == ^from and r.to_number == ^to)
+      |> Repo.exists?()
+
+    unless exists? do
+      params
+      |> changeset()
+      |> Repo.insert(on_conflict: :nothing)
+    end
   end
 
   # Updates a missing block range record with the provided parameters
