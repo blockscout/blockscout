@@ -83,16 +83,22 @@ defmodule Explorer.Chain.CsvExport.RequestTest do
     end
   end
 
-  describe "update_file_id/2" do
+  describe "update_file_id_and_expires_at/3" do
     test "sets file_id and transitions status to completed" do
       {:ok, request} = Request.create("127.0.0.1", address_export_args())
       file_id = "gokapi-file-123"
 
-      assert {1, nil} = Request.update_file_id(request.id, file_id)
+      assert {1, nil} =
+               Request.update_file_id_and_expires_at(
+                 request.id,
+                 file_id,
+                 DateTime.utc_now() |> DateTime.truncate(:second)
+               )
 
       updated = Request.get_by_uuid(request.id)
       assert updated.file_id == file_id
       assert updated.status == :completed
+      assert updated.expires_at != nil
     end
   end
 
