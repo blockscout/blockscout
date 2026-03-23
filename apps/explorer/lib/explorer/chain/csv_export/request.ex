@@ -18,12 +18,13 @@ defmodule Explorer.Chain.CsvExport.Request do
     field(:remote_ip_hash, :binary, null: false)
     field(:file_id, :string)
     field(:status, Ecto.Enum, values: [:pending, :completed, :failed], default: :pending)
+    field(:expires_at, :utc_datetime, null: true)
 
     timestamps()
   end
 
   @required_attrs ~w(remote_ip_hash)a
-  @optional_attrs ~w(file_id status)a
+  @optional_attrs ~w(file_id status expires_at)a
 
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = request, attrs \\ %{}) do
@@ -70,7 +71,7 @@ defmodule Explorer.Chain.CsvExport.Request do
   end
 
   @doc """
-  Updates the file_id for a given request_id.
+  Updates the file_id and expires_at for a given request_id.
 
   ## Parameters
 
@@ -83,15 +84,17 @@ defmodule Explorer.Chain.CsvExport.Request do
   ## Examples
 
   ```elixir
-  iex> update_file_id("123e4567-e89b-12d3-a456-426614174000", "123e4567-e89b-12d3-a456-426614174000")
+  iex> update_file_id_and_expires_at("123e4567-e89b-12d3-a456-426614174000", "123e4567-e89b-12d3-a456-426614174000", DateTime.from_unix(1716393600))
   {1, nil}
   ```
   """
-  @spec update_file_id(Ecto.UUID.t(), String.t()) :: {non_neg_integer(), nil}
-  def update_file_id(request_id, file_id) do
+  @spec update_file_id_and_expires_at(Ecto.UUID.t(), String.t(), DateTime.t()) :: {non_neg_integer(), nil}
+  def update_file_id_and_expires_at(request_id, file_id, expires_at) do
     __MODULE__
     |> where([r], r.id == ^request_id)
-    |> Repo.update_all(set: [file_id: file_id, status: :completed, updated_at: DateTime.utc_now()])
+    |> Repo.update_all(
+      set: [file_id: file_id, expires_at: expires_at, status: :completed, updated_at: DateTime.utc_now()]
+    )
   end
 
   @doc """

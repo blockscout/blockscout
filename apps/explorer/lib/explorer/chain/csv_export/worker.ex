@@ -91,8 +91,8 @@ defmodule Explorer.Chain.CsvExport.Worker do
 
   defp process_upload_result(result, request_id) do
     case result do
-      {:ok, file_id} ->
-        case Request.update_file_id(request_id, file_id) do
+      {:ok, file_id, expires_at} ->
+        case Request.update_file_id_and_expires_at(request_id, file_id, expires_at) do
           {0, _} ->
             Logger.warning(
               "CSV export request #{request_id} was deleted before file_id could be set. Uploaded file #{file_id} may be orphaned."

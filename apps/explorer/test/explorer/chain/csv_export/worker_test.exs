@@ -57,6 +57,7 @@ defmodule Explorer.Chain.CsvExport.WorkerTest do
       }
 
       {:ok, request} = Request.create("127.0.0.1", args)
+      date_time_to_expect = DateTime.utc_now() |> DateTime.truncate(:second)
 
       Bypass.expect(bypass, fn conn ->
         [path | _] = conn.request_path |> String.split("?")
@@ -69,7 +70,9 @@ defmodule Explorer.Chain.CsvExport.WorkerTest do
             Conn.resp(
               conn,
               200,
-              Jason.encode!(%{"FileInfo" => %{"Id" => "test-file-id"}})
+              Jason.encode!(%{
+                "FileInfo" => %{"Id" => "test-file-id", "ExpireAt" => date_time_to_expect |> DateTime.to_unix()}
+              })
             )
 
           true ->
@@ -93,6 +96,7 @@ defmodule Explorer.Chain.CsvExport.WorkerTest do
       updated = Request.get_by_uuid(request.id)
       assert updated.status == :completed
       assert updated.file_id == "test-file-id"
+      assert updated.expires_at == date_time_to_expect
     end
   end
 
