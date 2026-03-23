@@ -22,11 +22,11 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
 
   ## Returns
 
-  - `{:ok, file_id}` on success, where `file_id` is the Gokapi file ID.
+  - `{:ok, file_id, expires_at}` on success, where `file_id` is the Gokapi file ID and `expires_at` is the expiration timestamp of the file.
   - `{:error, reason}` on failure (e.g. chunk upload or complete request error).
   """
   # sobelow_skip ["Traversal.FileModule"]
-  @spec upload_file(String.t(), String.t(), String.t()) :: {:ok, String.t()} | {:error, any()}
+  @spec upload_file(String.t(), String.t(), String.t()) :: {:ok, String.t(), DateTime.t()} | {:error, any()}
   def upload_file(file_path, filename, uuid) do
     file_size = File.stat!(file_path).size
     chunk_size = chunk_size()
@@ -106,7 +106,8 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
     end
   end
 
-  @spec complete_upload(String.t(), String.t(), integer(), String.t()) :: {:ok, String.t()} | {:error, any()}
+  @spec complete_upload(String.t(), String.t(), integer(), String.t()) ::
+          {:ok, String.t(), DateTime.t()} | {:error, any()}
   defp complete_upload(uuid, filename, filesize, content_type \\ "application/csv") do
     result =
       HttpClient.post(
@@ -126,8 +127,9 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
       )
 
     with {:ok, %{status_code: 200, body: body}} <- result,
-         {:ok, %{"FileInfo" => %{"Id" => file_id}}} <- Jason.decode(body) do
-      {:ok, file_id}
+         {:ok, %{"FileInfo" => %{"Id" => file_id, "ExpireAt" => expires_at_unix_timestamp}}} <- Jason.decode(body),
+         {:ok, expires_at} <- DateTime.from_unix(expires_at_unix_timestamp) do
+      {:ok, file_id, expires_at}
     else
       error -> {:error, error}
     end
