@@ -5,6 +5,7 @@ defmodule Explorer.Account.Notify do
 
   alias Explorer.Account
   alias Explorer.Account.Notifier.Notify
+  alias Explorer.ThirdPartyIntegrations.{Auth0, Keycloak}
 
   require Logger
 
@@ -24,15 +25,12 @@ defmodule Explorer.Account.Notify do
   end
 
   defp check_envs do
-    check_auth0()
+    check_authentication_provider()
     check_sendgrid()
   end
 
-  defp check_auth0 do
-    (Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_id] &&
-       Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:client_secret] &&
-       Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)[:domain]) ||
-      raise "Auth0 not configured"
+  defp check_authentication_provider do
+    Auth0.enabled?() || Keycloak.enabled?() || raise "No authentication provider configured"
   end
 
   defp check_sendgrid do
