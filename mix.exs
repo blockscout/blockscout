@@ -7,7 +7,7 @@ defmodule BlockScout.Mixfile do
     [
       # app: :block_scout,
       # aliases: aliases(config_env()),
-      version: "10.1.1",
+      version: "10.2.0",
       apps_path: "apps",
       deps: deps(),
       dialyzer: dialyzer(),
