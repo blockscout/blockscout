@@ -39,7 +39,7 @@ defmodule Explorer.Chain.CsvExport.RequestsSanitizerTest do
           filter_value: nil
         })
 
-      Request.update_file_id(request1.id, "file-123")
+      Request.update_file_id_and_expires_at(request1.id, "file-123", DateTime.utc_now() |> DateTime.truncate(:second))
 
       past_time = DateTime.add(DateTime.utc_now(), -2, :day)
 
@@ -81,7 +81,7 @@ defmodule Explorer.Chain.CsvExport.RequestsSanitizerTest do
           filter_value: nil
         })
 
-      Request.update_file_id(request.id, "recent-file")
+      Request.update_file_id_and_expires_at(request.id, "recent-file", DateTime.utc_now() |> DateTime.truncate(:second))
 
       assert :ok = perform_job(RequestsSanitizer, %{})
 
