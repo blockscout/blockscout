@@ -465,10 +465,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       conn = get(conn, "/api/v2/csv-exports/#{request.id}")
 
-      assert conn.status == 200
-      body = Jason.decode!(conn.resp_body)
-      assert body["status"] == "pending"
-      assert body["file_id"] == nil
+      assert %{"status" => "pending", "file_id" => nil} = json_response(conn, 200)
     end
 
     test "returns 200 with completed status and file_id for completed request", %{
@@ -477,12 +474,14 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
     } do
       ip_hash = :crypto.hash(:sha256, "127.0.0.1")
       file_id = "test-file-123"
+      expires_at_to_expect = DateTime.utc_now() |> DateTime.truncate(:second)
 
       request =
         %Explorer.Chain.CsvExport.Request{
           remote_ip_hash: ip_hash,
           file_id: file_id,
-          status: :completed
+          status: :completed,
+          expires_at: expires_at_to_expect
         }
         |> Explorer.Repo.insert!()
 
@@ -493,10 +492,9 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       conn = get(conn, "/api/v2/csv-exports/#{request.id}")
 
-      assert conn.status == 200
-      body = Jason.decode!(conn.resp_body)
-      assert body["status"] == "completed"
-      assert body["file_id"] == file_id
+      assert %{"status" => "completed", "file_id" => ^file_id, "expires_at" => expires_at} = json_response(conn, 200)
+
+      assert expires_at == expires_at_to_expect |> DateTime.to_iso8601()
     end
 
     test "returns 200 with failed status for failed request", %{conn: conn} do
@@ -512,10 +510,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       conn = get(conn, "/api/v2/csv-exports/#{request.id}")
 
-      assert conn.status == 200
-      body = Jason.decode!(conn.resp_body)
-      assert body["status"] == "failed"
-      assert body["file_id"] == nil
+      assert %{"status" => "failed", "file_id" => nil, "expires_at" => nil} = json_response(conn, 200)
     end
 
     test "returns 404 for non-existent UUID", %{conn: conn} do
@@ -523,13 +518,21 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       conn = get(conn, "/api/v2/csv-exports/#{fake_uuid}")
 
-      assert conn.status == 404
+      assert %{"message" => "Not found"} = json_response(conn, 404)
     end
 
     test "returns 422 for malformed UUID", %{conn: conn} do
       conn = get(conn, "/api/v2/csv-exports/not-a-valid-uuid")
 
-      assert conn.status == 422
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected :uuid",
+                   "source" => %{"pointer" => "/uuid_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(conn, 422)
     end
 
     test "returns 404 when file is removed on gokapi", %{
@@ -554,7 +557,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       conn = get(conn, "/api/v2/csv-exports/#{request.id}")
 
-      assert conn.status == 404
+      assert %{"message" => "Not found"} = json_response(conn, 404)
     end
   end
 
@@ -607,10 +610,8 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
           "to_period" => to_period
         })
 
-      assert conn.status == 202
-      body = Jason.decode!(conn.resp_body)
-      assert Map.has_key?(body, "request_id")
-      assert is_binary(body["request_id"])
+      assert %{"request_id" => request_id} = json_response(conn, 202)
+      assert is_binary(request_id)
     end
 
     test "returns 202 with request_id for transactions export when async enabled", %{conn: conn} do
@@ -630,10 +631,8 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
           "to_period" => to_period
         })
 
-      assert conn.status == 202
-      body = Jason.decode!(conn.resp_body)
-      assert Map.has_key?(body, "request_id")
-      assert is_binary(body["request_id"])
+      assert %{"request_id" => request_id} = json_response(conn, 202)
+      assert is_binary(request_id)
     end
 
     test "returns 202 with request_id for internal-transactions export when async enabled", %{
@@ -665,10 +664,8 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
           "to_period" => to_period
         })
 
-      assert conn.status == 202
-      body = Jason.decode!(conn.resp_body)
-      assert Map.has_key?(body, "request_id")
-      assert is_binary(body["request_id"])
+      assert %{"request_id" => request_id} = json_response(conn, 202)
+      assert is_binary(request_id)
     end
 
     test "returns 202 with request_id for logs export when async enabled", %{conn: conn} do
@@ -714,10 +711,8 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       conn = get(conn, "/api/v2/tokens/#{Address.checksum(token.contract_address_hash)}/holders/csv")
 
-      assert conn.status == 202
-      body = Jason.decode!(conn.resp_body)
-      assert Map.has_key?(body, "request_id")
-      assert is_binary(body["request_id"])
+      assert %{"request_id" => request_id} = json_response(conn, 202)
+      assert is_binary(request_id)
     end
 
     if @chain_identity == {:optimism, :celo} do
@@ -736,10 +731,8 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
             "to_period" => to_period
           })
 
-        assert conn.status == 202
-        body = Jason.decode!(conn.resp_body)
-        assert Map.has_key?(body, "request_id")
-        assert is_binary(body["request_id"])
+        assert %{"request_id" => request_id} = json_response(conn, 202)
+        assert is_binary(request_id)
       end
     end
 
@@ -820,13 +813,21 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       conn = get(conn, "/api/v2/tokens/#{fake_hash}/holders/csv")
 
-      assert conn.status == 404
+      assert %{"message" => "Not found"} = json_response(conn, 404)
     end
 
     test "returns 422 for invalid token hash", %{conn: conn} do
       conn = get(conn, "/api/v2/tokens/not-a-valid-hash/holders/csv")
 
-      assert conn.status == 422
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(conn, 422)
     end
   end
 
