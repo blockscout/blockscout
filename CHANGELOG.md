@@ -1,5 +1,11 @@
 # Changelog
 
+## 9.4.2
+
+### 🐛 Bug Fixes
+
+- Notify.check_auth0 for Keycloak and Dynamic ([#14146](https://github.com/blockscout/blockscout/issues/14146))
+
 ## 9.4.1
 
 ### 🐛 Bug Fixes
