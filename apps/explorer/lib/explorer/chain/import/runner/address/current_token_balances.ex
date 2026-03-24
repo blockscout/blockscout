@@ -298,7 +298,9 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   defp should_update?(_new_ctb, nil), do: true
 
   # new ctb has no value
-  defp should_update?(%{value_fetched_at: nil}, _existing_ctb), do: false
+  defp should_update?(%{value_fetched_at: fetched_at, value: nil}, _existing_ctb)
+       when not is_nil(fetched_at),
+       do: false
 
   # new ctb is newer
   defp should_update?(%{block_number: new_ctb_block_number}, %{block_number: existing_ctb_block_number})
@@ -379,7 +381,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       update: [
         set: [
           block_number: fragment("EXCLUDED.block_number"),
-          value: fragment("EXCLUDED.value"),
+          value: fragment("COALESCE(EXCLUDED.value, ?)", current_token_balance.value),
           value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
           old_value: current_token_balance.value,
           token_type: fragment("EXCLUDED.token_type"),
@@ -390,12 +392,12 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
         ]
       ],
       where:
-        fragment("EXCLUDED.value_fetched_at IS NOT NULL") and
-          (fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
-             (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
-                fragment("EXCLUDED.value IS NOT NULL") and
-                (is_nil(current_token_balance.value_fetched_at) or
-                   fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at))))
+        fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
+          (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
+             fragment("EXCLUDED.value_fetched_at IS NOT NULL") and
+             fragment("EXCLUDED.value IS NOT NULL") and
+             (is_nil(current_token_balance.value_fetched_at) or
+                fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at)))
     )
   end
 
