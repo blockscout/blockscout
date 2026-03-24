@@ -189,10 +189,7 @@ defmodule NFTMediaHandler do
         {uri, []}
 
       %URI{path: path} ->
-        if is_binary(path) and TokenMetadataRetriever.valid_ipfs_path?("ipfs://" <> path) do
-          {TokenMetadataRetriever.ipfs_link(path), TokenMetadataRetriever.ipfs_headers()}
-        else
-          {uri, []}
+        maybe_fetch_ipfs_url(path, uri)
         end
     end
   end
