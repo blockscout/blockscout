@@ -18,12 +18,12 @@ on:
       - production-xdai
       - production-zkevm
       - production-zksync
-      - staging-l2
     paths-ignore:
       - "CHANGELOG.md"
       - "**/README.md"
       - "docker/*"
       - "docker-compose/*"
+  workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
     branches:
