@@ -131,7 +131,7 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
     end
   end
 
-  test "new_block broadcast skips enrichment when BLOCK_BROADCAST_ENRICHMENT_DISABLED is set", %{topic: topic} do
+  test "new_block broadcast skips enrichment when DISABLE_BLOCK_BROADCAST_ENRICHMENT is set", %{topic: topic} do
     bypass = Bypass.open()
 
     old_chain_id = Application.get_env(:block_scout_web, :chain_id)
