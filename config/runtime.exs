@@ -121,7 +121,7 @@ config :block_scout_web, BlockScoutWeb.Chain,
 
 config :block_scout_web, BlockScoutWeb.Notifier,
   block_broadcast_enrichment_timeout: 200,
-  block_broadcast_enrichment_disabled: ConfigHelper.parse_bool_env_var("BLOCK_BROADCAST_ENRICHMENT_DISABLED")
+  block_broadcast_enrichment_disabled: ConfigHelper.parse_bool_env_var("DISABLE_BLOCK_BROADCAST_ENRICHMENT")
 
 config :block_scout_web, :footer,
   logo: System.get_env("FOOTER_LOGO"),
