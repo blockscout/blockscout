@@ -190,7 +190,6 @@ defmodule NFTMediaHandler do
 
       %URI{path: path} ->
         maybe_fetch_ipfs_url(path, uri)
-        end
     end
   end
 
