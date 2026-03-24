@@ -129,13 +129,12 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     [token: reputation_association()] => :optional
   }
 
-  @internal_transaction_necessity_by_association [
-    necessity_by_association: %{
-      [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
-        :optional,
-      [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-      [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
-    }
+  @internal_transaction_address_preloads [
+    address_preloads: [
+      created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+      from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+      to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
+    ]
   ]
 
   @api_true [api?: true]
@@ -754,7 +753,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def internal_transactions(conn, %{transaction_hash_param: transaction_hash_string} = params) do
     with {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params) do
       full_options =
-        @internal_transaction_necessity_by_association
+        @internal_transaction_address_preloads
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(@api_true)
 

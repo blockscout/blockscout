@@ -51,6 +51,7 @@ defmodule Explorer.GraphQL do
     |> InternalTransaction.where_nonpending_operation()
     |> Repo.replica().one()
     |> InternalTransaction.preload_transaction(Repo.replica())
+    |> InternalTransaction.preload_addresses([], Repo.replica())
     |> case do
       nil -> {:error, "Internal transaction not found."}
       internal_transaction -> {:ok, internal_transaction}

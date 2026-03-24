@@ -20,7 +20,7 @@ defmodule Explorer.Chain.InternalTransaction do
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
-  alias Explorer.Utility.InternalTransactionHelper
+  alias Explorer.Utility.{AddressIdToAddressHash, InternalTransactionHelper}
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
@@ -83,25 +83,51 @@ defmodule Explorer.Chain.InternalTransaction do
 
     timestamps()
 
+    belongs_to(:created_contract_address_mapping, AddressIdToAddressHash,
+      foreign_key: :created_contract_address_id,
+      references: :address_id,
+      type: :integer
+    )
+
+    has_one(:created_contract_address, through: [:created_contract_address_mapping, :address])
+
+    # TODO: remove after migration to address ids is done
     belongs_to(
-      :created_contract_address,
+      :created_contract_address_by_hash,
       Address,
       foreign_key: :created_contract_address_hash,
       references: :hash,
       type: Hash.Address
     )
 
+    belongs_to(:from_address_mapping, AddressIdToAddressHash,
+      foreign_key: :from_address_id,
+      references: :address_id,
+      type: :integer
+    )
+
+    has_one(:from_address, through: [:from_address_mapping, :address])
+
+    # TODO: remove after migration to address ids is done
     belongs_to(
-      :from_address,
+      :from_address_by_hash,
       Address,
       foreign_key: :from_address_hash,
       references: :hash,
-      type: Hash.Address,
-      null: false
+      type: Hash.Address
     )
 
+    belongs_to(:to_address_mapping, AddressIdToAddressHash,
+      foreign_key: :to_address_id,
+      references: :address_id,
+      type: :integer
+    )
+
+    has_one(:to_address, through: [:to_address_mapping, :address])
+
+    # TODO: remove after migration to address ids is done
     belongs_to(
-      :to_address,
+      :to_address_by_hash,
       Address,
       foreign_key: :to_address_hash,
       references: :hash,
@@ -521,35 +547,58 @@ defmodule Explorer.Chain.InternalTransaction do
   """
   def where_address_fields_match(query, address_hash, :to) do
     if BackgroundMigrations.get_empty_internal_transactions_data_finished() do
-      where(query, [t], t.to_address_hash == ^address_hash)
+      query
+      |> join_address_query(:to_address)
+      |> where([it], it.to_address_hash == ^address_hash or as(:to_address).hash == ^address_hash)
     else
-      where(
-        query,
-        [t],
-        t.to_address_hash == ^address_hash or
-          (is_nil(t.to_address_hash) and t.created_contract_address_hash == ^address_hash)
+      query
+      |> join_address_query(:to_address)
+      |> join_address_query(:created_contract_address)
+      |> where(
+        [it],
+        it.to_address_hash == ^address_hash or as(:to_address).hash == ^address_hash or
+          (is_nil(it.to_address_hash) and is_nil(as(:to_address).hash) and
+             (it.created_contract_address_hash == ^address_hash or as(:created_contract_address).hash == ^address_hash))
       )
     end
   end
 
   def where_address_fields_match(query, address_hash, :from) do
-    where(query, [t], t.from_address_hash == ^address_hash)
+    query
+    |> join_address_query(:from_address)
+    |> where([it], it.from_address_hash == ^address_hash or as(:from_address).hash == ^address_hash)
   end
 
   def where_address_fields_match(query, address_hash, :to_address_hash) do
     if BackgroundMigrations.get_empty_internal_transactions_data_finished() do
-      where(query, [it], it.to_address_hash == ^address_hash and is_nil(it.created_contract_address_hash))
+      query
+      |> join_address_query(:to_address)
+      |> join_address_query(:created_contract_address)
+      |> where(
+        [it],
+        (it.to_address_hash == ^address_hash or as(:to_address).hash == ^address_hash) and
+          is_nil(it.created_contract_address_hash) and is_nil(as(:created_contract_address).hash)
+      )
     else
-      where(query, [it], it.to_address_hash == ^address_hash)
+      query
+      |> join_address_query(:to_address)
+      |> where([it], it.to_address_hash == ^address_hash or as(:to_address).hash == ^address_hash)
     end
   end
 
   def where_address_fields_match(query, address_hash, :from_address_hash) do
-    where(query, [it], it.from_address_hash == ^address_hash)
+    query
+    |> join_address_query(:from_address)
+    |> where([it], it.from_address_hash == ^address_hash or as(:from_address).hash == ^address_hash)
   end
 
   def where_address_fields_match(query, address_hash, :created_contract_address_hash) do
-    where(query, [it], it.created_contract_address_hash == ^address_hash)
+    query
+    |> join_address_query(:created_contract_address)
+    |> where(
+      [it],
+      it.created_contract_address_hash == ^address_hash or as(:created_contract_address).hash == ^address_hash
+    )
   end
 
   def where_address_fields_match(query, address_hash, _) do
@@ -557,11 +606,15 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   defp base_address_where(query, address_hash) do
-    where(
-      query,
+    query
+    |> join_address_query(:to_address)
+    |> join_address_query(:from_address)
+    |> join_address_query(:created_contract_address)
+    |> where(
       [it],
-      it.to_address_hash == ^address_hash or it.from_address_hash == ^address_hash or
-        it.created_contract_address_hash == ^address_hash
+      it.to_address_hash == ^address_hash or as(:to_address).hash == ^address_hash or
+        it.from_address_hash == ^address_hash or as(:from_address).hash == ^address_hash or
+        it.created_contract_address_hash == ^address_hash or as(:created_contract_address).hash == ^address_hash
     )
   end
 
@@ -632,6 +685,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> Chain.select_repo(options).all()
     |> preload_error(options)
     |> preload_transaction()
+    |> preload_addresses(options)
   end
 
   @spec transaction_to_internal_transactions(Hash.Full.t(), [
@@ -656,6 +710,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> Chain.select_repo(options).all()
     |> preload_error(options)
     |> preload_transaction()
+    |> preload_addresses(options)
   end
 
   @spec block_to_internal_transactions(non_neg_integer(), [
@@ -683,6 +738,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> Chain.select_repo(options).all()
     |> preload_error(options)
     |> preload_transaction()
+    |> preload_addresses(options)
   end
 
   @doc """
@@ -814,6 +870,7 @@ defmodule Explorer.Chain.InternalTransaction do
       |> deduplicate_and_trim_internal_transactions(paging_options)
       |> preload_error(options)
       |> preload_transaction()
+      |> preload_addresses(options)
     else
       __MODULE__
       |> where_nonpending_operation()
@@ -826,6 +883,7 @@ defmodule Explorer.Chain.InternalTransaction do
       |> Chain.select_repo(options).all()
       |> preload_error(options)
       |> preload_transaction()
+      |> preload_addresses(options)
     end
   end
 
@@ -856,6 +914,29 @@ defmodule Explorer.Chain.InternalTransaction do
       join(query, :inner, [it], t in Transaction,
         on: it.block_number == t.block_number and it.transaction_index == t.index and t.block_consensus == true,
         as: ^binding
+      )
+    end)
+  end
+
+  def join_address_query(query, address_field) do
+    mapping_binding = :"#{address_field}_mapping"
+    address_binding = :"#{address_field}"
+    address_id_field = :"#{address_field}_id"
+    address_hash_field = :"#{address_field}_hash"
+
+    query
+    |> with_named_binding(mapping_binding, fn query, binding ->
+      join(query, :left, [it], m in AddressIdToAddressHash,
+        as: ^binding,
+        on: field(it, ^address_id_field) == m.address_id
+      )
+    end)
+    |> with_named_binding(address_binding, fn query, binding ->
+      join(query, :left, [it], a in Address,
+        as: ^binding,
+        on:
+          a.hash == as(^mapping_binding).address_hash or
+            (is_nil(as(^mapping_binding).address_hash) and a.hash == field(it, ^address_hash_field))
       )
     end)
   end
@@ -1030,12 +1111,13 @@ defmodule Explorer.Chain.InternalTransaction do
         []
 
       _ ->
-        preloads =
-          [
-            :block,
-            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]],
-            [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
-          ]
+        preload_options =
+          Keyword.merge(options,
+            address_preloads: [
+              from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+              to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
+            ]
+          )
 
         __MODULE__
         |> where_nonpending_operation()
@@ -1048,10 +1130,11 @@ defmodule Explorer.Chain.InternalTransaction do
           desc: internal_transaction.index
         )
         |> limit(^paging_options.page_size)
-        |> preload(^preloads)
+        |> preload(:block)
         |> Chain.select_repo(options).all()
         |> preload_error(options)
         |> preload_transaction()
+        |> preload_addresses(preload_options)
     end
   end
 
@@ -1358,5 +1441,99 @@ defmodule Explorer.Chain.InternalTransaction do
     [internal_transaction]
     |> preload_transaction(repo, transactions)
     |> List.first()
+  end
+
+  @default_address_preloads [from_address: [], to_address: [], created_contract_address: []]
+  def preload_addresses(internal_transactions, options \\ [], repo \\ nil)
+
+  def preload_addresses([], _options, _repo), do: []
+  def preload_addresses(nil, _options, _repo), do: nil
+
+  def preload_addresses(internal_transactions, options, repo) when is_list(internal_transactions) do
+    preloads = Keyword.merge(@default_address_preloads, Keyword.get(options, :address_preloads, []))
+    repo = repo || Chain.select_repo(options)
+
+    indexed_transactions = Enum.with_index(internal_transactions)
+
+    {migrated_indexed, not_migrated_indexed} =
+      Enum.split_with(
+        indexed_transactions,
+        fn {it, _idx} ->
+          is_nil(it.from_address_hash) and is_nil(it.to_address_hash) and is_nil(it.created_contract_address_hash)
+        end
+      )
+
+    migrated = Enum.map(migrated_indexed, &elem(&1, 0))
+    not_migrated = Enum.map(not_migrated_indexed, &elem(&1, 0))
+
+    not_migrated_preloaded = preload_addresses_for_not_migrated_internal_transactions(not_migrated, preloads, repo)
+    migrated_preloaded = preload_addresses_for_migrated_internal_transactions(migrated, preloads, repo)
+
+    migrated_with_idx = Enum.zip(migrated_preloaded, Enum.map(migrated_indexed, &elem(&1, 1)))
+    not_migrated_with_idx = Enum.zip(not_migrated_preloaded, Enum.map(not_migrated_indexed, &elem(&1, 1)))
+
+    (migrated_with_idx ++ not_migrated_with_idx)
+    |> Enum.sort_by(&elem(&1, 1))
+    |> Enum.map(&elem(&1, 0))
+  end
+
+  def preload_addresses(internal_transaction, options, repo) do
+    [internal_transaction]
+    |> preload_addresses(options, repo)
+    |> List.first()
+  end
+
+  defp preload_addresses_for_not_migrated_internal_transactions([], _preloads, _repo), do: []
+
+  defp preload_addresses_for_not_migrated_internal_transactions(internal_transactions, preloads, repo) do
+    unified_preloads =
+      preloads
+      |> List.wrap()
+      |> Enum.map(fn
+        preload when is_atom(preload) -> {String.to_existing_atom("#{preload}_by_hash"), []}
+        {preload, fields} -> {String.to_existing_atom("#{preload}_by_hash"), fields}
+      end)
+
+    internal_transactions
+    |> repo.preload(unified_preloads)
+    |> Enum.map(fn internal_transaction ->
+      Enum.reduce(
+        [
+          {:from_address_by_hash, :from_address_hash, :from_address},
+          {:to_address_by_hash, :to_address_hash, :to_address},
+          {:created_contract_address_by_hash, :created_contract_address_hash, :created_contract_address}
+        ],
+        internal_transaction,
+        fn {source_field, hash_field, address_field}, acc ->
+          corresponding_address = Map.get(acc, source_field)
+
+          Map.merge(acc, %{
+            hash_field => (corresponding_address && corresponding_address.hash) || Map.get(acc, hash_field),
+            address_field => corresponding_address
+          })
+        end
+      )
+    end)
+  end
+
+  defp preload_addresses_for_migrated_internal_transactions([], _preloads, _repo), do: []
+
+  defp preload_addresses_for_migrated_internal_transactions(internal_transactions, preloads, repo) do
+    internal_transactions
+    |> repo.preload(preloads)
+    |> Enum.map(fn internal_transaction ->
+      Enum.reduce(
+        [
+          {:from_address_hash, :from_address},
+          {:to_address_hash, :to_address},
+          {:created_contract_address_hash, :created_contract_address}
+        ],
+        internal_transaction,
+        fn {hash_field, address_field}, acc ->
+          corresponding_address = Map.get(acc, address_field)
+          Map.put(acc, hash_field, corresponding_address && corresponding_address.hash)
+        end
+      )
+    end)
   end
 end

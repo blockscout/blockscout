@@ -113,13 +113,12 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       |> Map.merge(@chain_type_transaction_necessity_by_association)
   ]
 
-  @internal_transaction_necessity_by_association [
-    necessity_by_association: %{
-      [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
-        :optional,
-      [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-      [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
-    }
+  @internal_transaction_address_preloads [
+    address_preloads: [
+      created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+      from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+      to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
+    ]
   ]
 
   @api_true [api?: true]
@@ -464,7 +463,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   def internal_transactions(conn, %{block_hash_or_number_param: block_hash_or_number} = params) do
     with {:ok, block} <- block_param_to_block(block_hash_or_number) do
       full_options =
-        @internal_transaction_necessity_by_association
+        @internal_transaction_address_preloads
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(@api_true)
         |> Keyword.merge(internal_transaction_type_options(params))

@@ -1,5 +1,5 @@
 defmodule Indexer.Transform.AddressCoinBalancesTest do
-  use ExUnit.Case, async: true
+  use Explorer.DataCase, async: true
 
   alias Explorer.Factory
   alias Indexer.Transform.AddressCoinBalances

@@ -617,6 +617,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           transaction_index: transaction.index,
           block_hash: transaction.block_hash
         )
+        |> InternalTransaction.preload_addresses()
 
       transaction_1 =
         :transaction
@@ -667,6 +668,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
             block_hash: transaction.block_hash
           )
         end)
+        |> InternalTransaction.preload_addresses()
 
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
       assert response = json_response(request, 200)
@@ -1973,6 +1975,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           block_hash: transaction.block_hash,
           value: %Wei{value: Decimal.new(1000)}
         )
+        |> InternalTransaction.preload_addresses()
 
       insert(:internal_transaction,
         call_type: :call,

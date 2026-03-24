@@ -685,13 +685,17 @@ defmodule Explorer.Chain do
     necessity_by_association =
       options
       |> Keyword.get(:necessity_by_association, default_hash_to_address_necessity_by_association())
-      |> maybe_remove_internal_transaction_association(include_internal_transaction_association?)
 
     query = Address.address_query(hash)
 
     query
     |> join_associations(necessity_by_association)
     |> select_repo(options).one()
+    |> then(fn address ->
+      if include_internal_transaction_association?,
+        do: Address.preload_contract_creation_internal_transaction(address, select_repo(options)),
+        else: address
+    end)
     |> SmartContract.compose_address_for_unverified_smart_contract(hash, options)
     |> case do
       nil -> {:error, :not_found}
@@ -704,38 +708,8 @@ defmodule Explorer.Chain do
       :names => :optional,
       :smart_contract => :optional,
       :token => :optional,
-      Address.contract_creation_transaction_associations() => :optional
+      Address.contract_creation_transaction_association() => :optional
     }
-  end
-
-  defp maybe_remove_internal_transaction_association(necessity_by_association, true),
-    do: necessity_by_association
-
-  defp maybe_remove_internal_transaction_association(necessity_by_association, false) do
-    necessity_by_association
-    |> replace_association_key(
-      Address.contract_creation_transaction_associations(),
-      Address.contract_creation_transaction_associations(false)
-    )
-    |> replace_association_key(
-      Address.contract_creation_transaction_with_from_address_associations(),
-      Address.contract_creation_transaction_with_from_address_associations(false)
-    )
-    |> Map.delete(:contract_creation_internal_transaction)
-    |> Map.delete(Address.contract_creation_internal_transaction_association())
-    |> Map.delete(Address.contract_creation_internal_transaction_with_from_address_association())
-  end
-
-  defp replace_association_key(necessity_by_association, old_key, new_key) do
-    case Map.fetch(necessity_by_association, old_key) do
-      {:ok, value} ->
-        necessity_by_association
-        |> Map.delete(old_key)
-        |> Map.put(new_key, value)
-
-      :error ->
-        necessity_by_association
-    end
   end
 
   @doc """
@@ -776,7 +750,7 @@ defmodule Explorer.Chain do
             :names => :optional,
             :smart_contract => :optional,
             :token => :optional,
-            Address.contract_creation_transaction_associations() => :optional
+            Address.contract_creation_transaction_association() => :optional
           }
         ]
       ) do

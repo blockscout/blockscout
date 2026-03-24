@@ -3052,17 +3052,17 @@ defmodule Explorer.Chain.Transaction do
           list(),
           module()
         ) :: __MODULE__.t() | [__MODULE__.t()]
-  def preload_internal_transactions(transactions, preloads \\ [], repo \\ Repo)
+  def preload_internal_transactions(transactions, address_preloads \\ [], repo \\ Repo)
 
-  def preload_internal_transactions(transactions, preloads, repo) when is_list(transactions) do
+  def preload_internal_transactions(transactions, address_preloads, repo) when is_list(transactions) do
     block_number_index_to_internal_transactions_map =
       transactions
       |> Enum.map(&{&1.block_number, &1.index})
       |> Enum.uniq()
       |> InternalTransaction.by_block_number_transaction_index_query()
       |> repo.all()
-      |> repo.preload(preloads)
       |> InternalTransaction.preload_transaction(repo, transactions)
+      |> InternalTransaction.preload_addresses([address_preloads: address_preloads], repo)
       |> Enum.group_by(&{&1.block_number, &1.transaction_index})
 
     Enum.map(
@@ -3075,9 +3075,9 @@ defmodule Explorer.Chain.Transaction do
     )
   end
 
-  def preload_internal_transactions(transaction, preloads, repo) do
+  def preload_internal_transactions(transaction, address_preloads, repo) do
     [transaction]
-    |> preload_internal_transactions(preloads, repo)
+    |> preload_internal_transactions(address_preloads, repo)
     |> List.first()
   end
 

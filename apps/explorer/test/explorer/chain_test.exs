@@ -39,6 +39,8 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.TestHelper
 
+  alias Explorer.Utility.AddressIdToAddressHash
+
   @first_topic_hex_string "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
   @second_topic_hex_string "0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
   @third_topic_hex_string "0x000000000000000000000000515c09c5bba1ed566b02a5b0599ec5d5d0aee73d"
@@ -1182,6 +1184,11 @@ defmodule Explorer.ChainTest do
       gas_int = Decimal.new("4677320")
       gas_used_int = Decimal.new("27770")
 
+      %{address_id: from_address_id} =
+        AddressIdToAddressHash.find_or_create("0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
+
+      %{address_id: to_address_id} = AddressIdToAddressHash.find_or_create("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
+
       assert {:ok,
               %{
                 addresses: [
@@ -1283,18 +1290,8 @@ defmodule Explorer.ChainTest do
                     block_number: 37,
                     transaction_index: 1,
                     created_contract_address_hash: nil,
-                    from_address_hash: %Explorer.Chain.Hash{
-                      byte_count: 20,
-                      bytes:
-                        <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152, 122,
-                          202>>
-                    },
-                    to_address_hash: %Explorer.Chain.Hash{
-                      byte_count: 20,
-                      bytes:
-                        <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65,
-                          91>>
-                    }
+                    from_address_id: ^from_address_id,
+                    to_address_id: ^to_address_id
                   }
                 ],
                 logs: [

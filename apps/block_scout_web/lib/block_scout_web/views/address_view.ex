@@ -275,7 +275,7 @@ defmodule BlockScoutWeb.AddressView do
   end
 
   def transaction_hash(%Address{contract_creation_internal_transaction: %InternalTransaction{}} = address) do
-    InternalTransaction.preload_transaction(address.contract_creation_internal_transaction).hash
+    InternalTransaction.preload_transaction(address.contract_creation_internal_transaction).transaction_hash
   end
 
   def transaction_hash(%Address{contract_creation_transaction: %Transaction{}} = address) do

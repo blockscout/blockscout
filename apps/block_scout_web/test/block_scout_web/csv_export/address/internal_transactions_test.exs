@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
   use Explorer.DataCase
 
   alias BlockScoutWeb.CsvExport.Address.InternalTransactions, as: AddressInternalTransactionsCsvExporter
-  alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.{Address, InternalTransaction, Wei}
 
   describe "export/3" do
     test "exports address internal transactions to csv" do
@@ -22,6 +22,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           block_hash: transaction.block_hash,
           transaction_index: transaction.index
         )
+        |> InternalTransaction.preload_addresses()
 
       {:ok, now} = DateTime.now("Etc/UTC")
 
@@ -137,7 +138,6 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           transaction_index: transaction.index
         )
       end)
-      |> Enum.count()
 
       1..200
       |> Enum.map(fn index ->
@@ -155,7 +155,6 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           transaction_index: transaction.index
         )
       end)
-      |> Enum.count()
 
       1..200
       |> Enum.map(fn index ->
@@ -164,7 +163,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           |> insert()
           |> with_block()
 
-        insert(:internal_transaction,
+        insert(:internal_transaction_create,
           index: index,
           transaction: transaction,
           created_contract_address: address,
@@ -174,7 +173,6 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           transaction_index: transaction.index
         )
       end)
-      |> Enum.count()
 
       {:ok, now} = DateTime.now("Etc/UTC")
 
@@ -213,6 +211,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           gas_used: nil,
           output: nil
         )
+        |> InternalTransaction.preload_addresses()
 
       {:ok, now} = DateTime.now("Etc/UTC")
 
