@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.ContractCodeTest do
 
   import Mox
 
-  alias Explorer.Chain.{Address, Transaction}
+  alias Explorer.Chain.{Address, Data, Transaction}
   alias Indexer.Fetcher.ContractCode
 
   @moduletag :capture_log
@@ -146,15 +146,24 @@ defmodule Indexer.Fetcher.ContractCodeTest do
                  false
                )
 
-      # Wait a bit to ensure any potential processing is done
-      Process.sleep(100)
+      updated_address =
+        wait(fn ->
+          Repo.one!(
+            from(address in Address, where: address.hash == ^address.hash and not is_nil(address.contract_code))
+          )
+        end)
 
-      # Verify that the contract code was set to "0x"
-      updated_address = Repo.get!(Address, address.hash)
-      assert to_string(updated_address.contract_code) == "0x"
+      assert Data.to_string(updated_address.contract_code) == "0x"
 
-      # Verify that the transaction's created_contract_code_indexed_at remains nil
-      updated_transaction = Repo.get!(Transaction, transaction.hash)
+      updated_transaction =
+        wait(fn ->
+          Repo.one!(
+            from(transaction in Transaction,
+              where: transaction.hash == ^transaction.hash and not is_nil(transaction.created_contract_code_indexed_at)
+            )
+          )
+        end)
+
       assert updated_transaction.created_contract_code_indexed_at
     end
   end

@@ -3,10 +3,18 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateControllerTest do
 
   alias Explorer.Account.Identity
   alias Explorer.Chain.Address
+  alias Explorer.Helper
+  alias Explorer.ThirdPartyIntegrations.Auth0.Internal
   alias Explorer.ThirdPartyIntegrations.Dynamic
   alias Explorer.ThirdPartyIntegrations.Dynamic.Strategy
 
   import Mox
+
+  setup do
+    Redix.command(:redix, ["DEL", Helper.redis_key(Internal.redis_key())])
+
+    :ok
+  end
 
   describe "POST api/account/v2/send_otp" do
     test "send OTP successfully", %{conn: conn} do
@@ -510,7 +518,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateControllerTest do
              %Tesla.Env{
                status: 200,
                body:
-                 ~s([{"identities":[{"connection":"email","user_id":"123","provider":"email","isSocial":false}],"user_id":"email|123","email":"test@example.com","user_metadata":{"web3_address_hash":"#{address_string}"}}])
+                 ~s([{"identities":[{"connection":"email","user_id":"123","provider":"email","isSocial":false}],"user_id":"email|123","email":"test@example.com","user_metadata":{"web3_address_hash":"#{String.downcase(address_string)}"}}])
              }}
         end
       )
