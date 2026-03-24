@@ -518,7 +518,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateControllerTest do
              %Tesla.Env{
                status: 200,
                body:
-                 ~s([{"identities":[{"connection":"email","user_id":"123","provider":"email","isSocial":false}],"user_id":"email|123","email":"test@example.com","user_metadata":{"web3_address_hash":"#{String.downcase(address_string)}"}}])
+                 ~s([{"identities":[{"connection":"email","user_id":"123","provider":"email","isSocial":false}],"user_id":"email|123","email":"test@example.com","user_metadata":{"web3_address_hash":"#{address_string}"}}])
              }}
         end
       )
