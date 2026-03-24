@@ -1,6 +1,8 @@
 defmodule EthereumJSONRPC.Geth.TracerTest do
   use EthereumJSONRPC.Case, async: false
 
+  import ExUnit.CaptureLog
+
   alias EthereumJSONRPC.Geth
   alias EthereumJSONRPC.Geth.{Calls, Tracer}
 
@@ -48,6 +50,54 @@ defmodule EthereumJSONRPC.Geth.TracerTest do
       assert sl_calls == ct_calls
 
       Application.put_env(:ethereum_jsonrpc, Geth, tracer: init_tracer)
+    end
+  end
+
+  describe "prepare_calls/1 with call_tracer" do
+    setup do
+      config = Application.get_env(:ethereum_jsonrpc, Geth)
+      init_tracer = if is_list(config), do: Keyword.get(config, :tracer), else: config
+
+      Application.put_env(:ethereum_jsonrpc, Geth, tracer: "call_tracer")
+
+      on_exit(fn ->
+        Application.put_env(:ethereum_jsonrpc, Geth, tracer: init_tracer)
+      end)
+
+      :ok
+    end
+
+    test "does not emit a warning for DELEGATECALL type without 'from' field" do
+      call = %{"type" => "DELEGATECALL", "to" => "0xabc"}
+
+      log =
+        capture_log(fn ->
+          Geth.prepare_calls(call)
+        end)
+
+      refute log =~ "unknown type"
+    end
+
+    test "does not emit a warning for STATICCALL type without 'from' field" do
+      call = %{"type" => "STATICCALL", "to" => "0xabc"}
+
+      log =
+        capture_log(fn ->
+          Geth.prepare_calls(call)
+        end)
+
+      refute log =~ "unknown type"
+    end
+
+    test "still emits a warning for a truly unknown call type" do
+      call = %{"type" => "UNKNOWNTYPE", "from" => "0xabc", "to" => "0xdef"}
+
+      log =
+        capture_log(fn ->
+          Geth.prepare_calls(call)
+        end)
+
+      assert log =~ "unknown type"
     end
   end
 end
