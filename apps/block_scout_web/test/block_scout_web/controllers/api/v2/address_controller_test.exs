@@ -28,6 +28,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Plug.Conn
 
+  import Ecto.Query, only: [from: 2]
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
   import Mox
 
@@ -5702,8 +5703,17 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert to_string(cb.value.value) == json["value"]
     assert cb.block_number == json["block_number"]
 
-    assert Jason.encode!(Repo.get_by(Block, number: cb.block_number).timestamp) =~
-             String.replace(json["block_timestamp"], "Z", "")
+    expected_timestamps =
+      Repo.all(
+        from(block in Block,
+          where: block.number == ^cb.block_number,
+          select: block.timestamp
+        )
+      )
+      |> Enum.map(&DateTime.truncate(&1, :second))
+
+    {:ok, response_timestamp, 0} = DateTime.from_iso8601(json["block_timestamp"])
+    assert DateTime.truncate(response_timestamp, :second) in expected_timestamps
   end
 
   defp compare_item(%Token{} = token, json) do

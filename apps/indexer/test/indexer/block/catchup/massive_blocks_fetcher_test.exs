@@ -239,6 +239,10 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcherTest do
     TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     ReplacedTransaction.Supervisor.Case.start_supervised!()
 
+    Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!(
+      json_rpc_named_arguments: json_rpc_named_arguments
+    )
+
     MassiveBlocksFetcher.start_link(%{task_supervisor: Indexer.Block.Catchup.TaskSupervisor})
 
     wait_until(:timer.seconds(10), fn ->
