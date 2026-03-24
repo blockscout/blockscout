@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
 
   alias BlockScoutWeb.{BlockListPage, BlockPage}
   alias Explorer.Chain.Block
+  alias Explorer.Repo
 
   setup do
     timestamp = Timex.now() |> Timex.shift(hours: -1)
@@ -177,14 +178,15 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
 
   describe "viewing reorg blocks list" do
     test "lists uncle blocks", %{session: session} do
-      unique_base_number = System.unique_integer([:positive, :monotonic]) * 100
+      max_existing_number = Repo.aggregate(Block, :max, :number) || 0
+      reorg_base_number = max_existing_number + 100
 
       blocks =
         for offset <- 1..10 do
-          insert(:block, number: unique_base_number + offset, consensus: false)
+          insert(:block, number: reorg_base_number + offset, consensus: false)
         end
 
-      [reorg | _] = blocks
+      reorg = List.last(blocks)
       Enum.each(blocks, fn b -> insert(:block, number: b.number, consensus: true) end)
 
       session
