@@ -123,7 +123,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
       assert internal_transaction.block_number == block.number
     end
 
-    test "with transaction with internal transactions loads associations with in necessity_by_association" do
+    test "with transaction with internal transactions loads associations with in address_preloads" do
       transaction =
         :transaction
         |> insert()
@@ -138,23 +138,23 @@ defmodule Explorer.Chain.InternalTransactionTest do
 
       assert [
                %InternalTransaction{
-                 from_address: %Ecto.Association.NotLoaded{},
-                 to_address: %Ecto.Association.NotLoaded{}
+                 from_address: %{names: %Ecto.Association.NotLoaded{}},
+                 to_address: nil
                }
              ] = InternalTransaction.transaction_to_internal_transactions(transaction.hash)
 
       assert [
                %InternalTransaction{
-                 from_address: %Address{},
+                 from_address: %Address{names: []},
                  to_address: nil
                }
              ] =
                InternalTransaction.transaction_to_internal_transactions(
                  transaction.hash,
-                 necessity_by_association: %{
-                   :from_address => :optional,
-                   :to_address => :optional
-                 }
+                 address_preloads: [
+                   from_address: [:names],
+                   to_address: [:names]
+                 ]
                )
     end
 
@@ -384,7 +384,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
       assert internal_transaction.block_number == block.number
     end
 
-    test "with transaction with internal transactions loads associations with in necessity_by_association" do
+    test "with transaction with internal transactions loads associations with in address_preloads" do
       transaction =
         :transaction
         |> insert()
@@ -400,23 +400,23 @@ defmodule Explorer.Chain.InternalTransactionTest do
 
       assert [
                %InternalTransaction{
-                 from_address: %Ecto.Association.NotLoaded{},
-                 to_address: %Ecto.Association.NotLoaded{}
+                 from_address: %{names: %Ecto.Association.NotLoaded{}},
+                 to_address: nil
                }
              ] = InternalTransaction.all_transaction_to_internal_transactions(transaction.hash)
 
       assert [
                %InternalTransaction{
-                 from_address: %Address{},
+                 from_address: %Address{names: []},
                  to_address: nil
                }
              ] =
                InternalTransaction.all_transaction_to_internal_transactions(
                  transaction.hash,
-                 necessity_by_association: %{
-                   :from_address => :optional,
-                   :to_address => :optional
-                 }
+                 address_preloads: [
+                   from_address: [:names],
+                   to_address: [:names]
+                 ]
                )
     end
 
@@ -626,7 +626,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
       assert Enum.member?(result, {second_transaction_index, second_index})
     end
 
-    test "loads associations in necessity_by_association" do
+    test "loads associations in address_preloads" do
       %Address{hash: address_hash} = address = insert(:address)
       block = insert(:block, number: 2000)
 
@@ -655,25 +655,25 @@ defmodule Explorer.Chain.InternalTransactionTest do
 
       assert [
                %InternalTransaction{
-                 from_address: %Ecto.Association.NotLoaded{},
-                 to_address: %Ecto.Association.NotLoaded{}
+                 from_address: %{names: %Ecto.Association.NotLoaded{}},
+                 to_address: %{names: %Ecto.Association.NotLoaded{}}
                }
                | _
              ] = InternalTransaction.address_to_internal_transactions(address_hash)
 
       assert [
                %InternalTransaction{
-                 from_address: %Address{},
-                 to_address: %Address{}
+                 from_address: %Address{names: []},
+                 to_address: %Address{names: []}
                }
                | _
              ] =
                InternalTransaction.address_to_internal_transactions(
                  address_hash,
-                 necessity_by_association: %{
-                   [from_address: :names] => :optional,
-                   [to_address: :names] => :optional
-                 }
+                 address_preloads: [
+                   from_address: [:names],
+                   to_address: [:names]
+                 ]
                )
     end
 

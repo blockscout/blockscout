@@ -189,7 +189,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
         )
 
       to_internal_transaction =
-        insert(:internal_transaction,
+        insert(:internal_transaction_create,
           to_address: nil,
           created_contract_address: address,
           index: 2,
@@ -363,7 +363,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
         1..55
         |> Enum.map(fn index ->
           insert(
-            :internal_transaction,
+            :internal_transaction_create,
             transaction: transaction_3,
             created_contract_address: address,
             to_address: nil,

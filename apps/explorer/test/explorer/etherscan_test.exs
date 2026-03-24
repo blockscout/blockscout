@@ -4,7 +4,8 @@ defmodule Explorer.EtherscanTest do
   import Explorer.Factory
 
   alias Explorer.{Etherscan, Chain}
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{InternalTransaction, Transaction}
+  alias Explorer.Utility.AddressIdToAddressHash
 
   describe "list_transactions/2" do
     test "with empty db" do
@@ -62,16 +63,19 @@ defmodule Explorer.EtherscanTest do
         |> with_contract_creation(contract_address)
         |> with_block()
 
-      %{created_contract_address_hash: contract_address_hash} =
+      %{created_contract_address_id: contract_address_id} =
         :internal_transaction_create
         |> insert(
           transaction: transaction,
           index: 0,
           block_number: transaction.block_number,
+          created_contract_code: contract_address.contract_code,
+          created_contract_address: contract_address,
           block_hash: transaction.block_hash,
           transaction_index: transaction.index
         )
-        |> with_contract_creation(contract_address)
+
+      contract_address_hash = AddressIdToAddressHash.id_to_hash(contract_address_id)
 
       [found_transaction] = Etherscan.list_transactions(contract_address_hash)
 
@@ -139,16 +143,19 @@ defmodule Explorer.EtherscanTest do
         |> with_contract_creation(contract_address)
         |> with_block()
 
-      %{created_contract_address_hash: contract_hash} =
+      %{created_contract_address_id: contract_id} =
         :internal_transaction_create
         |> insert(
           transaction: transaction,
           index: 0,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
+          created_contract_code: contract_address.contract_code,
+          created_contract_address: contract_address,
           transaction_index: transaction.index
         )
-        |> with_contract_creation(contract_address)
+
+      contract_hash = AddressIdToAddressHash.id_to_hash(contract_id)
 
       [found_transaction] = Etherscan.list_transactions(address.hash)
 
@@ -639,11 +646,13 @@ defmodule Explorer.EtherscanTest do
           index: 0,
           value: 1,
           from_address: address,
+          created_contract_code: contract_address.contract_code,
+          created_contract_address: contract_address,
           block_number: transaction.block_number,
           block_hash: transaction.block_hash,
           transaction_index: transaction.index
         )
-        |> with_contract_creation(contract_address)
+        |> InternalTransaction.preload_addresses()
 
       [found_internal_transaction] = Etherscan.list_internal_transactions(transaction.hash)
 
@@ -867,11 +876,13 @@ defmodule Explorer.EtherscanTest do
           transaction: transaction,
           index: 0,
           from_address: address,
+          created_contract_code: contract_address.contract_code,
+          created_contract_address: contract_address,
           block_number: transaction.block_number,
           block_hash: block.hash,
           transaction_index: transaction.index
         )
-        |> with_contract_creation(contract_address)
+        |> InternalTransaction.preload_addresses()
 
       [found_internal_transaction] = Etherscan.list_internal_transactions(address.hash)
 

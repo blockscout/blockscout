@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   alias BlockScoutWeb.API.RPC.AddressController
   alias Explorer.{Chain, Repo, TestHelper}
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.{Events.Subscriber, Transaction, Wei}
+  alias Explorer.Chain.{Events.Subscriber, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
@@ -1848,6 +1848,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
+        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
@@ -1916,6 +1917,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
+        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
@@ -1995,6 +1997,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
+        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
@@ -2065,6 +2068,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
+        |> InternalTransaction.preload_addresses()
 
       internal_transaction_b =
         :internal_transaction
@@ -2078,6 +2082,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
+        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
@@ -2186,10 +2191,12 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           index: 0,
           value: 1,
           from_address: address,
+          created_contract_code: contract_address.contract_code,
+          created_contract_address: contract_address,
           block_hash: transaction.block_hash,
           block_number: transaction.block_number
         )
-        |> with_contract_creation(contract_address)
+        |> InternalTransaction.preload_addresses()
 
       params = %{
         "module" => "account",
@@ -2249,10 +2256,11 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           index: 0,
           value: 1,
           from_address: address,
+          created_contract_code: contract_address.contract_code,
+          created_contract_address: contract_address,
           block_hash: transaction.block_hash,
           block_number: transaction.block_number
         )
-        |> with_contract_creation(contract_address)
 
       params = %{
         "module" => "account",
@@ -2383,6 +2391,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
+        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
@@ -2449,6 +2458,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
+        |> InternalTransaction.preload_addresses()
 
       internal_transaction_b =
         :internal_transaction
@@ -2460,6 +2470,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
+        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
@@ -2590,10 +2601,12 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           transaction_index: transaction.index,
           index: 0,
           from_address: address,
+          created_contract_code: contract_address.contract_code,
+          created_contract_address: contract_address,
           block_number: block.number,
           block_hash: transaction.block_hash
         )
-        |> with_contract_creation(contract_address)
+        |> InternalTransaction.preload_addresses()
 
       params = %{
         "module" => "account",
@@ -2754,6 +2767,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
+        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
@@ -2824,6 +2838,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
+        |> InternalTransaction.preload_addresses()
 
       internal_transaction_b =
         :internal_transaction
@@ -2836,6 +2851,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
+        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{

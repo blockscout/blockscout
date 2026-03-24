@@ -22,14 +22,11 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
          {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
       full_options =
         [
-          necessity_by_association: %{
-            [created_contract_address: :names] => :optional,
-            [from_address: :names] => :optional,
-            [to_address: :names] => :optional,
-            [created_contract_address: :smart_contract] => :optional,
-            [from_address: :smart_contract] => :optional,
-            [to_address: :smart_contract] => :optional
-          }
+          address_preloads: [
+            created_contract_address: [:names, :smart_contract],
+            from_address: [:names, :smart_contract],
+            to_address: [:names, :smart_contract]
+          ]
         ]
         |> Keyword.merge(paging_options(params))
 

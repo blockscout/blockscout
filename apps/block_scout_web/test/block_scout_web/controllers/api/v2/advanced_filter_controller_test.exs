@@ -384,13 +384,12 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         if i < 20 do
           transaction = insert(:transaction) |> with_block()
 
-          insert(:internal_transaction,
+          insert(:internal_transaction_create,
             transaction: transaction,
             block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             created_contract_address: address,
-            created_contract_address_hash: address.hash,
             to_address_hash: nil,
             to_address: nil,
             index: i

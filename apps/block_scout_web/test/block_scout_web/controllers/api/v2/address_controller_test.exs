@@ -2234,6 +2234,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_hash: transaction.block_hash,
           from_address: address
         )
+        |> InternalTransaction.preload_addresses()
 
       internal_transaction_to =
         insert(:internal_transaction,
@@ -2244,6 +2245,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           block_hash: transaction.block_hash,
           to_address: address
         )
+        |> InternalTransaction.preload_addresses()
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
 
@@ -2317,6 +2319,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             from_address: address
           )
         end
+        |> InternalTransaction.preload_addresses()
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
       assert response = json_response(request, 200)
@@ -2339,6 +2342,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             to_address: address
           )
         end
+        |> InternalTransaction.preload_addresses()
 
       filter = %{"filter" => "to"}
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", filter)
