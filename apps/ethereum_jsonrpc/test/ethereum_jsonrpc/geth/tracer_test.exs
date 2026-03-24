@@ -55,13 +55,12 @@ defmodule EthereumJSONRPC.Geth.TracerTest do
 
   describe "prepare_calls/1 with call_tracer" do
     setup do
-      config = Application.get_env(:ethereum_jsonrpc, Geth)
-      init_tracer = if is_list(config), do: Keyword.get(config, :tracer), else: config
-
-      Application.put_env(:ethereum_jsonrpc, Geth, tracer: "call_tracer")
+      original_config = Application.get_env(:ethereum_jsonrpc, Geth)
+      updated_config = Keyword.put(original_config, :tracer, "call_tracer")
+      Application.put_env(:ethereum_jsonrpc, Geth, updated_config)
 
       on_exit(fn ->
-        Application.put_env(:ethereum_jsonrpc, Geth, tracer: init_tracer)
+        Application.put_env(:ethereum_jsonrpc, Geth, original_config)
       end)
 
       :ok
@@ -90,7 +89,7 @@ defmodule EthereumJSONRPC.Geth.TracerTest do
     end
 
     test "still emits a warning for a truly unknown call type" do
-      call = %{"type" => "UNKNOWNTYPE", "from" => "0xabc", "to" => "0xdef"}
+      call = %{"type" => "UNKNOWN", "from" => "0xabc", "to" => "0xdef"}
 
       log =
         capture_log(fn ->
