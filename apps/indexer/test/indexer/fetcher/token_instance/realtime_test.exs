@@ -113,9 +113,15 @@ defmodule Indexer.Fetcher.TokenInstance.RealtimeTest do
         %{token_contract_address_hash: token.contract_address_hash, token_ids: [Decimal.new(777)]}
       ])
 
-      :timer.sleep(250)
+      instance =
+        Enum.reduce_while(1..30, nil, fn _, _ ->
+          :timer.sleep(100)
 
-      [instance] = Repo.all(Instance)
+          case Repo.all(Instance) do
+            [%{metadata: metadata} = inst] when not is_nil(metadata) -> {:halt, inst}
+            _ -> {:cont, nil}
+          end
+        end)
 
       assert is_nil(instance.error)
       assert instance.metadata == %{"name" => "name"}

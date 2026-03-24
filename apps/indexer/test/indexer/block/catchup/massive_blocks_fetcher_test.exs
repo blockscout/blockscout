@@ -24,6 +24,32 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcherTest do
 
   setup :verify_on_exit!
 
+  setup do
+    old_celo_env = Application.get_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, [])
+
+    Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts,
+      contracts: %{
+        "addresses" => %{
+          "Accounts" => [],
+          "Election" => [],
+          "EpochRewards" => [],
+          "FeeHandler" => [],
+          "GasPriceMinimum" => [],
+          "GoldToken" => [],
+          "Governance" => [],
+          "LockedGold" => [],
+          "Reserve" => [],
+          "StableToken" => [],
+          "Validators" => []
+        }
+      }
+    )
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, old_celo_env)
+    end)
+  end
+
   test "successfully imports block", %{json_rpc_named_arguments: json_rpc_named_arguments} do
     %{number: block_number} = insert(:massive_block)
     block_quantity = integer_to_quantity(block_number)

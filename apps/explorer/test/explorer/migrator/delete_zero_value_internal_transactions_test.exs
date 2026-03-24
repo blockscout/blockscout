@@ -6,6 +6,16 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
   alias Explorer.Repo
   alias Explorer.Utility.{AddressIdToAddressHash, InternalTransactionsAddressPlaceholder}
 
+  setup do
+    on_exit(fn ->
+      if pid = Process.whereis(DeleteZeroValueInternalTransactions) do
+        GenServer.stop(pid, :normal, 5000)
+      end
+    end)
+
+    :ok
+  end
+
   test "Deletes zero value calls" do
     address_1 = insert(:address)
     address_2 = insert(:address)
