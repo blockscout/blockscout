@@ -6,7 +6,9 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
 
   setup do
     timestamp = Timex.now() |> Timex.shift(hours: -1)
-    [oldest_block | _] = Enum.map(308..310, &insert(:block, number: &1, timestamp: timestamp, gas_used: 10))
+
+    [oldest_block | _] =
+      Enum.map(308..310, &insert(:block, number: &1, timestamp: timestamp, gas_used: 10))
 
     newest_block =
       insert(:block, %{
@@ -175,7 +177,14 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
 
   describe "viewing reorg blocks list" do
     test "lists uncle blocks", %{session: session} do
-      [reorg | _] = blocks = insert_list(10, :block, consensus: false)
+      unique_base_number = System.unique_integer([:positive, :monotonic]) * 100
+
+      blocks =
+        for offset <- 1..10 do
+          insert(:block, number: unique_base_number + offset, consensus: false)
+        end
+
+      [reorg | _] = blocks
       Enum.each(blocks, fn b -> insert(:block, number: b.number, consensus: true) end)
 
       session
