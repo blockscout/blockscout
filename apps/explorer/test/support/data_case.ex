@@ -59,7 +59,7 @@ defmodule Explorer.DataCase do
     Process.sleep(100)
     producer.()
   rescue
-    e in [DBConnection.ConnectionError, Ecto.NoResultsError] ->
+      _error in [DBConnection.ConnectionError, Ecto.NoResultsError] ->
       Process.sleep(300)
       wait_for_results(producer)
   end
