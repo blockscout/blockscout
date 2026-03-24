@@ -169,10 +169,25 @@ defmodule Indexer.Fetcher.ContractCodeTest do
   end
 
   defp wait(producer) do
+    wait(producer, 10_000)
+  end
+
+  defp wait(producer, timeout) when is_integer(timeout) and timeout > 0 do
+    deadline = System.monotonic_time(:millisecond) + timeout
+
+    wait(producer, timeout, deadline)
+  end
+
+  defp wait(producer, timeout, deadline) do
     producer.()
   rescue
     Ecto.NoResultsError ->
-      Process.sleep(100)
-      wait(producer)
+      if System.monotonic_time(:millisecond) > deadline do
+        raise RuntimeError,
+              "wait/1 timed out after #{timeout}ms while waiting for producer #{inspect(producer)}"
+      else
+        Process.sleep(100)
+        wait(producer, timeout, deadline)
+      end
   end
 end
