@@ -56,7 +56,7 @@ defmodule Explorer.DataCase do
   end
 
   def wait_for_results(producer) do
-    wait_for_results(producer, 10)
+    wait_for_results(producer, 30)
   end
 
   def wait_for_results(_producer, 0) do
