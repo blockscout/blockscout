@@ -4,20 +4,6 @@ on:
   push:
     branches:
       - master
-      - production-arbitrum
-      - production-core
-      - production-eth-sepolia
-      - production-filecoin
-      - production-fuse
-      - production-optimism
-      - production-immutable
-      - production-iota
-      - production-lukso
-      - production-rsk
-      - production-sokol
-      - production-xdai
-      - production-zkevm
-      - production-zksync
     paths-ignore:
       - "CHANGELOG.md"
       - "**/README.md"
