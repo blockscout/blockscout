@@ -1,5 +1,23 @@
 # Changelog
 
+## 10.2.2
+
+### 🐛 Bug Fixes
+
+- Fix token transfers block_consensus setting ([#14005](https://github.com/blockscout/blockscout/issues/14005))
+- OP Withdrawals indexer enhancement ([#14056](https://github.com/blockscout/blockscout/issues/14056))
+
+### ⚙️ Miscellaneous Tasks
+
+- Add token transfer consensus sanitizer ([#14144](https://github.com/blockscout/blockscout/issues/14144))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `INDEXER_TOKEN_TRANSFER_BLOCK_CONSENSUS_SANITIZER_INTERVAL`   | Interval for token transfer block consensus sanitizer. [Time format](/setup/env-variables/backend-env-variables#time-format). Implemented in [#14144](https://github.com/blockscout/blockscout/pull/14144).                                                                                                                                                                                                                                                                                                                      | Version: v10.2.2\+ <br />Default: `20m` <br />Applications: Indexer                                       |
+
+
 ## 10.2.1
 
 ### 🐛 Bug Fixes
