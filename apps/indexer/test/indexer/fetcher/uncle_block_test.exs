@@ -61,6 +61,7 @@ defmodule Indexer.Fetcher.UncleBlockTest do
       uncle_hash_data = to_string(uncle_hash)
       uncle_uncle_hash_data = to_string(block_hash())
       index_data = integer_to_quantity(index)
+      transaction_hash = "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6"
 
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, fn [
@@ -104,7 +105,7 @@ defmodule Indexer.Fetcher.UncleBlockTest do
                    "from" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
                    "gas" => "0x47b760",
                    "gasPrice" => "0x174876e800",
-                   "hash" => "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
+                   "hash" => transaction_hash,
                    "input" => "0x",
                    "nonce" => "0x0",
                    "r" => "0xad3733df250c87556335ffe46c23e34dbaffde93097ef92f52c88632a40f0c75",
@@ -131,6 +132,15 @@ defmodule Indexer.Fetcher.UncleBlockTest do
         Repo.one!(
           from(bsdr in Chain.Block.SecondDegreeRelation,
             where: bsdr.nephew_hash == ^nephew_hash and not is_nil(bsdr.uncle_fetched_at)
+          )
+        )
+      end)
+
+      wait_for_results(fn ->
+        Repo.one!(
+          from(tf in Chain.Transaction.Fork,
+            where: tf.hash == ^transaction_hash,
+            select: tf.hash
           )
         )
       end)
