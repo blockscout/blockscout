@@ -2,6 +2,7 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
   use BlockScoutWeb.ChannelCase
 
   alias BlockScoutWeb.Notifier
+  alias Explorer.Chain.Address
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Plug.Conn
 
@@ -90,7 +91,7 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
         200,
         Jason.encode!(%{
           "names" => %{
-            to_string(miner.hash) => "miner.eth"
+            Address.checksum(miner.hash) => "miner.eth"
           }
         })
       )
@@ -102,7 +103,7 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
         200,
         Jason.encode!(%{
           "addresses" => %{
-            to_string(miner.hash) => %{
+            Address.checksum(miner.hash) => %{
               "tags" => []
             }
           }
