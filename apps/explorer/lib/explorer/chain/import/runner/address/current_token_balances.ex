@@ -297,11 +297,6 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   # ctb does not exist
   defp should_update?(_new_ctb, nil), do: true
 
-  # new ctb has no value
-  defp should_update?(%{value_fetched_at: fetched_at, value: nil}, _existing_ctb)
-       when not is_nil(fetched_at),
-       do: false
-
   # new ctb is newer
   defp should_update?(%{block_number: new_ctb_block_number}, %{block_number: existing_ctb_block_number})
        when new_ctb_block_number > existing_ctb_block_number,
