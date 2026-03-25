@@ -99,6 +99,7 @@ defmodule Explorer.Etherscan.Logs do
             block_timestamp: transaction.block_timestamp,
             block_consensus: transaction.block_consensus
           },
+          order_by: [asc: transaction.block_number, asc: log.index],
           limit: 1000
         )
 
@@ -123,6 +124,7 @@ defmodule Explorer.Etherscan.Logs do
             block_timestamp: block.timestamp,
             block_consensus: block.consensus
           },
+          order_by: [asc: block.number, asc: log.index],
           limit: 1000
         )
 
