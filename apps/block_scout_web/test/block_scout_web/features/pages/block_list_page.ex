@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.BlockListPage do
 
   use Wallaby.DSL
 
-  import Wallaby.Query, only: [css: 1, css: 2]
+  import Wallaby.Query, only: [css: 2]
 
   alias Explorer.Chain.Block
 
