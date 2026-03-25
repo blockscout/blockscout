@@ -1,5 +1,12 @@
 # Changelog
 
+## 10.2.3
+
+### 🐛 Bug Fixes
+
+- Allow fetching of stale token balances ([#14154](https://github.com/blockscout/blockscout/issues/14154))
+
+
 ## 10.2.2
 
 ### 🐛 Bug Fixes
