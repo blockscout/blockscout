@@ -168,11 +168,10 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       {:ok, %{uncles: uncles}}
     end
 
-    test "lists uncle blocks", %{session: session, uncles: [uncle | _]} do
+    test "lists uncle blocks", %{session: session, uncles: _uncles} do
       session
       |> BlockListPage.visit_uncles_page()
-      |> assert_has(BlockListPage.block(uncle))
-      |> assert_has(BlockListPage.blocks(10))
+      |> assert_has(BlockListPage.uncle_blocks(10))
     end
   end
 

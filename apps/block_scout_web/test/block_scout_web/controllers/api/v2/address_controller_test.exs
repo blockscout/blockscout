@@ -5703,6 +5703,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert to_string(cb.value.value) == json["value"]
     assert cb.block_number == json["block_number"]
 
+    # The API uses linear interpolation over the fetched set (page_size + 1 items),
+    # so the returned timestamp may be off by up to 1 second from the actual block
+    # timestamp. Allow ±1 second tolerance to account for this artifact.
     expected_timestamps =
       Repo.all(
         from(block in Block,
@@ -5710,7 +5713,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           select: block.timestamp
         )
       )
-      |> Enum.map(&DateTime.truncate(&1, :second))
+      |> Enum.flat_map(fn ts ->
+        truncated = DateTime.truncate(ts, :second)
+
+        [
+          DateTime.add(truncated, -1, :second),
+          truncated,
+          DateTime.add(truncated, 1, :second)
+        ]
+      end)
+      |> Enum.uniq()
 
     {:ok, response_timestamp, 0} = DateTime.from_iso8601(json["block_timestamp"])
     assert DateTime.truncate(response_timestamp, :second) in expected_timestamps
