@@ -3,13 +3,10 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
 
   alias BlockScoutWeb.{BlockListPage, BlockPage}
   alias Explorer.Chain.Block
-  alias Explorer.Repo
 
   setup do
     timestamp = Timex.now() |> Timex.shift(hours: -1)
-
-    [oldest_block | _] =
-      Enum.map(308..310, &insert(:block, number: &1, timestamp: timestamp, gas_used: 10))
+    [oldest_block | _] = Enum.map(308..310, &insert(:block, number: &1, timestamp: timestamp, gas_used: 10))
 
     newest_block =
       insert(:block, %{
@@ -168,24 +165,17 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       {:ok, %{uncles: uncles}}
     end
 
-    test "lists uncle blocks", %{session: session, uncles: _uncles} do
+    test "lists uncle blocks", %{session: session, uncles: [uncle | _]} do
       session
       |> BlockListPage.visit_uncles_page()
-      |> assert_has(BlockListPage.uncle_blocks(10))
+      |> assert_has(BlockListPage.block(uncle))
+      |> assert_has(BlockListPage.blocks(10))
     end
   end
 
   describe "viewing reorg blocks list" do
     test "lists uncle blocks", %{session: session} do
-      max_existing_number = Repo.aggregate(Block, :max, :number) || 0
-      reorg_base_number = max_existing_number + 100
-
-      blocks =
-        for offset <- 1..10 do
-          insert(:block, number: reorg_base_number + offset, consensus: false)
-        end
-
-      reorg = List.last(blocks)
+      [reorg | _] = blocks = insert_list(10, :block, consensus: false)
       Enum.each(blocks, fn b -> insert(:block, number: b.number, consensus: true) end)
 
       session
