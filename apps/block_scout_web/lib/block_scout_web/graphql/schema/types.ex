@@ -3,7 +3,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.Transaction do
   use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
 
   alias BlockScoutWeb.GraphQL.Resolvers.{Block, InternalTransaction}
-  alias Ecto.Enum
 
   case @chain_identity do
     {:optimism, :celo} ->
@@ -110,6 +109,8 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
   @moduledoc false
 
   require BlockScoutWeb.GraphQL.Schema.{Transaction, SmartContracts}
+
+  alias Ecto.Enum
 
   use Absinthe.Schema.Notation
   use Absinthe.Relay.Schema.Notation, :modern
