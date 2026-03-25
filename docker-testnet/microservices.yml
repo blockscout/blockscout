@@ -56,7 +56,7 @@ services:
   #     - visualizer
   #     - stats
   #   extends:
-  #     file: ./services/nginx.yml
+  #     file: ./services/static.yml
   #     service: proxy
   #   volumes:
-  #     - "./proxy/microservices.conf.template:/etc/nginx/templates/default.conf.template"
+  #     - "./proxy/microservices.conf.template:/etc/static/templates/default.conf.template"

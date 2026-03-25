@@ -2,12 +2,12 @@ version: '3.9'
 
 services:
   proxy:
-    image: nginx
+    image: ghcr.io/hanzoai/static:latest
     container_name: explorer-luxnet-proxy
     extra_hosts:
       - 'host.docker.internal:host-gateway'
     volumes:
-      - "../proxy:/etc/nginx/templates"
+      - "../proxy:/etc/static/templates"
     environment:
       BACK_PROXY_PASS: ${BACK_PROXY_PASS:-http://backend:4000}
       FRONT_PROXY_PASS: ${FRONT_PROXY_PASS:-http://frontend:3000}

@@ -57,7 +57,7 @@ services:
       - backend
       - frontend
     extends:
-      file: ./services/nginx-explorer.yml
+      file: ./services/static-explorer.yml
       service: proxy
     volumes:
-      - "./proxy/explorer.conf.template:/etc/nginx/templates/default.conf.template"
+      - "./proxy/explorer.conf.template:/etc/static/templates/default.conf.template"
