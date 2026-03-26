@@ -339,6 +339,18 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateTokensOrdMcapFiatHolderNameIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateTokensOrdFiatHolderNameIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateTokensOrdHolderNameIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey,
           :indexer
         ),
