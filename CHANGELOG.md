@@ -1,5 +1,89 @@
 # Changelog
 
+## 10.2.3
+
+### 🐛 Bug Fixes
+
+- Allow fetching of stale token balances ([#14154](https://github.com/blockscout/blockscout/issues/14154))
+
+
+## 10.2.2
+
+### 🐛 Bug Fixes
+
+- Fix token transfers block_consensus setting ([#14005](https://github.com/blockscout/blockscout/issues/14005))
+- OP Withdrawals indexer enhancement ([#14056](https://github.com/blockscout/blockscout/issues/14056))
+
+### ⚙️ Miscellaneous Tasks
+
+- Add token transfer consensus sanitizer ([#14144](https://github.com/blockscout/blockscout/issues/14144))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `INDEXER_TOKEN_TRANSFER_BLOCK_CONSENSUS_SANITIZER_INTERVAL`   | Interval for token transfer block consensus sanitizer. [Time format](/setup/env-variables/backend-env-variables#time-format). Implemented in [#14144](https://github.com/blockscout/blockscout/pull/14144).                                                                                                                                                                                                                                                                                                                      | Version: v10.2.2\+ <br />Default: `20m` <br />Applications: Indexer                                       |
+
+
+## 10.2.1
+
+### 🐛 Bug Fixes
+
+- Notify.check_auth0 for Keycloak and Dynamic ([#14146](https://github.com/blockscout/blockscout/issues/14146))
+
+## 10.2.0
+
+### 🚀 Features
+
+- Fetch transaction receipts by block ([#14046](https://github.com/blockscout/blockscout/issues/14046))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `ETHEREUM_JSONRPC_RECEIPTS_BY_BLOCK`                          | If `true`, block fetchers will fetch transaction receipts by block instead of per transaction. Implemented in [#14046](https://github.com/blockscout/blockscout/pull/14046)                                                                                                                                                                                                                                                                                                                                                      | Version: v10.2.0\+ <br />Default: `false` <br />Applications: API, Indexer                                |
+| `ETHEREUM_JSONRPC_MAX_RECEIPTS_BY_BLOCK`                      | Max number of transactions in block for which receipts will be fetched by block. If block has more transactions, receipts will be fetched per transaction in purpose of reducing response body size. Implemented in [#14046](https://github.com/blockscout/blockscout/pull/14046)                                                                                                                                                                                                                                                | Version: v10.2.0\+ <br />Default: `1000` <br />Applications: API, Indexer                                 |
+
+
+## 10.1.1
+
+### 🐛 Bug Fixes
+
+- Authentication provider token redis key ([#14137](https://github.com/blockscout/blockscout/issues/14137))
+
+
+## 10.1.0
+
+### 🚀 Features
+
+- KeyCloak integration ([#14068](https://github.com/blockscout/blockscout/issues/14068))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `ACCOUNT_SENDGRID_OTP_TEMPLATE`                     | Sendgrid email OTP template for login with email functionality. Implemented in [#14068](https://github.com/blockscout/blockscout/pull/14068).                                                   | Version: v9.4.0\+ <br />Default: (empty) <br />Applications: API    |
+| `ACCOUNT_KEYCLOAK_DOMAIN`                           | Domain for [Keycloak](https://www.keycloak.org/). Implemented in [#14068](https://github.com/blockscout/blockscout/pull/14068).                                                                 | Version: v9.4.0\+ <br />Default: (empty) <br />Applications: API    |
+| `ACCOUNT_KEYCLOAK_REALM`                            | Realm for [Keycloak](https://www.keycloak.org/). Implemented in [#14068](https://github.com/blockscout/blockscout/pull/14068).                                                                  | Version: v9.4.0\+ <br />Default: (empty) <br />Applications: API    |
+| `ACCOUNT_KEYCLOAK_CLIENT_ID`                        | [Keycloak](https://www.keycloak.org/) client ID. Implemented in [#14068](https://github.com/blockscout/blockscout/pull/14068).                                                                  | Version: v9.4.0\+ <br />Default: (empty) <br />Applications: API    |
+| `ACCOUNT_KEYCLOAK_CLIENT_SECRET`                    | [Keycloak](https://www.keycloak.org/) client secret. Implemented in [#14068](https://github.com/blockscout/blockscout/pull/14068).                                                              | Version: v9.4.0\+ <br />Default: (empty) <br />Applications: API    |
+| `ACCOUNT_KEYCLOAK_EMAIL_WEBHOOK_URL`                | URL address where new email users are reported. Implemented in [#14068](https://github.com/blockscout/blockscout/pull/14068).                                                                   | Version: v9.4.0\+ <br />Default: (empty) <br />Applications: API    |
+
+
+## 10.0.8
+
+### 🐛 Bug Fixes
+
+- Zetachain internal txs fetching error ([#14122](https://github.com/blockscout/blockscout/issues/14122))
+
+
+## 10.0.7
+
+### 🐛 Bug Fixes
+
+- Add missing DenormalizationHelper alias in state changes ([#14119](https://github.com/blockscout/blockscout/issues/14119))
+
+
 ## 10.0.6
 
 ### 🐛 Bug Fixes
