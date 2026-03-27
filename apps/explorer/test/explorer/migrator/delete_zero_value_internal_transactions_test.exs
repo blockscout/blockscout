@@ -317,7 +317,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
 
       insert(:internal_transaction,
         index: 10,
-        transaction: transaction,
         block_hash: transaction.block_hash,
         block_number: transaction.block_number,
         transaction_index: transaction.index,

@@ -127,12 +127,13 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         |> Enum.take(paging_options.page_size)
         |> Repo.preload(:block)
         |> InternalTransaction.preload_error()
+        |> InternalTransaction.preload_transaction()
 
       :ignore ->
         [transaction.block_number]
         |> fetch_block_internal_transactions()
         |> Enum.map(&serialize/1)
-        |> Enum.filter(&(&1.transaction_hash == transaction.hash))
+        |> Enum.filter(&(&1.block_number == transaction.block_number and &1.transaction_index == transaction.index))
         |> different_from_parent_transaction()
         |> Enum.sort_by(& &1.index)
         |> add_block_hashes(transaction.block_hash)
@@ -141,6 +142,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         |> Enum.take(paging_options.page_size)
         |> Repo.preload(:block)
         |> InternalTransaction.preload_error()
+        |> InternalTransaction.preload_transaction()
 
       error ->
         Logger.error(
@@ -194,6 +196,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> add_block_hashes(block.hash)
     |> join_associations(necessity_by_association)
     |> InternalTransaction.preload_error()
+    |> InternalTransaction.preload_transaction()
   end
 
   @doc """
@@ -274,6 +277,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> join_associations(necessity_by_association)
     |> Repo.preload(:block)
     |> InternalTransaction.preload_error()
+    |> InternalTransaction.preload_transaction()
   end
 
   defp do_fetch_for_address(address_id, to_block, from_block, limit, sum_mode, sort_direction, acc \\ [])
@@ -725,6 +729,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     %InternalTransaction{}
     |> InternalTransaction.changeset(internal_transaction_params)
     |> Ecto.Changeset.apply_changes()
+    |> Map.put(:transaction_hash, internal_transaction_params[:transaction_hash])
   end
 
   defp etherscan_serialize(internal_transaction) do

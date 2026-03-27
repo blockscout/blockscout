@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
 
   alias BlockScoutWeb.{AccessHelper, Controller, InternalTransactionView, TransactionController}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{DenormalizationHelper, Transaction}
+  alias Explorer.Chain.Transaction
   alias Phoenix.View
 
   def index(conn, %{"transaction_id" => transaction_hash_string, "type" => "JSON"} = params) do
@@ -28,11 +28,9 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
             [to_address: :names] => :optional,
             [created_contract_address: :smart_contract] => :optional,
             [from_address: :smart_contract] => :optional,
-            [to_address: :smart_contract] => :optional,
-            :transaction => :optional
+            [to_address: :smart_contract] => :optional
           }
         ]
-        |> DenormalizationHelper.extend_transaction_block_necessity(:optional)
         |> Keyword.merge(paging_options(params))
 
       internal_transactions_plus_one = transaction_to_internal_transactions(transaction, full_options)

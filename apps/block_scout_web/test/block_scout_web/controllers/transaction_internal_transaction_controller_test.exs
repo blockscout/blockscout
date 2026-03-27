@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
           transaction_internal_transaction_path(
             BlockScoutWeb.Endpoint,
             :index,
-            internal_transaction.transaction_hash
+            internal_transaction.transaction.hash
           )
         )
 

@@ -836,7 +836,7 @@ defmodule Explorer.EtherscanTest do
       address = insert(:address)
       contract_address = insert(:contract_address)
 
-      block = insert(:block)
+      %{number: block_number, timestamp: block_timestamp} = block = insert(:block)
 
       transaction =
         :transaction
@@ -844,7 +844,24 @@ defmodule Explorer.EtherscanTest do
         |> with_contract_creation(contract_address)
         |> with_block(block)
 
-      internal_transaction =
+      transaction_hash = transaction.hash
+
+      %{
+        from_address_hash: from_address_hash,
+        to_address_hash: to_address_hash,
+        value: value,
+        created_contract_address_hash: created_contract_address_hash,
+        input: input,
+        index: index,
+        transaction_index: transaction_index,
+        type: type,
+        call_type: call_type,
+        call_type_enum: call_type_enum,
+        gas: gas,
+        gas_used: gas_used,
+        error: error,
+        error_id: error_id
+      } =
         :internal_transaction_create
         |> insert(
           transaction: transaction,
@@ -858,27 +875,25 @@ defmodule Explorer.EtherscanTest do
 
       [found_internal_transaction] = Etherscan.list_internal_transactions(address.hash)
 
-      expected = %{
-        block_number: block.number,
-        block_timestamp: block.timestamp,
-        from_address_hash: internal_transaction.from_address_hash,
-        to_address_hash: internal_transaction.to_address_hash,
-        value: internal_transaction.value,
-        created_contract_address_hash: internal_transaction.created_contract_address_hash,
-        input: internal_transaction.input,
-        index: internal_transaction.index,
-        transaction_hash: internal_transaction.transaction_hash,
-        transaction_index: internal_transaction.transaction_index,
-        type: internal_transaction.type,
-        call_type: internal_transaction.call_type,
-        call_type_enum: internal_transaction.call_type_enum,
-        gas: internal_transaction.gas,
-        gas_used: internal_transaction.gas_used,
-        error: internal_transaction.error,
-        error_id: internal_transaction.error_id
-      }
-
-      assert found_internal_transaction == expected
+      assert %{
+               block_number: ^block_number,
+               block_timestamp: ^block_timestamp,
+               from_address_hash: ^from_address_hash,
+               to_address_hash: ^to_address_hash,
+               value: ^value,
+               created_contract_address_hash: ^created_contract_address_hash,
+               input: ^input,
+               index: ^index,
+               transaction_hash: ^transaction_hash,
+               transaction_index: ^transaction_index,
+               type: ^type,
+               call_type: ^call_type,
+               call_type_enum: ^call_type_enum,
+               gas: ^gas,
+               gas_used: ^gas_used,
+               error: ^error,
+               error_id: ^error_id
+             } = found_internal_transaction
     end
 
     test "with address with 0 internal transactions" do

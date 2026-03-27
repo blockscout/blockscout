@@ -311,6 +311,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp preload_internal_transaction_query(balance) do
     InternalTransaction
+    |> InternalTransaction.join_transaction_query()
     |> where(
       [internal_transaction],
       internal_transaction.block_number == ^balance.block_number and
@@ -322,7 +323,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
            internal_transaction.from_address_hash == ^balance.address_hash or
            internal_transaction.created_contract_address_hash == ^balance.address_hash)
     )
-    |> select([internal_transaction], internal_transaction.transaction_hash)
+    |> select([_internal_transaction, transaction], transaction.hash)
     |> limit(1)
   end
 

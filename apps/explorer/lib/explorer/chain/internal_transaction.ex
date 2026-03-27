@@ -3,7 +3,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
   use Explorer.Schema
 
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.{Chain, PagingOptions, QueryHelper, Repo}
 
   alias Explorer.Chain.{
     Address,
@@ -18,7 +18,6 @@ defmodule Explorer.Chain.InternalTransaction do
 
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.DenormalizationHelper
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
   alias Explorer.Utility.InternalTransactionHelper
@@ -48,7 +47,6 @@ defmodule Explorer.Chain.InternalTransaction do
    * `to_address_hash` - hash of the sink of the `value`
    * `trace_address` - list of traces
    * `transaction` - transaction in which this internal transaction occurred
-   * `transaction_hash` - foreign key for `transaction`
    * `transaction_index` - the `t:Explorer.Chain.Transaction.t/0` `index` of `transaction` in `block_number`.
    * `type` - type of internal transaction
    * `value` - value of transferred from `from_address` to `to_address`
@@ -80,6 +78,9 @@ defmodule Explorer.Chain.InternalTransaction do
     # TODO: remove field after update PK migration is completed
     field(:block_index, :integer)
 
+    field(:transaction, :map, virtual: true)
+    field(:transaction_hash, Hash.Full, virtual: true)
+
     timestamps()
 
     belongs_to(
@@ -107,13 +108,6 @@ defmodule Explorer.Chain.InternalTransaction do
       type: Hash.Address
     )
 
-    belongs_to(:transaction, Transaction,
-      foreign_key: :transaction_hash,
-      references: :hash,
-      type: Hash.Full,
-      null: false
-    )
-
     belongs_to(:block, Block,
       foreign_key: :block_number,
       references: :number,
@@ -127,7 +121,7 @@ defmodule Explorer.Chain.InternalTransaction do
   Validates that the `attrs` are valid.
 
   `:create` type traces generated when a contract is created are valid.  `created_contract_address_hash`,
-  `from_address_hash`, and `transaction_hash` are converted to `t:Explorer.Chain.Hash.t/0`, and `type` is converted to
+  `from_address_hash` are converted to `t:Explorer.Chain.Hash.t/0`, and `type` is converted to
   `t:Explorer.Chain.InternalTransaction.Type.t/0`
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
@@ -141,7 +135,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     index: 0,
       ...>     init: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>     trace_address: [],
-      ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     transaction_index: 0,
       ...>     type: "create",
       ...>     value: 0,
@@ -161,12 +154,6 @@ defmodule Explorer.Chain.InternalTransaction do
         byte_count: 20,
         bytes: <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152, 122, 202>>
       }
-      iex> changeset.changes.transaction_hash
-      %Explorer.Chain.Hash{
-        byte_count: 32,
-        bytes: <<58, 62, 177, 52, 230, 121, 44, 233, 64, 62, 164, 24, 142, 94, 121, 105, 61, 233, 228, 201, 78, 73, 157,
-                177, 50, 190, 8, 100, 0, 218, 121, 230>>
-      }
       iex> changeset.changes.type
       :create
 
@@ -182,7 +169,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     index: 0,
       ...>     init: "0x4bb278f3",
       ...>     trace_address: [],
-      ...>     transaction_hash: "0x3c624bb4852fb5e35a8f45644cec7a486211f6ba89034768a2b763194f22f97d",
       ...>     type: "create",
       ...>     value: 0,
       ...>     block_number: 35,
@@ -206,7 +192,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     block_number: 35,
       ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0,
-      ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     index: 0,
       ...>     trace_address: [],
       ...>     call_type: "call",
@@ -231,7 +216,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     block_number: 35,
       ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0,
-      ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
       ...>     index: 0,
       ...>     trace_address: [],
       ...>     type: "call",
@@ -257,7 +241,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     block_number: 35,
       ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0,
-      ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
       ...>     index: 0,
       ...>     trace_address: [],
       ...>     type: "call",
@@ -283,7 +266,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     block_number: 35,
       ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0,
-      ...>     transaction_hash: "0xcd7c15dbbc797722bef6e1d551edfd644fc7f4fb2ccd6a7947b2d1ade9ed140b",
       ...>     index: 0,
       ...>     trace_address: [],
       ...>     type: "call",
@@ -319,7 +301,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     index: 0,
       ...>     init: "0x4bb278f3",
       ...>     trace_address: [],
-      ...>     transaction_hash: "0x3c624bb4852fb5e35a8f45644cec7a486211f6ba89034768a2b763194f22f97d",
       ...>     type: "create",
       ...>     value: 0,
       ...>     block_number: 35,
@@ -340,7 +321,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     index: 0,
       ...>     init: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
       ...>     trace_address: [],
-      ...>     transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
       ...>     type: "create",
       ...>     value: 0,
       ...>     block_number: 35,
@@ -366,7 +346,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     index: 1,
       ...>     to_address_hash: "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5",
       ...>     trace_address: [0],
-      ...>     transaction_hash: "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
       ...>     type: "selfdestruct",
       ...>     value: 0,
       ...>     block_number: 35,
@@ -417,8 +396,8 @@ defmodule Explorer.Chain.InternalTransaction do
     type_changeset(changeset, attrs, type)
   end
 
-  @call_optional_fields ~w(error error_id gas_used output block_number value)a
-  @call_required_fields ~w(call_type_enum from_address_hash gas input to_address_hash transaction_hash)a
+  @call_optional_fields ~w(error error_id gas_used output value)a
+  @call_required_fields ~w(block_number call_type_enum from_address_hash gas input to_address_hash)a
   @call_allowed_fields @call_optional_fields ++ @call_required_fields
 
   defp type_changeset(changeset, attrs, :call) do
@@ -432,11 +411,10 @@ defmodule Explorer.Chain.InternalTransaction do
       name: :call_has_call_type_enum
     )
     |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_input)
-    |> foreign_key_constraint(:transaction_hash)
   end
 
-  @create_optional_fields ~w(error error_id created_contract_code created_contract_address_hash gas_used block_number value)a
-  @create_required_fields ~w(from_address_hash gas init transaction_hash)a
+  @create_optional_fields ~w(error error_id created_contract_code created_contract_address_hash gas_used value)a
+  @create_required_fields ~w(block_number from_address_hash gas init)a
   @create_allowed_fields @create_optional_fields ++ @create_required_fields
 
   defp type_changeset(changeset, attrs, type) when type in [:create, :create2] do
@@ -446,11 +424,10 @@ defmodule Explorer.Chain.InternalTransaction do
     # TODO consider removing
     |> validate_create_error_or_result()
     |> check_constraint(:init, message: ~S|can't be blank when type is 'create'|, name: :create_has_init)
-    |> foreign_key_constraint(:transaction_hash)
   end
 
-  @selfdestruct_optional_fields ~w(block_number value)a
-  @selfdestruct_required_fields ~w(from_address_hash to_address_hash transaction_hash type)a
+  @selfdestruct_optional_fields ~w(value)a
+  @selfdestruct_required_fields ~w(block_number from_address_hash to_address_hash type)a
   @selfdestruct_allowed_fields @selfdestruct_optional_fields ++ @selfdestruct_required_fields
 
   defp type_changeset(changeset, attrs, :selfdestruct) do
@@ -460,7 +437,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @stop_optional_fields ~w(from_address_hash gas gas_used error error_id value)a
-  @stop_required_fields ~w(block_number transaction_hash type)a
+  @stop_required_fields ~w(block_number type)a
   @stop_allowed_fields @stop_optional_fields ++ @stop_required_fields
 
   defp type_changeset(changeset, attrs, :stop) do
@@ -611,12 +588,13 @@ defmodule Explorer.Chain.InternalTransaction do
         )
 
       "transactions" ->
-        where(
-          query,
-          [it],
+        query
+        |> join_transaction_query()
+        |> where(
+          [transaction: t],
           fragment(
             "(SELECT 1 FROM pending_transaction_operations WHERE transaction_hash = ? LIMIT 1) IS NULL",
-            it.transaction_hash
+            t.hash
           )
         )
     end
@@ -653,6 +631,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> order_by([internal_transaction], asc: internal_transaction.index)
     |> Chain.select_repo(options).all()
     |> preload_error(options)
+    |> preload_transaction()
   end
 
   @spec transaction_to_internal_transactions(Hash.Full.t(), [
@@ -676,6 +655,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> preload(:block)
     |> Chain.select_repo(options).all()
     |> preload_error(options)
+    |> preload_transaction()
   end
 
   @spec block_to_internal_transactions(non_neg_integer(), [
@@ -702,6 +682,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> order_by([internal_transaction], asc: internal_transaction.transaction_index, asc: internal_transaction.index)
     |> Chain.select_repo(options).all()
     |> preload_error(options)
+    |> preload_transaction()
   end
 
   @doc """
@@ -742,7 +723,7 @@ defmodule Explorer.Chain.InternalTransaction do
   def deduplicate_and_trim_internal_transactions(internal_transactions, paging_options) do
     internal_transactions
     |> Enum.uniq_by(fn internal_transaction ->
-      {internal_transaction.transaction_hash, internal_transaction.index}
+      {internal_transaction.block_number, internal_transaction.transaction_index, internal_transaction.index}
     end)
     |> Enum.take(paging_options.page_size)
   end
@@ -832,6 +813,7 @@ defmodule Explorer.Chain.InternalTransaction do
       |> Chain.select_repo(options).all()
       |> deduplicate_and_trim_internal_transactions(paging_options)
       |> preload_error(options)
+      |> preload_transaction()
     else
       __MODULE__
       |> where_nonpending_operation()
@@ -843,7 +825,17 @@ defmodule Explorer.Chain.InternalTransaction do
       |> Chain.join_associations(necessity_by_association)
       |> Chain.select_repo(options).all()
       |> preload_error(options)
+      |> preload_transaction()
     end
+  end
+
+  def join_transaction_query(query) do
+    with_named_binding(query, :transaction, fn query, binding ->
+      join(query, :inner, [it], t in Transaction,
+        on: it.block_number == t.block_number and it.transaction_index == t.index and t.block_consensus == true,
+        as: ^binding
+      )
+    end)
   end
 
   defp common_where_limit_order(query, paging_options) do
@@ -972,11 +964,9 @@ defmodule Explorer.Chain.InternalTransaction do
       )
 
   defp for_parent_transaction(query, %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash) do
-    from(
-      child in query,
-      inner_join: transaction in assoc(child, :transaction),
-      where: transaction.hash == ^hash
-    )
+    query
+    |> join_transaction_query()
+    |> where(as(:transaction).hash == ^hash)
   end
 
   # filter by `type` is automatically ignored if `call_type_filter` is not empty,
@@ -1019,11 +1009,11 @@ defmodule Explorer.Chain.InternalTransaction do
 
       _ ->
         preloads =
-          DenormalizationHelper.extend_transaction_preload([
+          [
             :block,
             [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]],
             [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
-          ])
+          ]
 
         __MODULE__
         |> where_nonpending_operation()
@@ -1039,6 +1029,7 @@ defmodule Explorer.Chain.InternalTransaction do
         |> preload(^preloads)
         |> Chain.select_repo(options).all()
         |> preload_error(options)
+        |> preload_transaction()
     end
   end
 
@@ -1074,7 +1065,8 @@ defmodule Explorer.Chain.InternalTransaction do
 
   defp where_internal_transactions_by_transaction_hash(query, transaction_hash) do
     query
-    |> where([internal_transaction], internal_transaction.transaction_hash == ^transaction_hash)
+    |> join_transaction_query()
+    |> where(as(:transaction).hash == ^transaction_hash)
   end
 
   defp maybe_filter_origin_transaction(query, true), do: where_is_different_from_parent_transaction(query)
@@ -1103,6 +1095,17 @@ defmodule Explorer.Chain.InternalTransaction do
       query,
       [internal_transaction],
       (internal_transaction.type == :call and internal_transaction.value > ^0) or internal_transaction.type != :call
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch internal transactions by {block_number, transaction_index} pairs
+  """
+  @spec by_block_number_transaction_index_query([{non_neg_integer(), non_neg_integer()}]) :: Ecto.Query.t()
+  def by_block_number_transaction_index_query(block_number_transaction_index_pairs) do
+    from(
+      t in __MODULE__,
+      where: ^QueryHelper.tuple_in([:block_number, :transaction_index], block_number_transaction_index_pairs)
     )
   end
 
@@ -1219,6 +1222,16 @@ defmodule Explorer.Chain.InternalTransaction do
     {:ok, [first_trace_formatted]}
   end
 
+  @doc """
+  Finds internal transactions by {block_number, transaction_index} pairs
+  """
+  @spec get_by_block_number_transaction_index([{non_neg_integer(), non_neg_integer()}]) :: [__MODULE__.t()]
+  def get_by_block_number_transaction_index(block_number_transaction_index_pairs) do
+    block_number_transaction_index_pairs
+    |> by_block_number_transaction_index_query()
+    |> Repo.all()
+  end
+
   @spec call_type(map()) :: atom() | nil
   def call_type(%{call_type: call_type, call_type_enum: call_type_enum}) do
     if BackgroundMigrations.get_empty_internal_transactions_data_finished() do
@@ -1259,6 +1272,42 @@ defmodule Explorer.Chain.InternalTransaction do
   def preload_error(internal_transaction, options) do
     [internal_transaction]
     |> preload_error(options)
+    |> List.first()
+  end
+
+  def preload_transaction(internal_transactions, repo \\ Repo, transactions \\ nil)
+
+  def preload_transaction(nil, _repo, _transactions), do: nil
+
+  def preload_transaction(internal_transactions, repo, existing_transactions) when is_list(internal_transactions) do
+    transactions =
+      case existing_transactions do
+        nil ->
+          internal_transactions
+          |> Enum.map(&{&1.block_number, &1.transaction_index})
+          |> Enum.uniq()
+          |> Transaction.by_block_number_index_query()
+          |> repo.all()
+
+        transactions ->
+          transactions
+      end
+
+    block_number_index_to_transaction_map = Map.new(transactions, &{{&1.block_number, &1.index}, &1})
+
+    Enum.map(internal_transactions, fn it ->
+      transaction = block_number_index_to_transaction_map[{it.block_number, it.transaction_index}]
+
+      Map.merge(it, %{
+        transaction: transaction,
+        transaction_hash: (transaction && transaction.hash) || it.transaction_hash
+      })
+    end)
+  end
+
+  def preload_transaction(internal_transaction, repo, transactions) do
+    [internal_transaction]
+    |> preload_transaction(repo, transactions)
     |> List.first()
   end
 end

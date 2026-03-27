@@ -15,7 +15,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
   alias Explorer.Chain.{Address, Data, InternalTransaction}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Migrator.{FillingMigration, MigrationStatus}
-  alias Explorer.Repo
+  alias Explorer.{QueryHelper, Repo}
 
   require Logger
 
@@ -72,7 +72,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
           where: it.block_number in ^block_numbers,
           where: it.type == :selfdestruct,
           select: %{
-            transaction_hash: it.transaction_hash,
+            transaction_index: it.transaction_index,
             from_address_hash: it.from_address_hash,
             block_number: it.block_number
           }
@@ -83,37 +83,38 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
       if Enum.empty?(selfdestruct_transactions) do
         {:ok, []}
       else
-        # Get unique transaction hashes to check for create/create2
-        transaction_hashes =
+        # Get unique transaction block numbers and indexes to check for create/create2
+        transaction_identifiers =
           selfdestruct_transactions
-          |> Enum.map(& &1.transaction_hash)
+          |> Enum.map(&{&1.block_number, &1.transaction_index})
           |> Enum.uniq()
 
         # Find all create/create2 internal transactions in the same transactions
         create_query =
           from(
             it in InternalTransaction,
-            where: it.transaction_hash in ^transaction_hashes,
+            where: ^QueryHelper.tuple_in([:block_number, :transaction_index], transaction_identifiers),
             where: it.type in [:create, :create2],
             select: %{
-              transaction_hash: it.transaction_hash,
+              block_number: it.block_number,
+              transaction_index: it.transaction_index,
               created_contract_address_hash: it.created_contract_address_hash
             }
           )
 
         created_contracts = Repo.all(create_query, timeout: :infinity)
 
-        # Build a set of {transaction_hash, address_hash} for contracts created in same tx
+        # Build a set of {block_number, transaction_index, address_hash} for contracts created in same tx
         created_in_same_tx =
           created_contracts
-          |> Enum.map(&{&1.transaction_hash, &1.created_contract_address_hash})
+          |> Enum.map(&{&1.block_number, &1.transaction_index, &1.created_contract_address_hash})
           |> MapSet.new()
 
         # Filter to find addresses that were selfdestructed but NOT created in the same transaction
         addresses_to_empty =
           selfdestruct_transactions
           |> Enum.reject(fn sd ->
-            MapSet.member?(created_in_same_tx, {sd.transaction_hash, sd.from_address_hash})
+            MapSet.member?(created_in_same_tx, {sd.block_number, sd.transaction_index, sd.from_address_hash})
           end)
           |> Enum.map(& &1.from_address_hash)
           |> Enum.uniq()

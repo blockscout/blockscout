@@ -848,17 +848,17 @@ defmodule Explorer.Chain.Address do
   """
   @spec contract_creation_internal_transaction_preload_query() :: Ecto.Query.t()
   def contract_creation_internal_transaction_preload_query do
-    from(
-      it in InternalTransaction,
-      where: it.index > 0,
-      order_by: [
-        asc_nulls_first: coalesce(it.error, type(it.error_id, :string)),
-        desc: it.block_number,
-        desc: it.transaction_index,
-        desc: it.index
-      ],
-      limit: 1
+    InternalTransaction
+    |> InternalTransaction.join_transaction_query()
+    |> where([it], it.index > 0)
+    |> order_by([it],
+      asc_nulls_first: coalesce(it.error, type(it.error_id, :string)),
+      desc: it.block_number,
+      desc: it.transaction_index,
+      desc: it.index
     )
+    |> limit(1)
+    |> select_merge([_it, t], %{transaction: t})
   end
 
   @doc """
@@ -1094,14 +1094,12 @@ defmodule Explorer.Chain.Address do
   """
   @spec creation_internal_transaction_query(binary() | Hash.t()) :: Ecto.Query.t()
   def creation_internal_transaction_query(address_hash) do
-    from(
-      it in InternalTransaction,
-      inner_join: t in assoc(it, :transaction),
-      where: it.created_contract_address_hash == ^address_hash,
-      where: t.status == ^1,
-      order_by: [desc: it.block_number],
-      limit: 1
-    )
+    InternalTransaction
+    |> InternalTransaction.join_transaction_query()
+    |> where([it], it.created_contract_address_hash == ^address_hash)
+    |> where(as(:transaction).status == ^:ok)
+    |> order_by([it], desc: it.block_number, desc: it.transaction_index, desc: it.index)
+    |> limit(1)
   end
 
   @doc """

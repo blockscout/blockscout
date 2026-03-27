@@ -391,36 +391,33 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp internal_transactions_query_function(paging_options, options) do
     query =
       if DenormalizationHelper.transactions_denormalization_finished?() do
-        from(internal_transaction in InternalTransaction,
-          as: :internal_transaction,
-          join: transaction in assoc(internal_transaction, :transaction),
-          as: :transaction,
-          where: transaction.block_consensus == true,
-          where:
-            (internal_transaction.type == :call and internal_transaction.index > 0) or
-              internal_transaction.type != :call,
-          order_by: [
-            desc: transaction.block_number,
-            desc: transaction.index,
-            desc: internal_transaction.index
-          ]
+        InternalTransaction
+        |> from(as: :internal_transaction)
+        |> InternalTransaction.join_transaction_query()
+        |> where(as(:transaction).block_consensus == true)
+        |> where(
+          (as(:internal_transaction).type == :call and as(:internal_transaction).index > 0) or
+            as(:internal_transaction).type != :call
+        )
+        |> order_by(
+          desc: as(:transaction).block_number,
+          desc: as(:transaction).index,
+          desc: as(:internal_transaction).index
         )
       else
-        from(internal_transaction in InternalTransaction,
-          as: :internal_transaction,
-          join: transaction in assoc(internal_transaction, :transaction),
-          as: :transaction,
-          join: block in assoc(internal_transaction, :block),
-          as: :block,
-          where: block.consensus == true,
-          where:
-            (internal_transaction.type == :call and internal_transaction.index > 0) or
-              internal_transaction.type != :call,
-          order_by: [
-            desc: transaction.block_number,
-            desc: transaction.index,
-            desc: internal_transaction.index
-          ]
+        InternalTransaction
+        |> from(as: :internal_transaction)
+        |> InternalTransaction.join_transaction_query()
+        |> join(:inner, [internal_transaction], block in assoc(internal_transaction, :block), as: :block)
+        |> where(as(:block).consensus == true)
+        |> where(
+          (as(:internal_transaction).type == :call and as(:internal_transaction).index > 0) or
+            as(:internal_transaction).type != :call
+        )
+        |> order_by(
+          desc: as(:transaction).block_number,
+          desc: as(:transaction).index,
+          desc: as(:internal_transaction).index
         )
       end
 
@@ -437,9 +434,12 @@ defmodule Explorer.Chain.AdvancedFilter do
         )
       end)
       |> limit_query(paging_options)
-      |> preload([:transaction])
 
-    fn repo, repo_options -> repo.all(filtered_and_paginated_query, repo_options) end
+    fn repo, repo_options ->
+      filtered_and_paginated_query
+      |> repo.all(repo_options)
+      |> InternalTransaction.preload_transaction(repo)
+    end
   end
 
   defp page_internal_transactions(query, %PagingOptions{

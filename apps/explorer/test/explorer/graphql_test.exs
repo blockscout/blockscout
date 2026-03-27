@@ -4,7 +4,7 @@ defmodule Explorer.GraphQLTest do
   import Explorer.Factory
 
   alias Explorer.{GraphQL, Repo}
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, InternalTransaction}
 
   describe "address_to_transactions_query/1" do
     test "with address hash with zero transactions" do
@@ -107,7 +107,7 @@ defmodule Explorer.GraphQLTest do
 
       {:ok, found_internal_transaction} = GraphQL.get_internal_transaction(clauses)
 
-      assert found_internal_transaction.transaction_hash == transaction.hash
+      assert found_internal_transaction.transaction.hash == transaction.hash
       assert found_internal_transaction.index == internal_transaction.index
     end
 
@@ -148,8 +148,9 @@ defmodule Explorer.GraphQLTest do
         transaction1
         |> GraphQL.transaction_to_internal_transactions_query()
         |> Repo.replica().all()
+        |> InternalTransaction.preload_transaction()
 
-      assert found_internal_transaction.transaction_hash == transaction1.hash
+      assert found_internal_transaction.transaction.hash == transaction1.hash
       assert found_internal_transaction.index == internal_transaction.index
     end
 
@@ -179,11 +180,12 @@ defmodule Explorer.GraphQLTest do
         transaction1
         |> GraphQL.transaction_to_internal_transactions_query()
         |> Repo.replica().all()
+        |> InternalTransaction.preload_transaction()
 
       assert length(found_internal_transactions) == 3
 
       for found_internal_transaction <- found_internal_transactions do
-        assert found_internal_transaction.transaction_hash == transaction1.hash
+        assert found_internal_transaction.transaction.hash == transaction1.hash
       end
     end
 

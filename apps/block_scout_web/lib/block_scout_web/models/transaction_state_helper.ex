@@ -73,7 +73,8 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
         api?: Keyword.get(options, :api?, false)
       )
       |> Enum.filter(&(&1.index <= transaction.index))
-      |> Repo.preload([:token_transfers, :internal_transactions])
+      |> Repo.preload([:token_transfers])
+      |> Transaction.preload_internal_transactions()
 
     transaction =
       block_transactions
@@ -84,11 +85,11 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
           from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
           to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
         ],
-        internal_transactions: [
-          from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
-          to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
-        ],
         block: [miner: [:names, :smart_contract, proxy_implementations_association()]],
+        from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+        to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
+      )
+      |> Transaction.preload_internal_transactions(
         from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
         to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
       )

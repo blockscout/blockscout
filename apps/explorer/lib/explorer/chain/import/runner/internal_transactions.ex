@@ -13,7 +13,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Explorer.Chain.{
     Address,
     Block,
-    Hash,
     Import,
     InternalTransaction,
     PendingOperationsHelper,
@@ -47,8 +46,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   @impl Runner
   def imported_table_row do
     %{
-      value_type: "[%{index: non_neg_integer(), transaction_hash: Explorer.Chain.Hash.t()}]",
-      value_description: "List of maps of the `t:Explorer.Chain.InternalTransaction.t/0` `index` and `transaction_hash`"
+      value_type: "[InternalTransaction.t()]",
+      value_description: "List of maps of the `t:Explorer.Chain.InternalTransaction.t/0`"
     }
   end
 
@@ -253,7 +252,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           required(:timeout) => timeout,
           required(:timestamps) => Import.timestamps()
         }) ::
-          {:ok, [%{index: non_neg_integer, transaction_hash: Hash.t()}]}
+          {:ok, [InternalTransaction.t()]}
           | {:error, [Changeset.t()]}
   defp insert(repo, valid_internal_transactions, %{timeout: timeout, timestamps: timestamps} = options)
        when is_list(valid_internal_transactions) do
@@ -264,7 +263,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       |> Enum.map(fn internal_transaction ->
         Map.put(internal_transaction, :trace_address, nil)
       end)
-      |> Enum.sort_by(&{&1.transaction_hash, &1.index})
+      |> Enum.sort_by(&{&1.transaction_index, &1.index})
 
     conflict_target =
       if InternalTransactionHelper.primary_key_updated?() do
@@ -306,7 +305,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
             input: fragment("EXCLUDED.input"),
             output: fragment("EXCLUDED.output"),
             to_address_hash: fragment("EXCLUDED.to_address_hash"),
-            transaction_hash: fragment("EXCLUDED.transaction_hash"),
             type: fragment("EXCLUDED.type"),
             value: fragment("EXCLUDED.value"),
             inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", internal_transaction.inserted_at),
@@ -319,8 +317,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         # `IS DISTINCT FROM` is used because it allows `NULL` to be equal to itself
         where:
           fragment(
-            "(EXCLUDED.transaction_hash, EXCLUDED.call_type, EXCLUDED.call_type_enum, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error_id, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            internal_transaction.transaction_hash,
+            "(EXCLUDED.call_type, EXCLUDED.call_type_enum, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error_id, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             internal_transaction.call_type,
             internal_transaction.call_type_enum,
             internal_transaction.created_contract_address_hash,
@@ -356,7 +353,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
             input: fragment("EXCLUDED.input"),
             output: fragment("EXCLUDED.output"),
             to_address_hash: fragment("EXCLUDED.to_address_hash"),
-            transaction_hash: fragment("EXCLUDED.transaction_hash"),
             transaction_index: fragment("EXCLUDED.transaction_index"),
             type: fragment("EXCLUDED.type"),
             value: fragment("EXCLUDED.value"),
@@ -369,8 +365,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         # `IS DISTINCT FROM` is used because it allows `NULL` to be equal to itself
         where:
           fragment(
-            "(EXCLUDED.transaction_hash, EXCLUDED.index, EXCLUDED.call_type, EXCLUDED.call_type_enum, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error_id, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.transaction_index, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            internal_transaction.transaction_hash,
+            "(EXCLUDED.index, EXCLUDED.call_type, EXCLUDED.call_type_enum, EXCLUDED.created_contract_address_hash, EXCLUDED.created_contract_code, EXCLUDED.error_id, EXCLUDED.from_address_hash, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_hash, EXCLUDED.transaction_index, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             internal_transaction.index,
             internal_transaction.call_type,
             internal_transaction.call_type_enum,
@@ -426,9 +421,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       "transactions" ->
         transaction_hashes =
           changes_list
-          |> Enum.map(&Map.get(&1, :transaction_hash))
+          |> Enum.reject(&is_nil(Map.get(&1, :transaction_index)))
+          |> Enum.map(&{&1.block_number, &1.transaction_index})
           |> Enum.uniq()
-          |> Enum.reject(&is_nil/1)
+          |> Transaction.by_block_number_index_query()
+          |> repo.all()
+          |> Enum.map(& &1.hash)
 
         query =
           from(
@@ -455,7 +453,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       from(
         t in Transaction,
         where: ^dynamic_condition,
-        select: map(t, [:hash, :block_hash, :block_number, :cumulative_gas_used, :status]),
+        select: map(t, [:hash, :block_hash, :block_number, :cumulative_gas_used, :status, :index]),
         # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: t.hash],
         lock: "FOR NO KEY UPDATE"
@@ -468,7 +466,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     # Finds all mismatches between transactions and internal transactions
     # for a block number:
     # - there are no internal transactions for some transactions
-    # - there are internal transactions with a different block number than their transactions
     # Returns block numbers where any of these issues is found
 
     # Note: the case "# - there are no transactions for some internal transactions" was removed because it caused the issue https://github.com/blockscout/blockscout/issues/3367
@@ -480,23 +477,17 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     # the case "# - there are no internal transactions for some transactions" is removed since
     # there are may be non-traceable transactions
 
-    transactions_tuples = MapSet.new(transactions, &{&1.hash, &1.block_number})
-
-    internal_transactions_tuples = MapSet.new(internal_transactions_params, &{&1.transaction_hash, &1.block_number})
-
-    all_tuples = MapSet.union(transactions_tuples, internal_transactions_tuples)
-
     invalid_block_numbers =
       if allow_non_traceable_transactions?() do
-        Enum.reduce(internal_transactions_tuples, [], fn {transaction_hash, block_number}, acc ->
-          # credo:disable-for-next-line
-          case Enum.find(transactions_tuples, fn {t_hash, _block_number} -> t_hash == transaction_hash end) do
-            nil -> acc
-            {_t_hash, ^block_number} -> acc
-            _ -> [block_number | acc]
-          end
-        end)
+        []
       else
+        transactions_tuples = MapSet.new(transactions, &{&1.index, &1.block_number})
+
+        internal_transactions_tuples =
+          MapSet.new(internal_transactions_params, &{&1.transaction_index, &1.block_number})
+
+        all_tuples = MapSet.union(transactions_tuples, internal_transactions_tuples)
+
         all_tuples
         |> MapSet.difference(internal_transactions_tuples)
         |> MapSet.new(fn {_hash, block_number} -> block_number end)
@@ -561,9 +552,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         block_hash = Map.fetch!(blocks_map, block_number)
 
         entries
-        |> Enum.sort_by(
-          &{(Map.has_key?(&1, :transaction_index) && &1.transaction_index) || &1.transaction_hash, &1.index}
-        )
+        |> Enum.sort_by(&{&1.transaction_index, &1.index})
         |> Enum.with_index()
         # credo:disable-for-next-line Credo.Check.Refactor.Nesting
         |> Enum.map(fn {entry, index} ->
@@ -677,6 +666,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     if valid_internal_transactions_count == 0 do
       {:ok, nil}
     else
+      block_number_index_to_hash_map = Map.new(transactions, &{{&1.block_number, &1.index}, &1.hash})
+
       params =
         valid_internal_transactions
         |> Enum.filter(fn internal_transaction ->
@@ -686,7 +677,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           %{
             block_number: Map.get(trace, :block_number),
             gas_used: Map.get(trace, :gas_used),
-            transaction_hash: Map.get(trace, :transaction_hash),
+            transaction_hash:
+              Map.fetch!(block_number_index_to_hash_map, {trace[:block_number], trace[:transaction_index]}),
             created_contract_address_hash: Map.get(trace, :created_contract_address_hash),
             error: Map.get(trace, :error),
             status: if(is_nil(Map.get(trace, :error)), do: :ok, else: :error)
@@ -695,10 +687,18 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
       transaction_hashes =
         valid_internal_transactions
-        |> MapSet.new(& &1.transaction_hash)
+        |> MapSet.new(&{&1.block_number, &1.transaction_index})
         |> MapSet.to_list()
+        |> then(fn block_numbers_indexes -> Map.take(block_number_index_to_hash_map, block_numbers_indexes) end)
+        |> Map.values()
 
       json_rpc_named_arguments = Application.fetch_env!(:indexer, :json_rpc_named_arguments)
+
+      valid_internal_transactions_with_hashes =
+        Enum.map(valid_internal_transactions, fn it ->
+          transaction_hash = Map.fetch!(block_number_index_to_hash_map, {it[:block_number], it[:transaction_index]})
+          Map.put(it, :transaction_hash, transaction_hash)
+        end)
 
       result =
         Enum.reduce_while(params, 0, fn first_trace, transaction_hashes_iterator ->
@@ -709,7 +709,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           update_transactions_inner_wrapper(
             transaction_from_db,
             repo,
-            valid_internal_transactions,
+            valid_internal_transactions_with_hashes,
             transaction_hash,
             json_rpc_named_arguments,
             transaction_hashes,
@@ -1012,24 +1012,24 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     selfdestruct_addresses =
       valid_internal_transactions
       |> Enum.filter(&(&1.type == :selfdestruct))
-      |> Enum.map(&{&1.transaction_hash, &1.from_address_hash})
+      |> Enum.map(&{&1.block_number, &1.transaction_index, &1.from_address_hash})
       |> MapSet.new()
 
     # Find all create/create2 internal transactions in the same transactions
     created_addresses =
       valid_internal_transactions
       |> Enum.filter(&(&1.type in [:create, :create2]))
-      |> Enum.map(&{&1.transaction_hash, Map.get(&1, :created_contract_address_hash)})
-      |> Enum.reject(fn {_tx_hash, address_hash} -> is_nil(address_hash) end)
+      |> Enum.map(&{&1.block_number, &1.transaction_index, Map.get(&1, :created_contract_address_hash)})
+      |> Enum.reject(fn {_block_number, _tx_index, address_hash} -> is_nil(address_hash) end)
       |> MapSet.new()
 
     # Filter to find addresses that were selfdestructed but NOT created in the same transaction
     addresses_to_empty =
       selfdestruct_addresses
-      |> Enum.reject(fn {tx_hash, address_hash} ->
-        MapSet.member?(created_addresses, {tx_hash, address_hash})
+      |> Enum.reject(fn {block_number, tx_index, address_hash} ->
+        MapSet.member?(created_addresses, {block_number, tx_index, address_hash})
       end)
-      |> Enum.map(fn {_tx_hash, address_hash} -> address_hash end)
+      |> Enum.map(fn {_block_number, _tx_index, address_hash} -> address_hash end)
       |> Enum.uniq()
 
     if Enum.empty?(addresses_to_empty) do

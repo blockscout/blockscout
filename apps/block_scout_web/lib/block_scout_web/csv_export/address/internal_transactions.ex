@@ -33,9 +33,6 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
       |> Keyword.put(:paging_options, paging_options)
       |> Keyword.put(:from_block, from_block)
       |> Keyword.put(:to_block, to_block)
-      |> Keyword.put(:necessity_by_association, %{
-        :transaction => :optional
-      })
       |> (&if(Helper.valid_filter?(filter_type, filter_value, "internal_transactions"),
             do: &1 |> Keyword.put(:direction, String.to_atom(filter_value)),
             else: &1
