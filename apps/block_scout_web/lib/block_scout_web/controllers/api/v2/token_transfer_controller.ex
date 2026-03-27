@@ -105,9 +105,20 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
     |> put_status(200)
     |> render(:token_transfers, %{
       token_transfers:
-        token_transfers |> Instance.preload_nft(@api_true) |> maybe_preload_ens() |> maybe_preload_metadata(),
+        token_transfers
+        |> Instance.preload_nft(@api_true)
+        |> maybe_preload_ens_for_token_transfers()
+        |> maybe_preload_metadata(),
       decoded_transactions_map: decoded_transactions_map,
       next_page_params: next_page_params
     })
+  end
+
+  defp maybe_preload_ens_for_token_transfers(token_transfers) do
+    if Application.get_env(:block_scout_web, BlockScoutWeb.API.V2, [])[:disable_token_transfers_bens_preload] do
+      token_transfers
+    else
+      maybe_preload_ens(token_transfers)
+    end
   end
 end

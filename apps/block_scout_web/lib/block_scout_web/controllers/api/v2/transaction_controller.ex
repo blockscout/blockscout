@@ -262,9 +262,17 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     conn
     |> put_status(200)
     |> render(:transactions, %{
-      transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+      transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
       next_page_params: next_page_params
     })
+  end
+
+  defp maybe_preload_ens_for_transactions(transactions) do
+    if Application.get_env(:block_scout_web, BlockScoutWeb.API.V2, [])[:disable_transactions_bens_preload] do
+      transactions
+    else
+      maybe_preload_ens(transactions)
+    end
   end
 
   operation :polygon_zkevm_batch,
