@@ -24,6 +24,6 @@ defmodule Explorer.SmartContract.CertifiedSmartContractCataloger do
 
     SmartContract.set_smart_contracts_certified_flag(certified_contracts_list)
 
-    {:noreply, state}
+    {:stop, :normal, state}
   end
 end
