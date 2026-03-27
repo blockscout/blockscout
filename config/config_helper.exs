@@ -178,7 +178,7 @@ defmodule ConfigHelper do
   Parses value of env var through catalogued values list. If a value is not in the list, nil is returned.
   Also, the application shutdown option is supported, if a value is wrong.
   """
-  @spec parse_catalog_value(String.t(), List.t(), bool(), String.t() | nil) :: atom() | nil
+  @spec parse_catalog_value(String.t(), List.t(), boolean(), String.t() | nil) :: atom() | nil
   def parse_catalog_value(env_var, catalog, shutdown_on_wrong_value?, default_value \\ nil) do
     value = env_var |> safe_get_env(default_value)
 
@@ -208,7 +208,7 @@ defmodule ConfigHelper do
   the map, nil is returned. Also, the application shutdown option is supported,
   if a value is wrong.
   """
-  @spec parse_catalog_map_value(String.t(), %{binary() => any()}, bool(), String.t() | nil) :: any() | nil
+  @spec parse_catalog_map_value(String.t(), %{binary() => any()}, boolean(), String.t() | nil) :: any() | nil
   def parse_catalog_map_value(env_var, catalog, shutdown_on_wrong_key?, default_key \\ nil) do
     key = env_var |> safe_get_env(default_key)
 
