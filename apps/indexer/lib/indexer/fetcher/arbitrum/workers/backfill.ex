@@ -288,19 +288,23 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
                hash: Hash.to_string(tx.hash)
              }
            end) do
-      transaction_params
-      |> Enum.chunk_every(chunk_size)
-      |> Enum.reduce_while({:ok, []}, fn chunk, {:ok, acc} ->
-        case Receipts.fetch(chunk, json_rpc_named_arguments) do
-          {:ok, %{receipts: receipts}} -> {:cont, {:ok, acc ++ receipts}}
-          {:error, reason} -> {:halt, {:error, reason}}
-        end
-      end)
+      fetch_transaction_receipts_batch(transaction_params, chunk_size, json_rpc_named_arguments)
     else
       # It is assumed that this branch is unreachable, as there is a check for
       # `indexed_blocks?` above in the stack
       [] -> {:error, :block_not_found}
     end
+  end
+
+  defp fetch_transaction_receipts_batch(transaction_params, chunk_size, json_rpc_named_arguments) do
+    transaction_params
+    |> Enum.chunk_every(chunk_size)
+    |> Enum.reduce_while({:ok, []}, fn chunk, {:ok, acc} ->
+      case Receipts.fetch(chunk, json_rpc_named_arguments) do
+        {:ok, %{receipts: receipts}} -> {:cont, {:ok, acc ++ receipts}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
   end
 
   # Updates `Explorer.Chain.Block` and `Explorer.Chain.Transaction` records in the

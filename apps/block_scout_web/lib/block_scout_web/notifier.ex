@@ -6,6 +6,16 @@ defmodule BlockScoutWeb.Notifier do
     chain_type: [:explorer, :chain_type],
     chain_identity: [:explorer, :chain_identity]
 
+  use Utils.RuntimeEnvHelper,
+    block_broadcast_enrichment_disabled?: [
+      :block_scout_web,
+      [BlockScoutWeb.Notifier, :block_broadcast_enrichment_disabled]
+    ],
+    block_broadcast_enrichment_timeout: [
+      :block_scout_web,
+      [BlockScoutWeb.Notifier, :block_broadcast_enrichment_timeout]
+    ]
+
   require Logger
 
   alias Absinthe.Subscription
@@ -46,10 +56,13 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime, Helper}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
+  alias Explorer.MicroserviceInterfaces.{BENS, Metadata}
   alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
   alias Phoenix.View
   alias Timex.Duration
 
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens_to_block: 1]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata_to_block: 1]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   @check_broadcast_sequence_period 500
@@ -632,11 +645,15 @@ defmodule BlockScoutWeb.Notifier do
 
   defp broadcast_block(block) do
     preloaded_block =
-      Repo.preload(block, [
+      block
+      |> Repo.preload([
         [miner: [:names, :smart_contract, proxy_implementations_association()]],
         :transactions,
         :rewards
       ])
+      # TODO: theoretically might introduce performance issues,
+      # consider async broadcast of enrichment data
+      |> maybe_preload_enrichment_for_broadcast()
 
     average_block_time = AverageBlockTime.average_block_time()
 
@@ -663,6 +680,48 @@ defmodule BlockScoutWeb.Notifier do
     Endpoint.broadcast("blocks:new_block", "new_block", block_params_v2)
     Endpoint.broadcast("blocks:#{to_string(block.miner_hash)}", "new_block", block_params_v2)
   end
+
+  defp maybe_preload_enrichment_for_broadcast(block) do
+    if !block_broadcast_enrichment_disabled?() and (BENS.enabled?() or Metadata.enabled?()) do
+      preload_enrichment_for_broadcast(block)
+    else
+      block
+    end
+  end
+
+  defp preload_enrichment_for_broadcast(block) do
+    timeout = block_broadcast_enrichment_timeout()
+
+    results =
+      Task.Supervisor.async_stream_nolink(
+        Explorer.TaskSupervisor,
+        [
+          {:ens_domain_name, &maybe_preload_ens_to_block/1},
+          {:metadata, &maybe_preload_metadata_to_block/1}
+        ],
+        fn {field, preload_fun} ->
+          {field, preload_fun.(block)}
+        end,
+        timeout: timeout,
+        on_timeout: :kill_task,
+        ordered: false
+      )
+
+    Enum.reduce(results, block, fn
+      {:ok, {field, enriched_block}}, acc -> merge_enriched_miner_field(acc, enriched_block, field)
+      _, acc -> acc
+    end)
+  end
+
+  defp merge_enriched_miner_field(%{miner: %{} = miner} = block, %{miner: %{} = enriched_miner}, field) do
+    case Map.fetch(enriched_miner, field) do
+      {:ok, nil} -> block
+      {:ok, value} -> %{block | miner: Map.replace(miner, field, value)}
+      :error -> block
+    end
+  end
+
+  defp merge_enriched_miner_field(block, _enriched_block, _field), do: block
 
   defp broadcast_rewards(rewards) do
     preloaded_rewards = Repo.preload(rewards, [:address, :block])

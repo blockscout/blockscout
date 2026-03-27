@@ -19,7 +19,6 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Internal do
 
   alias Explorer.{Account, Helper, Repo}
   alias Explorer.Account.Identity
-  alias Explorer.Chain.Address
   alias Explorer.ThirdPartyIntegrations.Auth0
   alias Explorer.ThirdPartyIntegrations.Auth0.{Legacy, Migrated}
   alias OAuth2.{AccessToken, Client}
@@ -159,7 +158,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Internal do
   - `:error`: If there was an error in the process
   - `{:interval, integer()}`: If OTP was recently sent and the resend interval hasn't elapsed
   """
-  @spec handle_existing_user(map(), String.t(), String.t()) :: :ok | :error | {:interval, integer()}
+  @spec handle_existing_user(map(), String.t(), String.t()) :: :ok | :error | {:interval, integer()} | {:format, :email}
   def handle_existing_user(user, email, ip) do
     user
     |> create_auth()
@@ -402,42 +401,6 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Internal do
       error ->
         Logger.error("Error when updating session with address hash: #{inspect(error)}")
         {:old, session}
-    end
-  end
-
-  @doc """
-  Caches a nonce value for Sign-In with Ethereum (SIWE) authentication.
-
-  Stores the provided nonce in Redis with an expiration time of 300 seconds (5 minutes),
-  using a key derived from the wallet address. This cached nonce is used for the SIWE
-  authentication flow to prevent replay attacks.
-
-  ## Parameters
-  - `nonce`: The random nonce value to cache
-  - `address`: The Ethereum wallet address associated with the nonce
-
-  ## Returns
-  - `{:ok, nonce}`: If the nonce was successfully cached
-  - `{:error, reason}`: If there was an error caching the nonce
-  """
-  @spec cache_nonce_for_address(nonce, String.t()) ::
-          {:ok, nonce} | {:error, atom() | Redix.Error.t() | Redix.ConnectionError.t()}
-        when nonce: String.t()
-  def cache_nonce_for_address(nonce, address) do
-    case Redix.command(:redix, ["SET", Auth0.cookie_key(address <> "siwe_nonce"), nonce, "EX", 300]) do
-      {:ok, _} -> {:ok, nonce}
-      error -> error
-    end
-  end
-
-  def get_nonce_for_address(address_hash) do
-    cookie_key = Auth0.cookie_key(Address.checksum(address_hash) <> "siwe_nonce")
-
-    with {:get, {:ok, nonce}} <- {:get, Redix.command(:redix, ["GET", cookie_key])},
-         {:del, {:ok, _}} <- {:del, Redix.command(:redix, ["DEL", cookie_key])} do
-      {:ok, nonce}
-    else
-      _ -> {:error, "Redis configuration problem, please contact support."}
     end
   end
 

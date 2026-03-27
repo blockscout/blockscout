@@ -430,19 +430,27 @@ defmodule BlockScoutWeb.API.V2.MudController do
         <<1::256>>
 
       "0x" <> hex ->
-        with {:ok, bin} <- Base.decode16(hex, case: :mixed) do
-          # addresses are padded to 32 bytes with zeros on the right
-          if FieldSchema.type_of(schema.key_schema, field_idx) == 97 do
-            <<0::size(256 - byte_size(bin) * 8), bin::binary>>
-          else
-            <<bin::binary, 0::size(256 - byte_size(bin) * 8)>>
-          end
-        end
+        decode_hex_filter(hex, schema, field_idx)
 
       dec ->
-        with {num, _} <- Integer.parse(dec) do
-          <<num::256>>
-        end
+        decode_decimal_filter(dec)
+    end
+  end
+
+  defp decode_hex_filter(hex, schema, field_idx) do
+    with {:ok, bin} <- Base.decode16(hex, case: :mixed) do
+      # addresses are padded to 32 bytes with zeros on the right
+      if FieldSchema.type_of(schema.key_schema, field_idx) == 97 do
+        <<0::size(256 - byte_size(bin) * 8), bin::binary>>
+      else
+        <<bin::binary, 0::size(256 - byte_size(bin) * 8)>>
+      end
+    end
+  end
+
+  defp decode_decimal_filter(dec) do
+    with {num, _} <- Integer.parse(dec) do
+      <<num::256>>
     end
   end
 

@@ -136,6 +136,8 @@ defmodule Explorer.Chain do
   @type paging_options :: {:paging_options, PagingOptions.t()}
   @typep balance_by_day :: %{date: String.t(), value: Wei.t()}
   @type api? :: {:api?, true | false}
+  @type include_internal_transaction_association? ::
+          {:include_internal_transaction_association?, true | false}
   @type ip :: {:ip, String.t()}
   @type show_scam_tokens? :: {:show_scam_tokens?, true | false}
 
@@ -666,20 +668,24 @@ defmodule Explorer.Chain do
       then the `t:Explorer.Chain.Address.t/0` will not be included in the list.
 
   """
-  @spec hash_to_address(Hash.Address.t() | binary(), [necessity_by_association_option | api?]) ::
+  @spec hash_to_address(
+          Hash.Address.t() | binary(),
+          [necessity_by_association_option | api? | include_internal_transaction_association?]
+        ) ::
           {:ok, Address.t()} | {:error, :not_found}
   def hash_to_address(
         hash,
         options \\ [
-          necessity_by_association: %{
-            :names => :optional,
-            :smart_contract => :optional,
-            :token => :optional,
-            Address.contract_creation_transaction_associations() => :optional
-          }
+          necessity_by_association: default_hash_to_address_necessity_by_association()
         ]
       ) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    include_internal_transaction_association? =
+      Keyword.get(options, :include_internal_transaction_association?, true)
+
+    necessity_by_association =
+      options
+      |> Keyword.get(:necessity_by_association, default_hash_to_address_necessity_by_association())
+      |> maybe_remove_internal_transaction_association(include_internal_transaction_association?)
 
     query = Address.address_query(hash)
 
@@ -690,6 +696,45 @@ defmodule Explorer.Chain do
     |> case do
       nil -> {:error, :not_found}
       address -> {:ok, address}
+    end
+  end
+
+  defp default_hash_to_address_necessity_by_association do
+    %{
+      :names => :optional,
+      :smart_contract => :optional,
+      :token => :optional,
+      Address.contract_creation_transaction_associations() => :optional
+    }
+  end
+
+  defp maybe_remove_internal_transaction_association(necessity_by_association, true),
+    do: necessity_by_association
+
+  defp maybe_remove_internal_transaction_association(necessity_by_association, false) do
+    necessity_by_association
+    |> replace_association_key(
+      Address.contract_creation_transaction_associations(),
+      Address.contract_creation_transaction_associations(false)
+    )
+    |> replace_association_key(
+      Address.contract_creation_transaction_with_from_address_associations(),
+      Address.contract_creation_transaction_with_from_address_associations(false)
+    )
+    |> Map.delete(:contract_creation_internal_transaction)
+    |> Map.delete(Address.contract_creation_internal_transaction_association())
+    |> Map.delete(Address.contract_creation_internal_transaction_with_from_address_association())
+  end
+
+  defp replace_association_key(necessity_by_association, old_key, new_key) do
+    case Map.fetch(necessity_by_association, old_key) do
+      {:ok, value} ->
+        necessity_by_association
+        |> Map.delete(old_key)
+        |> Map.put(new_key, value)
+
+      :error ->
+        necessity_by_association
     end
   end
 

@@ -3,10 +3,18 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateControllerTest do
 
   alias Explorer.Account.Identity
   alias Explorer.Chain.Address
+  alias Explorer.Helper
+  alias Explorer.ThirdPartyIntegrations.Auth0.Internal
   alias Explorer.ThirdPartyIntegrations.Dynamic
   alias Explorer.ThirdPartyIntegrations.Dynamic.Strategy
 
   import Mox
+
+  setup do
+    Redix.command(:redix, ["DEL", Helper.redis_key(Internal.redis_key())])
+
+    :ok
+  end
 
   describe "POST api/account/v2/send_otp" do
     test "send OTP successfully", %{conn: conn} do
@@ -275,6 +283,171 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateControllerTest do
     end
   end
 
+  describe "POST api/account/v2/confirm_otp" do
+    setup do
+      initial_config = Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)
+
+      Application.put_env(
+        :ueberauth,
+        Ueberauth.Strategy.Auth0.OAuth,
+        Keyword.put(initial_config, :auth0_application_id, "test_app")
+      )
+
+      on_exit(fn ->
+        Application.put_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth, initial_config)
+      end)
+
+      :ok
+    end
+
+    # Regression test: after OpenApiSpex integration, confirm_otp must read
+    # email and otp from conn.body_params instead of the action's params argument.
+    # See commit dbf589ae25.
+    test "confirm OTP successfully", %{conn: conn} do
+      id_token = build_test_jwt(%{"sub" => "email|123", "email" => "test@example.com"})
+
+      user_json =
+        JSON.encode!(%{
+          "user_id" => "email|123",
+          "email" => "test@example.com",
+          "email_verified" => true,
+          "name" => "Test User",
+          "nickname" => "test",
+          "picture" => "https://example.com/avatar.png",
+          "user_metadata" => %{
+            "test_app" => %{
+              "user_id" => "email|123",
+              "name" => "Test User",
+              "nickname" => "test",
+              "picture" => "https://example.com/avatar.png"
+            }
+          }
+        })
+
+      Tesla.Test.expect_tesla_call(
+        times: 3,
+        returns: fn
+          # OTP confirmation via OAuth2.Client
+          %{
+            method: :post,
+            url: "https://example.com/oauth/token",
+            headers: [
+              {"accept", "application/json"},
+              {"auth0-forwarded-for", _ip},
+              {"content-type", "application/json"}
+            ]
+          },
+          _opts ->
+            {:ok,
+             %Tesla.Env{
+               status: 200,
+               body: ~s({"access_token":"test_access","id_token":"#{id_token}","token_type":"Bearer"})
+             }}
+
+          # M2M JWT via HttpClient
+          %{
+            method: :post,
+            url: "https://example.com/oauth/token",
+            query: [],
+            headers: [{"Content-type", "application/json"}]
+          },
+          _opts ->
+            {:ok,
+             %Tesla.Env{
+               status: 200,
+               body: ~s({"access_token": "test_token", "expires_in": 86400})
+             }}
+
+          # Get user by ID via OAuth2.Client
+          %Tesla.Env{
+            method: :get,
+            url: "https://example.com/api/v2/users/" <> _,
+            headers: [{"accept", "application/json"}, {"authorization", "Bearer test_token"}],
+            body: ""
+          },
+          _opts ->
+            {:ok,
+             %Tesla.Env{
+               status: 200,
+               body: user_json
+             }}
+        end
+      )
+
+      response =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/account/v2/confirm_otp", JSON.encode!(%{"email" => "test@example.com", "otp" => "123456"}))
+        |> json_response(200)
+
+      assert response["email"] == "test@example.com"
+      assert response["name"] == "Test User"
+    end
+
+    test "return error for wrong verification code", %{conn: conn} do
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn
+          %{
+            method: :post,
+            url: "https://example.com/oauth/token",
+            headers: [
+              {"accept", "application/json"},
+              {"auth0-forwarded-for", _ip},
+              {"content-type", "application/json"}
+            ]
+          },
+          _opts ->
+            {:ok,
+             %Tesla.Env{
+               status: 403,
+               body: ~s({"error":"invalid_grant","error_description":"Wrong email or verification code."})
+             }}
+        end
+      )
+
+      response =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/account/v2/confirm_otp", JSON.encode!(%{"email" => "test@example.com", "otp" => "000000"}))
+        |> json_response(500)
+
+      assert response == %{"message" => "Wrong verification code."}
+    end
+
+    test "return error when max attempts reached", %{conn: conn} do
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn
+          %{
+            method: :post,
+            url: "https://example.com/oauth/token",
+            headers: [
+              {"accept", "application/json"},
+              {"auth0-forwarded-for", _ip},
+              {"content-type", "application/json"}
+            ]
+          },
+          _opts ->
+            {:ok,
+             %Tesla.Env{
+               status: 403,
+               body:
+                 ~s({"error":"invalid_grant","error_description":"You've reached the maximum number of attempts. Please try to login again."})
+             }}
+        end
+      )
+
+      response =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/account/v2/confirm_otp", JSON.encode!(%{"email" => "test@example.com", "otp" => "000000"}))
+        |> json_response(500)
+
+      assert response == %{"message" => "Max attempts reached. Please resend code."}
+    end
+  end
+
   describe "GET api/account/v2/siwe_message" do
     test "get SIWE message successfully", %{conn: conn} do
       address = build(:address)
@@ -489,9 +662,16 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateControllerTest do
           "Bearer some_token"
         )
         |> get("/api/account/v2/authenticate_via_dynamic")
-        |> json_response(500)
+        |> json_response(404)
 
-      assert response == %{"message" => "Dynamic integration is disabled"}
+      assert response == %{"message" => "This endpoint is not configured"}
     end
+  end
+
+  defp build_test_jwt(claims) do
+    header = Base.url_encode64(JSON.encode!(%{"alg" => "HS256", "typ" => "JWT"}), padding: false)
+    payload = Base.url_encode64(JSON.encode!(claims), padding: false)
+    signature = Base.url_encode64("test_signature", padding: false)
+    "#{header}.#{payload}.#{signature}"
   end
 end

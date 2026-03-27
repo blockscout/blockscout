@@ -15,10 +15,8 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
 
   alias BlockScoutWeb.Schemas.API.V2.Account, as: AccountSchemas
 
-  alias Explorer.Account.Identity
+  alias Explorer.Account.{Authentication, Identity}
   alias Explorer.Chain
-  alias Explorer.Chain.Address
-  alias Explorer.ThirdPartyIntegrations.{Auth0, Dynamic}
   alias Plug.Conn
 
   action_fallback(BlockScoutWeb.Account.API.V2.FallbackController)
@@ -122,16 +120,17 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
           | {:interval, integer()}
           | Conn.t()
   def send_otp(conn, _params) do
+    conn = Conn.fetch_session(conn)
     email = Map.get(conn.body_params, :email)
 
-    case Auth0.enabled?() && conn |> current_user() do
+    case current_user(conn) do
       nil ->
-        with :ok <- Auth0.send_otp(email, AccessHelper.conn_to_ip_string(conn)) do
+        with :ok <- Authentication.send_otp(email, AccessHelper.conn_to_ip_string(conn)) do
           conn |> put_status(200) |> json(%{message: "Success"})
         end
 
       %{email: nil} ->
-        with :ok <- Auth0.send_otp_for_linking(email, AccessHelper.conn_to_ip_string(conn)) do
+        with :ok <- Authentication.send_otp_for_linking(email, AccessHelper.conn_to_ip_string(conn)) do
           conn |> put_status(200) |> json(%{message: "Success"})
         end
 
@@ -140,9 +139,6 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
         |> put_status(500)
         |> put_view(UserView)
         |> render(:message, %{message: "This account already has an email"})
-
-      false ->
-        {:enabled, false}
     end
   end
 
@@ -157,44 +153,39 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
     }
 
   @doc """
-  Confirms a one-time password (OTP) for a given email and updates the session.
+  Confirms a one-time password (OTP) for the email in the request body and establishes a user session on success.
 
-  This function verifies the OTP provided for a specific email address. If the
-  OTP is valid, it retrieves the authentication information and updates the
-  user's session accordingly.
-
-  The function performs the following steps:
-  1. Confirms the OTP with Auth0 and retrieves the authentication information.
-  2. If successful, updates the session with the new authentication data.
+  Verifies the OTP via `Auth0.confirm_otp_and_get_auth/3`. On successful
+  verification, retrieves or creates the user's identity and
+  updates the session via `put_auth_to_session/2`.
 
   ## Parameters
-  - `conn`: The `Plug.Conn` struct representing the current connection.
-  - `params`: A map containing:
-    - `"email"`: The email address associated with the OTP.
-    - `"otp"`: The one-time password to be confirmed.
+  - `conn`: The `Plug.Conn` struct. The request body must
+    contain `:email` and `:otp` fields.
+  - `_params`: Unused. Email and OTP are read from
+    `conn.body_params`.
 
   ## Returns
-  - `:error`: If there's an unexpected error during the process.
-  - `{:error, any()}`: If there's a specific error during OTP confirmation or
-    session update. The error details are included.
-  - `Conn.t()`: A modified connection struct with updated session information
-    if the OTP is successfully confirmed.
+  - `Conn.t()` with a 200 status and rendered user info on
+    successful OTP confirmation.
+  - `{:enabled, false}` if Auth0 authentication is not enabled.
+  - `{:error, any()}` if OTP verification or session creation
+    fails.
+  - `:error` if an unexpected error occurs during OTP
+    verification or session creation.
 
   ## Notes
-  - Errors are handled later in `BlockScoutWeb.Account.API.V2.FallbackController`.
-  - This function relies on the Auth0 service to confirm the OTP and retrieve
-    the authentication information.
-  - The function handles both existing and newly created users.
-  - For newly created users, it may create a new authentication record if the
-    user is not immediately found in the search after OTP confirmation.
-  - The session update is handled by the `put_auth_to_session/2` function, which
-    perform additional operations such as setting cookies or rendering user
-    information.
+  - Errors are handled by
+    `BlockScoutWeb.Account.API.V2.FallbackController`.
+  - The client's IP address is forwarded to Auth0 for rate
+    limiting.
   """
   @spec confirm_otp(Conn.t(), map()) :: :error | {:error, any()} | {:enabled, false} | Conn.t()
-  def confirm_otp(conn, %{email: email, otp: otp}) do
-    with {:enabled, true} <- {:enabled, Auth0.enabled?()},
-         {:ok, auth} <- Auth0.confirm_otp_and_get_auth(email, otp, AccessHelper.conn_to_ip_string(conn)) do
+  def confirm_otp(conn, _params) do
+    email = Map.get(conn.body_params, :email)
+    otp = Map.get(conn.body_params, :otp)
+
+    with {:ok, auth} <- Authentication.confirm_otp(email, otp, AccessHelper.conn_to_ip_string(conn)) do
       put_auth_to_session(conn, auth)
     end
   end
@@ -255,9 +246,8 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   """
   @spec siwe_message(Conn.t(), map()) :: {:error, String.t()} | {:enabled, false} | {:format, :error} | Conn.t()
   def siwe_message(conn, %{address: address}) do
-    with {:enabled, true} <- {:enabled, Auth0.enabled?()},
-         {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address)},
-         {:ok, message} <- Auth0.generate_siwe_message(Address.checksum(address_hash)) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address)},
+         {:ok, message} <- Authentication.generate_siwe_message(address_hash) do
       conn |> put_status(200) |> json(%{siwe_message: message})
     end
   end
@@ -310,8 +300,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
     message = Map.get(conn.body_params, :message)
     signature = Map.get(conn.body_params, :signature)
 
-    with {:enabled, true} <- {:enabled, Auth0.enabled?()},
-         {:ok, auth} <- Auth0.get_auth_with_web3(message, signature) do
+    with {:ok, auth} <- Authentication.verify_siwe_message(message, signature) do
       put_auth_to_session(conn, auth)
     end
   end
@@ -360,7 +349,7 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
       end
 
     with {:token, not_nil_token} when not is_nil(not_nil_token) <- {:token, token},
-         {:ok, auth} <- Dynamic.get_auth_from_token(not_nil_token) do
+         {:ok, auth} <- Authentication.authenticate_via_dynamic(not_nil_token) do
       put_auth_to_session(conn, auth)
     end
   end

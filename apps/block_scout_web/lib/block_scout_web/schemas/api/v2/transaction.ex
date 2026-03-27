@@ -475,7 +475,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         },
         has_error_in_internal_transactions: %Schema{type: :boolean, nullable: true},
         authorization_list: %Schema{type: :array, items: SignedAuthorization, nullable: true},
-        is_pending_update: %Schema{type: :boolean, nullable: true}
+        is_pending_update: %Schema{type: :boolean, nullable: true},
+        fhe_operations_count: %Schema{
+          type: :integer,
+          description: "Number of FHE (Fully Homomorphic Encryption) operations in the transaction",
+          nullable: false
+        }
       },
       required: [
         :hash,
@@ -514,7 +519,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         :transaction_tag,
         :has_error_in_internal_transactions,
         :authorization_list,
-        :is_pending_update
+        :is_pending_update,
+        :fhe_operations_count
       ],
       additionalProperties: false
     }

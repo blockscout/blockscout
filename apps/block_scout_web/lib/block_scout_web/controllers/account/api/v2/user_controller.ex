@@ -57,18 +57,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
 
       watchlist_addresses_prepared =
         Enum.map(watchlist_addresses, fn %WatchlistAddress{} = wa ->
-          balances =
-            Chain.fetch_paginated_last_token_balances(wa.address_hash,
-              paging_options: %PagingOptions{page_size: @token_balances_amount + 1}
-            )
-
-          count = Enum.count(balances)
-          overflow? = count > @token_balances_amount
-
-          fiat_sum =
-            balances
-            |> Enum.take(@token_balances_amount)
-            |> Enum.reduce(Decimal.new(0), fn tb, acc -> Decimal.add(acc, tb.fiat_value || 0) end)
+          {fiat_sum, count, overflow?} = watchlist_token_stats(wa.address_hash)
 
           %WatchlistAddress{
             wa
@@ -86,6 +75,23 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
         next_page_params: next_page_params
       })
     end
+  end
+
+  defp watchlist_token_stats(address_hash) do
+    balances =
+      Chain.fetch_paginated_last_token_balances(address_hash,
+        paging_options: %PagingOptions{page_size: @token_balances_amount + 1}
+      )
+
+    count = Enum.count(balances)
+    overflow? = count > @token_balances_amount
+
+    fiat_sum =
+      balances
+      |> Enum.take(@token_balances_amount)
+      |> Enum.reduce(Decimal.new(0), fn tb, acc -> Decimal.add(acc, tb.fiat_value || 0) end)
+
+    {fiat_sum, count, overflow?}
   end
 
   def delete_watchlist(conn, %{"id" => watchlist_address_id}) do

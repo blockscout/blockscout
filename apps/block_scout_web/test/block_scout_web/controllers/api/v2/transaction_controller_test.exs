@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   import Mox
 
   alias Explorer.Account.{Identity, WatchlistAddress}
-  alias Explorer.Chain.{Address, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.{Address, FheOperation, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.{Repo, TestHelper}
 
@@ -1369,6 +1369,184 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
+  describe "/transactions/{transaction_hash}/fhe-operations" do
+    test "return 404 on non existing transaction", %{conn: conn} do
+      transaction = build(:transaction)
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/fhe-operations")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "return 422 on invalid transaction hash", %{conn: conn} do
+      request = get(conn, "/api/v2/transactions/0x/fhe-operations")
+
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/transaction_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
+    end
+
+    test "return empty list when no FHE operations", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/fhe-operations")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["total_hcu"] == 0
+      assert response["max_depth_hcu"] == 0
+      assert response["operation_count"] == 0
+    end
+
+    test "return FHE operations for transaction", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      caller = insert(:address)
+
+      fhe_operation_1 =
+        insert(:fhe_operation,
+          transaction_hash: transaction.hash,
+          log_index: 1,
+          block_hash: transaction.block.hash,
+          block_number: transaction.block_number,
+          caller: caller.hash,
+          hcu_cost: 100,
+          hcu_depth: 1
+        )
+
+      fhe_operation_2 =
+        insert(:fhe_operation,
+          transaction_hash: transaction.hash,
+          log_index: 2,
+          block_hash: transaction.block.hash,
+          block_number: transaction.block_number,
+          caller: caller.hash,
+          hcu_cost: 200,
+          hcu_depth: 2
+        )
+
+      # Create another transaction with FHE operations to ensure filtering works
+      transaction_2 =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:fhe_operation,
+        transaction_hash: transaction_2.hash,
+        log_index: 1,
+        block_hash: transaction_2.block.hash,
+        block_number: transaction_2.block_number
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/fhe-operations")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 2
+      assert response["total_hcu"] == 300
+      assert response["max_depth_hcu"] == 2
+      assert response["operation_count"] == 2
+
+      # Check first operation
+      operation_1 = Enum.at(response["items"], 0)
+      assert operation_1["log_index"] == fhe_operation_1.log_index
+      assert operation_1["operation"] == fhe_operation_1.operation
+      assert operation_1["type"] == fhe_operation_1.operation_type
+      assert operation_1["fhe_type"] == fhe_operation_1.fhe_type
+      assert operation_1["is_scalar"] == fhe_operation_1.is_scalar
+      assert operation_1["hcu_cost"] == fhe_operation_1.hcu_cost
+      assert operation_1["hcu_depth"] == fhe_operation_1.hcu_depth
+      assert operation_1["block_number"] == fhe_operation_1.block_number
+      assert operation_1["caller"] != nil
+      assert operation_1["caller"]["hash"] == Address.checksum(caller.hash)
+      assert operation_1["result"] == "0x" <> Base.encode16(fhe_operation_1.result_handle, case: :lower)
+      assert operation_1["inputs"] == fhe_operation_1.input_handles
+
+      # Check second operation
+      operation_2 = Enum.at(response["items"], 1)
+      assert operation_2["log_index"] == fhe_operation_2.log_index
+      assert operation_2["hcu_cost"] == fhe_operation_2.hcu_cost
+      assert operation_2["hcu_depth"] == fhe_operation_2.hcu_depth
+    end
+
+    test "return FHE operations without caller", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      fhe_operation =
+        insert(:fhe_operation,
+          transaction_hash: transaction.hash,
+          log_index: 1,
+          block_hash: transaction.block.hash,
+          block_number: transaction.block_number,
+          caller: nil
+        )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/fhe-operations")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+
+      operation = Enum.at(response["items"], 0)
+      assert operation["caller"] == nil
+      assert operation["log_index"] == fhe_operation.log_index
+    end
+
+    test "return FHE operations ordered by log_index", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      # Insert operations in non-sequential order
+      fhe_operation_3 =
+        insert(:fhe_operation,
+          transaction_hash: transaction.hash,
+          log_index: 3,
+          block_hash: transaction.block.hash,
+          block_number: transaction.block_number
+        )
+
+      fhe_operation_1 =
+        insert(:fhe_operation,
+          transaction_hash: transaction.hash,
+          log_index: 1,
+          block_hash: transaction.block.hash,
+          block_number: transaction.block_number
+        )
+
+      fhe_operation_2 =
+        insert(:fhe_operation,
+          transaction_hash: transaction.hash,
+          log_index: 2,
+          block_hash: transaction.block.hash,
+          block_number: transaction.block_number
+        )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/fhe-operations")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 3
+
+      # Verify ordering
+      assert Enum.at(response["items"], 0)["log_index"] == fhe_operation_1.log_index
+      assert Enum.at(response["items"], 1)["log_index"] == fhe_operation_2.log_index
+      assert Enum.at(response["items"], 2)["log_index"] == fhe_operation_3.log_index
+    end
+  end
+
   describe "/transactions/{transaction_hash}/state-changes" do
     test "return 404 on non existing transaction", %{conn: conn} do
       transaction = build(:transaction)
@@ -1774,6 +1952,149 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert token_data["symbol"] == "SCAM"
       assert token_data["name"] == "Scam Token"
       assert token_data["address_hash"] == to_string(token.contract_address)
+    end
+
+    test "return state changes with null value internal transaction", %{conn: conn} do
+      block_before = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      internal_transaction =
+        insert(:internal_transaction,
+          call_type: :call,
+          transaction_hash: transaction.hash,
+          transaction: transaction,
+          index: 1,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
+          value: %Wei{value: Decimal.new(1000)}
+        )
+
+      insert(:internal_transaction,
+        call_type: :call,
+        transaction_hash: transaction.hash,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        block_hash: transaction.block_hash,
+        value: nil,
+        from_address_hash: internal_transaction.from_address_hash,
+        from_address: internal_transaction.from_address,
+        to_address_hash: internal_transaction.to_address_hash,
+        to_address: internal_transaction.to_address
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.from_address,
+        address_hash: transaction.from_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.to_address,
+        address_hash: transaction.to_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.block.miner,
+        address_hash: transaction.block.miner_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: internal_transaction.from_address,
+        address_hash: internal_transaction.from_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: internal_transaction.to_address,
+        address_hash: internal_transaction.to_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 5
+    end
+
+    test "return state changes with ERC-7984 token transfer", %{conn: conn} do
+      block_before = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      confidential_token = insert(:token, type: "ERC-7984", symbol: "CT", name: "Confidential Token")
+      erc20_token = insert(:token, type: "ERC-20", symbol: "ERC20", name: "ERC20 Token")
+
+      erc20_token_transfer =
+        insert(:token_transfer,
+          token_type: "ERC-20",
+          transaction: transaction,
+          transaction_hash: transaction.hash,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          token_contract_address: erc20_token.contract_address,
+          amount: Decimal.new(100),
+          token_ids: nil
+        )
+
+      from_address = erc20_token_transfer.from_address
+      to_address = erc20_token_transfer.to_address
+
+      # Create ERC-7984 token transfer - should be skipped in state changes
+      insert(:token_transfer,
+        token_type: "ERC-7984",
+        transaction: transaction,
+        transaction_hash: transaction.hash,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: confidential_token.contract_address,
+        from_address: from_address,
+        to_address: to_address,
+        amount: nil,
+        token_ids: nil
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.from_address,
+        address_hash: transaction.from_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.to_address,
+        address_hash: transaction.to_address_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      insert(:address_coin_balance,
+        address: transaction.block.miner,
+        address_hash: transaction.block.miner_hash,
+        block_number: block_before.number,
+        value: %Wei{value: Decimal.new(1000)}
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 5
     end
   end
 

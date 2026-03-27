@@ -60,70 +60,48 @@ defmodule BlockScoutWeb.TransactionController do
   def show(conn, %{"id" => id} = params) do
     with {:ok, transaction_hash} <- Chain.string_to_full_hash(id),
          :ok <- Transaction.check_transaction_exists(transaction_hash) do
-      if Chain.transaction_has_token_transfers?(transaction_hash) do
-        with {:ok, transaction} <-
-               Chain.hash_to_transaction(transaction_hash, necessity_by_association: @necessity_by_association),
-             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
-             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
-          render(
-            conn,
-            "show_token_transfers.html",
-            exchange_rate: Market.get_coin_exchange_rate(),
-            block_height: Chain.block_height(),
-            current_path: Controller.current_full_path(conn),
-            current_user: current_user(conn),
-            show_token_transfers: true,
-            transaction: transaction,
-            from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
-            to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
-            transaction_tags:
-              get_transaction_with_addresses_tags(
-                transaction,
-                current_user(conn)
-              )
-          )
-        else
-          {:error, :not_found} ->
-            set_not_found_view(conn, id)
-
-          {:restricted_access, _} ->
-            set_not_found_view(conn, id)
-        end
-      else
-        with {:ok, transaction} <-
-               Chain.hash_to_transaction(transaction_hash, necessity_by_association: @necessity_by_association),
-             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
-             {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
-          render(
-            conn,
-            "show_internal_transactions.html",
-            exchange_rate: Market.get_coin_exchange_rate(),
-            current_path: Controller.current_full_path(conn),
-            current_user: current_user(conn),
-            block_height: Chain.block_height(),
-            show_token_transfers: Chain.transaction_has_token_transfers?(transaction_hash),
-            transaction: transaction,
-            from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
-            to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
-            transaction_tags:
-              get_transaction_with_addresses_tags(
-                transaction,
-                current_user(conn)
-              )
-          )
-        else
-          {:error, :not_found} ->
-            set_not_found_view(conn, id)
-
-          {:restricted_access, _} ->
-            set_not_found_view(conn, id)
-        end
-      end
+      render_transaction_page(conn, id, transaction_hash, params)
     else
       :error ->
         unprocessable_entity(conn)
 
       :not_found ->
+        set_not_found_view(conn, id)
+    end
+  end
+
+  defp render_transaction_page(conn, id, transaction_hash, params) do
+    show_token_transfers? = Chain.transaction_has_token_transfers?(transaction_hash)
+
+    template =
+      if show_token_transfers? do
+        "show_token_transfers.html"
+      else
+        "show_internal_transactions.html"
+      end
+
+    with {:ok, transaction} <-
+           Chain.hash_to_transaction(transaction_hash, necessity_by_association: @necessity_by_association),
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
+         {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
+      render(
+        conn,
+        template,
+        exchange_rate: Market.get_coin_exchange_rate(),
+        block_height: Chain.block_height(),
+        current_path: Controller.current_full_path(conn),
+        current_user: current_user(conn),
+        show_token_transfers: show_token_transfers?,
+        transaction: transaction,
+        from_tags: get_address_tags(transaction.from_address_hash, current_user(conn)),
+        to_tags: get_address_tags(transaction.to_address_hash, current_user(conn)),
+        transaction_tags: get_transaction_with_addresses_tags(transaction, current_user(conn))
+      )
+    else
+      {:error, :not_found} ->
+        set_not_found_view(conn, id)
+
+      {:restricted_access, _} ->
         set_not_found_view(conn, id)
     end
   end

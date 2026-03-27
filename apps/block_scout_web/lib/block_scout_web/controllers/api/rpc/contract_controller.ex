@@ -131,29 +131,32 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   end
 
   def verify_via_sourcify(conn, %{"addressHash" => address_hash} = input) do
-    files =
-      if Map.has_key?(input, "files") do
-        input["files"]
-      else
-        []
-      end
+    files = sourcify_files(input)
 
-    if SmartContract.verified_with_full_match?(address_hash) do
-      render(conn, :error, error: @verified)
+    with false <- SmartContract.verified_with_full_match?(address_hash),
+         {:ok, _verified_status} <- Sourcify.check_by_address(address_hash) do
+      get_metadata_and_publish(address_hash, conn)
     else
-      case Sourcify.check_by_address(address_hash) do
-        {:ok, _verified_status} ->
-          get_metadata_and_publish(address_hash, conn)
+      true -> render(conn, :error, error: @verified)
+      _ -> verify_via_sourcify_with_files(conn, address_hash, files)
+    end
+  end
 
-        _ ->
-          with {:ok, files_array} <- prepare_params(files),
-               {:ok, validated_files} <- validate_files(files_array) do
-            verify_and_publish(address_hash, validated_files, conn)
-          else
-            {:error, error} ->
-              render(conn, :error, error: error)
-          end
-      end
+  defp verify_via_sourcify_with_files(conn, address_hash, files) do
+    with {:ok, files_array} <- prepare_params(files),
+         {:ok, validated_files} <- validate_files(files_array) do
+      verify_and_publish(address_hash, validated_files, conn)
+    else
+      {:error, error} ->
+        render(conn, :error, error: error)
+    end
+  end
+
+  defp sourcify_files(input) do
+    if Map.has_key?(input, "files") do
+      input["files"]
+    else
+      []
     end
   end
 

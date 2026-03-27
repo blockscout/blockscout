@@ -14,8 +14,7 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcherTest do
     ContractCode,
     InternalTransaction,
     ReplacedTransaction,
-    Token,
-    UncleBlock
+    Token
   }
 
   alias Explorer.Chain.Block
@@ -24,6 +23,32 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcherTest do
   setup :set_mox_global
 
   setup :verify_on_exit!
+
+  setup do
+    old_celo_env = Application.get_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, [])
+
+    Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts,
+      contracts: %{
+        "addresses" => %{
+          "Accounts" => [],
+          "Election" => [],
+          "EpochRewards" => [],
+          "FeeHandler" => [],
+          "GasPriceMinimum" => [],
+          "GoldToken" => [],
+          "Governance" => [],
+          "LockedGold" => [],
+          "Reserve" => [],
+          "StableToken" => [],
+          "Validators" => []
+        }
+      }
+    )
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, old_celo_env)
+    end)
+  end
 
   test "successfully imports block", %{json_rpc_named_arguments: json_rpc_named_arguments} do
     %{number: block_number} = insert(:massive_block)
@@ -214,12 +239,42 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcherTest do
     TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     ReplacedTransaction.Supervisor.Case.start_supervised!()
 
+    Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!(
+      json_rpc_named_arguments: json_rpc_named_arguments
+    )
+
     MassiveBlocksFetcher.start_link(%{task_supervisor: Indexer.Block.Catchup.TaskSupervisor})
 
-    Process.sleep(1000)
+    wait_until(:timer.seconds(10), fn ->
+      match?([%{number: ^block_number}], Repo.all(Block)) and
+        Repo.all(MassiveBlock) == [] and
+        Repo.all(MissingBlockRange) == []
+    end)
 
     assert [%{number: ^block_number}] = Repo.all(Block)
     assert [] = Repo.all(MassiveBlock)
     assert [] = Repo.all(MissingBlockRange)
+  end
+
+  defp wait_until(timeout, producer) do
+    parent = self()
+    ref = make_ref()
+
+    spawn(fn -> do_wait_until(parent, ref, producer) end)
+
+    receive do
+      {^ref, :ok} -> :ok
+    after
+      timeout -> exit(:timeout)
+    end
+  end
+
+  defp do_wait_until(parent, ref, producer) do
+    if producer.() do
+      send(parent, {ref, :ok})
+    else
+      :timer.sleep(100)
+      do_wait_until(parent, ref, producer)
+    end
   end
 end

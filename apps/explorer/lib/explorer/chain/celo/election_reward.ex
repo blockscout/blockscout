@@ -356,29 +356,25 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     end)
   end
 
-  @doc """
-  Custom filter for `ElectionReward`, inspired by
-  `Explorer.Chain.Block.Reader.General.where_block_number_in_period/3`
-  """
   @spec where_epoch_number_in_period(
           Ecto.Query.t(),
           String.t() | integer() | nil,
           String.t() | integer() | nil
         ) :: Ecto.Query.t()
-  def where_epoch_number_in_period(base_query, nil, nil),
+  defp where_epoch_number_in_period(base_query, nil, nil),
     do: base_query
 
-  def where_epoch_number_in_period(base_query, nil, to_epoch),
-    do: where(base_query, [reward], reward.epoch_number < ^to_epoch)
+  defp where_epoch_number_in_period(base_query, nil, to_epoch),
+    do: where(base_query, [reward], reward.epoch_number <= ^to_epoch)
 
-  def where_epoch_number_in_period(base_query, from_epoch, nil),
+  defp where_epoch_number_in_period(base_query, from_epoch, nil),
     do: where(base_query, [reward], reward.epoch_number >= ^from_epoch)
 
-  def where_epoch_number_in_period(base_query, from_epoch, to_epoch),
+  defp where_epoch_number_in_period(base_query, from_epoch, to_epoch),
     do:
       where(
         base_query,
         [reward],
-        reward.epoch_number >= ^from_epoch and reward.epoch_number < ^to_epoch
+        reward.epoch_number >= ^from_epoch and reward.epoch_number <= ^to_epoch
       )
 end

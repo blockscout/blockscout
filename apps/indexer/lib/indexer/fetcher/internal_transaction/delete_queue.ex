@@ -92,6 +92,7 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueue do
 
         pto_params =
           transactions
+          |> Transaction.filter_non_traceable_transactions()
           |> Enum.map(&%{transaction_hash: &1.hash})
           |> ExplorerHelper.add_timestamps()
 

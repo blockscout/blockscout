@@ -82,9 +82,12 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     PendingTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
     start_token_balance_fetcher(json_rpc_named_arguments)
 
-    wait_for_results(fn ->
-      Repo.one!(from(transaction in Explorer.Chain.Transaction, where: is_nil(transaction.block_hash), limit: 1))
-    end)
+    wait_for_results(
+      fn ->
+        Repo.one!(from(transaction in Explorer.Chain.Transaction, where: is_nil(transaction.block_hash), limit: 1))
+      end,
+      60
+    )
 
     hash_strings =
       InternalTransaction.init([], fn hash_string, acc -> [hash_string | acc] end, json_rpc_named_arguments)

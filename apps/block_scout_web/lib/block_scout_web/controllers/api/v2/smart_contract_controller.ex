@@ -271,12 +271,15 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   @spec contract_creation_transaction_associations() :: [keyword()]
   defp contract_creation_transaction_associations do
+    include_internal_tx =
+      !Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false)
+
     case chain_type() do
       :filecoin ->
-        Address.contract_creation_transaction_with_from_address_associations()
+        Address.contract_creation_transaction_with_from_address_associations(include_internal_tx)
 
       _ ->
-        Address.contract_creation_transaction_associations()
+        Address.contract_creation_transaction_associations(include_internal_tx)
     end
   end
 

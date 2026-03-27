@@ -59,16 +59,21 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       token_holders
       |> CurrentTokenBalance.to_csv_format(token)
       |> CsvHelper.dump_to_stream()
-      |> Enum.reduce_while(put_resp_params(conn), fn chunk, conn ->
-        case Conn.chunk(conn, chunk) do
-          {:ok, conn} ->
-            {:cont, conn}
-
-          {:error, :closed} ->
-            {:halt, conn}
-        end
-      end)
+      |> stream_csv_chunks(conn)
     end
+  end
+
+  defp stream_csv_chunks(csv_stream, conn) do
+    csv_stream
+    |> Enum.reduce_while(put_resp_params(conn), fn chunk, conn ->
+      case Conn.chunk(conn, chunk) do
+        {:ok, conn} ->
+          {:cont, conn}
+
+        {:error, :closed} ->
+          {:halt, conn}
+      end
+    end)
   end
 
   @spec put_resp_params(Conn.t()) :: Conn.t()
@@ -94,20 +99,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
        when is_binary(address_hash_string) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:address_exists, true} <- {:address_exists, Address.address_exists?(address_hash)} do
-      filter_type = Map.get(params, :filter_type)
-      filter_value = Map.get(params, :filter_value)
-
-      address_hash
-      |> csv_export_module.export(from_period, to_period, fetch_scam_token_toggle([], conn), filter_type, filter_value)
-      |> Enum.reduce_while(put_resp_params(conn), fn chunk, conn ->
-        case Conn.chunk(conn, chunk) do
-          {:ok, conn} ->
-            {:cont, conn}
-
-          {:error, :closed} ->
-            {:halt, conn}
-        end
-      end)
+      stream_address_export(address_hash, csv_export_module, from_period, to_period, params, conn)
     else
       :error ->
         unprocessable_entity(conn)
@@ -118,6 +110,23 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   end
 
   defp items_csv(conn, _, _), do: not_found(conn)
+
+  defp stream_address_export(address_hash, csv_export_module, from_period, to_period, params, conn) do
+    filter_type = Map.get(params, :filter_type)
+    filter_value = Map.get(params, :filter_value)
+
+    address_hash
+    |> csv_export_module.export(from_period, to_period, fetch_scam_token_toggle([], conn), filter_type, filter_value)
+    |> Enum.reduce_while(put_resp_params(conn), fn chunk, conn ->
+      case Conn.chunk(conn, chunk) do
+        {:ok, conn} ->
+          {:cont, conn}
+
+        {:error, :closed} ->
+          {:halt, conn}
+      end
+    end)
+  end
 
   operation :token_transfers_csv,
     summary: "Export token transfers as CSV",

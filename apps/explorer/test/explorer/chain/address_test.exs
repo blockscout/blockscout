@@ -172,4 +172,50 @@ defmodule Explorer.Chain.AddressTest do
       assert response == {:ok, address}
     end
   end
+
+  describe "contract_creation_transaction_associations/1" do
+    test "by default includes both transaction and internal transaction associations" do
+      associations = Address.contract_creation_transaction_associations()
+
+      assert Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_transaction))
+      assert Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_internal_transaction))
+    end
+
+    test "includes both associations when include_internal_transaction is true" do
+      associations = Address.contract_creation_transaction_associations(true)
+
+      assert Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_transaction))
+      assert Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_internal_transaction))
+    end
+
+    test "excludes internal transaction association when include_internal_transaction is false" do
+      associations = Address.contract_creation_transaction_associations(false)
+
+      assert Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_transaction))
+      refute Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_internal_transaction))
+    end
+  end
+
+  describe "contract_creation_transaction_with_from_address_associations/1" do
+    test "by default includes both transaction and internal transaction associations" do
+      associations = Address.contract_creation_transaction_with_from_address_associations()
+
+      assert Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_transaction))
+      assert Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_internal_transaction))
+    end
+
+    test "includes both associations when include_internal_transaction is true" do
+      associations = Address.contract_creation_transaction_with_from_address_associations(true)
+
+      assert Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_transaction))
+      assert Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_internal_transaction))
+    end
+
+    test "excludes internal transaction association when include_internal_transaction is false" do
+      associations = Address.contract_creation_transaction_with_from_address_associations(false)
+
+      assert Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_transaction))
+      refute Enum.any?(associations, &Keyword.has_key?(&1, :contract_creation_internal_transaction))
+    end
+  end
 end

@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.ContractCodeTest do
 
   import Mox
 
-  alias Explorer.Chain.{Address, Transaction}
+  alias Explorer.Chain.{Address, Data, Transaction}
   alias Indexer.Fetcher.ContractCode
 
   @moduletag :capture_log
@@ -146,24 +146,48 @@ defmodule Indexer.Fetcher.ContractCodeTest do
                  false
                )
 
-      # Wait a bit to ensure any potential processing is done
-      Process.sleep(100)
+      updated_address =
+        wait(fn ->
+          Repo.one!(
+            from(address in Address, where: address.hash == ^address.hash and not is_nil(address.contract_code))
+          )
+        end)
 
-      # Verify that the contract code was set to "0x"
-      updated_address = Repo.get!(Address, address.hash)
-      assert to_string(updated_address.contract_code) == "0x"
+      assert Data.to_string(updated_address.contract_code) == "0x"
 
-      # Verify that the transaction's created_contract_code_indexed_at remains nil
-      updated_transaction = Repo.get!(Transaction, transaction.hash)
+      updated_transaction =
+        wait(fn ->
+          Repo.one!(
+            from(transaction in Transaction,
+              where: transaction.hash == ^transaction.hash and not is_nil(transaction.created_contract_code_indexed_at)
+            )
+          )
+        end)
+
       assert updated_transaction.created_contract_code_indexed_at
     end
   end
 
   defp wait(producer) do
+    wait(producer, 10_000)
+  end
+
+  defp wait(producer, timeout) when is_integer(timeout) and timeout > 0 do
+    deadline = System.monotonic_time(:millisecond) + timeout
+
+    wait(producer, timeout, deadline)
+  end
+
+  defp wait(producer, timeout, deadline) do
     producer.()
   rescue
     Ecto.NoResultsError ->
-      Process.sleep(100)
-      wait(producer)
+      if System.monotonic_time(:millisecond) > deadline do
+        raise RuntimeError,
+              "wait/1 timed out after #{timeout}ms while waiting for producer #{inspect(producer)}"
+      else
+        Process.sleep(100)
+        wait(producer, timeout, deadline)
+      end
   end
 end
