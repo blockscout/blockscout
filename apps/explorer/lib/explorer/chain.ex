@@ -333,8 +333,7 @@ defmodule Explorer.Chain do
     options
     |> Keyword.get(:paging_options, @default_paging_options)
     |> fetch_transactions_in_ascending_order_by_index()
-    |> join(:inner, [transaction], block in assoc(transaction, :block))
-    |> where([_, block], block.hash == ^block_hash)
+    |> where([transaction], transaction.block_hash == ^block_hash)
     |> Transaction.apply_filter_by_type_to_transactions(type_filter)
     |> join_associations(necessity_by_association)
     |> Transaction.put_has_token_transfers_to_transaction(old_ui?)
