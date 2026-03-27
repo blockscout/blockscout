@@ -1315,14 +1315,17 @@ defmodule BlockScoutWeb.Chain do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     transaction_hash = Keyword.get(options, :transaction_hash)
 
-    necessity_by_association =
-      %{
-        :block => :optional,
-        [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-        [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
-      }
+    necessity_by_association = %{block: :optional}
 
-    options_with_necessity = Keyword.put_new(options, :necessity_by_association, necessity_by_association)
+    address_preloads = [
+      from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+      to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
+    ]
+
+    options_with_necessity =
+      options
+      |> Keyword.put_new(:necessity_by_association, necessity_by_association)
+      |> Keyword.put_new(:address_preloads, address_preloads)
 
     cond do
       match?(%PagingOptions{key: {0, 0, 0}}, paging_options) or
@@ -1343,7 +1346,7 @@ defmodule BlockScoutWeb.Chain do
         InternalTransactionOnDemand.fetch_latest(options_with_necessity)
 
       Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled] ->
-        from_db = InternalTransaction.fetch(options)
+        from_db = InternalTransaction.fetch(options_with_necessity)
 
         from_node =
           if InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size) do
@@ -1355,7 +1358,7 @@ defmodule BlockScoutWeb.Chain do
         merge_internal_transactions(from_db, from_node, paging_options.page_size)
 
       true ->
-        InternalTransaction.fetch(options)
+        InternalTransaction.fetch(options_with_necessity)
     end
   end
 
@@ -1397,6 +1400,7 @@ defmodule BlockScoutWeb.Chain do
     - `block`: The block struct to fetch internal transactions for
     - `options`: Keyword list with optional keys:
       - `:necessity_by_association` - associations to preload as required or optional
+      - `:address_preloads` - addresses to preload with nested associations
       - `:paging_options` - pagination options including page_size and key
       - `:type` - filter by transaction type
       - `:call_type` - filter by call type
@@ -1425,6 +1429,7 @@ defmodule BlockScoutWeb.Chain do
     - `options`: Keyword list with optional keys:
       - `:paging_options` - pagination options including page_size and key
       - `:necessity_by_association` - associations to preload as required or optional
+      - `:address_preloads` - addresses to preload with nested associations
 
     ## Returns
     - List of InternalTransaction structs for the given address

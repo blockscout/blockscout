@@ -122,17 +122,18 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
           )
 
         delete_query =
-          from(
-            it in InternalTransaction,
-            inner_join: locked_it in subquery(locked_internal_transactions_to_delete_query),
-            on: join_on_ctid(it, locked_it),
-            select: %{
-              from_address_hash: it.from_address_hash,
-              to_address_hash: it.to_address_hash,
-              block_number: it.block_number,
-              index: it.index
-            }
+          InternalTransaction
+          |> join(:inner, [it], locked_it in subquery(locked_internal_transactions_to_delete_query),
+            on: join_on_ctid(it, locked_it)
           )
+          |> join(:inner, [it], a in assoc(it, :from_address), as: :from_address)
+          |> join(:inner, [it], a in assoc(it, :to_address), as: :to_address)
+          |> select([it], %{
+            from_address_hash: as(:from_address).hash,
+            to_address_hash: as(:to_address).hash,
+            block_number: it.block_number,
+            index: it.index
+          })
 
         {_count, deleted_internal_transactions} = Repo.delete_all(delete_query, timeout: :infinity)
 

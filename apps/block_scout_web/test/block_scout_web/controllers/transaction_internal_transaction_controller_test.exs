@@ -94,9 +94,10 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
           index: 0,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
+          created_contract_code: contract_address.contract_code,
+          created_contract_address: contract_address,
           block_hash: transaction.block_hash
         )
-        |> with_contract_creation(contract_address)
 
       conn =
         get(

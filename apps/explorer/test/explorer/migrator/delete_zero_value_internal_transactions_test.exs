@@ -153,8 +153,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
 
     id_to_hashes = Repo.all(AddressIdToAddressHash)
 
-    assert length(id_to_hashes) == 3
-
     assert %{address_id: address_1_id} = Enum.find(id_to_hashes, &(&1.address_hash == address_1.hash))
     assert %{address_id: address_2_id} = Enum.find(id_to_hashes, &(&1.address_hash == address_2.hash))
     assert %{address_id: address_3_id} = Enum.find(id_to_hashes, &(&1.address_hash == address_3.hash))

@@ -98,6 +98,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
           (not Map.has_key?(internal_transaction, :call_type) || internal_transaction.call_type != "delegatecall")
       end)
       |> InternalTransaction.preload_transaction()
+      |> InternalTransaction.preload_addresses()
       |> Enum.map(fn internal_transaction ->
         to_address_hash =
           Map.get(internal_transaction, :to_address_hash) ||

@@ -83,12 +83,9 @@ defmodule Explorer.Etherscan do
 
   @internal_transaction_fields ~w(
     block_number
-    from_address_hash
-    to_address_hash
     transaction_index
     index
     value
-    created_contract_address_hash
     input
     type
     call_type
@@ -131,6 +128,9 @@ defmodule Explorer.Etherscan do
       if DenormalizationHelper.transactions_denormalization_finished?() do
         InternalTransaction
         |> InternalTransaction.join_transaction_query()
+        |> InternalTransaction.join_address_query(:from_address)
+        |> InternalTransaction.join_address_query(:to_address)
+        |> InternalTransaction.join_address_query(:created_contract_address)
         |> where(not is_nil(as(:transaction).block_hash))
         |> where(as(:transaction).hash == ^transaction_hash)
         |> limit(10_000)
@@ -138,12 +138,19 @@ defmodule Explorer.Etherscan do
           [it],
           merge(map(it, ^@internal_transaction_fields), %{
             block_timestamp: as(:transaction).block_timestamp,
-            transaction_hash: as(:transaction).hash
+            transaction_hash: as(:transaction).hash,
+            from_address_hash: coalesce(it.from_address_hash, as(:from_address).hash),
+            to_address_hash: coalesce(it.to_address_hash, as(:to_address).hash),
+            created_contract_address_hash:
+              coalesce(it.created_contract_address_hash, as(:created_contract_address).hash)
           })
         )
       else
         InternalTransaction
         |> InternalTransaction.join_transaction_query()
+        |> InternalTransaction.join_address_query(:from_address)
+        |> InternalTransaction.join_address_query(:to_address)
+        |> InternalTransaction.join_address_query(:created_contract_address)
         |> join(:inner, [it, t], b in assoc(t, :block), as: :block)
         |> where(as(:transaction).hash == ^transaction_hash)
         |> limit(10_000)
@@ -151,7 +158,11 @@ defmodule Explorer.Etherscan do
           [it],
           merge(map(it, ^@internal_transaction_fields), %{
             block_timestamp: as(:block).timestamp,
-            transaction_hash: as(:transaction).hash
+            transaction_hash: as(:transaction).hash,
+            from_address_hash: coalesce(it.from_address_hash, as(:from_address).hash),
+            to_address_hash: coalesce(it.to_address_hash, as(:to_address).hash),
+            created_contract_address_hash:
+              coalesce(it.created_contract_address_hash, as(:created_contract_address).hash)
           })
         )
       end
@@ -244,6 +255,9 @@ defmodule Explorer.Etherscan do
       InternalTransaction
       |> from(as: :internal_transaction)
       |> InternalTransaction.join_transaction_query()
+      |> InternalTransaction.join_address_query(:from_address)
+      |> InternalTransaction.join_address_query(:to_address)
+      |> InternalTransaction.join_address_query(:created_contract_address)
       |> where(not is_nil(as(:transaction).block_hash))
       |> where(as(:transaction).block_consensus == true)
       |> order_by(
@@ -259,13 +273,19 @@ defmodule Explorer.Etherscan do
         [it, transaction],
         merge(map(it, ^@internal_transaction_fields), %{
           block_timestamp: transaction.block_timestamp,
-          transaction_hash: transaction.hash
+          transaction_hash: transaction.hash,
+          from_address_hash: coalesce(it.from_address_hash, as(:from_address).hash),
+          to_address_hash: coalesce(it.to_address_hash, as(:to_address).hash),
+          created_contract_address_hash: coalesce(it.created_contract_address_hash, as(:created_contract_address).hash)
         })
       )
     else
       InternalTransaction
       |> from(as: :internal_transaction)
       |> InternalTransaction.join_transaction_query()
+      |> InternalTransaction.join_address_query(:from_address)
+      |> InternalTransaction.join_address_query(:to_address)
+      |> InternalTransaction.join_address_query(:created_contract_address)
       |> join(:inner, [_it, t], b in assoc(t, :block), as: :block)
       |> where(as(:block).consensus == true)
       |> order_by(
@@ -281,7 +301,10 @@ defmodule Explorer.Etherscan do
         [it],
         merge(map(it, ^@internal_transaction_fields), %{
           block_timestamp: as(:block).timestamp,
-          transaction_hash: as(:transaction).hash
+          transaction_hash: as(:transaction).hash,
+          from_address_hash: coalesce(it.from_address_hash, as(:from_address).hash),
+          to_address_hash: coalesce(it.to_address_hash, as(:to_address).hash),
+          created_contract_address_hash: coalesce(it.created_contract_address_hash, as(:created_contract_address).hash)
         })
       )
     end
@@ -291,6 +314,9 @@ defmodule Explorer.Etherscan do
     InternalTransaction
     |> from(as: :internal_transaction)
     |> InternalTransaction.join_transaction_query()
+    |> InternalTransaction.join_address_query(:from_address)
+    |> InternalTransaction.join_address_query(:to_address)
+    |> InternalTransaction.join_address_query(:created_contract_address)
     |> join(:inner, [it], block in subquery(consensus_blocks), on: it.block_number == block.number, as: :block)
     |> order_by(
       [it],
@@ -306,7 +332,10 @@ defmodule Explorer.Etherscan do
       [it],
       merge(map(it, ^@internal_transaction_fields), %{
         block_timestamp: as(:block).timestamp,
-        transaction_hash: as(:transaction).hash
+        transaction_hash: as(:transaction).hash,
+        from_address_hash: coalesce(it.from_address_hash, as(:from_address).hash),
+        to_address_hash: coalesce(it.to_address_hash, as(:to_address).hash),
+        created_contract_address_hash: coalesce(it.created_contract_address_hash, as(:created_contract_address).hash)
       })
     )
   end

@@ -898,6 +898,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
             block_hash: transaction.block_hash
           )
         end)
+        |> InternalTransaction.preload_addresses()
 
       request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
       assert response = json_response(request, 200)

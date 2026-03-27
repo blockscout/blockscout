@@ -164,7 +164,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
   test "fetch_by_address/2" do
     address = insert(:address)
     address_hash_str = to_string(address.hash)
-    id_to_hash = insert(:address_id_to_address_hash, address_hash: address.hash)
+    id_to_hash = insert(:address_id_to_address_hash, address: address)
 
     insert(:deleted_internal_transactions_address_placeholder,
       address_id: id_to_hash.address_id,

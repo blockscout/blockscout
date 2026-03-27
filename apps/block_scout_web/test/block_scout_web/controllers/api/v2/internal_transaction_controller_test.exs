@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
           )
         end
 
-      internal_transactions = [internal_transaction | internal_transactions]
+      internal_transactions = InternalTransaction.preload_addresses([internal_transaction | internal_transactions])
 
       request = get(conn, "/api/v2/internal-transactions")
       assert response = json_response(request, 200)

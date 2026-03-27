@@ -507,9 +507,9 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
           |> insert()
           |> with_block(transaction_success_details)
 
-        :internal_transaction
+        :internal_transaction_create
         |> insert(
-          created_contract_address_hash: contract_address.hash,
+          created_contract_address: contract_address,
           init: init,
           type: "create",
           created_contract_code: bytecode,
@@ -566,9 +566,9 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
           |> insert()
           |> with_block(transaction_failure_details)
 
-        :internal_transaction
+        :internal_transaction_create
         |> insert(
-          created_contract_address_hash: contract_address.hash,
+          created_contract_address: contract_address,
           init: init,
           type: "create",
           created_contract_code: bytecode,
@@ -580,9 +580,9 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
           block_number: transaction_success.block_number
         )
 
-        :internal_transaction
+        :internal_transaction_create
         |> insert(
-          created_contract_address_hash: contract_address.hash,
+          created_contract_address: contract_address,
           init: init,
           type: "create",
           created_contract_code: bytecode,

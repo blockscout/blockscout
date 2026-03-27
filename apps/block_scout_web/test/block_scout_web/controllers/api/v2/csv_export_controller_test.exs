@@ -320,7 +320,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         transaction_index: transaction_2.index
       )
 
-      insert(:internal_transaction,
+      insert(:internal_transaction_create,
         index: 2,
         transaction: transaction_3,
         created_contract_address: address,
