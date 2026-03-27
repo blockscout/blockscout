@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.AddressTokenController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain,
-    only: [next_page_params: 5, paging_options: 1, split_list_by_page: 1, paging_params_with_fiat_value: 1]
+    only: [next_page_params: 4, paging_options: 1, split_list_by_page: 1, paging_params_with_fiat_value: 1]
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.AddressTokenController do
       {tokens, next_page} = split_list_by_page(token_balances_plus_one)
 
       next_page_path =
-        case next_page_params(next_page, tokens, params, false, &paging_params_with_fiat_value/1) do
+        case next_page_params(next_page, tokens, params, &paging_params_with_fiat_value/1) do
           nil ->
             nil
 

@@ -194,7 +194,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     parameters:
       base_params() ++
         [address_hash_param()] ++
-        define_paging_params(["address_hash_param", "value", "items_count"]),
+        define_paging_params(["address_hash_param", "value"]),
     responses: [
       ok:
         {"Holders of the specified token, with pagination.", "application/json",
@@ -202,8 +202,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
            items: Schemas.Token.Holder,
            next_page_params_example: %{
              "address_hash" => "0x48bb9b14483e43c7726df702b271d410e7460656",
-             "value" => "200000000000000",
-             "items_count" => 50
+             "value" => "200000000000000"
            }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -452,7 +451,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     parameters:
       base_params() ++
         [address_hash_param(), token_id_param()] ++
-        define_paging_params(["address_hash_param", "items_count", "token_id", "value"]),
+        define_paging_params(["address_hash_param", "token_id", "value"]),
     responses: [
       ok:
         {"Current holders of the specified NFT instance, with pagination.", "application/json",
@@ -460,7 +459,6 @@ defmodule BlockScoutWeb.API.V2.TokenController do
            items: Schemas.Token.Holder,
            next_page_params_example: %{
              "address_hash" => "0x1d2c163fbda9486c3a384b6fa5e34c96fe948e9a",
-             "items_count" => 50,
              "token_id" => "0",
              "value" => "4217417051704137590935"
            }
@@ -560,8 +558,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
           "holders_count",
           "is_name_null",
           "market_cap",
-          "name",
-          "items_count"
+          "name"
         ]),
     responses: [
       ok:
@@ -574,8 +571,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
              "holders_count" => 59_731,
              "is_name_null" => false,
              "market_cap" => "570958125.135513",
-             "name" => "Wrapped Staked ETH",
-             "items_count" => 50
+             "name" => "Wrapped Staked ETH"
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
@@ -623,8 +619,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
           "holders_count",
           "is_name_null",
           "market_cap",
-          "name",
-          "items_count"
+          "name"
         ]),
     responses: [
       ok:
@@ -637,8 +632,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
              "holders_count" => 59_731,
              "is_name_null" => false,
              "market_cap" => "570958125.135513",
-             "name" => "Wrapped Staked ETH",
-             "items_count" => 50
+             "name" => "Wrapped Staked ETH"
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
