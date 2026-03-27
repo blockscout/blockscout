@@ -779,7 +779,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         created_contract_address: created_contract_address,
         created_contract_code: smart_contract_bytecode,
         block_number: transaction.block_number,
-        block_hash: transaction.block_hash,
         transaction_index: transaction.index
       )
 
@@ -1119,7 +1118,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         insert(:internal_transaction_create,
           transaction: transaction,
           index: 1,
-          block_hash: transaction.block_hash,
           block_number: transaction.block_number,
           transaction_index: transaction.index
         )
@@ -1176,7 +1174,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         # index 0 should result in empty contractFactory
         index: 0,
         created_contract_address: contract_address,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number,
         transaction_index: transaction.index
       )

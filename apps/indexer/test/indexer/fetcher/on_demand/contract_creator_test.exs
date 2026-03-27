@@ -60,7 +60,6 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
         created_contract_address: contract_address,
         created_contract_code: "0x1234",
         block_number: transaction.block_number,
-        block_hash: transaction.block_hash,
         transaction_index: transaction.index
       )
 

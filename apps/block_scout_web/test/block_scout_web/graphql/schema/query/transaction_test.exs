@@ -140,7 +140,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
         created_contract_code: contract_address.contract_code,
         created_contract_address: contract_address,
         call_type: :call,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number
       }
 
@@ -272,7 +271,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
         transaction: transaction,
         transaction_index: transaction.index,
         index: 2,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number
       )
 
@@ -280,7 +278,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
         transaction: transaction,
         transaction_index: transaction.index,
         index: 0,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number
       )
 
@@ -288,7 +285,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
         transaction: transaction,
         transaction_index: transaction.index,
         index: 1,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number
       )
 
@@ -403,7 +399,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
         transaction: transaction,
         transaction_index: transaction.index,
         index: 2,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number
       )
 
@@ -411,7 +406,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
         transaction: transaction,
         transaction_index: transaction.index,
         index: 0,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number
       )
 
@@ -419,7 +413,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
         transaction: transaction,
         transaction_index: transaction.index,
         index: 1,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number
       )
 
@@ -461,7 +454,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
           transaction: transaction,
           transaction_index: transaction.index,
           index: index,
-          block_hash: transaction.block_hash,
           block_number: transaction.block_number
         )
       end

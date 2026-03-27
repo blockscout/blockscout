@@ -1833,7 +1833,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         value: 1,
         from_address: address,
         to_address: address_2,
-        block_hash: transaction.block_hash,
         block_number: block.number
       )
 
@@ -1846,7 +1845,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           value: 2,
           from_address: address,
           to_address: address_2,
-          block_hash: transaction.block_hash,
           block_number: block.number
         )
 
@@ -1901,7 +1899,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         value: 1,
         from_address: address,
         to_address: address_2,
-        block_hash: transaction.block_hash,
         block_number: block.number
       )
 
@@ -1914,7 +1911,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           value: 2,
           from_address: address,
           to_address: address_2,
-          block_hash: transaction.block_hash,
           block_number: block.number
         )
 
@@ -1968,7 +1964,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         value: 1,
         from_address: address,
         to_address: address_2,
-        block_hash: transaction.block_hash,
         block_number: block.number
       )
 
@@ -1980,7 +1975,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         value: 0,
         from_address: address,
         to_address: address_2,
-        block_hash: transaction.block_hash,
         block_number: block.number
       )
 
@@ -1993,7 +1987,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           value: 2,
           from_address: address,
           to_address: address_2,
-          block_hash: transaction.block_hash,
           block_number: block.number
         )
 
@@ -2050,7 +2043,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         value: 1,
         from_address: address,
         to_address: address_2,
-        block_hash: transaction.block_hash,
         block_number: block.number
       )
 
@@ -2063,7 +2055,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           value: 2,
           from_address: address,
           to_address: address_2,
-          block_hash: transaction.block_hash,
           block_number: block.number
         )
 
@@ -2076,7 +2067,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           value: 0,
           from_address: address,
           to_address: address_2,
-          block_hash: transaction.block_hash,
           block_number: block.number
         )
 
@@ -2189,7 +2179,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           from_address: address,
           created_contract_code: contract_address.contract_code,
           created_contract_address: contract_address,
-          block_hash: transaction.block_hash,
           block_number: transaction.block_number
         )
 
@@ -2253,7 +2242,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           from_address: address,
           created_contract_code: contract_address.contract_code,
           created_contract_address: contract_address,
-          block_hash: transaction.block_hash,
           block_number: transaction.block_number
         )
 
@@ -2289,7 +2277,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         value: 1,
         type: :reward,
         error: "some error",
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number
       ]
 
@@ -2324,7 +2311,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           transaction: transaction,
           transaction_index: transaction.index,
           index: index,
-          block_hash: transaction.block_hash,
           block_number: transaction.block_number,
           value: 1
         )
@@ -2362,7 +2348,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         transaction_index: transaction.index,
         index: 0,
         value: 1,
-        block_hash: transaction.block_hash,
         block_number: block.number
       )
 
@@ -2372,7 +2357,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         transaction_index: transaction.index,
         index: 2,
         value: 0,
-        block_hash: transaction.block_hash,
         block_number: block.number
       )
 
@@ -2383,7 +2367,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           transaction_index: transaction.index,
           index: 1,
           value: 2,
-          block_hash: transaction.block_hash,
           block_number: block.number
         )
 
@@ -2438,7 +2421,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         transaction_index: transaction.index,
         index: 0,
         value: 1,
-        block_hash: transaction.block_hash,
         block_number: block.number
       )
 
@@ -2449,7 +2431,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           transaction_index: transaction.index,
           index: 1,
           value: 2,
-          block_hash: transaction.block_hash,
           block_number: block.number
         )
 
@@ -2460,7 +2441,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           transaction_index: transaction.index,
           index: 2,
           value: 0,
-          block_hash: transaction.block_hash,
           block_number: block.number
         )
 
@@ -2595,8 +2575,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           from_address: address,
           created_contract_code: contract_address.contract_code,
           created_contract_address: contract_address,
-          block_number: block.number,
-          block_hash: transaction.block_hash
+          block_number: block.number
         )
 
       params = %{
@@ -2651,8 +2630,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         index: 0,
         type: :reward,
         error: "some error",
-        block_number: transaction.block_number,
-        block_hash: transaction.block_hash
+        block_number: transaction.block_number
       ]
 
       insert(:internal_transaction_create, internal_transaction_details)
@@ -2690,7 +2668,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           transaction_index: transaction.index,
           index: index,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
           value: 1
         }
 
@@ -2732,7 +2709,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         index: 0,
         value: 1,
         from_address: address,
-        block_hash: transaction.block_hash,
         block_number: block.number
       )
 
@@ -2743,7 +2719,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         index: 2,
         value: 0,
         from_address: address,
-        block_hash: transaction.block_hash,
         block_number: block.number
       )
 
@@ -2755,7 +2730,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           index: 1,
           value: 2,
           from_address: address,
-          block_hash: transaction.block_hash,
           block_number: block.number
         )
 
@@ -2813,7 +2787,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         index: 0,
         value: 1,
         from_address: address,
-        block_hash: transaction.block_hash,
         block_number: block.number
       )
 
@@ -2825,7 +2798,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           index: 1,
           value: 2,
           from_address: address,
-          block_hash: transaction.block_hash,
           block_number: block.number
         )
 
@@ -2837,7 +2809,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           index: 2,
           value: 0,
           from_address: address,
-          block_hash: transaction.block_hash,
           block_number: block.number
         )
 
