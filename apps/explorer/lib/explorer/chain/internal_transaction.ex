@@ -20,7 +20,7 @@ defmodule Explorer.Chain.InternalTransaction do
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
-  alias Explorer.Utility.{AddressIdToAddressHash, InternalTransactionHelper}
+  alias Explorer.Utility.AddressIdToAddressHash
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
@@ -51,8 +51,6 @@ defmodule Explorer.Chain.InternalTransaction do
    * `type` - type of internal transaction
    * `value` - value of transferred from `from_address` to `to_address`
    * `block` - block in which this internal transaction occurred
-   * `block_hash` - foreign key for `block`
-   * `block_index` - the index of this internal transaction inside the `block`
   """
   @primary_key false
   typed_schema "internal_transactions" do
@@ -72,11 +70,7 @@ defmodule Explorer.Chain.InternalTransaction do
     # todo: consider using enum
     field(:type, Type, null: false)
     field(:value, Wei)
-    # TODO: remove field after update PK migration is completed
-    field(:block_hash, Hash.Full)
     field(:transaction_index, :integer, primary_key: true, null: false)
-    # TODO: remove field after update PK migration is completed
-    field(:block_index, :integer)
 
     field(:transaction, :map, virtual: true)
     field(:transaction_hash, Hash.Full, virtual: true)
@@ -164,8 +158,7 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     transaction_index: 0,
       ...>     type: "create",
       ...>     value: 0,
-      ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd"
+      ...>     block_number: 35
       ...>   }
       ...> )
       iex> changeset.valid?
@@ -198,7 +191,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     type: "create",
       ...>     value: 0,
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0
       ...>   }
       iex> )
@@ -216,7 +208,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0,
       ...>     index: 0,
       ...>     trace_address: [],
@@ -240,7 +231,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0,
       ...>     index: 0,
       ...>     trace_address: [],
@@ -265,7 +255,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0,
       ...>     index: 0,
       ...>     trace_address: [],
@@ -290,7 +279,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0,
       ...>     index: 0,
       ...>     trace_address: [],
@@ -330,7 +318,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     type: "create",
       ...>     value: 0,
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0
       ...>   }
       iex> )
@@ -350,7 +337,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     type: "create",
       ...>     value: 0,
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0
       ...>   }
       ...> )
@@ -375,7 +361,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     type: "selfdestruct",
       ...>     value: 0,
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0
       ...>   }
       ...> )
@@ -384,24 +369,17 @@ defmodule Explorer.Chain.InternalTransaction do
 
   """
   def changeset(%__MODULE__{} = internal_transaction, attrs \\ %{}) do
-    base_attributes = ~w(transaction_index index type)a
-
-    all_attributes =
-      if InternalTransactionHelper.primary_key_updated?() do
-        [:block_number | base_attributes]
-      else
-        [:block_hash, :block_index | base_attributes]
-      end
+    base_attributes = ~w(block_number transaction_index index type)a
 
     internal_transaction
-    |> cast(attrs, all_attributes)
-    |> validate_required(all_attributes)
+    |> cast(attrs, base_attributes)
+    |> validate_required(base_attributes)
     |> type_changeset(attrs)
   end
 
   @doc """
   Accepts changes without `:type` but with `:block_number`, if `:type` is defined
-  works like `changeset`, except allowing `:block_hash` to be undefined.
+  works like `changeset`, except allowing `:block_number` to be undefined.
 
   This is used because the `internal_transactions` runner can derive such values
   on its own or use empty types to know that a block has no internal transactions.
@@ -897,10 +875,10 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   def join_address_query(query, address_field) do
-    mapping_binding = :"#{address_field}_mapping"
-    address_binding = :"#{address_field}"
-    address_id_field = :"#{address_field}_id"
-    address_hash_field = :"#{address_field}_hash"
+    mapping_binding = String.to_existing_atom("#{address_field}_mapping")
+    address_binding = address_field
+    address_id_field = String.to_existing_atom("#{address_field}_id")
+    address_hash_field = String.to_existing_atom("#{address_field}_hash")
 
     query
     |> with_named_binding(mapping_binding, fn query, binding ->
@@ -1116,11 +1094,6 @@ defmodule Explorer.Chain.InternalTransaction do
     end
   end
 
-  defp page_block_internal_transaction(query, %PagingOptions{key: %{block_index: block_index}}) do
-    query
-    |> where([internal_transaction], internal_transaction.block_index > ^block_index)
-  end
-
   defp page_block_internal_transaction(query, %PagingOptions{key: %{transaction_index: transaction_index, index: index}}) do
     query
     |> where(
@@ -1132,16 +1105,8 @@ defmodule Explorer.Chain.InternalTransaction do
 
   defp page_block_internal_transaction(query, _), do: query
 
-  def internal_transaction_to_block_paging_options(%__MODULE__{
-        transaction_index: transaction_index,
-        index: index,
-        block_index: block_index
-      }) do
-    if InternalTransactionHelper.primary_key_updated?() do
-      %{"transaction_index" => transaction_index, "index" => index}
-    else
-      %{"block_index" => block_index}
-    end
+  def internal_transaction_to_block_paging_options(%__MODULE__{transaction_index: transaction_index, index: index}) do
+    %{"transaction_index" => transaction_index, "index" => index}
   end
 
   defp where_internal_transactions_by_transaction_hash(query, nil), do: query

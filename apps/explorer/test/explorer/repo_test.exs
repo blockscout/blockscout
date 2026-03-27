@@ -19,7 +19,6 @@ defmodule Explorer.RepoTest do
           to_address_hash: insert(:address).hash,
           index: 0,
           block_number: 35,
-          block_hash: transaction.block_hash,
           transaction_index: 0
         )
 

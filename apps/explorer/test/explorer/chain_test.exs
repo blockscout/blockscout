@@ -667,7 +667,6 @@ defmodule Explorer.ChainTest do
         transaction: transaction,
         index: 0,
         block_number: transaction.block_number,
-        block_hash: transaction.block_hash,
         transaction_index: transaction.index
       )
 
@@ -676,7 +675,6 @@ defmodule Explorer.ChainTest do
           transaction: transaction,
           index: index,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
           transaction_index: transaction.index
         )
       end)
@@ -2122,7 +2120,6 @@ defmodule Explorer.ChainTest do
         created_contract_address: created_contract_address,
         created_contract_code: smart_contract_bytecode,
         block_number: transaction.block_number,
-        block_hash: transaction.block_hash,
         transaction_index: transaction.index
       )
 

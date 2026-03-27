@@ -19,7 +19,6 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           transaction: transaction,
           from_address: address,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
           transaction_index: transaction.index
         )
         |> InternalTransaction.preload_addresses()
@@ -134,7 +133,6 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           transaction: transaction,
           from_address: address,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
           transaction_index: transaction.index
         )
       end)
@@ -151,7 +149,6 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           transaction: transaction,
           to_address: address,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
           transaction_index: transaction.index
         )
       end)
@@ -169,7 +166,6 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           created_contract_address: address,
           to_address: nil,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
           transaction_index: transaction.index
         )
       end)
@@ -204,7 +200,6 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           transaction: transaction,
           from_address: address,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
           transaction_index: transaction.index,
           error: "reverted",
           error_id: transaction_error.id,

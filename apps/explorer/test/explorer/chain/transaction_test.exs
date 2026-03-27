@@ -540,7 +540,6 @@ defmodule Explorer.Chain.TransactionTest do
         insert(:internal_transaction_create,
           index: 0,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
           transaction_index: transaction.index
         )
 
