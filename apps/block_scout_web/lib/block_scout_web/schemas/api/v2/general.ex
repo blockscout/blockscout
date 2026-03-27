@@ -1058,13 +1058,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Transaction index for paging"
     },
-    "block_index" => %Parameter{
-      name: :block_index,
-      in: :query,
-      schema: %Schema{type: :integer},
-      required: false,
-      description: "Block index for paging"
-    },
     "inserted_at" => %Parameter{
       name: :inserted_at,
       in: :query,

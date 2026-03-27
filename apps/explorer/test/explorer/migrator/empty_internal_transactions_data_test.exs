@@ -59,9 +59,7 @@ defmodule Explorer.Migrator.EmptyInternalTransactionsDataTest do
         transaction: transaction,
         index: index,
         block_number: transaction.block_number,
-        transaction_index: transaction.index,
-        block_hash: transaction.block_hash,
-        block_index: index
+        transaction_index: transaction.index
       ]
 
       insert(:internal_transaction, Keyword.merge(base_fields, additional_fields))
