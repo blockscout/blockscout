@@ -25,6 +25,8 @@ defmodule Explorer.Factory do
   alias Explorer.Admin.Administrator
   alias Explorer.Chain.Beacon.{Blob, BlobTransaction, Deposit}
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
+  alias Explorer.Chain.Arbitrum.L1Batch, as: ArbitrumL1Batch
+  alias Explorer.Chain.Arbitrum.LifecycleTransaction, as: ArbitrumLifecycleTransaction
   alias Explorer.Chain.Scroll.Batch, as: ScrollBatch
   alias Explorer.Chain.Scroll.BatchBundle, as: ScrollBatchBundle
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
@@ -1868,6 +1870,31 @@ defmodule Explorer.Factory do
       migration_name: sequence("migration_", &"migration_#{&1}"),
       status: "started",
       meta: nil
+    }
+  end
+
+  def arbitrum_lifecycle_transaction_factory do
+    %ArbitrumLifecycleTransaction{
+      id: sequence("arbitrum_lifecycle_tx_id", & &1),
+      hash: transaction_hash(),
+      block_number: block_number(),
+      timestamp: DateTime.utc_now(),
+      status: :finalized
+    }
+  end
+
+  def arbitrum_l1_batch_factory do
+    lifecycle_tx = insert(:arbitrum_lifecycle_transaction)
+    start = Enum.random(1..100_000)
+
+    %ArbitrumL1Batch{
+      number: sequence("arbitrum_l1_batch_number", & &1),
+      transactions_count: Enum.random(1..100),
+      start_block: start,
+      end_block: Kernel.+(start, 10),
+      before_acc: block_hash(),
+      after_acc: block_hash(),
+      commitment_id: lifecycle_tx.id
     }
   end
 end

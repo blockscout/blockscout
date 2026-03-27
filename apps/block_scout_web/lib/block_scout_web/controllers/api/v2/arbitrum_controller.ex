@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.ArbitrumController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
     only: [
@@ -21,7 +22,45 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags(["arbitrum"])
+
   @batch_necessity_by_association %{:commitment_transaction => :required}
+
+  operation :messages, false
+  operation :messages_count, false
+  operation :claim_message, false
+  operation :withdrawals, false
+  operation :batch, false
+  operation :batch_by_data_availability_info, false
+  operation :batches_count, false
+  operation :batches, false
+  operation :batch_latest_number, false
+  operation :recent_messages_to_l2, false
+
+  operation :batches_committed,
+    summary: "List committed batches on the main page.",
+    description:
+      "Retrieves a list of Arbitrum batches that have been committed to L1, displayed on the main page.",
+    parameters: base_params(),
+    responses: [
+      ok:
+        {"List of committed Arbitrum batches.", "application/json",
+         %Schema{
+           type: :object,
+           properties: %{
+             items: %Schema{
+               type: :array,
+               items: Schemas.Arbitrum.BatchForList,
+               nullable: false
+             }
+           },
+           required: [:items],
+           additionalProperties: false
+         }},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/arbitrum/messages/:direction` endpoint.
