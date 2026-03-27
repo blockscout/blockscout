@@ -120,6 +120,8 @@ defmodule Explorer.Chain do
 
   @limit_showing_transactions 10_000
 
+  @deduplicated_optional_address_associations [:from_address, :to_address, :created_contract_address]
+
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
   """
@@ -433,6 +435,10 @@ defmodule Explorer.Chain do
           ]
   def block_to_transactions(block_hash, options \\ [], old_ui? \\ true) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    {optional_address_associations, other_necessity_by_association} =
+      split_optional_address_associations(necessity_by_association)
+
     type_filter = Keyword.get(options, :type)
 
     options
@@ -441,11 +447,105 @@ defmodule Explorer.Chain do
     |> join(:inner, [transaction], block in assoc(transaction, :block))
     |> where([_, block], block.hash == ^block_hash)
     |> apply_filter_by_type_to_transactions(type_filter)
-    |> join_associations(necessity_by_association)
+    |> join_associations(other_necessity_by_association)
     |> Transaction.put_has_token_transfers_to_transaction(old_ui?)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> select_repo(options).all()
+    |> preload_optional_address_associations(optional_address_associations, options)
   end
+
+  defp split_optional_address_associations(necessity_by_association) when is_map(necessity_by_association) do
+    {optional, other} =
+      Enum.split_with(necessity_by_association, fn {association, necessity} ->
+        necessity == :optional and address_association_key?(association)
+      end)
+
+    {optional, Map.new(other)}
+  end
+
+  defp address_association_key?(association) when is_atom(association),
+    do: association in @deduplicated_optional_address_associations
+
+  defp address_association_key?([{association, _nested_preloads}]),
+    do: association in @deduplicated_optional_address_associations
+
+  defp address_association_key?(_), do: false
+
+  defp preload_optional_address_associations([], _optional_address_associations, _options), do: []
+
+  defp preload_optional_address_associations(entities, [], _options) when is_list(entities), do: entities
+
+  defp preload_optional_address_associations(entities, optional_address_associations, options)
+       when is_list(entities) and is_list(optional_address_associations) do
+    associations_and_nested_preloads =
+      Enum.map(optional_address_associations, &association_with_nested_preloads/1)
+
+    associations =
+      associations_and_nested_preloads
+      |> Enum.map(&elem(&1, 0))
+      |> Enum.uniq()
+
+    address_nested_preloads =
+      associations_and_nested_preloads
+      |> Enum.flat_map(&normalize_nested_preloads(elem(&1, 1)))
+      |> Enum.uniq()
+
+    hashes =
+      entities
+      |> Enum.flat_map(fn entity ->
+        Enum.flat_map(associations, fn association ->
+          association
+          |> address_hash_field_for_association()
+          |> then(&Map.get(entity, &1))
+          |> hash_to_list()
+        end)
+      end)
+      |> Enum.uniq()
+
+    addresses_by_hash = fetch_addresses_by_hash(hashes, address_nested_preloads, options)
+
+    Enum.map(entities, fn entity ->
+      Enum.reduce(associations, entity, fn association, acc_entity ->
+        address =
+          association
+          |> address_hash_field_for_association()
+          |> then(&Map.get(acc_entity, &1))
+          |> then(&Map.get(addresses_by_hash, &1))
+
+        Map.put(acc_entity, association, address)
+      end)
+    end)
+  end
+
+  defp hash_to_list(nil), do: []
+  defp hash_to_list(hash), do: [hash]
+
+  defp fetch_addresses_by_hash([], _address_nested_preloads, _options), do: %{}
+
+  defp fetch_addresses_by_hash(hashes, address_nested_preloads, options) do
+    Address
+    |> where([address], address.hash in ^hashes)
+    |> maybe_preload_address_nested(address_nested_preloads)
+    |> select_repo(options).all()
+    |> Map.new(&{&1.hash, &1})
+  end
+
+  defp association_with_nested_preloads({association, _necessity}) when is_atom(association),
+    do: {association, []}
+
+  defp association_with_nested_preloads({[{association, nested_preloads}], _necessity}),
+    do: {association, nested_preloads}
+
+  defp normalize_nested_preloads(nil), do: []
+  defp normalize_nested_preloads(nested_preload) when is_atom(nested_preload), do: [nested_preload]
+  defp normalize_nested_preloads(nested_preloads) when is_list(nested_preloads), do: nested_preloads
+
+  defp maybe_preload_address_nested(query, []), do: query
+  defp maybe_preload_address_nested(query, nested_preloads), do: preload(query, ^nested_preloads)
+
+  defp address_hash_field_for_association(:from_address), do: :from_address_hash
+  defp address_hash_field_for_association(:to_address), do: :to_address_hash
+  defp address_hash_field_for_association(:created_contract_address), do: :created_contract_address_hash
 
   @spec execution_node_to_transactions(Hash.Address.t(), [paging_options | necessity_by_association_option | api?()]) ::
           [Transaction.t()]
@@ -2772,9 +2872,20 @@ defmodule Explorer.Chain do
   """
   @spec join_associations(atom() | Ecto.Query.t(), %{any() => :optional | :required}) :: Ecto.Query.t()
   def join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
-    Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
-      join_association(acc_query, association, join)
-    end)
+    {optional_associations, required_associations} =
+      Enum.split_with(necessity_by_association, fn {_association, join} -> join == :optional end)
+
+    query_with_required_joins =
+      Enum.reduce(required_associations, query, fn {association, _join}, acc_query ->
+        join_association(acc_query, association, :required)
+      end)
+
+    optional_preloads = Enum.map(optional_associations, fn {association, _join} -> association end)
+
+    case optional_preloads do
+      [] -> query_with_required_joins
+      _ -> preload(query_with_required_joins, ^optional_preloads)
+    end
   end
 
   defp page_blocks(query, %PagingOptions{key: nil}), do: query
