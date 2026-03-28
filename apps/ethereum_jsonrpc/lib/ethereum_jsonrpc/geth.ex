@@ -462,7 +462,12 @@ defmodule EthereumJSONRPC.Geth do
   end
 
   defp parse_call_tracer_calls({%{} = call, _}, acc, _trace_address, _inner?) do
-    if !allow_empty_traces?(), do: log_unknown_type(call)
+    call_type = call |> Map.get("type", "") |> to_string() |> String.downcase()
+
+    known_type =
+      call_type in ~w(call callcode delegatecall staticcall create create2 selfdestruct revert stop invalid)
+
+    if !known_type and !allow_empty_traces?(), do: log_unknown_type(call)
     acc
   end
 
