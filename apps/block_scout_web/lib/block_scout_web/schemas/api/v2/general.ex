@@ -698,6 +698,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for scoped reCAPTCHA bypass token.
+  """
+  @spec scoped_recaptcha_bypass_token_param() :: Parameter.t()
+  def scoped_recaptcha_bypass_token_param do
+    %Parameter{
+      name: :scoped_recaptcha_bypass_token,
+      in: :query,
+      schema: %Schema{type: :string},
+      required: false,
+      description: "Scoped reCAPTCHA bypass token for trusted clients"
+    }
+  end
+
+  @doc """
   Returns a parameter definition for API key used in rate limiting.
   """
   @spec api_key_param() :: Parameter.t()
