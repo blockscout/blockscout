@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchForList do
       blocks_count: %Schema{type: :integer, description: "Number of blocks included in the batch."},
       batch_data_container: %Schema{
         type: :string,
+        # Enum values must be kept in sync with Explorer.Chain.Arbitrum.L1Batch :batch_container field.
         enum: ["in_blob4844", "in_calldata", "in_celestia", "in_anytrust", "in_eigenda"],
         nullable: true,
         description: "Data availability container type."

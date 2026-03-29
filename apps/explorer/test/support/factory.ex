@@ -1875,7 +1875,7 @@ defmodule Explorer.Factory do
 
   def arbitrum_lifecycle_transaction_factory do
     %ArbitrumLifecycleTransaction{
-      id: sequence("arbitrum_lifecycle_tx_id", & &1),
+      id: sequence("arbitrum_lifecycle_tx_id", & &1, start_at: 1),
       hash: transaction_hash(),
       block_number: block_number(),
       timestamp: DateTime.utc_now(),
