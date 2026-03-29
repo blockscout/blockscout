@@ -609,8 +609,8 @@ config :explorer, Explorer.Chain.Cache.BlockNumber,
   global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
 
 config :explorer, Explorer.Chain.Cache.Blocks,
-  ttl_check_interval: false,
-  global_ttl: nil
+  ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
+  global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
 
 config :explorer, Explorer.Chain.Cache.Transactions,
   ttl_check_interval: false,
