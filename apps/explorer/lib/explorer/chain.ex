@@ -566,34 +566,38 @@ defmodule Explorer.Chain do
   defp batch_load_proxy_implementations_for_contracts(addresses, proxy_preloads, options) when is_list(addresses) do
     address_hashes = Enum.map(addresses, & &1.hash)
 
-    # Build proxy preload spec based on what was requested
-    proxy_spec = build_proxy_preload_spec(proxy_preloads)
-
-    # Fetch proxy implementations for these contract addresses
     proxy_implementations =
-      Implementation
-      |> where([impl], impl.proxy_address_hash in ^address_hashes)
-      |> preload(^proxy_spec)
-      |> select_repo(options).all()
+      address_hashes
+      |> Implementation.get_proxy_implementations_for_multiple_proxies(options)
+      |> maybe_preload_proxy_implementation_nested(proxy_preloads, options)
 
     # Group proxy implementations by proxy_address_hash for efficient lookup
-    proxy_by_address = Enum.group_by(proxy_implementations, & &1.proxy_address_hash)
+    proxy_by_address = Map.new(proxy_implementations, &{&1.proxy_address_hash, &1})
 
     # Attach proxy data to addresses
     Enum.map(addresses, fn address ->
-      proxy_list = Map.get(proxy_by_address, address.hash, [])
-      Map.put(address, :proxy_implementations, proxy_list)
+      Map.put(address, :proxy_implementations, Map.get(proxy_by_address, address.hash))
     end)
   end
 
-  # Build the preload specification for proxy implementations
+  defp maybe_preload_proxy_implementation_nested(proxy_implementations, proxy_preloads, options)
+       when is_list(proxy_implementations) and is_list(proxy_preloads) do
+    case build_proxy_preload_spec(proxy_preloads) do
+      [] ->
+        proxy_implementations
+
+      proxy_spec ->
+        select_repo(options).preload(proxy_implementations, proxy_spec)
+    end
+  end
+
+  # Build the nested preload specification for implementation structs.
   defp build_proxy_preload_spec(proxy_preloads) when is_list(proxy_preloads) do
-    # Find the nested preload spec if one exists
     Enum.find_value(proxy_preloads, fn
-      :proxy_implementations -> [:addresses, :conflicting_addresses, :smart_contracts]
+      :proxy_implementations -> Implementation.proxy_implementations_addresses_association()
       [{:proxy_implementations, nested}] -> nested
       _ -> nil
-    end) || [:addresses, :conflicting_addresses]
+    end) || []
   end
 
   defp association_with_nested_preloads({association, _necessity}) when is_atom(association),
