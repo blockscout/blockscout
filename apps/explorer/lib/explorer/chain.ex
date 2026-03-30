@@ -419,6 +419,7 @@ defmodule Explorer.Chain do
     |> where([address], address.hash in ^hashes)
     |> maybe_preload_address_nested(address_nested_preloads)
     |> select_repo(options).all()
+    |> strip_smart_contract_large_fields()
     |> Map.new(&{&1.hash, &1})
   end
 
@@ -434,6 +435,29 @@ defmodule Explorer.Chain do
 
   defp maybe_preload_address_nested(query, []), do: query
   defp maybe_preload_address_nested(query, nested_preloads), do: preload(query, ^nested_preloads)
+
+  @doc """
+  Post-processes loaded addresses to remove large SmartContract fields to reduce memory usage
+  and deserialization overhead for transaction listings.
+
+  Removes:
+  - contract_source_code (can be hundreds of KB)
+  - abi (can be hundreds of KB)
+  - constructor_arguments (potentially large)
+  """
+  defp strip_smart_contract_large_fields(addresses) when is_list(addresses) do
+    Enum.map(addresses, fn address ->
+      if Map.has_key?(address, :smart_contract) && address.smart_contract do
+        filtered_contract =
+          address.smart_contract
+          |> Map.drop([:contract_source_code, :abi, :constructor_arguments])
+
+        Map.put(address, :smart_contract, filtered_contract)
+      else
+        address
+      end
+    end)
+  end
 
   defp address_hash_field_for_association(:from_address), do: :from_address_hash
   defp address_hash_field_for_association(:to_address), do: :to_address_hash
