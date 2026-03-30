@@ -41,8 +41,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   operation :batches_committed,
     summary: "List committed batches on the main page.",
-    description:
-      "Retrieves a list of Arbitrum batches that have been committed to L1, displayed on the main page.",
+    description: "Retrieves a list of Arbitrum batches that have been committed to L1, displayed on the main page.",
     parameters: base_params(),
     responses: [
       ok:
