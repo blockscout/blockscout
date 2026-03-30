@@ -1,0 +1,135 @@
+# Parameter Discovery Guide
+
+All parameter helper functions are centralized in a single file:
+`apps/block_scout_web/lib/block_scout_web/schemas/api/v2/general.ex`
+
+They are auto-imported into every controller via `block_scout_web.ex`:
+```elixir
+import BlockScoutWeb.Schemas.API.V2.General
+```
+
+No controllers or other schema modules define their own parameter helpers — `general.ex` is the single source.
+
+## How to discover existing helpers
+
+### Find a specific helper
+
+Grep for the function name in `general.ex`:
+```
+grep "def transaction_hash_param" in general.ex
+```
+
+Parameter helpers follow the naming convention `<descriptive_name>_param` for single params, and `<name>_params` for grouped helpers.
+
+### Browse all helpers
+
+Grep for `def.*_param` in `general.ex` to see the full list. There are ~48 helpers organized into functional categories (described below).
+
+### Find which controllers use a helper
+
+Grep for the function name across `controllers/api/v2/`:
+```
+grep "transaction_hash_param()" in controllers/api/v2/**/*.ex
+```
+
+## Naming conventions
+
+| Category | Naming pattern | Examples |
+|---|---|---|
+| Path identifiers | `<entity>_hash_param`, `<entity>_number_param`, `<entity>_id_param` | `address_hash_param`, `block_number_param`, `token_id_param` |
+| Domain filters | `<what_it_filters>_param` | `token_type_param`, `direction_filter_param`, `transaction_filter_param` |
+| Sorting | `sort_param(fields)`, `order_param` | `sort_param(["name", "holder_count"])` |
+| Boolean toggles | descriptive name | `just_request_body_param` |
+| Authentication | `<purpose>_param` | `api_key_param`, `key_param`, `admin_api_key_param` |
+| Paging factories | `define_paging_params(field_names)` | `define_paging_params(["index", "block_number"])` |
+
+## Functional categories
+
+When looking for existing helpers, think about which category the parameter falls into:
+
+**A. Path identifiers** — Entity identifiers in URL path segments. Grep: `def.*_hash_param\|def.*_number_param\|def.*_id_param`.
+
+**B. Domain filters** — Query params that filter list results. Grep: `def.*_filter_param\|def.*_type_param\|def.*q_param`.
+
+**C. Sorting** — `sort_param/1` takes a list of allowed sort fields, `order_param/0` provides asc/desc. Grep: `def sort_param\|def order_param`.
+
+**D. Paging factories** — `define_paging_params/1` generates multiple `%Parameter{in: :query}` structs from a list of field name strings. There are also `define_state_changes_paging_params/1` and `define_search_paging_params/1` variants. Grep: `def define_paging_params\|def define.*paging`.
+
+**E. Authentication** — `api_key_param`, `key_param` (bundled as `base_params()`), `admin_api_key_param` (header), `recaptcha_response_param`. Grep: `def.*api_key\|def.*key_param\|def recaptcha`.
+
+**F. Composite helpers** — `base_params()` returns `[api_key_param(), key_param()]`. Grep: `def base_params`.
+
+## Creating a new parameter helper
+
+### When to create a helper vs inline
+
+- **Create a helper** if the parameter will be used by 2+ operations or is a standard domain concept (like an entity hash).
+- **Use inline `%Parameter{}`** if the parameter is unique to one endpoint.
+
+### Helper function template
+
+```elixir
+@spec my_new_param() :: Parameter.t()
+def my_new_param do
+  %Parameter{
+    name: :my_new_param,       # atom — must match route segment and controller pattern-match
+    in: :path,                  # :path | :query | :header
+    schema: FullHash,           # a schema module or inline %Schema{}
+    required: true,             # true for path params, typically false for query params
+    description: "Description of what this parameter does"
+  }
+end
+```
+
+Place it in `general.ex` near other helpers of the same category. The file is organized roughly by category, though not strictly enforced.
+
+### Inline parameter template
+
+For one-off parameters, define directly in the `operation` macro arguments:
+
+```elixir
+operation :my_action,
+  parameters: [
+    %OpenApiSpex.Parameter{
+      name: :height,
+      in: :path,
+      schema: Schemas.General.IntegerString,
+      required: true,
+      description: "Block height"
+    }
+    | base_params()
+  ],
+  responses: [...]
+```
+
+## Schema types for parameters
+
+Parameter schemas reference leaf schema modules from `schemas/api/v2/general/`:
+
+| Type | Module | Use for |
+|---|---|---|
+| Full hash (0x + 64 hex) | `FullHash` | Transaction hashes, block hashes |
+| Address hash (0x + 40 hex) | `AddressHash` | Address identifiers |
+| Integer as string | `IntegerString` | Numeric IDs passed as strings |
+| Hex string | `HexString` | Arbitrary hex data |
+| Generic string | `%Schema{type: :string}` | Free-form text, API keys |
+| Boolean | `%Schema{type: :boolean}` | Toggle flags |
+| Enum | `%Schema{type: :string, enum: [...]}` | Fixed set of allowed values |
+
+To discover available leaf schemas, glob `schemas/api/v2/general/*.ex`.
+
+## The `define_paging_params` factory
+
+For paginated list endpoints, pagination cursor parameters are generated from a list of field names:
+
+```elixir
+define_paging_params(["index", "block_number", "batch_log_index"])
+```
+
+This creates one `%Parameter{in: :query, required: false}` per field name. The string names are converted to atoms as the parameter `:name`. Each gets an `IntegerString` schema by default.
+
+There are specialized variants:
+- `define_state_changes_paging_params/1` — for state change pagination
+- `define_search_paging_params/1` — for search result pagination (uses object params)
+
+Grep `define_paging_params\|define_state_changes\|define_search` in `general.ex` to see their implementations.
