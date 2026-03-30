@@ -829,6 +829,34 @@ defmodule Explorer.Chain.Address do
     )
   end
 
+  @doc """
+  Preloads the contract creation internal transaction for the given address or
+  list of addresses.
+
+  For each address, this function finds the most relevant internal transaction
+  whose `created_contract_address_hash` resolves to the address hash, preloads
+  its related addresses, and assigns it to the virtual
+  `:contract_creation_internal_transaction` field.
+
+  When a list of addresses is provided, the function performs a single batch
+  query for all address hashes, builds a map keyed by
+  `created_contract_address_hash`, and attaches the matched internal transaction
+  to each address.
+
+  ## Parameters
+
+    - `addresses`: An `Explorer.Chain.Address.t/0`, a list of addresses, `[]`, or `nil`
+    - `repo`: The repo module used to execute the query. Defaults to `Explorer.Repo`
+
+  ## Returns
+
+    - A list of addresses with `:contract_creation_internal_transaction`
+      populated when the input is a list
+    - A single address with `:contract_creation_internal_transaction`
+      populated when the input is a single struct
+  """
+  @spec preload_contract_creation_internal_transaction([__MODULE__.t()] | __MODULE__.t() | nil, module()) ::
+          [__MODULE__.t()] | __MODULE__.t() | nil
   def preload_contract_creation_internal_transaction(addresses, repo \\ Repo)
 
   def preload_contract_creation_internal_transaction([], _repo), do: []

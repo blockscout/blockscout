@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.AddressViewTest do
           transaction: transaction,
           transaction_index: transaction.index,
           to_address: nil,
-          created_contract_address_hash: nil,
+          created_contract_address: nil,
           block_hash: transaction.block_hash,
           block_number: transaction.block_number
         )

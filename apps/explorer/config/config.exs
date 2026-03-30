@@ -186,7 +186,11 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndexA,
       Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey,
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsBlockHashTransactionIndexIndexIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsCreatedContractAddressHashPartialIndex
+      Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsCreatedContractAddressHashPartialIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsFromAddressIdPartialIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsToAddressIdPartialIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdPartialIndex
     ] do
   config :explorer, index_operation, enabled: true
 end

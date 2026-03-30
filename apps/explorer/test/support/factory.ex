@@ -1377,22 +1377,37 @@ defmodule Explorer.Factory do
   end
 
   defp adjust_internal_transaction_addresses_attrs(attrs, addresses_fields, contract_code \\ nil) do
-    {addresses_attrs, other_attrs} = Map.split(attrs, addresses_fields)
+    hash_fields = Enum.map(addresses_fields, &String.to_existing_atom("#{&1}_hash"))
+    {address_related_attrs, other_attrs} = Map.split(attrs, addresses_fields ++ hash_fields)
 
     addresses_fields
-    |> Enum.reduce(addresses_attrs, fn address_field, acc ->
-      address =
-        case Map.get(acc, address_field) do
-          nil ->
-            additional_fields =
-              case address_field do
-                :created_contract_address -> %{contract_code: contract_code}
-                _ -> %{}
-              end
+    |> Enum.reduce(address_related_attrs, fn address_field, acc ->
+      hash_field = String.to_existing_atom("#{address_field}_hash")
 
-            built_address = :address |> build() |> Map.merge(additional_fields)
-            built_address |> Address.changeset(additional_fields) |> Repo.insert()
-            built_address
+      additional_fields =
+        case address_field do
+          :created_contract_address -> %{contract_code: contract_code}
+          _ -> %{}
+        end
+
+      address =
+        case Map.has_key?(acc, address_field) && Map.get(acc, address_field) do
+          nil ->
+            nil
+
+          false ->
+            address_params =
+              Map.merge(additional_fields, if(hash = Map.get(acc, hash_field), do: %{hash: hash}, else: %{}))
+
+            case Map.get(address_params, :hash) && Repo.get_by(Address, hash: address_params.hash) do
+              nil ->
+                built_address = build(:address, address_params)
+                insert(built_address)
+                built_address
+
+              _ ->
+                build(:address, address_params)
+            end
 
           address ->
             address
@@ -1400,7 +1415,8 @@ defmodule Explorer.Factory do
 
       Map.merge(acc, %{
         address_field => address,
-        :"#{address_field}_mapping" => AddressIdToAddressHash.find_or_create(address.hash)
+        hash_field => address && address.hash,
+        :"#{address_field}_mapping" => address && AddressIdToAddressHash.find_or_create(address.hash)
       })
     end)
     |> Map.merge(other_attrs)

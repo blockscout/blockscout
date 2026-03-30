@@ -126,8 +126,8 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
           |> join(:inner, [it], locked_it in subquery(locked_internal_transactions_to_delete_query),
             on: join_on_ctid(it, locked_it)
           )
-          |> join(:inner, [it], a in assoc(it, :from_address), as: :from_address)
-          |> join(:inner, [it], a in assoc(it, :to_address), as: :to_address)
+          |> InternalTransaction.join_address_query(:from_address, :inner)
+          |> InternalTransaction.join_address_query(:to_address, :inner)
           |> select([it], %{
             from_address_hash: as(:from_address).hash,
             to_address_hash: as(:to_address).hash,

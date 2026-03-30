@@ -918,21 +918,48 @@ defmodule Explorer.Chain.InternalTransaction do
     end)
   end
 
-  def join_address_query(query, address_field) do
-    mapping_binding = :"#{address_field}_mapping"
-    address_binding = :"#{address_field}"
-    address_id_field = :"#{address_field}_id"
-    address_hash_field = :"#{address_field}_hash"
+  @doc """
+  Joins an internal transaction query with the address mapping and resolved
+  address for the given address field.
+
+  This helper supports both migrated and partially migrated data:
+
+  - it first left joins the `AddressIdToAddressHash` mapping using the
+    corresponding `*_address_id` field
+  - it then left joins `Explorer.Chain.Address` using the mapped hash
+  - if no mapping is found, it falls back to joining by the legacy
+    `*_address_hash` field
+
+  This allows downstream query code to reference the joined address through
+  `as/1`, for example `as(:created_contract_address).hash`.
+
+  ## Parameters
+
+    - `query`: The base query to extend
+    - `address_field`: The logical address field to join. Expected values
+      include `:from_address`, `:to_address`, or `:created_contract_address`
+
+  ## Returns
+
+    An `Ecto.Query.t/0` with the mapping and address joins added.
+  """
+  @spec join_address_query(Ecto.Query.t() | module(), :from_address | :to_address | :created_contract_address, atom()) ::
+          Ecto.Query.t()
+  def join_address_query(query, address_field, join_type \\ :left) do
+    mapping_binding = String.to_existing_atom("#{address_field}_mapping")
+    address_binding = address_field
+    address_id_field = String.to_existing_atom("#{address_field}_id")
+    address_hash_field = String.to_existing_atom("#{address_field}_hash")
 
     query
     |> with_named_binding(mapping_binding, fn query, binding ->
-      join(query, :left, [it], m in AddressIdToAddressHash,
+      join(query, join_type, [it], m in AddressIdToAddressHash,
         as: ^binding,
         on: field(it, ^address_id_field) == m.address_id
       )
     end)
     |> with_named_binding(address_binding, fn query, binding ->
-      join(query, :left, [it], a in Address,
+      join(query, join_type, [it], a in Address,
         as: ^binding,
         on:
           a.hash == as(^mapping_binding).address_hash or
@@ -1444,6 +1471,35 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @default_address_preloads [from_address: [], to_address: [], created_contract_address: []]
+
+  @doc """
+  Preloads address associations for the given internal transaction or list of
+  internal transactions.
+
+  After preloading, the function normalizes the result so that
+  `:from_address`, `:to_address`, and `:created_contract_address` are populated
+  consistently, and the corresponding `*_address_hash` fields are aligned with
+  the resolved addresses.
+
+  ## Parameters
+
+    - `internal_transactions`: An `Explorer.Chain.InternalTransaction.t/0`, a
+      list of internal transactions, `[]`, or `nil`
+    - `options`: Keyword options. Supports `:address_preloads` to specify nested
+      preloads for `:from_address`, `:to_address`, and
+      `:created_contract_address`
+    - `repo`: The repo module used for preloading. When omitted, it is resolved
+      via `Explorer.Chain.select_repo/1`
+
+  ## Returns
+
+    - A list of internal transactions with addresses preloaded when the input is
+      a list
+    - A single internal transaction with addresses preloaded when the input is a
+      single struct
+  """
+  @spec preload_addresses([__MODULE__.t()] | __MODULE__.t() | nil, Keyword.t(), module() | nil) ::
+          [__MODULE__.t()] | __MODULE__.t() | nil
   def preload_addresses(internal_transactions, options \\ [], repo \\ nil)
 
   def preload_addresses([], _options, _repo), do: []

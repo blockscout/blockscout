@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
 
   alias BlockScoutWeb.CsvExport.Address.InternalTransactions, as: AddressInternalTransactionsCsvExporter
   alias Explorer.Chain.{Address, InternalTransaction, Wei}
+  alias Explorer.Utility.AddressIdToAddressHash
 
   describe "export/3" do
     test "exports address internal transactions to csv" do
@@ -22,7 +23,6 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
           block_hash: transaction.block_hash,
           transaction_index: transaction.index
         )
-        |> InternalTransaction.preload_addresses()
 
       {:ok, now} = DateTime.now("Etc/UTC")
 
@@ -99,9 +99,16 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
       assert result.block_number == to_string(internal_transaction.block_number)
       assert result.transaction_index == to_string(internal_transaction.transaction_index)
       assert result.timestamp
-      assert result.from_address_hash == Address.checksum(internal_transaction.from_address_hash)
-      assert result.to_address_hash == Address.checksum(internal_transaction.to_address_hash)
-      assert result.created_contract_address_hash == to_string(internal_transaction.created_contract_address_hash)
+
+      assert result.from_address_hash ==
+               Address.checksum(AddressIdToAddressHash.id_to_hash(internal_transaction.from_address_id))
+
+      assert result.to_address_hash ==
+               Address.checksum(AddressIdToAddressHash.id_to_hash(internal_transaction.to_address_id))
+
+      assert result.created_contract_address_hash ==
+               to_string(AddressIdToAddressHash.id_to_hash(internal_transaction.created_contract_address_hash))
+
       assert result.type == to_string(internal_transaction.type)
       assert result.call_type == to_string(internal_transaction.call_type)
       assert result.gas == to_string(internal_transaction.gas)

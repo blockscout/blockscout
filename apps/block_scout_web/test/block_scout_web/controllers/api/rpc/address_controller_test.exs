@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.{Events.Subscriber, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
+  alias Explorer.Utility.AddressIdToAddressHash
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   setup :set_mox_global
@@ -1848,14 +1849,13 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
-        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
           "blockNumber" => "#{transaction.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{internal_transaction.from_address_hash}",
-          "to" => "#{internal_transaction.to_address_hash}",
+          "from" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.from_address_id)}",
+          "to" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.to_address_id)}",
           "value" => "#{internal_transaction.value.value}",
           "contractAddress" => "",
           "input" => "#{internal_transaction.input}",
@@ -1917,14 +1917,13 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
-        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
           "blockNumber" => "#{transaction.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{internal_transaction.from_address_hash}",
-          "to" => "#{internal_transaction.to_address_hash}",
+          "from" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.from_address_id)}",
+          "to" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.to_address_id)}",
           "value" => "#{internal_transaction.value.value}",
           "contractAddress" => "",
           "input" => "#{internal_transaction.input}",
@@ -1997,14 +1996,13 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
-        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
           "blockNumber" => "#{transaction.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{internal_transaction.from_address_hash}",
-          "to" => "#{internal_transaction.to_address_hash}",
+          "from" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.from_address_id)}",
+          "to" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.to_address_id)}",
           "value" => "#{internal_transaction.value.value}",
           "contractAddress" => "",
           "input" => "#{internal_transaction.input}",
@@ -2068,7 +2066,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
-        |> InternalTransaction.preload_addresses()
 
       internal_transaction_b =
         :internal_transaction
@@ -2082,14 +2079,13 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
-        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
           "blockNumber" => "#{transaction.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{internal_transaction_b.from_address_hash}",
-          "to" => "#{internal_transaction_b.to_address_hash}",
+          "from" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction_b.from_address_id)}",
+          "to" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction_b.to_address_id)}",
           "value" => "#{internal_transaction_b.value.value}",
           "contractAddress" => "",
           "input" => "#{internal_transaction_b.input}",
@@ -2105,8 +2101,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         %{
           "blockNumber" => "#{internal_transaction_a.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{internal_transaction_a.from_address_hash}",
-          "to" => "#{internal_transaction_a.to_address_hash}",
+          "from" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction_a.from_address_id)}",
+          "to" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction_a.to_address_id)}",
           "value" => "#{internal_transaction_a.value.value}",
           "contractAddress" => "",
           "input" => "#{internal_transaction_a.input}",
@@ -2196,7 +2192,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: transaction.block_number
         )
-        |> InternalTransaction.preload_addresses()
 
       params = %{
         "module" => "account",
@@ -2208,8 +2203,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         %{
           "blockNumber" => "#{transaction.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{internal_transaction.from_address_hash}",
-          "to" => "#{internal_transaction.to_address_hash}",
+          "from" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.from_address_id)}",
+          "to" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.to_address_id)}",
           "value" => "#{internal_transaction.value.value}",
           "contractAddress" => "#{contract_address.hash}",
           "input" => "",
@@ -2391,14 +2386,13 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
-        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
           "blockNumber" => "#{transaction.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{internal_transaction.from_address_hash}",
-          "to" => "#{internal_transaction.to_address_hash}",
+          "from" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.from_address_id)}",
+          "to" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.to_address_id)}",
           "value" => "#{internal_transaction.value.value}",
           "contractAddress" => "",
           "input" => "#{internal_transaction.input}",
@@ -2458,7 +2452,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
-        |> InternalTransaction.preload_addresses()
 
       internal_transaction_b =
         :internal_transaction
@@ -2470,14 +2463,13 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
-        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
           "blockNumber" => "#{internal_transaction_b.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{internal_transaction_b.from_address_hash}",
-          "to" => "#{internal_transaction_b.to_address_hash}",
+          "from" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction_b.from_address_id)}",
+          "to" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction_b.to_address_id)}",
           "value" => "#{internal_transaction_b.value.value}",
           "contractAddress" => "",
           "input" => "#{internal_transaction_b.input}",
@@ -2493,8 +2485,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         %{
           "blockNumber" => "#{transaction.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{internal_transaction_a.from_address_hash}",
-          "to" => "#{internal_transaction_a.to_address_hash}",
+          "from" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction_a.from_address_id)}",
+          "to" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction_a.to_address_id)}",
           "value" => "#{internal_transaction_a.value.value}",
           "contractAddress" => "",
           "input" => "#{internal_transaction_a.input}",
@@ -2606,7 +2598,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_number: block.number,
           block_hash: transaction.block_hash
         )
-        |> InternalTransaction.preload_addresses()
 
       params = %{
         "module" => "account",
@@ -2618,8 +2609,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         %{
           "blockNumber" => "#{transaction.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{internal_transaction.from_address_hash}",
-          "to" => "#{internal_transaction.to_address_hash}",
+          "from" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.from_address_id)}",
+          "to" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.to_address_id)}",
           "value" => "#{internal_transaction.value.value}",
           "contractAddress" => "#{contract_address.hash}",
           "input" => "",
@@ -2767,14 +2758,13 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
-        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
           "blockNumber" => "#{transaction.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{internal_transaction.from_address_hash}",
-          "to" => "#{internal_transaction.to_address_hash}",
+          "from" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.from_address_id)}",
+          "to" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.to_address_id)}",
           "value" => "#{internal_transaction.value.value}",
           "contractAddress" => "",
           "input" => "#{internal_transaction.input}",
@@ -2838,7 +2828,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
-        |> InternalTransaction.preload_addresses()
 
       internal_transaction_b =
         :internal_transaction
@@ -2851,14 +2840,13 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           block_hash: transaction.block_hash,
           block_number: block.number
         )
-        |> InternalTransaction.preload_addresses()
 
       expected_result = [
         %{
           "blockNumber" => "#{transaction.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{internal_transaction_b.from_address_hash}",
-          "to" => "#{internal_transaction_b.to_address_hash}",
+          "from" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction_b.from_address_id)}",
+          "to" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction_b.to_address_id)}",
           "value" => "#{internal_transaction_b.value.value}",
           "contractAddress" => "",
           "input" => "#{internal_transaction_b.input}",
@@ -2874,8 +2862,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         %{
           "blockNumber" => "#{internal_transaction_a.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{internal_transaction_a.from_address_hash}",
-          "to" => "#{internal_transaction_a.to_address_hash}",
+          "from" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction_a.from_address_id)}",
+          "to" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction_a.to_address_id)}",
           "value" => "#{internal_transaction_a.value.value}",
           "contractAddress" => "",
           "input" => "#{internal_transaction_a.input}",

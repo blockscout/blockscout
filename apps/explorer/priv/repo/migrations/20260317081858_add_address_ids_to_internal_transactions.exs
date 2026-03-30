@@ -8,15 +8,6 @@ defmodule Explorer.Repo.Migrations.AddAddressIdsToInternalTransactions do
       add(:created_contract_address_id, :bigint)
     end
 
-    create_if_not_exists(
-      index(
-        :internal_transactions,
-        [:from_address_id, {:desc, :block_number}, {:desc, :transaction_index}, {:desc, :index}],
-        name: :internal_transactions_from_address_id_partial_index,
-        where: "((type = 'call' AND index > 0) OR type != 'call')"
-      )
-    )
-
     drop_if_exists(
       constraint(
         :internal_transactions,
@@ -33,26 +24,6 @@ defmodule Explorer.Repo.Migrations.AddAddressIdsToInternalTransactions do
         :selfdestruct_has_from_and_to_address,
         check: "type != 'selfdestruct' OR (from_address_id IS NOT NULL AND gas IS NULL AND to_address_id IS NOT NULL)",
         validate: false
-      )
-    )
-
-    create_if_not_exists(
-      index(
-        :internal_transactions,
-        [:to_address_id, {:desc, :block_number}, {:desc, :transaction_index}, {:desc, :index}],
-        name: :internal_transactions_to_address_id_partial_index,
-        where: "((type = 'call' AND index > 0) OR type != 'call')"
-      )
-    )
-
-    create_if_not_exists(index(:internal_transactions, [:created_contract_address_id]))
-
-    create_if_not_exists(
-      index(
-        :internal_transactions,
-        [:created_contract_address_id, {:desc, :block_number}, {:desc, :transaction_index}, {:desc, :index}],
-        name: :internal_transactions_created_contract_address_id_partial_index,
-        where: "((type = 'call' AND index > 0) OR type != 'call')"
       )
     )
 
