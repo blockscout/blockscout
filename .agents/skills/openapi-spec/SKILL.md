@@ -74,6 +74,20 @@ There is no runtime validation that view output matches the response schema. Ali
 
 If a view emits a key not in the schema (or vice versa), tests will fail.
 
+### CastAndValidate's effect on params (string keys → atom keys)
+
+When `CastAndValidate` processes an action with a real `operation` spec (not `operation :action, false`), it transforms **all** params before the action runs:
+- **String keys become atom keys:** `%{"id" => "42"}` → `%{id: 42}`
+- **Values are cast to declared types:** strings become integers, booleans, etc., based on the parameter's `%Schema{type: ...}`
+
+Actions declared with `operation :action, false` are **skipped** — they receive the original string-keyed params from Phoenix unchanged.
+
+This matters most for **pagination**. The `paging_options/1` function in `chain.ex` has parallel clauses for both forms:
+- String-key clauses (e.g., `%{"id" => id_string} when is_binary(id_string)`) — used by actions without a spec
+- Atom-key clauses (e.g., `%{id: id}`) — used by actions with a real spec
+
+When promoting an action from `operation :action, false` to a real spec, the string-key `paging_options` clause will stop matching. You must ensure a corresponding atom-key clause exists. See Workflow A, Step 4b for details.
+
 ### base_params() — always include
 
 `base_params()` returns `[api_key_param(), key_param()]` — two optional query parameters (`apikey`, `key`) present on every public API operation. Always include it.
@@ -192,7 +206,7 @@ For each parameter the controller reads:
 5. **Set `required:`** to list all keys that the view always emits.
 6. For paginated list endpoints, use `General.paginated_response/1` to wrap the item schema.
 
-### Step 4: Write the operation annotation
+### Step 4a: Write the operation annotation
 
 Add the `operation/2` call above the controller action. Follow the structure in "The operation macro" section above. Make sure:
 - `summary:` is a short imperative sentence
@@ -201,6 +215,18 @@ Add the `operation/2` call above the controller action. Follow the structure in 
 - `responses:` covers the success case and all error cases the action can return
 
 If the controller lacks the `use OpenApiSpex.ControllerSpecs` line and `CastAndValidate` plug, add them (see "Controller prerequisites").
+
+### Step 4b: Update paging_options if the endpoint is paginated
+
+If the action calls `paging_options(params)` (directly or via helpers like `next_page_params`), the string-key clauses in `chain.ex` will no longer match because `CastAndValidate` has already converted params to atom keys with cast types.
+
+Check `chain.ex` for the relevant `paging_options` clause. If only a string-key clause exists (e.g., `%{"id" => id_string}` with `Integer.parse`):
+- **Add** a matching atom-key clause (e.g., `%{id: id}`) if the string-key clause is still used by other actions without specs
+- **Replace** the string-key clause with an atom-key one if all callers now go through `CastAndValidate`
+
+The atom-key clause is typically simpler because `CastAndValidate` already handles type casting — no `Integer.parse` or similar parsing needed.
+
+This step is especially important when **promoting** an action from `operation :action, false` to a real spec — that is the moment where `paging_options` stops receiving string keys and the mismatch occurs.
 
 ### Step 5: Ensure test coverage
 
