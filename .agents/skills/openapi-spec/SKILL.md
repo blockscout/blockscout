@@ -203,6 +203,7 @@ For each parameter the controller reads:
    - Integer vs string — if the Ecto field is an integer type but the view converts it to a string (e.g., for large numbers), use an appropriate schema like `IntegerString`.
    See `references/schema-conventions.md` section "Determining property types from Ecto schemas" for more detail.
 4. **Set `additionalProperties: false`** on object schemas — this is a project-wide convention that enables test-time enforcement.
+   - **For non-negative integer properties** (block numbers, batch numbers, counts, indices, nonces), set `minimum: 0` to enforce the domain constraint at the validation level.
 5. **Set `required:`** to list all keys that the view always emits.
 6. For paginated list endpoints, use `General.paginated_response/1` to wrap the item schema.
 
