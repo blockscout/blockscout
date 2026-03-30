@@ -523,12 +523,77 @@ defmodule Explorer.Chain do
   defp fetch_addresses_by_hash([], _address_nested_preloads, _options), do: %{}
 
   defp fetch_addresses_by_hash(hashes, address_nested_preloads, options) do
-    Address
-    |> where([address], address.hash in ^hashes)
-    |> maybe_preload_address_nested(address_nested_preloads)
-    |> select_repo(options).all()
-    |> strip_smart_contract_large_fields()
-    |> Map.new(&{&1.hash, &1})
+    # Split nested preloads into proxy and non-proxy preloads
+    # This allows us to load proxy implementations conditionally only for contract addresses
+    {proxy_preloads, non_proxy_preloads} = split_proxy_preloads(address_nested_preloads)
+
+    addresses =
+      Address
+      |> where([address], address.hash in ^hashes)
+      |> maybe_preload_address_nested(non_proxy_preloads)
+      |> select_repo(options).all()
+      |> strip_smart_contract_large_fields()
+
+    # Only fetch proxy implementations for contract addresses (where smart_contract exists)
+    addresses_with_proxy =
+      if Enum.any?(proxy_preloads) and Enum.any?(addresses, &proxy_applicable?/1) do
+        contract_addresses = Enum.filter(addresses, &proxy_applicable?/1)
+        batch_load_proxy_implementations_for_contracts(contract_addresses, proxy_preloads, options)
+      else
+        addresses
+      end
+
+    Map.new(addresses_with_proxy, &{&1.hash, &1})
+  end
+
+  # Check if an address is a contract or has proxy_implementations
+  defp proxy_applicable?(%Address{smart_contract: nil}), do: false
+  defp proxy_applicable?(_), do: true
+
+  # Split proxy-related preloads from other nested preloads
+  defp split_proxy_preloads(nested_preloads) when is_list(nested_preloads) do
+    {proxy, non_proxy} =
+      Enum.split_with(nested_preloads, fn
+        :proxy_implementations -> true
+        [{:proxy_implementations, _}] -> true
+        _ -> false
+      end)
+
+    {proxy, non_proxy}
+  end
+
+  # Batch load proxy implementations for contract addresses and attach to originating addresses
+  defp batch_load_proxy_implementations_for_contracts(addresses, proxy_preloads, options) when is_list(addresses) do
+    address_hashes = Enum.map(addresses, & &1.hash)
+
+    # Build proxy preload spec based on what was requested
+    proxy_spec = build_proxy_preload_spec(proxy_preloads)
+
+    # Fetch proxy implementations for these contract addresses
+    proxy_implementations =
+      Implementation
+      |> where([impl], impl.proxy_address_hash in ^address_hashes)
+      |> preload(^proxy_spec)
+      |> select_repo(options).all()
+
+    # Group proxy implementations by proxy_address_hash for efficient lookup
+    proxy_by_address = Enum.group_by(proxy_implementations, & &1.proxy_address_hash)
+
+    # Attach proxy data to addresses
+    Enum.map(addresses, fn address ->
+      proxy_list = Map.get(proxy_by_address, address.hash, [])
+      Map.put(address, :proxy_implementations, proxy_list)
+    end)
+  end
+
+  # Build the preload specification for proxy implementations
+  defp build_proxy_preload_spec(proxy_preloads) when is_list(proxy_preloads) do
+    # Find the nested preload spec if one exists
+    Enum.find_value(proxy_preloads, fn
+      :proxy_implementations -> [:addresses, :conflicting_addresses, :smart_contracts]
+      [{:proxy_implementations, nested}] -> nested
+      _ -> nil
+    end) || [:addresses, :conflicting_addresses]
   end
 
   defp association_with_nested_preloads({association, _necessity}) when is_atom(association),
@@ -544,15 +609,13 @@ defmodule Explorer.Chain do
   defp maybe_preload_address_nested(query, []), do: query
   defp maybe_preload_address_nested(query, nested_preloads), do: preload(query, ^nested_preloads)
 
-  @doc """
-  Post-processes loaded addresses to remove large SmartContract fields to reduce memory usage
-  and deserialization overhead for transaction listings.
+  # Post-processes loaded addresses to remove large SmartContract fields to reduce memory usage
+  # and deserialization overhead for transaction listings.
 
-  Removes:
-  - contract_source_code (can be hundreds of KB)
-  - abi (can be hundreds of KB)
-  - constructor_arguments (potentially large)
-  """
+  # Removes:
+  # - contract_source_code (can be hundreds of KB)
+  # - abi (can be hundreds of KB)
+  # - constructor_arguments (potentially large)
   defp strip_smart_contract_large_fields(addresses) when is_list(addresses) do
     Enum.map(addresses, fn address ->
       if Map.has_key?(address, :smart_contract) && address.smart_contract do
