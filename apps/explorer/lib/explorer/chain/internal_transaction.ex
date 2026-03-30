@@ -58,7 +58,7 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:call_type, CallType)
     field(:call_type_enum, Ecto.Enum, values: [:call, :callcode, :delegatecall, :staticcall, :invalid])
     field(:created_contract_code, Data)
-    field(:error, :string)
+    field(:error, :string, virtual: true)
     field(:error_id, :integer)
     field(:gas, :decimal)
     field(:gas_used, :decimal)
@@ -140,16 +140,15 @@ defmodule Explorer.Chain.InternalTransaction do
   @doc """
   Validates that the `attrs` are valid.
 
-  `:create` type traces generated when a contract is created are valid.  `created_contract_address_hash`,
-  `from_address_hash` are converted to `t:Explorer.Chain.Hash.t/0`, and `type` is converted to
+  `:create` type traces generated when a contract is created are valid. `type` is converted to
   `t:Explorer.Chain.InternalTransaction.Type.t/0`
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
-      ...>     created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
+      ...>     created_contract_address_id: 3,
       ...>     created_contract_code: "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
-      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     from_address_id: 1,
       ...>     gas: 4597044,
       ...>     gas_used: 166651,
       ...>     index: 0,
@@ -163,27 +162,17 @@ defmodule Explorer.Chain.InternalTransaction do
       ...> )
       iex> changeset.valid?
       true
-      iex> changeset.changes.created_contract_address_hash
-      %Explorer.Chain.Hash{
-        byte_count: 20,
-        bytes: <<255, 200, 114, 57, 235, 2, 103, 188, 60, 162, 205, 81, 209, 47, 191, 39, 142, 2, 204, 180>>
-      }
-      iex> changeset.changes.from_address_hash
-      %Explorer.Chain.Hash{
-        byte_count: 20,
-        bytes: <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152, 122, 202>>
-      }
       iex> changeset.changes.type
       :create
 
   `:create` type can fail due to a Bad Instruction in the `init`, but these need to be valid, so we can display the
-  failures.  `to_address_hash` is converted to `t:Explorer.Chain.Hash.t/0`.
+  failures.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
-      ...>     error: "Bad instruction",
-      ...>     from_address_hash: "0x78a42d3705fb3c26a4b54737a784bf064f0815fb",
+      ...>     error_id: 1,
+      ...>     from_address_id: 1,
       ...>     gas: 3946728,
       ...>     index: 0,
       ...>     init: "0x4bb278f3",
@@ -196,11 +185,6 @@ defmodule Explorer.Chain.InternalTransaction do
       iex> )
       iex> changeset.valid?
       true
-      iex> changeset.changes.from_address_hash
-      %Explorer.Chain.Hash{
-        byte_count: 20,
-        bytes: <<120, 164, 45, 55, 5, 251, 60, 38, 164, 181, 71, 55, 167, 132, 191, 6, 79, 8, 21, 251>>
-      }
 
   `:call` type traces are generated when a method in a contract is call.
 
@@ -213,8 +197,8 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     trace_address: [],
       ...>     call_type: "call",
       ...>     type: "call",
-      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-      ...>     to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>     from_address_id: 1,
+      ...>     to_address_id: 2,
       ...>     gas: 4677320,
       ...>     gas_used: 27770,
       ...>     input: "0x",
@@ -236,11 +220,11 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     trace_address: [],
       ...>     type: "call",
       ...>     call_type: "call",
-      ...>     from_address_hash: "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
-      ...>     to_address_hash: "0xfdca0da4158740a93693441b35809b5bb463e527",
+      ...>     from_address_id: 1,
+      ...>     to_address_id: 2,
       ...>     gas: 7578728,
       ...>     input: "0x",
-      ...>     error: "Reverted",
+      ...>     error_id: 1,
       ...>     value: 10000000000000000
       ...>   }
       ...> )
@@ -260,13 +244,13 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     trace_address: [],
       ...>     type: "call",
       ...>     call_type: "call",
-      ...>     from_address_hash: "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
-      ...>     to_address_hash: "0xfdca0da4158740a93693441b35809b5bb463e527",
+      ...>     from_address_id: 1,
+      ...>     to_address_id: 2,
       ...>     gas: 7578728,
       ...>     gas_used: 7578727,
       ...>     input: "0x",
       ...>     output: "0x",
-      ...>     error: "Reverted",
+      ...>     error_id: 1,
       ...>     value: 10000000000000000
       ...>   }
       ...> )
@@ -284,8 +268,8 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     trace_address: [],
       ...>     type: "call",
       ...>     call_type: "call",
-      ...>     from_address_hash: "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
-      ...>     to_address_hash: "0xfdca0da4158740a93693441b35809b5bb463e527",
+      ...>     from_address_id: 1,
+      ...>     to_address_id: 2,
       ...>     input: "0x",
       ...>     gas: 7578728,
       ...>     value: 10000000000000000
@@ -299,17 +283,17 @@ defmodule Explorer.Chain.InternalTransaction do
         output: {"can't be blank for successful call", [validation: :required]}
       ]
 
-  For failed `:create`, `created_contract_code`, `created_contract_address_hash`, and `gas_used` are not allowed to be
+  For failed `:create`, `created_contract_code`, `created_contract_address_id`, and `gas_used` are not allowed to be
   set because they come from `result` object, which shouldn't be returned from Nethermind.
   The changeset will be fixed by `validate_create_error_or_result`, therefore the changeset is still valid.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
-      ...>     created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
+      ...>     created_contract_address_id: 3,
       ...>     created_contract_code: "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
-      ...>     error: "Bad instruction",
-      ...>     from_address_hash: "0x78a42d3705fb3c26a4b54737a784bf064f0815fb",
+      ...>     error_id: 1,
+      ...>     from_address_id: 1,
       ...>     gas: 3946728,
       ...>     gas_used: 166651,
       ...>     index: 0,
@@ -324,12 +308,12 @@ defmodule Explorer.Chain.InternalTransaction do
       iex> changeset.valid?
       true
 
-  For successful `:create`,  `created_contract_code`, `created_contract_address_hash`, and `gas_used` are required.
+  For successful `:create`,  `created_contract_code`, `created_contract_address_id`, and `gas_used` are required.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
-      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     from_address_id: 1,
       ...>     gas: 4597044,
       ...>     index: 0,
       ...>     init: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
@@ -345,7 +329,7 @@ defmodule Explorer.Chain.InternalTransaction do
       iex> changeset.errors
       [
         created_contract_code: {"can't be blank for successful create", [validation: :required]},
-        created_contract_address_hash: {"can't be blank for successful create", [validation: :required]},
+        created_contract_address_id: {"can't be blank for successful create", [validation: :required]},
         gas_used: {"can't be blank for successful create", [validation: :required]}
       ]
 
@@ -354,9 +338,9 @@ defmodule Explorer.Chain.InternalTransaction do
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
-      ...>     from_address_hash: "0xa7542d78b9a0be6147536887e0065f16182d294b",
+      ...>     from_address_id: 1,
       ...>     index: 1,
-      ...>     to_address_hash: "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5",
+      ...>     to_address_id: 2,
       ...>     trace_address: [0],
       ...>     type: "selfdestruct",
       ...>     value: 0,
@@ -400,8 +384,8 @@ defmodule Explorer.Chain.InternalTransaction do
     type_changeset(changeset, attrs, type)
   end
 
-  @call_optional_fields ~w(error error_id gas_used output value)a
-  @call_required_fields ~w(block_number call_type_enum from_address_hash gas input to_address_hash)a
+  @call_optional_fields ~w(error_id gas_used output value)a
+  @call_required_fields ~w(block_number call_type_enum from_address_id gas input to_address_id)a
   @call_allowed_fields @call_optional_fields ++ @call_required_fields
 
   defp type_changeset(changeset, attrs, :call) do
@@ -417,8 +401,8 @@ defmodule Explorer.Chain.InternalTransaction do
     |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_input)
   end
 
-  @create_optional_fields ~w(error error_id created_contract_code created_contract_address_hash gas_used value)a
-  @create_required_fields ~w(block_number from_address_hash gas init)a
+  @create_optional_fields ~w(error_id created_contract_code created_contract_address_id gas_used value)a
+  @create_required_fields ~w(block_number from_address_id gas init)a
   @create_allowed_fields @create_optional_fields ++ @create_required_fields
 
   defp type_changeset(changeset, attrs, type) when type in [:create, :create2] do
@@ -431,7 +415,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @selfdestruct_optional_fields ~w(value)a
-  @selfdestruct_required_fields ~w(block_number from_address_hash to_address_hash type)a
+  @selfdestruct_required_fields ~w(block_number from_address_id to_address_id type)a
   @selfdestruct_allowed_fields @selfdestruct_optional_fields ++ @selfdestruct_required_fields
 
   defp type_changeset(changeset, attrs, :selfdestruct) do
@@ -440,7 +424,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> validate_required(@selfdestruct_required_fields)
   end
 
-  @stop_optional_fields ~w(from_address_hash gas gas_used error error_id value)a
+  @stop_optional_fields ~w(from_address_id gas gas_used error_id value)a
   @stop_required_fields ~w(block_number type)a
   @stop_allowed_fields @stop_optional_fields ++ @stop_required_fields
 
@@ -477,8 +461,8 @@ defmodule Explorer.Chain.InternalTransaction do
 
   # Validates that :call `type` changeset either has an `error` or both `gas_used` and `output`
   defp validate_call_error_or_result(changeset) do
-    case {get_field(changeset, :error), get_field(changeset, :error_id)} do
-      {nil, nil} ->
+    case get_field(changeset, :error_id) do
+      nil ->
         validate_required(changeset, [:gas_used, :output], message: "can't be blank for successful call")
 
       _ ->
@@ -489,19 +473,19 @@ defmodule Explorer.Chain.InternalTransaction do
     end
   end
 
-  @create_success_fields ~w(created_contract_code created_contract_address_hash gas_used)a
+  @create_success_fields ~w(created_contract_code created_contract_address_id gas_used)a
 
-  # Validates that :create `type` changeset either has an `:error` or both `:created_contract_code` and
-  # `:created_contract_address_hash`
+  # Validates that :create `type` changeset either has an `:error_id` or both `:created_contract_code` and
+  # `:created_contract_address_id`
   defp validate_create_error_or_result(changeset) do
-    case {get_field(changeset, :error), get_field(changeset, :error_id)} do
-      {nil, nil} ->
+    case get_field(changeset, :error_id) do
+      nil ->
         validate_required(changeset, @create_success_fields, message: "can't be blank for successful create")
 
       _ ->
         changeset
         |> delete_change(:created_contract_code)
-        |> delete_change(:created_contract_address_hash)
+        |> delete_change(:created_contract_address_id)
         |> delete_change(:gas_used)
         |> validate_disallowed(@create_success_fields, message: "can't be present for failed create")
     end
@@ -1347,23 +1331,22 @@ defmodule Explorer.Chain.InternalTransaction do
   def preload_error(internal_transactions, options) when is_list(internal_transactions) do
     error_ids =
       internal_transactions
-      |> Enum.filter(&is_nil(&1.error))
       |> Enum.map(& &1.error_id)
       |> Enum.uniq()
       |> Enum.reject(&is_nil/1)
 
-    if error_ids == [] do
-      internal_transactions
-    else
-      error_id_to_error_map =
+    error_id_to_error_map =
+      if error_ids == [] do
+        internal_transactions
+      else
         TransactionError
         |> where([te], te.id in ^error_ids)
         |> select([te], {te.id, te.message})
         |> Chain.select_repo(options).all()
         |> Map.new()
+      end
 
-      Enum.map(internal_transactions, &Map.put(&1, :error, &1.error || error_id_to_error_map[&1.error_id]))
-    end
+    Enum.map(internal_transactions, &Map.put(&1, :error, Map.get(&1, :error) || error_id_to_error_map[&1.error_id]))
   end
 
   def preload_error(internal_transaction, options) do

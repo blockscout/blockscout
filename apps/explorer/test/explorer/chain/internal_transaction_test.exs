@@ -18,13 +18,13 @@ defmodule Explorer.Chain.InternalTransactionTest do
       changeset =
         InternalTransaction.changeset(%InternalTransaction{}, %{
           call_type: "call",
-          from_address_hash: "0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b",
+          from_address_id: 1,
           gas: 100,
           gas_used: 100,
           index: 0,
           input: "0x70696e746f73",
           output: "0x72656672696564",
-          to_address_hash: "0x6295ee1b4f6dd65047762f924ecd367c17eabf8f",
+          to_address_id: 2,
           trace_address: [0, 1],
           transaction_index: 0,
           type: "call",
@@ -61,7 +61,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
     test "with stop type" do
       changeset =
         InternalTransaction.changeset(%InternalTransaction{}, %{
-          from_address_hash: "0x0000000000000000000000000000000000000000",
+          from_address_id: 1,
           gas: 0,
           gas_used: 22234,
           index: 0,

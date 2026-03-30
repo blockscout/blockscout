@@ -708,6 +708,19 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> InternalTransaction.changeset(internal_transaction_params)
     |> Ecto.Changeset.apply_changes()
     |> Map.put(:transaction_hash, internal_transaction_params[:transaction_hash])
+    |> Map.put(:from_address_hash, convert_to_address_hash(internal_transaction_params[:from_address_hash]))
+    |> Map.put(:to_address_hash, convert_to_address_hash(internal_transaction_params[:to_address_hash]))
+    |> Map.put(
+      :created_contract_address_hash,
+      convert_to_address_hash(internal_transaction_params[:created_contract_address_hash])
+    )
+  end
+
+  defp convert_to_address_hash(nil), do: nil
+
+  defp convert_to_address_hash(hash_string) do
+    {:ok, hash} = Hash.Address.cast(hash_string)
+    hash
   end
 
   defp etherscan_serialize(internal_transaction) do

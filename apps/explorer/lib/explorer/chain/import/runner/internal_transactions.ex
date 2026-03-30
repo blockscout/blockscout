@@ -101,19 +101,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         :invalid_block_numbers
       )
     end)
-    |> Multi.run(:adjust_insert_params, fn _, _ ->
-      Instrumenter.block_import_stage_runner(
-        fn -> adjust_insert_params(internal_transactions_params) end,
-        :block_pending,
-        :internal_transactions,
-        :adjust_insert_params
-      )
-    end)
     |> Multi.run(:valid_internal_transactions, fn _,
                                                   %{
                                                     acquire_transactions: transactions,
-                                                    invalid_block_numbers: invalid_block_numbers,
-                                                    adjust_insert_params: internal_transactions_params
+                                                    invalid_block_numbers: invalid_block_numbers
                                                   } ->
       Instrumenter.block_import_stage_runner(
         fn ->
@@ -156,27 +147,14 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         :maybe_shrink_internal_transactions_params
       )
     end)
-    |> Multi.run(:maybe_reject_zero_value, fn _,
-                                              %{
-                                                maybe_shrink_internal_transactions_params:
-                                                  maybe_shrink_internal_transactions_params
-                                              } ->
-      Instrumenter.block_import_stage_runner(
-        fn ->
-          maybe_reject_zero_value(maybe_shrink_internal_transactions_params)
-        end,
-        :block_pending,
-        :internal_transactions,
-        :maybe_reject_zero_value
-      )
-    end)
     |> Multi.run(:internal_transactions, fn repo,
                                             %{
-                                              maybe_reject_zero_value: internal_transactions_params
+                                              maybe_shrink_internal_transactions_params:
+                                                maybe_shrink_internal_transactions_params
                                             } ->
       Instrumenter.block_import_stage_runner(
         fn ->
-          insert(repo, internal_transactions_params, insert_options)
+          insert(repo, maybe_shrink_internal_transactions_params, insert_options)
         end,
         :block_pending,
         :internal_transactions,
@@ -228,6 +206,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end)
   end
 
+  @impl Runner
+  def prepare_data(changes_list) do
+    changes_list
+    |> maybe_reject_zero_value()
+    |> adjust_insert_params()
+  end
+
   def run_insert_only(changes_list, %{timestamps: timestamps} = options) when is_map(options) do
     insert_options =
       options
@@ -242,14 +227,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     with {:ok, data} <-
            Multi.new()
-           |> Multi.run(:maybe_reject_zero_value, fn _, _ ->
-             maybe_reject_zero_value(internal_transactions_params)
+           |> Multi.run(:prepare_data, fn _, _ ->
+             prepare_data(internal_transactions_params)
            end)
-           |> Multi.run(:adjust_insert_params, fn _, %{maybe_reject_zero_value: maybe_reject_zero_value} ->
-             adjust_insert_params(maybe_reject_zero_value)
-           end)
-           |> Multi.run(:internal_transactions, fn repo, %{adjust_insert_params: adjusted_insert_params} ->
-             insert(repo, adjusted_insert_params, insert_options)
+           |> Multi.run(:internal_transactions, fn repo, %{prepare_data: prepared_data} ->
+             insert(repo, prepared_data, insert_options)
            end)
            |> ExplorerRepo.transaction() do
       Publisher.broadcast(data, :on_demand)
@@ -512,29 +494,29 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       |> Enum.uniq()
       |> AddressIdToAddressHash.find_or_create_multiple()
 
-    adjusted_params =
-      Enum.map(internal_transactions_params, fn params ->
-        params
-        |> sanitize_error()
-        |> put_error_id(error_to_error_id_map)
-        |> put_address_ids(address_hash_to_address_id_map)
-        |> shift_created_contract_address_id()
-      end)
-
-    {:ok, adjusted_params}
+    Enum.map(internal_transactions_params, fn params ->
+      params
+      |> sanitize_error()
+      |> put_error_id(error_to_error_id_map)
+      |> put_address_ids(address_hash_to_address_id_map)
+      |> shift_created_contract_address_id()
+    end)
   end
 
   defp put_error_id(entry, error_to_error_id_map) do
-    Map.put(entry, :error_id, Map.get(entry, :error_id) || error_to_error_id_map[Map.get(entry, :error)])
+    entry
+    |> Map.delete(:error)
+    |> Map.put(:error_id, Map.get(entry, :error_id) || error_to_error_id_map[Map.get(entry, :error)])
   end
 
   defp put_address_ids(entry, address_hash_to_address_id_map) do
     entry
     |> Map.drop([:from_address_hash, :to_address_hash, :created_contract_address_hash])
     |> Map.merge(%{
-      from_address_id: address_hash_to_address_id_map[entry[:from_address_hash]],
-      to_address_id: address_hash_to_address_id_map[entry[:to_address_hash]],
-      created_contract_address_id: address_hash_to_address_id_map[entry[:created_contract_address_hash]]
+      from_address_id: address_hash_to_address_id_map[String.downcase(to_string(entry[:from_address_hash]))],
+      to_address_id: address_hash_to_address_id_map[String.downcase(to_string(entry[:to_address_hash]))],
+      created_contract_address_id:
+        address_hash_to_address_id_map[String.downcase(to_string(entry[:created_contract_address_hash]))]
     })
   end
 
@@ -574,14 +556,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   defp maybe_reject_zero_value(internal_transactions) do
     with true <- Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled],
          border_number when is_integer(border_number) <- DeleteZeroValueInternalTransactions.border_number() do
-      {:ok,
-       Enum.reject(
-         internal_transactions,
-         &(&1.block_number <= border_number and &1.type == :call and
-             (is_nil(Map.get(&1, :value)) || Decimal.eq?(&1.value.value, 0)))
-       )}
+      Enum.reject(
+        internal_transactions,
+        &(&1.block_number <= border_number and &1.type == :call and
+            (is_nil(Map.get(&1, :value)) || Decimal.eq?(&1.value.value, 0)))
+      )
     else
-      _ -> {:ok, internal_transactions}
+      _ -> internal_transactions
     end
   end
 
@@ -646,8 +627,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
               Map.fetch!(block_number_index_to_hash_map, {trace[:block_number], trace[:transaction_index]}),
             created_contract_address_hash:
               AddressIdToAddressHash.id_to_hash(Map.get(trace, :created_contract_address_id)),
-            error: Map.get(trace, :error),
-            status: if(is_nil(Map.get(trace, :error)), do: :ok, else: :error)
+            error: TransactionError.id_to_error(Map.get(trace, :error_id)),
+            status: if(is_nil(Map.get(trace, :error_id)), do: :ok, else: :error)
           }
         end)
 
@@ -764,7 +745,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   defp get_trivial_transaction_hashes_with_error_in_internal_transaction(internal_transactions) do
     internal_transactions
     |> Enum.filter(fn internal_transaction ->
-      internal_transaction[:index] != 0 && !is_nil(internal_transaction[:error])
+      internal_transaction[:index] != 0 && !is_nil(internal_transaction[:error_id])
     end)
     |> Enum.map(fn internal_transaction -> internal_transaction[:transaction_hash] end)
     |> MapSet.new()

@@ -838,7 +838,10 @@ defmodule Explorer.Factory do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
 
-    all_attrs = adjust_internal_transaction_addresses_attrs(attrs, [:from_address, :to_address])
+    all_attrs =
+      attrs
+      |> adjust_internal_transaction_addresses_attrs([:from_address, :to_address])
+      |> adjust_internal_transaction_error_attr()
 
     %InternalTransaction{
       call_type: :delegatecall,
@@ -865,7 +868,9 @@ defmodule Explorer.Factory do
     contract_code = Map.fetch!(contract_code_info(), :bytecode)
 
     all_attrs =
-      adjust_internal_transaction_addresses_attrs(attrs, [:from_address, :created_contract_address], contract_code)
+      attrs
+      |> adjust_internal_transaction_addresses_attrs([:from_address, :created_contract_address], contract_code)
+      |> adjust_internal_transaction_error_attr()
 
     %InternalTransaction{
       created_contract_code: contract_code,
@@ -885,7 +890,10 @@ defmodule Explorer.Factory do
   end
 
   def internal_transaction_selfdestruct_factory(attrs) do
-    all_attrs = adjust_internal_transaction_addresses_attrs(attrs, [:from_address, :to_address])
+    all_attrs =
+      attrs
+      |> adjust_internal_transaction_addresses_attrs([:from_address, :to_address])
+      |> adjust_internal_transaction_error_attr()
 
     %InternalTransaction{
       from_address: build(:address),
@@ -1420,6 +1428,13 @@ defmodule Explorer.Factory do
       })
     end)
     |> Map.merge(other_attrs)
+  end
+
+  defp adjust_internal_transaction_error_attr(attrs) do
+    case Map.get(attrs, :error) do
+      nil -> attrs
+      error -> Map.put(attrs, :error_id, Map.get(attrs, :error_id) || TransactionError.find_or_create(error))
+    end
   end
 
   defp block_hash_to_next_transaction_index(block_hash) do

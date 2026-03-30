@@ -666,7 +666,7 @@ defmodule Explorer.EtherscanTest do
       assert found_internal_transaction.type == internal_transaction.type
       assert found_internal_transaction.gas == internal_transaction.gas
       assert found_internal_transaction.gas_used == internal_transaction.gas_used
-      assert found_internal_transaction.error == internal_transaction.error
+      assert found_internal_transaction.error_id == internal_transaction.error_id
     end
 
     test "with transaction with 0 internal transactions" do
@@ -857,7 +857,6 @@ defmodule Explorer.EtherscanTest do
         call_type_enum: call_type_enum,
         gas: gas,
         gas_used: gas_used,
-        error: error,
         error_id: error_id
       } =
         :internal_transaction_create
@@ -890,7 +889,6 @@ defmodule Explorer.EtherscanTest do
                call_type_enum: ^call_type_enum,
                gas: ^gas,
                gas_used: ^gas_used,
-               error: ^error,
                error_id: ^error_id
              } = found_internal_transaction
     end

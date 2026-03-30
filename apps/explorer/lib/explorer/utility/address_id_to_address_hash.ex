@@ -85,7 +85,7 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
     |> where([a], a.address_hash in ^filtered_address_hashes)
     |> Repo.all()
     |> then(fn records ->
-      if to_map?, do: Map.new(records, &{&1.address_hash, &1.address_id}), else: records
+      if to_map?, do: Map.new(records, &{to_string(&1.address_hash), &1.address_id}), else: records
     end)
   end
 

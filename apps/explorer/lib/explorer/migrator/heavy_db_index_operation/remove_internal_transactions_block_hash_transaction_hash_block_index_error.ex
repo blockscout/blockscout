@@ -1,6 +1,6 @@
-defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndex do
+defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError do
   @moduledoc """
-  Removes `block_hash`, `transaction_hash` and `block_index` columns from `internal_transactions`
+  Removes `block_hash`, `transaction_hash`, `block_index` and `error` columns from `internal_transactions`
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
@@ -12,7 +12,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
   alias Explorer.Repo
 
   @table_name :internal_transactions
-  @index_name "internal_transactions_remove_block_hash_transaction_hash_block_index"
+  @index_name "internal_transactions_remove_block_hash_transaction_hash_block_index_error"
   @operation_type :create
 
   @impl HeavyDbIndexOperation
@@ -38,7 +38,10 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
         :ok
 
       {:error, error} ->
-        Logger.error("Migration RemoveInternalTransactionsBlockHashTransactionHashBlockIndex failed: #{inspect(error)}")
+        Logger.error(
+          "Migration RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError failed: #{inspect(error)}"
+        )
+
         :error
     end
   end
@@ -55,7 +58,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
       case Repo.query("""
            SELECT COUNT(*) = 0
            FROM information_schema.columns
-           WHERE table_name = '#{@table_name}' AND column_name IN ('block_hash', 'transaction_hash', 'block_index');
+           WHERE table_name = '#{@table_name}' AND column_name IN ('block_hash', 'transaction_hash', 'block_index', 'error');
            """) do
         {:ok, %Postgrex.Result{rows: [[completed]]}} -> completed
         _ -> nil
@@ -93,7 +96,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
     ALTER TABLE #{@table_name}
     DROP COLUMN IF EXISTS block_hash,
     DROP COLUMN IF EXISTS transaction_hash,
-    DROP COLUMN IF EXISTS block_index;
+    DROP COLUMN IF EXISTS block_index,
+    DROP COLUMN IF EXISTS error;
     """
   end
 end
