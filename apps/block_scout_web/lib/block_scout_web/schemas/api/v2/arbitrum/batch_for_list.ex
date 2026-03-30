@@ -11,9 +11,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchForList do
     description: "Arbitrum batch summary for list endpoints.",
     type: :object,
     properties: %{
-      number: %Schema{type: :integer, description: "Batch number."},
-      transactions_count: %Schema{type: :integer, description: "Number of transactions in the batch."},
-      blocks_count: %Schema{type: :integer, description: "Number of blocks included in the batch."},
+      number: %Schema{type: :integer, minimum: 0, description: "Batch number."},
+      transactions_count: %Schema{type: :integer, minimum: 0, description: "Number of transactions in the batch."},
+      blocks_count: %Schema{type: :integer, minimum: 0, description: "Number of blocks included in the batch."},
       batch_data_container: %Schema{
         type: :string,
         # Enum values must be kept in sync with Explorer.Chain.Arbitrum.L1Batch :batch_container field.
@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchForList do
         description: "L1 transaction that committed the batch.",
         properties: %{
           hash: General.FullHashNullable,
-          block_number: %Schema{type: :integer, nullable: true},
+          block_number: %Schema{type: :integer, minimum: 0, nullable: true},
           timestamp: General.TimestampNullable,
           status: %Schema{type: :string, nullable: true, description: "Finalization status of the L1 transaction."}
         },

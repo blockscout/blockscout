@@ -1,11 +1,12 @@
 defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
-  use BlockScoutWeb.ConnCase
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  alias Explorer.Chain.Arbitrum.L1Batch
+  if @chain_type == :arbitrum do
+    use BlockScoutWeb.ConnCase
 
-  describe "/main-page/arbitrum/batches/committed" do
-    if @chain_type == :arbitrum do
+    alias Explorer.Chain.Arbitrum.L1Batch
+
+    describe "/main-page/arbitrum/batches/committed" do
       test "returns committed batches", %{conn: conn} do
         batches = insert_list(3, :arbitrum_l1_batch)
 
@@ -37,9 +38,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
         assert length(response["items"]) == 10
       end
     end
-  end
 
-  if @chain_type == :arbitrum do
     defp compare_batch(%L1Batch{} = batch, json) do
       batch = Explorer.Repo.preload(batch, :commitment_transaction)
 
