@@ -56,7 +56,9 @@ The view layer is lossy about types. A field that renders as a plain string may 
 
 1. Find the corresponding Ecto schema module in `apps/explorer/lib/explorer/chain/`. Grep for `Ecto.Enum` in that file.
 2. If the field is an `Ecto.Enum`, the OpenAPI property should use `enum: [...]` with the correct values, not just `type: :string`.
-3. Check existing schemas in the same domain for precedent — similar entities often already use enum for comparable fields.
+3. If the property already uses `enum:`, verify the values are **complete and current** by comparing against the Ecto enum definition. New values may have been added to the Ecto schema without updating the OpenAPI schema — this is a silent breakage where `CastAndValidate` rejects the new value on input.
+4. Verify there is a code comment on the enum property pointing to the source Ecto field (e.g., `# Enum values must be kept in sync with Explorer.Chain.<Module> :<field_name> field.`). If missing, add one.
+5. Check existing schemas in the same domain for precedent — similar entities often already use enum for comparable fields.
 
 Also check for other type refinements: large integers serialized as strings should use `IntegerString`, hash fields should use `FullHash`/`AddressHash`, timestamps should use `Timestamp`/`TimestampNullable`.
 

@@ -248,11 +248,17 @@ field(:batch_data_container, Ecto.Enum, values: [:in_blob4844, :in_calldata, :in
 
 The OpenAPI property should be:
 ```elixir
+# Enum values must be kept in sync with Explorer.Chain.Arbitrum.L1Batch :batch_data_container field.
 batch_data_container: %Schema{
   type: :string,
   enum: ["in_blob4844", "in_calldata", "in_celestia"],
   nullable: true    # if the field can be nil
 }
+```
+
+Enum values are duplicated between the Ecto schema and the OpenAPI schema — there is no automatic sync. If someone adds a new value to the Ecto enum without updating the OpenAPI schema, `CastAndValidate` will reject the new value on input, and test-time validation will fail on output only if a test exercises that specific value. To mitigate this, always add a code comment on the enum property pointing to the source Ecto field, e.g.:
+```elixir
+# Enum values must be kept in sync with Explorer.Chain.<Module> :<field_name> field.
 ```
 
 Check existing schemas in the same domain for precedent — similar entities often already use enum for the same kind of field, and you should follow the same pattern.
