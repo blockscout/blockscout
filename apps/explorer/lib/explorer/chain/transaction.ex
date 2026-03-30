@@ -3025,6 +3025,33 @@ defmodule Explorer.Chain.Transaction do
     |> Repo.all()
   end
 
+  @doc """
+  Preloads internal transactions for parent transaction records.
+
+  When a list of transactions is provided, the function fetches all matching
+  internal transactions by `{block_number, transaction_index}`, applies the
+  requested `preloads`, and attaches the resulting list to the
+  `:internal_transactions` field of each parent transaction.
+
+  The loaded internal transactions are also passed through
+  `InternalTransaction.preload_transaction/3` so that each internal transaction
+  has its parent `:transaction` populated from the already available
+  transaction list.
+
+  ## Parameters
+  - `transactions`: A single transaction or a list of transactions
+  - `preloads`: Optional associations to preload for each internal transaction
+  - `repo`: The repo used to fetch and preload internal transactions
+
+  ## Returns
+  - A list of transactions with the `:internal_transactions` field populated
+  - A single transaction with the `:internal_transactions` field populated
+  """
+  @spec preload_internal_transactions(
+          __MODULE__.t() | [__MODULE__.t()],
+          list(),
+          module()
+        ) :: __MODULE__.t() | [__MODULE__.t()]
   def preload_internal_transactions(transactions, preloads \\ [], repo \\ Repo)
 
   def preload_internal_transactions(transactions, preloads, repo) when is_list(transactions) do

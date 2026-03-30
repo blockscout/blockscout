@@ -829,6 +829,28 @@ defmodule Explorer.Chain.InternalTransaction do
     end
   end
 
+  @doc """
+  Joins the parent transaction to an internal transaction query by
+  `block_number` and `transaction_index`.
+
+  The join uses an inner join against `Explorer.Chain.Transaction` and matches
+  each internal transaction with its parent transaction where:
+  - `internal_transactions.block_number == transactions.block_number`
+  - `internal_transactions.transaction_index == transactions.index`
+  - `transactions.block_consensus == true`
+
+  The joined binding is added under the named binding `:transaction`. If the
+  query already contains that named binding, it is reused and no duplicate join
+  is added.
+
+  ## Parameters
+  - `query`: The Ecto query to join the parent transaction into
+
+  ## Returns
+  - Query with named `:transaction` binding available for further filtering,
+    selection, or preloading
+  """
+  @spec join_transaction_query(Ecto.Query.t() | module()) :: Ecto.Query.t()
   def join_transaction_query(query) do
     with_named_binding(query, :transaction, fn query, binding ->
       join(query, :inner, [it], t in Transaction,
@@ -1275,6 +1297,33 @@ defmodule Explorer.Chain.InternalTransaction do
     |> List.first()
   end
 
+  @doc """
+  Preloads parent transactions for internal transaction records.
+
+  When a list of internal transactions is provided and `transactions` is `nil`,
+  the function fetches the corresponding parent transactions by
+  `{block_number, transaction_index}` and attaches each transaction to the
+  `:transaction` field of the matching internal transaction.
+
+  It also ensures that `:transaction_hash` is populated from the loaded parent
+  transaction when available, while preserving the existing value if no parent
+  transaction is found.
+
+  ## Parameters
+  - `internal_transactions`: A single internal transaction, a list of internal
+    transactions, or `nil`
+  - `repo`: The repo used to fetch parent transactions when they are not passed
+    explicitly
+  - `transactions`: Optional preloaded parent transactions to reuse instead of
+    querying the database
+
+  ## Returns
+  - `nil` when `internal_transactions` is `nil`
+  - A list of internal transactions with the `:transaction` field populated
+  - A single internal transaction with the `:transaction` field populated
+  """
+  @spec preload_transaction(__MODULE__.t() | [__MODULE__.t()] | nil, module(), [Transaction.t()] | nil) ::
+          __MODULE__.t() | [__MODULE__.t()] | nil
   def preload_transaction(internal_transactions, repo \\ Repo, transactions \\ nil)
 
   def preload_transaction(nil, _repo, _transactions), do: nil
