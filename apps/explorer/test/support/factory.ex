@@ -25,6 +25,8 @@ defmodule Explorer.Factory do
   alias Explorer.Admin.Administrator
   alias Explorer.Chain.Beacon.{Blob, BlobTransaction, Deposit}
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
+  alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
+  alias Explorer.Chain.Arbitrum.BatchTransaction, as: ArbitrumBatchTransaction
   alias Explorer.Chain.Arbitrum.L1Batch, as: ArbitrumL1Batch
   alias Explorer.Chain.Arbitrum.LifecycleTransaction, as: ArbitrumLifecycleTransaction
   alias Explorer.Chain.Scroll.Batch, as: ScrollBatch
@@ -1896,5 +1898,13 @@ defmodule Explorer.Factory do
       after_acc: block_hash(),
       commitment_id: lifecycle_tx.id
     }
+  end
+
+  def arbitrum_batch_block_factory do
+    %ArbitrumBatchBlock{}
+  end
+
+  def arbitrum_batch_transaction_factory do
+    %ArbitrumBatchTransaction{}
   end
 end

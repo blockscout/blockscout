@@ -3393,4 +3393,53 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       end
     end
   end
+
+  if @chain_type == :arbitrum do
+    describe "/transactions/arbitrum-batch/:batch_number_param" do
+      test "returns empty list when batch has no transactions", %{conn: conn} do
+        batch = insert(:arbitrum_l1_batch)
+
+        request = get(conn, "/api/v2/transactions/arbitrum-batch/#{batch.number}")
+        assert response = json_response(request, 200)
+        assert response["items"] == []
+        assert response["next_page_params"] == nil
+      end
+
+      test "returns transactions in the batch", %{conn: conn} do
+        batch = insert(:arbitrum_l1_batch)
+        transaction = :transaction |> insert() |> with_block()
+
+        insert(:arbitrum_batch_transaction, batch_number: batch.number, transaction_hash: transaction.hash)
+
+        request = get(conn, "/api/v2/transactions/arbitrum-batch/#{batch.number}")
+        assert response = json_response(request, 200)
+        assert length(response["items"]) == 1
+        assert hd(response["items"])["hash"] == to_string(transaction.hash)
+      end
+
+      test "can paginate transactions in Arbitrum batch", %{conn: conn} do
+        batch = insert(:arbitrum_l1_batch)
+        transactions = 51 |> insert_list(:transaction) |> with_block()
+
+        Enum.each(transactions, fn tx ->
+          insert(:arbitrum_batch_transaction, batch_number: batch.number, transaction_hash: tx.hash)
+        end)
+
+        request = get(conn, "/api/v2/transactions/arbitrum-batch/#{batch.number}")
+        assert response = json_response(request, 200)
+
+        request_2nd_page =
+          get(conn, "/api/v2/transactions/arbitrum-batch/#{batch.number}", response["next_page_params"])
+
+        assert response_2nd_page = json_response(request_2nd_page, 200)
+
+        check_paginated_response(response, response_2nd_page, transactions)
+      end
+
+      test "returns 422 for non-integer batch_number_param", %{conn: conn} do
+        request = get(conn, "/api/v2/transactions/arbitrum-batch/invalid")
+        assert %{"errors" => [_]} = json_response(request, 422)
+      end
+    end
+  end
 end
