@@ -115,7 +115,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
   end
 
   defp maybe_preload_ens_for_token_transfers(token_transfers) do
-    if Application.get_env(:block_scout_web, BlockScoutWeb.API.V2, [])[:disable_token_transfers_bens_preload] do
+    if Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS, [])[:disable_token_transfers_bens_preload] do
       token_transfers
     else
       maybe_preload_ens(token_transfers)
