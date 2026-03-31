@@ -415,7 +415,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:transactions, %{
-            transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+            transactions: transactions |> maybe_preload_ens_for_address_transactions() |> maybe_preload_metadata(),
             next_page_params: next_page_params
           })
 
@@ -543,7 +543,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_view(TransactionView)
           |> render(:token_transfers, %{
             token_transfers:
-              token_transfers |> Instance.preload_nft(@api_true) |> maybe_preload_ens() |> maybe_preload_metadata(),
+              token_transfers
+              |> Instance.preload_nft(@api_true)
+              |> maybe_preload_ens_for_address_token_transfers()
+              |> maybe_preload_metadata(),
             next_page_params: next_page_params
           })
 
@@ -1544,6 +1547,22 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   # Checks if this address hash string is valid, and this address is not prohibited.
   # Returns the `{:ok, address_hash}` if address hash passed all the checks.
   # Returns {:ok, _} response even if the address is not present in the database.
+  defp maybe_preload_ens_for_address_transactions(transactions) do
+    if Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS, [])[:disable_transactions_bens_preload] do
+      transactions
+    else
+      maybe_preload_ens(transactions)
+    end
+  end
+
+  defp maybe_preload_ens_for_address_token_transfers(token_transfers) do
+    if Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS, [])[:disable_token_transfers_bens_preload] do
+      token_transfers
+    else
+      maybe_preload_ens(token_transfers)
+    end
+  end
+
   @spec validate_address_hash(String.t(), any()) ::
           {:format, :error}
           | {:restricted_access, true}

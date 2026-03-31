@@ -266,7 +266,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   defp maybe_preload_ens_for_transactions(transactions) do
-    if Application.get_env(:block_scout_web, BlockScoutWeb.API.V2, [])[:disable_transactions_bens_preload] do
+    if Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS, [])[:disable_transactions_bens_preload] do
       transactions
     else
       maybe_preload_ens(transactions)
