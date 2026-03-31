@@ -62,6 +62,7 @@ dump.rdb
 .cursorrules
 .elixir_ls
 .claude/settings.local.json
+/.ai
 
 **.dec**
 
