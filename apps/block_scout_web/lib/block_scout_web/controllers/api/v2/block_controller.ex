@@ -7,8 +7,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   use OpenApiSpex.ControllerSpecs
 
-  import Ecto.Query, only: [from: 2]
-
   import BlockScoutWeb.Chain,
     only: [
       next_page_params: 3,
@@ -44,8 +42,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: ArbitrumSettlementReader
   alias Explorer.Chain.Beacon.Deposit
-  alias Explorer.Chain.{InternalTransaction, SmartContract}
   alias Explorer.Chain.Cache.{BlockNumber, Counters.AverageBlockTime}
+  alias Explorer.Chain.InternalTransaction
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Timex.Duration
@@ -685,7 +683,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
               created_contract_address: [
                 :scam_badge,
                 :names,
-                {:smart_contract, transaction_smart_contract_preload_query()},
                 proxy_implementations_association()
               ]
             ] => :optional,
@@ -693,7 +690,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
               from_address: [
                 :scam_badge,
                 :names,
-                {:smart_contract, transaction_smart_contract_preload_query()},
                 proxy_implementations_association()
               ]
             ] => :optional,
@@ -701,7 +697,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
               to_address: [
                 :scam_badge,
                 :names,
-                {:smart_contract, transaction_smart_contract_preload_query()},
                 proxy_implementations_association()
               ]
             ] => :optional,
@@ -710,12 +705,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
           @chain_type_transaction_necessity_by_association
         )
     ]
-  end
-
-  defp transaction_smart_contract_preload_query do
-    from(smart_contract in SmartContract,
-      select: struct(smart_contract, [:address_hash])
-    )
   end
 
   defp block_param_to_block(block_hash_or_number, options \\ @api_true) do
