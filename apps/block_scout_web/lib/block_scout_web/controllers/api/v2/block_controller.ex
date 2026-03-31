@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   use OpenApiSpex.ControllerSpecs
 
+  import Ecto.Query, only: [from: 2]
+
   import BlockScoutWeb.Chain,
     only: [
       next_page_params: 3,
@@ -42,7 +44,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: ArbitrumSettlementReader
   alias Explorer.Chain.Beacon.Deposit
-  alias Explorer.Chain.{Block, InternalTransaction}
+  alias Explorer.Chain.{Block, InternalTransaction, SmartContract}
   alias Explorer.Chain.Cache.{BlockNumber, Counters.AverageBlockTime}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
@@ -100,18 +102,6 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       @chain_type_transaction_necessity_by_association %{}
       @chain_type_block_necessity_by_association %{}
   end
-
-  @transaction_necessity_by_association [
-    necessity_by_association:
-      %{
-        [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
-          :optional,
-        [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-        [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-        :block => :optional
-      }
-      |> Map.merge(@chain_type_transaction_necessity_by_association)
-  ]
 
   @internal_transaction_address_preloads [
     address_preloads: [
@@ -403,7 +393,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   def transactions(conn, %{block_hash_or_number_param: block_hash_or_number} = params) do
     with {:ok, block} <- block_param_to_block(block_hash_or_number) do
       full_options =
-        @transaction_necessity_by_association
+        transaction_necessity_by_association()
         |> Keyword.merge(put_key_value_to_paging_options(paging_options(params), :is_index_in_asc_order, true))
         |> Keyword.merge(type_filter_options(params))
         |> Keyword.merge(@api_true)
@@ -683,6 +673,48 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         next_page_params: next_page_params
       })
     end
+  end
+
+  defp transaction_necessity_by_association do
+    [
+      necessity_by_association:
+        Map.merge(
+          %{
+            [
+              created_contract_address: [
+                :scam_badge,
+                :names,
+                {:smart_contract, transaction_smart_contract_preload_query()},
+                proxy_implementations_association()
+              ]
+            ] => :optional,
+            [
+              from_address: [
+                :scam_badge,
+                :names,
+                {:smart_contract, transaction_smart_contract_preload_query()},
+                proxy_implementations_association()
+              ]
+            ] => :optional,
+            [
+              to_address: [
+                :scam_badge,
+                :names,
+                {:smart_contract, transaction_smart_contract_preload_query()},
+                proxy_implementations_association()
+              ]
+            ] => :optional,
+            :block => :optional
+          },
+          @chain_type_transaction_necessity_by_association
+        )
+    ]
+  end
+
+  defp transaction_smart_contract_preload_query do
+    from(smart_contract in SmartContract,
+      select: struct(smart_contract, [:address_hash])
+    )
   end
 
   defp block_param_to_block(block_hash_or_number, options \\ @api_true) do
