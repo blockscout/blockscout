@@ -27,8 +27,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   import Explorer.Helper, only: [safe_parse_non_negative_integer: 1]
 
-  import Ecto.Query, only: [from: 2]
-
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_to_address: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
@@ -45,7 +43,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   alias BlockScoutWeb.Schemas.Helper, as: SchemasHelper
   alias Explorer.{Chain, Market, PagingOptions}
-  alias Explorer.Chain.{Address, Beacon.Deposit, Block, Hash, SmartContract, Token, Transaction}
+  alias Explorer.Chain.{Address, Beacon.Deposit, Block, Hash, Token, Transaction}
   alias Explorer.Chain.Address.{CoinBalance, Counters}
 
   alias Explorer.Chain.Token.Instance
@@ -453,7 +451,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         created_contract_address: [
           :scam_badge,
           :names,
-          {:smart_contract, transaction_smart_contract_preload_query()},
           proxy_implementations_association()
         ]
       ] => :optional,
@@ -461,7 +458,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         from_address: [
           :scam_badge,
           :names,
-          {:smart_contract, transaction_smart_contract_preload_query()},
           proxy_implementations_association()
         ]
       ] => :optional,
@@ -469,19 +465,12 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         to_address: [
           :scam_badge,
           :names,
-          {:smart_contract, transaction_smart_contract_preload_query()},
           proxy_implementations_association()
         ]
       ] => :optional,
       :block => :optional
     }
     |> Map.merge(@chain_type_transaction_necessity_by_association)
-  end
-
-  defp transaction_smart_contract_preload_query do
-    from(smart_contract in SmartContract,
-      select: struct(smart_contract, [:address_hash])
-    )
   end
 
   operation :token_transfers,

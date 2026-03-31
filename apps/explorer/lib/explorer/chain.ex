@@ -438,9 +438,10 @@ defmodule Explorer.Chain do
     Map.new(addresses_with_proxy, &{&1.hash, &1})
   end
 
-  # Check if an address is a contract or has proxy_implementations
-  defp proxy_applicable?(%Address{smart_contract: nil}), do: false
-  defp proxy_applicable?(_), do: true
+  # Check if an address can have proxy implementations.
+  # Address.smart_contract?/1 relies on contract code presence, so this also covers EIP-7702 addresses.
+  defp proxy_applicable?(%Address{} = address), do: Address.smart_contract?(address)
+  defp proxy_applicable?(_), do: false
 
   # Split proxy-related preloads from other nested preloads
   defp split_proxy_preloads(nested_preloads) when is_list(nested_preloads) do

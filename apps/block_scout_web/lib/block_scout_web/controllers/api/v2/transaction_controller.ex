@@ -39,7 +39,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   import Ecto.Query,
     only: [
-      from: 2,
       preload: 2
     ]
 
@@ -56,8 +55,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.Cache.Counters.{NewPendingTransactionsCount, Transactions24hCount}
-  alias Explorer.Chain.FheOperation
-  alias Explorer.Chain.{Hash, SmartContract, Transaction}
+  alias Explorer.Chain.{FheOperation, Hash, Transaction}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Explorer.Chain.Token.Instance
@@ -267,7 +265,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           :scam_badge,
           :names,
           :token,
-          {:smart_contract, transaction_smart_contract_preload_query()},
           proxy_implementations_association()
         ]
       ] => :optional,
@@ -275,7 +272,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         from_address: [
           :scam_badge,
           :names,
-          {:smart_contract, transaction_smart_contract_preload_query()},
           proxy_implementations_association()
         ]
       ] => :optional,
@@ -283,18 +279,11 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         to_address: [
           :scam_badge,
           :names,
-          {:smart_contract, transaction_smart_contract_preload_query()},
           proxy_implementations_association()
         ]
       ] => :optional
     }
     |> Map.merge(@chain_type_transaction_necessity_by_association)
-  end
-
-  defp transaction_smart_contract_preload_query do
-    from(smart_contract in SmartContract,
-      select: struct(smart_contract, [:address_hash])
-    )
   end
 
   operation :zksync_batch,
