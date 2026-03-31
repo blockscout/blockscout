@@ -228,7 +228,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     with {:ok, data} <-
            Multi.new()
            |> Multi.run(:prepare_data, fn _, _ ->
-             prepare_data(internal_transactions_params)
+             {:ok, prepare_data(internal_transactions_params)}
            end)
            |> Multi.run(:internal_transactions, fn repo, %{prepare_data: prepared_data} ->
              insert(repo, prepared_data, insert_options)

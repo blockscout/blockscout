@@ -8,7 +8,15 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
   require Logger
 
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
-  alias Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey
+
+  alias Explorer.Migrator.HeavyDbIndexOperation.{
+    CreateInternalTransactionsCreatedContractAddressIdIndex,
+    CreateInternalTransactionsCreatedContractAddressIdPartialIndex,
+    CreateInternalTransactionsFromAddressIdPartialIndex,
+    CreateInternalTransactionsToAddressIdPartialIndex,
+    UpdateInternalTransactionsPrimaryKey
+  }
+
   alias Explorer.Repo
 
   @table_name :internal_transactions
@@ -27,13 +35,17 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
     do: [
-      UpdateInternalTransactionsPrimaryKey.migration_name()
+      UpdateInternalTransactionsPrimaryKey.migration_name(),
+      CreateInternalTransactionsCreatedContractAddressIdIndex.migration_name(),
+      CreateInternalTransactionsCreatedContractAddressIdPartialIndex.migration_name(),
+      CreateInternalTransactionsFromAddressIdPartialIndex.migration_name(),
+      CreateInternalTransactionsToAddressIdPartialIndex.migration_name()
     ]
 
   @impl HeavyDbIndexOperation
   # sobelow_skip ["SQL"]
   def db_index_operation do
-    case Repo.query(drop_columns_query_string()) do
+    case Repo.query(drop_columns_query_string(), [], timeout: :infinity) do
       {:ok, _} ->
         :ok
 

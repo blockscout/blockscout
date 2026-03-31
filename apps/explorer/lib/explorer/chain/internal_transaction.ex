@@ -1337,7 +1337,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
     error_id_to_error_map =
       if error_ids == [] do
-        internal_transactions
+        %{}
       else
         TransactionError
         |> where([te], te.id in ^error_ids)

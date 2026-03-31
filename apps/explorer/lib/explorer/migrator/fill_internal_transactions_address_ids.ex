@@ -56,7 +56,11 @@ defmodule Explorer.Migrator.FillInternalTransactionsAddressIds do
           from(
             it in InternalTransaction,
             select: select_ctid(it),
-            select_merge: %{error: it.error},
+            select_merge: %{
+              from_address_hash: it.from_address_hash,
+              to_address_hash: it.to_address_hash,
+              created_contract_address_hash: it.created_contract_address_hash
+            },
             where:
               it.block_number in ^block_numbers and
                 (not is_nil(it.from_address_hash) or not is_nil(it.to_address_hash) or
@@ -104,11 +108,11 @@ defmodule Explorer.Migrator.FillInternalTransactionsAddressIds do
             inner_join: locked_it in subquery(lock_query),
             on: join_on_ctid(it, locked_it),
             left_join: from_map in AddressIdToAddressHash,
-            on: from_map.address_hash == it.from_address_hash,
+            on: from_map.address_hash == locked_it.from_address_hash,
             left_join: to_map in AddressIdToAddressHash,
-            on: to_map.address_hash == it.to_address_hash,
+            on: to_map.address_hash == locked_it.to_address_hash,
             left_join: created_map in AddressIdToAddressHash,
-            on: created_map.address_hash == it.created_contract_address_hash,
+            on: created_map.address_hash == locked_it.created_contract_address_hash,
             update: [
               set: [
                 from_address_id: from_map.address_id,
