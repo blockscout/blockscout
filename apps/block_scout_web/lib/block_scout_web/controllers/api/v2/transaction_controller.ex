@@ -39,6 +39,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   import Ecto.Query,
     only: [
+      from: 2,
       preload: 2
     ]
 
@@ -56,7 +57,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.Cache.Counters.{NewPendingTransactionsCount, Transactions24hCount}
   alias Explorer.Chain.FheOperation
-  alias Explorer.Chain.{Hash, Transaction}
+  alias Explorer.Chain.{Hash, SmartContract, Transaction}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Explorer.Chain.Token.Instance
@@ -237,7 +238,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
     full_options =
       [
-        necessity_by_association: @transaction_necessity_by_association
+        necessity_by_association: transactions_necessity_by_association()
       ]
       |> Keyword.merge(paging_options(params, filter_options))
       |> Keyword.merge(method_filter_options(params))
@@ -256,6 +257,44 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
       next_page_params: next_page_params
     })
+  end
+
+  defp transactions_necessity_by_association do
+    %{
+      :block => :optional,
+      [
+        created_contract_address: [
+          :scam_badge,
+          :names,
+          :token,
+          {:smart_contract, transaction_smart_contract_preload_query()},
+          proxy_implementations_association()
+        ]
+      ] => :optional,
+      [
+        from_address: [
+          :scam_badge,
+          :names,
+          {:smart_contract, transaction_smart_contract_preload_query()},
+          proxy_implementations_association()
+        ]
+      ] => :optional,
+      [
+        to_address: [
+          :scam_badge,
+          :names,
+          {:smart_contract, transaction_smart_contract_preload_query()},
+          proxy_implementations_association()
+        ]
+      ] => :optional
+    }
+    |> Map.merge(@chain_type_transaction_necessity_by_association)
+  end
+
+  defp transaction_smart_contract_preload_query do
+    from(smart_contract in SmartContract,
+      select: struct(smart_contract, [:address_hash])
+    )
   end
 
   operation :zksync_batch,
@@ -457,7 +496,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           end
 
         query
-        |> Chain.join_associations(@transaction_necessity_by_association)
+        |> Chain.join_associations(transactions_necessity_by_association())
         |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
         |> Repo.replica().all()
       end
@@ -491,7 +530,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   defp handle_batch_transactions(conn, %{batch_number_param: batch_number} = params, batch_transactions_fun) do
     full_options =
       [
-        necessity_by_association: @transaction_necessity_by_association
+        necessity_by_association: transactions_necessity_by_association()
       ]
       |> Keyword.merge(paging_options(params))
       |> Keyword.merge(@api_true)
@@ -544,7 +583,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def execution_node(conn, %{execution_node_hash_param: execution_node_hash_string} = params) do
     with {:format, {:ok, execution_node_hash}} <- {:format, Chain.string_to_address_hash(execution_node_hash_string)} do
       full_options =
-        [necessity_by_association: @transaction_necessity_by_association]
+        [necessity_by_association: transactions_necessity_by_association()]
         |> Keyword.merge(put_key_value_to_paging_options(paging_options(params), :is_index_in_asc_order, true))
         |> Keyword.merge(@api_true)
 
@@ -901,7 +940,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     with {:auth, %{watchlist_id: watchlist_id}} <- {:auth, current_user(conn)} do
       full_options =
         [
-          necessity_by_association: @transaction_necessity_by_association
+          necessity_by_association: transactions_necessity_by_association()
         ]
         |> Keyword.merge(paging_options(params, [:validated]))
         |> Keyword.merge(@api_true)
