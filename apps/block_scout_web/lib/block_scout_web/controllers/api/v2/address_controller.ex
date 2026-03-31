@@ -27,6 +27,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   import Explorer.Helper, only: [safe_parse_non_negative_integer: 1]
 
+  import Ecto.Query, only: [from: 2]
+
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_to_address: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
@@ -43,7 +45,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   alias BlockScoutWeb.Schemas.Helper, as: SchemasHelper
   alias Explorer.{Chain, Market, PagingOptions}
-  alias Explorer.Chain.{Address, Beacon.Deposit, Hash, Transaction}
+  alias Explorer.Chain.{Address, Beacon.Deposit, Hash, SmartContract, Transaction}
   alias Explorer.Chain.Address.{CoinBalance, Counters}
 
   alias Explorer.Chain.Token.Instance
@@ -65,19 +67,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     _ ->
       @chain_type_transaction_necessity_by_association %{}
   end
-
-  @transaction_necessity_by_association [
-    necessity_by_association:
-      %{
-        [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
-          :optional,
-        [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-        [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-        :block => :optional
-      }
-      |> Map.merge(@chain_type_transaction_necessity_by_association),
-    api?: true
-  ]
 
   @token_transfer_necessity_by_association [
     necessity_by_association: %{
@@ -406,7 +395,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, _address} ->
           options =
-            @transaction_necessity_by_association
+            [necessity_by_association: address_transactions_necessity_by_association()]
+            |> Keyword.merge(@api_true)
             |> Keyword.merge(paging_options(params))
             |> Keyword.merge(current_filter(params))
             |> Keyword.merge(address_transactions_sorting(params))
@@ -441,6 +431,43 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           })
       end
     end
+  end
+
+  defp address_transactions_necessity_by_association do
+    %{
+      [
+        created_contract_address: [
+          :scam_badge,
+          :names,
+          {:smart_contract, transaction_smart_contract_preload_query()},
+          proxy_implementations_association()
+        ]
+      ] => :optional,
+      [
+        from_address: [
+          :scam_badge,
+          :names,
+          {:smart_contract, transaction_smart_contract_preload_query()},
+          proxy_implementations_association()
+        ]
+      ] => :optional,
+      [
+        to_address: [
+          :scam_badge,
+          :names,
+          {:smart_contract, transaction_smart_contract_preload_query()},
+          proxy_implementations_association()
+        ]
+      ] => :optional,
+      :block => :optional
+    }
+    |> Map.merge(@chain_type_transaction_necessity_by_association)
+  end
+
+  defp transaction_smart_contract_preload_query do
+    from(smart_contract in SmartContract,
+      select: struct(smart_contract, [:address_hash])
+    )
   end
 
   operation :token_transfers,
