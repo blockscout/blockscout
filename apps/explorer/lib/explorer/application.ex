@@ -323,6 +323,10 @@ defmodule Explorer.Application do
           Explorer.Migrator.HeavyDbIndexOperation.DropTokenInstancesTokenIdIndex,
           :indexer
         ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesHashContractCodeNotNullIndex,
+          :indexer
+        ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),
         configure(Explorer.Chain.Fetcher.AddressesBlacklist),
         Explorer.Migrator.SwitchPendingOperations,

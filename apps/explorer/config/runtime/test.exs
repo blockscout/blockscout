@@ -106,7 +106,8 @@ for migrator <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCountAscCoinBalanceDescHashPartialIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockHashTransactionIndexIndexUniqueIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractAdditionalSourcesUniqueIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.DropTokenInstancesTokenIdIndex
+      Explorer.Migrator.HeavyDbIndexOperation.DropTokenInstancesTokenIdIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesHashContractCodeNotNullIndex
     ] do
   config :explorer, migrator, enabled: false
 end
