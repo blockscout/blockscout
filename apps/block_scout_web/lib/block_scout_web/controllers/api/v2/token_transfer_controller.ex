@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
     ]
 
   import Explorer.MicroserviceInterfaces.BENS,
-    only: [maybe_preload_ens: 1, maybe_preload_ens_for_token_transfers: 1]
+    only: [maybe_preload_ens_for_token_transfers: 1]
 
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
