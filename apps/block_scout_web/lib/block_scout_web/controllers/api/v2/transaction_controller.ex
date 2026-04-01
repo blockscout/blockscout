@@ -339,7 +339,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     conn
     |> put_status(200)
     |> render(:transactions, %{
-      transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+      transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
       items: true
     })
   end
@@ -554,7 +554,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     conn
     |> put_status(200)
     |> render(:transactions, %{
-      transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+      transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
       next_page_params: next_page_params
     })
   end
@@ -598,7 +598,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     conn
     |> put_status(200)
     |> render(:transactions, %{
-      transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+      transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
       next_page_params: next_page_params
     })
   end
@@ -645,7 +645,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:transactions, %{
-        transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+        transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -950,7 +950,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:transactions_watchlist, %{
-        transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+        transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
         next_page_params: next_page_params,
         watchlist_names: watchlist_names
       })
