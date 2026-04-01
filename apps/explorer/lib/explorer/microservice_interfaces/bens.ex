@@ -325,4 +325,17 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   def maybe_preload_ens_to_block(block) do
     maybe_preload_meta(block, __MODULE__, &MetadataPreloader.preload_ens_to_block/1)
   end
+
+  @doc """
+  Preloads ENS data to the list of token transfers unless disabled via DISABLE_TOKEN_TRANSFERS_BENS_PRELOAD
+  """
+  @spec maybe_preload_ens_for_token_transfers(MetadataPreloader.supported_input()) ::
+          MetadataPreloader.supported_input()
+  def maybe_preload_ens_for_token_transfers(token_transfers) do
+    if Application.get_env(:explorer, __MODULE__, [])[:disable_token_transfers_bens_preload] do
+      token_transfers
+    else
+      maybe_preload_ens(token_transfers)
+    end
+  end
 end

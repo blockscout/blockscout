@@ -17,7 +17,9 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
       token_transfers_types_options: 1
     ]
 
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.BENS,
+    only: [maybe_preload_ens: 1, maybe_preload_ens_for_token_transfers: 1]
+
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
@@ -112,13 +114,5 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
       decoded_transactions_map: decoded_transactions_map,
       next_page_params: next_page_params
     })
-  end
-
-  defp maybe_preload_ens_for_token_transfers(token_transfers) do
-    if Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS, [])[:disable_token_transfers_bens_preload] do
-      token_transfers
-    else
-      maybe_preload_ens(token_transfers)
-    end
   end
 end
