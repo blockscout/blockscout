@@ -220,6 +220,8 @@ defmodule Explorer.Chain.Block do
   use Utils.RuntimeEnvHelper,
     miner_gets_burnt_fees?: [:explorer, [Explorer.Chain.Transaction, :block_miner_gets_burnt_fees?]]
 
+  alias EthereumJSONRPC.Utility.RangesHelper
+
   alias Explorer.Chain.{
     Block,
     DenormalizationHelper,
@@ -233,6 +235,7 @@ defmodule Explorer.Chain.Block do
 
   alias Explorer.{Chain, Helper, PagingOptions, Repo}
   alias Explorer.Chain.Block.{EmissionReward, Reward, SecondDegreeRelation}
+  alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
   alias Explorer.Utility.MissingBlockRange
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
@@ -618,6 +621,56 @@ defmodule Explorer.Chain.Block do
     |> Decimal.div_int(gas_target)
     |> Decimal.div_int(base_fee_max_change_denominator)
   end
+
+  @doc """
+  Queues blocks for a full refetch and marks them as needing refetch.
+
+  This function accepts either a block ranges string, a list of block numbers,
+  or a single block number. When given a ranges string, it parses the string into
+  individual block numbers. It then enqueues the blocks for internal transaction
+  cleanup and marks the corresponding blocks with `refetch_needed: true` inside a
+  single database transaction.
+
+  ## Parameters
+
+    - `block_ranges_string_or_numbers`: A block ranges string, a list of block numbers, or a single block number.
+
+  ## Returns
+
+    - The result of `Repo.transaction/2` for range strings and lists.
+    - The delegated result for a single block number.
+
+  ## Examples
+
+      iex> full_refetch("1..3,5..6")
+      {:ok, _}
+
+      iex> full_refetch([10, 11, 12])
+      {:ok, _}
+
+      iex> full_refetch(15)
+      {:ok, _}
+
+  """
+  @spec full_refetch(binary() | [integer()] | integer()) :: {:ok, any()} | {:error, any()}
+  def full_refetch(block_ranges_string) when is_binary(block_ranges_string) do
+    block_ranges_string
+    |> RangesHelper.parse_block_ranges_to_numbers()
+    |> full_refetch()
+  end
+
+  def full_refetch(block_numbers) when is_list(block_numbers) do
+    Repo.transaction(
+      fn ->
+        # TODO: delete other crucial entities as well
+        InternalTransactionDeleteQueue.batch_insert(block_numbers)
+        set_refetch_needed(block_numbers)
+      end,
+      timeout: :infinity
+    )
+  end
+
+  def full_refetch(block_number), do: full_refetch([block_number])
 
   @spec set_refetch_needed(integer | [integer]) :: :ok
   def set_refetch_needed(block_numbers) when is_list(block_numbers) do
