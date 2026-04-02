@@ -22,7 +22,6 @@ defmodule Explorer.Chain.Transaction.Schema do
     PendingTransactionOperation,
     SignedAuthorization,
     TokenTransfer,
-    TransactionAction,
     Wei
   }
 
@@ -280,12 +279,6 @@ defmodule Explorer.Chain.Transaction.Schema do
         has_many(:logs, Log, foreign_key: :transaction_hash, references: :hash)
 
         has_many(:token_transfers, TokenTransfer, foreign_key: :transaction_hash, references: :hash)
-
-        has_many(:transaction_actions, TransactionAction,
-          foreign_key: :hash,
-          preload_order: [asc: :log_index],
-          references: :hash
-        )
 
         belongs_to(
           :to_address,

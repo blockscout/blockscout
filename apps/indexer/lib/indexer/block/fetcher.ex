@@ -59,8 +59,7 @@ defmodule Indexer.Block.Fetcher do
     MintTransfers,
     SignedAuthorizations,
     TokenInstances,
-    TokenTransfers,
-    TransactionActions
+    TokenTransfers
   }
 
   alias Indexer.Transform.Stability.Validators, as: StabilityValidators
@@ -195,7 +194,6 @@ defmodule Indexer.Block.Fetcher do
          celo_l2_epochs = CeloL2Epochs.parse(logs),
          celo_pending_account_operations = parse_celo_pending_account_operations(logs),
          tokens = Enum.uniq(tokens ++ celo_tokens),
-         %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{fhe_operations: fhe_operations} = FheOperations.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          optimism_withdrawals =
@@ -228,7 +226,6 @@ defmodule Indexer.Block.Fetcher do
              shibarium_bridge_operations: shibarium_bridge_operations,
              token_transfers: token_transfers,
              transactions: transactions_with_receipts,
-             transaction_actions: transaction_actions,
              withdrawals: withdrawals_params,
              polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
              celo_pending_account_operations: celo_pending_account_operations
@@ -247,8 +244,6 @@ defmodule Indexer.Block.Fetcher do
          token_transfers_with_token = token_transfers_merge_token(token_transfers, tokens),
          address_token_balances =
            AddressTokenBalances.params_set(%{token_transfers_params: token_transfers_with_token}),
-         transaction_actions =
-           Enum.map(transaction_actions, fn action -> Map.put(action, :data, Map.delete(action.data, :block_number)) end),
          token_instances = TokenInstances.params_set(%{token_transfers_params: token_transfers}),
          stability_validators = StabilityValidators.parse(blocks),
          addresses_without_nonce = process_addresses_nonce(addresses),
@@ -289,14 +284,7 @@ defmodule Indexer.Block.Fetcher do
            __MODULE__.import(
              state,
              basic_import_options |> Map.merge(additional_options) |> import_options(chain_type_import_options)
-           ),
-         {:transaction_actions, {:ok, inserted_transaction_actions}} <-
-           {:transaction_actions,
-            Chain.import(%{
-              transaction_actions: %{params: transaction_actions},
-              timeout: :infinity
-            })} do
-      inserted = Map.merge(inserted, inserted_transaction_actions)
+           ) do
       Prometheus.Instrumenter.set_block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
 

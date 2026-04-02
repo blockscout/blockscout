@@ -79,10 +79,6 @@ config :explorer, Explorer.Chain.Cache.Counters.Blackfort.ValidatorsCount,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
 
-config :explorer, Explorer.Chain.Cache.TransactionActionTokensData, enabled: true
-
-config :explorer, Explorer.Chain.Cache.TransactionActionUniswapPools, enabled: true
-
 config :explorer, Explorer.Market.Fetcher.Token, enabled: true
 
 config :explorer, Explorer.Chain.Cache.Counters.TokenHoldersCount,
