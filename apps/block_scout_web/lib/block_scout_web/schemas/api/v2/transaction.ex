@@ -420,22 +420,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         decoded_input: %Schema{allOf: [General.DecodedInput], nullable: true},
         token_transfers: %Schema{type: :array, items: TokenTransfer, nullable: true},
         token_transfers_overflow: %Schema{type: :boolean, nullable: true},
-        actions: %Schema{
-          type: :array,
-          items: %Schema{
-            type: :object,
-            required: [:protocol, :type, :data],
-            properties: %{
-              data: %Schema{
-                type: :object,
-                description: "Transaction action details (json formatted)",
-                nullable: false
-              }
-            },
-            additionalProperties: false
-          },
-          nullable: true
-        },
         exchange_rate: General.FloatStringNullable,
         historic_exchange_rate: General.FloatStringNullable,
         method: General.MethodNameNullable,
@@ -500,7 +484,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         :decoded_input,
         :token_transfers,
         :token_transfers_overflow,
-        :actions,
         :exchange_rate,
         :historic_exchange_rate,
         :method,
