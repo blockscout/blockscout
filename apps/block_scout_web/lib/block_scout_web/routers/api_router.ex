@@ -158,10 +158,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/watchlist", V2.TransactionController, :watchlist_transactions)
       get("/stats", V2.TransactionController, :stats)
 
-      if @chain_type == :polygon_zkevm do
-        get("/zkevm-batch/:batch_number_param", V2.TransactionController, :polygon_zkevm_batch)
-      end
-
       if @chain_type == :zksync do
         get("/zksync-batch/:batch_number_param", V2.TransactionController, :zksync_batch)
       end
@@ -280,11 +276,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/optimism-deposits", V2.OptimismController, :main_page_deposits)
       end
 
-      if @chain_type == :polygon_zkevm do
-        get("/zkevm/batches/confirmed", V2.PolygonZkevmController, :batches_confirmed)
-        get("/zkevm/batches/latest-number", V2.PolygonZkevmController, :batch_latest_number)
-      end
-
       if @chain_type == :zksync do
         get("/zksync/batches/confirmed", V2.ZkSyncController, :batches_confirmed)
         get("/zksync/batches/latest-number", V2.ZkSyncController, :batch_latest_number)
@@ -361,18 +352,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     scope "/withdrawals" do
       get("/", V2.WithdrawalController, :withdrawals_list)
       get("/counters", V2.WithdrawalController, :withdrawals_counters)
-    end
-
-    scope "/zkevm" do
-      if @chain_type == :polygon_zkevm do
-        get("/batches", V2.PolygonZkevmController, :batches)
-        get("/batches/count", V2.PolygonZkevmController, :batches_count)
-        get("/batches/:batch_number", V2.PolygonZkevmController, :batch)
-        get("/deposits", V2.PolygonZkevmController, :deposits)
-        get("/deposits/count", V2.PolygonZkevmController, :deposits_count)
-        get("/withdrawals", V2.PolygonZkevmController, :withdrawals)
-        get("/withdrawals/count", V2.PolygonZkevmController, :withdrawals_count)
-      end
     end
 
     scope "/proxy" do

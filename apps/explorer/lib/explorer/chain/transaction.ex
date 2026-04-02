@@ -28,7 +28,6 @@ defmodule Explorer.Chain.Transaction.Schema do
   alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
   alias Explorer.Chain.Arbitrum.BatchTransaction, as: ArbitrumBatchTransaction
   alias Explorer.Chain.Arbitrum.Message, as: ArbitrumMessage
-  alias Explorer.Chain.PolygonZkevm.BatchTransaction, as: ZkevmBatchTransaction
   alias Explorer.Chain.Transaction.{Fork, Status}
   alias Explorer.Chain.ZkSync.BatchTransaction, as: ZkSyncBatchTransaction
 
@@ -96,29 +95,6 @@ defmodule Explorer.Chain.Transaction.Schema do
                                 foreign_key: :wrapped_to_address_hash,
                                 references: :hash,
                                 type: Hash.Address
-                              )
-                            end,
-                            2
-                          )
-
-                        :polygon_zkevm ->
-                          elem(
-                            quote do
-                              has_one(:zkevm_batch_transaction, ZkevmBatchTransaction,
-                                foreign_key: :hash,
-                                references: :hash
-                              )
-
-                              has_one(:zkevm_batch, through: [:zkevm_batch_transaction, :batch], references: :hash)
-
-                              has_one(:zkevm_sequence_transaction,
-                                through: [:zkevm_batch, :sequence_transaction],
-                                references: :hash
-                              )
-
-                              has_one(:zkevm_verify_transaction,
-                                through: [:zkevm_batch, :verify_transaction],
-                                references: :hash
                               )
                             end,
                             2

@@ -25,7 +25,6 @@ defmodule BlockScoutWeb.Notifier do
   alias BlockScoutWeb.API.V2.{
     AddressView,
     BlockView,
-    PolygonZkevmView,
     SmartContractView,
     TransactionView
   }
@@ -200,18 +199,6 @@ defmodule BlockScoutWeb.Notifier do
     |> Enum.sort_by(& &1.number, :asc)
     |> Enum.each(fn block ->
       broadcast_latest_block?(block, last_broadcasted_block_number)
-    end)
-  end
-
-  def handle_event({:chain_event, :zkevm_confirmed_batches, :realtime, batches}) do
-    batches
-    |> Enum.sort_by(& &1.number, :asc)
-    |> Enum.each(fn confirmed_batch ->
-      rendered_batch = PolygonZkevmView.render("zkevm_batch.json", %{batch: confirmed_batch, socket: nil})
-
-      Endpoint.broadcast("zkevm_batches:new_zkevm_confirmed_batch", "new_zkevm_confirmed_batch", %{
-        batch: rendered_batch
-      })
     end)
   end
 

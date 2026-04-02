@@ -31,7 +31,6 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
   alias Indexer.Fetcher.Filecoin.AddressInfo, as: FilecoinAddressInfo
-  alias Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens, as: PolygonZkevmBridgeL1Tokens
   alias Indexer.Fetcher.TokenBalance.Current, as: TokenBalanceCurrent
   alias Indexer.Fetcher.TokenBalance.Historical, as: TokenBalanceHistorical
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
@@ -72,7 +71,6 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Transform.Shibarium.Bridge, as: ShibariumBridge
 
   alias Indexer.Transform.Blocks, as: TransformBlocks
-  alias Indexer.Transform.PolygonZkevm.Bridge, as: PolygonZkevmBridge
 
   alias Indexer.Transform.Celo.L1Epochs, as: CeloL1Epochs
   alias Indexer.Transform.Celo.L2Epochs, as: CeloL2Epochs
@@ -208,11 +206,6 @@ defmodule Indexer.Block.Fetcher do
              do: ShibariumBridge.parse(blocks, transactions_with_receipts, logs),
              else: []
            ),
-         polygon_zkevm_bridge_operations =
-           if(callback_module == Indexer.Block.Realtime.Fetcher,
-             do: PolygonZkevmBridge.parse(blocks, logs),
-             else: []
-           ),
          {arbitrum_xlevel_messages, arbitrum_transactions_for_further_handling} =
            ArbitrumMessaging.parse(transactions_with_receipts, logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
@@ -227,7 +220,6 @@ defmodule Indexer.Block.Fetcher do
              token_transfers: token_transfers,
              transactions: transactions_with_receipts,
              withdrawals: withdrawals_params,
-             polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
              celo_pending_account_operations: celo_pending_account_operations
            }),
          coin_balances_params_set =
@@ -270,7 +262,6 @@ defmodule Indexer.Block.Fetcher do
            %{
              transactions_with_receipts: transactions_with_receipts,
              optimism_withdrawals: optimism_withdrawals,
-             polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
              scroll_l1_fee_params: scroll_l1_fee_params,
              shibarium_bridge_operations: shibarium_bridge_operations,
              celo_gas_tokens: celo_gas_tokens,
@@ -368,13 +359,6 @@ defmodule Indexer.Block.Fetcher do
       import_options,
       chain_specific_import_options
     )
-  end
-
-  defp do_import_options(:polygon_zkevm, basic_import_options, %{
-         polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations
-       }) do
-    basic_import_options
-    |> Map.put_new(:polygon_zkevm_bridge_operations, %{params: polygon_zkevm_bridge_operations})
   end
 
   defp do_import_options(:scroll, basic_import_options, %{scroll_l1_fee_params: scroll_l1_fee_params}) do
@@ -696,18 +680,6 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_replaced_transactions(_, _), do: :ok
-
-  @doc """
-  Fills a buffer of L1 token addresses to handle it asynchronously in
-  the Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens module. The addresses are
-  taken from the `operations` list.
-  """
-  @spec async_import_polygon_zkevm_bridge_l1_tokens(map()) :: :ok
-  def async_import_polygon_zkevm_bridge_l1_tokens(%{polygon_zkevm_bridge_operations: operations}) do
-    PolygonZkevmBridgeL1Tokens.async_fetch(operations)
-  end
-
-  def async_import_polygon_zkevm_bridge_l1_tokens(_), do: :ok
 
   def async_import_celo_epoch_block_operations(%{celo_epochs: epochs}, realtime?) do
     CeloEpochBlockOperations.async_fetch(epochs, realtime?)
