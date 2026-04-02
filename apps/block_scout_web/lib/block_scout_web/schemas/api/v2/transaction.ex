@@ -329,7 +329,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
 
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, SignedAuthorization, TokenTransfer}
   alias BlockScoutWeb.Schemas.API.V2.Transaction.{ChainTypeCustomizations, Fee}
-  alias Explorer.Chain.TransactionAction
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -427,16 +426,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
             type: :object,
             required: [:protocol, :type, :data],
             properties: %{
-              protocol: %Schema{
-                type: :string,
-                enum: TransactionAction.supported_protocols(),
-                nullable: false
-              },
-              type: %Schema{
-                type: :string,
-                enum: TransactionAction.supported_types(),
-                nullable: false
-              },
               data: %Schema{
                 type: :object,
                 description: "Transaction action details (json formatted)",

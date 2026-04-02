@@ -54,7 +54,6 @@ defmodule Indexer.Supervisor do
     TokenCountersUpdater,
     TokenTotalSupplyUpdater,
     TokenUpdater,
-    TransactionAction,
     UncleBlock,
     Withdrawal
   }
@@ -152,7 +151,6 @@ defmodule Indexer.Supervisor do
         {TokenInstanceSanitize.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(TokenInstanceSanitizeERC721, [[memory_monitor: memory_monitor]]),
         configure(TokenInstanceSanitizeERC1155, [[memory_monitor: memory_monitor]]),
-        configure(TransactionAction.Supervisor, [[memory_monitor: memory_monitor]]),
         {ContractCode.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {TokenBalanceHistorical.Supervisor,

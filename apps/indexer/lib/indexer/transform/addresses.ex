@@ -49,8 +49,6 @@ defmodule Indexer.Transform.Addresses do
   """
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  alias Indexer.Helper
-
   @entity_to_address_map %{
     address_coin_balances: [
       [
@@ -516,11 +514,6 @@ defmodule Indexer.Transform.Addresses do
               required(:adapter_address_hash) => String.t()
             }
           ],
-          optional(:transaction_actions) => [
-            %{
-              required(:data) => map()
-            }
-          ],
           optional(:mint_transfers) => [
             %{
               required(:from_address_hash) => String.t(),
@@ -578,18 +571,7 @@ defmodule Indexer.Transform.Addresses do
           (entity_items = Map.get(fetched_data, entity_key)) != nil,
           do: extract_addresses_from_collection(entity_items, entity_fields, state)
 
-    transaction_actions_addresses =
-      fetched_data
-      |> Map.get(:transaction_actions, [])
-      |> Enum.map(fn transaction_action ->
-        transaction_action.data
-        |> Map.get(:block_number)
-        |> find_transaction_action_addresses(transaction_action.data)
-      end)
-      |> List.flatten()
-
     addresses
-    |> Enum.concat(transaction_actions_addresses)
     |> List.flatten()
     |> merge_addresses()
   end
@@ -598,25 +580,6 @@ defmodule Indexer.Transform.Addresses do
     do: Enum.flat_map(items, &extract_addresses_from_item(&1, fields, state))
 
   def extract_addresses_from_item(item, fields, state), do: Enum.flat_map(fields, &extract_fields(&1, item, state))
-
-  defp find_transaction_action_addresses(block_number, data, accumulator \\ [])
-
-  defp find_transaction_action_addresses(block_number, data, accumulator) when is_map(data) or is_list(data) do
-    Enum.reduce(data, accumulator, fn
-      {_, value}, acc -> find_transaction_action_addresses(block_number, value, acc)
-      value, acc -> find_transaction_action_addresses(block_number, value, acc)
-    end)
-  end
-
-  defp find_transaction_action_addresses(block_number, value, accumulator) when is_binary(value) do
-    if Helper.address_correct?(value) do
-      [%{:fetched_coin_balance_block_number => block_number, :hash => value} | accumulator]
-    else
-      accumulator
-    end
-  end
-
-  defp find_transaction_action_addresses(_block_number, _value, accumulator), do: accumulator
 
   def merge_addresses(addresses) when is_list(addresses) do
     addresses
