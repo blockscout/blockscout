@@ -179,11 +179,6 @@ defmodule Indexer.Transform.Addresses do
         %{from: :address_hash, to: :hash}
       ]
     ],
-    polygon_zkevm_bridge_operations: [
-      [
-        %{from: :l2_token_address, to: :hash}
-      ]
-    ],
     celo_election_rewards: [
       [
         %{from: :account_address_hash, to: :hash}
@@ -531,11 +526,6 @@ defmodule Indexer.Transform.Addresses do
             %{
               required(:address_hash) => String.t(),
               required(:block_number) => non_neg_integer()
-            }
-          ],
-          optional(:polygon_zkevm_bridge_operations) => [
-            %{
-              optional(:l2_token_address) => String.t()
             }
           ],
           optional(:celo_election_rewards) => [

@@ -22,7 +22,6 @@ defmodule BlockScoutWeb.Mixfile do
       version: "10.0.6",
       xref: [
         exclude: [
-          Explorer.Chain.PolygonZkevm.Reader,
           Explorer.Chain.Beacon.Reader,
           Explorer.Chain.Cache.OptimismFinalizationPeriod,
           Explorer.Chain.Optimism.OutputRoot,

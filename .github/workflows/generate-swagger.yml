@@ -41,7 +41,6 @@ jobs:
               "neon",
               "optimism",
               "optimism-celo",
-              "polygon_zkevm",
               "rsk",
               "scroll",
               "shibarium",

@@ -177,7 +177,6 @@ defmodule Explorer.Application do
         configure_chain_type_dependent_process(Explorer.Chain.Cache.Counters.Stability.ValidatorsCount, :stability),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.LatestL1BlockNumber, [
           :optimism,
-          :polygon_zkevm,
           :scroll,
           :shibarium
         ]),
@@ -185,7 +184,6 @@ defmodule Explorer.Application do
         Explorer.Migrator.SanitizeDuplicatedLogIndexLogs
         |> configure_mode_dependent_process(:indexer)
         |> configure_chain_type_dependent_process([
-          :polygon_zkevm,
           :rsk,
           :filecoin
         ]),
@@ -377,7 +375,6 @@ defmodule Explorer.Application do
         Explorer.Repo.Filecoin,
         Explorer.Repo.Optimism,
         Explorer.Repo.PolygonEdge,
-        Explorer.Repo.PolygonZkevm,
         Explorer.Repo.RSK,
         Explorer.Repo.Scroll,
         Explorer.Repo.Shibarium,

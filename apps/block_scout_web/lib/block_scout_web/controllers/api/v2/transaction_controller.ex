@@ -58,7 +58,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.FheOperation
   alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
-  alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Explorer.Chain.Token.Instance
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
@@ -161,12 +160,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
     necessity_by_association =
       case Application.get_env(:explorer, :chain_type) do
-        :polygon_zkevm ->
-          necessity_by_association_with_actions
-          |> Map.put(:zkevm_batch, :optional)
-          |> Map.put(:zkevm_sequence_transaction, :optional)
-          |> Map.put(:zkevm_verify_transaction, :optional)
-
         :zksync ->
           necessity_by_association_with_actions
           |> Map.put(:zksync_batch, :optional)
@@ -263,48 +256,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     |> render(:transactions, %{
       transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
       next_page_params: next_page_params
-    })
-  end
-
-  operation :polygon_zkevm_batch,
-    summary: "List L2 transactions in a Polygon ZkEVM batch",
-    description: "Retrieves L2 transactions bound to a specific Polygon ZkEVM batch number.",
-    parameters: [batch_number_param() | base_params()],
-    responses: [
-      ok:
-        {"Polygon ZkEVM batch transactions.", "application/json",
-         %Schema{
-           type: :object,
-           properties: %{
-             items: %Schema{type: :array, items: Schemas.Transaction.Response}
-           },
-           nullable: false,
-           additionalProperties: false
-         }},
-      unprocessable_entity: JsonErrorResponse.response()
-    ]
-
-  @doc """
-    Function to handle GET requests to `/api/v2/transactions/zkevm-batch/:batch_number` endpoint.
-    It renders the list of L2 transactions bound to the specified batch.
-  """
-  @spec polygon_zkevm_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def polygon_zkevm_batch(conn, %{batch_number_param: batch_number} = _params) do
-    options =
-      [necessity_by_association: @transaction_necessity_by_association]
-      |> Keyword.merge(@api_true)
-
-    transactions =
-      batch_number
-      |> PolygonZkevmReader.batch_transactions(@api_true)
-      |> Enum.map(fn transaction -> transaction.hash end)
-      |> Chain.hashes_to_transactions(options)
-
-    conn
-    |> put_status(200)
-    |> render(:transactions, %{
-      transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
-      items: true
     })
   end
 

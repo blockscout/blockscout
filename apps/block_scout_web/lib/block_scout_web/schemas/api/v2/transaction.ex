@@ -155,21 +155,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
   def chain_type_fields(schema) do
     chain_type()
     |> case do
-      :polygon_zkevm ->
-        schema
-        |> Helper.extend_schema(
-          properties: %{
-            zkevm_batch_number: %Schema{type: :integer, nullable: true},
-            zkevm_sequence_hash: General.FullHash,
-            zkevm_verify_hash: General.FullHash,
-            zkevm_status: %Schema{
-              type: :string,
-              enum: ["Confirmed by Sequencer", "L1 Confirmed"],
-              nullable: false
-            }
-          }
-        )
-
       :zksync ->
         schema |> Helper.extend_schema(properties: %{zksync: @zksync_schema})
 
