@@ -1,5 +1,16 @@
 # Changelog
 
+## 10.2.4
+
+### 🐛 Bug Fixes
+
+- Update transaction from receipt in PendingTransactionsSanitizer ([#14182](https://github.com/blockscout/blockscout/issues/14182))
+
+### ⚙️ Miscellaneous Tasks
+
+- Add swagger generation for Arc and Suave chain types ([#14181](https://github.com/blockscout/blockscout/issues/14181))
+
+
 ## 10.2.3
 
 ### 🐛 Bug Fixes
