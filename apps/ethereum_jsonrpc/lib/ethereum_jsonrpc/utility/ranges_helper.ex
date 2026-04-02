@@ -139,6 +139,41 @@ defmodule EthereumJSONRPC.Utility.RangesHelper do
   end
 
   @doc """
+  Parses a block ranges string into a flat list of block numbers.
+
+  This function expands each parsed range into individual block numbers and returns
+  all resulting numbers as a single list. The input must contain only finite ranges.
+  If the parsed result includes a standalone integer such as a `latest` marker,
+  the function raises.
+
+  ## Parameters
+
+    - `block_ranges_string`: A string representing block ranges.
+
+  ## Returns
+
+    - A list of block numbers as integers.
+
+  ## Examples
+
+      iex> parse_block_ranges_to_numbers("1..3,5..6")
+      [1, 2, 3, 5, 6]
+
+      iex> parse_block_ranges_to_numbers("10..12")
+      [10, 11, 12]
+
+  """
+  @spec parse_block_ranges_to_numbers(binary()) :: [integer()]
+  def parse_block_ranges_to_numbers(block_ranges_string) do
+    block_ranges_string
+    |> parse_block_ranges()
+    |> Enum.flat_map(fn
+      %Range{} = range -> Range.to_list(range)
+      _number -> raise "Invalid ranges string"
+    end)
+  end
+
+  @doc """
   Extracts the minimum block number from a given block ranges string.
 
   ## Parameters
