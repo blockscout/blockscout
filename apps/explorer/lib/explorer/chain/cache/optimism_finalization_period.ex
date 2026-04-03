@@ -22,7 +22,7 @@ defmodule Explorer.Chain.Cache.OptimismFinalizationPeriod do
     # call FINALIZATION_PERIOD_SECONDS() public getter of L2OutputOracle contract on L1
     request = Contract.eth_call_request("0xf4daa291", output_oracle, 0, nil, nil)
 
-    case json_rpc(request, json_rpc_named_arguments(optimism_l1_rpc)) do
+    case json_rpc(request, Indexer.Helper.json_rpc_named_arguments(optimism_l1_rpc)) do
       {:ok, value} ->
         {:update, quantity_to_integer(value)}
 
@@ -36,19 +36,4 @@ defmodule Explorer.Chain.Cache.OptimismFinalizationPeriod do
   end
 
   defp handle_fallback(_key), do: {:return, nil}
-
-  defp json_rpc_named_arguments(optimism_l1_rpc) do
-    [
-      transport: EthereumJSONRPC.HTTP,
-      transport_options: [
-        http: EthereumJSONRPC.HTTP.Tesla,
-        urls: [optimism_l1_rpc],
-        http_options: [
-          recv_timeout: :timer.minutes(10),
-          timeout: :timer.minutes(10),
-          pool: :ethereum_jsonrpc
-        ]
-      ]
-    ]
-  end
 end
