@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.RealtimeEventHandlers.MainPage do
   def init([]) do
     Helper.create_cache_table(:last_broadcasted_block)
     Subscriber.to(:blocks, :realtime)
-    Subscriber.to(:transactions, :realtime)
+    # Subscriber.to(:transactions, :realtime)
     {:ok, []}
   end
 
