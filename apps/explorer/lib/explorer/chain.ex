@@ -515,7 +515,8 @@ defmodule Explorer.Chain do
   # - constructor_arguments (potentially large)
   defp strip_smart_contract_large_fields(addresses) when is_list(addresses) do
     Enum.map(addresses, fn address ->
-      if Map.has_key?(address, :smart_contract) && address.smart_contract do
+      if Map.has_key?(address, :smart_contract) && address.smart_contract &&
+           !is_struct(address.smart_contract, Ecto.Association.NotLoaded) do
         filtered_contract =
           address.smart_contract
           |> Map.drop([:contract_source_code, :abi, :constructor_arguments])
