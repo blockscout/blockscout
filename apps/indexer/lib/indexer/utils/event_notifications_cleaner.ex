@@ -31,7 +31,7 @@ defmodule Indexer.Utils.EventNotificationsCleaner do
     {count, _} =
       EventNotification
       |> where([en], en.inserted_at < ago(^max_age(), "millisecond"))
-      |> EventNotificationsRepo.delete_all()
+      |> EventNotificationsRepo.delete_all(timeout: :infinity)
 
     Logger.info("Deleted #{count} event notifications")
   end
