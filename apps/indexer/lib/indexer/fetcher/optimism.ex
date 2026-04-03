@@ -22,10 +22,10 @@ defmodule Indexer.Fetcher.Optimism do
   alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Optimism.Withdrawal
-  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Explorer.Repo
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
+  alias Indexer.RollupReorgMonitorQueue
 
   @empty_hash "0x0000000000000000000000000000000000000000000000000000000000000000"
 
@@ -515,7 +515,7 @@ defmodule Indexer.Fetcher.Optimism do
   def handle_reorgs_queue(module, handle_reorg_func) do
     reorg_block_number =
       Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), nil, fn _i, acc ->
-        number = RollupReorgMonitorQueue.reorg_block_pop(module)
+        number = RollupReorgMonitorQueue.pop(module)
 
         if is_nil(number) do
           {:halt, acc}
@@ -543,7 +543,7 @@ defmodule Indexer.Fetcher.Optimism do
   @spec handle_realtime_l2_reorg(non_neg_integer(), module()) :: any()
   def handle_realtime_l2_reorg(reorg_block_number, module) do
     Logger.warning("L2 reorg was detected at block #{reorg_block_number}.", fetcher: module.fetcher_name())
-    RollupReorgMonitorQueue.reorg_block_push(reorg_block_number, module)
+    RollupReorgMonitorQueue.push(reorg_block_number, module)
   end
 
   @doc """
