@@ -143,6 +143,57 @@ defmodule BlockScoutWeb.SmartContractControllerTest do
       assert conn.status == 200
       assert conn.assigns.read_only_functions == []
     end
+
+    test "uses first implementation from address_hashes for proxy contract" do
+      proxy_address = insert(:contract_address)
+      implementation_address = insert(:contract_address)
+
+      insert(:smart_contract,
+        address_hash: proxy_address.hash,
+        contract_code_md5: "123"
+      )
+
+      insert(:smart_contract,
+        address_hash: implementation_address.hash,
+        abi: [
+          %{
+            "type" => "function",
+            "stateMutability" => "view",
+            "payable" => false,
+            "outputs" => [%{"type" => "uint256", "name" => ""}],
+            "name" => "get",
+            "inputs" => [],
+            "constant" => true
+          }
+        ],
+        contract_code_md5: "456"
+      )
+
+      insert(:proxy_implementation,
+        proxy_address_hash: proxy_address.hash,
+        proxy_type: "eip1967",
+        address_hashes: [implementation_address.hash],
+        names: ["implementation"]
+      )
+
+      blockchain_get_function_mock()
+
+      path =
+        smart_contract_path(BlockScoutWeb.Endpoint, :index,
+          hash: proxy_address.hash,
+          type: :proxy,
+          action: :read
+        )
+
+      conn =
+        build_conn()
+        |> put_req_header("x-requested-with", "xmlhttprequest")
+        |> get(path)
+
+      assert conn.status == 200
+      assert conn.assigns.implementation_address == implementation_address.hash
+      refute conn.assigns.read_only_functions == []
+    end
   end
 
   describe "GET show/3" do
