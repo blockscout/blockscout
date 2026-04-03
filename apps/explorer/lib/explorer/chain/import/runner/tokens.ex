@@ -305,6 +305,40 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
     [:name, :symbol, :type, :fiat_value, :circulating_market_cap, :volume_24h, :decimals]
   end
 
+  def token_list_on_conflict do
+    from(
+      token in Token,
+      update: [
+        set: [
+          name: fragment("COALESCE(?, EXCLUDED.name)", token.name),
+          symbol: fragment("COALESCE(?, EXCLUDED.symbol)", token.symbol),
+          decimals: fragment("COALESCE(?, EXCLUDED.decimals)", token.decimals),
+          icon_url:
+            fragment(
+              "CASE WHEN ? THEN ? ELSE COALESCE(EXCLUDED.icon_url, ?) END",
+              token.is_verified_via_admin_panel,
+              token.icon_url,
+              token.icon_url
+            ),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.updated_at)
+        ]
+      ],
+      where:
+        fragment(
+          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.decimals, EXCLUDED.icon_url) IS DISTINCT FROM (?, ?, ?, ?)",
+          token.name,
+          token.symbol,
+          token.decimals,
+          token.icon_url
+        )
+    )
+  end
+
+  def token_list_fields_to_update do
+    [:name, :symbol, :decimals, :icon_url]
+  end
+
   defp should_update?(_new_token, nil, _fields_to_replace), do: true
 
   defp should_update?(new_token, existing_token, fields_to_replace) do

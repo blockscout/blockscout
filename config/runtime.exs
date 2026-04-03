@@ -564,6 +564,13 @@ config :explorer, Explorer.Market.Fetcher.Token,
       ConfigHelper.parse_integer_env_var("TOKEN_EXCHANGE_RATE_MAX_BATCH_SIZE", 500)
     )
 
+token_list_url = ConfigHelper.parse_url_env_var("TOKEN_LIST_URL")
+
+config :explorer, Explorer.Market.Fetcher.TokenList,
+  enabled: !is_nil(token_list_url),
+  token_list_url: token_list_url,
+  refetch_interval: ConfigHelper.parse_time_env_var("TOKEN_LIST_REFETCH_INTERVAL", "24h")
+
 config :explorer, Explorer.Market.Fetcher.History,
   enabled: !disable_exchange_rates? && ConfigHelper.parse_bool_env_var("MARKET_HISTORY_FETCHER_ENABLED", "true"),
   history_fetch_interval: ConfigHelper.parse_time_env_var("MARKET_HISTORY_FETCH_INTERVAL", "1h"),
