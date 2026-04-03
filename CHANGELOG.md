@@ -2,6 +2,10 @@
 
 ## 10.2.4
 
+### ⚡ Performance
+
+- Use tuple-based comparison to utlize index ([#14178](https://github.com/blockscout/blockscout/pull/14178))
+
 ### 🐛 Bug Fixes
 
 - Update transaction from receipt in PendingTransactionsSanitizer ([#14182](https://github.com/blockscout/blockscout/issues/14182))
