@@ -798,6 +798,8 @@ defmodule Explorer.Chain do
 
   def confirmations(nil, _), do: {:error, :pending}
 
+  def confirmations(%Ecto.Association.NotLoaded{}, _), do: {:error, :not_loaded}
+
   @spec verified_contracts_top(non_neg_integer()) :: [Hash.Address.t()]
   def verified_contracts_top(limit) do
     query =

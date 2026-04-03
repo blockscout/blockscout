@@ -265,25 +265,7 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :token_transfers, :realtime, all_token_transfers}) do
     all_token_transfers_full =
       all_token_transfers
-      |> Repo.preload(
-        DenormalizationHelper.extend_transaction_preload([
-          [token: Reputation.reputation_association()],
-          :transaction,
-          from_address: [
-            :scam_badge,
-            :names,
-            :smart_contract,
-            proxy_implementations_association()
-          ],
-          to_address: [
-            :scam_badge,
-            :names,
-            :smart_contract,
-            proxy_implementations_association()
-          ]
-        ])
-      )
-      |> Instance.preload_nft(@api_true)
+      |> Chain.select_repo(@api_true).preload(token: Reputation.reputation_association())
 
     transfers_by_token = Enum.group_by(all_token_transfers_full, fn tt -> to_string(tt.token_contract_address_hash) end)
 
@@ -302,26 +284,8 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :transactions, :realtime, transactions}) do
-    base_preloads = [
-      :block,
-      created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
-      from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
-      to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
-    ]
-
-    preloads =
-      if API_V2.enabled?(),
-        do: [{:token_transfers, [token: Reputation.reputation_association()]} | base_preloads],
-        else: base_preloads
-
     transactions
-    |> Repo.preload(preloads)
     |> broadcast_transactions_websocket_v2()
-    |> Enum.map(fn transaction ->
-      # Disable parsing of token transfers from websocket for transaction tab because we display token transfers at a separate tab
-      Map.put(transaction, :token_transfers, [])
-    end)
-    |> Enum.each(&broadcast_transaction/1)
   end
 
   def handle_event({:chain_event, :transaction_stats}) do
@@ -729,7 +693,7 @@ defmodule BlockScoutWeb.Notifier do
 
     prepared_transactions =
       TransactionView.render("transactions.json", %{
-        transactions: Repo.preload(transactions, @transaction_associations),
+        transactions: transactions,
         conn: nil
       })
 

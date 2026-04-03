@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.RealtimeEventHandlers.TokenTransfer do
 
   @impl true
   def init([]) do
-    # Subscriber.to(:token_transfers, :realtime)
+    Subscriber.to(:token_transfers, :realtime)
     {:ok, []}
   end
 

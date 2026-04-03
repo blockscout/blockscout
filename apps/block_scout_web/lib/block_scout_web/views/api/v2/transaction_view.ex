@@ -450,7 +450,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
          watchlist_names,
          decoded_input
        ) do
-    base_fee_per_gas = transaction.block && transaction.block.base_fee_per_gas
+    base_fee_per_gas =
+      if is_nil(transaction.block) or match?(%NotLoaded{}, transaction.block) do
+        nil
+      else
+        transaction.block.base_fee_per_gas
+      end
+
     max_priority_fee_per_gas = transaction.max_priority_fee_per_gas
     max_fee_per_gas = transaction.max_fee_per_gas
 
@@ -524,7 +530,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         GetTransactionTags.get_transaction_tags(transaction.hash, current_user(single_transaction? && conn)),
       "has_error_in_internal_transactions" => transaction.has_error_in_internal_transactions,
       "authorization_list" => authorization_list(transaction.signed_authorizations),
-      "is_pending_update" => transaction.block && transaction.block.refetch_needed
+      "is_pending_update" =>
+        if is_nil(transaction.block) or match?(%NotLoaded{}, transaction.block) do
+          nil
+        else
+          transaction.block.refetch_needed
+        end
     }
 
     result
@@ -667,6 +678,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def format_confirmations(_), do: 0
 
   def format_fee({type, value}), do: %{"type" => type, "value" => value}
+
+  def processing_time_duration(%Transaction{block: %NotLoaded{}}) do
+    []
+  end
 
   def processing_time_duration(%Transaction{block: nil}) do
     []
