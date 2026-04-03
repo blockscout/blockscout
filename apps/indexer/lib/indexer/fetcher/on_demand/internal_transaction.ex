@@ -128,6 +128,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         |> Repo.preload(:block)
         |> InternalTransaction.preload_error()
         |> InternalTransaction.preload_transaction()
+        |> InternalTransaction.preload_addresses(options)
 
       :ignore ->
         [transaction.block_number]

@@ -68,12 +68,12 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
       # Find all selfdestruct internal transactions in these blocks
       selfdestruct_query =
         InternalTransaction
-        |> InternalTransaction.join_address_query(:from_address)
+        |> InternalTransaction.join_address_mapping_query(:from_address)
         |> where([it], it.block_number in ^block_numbers)
         |> where([it], it.type == :selfdestruct)
         |> select([it], %{
           transaction_index: it.transaction_index,
-          from_address_hash: coalesce(it.from_address_hash, as(:from_address).hash),
+          from_address_hash: coalesce(it.from_address_hash, as(:from_address_mapping).address_hash),
           block_number: it.block_number
         })
 
@@ -91,14 +91,14 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
         # Find all create/create2 internal transactions in the same transactions
         create_query =
           InternalTransaction
-          |> InternalTransaction.join_address_query(:created_contract_address)
+          |> InternalTransaction.join_address_mapping_query(:created_contract_address)
           |> where(^QueryHelper.tuple_in([:block_number, :transaction_index], transaction_identifiers))
           |> where([it], it.type in [:create, :create2])
           |> select([it], %{
             block_number: it.block_number,
             transaction_index: it.transaction_index,
             created_contract_address_hash:
-              coalesce(it.created_contract_address_hash, as(:created_contract_address).hash)
+              coalesce(it.created_contract_address_hash, as(:created_contract_address_mapping).address_hash)
           })
 
         created_contracts = Repo.all(create_query, timeout: :infinity)

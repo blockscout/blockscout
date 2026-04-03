@@ -102,10 +102,26 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
   def hash_to_id(nil), do: nil
 
   def hash_to_id(hash) do
+    [hash]
+    |> hashes_to_ids()
+    |> List.first()
+  end
+
+  @doc """
+  Retrieves all address ids for the given address hashes.
+
+  ## Parameters
+  - `hashes`: A list of address hashes to look up
+
+  ## Returns
+  - A list of address ids for the matching mappings
+  """
+  @spec hashes_to_ids([Hash.Address.t()]) :: [integer()]
+  def hashes_to_ids(hashes) do
     __MODULE__
-    |> where([a], a.address_hash == ^hash)
+    |> where([a], a.address_hash in ^hashes)
     |> select([a], a.address_id)
-    |> Repo.one()
+    |> Repo.all()
   end
 
   @doc """

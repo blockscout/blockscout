@@ -23,6 +23,7 @@ defmodule Explorer.Chain.AdvancedFilter do
   }
 
   alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
+  alias Explorer.Utility.AddressIdToAddressHash
 
   @primary_key false
   typed_embedded_schema null: false do
@@ -912,10 +913,12 @@ defmodule Explorer.Chain.AdvancedFilter do
   defp filter_transaction_by_type("CONTRACT_CREATION", dynamic_condition),
     do: dynamic([t], is_nil(t.to_address_hash) or ^dynamic_condition)
 
-  defp filter_internal_transaction_by_type("CONTRACT_CREATION", nil), do: dynamic([t], is_nil(as(:to_address).hash))
+  defp filter_internal_transaction_by_type("CONTRACT_CREATION", nil),
+    do: dynamic([it], is_nil(as(:to_address_mapping).address_hash) and is_nil(it.to_address_hash))
 
   defp filter_internal_transaction_by_type("CONTRACT_CREATION", dynamic_condition),
-    do: dynamic([t], is_nil(as(:to_address).hash) or ^dynamic_condition)
+    do:
+      dynamic([it], (is_nil(as(:to_address_mapping).address_hash) and is_nil(it.to_address_hash)) or ^dynamic_condition)
 
   defp filter_internal_transaction_by_type(type, dynamic_condition),
     do: filter_transaction_by_type(type, dynamic_condition)
@@ -1254,8 +1257,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       addresses
       |> Enum.map(fn address ->
         query
-        |> InternalTransaction.join_address_query(binding)
-        |> where([transaction], as(^binding).hash == ^address)
+        |> InternalTransaction.where_address_match(binding, address)
         |> order_by.()
       end)
       |> map_first(&subquery/1)
@@ -1265,9 +1267,15 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp do_filter_internal_transactions_by_address(query, {:exclude, addresses}, binding, order_by) do
+    address_ids = AddressIdToAddressHash.hashes_to_ids(addresses)
+    address_id_field = String.to_existing_atom("#{binding}_id")
+    address_hash_field = String.to_existing_atom("#{binding}_hash")
+
     query
-    |> InternalTransaction.join_address_query(binding)
-    |> where([transaction], as(^binding).hash not in ^addresses)
+    |> where(
+      [it],
+      field(it, ^address_id_field) not in ^address_ids and field(it, ^address_hash_field) not in ^addresses
+    )
     |> order_by.()
   end
 
@@ -1396,9 +1404,8 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp do_filter_internal_transactions_by_both_addresses(query, {:include, from}, {:include, to}, :and, order_by) do
     query
-    |> InternalTransaction.join_address_query(:from_address)
-    |> InternalTransaction.join_address_query(:to_address)
-    |> where(as(:from_address).hash in ^from and as(:to_address).hash in ^to)
+    |> InternalTransaction.where_address_match(:from_address, from)
+    |> InternalTransaction.where_address_match(:to_address, to)
     |> order_by.()
   end
 
@@ -1407,8 +1414,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       from
       |> Enum.map(fn from_address ->
         query
-        |> InternalTransaction.join_address_query(:from_address)
-        |> where(as(:from_address).hash == ^from_address)
+        |> InternalTransaction.where_address_match(:from_address, from_address)
         |> order_by.()
       end)
 
@@ -1416,8 +1422,7 @@ defmodule Explorer.Chain.AdvancedFilter do
       to
       |> Enum.map(fn to_address ->
         query
-        |> InternalTransaction.join_address_query(:to_address)
-        |> where(as(:to_address).hash == ^to_address)
+        |> InternalTransaction.where_address_match(:to_address, to_address)
         |> order_by.()
       end)
 
@@ -1431,13 +1436,14 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp do_filter_internal_transactions_by_both_addresses(query, {:include, from}, {:exclude, to}, :and, order_by) do
+    to_address_ids = AddressIdToAddressHash.hashes_to_ids(to)
+
     from_queries =
       from
       |> Enum.map(fn from_address ->
         query
-        |> InternalTransaction.join_address_query(:from_address)
-        |> InternalTransaction.join_address_query(:to_address)
-        |> where(as(:from_address).hash == ^from_address and as(:to_address).hash not in ^to)
+        |> InternalTransaction.where_address_match(:from_address, from_address)
+        |> where([it], it.to_address_id not in ^to_address_ids and it.to_address_hash not in ^to)
         |> order_by.()
       end)
       |> map_first(&subquery/1)
@@ -1447,13 +1453,14 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp do_filter_internal_transactions_by_both_addresses(query, {:include, from}, {:exclude, to}, _relation, order_by) do
+    to_address_ids = AddressIdToAddressHash.hashes_to_ids(to)
+
     from_queries =
       from
       |> Enum.map(fn from_address ->
         query
-        |> InternalTransaction.join_address_query(:from_address)
-        |> InternalTransaction.join_address_query(:to_address)
-        |> where(as(:from_address).hash == ^from_address or as(:to_address).hash not in ^to)
+        |> InternalTransaction.where_address_match(:from_address, from_address)
+        |> or_where([it], it.to_address_id not in ^to_address_ids and it.to_address_hash not in ^to)
         |> order_by.()
       end)
       |> map_first(&subquery/1)
@@ -1463,13 +1470,14 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp do_filter_internal_transactions_by_both_addresses(query, {:exclude, from}, {:include, to}, :and, order_by) do
+    from_address_ids = AddressIdToAddressHash.hashes_to_ids(from)
+
     to_queries =
       to
       |> Enum.map(fn to_address ->
         query
-        |> InternalTransaction.join_address_query(:from_address)
-        |> InternalTransaction.join_address_query(:to_address)
-        |> where(as(:to_address).hash == ^to_address and as(:from_address).hash not in ^from)
+        |> InternalTransaction.where_address_match(:to_address, to_address)
+        |> where([it], it.from_address_id not in ^from_address_ids and it.from_address_hash not in ^from)
         |> order_by.()
       end)
       |> map_first(&subquery/1)
@@ -1479,13 +1487,14 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp do_filter_internal_transactions_by_both_addresses(query, {:exclude, from}, {:include, to}, _relation, order_by) do
+    from_address_ids = AddressIdToAddressHash.hashes_to_ids(from)
+
     to_queries =
       to
       |> Enum.map(fn to_address ->
         query
-        |> InternalTransaction.join_address_query(:from_address)
-        |> InternalTransaction.join_address_query(:to_address)
-        |> where(as(:to_address).hash == ^to_address or as(:from_address).hash not in ^from)
+        |> InternalTransaction.where_address_match(:to_address, to_address)
+        |> or_where([it], it.from_address_id not in ^from_address_ids and it.from_address_hash not in ^from)
         |> order_by.()
       end)
       |> map_first(&subquery/1)
@@ -1495,18 +1504,26 @@ defmodule Explorer.Chain.AdvancedFilter do
   end
 
   defp do_filter_internal_transactions_by_both_addresses(query, {:exclude, from}, {:exclude, to}, :and, order_by) do
+    from_address_ids = AddressIdToAddressHash.hashes_to_ids(from)
+    to_address_ids = AddressIdToAddressHash.hashes_to_ids(to)
+
     query
-    |> InternalTransaction.join_address_query(:from_address)
-    |> InternalTransaction.join_address_query(:to_address)
-    |> where(as(:from_address).hash not in ^from and as(:to_address).hash not in ^to)
+    |> where([it], it.from_address_id not in ^from_address_ids and it.from_address_hash not in ^from)
+    |> where([it], it.to_address_id not in ^to_address_ids and it.to_address_hash not in ^to)
     |> order_by.()
   end
 
   defp do_filter_internal_transactions_by_both_addresses(query, {:exclude, from}, {:exclude, to}, _relation, order_by) do
+    from_address_ids = AddressIdToAddressHash.hashes_to_ids(from)
+    to_address_ids = AddressIdToAddressHash.hashes_to_ids(to)
+
     query
-    |> InternalTransaction.join_address_query(:from_address)
-    |> InternalTransaction.join_address_query(:to_address)
     |> where(as(:from_address).hash not in ^from or as(:to_address).hash not in ^to)
+    |> where(
+      [it],
+      (it.from_address_id not in ^from_address_ids and it.from_address_hash not in ^from) or
+        (it.to_address_id not in ^to_address_ids and it.to_address_hash not in ^to)
+    )
     |> order_by.()
   end
 

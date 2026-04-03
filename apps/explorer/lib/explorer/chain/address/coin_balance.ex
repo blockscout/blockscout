@@ -312,9 +312,9 @@ defmodule Explorer.Chain.Address.CoinBalance do
   defp preload_internal_transaction_query(balance) do
     InternalTransaction
     |> InternalTransaction.join_transaction_query()
-    |> InternalTransaction.join_address_query(:from_address)
-    |> InternalTransaction.join_address_query(:to_address)
-    |> InternalTransaction.join_address_query(:created_contract_address)
+    |> InternalTransaction.join_address_mapping_query(:from_address)
+    |> InternalTransaction.join_address_mapping_query(:to_address)
+    |> InternalTransaction.join_address_mapping_query(:created_contract_address)
     |> where(
       [internal_transaction],
       internal_transaction.block_number == ^balance.block_number and
@@ -323,11 +323,12 @@ defmodule Explorer.Chain.Address.CoinBalance do
            coalesce(type(internal_transaction.call_type_enum, :string), internal_transaction.call_type) == ^"call") and
         internal_transaction.value > ^0 and is_nil(internal_transaction.error) and
         is_nil(internal_transaction.error_id) and
-        (internal_transaction.to_address_hash == ^balance.address_hash or as(:to_address).hash == ^balance.address_hash or
+        (internal_transaction.to_address_hash == ^balance.address_hash or
+           as(:to_address_mapping).address_hash == ^balance.address_hash or
            internal_transaction.from_address_hash == ^balance.address_hash or
-           as(:from_address).hash == ^balance.address_hash or
+           as(:from_address_mapping).address_hash == ^balance.address_hash or
            internal_transaction.created_contract_address_hash == ^balance.address_hash or
-           as(:created_contract_address).hash == ^balance.address_hash)
+           as(:created_contract_address_mapping).address_hash == ^balance.address_hash)
     )
     |> select([_internal_transaction, transaction], transaction.hash)
     |> limit(1)

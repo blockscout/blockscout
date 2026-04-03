@@ -229,12 +229,7 @@ defmodule Explorer.Chain.BridgedToken do
 
       created_from_internal_transaction_query =
         InternalTransaction
-        |> InternalTransaction.join_address_query(:created_contract_address)
-        |> where(
-          [it],
-          it.created_contract_address_hash == ^token_address_hash or
-            as(:created_contract_address).hash == ^token_address_hash
-        )
+        |> InternalTransaction.where_address_match(:created_contract_address, token_address_hash)
 
       created_from_internal_transaction =
         created_from_internal_transaction_query
@@ -307,12 +302,13 @@ defmodule Explorer.Chain.BridgedToken do
 
       created_by_amb_mediator_query =
         InternalTransaction
-        |> InternalTransaction.join_address_query(:to_address)
+        |> InternalTransaction.join_address_mapping_query(:to_address)
         |> where([it], it.block_number == ^block_number)
         |> where([it], it.transaction_index == ^transaction_index)
         |> where(
           [it],
-          it.to_address_hash == ^omni_bridge_mediator_hash or as(:to_address).hash == ^omni_bridge_mediator_hash
+          it.to_address_hash == ^omni_bridge_mediator_hash or
+            as(:to_address_mapping).address_hash == ^omni_bridge_mediator_hash
         )
 
       created_by_amb_mediator =

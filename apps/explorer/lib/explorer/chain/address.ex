@@ -867,8 +867,7 @@ defmodule Explorer.Chain.Address do
 
     internal_transactions_map =
       contract_creation_internal_transaction_preload_query()
-      |> InternalTransaction.join_address_query(:created_contract_address)
-      |> where(as(:created_contract_address).hash in ^address_hashes)
+      |> InternalTransaction.where_address_match(:created_contract_address, address_hashes)
       |> repo.all()
       |> InternalTransaction.preload_addresses([], repo)
       |> Map.new(&{&1.created_contract_address_hash, &1})
@@ -1056,11 +1055,7 @@ defmodule Explorer.Chain.Address do
   def creation_internal_transaction_query(address_hash) do
     InternalTransaction
     |> InternalTransaction.join_transaction_query()
-    |> InternalTransaction.join_address_query(:created_contract_address)
-    |> where(
-      [it],
-      it.created_contract_address_hash == ^address_hash or as(:created_contract_address).hash == ^address_hash
-    )
+    |> InternalTransaction.where_address_match(:created_contract_address, address_hash)
     |> where(as(:transaction).status == ^:ok)
     |> order_by([it], desc: it.block_number, desc: it.transaction_index, desc: it.index)
     |> limit(1)

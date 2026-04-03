@@ -545,76 +545,146 @@ defmodule Explorer.Chain.InternalTransaction do
   - returns a query considering that the given address_hash can be: to_address_hash,
     from_address_hash, created_contract_address_hash from internal_transactions' table.
   """
-  def where_address_fields_match(query, address_hash, :to) do
-    if BackgroundMigrations.get_empty_internal_transactions_data_finished() do
-      query
-      |> join_address_query(:to_address)
-      |> where([it], it.to_address_hash == ^address_hash or as(:to_address).hash == ^address_hash)
-    else
-      query
-      |> join_address_query(:to_address)
-      |> join_address_query(:created_contract_address)
-      |> where(
-        [it],
-        it.to_address_hash == ^address_hash or as(:to_address).hash == ^address_hash or
-          (is_nil(it.to_address_hash) and is_nil(as(:to_address).hash) and
-             (it.created_contract_address_hash == ^address_hash or as(:created_contract_address).hash == ^address_hash))
-      )
+  def where_address_fields_match(query, address_hash, direction) do
+    address_id = AddressIdToAddressHash.hash_to_id(address_hash)
+
+    case direction do
+      :to ->
+        if BackgroundMigrations.get_empty_internal_transactions_data_finished() do
+          where_address_match(query, :to_address, address_hash, address_id)
+        else
+          where(
+            query,
+            [it],
+            ^to_direction_match_dynamic(address_hash, address_id)
+          )
+        end
+
+      :from ->
+        where_address_match(query, :from_address, address_hash, address_id)
+
+      :to_address_hash ->
+        if BackgroundMigrations.get_empty_internal_transactions_data_finished() do
+          where(
+            query,
+            [it],
+            ^to_address_hash_match_dynamic(address_hash, address_id)
+          )
+        else
+          where_address_match(query, :to_address, address_hash, address_id)
+        end
+
+      :from_address_hash ->
+        where_address_match(query, :from_address, address_hash, address_id)
+
+      :created_contract_address_hash ->
+        where_address_match(query, :created_contract_address, address_hash, address_id)
+
+      _ ->
+        where(
+          query,
+          [it],
+          ^all_address_fields_match_dynamic(address_hash, address_id)
+        )
     end
   end
 
-  def where_address_fields_match(query, address_hash, :from) do
-    query
-    |> join_address_query(:from_address)
-    |> where([it], it.from_address_hash == ^address_hash or as(:from_address).hash == ^address_hash)
+  @doc """
+  Adds an address filter for the given internal transaction address field.
+
+  The function accepts either a single address hash or a list of address hashes.
+  It resolves corresponding address IDs through `Explorer.Chain.AddressIdToAddressHash`
+  and builds a `where` clause that matches:
+
+    * the migrated `*_address_id` field when mapping entries exist
+    * the legacy `*_address_hash` field as a fallback for partially migrated rows
+
+  This helper is intended for filtering internal transactions by one of the
+  logical address roles, such as `:from_address`, `:to_address`, or
+  `:created_contract_address`.
+
+  ## Parameters
+
+    * `query` - the base query to extend
+    * `address_field` - the logical internal transaction address field
+    * `address_hash_or_hashes` - a single address hash or a list of address hashes
+
+  ## Returns
+
+    An `Ecto.Query.t/0` with the address filter applied.
+  """
+  @spec where_address_match(
+          Ecto.Query.t() | module(),
+          :from_address | :to_address | :created_contract_address,
+          Hash.Address.t() | [Hash.Address.t()]
+        ) :: Ecto.Query.t()
+  def where_address_match(query, address_field, address_hash_or_hashes) do
+    address_hashes = List.wrap(address_hash_or_hashes)
+    address_ids = AddressIdToAddressHash.hashes_to_ids(address_hashes)
+
+    where_address_match(query, address_field, address_hashes, address_ids)
   end
 
-  def where_address_fields_match(query, address_hash, :to_address_hash) do
-    if BackgroundMigrations.get_empty_internal_transactions_data_finished() do
-      query
-      |> join_address_query(:to_address)
-      |> join_address_query(:created_contract_address)
-      |> where(
-        [it],
-        (it.to_address_hash == ^address_hash or as(:to_address).hash == ^address_hash) and
-          is_nil(it.created_contract_address_hash) and is_nil(as(:created_contract_address).hash)
-      )
-    else
-      query
-      |> join_address_query(:to_address)
-      |> where([it], it.to_address_hash == ^address_hash or as(:to_address).hash == ^address_hash)
-    end
+  @spec where_address_match(
+          Ecto.Query.t() | module(),
+          :from_address | :to_address | :created_contract_address,
+          Hash.Address.t() | [Hash.Address.t()],
+          integer() | [integer()] | nil
+        ) :: Ecto.Query.t()
+  def where_address_match(query, address_field, address_hash_or_hashes, address_id_or_ids) do
+    address_hashes = List.wrap(address_hash_or_hashes)
+    address_ids = List.wrap(address_id_or_ids)
+
+    where(query, [it], ^address_match_dynamic(address_field, address_hashes, address_ids))
   end
 
-  def where_address_fields_match(query, address_hash, :from_address_hash) do
-    query
-    |> join_address_query(:from_address)
-    |> where([it], it.from_address_hash == ^address_hash or as(:from_address).hash == ^address_hash)
-  end
+  defp to_direction_match_dynamic(address_hash, address_id) do
+    to_match = address_match_dynamic(:to_address, address_hash, address_id)
+    created_contract_match = address_match_dynamic(:created_contract_address, address_hash, address_id)
 
-  def where_address_fields_match(query, address_hash, :created_contract_address_hash) do
-    query
-    |> join_address_query(:created_contract_address)
-    |> where(
+    dynamic(
       [it],
-      it.created_contract_address_hash == ^address_hash or as(:created_contract_address).hash == ^address_hash
+      (^to_match and is_nil(it.created_contract_address_hash) and is_nil(it.created_contract_address_id)) or
+        (is_nil(it.to_address_hash) and is_nil(it.to_address_id) and ^created_contract_match)
     )
   end
 
-  def where_address_fields_match(query, address_hash, _) do
-    base_address_where(query, address_hash)
+  defp to_address_hash_match_dynamic(address_hash, address_id) do
+    to_match = address_match_dynamic(:to_address, address_hash, address_id)
+
+    dynamic(
+      [it],
+      ^to_match and is_nil(it.created_contract_address_hash) and is_nil(it.created_contract_address_id)
+    )
   end
 
-  defp base_address_where(query, address_hash) do
-    query
-    |> join_address_query(:to_address)
-    |> join_address_query(:from_address)
-    |> join_address_query(:created_contract_address)
-    |> where(
+  defp all_address_fields_match_dynamic(address_hash, address_id) do
+    to_match = address_match_dynamic(:to_address, address_hash, address_id)
+    from_match = address_match_dynamic(:from_address, address_hash, address_id)
+    created_contract_match = address_match_dynamic(:created_contract_address, address_hash, address_id)
+
+    dynamic(
       [it],
-      it.to_address_hash == ^address_hash or as(:to_address).hash == ^address_hash or
-        it.from_address_hash == ^address_hash or as(:from_address).hash == ^address_hash or
-        it.created_contract_address_hash == ^address_hash or as(:created_contract_address).hash == ^address_hash
+      ^to_match or ^from_match or ^created_contract_match
+    )
+  end
+
+  defp address_match_dynamic(address_field, address_hash_or_hashes, address_ids) when address_ids in [[], nil] do
+    address_hashes = List.wrap(address_hash_or_hashes)
+    address_hash_field = String.to_existing_atom("#{address_field}_hash")
+
+    dynamic([it], field(it, ^address_hash_field) in ^address_hashes)
+  end
+
+  defp address_match_dynamic(address_field, address_hash_or_hashes, address_id_or_ids) do
+    address_hashes = List.wrap(address_hash_or_hashes)
+    address_ids = List.wrap(address_id_or_ids)
+    address_id_field = String.to_existing_atom("#{address_field}_id")
+    address_hash_field = String.to_existing_atom("#{address_field}_hash")
+
+    dynamic(
+      [it],
+      field(it, ^address_id_field) in ^address_ids or field(it, ^address_hash_field) in ^address_hashes
     )
   end
 
@@ -964,6 +1034,47 @@ defmodule Explorer.Chain.InternalTransaction do
         on:
           a.hash == as(^mapping_binding).address_hash or
             (is_nil(as(^mapping_binding).address_hash) and a.hash == field(it, ^address_hash_field))
+      )
+    end)
+  end
+
+  @doc """
+  Joins an internal transaction query with the address mapping table for the
+  given address field.
+
+  The helper joins `Explorer.Chain.AddressIdToAddressHash` using the
+  corresponding `*_address_id` field and exposes the join under the named
+  binding `:"address_field_mapping"`.
+
+  This is useful when callers need access to the resolved mapping row, while the
+  main address filtering logic can stay on `internal_transactions.*_address_id`
+  with a fallback to the legacy `*_address_hash` fields.
+
+  ## Parameters
+
+    - `query`: The base query to extend
+    - `address_field`: The logical address field to join. Expected values
+      include `:from_address`, `:to_address`, or `:created_contract_address`
+    - `join_type`: Ecto join type, defaults to `:left`
+
+  ## Returns
+
+    An `Ecto.Query.t/0` with the mapping join added.
+  """
+  @spec join_address_mapping_query(
+          Ecto.Query.t() | module(),
+          :from_address | :to_address | :created_contract_address,
+          atom()
+        ) ::
+          Ecto.Query.t()
+  def join_address_mapping_query(query, address_field, join_type \\ :left) do
+    mapping_binding = String.to_existing_atom("#{address_field}_mapping")
+    address_id_field = String.to_existing_atom("#{address_field}_id")
+
+    with_named_binding(query, mapping_binding, fn query, binding ->
+      join(query, join_type, [it], m in AddressIdToAddressHash,
+        as: ^binding,
+        on: field(it, ^address_id_field) == m.address_id
       )
     end)
   end
