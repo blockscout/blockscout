@@ -15,10 +15,18 @@ defmodule Indexer.Fetcher.MultichainSearchDb.CountersExportQueueTest do
 
   setup do
     start_supervised!({Task.Supervisor, name: Indexer.TaskSupervisor})
+
+    previous_supervisor_config =
+      Application.get_env(:indexer, MultichainSearchDbCountersExportQueue.Supervisor)
+
     Application.put_env(:indexer, MultichainSearchDbCountersExportQueue.Supervisor, disabled?: false)
 
     on_exit(fn ->
-      Application.put_env(:indexer, MultichainSearchDbCountersExportQueue.Supervisor, disabled?: true)
+      Application.put_env(
+        :indexer,
+        MultichainSearchDbCountersExportQueue.Supervisor,
+        previous_supervisor_config
+      )
     end)
 
     :ok

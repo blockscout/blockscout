@@ -63,7 +63,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.CountersFetcherTest do
 
       past_block = insert(:block, timestamp: DateTime.add(yesterday_dt, -900, :second), consensus: true)
       future_block = insert(:block, timestamp: DateTime.add(yesterday_dt, 2, :second), consensus: true)
-      non_consensus_block = insert(:block, timestamp: DateTime.add(yesterday_dt, -600, :second), consensus: true)
+      non_consensus_block = insert(:block, timestamp: DateTime.add(yesterday_dt, -600, :second), consensus: false)
 
       insert(:transaction)
       |> with_block(past_block, block_timestamp: past_block.timestamp, block_consensus: true, status: :ok)
@@ -74,10 +74,14 @@ defmodule Indexer.Fetcher.MultichainSearchDb.CountersFetcherTest do
       insert(:transaction)
       |> with_block(future_block, block_timestamp: future_block.timestamp, block_consensus: true, status: :ok)
 
-      insert(:transaction)
-      |> with_block(non_consensus_block,
+      insert(:transaction,
+        block_hash: non_consensus_block.hash,
+        block_number: non_consensus_block.number,
         block_timestamp: non_consensus_block.timestamp,
         block_consensus: false,
+        cumulative_gas_used: 21_000,
+        gas_used: 21_000,
+        index: 0,
         status: :ok
       )
 
