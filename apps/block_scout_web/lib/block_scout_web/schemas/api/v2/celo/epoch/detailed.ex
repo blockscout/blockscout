@@ -43,8 +43,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Celo.Epoch.Detailed do
         :start_processing_block_number,
         :end_processing_block_hash,
         :end_processing_block_number,
-        :aggregated_election_rewards,
-        :distribution
+        :aggregated_election_rewards
       ]
     )
   )
