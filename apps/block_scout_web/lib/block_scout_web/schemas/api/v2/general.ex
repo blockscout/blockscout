@@ -1277,6 +1277,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Amount for paging"
     },
+    "account_address_hash" => %Parameter{
+      name: :account_address_hash,
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "Account address hash for paging"
+    },
     "associated_account_address_hash" => %Parameter{
       name: :associated_account_address_hash,
       in: :query,
