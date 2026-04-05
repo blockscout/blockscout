@@ -31,14 +31,16 @@ defmodule Explorer.ModuleQueueRegistry do
   def pop(registry_module, module) do
     table_name = registry_module.table_name(module)
 
-    case BoundQueue.pop_front(queue_get(table_name)) do
-      {:ok, {value, updated_queue}} ->
-        :ets.insert(table_name, {:queue, updated_queue})
-        value
+    :global.trans({__MODULE__, table_name}, fn ->
+      case BoundQueue.pop_front(queue_get(table_name)) do
+        {:ok, {value, updated_queue}} ->
+          :ets.insert(table_name, {:queue, updated_queue})
+          value
 
-      {:error, :empty} ->
-        nil
-    end
+        {:error, :empty} ->
+          nil
+      end
+    end)
   end
 
   @doc """
@@ -47,9 +49,12 @@ defmodule Explorer.ModuleQueueRegistry do
   @spec push(module(), term(), module()) :: true
   def push(registry_module, value, module) do
     table_name = registry_module.table_name(module)
-    {:ok, updated_queue} = BoundQueue.push_back(queue_get(table_name), value)
 
-    :ets.insert(table_name, {:queue, updated_queue})
+    :global.trans({__MODULE__, table_name}, fn ->
+      {:ok, updated_queue} = BoundQueue.push_back(queue_get(table_name), value)
+
+      :ets.insert(table_name, {:queue, updated_queue})
+    end)
   end
 
   @spec queue_get(atom()) :: BoundQueue.t(term())
