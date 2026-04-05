@@ -19,7 +19,7 @@ defmodule Explorer.ModuleQueueRegistry do
       @spec pop(module()) :: term() | nil
       def pop(module), do: ModuleQueueRegistry.pop(__MODULE__, module)
 
-      @spec push(term(), module()) :: true
+      @spec push(term(), module()) :: true | {:error, :maximum_size}
       def push(value, module), do: ModuleQueueRegistry.push(__MODULE__, value, module)
     end
   end
@@ -46,14 +46,18 @@ defmodule Explorer.ModuleQueueRegistry do
   @doc """
   Pushes a value to the back of the queue for the specified module.
   """
-  @spec push(module(), term(), module()) :: true
+  @spec push(module(), term(), module()) :: true | {:error, :maximum_size}
   def push(registry_module, value, module) do
     table_name = registry_module.table_name(module)
 
     :global.trans({__MODULE__, table_name}, fn ->
-      {:ok, updated_queue} = BoundQueue.push_back(queue_get(table_name), value)
+      case BoundQueue.push_back(queue_get(table_name), value) do
+        {:ok, updated_queue} ->
+          :ets.insert(table_name, {:queue, updated_queue})
 
-      :ets.insert(table_name, {:queue, updated_queue})
+        {:error, :maximum_size} = error ->
+          error
+      end
     end)
   end
 
