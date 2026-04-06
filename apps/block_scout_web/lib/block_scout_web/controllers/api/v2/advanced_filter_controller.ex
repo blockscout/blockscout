@@ -112,7 +112,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       %PagingOptions{} = paging_options ->
         %PagingOptions{paging_options | page_size: CsvHelper.limit()}
     end)
-    |> Keyword.put(:timeout, :timer.minutes(5))
   end
 
   defp handle_async_csv_export(conn, full_options) do
@@ -124,7 +123,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
       {:error, :too_many_pending_requests} ->
         conn
-        |> put_status(409)
+        |> put_status(:conflict)
         |> json(%{error: "You can only have #{AsyncCsvHelper.max_pending_tasks_per_ip()} pending requests at a time"})
 
       {:error, error} ->

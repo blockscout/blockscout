@@ -7,17 +7,14 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.Chain
   alias Explorer.Chain.Address
+  alias Explorer.Chain.CsvExport.Address.Celo.ElectionRewards, as: AddressCeloElectionRewardsCsvExporter
   alias Explorer.Chain.CsvExport.Address.Logs, as: AddressLogsCsvExporter
   alias Explorer.Chain.CsvExport.Address.TokenTransfers, as: AddressTokenTransfersCsvExporter
   alias Explorer.Chain.CsvExport.Address.Transactions, as: AddressTransactionsCsvExporter
-  alias Explorer.Chain.CsvExport.Token.Holders, as: TokenHoldersCsvExporter
-
-  alias Explorer.Chain.CsvExport.Address.Celo.ElectionRewards,
-    as: AddressCeloElectionRewardsCsvExporter
-
   alias Explorer.Chain.CsvExport.AsyncHelper, as: AsyncCsvHelper
   alias Explorer.Chain.CsvExport.Helper, as: CsvHelper
   alias Explorer.Chain.CsvExport.Request, as: AsyncCsvExportRequest
+  alias Explorer.Chain.CsvExport.Token.Holders, as: TokenHoldersCsvExporter
   alias Plug.Conn
 
   import BlockScoutWeb.Chain, only: [fetch_scam_token_toggle: 2]
@@ -132,7 +129,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
 
       {:error, :too_many_pending_requests} ->
         conn
-        |> put_status(409)
+        |> put_status(:conflict)
         |> json(%{error: "You can only have #{AsyncCsvHelper.max_pending_tasks_per_ip()} pending requests at a time"})
 
       {:error, error} ->

@@ -11,6 +11,32 @@ defmodule BlockScoutWeb.Endpoint do
 
   alias Explorer.ThirdPartyIntegrations.UniversalProxy
 
+  @cors_plug_base [
+    headers:
+      [
+        "x-apollo-tracing",
+        "updated-gas-oracle",
+        "recaptcha-v2-response",
+        "recaptcha-v3-response",
+        "recaptcha-bypass-token",
+        "scoped-recaptcha-bypass-token",
+        "show-scam-tokens",
+        @api_v2_temp_token_header_key
+      ] ++ CORSPlug.defaults()[:headers],
+    expose: [
+      "bypass-429-option",
+      "x-ratelimit-reset",
+      "x-ratelimit-limit",
+      "x-ratelimit-remaining",
+      @api_v2_temp_token_header_key
+    ]
+  ]
+
+  @cors_plug_options Keyword.merge(
+                       @cors_plug_base,
+                       if(Mix.env() == :dev, do: [origin: ["http://localhost:3000"]], else: [])
+                     )
+
   if @sql_sandbox do
     plug(Phoenix.Ecto.SQL.Sandbox, repo: Explorer.Repo)
   end
@@ -81,36 +107,7 @@ defmodule BlockScoutWeb.Endpoint do
 
     # 'x-apollo-tracing' header for https://www.graphqlbin.com to work with our GraphQL endpoint
     # 'updated-gas-oracle' header for /api/v2/stats endpoint, added to support cross-origin requests (e.g. multichain search explorer)
-    plug(
-      CORSPlug,
-      [
-        headers:
-          [
-            "x-apollo-tracing",
-            "updated-gas-oracle",
-            "recaptcha-v2-response",
-            "recaptcha-v3-response",
-            "recaptcha-bypass-token",
-            "scoped-recaptcha-bypass-token",
-            "show-scam-tokens",
-            @api_v2_temp_token_header_key
-          ] ++ CORSPlug.defaults()[:headers],
-        expose: [
-          "bypass-429-option",
-          "x-ratelimit-reset",
-          "x-ratelimit-limit",
-          "x-ratelimit-remaining",
-          @api_v2_temp_token_header_key
-        ]
-      ]
-      |> then(fn opts ->
-        if Mix.env() == :dev do
-          Keyword.put(opts, :origin, ["http://localhost:3000"])
-        else
-          opts
-        end
-      end)
-    )
+    plug(CORSPlug, @cors_plug_options)
 
     plug(BlockScoutWeb.Router)
   end

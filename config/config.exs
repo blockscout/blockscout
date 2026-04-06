@@ -7,6 +7,7 @@ config :explorer, Oban,
   notifier: Oban.Notifiers.Postgres,
   repo: Explorer.Repo,
   plugins: [
+    {Oban.Plugins.Pruner, max_age: 60 * 60 * 24 * 7},
     {Oban.Plugins.Cron,
      crontab: [
        {"@daily", Explorer.Chain.CsvExport.RequestsSanitizer}
