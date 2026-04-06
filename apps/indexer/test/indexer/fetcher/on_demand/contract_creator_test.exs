@@ -142,11 +142,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
                  |> Address.preload_contract_creation_internal_transaction()
                )
 
-      :timer.sleep(100)
-
-      assert :ets.lookup(:contract_creator_lookup, contract_address_hash) == [{contract_address_hash, :in_progress}]
-
-      :timer.sleep(200)
+      :timer.sleep(300)
 
       assert [%{from_number: 3, to_number: 3, priority: 1}] = Repo.all(MissingBlockRange)
 
@@ -181,11 +177,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
                |> Address.preload_contract_creation_internal_transaction()
              )
 
-    :timer.sleep(100)
-
-    assert :ets.lookup(:contract_creator_lookup, contract_address_hash) == [{contract_address_hash, :in_progress}]
-
-    :timer.sleep(200)
+    :timer.sleep(300)
 
     assert [%{from_number: 2, to_number: 2, priority: 1}] = Repo.all(MissingBlockRange)
 
@@ -220,16 +212,157 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
                |> Address.preload_contract_creation_internal_transaction()
              )
 
-    :timer.sleep(100)
-
-    assert :ets.lookup(:contract_creator_lookup, contract_address_hash) == [{contract_address_hash, :in_progress}]
-
-    :timer.sleep(200)
+    :timer.sleep(300)
 
     assert [%{from_number: 1, to_number: 1, priority: 1}] = Repo.all(MissingBlockRange)
 
     assert :ets.lookup(:contract_creator_lookup, "pending_blocks") == [
              {"pending_blocks", [%{block_number: 1, address_hash_string: contract_address_hash}]}
+           ]
+  end
+
+  test "retries when eth_getTransactionCount returns an error tuple" do
+    contract_address =
+      insert(:address, contract_code: "0x1234")
+
+    now = Timex.now()
+
+    Enum.each(0..4, fn i ->
+      insert(:block, number: i, refetch_needed: i == 3, timestamp: Timex.shift(now, minutes: -i))
+    end)
+
+    Explorer.Chain.Cache.BlockNumber.get_max()
+
+    contract_address_hash = to_string(contract_address.hash)
+
+    EthereumJSONRPC.Mox
+    |> eth_get_transaction_count_error_mock(contract_address_hash, "0x2")
+    |> eth_get_transaction_count_mock(contract_address_hash, "0x2", "0x0")
+    |> eth_get_transaction_count_mock(contract_address_hash, "0x3", "0x1")
+
+    pid = Process.whereis(ContractCreatorOnDemand)
+
+    assert :ok =
+             ContractCreatorOnDemand.trigger_fetch(
+               contract_address
+               |> Repo.preload([:contract_creation_transaction, :contract_creation_internal_transaction])
+             )
+
+    :timer.sleep(1200)
+
+    assert Process.whereis(ContractCreatorOnDemand) == pid
+    assert [%{from_number: 3, to_number: 3, priority: 1}] = Repo.all(MissingBlockRange)
+  end
+
+  test "stops retrying after 5 JSON RPC errors" do
+    contract_address =
+      insert(:address, contract_code: "0x1234")
+
+    now = Timex.now()
+
+    Enum.each(0..4, fn i ->
+      insert(:block, number: i, refetch_needed: i == 3, timestamp: Timex.shift(now, minutes: -i))
+    end)
+
+    Explorer.Chain.Cache.BlockNumber.get_max()
+
+    contract_address_hash = to_string(contract_address.hash)
+
+    EthereumJSONRPC.Mox
+    |> eth_get_transaction_count_error_mock_times(contract_address_hash, "0x2", 6)
+
+    pid = Process.whereis(ContractCreatorOnDemand)
+
+    assert :ok =
+             ContractCreatorOnDemand.trigger_fetch(
+               contract_address
+               |> Repo.preload([:contract_creation_transaction, :contract_creation_internal_transaction])
+             )
+
+    :timer.sleep(5400)
+
+    assert Process.whereis(ContractCreatorOnDemand) == pid
+    assert [] == Repo.all(MissingBlockRange)
+    assert [] == :ets.lookup(:contract_creator_lookup, contract_address_hash)
+  end
+
+  # Regression: per-address ETS entry must be updated to the resolved integer block number
+  # after a successful fetch. Previously it was left as :in_progress, which caused
+  # trigger_fetch/1 to keep returning :ignore and never re-trigger, masking stalls, or to
+  # re-dispatch indefinitely when the guard was removed.
+  test "stamps the resolved block number in the per-address ETS entry after a successful fetch" do
+    contract_address =
+      insert(:address, contract_code: "0x1234")
+
+    now = Timex.now()
+
+    Enum.each(0..4, fn i ->
+      insert(:block, number: i, refetch_needed: i == 3, timestamp: Timex.shift(now, minutes: -i))
+    end)
+
+    Explorer.Chain.Cache.BlockNumber.get_max()
+
+    contract_address_hash = to_string(contract_address.hash)
+
+    EthereumJSONRPC.Mox
+    |> eth_get_transaction_count_mock(contract_address_hash, "0x2", "0x0")
+    |> eth_get_transaction_count_mock(contract_address_hash, "0x3", "0x1")
+
+    assert :ok =
+             ContractCreatorOnDemand.trigger_fetch(
+               contract_address
+               |> Repo.preload([:contract_creation_transaction, :contract_creation_internal_transaction])
+             )
+
+    :timer.sleep(300)
+
+    # Must be the resolved integer, not the :in_progress atom that was written at fetch start
+    assert :ets.lookup(:contract_creator_lookup, contract_address_hash) == [
+             {contract_address_hash, 3}
+           ]
+  end
+
+  # Regression: Enum.member?(pending_blocks, block_number) compared an integer against a
+  # list of maps and was always false, allowing the same address to accumulate duplicate
+  # entries in pending_blocks. The fix uses Enum.reject/2 on address_hash_string so a
+  # stale entry is replaced rather than duplicated.
+  test "replaces a stale pending_blocks entry for the same address instead of duplicating it" do
+    contract_address =
+      insert(:address, contract_code: "0x1234")
+
+    now = Timex.now()
+
+    Enum.each(0..4, fn i ->
+      insert(:block, number: i, refetch_needed: i == 3, timestamp: Timex.shift(now, minutes: -i))
+    end)
+
+    Explorer.Chain.Cache.BlockNumber.get_max()
+
+    contract_address_hash = to_string(contract_address.hash)
+
+    # Pre-seed a stale pending_blocks entry for the same address at a different block (999).
+    # Without the fix, Enum.member?(pending_blocks, 3) would be false (integer vs map),
+    # the new entry would be prepended, and the list would grow to two entries.
+    :ets.insert(
+      :contract_creator_lookup,
+      {"pending_blocks", [%{block_number: 999, address_hash_string: contract_address_hash}]}
+    )
+
+    EthereumJSONRPC.Mox
+    |> eth_get_transaction_count_mock(contract_address_hash, "0x2", "0x0")
+    |> eth_get_transaction_count_mock(contract_address_hash, "0x3", "0x1")
+
+    assert :ok =
+             ContractCreatorOnDemand.trigger_fetch(
+               contract_address
+               |> Repo.preload([:contract_creation_transaction, :contract_creation_internal_transaction])
+             )
+
+    :timer.sleep(300)
+
+    # Exactly one entry for this address — the stale block 999 entry was replaced
+    assert :ets.lookup(:contract_creator_lookup, "pending_blocks") == [
+             {"pending_blocks", [%{block_number: 3, address_hash_string: contract_address_hash}]}
            ]
   end
 
@@ -243,6 +376,29 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
                             },
                             _ ->
       {:ok, nonce}
+    end)
+  end
+
+  defp eth_get_transaction_count_error_mock(mox, contract_address_hash, block_number) do
+    mox
+    |> expect(:json_rpc, fn %{
+                              id: _id,
+                              jsonrpc: "2.0",
+                              method: "eth_getTransactionCount",
+                              params: [^contract_address_hash, ^block_number]
+                            },
+                            _ ->
+      {:error,
+       %{
+         code: -32000,
+         message: "missing trie node 0000000000000000000000000000000000000000000000000000000000000000 (path )"
+       }}
+    end)
+  end
+
+  defp eth_get_transaction_count_error_mock_times(mox, contract_address_hash, block_number, times) do
+    Enum.reduce(1..times, mox, fn _, acc ->
+      eth_get_transaction_count_error_mock(acc, contract_address_hash, block_number)
     end)
   end
 end
