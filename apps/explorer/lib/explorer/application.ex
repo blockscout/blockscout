@@ -117,6 +117,7 @@ defmodule Explorer.Application do
     configurable_children_set =
       [
         configure_mode_dependent_process(Explorer.Utility.VersionConstantsUpdater, :indexer),
+        configure(Explorer.Utility.VersionUpgrade),
         configure_mode_dependent_process(Explorer.Market.Fetcher.Coin, :api),
         configure_mode_dependent_process(Explorer.Market.Fetcher.Token, :indexer),
         configure_mode_dependent_process(Explorer.Market.Fetcher.History, :indexer),
@@ -204,6 +205,7 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.DeleteZeroValueInternalTransactions, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.EmptyInternalTransactionsData, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.FillInternalTransactionsAddressIds, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
           :indexer
@@ -352,6 +354,26 @@ defmodule Explorer.Application do
         ),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndexA,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsFromAddressIdPartialIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsToAddressIdPartialIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdPartialIndex,
           :indexer
         ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),

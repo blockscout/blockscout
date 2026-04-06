@@ -50,15 +50,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       |> Enum.map(fn address_hash_string ->
         case validate_address(address_hash_string, params) do
           {:ok, _address_hash, address} ->
-            contract_creation_internal_transaction_with_transaction_association = [
-              contract_creation_internal_transaction: Address.contract_creation_internal_transaction_preload_query()
-            ]
-
             Address.maybe_preload_smart_contract_associations(
               address,
               [
-                Address.contract_creation_transaction_association(),
-                contract_creation_internal_transaction_with_transaction_association
+                Address.contract_creation_transaction_association()
               ],
               @api_true
             )

@@ -878,8 +878,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
         transaction: transaction,
         index: 0,
         block_number: transaction.block_number,
-        transaction_index: transaction.index,
-        block_hash: transaction.block_hash
+        transaction_index: transaction.index
       )
 
       internal_transactions =
@@ -894,10 +893,10 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
             transaction: transaction,
             index: index,
             block_number: transaction.block_number,
-            transaction_index: transaction.index,
-            block_hash: transaction.block_hash
+            transaction_index: transaction.index
           )
         end)
+        |> InternalTransaction.preload_addresses()
 
       request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
       assert response = json_response(request, 200)

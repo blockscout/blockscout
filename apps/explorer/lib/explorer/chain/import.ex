@@ -215,7 +215,15 @@ defmodule Explorer.Chain.Import do
     changeset_function_name = Map.get(options, :with, :changeset)
     struct = ecto_schema_module.__struct__()
 
+    prepare_data_function =
+      if Map.has_key?(Enum.into(runner.__info__(:functions), %{}), :prepare_data) do
+        &runner.prepare_data(&1)
+      else
+        & &1
+      end
+
     params
+    |> prepare_data_function.()
     |> Stream.map(&apply(ecto_schema_module, changeset_function_name, [struct, &1]))
     |> Enum.reduce({:ok, []}, fn
       changeset = %Changeset{valid?: false}, {:ok, _} ->

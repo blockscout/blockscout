@@ -4,15 +4,8 @@ defmodule Explorer.Chain.BridgedToken do
   """
   use Explorer.Schema
 
-  import Ecto.Changeset
   import EthereumJSONRPC, only: [json_rpc: 2]
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
-
-  import Ecto.Query,
-    only: [
-      from: 2,
-      limit: 2
-    ]
 
   alias ABI.{TypeDecoder, TypeEncoder}
   alias Ecto.Changeset
@@ -235,10 +228,8 @@ defmodule Explorer.Chain.BridgedToken do
         |> Enum.count() > 0
 
       created_from_internal_transaction_query =
-        from(
-          it in InternalTransaction,
-          where: it.created_contract_address_hash == ^token_address_hash
-        )
+        InternalTransaction
+        |> InternalTransaction.where_address_match(:created_contract_address, token_address_hash)
 
       created_from_internal_transaction =
         created_from_internal_transaction_query
@@ -310,11 +301,14 @@ defmodule Explorer.Chain.BridgedToken do
       {:ok, omni_bridge_mediator_hash} = Chain.string_to_address_hash(omni_bridge_mediator)
 
       created_by_amb_mediator_query =
-        from(
-          it in InternalTransaction,
-          where: it.block_number == ^block_number,
-          where: it.transaction_index == ^transaction_index,
-          where: it.to_address_hash == ^omni_bridge_mediator_hash
+        InternalTransaction
+        |> InternalTransaction.join_address_mapping_query(:to_address)
+        |> where([it], it.block_number == ^block_number)
+        |> where([it], it.transaction_index == ^transaction_index)
+        |> where(
+          [it],
+          it.to_address_hash == ^omni_bridge_mediator_hash or
+            as(:to_address_mapping).address_hash == ^omni_bridge_mediator_hash
         )
 
       created_by_amb_mediator =

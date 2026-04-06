@@ -696,6 +696,7 @@ defmodule Explorer.Chain.SmartContract do
         creation_int_transaction_query
         |> Repo.one()
         |> InternalTransaction.preload_transaction()
+        |> InternalTransaction.preload_addresses()
 
       case internal_transaction do
         %{init: init} ->

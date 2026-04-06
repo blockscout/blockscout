@@ -20,7 +20,7 @@ defmodule Explorer.Chain.InternalTransaction do
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.InternalTransaction.{CallType, Type}
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
-  alias Explorer.Utility.InternalTransactionHelper
+  alias Explorer.Utility.AddressIdToAddressHash
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
@@ -51,8 +51,6 @@ defmodule Explorer.Chain.InternalTransaction do
    * `type` - type of internal transaction
    * `value` - value of transferred from `from_address` to `to_address`
    * `block` - block in which this internal transaction occurred
-   * `block_hash` - foreign key for `block`
-   * `block_index` - the index of this internal transaction inside the `block`
   """
   @primary_key false
   typed_schema "internal_transactions" do
@@ -60,7 +58,7 @@ defmodule Explorer.Chain.InternalTransaction do
     field(:call_type, CallType)
     field(:call_type_enum, Ecto.Enum, values: [:call, :callcode, :delegatecall, :staticcall, :invalid])
     field(:created_contract_code, Data)
-    field(:error, :string)
+    field(:error, :string, virtual: true)
     field(:error_id, :integer)
     field(:gas, :decimal)
     field(:gas_used, :decimal)
@@ -72,36 +70,58 @@ defmodule Explorer.Chain.InternalTransaction do
     # todo: consider using enum
     field(:type, Type, null: false)
     field(:value, Wei)
-    # TODO: remove field after update PK migration is completed
-    field(:block_hash, Hash.Full)
     field(:transaction_index, :integer, primary_key: true, null: false)
-    # TODO: remove field after update PK migration is completed
-    field(:block_index, :integer)
 
     field(:transaction, :map, virtual: true)
     field(:transaction_hash, Hash.Full, virtual: true)
 
     timestamps()
 
+    belongs_to(:created_contract_address_mapping, AddressIdToAddressHash,
+      foreign_key: :created_contract_address_id,
+      references: :address_id,
+      type: :integer
+    )
+
+    has_one(:created_contract_address, through: [:created_contract_address_mapping, :address])
+
+    # TODO: remove after migration to address ids is done
     belongs_to(
-      :created_contract_address,
+      :created_contract_address_by_hash,
       Address,
       foreign_key: :created_contract_address_hash,
       references: :hash,
       type: Hash.Address
     )
 
+    belongs_to(:from_address_mapping, AddressIdToAddressHash,
+      foreign_key: :from_address_id,
+      references: :address_id,
+      type: :integer
+    )
+
+    has_one(:from_address, through: [:from_address_mapping, :address])
+
+    # TODO: remove after migration to address ids is done
     belongs_to(
-      :from_address,
+      :from_address_by_hash,
       Address,
       foreign_key: :from_address_hash,
       references: :hash,
-      type: Hash.Address,
-      null: false
+      type: Hash.Address
     )
 
+    belongs_to(:to_address_mapping, AddressIdToAddressHash,
+      foreign_key: :to_address_id,
+      references: :address_id,
+      type: :integer
+    )
+
+    has_one(:to_address, through: [:to_address_mapping, :address])
+
+    # TODO: remove after migration to address ids is done
     belongs_to(
-      :to_address,
+      :to_address_by_hash,
       Address,
       foreign_key: :to_address_hash,
       references: :hash,
@@ -120,16 +140,15 @@ defmodule Explorer.Chain.InternalTransaction do
   @doc """
   Validates that the `attrs` are valid.
 
-  `:create` type traces generated when a contract is created are valid.  `created_contract_address_hash`,
-  `from_address_hash` are converted to `t:Explorer.Chain.Hash.t/0`, and `type` is converted to
+  `:create` type traces generated when a contract is created are valid. `type` is converted to
   `t:Explorer.Chain.InternalTransaction.Type.t/0`
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
-      ...>     created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
+      ...>     created_contract_address_id: 3,
       ...>     created_contract_code: "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
-      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     from_address_id: 1,
       ...>     gas: 4597044,
       ...>     gas_used: 166651,
       ...>     index: 0,
@@ -138,33 +157,22 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     transaction_index: 0,
       ...>     type: "create",
       ...>     value: 0,
-      ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd"
+      ...>     block_number: 35
       ...>   }
       ...> )
       iex> changeset.valid?
       true
-      iex> changeset.changes.created_contract_address_hash
-      %Explorer.Chain.Hash{
-        byte_count: 20,
-        bytes: <<255, 200, 114, 57, 235, 2, 103, 188, 60, 162, 205, 81, 209, 47, 191, 39, 142, 2, 204, 180>>
-      }
-      iex> changeset.changes.from_address_hash
-      %Explorer.Chain.Hash{
-        byte_count: 20,
-        bytes: <<232, 221, 197, 199, 162, 210, 240, 215, 169, 121, 132, 89, 192, 16, 79, 223, 94, 152, 122, 202>>
-      }
       iex> changeset.changes.type
       :create
 
   `:create` type can fail due to a Bad Instruction in the `init`, but these need to be valid, so we can display the
-  failures.  `to_address_hash` is converted to `t:Explorer.Chain.Hash.t/0`.
+  failures.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
-      ...>     error: "Bad instruction",
-      ...>     from_address_hash: "0x78a42d3705fb3c26a4b54737a784bf064f0815fb",
+      ...>     error_id: 1,
+      ...>     from_address_id: 1,
       ...>     gas: 3946728,
       ...>     index: 0,
       ...>     init: "0x4bb278f3",
@@ -172,17 +180,11 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     type: "create",
       ...>     value: 0,
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0
       ...>   }
       iex> )
       iex> changeset.valid?
       true
-      iex> changeset.changes.from_address_hash
-      %Explorer.Chain.Hash{
-        byte_count: 20,
-        bytes: <<120, 164, 45, 55, 5, 251, 60, 38, 164, 181, 71, 55, 167, 132, 191, 6, 79, 8, 21, 251>>
-      }
 
   `:call` type traces are generated when a method in a contract is call.
 
@@ -190,14 +192,13 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0,
       ...>     index: 0,
       ...>     trace_address: [],
       ...>     call_type: "call",
       ...>     type: "call",
-      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-      ...>     to_address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>     from_address_id: 1,
+      ...>     to_address_id: 2,
       ...>     gas: 4677320,
       ...>     gas_used: 27770,
       ...>     input: "0x",
@@ -214,17 +215,16 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0,
       ...>     index: 0,
       ...>     trace_address: [],
       ...>     type: "call",
       ...>     call_type: "call",
-      ...>     from_address_hash: "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
-      ...>     to_address_hash: "0xfdca0da4158740a93693441b35809b5bb463e527",
+      ...>     from_address_id: 1,
+      ...>     to_address_id: 2,
       ...>     gas: 7578728,
       ...>     input: "0x",
-      ...>     error: "Reverted",
+      ...>     error_id: 1,
       ...>     value: 10000000000000000
       ...>   }
       ...> )
@@ -239,19 +239,18 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0,
       ...>     index: 0,
       ...>     trace_address: [],
       ...>     type: "call",
       ...>     call_type: "call",
-      ...>     from_address_hash: "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
-      ...>     to_address_hash: "0xfdca0da4158740a93693441b35809b5bb463e527",
+      ...>     from_address_id: 1,
+      ...>     to_address_id: 2,
       ...>     gas: 7578728,
       ...>     gas_used: 7578727,
       ...>     input: "0x",
       ...>     output: "0x",
-      ...>     error: "Reverted",
+      ...>     error_id: 1,
       ...>     value: 10000000000000000
       ...>   }
       ...> )
@@ -264,14 +263,13 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0,
       ...>     index: 0,
       ...>     trace_address: [],
       ...>     type: "call",
       ...>     call_type: "call",
-      ...>     from_address_hash: "0xc9266e6fdf5182dc47d27e0dc32bdff9e4cd2e32",
-      ...>     to_address_hash: "0xfdca0da4158740a93693441b35809b5bb463e527",
+      ...>     from_address_id: 1,
+      ...>     to_address_id: 2,
       ...>     input: "0x",
       ...>     gas: 7578728,
       ...>     value: 10000000000000000
@@ -285,17 +283,17 @@ defmodule Explorer.Chain.InternalTransaction do
         output: {"can't be blank for successful call", [validation: :required]}
       ]
 
-  For failed `:create`, `created_contract_code`, `created_contract_address_hash`, and `gas_used` are not allowed to be
+  For failed `:create`, `created_contract_code`, `created_contract_address_id`, and `gas_used` are not allowed to be
   set because they come from `result` object, which shouldn't be returned from Nethermind.
   The changeset will be fixed by `validate_create_error_or_result`, therefore the changeset is still valid.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
-      ...>     created_contract_address_hash: "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
+      ...>     created_contract_address_id: 3,
       ...>     created_contract_code: "0x606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
-      ...>     error: "Bad instruction",
-      ...>     from_address_hash: "0x78a42d3705fb3c26a4b54737a784bf064f0815fb",
+      ...>     error_id: 1,
+      ...>     from_address_id: 1,
       ...>     gas: 3946728,
       ...>     gas_used: 166651,
       ...>     index: 0,
@@ -304,19 +302,18 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     type: "create",
       ...>     value: 0,
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0
       ...>   }
       iex> )
       iex> changeset.valid?
       true
 
-  For successful `:create`,  `created_contract_code`, `created_contract_address_hash`, and `gas_used` are required.
+  For successful `:create`,  `created_contract_code`, `created_contract_address_id`, and `gas_used` are required.
 
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
-      ...>     from_address_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+      ...>     from_address_id: 1,
       ...>     gas: 4597044,
       ...>     index: 0,
       ...>     init: "0x6060604052341561000f57600080fd5b336000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055506102db8061005e6000396000f300606060405260043610610062576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff1680630900f01014610067578063445df0ac146100a05780638da5cb5b146100c9578063fdacd5761461011e575b600080fd5b341561007257600080fd5b61009e600480803573ffffffffffffffffffffffffffffffffffffffff16906020019091905050610141565b005b34156100ab57600080fd5b6100b3610224565b6040518082815260200191505060405180910390f35b34156100d457600080fd5b6100dc61022a565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b341561012957600080fd5b61013f600480803590602001909190505061024f565b005b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161415610220578190508073ffffffffffffffffffffffffffffffffffffffff1663fdacd5766001546040518263ffffffff167c010000000000000000000000000000000000000000000000000000000002815260040180828152602001915050600060405180830381600087803b151561020b57600080fd5b6102c65a03f1151561021c57600080fd5b5050505b5050565b60015481565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff1614156102ac57806001819055505b505600a165627a7a72305820a9c628775efbfbc17477a472413c01ee9b33881f550c59d21bee9928835c854b0029",
@@ -324,7 +321,6 @@ defmodule Explorer.Chain.InternalTransaction do
       ...>     type: "create",
       ...>     value: 0,
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0
       ...>   }
       ...> )
@@ -333,7 +329,7 @@ defmodule Explorer.Chain.InternalTransaction do
       iex> changeset.errors
       [
         created_contract_code: {"can't be blank for successful create", [validation: :required]},
-        created_contract_address_hash: {"can't be blank for successful create", [validation: :required]},
+        created_contract_address_id: {"can't be blank for successful create", [validation: :required]},
         gas_used: {"can't be blank for successful create", [validation: :required]}
       ]
 
@@ -342,14 +338,13 @@ defmodule Explorer.Chain.InternalTransaction do
       iex> changeset = Explorer.Chain.InternalTransaction.changeset(
       ...>   %Explorer.Chain.InternalTransaction{},
       ...>   %{
-      ...>     from_address_hash: "0xa7542d78b9a0be6147536887e0065f16182d294b",
+      ...>     from_address_id: 1,
       ...>     index: 1,
-      ...>     to_address_hash: "0x59e2e9ecf133649b1a7efc731162ff09d29ca5a5",
+      ...>     to_address_id: 2,
       ...>     trace_address: [0],
       ...>     type: "selfdestruct",
       ...>     value: 0,
       ...>     block_number: 35,
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
       ...>     transaction_index: 0
       ...>   }
       ...> )
@@ -358,24 +353,17 @@ defmodule Explorer.Chain.InternalTransaction do
 
   """
   def changeset(%__MODULE__{} = internal_transaction, attrs \\ %{}) do
-    base_attributes = ~w(transaction_index index type)a
-
-    all_attributes =
-      if InternalTransactionHelper.primary_key_updated?() do
-        [:block_number | base_attributes]
-      else
-        [:block_hash, :block_index | base_attributes]
-      end
+    base_attributes = ~w(block_number transaction_index index type)a
 
     internal_transaction
-    |> cast(attrs, all_attributes)
-    |> validate_required(all_attributes)
+    |> cast(attrs, base_attributes)
+    |> validate_required(base_attributes)
     |> type_changeset(attrs)
   end
 
   @doc """
   Accepts changes without `:type` but with `:block_number`, if `:type` is defined
-  works like `changeset`, except allowing `:block_hash` to be undefined.
+  works like `changeset`, except allowing `:block_number` to be undefined.
 
   This is used because the `internal_transactions` runner can derive such values
   on its own or use empty types to know that a block has no internal transactions.
@@ -396,8 +384,8 @@ defmodule Explorer.Chain.InternalTransaction do
     type_changeset(changeset, attrs, type)
   end
 
-  @call_optional_fields ~w(error error_id gas_used output value)a
-  @call_required_fields ~w(block_number call_type_enum from_address_hash gas input to_address_hash)a
+  @call_optional_fields ~w(error_id gas_used output value)a
+  @call_required_fields ~w(block_number call_type_enum from_address_id gas input to_address_id)a
   @call_allowed_fields @call_optional_fields ++ @call_required_fields
 
   defp type_changeset(changeset, attrs, :call) do
@@ -413,8 +401,8 @@ defmodule Explorer.Chain.InternalTransaction do
     |> check_constraint(:input, message: ~S|can't be blank when type is 'call'|, name: :call_has_input)
   end
 
-  @create_optional_fields ~w(error error_id created_contract_code created_contract_address_hash gas_used value)a
-  @create_required_fields ~w(block_number from_address_hash gas init)a
+  @create_optional_fields ~w(error_id created_contract_code created_contract_address_id gas_used value)a
+  @create_required_fields ~w(block_number from_address_id gas init)a
   @create_allowed_fields @create_optional_fields ++ @create_required_fields
 
   defp type_changeset(changeset, attrs, type) when type in [:create, :create2] do
@@ -427,7 +415,7 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @selfdestruct_optional_fields ~w(value)a
-  @selfdestruct_required_fields ~w(block_number from_address_hash to_address_hash type)a
+  @selfdestruct_required_fields ~w(block_number from_address_id to_address_id type)a
   @selfdestruct_allowed_fields @selfdestruct_optional_fields ++ @selfdestruct_required_fields
 
   defp type_changeset(changeset, attrs, :selfdestruct) do
@@ -436,7 +424,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> validate_required(@selfdestruct_required_fields)
   end
 
-  @stop_optional_fields ~w(from_address_hash gas gas_used error error_id value)a
+  @stop_optional_fields ~w(from_address_id gas gas_used error_id value)a
   @stop_required_fields ~w(block_number type)a
   @stop_allowed_fields @stop_optional_fields ++ @stop_required_fields
 
@@ -473,8 +461,8 @@ defmodule Explorer.Chain.InternalTransaction do
 
   # Validates that :call `type` changeset either has an `error` or both `gas_used` and `output`
   defp validate_call_error_or_result(changeset) do
-    case {get_field(changeset, :error), get_field(changeset, :error_id)} do
-      {nil, nil} ->
+    case get_field(changeset, :error_id) do
+      nil ->
         validate_required(changeset, [:gas_used, :output], message: "can't be blank for successful call")
 
       _ ->
@@ -485,19 +473,19 @@ defmodule Explorer.Chain.InternalTransaction do
     end
   end
 
-  @create_success_fields ~w(created_contract_code created_contract_address_hash gas_used)a
+  @create_success_fields ~w(created_contract_code created_contract_address_id gas_used)a
 
-  # Validates that :create `type` changeset either has an `:error` or both `:created_contract_code` and
-  # `:created_contract_address_hash`
+  # Validates that :create `type` changeset either has an `:error_id` or both `:created_contract_code` and
+  # `:created_contract_address_id`
   defp validate_create_error_or_result(changeset) do
-    case {get_field(changeset, :error), get_field(changeset, :error_id)} do
-      {nil, nil} ->
+    case get_field(changeset, :error_id) do
+      nil ->
         validate_required(changeset, @create_success_fields, message: "can't be blank for successful create")
 
       _ ->
         changeset
         |> delete_change(:created_contract_code)
-        |> delete_change(:created_contract_address_hash)
+        |> delete_change(:created_contract_address_id)
         |> delete_change(:gas_used)
         |> validate_disallowed(@create_success_fields, message: "can't be present for failed create")
     end
@@ -519,49 +507,146 @@ defmodule Explorer.Chain.InternalTransaction do
   - returns a query considering that the given address_hash can be: to_address_hash,
     from_address_hash, created_contract_address_hash from internal_transactions' table.
   """
-  def where_address_fields_match(query, address_hash, :to) do
-    if BackgroundMigrations.get_empty_internal_transactions_data_finished() do
-      where(query, [t], t.to_address_hash == ^address_hash)
-    else
-      where(
-        query,
-        [t],
-        t.to_address_hash == ^address_hash or
-          (is_nil(t.to_address_hash) and t.created_contract_address_hash == ^address_hash)
-      )
+  def where_address_fields_match(query, address_hash, direction) do
+    address_id = AddressIdToAddressHash.hash_to_id(address_hash)
+
+    case direction do
+      :to ->
+        if BackgroundMigrations.get_empty_internal_transactions_data_finished() do
+          where_address_match(query, :to_address, address_hash, address_id)
+        else
+          where(
+            query,
+            [it],
+            ^to_direction_match_dynamic(address_hash, address_id)
+          )
+        end
+
+      :from ->
+        where_address_match(query, :from_address, address_hash, address_id)
+
+      :to_address_hash ->
+        if BackgroundMigrations.get_empty_internal_transactions_data_finished() do
+          where(
+            query,
+            [it],
+            ^to_address_hash_match_dynamic(address_hash, address_id)
+          )
+        else
+          where_address_match(query, :to_address, address_hash, address_id)
+        end
+
+      :from_address_hash ->
+        where_address_match(query, :from_address, address_hash, address_id)
+
+      :created_contract_address_hash ->
+        where_address_match(query, :created_contract_address, address_hash, address_id)
+
+      _ ->
+        where(
+          query,
+          [it],
+          ^all_address_fields_match_dynamic(address_hash, address_id)
+        )
     end
   end
 
-  def where_address_fields_match(query, address_hash, :from) do
-    where(query, [t], t.from_address_hash == ^address_hash)
+  @doc """
+  Adds an address filter for the given internal transaction address field.
+
+  The function accepts either a single address hash or a list of address hashes.
+  It resolves corresponding address IDs through `Explorer.Chain.AddressIdToAddressHash`
+  and builds a `where` clause that matches:
+
+    * the migrated `*_address_id` field when mapping entries exist
+    * the legacy `*_address_hash` field as a fallback for partially migrated rows
+
+  This helper is intended for filtering internal transactions by one of the
+  logical address roles, such as `:from_address`, `:to_address`, or
+  `:created_contract_address`.
+
+  ## Parameters
+
+    * `query` - the base query to extend
+    * `address_field` - the logical internal transaction address field
+    * `address_hash_or_hashes` - a single address hash or a list of address hashes
+
+  ## Returns
+
+    An `Ecto.Query.t/0` with the address filter applied.
+  """
+  @spec where_address_match(
+          Ecto.Query.t() | module(),
+          :from_address | :to_address | :created_contract_address,
+          Hash.Address.t() | [Hash.Address.t()]
+        ) :: Ecto.Query.t()
+  def where_address_match(query, address_field, address_hash_or_hashes) do
+    address_hashes = List.wrap(address_hash_or_hashes)
+    address_ids = AddressIdToAddressHash.hashes_to_ids(address_hashes)
+
+    where_address_match(query, address_field, address_hashes, address_ids)
   end
 
-  def where_address_fields_match(query, address_hash, :to_address_hash) do
-    if BackgroundMigrations.get_empty_internal_transactions_data_finished() do
-      where(query, [it], it.to_address_hash == ^address_hash and is_nil(it.created_contract_address_hash))
-    else
-      where(query, [it], it.to_address_hash == ^address_hash)
-    end
+  @spec where_address_match(
+          Ecto.Query.t() | module(),
+          :from_address | :to_address | :created_contract_address,
+          Hash.Address.t() | [Hash.Address.t()],
+          integer() | [integer()] | nil
+        ) :: Ecto.Query.t()
+  def where_address_match(query, address_field, address_hash_or_hashes, address_id_or_ids) do
+    address_hashes = List.wrap(address_hash_or_hashes)
+    address_ids = List.wrap(address_id_or_ids)
+
+    where(query, [it], ^address_match_dynamic(address_field, address_hashes, address_ids))
   end
 
-  def where_address_fields_match(query, address_hash, :from_address_hash) do
-    where(query, [it], it.from_address_hash == ^address_hash)
-  end
+  defp to_direction_match_dynamic(address_hash, address_id) do
+    to_match = address_match_dynamic(:to_address, address_hash, address_id)
+    created_contract_match = address_match_dynamic(:created_contract_address, address_hash, address_id)
 
-  def where_address_fields_match(query, address_hash, :created_contract_address_hash) do
-    where(query, [it], it.created_contract_address_hash == ^address_hash)
-  end
-
-  def where_address_fields_match(query, address_hash, _) do
-    base_address_where(query, address_hash)
-  end
-
-  defp base_address_where(query, address_hash) do
-    where(
-      query,
+    dynamic(
       [it],
-      it.to_address_hash == ^address_hash or it.from_address_hash == ^address_hash or
-        it.created_contract_address_hash == ^address_hash
+      (^to_match and is_nil(it.created_contract_address_hash) and is_nil(it.created_contract_address_id)) or
+        (is_nil(it.to_address_hash) and is_nil(it.to_address_id) and ^created_contract_match)
+    )
+  end
+
+  defp to_address_hash_match_dynamic(address_hash, address_id) do
+    to_match = address_match_dynamic(:to_address, address_hash, address_id)
+
+    dynamic(
+      [it],
+      ^to_match and is_nil(it.created_contract_address_hash) and is_nil(it.created_contract_address_id)
+    )
+  end
+
+  defp all_address_fields_match_dynamic(address_hash, address_id) do
+    to_match = address_match_dynamic(:to_address, address_hash, address_id)
+    from_match = address_match_dynamic(:from_address, address_hash, address_id)
+    created_contract_match = address_match_dynamic(:created_contract_address, address_hash, address_id)
+
+    dynamic(
+      [it],
+      ^to_match or ^from_match or ^created_contract_match
+    )
+  end
+
+  defp address_match_dynamic(address_field, address_hash_or_hashes, address_ids) when address_ids in [[], nil] do
+    address_hashes = List.wrap(address_hash_or_hashes)
+    address_hash_field = String.to_existing_atom("#{address_field}_hash")
+
+    dynamic([it], field(it, ^address_hash_field) in ^address_hashes)
+  end
+
+  defp address_match_dynamic(address_field, address_hash_or_hashes, address_id_or_ids) do
+    address_hashes = List.wrap(address_hash_or_hashes)
+    address_ids = List.wrap(address_id_or_ids)
+    address_id_field = String.to_existing_atom("#{address_field}_id")
+    address_hash_field = String.to_existing_atom("#{address_field}_hash")
+
+    dynamic(
+      [it],
+      field(it, ^address_id_field) in ^address_ids or field(it, ^address_hash_field) in ^address_hashes
     )
   end
 
@@ -632,6 +717,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> Chain.select_repo(options).all()
     |> preload_error(options)
     |> preload_transaction()
+    |> preload_addresses(options)
   end
 
   @spec transaction_to_internal_transactions(Hash.Full.t(), [
@@ -656,6 +742,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> Chain.select_repo(options).all()
     |> preload_error(options)
     |> preload_transaction()
+    |> preload_addresses(options)
   end
 
   @spec block_to_internal_transactions(non_neg_integer(), [
@@ -683,6 +770,7 @@ defmodule Explorer.Chain.InternalTransaction do
     |> Chain.select_repo(options).all()
     |> preload_error(options)
     |> preload_transaction()
+    |> preload_addresses(options)
   end
 
   @doc """
@@ -814,6 +902,7 @@ defmodule Explorer.Chain.InternalTransaction do
       |> deduplicate_and_trim_internal_transactions(paging_options)
       |> preload_error(options)
       |> preload_transaction()
+      |> preload_addresses(options)
     else
       __MODULE__
       |> where_nonpending_operation()
@@ -826,6 +915,7 @@ defmodule Explorer.Chain.InternalTransaction do
       |> Chain.select_repo(options).all()
       |> preload_error(options)
       |> preload_transaction()
+      |> preload_addresses(options)
     end
   end
 
@@ -856,6 +946,97 @@ defmodule Explorer.Chain.InternalTransaction do
       join(query, :inner, [it], t in Transaction,
         on: it.block_number == t.block_number and it.transaction_index == t.index and t.block_consensus == true,
         as: ^binding
+      )
+    end)
+  end
+
+  @doc """
+  Joins an internal transaction query with the address mapping and resolved
+  address for the given address field.
+
+  This helper supports both migrated and partially migrated data:
+
+  - it first left joins the `AddressIdToAddressHash` mapping using the
+    corresponding `*_address_id` field
+  - it then left joins `Explorer.Chain.Address` using the mapped hash
+  - if no mapping is found, it falls back to joining by the legacy
+    `*_address_hash` field
+
+  This allows downstream query code to reference the joined address through
+  `as/1`, for example `as(:created_contract_address).hash`.
+
+  ## Parameters
+
+    - `query`: The base query to extend
+    - `address_field`: The logical address field to join. Expected values
+      include `:from_address`, `:to_address`, or `:created_contract_address`
+
+  ## Returns
+
+    An `Ecto.Query.t/0` with the mapping and address joins added.
+  """
+  @spec join_address_query(Ecto.Query.t() | module(), :from_address | :to_address | :created_contract_address, atom()) ::
+          Ecto.Query.t()
+  def join_address_query(query, address_field, join_type \\ :left) do
+    mapping_binding = String.to_existing_atom("#{address_field}_mapping")
+    address_binding = address_field
+    address_id_field = String.to_existing_atom("#{address_field}_id")
+    address_hash_field = String.to_existing_atom("#{address_field}_hash")
+
+    query
+    |> with_named_binding(mapping_binding, fn query, binding ->
+      join(query, join_type, [it], m in AddressIdToAddressHash,
+        as: ^binding,
+        on: field(it, ^address_id_field) == m.address_id
+      )
+    end)
+    |> with_named_binding(address_binding, fn query, binding ->
+      join(query, join_type, [it], a in Address,
+        as: ^binding,
+        on:
+          a.hash == as(^mapping_binding).address_hash or
+            (is_nil(as(^mapping_binding).address_hash) and a.hash == field(it, ^address_hash_field))
+      )
+    end)
+  end
+
+  @doc """
+  Joins an internal transaction query with the address mapping table for the
+  given address field.
+
+  The helper joins `Explorer.Chain.AddressIdToAddressHash` using the
+  corresponding `*_address_id` field and exposes the join under the named
+  binding `:"address_field_mapping"`.
+
+  This is useful when callers need access to the resolved mapping row, while the
+  main address filtering logic can stay on `internal_transactions.*_address_id`
+  with a fallback to the legacy `*_address_hash` fields.
+
+  ## Parameters
+
+    - `query`: The base query to extend
+    - `address_field`: The logical address field to join. Expected values
+      include `:from_address`, `:to_address`, or `:created_contract_address`
+    - `join_type`: Ecto join type, defaults to `:left`
+
+  ## Returns
+
+    An `Ecto.Query.t/0` with the mapping join added.
+  """
+  @spec join_address_mapping_query(
+          Ecto.Query.t() | module(),
+          :from_address | :to_address | :created_contract_address,
+          atom()
+        ) ::
+          Ecto.Query.t()
+  def join_address_mapping_query(query, address_field, join_type \\ :left) do
+    mapping_binding = String.to_existing_atom("#{address_field}_mapping")
+    address_id_field = String.to_existing_atom("#{address_field}_id")
+
+    with_named_binding(query, mapping_binding, fn query, binding ->
+      join(query, join_type, [it], m in AddressIdToAddressHash,
+        as: ^binding,
+        on: field(it, ^address_id_field) == m.address_id
       )
     end)
   end
@@ -1030,12 +1211,13 @@ defmodule Explorer.Chain.InternalTransaction do
         []
 
       _ ->
-        preloads =
-          [
-            :block,
-            [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]],
-            [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
-          ]
+        preload_options =
+          Keyword.merge(options,
+            address_preloads: [
+              from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+              to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
+            ]
+          )
 
         __MODULE__
         |> where_nonpending_operation()
@@ -1048,16 +1230,12 @@ defmodule Explorer.Chain.InternalTransaction do
           desc: internal_transaction.index
         )
         |> limit(^paging_options.page_size)
-        |> preload(^preloads)
+        |> preload(:block)
         |> Chain.select_repo(options).all()
         |> preload_error(options)
         |> preload_transaction()
+        |> preload_addresses(preload_options)
     end
-  end
-
-  defp page_block_internal_transaction(query, %PagingOptions{key: %{block_index: block_index}}) do
-    query
-    |> where([internal_transaction], internal_transaction.block_index > ^block_index)
   end
 
   defp page_block_internal_transaction(query, %PagingOptions{key: %{transaction_index: transaction_index, index: index}}) do
@@ -1071,16 +1249,8 @@ defmodule Explorer.Chain.InternalTransaction do
 
   defp page_block_internal_transaction(query, _), do: query
 
-  def internal_transaction_to_block_paging_options(%__MODULE__{
-        transaction_index: transaction_index,
-        index: index,
-        block_index: block_index
-      }) do
-    if InternalTransactionHelper.primary_key_updated?() do
-      %{"transaction_index" => transaction_index, "index" => index}
-    else
-      %{"block_index" => block_index}
-    end
+  def internal_transaction_to_block_paging_options(%__MODULE__{transaction_index: transaction_index, index: index}) do
+    %{"transaction_index" => transaction_index, "index" => index}
   end
 
   defp where_internal_transactions_by_transaction_hash(query, nil), do: query
@@ -1272,23 +1442,22 @@ defmodule Explorer.Chain.InternalTransaction do
   def preload_error(internal_transactions, options) when is_list(internal_transactions) do
     error_ids =
       internal_transactions
-      |> Enum.filter(&is_nil(&1.error))
       |> Enum.map(& &1.error_id)
       |> Enum.uniq()
       |> Enum.reject(&is_nil/1)
 
-    if error_ids == [] do
-      internal_transactions
-    else
-      error_id_to_error_map =
+    error_id_to_error_map =
+      if error_ids == [] do
+        %{}
+      else
         TransactionError
         |> where([te], te.id in ^error_ids)
         |> select([te], {te.id, te.message})
         |> Chain.select_repo(options).all()
         |> Map.new()
+      end
 
-      Enum.map(internal_transactions, &Map.put(&1, :error, &1.error || error_id_to_error_map[&1.error_id]))
-    end
+    Enum.map(internal_transactions, &Map.put(&1, :error, Map.get(&1, :error) || error_id_to_error_map[&1.error_id]))
   end
 
   def preload_error(internal_transaction, options) do
@@ -1358,5 +1527,128 @@ defmodule Explorer.Chain.InternalTransaction do
     [internal_transaction]
     |> preload_transaction(repo, transactions)
     |> List.first()
+  end
+
+  @default_address_preloads [from_address: [], to_address: [], created_contract_address: []]
+
+  @doc """
+  Preloads address associations for the given internal transaction or list of
+  internal transactions.
+
+  After preloading, the function normalizes the result so that
+  `:from_address`, `:to_address`, and `:created_contract_address` are populated
+  consistently, and the corresponding `*_address_hash` fields are aligned with
+  the resolved addresses.
+
+  ## Parameters
+
+    - `internal_transactions`: An `Explorer.Chain.InternalTransaction.t/0`, a
+      list of internal transactions, `[]`, or `nil`
+    - `options`: Keyword options. Supports `:address_preloads` to specify nested
+      preloads for `:from_address`, `:to_address`, and
+      `:created_contract_address`
+    - `repo`: The repo module used for preloading. When omitted, it is resolved
+      via `Explorer.Chain.select_repo/1`
+
+  ## Returns
+
+    - A list of internal transactions with addresses preloaded when the input is
+      a list
+    - A single internal transaction with addresses preloaded when the input is a
+      single struct
+  """
+  @spec preload_addresses([__MODULE__.t()] | __MODULE__.t() | nil, Keyword.t(), module() | nil) ::
+          [__MODULE__.t()] | __MODULE__.t() | nil
+  def preload_addresses(internal_transactions, options \\ [], repo \\ nil)
+
+  def preload_addresses([], _options, _repo), do: []
+  def preload_addresses(nil, _options, _repo), do: nil
+
+  def preload_addresses(internal_transactions, options, repo) when is_list(internal_transactions) do
+    preloads = Keyword.merge(@default_address_preloads, Keyword.get(options, :address_preloads, []))
+    repo = repo || Chain.select_repo(options)
+
+    indexed_transactions = Enum.with_index(internal_transactions)
+
+    {migrated_indexed, not_migrated_indexed} =
+      Enum.split_with(
+        indexed_transactions,
+        fn {it, _idx} ->
+          is_nil(it.from_address_hash) and is_nil(it.to_address_hash) and is_nil(it.created_contract_address_hash)
+        end
+      )
+
+    migrated = Enum.map(migrated_indexed, &elem(&1, 0))
+    not_migrated = Enum.map(not_migrated_indexed, &elem(&1, 0))
+
+    not_migrated_preloaded = preload_addresses_for_not_migrated_internal_transactions(not_migrated, preloads, repo)
+    migrated_preloaded = preload_addresses_for_migrated_internal_transactions(migrated, preloads, repo)
+
+    migrated_with_idx = Enum.zip(migrated_preloaded, Enum.map(migrated_indexed, &elem(&1, 1)))
+    not_migrated_with_idx = Enum.zip(not_migrated_preloaded, Enum.map(not_migrated_indexed, &elem(&1, 1)))
+
+    (migrated_with_idx ++ not_migrated_with_idx)
+    |> Enum.sort_by(&elem(&1, 1))
+    |> Enum.map(&elem(&1, 0))
+  end
+
+  def preload_addresses(internal_transaction, options, repo) do
+    [internal_transaction]
+    |> preload_addresses(options, repo)
+    |> List.first()
+  end
+
+  defp preload_addresses_for_not_migrated_internal_transactions([], _preloads, _repo), do: []
+
+  defp preload_addresses_for_not_migrated_internal_transactions(internal_transactions, preloads, repo) do
+    unified_preloads =
+      preloads
+      |> List.wrap()
+      |> Enum.map(fn
+        preload when is_atom(preload) -> {String.to_existing_atom("#{preload}_by_hash"), []}
+        {preload, fields} -> {String.to_existing_atom("#{preload}_by_hash"), fields}
+      end)
+
+    internal_transactions
+    |> repo.preload(unified_preloads)
+    |> Enum.map(fn internal_transaction ->
+      Enum.reduce(
+        [
+          {:from_address_by_hash, :from_address_hash, :from_address},
+          {:to_address_by_hash, :to_address_hash, :to_address},
+          {:created_contract_address_by_hash, :created_contract_address_hash, :created_contract_address}
+        ],
+        internal_transaction,
+        fn {source_field, hash_field, address_field}, acc ->
+          corresponding_address = Map.get(acc, source_field)
+
+          Map.merge(acc, %{
+            hash_field => (corresponding_address && corresponding_address.hash) || Map.get(acc, hash_field),
+            address_field => corresponding_address
+          })
+        end
+      )
+    end)
+  end
+
+  defp preload_addresses_for_migrated_internal_transactions([], _preloads, _repo), do: []
+
+  defp preload_addresses_for_migrated_internal_transactions(internal_transactions, preloads, repo) do
+    internal_transactions
+    |> repo.preload(preloads)
+    |> Enum.map(fn internal_transaction ->
+      Enum.reduce(
+        [
+          {:from_address_hash, :from_address},
+          {:to_address_hash, :to_address},
+          {:created_contract_address_hash, :created_contract_address}
+        ],
+        internal_transaction,
+        fn {hash_field, address_field}, acc ->
+          corresponding_address = Map.get(acc, address_field)
+          Map.put(acc, hash_field, corresponding_address && corresponding_address.hash)
+        end
+      )
+    end)
   end
 end
