@@ -183,7 +183,7 @@ defmodule BlockScoutWeb.AddressChannelTest do
                      :timer.seconds(5)
 
       assert address_hash == address.hash
-      assert {transaction_hash, index} == {internal_transaction.transaction_hash, internal_transaction.index}
+      assert {transaction_hash, index} == {transaction.hash, internal_transaction.index}
     end
 
     test "notified of new_internal_transaction for matching to_address", %{address: address, topic: topic} do

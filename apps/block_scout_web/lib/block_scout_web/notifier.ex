@@ -275,7 +275,8 @@ defmodule BlockScoutWeb.Notifier do
       &(InternalTransaction.where_nonpending_operation()
         |> Repo.get_by(block_number: &1.block_number, transaction_index: &1.transaction_index, index: &1.index)
         |> Repo.preload([:block])
-        |> InternalTransaction.preload_addresses())
+        |> InternalTransaction.preload_addresses()
+        |> InternalTransaction.preload_transaction())
     )
     |> Enum.each(&broadcast_internal_transaction/1)
   end
