@@ -277,7 +277,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
     import_internal_transaction(internal_transactions_params, block_numbers, data_type)
   rescue
     exception in Postgrex.Error ->
-      handle_foreign_key_violation(exception, internal_transactions_params, block_numbers, data_type)
+      Logger.error(
+        "Error on internal transactions import: #{inspect(exception)}, block numbers: #{inspect(block_numbers)}"
+      )
+
       {:retry, block_numbers}
   end
 
@@ -364,8 +367,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
           error_count: Enum.count(transactions_params_or_unique_numbers)
         )
 
-        handle_unique_key_violation(reason, transactions_params_or_unique_numbers, data_type)
-
         # re-queue the de-duped entries
         {:retry, transactions_params_or_unique_numbers}
     end
@@ -406,43 +407,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   # don't count itself as a parent
   defp has_failed_parent?(_failed_parent_paths, [], _reverse_path_acc), do: false
-
-  defp handle_unique_key_violation(
-         %{exception: %{postgres: %{code: :unique_violation}}},
-         transactions_params_or_unique_numbers,
-         data_type
-       ) do
-    block_numbers = data_to_block_numbers(transactions_params_or_unique_numbers, data_type)
-
-    Block.set_refetch_needed(block_numbers)
-
-    Logger.error(fn ->
-      [
-        "unique_violation on internal transactions import, #{data_type} identifiers: ",
-        inspect(transactions_params_or_unique_numbers)
-      ]
-    end)
-  end
-
-  defp handle_unique_key_violation(_reason, _identifiers, _data_type), do: :ok
-
-  defp handle_foreign_key_violation(reason, internal_transactions_params, block_numbers_or_transactions, data_type) do
-    block_numbers = data_to_block_numbers(block_numbers_or_transactions, data_type)
-
-    Block.set_refetch_needed(block_numbers)
-
-    transaction_hashes =
-      internal_transactions_params
-      |> Enum.map(&to_string(&1.transaction_hash))
-      |> Enum.uniq()
-
-    Logger.error(fn ->
-      [
-        "foreign_key_violation on internal transactions import: #{inspect(reason)}, foreign transactions hashes: ",
-        Enum.join(transaction_hashes, ", ")
-      ]
-    end)
-  end
 
   defp handle_not_found_transaction(errors) when is_list(errors) do
     Enum.each(errors, &handle_not_found_transaction/1)

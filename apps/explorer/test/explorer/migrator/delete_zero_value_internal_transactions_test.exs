@@ -36,7 +36,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
       insert(:internal_transaction,
         index: 10,
         transaction: transaction,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number,
         from_address: address_1,
         to_address: address_2,
@@ -55,7 +54,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
       insert(:internal_transaction,
         index: 10,
         transaction: transaction,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number,
         from_address: address_2,
         to_address: address_3,
@@ -74,7 +72,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
       insert(:internal_transaction,
         index: 10,
         transaction: transaction,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number,
         from_address: address_3,
         to_address: address_1,
@@ -93,7 +90,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
       insert(:internal_transaction,
         index: 10,
         transaction: transaction,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         type: :call,
@@ -110,7 +106,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
       insert(:internal_transaction_create,
         index: 10,
         transaction: transaction,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         value: 0
@@ -126,7 +121,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
       insert(:internal_transaction,
         index: 10,
         transaction: transaction,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         type: :call,
@@ -175,16 +169,9 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
 
     id_to_hashes = Repo.all(AddressIdToAddressHash)
 
-    assert length(id_to_hashes) == 3
-
-    assert %{address_id: address_1_id} =
-             Enum.find(id_to_hashes, &(&1.address_hash == address_1.hash))
-
-    assert %{address_id: address_2_id} =
-             Enum.find(id_to_hashes, &(&1.address_hash == address_2.hash))
-
-    assert %{address_id: address_3_id} =
-             Enum.find(id_to_hashes, &(&1.address_hash == address_3.hash))
+    assert %{address_id: address_1_id} = Enum.find(id_to_hashes, &(&1.address_hash == address_1.hash))
+    assert %{address_id: address_2_id} = Enum.find(id_to_hashes, &(&1.address_hash == address_2.hash))
+    assert %{address_id: address_3_id} = Enum.find(id_to_hashes, &(&1.address_hash == address_3.hash))
 
     placeholders = Repo.all(InternalTransactionsAddressPlaceholder)
 
@@ -256,7 +243,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
       insert(:internal_transaction,
         index: 10,
         transaction: transaction,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         from_address: address_1,
@@ -317,8 +303,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
 
       insert(:internal_transaction,
         index: 10,
-        transaction: transaction,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         from_address: address_1,

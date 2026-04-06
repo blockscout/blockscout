@@ -138,7 +138,6 @@ defmodule BlockScoutWeb.AddressTransactionControllerTest do
         to_address: nil,
         transaction: transaction,
         transaction_index: transaction.index,
-        block_hash: block.hash,
         block_number: transaction.block_number
       )
 

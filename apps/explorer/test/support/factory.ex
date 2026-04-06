@@ -336,7 +336,7 @@ defmodule Explorer.Factory do
   def address_id_to_address_hash_factory do
     %AddressIdToAddressHash{
       address_id: sequence("address_id", & &1),
-      address_hash: address_hash()
+      address: build(:address)
     }
   end
 
@@ -781,18 +781,6 @@ defmodule Explorer.Factory do
     |> Repo.update!()
   end
 
-  def with_contract_creation(%InternalTransaction{} = internal_transaction, %Address{
-        contract_code: contract_code,
-        hash: contract_address_hash
-      }) do
-    internal_transaction
-    |> InternalTransaction.changeset(%{
-      contract_code: contract_code,
-      created_contract_address_hash: contract_address_hash
-    })
-    |> Repo.update!()
-  end
-
   def data(sequence_name) do
     unpadded =
       sequence_name
@@ -846,13 +834,16 @@ defmodule Explorer.Factory do
     }
   end
 
-  def internal_transaction_factory() do
+  def internal_transaction_factory(attrs) do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
 
+    all_attrs =
+      attrs
+      |> adjust_internal_transaction_addresses_attrs([:from_address, :to_address])
+      |> adjust_internal_transaction_error_attr()
+
     %InternalTransaction{
-      from_address: build(:address),
-      to_address: build(:address),
       call_type: :delegatecall,
       gas: gas,
       gas_used: gas_used,
@@ -866,18 +857,23 @@ defmodule Explorer.Factory do
       type: :call,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
+    |> merge_attributes(all_attrs)
+    |> evaluate_lazy_attributes()
   end
 
-  def internal_transaction_create_factory() do
+  def internal_transaction_create_factory(attrs) do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
 
     contract_code = Map.fetch!(contract_code_info(), :bytecode)
 
+    all_attrs =
+      attrs
+      |> adjust_internal_transaction_addresses_attrs([:from_address, :created_contract_address], contract_code)
+      |> adjust_internal_transaction_error_attr()
+
     %InternalTransaction{
       created_contract_code: contract_code,
-      created_contract_address: build(:address, contract_code: contract_code),
-      from_address: build(:address),
       gas: gas,
       gas_used: gas_used,
       # caller MUST supply `index`
@@ -889,9 +885,16 @@ defmodule Explorer.Factory do
       type: :create,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
+    |> merge_attributes(all_attrs)
+    |> evaluate_lazy_attributes()
   end
 
-  def internal_transaction_selfdestruct_factory() do
+  def internal_transaction_selfdestruct_factory(attrs) do
+    all_attrs =
+      attrs
+      |> adjust_internal_transaction_addresses_attrs([:from_address, :to_address])
+      |> adjust_internal_transaction_error_attr()
+
     %InternalTransaction{
       from_address: build(:address),
       trace_address: nil,
@@ -900,6 +903,8 @@ defmodule Explorer.Factory do
       type: :selfdestruct,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
+    |> merge_attributes(all_attrs)
+    |> evaluate_lazy_attributes()
   end
 
   def transaction_error_factory do
@@ -1377,6 +1382,59 @@ defmodule Explorer.Factory do
       token_id: token_id,
       token_type: token_type
     }
+  end
+
+  defp adjust_internal_transaction_addresses_attrs(attrs, addresses_fields, contract_code \\ nil) do
+    hash_fields = Enum.map(addresses_fields, &String.to_existing_atom("#{&1}_hash"))
+    {address_related_attrs, other_attrs} = Map.split(attrs, addresses_fields ++ hash_fields)
+
+    addresses_fields
+    |> Enum.reduce(address_related_attrs, fn address_field, acc ->
+      hash_field = String.to_existing_atom("#{address_field}_hash")
+
+      additional_fields =
+        case address_field do
+          :created_contract_address -> %{contract_code: contract_code}
+          _ -> %{}
+        end
+
+      address =
+        case Map.has_key?(acc, address_field) && Map.get(acc, address_field) do
+          nil ->
+            nil
+
+          false ->
+            address_params =
+              Map.merge(additional_fields, if(hash = Map.get(acc, hash_field), do: %{hash: hash}, else: %{}))
+
+            case Map.get(address_params, :hash) && Repo.get_by(Address, hash: address_params.hash) do
+              nil ->
+                built_address = build(:address, address_params)
+                insert(built_address)
+                built_address
+
+              _ ->
+                build(:address, address_params)
+            end
+
+          address ->
+            address
+        end
+
+      Map.merge(acc, %{
+        address_field => address,
+        hash_field => address && address.hash,
+        :"#{address_field}_mapping" => address && AddressIdToAddressHash.find_or_create(address.hash)
+      })
+    end)
+    |> Map.merge(other_attrs)
+  end
+
+  defp adjust_internal_transaction_error_attr(attrs) do
+    case Map.get(attrs, :error) do
+      nil -> attrs
+      error -> Map.put(attrs, :error_id, Map.get(attrs, :error_id) || TransactionError.find_or_create(error))
+    end
   end
 
   defp block_hash_to_next_transaction_index(block_hash) do

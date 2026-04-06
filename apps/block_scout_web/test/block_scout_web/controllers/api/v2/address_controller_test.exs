@@ -2232,9 +2232,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
           from_address: address
         )
+        |> InternalTransaction.preload_addresses()
 
       internal_transaction_to =
         insert(:internal_transaction,
@@ -2242,9 +2242,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           index: 2,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
           to_address: address
         )
+        |> InternalTransaction.preload_addresses()
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
 
@@ -2285,7 +2285,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
           from_address: address,
           to_address: insert(:address),
           gas: nil,
@@ -2314,10 +2313,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             index: i,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
-            block_hash: transaction.block_hash,
             from_address: address
           )
         end
+        |> InternalTransaction.preload_addresses()
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
       assert response = json_response(request, 200)
@@ -2336,10 +2335,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             index: i,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
-            block_hash: transaction.block_hash,
             to_address: address
           )
         end
+        |> InternalTransaction.preload_addresses()
 
       filter = %{"filter" => "to"}
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", filter)
@@ -3982,7 +3981,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           index: x,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
           to_address: address
         )
       end
@@ -4025,7 +4023,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           index: x,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
           from_address: address
         )
       end
@@ -4078,7 +4075,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           index: x,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
           from_address: address
         )
       end
@@ -4125,7 +4121,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           index: x,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
           from_address: address
         )
       end
@@ -5683,7 +5678,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert internal_transaction.block_number == json["block_number"]
     assert to_string(internal_transaction.gas) == json["gas_limit"]
     assert internal_transaction.index == json["index"]
-    assert to_string(internal_transaction.transaction_hash) == json["transaction_hash"]
+    assert to_string(internal_transaction.transaction.hash) == json["transaction_hash"]
     assert Address.checksum(internal_transaction.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(internal_transaction.to_address_hash) == json["to"]["hash"]
   end

@@ -63,10 +63,10 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
           transaction: transaction,
           transaction_index: transaction.index,
           index: 0,
-          block_hash: transaction.block_hash,
+          created_contract_code: contract_address.contract_code,
+          created_contract_address: contract_address,
           block_number: transaction.block_number
         )
-        |> with_contract_creation(contract_address)
 
       session
       |> BlockPage.visit_page(block)

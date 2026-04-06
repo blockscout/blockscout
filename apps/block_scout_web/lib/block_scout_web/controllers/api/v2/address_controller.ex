@@ -170,12 +170,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   @spec contract_address_preloads() :: [keyword()]
   defp contract_address_preloads do
-    include_internal_tx = include_internal_transaction_association?()
-
     chain_type_associations =
       case chain_type() do
-        :filecoin -> Address.contract_creation_transaction_with_from_address_associations(include_internal_tx)
-        _ -> Address.contract_creation_transaction_associations(include_internal_tx)
+        :filecoin -> [Address.contract_creation_transaction_with_from_address_association()]
+        _ -> [Address.contract_creation_transaction_association()]
       end
 
     [:smart_contract | chain_type_associations]
@@ -604,13 +602,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {:ok, _address} ->
           full_options =
             [
-              necessity_by_association: %{
-                [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
-                  :optional,
-                [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
-                  :optional,
-                [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
-              }
+              address_preloads: [
+                created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+                from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+                to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
+              ]
             ]
             |> Keyword.merge(paging_options(params))
             |> Keyword.merge(current_filter(params))
