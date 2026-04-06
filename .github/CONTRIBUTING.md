@@ -17,6 +17,7 @@ We welcome contributions that enhance the project and improve the overall qualit
 
 ## General
 
+* Keep `.dialyzer-ignore` as small as possible. Only add entries to suppress false positives that cannot be resolved by fixing the underlying type issue. Every new suppression should include a comment explaining why it is necessary and cannot be fixed properly.
 * Commits should be one logical change that still allows all tests to pass.  Prefer smaller commits if there could be two levels of logic grouping.  The goal is to allow contributors in the future (including your own future self) to determine your reasoning for making changes and to allow them to cherry-pick, patch or port those changes in isolation to other branches or forks.
 * If during your PR you reveal a pre-existing bug:
   1. Try to isolate the bug and fix it on an independent branch and PR it first.
