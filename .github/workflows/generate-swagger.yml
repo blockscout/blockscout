@@ -34,20 +34,21 @@ jobs:
             const chainTypes = [
               "default",
               "arbitrum",
+              "arc",
               "blackfort",
               "ethereum",
               "filecoin",
+              "neon",
               "optimism",
               "optimism-celo",
-              "polygon_zkevm",
               "rsk",
               "scroll",
               "shibarium",
               "stability",
+              "suave",
               "zetachain",
               "zilliqa",
-              "zksync",
-              "neon"
+              "zksync"
             ];
 
             const matrix = { "chain-type": ${{ 'chainTypes' }} };

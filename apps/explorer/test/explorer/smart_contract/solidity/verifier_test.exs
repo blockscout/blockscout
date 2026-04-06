@@ -507,9 +507,9 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
           |> insert()
           |> with_block(transaction_success_details)
 
-        :internal_transaction
+        :internal_transaction_create
         |> insert(
-          created_contract_address_hash: contract_address.hash,
+          created_contract_address: contract_address,
           init: init,
           type: "create",
           created_contract_code: bytecode,
@@ -517,7 +517,6 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
           transaction_hash: transaction.hash,
           transaction_index: transaction.index,
           index: 0,
-          block_hash: transaction.block_hash,
           block_number: transaction.block_number
         )
 
@@ -566,9 +565,9 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
           |> insert()
           |> with_block(transaction_failure_details)
 
-        :internal_transaction
+        :internal_transaction_create
         |> insert(
-          created_contract_address_hash: contract_address.hash,
+          created_contract_address: contract_address,
           init: init,
           type: "create",
           created_contract_code: bytecode,
@@ -576,13 +575,12 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
           transaction_hash: transaction_success.hash,
           transaction_index: transaction_success.index,
           index: 0,
-          block_hash: transaction_success.block_hash,
           block_number: transaction_success.block_number
         )
 
-        :internal_transaction
+        :internal_transaction_create
         |> insert(
-          created_contract_address_hash: contract_address.hash,
+          created_contract_address: contract_address,
           init: init,
           type: "create",
           created_contract_code: bytecode,
@@ -590,7 +588,6 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
           transaction_hash: transaction_failure.hash,
           transaction_index: transaction_failure.index,
           index: 0,
-          block_hash: transaction_failure.block_hash,
           block_number: transaction_failure.block_number
         )
 

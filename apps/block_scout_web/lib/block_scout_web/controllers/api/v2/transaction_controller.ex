@@ -58,7 +58,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.FheOperation
   alias Explorer.Chain.{Hash, Transaction}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
-  alias Explorer.Chain.PolygonZkevm.Reader, as: PolygonZkevmReader
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Explorer.Chain.Token.Instance
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
@@ -129,13 +128,12 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     [token: reputation_association()] => :optional
   }
 
-  @internal_transaction_necessity_by_association [
-    necessity_by_association: %{
-      [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
-        :optional,
-      [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-      [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
-    }
+  @internal_transaction_address_preloads [
+    address_preloads: [
+      created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+      from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+      to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
+    ]
   ]
 
   @api_true [api?: true]
@@ -157,17 +155,10 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def transaction(conn, %{transaction_hash_param: transaction_hash_string} = params) do
     necessity_by_association_with_actions =
       @transaction_necessity_by_association
-      |> Map.put(:transaction_actions, :optional)
       |> Map.put(:signed_authorizations, :optional)
 
     necessity_by_association =
       case Application.get_env(:explorer, :chain_type) do
-        :polygon_zkevm ->
-          necessity_by_association_with_actions
-          |> Map.put(:zkevm_batch, :optional)
-          |> Map.put(:zkevm_sequence_transaction, :optional)
-          |> Map.put(:zkevm_verify_transaction, :optional)
-
         :zksync ->
           necessity_by_association_with_actions
           |> Map.put(:zksync_batch, :optional)
@@ -264,48 +255,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     |> render(:transactions, %{
       transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
       next_page_params: next_page_params
-    })
-  end
-
-  operation :polygon_zkevm_batch,
-    summary: "List L2 transactions in a Polygon ZkEVM batch",
-    description: "Retrieves L2 transactions bound to a specific Polygon ZkEVM batch number.",
-    parameters: [batch_number_param() | base_params()],
-    responses: [
-      ok:
-        {"Polygon ZkEVM batch transactions.", "application/json",
-         %Schema{
-           type: :object,
-           properties: %{
-             items: %Schema{type: :array, items: Schemas.Transaction.Response}
-           },
-           nullable: false,
-           additionalProperties: false
-         }},
-      unprocessable_entity: JsonErrorResponse.response()
-    ]
-
-  @doc """
-    Function to handle GET requests to `/api/v2/transactions/zkevm-batch/:batch_number` endpoint.
-    It renders the list of L2 transactions bound to the specified batch.
-  """
-  @spec polygon_zkevm_batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def polygon_zkevm_batch(conn, %{batch_number_param: batch_number} = _params) do
-    options =
-      [necessity_by_association: @transaction_necessity_by_association]
-      |> Keyword.merge(@api_true)
-
-    transactions =
-      batch_number
-      |> PolygonZkevmReader.batch_transactions(@api_true)
-      |> Enum.map(fn transaction -> transaction.hash end)
-      |> Chain.hashes_to_transactions(options)
-
-    conn
-    |> put_status(200)
-    |> render(:transactions, %{
-      transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
-      items: true
     })
   end
 
@@ -754,7 +703,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def internal_transactions(conn, %{transaction_hash_param: transaction_hash_string} = params) do
     with {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params) do
       full_options =
-        @internal_transaction_necessity_by_association
+        @internal_transaction_address_preloads
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(@api_true)
 

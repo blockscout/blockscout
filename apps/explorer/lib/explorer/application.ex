@@ -117,6 +117,7 @@ defmodule Explorer.Application do
     configurable_children_set =
       [
         configure_mode_dependent_process(Explorer.Utility.VersionConstantsUpdater, :indexer),
+        configure(Explorer.Utility.VersionUpgrade),
         configure_mode_dependent_process(Explorer.Market.Fetcher.Coin, :api),
         configure_mode_dependent_process(Explorer.Market.Fetcher.Token, :indexer),
         configure_mode_dependent_process(Explorer.Market.Fetcher.History, :indexer),
@@ -126,8 +127,6 @@ defmodule Explorer.Application do
         configure(Explorer.Chain.Cache.Counters.NewContractsCount),
         configure(Explorer.Chain.Cache.Counters.VerifiedContractsCount),
         configure(Explorer.Chain.Cache.Counters.NewVerifiedContractsCount),
-        configure(Explorer.Chain.Cache.TransactionActionTokensData),
-        configure(Explorer.Chain.Cache.TransactionActionUniswapPools),
         configure(Explorer.Chain.Cache.Counters.WithdrawalsSum),
         configure_mode_dependent_process(Explorer.Chain.Transaction.History.Historian, :indexer),
         configure(Explorer.Chain.Events.Listener),
@@ -179,7 +178,6 @@ defmodule Explorer.Application do
         configure_chain_type_dependent_process(Explorer.Chain.Cache.Counters.Stability.ValidatorsCount, :stability),
         configure_chain_type_dependent_process(Explorer.Chain.Cache.LatestL1BlockNumber, [
           :optimism,
-          :polygon_zkevm,
           :scroll,
           :shibarium
         ]),
@@ -187,7 +185,6 @@ defmodule Explorer.Application do
         Explorer.Migrator.SanitizeDuplicatedLogIndexLogs
         |> configure_mode_dependent_process(:indexer)
         |> configure_chain_type_dependent_process([
-          :polygon_zkevm,
           :rsk,
           :filecoin
         ]),
@@ -204,6 +201,7 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.DeleteZeroValueInternalTransactions, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.EmptyInternalTransactionsData, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.FillInternalTransactionsAddressIds, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
           :indexer
@@ -354,6 +352,26 @@ defmodule Explorer.Application do
           Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndexA,
           :indexer
         ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsFromAddressIdPartialIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsToAddressIdPartialIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdPartialIndex,
+          :indexer
+        ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),
         configure(Explorer.Chain.Fetcher.AddressesBlacklist),
         Explorer.Migrator.SwitchPendingOperations,
@@ -379,7 +397,6 @@ defmodule Explorer.Application do
         Explorer.Repo.Filecoin,
         Explorer.Repo.Optimism,
         Explorer.Repo.PolygonEdge,
-        Explorer.Repo.PolygonZkevm,
         Explorer.Repo.RSK,
         Explorer.Repo.Scroll,
         Explorer.Repo.Shibarium,

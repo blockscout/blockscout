@@ -692,7 +692,11 @@ defmodule Explorer.Chain.SmartContract do
     else
       creation_int_transaction_query = Address.creation_internal_transaction_query(address_hash)
 
-      internal_transaction = creation_int_transaction_query |> Repo.one()
+      internal_transaction =
+        creation_int_transaction_query
+        |> Repo.one()
+        |> InternalTransaction.preload_transaction()
+        |> InternalTransaction.preload_addresses()
 
       case internal_transaction do
         %{init: init} ->

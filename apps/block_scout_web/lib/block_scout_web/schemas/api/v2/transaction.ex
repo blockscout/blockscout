@@ -155,21 +155,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
   def chain_type_fields(schema) do
     chain_type()
     |> case do
-      :polygon_zkevm ->
-        schema
-        |> Helper.extend_schema(
-          properties: %{
-            zkevm_batch_number: %Schema{type: :integer, nullable: true},
-            zkevm_sequence_hash: General.FullHash,
-            zkevm_verify_hash: General.FullHash,
-            zkevm_status: %Schema{
-              type: :string,
-              enum: ["Confirmed by Sequencer", "L1 Confirmed"],
-              nullable: false
-            }
-          }
-        )
-
       :zksync ->
         schema |> Helper.extend_schema(properties: %{zksync: @zksync_schema})
 
@@ -329,7 +314,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
 
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, SignedAuthorization, TokenTransfer}
   alias BlockScoutWeb.Schemas.API.V2.Transaction.{ChainTypeCustomizations, Fee}
-  alias Explorer.Chain.TransactionAction
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -421,32 +405,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         decoded_input: %Schema{allOf: [General.DecodedInput], nullable: true},
         token_transfers: %Schema{type: :array, items: TokenTransfer, nullable: true},
         token_transfers_overflow: %Schema{type: :boolean, nullable: true},
-        actions: %Schema{
-          type: :array,
-          items: %Schema{
-            type: :object,
-            required: [:protocol, :type, :data],
-            properties: %{
-              protocol: %Schema{
-                type: :string,
-                enum: TransactionAction.supported_protocols(),
-                nullable: false
-              },
-              type: %Schema{
-                type: :string,
-                enum: TransactionAction.supported_types(),
-                nullable: false
-              },
-              data: %Schema{
-                type: :object,
-                description: "Transaction action details (json formatted)",
-                nullable: false
-              }
-            },
-            additionalProperties: false
-          },
-          nullable: true
-        },
         exchange_rate: General.FloatStringNullable,
         historic_exchange_rate: General.FloatStringNullable,
         method: General.MethodNameNullable,
@@ -511,7 +469,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         :decoded_input,
         :token_transfers,
         :token_transfers_overflow,
-        :actions,
         :exchange_rate,
         :historic_exchange_rate,
         :method,

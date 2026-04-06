@@ -3,6 +3,7 @@ defmodule Explorer.Chain.BlockTest do
 
   alias Ecto.Changeset
   alias Explorer.Chain.{Address, Block, PendingBlockOperation, Wei}
+  alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
   alias Explorer.PagingOptions
 
   describe "changeset/2" do
@@ -397,6 +398,66 @@ defmodule Explorer.Chain.BlockTest do
       assert Block.gas_payment_by_block_hash([consensus_block_hash]) == %{
                consensus_block_hash => %Wei{value: Decimal.new(14)}
              }
+    end
+  end
+
+  describe "full_refetch/1" do
+    test "with block numbers" do
+      Enum.each(1..5, fn _i ->
+        insert(:block)
+      end)
+
+      blocks = Repo.all(Block)
+
+      assert Enum.all?(blocks, &(&1.refetch_needed == false))
+      assert [] = Repo.all(InternalTransactionDeleteQueue)
+
+      block_numbers = Enum.map(blocks, & &1.number)
+
+      Block.full_refetch(block_numbers)
+
+      assert Enum.all?(Repo.all(Block), &(&1.refetch_needed == true))
+
+      delete_queue_entries = Repo.all(InternalTransactionDeleteQueue)
+
+      assert Enum.count(delete_queue_entries) == 5
+      assert Enum.map(delete_queue_entries, & &1.block_number) -- block_numbers == []
+    end
+
+    test "with block ranges" do
+      Enum.each(1..5, fn i ->
+        insert(:block, number: i)
+      end)
+
+      blocks = Repo.all(Block)
+
+      assert Enum.all?(blocks, &(&1.refetch_needed == false))
+      assert [] = Repo.all(InternalTransactionDeleteQueue)
+
+      Block.full_refetch("1..5")
+
+      assert Enum.all?(Repo.all(Block), &(&1.refetch_needed == true))
+
+      delete_queue_entries = Repo.all(InternalTransactionDeleteQueue)
+
+      assert Enum.count(delete_queue_entries) == 5
+      assert Enum.map(delete_queue_entries, & &1.block_number) -- Enum.to_list(1..5) == []
+    end
+
+    test "with single block number" do
+      insert(:block)
+
+      [block] = Repo.all(Block)
+      block_number = block.number
+
+      assert block.refetch_needed == false
+      assert [] = Repo.all(InternalTransactionDeleteQueue)
+
+      Block.full_refetch(block.number)
+
+      assert Repo.one(Block).refetch_needed == true
+
+      assert [%{block_number: ^block_number}] = Repo.all(InternalTransactionDeleteQueue)
     end
   end
 end

@@ -307,7 +307,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         transaction: transaction_1,
         from_address: address,
         block_number: transaction_1.block_number,
-        block_hash: transaction_1.block_hash,
         transaction_index: transaction_1.index
       )
 
@@ -316,17 +315,15 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         transaction: transaction_2,
         to_address: address,
         block_number: transaction_2.block_number,
-        block_hash: transaction_2.block_hash,
         transaction_index: transaction_2.index
       )
 
-      insert(:internal_transaction,
+      insert(:internal_transaction_create,
         index: 2,
         transaction: transaction_3,
         created_contract_address: address,
         to_address: nil,
         block_number: transaction_3.block_number,
-        block_hash: transaction_3.block_hash,
         transaction_index: transaction_3.index
       )
 

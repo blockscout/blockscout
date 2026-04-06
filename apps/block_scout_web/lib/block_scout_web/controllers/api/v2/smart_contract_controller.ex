@@ -271,15 +271,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   @spec contract_creation_transaction_associations() :: [keyword()]
   defp contract_creation_transaction_associations do
-    include_internal_tx =
-      !Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false)
-
     case chain_type() do
       :filecoin ->
-        Address.contract_creation_transaction_with_from_address_associations(include_internal_tx)
+        [Address.contract_creation_transaction_with_from_address_association()]
 
       _ ->
-        Address.contract_creation_transaction_associations(include_internal_tx)
+        [Address.contract_creation_transaction_association()]
     end
   end
 
@@ -289,7 +286,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       necessity_by_association: %{
         [smart_contract: :smart_contract_additional_sources] => :optional,
         contract_creation_transaction_associations() => :optional
-      }
+      },
+      preload_contract_creation_internal_transaction: true
     ]
     |> Keyword.merge(@api_true)
   end
@@ -300,7 +298,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       necessity_by_association: %{
         [:token, :names, :proxy_implementations] => :optional,
         contract_creation_transaction_associations() => :optional
-      }
+      },
+      preload_contract_creation_internal_transaction: true
     ]
     |> Keyword.merge(@api_true)
   end

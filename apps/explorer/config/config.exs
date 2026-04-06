@@ -79,10 +79,6 @@ config :explorer, Explorer.Chain.Cache.Counters.Blackfort.ValidatorsCount,
   enable_consolidation: true,
   update_interval_in_milliseconds: update_interval_in_milliseconds_default
 
-config :explorer, Explorer.Chain.Cache.TransactionActionTokensData, enabled: true
-
-config :explorer, Explorer.Chain.Cache.TransactionActionUniswapPools, enabled: true
-
 config :explorer, Explorer.Market.Fetcher.Token, enabled: true
 
 config :explorer, Explorer.Chain.Cache.Counters.TokenHoldersCount,
@@ -144,7 +140,8 @@ for migrator <- [
       Explorer.Migrator.UnescapeQuotesInTokens,
       Explorer.Migrator.UnescapeAmpersandsInTokens,
       Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources,
-      Explorer.Migrator.EmptyInternalTransactionsData
+      Explorer.Migrator.EmptyInternalTransactionsData,
+      Explorer.Migrator.FillInternalTransactionsAddressIds
     ] do
   config :explorer, migrator, enabled: true
 end
@@ -186,7 +183,12 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndexA,
       Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey,
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsBlockHashTransactionIndexIndexIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsCreatedContractAddressHashPartialIndex
+      Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsCreatedContractAddressHashPartialIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsFromAddressIdPartialIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsToAddressIdPartialIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdPartialIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError
     ] do
   config :explorer, index_operation, enabled: true
 end

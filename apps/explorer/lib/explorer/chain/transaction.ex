@@ -22,14 +22,12 @@ defmodule Explorer.Chain.Transaction.Schema do
     PendingTransactionOperation,
     SignedAuthorization,
     TokenTransfer,
-    TransactionAction,
     Wei
   }
 
   alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
   alias Explorer.Chain.Arbitrum.BatchTransaction, as: ArbitrumBatchTransaction
   alias Explorer.Chain.Arbitrum.Message, as: ArbitrumMessage
-  alias Explorer.Chain.PolygonZkevm.BatchTransaction, as: ZkevmBatchTransaction
   alias Explorer.Chain.Transaction.{Fork, Status}
   alias Explorer.Chain.ZkSync.BatchTransaction, as: ZkSyncBatchTransaction
 
@@ -97,29 +95,6 @@ defmodule Explorer.Chain.Transaction.Schema do
                                 foreign_key: :wrapped_to_address_hash,
                                 references: :hash,
                                 type: Hash.Address
-                              )
-                            end,
-                            2
-                          )
-
-                        :polygon_zkevm ->
-                          elem(
-                            quote do
-                              has_one(:zkevm_batch_transaction, ZkevmBatchTransaction,
-                                foreign_key: :hash,
-                                references: :hash
-                              )
-
-                              has_one(:zkevm_batch, through: [:zkevm_batch_transaction, :batch], references: :hash)
-
-                              has_one(:zkevm_sequence_transaction,
-                                through: [:zkevm_batch, :sequence_transaction],
-                                references: :hash
-                              )
-
-                              has_one(:zkevm_verify_transaction,
-                                through: [:zkevm_batch, :verify_transaction],
-                                references: :hash
                               )
                             end,
                             2
@@ -253,6 +228,7 @@ defmodule Explorer.Chain.Transaction.Schema do
         field(:has_error_in_internal_transactions, :boolean)
         field(:fhe_operations_count, :integer)
         field(:has_token_transfers, :boolean, virtual: true)
+        field(:internal_transactions, {:array, :map}, virtual: true)
 
         # stability virtual fields
         field(:transaction_fee_log, :any, virtual: true)
@@ -276,16 +252,9 @@ defmodule Explorer.Chain.Transaction.Schema do
           type: Hash.Address
         )
 
-        has_many(:internal_transactions, InternalTransaction, foreign_key: :transaction_hash, references: :hash)
         has_many(:logs, Log, foreign_key: :transaction_hash, references: :hash)
 
         has_many(:token_transfers, TokenTransfer, foreign_key: :transaction_hash, references: :hash)
-
-        has_many(:transaction_actions, TransactionAction,
-          foreign_key: :hash,
-          preload_order: [asc: :log_index],
-          references: :hash
-        )
 
         belongs_to(
           :to_address,
@@ -340,7 +309,7 @@ defmodule Explorer.Chain.Transaction do
   alias Ecto.Changeset
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
-  alias Explorer.{Chain, Helper, PagingOptions, Repo, SortingHelper}
+  alias Explorer.{Chain, Helper, PagingOptions, QueryHelper, Repo, SortingHelper}
 
   alias Explorer.Chain.{
     Address,
@@ -1452,6 +1421,17 @@ defmodule Explorer.Chain.Transaction do
     from(
       t in __MODULE__,
       where: t.hash in ^hashes
+    )
+  end
+
+  @doc """
+  Builds an `Ecto.Query` to fetch transaction by {block_number, index} pairs
+  """
+  @spec by_block_number_index_query([{non_neg_integer(), non_neg_integer()}]) :: Ecto.Query.t()
+  def by_block_number_index_query(block_number_index_pairs) do
+    from(
+      t in __MODULE__,
+      where: ^QueryHelper.tuple_in([:block_number, :index], block_number_index_pairs)
     )
   end
 
@@ -3002,6 +2982,72 @@ defmodule Explorer.Chain.Transaction do
     transaction_hashes
     |> by_hashes_query()
     |> Repo.all()
+  end
+
+  @doc """
+  Finds transactions by {block_number, index} pairs
+  """
+  @spec get_transactions_by_block_number_index([{non_neg_integer(), non_neg_integer()}]) :: [__MODULE__.t()]
+  def get_transactions_by_block_number_index(block_number_index_pairs) do
+    block_number_index_pairs
+    |> by_block_number_index_query()
+    |> Repo.all()
+  end
+
+  @doc """
+  Preloads internal transactions for parent transaction records.
+
+  When a list of transactions is provided, the function fetches all matching
+  internal transactions by `{block_number, transaction_index}`, applies the
+  requested `preloads`, and attaches the resulting list to the
+  `:internal_transactions` field of each parent transaction.
+
+  The loaded internal transactions are also passed through
+  `InternalTransaction.preload_transaction/3` so that each internal transaction
+  has its parent `:transaction` populated from the already available
+  transaction list.
+
+  ## Parameters
+  - `transactions`: A single transaction or a list of transactions
+  - `preloads`: Optional associations to preload for each internal transaction
+  - `repo`: The repo used to fetch and preload internal transactions
+
+  ## Returns
+  - A list of transactions with the `:internal_transactions` field populated
+  - A single transaction with the `:internal_transactions` field populated
+  """
+  @spec preload_internal_transactions(
+          __MODULE__.t() | [__MODULE__.t()],
+          list(),
+          module()
+        ) :: __MODULE__.t() | [__MODULE__.t()]
+  def preload_internal_transactions(transactions, address_preloads \\ [], repo \\ Repo)
+
+  def preload_internal_transactions(transactions, address_preloads, repo) when is_list(transactions) do
+    block_number_index_to_internal_transactions_map =
+      transactions
+      |> Enum.map(&{&1.block_number, &1.index})
+      |> Enum.uniq()
+      |> InternalTransaction.by_block_number_transaction_index_query()
+      |> repo.all()
+      |> InternalTransaction.preload_transaction(repo, transactions)
+      |> InternalTransaction.preload_addresses([address_preloads: address_preloads], repo)
+      |> Enum.group_by(&{&1.block_number, &1.transaction_index})
+
+    Enum.map(
+      transactions,
+      &Map.put(
+        &1,
+        :internal_transactions,
+        block_number_index_to_internal_transactions_map[{&1.block_number, &1.index}] || []
+      )
+    )
+  end
+
+  def preload_internal_transactions(transaction, address_preloads, repo) do
+    [transaction]
+    |> preload_internal_transactions(address_preloads, repo)
+    |> List.first()
   end
 
   @doc """

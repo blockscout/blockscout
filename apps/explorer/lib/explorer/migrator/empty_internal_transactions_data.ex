@@ -66,7 +66,7 @@ defmodule Explorer.Migrator.EmptyInternalTransactionsData do
                 (not is_nil(it.trace_address) or it.value == ^0 or
                    (is_nil(it.call_type_enum) and not is_nil(it.call_type)) or
                    not is_nil(it.error) or (not is_nil(it.created_contract_address_hash) and is_nil(it.to_address_hash))),
-            order_by: [asc: it.transaction_hash, asc: it.index],
+            order_by: [asc: it.block_number, asc: it.transaction_index, asc: it.index],
             lock: "FOR UPDATE"
           )
 
