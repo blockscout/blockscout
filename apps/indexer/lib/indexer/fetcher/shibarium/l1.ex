@@ -24,10 +24,10 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     only: [calc_operation_hash: 5, prepare_insert_items: 2, recalculate_cached_count: 0]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Explorer.Chain.Shibarium.Bridge
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
+  alias Indexer.RollupReorgMonitorQueue
   alias Indexer.Transform.Addresses
 
   @block_check_interval_range_size 100
@@ -281,7 +281,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
           )
         end
 
-        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           reorg_handle(reorg_block)

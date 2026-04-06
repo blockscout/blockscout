@@ -15,9 +15,9 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
 
   alias EthereumJSONRPC.Logs
   alias Explorer.Chain
-  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Indexer.Fetcher.Scroll.BridgeL1
   alias Indexer.Helper, as: IndexerHelper
+  alias Indexer.RollupReorgMonitorQueue
 
   # 32-byte signature of the event SentMessage(address indexed sender, address indexed target, uint256 value, uint256 messageNonce, uint256 gasLimit, bytes message)
   @sent_message_event "0x104371f3b442861a2a7b82a070afbbaab748bb13757bf47769e170e37809ec1e"
@@ -108,7 +108,7 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
           )
         end
 
-        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(module)
+        reorg_block = RollupReorgMonitorQueue.pop(module)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting

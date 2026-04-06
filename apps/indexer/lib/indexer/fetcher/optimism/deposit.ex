@@ -16,9 +16,9 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Optimism.Deposit
-  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
+  alias Indexer.RollupReorgMonitorQueue
 
   # 32-byte signature of the event TransactionDeposited(address indexed from, address indexed to, uint256 indexed version, bytes opaqueData)
   @transaction_deposited_event "0xb3813568d9991fc951961fcb4c784893574240a28925604d09fc577c55bb7c32"
@@ -115,7 +115,7 @@ defmodule Indexer.Fetcher.Optimism.Deposit do
           )
         end
 
-        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           {deleted_count, _} = Repo.delete_all(from(d in Deposit, where: d.l1_block_number >= ^reorg_block))
