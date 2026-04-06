@@ -596,7 +596,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
   defp run_internal_transactions(changes_list, multi \\ Multi.new()) when is_list(changes_list) do
     multi
-    |> InternalTransactions.run(changes_list, %{
+    |> InternalTransactions.run(InternalTransactions.prepare_data(changes_list), %{
       timeout: :infinity,
       timestamps: %{inserted_at: DateTime.utc_now(), updated_at: DateTime.utc_now()}
     })

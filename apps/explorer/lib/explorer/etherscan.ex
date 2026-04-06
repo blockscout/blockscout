@@ -92,7 +92,6 @@ defmodule Explorer.Etherscan do
     call_type_enum
     gas
     gas_used
-    error
     error_id
   )a
 

@@ -44,16 +44,14 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
         transaction: transaction,
         index: 0,
         block_number: transaction.block_number,
-        transaction_index: transaction.index,
-        block_hash: transaction.block_hash
+        transaction_index: transaction.index
       )
 
       insert(:internal_transaction,
         transaction: transaction,
         index: 1,
         transaction_index: transaction.index,
-        block_number: transaction.block_number,
-        block_hash: transaction.block_hash
+        block_number: transaction.block_number
       )
 
       path = transaction_internal_transaction_path(BlockScoutWeb.Endpoint, :index, transaction.hash)
@@ -95,8 +93,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           created_contract_code: contract_address.contract_code,
-          created_contract_address: contract_address,
-          block_hash: transaction.block_hash
+          created_contract_address: contract_address
         )
 
       conn =
@@ -123,8 +120,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
           transaction: transaction,
           index: 0,
           block_number: transaction.block_number,
-          transaction_index: transaction.index,
-          block_hash: transaction.block_hash
+          transaction_index: transaction.index
         )
 
       second_page_indexes =
@@ -134,8 +130,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
             transaction: transaction,
             index: index,
             block_number: transaction.block_number,
-            transaction_index: transaction.index,
-            block_hash: transaction.block_hash
+            transaction_index: transaction.index
           )
         end)
         |> Enum.map(& &1.index)
@@ -168,8 +163,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
           transaction: transaction,
           index: index,
           block_number: transaction.block_number,
-          transaction_index: transaction.index,
-          block_hash: transaction.block_hash
+          transaction_index: transaction.index
         )
       end)
 
@@ -198,8 +192,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionControllerTest do
           transaction: transaction,
           index: index,
           block_number: transaction.block_number,
-          transaction_index: transaction.index,
-          block_hash: transaction.block_hash
+          transaction_index: transaction.index
         )
       end)
 

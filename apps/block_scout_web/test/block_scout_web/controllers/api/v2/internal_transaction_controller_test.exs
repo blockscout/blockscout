@@ -31,7 +31,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
         transaction: tx,
         transaction_index: 0,
         block_number: tx.block_number,
-        block_hash: tx.block_hash,
         index: 1
       )
 
@@ -50,7 +49,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
           transaction: transaction,
           transaction_index: 0,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
           index: 1
         )
 
@@ -62,7 +60,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
             transaction: transaction_2,
             transaction_index: 0,
             block_number: transaction_2.block_number,
-            block_hash: transaction_2.block_hash,
             index: i
           )
         end
@@ -89,7 +86,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
         transaction: tx,
         transaction_index: 0,
         block_number: tx.block_number,
-        block_hash: tx.block_hash,
         index: 0,
         type: :call
       )
@@ -100,7 +96,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
           transaction: tx,
           transaction_index: 0,
           block_number: tx.block_number,
-          block_hash: tx.block_hash,
           index: 1,
           type: :call
         )
@@ -111,7 +106,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
           transaction: tx,
           transaction_index: 0,
           block_number: tx.block_number,
-          block_hash: tx.block_hash,
           index: 2,
           type: :call
         )
@@ -140,7 +134,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
         transaction: tx,
         transaction_index: 0,
         block_number: tx.block_number,
-        block_hash: tx.block_hash,
         index: 0,
         type: :call
       )
@@ -151,7 +144,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
           transaction: tx,
           transaction_index: 0,
           block_number: tx.block_number,
-          block_hash: tx.block_hash,
           index: i,
           type: :call
         )

@@ -67,7 +67,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
   test "fetch_by_block/2" do
     block = build(:block)
     block_quantity = EthereumJSONRPC.integer_to_quantity(block.number)
-    block_hash = block.hash
+    block_number = block.number
 
     expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, params: [^block_quantity, _]}], _ ->
       {:ok,
@@ -111,14 +111,14 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
       block_traceable?: true
     )
 
-    assert [%InternalTransaction{block_hash: ^block_hash, index: 1}] =
+    assert [%InternalTransaction{block_number: ^block_number, index: 1}] =
              InternalTransactionOnDemand.fetch_by_block(block, [])
   end
 
   test "fetch_by_block/2 (block_traceable?: false)" do
     transaction = :transaction |> insert() |> with_block()
     transaction_hash_str = to_string(transaction.hash)
-    block_hash = transaction.block_hash
+    block_number = transaction.block_number
 
     expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, params: [^transaction_hash_str, _]}], _ ->
       {:ok,
@@ -157,7 +157,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
       block_traceable?: false
     )
 
-    assert [%InternalTransaction{block_hash: ^block_hash, index: 1}] =
+    assert [%InternalTransaction{block_number: ^block_number, index: 1}] =
              InternalTransactionOnDemand.fetch_by_block(transaction.block, [])
   end
 

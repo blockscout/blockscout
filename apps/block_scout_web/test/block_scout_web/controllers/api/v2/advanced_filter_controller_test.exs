@@ -105,7 +105,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       for i <- 1..3 do
         insert(:internal_transaction,
           transaction: first_transaction,
-          block_hash: first_transaction.block_hash,
           block_number: first_transaction.block_number,
           transaction_index: first_transaction.index,
           index: i
@@ -129,7 +128,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       for i <- 1..3 do
         insert(:internal_transaction,
           transaction: first_transaction,
-          block_hash: first_transaction.block_hash,
           block_number: first_transaction.block_number,
           transaction_index: first_transaction.index,
           index: i
@@ -154,7 +152,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       for i <- 1..3 do
         insert(:internal_transaction,
           transaction: first_transaction,
-          block_hash: first_transaction.block_hash,
           block_number: first_transaction.block_number,
           transaction_index: first_transaction.index,
           index: i
@@ -186,7 +183,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       for i <- 1..3 do
         insert(:internal_transaction,
           transaction: first_transaction,
-          block_hash: first_transaction.block_hash,
           block_number: first_transaction.block_number,
           transaction_index: first_transaction.index,
           index: i
@@ -198,7 +194,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       for i <- 1..50 do
         insert(:internal_transaction,
           transaction: second_transaction,
-          block_hash: second_transaction.block_hash,
           block_number: second_transaction.block_number,
           transaction_index: second_transaction.index,
           index: i
@@ -235,7 +230,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       for i <- 1..30 do
         insert(:internal_transaction,
           transaction: transaction,
-          block_hash: transaction.block_hash,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           index: i
@@ -281,7 +275,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         insert(:internal_transaction,
           transaction: transaction,
           value: value,
-          block_hash: transaction.block_hash,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           index: i
@@ -327,7 +320,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
           insert(:internal_transaction,
             transaction: transaction,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i
@@ -340,7 +332,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
             transaction: transaction,
             to_address_hash: contract_address.hash,
             to_address: contract_address,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i
@@ -386,7 +377,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
           insert(:internal_transaction_create,
             transaction: transaction,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             created_contract_address: address,
@@ -406,7 +396,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
           insert(:internal_transaction,
             transaction: transaction,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i
@@ -492,7 +481,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
           transaction: transaction,
           to_address_hash: contract_address.hash,
           to_address: contract_address,
-          block_hash: transaction.block_hash,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           index: i,
@@ -505,7 +493,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
           transaction: transaction,
           to_address_hash: contract_address.hash,
           to_address: contract_address,
-          block_hash: transaction.block_hash,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           index: i,
@@ -563,7 +550,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
             transaction: tx,
             transaction_index: tx.index,
             index: i + 1,
-            block_hash: tx.block_hash,
             block_number: tx.block_number,
             block: tx.block
           )
@@ -603,7 +589,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
             transaction: transaction,
             from_address_hash: address.hash,
             from_address: address,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i + 1
@@ -619,7 +604,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         else
           insert(:internal_transaction,
             transaction: transaction,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i + 1
@@ -649,7 +633,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
             transaction: transaction,
             from_address_hash: address.hash,
             from_address: address,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i + 1
@@ -665,7 +648,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         else
           insert(:internal_transaction,
             transaction: transaction,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i + 1
@@ -701,7 +683,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
             transaction: transaction,
             from_address_hash: address_to_include.hash,
             from_address: address_to_include,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i + 1
@@ -717,7 +698,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         else
           insert(:internal_transaction,
             transaction: transaction,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i + 1
@@ -751,7 +731,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
             transaction: transaction,
             to_address_hash: address.hash,
             to_address: address,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i + 1
@@ -767,7 +746,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         else
           insert(:internal_transaction,
             transaction: transaction,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i + 1
@@ -797,7 +775,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
             transaction: transaction,
             to_address_hash: address.hash,
             to_address: address,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i + 1
@@ -813,7 +790,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         else
           insert(:internal_transaction,
             transaction: transaction,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i + 1
@@ -849,7 +825,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
             transaction: transaction,
             to_address_hash: address_to_include.hash,
             to_address: address_to_include,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i + 1
@@ -865,7 +840,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         else
           insert(:internal_transaction,
             transaction: transaction,
-            block_hash: transaction.block_hash,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
             index: i + 1
@@ -901,7 +875,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
               transaction: transaction,
               from_address_hash: from_address.hash,
               from_address: from_address,
-              block_hash: transaction.block_hash,
               block_number: transaction.block_number,
               transaction_index: transaction.index,
               index: i + 1
@@ -922,7 +895,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
               transaction: transaction,
               to_address_hash: to_address.hash,
               to_address: to_address,
-              block_hash: transaction.block_hash,
               block_number: transaction.block_number,
               transaction_index: transaction.index,
               index: i + 1
@@ -952,7 +924,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
               to_address: to_address,
               from_address_hash: from_address.hash,
               from_address: from_address,
-              block_hash: transaction.block_hash,
               block_number: transaction.block_number,
               transaction_index: transaction.index,
               index: i + 1
@@ -971,7 +942,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
           true ->
             insert(:internal_transaction,
               transaction: transaction,
-              block_hash: transaction.block_hash,
               block_number: transaction.block_number,
               transaction_index: transaction.index,
               index: i + 1
@@ -1009,7 +979,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       insert(:internal_transaction,
         transaction: transaction,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number,
         transaction_index: transaction.index,
         index: 51,
@@ -1035,7 +1004,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
         insert(:internal_transaction,
           transaction: transaction,
-          block_hash: transaction.block_hash,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           index: i + 1,
@@ -1055,7 +1023,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
         insert(:internal_transaction,
           transaction: transaction,
-          block_hash: transaction.block_hash,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           index: i + 1,
@@ -1099,7 +1066,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
               transaction: transaction,
               from_address_hash: from_address.hash,
               from_address: from_address,
-              block_hash: transaction.block_hash,
               block_number: transaction.block_number,
               transaction_index: transaction.index,
               index: i + 1
@@ -1120,7 +1086,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
               transaction: transaction,
               to_address_hash: to_address.hash,
               to_address: to_address,
-              block_hash: transaction.block_hash,
               block_number: transaction.block_number,
               transaction_index: transaction.index,
               index: i + 1
@@ -1150,7 +1115,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
               to_address: to_address,
               from_address_hash: from_address.hash,
               from_address: from_address,
-              block_hash: transaction.block_hash,
               block_number: transaction.block_number,
               transaction_index: transaction.index,
               index: i + 1
@@ -1169,7 +1133,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
           true ->
             insert(:internal_transaction,
               transaction: transaction,
-              block_hash: transaction.block_hash,
               block_number: transaction.block_number,
               transaction_index: transaction.index,
               index: i + 1
@@ -1196,7 +1159,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
         insert(:internal_transaction,
           transaction: transaction,
-          block_hash: transaction.block_hash,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
           index: 1,

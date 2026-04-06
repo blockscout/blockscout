@@ -26,7 +26,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
-  alias Explorer.Utility.{AddressIdToAddressHash, InternalTransactionHelper, MissingBlockRange}
+  alias Explorer.Utility.{AddressIdToAddressHash, MissingBlockRange}
 
   import Ecto.Query
 
@@ -101,19 +101,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         :invalid_block_numbers
       )
     end)
-    |> Multi.run(:adjust_insert_params, fn _, _ ->
-      Instrumenter.block_import_stage_runner(
-        fn -> adjust_insert_params(internal_transactions_params) end,
-        :block_pending,
-        :internal_transactions,
-        :adjust_insert_params
-      )
-    end)
     |> Multi.run(:valid_internal_transactions, fn _,
                                                   %{
                                                     acquire_transactions: transactions,
-                                                    invalid_block_numbers: invalid_block_numbers,
-                                                    adjust_insert_params: internal_transactions_params
+                                                    invalid_block_numbers: invalid_block_numbers
                                                   } ->
       Instrumenter.block_import_stage_runner(
         fn ->
@@ -156,27 +147,14 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         :maybe_shrink_internal_transactions_params
       )
     end)
-    |> Multi.run(:maybe_reject_zero_value, fn _,
-                                              %{
-                                                maybe_shrink_internal_transactions_params:
-                                                  maybe_shrink_internal_transactions_params
-                                              } ->
-      Instrumenter.block_import_stage_runner(
-        fn ->
-          maybe_reject_zero_value(maybe_shrink_internal_transactions_params)
-        end,
-        :block_pending,
-        :internal_transactions,
-        :maybe_reject_zero_value
-      )
-    end)
     |> Multi.run(:internal_transactions, fn repo,
                                             %{
-                                              maybe_reject_zero_value: internal_transactions_params
+                                              maybe_shrink_internal_transactions_params:
+                                                maybe_shrink_internal_transactions_params
                                             } ->
       Instrumenter.block_import_stage_runner(
         fn ->
-          insert(repo, internal_transactions_params, insert_options)
+          insert(repo, maybe_shrink_internal_transactions_params, insert_options)
         end,
         :block_pending,
         :internal_transactions,
@@ -228,6 +206,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end)
   end
 
+  @impl Runner
+  def prepare_data(changes_list) do
+    changes_list
+    |> maybe_reject_zero_value()
+    |> adjust_insert_params()
+  end
+
   def run_insert_only(changes_list, %{timestamps: timestamps} = options) when is_map(options) do
     insert_options =
       options
@@ -242,14 +227,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     with {:ok, data} <-
            Multi.new()
-           |> Multi.run(:maybe_reject_zero_value, fn _, _ ->
-             maybe_reject_zero_value(internal_transactions_params)
+           |> Multi.run(:prepare_data, fn _, _ ->
+             {:ok, prepare_data(internal_transactions_params)}
            end)
-           |> Multi.run(:adjust_insert_params, fn _, %{maybe_reject_zero_value: maybe_reject_zero_value} ->
-             adjust_insert_params(maybe_reject_zero_value)
-           end)
-           |> Multi.run(:internal_transactions, fn repo, %{adjust_insert_params: adjusted_insert_params} ->
-             insert(repo, adjusted_insert_params, insert_options)
+           |> Multi.run(:internal_transactions, fn repo, %{prepare_data: prepared_data} ->
+             insert(repo, prepared_data, insert_options)
            end)
            |> ExplorerRepo.transaction() do
       Publisher.broadcast(data, :on_demand)
@@ -277,18 +259,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       end)
       |> Enum.sort_by(&{&1.transaction_index, &1.index})
 
-    conflict_target =
-      if InternalTransactionHelper.primary_key_updated?() do
-        [:block_number, :transaction_index, :index]
-      else
-        [:block_hash, :block_index]
-      end
-
     {:ok, internal_transactions} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        conflict_target: conflict_target,
+        conflict_target: [:block_number, :transaction_index, :index],
         for: InternalTransaction,
         on_conflict: on_conflict,
         returning: true,
@@ -300,103 +275,51 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp default_on_conflict do
-    if InternalTransactionHelper.primary_key_updated?() do
-      from(
-        internal_transaction in InternalTransaction,
-        update: [
-          set: [
-            call_type: fragment("EXCLUDED.call_type"),
-            call_type_enum: fragment("EXCLUDED.call_type_enum"),
-            created_contract_address_id: fragment("EXCLUDED.created_contract_address_id"),
-            created_contract_code: fragment("EXCLUDED.created_contract_code"),
-            error_id: fragment("EXCLUDED.error_id"),
-            from_address_id: fragment("EXCLUDED.from_address_id"),
-            gas: fragment("EXCLUDED.gas"),
-            gas_used: fragment("EXCLUDED.gas_used"),
-            init: fragment("EXCLUDED.init"),
-            input: fragment("EXCLUDED.input"),
-            output: fragment("EXCLUDED.output"),
-            to_address_id: fragment("EXCLUDED.to_address_id"),
-            type: fragment("EXCLUDED.type"),
-            value: fragment("EXCLUDED.value"),
-            inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", internal_transaction.inserted_at),
-            updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", internal_transaction.updated_at)
-            # Don't update `block_number` as it is used for the conflict target
-            # Don't update `transaction_index` as it is used for the conflict target
-            # Don't update `index` as it is used for the conflict target
-          ]
-        ],
-        # `IS DISTINCT FROM` is used because it allows `NULL` to be equal to itself
-        where:
-          fragment(
-            "(EXCLUDED.call_type, EXCLUDED.call_type_enum, EXCLUDED.created_contract_address_id, EXCLUDED.created_contract_code, EXCLUDED.error_id, EXCLUDED.from_address_id, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_id, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            internal_transaction.call_type,
-            internal_transaction.call_type_enum,
-            internal_transaction.created_contract_address_id,
-            internal_transaction.created_contract_code,
-            internal_transaction.error_id,
-            internal_transaction.from_address_id,
-            internal_transaction.gas,
-            internal_transaction.gas_used,
-            internal_transaction.init,
-            internal_transaction.input,
-            internal_transaction.output,
-            internal_transaction.to_address_id,
-            internal_transaction.type,
-            internal_transaction.value
-          )
-      )
-    else
-      from(
-        internal_transaction in InternalTransaction,
-        update: [
-          set: [
-            block_number: fragment("EXCLUDED.block_number"),
-            call_type: fragment("EXCLUDED.call_type"),
-            call_type_enum: fragment("EXCLUDED.call_type_enum"),
-            created_contract_address_id: fragment("EXCLUDED.created_contract_address_id"),
-            created_contract_code: fragment("EXCLUDED.created_contract_code"),
-            error_id: fragment("EXCLUDED.error_id"),
-            from_address_id: fragment("EXCLUDED.from_address_id"),
-            gas: fragment("EXCLUDED.gas"),
-            gas_used: fragment("EXCLUDED.gas_used"),
-            index: fragment("EXCLUDED.index"),
-            init: fragment("EXCLUDED.init"),
-            input: fragment("EXCLUDED.input"),
-            output: fragment("EXCLUDED.output"),
-            to_address_id: fragment("EXCLUDED.to_address_id"),
-            transaction_index: fragment("EXCLUDED.transaction_index"),
-            type: fragment("EXCLUDED.type"),
-            value: fragment("EXCLUDED.value"),
-            inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", internal_transaction.inserted_at),
-            updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", internal_transaction.updated_at)
-            # Don't update `block_hash` as it is used for the conflict target
-            # Don't update `block_index` as it is used for the conflict target
-          ]
-        ],
-        # `IS DISTINCT FROM` is used because it allows `NULL` to be equal to itself
-        where:
-          fragment(
-            "(EXCLUDED.index, EXCLUDED.call_type, EXCLUDED.call_type_enum, EXCLUDED.created_contract_address_id, EXCLUDED.created_contract_code, EXCLUDED.error_id, EXCLUDED.from_address_id, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_id, EXCLUDED.transaction_index, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            internal_transaction.index,
-            internal_transaction.call_type,
-            internal_transaction.call_type_enum,
-            internal_transaction.created_contract_address_id,
-            internal_transaction.created_contract_code,
-            internal_transaction.error_id,
-            internal_transaction.from_address_id,
-            internal_transaction.gas,
-            internal_transaction.gas_used,
-            internal_transaction.init,
-            internal_transaction.input,
-            internal_transaction.output,
-            internal_transaction.to_address_id,
-            internal_transaction.transaction_index,
-            internal_transaction.type,
-            internal_transaction.value
-          )
-      )
-    end
+    from(
+      internal_transaction in InternalTransaction,
+      update: [
+        set: [
+          call_type: fragment("EXCLUDED.call_type"),
+          call_type_enum: fragment("EXCLUDED.call_type_enum"),
+          created_contract_address_id: fragment("EXCLUDED.created_contract_address_id"),
+          created_contract_code: fragment("EXCLUDED.created_contract_code"),
+          error_id: fragment("EXCLUDED.error_id"),
+          from_address_id: fragment("EXCLUDED.from_address_id"),
+          gas: fragment("EXCLUDED.gas"),
+          gas_used: fragment("EXCLUDED.gas_used"),
+          init: fragment("EXCLUDED.init"),
+          input: fragment("EXCLUDED.input"),
+          output: fragment("EXCLUDED.output"),
+          to_address_id: fragment("EXCLUDED.to_address_id"),
+          type: fragment("EXCLUDED.type"),
+          value: fragment("EXCLUDED.value"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", internal_transaction.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", internal_transaction.updated_at)
+          # Don't update `block_number` as it is used for the conflict target
+          # Don't update `transaction_index` as it is used for the conflict target
+          # Don't update `index` as it is used for the conflict target
+        ]
+      ],
+      # `IS DISTINCT FROM` is used because it allows `NULL` to be equal to itself
+      where:
+        fragment(
+          "(EXCLUDED.call_type, EXCLUDED.call_type_enum, EXCLUDED.created_contract_address_id, EXCLUDED.created_contract_code, EXCLUDED.error_id, EXCLUDED.from_address_id, EXCLUDED.gas, EXCLUDED.gas_used, EXCLUDED.init, EXCLUDED.input, EXCLUDED.output, EXCLUDED.to_address_id, EXCLUDED.type, EXCLUDED.value) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          internal_transaction.call_type,
+          internal_transaction.call_type_enum,
+          internal_transaction.created_contract_address_id,
+          internal_transaction.created_contract_code,
+          internal_transaction.error_id,
+          internal_transaction.from_address_id,
+          internal_transaction.gas,
+          internal_transaction.gas_used,
+          internal_transaction.init,
+          internal_transaction.input,
+          internal_transaction.output,
+          internal_transaction.to_address_id,
+          internal_transaction.type,
+          internal_transaction.value
+        )
+    )
   end
 
   defp acquire_blocks(repo, changes_list) do
@@ -545,21 +468,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   defp compose_entry(entries, block_number, blocks_map) do
     if Map.has_key?(blocks_map, block_number) do
-      if InternalTransactionHelper.primary_key_updated?() do
-        entries
-      else
-        block_hash = Map.fetch!(blocks_map, block_number)
-
-        entries
-        |> Enum.sort_by(&{&1.transaction_index, &1.index})
-        |> Enum.with_index()
-        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-        |> Enum.map(fn {entry, index} ->
-          entry
-          |> Map.put(:block_hash, block_hash)
-          |> Map.put(:block_index, index)
-        end)
-      end
+      entries
     else
       []
     end
@@ -585,29 +494,29 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       |> Enum.uniq()
       |> AddressIdToAddressHash.find_or_create_multiple()
 
-    adjusted_params =
-      Enum.map(internal_transactions_params, fn params ->
-        params
-        |> sanitize_error()
-        |> put_error_id(error_to_error_id_map)
-        |> put_address_ids(address_hash_to_address_id_map)
-        |> shift_created_contract_address_id()
-      end)
-
-    {:ok, adjusted_params}
+    Enum.map(internal_transactions_params, fn params ->
+      params
+      |> sanitize_error()
+      |> put_error_id(error_to_error_id_map)
+      |> put_address_ids(address_hash_to_address_id_map)
+      |> shift_created_contract_address_id()
+    end)
   end
 
   defp put_error_id(entry, error_to_error_id_map) do
-    Map.put(entry, :error_id, Map.get(entry, :error_id) || error_to_error_id_map[Map.get(entry, :error)])
+    entry
+    |> Map.delete(:error)
+    |> Map.put(:error_id, Map.get(entry, :error_id) || error_to_error_id_map[Map.get(entry, :error)])
   end
 
   defp put_address_ids(entry, address_hash_to_address_id_map) do
     entry
     |> Map.drop([:from_address_hash, :to_address_hash, :created_contract_address_hash])
     |> Map.merge(%{
-      from_address_id: address_hash_to_address_id_map[entry[:from_address_hash]],
-      to_address_id: address_hash_to_address_id_map[entry[:to_address_hash]],
-      created_contract_address_id: address_hash_to_address_id_map[entry[:created_contract_address_hash]]
+      from_address_id: address_hash_to_address_id_map[String.downcase(to_string(entry[:from_address_hash]))],
+      to_address_id: address_hash_to_address_id_map[String.downcase(to_string(entry[:to_address_hash]))],
+      created_contract_address_id:
+        address_hash_to_address_id_map[String.downcase(to_string(entry[:created_contract_address_hash]))]
     })
   end
 
@@ -647,14 +556,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   defp maybe_reject_zero_value(internal_transactions) do
     with true <- Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled],
          border_number when is_integer(border_number) <- DeleteZeroValueInternalTransactions.border_number() do
-      {:ok,
-       Enum.reject(
-         internal_transactions,
-         &(&1.block_number <= border_number and &1.type == :call and
-             (is_nil(Map.get(&1, :value)) || Decimal.eq?(&1.value.value, 0)))
-       )}
+      Enum.reject(
+        internal_transactions,
+        &(&1.block_number <= border_number and &1.type == :call and
+            (is_nil(Map.get(&1, :value)) || Decimal.eq?(&1.value.value, 0)))
+      )
     else
-      _ -> {:ok, internal_transactions}
+      _ -> internal_transactions
     end
   end
 
@@ -719,8 +627,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
               Map.fetch!(block_number_index_to_hash_map, {trace[:block_number], trace[:transaction_index]}),
             created_contract_address_hash:
               AddressIdToAddressHash.id_to_hash(Map.get(trace, :created_contract_address_id)),
-            error: Map.get(trace, :error),
-            status: if(is_nil(Map.get(trace, :error)), do: :ok, else: :error)
+            error: TransactionError.id_to_error(Map.get(trace, :error_id)),
+            status: if(is_nil(Map.get(trace, :error_id)), do: :ok, else: :error)
           }
         end)
 
@@ -837,7 +745,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   defp get_trivial_transaction_hashes_with_error_in_internal_transaction(internal_transactions) do
     internal_transactions
     |> Enum.filter(fn internal_transaction ->
-      internal_transaction[:index] != 0 && !is_nil(internal_transaction[:error])
+      internal_transaction[:index] != 0 && !is_nil(internal_transaction[:error_id])
     end)
     |> Enum.map(fn internal_transaction -> internal_transaction[:transaction_hash] end)
     |> MapSet.new()
