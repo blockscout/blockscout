@@ -50,7 +50,6 @@
 
 - Remove join to "blocks" in api/v2/blocks/:block_number/transactions API endpoint ([#14162](https://github.com/blockscout/blockscout/issues/14162))
 - Improve performance of /api/v2/tokens API endpoint ([#14158](https://github.com/blockscout/blockscout/issues/14158))
-- Use tuple-based comparison to utlize index ([#14178](https://github.com/blockscout/blockscout/issues/14178))
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -130,7 +129,7 @@
 
 ### ⚡ Performance
 
-- Use tuple-based comparison to utlize index ([#14178](https://github.com/blockscout/blockscout/pull/14178))
+- Use tuple-based comparison to utilize index ([#14178](https://github.com/blockscout/blockscout/pull/14178))
 
 ### 🐛 Bug Fixes
 
