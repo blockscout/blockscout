@@ -650,17 +650,29 @@ defmodule Explorer.Etherscan do
   end
 
   defp list_erc1155_token_transfers(address_hash, contract_address_hash, options) do
-    "ERC-1155"
-    |> base_token_transfers_query(address_hash, contract_address_hash, options)
+    base_query =
+      TokenTransfer.only_consensus_transfers_query()
+      |> TokenTransfer.maybe_filter_by_token_type("ERC-1155")
+      |> where_contract_address_match(contract_address_hash)
+      |> where_address_match_token_transfer(address_hash)
+      |> where_start_block_match_tt(options)
+      |> where_end_block_match_tt(options)
+      |> order_by([tt], [
+        {^options.order_by_direction, tt.block_number},
+        {^options.order_by_direction, tt.log_index}
+      ])
+
+    from(tt in {"base", TokenTransfer})
+    |> with_cte("base", as: ^base_query, materialized: true)
     |> join(
       :inner,
-      [token_transfer],
+      [tt],
       unnest in fragment(
-        "LATERAL (SELECT unnest(?) AS token_id, unnest(COALESCE(?, ARRAY[?])) AS amount, GENERATE_SERIES(0, COALESCE(ARRAY_LENGTH(?, 1), 0) - 1) as index_in_batch)",
-        token_transfer.token_ids,
-        token_transfer.amounts,
-        token_transfer.amount,
-        token_transfer.amounts
+        "LATERAL (SELECT unnest(?) AS token_id, unnest(COALESCE(?, ARRAY[?])) AS amount, GENERATE_SERIES(0, COALESCE(ARRAY_LENGTH(?, 1), 0) - 1) AS index_in_batch)",
+        tt.token_ids,
+        tt.amounts,
+        tt.amount,
+        tt.amounts
       ),
       as: :unnest,
       on: true
@@ -670,10 +682,14 @@ defmodule Explorer.Etherscan do
       amount: fragment("?::numeric", unnest.amount),
       index_in_batch: fragment("?::integer", unnest.index_in_batch)
     })
-    |> order_by(
-      [unnest: unnest],
+    |> order_by([tt, unnest: unnest], [
+      {^options.order_by_direction, tt.block_number},
+      {^options.order_by_direction, tt.log_index},
       {^options.order_by_direction, unnest.index_in_batch}
-    )
+    ])
+    |> limit(^options.page_size)
+    |> offset(^options_to_offset(options))
+    |> maybe_preload_entities()
     |> Repo.replica().all()
   end
 
