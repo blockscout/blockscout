@@ -245,7 +245,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
     assert :ok =
              ContractCreatorOnDemand.trigger_fetch(
                contract_address
-               |> Repo.preload([:contract_creation_transaction, :contract_creation_internal_transaction])
+               |> Repo.preload([:contract_creation_transaction])
+               |> Address.preload_contract_creation_internal_transaction()
              )
 
     :timer.sleep(1200)
@@ -276,7 +277,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
     assert :ok =
              ContractCreatorOnDemand.trigger_fetch(
                contract_address
-               |> Repo.preload([:contract_creation_transaction, :contract_creation_internal_transaction])
+               |> Repo.preload([:contract_creation_transaction])
+               |> Address.preload_contract_creation_internal_transaction()
              )
 
     :timer.sleep(5400)
@@ -311,7 +313,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
     assert :ok =
              ContractCreatorOnDemand.trigger_fetch(
                contract_address
-               |> Repo.preload([:contract_creation_transaction, :contract_creation_internal_transaction])
+               |> Repo.preload([:contract_creation_transaction])
+               |> Address.preload_contract_creation_internal_transaction()
              )
 
     :timer.sleep(300)
@@ -355,7 +358,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
     assert :ok =
              ContractCreatorOnDemand.trigger_fetch(
                contract_address
-               |> Repo.preload([:contract_creation_transaction, :contract_creation_internal_transaction])
+               |> Repo.preload([:contract_creation_transaction])
+               |> Address.preload_contract_creation_internal_transaction()
              )
 
     :timer.sleep(300)
