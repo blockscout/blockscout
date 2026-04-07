@@ -340,9 +340,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   end
 
   @doc """
-  Checks if this address hash string is valid, and this address is not prohibited.
-  Returns the `{:ok, address_hash}` if address hash passed all the checks.
-  Returns {:ok, _} response even if the address is not present in the database.
+  Preloads ENS data to the list of transactions unless disabled via DISABLE_TRANSACTIONS_BENS_PRELOAD
   """
   @spec maybe_preload_ens_for_transactions(MetadataPreloader.supported_input()) ::
           MetadataPreloader.supported_input()

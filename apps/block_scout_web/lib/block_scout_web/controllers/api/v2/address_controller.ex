@@ -1548,6 +1548,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  # Checks if this address hash string is valid, and this address is not prohibited.
+  # Returns the `{:ok, address_hash}` if address hash passed all the checks.
+  # Returns {:ok, _} response even if the address is not present in the database.
   @spec validate_address_hash(String.t(), any()) ::
           {:format, :error}
           | {:restricted_access, true}
