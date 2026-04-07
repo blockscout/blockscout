@@ -27,7 +27,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   import Explorer.Helper, only: [safe_parse_non_negative_integer: 1]
 
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_to_address: 1]
+  import Explorer.MicroserviceInterfaces.BENS,
+    only: [
+      maybe_preload_ens: 1,
+      maybe_preload_ens_for_token_transfers: 1,
+      maybe_preload_ens_for_transactions: 1,
+      maybe_preload_ens_to_address: 1
+    ]
+
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
@@ -441,7 +448,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:transactions, %{
-            transactions: transactions |> maybe_preload_ens_for_address_transactions() |> maybe_preload_metadata(),
+            transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
             next_page_params: next_page_params
           })
 
@@ -543,7 +550,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             token_transfers:
               token_transfers
               |> Instance.preload_nft(@api_true)
-              |> maybe_preload_ens_for_address_token_transfers()
+              |> maybe_preload_ens_for_token_transfers()
               |> maybe_preload_metadata(),
             next_page_params: next_page_params
           })
@@ -1538,25 +1545,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         deposits: deposits |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
-    end
-  end
-
-  # Checks if this address hash string is valid, and this address is not prohibited.
-  # Returns the `{:ok, address_hash}` if address hash passed all the checks.
-  # Returns {:ok, _} response even if the address is not present in the database.
-  defp maybe_preload_ens_for_address_transactions(transactions) do
-    if Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS, [])[:disable_transactions_bens_preload] do
-      transactions
-    else
-      maybe_preload_ens(transactions)
-    end
-  end
-
-  defp maybe_preload_ens_for_address_token_transfers(token_transfers) do
-    if Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS, [])[:disable_token_transfers_bens_preload] do
-      token_transfers
-    else
-      maybe_preload_ens(token_transfers)
     end
   end
 

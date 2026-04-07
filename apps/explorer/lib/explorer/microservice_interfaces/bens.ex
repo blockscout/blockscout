@@ -338,4 +338,19 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
       maybe_preload_ens(token_transfers)
     end
   end
+
+  @doc """
+  Checks if this address hash string is valid, and this address is not prohibited.
+  Returns the `{:ok, address_hash}` if address hash passed all the checks.
+  Returns {:ok, _} response even if the address is not present in the database.
+  """
+  @spec maybe_preload_ens_for_transactions(MetadataPreloader.supported_input()) ::
+          MetadataPreloader.supported_input()
+  def maybe_preload_ens_for_transactions(transactions) do
+    if Application.get_env(:explorer, __MODULE__, [])[:disable_transactions_bens_preload] do
+      transactions
+    else
+      maybe_preload_ens(transactions)
+    end
+  end
 end

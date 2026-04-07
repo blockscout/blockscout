@@ -31,7 +31,12 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     ]
 
   import Explorer.MicroserviceInterfaces.BENS,
-    only: [maybe_preload_ens: 1, maybe_preload_ens_for_token_transfers: 1, maybe_preload_ens_to_transaction: 1]
+    only: [
+      maybe_preload_ens: 1,
+      maybe_preload_ens_for_token_transfers: 1,
+      maybe_preload_ens_for_transactions: 1,
+      maybe_preload_ens_to_transaction: 1
+    ]
 
   import Explorer.MicroserviceInterfaces.Metadata,
     only: [maybe_preload_metadata: 1, maybe_preload_metadata_to_transaction: 1]
@@ -257,14 +262,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
       next_page_params: next_page_params
     })
-  end
-
-  defp maybe_preload_ens_for_transactions(transactions) do
-    if Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS, [])[:disable_transactions_bens_preload] do
-      transactions
-    else
-      maybe_preload_ens(transactions)
-    end
   end
 
   operation :zksync_batch,

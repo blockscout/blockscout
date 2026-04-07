@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       internal_transaction_call_type_options: 1
     ]
 
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_for_transactions: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
@@ -420,17 +420,9 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:transactions, %{
-        transactions: transactions |> maybe_preload_ens_for_block_transactions() |> maybe_preload_metadata(),
+        transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
-    end
-  end
-
-  defp maybe_preload_ens_for_block_transactions(transactions) do
-    if Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS, [])[:disable_transactions_bens_preload] do
-      transactions
-    else
-      maybe_preload_ens(transactions)
     end
   end
 
