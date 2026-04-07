@@ -19,6 +19,21 @@ defmodule Explorer.Chain.CsvExport.AdvancedFilter do
     |> Helper.dump_to_stream()
   end
 
+  @doc """
+  Converts a list or stream of advanced filter entities to an appropriate CSV-streaming format.
+
+  Builds the CSV's header row and a stream of rows corresponding to each advanced filter,
+  resolving historical market data for each row's date.
+
+  ## Parameters
+
+    - advanced_filters: An enumerable of advanced filter structs with `timestamp` and related fields.
+
+  ## Returns
+
+    - A stream where the first row is the header, followed by CSV data rows for each advanced filter.
+  """
+  @spec to_csv_format(Enumerable.t()) :: Enumerable.t()
   def to_csv_format(advanced_filters) do
     exchange_rate = Market.get_coin_exchange_rate()
 

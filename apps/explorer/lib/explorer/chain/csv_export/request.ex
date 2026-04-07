@@ -2,9 +2,10 @@ defmodule Explorer.Chain.CsvExport.Request do
   @moduledoc """
   Represents an asynchronous CSV export request.
 
-  When the requested export period exceeds `CSV_EXPORT_ASYNC_LOAD_THRESHOLD`,
-  the export is processed asynchronously via an Oban job. This schema tracks
-  the request lifecycle and provides a UUID for the user to poll for the result.
+  When asynchronous CSV export is enabled (`CSV_EXPORT_ASYNC_ENABLED`), the API
+  enqueues work as an Oban job (`Explorer.Chain.CsvExport.Worker`) instead of
+  streaming the CSV in the request. This schema tracks the request lifecycle;
+  the primary key UUID is the `request_id` clients use to poll for status.
   """
 
   use Explorer.Schema
