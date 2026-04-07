@@ -758,4 +758,23 @@ defmodule Explorer.Helper do
       key
     end
   end
+
+  @doc """
+  Returns a keyword list with a timeout option if a timeout is provided.
+
+  This helper is needed for Repo calls, since passing `timeout: nil` is not supported.
+  If `timeout` is `nil`, returns an empty keyword list. Otherwise, returns
+  a keyword list with the `:timeout` key set to the given value.
+
+  ## Parameters
+
+    - timeout: The timeout value to use, or `nil`.
+
+  ## Returns
+
+    - A keyword list with the `:timeout` key, or an empty keyword list.
+  """
+  @spec maybe_timeout(timeout() | nil) :: keyword()
+  def maybe_timeout(nil), do: []
+  def maybe_timeout(timeout), do: [timeout: timeout]
 end
