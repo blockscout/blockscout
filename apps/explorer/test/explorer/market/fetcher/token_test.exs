@@ -224,4 +224,187 @@ defmodule Explorer.Market.Fetcher.TokenTest do
       |> Enum.each(fn %{fiat_value: fiat_value} -> assert is_nil(fiat_value) end)
     end
   end
+
+  describe "stale market data cleanup" do
+    # We test the full cycle through handle_info since nullify_stale_market_data is private.
+
+    setup do
+      bypass = Bypass.open()
+
+      source_configuration = Application.get_env(:explorer, Explorer.Market.Source)
+      fetcher_configuration = Application.get_env(:explorer, Explorer.Market.Fetcher.Token)
+      coin_gecko_configuration = Application.get_env(:explorer, Explorer.Market.Source.CoinGecko)
+
+      Application.put_env(
+        :explorer,
+        Explorer.Market.Source,
+        Keyword.merge(source_configuration, tokens_source: Explorer.Market.Source.CoinGecko)
+      )
+
+      Application.put_env(
+        :explorer,
+        Explorer.Market.Fetcher.Token,
+        Keyword.merge(fetcher_configuration,
+          enabled: true,
+          interval: 0,
+          refetch_interval: 10_000,
+          max_batch_size: 100
+        )
+      )
+
+      Application.put_env(
+        :explorer,
+        Explorer.Market.Source.CoinGecko,
+        Keyword.merge(coin_gecko_configuration || [],
+          platform: "ethereum",
+          currency: "usd",
+          base_url: "http://localhost:#{bypass.port}"
+        )
+      )
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      # FiatValue.load returns nil unless the token fetcher is considered enabled.
+      # Simulate it being enabled so we can assert on loaded fiat_value fields.
+      :persistent_term.put(:market_token_fetcher_enabled, true)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Market.Source, source_configuration)
+        Application.put_env(:explorer, Explorer.Market.Fetcher.Token, fetcher_configuration)
+        Application.put_env(:explorer, Explorer.Market.Source.CoinGecko, coin_gecko_configuration)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        :persistent_term.put(:market_token_fetcher_enabled, false)
+      end)
+
+      {:ok, %{bypass: bypass}}
+    end
+
+    test "nullifies market data for tokens not returned by source", %{bypass: bypass} do
+      # Token that source WILL return
+      token_returned =
+        insert(:token,
+          fiat_value: Decimal.new("5.0"),
+          circulating_market_cap: Decimal.new("1000"),
+          volume_24h: Decimal.new("500")
+        )
+
+      # Token that source will NOT return — should be nullified
+      token_stale =
+        insert(:token,
+          fiat_value: Decimal.new("3.0"),
+          circulating_market_cap: Decimal.new("800"),
+          volume_24h: Decimal.new("200")
+        )
+
+      coins_list = [
+        %{
+          "id" => "returned_token",
+          "symbol" => "RT",
+          "name" => "Returned Token",
+          "platforms" => %{"ethereum" => "#{token_returned.contract_address_hash}"}
+        }
+      ]
+
+      Bypass.expect_once(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, Jason.encode!(coins_list))
+      end)
+
+      token_exchange_rates = %{
+        "returned_token" => %{
+          "usd" => 5.0,
+          "usd_market_cap" => 1000.0,
+          "usd_24h_vol" => 500.0
+        }
+      }
+
+      Bypass.expect_once(bypass, "GET", "/simple/price", fn conn ->
+        Conn.resp(conn, 200, Jason.encode!(token_exchange_rates))
+      end)
+
+      GenServer.start_link(TokenFetcher, [])
+      :timer.sleep(200)
+
+      # Returned token keeps market data
+      returned = Repo.get_by(Token, contract_address_hash: token_returned.contract_address_hash)
+      assert returned.fiat_value
+      assert returned.circulating_market_cap
+
+      # Stale token has market data nullified
+      stale = Repo.get_by(Token, contract_address_hash: token_stale.contract_address_hash)
+      assert is_nil(stale.fiat_value)
+      assert is_nil(stale.circulating_market_cap)
+      assert is_nil(stale.volume_24h)
+    end
+
+    test "skips nullification when source returns no tokens", %{bypass: bypass} do
+      token_with_data = insert(:token, fiat_value: Decimal.new("5.0"), circulating_market_cap: Decimal.new("1000"))
+
+      Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, "[]")
+      end)
+
+      GenServer.start_link(TokenFetcher, [])
+      :timer.sleep(200)
+
+      # Token should keep its data — empty-set guard prevents wipe
+      token = Repo.get_by(Token, contract_address_hash: token_with_data.contract_address_hash)
+      assert token.fiat_value
+    end
+
+    test "tokens with $0 fiat_value are filtered out and their market data is nullified", %{bypass: bypass} do
+      # Token that source returns with $0 price — filtered out, not added to seen set
+      token_zero_price = insert(:token, fiat_value: Decimal.new("2.0"), circulating_market_cap: Decimal.new("500"))
+      # A second token with a real price — goes into seen set, triggering nullification of the $0 token
+      token_real_price = insert(:token, fiat_value: Decimal.new("1.0"))
+
+      coins_list = [
+        %{
+          "id" => "zero_price_token",
+          "symbol" => "ZP",
+          "name" => "Zero Price Token",
+          "platforms" => %{"ethereum" => "#{token_zero_price.contract_address_hash}"}
+        },
+        %{
+          "id" => "real_price_token",
+          "symbol" => "RP",
+          "name" => "Real Price Token",
+          "platforms" => %{"ethereum" => "#{token_real_price.contract_address_hash}"}
+        }
+      ]
+
+      Bypass.expect_once(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, Jason.encode!(coins_list))
+      end)
+
+      token_exchange_rates = %{
+        "zero_price_token" => %{
+          "usd" => 0,
+          "usd_market_cap" => 0,
+          "usd_24h_vol" => 0
+        },
+        "real_price_token" => %{
+          "usd" => 10.0,
+          "usd_market_cap" => 5000.0,
+          "usd_24h_vol" => 100.0
+        }
+      }
+
+      Bypass.expect_once(bypass, "GET", "/simple/price", fn conn ->
+        Conn.resp(conn, 200, Jason.encode!(token_exchange_rates))
+      end)
+
+      GenServer.start_link(TokenFetcher, [])
+      :timer.sleep(200)
+
+      # $0-price token is not in seen set → gets nullified
+      token = Repo.get_by(Token, contract_address_hash: token_zero_price.contract_address_hash)
+      assert is_nil(token.fiat_value)
+      assert is_nil(token.circulating_market_cap)
+      assert is_nil(token.volume_24h)
+
+      # Real-price token is in seen set → retains its data
+      real = Repo.get_by(Token, contract_address_hash: token_real_price.contract_address_hash)
+      assert real.fiat_value
+    end
+  end
 end

@@ -13,9 +13,8 @@ defmodule Explorer.Market.Fetcher.TokenList do
   use Utils.RuntimeEnvHelper,
     chain_id: [:explorer, :chain_id]
 
-  alias Explorer.Chain
+  alias Explorer.{Chain, HttpClient}
   alias Explorer.Chain.Import.Runner.Tokens
-  alias Explorer.HttpClient
 
   defstruct [:url, :refetch_interval]
 

@@ -6,7 +6,8 @@ defmodule Explorer.Market.Fetcher.Token do
 
   require Logger
 
-  alias Explorer.Chain
+  alias Ecto.Multi
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Import.Runner.Tokens
   alias Explorer.Market.Source
@@ -17,7 +18,8 @@ defmodule Explorer.Market.Fetcher.Token do
     :source_state,
     :max_batch_size,
     :interval,
-    :refetch_interval
+    :refetch_interval,
+    seen_token_hashes: MapSet.new()
   ]
 
   @spec start_link(term()) :: GenServer.on_start()
@@ -60,9 +62,11 @@ defmodule Explorer.Market.Fetcher.Token do
       ) do
     case source.fetch_tokens(source_state, max_batch_size) do
       {:ok, source_state, fetch_finished?, tokens_data} ->
-        case update_tokens(tokens_data) do
+        filtered_tokens = Enum.reject(tokens_data, &Source.zero_or_nil?(&1[:fiat_value]))
+
+        case update_tokens(filtered_tokens) do
           {:ok, _imported} ->
-            enqueue_to_multichain(tokens_data)
+            enqueue_to_multichain(filtered_tokens)
 
           {:error, err} ->
             Logger.error("Error while importing tokens market data: #{inspect(err)}")
@@ -71,13 +75,23 @@ defmodule Explorer.Market.Fetcher.Token do
             Logger.error("Error while importing tokens market data: #{inspect({step, failed_value, changes_so_far})}")
         end
 
-        if fetch_finished? do
-          Process.send_after(self(), {:fetch, 0}, refetch_interval)
-        else
-          Process.send_after(self(), {:fetch, 0}, interval)
-        end
+        new_seen =
+          filtered_tokens
+          |> Enum.reduce(state.seen_token_hashes, fn token, acc ->
+            MapSet.put(acc, token.contract_address_hash)
+          end)
 
-        {:noreply, %{state | source_state: source_state}}
+        new_seen =
+          if fetch_finished? do
+            nullify_stale_market_data(new_seen)
+            Process.send_after(self(), {:fetch, 0}, refetch_interval)
+            MapSet.new()
+          else
+            Process.send_after(self(), {:fetch, 0}, interval)
+            new_seen
+          end
+
+        {:noreply, %{state | source_state: source_state, seen_token_hashes: new_seen}}
 
       {:error, reason} ->
         Logger.error("Error while fetching tokens: #{inspect(reason)}")
@@ -134,6 +148,55 @@ defmodule Explorer.Market.Fetcher.Token do
       end
     end)
     |> MultichainSearch.send_token_info_to_queue(:market_data)
+  end
+
+  defp nullify_stale_market_data(seen_token_hashes) do
+    if MapSet.size(seen_token_hashes) == 0 do
+      :noop
+    else
+      do_nullify_stale_market_data(seen_token_hashes)
+    end
+  end
+
+  defp do_nullify_stale_market_data(seen_token_hashes) do
+    values_sql =
+      seen_token_hashes
+      |> Enum.map_join(",", fn hash -> "('\\x#{Base.encode16(hash.bytes, case: :lower)}')" end)
+
+    Multi.new()
+    |> Multi.run(:create_temp_table, fn repo, _changes ->
+      repo.query("""
+      CREATE TEMP TABLE temp_seen_token_hashes (
+        contract_address_hash bytea
+      ) ON COMMIT DROP
+      """)
+    end)
+    |> Multi.run(:insert_seen_hashes, fn repo, _changes ->
+      repo.query("INSERT INTO temp_seen_token_hashes VALUES #{values_sql}")
+    end)
+    |> Multi.run(:nullify_stale, fn repo, _changes ->
+      repo.query("""
+      UPDATE tokens
+      SET fiat_value = NULL,
+          circulating_market_cap = NULL,
+          volume_24h = NULL,
+          updated_at = NOW()
+      WHERE fiat_value IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM temp_seen_token_hashes t
+          WHERE t.contract_address_hash = tokens.contract_address_hash
+        )
+      """)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, _} ->
+        :ok
+
+      {:error, step, reason, _} ->
+        Logger.error("Failed to nullify stale market data at step #{step}: #{inspect(reason)}")
+        :error
+    end
   end
 
   defp update_tokens(token_params) do
