@@ -46,6 +46,8 @@ See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for contribution and pull request
 
 ## License
 
-[![License: GPL v3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: Blockscout Software Licence](https://img.shields.io/badge/License-Blockscout%20Software%20Licence-blue.svg)](LICENSE)
 
-This project is licensed under the GNU General Public License v3.0. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the Blockscout Software Licence. See the [LICENSE](LICENSE) file for full terms.
+
+Third-party components included in this repository remain subject to their own licenses. See dependency manifests and bundled third-party notices for component-level license terms.
