@@ -313,7 +313,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         transaction: transaction,
         from_address: address,
         block_number: transaction.block_number,
-        block_hash: transaction.block_hash,
         transaction_index: transaction.index
       )
 
@@ -650,7 +649,6 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         transaction: transaction,
         from_address: address,
         block_number: transaction.block_number,
-        block_hash: transaction.block_hash,
         transaction_index: transaction.index
       )
 
