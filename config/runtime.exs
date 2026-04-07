@@ -697,7 +697,9 @@ config :explorer, Explorer.SmartContract.SigProviderInterface,
 config :explorer, Explorer.MicroserviceInterfaces.BENS,
   service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_BENS_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_BENS_ENABLED"),
-  protocols: ConfigHelper.parse_list_env_var("MICROSERVICE_BENS_PROTOCOLS")
+  protocols: ConfigHelper.parse_list_env_var("MICROSERVICE_BENS_PROTOCOLS"),
+  disable_transactions_bens_preload: ConfigHelper.parse_bool_env_var("DISABLE_TRANSACTIONS_BENS_PRELOAD", "false"),
+  disable_token_transfers_bens_preload: ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_TRANSFERS_BENS_PRELOAD", "false")
 
 config :explorer, Explorer.MicroserviceInterfaces.AccountAbstraction,
   service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_ACCOUNT_ABSTRACTION_URL"),

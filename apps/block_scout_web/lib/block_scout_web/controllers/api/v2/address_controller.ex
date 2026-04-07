@@ -27,7 +27,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   import Explorer.Helper, only: [safe_parse_non_negative_integer: 1]
 
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_to_address: 1]
+  import Explorer.MicroserviceInterfaces.BENS,
+    only: [
+      maybe_preload_ens: 1,
+      maybe_preload_ens_for_token_transfers: 1,
+      maybe_preload_ens_for_transactions: 1,
+      maybe_preload_ens_to_address: 1
+    ]
+
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
@@ -441,7 +448,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:transactions, %{
-            transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+            transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
             next_page_params: next_page_params
           })
 
@@ -541,7 +548,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_view(TransactionView)
           |> render(:token_transfers, %{
             token_transfers:
-              token_transfers |> Instance.preload_nft(@api_true) |> maybe_preload_ens() |> maybe_preload_metadata(),
+              token_transfers
+              |> Instance.preload_nft(@api_true)
+              |> maybe_preload_ens_for_token_transfers()
+              |> maybe_preload_metadata(),
             next_page_params: next_page_params
           })
 

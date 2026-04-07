@@ -209,6 +209,18 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     {:noreply, state}
   end
 
+  @impl true
+  def handle_cast({:update_pending_contract_creator_cache, imported}, state) do
+    imported_block_numbers =
+      imported
+      |> Map.get(:blocks, [])
+      |> Enum.map(&Map.get(&1, :number))
+
+    maybe_update_pending_contract_creator_cache(imported, imported_block_numbers)
+
+    {:noreply, state}
+  end
+
   defp address_cache_name(address_hash) do
     to_string(address_hash)
   end
@@ -233,18 +245,6 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   def async_update_cache_of_contract_creator_on_demand(imported) do
     GenServer.cast(__MODULE__, {:update_pending_contract_creator_cache, imported})
     :ok
-  end
-
-  @impl true
-  def handle_cast({:update_pending_contract_creator_cache, imported}, state) do
-    imported_block_numbers =
-      imported
-      |> Map.get(:blocks, [])
-      |> Enum.map(&Map.get(&1, :number))
-
-    maybe_update_pending_contract_creator_cache(imported, imported_block_numbers)
-
-    {:noreply, state}
   end
 
   defp maybe_update_pending_contract_creator_cache(_imported, []), do: :ok
