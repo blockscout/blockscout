@@ -40,6 +40,21 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
     {:ok, bypass: bypass}
   end
 
+  describe "native_coin_fetching_enabled?" do
+    test "returns true if coin_id is configured" do
+      assert CoinGecko.native_coin_fetching_enabled?()
+    end
+
+    test "returns false if coin_id is not configured" do
+      config = Application.get_env(:explorer, CoinGecko)
+      Application.put_env(:explorer, CoinGecko, Keyword.merge(config, coin_id: nil))
+
+      on_exit(fn -> Application.put_env(:explorer, CoinGecko, config) end)
+
+      refute CoinGecko.native_coin_fetching_enabled?()
+    end
+  end
+
   describe "fetch_native_coin/0" do
     test "fetches native coin", %{bypass: bypass} do
       Bypass.expect_once(bypass, "GET", "/coins/native_coin_id", fn conn ->
@@ -66,6 +81,21 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
     end
   end
 
+  describe "secondary_coin_fetching_enabled?" do
+    test "returns true if secondary_coin_id is configured" do
+      assert CoinGecko.secondary_coin_fetching_enabled?()
+    end
+
+    test "returns false if secondary_coin_id is not configured" do
+      config = Application.get_env(:explorer, CoinGecko)
+      Application.put_env(:explorer, CoinGecko, Keyword.merge(config, secondary_coin_id: nil))
+
+      on_exit(fn -> Application.put_env(:explorer, CoinGecko, config) end)
+
+      refute CoinGecko.secondary_coin_fetching_enabled?()
+    end
+  end
+
   describe "fetch_secondary_coin/0" do
     test "fetches native coin", %{bypass: bypass} do
       Bypass.expect_once(bypass, "GET", "/coins/secondary_coin_id", fn conn ->
@@ -89,6 +119,21 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
                 volume_24h: Decimal.new("66154765984"),
                 image_url: "https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628"
               }} == CoinGecko.fetch_secondary_coin()
+    end
+  end
+
+  describe "tokens_fetching_enabled?" do
+    test "returns true if platform is configured" do
+      assert CoinGecko.tokens_fetching_enabled?()
+    end
+
+    test "returns false if platform is not configured" do
+      config = Application.get_env(:explorer, CoinGecko)
+      Application.put_env(:explorer, CoinGecko, Keyword.merge(config, platform: nil))
+
+      on_exit(fn -> Application.put_env(:explorer, CoinGecko, config) end)
+
+      refute CoinGecko.tokens_fetching_enabled?()
     end
   end
 
@@ -203,6 +248,21 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
     end
   end
 
+  describe "native_coin_price_history_fetching_enabled?" do
+    test "returns true if coin_id is configured" do
+      assert CoinGecko.native_coin_price_history_fetching_enabled?()
+    end
+
+    test "returns false if coin_id is not configured" do
+      config = Application.get_env(:explorer, CoinGecko)
+      Application.put_env(:explorer, CoinGecko, Keyword.merge(config, coin_id: nil))
+
+      on_exit(fn -> Application.put_env(:explorer, CoinGecko, config) end)
+
+      refute CoinGecko.native_coin_price_history_fetching_enabled?()
+    end
+  end
+
   describe "fetch_native_coin_price_history/1" do
     test "fetches native coin price history", %{bypass: bypass} do
       Bypass.expect_once(bypass, "GET", "/coins/native_coin_id/market_chart", fn conn ->
@@ -235,6 +295,21 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
     end
   end
 
+  describe "secondary_coin_price_history_fetching_enabled?" do
+    test "returns true if secondary_coin_id is configured" do
+      assert CoinGecko.secondary_coin_price_history_fetching_enabled?()
+    end
+
+    test "returns false if secondary_coin_id is not configured" do
+      config = Application.get_env(:explorer, CoinGecko)
+      Application.put_env(:explorer, CoinGecko, Keyword.merge(config, secondary_coin_id: nil))
+
+      on_exit(fn -> Application.put_env(:explorer, CoinGecko, config) end)
+
+      refute CoinGecko.secondary_coin_price_history_fetching_enabled?()
+    end
+  end
+
   describe "fetch_secondary_coin_price_history/1" do
     test "fetches secondary coin price history", %{bypass: bypass} do
       Bypass.expect_once(bypass, "GET", "/coins/secondary_coin_id/market_chart", fn conn ->
@@ -264,6 +339,33 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
                   secondary_coin: true
                 }
               ]} == CoinGecko.fetch_secondary_coin_price_history(3)
+    end
+  end
+
+  describe "market_cap_history_fetching_enabled?" do
+    test "returns true if coin_id is configured" do
+      assert CoinGecko.market_cap_history_fetching_enabled?()
+    end
+
+    test "returns false if coin_id is not configured" do
+      config = Application.get_env(:explorer, CoinGecko)
+      Application.put_env(:explorer, CoinGecko, Keyword.merge(config, coin_id: nil))
+
+      on_exit(fn -> Application.put_env(:explorer, CoinGecko, config) end)
+
+      refute CoinGecko.market_cap_history_fetching_enabled?()
+    end
+  end
+
+  describe "tvl_history_fetching_enabled?" do
+    test "ignored" do
+      assert CoinGecko.tvl_history_fetching_enabled?() == :ignore
+    end
+  end
+
+  describe "fetch_tvl_history/1" do
+    test "ignored" do
+      assert CoinGecko.fetch_tvl_history(3) == :ignore
     end
   end
 
