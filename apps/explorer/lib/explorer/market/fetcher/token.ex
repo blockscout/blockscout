@@ -179,6 +179,7 @@ defmodule Explorer.Market.Fetcher.Token do
       UPDATE tokens
       SET fiat_value = NULL,
           circulating_market_cap = NULL,
+          circulating_supply = NULL,
           volume_24h = NULL,
           updated_at = NOW()
       WHERE fiat_value IS NOT NULL

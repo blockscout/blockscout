@@ -66,6 +66,7 @@ defmodule Explorer.Market.Source.CryptoRank do
               fiat_value: fiat_value,
               volume_24h: Source.to_decimal(token["volume24hUSD"]),
               circulating_market_cap: circulating_supply && fiat_value && Decimal.mult(fiat_value, circulating_supply),
+              circulating_supply: circulating_supply,
               contract_address_hash: token_contract_address_hash,
               type: "ERC-20"
             }

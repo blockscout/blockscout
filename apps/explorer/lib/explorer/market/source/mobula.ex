@@ -75,6 +75,7 @@ defmodule Explorer.Market.Source.Mobula do
       fiat_value: Source.to_decimal(token["price"]),
       volume_24h: Source.to_decimal(token["off_chain_volume"]),
       circulating_market_cap: Source.to_decimal(token["market_cap"]),
+      circulating_supply: Source.to_decimal(token["circulating_supply"]),
       icon_url: Source.handle_image_url(token["logo"]),
       contract_address_hash: token_contract_address_hash,
       type: "ERC-20"
