@@ -662,17 +662,17 @@ defmodule Explorer.Etherscan do
         {^options.order_by_direction, tt.log_index}
       ])
 
-    from(t in {"base", TokenTransfer})
+    from(tt in {"base", TokenTransfer})
     |> with_cte("base", as: ^base_query, materialized: true)
     |> join(
       :inner,
-      [t],
+      [tt],
       unnest in fragment(
         "LATERAL (SELECT unnest(?) AS token_id, unnest(COALESCE(?, ARRAY[?])) AS amount, GENERATE_SERIES(0, COALESCE(ARRAY_LENGTH(?, 1), 0) - 1) AS index_in_batch)",
-        t.token_ids,
-        t.amounts,
-        t.amount,
-        t.amounts
+        tt.token_ids,
+        tt.amounts,
+        tt.amount,
+        tt.amounts
       ),
       as: :unnest,
       on: true
@@ -682,9 +682,9 @@ defmodule Explorer.Etherscan do
       amount: fragment("?::numeric", unnest.amount),
       index_in_batch: fragment("?::integer", unnest.index_in_batch)
     })
-    |> order_by([t, unnest: unnest], [
-      {^options.order_by_direction, t.block_number},
-      {^options.order_by_direction, t.log_index},
+    |> order_by([tt, unnest: unnest], [
+      {^options.order_by_direction, tt.block_number},
+      {^options.order_by_direction, tt.log_index},
       {^options.order_by_direction, unnest.index_in_batch}
     ])
     |> limit(^options.page_size)
