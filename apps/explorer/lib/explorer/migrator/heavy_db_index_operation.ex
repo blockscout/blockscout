@@ -181,8 +181,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
                {:db_index_operation_status, db_index_operation_status()} do
           if db_operation_is_ready_to_start?() do
             MigrationStatus.set_status(migration_name(), "started")
-            db_index_operation()
-            schedule_next_db_operation_status_check()
+            timeout = (db_index_operation() == :ok && 0) || nil
+            schedule_next_db_operation_status_check(timeout)
           else
             schedule_next_db_operation_readiness_check()
           end
