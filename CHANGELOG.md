@@ -43,6 +43,7 @@
 
 ### ⚡ Performance
 
+- Optimize on demand hot contracts performance ([#14150](https://github.com/blockscout/blockscout/issues/14150))
 - Remove join to "blocks" in api/v2/blocks/:block_number/transactions API endpoint ([#14162](https://github.com/blockscout/blockscout/issues/14162))
 - Improve performance of /api/v2/tokens API endpoint ([#14158](https://github.com/blockscout/blockscout/issues/14158))
 
