@@ -15,6 +15,6 @@ Parse args and run via Bash:
 
 **IMPORTANT**: Always use the relative path shown above — never an absolute path.
 
-Commands: `init <id>`, `sync`, `deliver <id> <message>`, `push`.
+Commands: `init <id>`, `sync [id]`, `deliver <id> <message>`, `clean <id>`, `push`.
 
 Report the script output to the user. If the script exits non-zero, report the error and stop.
