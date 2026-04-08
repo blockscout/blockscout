@@ -15,6 +15,7 @@
 
 ### 🐛 Bug Fixes
 
+- Include bridged token query params in OpenAPI spec ([#14209](https://github.com/blockscout/blockscout/pull/14209))
 - Update changed constraint name in shrink IT migration ([#14205](https://github.com/blockscout/blockscout/pull/14205))
 - Optimize token1155tx API v1 endpoint ([#14202](https://github.com/blockscout/blockscout/issues/14202))
 - Fix contract internal transactions preload ([#14203](https://github.com/blockscout/blockscout/issues/14203))
