@@ -28,7 +28,31 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   @batch_necessity_by_association %{:commitment_transaction => :required}
 
-  operation :messages, false
+  operation :messages,
+    summary: "List cross-chain messages.",
+    description: "Retrieves a paginated list of Arbitrum cross-chain messages filtered by the specified direction.",
+    parameters:
+      [
+        %OpenApiSpex.Parameter{
+          name: :direction,
+          in: :path,
+          required: true,
+          schema: %Schema{type: :string, enum: ["from-rollup", "to-rollup"]},
+          description:
+            "Message direction: `from-rollup` for Rollup to Parent chain, `to-rollup` for Parent chain to Rollup."
+        }
+        | base_params()
+      ] ++ define_paging_params(["id", "items_count"]),
+    responses: [
+      ok:
+        {"Paginated list of cross-chain messages.", "application/json",
+         paginated_response(
+           items: Schemas.Arbitrum.Message,
+           next_page_params_example: %{"id" => 123}
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   operation :messages_count, false
   operation :claim_message, false
   operation :withdrawals, false
@@ -40,7 +64,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   operation :batch_latest_number,
     summary: "Get the latest batch number.",
     description:
-      "Retrieves the number of the most recent Arbitrum batch submitted to L1. Returns 0 if no batches exist.",
+      "Retrieves the number of the most recent Arbitrum batch submitted to the Parent chain. Returns 0 if no batches exist.",
     parameters: base_params(),
     responses: [
       ok: {"Latest Arbitrum batch number.", "application/json", %Schema{type: :integer, minimum: 0}},
@@ -48,18 +72,18 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     ]
 
   operation :recent_messages_to_l2,
-    summary: "List recent L1-to-L2 messages on the main page.",
-    description: "Retrieves the most recent relayed messages from L1 to L2, displayed on the main page.",
+    summary: "List recent Parent chain to Rollup messages on the main page.",
+    description: "Retrieves the most recent relayed messages from Parent chain to Rollup, displayed on the main page.",
     parameters: base_params(),
     responses: [
       ok:
-        {"List of recent L1-to-L2 messages.", "application/json",
+        {"List of recent Parent chain to Rollup messages.", "application/json",
          %Schema{
            type: :object,
            properties: %{
              items: %Schema{
                type: :array,
-               items: Schemas.Arbitrum.MessageForMainPage,
+               items: Schemas.Arbitrum.MinimalMessage,
                nullable: false
              }
            },
@@ -71,7 +95,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   operation :batches_committed,
     summary: "List committed batches on the main page.",
-    description: "Retrieves a list of Arbitrum batches that have been committed to L1, displayed on the main page.",
+    description:
+      "Retrieves a list of Arbitrum batches that have been committed to the Parent chain, displayed on the main page.",
     parameters: base_params(),
     responses: [
       ok:
@@ -95,7 +120,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     Function to handle GET requests to `/api/v2/arbitrum/messages/:direction` endpoint.
   """
   @spec messages(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def messages(conn, %{"direction" => direction} = params) do
+  def messages(conn, %{direction: direction} = params) do
     options =
       params
       |> paging_options()

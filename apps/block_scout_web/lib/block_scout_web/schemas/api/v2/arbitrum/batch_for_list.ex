@@ -23,12 +23,16 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchForList do
       },
       commitment_transaction: %Schema{
         type: :object,
-        description: "L1 transaction that committed the batch.",
+        description: "Parent chain transaction that committed the batch.",
         properties: %{
           hash: General.FullHashNullable,
           block_number: %Schema{type: :integer, minimum: 0, nullable: true},
           timestamp: General.TimestampNullable,
-          status: %Schema{type: :string, nullable: true, description: "Finalization status of the L1 transaction."}
+          status: %Schema{
+            type: :string,
+            nullable: true,
+            description: "Finalization status of the Parent chain transaction."
+          }
         },
         required: [:hash, :block_number, :timestamp, :status],
         additionalProperties: false

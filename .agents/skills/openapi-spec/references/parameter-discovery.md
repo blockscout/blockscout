@@ -128,6 +128,8 @@ define_paging_params(["index", "block_number", "batch_log_index"])
 
 This creates one `%Parameter{in: :query, required: false}` per field name. The string names are converted to atoms as the parameter `:name`. Each gets an `IntegerString` schema by default.
 
+**Always include `"items_count"`** in the field list. The `next_page_params/5` function in `chain.ex` unconditionally adds `items_count` to every pagination cursor. If the operation doesn't declare it as a query param, CastAndValidate will reject next-page requests with "Unexpected field: items_count." Example: `define_paging_params(["id", "items_count"])`.
+
 There are specialized variants:
 - `define_state_changes_paging_params/1` — for state change pagination
 - `define_search_paging_params/1` — for search result pagination (uses object params)

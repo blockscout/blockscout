@@ -1,6 +1,6 @@
-defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.MessageForMainPage do
+defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.MinimalMessage do
   @moduledoc """
-  Schema for an Arbitrum L1-to-L2 message item on the main page.
+  Minimal Arbitrum cross-chain message schema with origination and completion fields only.
   """
   require OpenApiSpex
 
@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.MessageForMainPage do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
-    description: "Arbitrum L1-to-L2 message summary for the main page.",
+    description: "Minimal Arbitrum cross-chain message with origination and completion fields.",
     type: :object,
     properties: %{
       origination_transaction_hash: General.FullHashNullable,

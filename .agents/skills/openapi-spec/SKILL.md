@@ -29,6 +29,7 @@ All paths are relative to `apps/block_scout_web/lib/block_scout_web/`:
 | Sub-routers | `routers/tokens_api_v2_router.ex`, `routers/smart_contracts_api_v2_router.ex` |
 | Account router | `routers/account_router.ex` |
 | Views | `views/api/v2/<domain>_view.ex` |
+| Paging helper | `paging_helper.ex` (`delete_parameters_from_next_page_params/1`) |
 | Spec aggregators | `specs/public.ex`, `specs/private.ex` |
 | Global aliases/imports | The file `block_scout_web.ex` — look for `:controller` quote block |
 | Tests | `../../test/block_scout_web/controllers/api/v2/<domain>_controller_test.exs` |
@@ -191,21 +192,25 @@ For each parameter the controller reads:
    - **Reusable across controllers?** Add a new helper function to `general.ex` following the naming conventions in `references/parameter-discovery.md`.
    - **One-off?** Define an inline `%OpenApiSpex.Parameter{}` struct directly in the `operation` macro arguments.
 
-3. **For pagination parameters**, use `define_paging_params(field_names)` — pass the list of pagination key names as strings.
+3. **For pagination parameters**, use `define_paging_params(field_names)` — pass the cursor field names as strings, and **always include `"items_count"`**. The `next_page_params` helper adds `items_count` to every paginated response automatically, so CastAndValidate must accept it as a query param. Example: `define_paging_params(["id", "items_count"])`.
 
 ### Step 3: Create or locate response schema
 
 1. **Check if a schema module exists** for the response entity. Glob `schemas/api/v2/<domain>*.ex`.
-2. **If not**, create one following the conventions in `references/schema-conventions.md`. The schema's properties must match the view's output keys exactly.
-3. **Determine precise types from the Ecto schema.** The view renders everything as JSON primitives (strings, integers, etc.), but the underlying Ecto schema in the Explorer app knows the real constraints. Read the Ecto schema module for the entity (under `apps/explorer/lib/explorer/chain/`) and check for:
+2. **If schemas exist in the same domain**, compare their properties against the new view's output keys to detect subset/superset relationships:
+   - **Existing schema is a subset** of what the new endpoint needs — use `extend_schema` from the existing schema, adding only the extra properties. See `references/schema-conventions.md` section "Schema reuse and naming for related schemas" for the naming convention and required `title:` parameter.
+   - **Existing schema is a superset** — the new endpoint may reference the existing schema directly (if it needs all the properties), or may need a reduced "minimal" schema that the existing one extends.
+   - **No meaningful overlap** — create a standalone schema.
+3. **If no suitable schema exists**, create one following the conventions in `references/schema-conventions.md`. The schema's properties must match the view's output keys exactly.
+4. **Determine precise types from the Ecto schema.** The view renders everything as JSON primitives (strings, integers, etc.), but the underlying Ecto schema in the Explorer app knows the real constraints. Read the Ecto schema module for the entity (under `apps/explorer/lib/explorer/chain/`) and check for:
    - `Ecto.Enum` fields — these should become `%Schema{type: :string, enum: [...values...]}`, not just `type: :string`. Grep for `Ecto.Enum` in the Ecto schema to find them, and check the enum values defined there.
    - Nullable fields — if the Ecto schema allows `nil`, the OpenAPI property should have `nullable: true`.
    - Integer vs string — if the Ecto field is an integer type but the view converts it to a string (e.g., for large numbers), use an appropriate schema like `IntegerString`.
    See `references/schema-conventions.md` section "Determining property types from Ecto schemas" for more detail.
-4. **Set `additionalProperties: false`** on object schemas — this is a project-wide convention that enables test-time enforcement.
+5. **Set `additionalProperties: false`** on object schemas — this is a project-wide convention that enables test-time enforcement.
    - **For non-negative integer properties** (block numbers, batch numbers, counts, indices, nonces), set `minimum: 0` to enforce the domain constraint at the validation level.
-5. **Set `required:`** to list all keys that the view always emits.
-6. For paginated list endpoints, use `General.paginated_response/1` to wrap the item schema.
+6. **Set `required:`** to list all keys that the view always emits.
+7. For paginated list endpoints, use `General.paginated_response/1` to wrap the item schema.
 
 ### Step 4a: Write the operation annotation
 
@@ -228,6 +233,19 @@ Check `chain.ex` for the relevant `paging_options` clause. If only a string-key 
 The atom-key clause is typically simpler because `CastAndValidate` already handles type casting — no `Integer.parse` or similar parsing needed.
 
 This step is especially important when **promoting** an action from `operation :action, false` to a real spec — that is the moment where `paging_options` stops receiving string keys and the mismatch occurs.
+
+### Step 4c: Ensure path params are excluded from `next_page_params`
+
+If the endpoint is paginated **and** has path parameters, those path params will leak into the pagination cursor response unless explicitly stripped.
+
+**Why this happens:** CastAndValidate converts all params (path + query) to atom keys in a single map. The `next_page_params/5` function receives this map and builds the cursor for the response. It calls `delete_parameters_from_next_page_params/1` (in `paging_helper.ex`) to strip known non-pagination params, but only params listed in its `Map.drop` list are removed. If a path param isn't listed, it appears in the JSON response's `next_page_params`. When the client sends that cursor back as query params on the next request, CastAndValidate rejects the path param as "Unexpected field" because it's declared as `:path`, not `:query`.
+
+**What to do:** For each path parameter declared in the operation:
+1. Read `delete_parameters_from_next_page_params/1` in `apps/block_scout_web/lib/block_scout_web/paging_helper.ex`.
+2. Check whether the atom-key form (e.g., `:direction`) is in the `Map.drop` list.
+3. If missing, add it among the other atom-key entries at the top of the list.
+
+The existing list already includes common path params like `:address_hash_param`, `:batch_number_param`, `:block_hash_or_number_param`, `:transaction_hash_param`. New path params need to be added as they are introduced.
 
 ### Step 5: Ensure test coverage
 

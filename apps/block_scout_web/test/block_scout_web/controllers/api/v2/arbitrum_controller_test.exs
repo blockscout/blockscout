@@ -73,6 +73,80 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
       end
     end
 
+    describe "/arbitrum/messages/:direction" do
+      test "returns to-rollup messages", %{conn: conn} do
+        messages = insert_list(3, :arbitrum_message, direction: :to_l2, status: :relayed)
+
+        request = get(conn, "/api/v2/arbitrum/messages/to-rollup")
+        assert response = json_response(request, 200)
+
+        assert length(response["items"]) == 3
+        assert response["next_page_params"] == nil
+
+        sorted_messages = Enum.sort_by(messages, & &1.message_id, :desc)
+
+        for {msg, item} <- Enum.zip(sorted_messages, response["items"]) do
+          assert msg.message_id == item["id"]
+          assert to_string(msg.originator_address) == item["origination_address_hash"]
+          assert to_string(msg.originating_transaction_hash) == item["origination_transaction_hash"]
+          assert msg.originating_transaction_block_number == item["origination_transaction_block_number"]
+          assert to_string(msg.completion_transaction_hash) == item["completion_transaction_hash"]
+          assert to_string(msg.status) == item["status"]
+        end
+      end
+
+      test "returns from-rollup messages", %{conn: conn} do
+        messages = insert_list(3, :arbitrum_message, direction: :from_l2, status: :initiated)
+
+        request = get(conn, "/api/v2/arbitrum/messages/from-rollup")
+        assert response = json_response(request, 200)
+
+        assert length(response["items"]) == 3
+        assert response["next_page_params"] == nil
+
+        sorted_messages = Enum.sort_by(messages, & &1.message_id, :desc)
+
+        for {msg, item} <- Enum.zip(sorted_messages, response["items"]) do
+          assert msg.message_id == item["id"]
+          assert to_string(msg.status) == item["status"]
+        end
+      end
+
+      test "returns empty list when no messages exist", %{conn: conn} do
+        request = get(conn, "/api/v2/arbitrum/messages/to-rollup")
+        assert response = json_response(request, 200)
+        assert response["items"] == []
+        assert response["next_page_params"] == nil
+      end
+
+      test "does not include messages from opposite direction", %{conn: conn} do
+        insert_list(3, :arbitrum_message, direction: :from_l2, status: :initiated)
+
+        request = get(conn, "/api/v2/arbitrum/messages/to-rollup")
+        assert response = json_response(request, 200)
+        assert response["items"] == []
+      end
+
+      test "paginates messages", %{conn: conn} do
+        insert_list(51, :arbitrum_message, direction: :to_l2, status: :relayed)
+
+        request = get(conn, "/api/v2/arbitrum/messages/to-rollup")
+        assert response = json_response(request, 200)
+        assert length(response["items"]) == 50
+        assert response["next_page_params"] != nil
+
+        request_2nd_page = get(conn, "/api/v2/arbitrum/messages/to-rollup", response["next_page_params"])
+        assert response_2nd_page = json_response(request_2nd_page, 200)
+        assert length(response_2nd_page["items"]) == 1
+        assert response_2nd_page["next_page_params"] == nil
+      end
+
+      test "returns 422 for invalid direction", %{conn: conn} do
+        request = get(conn, "/api/v2/arbitrum/messages/invalid")
+        assert %{"errors" => _} = json_response(request, 422)
+      end
+    end
+
     describe "/main-page/arbitrum/batches/latest-number" do
       test "returns latest batch number", %{conn: conn} do
         insert(:arbitrum_l1_batch, number: 5)

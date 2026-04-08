@@ -113,6 +113,59 @@ schema_map
 )
 ```
 
+### Schema reuse and naming for related schemas
+
+When multiple endpoints render the same underlying entity with different levels of detail (e.g., a list endpoint emits 7 fields while a main-page widget emits only 4), avoid duplicating properties across standalone schemas. Instead, use `extend_schema` to build one from the other.
+
+**When to apply:** This is a post-factum decision — evaluate only when you're creating a new schema and discover an existing one in the same domain with overlapping properties. Don't speculatively refactor schemas that have only one consumer.
+
+**Identifying the relationship:**
+1. Compare the property sets of the existing and new schemas.
+2. Determine which is the subset (fewer properties) and which is the superset.
+3. Cross-reference with the Ecto schema to see which OpenAPI schema most closely matches the full entity.
+
+**Naming convention:**
+- The schema whose properties most closely match the Ecto schema should be named after the entity: `<Entity>` (e.g., `Message`). This is the "full" representation.
+- The schema with fewer properties (a subset) should be named `Minimal<Entity>` (e.g., `MinimalMessage`). This clearly communicates it's a reduced view without tying the name to a specific endpoint.
+- `extend_schema` only adds properties — it cannot subtract. So `Minimal<Entity>` is always the base that `<Entity>` extends.
+
+**Renaming existing schemas:** If an existing schema was named for its endpoint (e.g., `MessageForMainPage`) and turns out to be the minimal subset, rename it to `Minimal<Entity>`. Update all references in controller operations, tests, and any other schemas that use it. Then create the full `<Entity>` schema extending it.
+
+**Critical: always pass `title:` when extending.** Without an explicit `title:`, the child schema inherits the parent's auto-generated title. OpenApiSpex uses titles as keys in its internal schema registry, so two schemas with the same title collide — the child silently overwrites the parent. This causes test failures on the parent's endpoints because the wrong schema (with extra required fields) is used for validation.
+
+**Template:**
+
+```elixir
+defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Message do
+  @moduledoc """
+  Full Arbitrum cross-chain message schema.
+
+  Extends `MinimalMessage` with: id, origination_address_hash, status.
+  """
+
+  require OpenApiSpex
+
+  alias BlockScoutWeb.Schemas.API.V2.Arbitrum.MinimalMessage
+  alias BlockScoutWeb.Schemas.API.V2.General
+  alias BlockScoutWeb.Schemas.Helper
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    MinimalMessage.schema()
+    |> Helper.extend_schema(
+      title: "Arbitrum.Message",           # REQUIRED — prevents registry collision
+      description: "Full Arbitrum cross-chain message.",
+      properties: %{
+        id: %Schema{type: :integer, minimum: 0},
+        origination_address_hash: General.AddressHashNullable,
+        status: %Schema{type: :string, enum: ["initiated", "sent", "confirmed", "relayed"]}
+      },
+      required: [:id, :origination_address_hash, :status]
+    )
+  )
+end
+```
+
 ### Paginated response wrapper
 
 For list endpoints, use `General.paginated_response/1`:
