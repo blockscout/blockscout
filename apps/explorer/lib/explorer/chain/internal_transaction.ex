@@ -631,23 +631,25 @@ defmodule Explorer.Chain.InternalTransaction do
     )
   end
 
-  defp address_match_dynamic(address_field, address_hash_or_hashes, address_ids) when address_ids in [[], nil] do
-    address_hashes = List.wrap(address_hash_or_hashes)
-    address_hash_field = String.to_existing_atom("#{address_field}_hash")
-
-    dynamic([it], field(it, ^address_hash_field) in ^address_hashes)
-  end
-
   defp address_match_dynamic(address_field, address_hash_or_hashes, address_id_or_ids) do
     address_hashes = List.wrap(address_hash_or_hashes)
-    address_ids = List.wrap(address_id_or_ids)
-    address_id_field = String.to_existing_atom("#{address_field}_id")
     address_hash_field = String.to_existing_atom("#{address_field}_hash")
 
-    dynamic(
-      [it],
-      field(it, ^address_id_field) in ^address_ids or field(it, ^address_hash_field) in ^address_hashes
-    )
+    if address_id_or_ids in [[], nil] or not address_ids_indexes_exists?() do
+      dynamic([it], field(it, ^address_hash_field) in ^address_hashes)
+    else
+      address_ids = List.wrap(address_id_or_ids)
+      address_id_field = String.to_existing_atom("#{address_field}_id")
+
+      dynamic(
+        [it],
+        field(it, ^address_id_field) in ^address_ids or field(it, ^address_hash_field) in ^address_hashes
+      )
+    end
+  end
+
+  defp address_ids_indexes_exists? do
+    BackgroundMigrations.get_heavy_indexes_create_address_ids_internal_transactions_indexes_finished()
   end
 
   def where_is_different_from_parent_transaction(query) do
