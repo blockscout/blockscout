@@ -12,18 +12,17 @@
 # at <repo_root>/../.worktrees/<repo_name>/<name>, and prints its absolute path to stdout.
 set -euo pipefail
 
-# Derive absolute repo root from script location (.claude/hooks/ is 2 levels deep).
-# This is used early (for the log file) before git commands are available.
-# Later, REPO_ROOT is re-derived via git to handle invocation from inside a worktree.
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-REPO_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)
+PROJECT_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+
+AI_TMP_DIR="$PROJECT_ROOT/.ai/tmp"
 
 DEBUG=false
 
 if [ "$DEBUG" = true ]; then
   TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-  LOG_FILE="$REPO_ROOT/tmp/worktree-create-${TIMESTAMP}.log"
-  mkdir -p "$REPO_ROOT/tmp"
+  LOG_FILE="$AI_TMP_DIR/worktree-create-${TIMESTAMP}.log"
+  mkdir -p "$AI_TMP_DIR"
   log() { echo "[$(date +%T)] $*" >> "$LOG_FILE"; }
   trap 'log "ERROR: script failed at line $LINENO (exit $?)"' ERR
   log "Script started, cwd=$(pwd)"
@@ -62,7 +61,7 @@ mkdir -p "$(dirname "$DIR")"
 
 # Check if the worktree is already registered (e.g. resuming a previous session).
 # `git worktree list --porcelain` prints each worktree path prefixed with "worktree ".
-if git worktree list --porcelain | grep -qF "worktree $DIR"; then
+if git worktree list --porcelain | grep -qxF "worktree $DIR"; then
   log "Worktree already exists, skipping creation"
   : # worktree already exists, nothing to do
 # Check if the branch already exists locally.

@@ -22,12 +22,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 
-DEBUG=true
+AI_TMP_DIR="$PROJECT_ROOT/.ai/tmp"
+
+DEBUG=false
 
 if [ "$DEBUG" = true ]; then
   TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-  LOG_FILE="$PROJECT_ROOT/tmp/credo-changed-${TIMESTAMP}.log"
-  mkdir -p "$PROJECT_ROOT/tmp"
+  LOG_FILE="$AI_TMP_DIR/credo-changed-${TIMESTAMP}.log"
+  mkdir -p "$AI_TMP_DIR"
   log() { echo "[$(date +%T)] $*" >> "$LOG_FILE"; }
   trap 'log "ERROR: script failed at line $LINENO (exit $?)"' ERR
   log "Script started, cwd=$(pwd), args=$*"

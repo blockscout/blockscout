@@ -31,7 +31,7 @@ TEST_DATABASE_URL="postgresql://postgres:postgres@localhost:5432/explorer_test" 
 ```
 
 **Other app tests** (no chromedriver needed — can run from app dir):
-```
+``` 
 cd apps/explorer && \
   TEST_DATABASE_URL="postgresql://postgres:postgres@localhost:5432/explorer_test" \
   CHAIN_TYPE=<type> \
