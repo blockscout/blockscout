@@ -49,6 +49,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- FillInternalTransactionsAddressIds improvements ([#14208](https://github.com/blockscout/blockscout/pull/14208))
 - Remove timeout between successful migrations ([#14198](https://github.com/blockscout/blockscout/issues/14198))
 - Add batch size env for FillInternalTransactionsAddressIds migration ([#14204](https://github.com/blockscout/blockscout/issues/14204))
 - Remove transaction_hash from internal transactions ([#14099](https://github.com/blockscout/blockscout/issues/14099))
