@@ -1,6 +1,7 @@
 ---
 name: inspect-code-quality-session
 description: "Inspect and analyze a code-quality subagent session file (JSONL). Produces a step-by-step walkthrough of what the agent did, what each result was, why it chose its next action, and whether it followed the code-quality spec. Only invoke manually via /inspect-code-quality-session <path-to-session.jsonl>."
+disable-model-invocation: true
 allowed-tools: Bash(python3 .agents/skills/inspect-code-quality-session/scripts/parse-session.py *)
 ---
 
