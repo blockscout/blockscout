@@ -624,7 +624,6 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         [
           chain_ids_param(),
           q_param(),
-          limit_param(),
           sort_param(["fiat_value", "holders_count", "circulating_market_cap"]),
           order_param()
         ] ++

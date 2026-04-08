@@ -2679,8 +2679,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         base_params = %{
           "q" => "BridgeToken",
           "chain_ids" => "1",
-          "sort" => "fiat_value",
-          "limit" => "10"
+          "sort" => "fiat_value"
         }
 
         request_asc = get(conn, "/api/v2/tokens/bridged", Map.put(base_params, "order", "asc"))
