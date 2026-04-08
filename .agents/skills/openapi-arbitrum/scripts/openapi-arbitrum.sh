@@ -79,11 +79,19 @@ case "$CMD" in
     BASE=$(git merge-base "$TARGET" "$TMP")
     log "Merge base: ${BASE}"
 
-    mapfile -t EXISTING < <(git log --format="%s" "${BASE}..${TARGET}")
-    log "Existing commits in ${TARGET}: ${#EXISTING[@]}"
+    EXISTING=""
+    while IFS= read -r line; do
+      EXISTING="${EXISTING}${line}"$'\n'
+    done < <(git log --format="%s" "${BASE}..${TARGET}")
+    EXISTING_COUNT=$(echo -n "$EXISTING" | grep -c . || true)
+    log "Existing commits in ${TARGET}: ${EXISTING_COUNT}"
 
-    mapfile -t COMMITS < <(git log --reverse --format="%H|%s" "${BASE}..${TMP}")
-    log "Commits in ${TMP} since base: ${#COMMITS[@]}"
+    COMMITS=""
+    while IFS= read -r line; do
+      COMMITS="${COMMITS}${line}"$'\n'
+    done < <(git log --reverse --format="%H|%s" "${BASE}..${TMP}")
+    COMMITS_COUNT=$(echo -n "$COMMITS" | grep -c . || true)
+    log "Commits in ${TMP} since base: ${COMMITS_COUNT}"
 
     PROJECT_ROOT="$(git rev-parse --show-toplevel)"
     log "Getting or creating worktree for ${TARGET}"
@@ -93,26 +101,20 @@ case "$CMD" in
     cd "$WTDIR"
     PICKED=0
     SKIPPED=0
-    for entry in "${COMMITS[@]}"; do
+    while IFS= read -r entry; do
+      [[ -z "$entry" ]] && continue
       SHA="${entry%%|*}"
       SUBJECT="${entry#*|}"
 
       if [[ "$SUBJECT" == "HARNESS" ]]; then
         log "SKIP: HARNESS commit ${SHA:0:8}"
-        ((SKIPPED++))
+        ((SKIPPED++)) || true
         continue
       fi
 
-      SKIP=false
-      for existing in "${EXISTING[@]+"${EXISTING[@]}"}"; do
-        if [[ "$existing" == "$SUBJECT" ]]; then
-          SKIP=true
-          break
-        fi
-      done
-      if $SKIP; then
+      if echo -n "$EXISTING" | grep -qxF "$SUBJECT"; then
         log "SKIP: ${SHA:0:8} — ${SUBJECT} (already exists)"
-        ((SKIPPED++))
+        ((SKIPPED++)) || true
         continue
       fi
 
@@ -122,8 +124,8 @@ case "$CMD" in
         exit 1
       fi
       log "PICK: ${SHA:0:8} — ${SUBJECT}"
-      ((PICKED++))
-    done
+      ((PICKED++)) || true
+    done <<< "$COMMITS"
     log "OK: sync complete. Picked: ${PICKED}, skipped: ${SKIPPED}. Worktree: ${WTDIR}"
     ;;
 
