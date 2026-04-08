@@ -621,7 +621,13 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     description: "Retrieves a paginated list of bridged tokens with optional filtering and sorting.",
     parameters:
       base_params() ++
-        [chain_ids_param(), q_param()] ++
+        [
+          chain_ids_param(),
+          q_param(),
+          limit_param(),
+          sort_param(["fiat_value", "holders_count", "circulating_market_cap"]),
+          order_param()
+        ] ++
         define_paging_params([
           "contract_address_hash",
           "fiat_value",

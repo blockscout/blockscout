@@ -2645,6 +2645,55 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         assert length(items) == 1
         assert next_page_params == nil
       end
+
+      test "regression: sort and order params are applied for bridged tokens", %{conn: conn} do
+        parameter_names =
+          BlockScoutWeb.API.V2.TokenController.open_api_operation(:bridged_tokens_list).parameters
+          |> Enum.map(fn
+            %OpenApiSpex.Parameter{name: name} -> to_string(name)
+            %OpenApiSpex.Reference{} -> nil
+          end)
+          |> Enum.reject(&is_nil/1)
+
+        assert "sort" in parameter_names
+        assert "order" in parameter_names
+
+        high_fiat_token = insert(:token, %{total_supply: 20_000, name: "BridgeTokenHigh", fiat_value: 200})
+        low_fiat_token = insert(:token, %{total_supply: 10_000, name: "BridgeTokenLow", fiat_value: 100})
+
+        for token <- [high_fiat_token, low_fiat_token] do
+          Explorer.Repo.update_all(
+            from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token.contract_address_hash),
+            set: [bridged: true]
+          )
+
+          {:ok, _bridged_token} =
+            Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
+              home_token_contract_address_hash: token.contract_address_hash,
+              foreign_chain_id: 1,
+              foreign_token_contract_address_hash: build(:address).hash,
+              type: "omni"
+            })
+        end
+
+        base_params = %{
+          "q" => "BridgeToken",
+          "chain_ids" => "1",
+          "sort" => "fiat_value",
+          "limit" => "10"
+        }
+
+        request_asc = get(conn, "/api/v2/tokens/bridged", Map.put(base_params, "order", "asc"))
+        request_desc = get(conn, "/api/v2/tokens/bridged", Map.put(base_params, "order", "desc"))
+
+        assert %{"items" => [asc_first | _] = asc_items} = json_response(request_asc, 200)
+        assert %{"items" => [desc_first | _] = desc_items} = json_response(request_desc, 200)
+        assert length(asc_items) == 2
+        assert length(desc_items) == 2
+
+        assert asc_first["address_hash"] == Address.checksum(low_fiat_token.contract_address_hash)
+        assert desc_first["address_hash"] == Address.checksum(high_fiat_token.contract_address_hash)
+      end
     end
   end
 
