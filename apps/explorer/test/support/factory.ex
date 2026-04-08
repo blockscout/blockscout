@@ -29,6 +29,7 @@ defmodule Explorer.Factory do
   alias Explorer.Chain.Arbitrum.BatchTransaction, as: ArbitrumBatchTransaction
   alias Explorer.Chain.Arbitrum.L1Batch, as: ArbitrumL1Batch
   alias Explorer.Chain.Arbitrum.LifecycleTransaction, as: ArbitrumLifecycleTransaction
+  alias Explorer.Chain.Arbitrum.Message, as: ArbitrumMessage
   alias Explorer.Chain.Scroll.Batch, as: ScrollBatch
   alias Explorer.Chain.Scroll.BatchBundle, as: ScrollBatchBundle
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
@@ -1955,6 +1956,19 @@ defmodule Explorer.Factory do
       before_acc: block_hash(),
       after_acc: block_hash(),
       commitment_id: lifecycle_tx.id
+    }
+  end
+
+  def arbitrum_message_factory do
+    %ArbitrumMessage{
+      direction: :to_l2,
+      message_id: sequence("arbitrum_message_id", & &1, start_at: 1),
+      originator_address: address_hash(),
+      originating_transaction_hash: transaction_hash(),
+      origination_timestamp: DateTime.utc_now(),
+      originating_transaction_block_number: block_number(),
+      completion_transaction_hash: transaction_hash(),
+      status: :relayed
     }
   end
 

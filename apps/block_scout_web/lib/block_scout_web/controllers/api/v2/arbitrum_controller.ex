@@ -47,7 +47,27 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
-  operation :recent_messages_to_l2, false
+  operation :recent_messages_to_l2,
+    summary: "List recent L1-to-L2 messages on the main page.",
+    description: "Retrieves the most recent relayed messages from L1 to L2, displayed on the main page.",
+    parameters: base_params(),
+    responses: [
+      ok:
+        {"List of recent L1-to-L2 messages.", "application/json",
+         %Schema{
+           type: :object,
+           properties: %{
+             items: %Schema{
+               type: :array,
+               items: Schemas.Arbitrum.MessageForMainPage,
+               nullable: false
+             }
+           },
+           required: [:items],
+           additionalProperties: false
+         }},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   operation :batches_committed,
     summary: "List committed batches on the main page.",
