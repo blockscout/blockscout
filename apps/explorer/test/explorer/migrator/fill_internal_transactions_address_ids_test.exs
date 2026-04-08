@@ -1,10 +1,11 @@
-defmodule Explorer.Utility.FillInternalTransactionsAddressIdsTest do
+defmodule Explorer.Migrator.FillInternalTransactionsAddressIdsTest do
   use Explorer.DataCase, async: false
 
   import Ecto.Query
 
   alias Explorer.Chain.InternalTransaction
   alias Explorer.Migrator.{FillInternalTransactionsAddressIds, MigrationStatus}
+  alias Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdPartialIndex
   alias Explorer.Repo
   alias Explorer.Utility.AddressIdToAddressHash
 
@@ -36,6 +37,11 @@ defmodule Explorer.Utility.FillInternalTransactionsAddressIdsTest do
         transaction_index: transaction.index
       )
     end)
+
+    MigrationStatus.set_status(
+      CreateInternalTransactionsCreatedContractAddressIdPartialIndex.migration_name(),
+      "completed"
+    )
 
     assert MigrationStatus.get_status("fill_internal_transactions_address_ids") == nil
 

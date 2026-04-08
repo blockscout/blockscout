@@ -66,7 +66,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :empty_internal_transactions_data_finished,
     key: :heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished,
     key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished,
-    key: :heavy_indexes_create_addresses_hash_contract_code_not_null_index_finished
+    key: :heavy_indexes_create_addresses_hash_contract_code_not_null_index_finished,
+    key: :heavy_indexes_create_address_ids_internal_transactions_indexes_finished
 
   @dialyzer :no_match
 
@@ -90,6 +91,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateAddressesVerifiedTransactionsCountDescHashIndex,
     CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
     CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
+    CreateInternalTransactionsCreatedContractAddressIdPartialIndex,
     CreateLogsAddressHashBlockNumberDescIndexDescIndex,
     CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
     CreateLogsBlockHashIndex,
@@ -421,6 +423,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       CreateAddressesHashContractCodeNotNullIndex,
       &set_heavy_indexes_create_addresses_hash_contract_code_not_null_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_address_ids_internal_transactions_indexes_finished) do
+    set_and_return_migration_status(
+      CreateInternalTransactionsCreatedContractAddressIdPartialIndex,
+      &set_heavy_indexes_create_address_ids_internal_transactions_indexes_finished/1
     )
   end
 

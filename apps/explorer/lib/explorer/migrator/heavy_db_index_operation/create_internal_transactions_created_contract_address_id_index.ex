@@ -6,6 +6,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCrea
   use Explorer.Migrator.HeavyDbIndexOperation
 
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsToAddressIdPartialIndex
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :internal_transactions
@@ -23,7 +24,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCrea
   def index_name, do: @index_name
 
   @impl HeavyDbIndexOperation
-  def dependent_from_migrations, do: []
+  def dependent_from_migrations, do: [CreateInternalTransactionsToAddressIdPartialIndex.migration_name()]
 
   @impl HeavyDbIndexOperation
   def db_index_operation do

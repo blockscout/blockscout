@@ -5,7 +5,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCrea
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdIndex
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :internal_transactions
@@ -22,7 +24,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCrea
   def index_name, do: @index_name
 
   @impl HeavyDbIndexOperation
-  def dependent_from_migrations, do: []
+  def dependent_from_migrations, do: [CreateInternalTransactionsCreatedContractAddressIdIndex.migration_name()]
 
   @query_string """
   CREATE INDEX #{HeavyDbIndexOperationHelper.add_concurrently_flag?()} IF NOT EXISTS "#{@index_name}"
@@ -56,5 +58,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCrea
   end
 
   @impl HeavyDbIndexOperation
-  def update_cache, do: :ok
+  def update_cache do
+    BackgroundMigrations.set_heavy_indexes_create_address_ids_internal_transactions_indexes_finished(true)
+  end
 end
