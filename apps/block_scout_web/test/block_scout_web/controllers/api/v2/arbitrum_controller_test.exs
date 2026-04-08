@@ -39,6 +39,21 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
       end
     end
 
+    describe "/main-page/arbitrum/batches/latest-number" do
+      test "returns latest batch number", %{conn: conn} do
+        insert(:arbitrum_l1_batch, number: 5)
+        insert(:arbitrum_l1_batch, number: 10)
+
+        request = get(conn, "/api/v2/main-page/arbitrum/batches/latest-number")
+        assert json_response(request, 200) == 10
+      end
+
+      test "returns 0 when no batches exist", %{conn: conn} do
+        request = get(conn, "/api/v2/main-page/arbitrum/batches/latest-number")
+        assert json_response(request, 200) == 0
+      end
+    end
+
     defp compare_batch(%L1Batch{} = batch, json) do
       batch = Explorer.Repo.preload(batch, :commitment_transaction)
 

@@ -36,7 +36,17 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   operation :batch_by_data_availability_info, false
   operation :batches_count, false
   operation :batches, false
-  operation :batch_latest_number, false
+
+  operation :batch_latest_number,
+    summary: "Get the latest batch number.",
+    description:
+      "Retrieves the number of the most recent Arbitrum batch submitted to L1. Returns 0 if no batches exist.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Latest Arbitrum batch number.", "application/json", %Schema{type: :integer, minimum: 0}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   operation :recent_messages_to_l2, false
 
   operation :batches_committed,
