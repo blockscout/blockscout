@@ -164,7 +164,7 @@ Check that tests exist and exercise the endpoint:
 
 1. **Test file exists**: `test/block_scout_web/controllers/api/v2/<domain>_controller_test.exs`
 2. **Tests hit the endpoint**: grep for the endpoint path in the test file
-3. **Key status codes are tested**: ideally 200 (success), 404 (not found), 422 (validation error)
+3. **All declared status codes are tested**: enumerate every status code in the operation's `responses:` and verify at least one test exercises each. Pay special attention to status codes with multiple triggering conditions (e.g., multiple 400 branches) — each condition ideally has its own test case
 
 ### Minimal test templates
 

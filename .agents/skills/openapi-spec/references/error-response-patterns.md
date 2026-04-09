@@ -88,9 +88,36 @@ Look at the controller action to identify which error paths exist:
 2. If the action does a resource lookup (e.g., `Chain.hash_to_transaction`), include `:not_found`.
 3. If the action checks authorization (e.g., `AccessHelper.restricted_access?`), include `:forbidden`.
 4. If the action requires authentication, include `:unauthorized`.
-5. Check `put_status` and `send_resp` calls in the action for other status codes.
+5. Check `put_status` and `send_resp` calls in the action for other status codes. If multiple branches return the same status code with different error messages, see "Multiple error branches sharing one status code" below for how to write a descriptive response instead of using the generic helper.
 
 Not all runtime error paths need to be in the spec — undeclared status codes (like `:internal_server_error` from rate limiting) are typically treated as infrastructure concerns. But all explicitly handled error cases in the controller action should be declared.
+
+## Multiple error branches sharing one status code
+
+Sometimes a controller action has several branches that all return the same HTTP status code but with different error messages. For example, three separate `put_status(:bad_request)` calls returning "withdrawal is unconfirmed yet", "withdrawal is just initiated", and "withdrawal was executed already". Using `BadRequestResponse.response()` produces a generic "Bad Request" description that gives API consumers no hint about what triggers each error.
+
+When this happens, replace the generic `Module.response()` helper with a custom `{description, content_type, module}` tuple where the description documents the possible error conditions:
+
+```elixir
+responses: [
+  ok: {"Success description", "application/json", Schemas.SomeDomain.Response},
+  bad_request:
+    {"Withdrawal cannot be claimed. Returned when the withdrawal is unconfirmed, just initiated, or already executed.",
+     "application/json", BadRequestResponse},
+  not_found: NotFoundResponse.response(),
+  unprocessable_entity: JsonErrorResponse.response()
+]
+```
+
+This works because `response/0` just returns the same kind of 3-tuple. By writing the tuple directly, you can customize the description while keeping the same response schema module.
+
+**When to use this pattern:**
+- The controller has 2+ branches returning the same status code with different user-facing messages
+- The conditions are meaningful to API consumers (not internal implementation details)
+
+**When NOT to use it:**
+- The status code has only one triggering condition — use the standard `Module.response()` helper
+- The different messages are minor variants of the same condition — the generic description is fine
 
 ## Custom inline error responses
 

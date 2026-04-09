@@ -252,7 +252,7 @@ Add the `operation/2` call above the controller action. Follow the structure in 
 - `summary:` is a short imperative sentence
 - `description:` adds useful detail beyond the summary
 - `parameters:` includes `base_params()` and all path/query params
-- `responses:` covers the success case and all error cases the action can return
+- `responses:` covers the success case and all error cases the action can return. If multiple controller branches share the same status code with different error messages, use a custom description tuple instead of the generic `Module.response()` helper — see `references/error-response-patterns.md` section "Multiple error branches sharing one status code".
 
 If the controller lacks the `use OpenApiSpex.ControllerSpecs` line and `CastAndValidate` plug, add them (see "Controller prerequisites").
 
@@ -285,11 +285,23 @@ The existing list already includes common path params like `:address_hash_param`
 
 Tests are the primary mechanism that validates the response schema matches the actual view output. Without tests hitting the endpoint, the schema is unverified documentation that may be wrong.
 
-1. **Check if tests already exist.** Look for the test file at `apps/block_scout_web/test/block_scout_web/controllers/api/v2/<domain>_controller_test.exs`. Grep for the endpoint path or action name within the file.
+1. **Enumerate all status codes the controller action returns.** Read the controller action and list every distinct HTTP status code it can produce. Look for:
+   - `put_status` calls (e.g., `put_status(:bad_request)`, `put_status(200)`)
+   - Pattern-match branches that render different error responses
+   - `send_resp` calls with explicit status codes
+   - The implicit 200 from the success path (`render` without `put_status`)
+   
+   Cross-reference this list against the `responses:` declared in the operation. Every status code declared in the operation should have at least one test. If multiple branches return the same status code with different conditions, note each branch separately — ideally each gets its own test case so the conditions are documented.
 
-2. **If tests exist** that hit this endpoint and call `json_response/2`, they will automatically validate the schema. Proceed to Step 6.
+   Some error branches may be unreachable without mocking external dependencies (RPC calls, microservice responses). For those:
+   - Test the branches that ARE reachable with pure DB setup and factory data
+   - Add a code comment in the test file documenting which branches are blocked and why (e.g., `# 400 "withdrawal is unconfirmed yet" — requires mocking L1 RPC via get_actual_message_status, not covered here`)
 
-3. **If no tests exist** for this endpoint, create them. At minimum, write tests for the following cases:
+2. **Check if tests already exist.** Look for the test file at `apps/block_scout_web/test/block_scout_web/controllers/api/v2/<domain>_controller_test.exs`. Grep for the endpoint path or action name within the file.
+
+3. **If tests exist** that hit this endpoint and call `json_response/2`, they will automatically validate the schema. Proceed to Step 6.
+
+4. **If no tests exist** for this endpoint, create them. At minimum, write tests for the following cases:
 
 ```elixir
 # For a list endpoint — empty response, zero factory data needed
@@ -321,9 +333,11 @@ test "returns 422 on invalid input", %{conn: conn} do
 end
 ```
 
+These templates cover common cases but are not exhaustive. Refer back to the status code enumeration from item 1 — if the controller returns status codes beyond 200/404/422 (e.g., 400 from business-logic checks), write additional tests for those. For each status code, set up the DB state that triggers that specific branch and assert on both the status code and the error message.
+
 Choose the templates that match the endpoint type (list vs single resource). The `json_response/2` call is what triggers schema validation — every test that calls it automatically verifies the response against the declared OpenAPI schema.
 
-4. **If the schema contains `oneOf` polymorphic sub-objects** (from Step 3 item 5), write at least one test per variant so that each branch's `additionalProperties: false` constraint is exercised. The default factory typically produces only the simplest variant (e.g., a nil discriminator), so tests for other variants need explicit setup — insert the factory with the discriminator value set, plus any associated records the view fetches for that branch.
+5. **If the schema contains `oneOf` polymorphic sub-objects** (from Step 3 item 5), write at least one test per variant so that each branch's `additionalProperties: false` constraint is exercised. The default factory typically produces only the simplest variant (e.g., a nil discriminator), so tests for other variants need explicit setup — insert the factory with the discriminator value set, plus any associated records the view fetches for that branch.
 
 ### Step 6: Verify
 
