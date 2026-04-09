@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   import Explorer.Chain.Arbitrum.DaMultiPurposeRecord.Helper, only: [calculate_celestia_data_key: 2]
 
+  alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.BadRequestResponse
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.Arbitrum.ClaimRollupMessage
   alias Explorer.Chain.Arbitrum.{L1Batch, Message}
@@ -55,7 +56,30 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     ]
 
   operation :messages_count, false
-  operation :claim_message, false
+
+  operation :claim_message,
+    summary: "Get claim data for a withdrawal.",
+    description:
+      "Returns the ABI-encoded calldata and outbox contract address required to execute a Rollup withdrawal on the Parent chain.",
+    parameters: [
+      %OpenApiSpex.Parameter{
+        name: :message_id,
+        in: :path,
+        schema: %Schema{type: :integer, minimum: 0},
+        required: true,
+        description: "Withdrawal message ID."
+      }
+      | base_params()
+    ],
+    responses: [
+      ok: {"Claim data for the withdrawal.", "application/json", Schemas.Arbitrum.ClaimMessage},
+      bad_request:
+        {"Withdrawal cannot be claimed. Returned when the withdrawal is unconfirmed, just initiated, or already executed.",
+         "application/json", BadRequestResponse},
+      not_found: NotFoundResponse.response(),
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   operation :withdrawals, false
 
   operation :batch,
@@ -181,9 +205,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     Function to handle GET requests to `/api/v2/arbitrum/messages/claim/:message_id` endpoint.
   """
   @spec claim_message(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def claim_message(conn, %{"message_id" => message_id} = _params) do
-    message_id = String.to_integer(message_id)
-
+  def claim_message(conn, %{message_id: message_id} = _params) do
     case ClaimRollupMessage.claim(message_id) do
       {:ok, [contract_address: outbox_contract_address, calldata: calldata]} ->
         conn

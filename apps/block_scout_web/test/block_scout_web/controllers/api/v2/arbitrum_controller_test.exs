@@ -322,6 +322,60 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
       end
     end
 
+    describe "/arbitrum/messages/claim/:message_id" do
+      test "returns 400 for already relayed withdrawal", %{conn: conn} do
+        message_id = 42
+
+        transaction = insert(:transaction) |> with_block()
+
+        insert(:arbitrum_message,
+          direction: :from_l2,
+          message_id: message_id,
+          originating_transaction_hash: transaction.hash,
+          status: :relayed
+        )
+
+        {:ok, fourth_topic} =
+          Explorer.Chain.Hash.Full.cast("0x" <> String.pad_leading(Integer.to_string(message_id, 16), 64, "0"))
+
+        {:ok, second_topic} =
+          Explorer.Chain.Hash.Full.cast("0x" <> String.pad_leading("dead", 64, "0"))
+
+        # ABI-encode unindexed params: [caller, arb_block_number, eth_block_number, timestamp, callvalue, data]
+        log_data_bin =
+          ABI.TypeEncoder.encode_raw(
+            [<<0::160>>, 1, 2, 3, 0, <<>>],
+            [:address, {:uint, 256}, {:uint, 256}, {:uint, 256}, {:uint, 256}, :bytes],
+            :standard
+          )
+
+        {:ok, data} = Explorer.Chain.Data.cast("0x" <> Base.encode16(log_data_bin, case: :lower))
+
+        insert(:log,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          first_topic: "0x3e7aafa77dbf186b7fd488006beff893744caa3c4f6f299e8a709fa2087374fc",
+          second_topic: second_topic,
+          fourth_topic: fourth_topic,
+          data: data
+        )
+
+        request = get(conn, "/api/v2/arbitrum/messages/claim/#{message_id}")
+        assert %{"message" => "withdrawal was executed already"} = json_response(request, 400)
+      end
+
+      test "returns 404 for non-existing message", %{conn: conn} do
+        request = get(conn, "/api/v2/arbitrum/messages/claim/0")
+        assert %{"message" => _} = json_response(request, 404)
+      end
+
+      test "returns 422 for invalid message id", %{conn: conn} do
+        request = get(conn, "/api/v2/arbitrum/messages/claim/invalid")
+        assert %{"errors" => _} = json_response(request, 422)
+      end
+    end
+
     defp compare_batch(%L1Batch{} = batch, json) do
       batch = Explorer.Repo.preload(batch, :commitment_transaction)
 
