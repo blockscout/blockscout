@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Batch do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.Arbitrum.{BatchDataContainer, CommitmentTransaction}
+  alias BlockScoutWeb.Schemas.API.V2.Arbitrum.CommitmentTransaction
   alias BlockScoutWeb.Schemas.API.V2.General
   alias OpenApiSpex.Schema
 
@@ -32,7 +32,15 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Batch do
           # Variant: nil / in_blob4844 / in_calldata (no extra fields)
           %Schema{
             type: :object,
-            properties: %{batch_data_container: BatchDataContainer},
+            properties: %{
+              batch_data_container: %Schema{
+                type: :string,
+                # Enum values must be kept in sync with Explorer.Chain.Arbitrum.L1Batch :batch_container field.
+                enum: ["in_blob4844", "in_calldata"],
+                nullable: true,
+                description: "Data availability container type."
+              }
+            },
             required: [:batch_data_container],
             additionalProperties: false
           },
@@ -40,7 +48,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Batch do
           %Schema{
             type: :object,
             properties: %{
-              batch_data_container: BatchDataContainer,
+              batch_data_container: %Schema{type: :string, enum: ["in_anytrust"]},
               data_hash: %Schema{type: :string, nullable: true, description: "AnyTrust data hash."},
               timeout: %Schema{type: :string, nullable: true, description: "Data availability timeout (ISO 8601)."},
               bls_signature: %Schema{
@@ -70,7 +78,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Batch do
           %Schema{
             type: :object,
             properties: %{
-              batch_data_container: BatchDataContainer,
+              batch_data_container: %Schema{type: :string, enum: ["in_celestia"]},
               height: %Schema{type: :integer, nullable: true, description: "Celestia block height."},
               transaction_commitment: %Schema{
                 type: :string,
@@ -85,7 +93,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Batch do
           %Schema{
             type: :object,
             properties: %{
-              batch_data_container: BatchDataContainer,
+              batch_data_container: %Schema{type: :string, enum: ["in_eigenda"]},
               blob_header: %Schema{
                 type: :string,
                 nullable: true,

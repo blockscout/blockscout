@@ -203,14 +203,17 @@ For each parameter the controller reads:
    - **No meaningful overlap** — create a standalone schema.
 3. **If no suitable schema exists**, create one following the conventions in `references/schema-conventions.md`. The schema's properties must match the view's output keys exactly.
 4. **Deduplicate against existing domain schemas.** Before finalizing properties, compare each inline `%Schema{type: :object}` block and each `%Schema{type: :string, enum: [...]}` definition in the new schema against properties in the existing schemas found in step 1. If an identical structure already exists in another schema in the same domain directory, extract it into a shared leaf schema module and reference it from both schemas. This avoids drift when the structure changes and consolidates Ecto.Enum sync comments to one location. See `references/schema-conventions.md` section "Domain-scoped shared schemas" for templates.
-5. **Model polymorphic sub-objects.** If Step 1 identified a property whose structure varies based on a discriminator field (e.g., a `data_availability` object that changes shape depending on `batch_data_container`), a single flat `%Schema{type: :object}` with only the common fields will be incomplete — the variant-specific fields won't be documented or validated. Use `oneOf` to declare each variant explicitly. Each variant is a `%Schema{type: :object}` with its own properties, `required` list, and `additionalProperties: false`. The discriminator field appears in every variant. If the view has a catch-all branch (e.g., `value -> %{"field" => to_string(value)}`), model it as the minimal variant containing only the discriminator. For existing precedent, see `transaction.ex` (`revert_reason` property). Template:
+5. **Model polymorphic sub-objects.** If Step 1 identified a property whose structure varies based on a discriminator field (e.g., a `data_availability` object that changes shape depending on `batch_data_container`), a single flat `%Schema{type: :object}` with only the common fields will be incomplete — the variant-specific fields won't be documented or validated. Use `oneOf` to declare each variant explicitly. Each variant is a `%Schema{type: :object}` with its own properties, `required` list, and `additionalProperties: false`. The discriminator field appears in every variant. If the view has a catch-all branch (e.g., `value -> %{"field" => to_string(value)}`), model it as the minimal variant containing only the discriminator. For existing precedent, see `transaction.ex` (`revert_reason` property).
+   **Constrain the discriminator per variant.** Each variant's discriminator property must be narrowed to the specific value(s) that identify it — use an inline `%Schema{type: :string, enum: [...]}` instead of referencing the shared enum schema. This prevents logically invalid combinations from passing validation. Template:
    ```elixir
    data_availability: %Schema{
      oneOf: [
        # Variant: nil / in_blob4844 / in_calldata (no extra fields)
        %Schema{
          type: :object,
-         properties: %{batch_data_container: BatchDataContainer},
+         properties: %{
+           batch_data_container: %Schema{type: :string, enum: ["in_blob4844", "in_calldata"], nullable: true}
+         },
          required: [:batch_data_container],
          additionalProperties: false
        },
@@ -218,7 +221,7 @@ For each parameter the controller reads:
        %Schema{
          type: :object,
          properties: %{
-           batch_data_container: BatchDataContainer,
+           batch_data_container: %Schema{type: :string, enum: ["in_anytrust"]},
            data_hash: %Schema{type: :string, nullable: true},
            timeout: %Schema{type: :string, nullable: true},
            bls_signature: %Schema{type: :string, nullable: true},
@@ -227,7 +230,7 @@ For each parameter the controller reads:
          required: [:batch_data_container, :data_hash, :timeout, :bls_signature, :signers],
          additionalProperties: false
        },
-       # ... additional variants
+       # ... additional variants (each with its own enum constraint)
      ],
      description: "Data availability info. Structure varies by `batch_data_container`."
    }
