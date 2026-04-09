@@ -50,6 +50,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Filter blocks by BLOCK_RANGES in add_ranges_by_block_numbers ([#13875](https://github.com/blockscout/blockscout/pull/13875))
 - FillInternalTransactionsAddressIds improvements ([#14208](https://github.com/blockscout/blockscout/pull/14208))
 - Remove timeout between successful migrations ([#14198](https://github.com/blockscout/blockscout/issues/14198))
 - Add batch size env for FillInternalTransactionsAddressIds migration ([#14204](https://github.com/blockscout/blockscout/issues/14204))
