@@ -15,6 +15,7 @@
 
 ### 🐛 Bug Fixes
 
+- Handle partial errors in ContractCode fetch_codes ([#14211](https://github.com/blockscout/blockscout/pull/14211))
 - Include bridged token query params in OpenAPI spec ([#14209](https://github.com/blockscout/blockscout/pull/14209))
 - Update changed constraint name in shrink IT migration ([#14205](https://github.com/blockscout/blockscout/pull/14205))
 - Optimize token1155tx API v1 endpoint ([#14202](https://github.com/blockscout/blockscout/issues/14202))
@@ -44,6 +45,7 @@
 
 ### ⚡ Performance
 
+- Optimize optional address preloads across tx endpoints ([#14165](https://github.com/blockscout/blockscout/pull/14165))
 - Optimize on demand hot contracts performance ([#14150](https://github.com/blockscout/blockscout/issues/14150))
 - Remove join to "blocks" in api/v2/blocks/:block_number/transactions API endpoint ([#14162](https://github.com/blockscout/blockscout/issues/14162))
 - Improve performance of /api/v2/tokens API endpoint ([#14158](https://github.com/blockscout/blockscout/issues/14158))
