@@ -21,6 +21,38 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
       assert response["next_page_params"] == nil
     end
 
+    test "returns pending status when internal transaction scope is pending", %{conn: conn} do
+      request = get(conn, "/api/v2/internal-transactions")
+      assert %{"items" => []} = json_response(request, 200)
+
+      block = insert(:block)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      request = get(conn, "/api/v2/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["status"] == 2
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "returns pending status when transaction hash is in pending_transaction_operations", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+
+      request = get(conn, "/api/v2/internal-transactions", %{"transaction_hash" => to_string(transaction.hash)})
+
+      assert response = json_response(request, 200)
+      assert response["next_page_params"] == nil
+      assert response["status"] == 2
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+    end
+
     test "non empty list", %{conn: conn} do
       tx =
         :transaction
