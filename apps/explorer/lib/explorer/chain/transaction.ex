@@ -852,6 +852,33 @@ defmodule Explorer.Chain.Transaction do
         do: {:error, :not_a_contract_call}
   end
 
+  # if to_address is a verified contract but smart_contract is not preloaded,
+  # decode using the pre-built smart_contract_full_abi_map (keyed by address hash)
+  def decoded_input_data(
+        %__MODULE__{
+          input: %{bytes: data} = input,
+          to_address: %Address{verified: true, hash: to_address_hash, smart_contract: %NotLoaded{}},
+          hash: hash
+        },
+        skip_sig_provider?,
+        options,
+        methods_map,
+        smart_contract_full_abi_map
+      ) do
+    full_abi = Map.get(smart_contract_full_abi_map, to_address_hash, [])
+
+    decode_input_data_with_fallback(
+      data,
+      full_abi,
+      input,
+      hash,
+      skip_sig_provider?,
+      options,
+      methods_map,
+      smart_contract_full_abi_map
+    )
+  end
+
   # if to_address's smart_contract is nil reduce to the case when to_address is not loaded
   def decoded_input_data(
         %__MODULE__{
@@ -958,6 +985,37 @@ defmodule Explorer.Chain.Transaction do
       ) do
     full_abi = check_full_abi_cache(smart_contract, smart_contract_full_abi_map, options)
 
+    decode_input_data_with_fallback(
+      data,
+      full_abi,
+      input,
+      hash,
+      skip_sig_provider?,
+      options,
+      methods_map,
+      smart_contract_full_abi_map
+    )
+  end
+
+  def decoded_input_data(
+        %__MODULE__{to_address: %{metadata: _, ens_domain_name: _}},
+        _,
+        _,
+        _,
+        _
+      ),
+      do: {:error, :no_to_address}
+
+  defp decode_input_data_with_fallback(
+         data,
+         full_abi,
+         input,
+         hash,
+         skip_sig_provider?,
+         options,
+         methods_map,
+         smart_contract_full_abi_map
+       ) do
     case do_decoded_input_data(data, full_abi, hash) do
       # In some cases transactions use methods of some unpredictable contracts, so we can try to look up for method in a whole DB
       {:error, error} when error in [:could_not_decode, :no_matching_function] ->
@@ -986,15 +1044,6 @@ defmodule Explorer.Chain.Transaction do
         output
     end
   end
-
-  def decoded_input_data(
-        %__MODULE__{to_address: %{metadata: _, ens_domain_name: _}},
-        _,
-        _,
-        _,
-        _
-      ),
-      do: {:error, :no_to_address}
 
   defp decode_function_call_via_sig_provider_wrapper(input, hash, skip_sig_provider?) do
     case decode_function_call_via_sig_provider(input, hash, skip_sig_provider?) do
@@ -1656,6 +1705,7 @@ defmodule Explorer.Chain.Transaction do
             Chain.paging_options()
             | Chain.necessity_by_association_option()
             | {:sorting, SortingHelper.sorting_params()}
+            | Chain.timeout_option()
           ],
           boolean()
         ) :: [__MODULE__.t()]
@@ -1675,6 +1725,7 @@ defmodule Explorer.Chain.Transaction do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     old_ui? = old_ui? || is_tuple(Keyword.get(options, :paging_options, Chain.default_paging_options()).key)
     sorting_options = Keyword.get(options, :sorting, [])
+    timeout = Keyword.get(options, :timeout)
 
     options
     |> address_to_transactions_tasks_query(false, old_ui?)
@@ -1682,7 +1733,11 @@ defmodule Explorer.Chain.Transaction do
     |> Chain.join_associations(necessity_by_association)
     |> put_has_token_transfers_to_transaction(old_ui?)
     |> matching_address_queries_list(direction, address_hash, sorting_options)
-    |> Enum.map(fn query -> Task.async(fn -> Chain.select_repo(options).all(query) end) end)
+    |> Enum.map(fn query ->
+      Task.async(fn ->
+        Chain.select_repo(options).all(query, Helper.maybe_timeout(timeout))
+      end)
+    end)
   end
 
   @doc """

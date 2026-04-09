@@ -1,5 +1,146 @@
 # Changelog
 
+## 11.0.0
+
+### 🚀 Features
+
+- Async CSV export ([#14028](https://github.com/blockscout/blockscout/issues/14028))
+- Add toggle to disable transactions / token transfers BENS preload ([#14159](https://github.com/blockscout/blockscout/issues/14159))
+- Add ENS and metadata preloading in block channel ([#12074](https://github.com/blockscout/blockscout/issues/12074))
+- Add validation for IPFS links before sending requests to gateway ([#14131](https://github.com/blockscout/blockscout/issues/14131))
+- Add search by token address hash in /api/v2/tokens ([#14102](https://github.com/blockscout/blockscout/issues/14102))
+- FHE operations and tags ([#13742](https://github.com/blockscout/blockscout/issues/13742))
+- Add :rename heavy index db operation type and implement zero-downtime index replacement for transactions table ([#14052](https://github.com/blockscout/blockscout/issues/14052))
+- Use libraries field from eth bytecode db response ([#13948](https://github.com/blockscout/blockscout/issues/13948))
+
+### 🐛 Bug Fixes
+
+- Handle partial errors in ContractCode fetch_codes ([#14211](https://github.com/blockscout/blockscout/pull/14211))
+- Include bridged token query params in OpenAPI spec ([#14209](https://github.com/blockscout/blockscout/pull/14209))
+- Update changed constraint name in shrink IT migration ([#14205](https://github.com/blockscout/blockscout/pull/14205))
+- Optimize token1155tx API v1 endpoint ([#14202](https://github.com/blockscout/blockscout/issues/14202))
+- Fix contract internal transactions preload ([#14203](https://github.com/blockscout/blockscout/issues/14203))
+- Handle RPC errors in ContractCreator, limit retries to 5 ([#14136](https://github.com/blockscout/blockscout/issues/14136))
+- Prevent duplicate missing block range inserts ([#14138](https://github.com/blockscout/blockscout/issues/14138))
+- Implementation address hash retrieval logic in the old UI ([#14192](https://github.com/blockscout/blockscout/issues/14192))
+- Keycloak address displaying ([#14155](https://github.com/blockscout/blockscout/issues/14155))
+- Celo election rewards csv export ([#14160](https://github.com/blockscout/blockscout/issues/14160))
+- Sync GraphQL language enum with SmartContract schema ([#14109](https://github.com/blockscout/blockscout/issues/14109))
+- Don't insert PTO for non-traceable transactions ([#14133](https://github.com/blockscout/blockscout/issues/14133))
+- Fix pending ops migration overflow by adaptive batching and chunked inserts ([#14135](https://github.com/blockscout/blockscout/issues/14135))
+- State changes use token transfer type ([#14073](https://github.com/blockscout/blockscout/issues/14073))
+- Fix 500 error when apikey provided with disabled account ([#14064](https://github.com/blockscout/blockscout/issues/14064))
+- Fix ArgumentError in BlockScoutWeb.NFTHelper.get_media_src/2 ([#14051](https://github.com/blockscout/blockscout/issues/14051))
+
+### 🚜 Refactor
+
+- Refactor RollupReorgMonitorQueue ([#14196](https://github.com/blockscout/blockscout/issues/14196))
+- Deduplicate json_rpc_named_arguments ([#14194](https://github.com/blockscout/blockscout/issues/14194))
+- Fully migrate to `language` enum field in `smart_contracts` table ([#14049](https://github.com/blockscout/blockscout/issues/14049))
+- Migrate address_names to composite primary key on (address_hash, name) ([#14078](https://github.com/blockscout/blockscout/issues/14078))
+
+### 📚 Documentation
+
+- Add .dialyzer-ignore hygiene guideline to CONTRIBUTING ([#14199](https://github.com/blockscout/blockscout/issues/14199))
+
+### ⚡ Performance
+
+- Optimize optional address preloads across tx endpoints ([#14165](https://github.com/blockscout/blockscout/pull/14165))
+- Optimize on demand hot contracts performance ([#14150](https://github.com/blockscout/blockscout/issues/14150))
+- Remove join to "blocks" in api/v2/blocks/:block_number/transactions API endpoint ([#14162](https://github.com/blockscout/blockscout/issues/14162))
+- Improve performance of /api/v2/tokens API endpoint ([#14158](https://github.com/blockscout/blockscout/issues/14158))
+
+### ⚙️ Miscellaneous Tasks
+
+- Filter blocks by BLOCK_RANGES in add_ranges_by_block_numbers ([#13875](https://github.com/blockscout/blockscout/pull/13875))
+- FillInternalTransactionsAddressIds improvements ([#14208](https://github.com/blockscout/blockscout/pull/14208))
+- Remove timeout between successful migrations ([#14198](https://github.com/blockscout/blockscout/issues/14198))
+- Add batch size env for FillInternalTransactionsAddressIds migration ([#14204](https://github.com/blockscout/blockscout/issues/14204))
+- Remove transaction_hash from internal transactions ([#14099](https://github.com/blockscout/blockscout/issues/14099))
+- Add Celo OpenAPI specs ([#14197](https://github.com/blockscout/blockscout/issues/14197))
+- Cover counters to multichain export with unit tests ([#14193](https://github.com/blockscout/blockscout/issues/14193))
+- Update credo config ([#14147](https://github.com/blockscout/blockscout/issues/14147))
+- Remove Polygon zkEVM support ([#14188](https://github.com/blockscout/blockscout/issues/14188))
+- Add Block.full_refetch ([#14180](https://github.com/blockscout/blockscout/issues/14180))
+- Remove deprecated files from the root folder ([#14186](https://github.com/blockscout/blockscout/issues/14186))
+- Remove deprecated "transaction actions" indexer ([#14183](https://github.com/blockscout/blockscout/issues/14183))
+- Stabilize various flaky tests ([#14149](https://github.com/blockscout/blockscout/issues/14149))
+- Return automatic chromedriver version definition ([#14108](https://github.com/blockscout/blockscout/issues/14108))
+- Move agents skills to .agents/skills folder ([#14081](https://github.com/blockscout/blockscout/issues/14081))
+- Put in order background db migrations on the "transactions" table ([#14077](https://github.com/blockscout/blockscout/issues/14077))
+- Drop `transactions_operator_fee_constant_index` ([#14066](https://github.com/blockscout/blockscout/issues/14066))
+- Unescape ampersand in token's metadata ([#14055](https://github.com/blockscout/blockscout/issues/14055))
+- Treat blocks with huge amount of transactions as massive ([#13994](https://github.com/blockscout/blockscout/issues/13994))
+- Add OpenAPI docs for Scroll and Zilliqa endpoints ([#13972](https://github.com/blockscout/blockscout/issues/13972))
+- Add all-in-one open API spec file ([#14050](https://github.com/blockscout/blockscout/issues/14050))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `DISABLE_BLOCK_BROADCAST_ENRICHMENT`                    | If `true`, disables ENS and metadata enrichment for `new_block` WebSocket broadcasts. Implemented in [#12074](https://github.com/blockscout/blockscout/pull/12074).                                                                                                                                                                                                                                                                                | Version: v11.0.0\+ <br />Default: (empty) <br />Applications: API                                                                                                                                                                                                                                                                                                                |
+| `INDEXER_MASSIVE_BLOCK_THRESHOLD`                             | Max transactions count in a single block after which the block is treated as massive. Implemented in [#13994](https://github.com/blockscout/blockscout/pull/13994).                                                                                                                                                                                                                                                                                                                                                              | Version: v11.0.0\+ <br />Default: `1000` <br />Applications: Indexer                                         |
+| `INDEXER_FHE_OPERATIONS_ENABLED`                              | Flag to enable parsing of Fully Homomorphic Encryption (FHE) operations from transactions. Implemented in [#13742](https://github.com/blockscout/blockscout/pull/13742).                                                                                                                                                                                                                                                                                                                                                         | Version: v11.0.0\+ <br />Default: `false` <br />Applications: Indexer                                      |
+| `MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_BATCH_SIZE`     | Number of internal transactions to fill their address ids in the batch. Implemented in [#14204](https://github.com/blockscout/blockscout/pull/14204).                                                                                                                                                                                                                 | Version: v11.0.0\+ <br />Default: `100` <br />Applications: Indexer          |
+| `MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_TIMEOUT`     | Timeout between filling internal transactions address ids batches processing. Implemented in [#14208](https://github.com/blockscout/blockscout/pull/14208).                                                                                                                                                                                                              | Version: v11.0.0\+ <br />Default: `0s` <br />Applications: Indexer          |
+| `DISABLE_TRANSACTIONS_BENS_PRELOAD`       | If `true`, skips ENS name preloading in responses for transaction list endpoints: `/api/v2/transactions`, `/api/v2/addresses/:hash/transactions`, `/api/v2/blocks/:hash/transactions`.                            | Version: v11.0.0+ <br />Default: `false` <br />Applications: API |
+| `DISABLE_TOKEN_TRANSFERS_BENS_PRELOAD`    | If `true`, skips ENS name preloading in responses for token transfer list endpoints: `/api/v2/token-transfers`, `/api/v2/addresses/:hash/token-transfers`, `/api/v2/tokens/:address_hash_param/transfers`.        | Version: v11.0.0+ <br />Default: `false` <br />Applications: API |
+| `CSV_EXPORT_ASYNC_ENABLED`                       | Enables async CSV export for supported endpoints. When enabled, the API returns `202 Accepted` with a `request_id` and processes exports through Oban instead of streaming them directly. Implemented in [#14028](https://github.com/blockscout/blockscout/pull/14028) | Version: v11.0.0\+ Required: No <br />Default: `false` <br />Applications: API                                                          |
+| `CSV_EXPORT_ASYNC_OBAN_CONCURRENCY`              | Sets Oban concurrency for the `csv_export` queue used by async CSV exports. Implemented in [#14028](https://github.com/blockscout/blockscout/pull/14028)                                     | Version: v11.0.0\+ Required: No <br />Default: `10` <br />Applications: API                                                             |
+| `CSV_EXPORT_ASYNC_GOKAPI_URL`                    | Base URL of the Gokapi instance used to store completed async CSV exports. Trailing slash is stripped during validation. Implemented in [#14028](https://github.com/blockscout/blockscout/pull/14028) | Version: v11.0.0\+ Required: Yes, if async export is enabled <br />Default: (empty) <br />Applications: API                            |
+| `CSV_EXPORT_ASYNC_GOKAPI_API_KEY`                | API key sent to Gokapi in the `apikey` header for async CSV export uploads. Implemented in [#14028](https://github.com/blockscout/blockscout/pull/14028)                                     | Version: v11.0.0\+ Required: Yes, if async export is enabled <br />Default: (empty) <br />Applications: API                            |
+| `CSV_EXPORT_ASYNC_MAX_PENDING_TASKS_PER_IP`      | Maximum number of pending async CSV export requests allowed per client IP at once. Implemented in [#14028](https://github.com/blockscout/blockscout/pull/14028)                              | Version: v11.0.0\+ Required: No <br />Default: `3` <br />Applications: API                                                              |
+| `CSV_EXPORT_ASYNC_UPLOAD_CHUNK_SIZE`             | Chunk size in bytes for reading the generated CSV file and uploading it to Gokapi. Should be synchronized with Gokapi settings. Implemented in [#14028](https://github.com/blockscout/blockscout/pull/14028)                              | Version: v11.0.0\+ Required: No <br />Default: `47185920` <br />Applications: API                                                       |
+| `CSV_EXPORT_DB_TIMEOUT`                          | Timeout for CSV export database work. Follows the [time format](/setup/env-variables/backend-env-variables#time-format). Implemented in [#14028](https://github.com/blockscout/blockscout/pull/14028) | Version: v11.0.0\+ Required: No <br />Default: `1h` if async export is enabled, otherwise `5m` <br />Applications: API                |
+| `CSV_EXPORT_ASYNC_TMP_DIR`                       | Directory used for in-progress async CSV export files before they are uploaded to Gokapi. Implemented in [#14028](https://github.com/blockscout/blockscout/pull/14028)                       | Version: v11.0.0\+ Required: No <br />Default: `/tmp/csv_export` <br />Applications: API                                                |
+| `CSV_EXPORT_ASYNC_GOKAPI_TIMEOUT`                | HTTP timeout and `recv_timeout` used for Gokapi requests during async CSV export. Follows the [time format](/setup/env-variables/backend-env-variables#time-format). Implemented in [#14028](https://github.com/blockscout/blockscout/pull/14028) | Version: v11.0.0\+ Required: No <br />Default: `60s` <br />Applications: API                                                            |
+| `CSV_EXPORT_ASYNC_GOKAPI_UPLOAD_EXPIRY_DAYS`     | Sets Gokapi `expiryDays` for completed async CSV export uploads. Implemented in [#14028](https://github.com/blockscout/blockscout/pull/14028)                                                | Version: v11.0.0\+ Required: No <br />Default: `1` <br />Applications: API                                                              |
+| `CSV_EXPORT_ASYNC_GOKAPI_UPLOAD_ALLOWED_DOWNLOADS` | Sets Gokapi `allowedDownloads` for completed async CSV export uploads. Implemented in [#14028](https://github.com/blockscout/blockscout/pull/14028)                                        | Version: v11.0.0\+ Required: No <br />Default: `1` <br />Applications: API                                                              |
+
+### Deprecated ENV variables
+
+| Variable | Description | Default | Version | Need recompile | Deprecated in Version |
+| -------- | ----------- | ------- | ------- | -------------- | --------------------- |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_BATCHES_ENABLED` | Enables Polygon zkEVM batches fetcher. Implemented in [#7584](https://github.com/blockscout/blockscout/pull/7584). | `false` | v5.3.1+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_BATCHES_CHUNK_SIZE` | The number of Polygon zkEVM batches in one chunk when reading them from RPC. Implemented in [#7584](https://github.com/blockscout/blockscout/pull/7584). | `20` | v5.3.1+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_BATCHES_RECHECK_INTERVAL` | The latest batch rechecking interval, seconds. Implemented in [#7584](https://github.com/blockscout/blockscout/pull/7584). | `60` | v5.3.1+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_BATCHES_IGNORE` | Comma-separated list of batch numbers that should be ignored by the fetcher. Implemented in [#12387](https://github.com/blockscout/blockscout/pull/12387). | (empty) | v9.0.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_L1_RPC` | The RPC endpoint for L1 used to fetch Deposit or Withdrawal bridge events. Implemented in [#9098](https://github.com/blockscout/blockscout/pull/9098). | (empty) | v6.2.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_L1_BRIDGE_START_BLOCK` | The number of a start block on L1 to index L1 bridge events. If the table of bridge operations is not empty, the process will continue indexing from the last indexed L1 event. If empty or not defined, the L1 events are not handled. Implemented in [#9098](https://github.com/blockscout/blockscout/pull/9098). | (empty) | v6.2.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_L1_BRIDGE_CONTRACT` | The address of PolygonZkEVMBridgeV2 contract on L1 used to fetch L1 bridge events. Required for L1 bridge events indexing. Implemented in [#9098](https://github.com/blockscout/blockscout/pull/9098). | (empty) | v6.2.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NETWORK_ID` | L1 Network ID in terms of Polygon zkEVM bridge (0 = Ethereum Mainnet, 1 = Polygon zkEVM, 2 = Astar zkEVM, etc.). Required if `INDEXER_POLYGON_ZKEVM_L1_BRIDGE_START_BLOCK` or `INDEXER_POLYGON_ZKEVM_L2_BRIDGE_START_BLOCK` is defined. Implemented in [#9637](https://github.com/blockscout/blockscout/pull/9637). | (empty) | v6.4.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_L1_BRIDGE_ROLLUP_INDEX` | L1 Rollup index in terms of Polygon zkEVM bridge (0 = Polygon zkEVM, 1 = Astar zkEVM, etc.). Not defined if L1 is Ethereum Mainnet. Required if L1 is not Ethereum Mainnet and `INDEXER_POLYGON_ZKEVM_L1_BRIDGE_START_BLOCK` or `INDEXER_POLYGON_ZKEVM_L2_BRIDGE_START_BLOCK` is defined. Implemented in [#9637](https://github.com/blockscout/blockscout/pull/9637). | (empty) | v6.4.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NATIVE_SYMBOL` | The symbol of the native coin on L1 to display it in the table of the bridge Deposits and Withdrawals on UI. Implemented in [#9098](https://github.com/blockscout/blockscout/pull/9098). | `ETH` | v6.2.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NATIVE_DECIMALS` | The number of decimals to correctly display an amount of native coins for some Deposit or Withdrawal bridge operations on UI. Implemented in [#9098](https://github.com/blockscout/blockscout/pull/9098). | `18` | v6.2.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_L2_BRIDGE_START_BLOCK` | The number of a start block on L2 to index L2 bridge events. If the table of bridge operations is not empty, the process will continue indexing from the last indexed L2 event. If empty or not defined, the L2 events are not handled. Implemented in [#9098](https://github.com/blockscout/blockscout/pull/9098). | (empty) | v6.2.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_L2_BRIDGE_CONTRACT` | The address of PolygonZkEVMBridgeV2 contract on L2 used to fetch L2 bridge events. Required for L2 bridge events indexing. Implemented in [#9098](https://github.com/blockscout/blockscout/pull/9098). | (empty) | v6.2.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_L2_BRIDGE_NETWORK_ID` | L2 Network ID in terms of Polygon zkEVM bridge (1 = Polygon zkEVM, 2 = Astar zkEVM, etc.). Required if `INDEXER_POLYGON_ZKEVM_L1_BRIDGE_START_BLOCK` or `INDEXER_POLYGON_ZKEVM_L2_BRIDGE_START_BLOCK` is defined. Implemented in [#9637](https://github.com/blockscout/blockscout/pull/9637). | (empty) | v6.4.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_POLYGON_ZKEVM_L2_BRIDGE_ROLLUP_INDEX` | L2 Rollup index in terms of Polygon zkEVM bridge (0 = Polygon zkEVM, 1 = Astar zkEVM, etc.). Required if `INDEXER_POLYGON_ZKEVM_L1_BRIDGE_START_BLOCK` or `INDEXER_POLYGON_ZKEVM_L2_BRIDGE_START_BLOCK` is defined. Implemented in [#9637](https://github.com/blockscout/blockscout/pull/9637). | (empty) | v6.4.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_TX_ACTIONS_AAVE_V3_POOL_CONTRACT` | Pool contract address for Aave v3 protocol. If not defined, Aave transaction actions are ignored by the indexer. Implemented in [#7185](https://github.com/blockscout/blockscout/pull/7185). | (empty) | v5.1.3+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_TX_ACTIONS_ENABLE` | If `true`, transaction action indexer is active. Implemented in [#6582](https://github.com/blockscout/blockscout/pull/6582). | `false` | v5.1.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_TX_ACTIONS_MAX_TOKEN_CACHE_SIZE` | Maximum number of items in an internal cache of tx actions indexing process (to limit memory consumption). Implemented in [#6582](https://github.com/blockscout/blockscout/pull/6582). | `100000` | v5.1.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_TX_ACTIONS_REINDEX_FIRST_BLOCK` | The first block of a block range for historical indexing or reindexing of tx actions. Implemented in [#6582](https://github.com/blockscout/blockscout/pull/6582). | (empty) | v5.1.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_TX_ACTIONS_REINDEX_LAST_BLOCK` | The last block of a block range for historical indexing or reindexing of tx actions. Implemented in [#6582](https://github.com/blockscout/blockscout/pull/6582). | (empty) | v5.1.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_TX_ACTIONS_REINDEX_PROTOCOLS` | Comma-separated names of protocols which should be indexed or reindexed on historical blocks defined by the range. Example: `uniswap_v3,zkbob` - only these protocols will be indexed or reindexed for the defined block range. If the value is empty string (or not defined), all supported protocols will be indexed/reindexed. This option is not applicable to `realtime` and `catchup` fetchers (it always indexes all supported protocols). Implemented in [#6582](https://github.com/blockscout/blockscout/pull/6582). | (empty) | v5.1.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_TX_ACTIONS_UNISWAP_V3_FACTORY_CONTRACT` | UniswapV3Factory contract address. Implemented in [#7312](https://github.com/blockscout/blockscout/pull/7312). | `0x1F98431c8aD98523631AE4a59f267346ea31F984` | v5.1.4+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `INDEXER_TX_ACTIONS_UNISWAP_V3_NFT_POSITION_MANAGER_CONTRACT` | NonfungiblePositionManager contract address for Uniswap v3. Implemented in [#7312](https://github.com/blockscout/blockscout/pull/7312). | `0xC36442b4a4522E871399CD717aBDD847Ab11FE88` | v5.1.4+ |  | v11.0.0+ |
+
+
+## 10.2.4
+
+### ⚡ Performance
+
+- Use tuple-based comparison to utilize index ([#14178](https://github.com/blockscout/blockscout/pull/14178))
+
+### 🐛 Bug Fixes
+
+- Update transaction from receipt in PendingTransactionsSanitizer ([#14182](https://github.com/blockscout/blockscout/issues/14182))
+
+### ⚙️ Miscellaneous Tasks
+
+- Add swagger generation for Arc and Suave chain types ([#14181](https://github.com/blockscout/blockscout/issues/14181))
+
+
 ## 10.2.3
 
 ### 🐛 Bug Fixes
@@ -12,7 +153,7 @@
 ### 🐛 Bug Fixes
 
 - Fix token transfers block_consensus setting ([#14005](https://github.com/blockscout/blockscout/issues/14005))
-- OP Withdrawals indexer enhancement ([#14056](https://github.com/blockscout/blockscout/issues/14056))
+- OP Withdrawals indexer enhancement ([#13436](https://github.com/blockscout/blockscout/issues/13436))
 
 ### ⚙️ Miscellaneous Tasks
 

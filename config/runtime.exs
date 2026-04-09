@@ -697,7 +697,9 @@ config :explorer, Explorer.SmartContract.SigProviderInterface,
 config :explorer, Explorer.MicroserviceInterfaces.BENS,
   service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_BENS_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_BENS_ENABLED"),
-  protocols: ConfigHelper.parse_list_env_var("MICROSERVICE_BENS_PROTOCOLS")
+  protocols: ConfigHelper.parse_list_env_var("MICROSERVICE_BENS_PROTOCOLS"),
+  disable_transactions_bens_preload: ConfigHelper.parse_bool_env_var("DISABLE_TRANSACTIONS_BENS_PRELOAD", "false"),
+  disable_token_transfers_bens_preload: ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_TRANSFERS_BENS_PRELOAD", "false")
 
 config :explorer, Explorer.MicroserviceInterfaces.AccountAbstraction,
   service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_ACCOUNT_ABSTRACTION_URL"),
@@ -893,6 +895,10 @@ config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions,
   check_interval:
     ConfigHelper.parse_time_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_CHECK_INTERVAL", "1m")
 
+config :explorer, Explorer.Migrator.FillInternalTransactionsAddressIds,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_BATCH_SIZE", 100),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_TIMEOUT", "0s")
+
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
   bsc_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_BSC_OMNI_BRIDGE_MEDIATOR"),
@@ -966,6 +972,46 @@ config :explorer, Explorer.Chain.Scroll.L1FeeParam,
   blob_scalar_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BLOB_SCALAR_INIT", 0),
   l1_base_fee_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BASE_FEE_INIT", 0),
   l1_blob_base_fee_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BLOB_BASE_FEE_INIT", 0)
+
+async_csv_export_enabled? = ConfigHelper.parse_bool_env_var("CSV_EXPORT_ASYNC_ENABLED")
+csv_export_oban_concurrency = ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_OBAN_CONCURRENCY", 10)
+
+csv_export_queues =
+  if async_csv_export_enabled? do
+    [csv_export: csv_export_oban_concurrency, csv_export_sanitize: 1]
+  else
+    []
+  end
+
+config :explorer, Oban, enabled: async_csv_export_enabled?, queues: csv_export_queues
+
+gokapi_url = ConfigHelper.parse_url_env_var("CSV_EXPORT_ASYNC_GOKAPI_URL")
+gokapi_api_key = System.get_env("CSV_EXPORT_ASYNC_GOKAPI_API_KEY")
+
+default_db_timeout = if async_csv_export_enabled?, do: "1h", else: "5m"
+
+config :explorer, Explorer.Chain.CsvExport,
+  async?: async_csv_export_enabled?,
+  max_pending_tasks_per_ip: ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_MAX_PENDING_TASKS_PER_IP", 3),
+  chunk_size: ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_UPLOAD_CHUNK_SIZE", 47_185_920),
+  db_timeout: ConfigHelper.parse_time_env_var("CSV_EXPORT_DB_TIMEOUT", default_db_timeout),
+  tmp_dir: ConfigHelper.safe_get_env("CSV_EXPORT_ASYNC_TMP_DIR", "/tmp/csv_export"),
+  gokapi_url: gokapi_url,
+  gokapi_api_key: gokapi_api_key,
+  gokapi_timeout: ConfigHelper.parse_time_env_var("CSV_EXPORT_ASYNC_GOKAPI_TIMEOUT", "60s"),
+  gokapi_upload_expiry_days: ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_GOKAPI_UPLOAD_EXPIRY_DAYS", 1),
+  gokapi_upload_allowed_downloads:
+    ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_GOKAPI_UPLOAD_ALLOWED_DOWNLOADS", 1)
+
+if async_csv_export_enabled? do
+  if is_nil(gokapi_url) or gokapi_url == "" do
+    raise "CSV_EXPORT_ASYNC_GOKAPI_URL must be set when CSV_EXPORT_ASYNC_ENABLED=true"
+  end
+
+  if is_nil(gokapi_api_key) or gokapi_api_key == "" do
+    raise "CSV_EXPORT_ASYNC_GOKAPI_API_KEY must be set when CSV_EXPORT_ASYNC_ENABLED=true"
+  end
+end
 
 ###############
 ### Indexer ###

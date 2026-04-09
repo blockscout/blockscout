@@ -3,7 +3,7 @@ defmodule Explorer.Chain.InternalTransaction do
 
   use Explorer.Schema
 
-  alias Explorer.{Chain, PagingOptions, QueryHelper, Repo}
+  alias Explorer.{Chain, Helper, PagingOptions, QueryHelper, Repo}
 
   alias Explorer.Chain.{
     Address,
@@ -631,23 +631,25 @@ defmodule Explorer.Chain.InternalTransaction do
     )
   end
 
-  defp address_match_dynamic(address_field, address_hash_or_hashes, address_ids) when address_ids in [[], nil] do
-    address_hashes = List.wrap(address_hash_or_hashes)
-    address_hash_field = String.to_existing_atom("#{address_field}_hash")
-
-    dynamic([it], field(it, ^address_hash_field) in ^address_hashes)
-  end
-
   defp address_match_dynamic(address_field, address_hash_or_hashes, address_id_or_ids) do
     address_hashes = List.wrap(address_hash_or_hashes)
-    address_ids = List.wrap(address_id_or_ids)
-    address_id_field = String.to_existing_atom("#{address_field}_id")
     address_hash_field = String.to_existing_atom("#{address_field}_hash")
 
-    dynamic(
-      [it],
-      field(it, ^address_id_field) in ^address_ids or field(it, ^address_hash_field) in ^address_hashes
-    )
+    if address_id_or_ids in [[], nil] or not address_ids_indexes_exists?() do
+      dynamic([it], field(it, ^address_hash_field) in ^address_hashes)
+    else
+      address_ids = List.wrap(address_id_or_ids)
+      address_id_field = String.to_existing_atom("#{address_field}_id")
+
+      dynamic(
+        [it],
+        field(it, ^address_id_field) in ^address_ids or field(it, ^address_hash_field) in ^address_hashes
+      )
+    end
+  end
+
+  defp address_ids_indexes_exists? do
+    BackgroundMigrations.get_heavy_indexes_create_address_ids_internal_transactions_indexes_finished()
   end
 
   def where_is_different_from_parent_transaction(query) do
@@ -867,6 +869,7 @@ defmodule Explorer.Chain.InternalTransaction do
   def fetch_from_db_by_address(hash, options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     direction = Keyword.get(options, :direction)
+    timeout = Keyword.get(options, :timeout)
 
     from_block = Chain.from_block(options)
     to_block = Chain.to_block(options)
@@ -898,7 +901,7 @@ defmodule Explorer.Chain.InternalTransaction do
       |> common_where_and_order(paging_options)
       |> preload(:block)
       |> Chain.join_associations(necessity_by_association)
-      |> Chain.select_repo(options).all()
+      |> Chain.select_repo(options).all(Helper.maybe_timeout(timeout))
       |> deduplicate_and_trim_internal_transactions(paging_options)
       |> preload_error(options)
       |> preload_transaction()
@@ -912,7 +915,7 @@ defmodule Explorer.Chain.InternalTransaction do
       |> common_where_limit_order(paging_options)
       |> preload(:block)
       |> Chain.join_associations(necessity_by_association)
-      |> Chain.select_repo(options).all()
+      |> Chain.select_repo(options).all(Helper.maybe_timeout(timeout))
       |> preload_error(options)
       |> preload_transaction()
       |> preload_addresses(options)

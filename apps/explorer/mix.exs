@@ -20,7 +20,7 @@ defmodule Explorer.Mixfile do
       lockfile: "../../mix.lock",
       package: package(),
       start_permanent: Mix.env() == :prod,
-      version: "10.0.6",
+      version: "11.0.0",
       xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper, Indexer.Fetcher.InternalTransaction]]
     ]
   end
@@ -135,7 +135,8 @@ defmodule Explorer.Mixfile do
       {:inet_cidr, "~> 1.0.0"},
       {:hammer, "~> 7.0"},
       {:ton, "~> 0.5.0"},
-      {:mint, "~> 1.0"}
+      {:mint, "~> 1.0"},
+      {:oban, "~> 2.19"}
     ]
   end
 

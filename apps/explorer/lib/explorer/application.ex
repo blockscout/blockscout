@@ -39,12 +39,17 @@ defmodule Explorer.Application do
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo.PrometheusLogger
   alias Explorer.Utility.Hammer
+  alias Oban.Telemetry, as: ObanTelemetry
   alias Utils.ConfigHelper
 
   @impl Application
   def start(_type, _args) do
     PrometheusLogger.setup()
     Instrumenter.setup()
+
+    if Application.get_env(:explorer, Oban, [])[:enabled] && Explorer.mode() in [:api, :all] do
+      ObanTelemetry.attach_default_logger()
+    end
 
     :telemetry.attach(
       "prometheus-ecto",
@@ -337,6 +342,18 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateTokensOrdMcapFiatHolderNameIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateTokensOrdFiatHolderNameIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateTokensOrdHolderNameIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey,
           :indexer
         ),
@@ -372,6 +389,10 @@ defmodule Explorer.Application do
           Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdPartialIndex,
           :indexer
         ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesHashContractCodeNotNullIndex,
+          :indexer
+        ),
         Explorer.Migrator.RefetchContractCodes |> configure() |> configure_chain_type_dependent_process(:zksync),
         configure(Explorer.Chain.Fetcher.AddressesBlacklist),
         Explorer.Migrator.SwitchPendingOperations,
@@ -379,7 +400,11 @@ defmodule Explorer.Application do
         Hammer.child_for_supervisor() |> configure_mode_dependent_process(:api),
         configure_mode_dependent_process(Explorer.ThirdPartyIntegrations.Dynamic.Strategy, :api),
         # keep at the end
-        configure_libcluster()
+        configure_libcluster(),
+        configure_mode_dependent_process(
+          {Oban, :explorer |> Application.fetch_env!(Oban) |> Keyword.delete(:enabled)},
+          :api
+        )
       ]
       |> List.flatten()
 

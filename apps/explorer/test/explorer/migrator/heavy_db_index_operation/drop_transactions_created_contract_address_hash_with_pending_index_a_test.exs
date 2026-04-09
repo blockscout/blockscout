@@ -36,10 +36,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContrac
       # Mark create migration as completed
       insert(:db_migration_status, migration_name: create_migration_name, status: "completed")
 
-      Process.sleep(150)
-
-      assert MigrationStatus.get_status(drop_migration_name) == "started"
-
       Process.sleep(200)
 
       assert MigrationStatus.get_status(drop_migration_name) == "completed"

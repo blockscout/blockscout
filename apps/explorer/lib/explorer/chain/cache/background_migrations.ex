@@ -59,10 +59,15 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_token_instances_token_id_index_finished,
     key: :heavy_indexes_drop_internal_transactions_created_contract_address_hash_partial_index_finished,
     key: :heavy_indexes_create_tokens_name_partial_fts_index_finished,
+    key: :heavy_indexes_create_idx_tokens_ord_mcap_fiat_holder_name_finished,
+    key: :heavy_indexes_create_idx_tokens_ord_fiat_holder_name_finished,
+    key: :heavy_indexes_create_idx_tokens_ord_holder_name_finished,
     key: :heavy_indexes_update_internal_transactions_primary_key_finished,
     key: :empty_internal_transactions_data_finished,
     key: :heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished,
-    key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished
+    key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished,
+    key: :heavy_indexes_create_addresses_hash_contract_code_not_null_index_finished,
+    key: :heavy_indexes_create_address_ids_internal_transactions_indexes_finished
 
   @dialyzer :no_match
 
@@ -78,6 +83,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   }
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
+    CreateAddressesHashContractCodeNotNullIndex,
     CreateAddressesTransactionsCountAscCoinBalanceDescHashPartialIndex,
     CreateAddressesTransactionsCountDescPartialIndex,
     CreateAddressesVerifiedFetchedCoinBalanceDescHashIndex,
@@ -85,12 +91,16 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateAddressesVerifiedTransactionsCountDescHashIndex,
     CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
     CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
+    CreateInternalTransactionsCreatedContractAddressIdPartialIndex,
     CreateLogsAddressHashBlockNumberDescIndexDescIndex,
     CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
     CreateLogsBlockHashIndex,
     CreateLogsDepositsWithdrawalsIndex,
     CreateSmartContractsLanguageIndex,
     CreateTokensNamePartialFtsIndex,
+    CreateTokensOrdFiatHolderNameIndex,
+    CreateTokensOrdHolderNameIndex,
+    CreateTokensOrdMcapFiatHolderNameIndex,
     CreateTransactionsCreatedContractAddressHashWPendingIndex,
     DropInternalTransactionsCreatedContractAddressHashPartialIndex,
     DropInternalTransactionsFromAddressHashIndex,
@@ -360,6 +370,27 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     )
   end
 
+  defp handle_fallback(:heavy_indexes_create_idx_tokens_ord_mcap_fiat_holder_name_finished) do
+    set_and_return_migration_status(
+      CreateTokensOrdMcapFiatHolderNameIndex,
+      &set_heavy_indexes_create_idx_tokens_ord_mcap_fiat_holder_name_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_idx_tokens_ord_fiat_holder_name_finished) do
+    set_and_return_migration_status(
+      CreateTokensOrdFiatHolderNameIndex,
+      &set_heavy_indexes_create_idx_tokens_ord_fiat_holder_name_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_idx_tokens_ord_holder_name_finished) do
+    set_and_return_migration_status(
+      CreateTokensOrdHolderNameIndex,
+      &set_heavy_indexes_create_idx_tokens_ord_holder_name_finished/1
+    )
+  end
+
   defp handle_fallback(:heavy_indexes_update_internal_transactions_primary_key_finished) do
     set_and_return_migration_status(
       UpdateInternalTransactionsPrimaryKey,
@@ -385,6 +416,20 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       DropTransactionsCreatedContractAddressHashWithPendingIndexA,
       &set_heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_addresses_hash_contract_code_not_null_index_finished) do
+    set_and_return_migration_status(
+      CreateAddressesHashContractCodeNotNullIndex,
+      &set_heavy_indexes_create_addresses_hash_contract_code_not_null_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_address_ids_internal_transactions_indexes_finished) do
+    set_and_return_migration_status(
+      CreateInternalTransactionsCreatedContractAddressIdPartialIndex,
+      &set_heavy_indexes_create_address_ids_internal_transactions_indexes_finished/1
     )
   end
 

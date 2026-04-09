@@ -30,7 +30,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       type_filter_options: 1
     ]
 
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_to_transaction: 1]
+  import Explorer.MicroserviceInterfaces.BENS,
+    only: [
+      maybe_preload_ens: 1,
+      maybe_preload_ens_for_token_transfers: 1,
+      maybe_preload_ens_for_transactions: 1,
+      maybe_preload_ens_to_transaction: 1
+    ]
 
   import Explorer.MicroserviceInterfaces.Metadata,
     only: [maybe_preload_metadata: 1, maybe_preload_metadata_to_transaction: 1]
@@ -55,8 +61,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.Cache.Counters.{NewPendingTransactionsCount, Transactions24hCount}
-  alias Explorer.Chain.FheOperation
-  alias Explorer.Chain.{Hash, Transaction}
+  alias Explorer.Chain.{FheOperation, Hash, Transaction}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Explorer.Chain.Token.Instance
@@ -237,7 +242,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
     full_options =
       [
-        necessity_by_association: @transaction_necessity_by_association
+        necessity_by_association: transactions_necessity_by_association()
       ]
       |> Keyword.merge(paging_options(params, filter_options))
       |> Keyword.merge(method_filter_options(params))
@@ -253,9 +258,38 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     conn
     |> put_status(200)
     |> render(:transactions, %{
-      transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+      transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
       next_page_params: next_page_params
     })
+  end
+
+  defp transactions_necessity_by_association do
+    %{
+      :block => :optional,
+      [
+        created_contract_address: [
+          :scam_badge,
+          :names,
+          :token,
+          proxy_implementations_association()
+        ]
+      ] => :optional,
+      [
+        from_address: [
+          :scam_badge,
+          :names,
+          proxy_implementations_association()
+        ]
+      ] => :optional,
+      [
+        to_address: [
+          :scam_badge,
+          :names,
+          proxy_implementations_association()
+        ]
+      ] => :optional
+    }
+    |> Map.merge(@chain_type_transaction_necessity_by_association)
   end
 
   operation :zksync_batch,
@@ -457,7 +491,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           end
 
         query
-        |> Chain.join_associations(@transaction_necessity_by_association)
+        |> Chain.join_associations(transactions_necessity_by_association())
         |> preload([{:token_transfers, [:token, :from_address, :to_address]}])
         |> Repo.replica().all()
       end
@@ -468,7 +502,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     conn
     |> put_status(200)
     |> render(:transactions, %{
-      transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+      transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
       next_page_params: next_page_params
     })
   end
@@ -491,7 +525,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   defp handle_batch_transactions(conn, %{batch_number_param: batch_number} = params, batch_transactions_fun) do
     full_options =
       [
-        necessity_by_association: @transaction_necessity_by_association
+        necessity_by_association: transactions_necessity_by_association()
       ]
       |> Keyword.merge(paging_options(params))
       |> Keyword.merge(@api_true)
@@ -512,7 +546,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     conn
     |> put_status(200)
     |> render(:transactions, %{
-      transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+      transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
       next_page_params: next_page_params
     })
   end
@@ -544,7 +578,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   def execution_node(conn, %{execution_node_hash_param: execution_node_hash_string} = params) do
     with {:format, {:ok, execution_node_hash}} <- {:format, Chain.string_to_address_hash(execution_node_hash_string)} do
       full_options =
-        [necessity_by_association: @transaction_necessity_by_association]
+        [necessity_by_association: transactions_necessity_by_association()]
         |> Keyword.merge(put_key_value_to_paging_options(paging_options(params), :is_index_in_asc_order, true))
         |> Keyword.merge(@api_true)
 
@@ -559,7 +593,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:transactions, %{
-        transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+        transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -667,7 +701,10 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       |> put_status(200)
       |> render(:token_transfers, %{
         token_transfers:
-          token_transfers |> Instance.preload_nft(@api_true) |> maybe_preload_ens() |> maybe_preload_metadata(),
+          token_transfers
+          |> Instance.preload_nft(@api_true)
+          |> maybe_preload_ens_for_token_transfers()
+          |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -901,7 +938,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     with {:auth, %{watchlist_id: watchlist_id}} <- {:auth, current_user(conn)} do
       full_options =
         [
-          necessity_by_association: @transaction_necessity_by_association
+          necessity_by_association: transactions_necessity_by_association()
         ]
         |> Keyword.merge(paging_options(params, [:validated]))
         |> Keyword.merge(@api_true)
@@ -916,7 +953,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:transactions_watchlist, %{
-        transactions: transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+        transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
         next_page_params: next_page_params,
         watchlist_names: watchlist_names
       })
