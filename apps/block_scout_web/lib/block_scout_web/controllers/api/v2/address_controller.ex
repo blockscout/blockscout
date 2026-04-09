@@ -73,19 +73,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       @chain_type_transaction_necessity_by_association %{}
   end
 
-  @transaction_necessity_by_association [
-    necessity_by_association:
-      %{
-        [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
-          :optional,
-        [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-        [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-        :block => :optional
-      }
-      |> Map.merge(@chain_type_transaction_necessity_by_association),
-    api?: true
-  ]
-
   @token_transfer_necessity_by_association [
     necessity_by_association: %{
       [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
@@ -427,7 +414,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       case Chain.hash_to_address(address_hash, hash_to_address_options(@address_options)) do
         {:ok, _address} ->
           options =
-            @transaction_necessity_by_association
+            [necessity_by_association: address_transactions_necessity_by_association()]
+            |> Keyword.merge(@api_true)
             |> Keyword.merge(paging_options(params))
             |> Keyword.merge(current_filter(params))
             |> Keyword.merge(address_transactions_sorting(params))
@@ -462,6 +450,34 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           })
       end
     end
+  end
+
+  defp address_transactions_necessity_by_association do
+    %{
+      [
+        created_contract_address: [
+          :scam_badge,
+          :names,
+          proxy_implementations_association()
+        ]
+      ] => :optional,
+      [
+        from_address: [
+          :scam_badge,
+          :names,
+          proxy_implementations_association()
+        ]
+      ] => :optional,
+      [
+        to_address: [
+          :scam_badge,
+          :names,
+          proxy_implementations_association()
+        ]
+      ] => :optional,
+      :block => :optional
+    }
+    |> Map.merge(@chain_type_transaction_necessity_by_association)
   end
 
   operation :token_transfers,

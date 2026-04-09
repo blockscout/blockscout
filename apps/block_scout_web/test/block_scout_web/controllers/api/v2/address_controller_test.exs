@@ -382,7 +382,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
 
     test "get Resolved Delegate Proxy contract info", %{conn: conn} do
-      proxy_address = insert(:address, contract_code: @resolved_delegate_proxy)
+      proxy_address = insert(:address, contract_code: @resolved_delegate_proxy, verified: true)
       proxy_smart_contract = insert(:smart_contract, address_hash: proxy_address.hash)
 
       transaction =
@@ -3806,8 +3806,11 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(address, address_json)
     end
 
-    test "check smart contract preload", %{conn: conn} do
-      smart_contract = insert(:smart_contract, address_hash: insert(:contract_address, fetched_coin_balance: 1).hash)
+    test "check smart contract properties", %{conn: conn} do
+      smart_contract =
+        insert(:smart_contract,
+          address_hash: insert(:contract_address, fetched_coin_balance: 1, verified: true).hash
+        )
 
       request = get(conn, "/api/v2/addresses")
       response = json_response(request, 200)
