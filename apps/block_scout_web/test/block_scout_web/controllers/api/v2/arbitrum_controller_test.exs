@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
   if @chain_type == :arbitrum do
     use BlockScoutWeb.ConnCase
 
-    alias Explorer.Chain.Arbitrum.L1Batch
+    alias Explorer.Chain.Arbitrum.{BatchToDaBlob, DaMultiPurposeRecord, L1Batch}
 
     describe "/main-page/arbitrum/batches/committed" do
       test "returns committed batches", %{conn: conn} do
@@ -159,6 +159,166 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
       test "returns 0 when no batches exist", %{conn: conn} do
         request = get(conn, "/api/v2/main-page/arbitrum/batches/latest-number")
         assert json_response(request, 200) == 0
+      end
+    end
+
+    describe "/arbitrum/batches/:batch_number" do
+      test "returns batch by number", %{conn: conn} do
+        batch = insert(:arbitrum_l1_batch)
+
+        request = get(conn, "/api/v2/arbitrum/batches/#{batch.number}")
+        assert response = json_response(request, 200)
+
+        batch = Explorer.Repo.preload(batch, :commitment_transaction)
+
+        assert response["number"] == batch.number
+        assert response["transactions_count"] == batch.transactions_count
+        assert response["start_block_number"] == batch.start_block
+        assert response["end_block_number"] == batch.end_block
+        assert response["before_acc_hash"] == to_string(batch.before_acc)
+        assert response["after_acc_hash"] == to_string(batch.after_acc)
+
+        commitment_json = response["commitment_transaction"]
+        assert to_string(batch.commitment_transaction.hash) == commitment_json["hash"]
+        assert batch.commitment_transaction.block_number == commitment_json["block_number"]
+
+        assert response["data_availability"] != nil
+        assert response["data_availability"]["batch_data_container"] == nil
+      end
+
+      test "returns batch with celestia data availability info", %{conn: conn} do
+        batch = insert(:arbitrum_l1_batch, batch_container: :in_celestia)
+
+        {:ok, data_key} = Explorer.Chain.Hash.Full.cast("0x" <> String.duplicate("ab", 32))
+
+        Explorer.Repo.insert!(%DaMultiPurposeRecord{
+          data_key: data_key,
+          data_type: 0,
+          batch_number: batch.number,
+          data: %{
+            "height" => 123_456,
+            "transaction_commitment" => "0x" <> String.duplicate("cd", 32)
+          }
+        })
+
+        Explorer.Repo.insert!(%BatchToDaBlob{
+          batch_number: batch.number,
+          data_blob_id: data_key
+        })
+
+        request = get(conn, "/api/v2/arbitrum/batches/#{batch.number}")
+        assert response = json_response(request, 200)
+
+        da = response["data_availability"]
+        assert da["batch_data_container"] == "in_celestia"
+        assert da["height"] == 123_456
+        assert da["transaction_commitment"] == "0x" <> String.duplicate("cd", 32)
+      end
+
+      test "returns batch with in_blob4844 data availability", %{conn: conn} do
+        batch = insert(:arbitrum_l1_batch, batch_container: :in_blob4844)
+
+        request = get(conn, "/api/v2/arbitrum/batches/#{batch.number}")
+        assert response = json_response(request, 200)
+
+        da = response["data_availability"]
+        assert da["batch_data_container"] == "in_blob4844"
+      end
+
+      test "returns batch with anytrust data availability info", %{conn: conn} do
+        batch = insert(:arbitrum_l1_batch, batch_container: :in_anytrust)
+
+        {:ok, data_key} = Explorer.Chain.Hash.Full.cast("0x" <> String.duplicate("a1", 32))
+        {:ok, keyset_key} = Explorer.Chain.Hash.Full.cast("0x" <> String.duplicate("b2", 32))
+
+        Explorer.Repo.insert!(%DaMultiPurposeRecord{
+          data_key: data_key,
+          data_type: 0,
+          batch_number: batch.number,
+          data: %{
+            "keyset_hash" => "0x" <> String.duplicate("b2", 32),
+            "data_hash" => "0x" <> String.duplicate("c3", 32),
+            "timeout" => "2024-10-01T12:00:00Z",
+            "signers_mask" => 3,
+            "bls_signature" => "0x" <> String.duplicate("d4", 32)
+          }
+        })
+
+        Explorer.Repo.insert!(%BatchToDaBlob{
+          batch_number: batch.number,
+          data_blob_id: data_key
+        })
+
+        Explorer.Repo.insert!(%DaMultiPurposeRecord{
+          data_key: keyset_key,
+          data_type: 1,
+          data: %{
+            "threshold" => 1,
+            "pubkeys" => [
+              %{"trusted" => true, "key" => "0x" <> String.duplicate("e5", 32)},
+              %{
+                "trusted" => false,
+                "key" => "0x" <> String.duplicate("f6", 32),
+                "proof" => "0x" <> String.duplicate("07", 32)
+              }
+            ]
+          }
+        })
+
+        request = get(conn, "/api/v2/arbitrum/batches/#{batch.number}")
+        assert response = json_response(request, 200)
+
+        da = response["data_availability"]
+        assert da["batch_data_container"] == "in_anytrust"
+        assert da["data_hash"] == "0x" <> String.duplicate("c3", 32)
+        assert da["timeout"] == "2024-10-01T12:00:00Z"
+        assert da["bls_signature"] == "0x" <> String.duplicate("d4", 32)
+        assert length(da["signers"]) == 2
+
+        [signer1, signer2] = da["signers"]
+        assert signer1["trusted"] == true
+        assert signer1["key"] == "0x" <> String.duplicate("e5", 32)
+        assert signer2["trusted"] == false
+        assert signer2["proof"] != nil
+      end
+
+      test "returns batch with eigenda data availability info", %{conn: conn} do
+        batch = insert(:arbitrum_l1_batch, batch_container: :in_eigenda)
+
+        {:ok, data_key} = Explorer.Chain.Hash.Full.cast("0x" <> String.duplicate("e1", 32))
+
+        Explorer.Repo.insert!(%DaMultiPurposeRecord{
+          data_key: data_key,
+          data_type: 0,
+          batch_number: batch.number,
+          data: %{
+            "blob_header" => "0x" <> String.duplicate("f2", 32),
+            "blob_verification_proof" => "0x" <> String.duplicate("03", 32)
+          }
+        })
+
+        Explorer.Repo.insert!(%BatchToDaBlob{
+          batch_number: batch.number,
+          data_blob_id: data_key
+        })
+
+        request = get(conn, "/api/v2/arbitrum/batches/#{batch.number}")
+        assert response = json_response(request, 200)
+
+        da = response["data_availability"]
+        assert da["batch_data_container"] == "in_eigenda"
+        assert da["blob_header"] == "0x" <> String.duplicate("f2", 32)
+        assert da["blob_verification_proof"] == "0x" <> String.duplicate("03", 32)
+      end
+
+      test "returns 404 for non-existing batch", %{conn: conn} do
+        request = get(conn, "/api/v2/arbitrum/batches/0")
+        assert %{"message" => "Not found"} = json_response(request, 404)
+      end
+
+      test "returns 422 for invalid batch number", %{conn: conn} do
+        request = get(conn, "/api/v2/arbitrum/batches/invalid")
+        assert %{"errors" => _} = json_response(request, 422)
       end
     end
 

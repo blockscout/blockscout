@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   import Explorer.Chain.Arbitrum.DaMultiPurposeRecord.Helper, only: [calculate_celestia_data_key: 2]
 
+  alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.Arbitrum.ClaimRollupMessage
   alias Explorer.Chain.Arbitrum.{L1Batch, Message}
   alias Explorer.Chain.Hash
@@ -56,7 +57,26 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   operation :messages_count, false
   operation :claim_message, false
   operation :withdrawals, false
-  operation :batch, false
+
+  operation :batch,
+    summary: "Get batch by number.",
+    description: "Retrieves detailed information about an Arbitrum batch by its number.",
+    parameters: [
+      %OpenApiSpex.Parameter{
+        name: :batch_number,
+        in: :path,
+        schema: %Schema{type: :integer, minimum: 0},
+        required: true,
+        description: "Batch number."
+      }
+      | base_params()
+    ],
+    responses: [
+      ok: {"Batch info.", "application/json", Schemas.Arbitrum.Batch},
+      not_found: NotFoundResponse.response(),
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   operation :batch_by_data_availability_info, false
   operation :batches_count, false
   operation :batches, false
@@ -219,7 +239,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     Function to handle GET requests to `/api/v2/arbitrum/batches/:batch_number` endpoint.
   """
   @spec batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def batch(conn, %{"batch_number" => batch_number} = _params) do
+  def batch(conn, %{batch_number: batch_number} = _params) do
     case SettlementReader.batch(batch_number, necessity_by_association: @batch_necessity_by_association) do
       {:ok, batch} ->
         conn
@@ -264,7 +284,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
          key <- calculate_celestia_data_key(height, transaction_commitment_hash) do
       case SettlementReader.get_da_record_by_data_key(key) do
         {:ok, {batch_number, _}} ->
-          batch(conn, %{"batch_number" => batch_number})
+          batch(conn, %{batch_number: batch_number})
 
         {:error, :not_found} = res ->
           res
@@ -284,11 +304,12 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   #
   # ## Returns
   # - The connection struct with rendered response
-  @spec one_batch_by_data_availability_info(Plug.Conn.t(), binary(), map()) :: Plug.Conn.t()
+  @spec one_batch_by_data_availability_info(Plug.Conn.t(), binary(), map()) ::
+          Plug.Conn.t() | {:error, :not_found}
   defp one_batch_by_data_availability_info(conn, data_hash, _params) do
     case SettlementReader.get_da_record_by_data_key(data_hash) do
       {:ok, {batch_number, _}} ->
-        batch(conn, %{"batch_number" => batch_number})
+        batch(conn, %{batch_number: batch_number})
 
       {:error, :not_found} = res ->
         res

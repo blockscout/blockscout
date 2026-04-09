@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchForList do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.General
+  alias BlockScoutWeb.Schemas.API.V2.Arbitrum.{BatchDataContainer, CommitmentTransaction}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -14,29 +14,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchForList do
       number: %Schema{type: :integer, minimum: 0, description: "Batch number."},
       transactions_count: %Schema{type: :integer, minimum: 0, description: "Number of transactions in the batch."},
       blocks_count: %Schema{type: :integer, minimum: 0, description: "Number of blocks included in the batch."},
-      batch_data_container: %Schema{
-        type: :string,
-        # Enum values must be kept in sync with Explorer.Chain.Arbitrum.L1Batch :batch_container field.
-        enum: ["in_blob4844", "in_calldata", "in_celestia", "in_anytrust", "in_eigenda"],
-        nullable: true,
-        description: "Data availability container type."
-      },
-      commitment_transaction: %Schema{
-        type: :object,
-        description: "Parent chain transaction that committed the batch.",
-        properties: %{
-          hash: General.FullHashNullable,
-          block_number: %Schema{type: :integer, minimum: 0, nullable: true},
-          timestamp: General.TimestampNullable,
-          status: %Schema{
-            type: :string,
-            nullable: true,
-            description: "Finalization status of the Parent chain transaction."
-          }
-        },
-        required: [:hash, :block_number, :timestamp, :status],
-        additionalProperties: false
-      }
+      batch_data_container: BatchDataContainer,
+      commitment_transaction: CommitmentTransaction
     },
     required: [:number, :transactions_count, :blocks_count, :batch_data_container, :commitment_transaction],
     additionalProperties: false

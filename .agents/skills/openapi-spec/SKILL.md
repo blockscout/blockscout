@@ -174,7 +174,7 @@ Read these files in parallel to understand the endpoint:
 
 1. **Router** — find the route definition. Note the HTTP method, path segments (especially `:param_name` segments), and which controller/action it maps to.
 2. **Controller** — read the action function. Note what keys it destructures from `params` and `conn.body_params`, what data it fetches, and what view template it renders.
-3. **View** — read the render function and any `prepare_*` helper it calls. Note every key in the output map — these become schema properties.
+3. **View** — read the render function and any `prepare_*` helper it calls. Note every key in the output map — these become schema properties. Trace **all code paths**, not just the default: look for `case`/`cond`/pattern-match branches in the render function and its helpers that produce different map shapes depending on a field value. When found, note the discriminator field and the distinct set of keys each branch emits — these indicate a polymorphic sub-object that needs special handling in Step 3.
 4. **Existing schemas** — glob `schemas/api/v2/<domain>*` to see if schema modules already exist for this domain.
 
 ### Step 2: Find or create parameter definitions
@@ -202,15 +202,46 @@ For each parameter the controller reads:
    - **Existing schema is a superset** — the new endpoint may reference the existing schema directly (if it needs all the properties), or may need a reduced "minimal" schema that the existing one extends.
    - **No meaningful overlap** — create a standalone schema.
 3. **If no suitable schema exists**, create one following the conventions in `references/schema-conventions.md`. The schema's properties must match the view's output keys exactly.
-4. **Determine precise types from the Ecto schema.** The view renders everything as JSON primitives (strings, integers, etc.), but the underlying Ecto schema in the Explorer app knows the real constraints. Read the Ecto schema module for the entity (under `apps/explorer/lib/explorer/chain/`) and check for:
-   - `Ecto.Enum` fields — these should become `%Schema{type: :string, enum: [...values...]}`, not just `type: :string`. Grep for `Ecto.Enum` in the Ecto schema to find them, and check the enum values defined there.
+4. **Deduplicate against existing domain schemas.** Before finalizing properties, compare each inline `%Schema{type: :object}` block and each `%Schema{type: :string, enum: [...]}` definition in the new schema against properties in the existing schemas found in step 1. If an identical structure already exists in another schema in the same domain directory, extract it into a shared leaf schema module and reference it from both schemas. This avoids drift when the structure changes and consolidates Ecto.Enum sync comments to one location. See `references/schema-conventions.md` section "Domain-scoped shared schemas" for templates.
+5. **Model polymorphic sub-objects.** If Step 1 identified a property whose structure varies based on a discriminator field (e.g., a `data_availability` object that changes shape depending on `batch_data_container`), a single flat `%Schema{type: :object}` with only the common fields will be incomplete — the variant-specific fields won't be documented or validated. Use `oneOf` to declare each variant explicitly. Each variant is a `%Schema{type: :object}` with its own properties, `required` list, and `additionalProperties: false`. The discriminator field appears in every variant. If the view has a catch-all branch (e.g., `value -> %{"field" => to_string(value)}`), model it as the minimal variant containing only the discriminator. For existing precedent, see `transaction.ex` (`revert_reason` property). Template:
+   ```elixir
+   data_availability: %Schema{
+     oneOf: [
+       # Variant: nil / in_blob4844 / in_calldata (no extra fields)
+       %Schema{
+         type: :object,
+         properties: %{batch_data_container: BatchDataContainer},
+         required: [:batch_data_container],
+         additionalProperties: false
+       },
+       # Variant: in_anytrust
+       %Schema{
+         type: :object,
+         properties: %{
+           batch_data_container: BatchDataContainer,
+           data_hash: %Schema{type: :string, nullable: true},
+           timeout: %Schema{type: :string, nullable: true},
+           bls_signature: %Schema{type: :string, nullable: true},
+           signers: %Schema{type: :array, items: %Schema{type: :string}}
+         },
+         required: [:batch_data_container, :data_hash, :timeout, :bls_signature, :signers],
+         additionalProperties: false
+       },
+       # ... additional variants
+     ],
+     description: "Data availability info. Structure varies by `batch_data_container`."
+   }
+   ```
+   For 2-3 simple variants, inline schemas inside the `oneOf` list are fine. For more variants or cross-schema reuse, extract each into a domain schema module. Note: `discriminator:` (the OpenAPI 3.0 keyword) is optional in OpenApiSpex — `oneOf` alone is sufficient for validation.
+6. **Determine precise types from the Ecto schema.** The view renders everything as JSON primitives (strings, integers, etc.), but the underlying Ecto schema in the Explorer app knows the real constraints. Read the Ecto schema module for the entity (under `apps/explorer/lib/explorer/chain/`) and check for:
+   - `Ecto.Enum` fields — these should become `%Schema{type: :string, enum: [...values...]}`, not just `type: :string`. Grep for `Ecto.Enum` in the Ecto schema to find them, and check the enum values defined there. **Every enum property requires a sync comment** — see `references/schema-conventions.md` section "Required: Ecto.Enum sync comments".
    - Nullable fields — if the Ecto schema allows `nil`, the OpenAPI property should have `nullable: true`.
    - Integer vs string — if the Ecto field is an integer type but the view converts it to a string (e.g., for large numbers), use an appropriate schema like `IntegerString`.
    See `references/schema-conventions.md` section "Determining property types from Ecto schemas" for more detail.
-5. **Set `additionalProperties: false`** on object schemas — this is a project-wide convention that enables test-time enforcement.
+7. **Set `additionalProperties: false`** on object schemas — this is a project-wide convention that enables test-time enforcement.
    - **For non-negative integer properties** (block numbers, batch numbers, counts, indices, nonces), set `minimum: 0` to enforce the domain constraint at the validation level.
-6. **Set `required:`** to list all keys that the view always emits.
-7. For paginated list endpoints, use `General.paginated_response/1` to wrap the item schema.
+8. **Set `required:`** to list all keys that the view always emits.
+9. For paginated list endpoints, use `General.paginated_response/1` to wrap the item schema.
 
 ### Step 4a: Write the operation annotation
 
@@ -289,6 +320,8 @@ end
 
 Choose the templates that match the endpoint type (list vs single resource). The `json_response/2` call is what triggers schema validation — every test that calls it automatically verifies the response against the declared OpenAPI schema.
 
+4. **If the schema contains `oneOf` polymorphic sub-objects** (from Step 3 item 5), write at least one test per variant so that each branch's `additionalProperties: false` constraint is exercised. The default factory typically produces only the simplest variant (e.g., a nil discriminator), so tests for other variants need explicit setup — insert the factory with the discriminator value set, plus any associated records the view fetches for that branch.
+
 ### Step 6: Verify
 
 Run through the verification ladder described in the "Verification" section above:
@@ -346,7 +379,7 @@ Read `references/inspection-checklist.md` for the full systematic checklist. The
 | Reference | Read when... |
 |---|---|
 | `references/parameter-discovery.md` | You need to find existing parameter helpers, create new ones, or understand naming/categorization conventions |
-| `references/schema-conventions.md` | You need to create new schema modules, understand directory layout, or work with chain-type customizations |
+| `references/schema-conventions.md` | You need to create new schema modules, understand directory layout, work with chain-type customizations, or model polymorphic properties with `oneOf` |
 | `references/error-response-patterns.md` | You need to declare error responses or understand which error module to use for a status code |
 | `references/request-body-security-headers.md` | You're working with POST/PUT/PATCH endpoints, authentication/security, or HTTP header declarations |
 | `references/inspection-checklist.md` | You're running an audit of an existing declaration (Workflow C) |
