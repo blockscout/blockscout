@@ -79,19 +79,25 @@ case "$CMD" in
     BASE=$(git merge-base "$TARGET" "$TMP")
     log "Merge base: ${BASE}"
 
-    EXISTING=""
-    while IFS= read -r line; do
-      EXISTING="${EXISTING}${line}"$'\n'
-    done < <(git log --format="%s" "${BASE}..${TARGET}")
-    EXISTING_COUNT=$(echo -n "$EXISTING" | grep -c . || true)
-    log "Existing commits in ${TARGET}: ${EXISTING_COUNT}"
-
     COMMITS=""
     while IFS= read -r line; do
       COMMITS="${COMMITS}${line}"$'\n'
     done < <(git log --reverse --format="%H|%s" "${BASE}..${TMP}")
     COMMITS_COUNT=$(echo -n "$COMMITS" | grep -c . || true)
     log "Commits in ${TMP} since base: ${COMMITS_COUNT}"
+
+    # Use git cherry (patch-id based) to find already-applied commits
+    APPLIED=""
+    while IFS= read -r line; do
+      [[ -z "$line" ]] && continue
+      sign="${line:0:1}"
+      sha="${line:2}"
+      if [[ "$sign" == "-" ]]; then
+        APPLIED="${APPLIED}${sha}"$'\n'
+      fi
+    done < <(git cherry "$TARGET" "$TMP" "$BASE")
+    APPLIED_COUNT=$(echo -n "$APPLIED" | grep -c . || true)
+    log "Already applied commits: ${APPLIED_COUNT}"
 
     PROJECT_ROOT="$(git rev-parse --show-toplevel)"
     log "Getting or creating worktree for ${TARGET}"
@@ -112,8 +118,8 @@ case "$CMD" in
         continue
       fi
 
-      if echo -n "$EXISTING" | grep -qxF "$SUBJECT"; then
-        log "SKIP: ${SHA:0:8} — ${SUBJECT} (already exists)"
+      if echo -n "$APPLIED" | grep -qxF "$SHA"; then
+        log "SKIP: ${SHA:0:8} — ${SUBJECT} (already applied)"
         ((SKIPPED++)) || true
         continue
       fi
