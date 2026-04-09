@@ -3,7 +3,9 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
+  alias BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper
   alias Explorer.Chain
+  alias Explorer.Chain.PendingOperationsHelper
 
   alias Explorer.Chain.Cache.BackgroundMigrations
 
@@ -35,6 +37,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
         {"List of internal transactions with pagination information.", "application/json",
          paginated_response(
            items: Schemas.InternalTransaction,
+           include_pending_status?: true,
            next_page_params_example: %{
              "index" => 50,
              "transaction_index" => 68,
@@ -49,9 +52,10 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   """
   @spec internal_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def internal_transactions(conn, params) do
+    transaction_hash = transaction_hash_from_params(params)
+
     with true <-
            BackgroundMigrations.get_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(),
-         transaction_hash = transaction_hash_from_params(params),
          false <- transaction_hash == :invalid do
       paging_options = paging_options(params)
       options = options(paging_options, %{transaction_hash: transaction_hash, limit: params[:limit]})
@@ -61,24 +65,31 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
         |> fetch_internal_transactions()
         |> paginate_list(params, options[:paging_options])
 
+      pending_status? =
+        pending_status?(internal_transactions, transaction_hash)
+
       conn
       |> put_status(200)
       |> render(:internal_transactions, %{
         internal_transactions: internal_transactions,
-        next_page_params: next_page_params
+        next_page_params: next_page_params,
+        pending_status?: pending_status?
       })
     else
       _ ->
-        empty_response(conn)
+        empty_response(conn, if(transaction_hash == :invalid, do: nil, else: transaction_hash))
     end
   end
 
-  defp empty_response(conn) do
+  defp empty_response(conn, transaction_hash) do
+    pending_status? = pending_status?([], transaction_hash)
+
     conn
     |> put_status(200)
     |> render(:internal_transactions, %{
       internal_transactions: [],
-      next_page_params: nil
+      next_page_params: nil,
+      pending_status?: pending_status?
     })
   end
 
@@ -97,5 +108,11 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
       nil -> nil
       :error -> :invalid
     end
+  end
+
+  defp pending_status?([], nil), do: PendingOperationsHelper.any_pending_operations?()
+
+  defp pending_status?(internal_transactions, transaction_hash) do
+    InternalTransactionsPendingStatusHelper.internal_transactions_pending?(internal_transactions, transaction_hash)
   end
 end

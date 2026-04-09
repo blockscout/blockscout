@@ -36,6 +36,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   alias BlockScoutWeb.API.V2.{
     Ethereum.DepositController,
     Ethereum.DepositView,
+    InternalTransactionsPendingStatusHelper,
     TransactionView,
     WithdrawalView
   }
@@ -425,6 +426,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         {"Internal transactions in the specified block.", "application/json",
          paginated_response(
            items: Schemas.InternalTransaction,
+           include_pending_status?: true,
            next_page_params_example: %{
              "transaction_index" => 3,
              "index" => 8
@@ -461,13 +463,20 @@ defmodule BlockScoutWeb.API.V2.BlockController do
           paging_function: &InternalTransaction.internal_transaction_to_block_paging_options/1
         )
 
+      pending_status? =
+        InternalTransactionsPendingStatusHelper.block_internal_transactions_pending?(
+          internal_transactions,
+          block.number
+        )
+
       conn
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:internal_transactions, %{
         internal_transactions: internal_transactions,
         next_page_params: next_page_params,
-        block: block
+        block: block,
+        pending_status?: pending_status?
       })
     end
   end
