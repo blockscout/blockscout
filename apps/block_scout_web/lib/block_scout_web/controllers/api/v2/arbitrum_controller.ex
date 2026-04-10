@@ -391,9 +391,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
         |> put_status(:bad_request)
         |> render(:message, %{message: "withdrawal was executed already"})
 
-      # Returns 404 intentionally — 5xx would be misleading because the error
-      # originates from on-chain data (missing proof data, unreachable contracts),
-      # not from a Blockscout internal failure.
       {:error, :internal_error} ->
         conn
         |> put_status(:not_found)
@@ -439,6 +436,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     Function to handle GET requests to `/api/v2/arbitrum/batches/da/anytrust/:data_hash` endpoint.
   """
   @spec batch_by_anytrust_da_info(Plug.Conn.t(), map()) :: Plug.Conn.t() | {:error, :not_found}
+  # For AnyTrust, data_key is the hash of the data itself
   def batch_by_anytrust_da_info(conn, %{data_hash: data_hash} = params) do
     case Map.get(params, :type) do
       "all" -> all_batches_by_data_availability_info(conn, data_hash, params)
@@ -450,6 +448,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     Function to handle GET requests to `/api/v2/arbitrum/batches/da/eigenda/:data_hash` endpoint.
   """
   @spec batch_by_eigenda_da_info(Plug.Conn.t(), map()) :: Plug.Conn.t() | {:error, :not_found}
+  # For EigenDA, data_key is the hash of the data itself
   def batch_by_eigenda_da_info(conn, %{data_hash: data_hash} = params) do
     case Map.get(params, :type) do
       "all" -> all_batches_by_data_availability_info(conn, data_hash, params)
