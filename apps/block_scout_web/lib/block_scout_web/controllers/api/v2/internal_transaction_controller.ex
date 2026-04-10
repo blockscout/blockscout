@@ -54,9 +54,10 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   """
   @spec internal_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def internal_transactions(conn, params) do
+    transaction_hash = transaction_hash_from_params(params)
+
     with true <-
            BackgroundMigrations.get_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(),
-         transaction_hash = transaction_hash_from_params(params),
          false <- transaction_hash == :invalid do
       paging_options = paging_options(params)
       options = options(paging_options, %{transaction_hash: transaction_hash, limit: params[:limit]})
@@ -83,7 +84,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
       })
     else
       _ ->
-        empty_response(conn, nil)
+        empty_response(conn, if(transaction_hash == :invalid, do: nil, else: transaction_hash))
     end
   end
 

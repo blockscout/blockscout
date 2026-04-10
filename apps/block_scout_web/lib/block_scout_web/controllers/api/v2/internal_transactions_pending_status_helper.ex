@@ -21,17 +21,20 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper do
   """
   @spec internal_transactions_pending?(list(), any() | nil) :: boolean()
   def internal_transactions_pending?(internal_transactions, transaction_hash \\ nil) do
-    block_numbers = extract_block_numbers(internal_transactions)
+    block_range =
+      internal_transactions
+      |> extract_block_numbers()
+      |> expand_block_range()
 
     transaction_hashes =
       internal_transactions
       |> extract_transaction_hashes()
       |> maybe_prepend_hash(transaction_hash)
 
-    if block_numbers == [] and transaction_hashes == [] do
+    if block_range == [] and transaction_hashes == [] do
       PendingOperationsHelper.any_pending_operations?()
     else
-      PendingOperationsHelper.pending_operations_for_blocks_or_transactions?(block_numbers, transaction_hashes)
+      PendingOperationsHelper.pending_operations_for_blocks_or_transactions?(block_range, transaction_hashes)
     end
   end
 
@@ -102,5 +105,12 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper do
     |> Enum.map(& &1.transaction_hash)
     |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
+  end
+
+  defp expand_block_range([]), do: []
+
+  defp expand_block_range(block_numbers) do
+    {min_block, max_block} = Enum.min_max(block_numbers)
+    Enum.to_list(min_block..max_block)
   end
 end

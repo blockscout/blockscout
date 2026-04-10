@@ -2275,7 +2275,11 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       address = insert(:address)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
-      assert %{"items" => []} = json_response(request, 200)
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      refute Map.has_key?(response, "status")
+      refute Map.has_key?(response, "message")
 
       block = insert(:block)
       insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
@@ -2302,8 +2306,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         index: 1,
         block_number: transaction.block_number,
         transaction_index: transaction.index,
-        from_address: address
+        from_address: insert(:address)
       )
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      refute Map.has_key?(response, "status")
+      refute Map.has_key?(response, "message")
 
       insert(:pending_transaction_operation, transaction_hash: transaction.hash)
 
