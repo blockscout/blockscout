@@ -27,8 +27,19 @@ case "$CMD" in
     log "Fetching origin..."
     git fetch origin
 
-    log "Creating branch ${BRANCH} from origin/${PREFIX}"
-    git branch "$BRANCH" "origin/${PREFIX}"
+    if git show-ref --verify --quiet "refs/remotes/origin/${PREFIX}"; then
+      BEHIND=$(git rev-list --count "${PREFIX}..origin/${PREFIX}")
+      if [[ "$BEHIND" -gt 0 ]]; then
+        echo "ERROR: Local ${PREFIX} is behind origin/${PREFIX} by ${BEHIND} commit(s). Run 'git pull' on ${PREFIX} first."
+        exit 1
+      fi
+      log "Local ${PREFIX} is up-to-date with origin"
+    else
+      log "No remote tracking branch for ${PREFIX}, skipping sync check"
+    fi
+
+    log "Creating branch ${BRANCH} from local ${PREFIX}"
+    git branch "$BRANCH" "$PREFIX"
 
     log "Creating branch ${TMP} from ${BRANCH}"
     git branch "$TMP" "$BRANCH"
