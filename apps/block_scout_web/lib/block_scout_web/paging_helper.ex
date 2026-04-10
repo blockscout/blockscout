@@ -263,6 +263,7 @@ defmodule BlockScoutWeb.PagingHelper do
       :address_hash_param,
       :batch_number_param,
       :batch_numbers,
+      :data_hash,
       :block_hash_or_number_param,
       :direction,
       :transaction_hash_param,

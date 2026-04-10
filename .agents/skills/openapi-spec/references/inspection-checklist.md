@@ -94,6 +94,19 @@ Self-documenting compound names (`origination_transaction_block_number`) and wel
 
 See `references/schema-conventions.md` section "Property descriptions" for the full guidelines and before/after examples.
 
+### 2g. `oneOf`/`anyOf` variant reachability
+
+For each property in the response schema that uses `oneOf` or `anyOf`, verify that every variant is producible by this endpoint's controller action:
+
+1. List the variants in the `oneOf`/`anyOf` and identify the discriminator value(s) each covers.
+2. Read the controller action. Trace which code paths lead to the view's render function. Identify which discriminator values the controller can pass to the view.
+3. Read the view's render function and its helpers. Confirm which variants the view can actually emit for the data the controller provides.
+4. Compare: flag any variant whose discriminator value(s) can never be produced by this endpoint.
+
+**If unreachable variants are found:** The schema overpromises to API consumers. Create a narrowed schema via `extend_schema` that overrides only the polymorphic property, keeping just the reachable variants. See `references/schema-conventions.md` section "Helper.extend_schema/2".
+
+This check is especially important for endpoints that filter by a specific discriminator value (e.g., a DA-type lookup that always returns one DA variant, but references a shared batch schema containing all DA variants).
+
 ## 3. Convention compliance
 
 ### 3a. Controller prerequisites

@@ -126,7 +126,118 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
-  operation :batch_by_data_availability_info, false
+  operation :batch_by_anytrust_da_info,
+    summary: "Get batch by AnyTrust data hash.",
+    description:
+      "Retrieves an Arbitrum batch associated with the given AnyTrust data hash. " <>
+        "By default, returns the most recently associated batch. " <>
+        "When `type=all`, returns a paginated list of all batches referencing this data hash.",
+    parameters:
+      [
+        %OpenApiSpex.Parameter{
+          name: :data_hash,
+          in: :path,
+          required: true,
+          schema: Schemas.General.FullHash,
+          description: "AnyTrust data hash."
+        }
+        | base_params()
+      ] ++
+        [
+          %OpenApiSpex.Parameter{
+            name: :type,
+            in: :query,
+            required: false,
+            schema: %Schema{type: :string, enum: ["all"]},
+            description: "When set to `all`, returns a paginated list of all batches for this data hash."
+          }
+        ] ++ define_paging_params(["number", "items_count"]),
+    responses: [
+      ok:
+        {"Batch info, or paginated batch list when `type=all`.", "application/json",
+         %Schema{
+           oneOf: [
+             Schemas.Arbitrum.BatchByAnytrust,
+             paginated_response(
+               items: Schemas.Arbitrum.BatchForList,
+               next_page_params_example: %{"number" => 123}
+             )
+           ]
+         }},
+      not_found: NotFoundResponse.response(),
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  operation :batch_by_eigenda_da_info,
+    summary: "Get batch by EigenDA data hash.",
+    description:
+      "Retrieves an Arbitrum batch associated with the given EigenDA data hash. " <>
+        "By default, returns the most recently associated batch. " <>
+        "When `type=all`, returns a paginated list of all batches referencing this data hash.",
+    parameters:
+      [
+        %OpenApiSpex.Parameter{
+          name: :data_hash,
+          in: :path,
+          required: true,
+          schema: Schemas.General.FullHash,
+          description: "EigenDA data hash (Keccak-256 of the blob header)."
+        }
+        | base_params()
+      ] ++
+        [
+          %OpenApiSpex.Parameter{
+            name: :type,
+            in: :query,
+            required: false,
+            schema: %Schema{type: :string, enum: ["all"]},
+            description: "When set to `all`, returns a paginated list of all batches for this data hash."
+          }
+        ] ++ define_paging_params(["number", "items_count"]),
+    responses: [
+      ok:
+        {"Batch info, or paginated batch list when `type=all`.", "application/json",
+         %Schema{
+           oneOf: [
+             Schemas.Arbitrum.BatchByEigenda,
+             paginated_response(
+               items: Schemas.Arbitrum.BatchForList,
+               next_page_params_example: %{"number" => 123}
+             )
+           ]
+         }},
+      not_found: NotFoundResponse.response(),
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  operation :batch_by_celestia_da_info,
+    summary: "Get batch by Celestia blob reference.",
+    description:
+      "Retrieves an Arbitrum batch whose data availability blob is identified by the given " <>
+        "Celestia block height and transaction commitment hash.",
+    parameters: [
+      %OpenApiSpex.Parameter{
+        name: :height,
+        in: :path,
+        required: true,
+        schema: %Schema{type: :integer, minimum: 0},
+        description: "Celestia block height."
+      },
+      %OpenApiSpex.Parameter{
+        name: :transaction_commitment,
+        in: :path,
+        required: true,
+        schema: Schemas.General.FullHash,
+        description: "Celestia transaction commitment hash."
+      }
+      | base_params()
+    ],
+    responses: [
+      ok: {"Batch info.", "application/json", Schemas.Arbitrum.BatchByCelestia},
+      not_found: NotFoundResponse.response(),
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   operation :batches_count, false
 
   operation :batches,
@@ -325,36 +436,38 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/arbitrum/batches/da/.../:data_hash` or
-    `/api/v2/arbitrum/batches/da/celestia/:transaction_commitment/:height` endpoints.
-
-    For AnyTrust and EigenDA data hash, the function can be called in two ways:
-    1. Without type parameter - returns the most recent batch for the data hash
-    2. With type=all parameter - returns all batches for the data hash
-
-    ## Parameters
-    - `conn`: The connection struct
-    - `params`: A map that may contain:
-      * `data_hash` - The AnyTrust or EigenDA data hash
-      * `transaction_commitment` and `height` - For Celestia data
-      * `type` - Optional parameter to specify return type ("all" for all batches)
+    Function to handle GET requests to `/api/v2/arbitrum/batches/da/anytrust/:data_hash` endpoint.
   """
-  @spec batch_by_data_availability_info(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def batch_by_data_availability_info(conn, %{"data_hash" => data_hash} = params) do
-    # In case of AnyTrust or EigenDA, `data_key` is the hash of the data itself
-    case Map.get(params, "type") do
+  @spec batch_by_anytrust_da_info(Plug.Conn.t(), map()) :: Plug.Conn.t() | {:error, :not_found}
+  def batch_by_anytrust_da_info(conn, %{data_hash: data_hash} = params) do
+    case Map.get(params, :type) do
       "all" -> all_batches_by_data_availability_info(conn, data_hash, params)
       _ -> one_batch_by_data_availability_info(conn, data_hash, params)
     end
   end
 
-  def batch_by_data_availability_info(
+  @doc """
+    Function to handle GET requests to `/api/v2/arbitrum/batches/da/eigenda/:data_hash` endpoint.
+  """
+  @spec batch_by_eigenda_da_info(Plug.Conn.t(), map()) :: Plug.Conn.t() | {:error, :not_found}
+  def batch_by_eigenda_da_info(conn, %{data_hash: data_hash} = params) do
+    case Map.get(params, :type) do
+      "all" -> all_batches_by_data_availability_info(conn, data_hash, params)
+      _ -> one_batch_by_data_availability_info(conn, data_hash, params)
+    end
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/arbitrum/batches/da/celestia/:height/:transaction_commitment` endpoint.
+  """
+  @spec batch_by_celestia_da_info(Plug.Conn.t(), map()) :: Plug.Conn.t() | {:error, :not_found}
+  def batch_by_celestia_da_info(
         conn,
-        %{"transaction_commitment" => transaction_commitment, "height" => height} = _params
+        %{transaction_commitment: transaction_commitment, height: height} = _params
       ) do
-    # In case of Celestia, `data_key` is the hash of the height and the commitment hash
-    with {:ok, :hash, transaction_commitment_hash} <- parse_block_hash_or_number_param(transaction_commitment),
-         key <- calculate_celestia_data_key(height, transaction_commitment_hash) do
+    with {:ok, :hash, transaction_commitment_hash} <- parse_block_hash_or_number_param(transaction_commitment) do
+      key = calculate_celestia_data_key(height, transaction_commitment_hash)
+
       case SettlementReader.get_da_record_by_data_key(key) do
         {:ok, {batch_number, _}} ->
           batch(conn, %{batch_number: batch_number})
@@ -362,9 +475,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
         {:error, :not_found} = res ->
           res
       end
-    else
-      res ->
-        res
     end
   end
 
@@ -402,7 +512,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   defp all_batches_by_data_availability_info(conn, data_hash, params) do
     case SettlementReader.get_all_da_records_by_data_key(data_hash) do
       {:ok, {batch_numbers, _}} ->
-        params = Map.put(params, "batch_numbers", batch_numbers)
+        params = Map.put(params, :batch_numbers, batch_numbers)
         batches(conn, params)
 
       {:error, :not_found} = res ->
