@@ -321,8 +321,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
         internal_transaction.type in ~w(call create create2 selfdestruct)a and
         (is_nil(coalesce(type(internal_transaction.call_type_enum, :string), internal_transaction.call_type)) or
            coalesce(type(internal_transaction.call_type_enum, :string), internal_transaction.call_type) == ^"call") and
-        internal_transaction.value > ^0 and is_nil(internal_transaction.error) and
-        is_nil(internal_transaction.error_id) and
+        internal_transaction.value > ^0 and is_nil(internal_transaction.error_id) and
         (internal_transaction.to_address_hash == ^balance.address_hash or
            as(:to_address_mapping).address_hash == ^balance.address_hash or
            internal_transaction.from_address_hash == ^balance.address_hash or
