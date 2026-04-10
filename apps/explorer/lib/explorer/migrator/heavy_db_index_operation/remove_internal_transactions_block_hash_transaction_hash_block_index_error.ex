@@ -45,10 +45,14 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
   @impl HeavyDbIndexOperation
   # sobelow_skip ["SQL"]
   def db_index_operation do
-    case Repo.query(drop_columns_query_string(), [], timeout: :infinity) do
-      {:ok, _} ->
-        :ok
+    Logger.info("Migration RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError started")
 
+    with {:ok, _} <- drop_blocks_foreign_key(),
+         {:ok, _} <- drop_transactions_foreign_key(),
+         {:ok, _} <- Repo.query(drop_columns_query_string(), [], timeout: :infinity) do
+      Logger.info("Migration RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError finished")
+      :ok
+    else
       {:error, error} ->
         Logger.error(
           "Migration RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError failed: #{inspect(error)}"
@@ -102,6 +106,67 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
 
   @impl HeavyDbIndexOperation
   def update_cache, do: :ok
+
+  # sobelow_skip ["SQL"]
+  defp drop_blocks_foreign_key do
+    Repo.transaction(
+      fn ->
+        with {:ok, _} <- Repo.query(lock_blocks_query_string(), [], timeout: :infinity),
+             {:ok, _} <- Repo.query(drop_blocks_foreign_key_query_string(), [], timeout: :infinity) do
+          Logger.info("Migration RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError finished blocks")
+          :ok
+        else
+          {:error, error} -> Repo.rollback(error)
+        end
+      end,
+      timeout: :infinity
+    )
+  end
+
+  # sobelow_skip ["SQL"]
+  defp drop_transactions_foreign_key do
+    Repo.transaction(
+      fn ->
+        with {:ok, _} <- Repo.query(lock_transactions_query_string(), [], timeout: :infinity),
+             {:ok, _} <- Repo.query(drop_transactions_foreign_key_query_string(), [], timeout: :infinity) do
+          Logger.info(
+            "Migration RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError finished transactions"
+          )
+
+          :ok
+        else
+          {:error, error} -> Repo.rollback(error)
+        end
+      end,
+      timeout: :infinity
+    )
+  end
+
+  defp lock_blocks_query_string do
+    """
+    LOCK TABLE blocks IN ACCESS EXCLUSIVE MODE;
+    """
+  end
+
+  defp lock_transactions_query_string do
+    """
+    LOCK TABLE transactions IN ACCESS EXCLUSIVE MODE;
+    """
+  end
+
+  defp drop_blocks_foreign_key_query_string do
+    """
+    ALTER TABLE #{@table_name}
+    DROP CONSTRAINT IF EXISTS internal_transactions_block_hash_fkey;
+    """
+  end
+
+  defp drop_transactions_foreign_key_query_string do
+    """
+    ALTER TABLE #{@table_name}
+    DROP CONSTRAINT IF EXISTS internal_transactions_transaction_hash_fkey;
+    """
+  end
 
   defp drop_columns_query_string do
     """
