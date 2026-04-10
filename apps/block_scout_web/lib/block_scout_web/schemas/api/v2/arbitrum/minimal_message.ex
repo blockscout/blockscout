@@ -11,10 +11,21 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.MinimalMessage do
     description: "Minimal Arbitrum cross-chain message with origination and completion fields.",
     type: :object,
     properties: %{
-      origination_transaction_hash: General.FullHashNullable,
+      origination_transaction_hash: %Schema{
+        allOf: [General.FullHashNullable],
+        description: "Hash of the transaction on the originating chain that initiated this message."
+      },
       origination_timestamp: General.TimestampNullable,
-      origination_transaction_block_number: %Schema{type: :integer, minimum: 0, nullable: true},
-      completion_transaction_hash: General.FullHashNullable
+      origination_transaction_block_number: %Schema{
+        type: :integer,
+        minimum: 0,
+        nullable: true,
+        description: "Block number on the originating chain containing the initiation transaction."
+      },
+      completion_transaction_hash: %Schema{
+        allOf: [General.FullHashNullable],
+        description: "Hash of the transaction on the destination chain that executed this message."
+      }
     },
     required: [
       :origination_transaction_hash,

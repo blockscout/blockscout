@@ -78,6 +78,22 @@ Check that `additionalProperties: false` is present on all object schemas. This 
 
 If the view has chain-type dispatching (check for `chain_type` case statements or `with_chain_type_fields` calls), the schema should also have a `ChainTypeCustomizations` module applying the same fields. Verify both sides handle the same chain types.
 
+### 2f. Property descriptions are adequate
+
+Scan all properties in the schema. For each property that has no `description:` (or a tautological one that restates the name), ask: "Would an API consumer unfamiliar with this chain's internals understand this property from its name alone?"
+
+Flag properties that fail this test. Common patterns to watch for:
+
+- **Domain jargon** (`before_acc_hash`, `callvalue`) — needs explanation of what the term means
+- **Ambiguous roles** (`caller_address_hash`, `destination_address_hash`) — needs "who" and "on which chain"
+- **Unclear chain context** (`block_number` in a cross-chain object) — needs "Parent chain" or "Rollup"
+- **Enum values without lifecycle explanation** (`status` with `["initiated", "sent", "confirmed", "relayed"]`) — needs description of what triggers each transition
+- **Tautological descriptions** ("Withdrawal status." on `status`) — count as missing; rewrite or remove
+
+Self-documenting compound names (`origination_transaction_block_number`) and well-known primitives (`token.symbol`) don't need descriptions.
+
+See `references/schema-conventions.md` section "Property descriptions" for the full guidelines and before/after examples.
+
 ## 3. Convention compliance
 
 ### 3a. Controller prerequisites

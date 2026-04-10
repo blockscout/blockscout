@@ -80,7 +80,32 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
-  operation :withdrawals, false
+  operation :withdrawals,
+    summary: "Get withdrawal messages for a transaction.",
+    description: "Returns the list of Rollup withdrawal messages (L2ToL1Tx events) emitted by the given transaction.",
+    parameters: [
+      %OpenApiSpex.Parameter{
+        name: :transaction_hash,
+        in: :path,
+        schema: Schemas.General.FullHash,
+        required: true,
+        description: "Transaction hash."
+      }
+      | base_params()
+    ],
+    responses: [
+      ok:
+        {"Withdrawal messages for the transaction.", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{
+             items: %OpenApiSpex.Schema{type: :array, items: Schemas.Arbitrum.Withdrawal}
+           },
+           required: [:items],
+           additionalProperties: false
+         }},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   operation :batch,
     summary: "Get batch by number.",
@@ -243,7 +268,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     Function to handle GET requests to `/api/v2/arbitrum/messages/withdrawals/:transaction_hash` endpoint.
   """
   @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def withdrawals(conn, %{"transaction_hash" => transaction_hash} = _params) do
+  def withdrawals(conn, %{transaction_hash: transaction_hash} = _params) do
     hash =
       case Hash.Full.cast(transaction_hash) do
         {:ok, address} -> address

@@ -12,7 +12,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Batch do
     description: "Detailed Arbitrum batch info.",
     type: :object,
     properties: %{
-      number: %Schema{type: :integer, minimum: 0, description: "Batch number."},
+      number: %Schema{
+        type: :integer,
+        minimum: 0,
+        description: "Sequential identifier assigned to this batch by the sequencer."
+      },
       transactions_count: %Schema{type: :integer, minimum: 0, description: "Number of transactions in the batch."},
       start_block_number: %Schema{
         type: :integer,
@@ -24,8 +28,18 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Batch do
         minimum: 0,
         description: "Last Rollup block included in the batch."
       },
-      before_acc_hash: General.FullHash,
-      after_acc_hash: General.FullHash,
+      before_acc_hash: %Schema{
+        allOf: [General.FullHash],
+        description:
+          "Accumulator hash of the sequencer inbox before this batch was appended. " <>
+            "Forms a hash chain: must equal `after_acc_hash` of the previous batch."
+      },
+      after_acc_hash: %Schema{
+        allOf: [General.FullHash],
+        description:
+          "Accumulator hash of the sequencer inbox after this batch was appended. " <>
+            "Must equal `before_acc_hash` of the next batch."
+      },
       commitment_transaction: CommitmentTransaction,
       data_availability: %Schema{
         oneOf: [

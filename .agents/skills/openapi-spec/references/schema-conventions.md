@@ -434,6 +434,56 @@ batch_data_container: %Schema{
 
 If the Ecto schema field can be `nil` (not in `@required_attrs`, or the view conditionally emits it), the OpenAPI property should have `nullable: true`. If the key is always present but sometimes null, keep it in `required:` and set `nullable: true`. If the key is sometimes absent entirely, remove it from `required:`.
 
+## Property descriptions
+
+Not every property needs a `description:` — but ambiguous ones without descriptions become a guessing game for API consumers who aren't reading the source code.
+
+### When to add a description
+
+Add a description when the property name alone doesn't convey what the value represents:
+
+- **Domain jargon.** Names inherited from protocol internals that mean nothing outside that context. Example: `before_acc_hash` and `after_acc_hash` are Arbitrum Nitro accumulator hashes — a consumer seeing "acc hash" has no idea this refers to a cumulative hash over sequencer inbox messages.
+- **Ambiguous roles.** Names where the "who" or "what" is unclear. Example: `caller_address_hash` — caller of what? Is this the EOA that signed the transaction, or the contract that emitted the event? `destination_address_hash` — destination on which chain?
+- **Unclear chain context.** In cross-chain schemas, a bare `block_number` could refer to either the Parent chain or the Rollup. If the containing schema's description doesn't disambiguate, the property must.
+- **Opaque Solidity mirrors.** Field names lifted directly from contract events or structs. Example: `callvalue` mirrors Solidity's `msg.value` but reads as one opaque word to REST consumers — describe it as the native coin amount in wei.
+- **Enum lifecycle.** When enum values represent a state machine, list the progression and what triggers each transition. A `status` field with `["initiated", "sent", "confirmed", "relayed"]` is meaningless without knowing what moves a message from "sent" to "confirmed".
+- **Tautological descriptions.** "Withdrawal status." on a `status` property inside a Withdrawal schema adds zero information — it restates the name. Either write a real description or omit it; a tautology is worse than nothing because it signals "this was reviewed" when it wasn't.
+
+### When descriptions are unnecessary
+
+- **Self-documenting compound names.** `origination_transaction_block_number`, `completion_transaction_hash` — the full context is in the name.
+- **Well-known token primitives.** `token.symbol`, `token.name`, `token.decimals` — universally understood in the domain.
+- **Context from the parent schema.** If the schema-level `description:` already explains the object's role and the property name is unambiguous within that context, a per-property description is redundant.
+
+### Quality standard
+
+A description should tell the consumer something they cannot infer from the property name alone. If you can delete the description and the property is equally clear, it wasn't worth writing.
+
+### Where to find the meaning
+
+When a property name is ambiguous, cross-reference these sources to determine what it actually represents:
+
+1. **Ecto schema** — field comments, type annotations, and module docs in `apps/explorer/lib/explorer/chain/`.
+2. **Solidity source** — the event or struct the data originates from (e.g., `L2ToL1Tx` event for Arbitrum withdrawals). Contract ABIs clarify which field is the sender, recipient, value, etc.
+3. **View's `prepare_*` functions** — trace how the Ecto struct is transformed into the JSON map. The transformation logic often reveals the semantic meaning.
+
+### Example: before and after
+
+```elixir
+# Bad — tautological, adds nothing
+status: %Schema{type: :string, enum: [...], description: "Withdrawal status."}
+
+# Good — explains the lifecycle
+status: %Schema{
+  type: :string,
+  enum: ["initiated", "sent", "confirmed", "relayed"],
+  description:
+    "Cross-chain message lifecycle: initiated (tx submitted on Rollup) → " <>
+    "sent (included in an outbox entry) → confirmed (batch committed to " <>
+    "Parent chain) → relayed (executed on Parent chain)."
+}
+```
+
 ## Examples in schemas
 
 Three patterns exist, all optional:

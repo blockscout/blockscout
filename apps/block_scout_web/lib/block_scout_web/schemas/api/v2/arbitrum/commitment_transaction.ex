@@ -12,7 +12,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.CommitmentTransaction do
     type: :object,
     properties: %{
       hash: General.FullHashNullable,
-      block_number: %Schema{type: :integer, minimum: 0, nullable: true},
+      block_number: %Schema{
+        type: :integer,
+        minimum: 0,
+        nullable: true,
+        description: "Parent chain block number containing this transaction."
+      },
       timestamp: General.TimestampNullable,
       status: %Schema{
         type: :string,

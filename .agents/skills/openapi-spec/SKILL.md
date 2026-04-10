@@ -245,6 +245,7 @@ For each parameter the controller reads:
    - **For non-negative integer properties** (block numbers, batch numbers, counts, indices, nonces), set `minimum: 0` to enforce the domain constraint at the validation level.
 8. **Set `required:`** to list all keys that the view always emits.
 9. For paginated list endpoints, use `General.paginated_response/1` to wrap the item schema.
+10. **Review properties for description adequacy.** After defining types and constraints, do a final pass over all properties. For each property without a `description:`, ask: "Would an API consumer unfamiliar with this chain's internals understand this from the name alone?" Add descriptions to properties that are ambiguous, use domain jargon, mirror Solidity field names, or where the chain context (Parent chain vs Rollup) is unclear. Tautological descriptions that restate the property name don't count — rewrite or remove them. See `references/schema-conventions.md` section "Property descriptions" for guidelines and examples.
 
 ### Step 4a: Write the operation annotation
 

@@ -13,7 +13,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.ClaimMessage do
     required: [:calldata, :outbox_address_hash],
     properties: %{
       calldata: %Schema{type: :string, description: "ABI-encoded calldata for the executeTransaction call."},
-      outbox_address_hash: General.AddressHash
+      outbox_address_hash: %Schema{
+        allOf: [General.AddressHash],
+        description:
+          "Address of the Arbitrum Outbox contract on the Parent chain through which the withdrawal is executed."
+      }
     },
     additionalProperties: false
   })

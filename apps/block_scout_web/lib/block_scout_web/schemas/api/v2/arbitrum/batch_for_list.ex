@@ -11,7 +11,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchForList do
     description: "Arbitrum batch summary for list endpoints.",
     type: :object,
     properties: %{
-      number: %Schema{type: :integer, minimum: 0, description: "Batch number."},
+      number: %Schema{
+        type: :integer,
+        minimum: 0,
+        description: "Sequential identifier assigned to this batch by the sequencer."
+      },
       transactions_count: %Schema{type: :integer, minimum: 0, description: "Number of transactions in the batch."},
       blocks_count: %Schema{type: :integer, minimum: 0, description: "Number of blocks included in the batch."},
       batch_data_container: BatchDataContainer,

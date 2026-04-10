@@ -376,6 +376,23 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
       end
     end
 
+    # Non-empty withdrawal list and token sub-object variants require L2ToL1Tx event logs
+    # plus L1 RPC calls (Outbox contract for status, ERC20 for token info) — not covered here.
+    describe "/arbitrum/messages/withdrawals/:transaction_hash" do
+      test "returns empty list for a transaction with no withdrawals", %{conn: conn} do
+        transaction = insert(:transaction)
+
+        request = get(conn, "/api/v2/arbitrum/messages/withdrawals/#{transaction.hash}")
+        assert response = json_response(request, 200)
+        assert response["items"] == []
+      end
+
+      test "returns 422 for invalid transaction hash", %{conn: conn} do
+        request = get(conn, "/api/v2/arbitrum/messages/withdrawals/invalid")
+        assert %{"errors" => _} = json_response(request, 422)
+      end
+    end
+
     defp compare_batch(%L1Batch{} = batch, json) do
       batch = Explorer.Repo.preload(batch, :commitment_transaction)
 
