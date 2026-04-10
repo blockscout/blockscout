@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
 
   alias BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper
   alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain.PendingOperationsHelper
 
   alias Explorer.Chain.Cache.BackgroundMigrations
 
@@ -70,7 +71,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
       {internal_transactions, next_page} = result
 
       pending_status? =
-        InternalTransactionsPendingStatusHelper.internal_transactions_pending?(internal_transactions, transaction_hash)
+        pending_status?(internal_transactions, transaction_hash)
 
       next_page_params =
         next_page |> next_page_params(internal_transactions, params)
@@ -89,8 +90,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   end
 
   defp empty_response(conn, transaction_hash) do
-    pending_status? =
-      InternalTransactionsPendingStatusHelper.internal_transactions_pending?([], transaction_hash)
+    pending_status? = pending_status?([], transaction_hash)
 
     conn
     |> put_status(200)
@@ -122,5 +122,11 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
       nil -> nil
       :error -> :invalid
     end
+  end
+
+  defp pending_status?([], nil), do: PendingOperationsHelper.any_pending_operations?()
+
+  defp pending_status?(internal_transactions, transaction_hash) do
+    InternalTransactionsPendingStatusHelper.internal_transactions_pending?(internal_transactions, transaction_hash)
   end
 end

@@ -15,9 +15,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper do
 
   @doc """
   Checks whether the global internal-transactions endpoint scope contains pending operations.
-
-  If `internal_transactions` is empty and no explicit `transaction_hash` is provided,
-  it falls back to checking whether any pending internal-transaction processing exists.
   """
   @spec internal_transactions_pending?(list(), any() | nil) :: boolean()
   def internal_transactions_pending?(internal_transactions, transaction_hash \\ nil) do
@@ -31,17 +28,13 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper do
       |> extract_transaction_hashes()
       |> maybe_prepend_hash(transaction_hash)
 
-    if is_nil(block_range_bounds) and transaction_hashes == [] do
-      PendingOperationsHelper.any_pending_operations?()
-    else
-      {min_block_number, max_block_number} = block_range_bounds || {nil, nil}
+    {min_block_number, max_block_number} = block_range_bounds || {nil, nil}
 
-      PendingOperationsHelper.pending_operations_for_block_range_or_transactions?(
-        min_block_number,
-        max_block_number,
-        transaction_hashes
-      )
-    end
+    PendingOperationsHelper.pending_operations_for_block_range_or_transactions?(
+      min_block_number,
+      max_block_number,
+      transaction_hashes
+    )
   end
 
   @doc """
