@@ -353,6 +353,19 @@ defmodule Explorer.Chain.PendingOperationsHelper do
   end
 
   @doc """
+  Checks if there are pending operations in a block-number range or among provided transaction hashes.
+  """
+  @spec pending_operations_for_block_range_or_transactions?(
+          non_neg_integer() | nil,
+          non_neg_integer() | nil,
+          [Hash.Full.t()]
+        ) :: boolean()
+  def pending_operations_for_block_range_or_transactions?(min_block_number, max_block_number, transaction_hashes) do
+    pending_operations_in_block_range?(min_block_number, max_block_number) ||
+      transaction_hashes_pending?(transaction_hashes)
+  end
+
+  @doc """
   Checks if there are pending operations for a single transaction scope.
   """
   @spec pending_operations_for_transaction?(Hash.Full.t(), non_neg_integer() | nil) :: boolean()
