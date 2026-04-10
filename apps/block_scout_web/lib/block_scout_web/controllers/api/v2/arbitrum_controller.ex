@@ -128,7 +128,30 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   operation :batch_by_data_availability_info, false
   operation :batches_count, false
-  operation :batches, false
+
+  operation :batches,
+    summary: "List batches.",
+    description: "Retrieves a paginated list of Arbitrum batches committed to the Parent chain.",
+    parameters:
+      base_params() ++
+        [
+          %OpenApiSpex.Parameter{
+            name: :batch_numbers,
+            in: :query,
+            required: false,
+            schema: %Schema{type: :array, items: %Schema{type: :integer, minimum: 0}},
+            description: "Optional list of specific batch numbers to retrieve."
+          }
+        ] ++ define_paging_params(["number", "items_count"]),
+    responses: [
+      ok:
+        {"Paginated list of Arbitrum batches.", "application/json",
+         paginated_response(
+           items: Schemas.Arbitrum.BatchForList,
+           next_page_params_example: %{"number" => 123}
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   operation :batch_latest_number,
     summary: "Get the latest batch number.",
@@ -443,6 +466,10 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   # ## Returns
   # - The options keyword list, potentially extended with batch_numbers
   @spec maybe_add_batch_numbers(Keyword.t(), map()) :: Keyword.t()
+  defp maybe_add_batch_numbers(options, %{batch_numbers: batch_numbers}) when is_list(batch_numbers) do
+    Keyword.put(options, :batch_numbers, batch_numbers)
+  end
+
   defp maybe_add_batch_numbers(options, %{"batch_numbers" => batch_numbers}) when is_list(batch_numbers) do
     Keyword.put(options, :batch_numbers, batch_numbers)
   end

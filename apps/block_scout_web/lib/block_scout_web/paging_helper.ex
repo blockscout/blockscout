@@ -262,6 +262,7 @@ defmodule BlockScoutWeb.PagingHelper do
     |> Map.drop([
       :address_hash_param,
       :batch_number_param,
+      :batch_numbers,
       :block_hash_or_number_param,
       :direction,
       :transaction_hash_param,

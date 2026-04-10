@@ -162,6 +162,63 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
       end
     end
 
+    describe "/arbitrum/batches" do
+      test "returns empty list when no batches exist", %{conn: conn} do
+        request = get(conn, "/api/v2/arbitrum/batches")
+        assert response = json_response(request, 200)
+        assert response["items"] == []
+        assert response["next_page_params"] == nil
+      end
+
+      test "returns batches", %{conn: conn} do
+        batches = insert_list(3, :arbitrum_l1_batch)
+
+        request = get(conn, "/api/v2/arbitrum/batches")
+        assert response = json_response(request, 200)
+
+        assert length(response["items"]) == 3
+
+        sorted_batches = Enum.sort_by(batches, & &1.number, :desc)
+
+        for {batch, item} <- Enum.zip(sorted_batches, response["items"]) do
+          compare_batch(batch, item)
+        end
+      end
+
+      test "filters by batch_numbers", %{conn: conn} do
+        batches = insert_list(5, :arbitrum_l1_batch)
+        selected = Enum.take(batches, 2)
+        selected_numbers = Enum.map(selected, & &1.number)
+
+        query = %{"batch_numbers" => selected_numbers}
+        request = get(conn, "/api/v2/arbitrum/batches", query)
+        assert response = json_response(request, 200)
+
+        assert length(response["items"]) == 2
+
+        returned_numbers = Enum.map(response["items"], & &1["number"])
+        assert Enum.sort(returned_numbers) == Enum.sort(selected_numbers)
+      end
+
+      test "paginates batches", %{conn: conn} do
+        batches = insert_list(51, :arbitrum_l1_batch)
+
+        request = get(conn, "/api/v2/arbitrum/batches")
+        assert response = json_response(request, 200)
+
+        assert length(response["items"]) == 50
+        assert response["next_page_params"] != nil
+
+        request = get(conn, "/api/v2/arbitrum/batches", response["next_page_params"])
+        assert response = json_response(request, 200)
+
+        assert length(response["items"]) == 1
+        assert response["next_page_params"] == nil
+
+        assert length(Enum.uniq_by(batches, & &1.number)) == 51
+      end
+    end
+
     describe "/arbitrum/batches/:batch_number" do
       test "returns batch by number", %{conn: conn} do
         batch = insert(:arbitrum_l1_batch)
