@@ -13,6 +13,8 @@ defmodule Explorer.EthRpcHelper do
   @invalid_bool "Invalid bool"
   @invalid_hash "Invalid hash"
   @invalid_hex_data "Invalid hex data"
+  @invalid_data_array "Invalid data array"
+  @invalid_fee_history_reward_percentiles "Invalid fee history reward percentiles"
   @doc """
   Validates if address is valid
   """
@@ -87,6 +89,45 @@ defmodule Explorer.EthRpcHelper do
   def bool_validator(bool) when is_boolean(bool), do: :ok
   def bool_validator(_), do: {:error, @invalid_bool}
 
+  @doc """
+  Validates if value is a valid data array
+  """
+  @spec data_array_validator(list()) :: :ok | {:error, String.t()}
+  def data_array_validator(data) when is_list(data) do
+    if Enum.all?(data, &match?({:ok, _}, Data.cast(&1))) do
+      :ok
+    else
+      {:error, @invalid_data_array}
+    end
+  end
+
+  def data_array_validator(_), do: {:error, @invalid_data_array}
+
+  @doc """
+  Validates if fee history reward percentiles are valid
+  """
+  @spec fee_history_reward_percentiles_validator(list()) :: :ok | {:error, String.t()}
+  def fee_history_reward_percentiles_validator(reward_percentiles) when is_list(reward_percentiles) do
+    if sorted?(reward_percentiles) and Enum.all?(reward_percentiles, &valid_percentile?/1) do
+      :ok
+    else
+      {:error, @invalid_fee_history_reward_percentiles}
+    end
+  end
+
+  def fee_history_reward_percentiles_validator(_), do: {:error, @invalid_fee_history_reward_percentiles}
+
+  @doc """
+  Validates if value is either a block tag/number or block hash
+  """
+  @spec hash_or_block_validator(binary()) :: :ok | {:error, String.t()}
+  def hash_or_block_validator(value) do
+    case block_validator(value) do
+      :ok -> :ok
+      _ -> hash_validator(value)
+    end
+  end
+
   defp validate_optional_address(nil, _), do: :ok
 
   defp validate_optional_address(address_hash, field_name) do
@@ -118,4 +159,12 @@ defmodule Explorer.EthRpcHelper do
       _ -> {:error, "Invalid `#{field_name}` data"}
     end
   end
+
+  defp sorted?([]), do: true
+  defp sorted?([_]), do: true
+
+  defp sorted?([first, second | _]) when first > second, do: false
+  defp sorted?([_ | rest]), do: sorted?(rest)
+
+  defp valid_percentile?(percentile), do: is_number(percentile) and percentile >= 0 and percentile <= 100
 end

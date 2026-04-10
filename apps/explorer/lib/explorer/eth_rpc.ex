@@ -665,6 +665,199 @@ defmodule Explorer.EthRPC do
     }
   }
 
+  @extended_proxy_methods %{
+    "net_version" => %{
+      arity: 0,
+      params_validators: [],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "net_version", "params": []}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": "1"}
+      """
+    },
+    "net_listening" => %{
+      arity: 0,
+      params_validators: [],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "net_listening", "params": []}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": true}
+      """
+    },
+    "net_peerCount" => %{
+      arity: 0,
+      params_validators: [],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "net_peerCount", "params": []}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": "0x2"}
+      """
+    },
+    "web3_clientVersion" => %{
+      arity: 0,
+      params_validators: [],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "web3_clientVersion", "params": []}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": "Geth/v1.13.0"}
+      """
+    },
+    "web3_sha3" => %{
+      arity: 1,
+      params_validators: [&hex_data_validator/1],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "web3_sha3", "params": ["0x68656c6c6f20776f726c64"]}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": "0x47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad"}
+      """
+    },
+    "eth_syncing" => %{
+      arity: 0,
+      params_validators: [],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_syncing", "params": []}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": false}
+      """
+    },
+    "eth_protocolVersion" => %{
+      arity: 0,
+      params_validators: [],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_protocolVersion", "params": []}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": "0x41"}
+      """
+    },
+    "eth_getBlockTransactionCountByHash" => %{
+      arity: 1,
+      params_validators: [&hash_validator/1],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_getBlockTransactionCountByHash", "params": ["0x2980314632a35ff83ef1f26a2a972259dca49353ed9368a04f21bcd7a5512231"]}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": "0x14"}
+      """
+    },
+    "eth_getBlockTransactionCountByNumber" => %{
+      arity: 1,
+      params_validators: [&block_validator/1],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_getBlockTransactionCountByNumber", "params": ["latest"]}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": "0x14"}
+      """
+    },
+    "eth_getTransactionByBlockHashAndIndex" => %{
+      arity: 2,
+      params_validators: [&hash_validator/1, &integer_validator/1],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_getTransactionByBlockHashAndIndex", "params": ["0x2980314632a35ff83ef1f26a2a972259dca49353ed9368a04f21bcd7a5512231", "0x0"]}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": null}
+      """
+    },
+    "eth_getTransactionByBlockNumberAndIndex" => %{
+      arity: 2,
+      params_validators: [&block_validator/1, &integer_validator/1],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_getTransactionByBlockNumberAndIndex", "params": ["latest", "0x0"]}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": null}
+      """
+    },
+    "eth_getUncleByBlockHashAndIndex" => %{
+      arity: 2,
+      params_validators: [&hash_validator/1, &integer_validator/1],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_getUncleByBlockHashAndIndex", "params": ["0x2980314632a35ff83ef1f26a2a972259dca49353ed9368a04f21bcd7a5512231", "0x0"]}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": null}
+      """
+    },
+    "eth_getUncleByBlockNumberAndIndex" => %{
+      arity: 2,
+      params_validators: [&block_validator/1, &integer_validator/1],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_getUncleByBlockNumberAndIndex", "params": ["latest", "0x0"]}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": null}
+      """
+    },
+    "eth_getUncleCountByBlockHash" => %{
+      arity: 1,
+      params_validators: [&hash_validator/1],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_getUncleCountByBlockHash", "params": ["0x2980314632a35ff83ef1f26a2a972259dca49353ed9368a04f21bcd7a5512231"]}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": "0x0"}
+      """
+    },
+    "eth_getUncleCountByBlockNumber" => %{
+      arity: 1,
+      params_validators: [&block_validator/1],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_getUncleCountByBlockNumber", "params": ["latest"]}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": "0x0"}
+      """
+    },
+    "eth_feeHistory" => %{
+      arity: 2..3,
+      params_validators: [&integer_validator/1, &block_validator/1, &fee_history_reward_percentiles_validator/1],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_feeHistory", "params": ["0x4", "latest", [25, 50, 75]]}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": {"oldestBlock": "0x1", "baseFeePerGas": [], "gasUsedRatio": [], "reward": []}}
+      """
+    },
+    "eth_blobBaseFee" => %{
+      arity: 0,
+      params_validators: [],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_blobBaseFee", "params": []}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": "0x1"}
+      """
+    },
+    "eth_getBlockReceipts" => %{
+      arity: 1,
+      params_validators: [&hash_or_block_validator/1],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_getBlockReceipts", "params": ["latest"]}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": []}
+      """
+    },
+    "eth_getProof" => %{
+      arity: 3,
+      params_validators: [&address_hash_validator/1, &data_array_validator/1, &block_validator/1],
+      example: """
+      {"id": 0, "jsonrpc": "2.0", "method": "eth_getProof", "params": ["0x0000000000000000000000000000000000000007", ["0x0"], "latest"]}
+      """,
+      result: """
+      {"id": 0, "jsonrpc": "2.0", "result": {"address": "0x0000000000000000000000000000000000000007"}}
+      """
+    }
+  }
+
   @index_to_word %{
     0 => "first",
     1 => "second",
@@ -723,8 +916,8 @@ defmodule Explorer.EthRPC do
 
   defp proxy_method?(%{"jsonrpc" => "2.0", "method" => method, "params" => params, "id" => id})
        when is_list(params) and (is_number(id) or is_binary(id) or is_nil(id)) do
-    with method_definition when not is_nil(method_definition) <- @proxy_methods[method],
-         {:arity, true} <- {:arity, method_definition[:arity] == length(params)},
+    with method_definition when not is_nil(method_definition) <- active_proxy_methods()[method],
+         {:arity, true} <- {:arity, arity_valid?(method_definition[:arity], length(params))},
          :ok <- validate_params(method_definition[:params_validators], params) do
       true
     else
@@ -740,6 +933,22 @@ defmodule Explorer.EthRPC do
   end
 
   defp proxy_method?(_), do: false
+
+  defp active_proxy_methods do
+    if extended_proxy_methods_enabled?() do
+      Map.merge(@proxy_methods, @extended_proxy_methods)
+    else
+      @proxy_methods
+    end
+  end
+
+  defp extended_proxy_methods_enabled? do
+    Application.get_env(:explorer, __MODULE__, [])
+    |> Keyword.get(:extended_proxy_methods_enabled, false)
+  end
+
+  defp arity_valid?(%Range{} = range, params_length), do: params_length in range
+  defp arity_valid?(arity, params_length) when is_integer(arity), do: arity == params_length
 
   defp validate_params(validators, params) do
     validators
