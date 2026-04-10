@@ -280,6 +280,9 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
         |> put_status(:bad_request)
         |> render(:message, %{message: "withdrawal was executed already"})
 
+      # Returns 404 intentionally — 5xx would be misleading because the error
+      # originates from on-chain data (missing proof data, unreachable contracts),
+      # not from a Blockscout internal failure.
       {:error, :internal_error} ->
         conn
         |> put_status(:not_found)
