@@ -98,5 +98,25 @@ else
   log "No .claude/settings.local.json in main repo, skipping symlink"
 fi
 
+# Create deps symlink pointing to the main repo's deps directory.
+# This avoids re-fetching dependencies in every worktree.
+# Only create the symlink if the source directory exists in the main repo (avoids dangling
+# symlinks) and the target is not already a symlink. If a regular directory already exists
+# (e.g. from a previous session), leave it in place rather than failing.
+DEPS_SYMLINK="$DIR/deps"
+if [ ! -L "$DEPS_SYMLINK" ] && [ -d "$REPO_ROOT/deps" ]; then
+  if [ -e "$DEPS_SYMLINK" ]; then
+    log "Regular directory/file already exists at $DEPS_SYMLINK, skipping symlink creation"
+  else
+    REL_TARGET=$(python3 -c "import os; print(os.path.relpath('$REPO_ROOT/deps', '$DIR'))")
+    ln -s "$REL_TARGET" "$DEPS_SYMLINK"
+    log "Created symlink: $DEPS_SYMLINK -> $REL_TARGET"
+  fi
+elif [ -L "$DEPS_SYMLINK" ]; then
+  log "Symlink already exists: $DEPS_SYMLINK"
+else
+  log "No deps directory in main repo, skipping symlink"
+fi
+
 log "Done, worktree path: $DIR"
 echo "$DIR"
