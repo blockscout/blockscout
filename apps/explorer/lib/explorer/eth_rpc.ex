@@ -2,6 +2,8 @@ defmodule Explorer.EthRPC do
   @moduledoc """
   Ethereum JSON RPC methods logic implementation.
   """
+
+  import EthereumJSONRPC, only: [quantity_to_integer: 1]
   import Explorer.EthRpcHelper
 
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
@@ -23,7 +25,20 @@ defmodule Explorer.EthRPC do
   alias Explorer.Chain.Cache.{BlockNumber, GasPriceOracle}
   alias Explorer.Etherscan.{Blocks, Logs}
 
+  # Error codes
+  @invalid_request_code -32600
+  @method_not_found_code -32601
+  @invalid_param_code -32602
+  @internal_error_code -32603
+
+  # Error messages
   @nil_gas_price_message "Gas price is not estimated yet"
+  @invalid_block_hash_message "Invalid block hash"
+  @invalid_block_number_message "Invalid block number"
+  @incorrect_number_of_params_message "Incorrect number of params"
+  @something_went_wrong_message "Something went wrong"
+
+  @type error :: %{code: integer(), message: String.t()}
 
   @methods %{
     "eth_blockNumber" => %{
@@ -657,8 +672,6 @@ defmodule Explorer.EthRPC do
     3 => "fourth"
   }
 
-  @incorrect_number_of_params "Incorrect number of params."
-
   @spec responses([map()]) :: [map()]
   def responses(requests) do
     requests =
@@ -672,7 +685,7 @@ defmodule Explorer.EthRPC do
           true ->
             Map.put(acc, index, request)
 
-          {:error, _reason} = error ->
+          {:error, error} ->
             Map.put(acc, index, error)
 
           false ->
@@ -687,11 +700,23 @@ defmodule Explorer.EthRPC do
            {:request, {:ok, result}} <- {:request, do_eth_request(request)} do
         format_success(result, id)
       else
-        {:id, :error} -> format_error("id is a required field", 0)
-        {:request, {:error, message}} -> format_error(message, Map.get(request, "id"))
-        {:proxy, {:error, message}} -> format_error(message, Map.get(request, "id"))
-        {:proxy, %{result: result}} -> format_success(result, Map.get(request, "id"))
-        {:proxy, %{error: error}} -> format_error(error, Map.get(request, "id"))
+        {:id, :error} ->
+          format_error("Id is a required field", @invalid_request_code, 0)
+
+        {:request, {:error, %{code: code, message: message}}} ->
+          format_error(message, code, Map.get(request, "id"))
+
+        {:proxy, {:error, %{code: code, message: message}}} ->
+          format_error(message, code, Map.get(request, "id"))
+
+        {:proxy, %{result: result}} ->
+          format_success(result, Map.get(request, "id"))
+
+        {:proxy, {:error, {:bad_response = error, _}}} ->
+          format_error(error, @internal_error_code, Map.get(request, "id"))
+
+        {:proxy, {:error, %Mint.TransportError{reason: reason}}} ->
+          format_error(reason, @internal_error_code, Map.get(request, "id"))
       end
     end)
   end
@@ -703,11 +728,11 @@ defmodule Explorer.EthRPC do
          :ok <- validate_params(method_definition[:params_validators], params) do
       true
     else
-      {:error, _reason} = error ->
-        error
+      {:error, reason} ->
+        {:error, %{code: @internal_error_code, message: reason}}
 
       {:arity, false} ->
-        {:error, @incorrect_number_of_params}
+        {:error, %{code: @invalid_param_code, message: @incorrect_number_of_params_message}}
 
       _ ->
         false
@@ -734,8 +759,11 @@ defmodule Explorer.EthRPC do
         {:error, _} ->
           []
 
-        map when is_map(map) ->
-          [request_to_elixir(map)]
+        %{"jsonrpc" => _json_rpc, "method" => _method, "params" => _params, "id" => _id} = request ->
+          [request_to_elixir(request)]
+
+        _ ->
+          []
       end)
 
     with [_ | _] = to_request <- to_request,
@@ -754,6 +782,11 @@ defmodule Explorer.EthRPC do
     else
       [] ->
         map
+        |> Enum.map(fn
+          {_index, elem} ->
+            {:error, elem}
+        end)
+        |> Enum.into(%{})
 
       {:error, _reason} = error ->
         map
@@ -789,7 +822,7 @@ defmodule Explorer.EthRPC do
   @doc """
   Handles `eth_getBalance` method
   """
-  @spec eth_get_balance(String.t(), String.t() | nil) :: {:ok, String.t()} | {:error, String.t()}
+  @spec eth_get_balance(String.t(), String.t() | nil) :: {:ok, String.t()} | {:error, error()}
   def eth_get_balance(address_param, block_param \\ nil) do
     with {:address, {:ok, address}} <- {:address, Chain.string_to_address_hash(address_param)},
          {:block, {:ok, block}} <- {:block, block_param(block_param)},
@@ -797,41 +830,41 @@ defmodule Explorer.EthRPC do
       {:ok, Wei.hex_format(balance)}
     else
       {:address, :error} ->
-        {:error, "Query parameter 'address' is invalid"}
+        {:error, %{code: @invalid_param_code, message: "Query parameter 'address' is invalid"}}
 
       {:block, :error} ->
-        {:error, "Query parameter 'block' is invalid"}
+        {:error, %{code: @invalid_param_code, message: "Query parameter 'block' is invalid"}}
 
       {:balance, {:error, :not_found}} ->
-        {:error, "Balance not found"}
+        {:error, %{code: @invalid_param_code, message: "Balance not found"}}
     end
   end
 
   @doc """
   Handles `eth_gasPrice` method
   """
-  @spec eth_gas_price() :: {:ok, String.t()} | {:error, String.t()}
+  @spec eth_gas_price() :: {:ok, String.t()} | {:error, error()}
   def eth_gas_price do
     case GasPriceOracle.get_gas_prices() do
       {:ok, gas_prices} ->
         {:ok, Wei.hex_format(gas_prices[:average][:wei])}
 
       _ ->
-        {:error, @nil_gas_price_message}
+        {:error, %{code: @internal_error_code, message: @nil_gas_price_message}}
     end
   end
 
   @doc """
   Handles `eth_maxPriorityFeePerGas` method
   """
-  @spec eth_max_priority_fee_per_gas() :: {:ok, String.t()} | {:error, String.t()}
+  @spec eth_max_priority_fee_per_gas() :: {:ok, String.t()} | {:error, error()}
   def eth_max_priority_fee_per_gas do
     case GasPriceOracle.get_gas_prices() do
       {:ok, gas_prices} ->
         {:ok, Wei.hex_format(gas_prices[:average][:priority_fee_wei])}
 
       _ ->
-        {:error, @nil_gas_price_message}
+        {:error, %{code: @internal_error_code, message: @nil_gas_price_message}}
     end
   end
 
@@ -846,7 +879,7 @@ defmodule Explorer.EthRPC do
   @doc """
   Handles `eth_getTransactionByHash` method
   """
-  @spec eth_get_transaction_by_hash(String.t()) :: {:ok, map() | nil} | {:error, String.t()}
+  @spec eth_get_transaction_by_hash(String.t()) :: {:ok, map() | nil} | {:error, error()}
   def eth_get_transaction_by_hash(transaction_hash_string) do
     necessity_by_association =
       %{signed_authorizations: :optional}
@@ -890,7 +923,7 @@ defmodule Explorer.EthRPC do
   @doc """
   Handles `eth_getTransactionReceipt` method
   """
-  @spec eth_get_transaction_receipt(String.t()) :: {:ok, map() | nil} | {:error, String.t()}
+  @spec eth_get_transaction_receipt(String.t()) :: {:ok, map() | nil} | {:error, error()}
   def eth_get_transaction_receipt(transaction_hash_string) do
     necessity_by_association =
       %{block: :optional, logs: :optional}
@@ -1021,7 +1054,7 @@ defmodule Explorer.EthRPC do
       render_func.(transaction)
     else
       {:transaction_hash, :error} ->
-        {:error, "Transaction hash is invalid"}
+        {:error, %{code: @invalid_param_code, message: "Transaction hash is invalid"}}
 
       {:transaction, _} ->
         {:ok, nil}
@@ -1046,14 +1079,14 @@ defmodule Explorer.EthRPC do
 
       {:ok, logs}
     else
-      {:error, message} when is_bitstring(message) ->
-        {:error, message}
+      {:error, %{} = error} ->
+        {:error, error}
 
       {:error, :empty} ->
         {:ok, []}
 
       _ ->
-        {:error, "Something went wrong."}
+        {:error, %{code: @internal_error_code, message: @something_went_wrong_message}}
     end
   end
 
@@ -1113,12 +1146,12 @@ defmodule Explorer.EthRPC do
   defp cast_block("0x" <> hexadecimal_digits = input) do
     case Integer.parse(hexadecimal_digits, 16) do
       {integer, ""} -> {:ok, integer}
-      _ -> {:error, input <> " is not a valid block number"}
+      _ -> {:error, %{code: @invalid_param_code, message: input <> " is not a valid block number"}}
     end
   end
 
   defp cast_block(integer) when is_integer(integer), do: {:ok, integer}
-  defp cast_block(_), do: {:error, "invalid block number"}
+  defp cast_block(_), do: {:error, %{code: @invalid_param_code, message: @invalid_block_number_message}}
 
   defp address_or_topic_params(filter_options) do
     address_param = Map.get(filter_options, "address")
@@ -1130,7 +1163,9 @@ defmodule Explorer.EthRPC do
     end
   end
 
-  defp address_and_topics(nil, nil), do: {:error, "Must supply one of address and topics"}
+  defp address_and_topics(nil, nil),
+    do: {:error, %{code: @invalid_param_code, message: "Must supply one of address and topics"}}
+
   defp address_and_topics(address, nil), do: {:ok, %{address_hash: address}}
   defp address_and_topics(nil, topics), do: {:ok, topics}
   defp address_and_topics(address, topics), do: {:ok, Map.put(topics, :address_hash, address)}
@@ -1140,7 +1175,7 @@ defmodule Explorer.EthRPC do
   defp validate_address(address) do
     case Address.cast(address) do
       {:ok, address} -> {:ok, address}
-      :error -> {:error, "invalid address"}
+      :error -> {:error, %{code: @invalid_param_code, message: "invalid address"}}
     end
   end
 
@@ -1159,7 +1194,7 @@ defmodule Explorer.EthRPC do
           {:ok, add_operator(with_filter, index)}
 
         :error ->
-          {:error, "invalid topics"}
+          {:error, %{code: @invalid_param_code, message: "invalid topics"}}
       end
     end)
   end
@@ -1197,10 +1232,10 @@ defmodule Explorer.EthRPC do
         resolve_logs_blocks_range(from_block, to_block)
 
       {:block, _} ->
-        {:error, "Invalid Block Hash"}
+        {:error, %{code: @invalid_param_code, message: @invalid_block_hash_message}}
 
       {:block_hash, _} ->
-        {:error, "Invalid Block Hash"}
+        {:error, %{code: @invalid_param_code, message: @invalid_block_hash_message}}
     end
   end
 
@@ -1224,7 +1259,7 @@ defmodule Explorer.EthRPC do
            "blockNumber" => block_number
          }
        }) do
-    with {:ok, parsed_block_number} <- to_number(block_number, "invalid block number"),
+    with {:ok, parsed_block_number} <- to_number(block_number, @invalid_block_number_message),
          {:ok, parsed_log_index} <- to_number(log_index, "invalid log index") do
       {:ok,
        %{
@@ -1251,27 +1286,27 @@ defmodule Explorer.EthRPC do
   defp to_block_number("0x" <> number, _) do
     case Integer.parse(number, 16) do
       {integer, ""} -> {:ok, integer}
-      _ -> {:error, "invalid block number"}
+      _ -> {:error, %{code: @invalid_param_code, message: @invalid_block_number_message}}
     end
   end
 
   defp to_block_number(number, _) when is_bitstring(number) do
     case Integer.parse(number, 16) do
       {integer, ""} -> {:ok, integer}
-      _ -> {:error, "invalid block number"}
+      _ -> {:error, %{code: @invalid_param_code, message: @invalid_block_number_message}}
     end
   end
 
-  defp to_block_number(_, _), do: {:error, "invalid block number"}
+  defp to_block_number(_, _), do: {:error, %{code: @invalid_param_code, message: @invalid_block_number_message}}
 
   defp to_number(number, error_message) when is_bitstring(number) do
     case Integer.parse(number, 16) do
       {integer, ""} -> {:ok, integer}
-      _ -> {:error, error_message}
+      _ -> {:error, %{code: @invalid_param_code, message: error_message}}
     end
   end
 
-  defp to_number(_, error_message), do: {:error, error_message}
+  defp to_number(_, error_message), do: {:error, %{code: @invalid_param_code, message: error_message}}
 
   defp max_consensus_block_number do
     case Chain.max_consensus_block_number() do
@@ -1284,12 +1319,12 @@ defmodule Explorer.EthRPC do
     %{result: result, id: id}
   end
 
-  defp format_error(message, id) do
-    %{error: message, id: id}
+  defp format_error(message, code, id) do
+    %{error: %{code: code, message: message}, id: id}
   end
 
   defp do_eth_request(%{"jsonrpc" => rpc_version}) when rpc_version != "2.0" do
-    {:error, "invalid rpc version"}
+    {:error, %{code: @invalid_param_code, message: "invalid rpc version"}}
   end
 
   defp do_eth_request(%{"jsonrpc" => "2.0", "method" => method, "params" => params})
@@ -1300,15 +1335,15 @@ defmodule Explorer.EthRPC do
       apply(__MODULE__, action, params)
     else
       {:correct_arity, _} ->
-        {:error, "Incorrect number of params."}
+        {:error, %{code: @invalid_param_code, message: @incorrect_number_of_params_message}}
 
       _ ->
-        {:error, "Action not found."}
+        {:error, %{code: @method_not_found_code, message: "Method not found."}}
     end
   end
 
   defp do_eth_request(%{"params" => _params, "method" => _}) do
-    {:error, "Invalid params. Params must be a list."}
+    {:error, %{code: @invalid_param_code, message: "Invalid params. Params must be a list."}}
   end
 
   defp do_eth_request(%{"jsonrpc" => jsonrpc, "method" => method}) do
@@ -1316,7 +1351,7 @@ defmodule Explorer.EthRPC do
   end
 
   defp do_eth_request(_) do
-    {:error, "Method, and jsonrpc are required parameters."}
+    {:error, %{code: @invalid_request_code, message: "Method, and jsonrpc are required parameters."}}
   end
 
   defp get_action(action) do
@@ -1334,15 +1369,21 @@ defmodule Explorer.EthRPC do
   defp block_param("pending"), do: {:ok, :pending}
 
   defp block_param(string_integer) when is_bitstring(string_integer) do
-    case Integer.parse(string_integer) do
-      {integer, ""} -> {:ok, integer}
-      _ -> :error
+    case quantity_to_integer(string_integer) do
+      nil -> :error
+      block_number -> {:ok, block_number}
     end
   end
 
   defp block_param(nil), do: {:ok, :latest}
   defp block_param(_), do: :error
 
+  @doc """
+  Encodes a numeric or binary value as a hex-prefixed quantity string (e.g. `"0x1a"`).
+
+  Returns `nil` when the value is `nil`.
+  """
+  @spec encode_quantity(Decimal.t() | binary() | integer() | nil) :: String.t() | nil
   def encode_quantity(%Decimal{} = decimal), do: encode_quantity(Decimal.to_integer(decimal))
 
   def encode_quantity(binary) when is_binary(binary) do
@@ -1361,10 +1402,12 @@ defmodule Explorer.EthRPC do
     |> encode_quantity()
   end
 
-  def encode_quantity(value) when is_nil(value) do
-    nil
-  end
+  def encode_quantity(value) when is_nil(value), do: nil
 
+  @doc """
+  Returns the map of supported Ethereum JSON RPC methods with their metadata.
+  """
+  @spec methods() :: map()
   def methods, do: @methods
 
   defp chain_id, do: :block_scout_web |> Application.get_env(:chain_id) |> Helper.parse_integer() |> encode_quantity()
