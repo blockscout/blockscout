@@ -85,7 +85,9 @@ defmodule BlockScoutWeb.TestApiSchemaAssertions do
     end)
     |> Enum.min_by(
       fn {template_path, _} ->
-        template_path |> split_path() |> Enum.count(&dynamic_segment?/1)
+        segments = split_path(template_path)
+        dynamic_count = Enum.count(segments, &dynamic_segment?/1)
+        {dynamic_count, length(segments), template_path}
       end,
       fn -> nil end
     )
