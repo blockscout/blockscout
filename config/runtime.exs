@@ -346,6 +346,9 @@ config :explorer,
 
 config :explorer, Explorer.PagingOptions, max_page_size: ConfigHelper.parse_integer_env_var("MAX_ITEMS_PER_PAGE", 100)
 
+config :explorer, Explorer.EthRPC,
+  extended_proxy_methods_enabled: ConfigHelper.parse_bool_env_var("API_ETH_RPC_EXTENDED_PROXY_METHODS_ENABLED", "false")
+
 config :explorer, Explorer.Chain.Health.Monitor,
   check_interval: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_CHECK_INTERVAL", "1m"),
   healthy_blocks_period: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_BLOCKS_PERIOD", "5m"),
