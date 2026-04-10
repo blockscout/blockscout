@@ -190,7 +190,8 @@ For each parameter the controller reads:
 
 2. **If no helper exists**, decide:
    - **Reusable across controllers?** Add a new helper function to `general.ex` following the naming conventions in `references/parameter-discovery.md`.
-   - **One-off?** Define an inline `%OpenApiSpex.Parameter{}` struct directly in the `operation` macro arguments.
+   - **Domain-specific but used by multiple operations in the same controller?** Add a private helper function in the controller itself. This avoids polluting `general.ex` with chain-specific concerns while preventing duplication across operations.
+   - **Truly one-off (single operation)?** Define an inline `%OpenApiSpex.Parameter{}` struct directly in the `operation` macro arguments.
 
 3. **For pagination parameters**, use `define_paging_params(field_names)` — pass the cursor field names as strings, and **always include `"items_count"`**. The `next_page_params` helper adds `items_count` to every paginated response automatically, so CastAndValidate must accept it as a query param. Example: `define_paging_params(["id", "items_count"])`.
 
@@ -386,7 +387,7 @@ Use this to audit an existing declaration for correctness, completeness, and adh
 
 Read `references/inspection-checklist.md` for the full systematic checklist. The high-level steps:
 
-1. **Code cross-referencing** — verify parameter completeness (controller reads vs declared params), response field alignment (view output vs schema properties), three-way coupling consistency, and convention compliance.
+1. **Code cross-referencing** — verify parameter completeness (controller reads vs declared params, no duplicated inline parameters across operations), response field alignment (view output vs schema properties), three-way coupling consistency, and convention compliance.
 2. **Compile** — confirm no structural issues after any fixes applied.
 3. **Generate the spec** — confirm the full spec resolves cleanly.
 4. **Run tests** — confirm response schemas match view output. Check that tests exist for key status codes (200, 404, 422).

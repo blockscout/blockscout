@@ -149,6 +149,32 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
       end
     end
 
+    describe "/arbitrum/messages/:direction/count" do
+      test "returns count for to-rollup messages", %{conn: conn} do
+        insert_list(3, :arbitrum_message, direction: :to_l2, status: :relayed)
+
+        request = get(conn, "/api/v2/arbitrum/messages/to-rollup/count")
+        assert json_response(request, 200) == 3
+      end
+
+      test "returns count for from-rollup messages", %{conn: conn} do
+        insert_list(5, :arbitrum_message, direction: :from_l2, status: :initiated)
+
+        request = get(conn, "/api/v2/arbitrum/messages/from-rollup/count")
+        assert json_response(request, 200) == 5
+      end
+
+      test "returns 0 when no messages exist", %{conn: conn} do
+        request = get(conn, "/api/v2/arbitrum/messages/to-rollup/count")
+        assert json_response(request, 200) == 0
+      end
+
+      test "returns 422 for invalid direction", %{conn: conn} do
+        request = get(conn, "/api/v2/arbitrum/messages/invalid/count")
+        assert %{"errors" => _} = json_response(request, 422)
+      end
+    end
+
     describe "/main-page/arbitrum/batches/latest-number" do
       test "returns latest batch number", %{conn: conn} do
         insert(:arbitrum_l1_batch, number: 5)
@@ -218,6 +244,26 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
         assert response["next_page_params"] == nil
 
         assert length(Enum.uniq_by(batches, & &1.number)) == 51
+      end
+    end
+
+    describe "/arbitrum/batches/count" do
+      test "returns 0 when no batches exist", %{conn: conn} do
+        request = get(conn, "/api/v2/arbitrum/batches/count")
+        assert json_response(request, 200) == 0
+      end
+
+      # The endpoint uses get_table_rows_total_count/2 which relies on PostgreSQL's
+      # reltuples estimate rather than an exact COUNT. In the test database, reltuples
+      # is stale after inserts (ANALYZE hasn't run), so the returned count may be 0
+      # instead of the actual row count. We assert the response type rather than an
+      # exact value; schema validation via json_response/2 is the main check here.
+      test "returns batches count", %{conn: conn} do
+        insert_list(3, :arbitrum_l1_batch)
+
+        request = get(conn, "/api/v2/arbitrum/batches/count")
+        assert response = json_response(request, 200)
+        assert is_integer(response) and response >= 0
       end
     end
 

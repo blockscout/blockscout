@@ -63,8 +63,9 @@ When looking for existing helpers, think about which category the parameter fall
 
 ### When to create a helper vs inline
 
-- **Create a helper** if the parameter will be used by 2+ operations or is a standard domain concept (like an entity hash).
-- **Use inline `%Parameter{}`** if the parameter is unique to one endpoint.
+- **Create a helper in `general.ex`** if the parameter is a generic concept reusable across multiple controllers (entity hashes, block numbers, token types).
+- **Create a private helper in the controller** if the parameter is domain-specific but used by multiple operations in the same controller (e.g., an Arbitrum message direction param shared by `messages` and `messages_count`). This avoids polluting `general.ex` with chain-specific concerns while preventing copy-paste duplication across operations.
+- **Use inline `%Parameter{}`** only if the parameter is truly unique to a single operation.
 
 ### Helper function template
 

@@ -30,21 +30,18 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   @batch_necessity_by_association %{:commitment_transaction => :required}
 
+  @direction_param %OpenApiSpex.Parameter{
+    name: :direction,
+    in: :path,
+    required: true,
+    schema: %Schema{type: :string, enum: ["from-rollup", "to-rollup"]},
+    description: "Message direction: `from-rollup` for Rollup to Parent chain, `to-rollup` for Parent chain to Rollup."
+  }
+
   operation :messages,
     summary: "List cross-chain messages.",
     description: "Retrieves a paginated list of Arbitrum cross-chain messages filtered by the specified direction.",
-    parameters:
-      [
-        %OpenApiSpex.Parameter{
-          name: :direction,
-          in: :path,
-          required: true,
-          schema: %Schema{type: :string, enum: ["from-rollup", "to-rollup"]},
-          description:
-            "Message direction: `from-rollup` for Rollup to Parent chain, `to-rollup` for Parent chain to Rollup."
-        }
-        | base_params()
-      ] ++ define_paging_params(["id", "items_count"]),
+    parameters: [@direction_param | base_params()] ++ define_paging_params(["id", "items_count"]),
     responses: [
       ok:
         {"Paginated list of cross-chain messages.", "application/json",
@@ -55,7 +52,16 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
-  operation :messages_count, false
+  operation :messages_count,
+    summary: "Get cross-chain messages count.",
+    description: "Retrieves the total count of Arbitrum cross-chain messages for the specified direction.",
+    parameters: [@direction_param | base_params()],
+    responses: [
+      ok:
+        {"Total count of cross-chain messages for the specified direction.", "application/json",
+         %Schema{type: :integer, minimum: 0}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   operation :claim_message,
     summary: "Get claim data for a withdrawal.",
@@ -238,7 +244,14 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
-  operation :batches_count, false
+  operation :batches_count,
+    summary: "Get batches count.",
+    description: "Retrieves the total count of Arbitrum batches committed to the Parent chain.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Total count of batches.", "application/json", %Schema{type: :integer, minimum: 0}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   operation :batches,
     summary: "List batches.",
@@ -354,7 +367,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     Function to handle GET requests to `/api/v2/arbitrum/messages/:direction/count` endpoint.
   """
   @spec messages_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def messages_count(conn, %{"direction" => direction} = _params) do
+  def messages_count(conn, %{direction: direction} = _params) do
     conn
     |> put_status(200)
     |> render(:arbitrum_messages_count, %{count: MessagesReader.messages_count(direction)})

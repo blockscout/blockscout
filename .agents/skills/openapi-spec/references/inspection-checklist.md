@@ -37,6 +37,14 @@ For each parameter:
 - Enum params should have the correct `enum:` values (check the controller logic for valid values)
 - Boolean params should use `%Schema{type: :boolean}`
 
+### 1e. No duplicated inline parameters
+
+For each inline `%Parameter{}` struct in the operation, scan the other operations in the same controller for identical or near-identical structs (same `name`, `in`, `schema`, and `description`). Duplicated inline parameters are a maintenance risk — changing one without updating the other creates silent inconsistencies.
+
+If duplication is found, extract the parameter into a reusable helper function:
+- **Generic concept** (address hashes, transaction hashes, block numbers — useful across multiple controllers): add a helper to `general.ex` following the conventions in `references/parameter-discovery.md`.
+- **Domain-specific concept** (e.g., an Arbitrum message direction — only meaningful within one controller): add a private helper function in the same controller. This keeps the chain-specific concern contained without polluting the shared `general.ex`.
+
 ## 2. Response field alignment
 
 ### 2a. Schema properties match view output
