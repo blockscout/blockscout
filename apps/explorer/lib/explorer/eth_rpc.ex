@@ -909,7 +909,7 @@ defmodule Explorer.EthRPC do
           format_error(error, @internal_error_code, Map.get(request, "id"))
 
         {:proxy, {:error, %Mint.TransportError{reason: reason}}} ->
-          format_error(reason, @internal_error_code, Map.get(request, "id"))
+          format_error(inspect(reason), @internal_error_code, Map.get(request, "id"))
       end
     end)
   end
@@ -922,7 +922,7 @@ defmodule Explorer.EthRPC do
       true
     else
       {:error, reason} ->
-        {:error, %{code: @internal_error_code, message: reason}}
+        {:error, %{code: @invalid_param_code, message: reason}}
 
       {:arity, false} ->
         {:error, %{code: @invalid_param_code, message: @incorrect_number_of_params_message}}
@@ -1499,13 +1499,6 @@ defmodule Explorer.EthRPC do
     end
   end
 
-  defp to_block_number(number, _) when is_bitstring(number) do
-    case Integer.parse(number, 16) do
-      {integer, ""} -> {:ok, integer}
-      _ -> {:error, %{code: @invalid_param_code, message: @invalid_block_number_message}}
-    end
-  end
-
   defp to_block_number(_, _), do: {:error, %{code: @invalid_param_code, message: @invalid_block_number_message}}
 
   defp to_number(number, error_message) when is_bitstring(number) do
@@ -1533,7 +1526,7 @@ defmodule Explorer.EthRPC do
   end
 
   defp do_eth_request(%{"jsonrpc" => rpc_version}) when rpc_version != "2.0" do
-    {:error, %{code: @invalid_param_code, message: "invalid rpc version"}}
+    {:error, %{code: @invalid_request_code, message: "invalid rpc version"}}
   end
 
   defp do_eth_request(%{"jsonrpc" => "2.0", "method" => method, "params" => params})
@@ -1551,7 +1544,7 @@ defmodule Explorer.EthRPC do
     end
   end
 
-  defp do_eth_request(%{"params" => _params, "method" => _}) do
+  defp do_eth_request(%{"jsonrpc" => _jsonrpc, "params" => _params, "method" => _}) do
     {:error, %{code: @invalid_param_code, message: "Invalid params. Params must be a list."}}
   end
 
