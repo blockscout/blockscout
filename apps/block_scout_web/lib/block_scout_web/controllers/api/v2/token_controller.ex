@@ -34,7 +34,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       tokens_sorting: 1
     ]
 
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.BENS,
+    only: [maybe_preload_ens: 1, maybe_preload_ens_for_token_transfers: 1]
+
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
@@ -181,7 +183,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> put_view(TransactionView)
       |> render(:token_transfers, %{
         token_transfers:
-          token_transfers |> Instance.preload_nft(@api_true) |> maybe_preload_ens() |> maybe_preload_metadata(),
+          token_transfers
+          |> Instance.preload_nft(@api_true)
+          |> maybe_preload_ens_for_token_transfers()
+          |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -439,7 +444,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:token_transfers, %{
-        token_transfers: token_transfers |> maybe_preload_ens() |> maybe_preload_metadata(),
+        token_transfers: token_transfers |> maybe_preload_ens_for_token_transfers() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -616,7 +621,12 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     description: "Retrieves a paginated list of bridged tokens with optional filtering and sorting.",
     parameters:
       base_params() ++
-        [chain_ids_param(), q_param()] ++
+        [
+          chain_ids_param(),
+          q_param(),
+          sort_param(["fiat_value", "holders_count", "circulating_market_cap"]),
+          order_param()
+        ] ++
         define_paging_params([
           "contract_address_hash",
           "fiat_value",

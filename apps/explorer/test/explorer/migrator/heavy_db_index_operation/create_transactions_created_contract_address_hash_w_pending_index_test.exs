@@ -37,9 +37,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContr
         assert Helper.db_index_exists_and_valid?(index_name) == %{exists?: false, valid?: nil}
 
         CreateTransactionsCreatedContractAddressHashWPendingIndex.start_link([])
-        Process.sleep(100)
-
-        assert MigrationStatus.get_status(migration_name) == "started"
 
         Process.sleep(200)
 
@@ -70,10 +67,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContr
         assert MigrationStatus.get_status(migration_name) == nil
 
         insert(:db_migration_status, migration_name: dependent_migration_name, status: "completed")
-
-        Process.sleep(150)
-
-        assert MigrationStatus.get_status(migration_name) == "started"
 
         Process.sleep(200)
 

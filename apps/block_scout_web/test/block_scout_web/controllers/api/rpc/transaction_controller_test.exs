@@ -269,7 +269,6 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         index: 0,
         type: :reward,
         error: error,
-        block_hash: transaction.block_hash,
         block_number: transaction.block_number
       ]
 

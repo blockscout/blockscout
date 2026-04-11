@@ -46,7 +46,7 @@ defmodule Utils.Credo.Checks.CompileEnvUsage do
       issue_meta,
       message: """
       Avoid using Application.compile_env, use runtime configuration instead. If you need compile-time config, use Utils.CompileTimeEnvHelper.
-      More details: https://github.com/blockscout/blockscout/tree/master/CONTRIBUTING.md#compile-time-environment-variables
+      More details: https://github.com/blockscout/blockscout/tree/master/.github/CONTRIBUTING.md#compile-time-environment-variables
       """,
       trigger: trigger
     )

@@ -93,7 +93,7 @@ defmodule Explorer.Chain do
   # Geth-like node
   @revert_msg_prefix_5 "execution reverted: "
   @revert_msg_prefix_6_empty "execution reverted"
-
+  @deduplicated_optional_address_associations [:from_address, :to_address, :created_contract_address]
   @typedoc """
   The name of an association on the `t:Ecto.Schema.t/0`
   """
@@ -140,6 +140,7 @@ defmodule Explorer.Chain do
           {:include_internal_transaction_association?, true | false}
   @type ip :: {:ip, String.t()}
   @type show_scam_tokens? :: {:show_scam_tokens?, true | false}
+  @type timeout_option :: {:timeout, timeout() | nil}
 
   def wrapped_union_subquery(query) do
     from(
@@ -196,10 +197,12 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
-  @spec address_to_logs(Hash.Address.t(), [paging_options | necessity_by_association_option | api?]) :: [Log.t()]
+  @spec address_to_logs(Hash.Address.t(), [paging_options | necessity_by_association_option | api? | timeout_option]) ::
+          [Log.t()]
   def address_to_logs(address_hash, csv_export?, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    timeout = Keyword.get(options, :timeout)
 
     case paging_options do
       %PagingOptions{key: {0, 0}} ->
@@ -238,7 +241,7 @@ defmodule Explorer.Chain do
         |> filter_topic(Keyword.get(options, :topic))
         |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
         |> join_associations(necessity_by_association)
-        |> select_repo(options).all()
+        |> select_repo(options).all(ExplorerHelper.maybe_timeout(timeout))
         |> Enum.take(paging_options.page_size)
     end
   end
@@ -328,19 +331,209 @@ defmodule Explorer.Chain do
           ]
   def block_to_transactions(block_hash, options \\ [], old_ui? \\ true) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    {optional_address_associations, other_necessity_by_association} =
+      split_optional_address_associations(necessity_by_association)
+
     type_filter = Keyword.get(options, :type)
 
     options
     |> Keyword.get(:paging_options, @default_paging_options)
     |> fetch_transactions_in_ascending_order_by_index()
-    |> join(:inner, [transaction], block in assoc(transaction, :block))
-    |> where([_, block], block.hash == ^block_hash)
+    |> where([transaction], transaction.block_hash == ^block_hash)
     |> Transaction.apply_filter_by_type_to_transactions(type_filter)
-    |> join_associations(necessity_by_association)
+    |> join_associations(other_necessity_by_association)
     |> Transaction.put_has_token_transfers_to_transaction(old_ui?)
     |> (&if(old_ui?, do: preload(&1, [{:token_transfers, [:token, :from_address, :to_address]}]), else: &1)).()
     |> select_repo(options).all()
+    |> preload_optional_address_associations(optional_address_associations, options)
   end
+
+  defp split_optional_address_associations(necessity_by_association) when is_map(necessity_by_association) do
+    {optional, other} =
+      Enum.split_with(necessity_by_association, fn {association, necessity} ->
+        necessity == :optional and address_association_key?(association)
+      end)
+
+    {optional, Map.new(other)}
+  end
+
+  defp address_association_key?(association) when is_atom(association),
+    do: association in @deduplicated_optional_address_associations
+
+  defp address_association_key?([{association, _nested_preloads}]),
+    do: association in @deduplicated_optional_address_associations
+
+  defp address_association_key?(_), do: false
+
+  defp preload_optional_address_associations([], _optional_address_associations, _options), do: []
+
+  defp preload_optional_address_associations(entities, [], _options) when is_list(entities), do: entities
+
+  defp preload_optional_address_associations(entities, optional_address_associations, options)
+       when is_list(entities) and is_list(optional_address_associations) do
+    associations_and_nested_preloads =
+      Enum.map(optional_address_associations, &association_with_nested_preloads/1)
+
+    associations =
+      associations_and_nested_preloads
+      |> Enum.map(&elem(&1, 0))
+      |> Enum.uniq()
+
+    address_nested_preloads =
+      associations_and_nested_preloads
+      |> Enum.flat_map(&normalize_nested_preloads(elem(&1, 1)))
+      |> Enum.uniq()
+
+    hashes =
+      entities
+      |> Enum.flat_map(fn entity ->
+        Enum.flat_map(associations, fn association ->
+          association
+          |> address_hash_field_for_association()
+          |> then(&Map.get(entity, &1))
+          |> hash_to_list()
+        end)
+      end)
+      |> Enum.uniq()
+
+    addresses_by_hash = fetch_addresses_by_hash(hashes, address_nested_preloads, options)
+
+    Enum.map(entities, fn entity ->
+      Enum.reduce(associations, entity, fn association, acc_entity ->
+        address =
+          association
+          |> address_hash_field_for_association()
+          |> then(&Map.get(acc_entity, &1))
+          |> then(&Map.get(addresses_by_hash, &1))
+
+        Map.put(acc_entity, association, address)
+      end)
+    end)
+  end
+
+  defp hash_to_list(nil), do: []
+  defp hash_to_list(hash), do: [hash]
+
+  defp fetch_addresses_by_hash([], _address_nested_preloads, _options), do: %{}
+
+  defp fetch_addresses_by_hash(hashes, address_nested_preloads, options) do
+    # Split nested preloads into proxy and non-proxy preloads
+    # This allows us to load proxy implementations conditionally only for contract addresses
+    {proxy_preloads, non_proxy_preloads} = split_proxy_preloads(address_nested_preloads)
+
+    addresses =
+      Address
+      |> where([address], address.hash in ^hashes)
+      |> maybe_preload_address_nested(non_proxy_preloads)
+      |> select_repo(options).all()
+      |> strip_smart_contract_large_fields()
+
+    # Only fetch proxy implementations for contract addresses (where smart_contract exists)
+    addresses_with_proxy =
+      if Enum.any?(proxy_preloads) and Enum.any?(addresses, &proxy_applicable?/1) do
+        contract_addresses = Enum.filter(addresses, &proxy_applicable?/1)
+        batch_load_proxy_implementations_for_contracts(contract_addresses, proxy_preloads, options)
+      else
+        addresses
+      end
+
+    Map.new(addresses_with_proxy, &{&1.hash, &1})
+  end
+
+  # Check if an address can have proxy implementations.
+  # Address.smart_contract?/1 relies on contract code presence, so this also covers EIP-7702 addresses.
+  defp proxy_applicable?(%Address{} = address), do: Address.smart_contract?(address)
+  defp proxy_applicable?(_), do: false
+
+  # Split proxy-related preloads from other nested preloads
+  defp split_proxy_preloads(nested_preloads) when is_list(nested_preloads) do
+    {proxy, non_proxy} =
+      Enum.split_with(nested_preloads, fn
+        :proxy_implementations -> true
+        [{:proxy_implementations, _}] -> true
+        _ -> false
+      end)
+
+    {proxy, non_proxy}
+  end
+
+  # Batch load proxy implementations for contract addresses and attach to originating addresses
+  defp batch_load_proxy_implementations_for_contracts(addresses, proxy_preloads, options) when is_list(addresses) do
+    address_hashes = Enum.map(addresses, & &1.hash)
+
+    proxy_implementations =
+      address_hashes
+      |> Implementation.get_proxy_implementations_for_multiple_proxies(options)
+      |> maybe_preload_proxy_implementation_nested(proxy_preloads, options)
+
+    # Group proxy implementations by proxy_address_hash for efficient lookup
+    proxy_by_address = Map.new(proxy_implementations, &{&1.proxy_address_hash, &1})
+
+    # Attach proxy data to addresses
+    Enum.map(addresses, fn address ->
+      Map.put(address, :proxy_implementations, Map.get(proxy_by_address, address.hash))
+    end)
+  end
+
+  defp maybe_preload_proxy_implementation_nested(proxy_implementations, proxy_preloads, options)
+       when is_list(proxy_implementations) and is_list(proxy_preloads) do
+    case build_proxy_preload_spec(proxy_preloads) do
+      [] ->
+        proxy_implementations
+
+      proxy_spec ->
+        select_repo(options).preload(proxy_implementations, proxy_spec)
+    end
+  end
+
+  # Build the nested preload specification for implementation structs.
+  defp build_proxy_preload_spec(proxy_preloads) when is_list(proxy_preloads) do
+    Enum.find_value(proxy_preloads, fn
+      :proxy_implementations -> Implementation.proxy_implementations_addresses_association()
+      [{:proxy_implementations, nested}] -> nested
+      _ -> nil
+    end) || []
+  end
+
+  defp association_with_nested_preloads({association, _necessity}) when is_atom(association),
+    do: {association, []}
+
+  defp association_with_nested_preloads({[{association, nested_preloads}], _necessity}),
+    do: {association, nested_preloads}
+
+  defp normalize_nested_preloads(nil), do: []
+  defp normalize_nested_preloads(nested_preload) when is_atom(nested_preload), do: [nested_preload]
+  defp normalize_nested_preloads(nested_preloads) when is_list(nested_preloads), do: nested_preloads
+
+  defp maybe_preload_address_nested(query, []), do: query
+  defp maybe_preload_address_nested(query, nested_preloads), do: preload(query, ^nested_preloads)
+
+  # Post-processes loaded addresses to remove large SmartContract fields to reduce memory usage
+  # and deserialization overhead for transaction listings.
+
+  # Removes:
+  # - contract_source_code (can be hundreds of KB)
+  # - abi (can be hundreds of KB)
+  # - constructor_arguments (potentially large)
+  defp strip_smart_contract_large_fields(addresses) when is_list(addresses) do
+    Enum.map(addresses, fn address ->
+      if Map.has_key?(address, :smart_contract) && address.smart_contract &&
+           !is_struct(address.smart_contract, Ecto.Association.NotLoaded) do
+        filtered_contract =
+          address.smart_contract
+          |> Map.drop([:contract_source_code, :abi, :constructor_arguments])
+
+        Map.put(address, :smart_contract, filtered_contract)
+      else
+        address
+      end
+    end)
+  end
+
+  defp address_hash_field_for_association(:from_address), do: :from_address_hash
+  defp address_hash_field_for_association(:to_address), do: :to_address_hash
+  defp address_hash_field_for_association(:created_contract_address), do: :created_contract_address_hash
 
   @spec execution_node_to_transactions(Hash.Address.t(), [paging_options | necessity_by_association_option | api?()]) ::
           [Transaction.t()]
@@ -685,13 +878,17 @@ defmodule Explorer.Chain do
     necessity_by_association =
       options
       |> Keyword.get(:necessity_by_association, default_hash_to_address_necessity_by_association())
-      |> maybe_remove_internal_transaction_association(include_internal_transaction_association?)
 
     query = Address.address_query(hash)
 
     query
     |> join_associations(necessity_by_association)
     |> select_repo(options).one()
+    |> then(fn address ->
+      if include_internal_transaction_association?,
+        do: Address.preload_contract_creation_internal_transaction(address, select_repo(options)),
+        else: address
+    end)
     |> SmartContract.compose_address_for_unverified_smart_contract(hash, options)
     |> case do
       nil -> {:error, :not_found}
@@ -704,38 +901,8 @@ defmodule Explorer.Chain do
       :names => :optional,
       :smart_contract => :optional,
       :token => :optional,
-      Address.contract_creation_transaction_associations() => :optional
+      Address.contract_creation_transaction_association() => :optional
     }
-  end
-
-  defp maybe_remove_internal_transaction_association(necessity_by_association, true),
-    do: necessity_by_association
-
-  defp maybe_remove_internal_transaction_association(necessity_by_association, false) do
-    necessity_by_association
-    |> replace_association_key(
-      Address.contract_creation_transaction_associations(),
-      Address.contract_creation_transaction_associations(false)
-    )
-    |> replace_association_key(
-      Address.contract_creation_transaction_with_from_address_associations(),
-      Address.contract_creation_transaction_with_from_address_associations(false)
-    )
-    |> Map.delete(:contract_creation_internal_transaction)
-    |> Map.delete(Address.contract_creation_internal_transaction_association())
-    |> Map.delete(Address.contract_creation_internal_transaction_with_from_address_association())
-  end
-
-  defp replace_association_key(necessity_by_association, old_key, new_key) do
-    case Map.fetch(necessity_by_association, old_key) do
-      {:ok, value} ->
-        necessity_by_association
-        |> Map.delete(old_key)
-        |> Map.put(new_key, value)
-
-      :error ->
-        necessity_by_association
-    end
   end
 
   @doc """
@@ -776,7 +943,7 @@ defmodule Explorer.Chain do
             :names => :optional,
             :smart_contract => :optional,
             :token => :optional,
-            Address.contract_creation_transaction_associations() => :optional
+            Address.contract_creation_transaction_association() => :optional
           }
         ]
       ) do
@@ -2042,9 +2209,20 @@ defmodule Explorer.Chain do
   """
   @spec join_associations(atom() | Ecto.Query.t(), %{any() => :optional | :required}) :: Ecto.Query.t()
   def join_associations(query, necessity_by_association) when is_map(necessity_by_association) do
-    Enum.reduce(necessity_by_association, query, fn {association, join}, acc_query ->
-      join_association(acc_query, association, join)
-    end)
+    {optional_associations, required_associations} =
+      Enum.split_with(necessity_by_association, fn {_association, join} -> join == :optional end)
+
+    query_with_required_joins =
+      Enum.reduce(required_associations, query, fn {association, _join}, acc_query ->
+        join_association(acc_query, association, :required)
+      end)
+
+    optional_preloads = Enum.map(optional_associations, fn {association, _join} -> association end)
+
+    case optional_preloads do
+      [] -> query_with_required_joins
+      _ -> preload(query_with_required_joins, ^optional_preloads)
+    end
   end
 
   def page_blocks(query, %PagingOptions{key: nil}), do: query
@@ -2375,14 +2553,18 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
-  @spec fetch_token_holders_from_token_hash_for_csv(Hash.Address.t(), [paging_options | api?]) :: [TokenBalance.t()]
+  @spec fetch_token_holders_from_token_hash_for_csv(Hash.Address.t(), [paging_options | api? | timeout_option]) :: [
+          TokenBalance.t()
+        ]
   def fetch_token_holders_from_token_hash_for_csv(contract_address_hash, options \\ []) do
+    timeout = Keyword.get(options, :timeout)
+
     query =
       contract_address_hash
       |> CurrentTokenBalance.token_holders_ordered_by_value_query_without_address_preload(options)
 
     query
-    |> select_repo(options).all()
+    |> select_repo(options).all(ExplorerHelper.maybe_timeout(timeout))
   end
 
   def fetch_token_holders_from_token_hash_and_token_id(contract_address_hash, token_id, options \\ []) do

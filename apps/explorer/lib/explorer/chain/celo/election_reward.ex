@@ -31,7 +31,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   import Explorer.PagingOptions, only: [default_paging_options: 0]
   import Ecto.Query, only: [from: 2, where: 3]
 
-  alias Explorer.{Chain, SortingHelper}
+  alias Explorer.{Chain, Helper, SortingHelper}
   alias Explorer.Chain.{Address, Address.Reputation, Celo.Epoch, Hash, Token, Wei}
   alias Explorer.Chain.Cache.CeloCoreContracts
 
@@ -243,6 +243,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     sorting_options = Keyword.get(options, :sorting, [])
     from_epoch = Keyword.get(options, :from_epoch)
     to_epoch = Keyword.get(options, :to_epoch)
+    timeout = Keyword.get(options, :timeout)
 
     address_hash
     |> address_hash_to_rewards_query()
@@ -251,7 +252,7 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     |> SortingHelper.apply_sorting(sorting_options, default_sorting)
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
     |> Chain.join_associations(necessity_by_association)
-    |> Chain.select_repo(options).all()
+    |> Chain.select_repo(options).all(Helper.maybe_timeout(timeout))
     |> with_loaded_token_reputations()
   end
 
@@ -356,29 +357,25 @@ defmodule Explorer.Chain.Celo.ElectionReward do
     end)
   end
 
-  @doc """
-  Custom filter for `ElectionReward`, inspired by
-  `Explorer.Chain.Block.Reader.General.where_block_number_in_period/3`
-  """
   @spec where_epoch_number_in_period(
           Ecto.Query.t(),
           String.t() | integer() | nil,
           String.t() | integer() | nil
         ) :: Ecto.Query.t()
-  def where_epoch_number_in_period(base_query, nil, nil),
+  defp where_epoch_number_in_period(base_query, nil, nil),
     do: base_query
 
-  def where_epoch_number_in_period(base_query, nil, to_epoch),
-    do: where(base_query, [reward], reward.epoch_number < ^to_epoch)
+  defp where_epoch_number_in_period(base_query, nil, to_epoch),
+    do: where(base_query, [reward], reward.epoch_number <= ^to_epoch)
 
-  def where_epoch_number_in_period(base_query, from_epoch, nil),
+  defp where_epoch_number_in_period(base_query, from_epoch, nil),
     do: where(base_query, [reward], reward.epoch_number >= ^from_epoch)
 
-  def where_epoch_number_in_period(base_query, from_epoch, to_epoch),
+  defp where_epoch_number_in_period(base_query, from_epoch, to_epoch),
     do:
       where(
         base_query,
         [reward],
-        reward.epoch_number >= ^from_epoch and reward.epoch_number < ^to_epoch
+        reward.epoch_number >= ^from_epoch and reward.epoch_number <= ^to_epoch
       )
 end

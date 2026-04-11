@@ -697,7 +697,9 @@ config :explorer, Explorer.SmartContract.SigProviderInterface,
 config :explorer, Explorer.MicroserviceInterfaces.BENS,
   service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_BENS_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_BENS_ENABLED"),
-  protocols: ConfigHelper.parse_list_env_var("MICROSERVICE_BENS_PROTOCOLS")
+  protocols: ConfigHelper.parse_list_env_var("MICROSERVICE_BENS_PROTOCOLS"),
+  disable_transactions_bens_preload: ConfigHelper.parse_bool_env_var("DISABLE_TRANSACTIONS_BENS_PRELOAD", "false"),
+  disable_token_transfers_bens_preload: ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_TRANSFERS_BENS_PRELOAD", "false")
 
 config :explorer, Explorer.MicroserviceInterfaces.AccountAbstraction,
   service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_ACCOUNT_ABSTRACTION_URL"),
@@ -761,9 +763,6 @@ config :explorer, :spandex,
   sync_threshold: ConfigHelper.parse_integer_env_var("SPANDEX_SYNC_THRESHOLD", 100)
 
 config :explorer, :datadog, port: ConfigHelper.parse_integer_env_var("DATADOG_PORT", 8126)
-
-config :explorer, Explorer.Chain.Cache.TransactionActionTokensData,
-  max_cache_size: ConfigHelper.parse_integer_env_var("INDEXER_TX_ACTIONS_MAX_TOKEN_CACHE_SIZE", 100_000)
 
 config :explorer, Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand,
   fetch_interval: ConfigHelper.parse_time_env_var("MICROSERVICE_ETH_BYTECODE_DB_INTERVAL_BETWEEN_LOOKUPS", "10m"),
@@ -896,6 +895,10 @@ config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions,
   check_interval:
     ConfigHelper.parse_time_env_var("MIGRATION_DELETE_ZERO_VALUE_INTERNAL_TRANSACTIONS_CHECK_INTERVAL", "1m")
 
+config :explorer, Explorer.Migrator.FillInternalTransactionsAddressIds,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_BATCH_SIZE", 100),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_TIMEOUT", "0s")
+
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
   bsc_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_BSC_OMNI_BRIDGE_MEDIATOR"),
@@ -970,6 +973,46 @@ config :explorer, Explorer.Chain.Scroll.L1FeeParam,
   l1_base_fee_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BASE_FEE_INIT", 0),
   l1_blob_base_fee_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_BLOB_BASE_FEE_INIT", 0)
 
+async_csv_export_enabled? = ConfigHelper.parse_bool_env_var("CSV_EXPORT_ASYNC_ENABLED")
+csv_export_oban_concurrency = ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_OBAN_CONCURRENCY", 10)
+
+csv_export_queues =
+  if async_csv_export_enabled? do
+    [csv_export: csv_export_oban_concurrency, csv_export_sanitize: 1]
+  else
+    []
+  end
+
+config :explorer, Oban, enabled: async_csv_export_enabled?, queues: csv_export_queues
+
+gokapi_url = ConfigHelper.parse_url_env_var("CSV_EXPORT_ASYNC_GOKAPI_URL")
+gokapi_api_key = System.get_env("CSV_EXPORT_ASYNC_GOKAPI_API_KEY")
+
+default_db_timeout = if async_csv_export_enabled?, do: "1h", else: "5m"
+
+config :explorer, Explorer.Chain.CsvExport,
+  async?: async_csv_export_enabled?,
+  max_pending_tasks_per_ip: ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_MAX_PENDING_TASKS_PER_IP", 3),
+  chunk_size: ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_UPLOAD_CHUNK_SIZE", 47_185_920),
+  db_timeout: ConfigHelper.parse_time_env_var("CSV_EXPORT_DB_TIMEOUT", default_db_timeout),
+  tmp_dir: ConfigHelper.safe_get_env("CSV_EXPORT_ASYNC_TMP_DIR", "/tmp/csv_export"),
+  gokapi_url: gokapi_url,
+  gokapi_api_key: gokapi_api_key,
+  gokapi_timeout: ConfigHelper.parse_time_env_var("CSV_EXPORT_ASYNC_GOKAPI_TIMEOUT", "60s"),
+  gokapi_upload_expiry_days: ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_GOKAPI_UPLOAD_EXPIRY_DAYS", 1),
+  gokapi_upload_allowed_downloads:
+    ConfigHelper.parse_integer_env_var("CSV_EXPORT_ASYNC_GOKAPI_UPLOAD_ALLOWED_DOWNLOADS", 1)
+
+if async_csv_export_enabled? do
+  if is_nil(gokapi_url) or gokapi_url == "" do
+    raise "CSV_EXPORT_ASYNC_GOKAPI_URL must be set when CSV_EXPORT_ASYNC_ENABLED=true"
+  end
+
+  if is_nil(gokapi_api_key) or gokapi_api_key == "" do
+    raise "CSV_EXPORT_ASYNC_GOKAPI_API_KEY must be set when CSV_EXPORT_ASYNC_ENABLED=true"
+  end
+end
+
 ###############
 ### Indexer ###
 ###############
@@ -1040,25 +1083,6 @@ config :indexer, Indexer.Supervisor, enabled: !disable_indexer?
 
 config :indexer, Indexer.Transform.FheOperations,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_FHE_OPERATIONS_ENABLED", "false")
-
-config :indexer, Indexer.Fetcher.TransactionAction.Supervisor,
-  enabled: ConfigHelper.parse_bool_env_var("INDEXER_TX_ACTIONS_ENABLE")
-
-config :indexer, Indexer.Fetcher.TransactionAction,
-  reindex_first_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_FIRST_BLOCK"),
-  reindex_last_block: System.get_env("INDEXER_TX_ACTIONS_REINDEX_LAST_BLOCK"),
-  reindex_protocols: System.get_env("INDEXER_TX_ACTIONS_REINDEX_PROTOCOLS", ""),
-  aave_v3_pool: System.get_env("INDEXER_TX_ACTIONS_AAVE_V3_POOL_CONTRACT"),
-  uniswap_v3_factory:
-    ConfigHelper.safe_get_env(
-      "INDEXER_TX_ACTIONS_UNISWAP_V3_FACTORY_CONTRACT",
-      "0x1F98431c8aD98523631AE4a59f267346ea31F984"
-    ),
-  uniswap_v3_nft_position_manager:
-    ConfigHelper.safe_get_env(
-      "INDEXER_TX_ACTIONS_UNISWAP_V3_NFT_POSITION_MANAGER_CONTRACT",
-      "0xC36442b4a4522E871399CD717aBDD847Ab11FE88"
-    )
 
 config :indexer, Indexer.PendingTransactionsSanitizer,
   interval: ConfigHelper.parse_time_env_var("INDEXER_PENDING_TRANSACTIONS_SANITIZER_INTERVAL", "1h")
@@ -1565,38 +1589,6 @@ config :indexer, Indexer.Fetcher.Shibarium.L2,
 config :indexer, Indexer.Fetcher.Shibarium.L1.Supervisor, enabled: ConfigHelper.chain_type() == :shibarium
 
 config :indexer, Indexer.Fetcher.Shibarium.L2.Supervisor, enabled: ConfigHelper.chain_type() == :shibarium
-
-config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL1,
-  rpc: System.get_env("INDEXER_POLYGON_ZKEVM_L1_RPC"),
-  start_block: System.get_env("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_START_BLOCK"),
-  bridge_contract: System.get_env("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_CONTRACT"),
-  native_symbol: System.get_env("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NATIVE_SYMBOL", "ETH"),
-  native_decimals: ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NATIVE_DECIMALS", 18),
-  rollup_network_id_l1: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_NETWORK_ID"),
-  rollup_index_l1: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_POLYGON_ZKEVM_L1_BRIDGE_ROLLUP_INDEX")
-
-config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL1.Supervisor, enabled: ConfigHelper.chain_type() == :polygon_zkevm
-
-config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens.Supervisor,
-  enabled: ConfigHelper.chain_type() == :polygon_zkevm
-
-config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL2,
-  start_block: System.get_env("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_START_BLOCK"),
-  bridge_contract: System.get_env("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_CONTRACT"),
-  rollup_network_id_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_NETWORK_ID"),
-  rollup_index_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_POLYGON_ZKEVM_L2_BRIDGE_ROLLUP_INDEX")
-
-config :indexer, Indexer.Fetcher.PolygonZkevm.BridgeL2.Supervisor, enabled: ConfigHelper.chain_type() == :polygon_zkevm
-
-config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch,
-  chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_CHUNK_SIZE", 20),
-  ignore_numbers: System.get_env("INDEXER_POLYGON_ZKEVM_BATCHES_IGNORE", "0"),
-  recheck_interval: ConfigHelper.parse_integer_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_RECHECK_INTERVAL", 60)
-
-config :indexer, Indexer.Fetcher.PolygonZkevm.TransactionBatch.Supervisor,
-  enabled:
-    ConfigHelper.chain_type() == :polygon_zkevm &&
-      ConfigHelper.parse_bool_env_var("INDEXER_POLYGON_ZKEVM_BATCHES_ENABLED")
 
 config :indexer, Indexer.Fetcher.Celo.ValidatorGroupVotes,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_CELO_VALIDATOR_GROUP_VOTES_BATCH_SIZE", 200_000)

@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.{Address, Address.Reputation, SmartContract}
+  alias Explorer.Chain.{Address, Address.Reputation}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.Transaction.History.TransactionStats
 
@@ -187,11 +187,10 @@ defmodule BlockScoutWeb.API.V2.Helper do
     - `false` if the smart contract is `NotLoaded`.
     - `true` if the smart contract is present and does not have metadata from a verified bytecode twin.
   """
-  @spec smart_contract_verified?(Address.t()) :: boolean()
-  def smart_contract_verified?(%Address{smart_contract: nil}), do: false
-  def smart_contract_verified?(%Address{smart_contract: %{metadata_from_verified_bytecode_twin: true}}), do: false
-  def smart_contract_verified?(%Address{smart_contract: %NotLoaded{}}), do: nil
-  def smart_contract_verified?(%Address{smart_contract: %SmartContract{}}), do: true
+  @spec smart_contract_verified?(Address.t()) :: boolean() | nil
+  def smart_contract_verified?(%Address{verified: verified}) when is_boolean(verified), do: verified
+  def smart_contract_verified?(%Address{verified: nil}), do: nil
+  def smart_contract_verified?(_), do: false
 
   def market_cap(:standard, %{
         available_supply: available_supply,

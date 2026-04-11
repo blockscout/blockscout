@@ -25,7 +25,6 @@ defmodule BlockScoutWeb.Notifier do
   alias BlockScoutWeb.API.V2.{
     AddressView,
     BlockView,
-    PolygonZkevmView,
     SmartContractView,
     TransactionView
   }
@@ -203,18 +202,6 @@ defmodule BlockScoutWeb.Notifier do
     end)
   end
 
-  def handle_event({:chain_event, :zkevm_confirmed_batches, :realtime, batches}) do
-    batches
-    |> Enum.sort_by(& &1.number, :asc)
-    |> Enum.each(fn confirmed_batch ->
-      rendered_batch = PolygonZkevmView.render("zkevm_batch.json", %{batch: confirmed_batch, socket: nil})
-
-      Endpoint.broadcast("zkevm_batches:new_zkevm_confirmed_batch", "new_zkevm_confirmed_batch", %{
-        batch: rendered_batch
-      })
-    end)
-  end
-
   def handle_event({:chain_event, :exchange_rate}) do
     exchange_rate = Market.get_coin_exchange_rate()
 
@@ -249,9 +236,13 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event(
-        {:chain_event, :internal_transactions, :on_demand,
-         [%InternalTransaction{index: 0, transaction_hash: transaction_hash}]}
+        {:chain_event, :internal_transactions, :on_demand, [%InternalTransaction{index: 0} = internal_transaction]}
       ) do
+    transaction_hash =
+      internal_transaction
+      |> InternalTransaction.preload_transaction()
+      |> Map.get(:transaction_hash)
+
     # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.broadcast("transactions_old:#{transaction_hash}", "raw_trace", %{raw_trace_origin: transaction_hash})
 
@@ -269,8 +260,10 @@ defmodule BlockScoutWeb.Notifier do
     internal_transactions
     |> Stream.map(
       &(InternalTransaction.where_nonpending_operation()
-        |> Repo.get_by(transaction_hash: &1.transaction_hash, index: &1.index)
-        |> Repo.preload([:from_address, :to_address, :block]))
+        |> Repo.get_by(block_number: &1.block_number, transaction_index: &1.transaction_index, index: &1.index)
+        |> Repo.preload([:block])
+        |> InternalTransaction.preload_addresses()
+        |> InternalTransaction.preload_transaction())
     )
     |> Enum.each(&broadcast_internal_transaction/1)
   end

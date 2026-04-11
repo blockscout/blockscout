@@ -31,7 +31,6 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
   alias Indexer.Fetcher.Filecoin.AddressInfo, as: FilecoinAddressInfo
-  alias Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens, as: PolygonZkevmBridgeL1Tokens
   alias Indexer.Fetcher.TokenBalance.Current, as: TokenBalanceCurrent
   alias Indexer.Fetcher.TokenBalance.Historical, as: TokenBalanceHistorical
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
@@ -59,8 +58,7 @@ defmodule Indexer.Block.Fetcher do
     MintTransfers,
     SignedAuthorizations,
     TokenInstances,
-    TokenTransfers,
-    TransactionActions
+    TokenTransfers
   }
 
   alias Indexer.Transform.Stability.Validators, as: StabilityValidators
@@ -73,7 +71,6 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.Transform.Shibarium.Bridge, as: ShibariumBridge
 
   alias Indexer.Transform.Blocks, as: TransformBlocks
-  alias Indexer.Transform.PolygonZkevm.Bridge, as: PolygonZkevmBridge
 
   alias Indexer.Transform.Celo.L1Epochs, as: CeloL1Epochs
   alias Indexer.Transform.Celo.L2Epochs, as: CeloL2Epochs
@@ -195,7 +192,6 @@ defmodule Indexer.Block.Fetcher do
          celo_l2_epochs = CeloL2Epochs.parse(logs),
          celo_pending_account_operations = parse_celo_pending_account_operations(logs),
          tokens = Enum.uniq(tokens ++ celo_tokens),
-         %{transaction_actions: transaction_actions} = TransactionActions.parse(logs),
          %{fhe_operations: fhe_operations} = FheOperations.parse(logs),
          %{mint_transfers: mint_transfers} = MintTransfers.parse(logs),
          optimism_withdrawals =
@@ -208,11 +204,6 @@ defmodule Indexer.Block.Fetcher do
          shibarium_bridge_operations =
            if(callback_module == Indexer.Block.Realtime.Fetcher,
              do: ShibariumBridge.parse(blocks, transactions_with_receipts, logs),
-             else: []
-           ),
-         polygon_zkevm_bridge_operations =
-           if(callback_module == Indexer.Block.Realtime.Fetcher,
-             do: PolygonZkevmBridge.parse(blocks, logs),
              else: []
            ),
          {arbitrum_xlevel_messages, arbitrum_transactions_for_further_handling} =
@@ -228,9 +219,7 @@ defmodule Indexer.Block.Fetcher do
              shibarium_bridge_operations: shibarium_bridge_operations,
              token_transfers: token_transfers,
              transactions: transactions_with_receipts,
-             transaction_actions: transaction_actions,
              withdrawals: withdrawals_params,
-             polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
              celo_pending_account_operations: celo_pending_account_operations
            }),
          coin_balances_params_set =
@@ -247,8 +236,6 @@ defmodule Indexer.Block.Fetcher do
          token_transfers_with_token = token_transfers_merge_token(token_transfers, tokens),
          address_token_balances =
            AddressTokenBalances.params_set(%{token_transfers_params: token_transfers_with_token}),
-         transaction_actions =
-           Enum.map(transaction_actions, fn action -> Map.put(action, :data, Map.delete(action.data, :block_number)) end),
          token_instances = TokenInstances.params_set(%{token_transfers_params: token_transfers}),
          stability_validators = StabilityValidators.parse(blocks),
          addresses_without_nonce = process_addresses_nonce(addresses),
@@ -275,7 +262,6 @@ defmodule Indexer.Block.Fetcher do
            %{
              transactions_with_receipts: transactions_with_receipts,
              optimism_withdrawals: optimism_withdrawals,
-             polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations,
              scroll_l1_fee_params: scroll_l1_fee_params,
              shibarium_bridge_operations: shibarium_bridge_operations,
              celo_gas_tokens: celo_gas_tokens,
@@ -289,14 +275,7 @@ defmodule Indexer.Block.Fetcher do
            __MODULE__.import(
              state,
              basic_import_options |> Map.merge(additional_options) |> import_options(chain_type_import_options)
-           ),
-         {:transaction_actions, {:ok, inserted_transaction_actions}} <-
-           {:transaction_actions,
-            Chain.import(%{
-              transaction_actions: %{params: transaction_actions},
-              timeout: :infinity
-            })} do
-      inserted = Map.merge(inserted, inserted_transaction_actions)
+           ) do
       Prometheus.Instrumenter.set_block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
 
@@ -380,13 +359,6 @@ defmodule Indexer.Block.Fetcher do
       import_options,
       chain_specific_import_options
     )
-  end
-
-  defp do_import_options(:polygon_zkevm, basic_import_options, %{
-         polygon_zkevm_bridge_operations: polygon_zkevm_bridge_operations
-       }) do
-    basic_import_options
-    |> Map.put_new(:polygon_zkevm_bridge_operations, %{params: polygon_zkevm_bridge_operations})
   end
 
   defp do_import_options(:scroll, basic_import_options, %{scroll_l1_fee_params: scroll_l1_fee_params}) do
@@ -708,18 +680,6 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_replaced_transactions(_, _), do: :ok
-
-  @doc """
-  Fills a buffer of L1 token addresses to handle it asynchronously in
-  the Indexer.Fetcher.PolygonZkevm.BridgeL1Tokens module. The addresses are
-  taken from the `operations` list.
-  """
-  @spec async_import_polygon_zkevm_bridge_l1_tokens(map()) :: :ok
-  def async_import_polygon_zkevm_bridge_l1_tokens(%{polygon_zkevm_bridge_operations: operations}) do
-    PolygonZkevmBridgeL1Tokens.async_fetch(operations)
-  end
-
-  def async_import_polygon_zkevm_bridge_l1_tokens(_), do: :ok
 
   def async_import_celo_epoch_block_operations(%{celo_epochs: epochs}, realtime?) do
     CeloEpochBlockOperations.async_fetch(epochs, realtime?)

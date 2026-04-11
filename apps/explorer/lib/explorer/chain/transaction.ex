@@ -22,14 +22,12 @@ defmodule Explorer.Chain.Transaction.Schema do
     PendingTransactionOperation,
     SignedAuthorization,
     TokenTransfer,
-    TransactionAction,
     Wei
   }
 
   alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
   alias Explorer.Chain.Arbitrum.BatchTransaction, as: ArbitrumBatchTransaction
   alias Explorer.Chain.Arbitrum.Message, as: ArbitrumMessage
-  alias Explorer.Chain.PolygonZkevm.BatchTransaction, as: ZkevmBatchTransaction
   alias Explorer.Chain.Transaction.{Fork, Status}
   alias Explorer.Chain.ZkSync.BatchTransaction, as: ZkSyncBatchTransaction
 
@@ -97,29 +95,6 @@ defmodule Explorer.Chain.Transaction.Schema do
                                 foreign_key: :wrapped_to_address_hash,
                                 references: :hash,
                                 type: Hash.Address
-                              )
-                            end,
-                            2
-                          )
-
-                        :polygon_zkevm ->
-                          elem(
-                            quote do
-                              has_one(:zkevm_batch_transaction, ZkevmBatchTransaction,
-                                foreign_key: :hash,
-                                references: :hash
-                              )
-
-                              has_one(:zkevm_batch, through: [:zkevm_batch_transaction, :batch], references: :hash)
-
-                              has_one(:zkevm_sequence_transaction,
-                                through: [:zkevm_batch, :sequence_transaction],
-                                references: :hash
-                              )
-
-                              has_one(:zkevm_verify_transaction,
-                                through: [:zkevm_batch, :verify_transaction],
-                                references: :hash
                               )
                             end,
                             2
@@ -253,6 +228,7 @@ defmodule Explorer.Chain.Transaction.Schema do
         field(:has_error_in_internal_transactions, :boolean)
         field(:fhe_operations_count, :integer)
         field(:has_token_transfers, :boolean, virtual: true)
+        field(:internal_transactions, {:array, :map}, virtual: true)
 
         # stability virtual fields
         field(:transaction_fee_log, :any, virtual: true)
@@ -276,16 +252,9 @@ defmodule Explorer.Chain.Transaction.Schema do
           type: Hash.Address
         )
 
-        has_many(:internal_transactions, InternalTransaction, foreign_key: :transaction_hash, references: :hash)
         has_many(:logs, Log, foreign_key: :transaction_hash, references: :hash)
 
         has_many(:token_transfers, TokenTransfer, foreign_key: :transaction_hash, references: :hash)
-
-        has_many(:transaction_actions, TransactionAction,
-          foreign_key: :hash,
-          preload_order: [asc: :log_index],
-          references: :hash
-        )
 
         belongs_to(
           :to_address,
@@ -340,7 +309,7 @@ defmodule Explorer.Chain.Transaction do
   alias Ecto.Changeset
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
-  alias Explorer.{Chain, Helper, PagingOptions, Repo, SortingHelper}
+  alias Explorer.{Chain, Helper, PagingOptions, QueryHelper, Repo, SortingHelper}
 
   alias Explorer.Chain.{
     Address,
@@ -883,6 +852,33 @@ defmodule Explorer.Chain.Transaction do
         do: {:error, :not_a_contract_call}
   end
 
+  # if to_address is a verified contract but smart_contract is not preloaded,
+  # decode using the pre-built smart_contract_full_abi_map (keyed by address hash)
+  def decoded_input_data(
+        %__MODULE__{
+          input: %{bytes: data} = input,
+          to_address: %Address{verified: true, hash: to_address_hash, smart_contract: %NotLoaded{}},
+          hash: hash
+        },
+        skip_sig_provider?,
+        options,
+        methods_map,
+        smart_contract_full_abi_map
+      ) do
+    full_abi = Map.get(smart_contract_full_abi_map, to_address_hash, [])
+
+    decode_input_data_with_fallback(
+      data,
+      full_abi,
+      input,
+      hash,
+      skip_sig_provider?,
+      options,
+      methods_map,
+      smart_contract_full_abi_map
+    )
+  end
+
   # if to_address's smart_contract is nil reduce to the case when to_address is not loaded
   def decoded_input_data(
         %__MODULE__{
@@ -989,6 +985,37 @@ defmodule Explorer.Chain.Transaction do
       ) do
     full_abi = check_full_abi_cache(smart_contract, smart_contract_full_abi_map, options)
 
+    decode_input_data_with_fallback(
+      data,
+      full_abi,
+      input,
+      hash,
+      skip_sig_provider?,
+      options,
+      methods_map,
+      smart_contract_full_abi_map
+    )
+  end
+
+  def decoded_input_data(
+        %__MODULE__{to_address: %{metadata: _, ens_domain_name: _}},
+        _,
+        _,
+        _,
+        _
+      ),
+      do: {:error, :no_to_address}
+
+  defp decode_input_data_with_fallback(
+         data,
+         full_abi,
+         input,
+         hash,
+         skip_sig_provider?,
+         options,
+         methods_map,
+         smart_contract_full_abi_map
+       ) do
     case do_decoded_input_data(data, full_abi, hash) do
       # In some cases transactions use methods of some unpredictable contracts, so we can try to look up for method in a whole DB
       {:error, error} when error in [:could_not_decode, :no_matching_function] ->
@@ -1017,15 +1044,6 @@ defmodule Explorer.Chain.Transaction do
         output
     end
   end
-
-  def decoded_input_data(
-        %__MODULE__{to_address: %{metadata: _, ens_domain_name: _}},
-        _,
-        _,
-        _,
-        _
-      ),
-      do: {:error, :no_to_address}
 
   defp decode_function_call_via_sig_provider_wrapper(input, hash, skip_sig_provider?) do
     case decode_function_call_via_sig_provider(input, hash, skip_sig_provider?) do
@@ -1456,6 +1474,17 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
+  Builds an `Ecto.Query` to fetch transaction by {block_number, index} pairs
+  """
+  @spec by_block_number_index_query([{non_neg_integer(), non_neg_integer()}]) :: Ecto.Query.t()
+  def by_block_number_index_query(block_number_index_pairs) do
+    from(
+      t in __MODULE__,
+      where: ^QueryHelper.tuple_in([:block_number, :index], block_number_index_pairs)
+    )
+  end
+
+  @doc """
   Builds an `Ecto.Query` to fetch the last nonce from the given address hash.
 
   The last nonce value means the total of transactions that the given address has sent through the
@@ -1676,6 +1705,7 @@ defmodule Explorer.Chain.Transaction do
             Chain.paging_options()
             | Chain.necessity_by_association_option()
             | {:sorting, SortingHelper.sorting_params()}
+            | Chain.timeout_option()
           ],
           boolean()
         ) :: [__MODULE__.t()]
@@ -1695,6 +1725,7 @@ defmodule Explorer.Chain.Transaction do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     old_ui? = old_ui? || is_tuple(Keyword.get(options, :paging_options, Chain.default_paging_options()).key)
     sorting_options = Keyword.get(options, :sorting, [])
+    timeout = Keyword.get(options, :timeout)
 
     options
     |> address_to_transactions_tasks_query(false, old_ui?)
@@ -1702,7 +1733,11 @@ defmodule Explorer.Chain.Transaction do
     |> Chain.join_associations(necessity_by_association)
     |> put_has_token_transfers_to_transaction(old_ui?)
     |> matching_address_queries_list(direction, address_hash, sorting_options)
-    |> Enum.map(fn query -> Task.async(fn -> Chain.select_repo(options).all(query) end) end)
+    |> Enum.map(fn query ->
+      Task.async(fn ->
+        Chain.select_repo(options).all(query, Helper.maybe_timeout(timeout))
+      end)
+    end)
   end
 
   @doc """
@@ -3002,6 +3037,72 @@ defmodule Explorer.Chain.Transaction do
     transaction_hashes
     |> by_hashes_query()
     |> Repo.all()
+  end
+
+  @doc """
+  Finds transactions by {block_number, index} pairs
+  """
+  @spec get_transactions_by_block_number_index([{non_neg_integer(), non_neg_integer()}]) :: [__MODULE__.t()]
+  def get_transactions_by_block_number_index(block_number_index_pairs) do
+    block_number_index_pairs
+    |> by_block_number_index_query()
+    |> Repo.all()
+  end
+
+  @doc """
+  Preloads internal transactions for parent transaction records.
+
+  When a list of transactions is provided, the function fetches all matching
+  internal transactions by `{block_number, transaction_index}`, applies the
+  requested `preloads`, and attaches the resulting list to the
+  `:internal_transactions` field of each parent transaction.
+
+  The loaded internal transactions are also passed through
+  `InternalTransaction.preload_transaction/3` so that each internal transaction
+  has its parent `:transaction` populated from the already available
+  transaction list.
+
+  ## Parameters
+  - `transactions`: A single transaction or a list of transactions
+  - `preloads`: Optional associations to preload for each internal transaction
+  - `repo`: The repo used to fetch and preload internal transactions
+
+  ## Returns
+  - A list of transactions with the `:internal_transactions` field populated
+  - A single transaction with the `:internal_transactions` field populated
+  """
+  @spec preload_internal_transactions(
+          __MODULE__.t() | [__MODULE__.t()],
+          list(),
+          module()
+        ) :: __MODULE__.t() | [__MODULE__.t()]
+  def preload_internal_transactions(transactions, address_preloads \\ [], repo \\ Repo)
+
+  def preload_internal_transactions(transactions, address_preloads, repo) when is_list(transactions) do
+    block_number_index_to_internal_transactions_map =
+      transactions
+      |> Enum.map(&{&1.block_number, &1.index})
+      |> Enum.uniq()
+      |> InternalTransaction.by_block_number_transaction_index_query()
+      |> repo.all()
+      |> InternalTransaction.preload_transaction(repo, transactions)
+      |> InternalTransaction.preload_addresses([address_preloads: address_preloads], repo)
+      |> Enum.group_by(&{&1.block_number, &1.transaction_index})
+
+    Enum.map(
+      transactions,
+      &Map.put(
+        &1,
+        :internal_transactions,
+        block_number_index_to_internal_transactions_map[{&1.block_number, &1.index}] || []
+      )
+    )
+  end
+
+  def preload_internal_transactions(transaction, address_preloads, repo) do
+    [transaction]
+    |> preload_internal_transactions(address_preloads, repo)
+    |> List.first()
   end
 
   @doc """

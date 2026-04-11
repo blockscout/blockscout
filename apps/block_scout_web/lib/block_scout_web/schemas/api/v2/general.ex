@@ -106,6 +106,24 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns an optional parameter definition for the start of the time period.
+  Used for endpoints like token holders CSV that don't require a time range.
+  """
+  @spec optional_from_period_param() :: Parameter.t()
+  def optional_from_period_param do
+    %{from_period_param() | required: false}
+  end
+
+  @doc """
+  Returns an optional parameter definition for the end of the time period.
+  Used for endpoints like token holders CSV that don't require a time range.
+  """
+  @spec optional_to_period_param() :: Parameter.t()
+  def optional_to_period_param do
+    %{to_period_param() | required: false}
+  end
+
+  @doc """
   Returns a parameter definition for chain IDs in the query.
   """
   @spec chain_ids_param() :: Parameter.t()
@@ -951,6 +969,24 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
+  Returns a parameter definition for a UUID in the path.
+  """
+  @spec uuid_param() :: Parameter.t()
+  def uuid_param do
+    %Parameter{
+      name: :uuid_param,
+      in: :path,
+      schema: %Schema{
+        type: :string,
+        format: :uuid,
+        pattern: ~r/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+      },
+      required: true,
+      description: "UUID for CSV export"
+    }
+  end
+
+  @doc """
   Returns a list of base parameters (api_key and key).
   """
   @spec base_params() :: [Parameter.t()]
@@ -1057,13 +1093,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: %Schema{anyOf: [%Schema{type: :integer}, EmptyString, NullString]},
       required: false,
       description: "Transaction index for paging"
-    },
-    "block_index" => %Parameter{
-      name: :block_index,
-      in: :query,
-      schema: %Schema{type: :integer},
-      required: false,
-      description: "Block index for paging"
     },
     "inserted_at" => %Parameter{
       name: :inserted_at,
@@ -1276,6 +1305,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       schema: IntegerStringNullable,
       required: false,
       description: "Amount for paging"
+    },
+    "account_address_hash" => %Parameter{
+      name: :account_address_hash,
+      in: :query,
+      schema: AddressHash,
+      required: false,
+      description: "Account address hash for paging"
     },
     "associated_account_address_hash" => %Parameter{
       name: :associated_account_address_hash,

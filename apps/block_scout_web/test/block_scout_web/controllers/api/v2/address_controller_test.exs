@@ -382,7 +382,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
 
     test "get Resolved Delegate Proxy contract info", %{conn: conn} do
-      proxy_address = insert(:address, contract_code: @resolved_delegate_proxy)
+      proxy_address = insert(:address, contract_code: @resolved_delegate_proxy, verified: true)
       proxy_smart_contract = insert(:smart_contract, address_hash: proxy_address.hash)
 
       transaction =
@@ -2232,9 +2232,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
           from_address: address
         )
+        |> InternalTransaction.preload_addresses()
 
       internal_transaction_to =
         insert(:internal_transaction,
@@ -2242,9 +2242,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           index: 2,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
           to_address: address
         )
+        |> InternalTransaction.preload_addresses()
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
 
@@ -2285,7 +2285,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           index: 1,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
           from_address: address,
           to_address: insert(:address),
           gas: nil,
@@ -2314,10 +2313,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             index: i,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
-            block_hash: transaction.block_hash,
             from_address: address
           )
         end
+        |> InternalTransaction.preload_addresses()
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
       assert response = json_response(request, 200)
@@ -2336,10 +2335,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             index: i,
             block_number: transaction.block_number,
             transaction_index: transaction.index,
-            block_hash: transaction.block_hash,
             to_address: address
           )
         end
+        |> InternalTransaction.preload_addresses()
 
       filter = %{"filter" => "to"}
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", filter)
@@ -3807,8 +3806,11 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(address, address_json)
     end
 
-    test "check smart contract preload", %{conn: conn} do
-      smart_contract = insert(:smart_contract, address_hash: insert(:contract_address, fetched_coin_balance: 1).hash)
+    test "check smart contract properties", %{conn: conn} do
+      smart_contract =
+        insert(:smart_contract,
+          address_hash: insert(:contract_address, fetched_coin_balance: 1, verified: true).hash
+        )
 
       request = get(conn, "/api/v2/addresses")
       response = json_response(request, 200)
@@ -3982,7 +3984,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           index: x,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
           to_address: address
         )
       end
@@ -4025,7 +4026,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           index: x,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
           from_address: address
         )
       end
@@ -4078,7 +4078,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           index: x,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
           from_address: address
         )
       end
@@ -4125,7 +4124,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           index: x,
           block_number: transaction.block_number,
           transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
           from_address: address
         )
       end
@@ -5683,7 +5681,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     assert internal_transaction.block_number == json["block_number"]
     assert to_string(internal_transaction.gas) == json["gas_limit"]
     assert internal_transaction.index == json["index"]
-    assert to_string(internal_transaction.transaction_hash) == json["transaction_hash"]
+    assert to_string(internal_transaction.transaction.hash) == json["transaction_hash"]
     assert Address.checksum(internal_transaction.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(internal_transaction.to_address_hash) == json["to"]["hash"]
   end

@@ -538,10 +538,8 @@ defmodule Explorer.Chain.TransactionTest do
 
       %InternalTransaction{created_contract_address: address} =
         insert(:internal_transaction_create,
-          transaction: transaction,
           index: 0,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
           transaction_index: transaction.index
         )
 

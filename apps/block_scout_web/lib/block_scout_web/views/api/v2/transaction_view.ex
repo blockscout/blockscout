@@ -162,10 +162,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     TokenTransferView.prepare_token_transfer(token_transfer, conn, decoded_transaction)
   end
 
-  def render("transaction_actions.json", %{actions: actions}) do
-    Enum.map(actions, &prepare_transaction_action(&1))
-  end
-
   def render("internal_transactions.json", %{
         internal_transactions: internal_transactions,
         next_page_params: next_page_params,
@@ -555,7 +551,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "decoded_input" => decoded_input_data,
       "token_transfers" => token_transfers(transaction.token_transfers, conn, single_transaction?),
       "token_transfers_overflow" => token_transfers_overflow(transaction.token_transfers, single_transaction?),
-      "actions" => transaction_actions(transaction.transaction_actions),
       "exchange_rate" => Market.get_coin_exchange_rate().fiat_value,
       "historic_exchange_rate" => historic_exchange_rate(block_timestamp),
       "method" => Transaction.method_name(transaction, decoded_input),
@@ -625,15 +620,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   def token_transfers_overflow(token_transfers, _),
     do: Enum.count(token_transfers) > Chain.get_token_transfers_per_transaction_preview_count()
-
-  def transaction_actions(%NotLoaded{}), do: []
-
-  @doc """
-    Renders transaction actions
-  """
-  def transaction_actions(actions) do
-    render("transaction_actions.json", %{actions: actions})
-  end
 
   @doc """
     Renders the authorization list for a transaction.
@@ -997,18 +983,6 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       conn,
       watchlist_names
     )
-  end
-
-  defp do_with_chain_type_fields(
-         result,
-         :polygon_zkevm,
-         transaction,
-         true = _single_transaction?,
-         _conn,
-         _watchlist_names
-       ) do
-    # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-    BlockScoutWeb.API.V2.PolygonZkevmView.extend_transaction_json_response(result, transaction)
   end
 
   defp do_with_chain_type_fields(result, :zksync, transaction, true = _single_transaction?, _conn, _watchlist_names) do

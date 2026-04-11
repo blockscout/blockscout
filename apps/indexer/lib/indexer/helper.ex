@@ -226,12 +226,17 @@ defmodule Indexer.Helper do
   Forms JSON RPC named arguments for the given RPC URL.
   """
   @spec json_rpc_named_arguments(binary()) :: list()
-  def json_rpc_named_arguments(rpc_url) do
+  def json_rpc_named_arguments(rpc_url) when is_binary(rpc_url) do
+    normalized_rpc_url =
+      rpc_url
+      |> trim_url()
+      |> validate_rpc_url!()
+
     [
       transport: EthereumJSONRPC.HTTP,
       transport_options: [
         http: EthereumJSONRPC.HTTP.Tesla,
-        urls: [rpc_url],
+        urls: [normalized_rpc_url],
         http_options: [
           recv_timeout: :timer.minutes(10),
           timeout: :timer.minutes(10),
@@ -240,6 +245,11 @@ defmodule Indexer.Helper do
       ]
     ]
   end
+
+  def json_rpc_named_arguments(_rpc_url), do: raise(ArgumentError, "RPC URL must be a non-empty string")
+
+  defp validate_rpc_url!(""), do: raise(ArgumentError, "RPC URL must be a non-empty string")
+  defp validate_rpc_url!(rpc_url), do: rpc_url
 
   @doc """
   Splits a given range into chunks of the specified size.
