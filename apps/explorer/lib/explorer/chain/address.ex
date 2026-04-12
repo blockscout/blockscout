@@ -903,7 +903,7 @@ defmodule Explorer.Chain.Address do
     |> InternalTransaction.join_transaction_query()
     |> where([it], it.index > 0)
     |> order_by([it],
-      asc_nulls_first: coalesce(it.error, type(it.error_id, :string)),
+      asc_nulls_first: it.error_id,
       desc: it.block_number,
       desc: it.transaction_index,
       desc: it.index
