@@ -429,6 +429,9 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       "" ->
         nil
 
+      "0x" ->
+        nil
+
       "0x" <> _ = prefixed_arguments ->
         prefixed_arguments
 
