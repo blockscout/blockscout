@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 5, fetch_scam_token_toggle: 2]
@@ -18,6 +19,13 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   require Logger
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
+
+  # Once CastAndValidate is installed, every new action in this controller must
+  # declare either a real `operation …` spec or `operation :name, false`;
+  # otherwise the plug rejects requests to it.
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags(["advanced-filters"])
 
   @api_true [api?: true]
 
@@ -55,6 +63,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   @token_options [api?: true, necessity_by_association: %{Reputation.reputation_association() => :optional}]
 
+  operation :list, false
+
   @doc """
   Function responsible for `api/v2/advanced-filters/` endpoint.
   """
@@ -89,6 +99,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       next_page_params: next_page_params
     )
   end
+
+  operation :list_csv, false
 
   @doc """
   Function responsible for `api/v2/advanced-filters/csv` endpoint.
@@ -142,12 +154,40 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     end)
   end
 
+  operation :list_methods,
+    summary: "List known contract methods",
+    description:
+      "Returns a list of known contract methods. " <>
+        "When the `q` parameter is provided, searches for a single method by its 4-byte selector or name. " <>
+        "Without `q`, returns the default list of popular methods.",
+    parameters: [
+      %OpenApiSpex.Parameter{
+        name: :q,
+        in: :query,
+        schema: %OpenApiSpex.Schema{type: :string, nullable: true},
+        required: false,
+        description:
+          "Search string: either a 4-byte method selector (e.g. `0xa9059cbb`) or a method name (e.g. `transfer`)."
+      }
+      | base_params()
+    ],
+    responses: [
+      ok:
+        {"List of contract methods.", "application/json",
+         %OpenApiSpex.Schema{
+           type: :array,
+           items: Schemas.AdvancedFilter.Method,
+           nullable: false
+         }},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
   Function responsible for `api/v2/advanced-filters/methods` endpoint,
   including `api/v2/advanced-filters/methods/?q=:search_string`.
   """
-  @spec list_methods(Plug.Conn.t(), map()) :: {:method, nil | Explorer.Chain.ContractMethod.t()} | Plug.Conn.t()
-  def list_methods(conn, %{"q" => query}) do
+  @spec list_methods(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def list_methods(conn, %{q: query}) when is_binary(query) do
     query = String.downcase(query)
 
     case {@methods_id_to_name_map[query], @methods_name_to_id_map[query]} do
