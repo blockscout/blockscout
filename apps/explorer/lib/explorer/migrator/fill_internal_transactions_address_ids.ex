@@ -10,7 +10,7 @@ defmodule Explorer.Migrator.FillInternalTransactionsAddressIds do
 
   alias Explorer.Chain.InternalTransaction
   alias Explorer.Migrator.FillingMigration
-  alias Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdPartialIndex
+  alias Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError
   alias Explorer.Repo
   alias Explorer.Utility.AddressIdToAddressHash
 
@@ -20,7 +20,8 @@ defmodule Explorer.Migrator.FillInternalTransactionsAddressIds do
   def migration_name, do: @migration_name
 
   @impl FillingMigration
-  def dependent_from_migrations, do: [CreateInternalTransactionsCreatedContractAddressIdPartialIndex.migration_name()]
+  def dependent_from_migrations,
+    do: [RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError.migration_name()]
 
   @impl FillingMigration
   def last_unprocessed_identifiers(%{"max_block_number" => -1} = state), do: {[], state}
