@@ -650,17 +650,7 @@ defmodule Explorer.Etherscan do
   end
 
   defp list_erc1155_token_transfers(address_hash, contract_address_hash, options) do
-    base_query =
-      TokenTransfer.only_consensus_transfers_query()
-      |> TokenTransfer.maybe_filter_by_token_type("ERC-1155")
-      |> where_contract_address_match(contract_address_hash)
-      |> where_address_match_token_transfer(address_hash)
-      |> where_start_block_match_tt(options)
-      |> where_end_block_match_tt(options)
-      |> order_by([tt], [
-        {^options.order_by_direction, tt.block_number},
-        {^options.order_by_direction, tt.log_index}
-      ])
+    base_query = build_erc1155_base_query(address_hash, contract_address_hash, options)
 
     from(tt in {"base", TokenTransfer})
     |> with_cte("base", as: ^base_query, materialized: true)
@@ -693,6 +683,36 @@ defmodule Explorer.Etherscan do
     |> Repo.replica().all()
   end
 
+  defp build_erc1155_base_query(nil, contract_address_hash, options) do
+    TokenTransfer.only_consensus_transfers_query()
+    |> TokenTransfer.maybe_filter_by_token_type("ERC-1155")
+    |> where_contract_address_match(contract_address_hash)
+    |> where_start_block_match_tt(options)
+    |> where_end_block_match_tt(options)
+    |> order_by([tt], [
+      {^options.order_by_direction, tt.block_number},
+      {^options.order_by_direction, tt.log_index}
+    ])
+  end
+
+  defp build_erc1155_base_query(address_hash, contract_address_hash, options) do
+    inner =
+      TokenTransfer.only_consensus_transfers_query()
+      |> TokenTransfer.maybe_filter_by_token_type("ERC-1155")
+      |> where_contract_address_match(contract_address_hash)
+      |> where_start_block_match_tt(options)
+      |> where_end_block_match_tt(options)
+
+    union(
+      where(inner, [tt], tt.from_address_hash == ^address_hash),
+      ^where(inner, [tt], tt.to_address_hash == ^address_hash)
+    )
+    |> order_by([], [
+      {^options.order_by_direction, fragment("block_number")},
+      {^options.order_by_direction, fragment("log_index")}
+    ])
+  end
+
   defp list_erc404_token_transfers(address_hash, contract_address_hash, options) do
     "ERC-404"
     |> base_token_transfers_query(address_hash, contract_address_hash, options)
@@ -705,17 +725,37 @@ defmodule Explorer.Etherscan do
     |> Repo.replica().all()
   end
 
-  defp base_token_transfers_query(transfers_type, address_hash, contract_address_hash, options) do
+  defp base_token_transfers_query(transfers_type, nil, contract_address_hash, options) do
     TokenTransfer.only_consensus_transfers_query()
     |> TokenTransfer.maybe_filter_by_token_type(transfers_type)
     |> where_contract_address_match(contract_address_hash)
-    |> where_address_match_token_transfer(address_hash)
+    |> where_start_block_match_tt(options)
+    |> where_end_block_match_tt(options)
     |> order_by([tt], [
       {^options.order_by_direction, tt.block_number},
       {^options.order_by_direction, tt.log_index}
     ])
-    |> where_start_block_match_tt(options)
-    |> where_end_block_match_tt(options)
+    |> limit(^options.page_size)
+    |> offset(^options_to_offset(options))
+    |> maybe_preload_entities()
+  end
+
+  defp base_token_transfers_query(transfers_type, address_hash, contract_address_hash, options) do
+    inner_query =
+      TokenTransfer.only_consensus_transfers_query()
+      |> TokenTransfer.maybe_filter_by_token_type(transfers_type)
+      |> where_contract_address_match(contract_address_hash)
+      |> where_start_block_match_tt(options)
+      |> where_end_block_match_tt(options)
+
+    union(
+      where(inner_query, [tt], tt.from_address_hash == ^address_hash),
+      ^where(inner_query, [tt], tt.to_address_hash == ^address_hash)
+    )
+    |> order_by([], [
+      {^options.order_by_direction, fragment("block_number")},
+      {^options.order_by_direction, fragment("log_index")}
+    ])
     |> limit(^options.page_size)
     |> offset(^options_to_offset(options))
     |> maybe_preload_entities()
@@ -811,12 +851,6 @@ defmodule Explorer.Etherscan do
 
   defp where_contract_address_match(query, contract_address_hash) do
     where(query, [tt], tt.token_contract_address_hash == ^contract_address_hash)
-  end
-
-  defp where_address_match_token_transfer(query, nil), do: query
-
-  defp where_address_match_token_transfer(query, address_hash) do
-    where(query, [tt], tt.from_address_hash == ^address_hash or tt.to_address_hash == ^address_hash)
   end
 
   defp options_to_offset(options), do: (options.page_number - 1) * options.page_size

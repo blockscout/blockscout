@@ -1632,6 +1632,55 @@ defmodule Explorer.EtherscanTest do
 
       assert found_token_transfer.token_contract_address_hash == contract_address.hash
     end
+
+    test "does not duplicate erc20 transfers when address is both sender and receiver" do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        from_address: address,
+        to_address: address,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
+
+      result = Etherscan.list_token_transfers(:erc20, address.hash, nil, %{})
+
+      assert length(result) == 1
+    end
+
+    test "does not duplicate erc1155 transfers when address is both sender and receiver" do
+      address = insert(:address)
+
+      token_contract_address = insert(:contract_address)
+      insert(:token, contract_address: token_contract_address, type: "ERC-1155")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        from_address: address,
+        to_address: address,
+        token_contract_address: token_contract_address,
+        token_type: "ERC-1155",
+        token_ids: [Decimal.new(1)],
+        amounts: [Decimal.new(10)],
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
+
+      result = Etherscan.list_token_transfers(:erc1155, address.hash, nil, %{})
+
+      assert length(result) == 1
+    end
   end
 
   describe "list_blocks/1" do
