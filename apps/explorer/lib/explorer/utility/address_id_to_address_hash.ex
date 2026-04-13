@@ -74,6 +74,7 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
         {:ok, casted} = Hash.Address.cast(address_hash)
         casted
       end)
+      |> Enum.sort()
 
     Repo.insert_all(
       __MODULE__,
