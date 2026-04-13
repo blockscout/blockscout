@@ -52,6 +52,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Prevent deadlocks in IT fields removing migration ([#14215](https://github.com/blockscout/blockscout/pull/14215))
 - Filter blocks by BLOCK_RANGES in add_ranges_by_block_numbers ([#13875](https://github.com/blockscout/blockscout/pull/13875))
 - FillInternalTransactionsAddressIds improvements ([#14208](https://github.com/blockscout/blockscout/pull/14208))
 - Remove timeout between successful migrations ([#14198](https://github.com/blockscout/blockscout/issues/14198))
