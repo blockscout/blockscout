@@ -150,6 +150,14 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
                {"pending_blocks", [%{block_number: 3, address_hash_string: contract_address_hash}]}
              ]
     end
+
+    test "returns :ignore when ETS table does not exist (GenServer not started)" do
+      :ets.delete(:contract_creator_lookup)
+
+      address = insert(:address, contract_code: "0x1234")
+
+      assert :ignore = ContractCreatorOnDemand.trigger_fetch(address)
+    end
   end
 
   test "initiates fetch if address has contract code but no creator hash (target block is in the middle)" do
