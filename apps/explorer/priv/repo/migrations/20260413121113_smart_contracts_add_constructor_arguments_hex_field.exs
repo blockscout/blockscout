@@ -8,8 +8,10 @@ defmodule Explorer.Repo.Migrations.SmartContractsAddConstructorArgumentsHexField
 
     execute("""
       UPDATE smart_contracts
-      SET constructor_arguments_hex = decode(replace(constructor_arguments, '0x', ''), 'hex')
-      WHERE constructor_arguments IS NOT NULL;
+      SET constructor_arguments_hex = decode(regexp_replace(constructor_arguments, '^0[xX]', ''), 'hex')
+      WHERE constructor_arguments IS NOT NULL
+        AND regexp_replace(constructor_arguments, '^0[xX]', '') ~ '^[0-9A-Fa-f]*$'
+        AND mod(length(regexp_replace(constructor_arguments, '^0[xX]', '')), 2) = 0;
     """)
 
     alter table(:smart_contracts) do
