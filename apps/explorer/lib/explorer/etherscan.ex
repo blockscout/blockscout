@@ -702,6 +702,11 @@ defmodule Explorer.Etherscan do
       |> where_contract_address_match(contract_address_hash)
       |> where_start_block_match_tt(options)
       |> where_end_block_match_tt(options)
+      |> order_by([tt], [
+        {^options.order_by_direction, tt.block_number},
+        {^options.order_by_direction, tt.log_index}
+      ])
+      |> limit(^options_to_limit_for_inner_query(options))
 
     union(
       where(inner, [tt], tt.from_address_hash == ^address_hash),
@@ -747,6 +752,11 @@ defmodule Explorer.Etherscan do
       |> where_contract_address_match(contract_address_hash)
       |> where_start_block_match_tt(options)
       |> where_end_block_match_tt(options)
+      |> order_by([tt], [
+        {^options.order_by_direction, tt.block_number},
+        {^options.order_by_direction, tt.log_index}
+      ])
+      |> limit(^options_to_limit_for_inner_query(options))
 
     union(
       where(inner_query, [tt], tt.from_address_hash == ^address_hash),
