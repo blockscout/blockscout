@@ -1338,7 +1338,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         to_timestamp = List.last(transactions).block.timestamp
 
         params = %{
-          "tx_types" => "coin_transfer,ERC-20",
+          "transaction_types" => "COIN_TRANSFER,ERC-20",
           "methods" => method_id_string,
           "age_from" => from_timestamp |> DateTime.to_iso8601(),
           "age_to" => to_timestamp |> DateTime.to_iso8601(),
@@ -1360,7 +1360,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
         check_paginated_response(
           AdvancedFilter.list(
-            tx_types: ["COIN_TRANSFER", "ERC-20"],
+            transaction_types: ["COIN_TRANSFER", "ERC-20"],
             methods: ["0xa9059cbb"],
             age: [from: from_timestamp, to: to_timestamp],
             from_address_hashes: [
