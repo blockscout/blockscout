@@ -495,7 +495,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         insert(:smart_contract,
           name: "Implementation",
           external_libraries: [],
-          constructor_arguments: "",
+          constructor_arguments: nil,
           abi: [
             %{
               "type" => "constructor",
@@ -710,7 +710,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           optimization_runs: @optimization_runs,
           evm_version: "default",
           constructor_arguments:
-            "00000000000000000000000008e7592ce0d7ebabf42844b62ee6a878d4e1913e000000000000000000000000e1b6037da5f1d756499e184ca15254a981c92546",
+            "0x00000000000000000000000008e7592ce0d7ebabf42844b62ee6a878d4e1913e000000000000000000000000e1b6037da5f1d756499e184ca15254a981c92546",
           contract_code_md5: "123"
         )
 
@@ -731,7 +731,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
           "OptimizationRuns" => @optimization_runs,
           "EVMVersion" => "default",
           "ConstructorArguments" =>
-            "00000000000000000000000008e7592ce0d7ebabf42844b62ee6a878d4e1913e000000000000000000000000e1b6037da5f1d756499e184ca15254a981c92546",
+            "0x00000000000000000000000008e7592ce0d7ebabf42844b62ee6a878d4e1913e000000000000000000000000e1b6037da5f1d756499e184ca15254a981c92546",
           "FileName" => "",
           "IsProxy" => "false"
         }

@@ -33,6 +33,15 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     :ok
   end
 
+  defp expected_constructor_args(nil), do: nil
+  defp expected_constructor_args(""), do: ""
+  defp expected_constructor_args("0x" <> _ = constructor_arguments), do: constructor_arguments
+
+  defp expected_constructor_args(constructor_arguments) when is_binary(constructor_arguments),
+    do: "0x" <> constructor_arguments
+
+  defp expected_constructor_args(constructor_arguments), do: to_string(constructor_arguments)
+
   describe "/smart-contracts/{address_hash}" do
     setup do
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
@@ -202,7 +211,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "additional_sources" => [],
         "compiler_settings" => target_contract.compiler_settings,
         "external_libraries" => [%{"name" => "ABC", "address_hash" => Address.checksum(lib_address)}],
-        "constructor_args" => target_contract.constructor_arguments,
+        "constructor_args" => expected_constructor_args(target_contract.constructor_arguments),
         "decoded_constructor_args" => nil,
         "deployed_bytecode" =>
           "0x6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
@@ -309,7 +318,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "additional_sources" => [],
         "compiler_settings" => target_contract.compiler_settings,
         "external_libraries" => [%{"name" => "ABC", "address_hash" => Address.checksum(lib_address)}],
-        "constructor_args" => target_contract.constructor_arguments,
+        "constructor_args" => expected_constructor_args(target_contract.constructor_arguments),
         "decoded_constructor_args" => [
           ["0x0000000000000000000000000000000000000000", %{"name" => "_proxyStorage", "type" => "address"}],
           [
@@ -456,7 +465,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       implementation_contract =
         insert(:smart_contract,
           external_libraries: [],
-          constructor_arguments: "",
+          constructor_arguments: nil,
           abi: [
             %{
               "type" => "constructor",
@@ -581,7 +590,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "additional_sources" => [],
         "compiler_settings" => target_contract.compiler_settings,
         "external_libraries" => target_contract.external_libraries,
-        "constructor_args" => target_contract.constructor_arguments,
+        "constructor_args" => expected_constructor_args(target_contract.constructor_arguments),
         "decoded_constructor_args" => nil,
         "deployed_bytecode" =>
           "0x6080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582061b7676067d537e410bb704932a9984739a959416170ea17bda192ac1218d2790029",
@@ -620,7 +629,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
     implementation_contract =
       insert(:smart_contract,
         external_libraries: [],
-        constructor_arguments: "",
+        constructor_arguments: nil,
         abi: [
           %{
             "type" => "constructor",
@@ -942,7 +951,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert response["name"] == smart_contract["contractName"]
         assert response["compiler_version"] == smart_contract["compilerVersion"]
         assert response["file_path"] == smart_contract["fileName"]
-        assert response["constructor_args"] == smart_contract["constructorArguments"]
+        assert response["constructor_args"] == expected_constructor_args(smart_contract["constructorArguments"])
         assert response["abi"] == Jason.decode!(smart_contract["abi"])
 
         assert response["decoded_constructor_args"] == [
@@ -1300,7 +1309,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert response["name"] == smart_contract["contractName"]
         assert response["compiler_version"] == smart_contract["compilerVersion"]
         assert response["file_path"] == smart_contract["fileName"]
-        assert response["constructor_args"] == smart_contract["constructorArguments"]
+        assert response["constructor_args"] == expected_constructor_args(smart_contract["constructorArguments"])
         assert response["abi"] == Jason.decode!(smart_contract["abi"])
 
         assert response["source_code"] == smart_contract["sourceFiles"][smart_contract["fileName"]]
@@ -1419,7 +1428,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert response["name"] == smart_contract["contractName"]
         assert response["compiler_version"] == smart_contract["compilerVersion"]
         assert response["file_path"] == smart_contract["fileName"]
-        assert response["constructor_args"] == smart_contract["constructorArguments"]
+        assert response["constructor_args"] == expected_constructor_args(smart_contract["constructorArguments"])
         assert response["abi"] == Jason.decode!(smart_contract["abi"])
 
         assert response["source_code"] == smart_contract["sourceFiles"][smart_contract["fileName"]]
@@ -1538,7 +1547,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert response["name"] == smart_contract["contractName"]
         assert response["compiler_version"] == smart_contract["compilerVersion"]
         assert response["file_path"] == smart_contract["fileName"]
-        assert response["constructor_args"] == smart_contract["constructorArguments"]
+        assert response["constructor_args"] == expected_constructor_args(smart_contract["constructorArguments"])
         assert response["abi"] == Jason.decode!(smart_contract["abi"])
 
         assert response["source_code"] == smart_contract["sourceFiles"][smart_contract["fileName"]]

@@ -422,10 +422,18 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   """
   @spec clear_constructor_arguments(String.t() | nil) :: String.t() | nil
   def clear_constructor_arguments(constructor_arguments) do
-    if constructor_arguments != nil && constructor_arguments != "" do
-      constructor_arguments
-    else
-      nil
+    case constructor_arguments do
+      nil ->
+        nil
+
+      "" ->
+        nil
+
+      "0x" <> _ = prefixed_arguments ->
+        prefixed_arguments
+
+      constructor_arguments ->
+        "0x" <> constructor_arguments
     end
   end
 
