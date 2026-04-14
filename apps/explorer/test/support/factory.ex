@@ -1972,10 +1972,18 @@ defmodule Explorer.Factory do
     }
   end
 
+  # Pure association factory — callers must supply `:batch_number` and `:block_number`
+  # as overrides referencing existing records. Both are required foreign keys on
+  # `Explorer.Chain.Arbitrum.BatchBlock`, so `insert(:arbitrum_batch_block)` without
+  # overrides will raise.
   def arbitrum_batch_block_factory do
     %ArbitrumBatchBlock{}
   end
 
+  # Pure association factory — callers must supply `:batch_number` and `:transaction_hash`
+  # as overrides referencing existing records. Both are required foreign keys on
+  # `Explorer.Chain.Arbitrum.BatchTransaction`, so `insert(:arbitrum_batch_transaction)`
+  # without overrides will raise.
   def arbitrum_batch_transaction_factory do
     %ArbitrumBatchTransaction{}
   end

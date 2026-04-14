@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Withdrawal do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "Arbitrum.Withdrawal",
     description: "Arbitrum Rollup withdrawal message.",
     type: :object,
     required: [

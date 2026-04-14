@@ -520,7 +520,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   #
   # ## Returns
   # - The connection struct with rendered response
-  @spec all_batches_by_data_availability_info(Plug.Conn.t(), binary(), map()) :: Plug.Conn.t()
+  @spec all_batches_by_data_availability_info(Plug.Conn.t(), binary(), map()) ::
+          Plug.Conn.t() | {:error, :not_found}
   defp all_batches_by_data_availability_info(conn, data_hash, params) do
     case SettlementReader.get_all_da_records_by_data_key(data_hash) do
       {:ok, {batch_numbers, _}} ->
