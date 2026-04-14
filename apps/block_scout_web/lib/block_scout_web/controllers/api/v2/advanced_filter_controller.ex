@@ -169,7 +169,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       required: false,
       description:
         "Comma-separated list of token contract address hashes to include. Use the literal `native` to also " <>
-          "include native coin transfers. At most 20 unique entries (across include + exclude) are honored.",
+          "include native coin transfers. Each list (include and exclude) is capped to 20 entries separately.",
       example: "native,0xdac17f958d2ee523a2206206994597c13d831ec7"
     },
     %OpenApiSpex.Parameter{

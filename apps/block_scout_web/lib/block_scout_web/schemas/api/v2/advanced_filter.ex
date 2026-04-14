@@ -19,9 +19,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter do
       type: %Schema{
         type: :string,
         description:
-          "Kind of activity represented by the item. Values include `coin_transfer` and `contract_call` for " <>
-            "top-level transactions and internal transactions, as well as token-transfer type labels (e.g. `ERC-20`, " <>
-            "`ERC-721`, `ERC-1155`, `ERC-404`, `ERC-7984`) for token transfers.",
+          "Kind of activity represented by the item. Values include `coin_transfer`, `contract_interaction`, " <>
+            "and `contract_creation` for top-level transactions and internal transactions, as well as " <>
+            "token-transfer type labels (e.g. `ERC-20`, `ERC-721`, `ERC-1155`, `ERC-404`, `ERC-7984`) " <>
+            "for token transfers.",
         nullable: false
       },
       status: %Schema{
