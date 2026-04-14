@@ -67,6 +67,7 @@ defmodule Explorer.Factory do
 
   alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
 
+  alias Explorer.Chain.Celo.AggregatedElectionReward, as: CeloAggregatedElectionReward
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
   alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
 
@@ -1667,6 +1668,15 @@ defmodule Explorer.Factory do
       end_block_number: nil,
       start_processing_block_hash: nil,
       end_processing_block_hash: nil
+    }
+  end
+
+  def celo_aggregated_election_reward_factory do
+    %CeloAggregatedElectionReward{
+      epoch_number: sequence("celo_aggregated_election_reward_epoch_number", & &1),
+      type: Enum.random([:voter, :validator, :group, :delegated_payment]),
+      sum: Enum.random(1..100_000),
+      count: Enum.random(0..100)
     }
   end
 
