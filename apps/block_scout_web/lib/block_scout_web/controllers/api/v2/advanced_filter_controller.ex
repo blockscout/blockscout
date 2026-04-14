@@ -177,7 +177,9 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       in: :query,
       schema: %OpenApiSpex.Schema{type: :string, nullable: true},
       required: false,
-      description: "Comma-separated list of token contract address hashes to exclude.",
+      description:
+        "Comma-separated list of token contract address hashes to exclude. Use the literal `native` to also " <>
+          "exclude native coin transfers. Each list (include and exclude) is capped to 20 entries separately.",
       example: "0x0000000000000000000000000000000000000000"
     }
   ]

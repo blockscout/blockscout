@@ -167,8 +167,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter.SearchParams do
       tokens: %Schema{
         type: :object,
         description:
-          "Map of token contract address hashes (keys) to `Token` objects for tokens used in the " <>
-            "`token_contract_address_hashes_to_include`/`_exclude` filters.",
+          "Map of token contract address hashes (keys) to `Token` objects for tokens referenced in the " <>
+            "`token_contract_address_hashes_to_include`/`_exclude` filters. At most 20 entries are returned " <>
+            "(combined across both lists).",
         additionalProperties: Token
       }
     },
