@@ -51,4 +51,6 @@ defmodule EthereumJSONRPC.Nethermind.Trace.Action do
   defp entry_to_elixir({key, quantity}) when key in ~w(balance gas value) do
     {key, quantity_to_integer(quantity)}
   end
+
+  defp entry_to_elixir({_, _}), do: {:ignore, :ignore}
 end

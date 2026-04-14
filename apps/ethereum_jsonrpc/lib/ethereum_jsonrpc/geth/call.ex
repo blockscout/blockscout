@@ -324,6 +324,8 @@ defmodule EthereumJSONRPC.Geth.Call do
     entry
   end
 
+  defp entry_to_elixir({_, _}), do: {:ignore, :ignore}
+
   defp elixir_to_internal_transaction_params(
          %{
            "blockNumber" => block_number,
