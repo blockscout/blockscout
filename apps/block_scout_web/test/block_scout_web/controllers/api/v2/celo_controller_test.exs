@@ -181,6 +181,14 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
         request = get(conn, "/api/v2/celo/epochs/invalid/election-rewards/voter")
         assert %{"errors" => [_]} = json_response(request, 422)
       end
+
+      test "accepts both hyphenated and underscored delegated_payment type in URL", %{conn: conn} do
+        request = get(conn, "/api/v2/celo/epochs/1/election-rewards/delegated-payment")
+        assert %{"items" => []} = json_response(request, 200)
+
+        request = get(conn, "/api/v2/celo/epochs/1/election-rewards/delegated_payment")
+        assert %{"items" => []} = json_response(request, 200)
+      end
     end
   end
 end
