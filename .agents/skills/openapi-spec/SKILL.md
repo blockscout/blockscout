@@ -296,9 +296,12 @@ Tests are the primary mechanism that validates the response schema matches the a
    
    Cross-reference this list against the `responses:` declared in the operation. Every status code declared in the operation should have at least one test. If multiple branches return the same status code with different conditions, note each branch separately — ideally each gets its own test case so the conditions are documented.
 
-   Some error branches may be unreachable without mocking external dependencies (RPC calls, microservice responses). For those:
-   - Test the branches that ARE reachable with pure DB setup and factory data
-   - Add a code comment in the test file documenting which branches are blocked and why (e.g., `# 400 "withdrawal is unconfirmed yet" — requires mocking L1 RPC via get_actual_message_status, not covered here`)
+   Some branches depend on external systems (RPC calls, microservice responses) and cannot be reached with pure DB setup. Decide how to handle each one:
+
+   - **Mock when the branch produces a distinct response shape** — a different `oneOf` variant, a different set of required keys, or an enum value not exercised by other tests. These are exactly the cases where `additionalProperties: false` and type constraints silently rot without coverage. (Example: the Arbitrum withdrawal token sub-object and `:confirmed`/`:sent` status paths are only reachable through L1 RPC mocking, and testing them exposed a real OpenApiSpex schema-title collision bug that would have shipped otherwise.)
+   - **Document and skip when the mocking cost is disproportionate** — e.g., a branch requires orchestrating multiple cross-chain RPC fallback steps. Add a code comment explaining what the branch does and why it's not covered (e.g., `# :unknown status — requires Outbox.isSpent=false AND get_size_for_proof/0 returning nil (multi-step L1/L2 RPC fallback), not covered here`).
+
+   **How to mock RPC dependencies when it's worth it.** The established pattern uses `:meck` to intercept `Indexer.Helper.json_rpc_named_arguments/1` so it returns a Mox-backed transport, then `Mox.expect` stubs specific contract calls with ABI-encoded responses. See `arbitrum_controller_test.exs` helpers (`setup_arbitrum_l1_rpc_mocks!`, `expect_inbox_outbox_query!`, `expect_erc20_metadata!`, etc.) for a working reference. When building mock fixtures for chain-specific RPC calls, the Blockscout MCP server can discover real on-chain data (event logs, calldata, contract return values) to verify that fixtures match production structure — it is a discovery aid, not a source of truth; the ABI spec and contract source are authoritative.
 
 2. **Check if tests already exist.** Look for the test file at `apps/block_scout_web/test/block_scout_web/controllers/api/v2/<domain>_controller_test.exs`. Grep for the endpoint path or action name within the file.
 
@@ -340,7 +343,7 @@ These templates cover common cases but are not exhaustive. Refer back to the sta
 
 Choose the templates that match the endpoint type (list vs single resource). The `json_response/2` call is what triggers schema validation — every test that calls it automatically verifies the response against the declared OpenAPI schema.
 
-5. **If the schema contains `oneOf` polymorphic sub-objects** (from Step 3 item 5), write at least one test per variant so that each branch's `additionalProperties: false` constraint is exercised. The default factory typically produces only the simplest variant (e.g., a nil discriminator), so tests for other variants need explicit setup — insert the factory with the discriminator value set, plus any associated records the view fetches for that branch.
+5. **If the schema contains `oneOf` polymorphic sub-objects** (from Step 3 item 5), write at least one test per variant so that each branch's `additionalProperties: false` constraint is exercised. The default factory typically produces only the simplest variant (e.g., a nil discriminator), so tests for other variants need explicit setup — insert the factory with the discriminator value set, plus any associated records the view fetches for that branch. If a variant is only reachable through an external dependency (RPC, microservice), see item 1 above for when and how to mock.
 
 ### Step 6: Verify
 
