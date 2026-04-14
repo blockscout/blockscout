@@ -16,8 +16,10 @@
     "allow": [
       "Bash(.agents/agents/scripts/code-quality-check.sh *)",
       "Bash(.agents/agents/scripts/dialyzer-check.sh *)",
+      "Bash(.agents/agents/scripts/run-tests.sh *)",
       "Bash(.claude/agents/scripts/code-quality-check.sh *)",
-      "Bash(.claude/agents/scripts/dialyzer-check.sh *)"
+      "Bash(.claude/agents/scripts/dialyzer-check.sh *)",
+      "Bash(.claude/agents/scripts/run-tests.sh *)"
     ]
   }
 }
