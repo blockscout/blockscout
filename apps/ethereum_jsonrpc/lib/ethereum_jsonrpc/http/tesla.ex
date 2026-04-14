@@ -3,6 +3,8 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
   Uses `Tesla.Mint` for `EthereumJSONRPC.HTTP`
   """
 
+  require Logger
+
   alias EthereumJSONRPC.HTTP
   alias EthereumJSONRPC.HTTP.Helper
   alias EthereumJSONRPC.Prometheus.Instrumenter
@@ -39,12 +41,14 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
   rescue
     error ->
       if timeout_middleware_exception?(__STACKTRACE__) do
+        log_normalized_timeout(:rescue, url, headers, options)
         {:error, :timeout}
       else
         {:error, error}
       end
   catch
     :exit, {:timeout, _} ->
+      log_normalized_timeout(:exit, url, headers, options)
       {:error, :timeout}
   end
 
@@ -54,5 +58,11 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
       {Tesla.Middleware.Timeout, :repass_error, 1, _} -> true
       _ -> false
     end)
+  end
+
+  defp log_normalized_timeout(source, url, headers, options) do
+    Logger.warning(
+      "Normalized timeout in do_post/4 source=#{source} url=#{inspect(url)} timeout=#{inspect(options[:timeout])} recv_timeout=#{inspect(options[:recv_timeout])} headers_count=#{length(headers)}"
+    )
   end
 end
