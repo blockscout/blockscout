@@ -6,9 +6,14 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
     chain_identity: [:explorer, :chain_identity]
 
   if @chain_identity == {:optimism, :celo} do
+    alias Explorer.Chain.Celo.ElectionReward
+
     setup do
       celo_token = insert(:token)
       usd_token = insert(:token)
+
+      original_core_contracts_config =
+        Application.get_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts)
 
       Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts,
         contracts: %{
@@ -35,7 +40,12 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
       original_celo_config = Application.get_env(:explorer, :celo)
 
       on_exit(fn ->
-        Application.put_env(:explorer, Explorer.Chain.Cache.CeloCoreContracts, contracts: %{})
+        Application.put_env(
+          :explorer,
+          Explorer.Chain.Cache.CeloCoreContracts,
+          original_core_contracts_config
+        )
+
         Application.put_env(:explorer, :celo, original_celo_config)
       end)
 
@@ -103,7 +113,7 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
           end_block_number: 17_279
         )
 
-        for type <- [:voter, :validator, :group, :delegated_payment] do
+        for type <- ElectionReward.types() do
           insert(:celo_aggregated_election_reward,
             epoch_number: 1,
             type: type,
@@ -120,8 +130,8 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
         rewards = response["aggregated_election_rewards"]
         assert is_map(rewards)
 
-        for type <- ["voter", "validator", "group", "delegated_payment"] do
-          assert %{"total" => _, "count" => 5, "token" => _} = rewards[type]
+        for type <- ElectionReward.types() do
+          assert %{"total" => _, "count" => 5, "token" => _} = rewards[to_string(type)]
         end
       end
 
@@ -137,7 +147,7 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
           end_block_number: 34_559
         )
 
-        for type <- [:voter, :validator, :group, :delegated_payment] do
+        for type <- ElectionReward.types() do
           insert(:celo_aggregated_election_reward,
             epoch_number: 2,
             type: type,
@@ -153,8 +163,8 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
         rewards = response["aggregated_election_rewards"]
         assert rewards["delegated_payment"] == nil
 
-        for type <- ["voter", "validator", "group"] do
-          assert %{"total" => _, "count" => 5, "token" => _} = rewards[type]
+        for type <- ElectionReward.types() -- [:delegated_payment] do
+          assert %{"total" => _, "count" => 5, "token" => _} = rewards[to_string(type)]
         end
       end
     end

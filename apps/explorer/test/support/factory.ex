@@ -1674,7 +1674,7 @@ defmodule Explorer.Factory do
   def celo_aggregated_election_reward_factory do
     %CeloAggregatedElectionReward{
       epoch_number: sequence("celo_aggregated_election_reward_epoch_number", & &1),
-      type: Enum.random([:voter, :validator, :group, :delegated_payment]),
+      type: Enum.random(CeloElectionReward.types()),
       sum: Enum.random(1..100_000),
       count: Enum.random(0..100)
     }
@@ -1683,7 +1683,7 @@ defmodule Explorer.Factory do
   def celo_election_reward_factory do
     %CeloElectionReward{
       amount: Enum.random(1..100_000),
-      type: Enum.random([:voter, :validator, :group, :delegated_payment]),
+      type: Enum.random(CeloElectionReward.types()),
       epoch_number: sequence("celo_election_reward_epoch_number", & &1),
       account_address_hash: insert(:address).hash,
       associated_account_address_hash: insert(:address).hash
