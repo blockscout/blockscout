@@ -10,8 +10,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
+    CreateInternalTransactionsBlockNumberCreatedContractAddressIdPartialIndex,
     CreateInternalTransactionsCreatedContractAddressIdIndex,
-    CreateInternalTransactionsCreatedContractAddressIdPartialIndex,
     CreateInternalTransactionsFromAddressIdPartialIndex,
     CreateInternalTransactionsToAddressIdPartialIndex,
     UpdateInternalTransactionsPrimaryKey
@@ -37,7 +37,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
     do: [
       UpdateInternalTransactionsPrimaryKey.migration_name(),
       CreateInternalTransactionsCreatedContractAddressIdIndex.migration_name(),
-      CreateInternalTransactionsCreatedContractAddressIdPartialIndex.migration_name(),
+      CreateInternalTransactionsBlockNumberCreatedContractAddressIdPartialIndex.migration_name(),
       CreateInternalTransactionsFromAddressIdPartialIndex.migration_name(),
       CreateInternalTransactionsToAddressIdPartialIndex.migration_name()
     ]
