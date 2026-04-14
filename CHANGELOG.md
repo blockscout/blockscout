@@ -15,6 +15,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix timeouts for API v1 tokentx endpoint ([#14185](https://github.com/blockscout/blockscout/issues/14185))
 - Remove internal transaction error field references ([#14213](https://github.com/blockscout/blockscout/pull/14213))
 - Handle partial errors in ContractCode fetch_codes ([#14211](https://github.com/blockscout/blockscout/pull/14211))
 - Include bridged token query params in OpenAPI spec ([#14209](https://github.com/blockscout/blockscout/pull/14209))
