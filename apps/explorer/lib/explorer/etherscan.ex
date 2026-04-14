@@ -708,13 +708,14 @@ defmodule Explorer.Etherscan do
       ])
       |> limit(^options_to_limit_for_inner_query(options))
 
-    union(
-      where(inner, [tt], tt.from_address_hash == ^address_hash),
-      ^where(inner, [tt], tt.to_address_hash == ^address_hash)
-    )
-    |> order_by([], [
-      {^options.order_by_direction, fragment("block_number")},
-      {^options.order_by_direction, fragment("log_index")}
+    from_query = inner |> where([tt], tt.from_address_hash == ^address_hash) |> Chain.wrapped_union_subquery()
+    to_query = inner |> where([tt], tt.to_address_hash == ^address_hash) |> Chain.wrapped_union_subquery()
+
+    union(from_query, ^to_query)
+    |> Chain.wrapped_union_subquery()
+    |> order_by([q], [
+      {^options.order_by_direction, q.block_number},
+      {^options.order_by_direction, q.log_index}
     ])
   end
 
@@ -758,13 +759,14 @@ defmodule Explorer.Etherscan do
       ])
       |> limit(^options_to_limit_for_inner_query(options))
 
-    union(
-      where(inner_query, [tt], tt.from_address_hash == ^address_hash),
-      ^where(inner_query, [tt], tt.to_address_hash == ^address_hash)
-    )
-    |> order_by([], [
-      {^options.order_by_direction, fragment("block_number")},
-      {^options.order_by_direction, fragment("log_index")}
+    from_query = inner_query |> where([tt], tt.from_address_hash == ^address_hash) |> Chain.wrapped_union_subquery()
+    to_query = inner_query |> where([tt], tt.to_address_hash == ^address_hash) |> Chain.wrapped_union_subquery()
+
+    union(from_query, ^to_query)
+    |> Chain.wrapped_union_subquery()
+    |> order_by([q], [
+      {^options.order_by_direction, q.block_number},
+      {^options.order_by_direction, q.log_index}
     ])
     |> limit(^options.page_size)
     |> offset(^options_to_offset(options))
