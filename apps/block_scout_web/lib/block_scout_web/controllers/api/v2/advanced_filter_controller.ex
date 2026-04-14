@@ -186,7 +186,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     %OpenApiSpex.Parameter{
       name: :block_number,
       in: :query,
-      schema: %OpenApiSpex.Schema{type: :string, pattern: ~r/^-?(?:[1-9][0-9]*|0)$/},
+      schema: %OpenApiSpex.Schema{type: :string, pattern: ~r/^(?:[1-9][0-9]*|0)$/},
       required: false,
       description: "Keyset cursor: block number of the last item from the previous page.",
       example: "23532302"
@@ -194,7 +194,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     %OpenApiSpex.Parameter{
       name: :transaction_index,
       in: :query,
-      schema: %OpenApiSpex.Schema{type: :string, pattern: ~r/^-?(?:[1-9][0-9]*|0)$/},
+      schema: %OpenApiSpex.Schema{type: :string, pattern: ~r/^(?:[1-9][0-9]*|0)$/},
       required: false,
       description: "Keyset cursor: transaction index within the block of the last item from the previous page.",
       example: "1"
@@ -204,7 +204,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       in: :query,
       schema: %OpenApiSpex.Schema{
         oneOf: [
-          %OpenApiSpex.Schema{type: :string, pattern: ~r/^-?(?:[1-9][0-9]*|0)$/},
+          %OpenApiSpex.Schema{type: :string, pattern: ~r/^(?:[1-9][0-9]*|0)$/},
           %OpenApiSpex.Schema{type: :string, enum: ["", "null"]}
         ]
       },
@@ -218,7 +218,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       in: :query,
       schema: %OpenApiSpex.Schema{
         oneOf: [
-          %OpenApiSpex.Schema{type: :string, pattern: ~r/^-?(?:[1-9][0-9]*|0)$/},
+          %OpenApiSpex.Schema{type: :string, pattern: ~r/^(?:[1-9][0-9]*|0)$/},
           %OpenApiSpex.Schema{type: :string, enum: ["", "null"]}
         ]
       },
@@ -232,7 +232,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       in: :query,
       schema: %OpenApiSpex.Schema{
         oneOf: [
-          %OpenApiSpex.Schema{type: :string, pattern: ~r/^-?(?:[1-9][0-9]*|0)$/},
+          %OpenApiSpex.Schema{type: :string, pattern: ~r/^(?:[1-9][0-9]*|0)$/},
           %OpenApiSpex.Schema{type: :string, enum: ["", "null"]}
         ]
       },
