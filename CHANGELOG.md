@@ -1,5 +1,12 @@
 # Changelog
 
+## 10.2.5
+
+### 🐛 Bug Fixes
+
+- Update changed constraint name in shrink IT migration ([#14205](https://github.com/blockscout/blockscout/issues/14205))
+
+
 ## 10.2.4
 
 ### ⚡ Performance
