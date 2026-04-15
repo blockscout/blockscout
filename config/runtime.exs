@@ -1032,6 +1032,8 @@ disable_multichain_search_db_export_counters_queue_fetcher =
 optimism_l2_isthmus_timestamp =
   ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_ISTHMUS_TIMESTAMP")
 
+superchain_config_file_path = System.get_env("INDEXER_SUPERCHAIN_CONFIG_FILE_PATH")
+
 config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
   chain_id: System.get_env("CHAIN_ID"),
@@ -1377,6 +1379,7 @@ config :indexer, Indexer.Fetcher.Optimism.Interop.MultichainExport.Supervisor,
 config :indexer, Indexer.Fetcher.Optimism,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
   optimism_l1_system_config: System.get_env("INDEXER_OPTIMISM_L1_SYSTEM_CONFIG_CONTRACT"),
+  superchain_config_file_path: System.get_env("INDEXER_SUPERCHAIN_CONFIG_FILE_PATH"),
   l1_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L1_ETH_GET_LOGS_RANGE_SIZE", 250),
   l2_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L2_ETH_GET_LOGS_RANGE_SIZE", 250),
   block_duration: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_BLOCK_DURATION", 2),
@@ -1438,7 +1441,9 @@ config :indexer, Indexer.Fetcher.Optimism.OperatorFee,
   init_limit: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_INIT_QUERY_LIMIT", 1_000)
 
 config :indexer, Indexer.Fetcher.Optimism.OperatorFee.Supervisor,
-  disabled?: is_nil(optimism_l2_isthmus_timestamp) or ConfigHelper.chain_type() != :optimism
+  disabled?:
+    (is_nil(optimism_l2_isthmus_timestamp) and is_nil(superchain_config_file_path)) or
+      ConfigHelper.chain_type() != :optimism
 
 config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_WITHDRAWALS_FETCHER", "true") == "true"

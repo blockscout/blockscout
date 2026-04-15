@@ -36,7 +36,9 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
-  alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
+  alias Indexer.Fetcher.Optimism
+  alias Indexer.Fetcher.Optimism.SuperchainConfig
+  alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
   alias Indexer.Prometheus.Instrumenter
   alias Indexer.RollupReorgMonitorQueue
@@ -82,15 +84,16 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         %{json_rpc_named_arguments_l2: json_rpc_named_arguments_l2} = state
       ) do
     env = Application.get_all_env(:indexer)[__MODULE__]
+    genesis_block_l2 = SuperchainConfig.optimism_l2_batch_genesis_block_number()
 
     optimism_env = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism]
-    system_config = optimism_env[:optimism_l1_system_config]
+    system_config = SuperchainConfig.optimism_l1_system_config_contract()
     optimism_l1_rpc = l1_rpc_url()
 
     with {:system_config_valid, true} <-
            {:system_config_valid, Helper.address_correct?(system_config)},
          {:genesis_block_l2_invalid, false} <-
-           {:genesis_block_l2_invalid, is_nil(env[:genesis_block_l2]) or env[:genesis_block_l2] < 0},
+           {:genesis_block_l2_invalid, is_nil(genesis_block_l2) or genesis_block_l2 < 0},
          _ <- RollupL1ReorgMonitor.wait_for_start(__MODULE__),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          json_rpc_named_arguments = Helper.json_rpc_named_arguments(optimism_l1_rpc),
@@ -141,7 +144,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          end_block: last_safe_block,
          chunk_size: chunk_size,
          incomplete_channels: %{},
-         genesis_block_l2: env[:genesis_block_l2],
+         genesis_block_l2: genesis_block_l2,
          block_duration: optimism_env[:block_duration],
          json_rpc_named_arguments: json_rpc_named_arguments,
          json_rpc_named_arguments_l2: json_rpc_named_arguments_l2,
@@ -1586,7 +1589,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     error_message = &"Cannot call public getters of SystemConfig. Error: #{inspect(&1)}"
 
     env = Application.get_all_env(:indexer)[__MODULE__]
-    fallback_start_block = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:start_block_l1]
+    fallback_start_block = SuperchainConfig.optimism_l1_batch_start_block()
+    fallback_submitter = SuperchainConfig.optimism_l1_batch_submitter()
 
     {start_block, batch_inbox, batch_submitter} =
       case Helper.repeated_call(
@@ -1610,8 +1614,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
                    {:nil_result, is_nil(inbox_result) or is_nil(submitter_result), inbox_result, submitter_result},
                  {:fallback_defined, true} <-
                    {:fallback_defined,
-                    Helper.address_correct?(env[:inbox]) and Helper.address_correct?(env[:submitter])} do
-              {env[:inbox], env[:submitter]}
+                    Helper.address_correct?(env[:inbox]) and Helper.address_correct?(fallback_submitter)} do
+              {env[:inbox], fallback_submitter}
             else
               {:nil_result, false, inbox, submitter} ->
                 "0x000000000000000000000000" <> batch_inbox = inbox
@@ -1625,7 +1629,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           {start_block, batch_inbox, batch_submitter}
 
         _ ->
-          {fallback_start_block, env[:inbox], env[:submitter]}
+          {fallback_start_block, env[:inbox], fallback_submitter}
       end
 
     if !is_nil(start_block) and Helper.address_correct?(batch_inbox) and Helper.address_correct?(batch_submitter) do

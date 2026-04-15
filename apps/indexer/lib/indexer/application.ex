@@ -52,6 +52,7 @@ defmodule Indexer.Application do
 
     base_children = [
       :hackney_pool.child_spec(:token_instance_fetcher, max_connections: pool_size),
+      {Indexer.Fetcher.Optimism.SuperchainConfigUpdater, []},
       {Memory.Monitor, [%{}, [name: memory_monitor_name]]},
       {CoinBalanceOnDemand.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
       {TokenBalanceOnDemand.Supervisor, []},

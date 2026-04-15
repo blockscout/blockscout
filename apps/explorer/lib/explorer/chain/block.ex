@@ -221,6 +221,7 @@ defmodule Explorer.Chain.Block do
     miner_gets_burnt_fees?: [:explorer, [Explorer.Chain.Transaction, :block_miner_gets_burnt_fees?]]
 
   alias EthereumJSONRPC.Utility.RangesHelper
+  alias Explorer.Application.Constants
 
   alias Explorer.Chain.{
     Block,
@@ -509,8 +510,21 @@ defmodule Explorer.Chain.Block do
       {denominator, multiplier}
     else
       _ ->
-        {Application.get_env(:explorer, :base_fee_max_change_denominator),
-         Application.get_env(:explorer, :elasticity_multiplier)}
+        {
+          parse_non_neg_integer(Constants.get_constant_value("optimism_eip1559_base_fee_max_change_denominator")) ||
+            Application.get_env(:explorer, :base_fee_max_change_denominator),
+          parse_non_neg_integer(Constants.get_constant_value("optimism_eip1559_elasticity_multiplier")) ||
+            Application.get_env(:explorer, :elasticity_multiplier)
+        }
+    end
+  end
+
+  defp parse_non_neg_integer(nil), do: nil
+
+  defp parse_non_neg_integer(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {integer, ""} when integer >= 0 -> integer
+      _ -> nil
     end
   end
 

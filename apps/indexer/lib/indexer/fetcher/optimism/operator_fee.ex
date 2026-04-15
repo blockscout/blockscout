@@ -31,6 +31,7 @@ defmodule Indexer.Fetcher.Optimism.OperatorFee do
   alias Explorer.Repo
 
   alias Indexer.{BufferedTask, Helper}
+  alias Indexer.Fetcher.Optimism.SuperchainConfig
 
   @behaviour BufferedTask
 
@@ -67,7 +68,7 @@ defmodule Indexer.Fetcher.Optimism.OperatorFee do
       Process.send(__MODULE__, :shutdown, [])
       initial_acc
     else
-      isthmus_timestamp_l2 = Application.get_env(:indexer, Indexer.Fetcher.Optimism)[:isthmus_timestamp_l2]
+      isthmus_timestamp_l2 = SuperchainConfig.isthmus_timestamp_l2()
 
       {:ok, acc} =
         Transaction.stream_transactions_without_operator_fee(
