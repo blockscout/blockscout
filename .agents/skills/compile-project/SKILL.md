@@ -5,119 +5,44 @@ description: "Compile the Blockscout Elixir project. Use this skill when you nee
 
 # Compiling the Blockscout project
 
-Blockscout is an Elixir umbrella project. `CHAIN_TYPE` is read at **compile time** and determines which Ecto repos and chain-specific modules are compiled in. Always set it before compiling.
+Spawn the **compiler-runner** agent. The agent runs compilation via a script that handles all environment setup automatically.
 
-The commands below show raw `mix` invocations — run them in whatever environment has Elixir available (host, devcontainer, CI, etc.).
+## How to invoke
 
-## Standard compile
+Use the Agent tool with `subagent_type: "compiler-runner"`. Include `CHAIN_TYPE=<value>` and optionally the compilation mode in the prompt.
 
-The safe default after editing code. Ensures deps and build tools are up to date before compiling — `deps.get` and `local.hex/rebar` are fast no-ops when nothing has changed, but protect against stale state from branch switches, other sessions, or interrupted builds:
+### Prompt examples
 
-```bash
-CHAIN_TYPE=<type> mix do deps.get, local.hex --force, local.rebar --force, deps.compile, compile
+**Standard compile** (default — after code edits):
+```
+Compile. CHAIN_TYPE=arbitrum
 ```
 
-## Full recompile
-
-Required after switching `CHAIN_TYPE`, switching branches with dependency changes, or when incremental compilation produces stale-module errors. This cleans the project's own apps, re-fetches deps, and force-recompiles everything:
-
-```bash
-CHAIN_TYPE=<type> mix deps.clean block_scout_web ethereum_jsonrpc explorer indexer utils nft_media_handler && \
-CHAIN_TYPE=<type> mix do deps.get, local.hex --force, local.rebar --force, deps.compile --force, compile
+**Full recompile** (after switching CHAIN_TYPE or branches with dependency changes):
+```
+Compile. CHAIN_TYPE=arbitrum. Mode: full
 ```
 
-The app list above covers the standard Blockscout apps. If the project's `mix.exs` release config has changed, check `.devcontainer/bin/extract_apps.exs` — it can extract the current app list dynamically.
-
-## First-time initialization
-
-For a freshly cloned project (detectable by the absence of `apps/block_scout_web/priv/cert`):
-
-```bash
-CHAIN_TYPE=<type> mix do local.hex --force, local.rebar --force, deps.get, deps.compile, compile && \
-cd apps/block_scout_web && mix phx.gen.cert blockscout blockscout.local && cd -
+**First-time initialization** (fresh clone):
+```
+Compile. CHAIN_TYPE=arbitrum. Mode: init
 ```
 
-`local.hex` installs the Hex package manager, `local.rebar` installs Rebar (Erlang build tool) — both are needed before deps can be fetched. The `phx.gen.cert` step generates a self-signed SSL certificate needed by the Phoenix server. These only need to run once.
+## When to use which mode
+
+- **standard** — default. Use after code edits. Runs `deps.get` + `compile`.
+- **full** — use after switching `CHAIN_TYPE`, switching branches with dependency changes, or when standard compile fails with stale-module errors. Cleans app builds and force-recompiles all dependencies.
+- **init** — use for first-time setup of a freshly cloned project. Installs Hex/Rebar, fetches deps, compiles, and generates SSL certificates. Detectable by absence of `apps/block_scout_web/priv/cert`.
+
+The agent and script handle automatically:
+- `CHAIN_TYPE` export
+- `deps.get`, `local.hex --force`, `local.rebar --force`, `deps.compile`
+- `deps.clean` and `--force` recompile (full mode)
+- `phx.gen.cert` (init mode, skipped if cert already exists)
+- Devcontainer delegation when mix is not available on the host
 
 ## CHAIN_TYPE
 
-Valid values: `default`, `ethereum`, `arbitrum`, `optimism`, `polygon_zkevm`, `zksync`, `celo`, `rsk`, `stability`, `filecoin`, `scroll`, `zetachain`, `shibarium`, `suave`, `blackfort`, `mud`.
+Chain-specific code compiles conditionally based on `CHAIN_TYPE`. Always set it to match the chain you're working on. Omitting `CHAIN_TYPE` defaults to `default`. Note that `default` and `ethereum` are distinct — `ethereum` activates beacon/blob routes and the Beacon Ecto repo.
 
-Omitting `CHAIN_TYPE` defaults to `default`. Note that `default` and `ethereum` are distinct — `ethereum` activates beacon/blob routes, EIP-4844 fields, and the Beacon Ecto repo that are absent under `default`.
-
-If you're unsure which `CHAIN_TYPE` the project was last compiled with, a full recompile is the safest path.
-
-## Troubleshooting
-
-### Dependency lock mismatch
-
-```
-** (Mix) You have changed mix.exs but mix.lock is out of date
-```
-
-Run `mix deps.get` to update the lock file.
-
-### Stale build artifacts
-
-```
-** (CompileError) cannot compile dependency
-```
-
-Clean and rebuild:
-
-```bash
-mix deps.clean --all
-CHAIN_TYPE=<type> mix do deps.get, local.hex --force, local.rebar --force, deps.compile, compile
-```
-
-### Chain-type mismatch
-
-```
-** (UndefinedFunctionError) function SomeChainSpecificModule.some_function/1 is undefined
-```
-
-The project was compiled with a different `CHAIN_TYPE`. Do a full recompile with the correct value.
-
-### Erlang/Elixir version mismatch
-
-Check required versions in `mix.exs` and compare with `elixir --version`. The devcontainer has the correct versions pre-installed.
-
-### Permission issues with Hex/Rebar
-
-If `local.hex --force` or `local.rebar --force` fails with permission errors, fix ownership instead of using `sudo`:
-
-```bash
-chown -R $(whoami) ~/.mix ~/.hex
-```
-
-### Nothing else works
-
-Nuclear option — clean everything and start fresh:
-
-```bash
-rm -rf _build deps
-CHAIN_TYPE=<type> mix do deps.get, local.hex --force, local.rebar --force, deps.compile, compile
-```
-
-## Additional commands
-
-```bash
-# Check for unused dependencies
-mix deps.unlock --unused
-
-# View dependency tree
-mix deps.tree
-
-# Compile with warnings as errors (strict mode, use before PRs)
-CHAIN_TYPE=<type> mix compile --warnings-as-errors
-```
-
-## When compilation warnings are acceptable
-
-Some warnings are expected and do not need fixing:
-
-- **Module redefinition warnings for ConfigHelper** — caused by `Code.eval_file()` in config loading; this is by design
-- **TODO comments** — tracked technical debt, not compilation issues
-- **Unused variables in generated code** — auto-generated functions may have unused params
-
-New code should aim for zero warnings.
+If compilation fails with environment, dependency, or configuration errors that are not simple code fixes, use the **fix-compilation** skill for troubleshooting guidance.
