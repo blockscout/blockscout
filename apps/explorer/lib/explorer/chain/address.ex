@@ -903,7 +903,7 @@ defmodule Explorer.Chain.Address do
     |> InternalTransaction.join_transaction_query()
     |> where([it], it.index > 0)
     |> order_by([it],
-      asc_nulls_first: coalesce(it.error, type(it.error_id, :string)),
+      asc_nulls_first: it.error_id,
       desc: it.block_number,
       desc: it.transaction_index,
       desc: it.index
@@ -967,50 +967,6 @@ defmodule Explorer.Chain.Address do
         :from_address
       }
     ]
-  end
-
-  @doc """
-  Finds contract addresses from a list of hashes.
-
-  ## Parameters
-
-    - `hashes`: A list of hashes to search for contract addresses.
-    - `options`: An optional keyword list of options.
-
-  ## Options
-
-    - `:necessity_by_association`: A map of associations with their necessity (default: `%{}`).
-
-  ## Returns
-
-    - `{:ok, addresses}`: A tuple with `:ok` and a list of found addresses.
-    - `{:error, :not_found}`: A tuple with `:error` and `:not_found` if no addresses are found.
-
-  """
-  @spec find_contract_addresses([Hash.Address.t()], [Chain.necessity_by_association_option() | Chain.api?()]) ::
-          {:ok, [__MODULE__.t()]} | {:error, :not_found}
-  def find_contract_addresses(
-        hashes,
-        options \\ []
-      ) do
-    necessity_by_association =
-      options
-      |> Keyword.get(:necessity_by_association, %{})
-      |> Map.merge(%{
-        Implementation.proxy_implementations_association() => :optional
-      })
-
-    hashes
-    |> addresses_with_bytecode_query()
-    |> Chain.join_associations(necessity_by_association)
-    |> Chain.select_repo(options).all()
-    |> Enum.map(fn address_result ->
-      update_address_result(address_result, options, true)
-    end)
-    |> case do
-      [] -> {:error, :not_found}
-      addresses -> {:ok, addresses}
-    end
   end
 
   @spec update_address_result(

@@ -17,6 +17,8 @@ defmodule BlockScoutWeb.API.V2.CeloController do
   alias Explorer.Chain.Hash
   alias Explorer.PagingOptions
 
+  @celo_reward_types ElectionReward.types()
+
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
   plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
@@ -273,9 +275,28 @@ defmodule BlockScoutWeb.API.V2.CeloController do
     end
   end
 
-  @spec parse_celo_reward_type(String.t()) ::
+  # Parses a reward type value produced by CastAndValidate.
+  #
+  # The OpenAPI schema enum (see `ElectionReward.type_enum_with_legacy/0`)
+  # contains both atoms (:voter, :validator, :group, :delegated_payment)
+  # and a legacy hyphenated string ("delegated-payment"). CastAndValidate
+  # returns an atom when the URL segment matches `to_string(atom)`, but
+  # passes "delegated-payment" through as a string because
+  # `to_string(:delegated_payment)` is "delegated_payment" (underscore),
+  # which does not match the hyphenated URL form.
+  #
+  # The atom clause handles the canonical types; the string clause handles
+  # the legacy "delegated-payment" form via `type_from_url_string/1`.
+  #
+  # Once the legacy form is removed from the enum, the string clause and
+  # catch-all can be deleted.
+  @spec parse_celo_reward_type(atom() | String.t()) ::
           {:ok, ElectionReward.type()} | {:error, {:invalid, :celo_election_reward_type}}
-  defp parse_celo_reward_type(reward_type_string) do
+  defp parse_celo_reward_type(reward_type) when reward_type in @celo_reward_types do
+    {:ok, reward_type}
+  end
+
+  defp parse_celo_reward_type(reward_type_string) when is_binary(reward_type_string) do
     reward_type_string
     |> ElectionReward.type_from_url_string()
     |> case do
@@ -283,4 +304,6 @@ defmodule BlockScoutWeb.API.V2.CeloController do
       :error -> {:error, {:invalid, :celo_election_reward_type}}
     end
   end
+
+  defp parse_celo_reward_type(_), do: {:error, {:invalid, :celo_election_reward_type}}
 end

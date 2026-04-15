@@ -15,6 +15,8 @@
 
 ### 🐛 Bug Fixes
 
+- Fix timeouts for API v1 tokentx endpoint ([#14185](https://github.com/blockscout/blockscout/issues/14185))
+- Remove internal transaction error field references ([#14213](https://github.com/blockscout/blockscout/pull/14213))
 - Handle partial errors in ContractCode fetch_codes ([#14211](https://github.com/blockscout/blockscout/pull/14211))
 - Include bridged token query params in OpenAPI spec ([#14209](https://github.com/blockscout/blockscout/pull/14209))
 - Update changed constraint name in shrink IT migration ([#14205](https://github.com/blockscout/blockscout/pull/14205))
@@ -52,12 +54,15 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Improve internal transactions migrations ([#14233](https://github.com/blockscout/blockscout/pull/14233))
+- Remove unused Explorer.Chain.Address.find_contract_addresses/2 function ([#14220](https://github.com/blockscout/blockscout/pull/14220))
+- Prevent deadlocks in IT fields removing migration ([#14215](https://github.com/blockscout/blockscout/pull/14215))
 - Filter blocks by BLOCK_RANGES in add_ranges_by_block_numbers ([#13875](https://github.com/blockscout/blockscout/pull/13875))
 - FillInternalTransactionsAddressIds improvements ([#14208](https://github.com/blockscout/blockscout/pull/14208))
 - Remove timeout between successful migrations ([#14198](https://github.com/blockscout/blockscout/issues/14198))
 - Add batch size env for FillInternalTransactionsAddressIds migration ([#14204](https://github.com/blockscout/blockscout/issues/14204))
 - Remove transaction_hash from internal transactions ([#14099](https://github.com/blockscout/blockscout/issues/14099))
-- Add Celo OpenAPI specs ([#14197](https://github.com/blockscout/blockscout/issues/14197))
+- Add Celo OpenAPI specs ([#14197](https://github.com/blockscout/blockscout/issues/14197), [#14229](https://github.com/blockscout/blockscout/pull/14229))
 - Cover counters to multichain export with unit tests ([#14193](https://github.com/blockscout/blockscout/issues/14193))
 - Update credo config ([#14147](https://github.com/blockscout/blockscout/issues/14147))
 - Remove Polygon zkEVM support ([#14188](https://github.com/blockscout/blockscout/issues/14188))
@@ -81,7 +86,7 @@
 | `DISABLE_BLOCK_BROADCAST_ENRICHMENT`                    | If `true`, disables ENS and metadata enrichment for `new_block` WebSocket broadcasts. Implemented in [#12074](https://github.com/blockscout/blockscout/pull/12074).                                                                                                                                                                                                                                                                                | Version: v11.0.0\+ <br />Default: (empty) <br />Applications: API                                                                                                                                                                                                                                                                                                                |
 | `INDEXER_MASSIVE_BLOCK_THRESHOLD`                             | Max transactions count in a single block after which the block is treated as massive. Implemented in [#13994](https://github.com/blockscout/blockscout/pull/13994).                                                                                                                                                                                                                                                                                                                                                              | Version: v11.0.0\+ <br />Default: `1000` <br />Applications: Indexer                                         |
 | `INDEXER_FHE_OPERATIONS_ENABLED`                              | Flag to enable parsing of Fully Homomorphic Encryption (FHE) operations from transactions. Implemented in [#13742](https://github.com/blockscout/blockscout/pull/13742).                                                                                                                                                                                                                                                                                                                                                         | Version: v11.0.0\+ <br />Default: `false` <br />Applications: Indexer                                      |
-| `MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_BATCH_SIZE`     | Number of internal transactions to fill their address ids in the batch. Implemented in [#14204](https://github.com/blockscout/blockscout/pull/14204).                                                                                                                                                                                                                 | Version: v11.0.0\+ <br />Default: `100` <br />Applications: Indexer          |
+| `MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_BATCH_SIZE`     | Number of internal transactions to fill their address ids in the batch. Implemented in [#14204](https://github.com/blockscout/blockscout/pull/14204).                                                                                                                                                                                                                 | Version: v11.0.0\+ <br />Default: `30` <br />Applications: Indexer          |
 | `MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_TIMEOUT`     | Timeout between filling internal transactions address ids batches processing. Implemented in [#14208](https://github.com/blockscout/blockscout/pull/14208).                                                                                                                                                                                                              | Version: v11.0.0\+ <br />Default: `0s` <br />Applications: Indexer          |
 | `DISABLE_TRANSACTIONS_BENS_PRELOAD`       | If `true`, skips ENS name preloading in responses for transaction list endpoints: `/api/v2/transactions`, `/api/v2/addresses/:hash/transactions`, `/api/v2/blocks/:hash/transactions`.                            | Version: v11.0.0+ <br />Default: `false` <br />Applications: API |
 | `DISABLE_TOKEN_TRANSFERS_BENS_PRELOAD`    | If `true`, skips ENS name preloading in responses for token transfer list endpoints: `/api/v2/token-transfers`, `/api/v2/addresses/:hash/token-transfers`, `/api/v2/tokens/:address_hash_param/transfers`.        | Version: v11.0.0+ <br />Default: `false` <br />Applications: API |
@@ -124,6 +129,9 @@
 | <span style={{color: "red"}}>Deprecated</span> `INDEXER_TX_ACTIONS_REINDEX_PROTOCOLS` | Comma-separated names of protocols which should be indexed or reindexed on historical blocks defined by the range. Example: `uniswap_v3,zkbob` - only these protocols will be indexed or reindexed for the defined block range. If the value is empty string (or not defined), all supported protocols will be indexed/reindexed. This option is not applicable to `realtime` and `catchup` fetchers (it always indexes all supported protocols). Implemented in [#6582](https://github.com/blockscout/blockscout/pull/6582). | (empty) | v5.1.0+ |  | v11.0.0+ |
 | <span style={{color: "red"}}>Deprecated</span> `INDEXER_TX_ACTIONS_UNISWAP_V3_FACTORY_CONTRACT` | UniswapV3Factory contract address. Implemented in [#7312](https://github.com/blockscout/blockscout/pull/7312). | `0x1F98431c8aD98523631AE4a59f267346ea31F984` | v5.1.4+ |  | v11.0.0+ |
 | <span style={{color: "red"}}>Deprecated</span> `INDEXER_TX_ACTIONS_UNISWAP_V3_NFT_POSITION_MANAGER_CONTRACT` | NonfungiblePositionManager contract address for Uniswap v3. Implemented in [#7312](https://github.com/blockscout/blockscout/pull/7312). | `0xC36442b4a4522E871399CD717aBDD847Ab11FE88` | v5.1.4+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `MIGRATION_REINDEX_DUPLICATED_INTERNAL_TRANSACTIONS_BATCH_SIZE` | Number of internal transactions to reindex in the batch. Implemented in [#12394](https://github.com/blockscout/blockscout/pull/12394). | `100` | v8.1.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `MIGRATION_REINDEX_DUPLICATED_INTERNAL_TRANSACTIONS_CONCURRENCY` | Number of parallel reindexing internal transaction batches processing. Implemented in [#12394](https://github.com/blockscout/blockscout/pull/12394).  | `1` | v8.1.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `MIGRATION_REINDEX_DUPLICATED_INTERNAL_TRANSACTIONS_TIMEOUT` | Timeout between reindexing internal transaction batches processing. Implemented in [#12394](https://github.com/blockscout/blockscout/pull/12394). | `0` | v8.1.0+ |  | v11.0.0+ |
 
 
 ## 10.2.4
