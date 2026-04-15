@@ -38,6 +38,16 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   @type type :: :voter | :validator | :group | :delegated_payment
   @types_enum ~w(voter validator group delegated_payment)a
 
+  # Legacy URL forms that differ from `to_string(atom)`.
+  # The URL path uses "delegated-payment" (hyphen), but the canonical atom
+  # is :delegated_payment (underscore). OpenApiSpex.Plug.CastAndValidate
+  # matches enum values via `to_string(atom) == binary`, so
+  # "delegated-payment" does not match :delegated_payment. Including the
+  # hyphenated string in the enum lets CastAndValidate accept both forms
+  # during a migration period, after which the hyphenated form can be
+  # removed.
+  @legacy_type_url_strings ["delegated-payment"]
+
   @reward_type_url_string_to_atom %{
     "voter" => :voter,
     "validator" => :validator,
@@ -123,6 +133,21 @@ defmodule Explorer.Chain.Celo.ElectionReward do
   """
   @spec types() :: [type]
   def types, do: @types_enum
+
+  @doc """
+  Returns the list of election reward types extended with legacy hyphenated
+  URL strings (e.g. `"delegated-payment"`).
+
+  Intended for use as the `enum` in OpenApiSpex schemas so that
+  `CastAndValidate` accepts both the canonical atom forms (`voter`,
+  `validator`, `group`, `delegated_payment`) and the legacy hyphenated URL
+  form (`delegated-payment`).
+
+  Once the migration period ends and `"delegated-payment"` is no longer
+  accepted, replace usages with `types/0` and remove `@legacy_type_url_strings`.
+  """
+  @spec type_enum_with_legacy() :: [type | String.t()]
+  def type_enum_with_legacy, do: @types_enum ++ @legacy_type_url_strings
 
   @doc """
   Converts a reward type url string to its corresponding atom.

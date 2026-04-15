@@ -5,7 +5,7 @@ defmodule Explorer.Migrator.FillInternalTransactionsAddressIdsTest do
 
   alias Explorer.Chain.InternalTransaction
   alias Explorer.Migrator.{FillInternalTransactionsAddressIds, MigrationStatus}
-  alias Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdPartialIndex
+  alias Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError
   alias Explorer.Repo
   alias Explorer.Utility.AddressIdToAddressHash
 
@@ -39,7 +39,7 @@ defmodule Explorer.Migrator.FillInternalTransactionsAddressIdsTest do
     end)
 
     MigrationStatus.set_status(
-      CreateInternalTransactionsCreatedContractAddressIdPartialIndex.migration_name(),
+      RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError.migration_name(),
       "completed"
     )
 

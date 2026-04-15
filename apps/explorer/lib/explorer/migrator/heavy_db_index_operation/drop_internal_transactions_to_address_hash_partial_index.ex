@@ -1,24 +1,18 @@
-defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex do
+defmodule Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsToAddressHashPartialIndex do
   @moduledoc """
-  Create unique B-tree index `internal_transactions_block_number_transaction_index_index_index` on `internal_transactions` table for (`block_number`, `transaction_index`, `index`) columns.
+  Drops index "internal_transactions_to_address_hash_partial_index" btree (to_address_hash, block_number DESC, transaction_index DESC, index DESC) WHERE ((((type)::text = 'call'::text) AND (index > 0)) OR ((type)::text <> 'call'::text)).
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  require Logger
+  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
 
-  alias Explorer.Migrator.{
-    EmptyInternalTransactionsData,
-    HeavyDbIndexOperation,
-    MigrationStatus
-  }
-
+  alias Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAddressHashPartialIndex
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :internal_transactions
-  @index_name "internal_transactions_block_number_transaction_index_index_index"
-  @operation_type :create
-  @table_columns ["block_number", "transaction_index", "index"]
+  @index_name "internal_transactions_to_address_hash_partial_index"
+  @operation_type :drop
 
   @impl HeavyDbIndexOperation
   def table_name, do: @table_name
@@ -31,24 +25,22 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBloc
 
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
-    do: [
-      EmptyInternalTransactionsData.migration_name()
-    ]
+    do: [DropInternalTransactionsFromAddressHashPartialIndex.migration_name()]
 
   @impl HeavyDbIndexOperation
   def db_index_operation do
-    HeavyDbIndexOperationHelper.create_db_index(@index_name, @table_name, @table_columns, true)
+    HeavyDbIndexOperationHelper.safely_drop_db_index(@index_name)
   end
 
   @impl HeavyDbIndexOperation
   def check_db_index_operation_progress do
-    operation = HeavyDbIndexOperationHelper.create_index_query_string(@index_name, @table_name, @table_columns, true)
+    operation = HeavyDbIndexOperationHelper.drop_index_query_string(@index_name)
     HeavyDbIndexOperationHelper.check_db_index_operation_progress(@index_name, operation)
   end
 
   @impl HeavyDbIndexOperation
   def db_index_operation_status do
-    HeavyDbIndexOperationHelper.db_index_creation_status(@index_name)
+    HeavyDbIndexOperationHelper.db_index_dropping_status(@index_name)
   end
 
   @impl HeavyDbIndexOperation
