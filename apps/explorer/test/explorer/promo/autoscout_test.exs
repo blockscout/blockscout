@@ -10,25 +10,20 @@ defmodule Explorer.Promo.AutoscoutTest do
   @moduletag :capture_log
 
   describe "init/1" do
-    test "logs promo and returns the initial state" do
+    test "returns the initial state" do
       parent = self()
 
-      log =
-        capture_log(fn ->
-          pid =
-            spawn(fn ->
-              send(parent, {:init_result, Autoscout.init(nil)})
+      pid =
+        spawn(fn ->
+          send(parent, {:init_result, Autoscout.init(nil)})
 
-              receive do
-                :stop -> :ok
-              end
-            end)
-
-          assert_receive {:init_result, {:ok, %{}}}
-          send(pid, :stop)
+          receive do
+            :stop -> :ok
+          end
         end)
 
-      assert log =~ @promo_line
+      assert_receive {:init_result, {:ok, %{}}}
+      send(pid, :stop)
     end
   end
 

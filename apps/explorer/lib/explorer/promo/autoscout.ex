@@ -26,7 +26,6 @@ defmodule Explorer.Promo.Autoscout do
 
   @impl GenServer
   def init(_) do
-    Logger.info(@autoscout_promo)
     Process.send_after(self(), :promo, :timer.seconds(10))
 
     {:ok, %{}}
