@@ -1,5 +1,12 @@
 # Changelog
 
+## 10.2.6
+
+### 🐛 Bug Fixes
+
+- Fix PendingTransactionsSanitizer ([#14235](https://github.com/blockscout/blockscout/issues/14235))
+
+
 ## 10.2.5
 
 ### 🐛 Bug Fixes
