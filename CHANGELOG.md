@@ -62,7 +62,7 @@
 - Remove timeout between successful migrations ([#14198](https://github.com/blockscout/blockscout/issues/14198))
 - Add batch size env for FillInternalTransactionsAddressIds migration ([#14204](https://github.com/blockscout/blockscout/issues/14204))
 - Remove transaction_hash from internal transactions ([#14099](https://github.com/blockscout/blockscout/issues/14099))
-- Add Celo OpenAPI specs ([#14197](https://github.com/blockscout/blockscout/issues/14197))
+- Add Celo OpenAPI specs ([#14197](https://github.com/blockscout/blockscout/issues/14197), [#14229](https://github.com/blockscout/blockscout/pull/14229))
 - Cover counters to multichain export with unit tests ([#14193](https://github.com/blockscout/blockscout/issues/14193))
 - Update credo config ([#14147](https://github.com/blockscout/blockscout/issues/14147))
 - Remove Polygon zkEVM support ([#14188](https://github.com/blockscout/blockscout/issues/14188))
