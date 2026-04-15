@@ -54,6 +54,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add Autoscout promo in the logs ([#14234](https://github.com/blockscout/blockscout/pull/14234))
 - Improve internal transactions migrations ([#14233](https://github.com/blockscout/blockscout/pull/14233))
 - Remove unused Explorer.Chain.Address.find_contract_addresses/2 function ([#14220](https://github.com/blockscout/blockscout/pull/14220))
 - Prevent deadlocks in IT fields removing migration ([#14215](https://github.com/blockscout/blockscout/pull/14215))
