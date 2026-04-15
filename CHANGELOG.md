@@ -135,6 +135,20 @@
 | <span style={{color: "red"}}>Deprecated</span> `MIGRATION_REINDEX_DUPLICATED_INTERNAL_TRANSACTIONS_TIMEOUT` | Timeout between reindexing internal transaction batches processing. Implemented in [#12394](https://github.com/blockscout/blockscout/pull/12394). | `0` | v8.1.0+ |  | v11.0.0+ |
 
 
+## 10.2.6
+
+### 🐛 Bug Fixes
+
+- Fix PendingTransactionsSanitizer ([#14235](https://github.com/blockscout/blockscout/issues/14235))
+
+
+## 10.2.5
+
+### 🐛 Bug Fixes
+
+- Update changed constraint name in shrink IT migration ([#14205](https://github.com/blockscout/blockscout/issues/14205))
+
+
 ## 10.2.4
 
 ### ⚡ Performance
