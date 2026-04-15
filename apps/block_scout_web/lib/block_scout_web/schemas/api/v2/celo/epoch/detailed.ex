@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Celo.Epoch.Detailed do
   OpenApiSpex.schema(
     Epoch.schema()
     |> Helper.extend_schema(
+      title: "CeloEpochDetailed",
       nullable: false,
       properties: %{
         start_processing_block_hash: General.FullHashNullable,
@@ -21,19 +22,15 @@ defmodule BlockScoutWeb.Schemas.API.V2.Celo.Epoch.Detailed do
           type: :object,
           nullable: true,
           additionalProperties: %Schema{
-            anyOf: [
-              %Schema{
-                type: :object,
-                properties: %{
-                  total: General.IntegerString,
-                  count: %Schema{type: :integer, nullable: false, minimum: 0},
-                  token: %Schema{type: :object, nullable: true, additionalProperties: true}
-                },
-                required: [:total, :count, :token],
-                additionalProperties: false
-              },
-              %Schema{type: :null}
-            ]
+            type: :object,
+            nullable: true,
+            properties: %{
+              total: General.IntegerString,
+              count: %Schema{type: :integer, nullable: false, minimum: 0},
+              token: %Schema{type: :object, nullable: true, additionalProperties: true}
+            },
+            required: [:total, :count, :token],
+            additionalProperties: false
           }
         },
         distribution: %Schema{type: :object, nullable: true, additionalProperties: true}
