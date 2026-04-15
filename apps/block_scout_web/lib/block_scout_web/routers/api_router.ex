@@ -482,6 +482,17 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/csv", V2.AdvancedFilterController, :list_csv)
       get("/methods", V2.AdvancedFilterController, :list_methods)
     end
+
+    scope "/legacy" do
+      scope "/logs" do
+        get("/get-logs", V2.Legacy.LogsController, :get_logs)
+      end
+
+      scope "/block" do
+        get("/get-block-number-by-time", V2.Legacy.BlockController, :get_block_number_by_time)
+        get("/eth-block-number", V2.Legacy.BlockController, :eth_block_number)
+      end
+    end
   end
 
   scope "/v1/graphql" do
