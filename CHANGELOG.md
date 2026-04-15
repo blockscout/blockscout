@@ -54,6 +54,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Improve internal transactions migrations ([#14233](https://github.com/blockscout/blockscout/pull/14233))
 - Remove unused Explorer.Chain.Address.find_contract_addresses/2 function ([#14220](https://github.com/blockscout/blockscout/pull/14220))
 - Prevent deadlocks in IT fields removing migration ([#14215](https://github.com/blockscout/blockscout/pull/14215))
 - Filter blocks by BLOCK_RANGES in add_ranges_by_block_numbers ([#13875](https://github.com/blockscout/blockscout/pull/13875))
@@ -61,7 +62,7 @@
 - Remove timeout between successful migrations ([#14198](https://github.com/blockscout/blockscout/issues/14198))
 - Add batch size env for FillInternalTransactionsAddressIds migration ([#14204](https://github.com/blockscout/blockscout/issues/14204))
 - Remove transaction_hash from internal transactions ([#14099](https://github.com/blockscout/blockscout/issues/14099))
-- Add Celo OpenAPI specs ([#14197](https://github.com/blockscout/blockscout/issues/14197))
+- Add Celo OpenAPI specs ([#14197](https://github.com/blockscout/blockscout/issues/14197), [#14229](https://github.com/blockscout/blockscout/pull/14229))
 - Cover counters to multichain export with unit tests ([#14193](https://github.com/blockscout/blockscout/issues/14193))
 - Update credo config ([#14147](https://github.com/blockscout/blockscout/issues/14147))
 - Remove Polygon zkEVM support ([#14188](https://github.com/blockscout/blockscout/issues/14188))
@@ -128,6 +129,9 @@
 | <span style={{color: "red"}}>Deprecated</span> `INDEXER_TX_ACTIONS_REINDEX_PROTOCOLS` | Comma-separated names of protocols which should be indexed or reindexed on historical blocks defined by the range. Example: `uniswap_v3,zkbob` - only these protocols will be indexed or reindexed for the defined block range. If the value is empty string (or not defined), all supported protocols will be indexed/reindexed. This option is not applicable to `realtime` and `catchup` fetchers (it always indexes all supported protocols). Implemented in [#6582](https://github.com/blockscout/blockscout/pull/6582). | (empty) | v5.1.0+ |  | v11.0.0+ |
 | <span style={{color: "red"}}>Deprecated</span> `INDEXER_TX_ACTIONS_UNISWAP_V3_FACTORY_CONTRACT` | UniswapV3Factory contract address. Implemented in [#7312](https://github.com/blockscout/blockscout/pull/7312). | `0x1F98431c8aD98523631AE4a59f267346ea31F984` | v5.1.4+ |  | v11.0.0+ |
 | <span style={{color: "red"}}>Deprecated</span> `INDEXER_TX_ACTIONS_UNISWAP_V3_NFT_POSITION_MANAGER_CONTRACT` | NonfungiblePositionManager contract address for Uniswap v3. Implemented in [#7312](https://github.com/blockscout/blockscout/pull/7312). | `0xC36442b4a4522E871399CD717aBDD847Ab11FE88` | v5.1.4+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `MIGRATION_REINDEX_DUPLICATED_INTERNAL_TRANSACTIONS_BATCH_SIZE` | Number of internal transactions to reindex in the batch. Implemented in [#12394](https://github.com/blockscout/blockscout/pull/12394). | `100` | v8.1.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `MIGRATION_REINDEX_DUPLICATED_INTERNAL_TRANSACTIONS_CONCURRENCY` | Number of parallel reindexing internal transaction batches processing. Implemented in [#12394](https://github.com/blockscout/blockscout/pull/12394).  | `1` | v8.1.0+ |  | v11.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `MIGRATION_REINDEX_DUPLICATED_INTERNAL_TRANSACTIONS_TIMEOUT` | Timeout between reindexing internal transaction batches processing. Implemented in [#12394](https://github.com/blockscout/blockscout/pull/12394). | `0` | v8.1.0+ |  | v11.0.0+ |
 
 
 ## 10.2.4
