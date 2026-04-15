@@ -4,7 +4,7 @@ defmodule Indexer.PendingTransactionsSanitizerTest do
 
   import Mox
 
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Transaction, Wei}
   alias Explorer.Repo
   alias Indexer.PendingTransactionsSanitizer
 
@@ -112,6 +112,51 @@ defmodule Indexer.PendingTransactionsSanitizerTest do
       assert transaction.cumulative_gas_used == Decimal.new("21000")
       assert transaction.gas_used == Decimal.new("21000")
       assert transaction.block_hash == block.hash
+      assert transaction.status == :ok
+      assert transaction.index == 0
+    end
+
+    test "with gas price and contract address", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      pending_transaction = insert(:transaction, inserted_at: Timex.shift(Timex.now(), days: -2), gas_price: nil)
+      block = insert(:block, consensus: true, refetch_needed: false)
+      contract_address = insert(:address)
+
+      EthereumJSONRPC.Mox
+      |> expect(
+        :json_rpc,
+        fn _json, _options ->
+          {:ok,
+           [
+             %{
+               id: 0,
+               jsonrpc: "2.0",
+               result: %{
+                 "transactionHash" => to_string(pending_transaction.hash),
+                 "blockHash" => to_string(block.hash),
+                 "cumulativeGasUsed" => "0x5208",
+                 "gasUsed" => "0x5208",
+                 "effectiveGasPrice" => "0x76be5e6c00",
+                 "contractAddress" => to_string(contract_address.hash),
+                 "status" => "0x1",
+                 "transactionIndex" => "0x0"
+               }
+             }
+           ]}
+        end
+      )
+
+      PendingTransactionsSanitizer.sanitize_pending_transactions(json_rpc_named_arguments)
+
+      updated_block = Repo.reload(block)
+      assert updated_block.refetch_needed == true
+
+      assert [transaction] = Repo.all(Transaction)
+
+      assert transaction.cumulative_gas_used == Decimal.new("21000")
+      assert transaction.gas_used == Decimal.new("21000")
+      assert Wei.to(transaction.gas_price, :wei) == Decimal.new("510000000000")
+      assert transaction.block_hash == block.hash
+      assert transaction.created_contract_address_hash == contract_address.hash
       assert transaction.status == :ok
       assert transaction.index == 0
     end
