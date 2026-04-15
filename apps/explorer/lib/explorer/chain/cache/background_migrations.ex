@@ -90,8 +90,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateAddressesVerifiedHashIndex,
     CreateAddressesVerifiedTransactionsCountDescHashIndex,
     CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
+    CreateInternalTransactionsBlockNumberCreatedContractAddressIdPartialIndex,
     CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
-    CreateInternalTransactionsCreatedContractAddressIdPartialIndex,
     CreateLogsAddressHashBlockNumberDescIndexDescIndex,
     CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
     CreateLogsBlockHashIndex,
@@ -428,7 +428,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
 
   defp handle_fallback(:heavy_indexes_create_address_ids_internal_transactions_indexes_finished) do
     set_and_return_migration_status(
-      CreateInternalTransactionsCreatedContractAddressIdPartialIndex,
+      CreateInternalTransactionsBlockNumberCreatedContractAddressIdPartialIndex,
       &set_heavy_indexes_create_address_ids_internal_transactions_indexes_finished/1
     )
   end
