@@ -1,6 +1,7 @@
 defmodule Explorer.Promo.Autoscout do
   @moduledoc """
-  Module responsible for logging the Autoscout promo message on application startup.
+  Module responsible for logging the Autoscout promo message on application startup
+  and once again 10 seconds after initialization.
   """
 
   require Logger
