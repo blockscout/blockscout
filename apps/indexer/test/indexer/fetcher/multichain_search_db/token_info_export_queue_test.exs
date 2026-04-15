@@ -4,6 +4,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueueTest do
 
   import ExUnit.CaptureLog, only: [capture_log: 1]
 
+  alias Explorer.Chain.Hash
   alias Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.TestHelper
@@ -140,7 +141,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueueTest do
       token_info_item_2 = insert(:multichain_search_db_export_token_info_queue)
       token_info_item_3 = insert(:multichain_search_db_export_token_info_queue)
       token_info_item_4 = insert(:multichain_search_db_export_token_info_queue)
-      token_info_item_4_address_hash_string = "0x" <> Base.encode16(token_info_item_4.address_hash, case: :lower)
+      token_info_item_4_address_hash_string = Hash.to_string(token_info_item_4.address_hash)
       token_info_item_5 = insert(:multichain_search_db_export_token_info_queue)
 
       export_data = [
