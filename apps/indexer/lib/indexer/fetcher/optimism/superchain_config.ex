@@ -155,9 +155,8 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
         {:error, :superchain_config_file_path_not_set}
 
       file_path ->
-        with {:ok, content} <- read_superchain_file(file_path),
-             {:ok, values} <- parse_toml(content) do
-          {:ok, values}
+        with {:ok, content} <- read_superchain_file(file_path) do
+          parse_toml(content)
         end
     end
   end
@@ -247,17 +246,15 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
   defp parse_toml_value(raw_value) do
     value = String.trim(raw_value)
 
-    cond do
-      String.starts_with?(value, "\"") and String.ends_with?(value, "\"") ->
-        value
-        |> String.trim_leading("\"")
-        |> String.trim_trailing("\"")
-
-      true ->
-        case Integer.parse(value) do
-          {integer, ""} -> integer
-          _ -> value
-        end
+    if String.starts_with?(value, "\"") and String.ends_with?(value, "\"") do
+      value
+      |> String.trim_leading("\"")
+      |> String.trim_trailing("\"")
+    else
+      case Integer.parse(value) do
+        {integer, ""} -> integer
+        _ -> value
+      end
     end
   end
 
@@ -325,9 +322,6 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
       _ -> nil
     end
   end
-
-  defp parse_integer_or_nil(value) when is_integer(value) and value >= 0, do: value
-  defp parse_integer_or_nil(_), do: nil
 
   defp blank_to_nil(nil), do: nil
 
