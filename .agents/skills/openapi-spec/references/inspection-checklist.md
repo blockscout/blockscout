@@ -177,15 +177,10 @@ Catches: missing schema modules, undefined parameter helper functions, operation
 ### 5b. Generate the spec
 
 ```bash
-mix openapi.spec.yaml --spec BlockScoutWeb.Specs.Public /tmp/openapi_check.yaml --start-app=false
+.claude/skills/openapi-spec/scripts/generate-spec.sh
 ```
 
-For chain-specific endpoints, set `CHAIN_TYPE`:
-```bash
-CHAIN_TYPE=optimism mix openapi.spec.yaml --spec BlockScoutWeb.Specs.Public /tmp/openapi_check.yaml --start-app=false
-```
-
-Catches: schema resolution failures, circular references, malformed schema structures that compile but can't be inlined into the spec. The generated YAML can also be visually inspected or fed to external OpenAPI validators.
+Catches: schema resolution failures, circular references, malformed schema structures that compile but can't be inlined into the spec. See `references/spec-generation-and-verification.md` for script options and `oastools` verification commands.
 
 ### 5c. Run controller tests
 
