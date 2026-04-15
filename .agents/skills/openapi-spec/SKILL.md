@@ -1,6 +1,7 @@
 ---
 name: openapi-spec
 description: "Create, adjust, or inspect OpenAPI declarations for Blockscout API v2 endpoints. Use this skill whenever the user asks to: add an OpenAPI spec to an endpoint that lacks one, update a spec after controller/view changes, audit or fix an existing OpenAPI declaration, or work with open_api_spex annotations in the Blockscout codebase. Also trigger when the user mentions 'swagger', 'openapi', 'open_api_spex', 'API spec', 'API schema', or 'operation macro' in the context of Blockscout endpoints."
+allowed-tools: ["Bash(.claude/skills/openapi-spec/scripts/generate-spec.sh *)", "Bash(oastools *)"]
 ---
 
 # OpenAPI Spec Authoring for Blockscout API v2
@@ -131,20 +132,15 @@ Compiling the `block_scout_web` app verifies structural validity: schema modules
 
 Run via devcontainer if mix is not available on the host.
 
-### 2. Generate the spec (`mix openapi.spec.yaml`)
+### 2. Generate the spec (`generate-spec.sh`)
 
 This exercises `OpenApiSpex.resolve_schema_modules/1`, which resolves all schema module references and inlines them into the full spec. It catches issues that compilation alone misses: circular references, malformed schema structures, and resolution failures.
 
 ```bash
-mix openapi.spec.yaml --spec BlockScoutWeb.Specs.Public /tmp/openapi_check.yaml --start-app=false
+.claude/skills/openapi-spec/scripts/generate-spec.sh
 ```
 
-For chain-specific endpoints, set `CHAIN_TYPE`:
-```bash
-CHAIN_TYPE=optimism mix openapi.spec.yaml --spec BlockScoutWeb.Specs.Public /tmp/openapi_check.yaml --start-app=false
-```
-
-The generated YAML can also be visually inspected or fed to external OpenAPI validators for additional checks.
+See `references/spec-generation-and-verification.md` for script options (chain-specific generation, custom output path) and `oastools` commands for inspecting the result.
 
 ### 3. Run controller tests (`mix test`)
 
@@ -406,6 +402,7 @@ Read `references/inspection-checklist.md` for the full systematic checklist. The
 | `references/error-response-patterns.md` | You need to declare error responses or understand which error module to use for a status code |
 | `references/request-body-security-headers.md` | You're working with POST/PUT/PATCH endpoints, authentication/security, or HTTP header declarations |
 | `references/inspection-checklist.md` | You're running an audit of an existing declaration (Workflow C) |
+| `references/spec-generation-and-verification.md` | You need to generate the spec YAML, validate it, or inspect specific operations/schemas with oastools |
 
 ## Using subagents
 
