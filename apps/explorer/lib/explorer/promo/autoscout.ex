@@ -20,12 +20,12 @@ defmodule Explorer.Promo.Autoscout do
   """
 
   def start_link(_) do
-    Logger.info(@autoscout_promo)
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
   @impl GenServer
   def init(_) do
+    Logger.info(@autoscout_promo)
     Process.send_after(self(), :promo, :timer.seconds(10))
 
     {:ok, %{}}
