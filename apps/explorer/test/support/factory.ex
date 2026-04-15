@@ -326,7 +326,7 @@ defmodule Explorer.Factory do
       end
 
     %MultichainSearchDb.TokenInfoExportQueue{
-      address_hash: address_hash().bytes,
+      address_hash: address_hash(),
       data_type: data_type,
       data: data
     }

@@ -7,6 +7,7 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
 
   import Ecto.Query
 
+  alias Explorer.Chain.Hash
   alias Explorer.Repo
 
   @required_attrs ~w(address_hash data_type data)a
@@ -15,7 +16,7 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
 
   @primary_key false
   typed_schema "multichain_search_db_export_token_info_queue" do
-    field(:address_hash, :binary, null: false, primary_key: true)
+    field(:address_hash, Hash.Address, null: false, primary_key: true)
 
     field(:data_type, Ecto.Enum,
       values: [
@@ -86,7 +87,8 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
     ## Returns
     - An `Ecto.Query` struct containing the delete operation.
   """
-  @spec delete_query(%{:address_hash => binary(), :data_type => atom(), optional(:data) => map()}) :: Ecto.Query.t()
+  @spec delete_query(%{:address_hash => Hash.Address.t(), :data_type => atom(), optional(:data) => map()}) ::
+          Ecto.Query.t()
   def delete_query(queue_item) do
     from(q in __MODULE__,
       where: q.address_hash == ^queue_item.address_hash and q.data_type == ^queue_item.data_type
