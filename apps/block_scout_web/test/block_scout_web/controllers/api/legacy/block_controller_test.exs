@@ -4,11 +4,11 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
   alias BlockScoutWeb.Chain
   alias Explorer.Chain.Cache.BlockNumber
 
-  describe "GET /api/v2/legacy/block/get-block-number-by-time" do
+  describe "GET /api/legacy/block/get-block-number-by-time" do
     test "missing timestamp param", %{conn: conn} do
       response =
         conn
-        |> get("/api/v2/legacy/block/get-block-number-by-time", %{"closest" => "after"})
+        |> get("/api/legacy/block/get-block-number-by-time", %{"closest" => "after"})
         |> json_response(200)
 
       assert response["status"] == "0"
@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
     test "missing closest param", %{conn: conn} do
       response =
         conn
-        |> get("/api/v2/legacy/block/get-block-number-by-time", %{"timestamp" => "1617019505"})
+        |> get("/api/legacy/block/get-block-number-by-time", %{"timestamp" => "1617019505"})
         |> json_response(200)
 
       assert response["status"] == "0"
@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
     test "invalid timestamp param", %{conn: conn} do
       response =
         conn
-        |> get("/api/v2/legacy/block/get-block-number-by-time", %{
+        |> get("/api/legacy/block/get-block-number-by-time", %{
           "timestamp" => "invalid",
           "closest" => "before"
         })
@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
     test "invalid closest param", %{conn: conn} do
       response =
         conn
-        |> get("/api/v2/legacy/block/get-block-number-by-time", %{
+        |> get("/api/legacy/block/get-block-number-by-time", %{
           "timestamp" => "1617019505",
           "closest" => "invalid"
         })
@@ -62,7 +62,7 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
     test "not found — no matching block", %{conn: conn} do
       response =
         conn
-        |> get("/api/v2/legacy/block/get-block-number-by-time", %{
+        |> get("/api/legacy/block/get-block-number-by-time", %{
           "timestamp" => "1617019505",
           "closest" => "before"
         })
@@ -83,7 +83,7 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
 
       response =
         conn
-        |> get("/api/v2/legacy/block/get-block-number-by-time", %{
+        |> get("/api/legacy/block/get-block-number-by-time", %{
           "timestamp" => timestamp_in_the_future,
           "closest" => "before"
         })
@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
 
       response =
         conn
-        |> get("/api/v2/legacy/block/get-block-number-by-time", %{
+        |> get("/api/legacy/block/get-block-number-by-time", %{
           "timestamp" => timestamp_in_the_past,
           "closest" => "after"
         })
@@ -133,7 +133,7 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
 
       v2_response =
         conn
-        |> get("/api/v2/legacy/block/get-block-number-by-time", params)
+        |> get("/api/legacy/block/get-block-number-by-time", params)
         |> json_response(200)
 
       assert v1_response == v2_response
@@ -147,14 +147,14 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
 
       v2_response =
         conn
-        |> get("/api/v2/legacy/block/get-block-number-by-time")
+        |> get("/api/legacy/block/get-block-number-by-time")
         |> json_response(200)
 
       assert v1_response == v2_response
     end
   end
 
-  describe "GET /api/v2/legacy/block/eth-block-number" do
+  describe "GET /api/legacy/block/eth-block-number" do
     setup do
       Supervisor.terminate_child(Explorer.Supervisor, BlockNumber.child_id())
       Supervisor.restart_child(Explorer.Supervisor, BlockNumber.child_id())
@@ -166,7 +166,7 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
 
       response =
         conn
-        |> get("/api/v2/legacy/block/eth-block-number")
+        |> get("/api/legacy/block/eth-block-number")
         |> json_response(200)
 
       assert response["jsonrpc"] == "2.0"
@@ -181,7 +181,7 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
 
       response =
         conn
-        |> get("/api/v2/legacy/block/eth-block-number", %{"id" => "7"})
+        |> get("/api/legacy/block/eth-block-number", %{"id" => "7"})
         |> json_response(200)
 
       assert response["jsonrpc"] == "2.0"
@@ -195,7 +195,7 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
 
       response =
         conn
-        |> get("/api/v2/legacy/block/eth-block-number", %{"id" => "hello"})
+        |> get("/api/legacy/block/eth-block-number", %{"id" => "hello"})
         |> json_response(200)
 
       assert response["jsonrpc"] == "2.0"
@@ -208,7 +208,7 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
       # result is 0, not nil. encode_quantity(0) → "0x0".
       response =
         conn
-        |> get("/api/v2/legacy/block/eth-block-number")
+        |> get("/api/legacy/block/eth-block-number")
         |> json_response(200)
 
       assert response["jsonrpc"] == "2.0"
@@ -226,7 +226,7 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
 
       v2_response =
         conn
-        |> get("/api/v2/legacy/block/eth-block-number")
+        |> get("/api/legacy/block/eth-block-number")
         |> json_response(200)
 
       assert v1_response == v2_response
@@ -240,7 +240,7 @@ defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
 
       v2_response =
         conn
-        |> get("/api/v2/legacy/block/eth-block-number")
+        |> get("/api/legacy/block/eth-block-number")
         |> json_response(200)
 
       assert v1_response == v2_response

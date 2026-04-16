@@ -3,11 +3,11 @@ defmodule BlockScoutWeb.API.Legacy.LogsControllerTest do
 
   alias Explorer.Chain.Transaction
 
-  describe "GET /api/v2/legacy/logs/get-logs" do
+  describe "GET /api/legacy/logs/get-logs" do
     test "missing fromBlock, toBlock, address, and topic{x}", %{conn: conn} do
       response =
         conn
-        |> get("/api/v2/legacy/logs/get-logs")
+        |> get("/api/legacy/logs/get-logs")
         |> json_response(200)
 
       assert response["status"] == "0"
@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.API.Legacy.LogsControllerTest do
     test "missing fromBlock", %{conn: conn} do
       response =
         conn
-        |> get("/api/v2/legacy/logs/get-logs", %{
+        |> get("/api/legacy/logs/get-logs", %{
           "toBlock" => "10",
           "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
         })
@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.API.Legacy.LogsControllerTest do
     test "missing toBlock", %{conn: conn} do
       response =
         conn
-        |> get("/api/v2/legacy/logs/get-logs", %{
+        |> get("/api/legacy/logs/get-logs", %{
           "fromBlock" => "5",
           "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
         })
@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.API.Legacy.LogsControllerTest do
     test "missing address and topic{x}", %{conn: conn} do
       response =
         conn
-        |> get("/api/v2/legacy/logs/get-logs", %{"fromBlock" => "5", "toBlock" => "10"})
+        |> get("/api/legacy/logs/get-logs", %{"fromBlock" => "5", "toBlock" => "10"})
         |> json_response(200)
 
       assert response["status"] == "0"
@@ -61,7 +61,7 @@ defmodule BlockScoutWeb.API.Legacy.LogsControllerTest do
     test "invalid fromBlock format", %{conn: conn} do
       response =
         conn
-        |> get("/api/v2/legacy/logs/get-logs", %{
+        |> get("/api/legacy/logs/get-logs", %{
           "fromBlock" => "abc",
           "toBlock" => "10",
           "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
@@ -77,7 +77,7 @@ defmodule BlockScoutWeb.API.Legacy.LogsControllerTest do
     test "no logs found returns empty result array", %{conn: conn} do
       response =
         conn
-        |> get("/api/v2/legacy/logs/get-logs", %{
+        |> get("/api/legacy/logs/get-logs", %{
           "fromBlock" => "5",
           "toBlock" => "10",
           "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"
@@ -107,7 +107,7 @@ defmodule BlockScoutWeb.API.Legacy.LogsControllerTest do
 
       response =
         conn
-        |> get("/api/v2/legacy/logs/get-logs", %{
+        |> get("/api/legacy/logs/get-logs", %{
           "fromBlock" => "latest",
           "toBlock" => "latest",
           "address" => "#{contract_address.hash}"
@@ -145,7 +145,7 @@ defmodule BlockScoutWeb.API.Legacy.LogsControllerTest do
 
       response =
         conn
-        |> get("/api/v2/legacy/logs/get-logs", params)
+        |> get("/api/legacy/logs/get-logs", params)
         |> json_response(200)
 
       assert response["status"] == "1"
@@ -169,7 +169,7 @@ defmodule BlockScoutWeb.API.Legacy.LogsControllerTest do
       for {[key1, key2], expectation} <- conditions do
         response =
           conn
-          |> get("/api/v2/legacy/logs/get-logs", %{
+          |> get("/api/legacy/logs/get-logs", %{
             "fromBlock" => "5",
             "toBlock" => "10",
             key1 => "some topic",
@@ -187,7 +187,7 @@ defmodule BlockScoutWeb.API.Legacy.LogsControllerTest do
     test "four topics set, all six topic*_opr missing", %{conn: conn} do
       response =
         conn
-        |> get("/api/v2/legacy/logs/get-logs", %{
+        |> get("/api/legacy/logs/get-logs", %{
           "fromBlock" => "5",
           "toBlock" => "10",
           "topic0" => "some topic",
@@ -237,7 +237,7 @@ defmodule BlockScoutWeb.API.Legacy.LogsControllerTest do
 
       v2_response =
         conn
-        |> get("/api/v2/legacy/logs/get-logs", params)
+        |> get("/api/legacy/logs/get-logs", params)
         |> json_response(200)
 
       assert v1_response == v2_response
@@ -251,7 +251,7 @@ defmodule BlockScoutWeb.API.Legacy.LogsControllerTest do
 
       v2_response =
         conn
-        |> get("/api/v2/legacy/logs/get-logs")
+        |> get("/api/legacy/logs/get-logs")
         |> json_response(200)
 
       assert v1_response == v2_response
