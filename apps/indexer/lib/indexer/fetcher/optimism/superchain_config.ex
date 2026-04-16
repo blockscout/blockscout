@@ -39,67 +39,69 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
           %{}
       end
 
-    set_integer(
-      @holocene_timestamp_key,
-      toml_values[{"hardforks", "holocene_time"}],
-      holocene_timestamp_l2_fallback()
-    )
+    Repo.transaction(fn ->
+      set_integer(
+        @holocene_timestamp_key,
+        toml_values[{"hardforks", "holocene_time"}],
+        holocene_timestamp_l2_fallback()
+      )
 
-    set_integer(
-      @isthmus_timestamp_key,
-      toml_values[{"hardforks", "isthmus_time"}],
-      isthmus_timestamp_l2_fallback()
-    )
+      set_integer(
+        @isthmus_timestamp_key,
+        toml_values[{"hardforks", "isthmus_time"}],
+        isthmus_timestamp_l2_fallback()
+      )
 
-    set_integer(@jovian_timestamp_key, toml_values[{"hardforks", "jovian_time"}], jovian_timestamp_l2_fallback())
+      set_integer(@jovian_timestamp_key, toml_values[{"hardforks", "jovian_time"}], jovian_timestamp_l2_fallback())
 
-    set_integer(
-      @eip1559_denominator_key,
-      toml_values[{"optimism", "eip1559_denominator"}],
-      eip1559_base_fee_max_change_denominator_fallback()
-    )
+      set_integer(
+        @eip1559_denominator_key,
+        toml_values[{"optimism", "eip1559_denominator"}],
+        eip1559_base_fee_max_change_denominator_fallback()
+      )
 
-    set_integer(
-      @eip1559_elasticity_key,
-      toml_values[{"optimism", "eip1559_elasticity"}],
-      eip1559_elasticity_multiplier_fallback()
-    )
+      set_integer(
+        @eip1559_elasticity_key,
+        toml_values[{"optimism", "eip1559_elasticity"}],
+        eip1559_elasticity_multiplier_fallback()
+      )
 
-    set_address(
-      @system_config_contract_key,
-      toml_values[{"addresses", "SystemConfigProxy"}],
-      optimism_l1_system_config_contract_fallback()
-    )
+      set_address(
+        @system_config_contract_key,
+        toml_values[{"addresses", "SystemConfigProxy"}],
+        optimism_l1_system_config_contract_fallback()
+      )
 
-    set_address(
-      @portal_contract_key,
-      toml_values[{"addresses", "OptimismPortalProxy"}],
-      optimism_l1_portal_contract_fallback()
-    )
+      set_address(
+        @portal_contract_key,
+        toml_values[{"addresses", "OptimismPortalProxy"}],
+        optimism_l1_portal_contract_fallback()
+      )
 
-    set_address(
-      @batch_submitter_key,
-      toml_values[{"genesis.system_config", "batcherAddress"}],
-      optimism_l1_batch_submitter_fallback()
-    )
+      set_address(
+        @batch_submitter_key,
+        toml_values[{"genesis.system_config", "batcherAddress"}],
+        optimism_l1_batch_submitter_fallback()
+      )
 
-    set_address(
-      @batch_inbox_key,
-      toml_values[{"genesis.system_config", "batch_inbox_addr"}] || toml_values[{nil, "batch_inbox_addr"}],
-      optimism_l1_batch_inbox_fallback()
-    )
+      set_address(
+        @batch_inbox_key,
+        toml_values[{"genesis.system_config", "batch_inbox_addr"}] || toml_values[{nil, "batch_inbox_addr"}],
+        optimism_l1_batch_inbox_fallback()
+      )
 
-    set_integer(
-      @batch_start_block_key,
-      toml_values[{"genesis.l1", "number"}],
-      optimism_l1_batch_start_block_fallback()
-    )
+      set_integer(
+        @batch_start_block_key,
+        toml_values[{"genesis.l1", "number"}],
+        optimism_l1_batch_start_block_fallback()
+      )
 
-    set_integer(
-      @batch_genesis_l2_block_key,
-      toml_values[{"genesis.l2", "number"}],
-      optimism_l2_batch_genesis_block_number_fallback()
-    )
+      set_integer(
+        @batch_genesis_l2_block_key,
+        toml_values[{"genesis.l2", "number"}],
+        optimism_l2_batch_genesis_block_number_fallback()
+      )
+    end)
 
     :ok
   end
@@ -159,7 +161,7 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
     get_integer(@batch_genesis_l2_block_key, optimism_l2_batch_genesis_block_number_fallback())
   end
 
-  @spec eip1559_constants() :: {non_neg_integer(), non_neg_integer()}
+  @spec eip1559_constants() :: {non_neg_integer() | nil, non_neg_integer() | nil}
   def eip1559_constants do
     {eip1559_base_fee_max_change_denominator(), eip1559_elasticity_multiplier()}
   end
@@ -297,8 +299,8 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
   defp set_integer(key, value_from_toml, fallback_value) do
     value =
       cond do
-        is_integer(value_from_toml) -> value_from_toml
-        is_integer(fallback_value) -> fallback_value
+        is_integer(value_from_toml) and value_from_toml >= 0 -> value_from_toml
+        is_integer(fallback_value) and fallback_value >= 0 -> fallback_value
         true -> nil
       end
 
