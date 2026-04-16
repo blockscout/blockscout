@@ -350,4 +350,44 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
     assert result |> Enum.filter(&(&1.block_number == 3)) |> Enum.count() == 3
     assert result |> Enum.filter(&(&1.block_number == 2)) |> Enum.count() == 1
   end
+
+  test "fetch_by_address/2 (no suitable placeholders)" do
+    address = insert(:address)
+    address_hash_str = to_string(address.hash)
+    id_to_hash = insert(:address_id_to_address_hash, address: address)
+
+    insert(:deleted_internal_transactions_address_placeholder,
+      address_id: id_to_hash.address_id,
+      block_number: 1,
+      count_tos: 0,
+      count_froms: 1
+    )
+
+    insert(:deleted_internal_transactions_address_placeholder,
+      address_id: id_to_hash.address_id,
+      block_number: 2,
+      count_tos: 0,
+      count_froms: 2
+    )
+
+    insert(:deleted_internal_transactions_address_placeholder,
+      address_id: id_to_hash.address_id,
+      block_number: 3,
+      count_tos: 0,
+      count_froms: 3
+    )
+
+    Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth,
+      tracer: "call_tracer",
+      debug_trace_timeout: "5s",
+      block_traceable?: true
+    )
+
+    opts = [
+      direction: :to_address_hash,
+      paging_options: %PagingOptions{page_size: 4}
+    ]
+
+    assert [] = InternalTransactionOnDemand.fetch_by_address(address.hash, opts)
+  end
 end
