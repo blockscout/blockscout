@@ -1032,7 +1032,19 @@ disable_multichain_search_db_export_counters_queue_fetcher =
 optimism_l2_isthmus_timestamp =
   ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_ISTHMUS_TIMESTAMP")
 
-superchain_config_file_path = System.get_env("INDEXER_SUPERCHAIN_CONFIG_FILE_PATH")
+superchain_config_file_path =
+  case System.get_env("INDEXER_SUPERCHAIN_CONFIG_FILE_PATH") do
+    nil ->
+      nil
+
+    value ->
+      value
+      |> String.trim()
+      |> case do
+        "" -> nil
+        trimmed -> trimmed
+      end
+  end
 
 config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
@@ -1379,7 +1391,7 @@ config :indexer, Indexer.Fetcher.Optimism.Interop.MultichainExport.Supervisor,
 config :indexer, Indexer.Fetcher.Optimism,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
   optimism_l1_system_config: System.get_env("INDEXER_OPTIMISM_L1_SYSTEM_CONFIG_CONTRACT"),
-  superchain_config_file_path: System.get_env("INDEXER_SUPERCHAIN_CONFIG_FILE_PATH"),
+  superchain_config_file_path: superchain_config_file_path,
   l1_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L1_ETH_GET_LOGS_RANGE_SIZE", 250),
   l2_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L2_ETH_GET_LOGS_RANGE_SIZE", 250),
   block_duration: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_BLOCK_DURATION", 2),

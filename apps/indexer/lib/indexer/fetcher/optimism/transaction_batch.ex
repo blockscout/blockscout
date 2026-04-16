@@ -1565,7 +1565,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   # the inbox address, and the batcher (batch submitter) address.
   #
   # If SystemConfig has obsolete implementation, the values are fallen back from the corresponding
-  # env variables (INDEXER_OPTIMISM_L1_START_BLOCK, INDEXER_OPTIMISM_L1_BATCH_INBOX, INDEXER_OPTIMISM_L1_BATCH_SUBMITTER).
+  # SuperchainConfig-backed values.
   #
   # ## Parameters
   # - `contract_address`: An address of SystemConfig contract.
@@ -1588,8 +1588,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
     error_message = &"Cannot call public getters of SystemConfig. Error: #{inspect(&1)}"
 
-    env = Application.get_all_env(:indexer)[__MODULE__]
     fallback_start_block = SuperchainConfig.optimism_l1_batch_start_block()
+    fallback_inbox = SuperchainConfig.optimism_l1_batch_inbox()
     fallback_submitter = SuperchainConfig.optimism_l1_batch_submitter()
 
     {start_block, batch_inbox, batch_submitter} =
@@ -1614,8 +1614,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
                    {:nil_result, is_nil(inbox_result) or is_nil(submitter_result), inbox_result, submitter_result},
                  {:fallback_defined, true} <-
                    {:fallback_defined,
-                    Helper.address_correct?(env[:inbox]) and Helper.address_correct?(fallback_submitter)} do
-              {env[:inbox], fallback_submitter}
+                    Helper.address_correct?(fallback_inbox) and Helper.address_correct?(fallback_submitter)} do
+              {fallback_inbox, fallback_submitter}
             else
               {:nil_result, false, inbox, submitter} ->
                 "0x000000000000000000000000" <> batch_inbox = inbox
@@ -1629,7 +1629,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           {start_block, batch_inbox, batch_submitter}
 
         _ ->
-          {fallback_start_block, env[:inbox], fallback_submitter}
+          {fallback_start_block, fallback_inbox, fallback_submitter}
       end
 
     if !is_nil(start_block) and Helper.address_correct?(batch_inbox) and Helper.address_correct?(batch_submitter) do
