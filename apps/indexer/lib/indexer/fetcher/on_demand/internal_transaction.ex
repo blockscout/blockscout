@@ -455,6 +455,21 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
       |> windows([q], w: [order_by: [{^order, :block_number}]])
       |> select([q], %{
         block_number: q.block_number,
+        value:
+          fragment(
+            """
+            CASE ?
+              WHEN 'froms' THEN ?
+              WHEN 'tos'   THEN ?
+              ELSE ? + ?
+            END
+            """,
+            ^sum_mode,
+            q.count_froms,
+            q.count_tos,
+            q.count_froms,
+            q.count_tos
+          ),
         running_sum:
           fragment(
             """
@@ -478,6 +493,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
       from(r in subquery(ranked_query),
         select: %{
           block_number: r.block_number,
+          value: r.value,
           running_sum: r.running_sum,
           cutoff_block:
             fragment(
@@ -491,8 +507,8 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
 
     condition =
       case order do
-        :desc -> dynamic([c], is_nil(c.cutoff_block) or c.block_number >= c.cutoff_block)
-        :asc -> dynamic([c], is_nil(c.cutoff_block) or c.block_number <= c.cutoff_block)
+        :desc -> dynamic([c], c.value > 0 and (is_nil(c.cutoff_block) or c.block_number >= c.cutoff_block))
+        :asc -> dynamic([c], c.value > 0 and (is_nil(c.cutoff_block) or c.block_number <= c.cutoff_block))
       end
 
     final_query =

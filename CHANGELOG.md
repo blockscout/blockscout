@@ -15,6 +15,9 @@
 
 ### 🐛 Bug Fixes
 
+- Fix OnDemand.InternalTransaction fetcher ([#14242](https://github.com/blockscout/blockscout/pull/14242))
+- Guard missing ETS table in contract creator fetcher ([#14241](https://github.com/blockscout/blockscout/pull/14241))
+- Address ids usage improvements ([#14240](https://github.com/blockscout/blockscout/pull/14240))
 - Fix timeouts for API v1 tokentx endpoint ([#14185](https://github.com/blockscout/blockscout/issues/14185))
 - Remove internal transaction error field references ([#14213](https://github.com/blockscout/blockscout/pull/14213))
 - Handle partial errors in ContractCode fetch_codes ([#14211](https://github.com/blockscout/blockscout/pull/14211))
@@ -54,6 +57,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add Autoscout promo in the logs ([#14234](https://github.com/blockscout/blockscout/pull/14234))
 - Improve internal transactions migrations ([#14233](https://github.com/blockscout/blockscout/pull/14233))
 - Remove unused Explorer.Chain.Address.find_contract_addresses/2 function ([#14220](https://github.com/blockscout/blockscout/pull/14220))
 - Prevent deadlocks in IT fields removing migration ([#14215](https://github.com/blockscout/blockscout/pull/14215))
@@ -132,6 +136,20 @@
 | <span style={{color: "red"}}>Deprecated</span> `MIGRATION_REINDEX_DUPLICATED_INTERNAL_TRANSACTIONS_BATCH_SIZE` | Number of internal transactions to reindex in the batch. Implemented in [#12394](https://github.com/blockscout/blockscout/pull/12394). | `100` | v8.1.0+ |  | v11.0.0+ |
 | <span style={{color: "red"}}>Deprecated</span> `MIGRATION_REINDEX_DUPLICATED_INTERNAL_TRANSACTIONS_CONCURRENCY` | Number of parallel reindexing internal transaction batches processing. Implemented in [#12394](https://github.com/blockscout/blockscout/pull/12394).  | `1` | v8.1.0+ |  | v11.0.0+ |
 | <span style={{color: "red"}}>Deprecated</span> `MIGRATION_REINDEX_DUPLICATED_INTERNAL_TRANSACTIONS_TIMEOUT` | Timeout between reindexing internal transaction batches processing. Implemented in [#12394](https://github.com/blockscout/blockscout/pull/12394). | `0` | v8.1.0+ |  | v11.0.0+ |
+
+
+## 10.2.6
+
+### 🐛 Bug Fixes
+
+- Fix PendingTransactionsSanitizer ([#14235](https://github.com/blockscout/blockscout/issues/14235))
+
+
+## 10.2.5
+
+### 🐛 Bug Fixes
+
+- Update changed constraint name in shrink IT migration ([#14205](https://github.com/blockscout/blockscout/issues/14205))
 
 
 ## 10.2.4
