@@ -194,6 +194,7 @@ defmodule Explorer.Market.Fetcher.HistoryTest do
     Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
     on_exit(fn ->
+      if pid = GenServer.whereis(History), do: GenServer.stop(pid)
       Application.put_env(:explorer, CryptoCompare, crypto_compare_configuration)
       Application.put_env(:explorer, Source, source_configuration)
       Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
@@ -258,6 +259,7 @@ defmodule Explorer.Market.Fetcher.HistoryTest do
 
   @tag capture_log: true
   test "start_link" do
-    assert {:ok, _} = History.start_link([])
+    assert {:ok, pid} = History.start_link([])
+    on_exit(fn -> if Process.alive?(pid), do: GenServer.stop(pid) end)
   end
 end

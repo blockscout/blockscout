@@ -20,8 +20,11 @@ defmodule Explorer.MarketTest do
     test "with enabled history fetcher" do
       ConCache.delete(:market_history, :last_update)
 
-      start_supervised!(Explorer.Market.Fetcher.History)
-      start_supervised!(Explorer.Market)
+      :persistent_term.put(:market_history_fetcher_enabled, true)
+
+      on_exit(fn ->
+        :persistent_term.put(:market_history_fetcher_enabled, false)
+      end)
 
       today = Date.utc_today()
 
