@@ -20,6 +20,8 @@ defmodule Explorer.MarketTest do
     test "with enabled history fetcher" do
       ConCache.delete(:market_history, :last_update)
 
+      # Simulate the history fetcher being enabled without starting the real GenServer,
+      # which would make HTTP calls via the Mock Tesla adapter and raise Mox.UnexpectedCallError.
       :persistent_term.put(:market_history_fetcher_enabled, true)
 
       on_exit(fn ->
