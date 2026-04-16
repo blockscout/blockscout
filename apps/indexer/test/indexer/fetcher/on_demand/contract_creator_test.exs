@@ -270,7 +270,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
     contract_address_hash = to_string(contract_address.hash)
 
     EthereumJSONRPC.Mox
-    |> eth_get_transaction_count_error_mock_times(contract_address_hash, "0x2", 7)
+    |> eth_get_transaction_count_error_mock_times(contract_address_hash, "0x2", 6)
 
     pid = Process.whereis(ContractCreatorOnDemand)
 

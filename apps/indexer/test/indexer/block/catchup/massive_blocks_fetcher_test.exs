@@ -161,6 +161,12 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcherTest do
                    }
                  }
                ]}
+
+            requests, _options when is_list(requests) ->
+              {:ok,
+               Enum.map(requests, fn %{id: id} ->
+                 %{id: id, error: %{code: -32000, message: "execution reverted"}}
+               end)}
           end)
 
         EthereumJSONRPC.Geth ->
@@ -223,6 +229,12 @@ defmodule Indexer.Block.Catchup.MassiveBlocksFetcherTest do
                    }
                  }
                ]}
+
+            requests, _options when is_list(requests) ->
+              {:ok,
+               Enum.map(requests, fn %{id: id} ->
+                 %{id: id, error: %{code: -32000, message: "execution reverted"}}
+               end)}
           end)
 
         variant_name ->
