@@ -51,6 +51,14 @@ defmodule Explorer.Market.Fetcher.History do
 
   @impl GenServer
   def init(:ok) do
+    if config(:enabled) == false do
+      :ignore
+    else
+      do_init()
+    end
+  end
+
+  defp do_init do
     types_states =
       @types_to_default_state
       |> Map.new(fn {type, %{max_failed_attempts: max_failed_attempts, source_function: source_function}} ->
