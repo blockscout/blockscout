@@ -7,7 +7,10 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
 
   require Logger
 
+  import Ecto.Query
+
   alias Explorer.Application.Constants
+  alias Explorer.Repo
 
   @holocene_timestamp_key "optimism_l2_holocene_timestamp"
   @isthmus_timestamp_key "optimism_l2_isthmus_timestamp"
@@ -17,6 +20,7 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
   @system_config_contract_key "optimism_l1_system_config_contract"
   @portal_contract_key "optimism_l1_portal_contract"
   @batch_submitter_key "optimism_l1_batch_submitter"
+  @batch_inbox_key "optimism_l1_batch_inbox"
   @batch_start_block_key "optimism_l1_batch_start_block"
   @batch_genesis_l2_block_key "optimism_l2_batch_genesis_block_number"
 
@@ -79,6 +83,12 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
       optimism_l1_batch_submitter_fallback()
     )
 
+    set_address(
+      @batch_inbox_key,
+      toml_values[{"genesis.system_config", "batch_inbox_addr"}] || toml_values[{nil, "batch_inbox_addr"}],
+      optimism_l1_batch_inbox_fallback()
+    )
+
     set_integer(
       @batch_start_block_key,
       toml_values[{"genesis.l1", "number"}],
@@ -139,6 +149,11 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
     get_integer(@batch_start_block_key, optimism_l1_batch_start_block_fallback())
   end
 
+  @spec optimism_l1_batch_inbox() :: String.t() | nil
+  def optimism_l1_batch_inbox do
+    get_address(@batch_inbox_key, optimism_l1_batch_inbox_fallback())
+  end
+
   @spec optimism_l2_batch_genesis_block_number() :: non_neg_integer() | nil
   def optimism_l2_batch_genesis_block_number do
     get_integer(@batch_genesis_l2_block_key, optimism_l2_batch_genesis_block_number_fallback())
@@ -176,11 +191,12 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
 
   defp read_remote_superchain_file(url) do
     request_url = normalize_github_blob_url(url)
+    http_options = [autoredirect: true, timeout: 15_000, connect_timeout: 5_000]
 
     :inets.start()
     :ssl.start()
 
-    case :httpc.request(:get, {String.to_charlist(request_url), []}, [autoredirect: true], body_format: :binary) do
+    case :httpc.request(:get, {String.to_charlist(request_url), []}, http_options, body_format: :binary) do
       {:ok, {{_http_version, 200, _status_text}, _headers, body}} ->
         {:ok, body}
 
@@ -258,8 +274,6 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
     end
   end
 
-  defp set_integer(_key, nil, nil), do: :ok
-
   defp set_integer(key, value_from_toml, fallback_value) do
     value =
       cond do
@@ -268,12 +282,11 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
         true -> nil
       end
 
-    if is_integer(value) do
-      Constants.set_constant_value(key, Integer.to_string(value))
+    case value do
+      integer when is_integer(integer) -> Constants.set_constant_value(key, Integer.to_string(integer))
+      _ -> clear_constant_value(key)
     end
   end
-
-  defp set_address(_key, nil, nil), do: :ok
 
   defp set_address(key, value_from_toml, fallback_value) do
     value =
@@ -283,9 +296,17 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
         true -> nil
       end
 
-    if is_binary(value) do
-      Constants.set_constant_value(key, value)
+    case value do
+      address when is_binary(address) -> Constants.set_constant_value(key, address)
+      _ -> clear_constant_value(key)
     end
+  end
+
+  defp clear_constant_value(key) do
+    from(c in Constants, where: c.key == ^key)
+    |> Repo.delete_all()
+
+    :ok
   end
 
   defp get_integer(key, fallback) do
@@ -370,6 +391,10 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
 
   defp optimism_l1_batch_submitter_fallback do
     Application.get_env(:indexer, Indexer.Fetcher.Optimism.TransactionBatch, [])[:submitter]
+  end
+
+  defp optimism_l1_batch_inbox_fallback do
+    Application.get_env(:indexer, Indexer.Fetcher.Optimism.TransactionBatch, [])[:inbox]
   end
 
   defp optimism_l1_batch_start_block_fallback do
