@@ -6,11 +6,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 3,
-      next_page_params: 4,
+      paginate_list: 3,
+      paginate_list: 4,
       token_transfers_next_page_params: 3,
       paging_options: 1,
-      split_list_by_page: 1,
       current_filter: 1,
       paging_params_with_fiat_value: 1,
       fetch_scam_token_toggle: 2,
@@ -406,14 +405,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(address_transactions_sorting(params))
 
           results_plus_one = Transaction.address_to_transactions_without_rewards(address_hash, options, false)
-          {transactions, next_page} = split_list_by_page(results_plus_one)
 
-          next_page_params =
-            next_page
-            |> next_page_params(
-              transactions,
-              params,
-              &Transaction.address_transactions_next_page_params/1
+          {transactions, next_page_params} =
+            paginate_list(results_plus_one, params, options[:paging_options],
+              paging_function: &Transaction.address_transactions_next_page_params/1
             )
 
           conn
@@ -535,11 +530,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Chain.flat_1155_batch_token_transfers()
             |> Chain.paginate_1155_batch_token_transfers(paging_options)
 
-          {token_transfers, next_page} = split_list_by_page(results)
-
-          next_page_params =
-            next_page
-            |> token_transfers_next_page_params(token_transfers, params)
+          {token_transfers, next_page_params} =
+            token_transfers_next_page_params(results, params, options[:paging_options])
 
           conn
           |> put_status(200)
@@ -620,10 +612,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(@api_true)
 
           results_plus_one = address_to_internal_transactions(address_hash, full_options)
-          {internal_transactions, next_page} = split_list_by_page(results_plus_one)
 
-          next_page_params =
-            next_page |> next_page_params(internal_transactions, params)
+          {internal_transactions, next_page_params} =
+            paginate_list(results_plus_one, params, full_options[:paging_options])
 
           conn
           |> put_status(200)
@@ -696,9 +687,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
           results_plus_one = Chain.address_to_logs(address_hash, false, options)
 
-          {logs, next_page} = split_list_by_page(results_plus_one)
-
-          next_page_params = next_page |> next_page_params(logs, params)
+          {logs, next_page_params} = paginate_list(results_plus_one, params, options[:paging_options])
 
           conn
           |> put_status(200)
@@ -769,9 +758,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(@api_true)
 
           results_plus_one = Block.get_blocks_validated_by_address(full_options, address_hash)
-          {blocks, next_page} = split_list_by_page(results_plus_one)
 
-          next_page_params = next_page |> next_page_params(blocks, params)
+          {blocks, next_page_params} = paginate_list(results_plus_one, params, full_options[:paging_options])
 
           conn
           |> put_status(200)
@@ -826,10 +814,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
           results_plus_one = CoinBalance.address_to_coin_balances(address, full_options)
 
-          {coin_balances, next_page} = split_list_by_page(results_plus_one)
-
-          next_page_params =
-            next_page |> next_page_params(coin_balances, params)
+          {coin_balances, next_page_params} = paginate_list(results_plus_one, params, full_options[:paging_options])
 
           conn
           |> put_status(200)
@@ -957,14 +942,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
           TokenBalanceOnDemand.trigger_fetch(ip, address_hash)
 
-          {tokens, next_page} = split_list_by_page(results_plus_one)
+          paging_opts =
+            params
+            |> paging_options()
 
-          next_page_params =
-            next_page
-            |> next_page_params(
-              tokens,
-              params,
-              &paging_params_with_fiat_value/1
+          {tokens, next_page_params} =
+            paginate_list(results_plus_one, params, paging_opts[:paging_options],
+              paging_function: &paging_params_with_fiat_value/1
             )
 
           conn
@@ -1017,9 +1001,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {:ok, _address} ->
           options = @api_true |> Keyword.merge(paging_options(params))
           withdrawals_plus_one = address_hash |> Chain.address_hash_to_withdrawals(options)
-          {withdrawals, next_page} = split_list_by_page(withdrawals_plus_one)
 
-          next_page_params = next_page |> next_page_params(withdrawals, params)
+          {withdrawals, next_page_params} = paginate_list(withdrawals_plus_one, params, options[:paging_options])
 
           conn
           |> put_status(200)
@@ -1098,15 +1081,15 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   """
   @spec addresses_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def addresses_list(conn, params) do
-    {addresses, next_page} =
+    options =
       params
       |> paging_options()
       |> Keyword.merge(@api_true)
       |> Keyword.merge(addresses_sorting(params))
-      |> Address.list_top_addresses()
-      |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, addresses, params)
+    results_plus_one = Address.list_top_addresses(options)
+
+    {addresses, next_page_params} = paginate_list(results_plus_one, params, options[:paging_options])
 
     exchange_rate = Market.get_coin_exchange_rate()
     total_supply = Chain.total_supply()
@@ -1249,14 +1232,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
               |> fetch_scam_token_toggle(conn)
             )
 
-          {nfts, next_page} = split_list_by_page(results_plus_one)
+          nft_paging_opts = paging_options(params)
 
-          next_page_params =
-            next_page
-            |> next_page_params(
-              nfts,
-              params,
-              &Instance.nft_list_next_page_params/1
+          {nfts, next_page_params} =
+            paginate_list(results_plus_one, params, nft_paging_opts[:paging_options],
+              paging_function: &Instance.nft_list_next_page_params/1
             )
 
           conn
@@ -1323,14 +1303,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
               |> fetch_scam_token_toggle(conn)
             )
 
-          {collections, next_page} = split_list_by_page(results_plus_one)
+          collections_paging_opts = paging_options(params)
 
-          next_page_params =
-            next_page
-            |> next_page_params(
-              collections,
-              params,
-              &Instance.nft_collections_next_page_params/1
+          {collections, next_page_params} =
+            paginate_list(results_plus_one, params, collections_paging_opts[:paging_options],
+              paging_function: &Instance.nft_collections_next_page_params/1
             )
 
           conn
@@ -1384,8 +1361,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
       results_plus_one = CeloElectionReward.address_hash_to_rewards(address_hash, full_options)
 
-      {rewards, next_page} = split_list_by_page(results_plus_one)
-
       filtered_params =
         params
         |> Map.drop([
@@ -1395,17 +1370,15 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           "type"
         ])
 
-      next_page_params =
-        next_page_params(
-          next_page,
-          rewards,
-          filtered_params,
-          &%{
-            epoch_number: &1.epoch_number,
-            amount: &1.amount,
-            associated_account_address_hash: &1.associated_account_address_hash,
-            type: &1.type
-          }
+      {rewards, next_page_params} =
+        paginate_list(results_plus_one, filtered_params, full_options[:paging_options],
+          paging_function:
+            &%{
+              epoch_number: &1.epoch_number,
+              amount: &1.amount,
+              associated_account_address_hash: &1.associated_account_address_hash,
+              type: &1.type
+            }
         )
 
       conn
@@ -1533,14 +1506,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> Keyword.merge(DepositController.paging_options(params))
 
       deposit_plus_one = Deposit.from_address_hash(address_hash, full_options)
-      {deposits, next_page} = split_list_by_page(deposit_plus_one)
 
-      next_page_params =
-        next_page
-        |> next_page_params(
-          deposits,
-          params,
-          DepositController.paging_function()
+      {deposits, next_page_params} =
+        paginate_list(deposit_plus_one, params, full_options[:paging_options],
+          paging_function: DepositController.paging_function()
         )
 
       conn

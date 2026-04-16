@@ -11,7 +11,8 @@ defmodule BlockScoutWeb.Tokens.TransferController do
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
   alias Phoenix.View
 
-  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
+  import BlockScoutWeb.Chain, only: [paging_options: 1]
+  import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 3, split_list_by_page: 1]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())

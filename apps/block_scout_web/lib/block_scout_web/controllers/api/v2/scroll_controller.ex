@@ -4,9 +4,8 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 3,
-      paging_options: 1,
-      split_list_by_page: 1
+      paginate_list: 3,
+      paging_options: 1
     ]
 
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
@@ -89,14 +88,15 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
   """
   @spec batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batches(conn, params) do
-    {batches, next_page} =
+    batches_options =
       params
       |> paging_options()
       |> Keyword.merge(@api_true)
-      |> Reader.batches()
-      |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, batches, params)
+    {batches, next_page_params} =
+      batches_options
+      |> Reader.batches()
+      |> paginate_list(params, batches_options[:paging_options])
 
     conn
     |> put_status(200)
@@ -151,14 +151,15 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
   """
   @spec deposits(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def deposits(conn, params) do
-    {deposits, next_page} =
+    deposits_options =
       params
       |> paging_options()
       |> Keyword.merge(@api_true)
-      |> Reader.deposits()
-      |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, deposits, params)
+    {deposits, next_page_params} =
+      deposits_options
+      |> Reader.deposits()
+      |> paginate_list(params, deposits_options[:paging_options])
 
     conn
     |> put_status(200)
@@ -216,14 +217,15 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
   """
   @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def withdrawals(conn, params) do
-    {withdrawals, next_page} =
+    withdrawals_options =
       params
       |> paging_options()
       |> Keyword.merge(@api_true)
-      |> Reader.withdrawals()
-      |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, withdrawals, params)
+    {withdrawals, next_page_params} =
+      withdrawals_options
+      |> Reader.withdrawals()
+      |> paginate_list(params, withdrawals_options[:paging_options])
 
     conn
     |> put_status(200)

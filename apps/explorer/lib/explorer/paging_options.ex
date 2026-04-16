@@ -41,4 +41,9 @@ defmodule Explorer.PagingOptions do
   def default_paging_options do
     %__MODULE__{page_size: @page_size + 1}
   end
+
+  @spec max_page_size() :: pos_integer()
+  def max_page_size do
+    Application.get_env(:explorer, __MODULE__)[:max_page_size] || 100
+  end
 end

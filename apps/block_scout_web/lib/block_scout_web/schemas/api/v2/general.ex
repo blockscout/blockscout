@@ -1540,9 +1540,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   """
   @spec define_paging_params([String.t()]) :: [Parameter.t()]
   def define_paging_params(fields) do
-    Enum.map(fields, fn field ->
-      Map.get(@paging_params, field) || raise "Unknown paging param: #{field}"
-    end)
+    items_count_param = %Parameter{
+      name: :items_count,
+      in: :query,
+      schema: %Schema{type: :integer, minimum: 1},
+      required: false,
+      description: "Number of items per page"
+    }
+
+    paging_params =
+      Enum.map(fields, fn field ->
+        Map.get(@paging_params, field) || raise "Unknown paging param: #{field}"
+      end)
+
+    [items_count_param | paging_params]
   end
 
   @doc """

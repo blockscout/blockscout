@@ -3,9 +3,8 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 3,
-      paging_options: 1,
-      split_list_by_page: 1
+      paginate_list: 3,
+      paging_options: 1
     ]
 
   alias Explorer.Chain.Cache.Counters.Shibarium.DepositsAndWithdrawalsCount
@@ -17,14 +16,15 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
 
   @spec deposits(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def deposits(conn, params) do
-    {deposits, next_page} =
+    deposits_options =
       params
       |> paging_options()
       |> Keyword.put(:api?, true)
-      |> Reader.deposits()
-      |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, deposits, params)
+    {deposits, next_page_params} =
+      deposits_options
+      |> Reader.deposits()
+      |> paginate_list(params, deposits_options[:paging_options])
 
     conn
     |> put_status(200)
@@ -49,14 +49,15 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
 
   @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def withdrawals(conn, params) do
-    {withdrawals, next_page} =
+    withdrawals_options =
       params
       |> paging_options()
       |> Keyword.put(:api?, true)
-      |> Reader.withdrawals()
-      |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, withdrawals, params)
+    {withdrawals, next_page_params} =
+      withdrawals_options
+      |> Reader.withdrawals()
+      |> paginate_list(params, withdrawals_options[:paging_options])
 
     conn
     |> put_status(200)

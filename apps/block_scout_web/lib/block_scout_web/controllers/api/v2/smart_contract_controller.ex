@@ -8,8 +8,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   import BlockScoutWeb.Chain,
     only: [
       fetch_scam_token_toggle: 2,
-      next_page_params: 4,
-      split_list_by_page: 1
+      paginate_list: 4
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -122,7 +121,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       |> fetch_scam_token_toggle(conn)
 
     addresses_plus_one = SmartContract.verified_contract_addresses(full_options)
-    {addresses, next_page} = split_list_by_page(addresses_plus_one)
 
     # If no sorting options are provided, we sort by `id` descending only. If
     # there are some sorting options supplied, we sort by `:hash` ascending as a
@@ -136,13 +134,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
         &%{smart_contract_id: &1.smart_contract.id}
       end
 
-    next_page_params =
-      next_page
-      |> next_page_params(
-        addresses,
-        params,
-        pager
-      )
+    {addresses, next_page_params} =
+      paginate_list(addresses_plus_one, params, full_options[:paging_options], paging_function: pager)
 
     conn
     |> put_status(200)

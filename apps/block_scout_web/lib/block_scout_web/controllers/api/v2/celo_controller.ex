@@ -6,8 +6,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 4,
-      split_list_by_page: 1
+      paginate_list: 4
     ]
 
   import Explorer.PagingOptions, only: [default_paging_options: 0]
@@ -70,22 +69,14 @@ defmodule BlockScoutWeb.API.V2.CeloController do
       api?: true
     ]
 
-    {epochs, next_page} =
-      options
-      |> Epoch.all()
-      |> split_list_by_page()
-
     filtered_params =
       params
       |> Map.drop([:number])
 
-    next_page_params =
-      next_page_params(
-        next_page,
-        epochs,
-        filtered_params,
-        &%{number: &1.number}
-      )
+    {epochs, next_page_params} =
+      options
+      |> Epoch.all()
+      |> paginate_list(filtered_params, options[:paging_options], paging_function: &%{number: &1.number})
 
     conn
     |> render(:celo_epochs, %{
@@ -208,8 +199,6 @@ defmodule BlockScoutWeb.API.V2.CeloController do
           full_options
         )
 
-      {rewards, next_page} = split_list_by_page(rewards_plus_one)
-
       filtered_params =
         params
         |> Map.drop([
@@ -220,16 +209,14 @@ defmodule BlockScoutWeb.API.V2.CeloController do
           :associated_account_address_hash
         ])
 
-      next_page_params =
-        next_page_params(
-          next_page,
-          rewards,
-          filtered_params,
-          &%{
-            amount: &1.amount,
-            account_address_hash: &1.account_address_hash,
-            associated_account_address_hash: &1.associated_account_address_hash
-          }
+      {rewards, next_page_params} =
+        paginate_list(rewards_plus_one, filtered_params, full_options[:paging_options],
+          paging_function:
+            &%{
+              amount: &1.amount,
+              account_address_hash: &1.account_address_hash,
+              associated_account_address_hash: &1.associated_account_address_hash
+            }
         )
 
       conn

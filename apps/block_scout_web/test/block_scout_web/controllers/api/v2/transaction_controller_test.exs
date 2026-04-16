@@ -43,6 +43,51 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response["next_page_params"] == nil
     end
 
+    test "items_count=10 returns 10 items with next_page_params", %{conn: conn} do
+      15
+      |> insert_list(:transaction)
+      |> with_block()
+
+      request = get(conn, "/api/v2/transactions", %{"items_count" => "10"})
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 10
+      assert response["next_page_params"] != nil
+
+      request_2nd_page =
+        get(conn, "/api/v2/transactions", Map.merge(response["next_page_params"], %{"items_count" => "10"}))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response_2nd_page["items"]) == 5
+      assert response_2nd_page["next_page_params"] == nil
+    end
+
+    test "items_count=1 returns 1 item with valid cursor", %{conn: conn} do
+      3
+      |> insert_list(:transaction)
+      |> with_block()
+
+      request = get(conn, "/api/v2/transactions", %{"items_count" => "1"})
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] != nil
+      refute Map.has_key?(response["next_page_params"], "items_count")
+    end
+
+    test "absent items_count returns default 50", %{conn: conn} do
+      51
+      |> insert_list(:transaction)
+      |> with_block()
+
+      request = get(conn, "/api/v2/transactions")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+    end
+
     test "transactions with next_page_params", %{conn: conn} do
       transactions =
         51

@@ -21,9 +21,8 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
 
   import BlockScoutWeb.Chain,
     only: [
-      split_list_by_page: 1,
-      paging_options: 1,
-      next_page_params: 4
+      paginate_list: 4,
+      paging_options: 1
     ]
 
   @api_true api?: true
@@ -50,15 +49,10 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       |> Keyword.merge(validators_stability_sorting(params))
       |> Keyword.merge(stability_validators_state_options(params))
 
-    {validators, next_page} = options |> ValidatorStability.get_paginated_validators() |> split_list_by_page()
-
-    next_page_params =
-      next_page
-      |> next_page_params(
-        validators,
-        params,
-        &ValidatorStability.next_page_params/1
-      )
+    {validators, next_page_params} =
+      options
+      |> ValidatorStability.get_paginated_validators()
+      |> paginate_list(params, options[:paging_options], paging_function: &ValidatorStability.next_page_params/1)
 
     conn
     |> render(:stability_validators, %{validators: validators, next_page_params: next_page_params})
@@ -104,15 +98,10 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       |> Keyword.merge(paging_options(params))
       |> Keyword.merge(validators_blackfort_sorting(params))
 
-    {validators, next_page} = options |> ValidatorBlackfort.get_paginated_validators() |> split_list_by_page()
-
-    next_page_params =
-      next_page
-      |> next_page_params(
-        validators,
-        params,
-        &ValidatorBlackfort.next_page_params/1
-      )
+    {validators, next_page_params} =
+      options
+      |> ValidatorBlackfort.get_paginated_validators()
+      |> paginate_list(params, options[:paging_options], paging_function: &ValidatorBlackfort.next_page_params/1)
 
     conn
     |> render(:blackfort_validators, %{validators: validators, next_page_params: next_page_params})
@@ -213,18 +202,10 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       |> Keyword.merge(paging_options: paging_options)
       |> Keyword.merge(sorting_options: sorting_options)
 
-    {validators, next_page} =
+    {validators, next_page_params} =
       options
       |> ValidatorZilliqa.paginated_active_stakers()
-      |> split_list_by_page()
-
-    next_page_params =
-      next_page
-      |> next_page_params(
-        validators,
-        params,
-        &ValidatorZilliqa.next_page_params/1
-      )
+      |> paginate_list(params, options[:paging_options], paging_function: &ValidatorZilliqa.next_page_params/1)
 
     conn
     |> render(:zilliqa_validators, %{

@@ -3,9 +3,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 4,
+      paginate_list: 4,
       paging_options: 1,
-      split_list_by_page: 1,
       parse_block_hash_or_number_param: 1
     ]
 
@@ -32,17 +31,11 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
       params
       |> paging_options()
 
-    {messages, next_page} =
+    {messages, next_page_params} =
       direction
       |> MessagesReader.messages(options)
-      |> split_list_by_page()
-
-    next_page_params =
-      next_page_params(
-        next_page,
-        messages,
-        params,
-        fn %Message{message_id: message_id} -> %{"id" => message_id} end
+      |> paginate_list(params, options[:paging_options],
+        paging_function: fn %Message{message_id: message_id} -> %{"id" => message_id} end
       )
 
     conn
@@ -247,20 +240,17 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   """
   @spec batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batches(conn, params) do
-    {batches, next_page} =
+    batches_options =
       params
       |> paging_options()
       |> maybe_add_batch_numbers(params)
       |> Keyword.put(:necessity_by_association, @batch_necessity_by_association)
-      |> SettlementReader.batches()
-      |> split_list_by_page()
 
-    next_page_params =
-      next_page_params(
-        next_page,
-        batches,
-        params,
-        fn %L1Batch{number: number} -> %{"number" => number} end
+    {batches, next_page_params} =
+      batches_options
+      |> SettlementReader.batches()
+      |> paginate_list(params, batches_options[:paging_options],
+        paging_function: fn %L1Batch{number: number} -> %{"number" => number} end
       )
 
     conn

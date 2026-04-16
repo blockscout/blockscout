@@ -1,8 +1,7 @@
 defmodule BlockScoutWeb.VerifiedContractsController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain,
-    only: [next_page_params: 4, split_list_by_page: 1]
+  import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 4, split_list_by_page: 1]
 
   import BlockScoutWeb.PagingHelper, only: [current_filter: 1, search_query: 1]
 

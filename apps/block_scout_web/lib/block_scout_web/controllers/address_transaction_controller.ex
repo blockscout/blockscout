@@ -7,8 +7,8 @@ defmodule BlockScoutWeb.AddressTransactionController do
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
-  import BlockScoutWeb.Chain,
-    only: [current_filter: 1, paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1]
+  import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 3, split_list_by_page: 1]
 
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]

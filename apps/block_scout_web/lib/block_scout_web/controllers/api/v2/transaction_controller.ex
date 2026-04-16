@@ -10,13 +10,12 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 3,
-      next_page_params: 4,
       next_page_params_for_state_changes: 3,
+      paginate_list: 3,
+      paginate_list: 4,
       put_key_value_to_paging_options: 3,
       token_transfers_next_page_params: 3,
       paging_options: 1,
-      split_list_by_page: 1,
       fetch_scam_token_toggle: 2,
       transaction_to_internal_transactions: 2
     ]
@@ -250,9 +249,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
     transactions_plus_one = Chain.recent_transactions(full_options, filter_options)
 
-    {transactions, next_page} = split_list_by_page(transactions_plus_one)
-
-    next_page_params = next_page |> next_page_params(transactions, params)
+    {transactions, next_page_params} = paginate_list(transactions_plus_one, params, full_options[:paging_options])
 
     conn
     |> put_status(200)
@@ -491,8 +488,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         |> Repo.replica().all()
       end
 
-    {transactions, next_page} = split_list_by_page(transactions_plus_one)
-    next_page_params = next_page |> next_page_params(transactions, params)
+    {transactions, next_page_params} =
+      paginate_list(transactions_plus_one, params, paging_options(params)[:paging_options])
 
     conn
     |> put_status(200)
@@ -535,8 +532,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       |> Enum.map(fn transaction -> transaction.transaction_hash end)
       |> Chain.hashes_to_transactions(full_options)
 
-    {transactions, next_page} = split_list_by_page(transactions_plus_one)
-    next_page_params = next_page |> next_page_params(transactions, params)
+    {transactions, next_page_params} = paginate_list(transactions_plus_one, params, full_options[:paging_options])
 
     conn
     |> put_status(200)
@@ -577,11 +573,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       transactions_plus_one = Chain.execution_node_to_transactions(execution_node_hash, full_options)
 
-      {transactions, next_page} = split_list_by_page(transactions_plus_one)
-
-      next_page_params =
-        next_page
-        |> next_page_params(transactions, params)
+      {transactions, next_page_params} = paginate_list(transactions_plus_one, params, full_options[:paging_options])
 
       conn
       |> put_status(200)
@@ -684,11 +676,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         |> Chain.flat_1155_batch_token_transfers()
         |> Chain.paginate_1155_batch_token_transfers(paging_options)
 
-      {token_transfers, next_page} = split_list_by_page(results)
-
-      next_page_params =
-        next_page
-        |> token_transfers_next_page_params(token_transfers, params)
+      {token_transfers, next_page_params} =
+        token_transfers_next_page_params(results, params, full_options[:paging_options])
 
       conn
       |> put_status(200)
@@ -738,11 +727,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       internal_transactions_plus_one = transaction_to_internal_transactions(transaction, full_options)
 
-      {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
-
-      next_page_params =
-        next_page
-        |> next_page_params(internal_transactions, params)
+      {internal_transactions, next_page_params} =
+        paginate_list(internal_transactions_plus_one, params, full_options[:paging_options])
 
       conn
       |> put_status(200)
@@ -792,11 +778,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       logs_plus_one = Chain.transaction_to_logs(transaction_hash, full_options)
 
-      {logs, next_page} = split_list_by_page(logs_plus_one)
-
-      next_page_params =
-        next_page
-        |> next_page_params(logs, params)
+      {logs, next_page_params} = paginate_list(logs_plus_one, params, full_options[:paging_options])
 
       conn
       |> put_status(200)
@@ -879,20 +861,18 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   @spec state_changes(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def state_changes(conn, %{transaction_hash_param: transaction_hash_string} = params) do
     with {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params) do
+      paging_opts = paging_options(params)
+
       state_changes_plus_next_page =
         transaction
         |> TransactionStateHelper.state_changes(
-          params
-          |> paging_options()
+          paging_opts
           |> Keyword.merge(@api_true)
           |> Keyword.put(:ip, AccessHelper.conn_to_ip_string(conn))
         )
 
-      {state_changes, next_page} = split_list_by_page(state_changes_plus_next_page)
-
-      next_page_params =
-        next_page
-        |> next_page_params_for_state_changes(state_changes, params)
+      {state_changes, next_page_params} =
+        next_page_params_for_state_changes(state_changes_plus_next_page, params, paging_opts[:paging_options])
 
       conn
       |> put_status(200)
@@ -934,9 +914,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       {watchlist_names, transactions_plus_one} =
         WatchlistAddress.fetch_watchlist_transactions(watchlist_id, full_options)
 
-      {transactions, next_page} = split_list_by_page(transactions_plus_one)
-
-      next_page_params = next_page |> next_page_params(transactions, params)
+      {transactions, next_page_params} = paginate_list(transactions_plus_one, params, full_options[:paging_options])
 
       conn
       |> put_status(200)
@@ -1161,14 +1139,10 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         |> Keyword.merge(DepositController.paging_options(params))
 
       deposit_plus_one = BeaconDeposit.from_transaction_hash(transaction_hash, full_options)
-      {deposits, next_page} = split_list_by_page(deposit_plus_one)
 
-      next_page_params =
-        next_page
-        |> next_page_params(
-          deposits,
-          params,
-          DepositController.paging_function()
+      {deposits, next_page_params} =
+        paginate_list(deposit_plus_one, params, full_options[:paging_options],
+          paging_function: DepositController.paging_function()
         )
 
       conn

@@ -4,8 +4,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 4,
-      split_list_by_page: 1
+      paginate_list: 4
     ]
 
   import BlockScoutWeb.PagingHelper, only: [mud_records_sorting: 1]
@@ -49,11 +48,16 @@ defmodule BlockScoutWeb.API.V2.MudController do
   """
   @spec worlds(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def worlds(conn, params) do
-    {worlds, next_page} =
-      params
-      |> mud_paging_options([:world], [Hash.Address])
+    options = mud_paging_options(params, [:world], [Hash.Address])
+
+    {worlds, next_page_params} =
+      options
       |> Mud.worlds_list()
-      |> split_list_by_page()
+      |> paginate_list(conn.query_params, options[:paging_options],
+        paging_function: fn item ->
+          %{"world" => item}
+        end
+      )
 
     world_addresses =
       worlds
@@ -66,11 +70,6 @@ defmodule BlockScoutWeb.API.V2.MudController do
         api?: true
       )
       |> Enum.into(%{}, &{&1.hash, &1})
-
-    next_page_params =
-      next_page_params(next_page, worlds, conn.query_params, fn item ->
-        %{"world" => item}
-      end)
 
     conn
     |> put_status(200)
@@ -132,15 +131,14 @@ defmodule BlockScoutWeb.API.V2.MudController do
     with {:format, {:ok, world}} <- {:format, Hash.Address.cast(world_param)} do
       options = params |> mud_paging_options([:table_id], [Hash.Full]) |> Keyword.merge(mud_tables_filter(params))
 
-      {tables, next_page} =
+      {tables, next_page_params} =
         world
         |> Mud.world_tables(options)
-        |> split_list_by_page()
-
-      next_page_params =
-        next_page_params(next_page, tables, conn.query_params, fn item ->
-          %{"table_id" => item |> elem(0)}
-        end)
+        |> paginate_list(conn.query_params, options[:paging_options],
+          paging_function: fn item ->
+            %{"table_id" => item |> elem(0)}
+          end
+        )
 
       conn
       |> put_status(200)
@@ -268,15 +266,17 @@ defmodule BlockScoutWeb.API.V2.MudController do
         |> Keyword.merge(mud_records_filter(params, schema))
         |> Keyword.merge(mud_records_sorting(params))
 
-      {records, next_page} = world |> Mud.world_table_records(table_id, options) |> split_list_by_page()
+      {records, next_page_params} =
+        world
+        |> Mud.world_table_records(table_id, options)
+        |> paginate_list(conn.query_params, options[:paging_options],
+          paging_function: fn item ->
+            keys = [item.key_bytes, item.key0, item.key1] |> Enum.filter(&(!is_nil(&1)))
+            ["key_bytes", "key0", "key1"] |> Enum.zip(keys) |> Enum.into(%{})
+          end
+        )
 
       blocks = Mud.preload_records_timestamps(records, @api_true)
-
-      next_page_params =
-        next_page_params(next_page, records, conn.query_params, fn item ->
-          keys = [item.key_bytes, item.key0, item.key1] |> Enum.filter(&(!is_nil(&1)))
-          ["key_bytes", "key0", "key1"] |> Enum.zip(keys) |> Enum.into(%{})
-        end)
 
       conn
       |> put_status(200)

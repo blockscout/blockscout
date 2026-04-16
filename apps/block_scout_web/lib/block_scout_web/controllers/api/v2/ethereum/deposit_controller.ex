@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  import BlockScoutWeb.Chain, only: [next_page_params: 4, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [paginate_list: 4]
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
@@ -63,11 +63,9 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
       |> Keyword.merge(paging_options(params))
 
     deposit_plus_one = Deposit.all(full_options)
-    {deposits, next_page} = split_list_by_page(deposit_plus_one)
 
-    next_page_params =
-      next_page
-      |> next_page_params(deposits, params, paging_function())
+    {deposits, next_page_params} =
+      paginate_list(deposit_plus_one, params, full_options[:paging_options], paging_function: paging_function())
 
     conn
     |> put_status(200)
