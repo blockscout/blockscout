@@ -119,12 +119,12 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
     get_integer(@jovian_timestamp_key, jovian_timestamp_l2_fallback())
   end
 
-  @spec eip1559_base_fee_max_change_denominator() :: non_neg_integer()
+  @spec eip1559_base_fee_max_change_denominator() :: non_neg_integer() | nil
   def eip1559_base_fee_max_change_denominator do
     get_integer(@eip1559_denominator_key, eip1559_base_fee_max_change_denominator_fallback())
   end
 
-  @spec eip1559_elasticity_multiplier() :: non_neg_integer()
+  @spec eip1559_elasticity_multiplier() :: non_neg_integer() | nil
   def eip1559_elasticity_multiplier do
     get_integer(@eip1559_elasticity_key, eip1559_elasticity_multiplier_fallback())
   end
