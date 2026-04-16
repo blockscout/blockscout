@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfigUpdater do
 
   require Logger
 
-  alias Indexer.Fetcher.Optimism.SuperchainConfig
+  alias Explorer.Chain.Optimism.SuperchainConfig
 
   @max_attempts 3
   @refresh_timeout_ms 20_000

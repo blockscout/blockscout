@@ -1,4 +1,4 @@
-defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
+defmodule Explorer.Chain.Optimism.SuperchainConfig do
   @moduledoc """
   Loads selected Optimism chain parameters from a Superchain TOML file,
   persists them to the `constants` table, and serves DB-backed values
@@ -183,6 +183,7 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
     |> blank_to_nil()
   end
 
+  # sobelow_skip ["Traversal.FileModule"]
   defp read_superchain_file(file_path) do
     if String.starts_with?(file_path, ["http://", "https://"]) do
       read_remote_superchain_file(file_path)
