@@ -15,7 +15,7 @@ jobs:
           ALLOWED_TYPES="feat|fix|chore|perf|refactor|docs|doc"
           # Pattern: type(optional-scope): subject  OR  type: subject
           PATTERN="^($ALLOWED_TYPES)(\([^)]+\))?: .+"
-          if echo "$PR_TITLE" | grep -qP "$PATTERN"; then
+          if echo "$PR_TITLE" | grep -qE "$PATTERN"; then
             echo "PR title is valid: $PR_TITLE"
           else
             echo "ERROR: PR title does not follow Conventional Commits format."
