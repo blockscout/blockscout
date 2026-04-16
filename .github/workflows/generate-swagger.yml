@@ -161,13 +161,17 @@ jobs:
     name: Push all OpenAPI specs
     steps:
       - name: Validate required secrets
+        id: validate
         run: |
           if [ -z "${{ secrets.API_SPECS_PAT }}" ]; then
-            echo "Error: API_SPECS_PAT secret is not set"
-            exit 1
+            echo "::warning::API_SPECS_PAT secret is not set, skipping push to specs repository"
+            echo "has_pat=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_pat=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Checkout specs repository
+        if: steps.validate.outputs.has_pat == 'true'
         uses: actions/checkout@v5
         with:
           repository: ${{ vars.API_SPECS_REPOSITORY }}
@@ -175,6 +179,7 @@ jobs:
           path: api-specs
 
       - name: Download all swagger specs
+        if: steps.validate.outputs.has_pat == 'true'
         uses: actions/download-artifact@v5
         with:
           pattern: openapi-spec-*
@@ -182,6 +187,7 @@ jobs:
           path: temp-specs
 
       - name: Merge all OpenAPI specs into all-in-one spec
+        if: steps.validate.outputs.has_pat == 'true'
         run: |
           npm install js-yaml
           cat > merge-specs.js << 'SCRIPT_EOF'
@@ -247,6 +253,7 @@ jobs:
           node merge-specs.js
 
       - name: Create specs directory structure
+        if: steps.validate.outputs.has_pat == 'true'
         run: |
           VERSION=${{ github.event_name == 'release' && env.RELEASE_VERSION || 'master' }}
 
@@ -269,6 +276,7 @@ jobs:
 
 
       - name: Commit and push changes
+        if: steps.validate.outputs.has_pat == 'true'
         working-directory: api-specs
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
