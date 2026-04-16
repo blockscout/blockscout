@@ -2,9 +2,9 @@ defmodule BlockScoutWeb.Specs.PublicLegacyTagTest do
   use ExUnit.Case, async: true
 
   @legacy_paths [
-    "/v2/legacy/logs/get-logs",
-    "/v2/legacy/block/get-block-number-by-time",
-    "/v2/legacy/block/eth-block-number"
+    "/legacy/logs/get-logs",
+    "/legacy/block/get-block-number-by-time",
+    "/legacy/block/eth-block-number"
   ]
 
   setup_all do
