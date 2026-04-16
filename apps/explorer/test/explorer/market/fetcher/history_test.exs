@@ -194,7 +194,8 @@ defmodule Explorer.Market.Fetcher.HistoryTest do
     Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
     on_exit(fn ->
-      if pid = GenServer.whereis(History), do: GenServer.stop(pid)
+      pid = GenServer.whereis(History)
+      if pid, do: GenServer.stop(pid)
       Application.put_env(:explorer, CryptoCompare, crypto_compare_configuration)
       Application.put_env(:explorer, Source, source_configuration)
       Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)

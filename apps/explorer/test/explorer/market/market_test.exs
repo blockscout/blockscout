@@ -23,7 +23,7 @@ defmodule Explorer.MarketTest do
       :persistent_term.put(:market_history_fetcher_enabled, true)
 
       on_exit(fn ->
-        :persistent_term.put(:market_history_fetcher_enabled, false)
+        :persistent_term.erase(:market_history_fetcher_enabled)
       end)
 
       today = Date.utc_today()
