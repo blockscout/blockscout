@@ -1033,7 +1033,7 @@ optimism_l2_isthmus_timestamp =
   ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_ISTHMUS_TIMESTAMP")
 
 superchain_config_file_path =
-  case System.get_env("INDEXER_SUPERCHAIN_CONFIG_FILE_PATH") do
+  case System.get_env("INDEXER_OPTIMISM_SUPERCHAIN_CONFIG_FILE_PATH") do
     nil ->
       nil
 
@@ -1389,9 +1389,9 @@ config :indexer, Indexer.Fetcher.Optimism.Interop.MultichainExport.Supervisor,
       ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_OPTIMISM_INTEROP_MULTICHAIN_EXPORT", "true")
 
 config :indexer, Indexer.Fetcher.Optimism,
+  superchain_config_file_path: superchain_config_file_path,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
   optimism_l1_system_config: System.get_env("INDEXER_OPTIMISM_L1_SYSTEM_CONFIG_CONTRACT"),
-  superchain_config_file_path: superchain_config_file_path,
   l1_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L1_ETH_GET_LOGS_RANGE_SIZE", 250),
   l2_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L2_ETH_GET_LOGS_RANGE_SIZE", 250),
   block_duration: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_BLOCK_DURATION", 2),

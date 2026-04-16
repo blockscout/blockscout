@@ -35,9 +35,9 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob}
+  alias Explorer.Chain.Optimism.SuperchainConfig
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Indexer.Fetcher.Optimism
-  alias Indexer.Fetcher.Optimism.SuperchainConfig
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
   alias Indexer.Prometheus.Instrumenter

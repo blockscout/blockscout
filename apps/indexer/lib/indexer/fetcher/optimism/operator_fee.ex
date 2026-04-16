@@ -28,10 +28,10 @@ defmodule Indexer.Fetcher.Optimism.OperatorFee do
   alias EthereumJSONRPC.Receipts.ByTransactionHash
   alias Explorer.Application.Constants
   alias Explorer.Chain.{Hash, Transaction}
+  alias Explorer.Chain.Optimism.SuperchainConfig
   alias Explorer.Repo
 
   alias Indexer.{BufferedTask, Helper}
-  alias Indexer.Fetcher.Optimism.SuperchainConfig
 
   @behaviour BufferedTask
 

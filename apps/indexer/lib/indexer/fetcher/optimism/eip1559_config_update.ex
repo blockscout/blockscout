@@ -42,8 +42,8 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Optimism.EIP1559ConfigUpdate
+  alias Explorer.Chain.Optimism.SuperchainConfig
   alias Indexer.Fetcher.Optimism
-  alias Indexer.Fetcher.Optimism.SuperchainConfig
   alias Indexer.Helper
 
   @fetcher_name :optimism_eip1559_config_updates

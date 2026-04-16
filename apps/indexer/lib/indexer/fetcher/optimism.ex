@@ -18,12 +18,10 @@ defmodule Indexer.Fetcher.Optimism do
 
   alias EthereumJSONRPC.Block.{ByHash, ByNumber}
   alias EthereumJSONRPC.{Blocks, Contract}
-  alias Explorer.Application.Constants
   alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
-  alias Explorer.Chain.Optimism.Withdrawal
+  alias Explorer.Chain.Optimism.SuperchainConfig
   alias Explorer.Repo
-  alias Indexer.Fetcher.Optimism.SuperchainConfig
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
   alias Indexer.RollupReorgMonitorQueue
@@ -248,11 +246,6 @@ defmodule Indexer.Fetcher.Optimism do
             |> Enum.at(1)
             |> Map.get(:result, fallback_start_block)
             |> quantity_to_integer()
-
-          if not is_nil(optimism_portal) do
-            # we save the OptimismPortal contract address to use it in other modules (e.g. by `BlockScoutWeb.API.V2.OptimismView`)
-            Constants.set_constant_value(Withdrawal.portal_contract_address_constant(), optimism_portal)
-          end
 
           {optimism_portal, start_block}
 
