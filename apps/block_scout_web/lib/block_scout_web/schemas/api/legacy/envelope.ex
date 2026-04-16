@@ -25,6 +25,7 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.Envelope do
         },
         result: %Schema{
           description: "Endpoint-specific payload on success; `null` on error.",
+          nullable: true,
           allOf: [result_schema]
         }
       },
