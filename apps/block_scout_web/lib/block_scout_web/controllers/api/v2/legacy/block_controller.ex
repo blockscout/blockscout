@@ -12,12 +12,11 @@ defmodule BlockScoutWeb.API.V2.Legacy.BlockController do
   tags(["legacy"])
 
   operation :get_block_number_by_time,
-    summary: "Etherscan-style block number by timestamp (legacy ES-compatible surface)",
+    summary: "Get block number by time stamp",
     description: """
-    Legacy bridge for `/api?module=block&action=getblocknobytime`. Response body is
-    byte-identical to the v1 endpoint (RPCView envelope: status / message / result).
+    Returns the block number created closest to a provided timestamp.
 
-    Required at runtime (enforced by the v1 controller, not by OpenAPI):
+    Required:
     - `timestamp`
     - `closest`
     """,
@@ -27,21 +26,17 @@ defmodule BlockScoutWeb.API.V2.Legacy.BlockController do
           name: :timestamp,
           in: :query,
           schema: General.IntegerString,
-          description: "Unix timestamp (seconds). Required at runtime."
+          description: "Unix timestamp in seconds."
         },
         %Parameter{
           name: :closest,
           in: :query,
           schema: %Schema{type: :string, enum: ["before", "after"]},
-          description:
-            "Whether to return the block before or after the timestamp. " <>
-              "Required at runtime."
+          description: "Whether to return the block before or after the timestamp."
         }
       ] ++ General.base_params(),
     responses: [
-      ok:
-        {"ES-compatible RPC envelope (block number)", "application/json",
-         Envelope.rpc_envelope(GetBlockNumberByTimeResult)}
+      ok: {"Block number", "application/json", Envelope.rpc_envelope(GetBlockNumberByTimeResult)}
     ]
 
   @doc """
@@ -51,10 +46,9 @@ defmodule BlockScoutWeb.API.V2.Legacy.BlockController do
   def get_block_number_by_time(conn, params), do: V1BlockController.getblocknobytime(conn, params)
 
   operation :eth_block_number,
-    summary: "JSON-RPC eth_blockNumber (legacy ES-compatible surface)",
+    summary: "Get the latest block number",
     description: """
-    Legacy bridge for `/api?module=block&action=eth_block_number`. Response body is
-    byte-identical to the v1 endpoint (JSON-RPC 2.0 envelope: jsonrpc / result / id).
+    Returns the latest block number as a hex-encoded string in a JSON-RPC 2.0 response.
     """,
     parameters:
       [
@@ -68,9 +62,7 @@ defmodule BlockScoutWeb.API.V2.Legacy.BlockController do
         }
       ] ++ General.base_params(),
     responses: [
-      ok:
-        {"eth_rpc JSON-RPC envelope (block number)", "application/json",
-         Envelope.eth_rpc_envelope(EthBlockNumberResult)}
+      ok: {"Latest block number", "application/json", Envelope.eth_rpc_envelope(EthBlockNumberResult)}
     ]
 
   @doc """

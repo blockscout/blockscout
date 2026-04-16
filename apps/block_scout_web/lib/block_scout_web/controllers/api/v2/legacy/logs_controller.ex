@@ -13,15 +13,15 @@ defmodule BlockScoutWeb.API.V2.Legacy.LogsController do
   @topic_opr_schema %Schema{type: :string, enum: ["and", "or"]}
 
   operation :get_logs,
-    summary: "Etherscan-style event-log filter (legacy ES-compatible surface)",
+    summary: "Get Event Logs by Address and/or Topic(s)",
     description: """
-    Legacy bridge for `/api?module=logs&action=getlogs`. Response body is
-    byte-identical to the v1 endpoint (RPCView envelope: status / message / result).
+    Event logs for an address and topic. Use and/or with the topic operator to specify
+    topic retrieval options when adding multiple topics. Up to a maximum of 1,000 event logs.
 
-    Required at runtime (enforced by the v1 controller, not by OpenAPI):
-    - `fromBlock` AND `toBlock`
-    - at least one of `address`, `topic0`, `topic1`, `topic2`, `topic3`
-    - if any pair of topic params is set, the corresponding `topicA_B_opr` is required.
+    Required:
+    - `fromBlock` and `toBlock`
+    - At least one of `address`, `topic0`, `topic1`, `topic2`, `topic3`
+    - If any pair of topic parameters is set, the corresponding `topicA_B_opr` is required.
     """,
     parameters:
       [
@@ -51,8 +51,7 @@ defmodule BlockScoutWeb.API.V2.Legacy.LogsController do
       ] ++ General.base_params(),
     responses: [
       ok:
-        {"ES-compatible RPC envelope (logs)", "application/json",
-         Envelope.rpc_envelope(%Schema{type: :array, items: LogItem, nullable: true})}
+        {"Event logs", "application/json", Envelope.rpc_envelope(%Schema{type: :array, items: LogItem, nullable: true})}
     ]
 
   @doc """

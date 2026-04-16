@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Legacy.Envelope do
   alias OpenApiSpex.Schema
 
   @doc """
-  Returns an OpenAPI schema for the Etherscan-style RPC envelope:
+  Returns an OpenAPI schema for the RPC response envelope:
   `{"status": "0"|"1"|"2", "message": "...", "result": <result_schema>}`.
   """
   @spec rpc_envelope(Schema.t()) :: Schema.t()
@@ -15,9 +15,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Legacy.Envelope do
         status: %Schema{
           type: :string,
           enum: ["0", "1", "2"],
-          description:
-            "Etherscan status sentinel: `1` = OK, `0` = error, `2` = pending " <>
-              "(used by other legacy endpoints)."
+          description: "`1` = OK, `0` = error, `2` = pending."
         },
         message: %Schema{
           type: :string,

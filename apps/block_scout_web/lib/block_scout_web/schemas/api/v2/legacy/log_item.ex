@@ -30,9 +30,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Legacy.LogItem do
       blockNumber: %Schema{
         type: :string,
         pattern: ~r/^0x[0-9a-fA-F]+$/,
-        description:
-          "Hex-encoded block number. Note: hex-encoded in this endpoint, unlike " <>
-            "`GetBlockNumberByTimeResult.blockNumber` which is a decimal string — an Etherscan quirk."
+        description: "Hex-encoded block number."
       },
       timeStamp: %Schema{
         type: :string,
