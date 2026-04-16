@@ -1,5 +1,5 @@
 defmodule Explorer.SmartContract.Solidity.VerifierTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   use Explorer.DataCase
 
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]

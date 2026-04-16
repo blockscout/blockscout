@@ -1,5 +1,5 @@
 defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
@@ -15,17 +15,21 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
                     |> File.read!()
                     |> Jason.decode!()
 
+    setup do
+      configuration = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+      Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, enabled: false)
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, configuration)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      end)
+
+      :ok
+    end
+
     describe "run/2" do
       setup do
-        configuration = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
-        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, enabled: false)
-        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
-
-        on_exit(fn ->
-          Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, configuration)
-          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-        end)
-
         {:ok,
          contract_code_info: Factory.contract_code_info(),
          contract_code_info_modern_compiler: Factory.contract_code_info_modern_compiler()}
