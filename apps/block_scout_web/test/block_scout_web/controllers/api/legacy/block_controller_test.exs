@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.API.V2.Legacy.BlockControllerTest do
+defmodule BlockScoutWeb.API.Legacy.BlockControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias BlockScoutWeb.Chain

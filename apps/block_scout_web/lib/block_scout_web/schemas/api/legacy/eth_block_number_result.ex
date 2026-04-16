@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Schemas.API.V2.Legacy.EthBlockNumberResult do
+defmodule BlockScoutWeb.Schemas.API.Legacy.EthBlockNumberResult do
   @moduledoc false
   require OpenApiSpex
 

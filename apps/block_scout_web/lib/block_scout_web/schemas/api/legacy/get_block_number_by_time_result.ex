@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Schemas.API.V2.Legacy.GetBlockNumberByTimeResult do
+defmodule BlockScoutWeb.Schemas.API.Legacy.GetBlockNumberByTimeResult do
   @moduledoc false
   require OpenApiSpex
   alias BlockScoutWeb.Schemas.API.V2.General

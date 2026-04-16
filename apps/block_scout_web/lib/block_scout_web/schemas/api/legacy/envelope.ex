@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Schemas.API.V2.Legacy.Envelope do
+defmodule BlockScoutWeb.Schemas.API.Legacy.Envelope do
   @moduledoc false
 
   alias OpenApiSpex.Schema

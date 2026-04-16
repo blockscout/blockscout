@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.API.V2.Legacy.LogsControllerTest do
+defmodule BlockScoutWeb.API.Legacy.LogsControllerTest do
   use BlockScoutWeb.ConnCase
 
   alias Explorer.Chain.Transaction

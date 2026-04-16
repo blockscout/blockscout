@@ -111,7 +111,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(CheckFeature, feature_check: &mud_enabled?/0)
   end
 
-  alias BlockScoutWeb.API.V2
+  alias BlockScoutWeb.API.{V2, Legacy}
 
   forward("/account", AccountRouter)
 
@@ -482,16 +482,17 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/csv", V2.AdvancedFilterController, :list_csv)
       get("/methods", V2.AdvancedFilterController, :list_methods)
     end
+  end
 
-    scope "/legacy" do
-      scope "/logs" do
-        get("/get-logs", V2.Legacy.LogsController, :get_logs)
-      end
+  scope "/legacy" do
+    pipe_through(:api_v2)
+    scope "/logs" do
+      get("/get-logs", Legacy.LogsController, :get_logs)
+    end
 
-      scope "/block" do
-        get("/get-block-number-by-time", V2.Legacy.BlockController, :get_block_number_by_time)
-        get("/eth-block-number", V2.Legacy.BlockController, :eth_block_number)
-      end
+    scope "/block" do
+      get("/get-block-number-by-time", Legacy.BlockController, :get_block_number_by_time)
+      get("/eth-block-number", Legacy.BlockController, :eth_block_number)
     end
   end
 

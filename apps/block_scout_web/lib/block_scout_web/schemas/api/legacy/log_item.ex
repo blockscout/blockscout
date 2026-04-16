@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.Schemas.API.V2.Legacy.LogItem do
+defmodule BlockScoutWeb.Schemas.API.Legacy.LogItem do
   @moduledoc false
   require OpenApiSpex
   alias BlockScoutWeb.Schemas.API.V2.General

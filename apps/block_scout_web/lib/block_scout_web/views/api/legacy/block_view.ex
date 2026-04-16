@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.API.V2.Legacy.BlockView do
+defmodule BlockScoutWeb.API.Legacy.BlockView do
   @moduledoc false
 
   alias BlockScoutWeb.API.RPC.BlockView, as: V1BlockView

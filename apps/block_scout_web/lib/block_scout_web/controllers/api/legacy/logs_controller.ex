@@ -1,10 +1,10 @@
-defmodule BlockScoutWeb.API.V2.Legacy.LogsController do
+defmodule BlockScoutWeb.API.Legacy.LogsController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
   alias BlockScoutWeb.API.RPC.LogsController, as: V1LogsController
   alias BlockScoutWeb.Schemas.API.V2.General
-  alias BlockScoutWeb.Schemas.API.V2.Legacy.{Envelope, LogItem}
+  alias BlockScoutWeb.Schemas.API.Legacy.{Envelope, LogItem}
   alias OpenApiSpex.{Parameter, Schema}
 
   tags(["legacy"])

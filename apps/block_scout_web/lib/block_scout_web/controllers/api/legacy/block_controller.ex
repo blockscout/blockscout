@@ -1,4 +1,4 @@
-defmodule BlockScoutWeb.API.V2.Legacy.BlockController do
+defmodule BlockScoutWeb.API.Legacy.BlockController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.Legacy.BlockController do
   # (BlockScoutWeb.API.V2.Legacy.BlockController)
   alias BlockScoutWeb.API.RPC.BlockController, as: V1BlockController
   alias BlockScoutWeb.Schemas.API.V2.General
-  alias BlockScoutWeb.Schemas.API.V2.Legacy.{Envelope, EthBlockNumberResult, GetBlockNumberByTimeResult}
+  alias BlockScoutWeb.Schemas.API.Legacy.{Envelope, EthBlockNumberResult, GetBlockNumberByTimeResult}
   alias OpenApiSpex.{Parameter, Schema}
 
   tags(["legacy"])
