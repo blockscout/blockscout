@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
 
   plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
 
-  tags(["smart_contracts"])
+  tags(["smart-contracts"])
 
   operation :smart_contract,
     summary: "Retrieve detailed information about a verified smart contract",
