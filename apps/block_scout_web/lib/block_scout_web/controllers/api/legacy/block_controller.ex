@@ -5,8 +5,8 @@ defmodule BlockScoutWeb.API.Legacy.BlockController do
   # aliased with as: to avoid shadowing this module's own name
   # (BlockScoutWeb.API.V2.Legacy.BlockController)
   alias BlockScoutWeb.API.RPC.BlockController, as: V1BlockController
-  alias BlockScoutWeb.Schemas.API.V2.General
   alias BlockScoutWeb.Schemas.API.Legacy.{Envelope, EthBlockNumberResult, GetBlockNumberByTimeResult}
+  alias BlockScoutWeb.Schemas.API.V2.General
   alias OpenApiSpex.{Parameter, Schema}
 
   tags(["legacy"])
