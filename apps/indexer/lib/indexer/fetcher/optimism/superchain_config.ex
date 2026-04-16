@@ -254,10 +254,30 @@ defmodule Indexer.Fetcher.Optimism.SuperchainConfig do
 
   defp clean_toml_line(line) do
     line
-    |> String.split("#", parts: 2)
-    |> List.first()
+    |> strip_toml_comment()
     |> String.trim()
   end
+
+  # Removes a TOML line comment (everything from the first '#' that is outside
+  # a quoted string), handling escaped backslashes and quotes inside strings.
+  defp strip_toml_comment(line) do
+    strip_toml_comment(line, _in_quote = false, _acc = [])
+  end
+
+  defp strip_toml_comment(<<>>, _in_quote, acc), do: IO.iodata_to_binary(Enum.reverse(acc))
+  defp strip_toml_comment(<<?#, _rest::binary>>, false, acc), do: IO.iodata_to_binary(Enum.reverse(acc))
+
+  defp strip_toml_comment(<<?\\, ?\\, rest::binary>>, true, acc),
+    do: strip_toml_comment(rest, true, [?\\, ?\\ | acc])
+
+  defp strip_toml_comment(<<?\\, ?", rest::binary>>, true, acc),
+    do: strip_toml_comment(rest, true, [?", ?\\ | acc])
+
+  defp strip_toml_comment(<<?", rest::binary>>, in_quote, acc),
+    do: strip_toml_comment(rest, !in_quote, [?" | acc])
+
+  defp strip_toml_comment(<<char, rest::binary>>, in_quote, acc),
+    do: strip_toml_comment(rest, in_quote, [char | acc])
 
   defp parse_toml_value(raw_value) do
     value = String.trim(raw_value)
