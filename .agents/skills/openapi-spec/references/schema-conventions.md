@@ -434,6 +434,22 @@ batch_data_container: %Schema{
 
 If the Ecto schema field can be `nil` (not in `@required_attrs`, or the view conditionally emits it), the OpenAPI property should have `nullable: true`. If the key is always present but sometimes null, keep it in `required:` and set `nullable: true`. If the key is sometimes absent entirely, remove it from `required:`.
 
+**Do not use `type: :null` in `anyOf`/`oneOf`, and do not use array types like `type: [:string, :null]`.** These are OpenAPI 3.1 / JSON Schema 2020-12 patterns. Blockscout's spec is OpenAPI 3.0 (open_api_spex v3.22), which predates the null type and supports nullability exclusively through the `nullable: true` keyword.
+
+```elixir
+# Correct — OpenAPI 3.0
+block_number: %Schema{type: :integer, nullable: true}
+
+result: %Schema{nullable: true, allOf: [result_schema]}
+
+# Wrong — OpenAPI 3.1 syntax, invalid in 3.0
+block_number: %Schema{anyOf: [%Schema{type: :null}, %Schema{type: :integer}]}
+
+result: %Schema{anyOf: [%Schema{type: :null}, result_schema]}
+```
+
+When combining nullability with `allOf`/`oneOf`/`anyOf`, set `nullable: true` alongside the composition keyword on the same schema — don't express null as a separate branch.
+
 ## Property descriptions
 
 Not every property needs a `description:` — but ambiguous ones without descriptions become a guessing game for API consumers who aren't reading the source code.
