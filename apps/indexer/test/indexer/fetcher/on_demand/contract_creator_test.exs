@@ -117,6 +117,20 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
                )
     end
 
+    test "does not crash when ETS table is unavailable" do
+      contract_address =
+        insert(:address, contract_code: "0x1234")
+
+      :ets.delete(:contract_creator_lookup)
+
+      assert :ignore =
+               ContractCreatorOnDemand.trigger_fetch(
+                 contract_address
+                 |> Repo.preload([:contract_creation_transaction])
+                 |> Address.preload_contract_creation_internal_transaction()
+               )
+    end
+
     test "initiates fetch if address has contract code but no creator hash (target block is right from the middle)" do
       contract_address =
         insert(:address, contract_code: "0x1234")
