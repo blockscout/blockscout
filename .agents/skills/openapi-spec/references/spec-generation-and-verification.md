@@ -98,3 +98,9 @@ After creating or modifying an OpenAPI declaration:
    ```
 
 4. **Run tests** to verify response schemas match the view output (use the `run-tests` skill).
+
+## Spec-wide audits
+
+Single-endpoint queries above answer "did I declare this right?" For "does the whole spec still follow our conventions?", use `references/oastools-audit-recipes.md`. Minimum sweep after any schema-touching change: recipe A (additionalProperties), B (422 coverage), F (base_params), I (tag casing).
+
+Always regenerate before auditing — the generated spec is cache-like, and a stale YAML produces false positives.

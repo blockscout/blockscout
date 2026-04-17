@@ -54,6 +54,8 @@ Grep for `request_body` in `general.ex` and domain-specific schema files:
 grep "def.*_request_body" in schemas/api/v2/**/*.ex
 ```
 
+To see request bodies actually wired into the generated spec (not just defined), run recipe L in `references/oastools-audit-recipes.md`. Useful because grep finds helpers that may not be referenced by any operation.
+
 ### How CastAndValidate handles request bodies
 
 After casting, body params are written to `conn.body_params` with **atom keys** (not string keys). Controllers read casted body params like:
@@ -123,6 +125,8 @@ Grep for `security:` in controller files:
 ```
 grep "security:" in controllers/**/*.ex
 ```
+
+Spec-side lookup: recipe M in `references/oastools-audit-recipes.md`. Empty against the public spec — `security:` is private/account-only. Regenerate against `specs/private.ex` to see auth-bearing endpoints.
 
 ---
 

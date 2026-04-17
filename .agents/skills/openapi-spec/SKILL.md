@@ -1,6 +1,6 @@
 ---
 name: openapi-spec
-description: "Create, adjust, or inspect OpenAPI declarations for Blockscout API v2 endpoints. Use this skill whenever the user asks to: add an OpenAPI spec to an endpoint that lacks one, update a spec after controller/view changes, audit or fix an existing OpenAPI declaration, or work with open_api_spex annotations in the Blockscout codebase. Also trigger when the user mentions 'swagger', 'openapi', 'open_api_spex', 'API spec', 'API schema', or 'operation macro' in the context of Blockscout endpoints."
+description: "Create, adjust, or inspect OpenAPI declarations for Blockscout API v2 endpoints. Use this skill whenever the user asks to: add an OpenAPI spec to an endpoint that lacks one, update a spec after controller/view changes, audit or fix an existing OpenAPI declaration, or work with open_api_spex annotations in the Blockscout codebase. Also trigger when the user mentions 'swagger', 'openapi', 'open_api_spex', 'API spec', 'API schema', or 'operation macro', or when debugging failures like 'response schema mismatch', 'CastAndValidate rejection', 'json_response validation error', 'Unexpected field', or extra/missing keys in API responses."
 allowed-tools: ["Bash(.claude/skills/openapi-spec/scripts/generate-spec.sh *)", "Bash(oastools *)"]
 ---
 
@@ -15,25 +15,36 @@ Blockscout uses the `open_api_spex` library (v3.22+) to define OpenAPI 3.0 specs
 
 ## Key file locations
 
-All paths are relative to `apps/block_scout_web/lib/block_scout_web/`:
+All paths are relative to `apps/block_scout_web/lib/block_scout_web/`. Most endpoints live under the flat v2 layout, but annotated endpoints also exist outside of it — the table below calls out every tree that contributes to the generated spec.
 
 | What | Where |
 |---|---|
-| Controllers | `controllers/api/v2/<domain>_controller.ex` |
-| Account controllers | `controllers/account/api/v2/<domain>_controller.ex` |
-| Schema modules | `schemas/api/v2/<domain>.ex` and `schemas/api/v2/<domain>/*.ex` |
+| V2 controllers (flat) | `controllers/api/v2/<domain>_controller.ex` |
+| V2 proxy controllers | `controllers/api/v2/proxy/<domain>_controller.ex` (routed under `/v2/proxy`) |
+| V2 chain-type-nested controllers | `controllers/api/v2/<chain>/<domain>_controller.ex` (e.g. `controllers/api/v2/ethereum/deposit_controller.ex`) |
+| Account controllers (Private spec) | `controllers/account/api/v2/<domain>_controller.ex` |
+| Legacy controllers | `controllers/api/legacy/<domain>_controller.ex` (routed under `/legacy`) |
+| V2 schema modules | `schemas/api/v2/<domain>.ex` and `schemas/api/v2/<domain>/*.ex` |
+| V2 chain-type schema subdirs | `schemas/api/v2/<chain>/*.ex` (e.g. `schemas/api/v2/{arbitrum,beacon,celo,optimism,scroll,zilliqa,mud}/*.ex`) |
+| V2 proxy schemas | `schemas/api/v2/proxy/*.ex` |
+| Account schemas (Private spec) | `schemas/api/v2/account/*.ex` |
+| Legacy schemas | `schemas/api/legacy/*.ex` |
 | Parameter helpers | `schemas/api/v2/general.ex` (all helpers centralized here) |
 | Error responses | `schemas/api/v2/error_responses.ex` |
 | Schema helper | `schemas/helper.ex` (`extend_schema/2`) |
 | Leaf type schemas | `schemas/api/v2/general/*.ex` (AddressHash, FullHash, IntegerString, etc.) |
 | API router | `routers/api_router.ex` |
-| Sub-routers | `routers/tokens_api_v2_router.ex`, `routers/smart_contracts_api_v2_router.ex` |
-| Account router | `routers/account_router.ex` |
-| Views | `views/api/v2/<domain>_view.ex` |
+| V2 sub-routers forwarded from the API router | `routers/tokens_api_v2_router.ex`, `routers/smart_contracts_api_v2_router.ex`, `routers/api_key_v2_router.ex`, `routers/utils_api_v2_router.ex`, `routers/address_badges_v2_router.ex` |
+| Account router (Private spec) | `routers/account_router.ex` |
+| Views (flat v2) | `views/api/v2/<domain>_view.ex` |
+| Legacy views | `views/api/legacy/<domain>_view.ex` |
 | Paging helper | `paging_helper.ex` (`delete_parameters_from_next_page_params/1`) |
-| Spec aggregators | `specs/public.ex`, `specs/private.ex` |
+| Spec aggregators | `specs/public.ex` (public spec + **tag registry**), `specs/private.ex` (account/private spec) |
 | Global aliases/imports | The file `block_scout_web.ex` — look for `:controller` quote block |
-| Tests | `../../test/block_scout_web/controllers/api/v2/<domain>_controller_test.exs` |
+| V2 tests | `../../test/block_scout_web/controllers/api/v2/<domain>_controller_test.exs` |
+| Legacy tests | `../../test/block_scout_web/controllers/api/legacy/<domain>_controller_test.exs` |
+
+**On router coverage of the public spec:** `specs/public.ex` builds `paths` via `Paths.from_router(ApiRouter)`, which picks up everything reachable from `api_router.ex` — including endpoints declared in the sub-routers that `api_router.ex` `forward`s to (api-key, utils, address-badges). Only `TokensApiV2Router` and `SmartContractsApiV2Router` need the extra `Paths.from_routes(...)` merges in `public.ex` because their prefixes are stripped by Phoenix `forward` and must be re-added. A new annotated endpoint placed in any of the other sub-routers needs no extra wiring beyond the `forward` that already exists in `api_router.ex`.
 
 ## Core patterns
 
@@ -120,6 +131,24 @@ tags(["domain-tag"])                                      # groups operations in
 
 These are typically near the top of the controller module, after `use BlockScoutWeb, :controller`.
 
+**Tag naming: kebab-case.** Tag strings use kebab-case (`"internal-transactions"`, `"main-page"`, `"smart-contracts"`, `"token-transfers"`, `"account-abstraction"`), not snake_case. Multi-word controller module names such as `InternalTransactionController` still map to the kebab-case plural tag, not to the module name.
+
+### Tag registry (`specs/public.ex`)
+
+The order of tag groups in the generated public spec is not derived from the controllers — it's declared explicitly in `specs/public.ex` and has a fixed three-part shape:
+
+1. **Base tags** — the `@default_api_categories` list at the top of `specs/public.ex`, always present regardless of chain type.
+2. **Chain-type-specific tags** — returned by `chain_type_category/0`, whose clauses are keyed on `@chain_identity` (`{:optimism, :celo}`, `{:optimism, nil}`, `{:scroll, nil}`, `{:zilliqa, nil}`, …). For chains without OpenAPI coverage this is an empty list.
+3. **`"legacy"`** — hard-coded trailer pinned last.
+
+If a new annotated controller introduces a brand-new tag, the agent must register it in the right group, or the tag will still appear in the spec (via controller-side `tags(...)`) but with no ordering guarantee and no entry in the top-level `tags:` list:
+
+- Base endpoint → append the kebab-case tag to `@default_api_categories`.
+- Chain-type endpoint → add it inside the relevant `case @chain_identity` branch, matching the existing patterns (module-attribute + `defp` for static lists, full `defp` body when the tag set depends on a runtime flag such as `mud_enabled?()`).
+- Legacy endpoint → no action; `"legacy"` is already the trailer.
+
+Tags that are already covered by an existing group (e.g. another `addresses` endpoint) need no change.
+
 ---
 
 ## Verification
@@ -141,6 +170,12 @@ This exercises `OpenApiSpex.resolve_schema_modules/1`, which resolves all schema
 ```
 
 See `references/spec-generation-and-verification.md` for script options (chain-specific generation, custom output path) and `oastools` commands for inspecting the result.
+
+### 2a. Audit for spec-wide convention drift (optional)
+
+After regeneration, sweep the spec for convention violations a single-endpoint test run won't catch: missing `additionalProperties: false`, missing `:unprocessable_entity`, tag casing, etc. See `references/oastools-audit-recipes.md` — the quick sweep is recipes A, B, F, I.
+
+The generated spec is cache-like, so regeneration must come first. A stale `.ai/tmp/openapi_public.yaml` produces false positives for every recipe that counts violations — e.g., it may report tag-casing hits that no longer exist in the codebase.
 
 ### 3. Run controller tests (`mix test`)
 
@@ -172,6 +207,7 @@ Read these files in parallel to understand the endpoint:
 2. **Controller** — read the action function. Note what keys it destructures from `params` and `conn.body_params`, what data it fetches, and what view template it renders.
 3. **View** — read the render function and any `prepare_*` helper it calls. Note every key in the output map — these become schema properties. Trace **all code paths**, not just the default: look for `case`/`cond`/pattern-match branches in the render function and its helpers that produce different map shapes depending on a field value. When found, note the discriminator field and the distinct set of keys each branch emits — these indicate a polymorphic sub-object that needs special handling in Step 3.
 4. **Existing schemas** — glob `schemas/api/v2/<domain>*` to see if schema modules already exist for this domain.
+5. **Peer precedent (optional)** — `oastools walk operations -tag <domain> -q .ai/tmp/openapi_public.yaml` lists sibling endpoints already in the spec. Useful before choosing between schema reuse and new schemas in Step 3.
 
 ### Step 2: Find or create parameter definitions
 
@@ -189,56 +225,20 @@ For each parameter the controller reads:
    - **Domain-specific but used by multiple operations in the same controller?** Add a private helper function in the controller itself. This avoids polluting `general.ex` with chain-specific concerns while preventing duplication across operations.
    - **Truly one-off (single operation)?** Define an inline `%OpenApiSpex.Parameter{}` struct directly in the `operation` macro arguments.
 
-3. **For pagination parameters**, use `define_paging_params(field_names)` — pass the cursor field names as strings, and **always include `"items_count"`**. The `next_page_params` helper adds `items_count` to every paginated response automatically, so CastAndValidate must accept it as a query param. Example: `define_paging_params(["id", "items_count"])`.
+3. **For pagination parameters**, use `define_paging_params(field_names)` — pass the cursor field names as strings, and always include `"items_count"` (the `next_page_params` helper adds it to every cursor automatically). See `references/parameter-discovery.md` section "The `define_paging_params` factory" for details.
 
 ### Step 3: Create or locate response schema
 
 1. **Check if a schema module exists** for the response entity. Glob `schemas/api/v2/<domain>*.ex`.
-2. **If schemas exist in the same domain**, compare their properties against the new view's output keys to detect subset/superset relationships:
+2. **If schemas exist in the same domain**, compare their properties against the new view's output keys to detect subset/superset relationships (recipe N in `references/oastools-audit-recipes.md` gives a mechanical candidate list across all component schemas):
    - **Existing schema is a subset** of what the new endpoint needs — use `extend_schema` from the existing schema, adding only the extra properties. See `references/schema-conventions.md` section "Schema reuse and naming for related schemas" for the naming convention and required `title:` parameter.
    - **Existing schema is a superset** — the new endpoint may reference the existing schema directly (if it needs all the properties), or may need a reduced "minimal" schema that the existing one extends.
    - **Before reusing, check `oneOf`/`anyOf` reachability.** If the candidate schema (or any of its nested properties) contains a `oneOf` or `anyOf`, trace each variant back through the controller action's code path to the view's render function. Identify which discriminator values the controller can actually produce for this endpoint. If all variants are reachable, reuse the schema directly. If only a subset is reachable, create a narrowed schema via `extend_schema`, overriding only the polymorphic property with a `oneOf` containing just the reachable variants. `extend_schema` merges properties and overwrites existing keys, so passing the narrowed property replaces the parent's full variant list (see `references/schema-conventions.md` section "Helper.extend_schema/2"). Example: if `Batch` has a `data_availability` with 4 `oneOf` variants but endpoint `batch_by_celestia_da_info` can only produce the Celestia variant, create a schema that extends `Batch` and overrides `data_availability` to contain only that variant.
    - **No meaningful overlap** — create a standalone schema.
 3. **If no suitable schema exists**, create one following the conventions in `references/schema-conventions.md`. The schema's properties must match the view's output keys exactly.
-4. **Deduplicate against existing domain schemas.** Before finalizing properties, compare each inline `%Schema{type: :object}` block and each `%Schema{type: :string, enum: [...]}` definition in the new schema against properties in the existing schemas found in step 1. If an identical structure already exists in another schema in the same domain directory, extract it into a shared leaf schema module and reference it from both schemas. This avoids drift when the structure changes and consolidates Ecto.Enum sync comments to one location. See `references/schema-conventions.md` section "Domain-scoped shared schemas" for templates.
-5. **Model polymorphic sub-objects.** If Step 1 identified a property whose structure varies based on a discriminator field (e.g., a `data_availability` object that changes shape depending on `batch_data_container`), a single flat `%Schema{type: :object}` with only the common fields will be incomplete — the variant-specific fields won't be documented or validated. Use `oneOf` to declare each variant explicitly. Each variant is a `%Schema{type: :object}` with its own properties, `required` list, and `additionalProperties: false`. The discriminator field appears in every variant. If the view has a catch-all branch (e.g., `value -> %{"field" => to_string(value)}`), model it as the minimal variant containing only the discriminator. For existing precedent, see `transaction.ex` (`revert_reason` property).
-   **Constrain the discriminator per variant.** Each variant's discriminator property must be narrowed to the specific value(s) that identify it — use an inline `%Schema{type: :string, enum: [...]}` instead of referencing the shared enum schema. This prevents logically invalid combinations from passing validation. Template:
-   ```elixir
-   data_availability: %Schema{
-     oneOf: [
-       # Variant: nil / in_blob4844 / in_calldata (no extra fields)
-       %Schema{
-         type: :object,
-         properties: %{
-           batch_data_container: %Schema{type: :string, enum: ["in_blob4844", "in_calldata"], nullable: true}
-         },
-         required: [:batch_data_container],
-         additionalProperties: false
-       },
-       # Variant: in_anytrust
-       %Schema{
-         type: :object,
-         properties: %{
-           batch_data_container: %Schema{type: :string, enum: ["in_anytrust"]},
-           data_hash: %Schema{type: :string, nullable: true},
-           timeout: %Schema{type: :string, nullable: true},
-           bls_signature: %Schema{type: :string, nullable: true},
-           signers: %Schema{type: :array, items: %Schema{type: :string}}
-         },
-         required: [:batch_data_container, :data_hash, :timeout, :bls_signature, :signers],
-         additionalProperties: false
-       },
-       # ... additional variants (each with its own enum constraint)
-     ],
-     description: "Data availability info. Structure varies by `batch_data_container`."
-   }
-   ```
-   For 2-3 simple variants, inline schemas inside the `oneOf` list are fine. For more variants or cross-schema reuse, extract each into a domain schema module. Note: `discriminator:` (the OpenAPI 3.0 keyword) is optional in OpenApiSpex — `oneOf` alone is sufficient for validation.
-6. **Determine precise types from the Ecto schema.** The view renders everything as JSON primitives (strings, integers, etc.), but the underlying Ecto schema in the Explorer app knows the real constraints. Read the Ecto schema module for the entity (under `apps/explorer/lib/explorer/chain/`) and check for:
-   - `Ecto.Enum` fields — these should become `%Schema{type: :string, enum: [...values...]}`, not just `type: :string`. Grep for `Ecto.Enum` in the Ecto schema to find them, and check the enum values defined there. **Every enum property requires a sync comment** — see `references/schema-conventions.md` section "Required: Ecto.Enum sync comments".
-   - Nullable fields — if the Ecto schema allows `nil`, the OpenAPI property should have `nullable: true`. Do not use `type: :null` or `anyOf: [%Schema{type: :null}, …]` — that's OpenAPI 3.1 syntax and invalid in 3.0. See `references/schema-conventions.md` section "Nullable fields".
-   - Integer vs string — if the Ecto field is an integer type but the view converts it to a string (e.g., for large numbers), use an appropriate schema like `IntegerString`.
-   See `references/schema-conventions.md` section "Determining property types from Ecto schemas" for more detail.
+4. **Deduplicate against existing domain schemas.** Before finalizing properties, compare each inline `%Schema{type: :object}` block and each `%Schema{type: :string, enum: [...]}` definition in the new schema against properties in the existing schemas found in step 1. If an identical structure already exists in another schema in the same domain directory, extract it into a shared leaf schema module and reference it from both schemas. This avoids drift when the structure changes and consolidates Ecto.Enum sync comments to one location. See `references/schema-conventions.md` section "Domain-scoped shared schemas" for templates. Recipe D in `references/oastools-audit-recipes.md` enumerates every inline enum across the spec — group by `.enum` to find duplicates mechanically.
+5. **Model polymorphic sub-objects.** If Step 1 identified a property whose structure varies based on a discriminator field (e.g., a `data_availability` object that changes shape depending on `batch_data_container`), a single flat `%Schema{type: :object}` with only the common fields will be incomplete — the variant-specific fields won't be documented or validated. Use `oneOf` to declare each variant. See `references/schema-conventions.md` section "Polymorphic properties (`oneOf`)" for the structural pattern, the per-variant discriminator-constraint rule, and a concrete template. For existing precedent, see `transaction.ex` (`revert_reason` property).
+6. **Determine precise types from the Ecto schema.** The view layer is lossy — it renders everything as JSON primitives. Read the entity's Ecto schema (under `apps/explorer/lib/explorer/chain/`) to recover the real constraints: `Ecto.Enum` values, nullability, and integer-vs-string representation for large numbers. See `references/schema-conventions.md` §"Determining property types from Ecto schemas" for the full Ecto-to-OpenAPI mapping, the mandatory enum sync-comment format, and the OpenAPI-3.0 nullability rule (`nullable: true`, never `type: :null`).
 7. **Set `additionalProperties: false`** on object schemas — this is a project-wide convention that enables test-time enforcement.
    - **For non-negative integer properties** (block numbers, batch numbers, counts, indices, nonces), set `minimum: 0` to enforce the domain constraint at the validation level.
 8. **Set `required:`** to list all keys that the view always emits.
@@ -290,7 +290,7 @@ Tests are the primary mechanism that validates the response schema matches the a
    - `send_resp` calls with explicit status codes
    - The implicit 200 from the success path (`render` without `put_status`)
    
-   Cross-reference this list against the `responses:` declared in the operation. Every status code declared in the operation should have at least one test. If multiple branches return the same status code with different conditions, note each branch separately — ideally each gets its own test case so the conditions are documented.
+   Cross-reference this list against the `responses:` declared in the operation. Every status code declared in the operation should have at least one test. If multiple branches return the same status code with different conditions, note each branch separately — ideally each gets its own test case so the conditions are documented. The spec-side half of this cross-check is one command: `oastools walk responses -path <X> -method <Y> -q .ai/tmp/openapi_public.yaml`.
 
    Some branches depend on external systems (RPC calls, microservice responses) and cannot be reached with pure DB setup. Decide how to handle each one:
 
@@ -299,55 +299,15 @@ Tests are the primary mechanism that validates the response schema matches the a
 
    **How to mock RPC dependencies when it's worth it.** The established pattern uses `:meck` to intercept `Indexer.Helper.json_rpc_named_arguments/1` so it returns a Mox-backed transport, then `Mox.expect` stubs specific contract calls with ABI-encoded responses. See `arbitrum_controller_test.exs` helpers (`setup_arbitrum_l1_rpc_mocks!`, `expect_inbox_outbox_query!`, `expect_erc20_metadata!`, etc.) for a working reference. When building mock fixtures for chain-specific RPC calls, the Blockscout MCP server can discover real on-chain data (event logs, calldata, contract return values) to verify that fixtures match production structure — it is a discovery aid, not a source of truth; the ABI spec and contract source are authoritative.
 
-2. **Check if tests already exist.** Look for the test file at `apps/block_scout_web/test/block_scout_web/controllers/api/v2/<domain>_controller_test.exs`. Grep for the endpoint path or action name within the file.
+2. **Check if tests already exist.** Look for the test file at `apps/block_scout_web/test/block_scout_web/controllers/api/v2/<domain>_controller_test.exs`. Grep for the endpoint path or action name within the file. If tests already hit the endpoint and call `json_response/2`, they will automatically validate the schema — proceed to Step 6.
 
-3. **If tests exist** that hit this endpoint and call `json_response/2`, they will automatically validate the schema. Proceed to Step 6.
+3. **If no tests exist**, create them. For minimal test templates covering list / single-resource / 404 / 422 cases, see `references/inspection-checklist.md` section "Minimal test templates". Every `json_response/2` call triggers schema validation automatically. Cover every status code enumerated in item 1 — if the controller returns codes beyond the templates (e.g., 400 from business-logic checks), add tests for those too, setting up the DB state that triggers each branch.
 
-4. **If no tests exist** for this endpoint, create them. At minimum, write tests for the following cases:
-
-```elixir
-# For a list endpoint — empty response, zero factory data needed
-test "empty list", %{conn: conn} do
-  request = get(conn, "/api/v2/<path>")
-  assert response = json_response(request, 200)
-  assert response["items"] == []
-  assert response["next_page_params"] == nil
-end
-
-# For a single-resource endpoint
-test "returns resource", %{conn: conn} do
-  resource = insert(:<factory_name>)
-  request = get(conn, "/api/v2/<path>/#{resource.id}")
-  assert _response = json_response(request, 200)
-end
-
-# Not-found case (build without inserting)
-test "returns 404 for non-existing resource", %{conn: conn} do
-  resource = build(:<factory_name>)
-  request = get(conn, "/api/v2/<path>/#{resource.id}")
-  assert %{"message" => "Not found"} = json_response(request, 404)
-end
-
-# Validation error (invalid parameter value)
-test "returns 422 on invalid input", %{conn: conn} do
-  request = get(conn, "/api/v2/<path>/invalid_value")
-  assert %{"errors" => [_]} = json_response(request, 422)
-end
-```
-
-These templates cover common cases but are not exhaustive. Refer back to the status code enumeration from item 1 — if the controller returns status codes beyond 200/404/422 (e.g., 400 from business-logic checks), write additional tests for those. For each status code, set up the DB state that triggers that specific branch and assert on both the status code and the error message.
-
-Choose the templates that match the endpoint type (list vs single resource). The `json_response/2` call is what triggers schema validation — every test that calls it automatically verifies the response against the declared OpenAPI schema.
-
-5. **If the schema contains `oneOf` polymorphic sub-objects** (from Step 3 item 5), write at least one test per variant so that each branch's `additionalProperties: false` constraint is exercised. The default factory typically produces only the simplest variant (e.g., a nil discriminator), so tests for other variants need explicit setup — insert the factory with the discriminator value set, plus any associated records the view fetches for that branch. If a variant is only reachable through an external dependency (RPC, microservice), see item 1 above for when and how to mock.
+4. **If the schema contains `oneOf` polymorphic sub-objects** (from Step 3 item 5), write at least one test per variant so each branch's `additionalProperties: false` constraint is exercised. The default factory typically produces only the simplest variant, so other variants need explicit setup — insert the factory with the discriminator value set, plus any associated records the view fetches. If a variant is only reachable through an external dependency (RPC, microservice), see item 1 above.
 
 ### Step 6: Verify
 
-Run through the verification ladder described in the "Verification" section above:
-
-1. **Compile** — confirm the new schema modules and operation annotation are structurally valid.
-2. **Generate the spec** — confirm the spec resolves cleanly with the new declaration included.
-3. **Run tests** — run the tests from Step 5. If schema validation errors occur, the view output doesn't match the declared schema — fix the discrepancy.
+Run the verification ladder from the "Verification" section above (compile → generate-spec → tests). If tests fail with schema validation errors, the view output doesn't match the declared schema — fix the discrepancy.
 
 ---
 
@@ -372,24 +332,13 @@ Read the controller action and view to understand what changed. Common scenarios
 
 ### Step 3: Verify
 
-Run through the verification ladder described in the "Verification" section above:
-
-1. **Compile** — confirm the modified schema modules still resolve.
-2. **Generate the spec** — confirm the spec is still valid after changes.
-3. **Run tests** — confirm updated response schemas match the view output.
+Run the verification ladder from the "Verification" section above (compile → generate-spec → tests). If parameters changed, also revisit Workflow A Step 4b/4c — atom-key `paging_options` clauses and `next_page_params` path-param stripping apply equally when adjusting.
 
 ---
 
 ## Workflow C: Inspect & fix an existing declaration
 
-Use this to audit an existing declaration for correctness, completeness, and adherence to project conventions.
-
-Read `references/inspection-checklist.md` for the full systematic checklist. The high-level steps:
-
-1. **Code cross-referencing** — verify parameter completeness (controller reads vs declared params, no duplicated inline parameters across operations), response field alignment (view output vs schema properties), three-way coupling consistency, and convention compliance.
-2. **Compile** — confirm no structural issues after any fixes applied.
-3. **Generate the spec** — confirm the full spec resolves cleanly.
-4. **Run tests** — confirm response schemas match view output. Check that tests exist for key status codes (200, 404, 422).
+Use this to audit an existing declaration for correctness, completeness, and adherence to project conventions. Read `references/inspection-checklist.md` and work through it end to end — it owns the full cross-reference procedure (parameters, response fields, conventions, schema organization) and ends with the verification ladder.
 
 ---
 
@@ -403,6 +352,7 @@ Read `references/inspection-checklist.md` for the full systematic checklist. The
 | `references/request-body-security-headers.md` | You're working with POST/PUT/PATCH endpoints, authentication/security, or HTTP header declarations |
 | `references/inspection-checklist.md` | You're running an audit of an existing declaration (Workflow C) |
 | `references/spec-generation-and-verification.md` | You need to generate the spec YAML, validate it, or inspect specific operations/schemas with oastools |
+| `references/oastools-audit-recipes.md` | You want to audit the generated spec for spec-wide convention drift or reuse candidates, without reading every source file |
 
 ## Using subagents
 
