@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias BlockScoutWeb.{AddressContractView, SmartContractView}
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
   alias BlockScoutWeb.API.V2.TransactionView
-  alias Ecto.Changeset
+  alias BlockScoutWeb.ErrorHelper
   alias Explorer.Chain
   alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
   alias Explorer.Chain.SmartContract.Proxy
@@ -38,11 +38,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   end
 
   def render("changeset_errors.json", %{changeset: changeset}) do
-    Changeset.traverse_errors(changeset, fn {msg, opts} ->
-      Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
-        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
-      end)
-    end)
+    ErrorHelper.changeset_to_errors(changeset)
   end
 
   def render("audit_reports.json", %{reports: reports}) do
@@ -201,7 +197,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
           do: AddressContractView.sourcify_repo_url(address.hash, smart_contract.partially_verified)
         ),
       "can_be_visualized_via_sol2uml" =>
-        visualize_sol2uml_enabled && target_contract && SmartContract.language(target_contract) == :solidity,
+        visualize_sol2uml_enabled && target_contract && target_contract.language == :solidity,
       "name" => target_contract && target_contract.name,
       "compiler_version" => target_contract && target_contract.compiler_version,
       "optimization_enabled" => target_contract && target_contract.optimization,
@@ -219,7 +215,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         if(smart_contract_verified,
           do: SmartContract.format_constructor_arguments(smart_contract.abi, smart_contract.constructor_arguments)
         ),
-      "language" => SmartContract.language(smart_contract),
+      "language" => smart_contract.language,
       "license_type" => smart_contract.license_type,
       "certified" => if(smart_contract.certified, do: smart_contract.certified, else: false),
       "is_blueprint" => if(smart_contract.is_blueprint, do: smart_contract.is_blueprint, else: false)
@@ -316,7 +312,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
         "compiler_version" => smart_contract.compiler_version,
         "optimization_enabled" => smart_contract.optimization,
         "transactions_count" => address.transactions_count,
-        "language" => SmartContract.language(smart_contract),
+        "language" => smart_contract.language,
         "verified_at" => smart_contract.inserted_at,
         "market_cap" => token && token.circulating_market_cap,
         "has_constructor_args" => !is_nil(smart_contract.constructor_arguments),

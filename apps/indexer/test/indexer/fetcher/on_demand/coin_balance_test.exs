@@ -165,7 +165,8 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
 
       assert_receive(
         {:chain_event, :addresses, :on_demand,
-         [%{hash: ^address_hash, fetched_coin_balance: ^expected_wei, fetched_coin_balance_block_number: 102}]}
+         [%{hash: ^address_hash, fetched_coin_balance: ^expected_wei, fetched_coin_balance_block_number: 102}]},
+        1_000
       )
     end
 
@@ -183,11 +184,10 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalanceTest do
 
       {:ok, expected_wei} = Wei.cast(2)
 
-      :timer.sleep(100)
-
       assert_receive(
         {:chain_event, :addresses, :on_demand,
-         [%{hash: ^address_hash, fetched_coin_balance: ^expected_wei, fetched_coin_balance_block_number: 103}]}
+         [%{hash: ^address_hash, fetched_coin_balance: ^expected_wei, fetched_coin_balance_block_number: 103}]},
+        1_000
       )
     end
   end

@@ -101,11 +101,12 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Legacy do
   @spec find_or_create_web3_user(String.t(), String.t()) :: {:ok, map()} | :error | {:error, String.t()}
   def find_or_create_web3_user(address, signature) do
     case Internal.find_users_by_web3_address(address) do
-      {:ok, [%{"user_metadata" => %{"web3_address_hash" => ^address}} = user]} ->
-        {:ok, user}
-
-      {:ok, [%{"user_id" => user_id}]} ->
-        update_user_with_web3_address(user_id, address)
+      {:ok, [user]} ->
+        if same_web3_address?(user, address) do
+          {:ok, user}
+        else
+          update_user_with_web3_address(user["user_id"], address)
+        end
 
       {:ok, []} ->
         Internal.create_web3_user(address, signature, %{web3_address_hash: address})
@@ -175,6 +176,13 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0.Legacy do
   end
 
   defp maybe_verify_email(_), do: :ok
+
+  defp same_web3_address?(%{"user_metadata" => %{"web3_address_hash" => stored_address}}, address)
+       when is_binary(stored_address) do
+    String.downcase(stored_address) == String.downcase(address)
+  end
+
+  defp same_web3_address?(_, _), do: false
 
   defp merge_email_users([primary_user | _] = users, identity_id_to_link, provider_for_linking) do
     identity_map = get_identity_map(users)

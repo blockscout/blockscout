@@ -5,6 +5,7 @@ defmodule Explorer.Utility.MissingBlockRange do
   """
   use Explorer.Schema
 
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain.{Block, BlockNumberHelper}
   alias Explorer.Repo
 
@@ -110,6 +111,7 @@ defmodule Explorer.Utility.MissingBlockRange do
   @spec add_ranges_by_block_numbers([Block.block_number()], integer() | nil) :: :ok
   def add_ranges_by_block_numbers(numbers, priority \\ nil) do
     numbers
+    |> RangesHelper.filter_by_block_ranges()
     |> numbers_to_ranges()
     |> save_batch(priority)
 
@@ -385,10 +387,19 @@ defmodule Explorer.Utility.MissingBlockRange do
 
   # Inserts a new missing block range record with the provided parameters
   @spec insert_range(map()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
-  defp insert_range(params) do
-    params
-    |> changeset()
-    |> Repo.insert()
+  defp insert_range(%{from_number: from, to_number: to} = params) do
+    existing_record =
+      __MODULE__
+      |> where([r], r.from_number == ^from and r.to_number == ^to)
+      |> Repo.one()
+
+    if existing_record do
+      {:ok, existing_record}
+    else
+      params
+      |> changeset()
+      |> Repo.insert(on_conflict: :nothing, conflict_target: [:from_number, :to_number])
+    end
   end
 
   # Updates a missing block range record with the provided parameters

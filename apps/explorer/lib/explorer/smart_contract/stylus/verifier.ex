@@ -100,7 +100,7 @@ defmodule Explorer.SmartContract.Stylus.Verifier do
         transaction.hash
 
       %{internal_transaction: internal_transaction} ->
-        internal_transaction.transaction_hash
+        internal_transaction.transaction.hash
 
       _ ->
         nil

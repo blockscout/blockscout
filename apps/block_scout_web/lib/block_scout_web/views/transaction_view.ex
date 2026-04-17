@@ -64,10 +64,6 @@ defmodule BlockScoutWeb.TransactionView do
     if type, do: {type, transaction_with_transfers_filtered}, else: {nil, transaction_with_transfers_filtered}
   end
 
-  def transaction_actions(transaction) do
-    Repo.preload(transaction, :transaction_actions)
-  end
-
   def aggregate_token_transfers(token_transfers) do
     %{
       transfers: {ft_transfers, nft_transfers},
@@ -225,6 +221,7 @@ defmodule BlockScoutWeb.TransactionView do
       :erc1155 -> gettext("ERC-1155 ")
       :erc404 -> gettext("ERC-404 ")
       :zrc2 -> gettext("ZRC-2 ")
+      :erc7984 -> gettext("ERC-7984 ")
       _ -> ""
     end
   end

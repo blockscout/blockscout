@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
   alias Explorer.{Repo, TestHelper}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.{Address, InternalTransaction, SmartContract}
 
   setup :verify_on_exit!
 
@@ -779,8 +779,6 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         created_contract_address: created_contract_address,
         created_contract_code: smart_contract_bytecode,
         block_number: transaction.block_number,
-        block_hash: transaction.block_hash,
-        block_index: 0,
         transaction_index: transaction.index
       )
 
@@ -1120,9 +1118,10 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         insert(:internal_transaction_create,
           transaction: transaction,
           index: 1,
-          block_hash: transaction.block_hash,
-          block_index: transaction.index
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
         )
+        |> InternalTransaction.preload_addresses()
 
       address = internal_transaction.created_contract_address
 
@@ -1175,8 +1174,8 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         # index 0 should result in empty contractFactory
         index: 0,
         created_contract_address: contract_address,
-        block_hash: transaction.block_hash,
-        block_index: transaction.index
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
       )
 
       assert %{

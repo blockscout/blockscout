@@ -174,13 +174,7 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
                log,
              [amount] <- Helper.decode_data(data, [{:uint, 256}]) do
           {from_address_hash, to_address_hash, balance_address_hash} =
-            if log.first_topic == TokenTransfer.weth_deposit_signature() do
-              to_address_hash = Helper.truncate_address_hash(to_string(second_topic))
-              {burn_address_hash_string(), to_address_hash, to_address_hash}
-            else
-              from_address_hash = Helper.truncate_address_hash(to_string(second_topic))
-              {from_address_hash, burn_address_hash_string(), from_address_hash}
-            end
+            determine_weth_address_hashes(log, second_topic)
 
           token_transfer = %{
             amount: Decimal.new(amount || 0),
@@ -237,6 +231,16 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
           params: current_token_balances
         }
       })
+    end
+  end
+
+  defp determine_weth_address_hashes(log, second_topic) do
+    if log.first_topic == TokenTransfer.weth_deposit_signature() do
+      to_address_hash = Helper.truncate_address_hash(to_string(second_topic))
+      {burn_address_hash_string(), to_address_hash, to_address_hash}
+    else
+      from_address_hash = Helper.truncate_address_hash(to_string(second_topic))
+      {from_address_hash, burn_address_hash_string(), from_address_hash}
     end
   end
 

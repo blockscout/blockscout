@@ -5,12 +5,17 @@ defmodule Indexer.Block.Realtime.Supervisor do
 
   use Supervisor
 
+  alias Indexer.Block.Fetcher
+
   def start_link([arguments, gen_server_options]) do
     Supervisor.start_link(__MODULE__, arguments, gen_server_options)
   end
 
   @impl Supervisor
-  def init(%{block_fetcher: block_fetcher, subscribe_named_arguments: subscribe_named_arguments}) do
+  def init(%{block_fetcher: %Fetcher{} = block_fetcher, subscribe_named_arguments: subscribe_named_arguments}) do
+    block_fetcher_with_task_supervisor =
+      %Fetcher{block_fetcher | task_supervisor: Indexer.Block.Realtime.TaskSupervisor}
+
     children =
       case Keyword.fetch!(subscribe_named_arguments, :transport) do
         EthereumJSONRPC.WebSocket ->
@@ -30,7 +35,10 @@ defmodule Indexer.Block.Realtime.Supervisor do
             {EthereumJSONRPC.WebSocket.Supervisor, transport_options},
             {Indexer.Block.Realtime.Fetcher,
              [
-               %{block_fetcher: block_fetcher, subscribe_named_arguments: block_fetcher_subscribe_named_arguments},
+               %{
+                 block_fetcher: block_fetcher_with_task_supervisor,
+                 subscribe_named_arguments: block_fetcher_subscribe_named_arguments
+               },
                [name: Indexer.Block.Realtime.Fetcher]
              ]}
           ]
@@ -40,7 +48,7 @@ defmodule Indexer.Block.Realtime.Supervisor do
             {Task.Supervisor, name: Indexer.Block.Realtime.TaskSupervisor},
             {Indexer.Block.Realtime.Fetcher,
              [
-               %{block_fetcher: block_fetcher, subscribe_named_arguments: nil},
+               %{block_fetcher: block_fetcher_with_task_supervisor, subscribe_named_arguments: nil},
                [name: Indexer.Block.Realtime.Fetcher]
              ]}
           ]

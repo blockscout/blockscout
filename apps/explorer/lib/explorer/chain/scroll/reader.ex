@@ -300,8 +300,7 @@ defmodule Explorer.Chain.Scroll.Reader do
             base_query,
             [p],
             p.name == ^name and
-              (p.block_number < ^transaction.block_number or
-                 (p.block_number == ^transaction.block_number and p.transaction_index < ^transaction.index))
+              {p.block_number, p.transaction_index} < {^transaction.block_number, ^transaction.index}
           )
       end
 

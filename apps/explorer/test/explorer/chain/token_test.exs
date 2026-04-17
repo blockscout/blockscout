@@ -186,5 +186,50 @@ defmodule Explorer.Chain.TokenTest do
 
       assert Enum.all?(market_data, fn token -> is_nil(token.fiat_value) end)
     end
+
+    test "finds token by contract address hash" do
+      token = insert(:token, name: "Token that we search for", symbol: "ATK")
+      insert(:token)
+      insert(:token)
+      insert(:token)
+
+      address_hash_string = to_string(token.contract_address_hash)
+
+      results = Token.list_top(address_hash_string)
+
+      assert [%{name: "Token that we search for"}] = results
+    end
+
+    test "finds token by contract address hash when given mixed-case address" do
+      contract_address = insert(:contract_address, hash: "0xdAC17F958D2ee523a2206206994597C13D831ec7")
+      insert(:token, contract_address: contract_address, name: "Token that we search for", symbol: "ATK")
+      insert(:token)
+      insert(:token)
+      insert(:token)
+
+      results = Token.list_top("0xDAC17F958D2EE523A2206206994597C13D831EC7")
+
+      assert [%{name: "Token that we search for"}] = results
+    end
+
+    test "returns empty when searching with a valid address hash format that has no token" do
+      insert(:token, name: "Some Token", symbol: "STK")
+      non_existent_hash = "0xf000000000000000000000000000000000000000"
+
+      results = Token.list_top(non_existent_hash)
+
+      assert Enum.empty?(results)
+    end
+
+    test "falls back to full-text search for invalid address hash format" do
+      insert(:token, name: "0xINVALID_HEX Token", symbol: "IHT")
+      insert(:token)
+      insert(:token)
+      insert(:token)
+
+      results = Token.list_top("0xINVALID_HEX")
+
+      assert [%{name: "0xINVALID_HEX Token"}] = results
+    end
   end
 end

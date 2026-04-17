@@ -308,19 +308,28 @@ defmodule Explorer.Chain.Address.CoinBalance do
     |> limit(1)
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp preload_internal_transaction_query(balance) do
     InternalTransaction
+    |> InternalTransaction.join_transaction_query()
+    |> InternalTransaction.join_address_mapping_query(:from_address)
+    |> InternalTransaction.join_address_mapping_query(:to_address)
+    |> InternalTransaction.join_address_mapping_query(:created_contract_address)
     |> where(
       [internal_transaction],
       internal_transaction.block_number == ^balance.block_number and
         internal_transaction.type in ~w(call create create2 selfdestruct)a and
-        (is_nil(internal_transaction.call_type) or internal_transaction.call_type == :call) and
-        internal_transaction.value > ^0 and is_nil(internal_transaction.error) and
+        (is_nil(coalesce(type(internal_transaction.call_type_enum, :string), internal_transaction.call_type)) or
+           coalesce(type(internal_transaction.call_type_enum, :string), internal_transaction.call_type) == ^"call") and
+        internal_transaction.value > ^0 and is_nil(internal_transaction.error_id) and
         (internal_transaction.to_address_hash == ^balance.address_hash or
+           as(:to_address_mapping).address_hash == ^balance.address_hash or
            internal_transaction.from_address_hash == ^balance.address_hash or
-           internal_transaction.created_contract_address_hash == ^balance.address_hash)
+           as(:from_address_mapping).address_hash == ^balance.address_hash or
+           internal_transaction.created_contract_address_hash == ^balance.address_hash or
+           as(:created_contract_address_mapping).address_hash == ^balance.address_hash)
     )
-    |> select([internal_transaction], internal_transaction.transaction_hash)
+    |> select([_internal_transaction, transaction], transaction.hash)
     |> limit(1)
   end
 

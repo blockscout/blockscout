@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.V2.ExchangeRateChannelTest do
   import Mox
 
   alias BlockScoutWeb.Notifier
-  alias Explorer.Market.Fetcher.{Coin, History}
+  alias Explorer.Market.Fetcher.Coin
   alias Explorer.Market.{MarketHistory, MarketHistoryCache, Token}
   alias Explorer.Market.Source.OneCoinSource
   alias Explorer.Market

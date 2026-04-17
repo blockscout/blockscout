@@ -18,12 +18,19 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
       {:ok, responses} ->
         case trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params, traces_module) do
           {:ok, [first_trace]} ->
-            %{block_hash: block_hash} =
+            %{block_hash: block_hash, block_number: block_number} =
               transactions_params
               |> Enum.at(0)
 
             {:ok,
-             [%{first_trace: first_trace, block_hash: block_hash, json_rpc_named_arguments: json_rpc_named_arguments}]}
+             [
+               %{
+                 first_trace: first_trace,
+                 block_hash: block_hash,
+                 block_number: block_number,
+                 json_rpc_named_arguments: json_rpc_named_arguments
+               }
+             ]}
 
           {:error, error} ->
             Logger.error(inspect(error))

@@ -155,7 +155,7 @@ defmodule Explorer.Chain.AddressTest do
             :token,
             [smart_contract: :smart_contract_additional_sources],
             Explorer.Chain.SmartContract.Proxy.Models.Implementation.proxy_implementations_association()
-          ] ++ Address.contract_creation_transaction_associations()
+          ] ++ [Address.contract_creation_transaction_association()]
         )
 
       options = [
@@ -163,7 +163,7 @@ defmodule Explorer.Chain.AddressTest do
           :names => :optional,
           :smart_contract => :optional,
           :token => :optional,
-          Address.contract_creation_transaction_associations() => :optional
+          Address.contract_creation_transaction_association() => :optional
         }
       ]
 
