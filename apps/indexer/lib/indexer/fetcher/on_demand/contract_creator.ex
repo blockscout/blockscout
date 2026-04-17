@@ -45,6 +45,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     with false <- is_nil(address.contract_code),
          true <- is_nil(creator_hash),
          false <- Address.eoa_with_code?(address),
+         true <- table_exists?(),
          {:address_lookup, [{_, contract_creation_block_number}]} <-
            {:address_lookup, :ets.lookup(@table_name, address_cache_name(address.hash))},
          {:pending_blocks_lookup, [{@pending_blocks_cache_key, blocks}]} <-
@@ -235,7 +236,17 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
   # - `[{String.t(), [map()]}]`: A list of tuples containing block identifiers and their associated data.
   @spec pending_blocks_cache() :: [{String.t(), [map()]}]
-  defp pending_blocks_cache, do: :ets.lookup(@table_name, @pending_blocks_cache_key)
+  defp pending_blocks_cache do
+    if table_exists?() do
+      :ets.lookup(@table_name, @pending_blocks_cache_key)
+    else
+      []
+    end
+  end
+
+  defp table_exists? do
+    :ets.whereis(@table_name) != :undefined
+  end
 
   @doc """
   Asynchronously updates value of ETS cache :contract_creator_lookup for key "pending_blocks":
