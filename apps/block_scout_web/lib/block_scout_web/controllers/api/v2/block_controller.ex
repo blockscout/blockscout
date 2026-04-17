@@ -188,7 +188,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
              "block_number" => 22_566_361,
              "items_count" => 50
            }
-         )}
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
     ]
 
   @doc """

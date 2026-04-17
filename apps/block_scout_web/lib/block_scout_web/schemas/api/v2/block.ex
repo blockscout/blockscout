@@ -381,7 +381,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
         transactions_count: %Schema{type: :integer, nullable: false},
         internal_transactions_count: %Schema{type: :integer, nullable: true},
         miner: Address,
-        size: %Schema{type: :integer, nullable: false},
+        size: %Schema{type: :integer, nullable: true},
         hash: General.FullHash,
         parent_hash: General.FullHash,
         difficulty: General.IntegerStringNullable,
@@ -410,7 +410,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
         type: %Schema{type: :string, nullable: false, enum: ["block", "uncle", "reorg"]},
         transaction_fees: General.IntegerString,
         withdrawals_count: %Schema{type: :integer, minimum: 0, nullable: true},
-        is_pending_update: %Schema{type: :boolean, nullable: false}
+        is_pending_update: %Schema{type: :boolean, nullable: true}
       },
       required: required_fields(),
       additionalProperties: false
