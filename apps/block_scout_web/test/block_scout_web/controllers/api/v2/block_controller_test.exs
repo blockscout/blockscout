@@ -259,6 +259,12 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
              } = json_response(request_2, 422)
     end
 
+    test "return 404 when block number exceeds allowed range", %{conn: conn} do
+      request = get(conn, "/api/v2/blocks/3000000000")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
     test "return 404 on non existing block", %{conn: conn} do
       block = build(:block)
 
@@ -271,6 +277,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
 
     test "get 'Block lost consensus' message", %{conn: conn} do
       block = insert(:block, consensus: false)
+      insert(:block, consensus: true)
       hash = to_string(block.hash)
 
       request_1 = get(conn, "/api/v2/blocks/#{block.number}")
@@ -871,9 +878,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
         transaction: transaction,
         index: 0,
         block_number: transaction.block_number,
-        transaction_index: transaction.index,
-        block_hash: transaction.block_hash,
-        block_index: 0
+        transaction_index: transaction.index
       )
 
       internal_transactions =
@@ -888,11 +893,10 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
             transaction: transaction,
             index: index,
             block_number: transaction.block_number,
-            transaction_index: transaction.index,
-            block_hash: transaction.block_hash,
-            block_index: index
+            transaction_index: transaction.index
           )
         end)
+        |> InternalTransaction.preload_addresses()
 
       request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
       assert response = json_response(request, 200)
@@ -1001,7 +1005,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
     assert internal_transaction.block_number == json["block_number"]
     assert to_string(internal_transaction.gas) == json["gas_limit"]
     assert internal_transaction.index == json["index"]
-    assert to_string(internal_transaction.transaction_hash) == json["transaction_hash"]
+    assert to_string(internal_transaction.transaction.hash) == json["transaction_hash"]
     assert Address.checksum(internal_transaction.from_address_hash) == json["from"]["hash"]
     assert Address.checksum(internal_transaction.to_address_hash) == json["to"]["hash"]
   end

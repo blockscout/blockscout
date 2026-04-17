@@ -8,14 +8,15 @@ defmodule Indexer.Block.Catchup.FetcherTest do
   alias Explorer.Chain
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Hash
-  alias Explorer.Utility.MissingRangesManipulator
   alias Explorer.Utility.MissingBlockRange
   alias Indexer.Block
   alias Indexer.Block.Catchup.Fetcher
   alias Indexer.Block.Catchup.MissingRangesCollector
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
-  alias Indexer.Fetcher.{BlockReward, InternalTransaction, Token, TokenBalance, UncleBlock}
+  alias Indexer.Fetcher.{BlockReward, InternalTransaction, Token, UncleBlock}
   alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
+  alias Indexer.Fetcher.TokenBalance.Current, as: TokenBalanceCurrent
+  alias Indexer.Fetcher.TokenBalance.Historical, as: TokenBalanceHistorical
 
   @moduletag capture_log: true
 
@@ -54,14 +55,14 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceCurrent.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
       Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!(
         json_rpc_named_arguments: json_rpc_named_arguments
       )
 
       MissingRangesCollector.start_link([])
-      MissingRangesManipulator.start_link([])
 
       parent = self()
 
@@ -85,62 +86,65 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       block_number = 0
 
       assert {:ok, _} =
-               Fetcher.import(%Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments}, %{
-                 addresses: %{
-                   params: [
-                     %{hash: miner_hash}
-                   ]
-                 },
-                 address_hash_to_fetched_balance_block_number: %{miner_hash => block_number},
-                 address_coin_balances: %{
-                   params: [
-                     %{
-                       address_hash: miner_hash,
-                       block_number: block_number
-                     }
-                   ]
-                 },
-                 blocks: %{
-                   params: [
-                     %{
-                       difficulty: 0,
-                       gas_limit: 21000,
-                       gas_used: 21000,
-                       miner_hash: miner_hash,
-                       nonce: 0,
-                       number: block_number,
-                       parent_hash:
-                         block_hash()
-                         |> to_string(),
-                       size: 0,
-                       timestamp: DateTime.utc_now(),
-                       total_difficulty: 0,
-                       hash: nephew_hash
-                     }
-                   ]
-                 },
-                 block_rewards: %{errors: [], params: []},
-                 block_second_degree_relations: %{
-                   params: [
-                     %{
-                       nephew_hash: nephew_hash,
-                       uncle_hash: uncle_hash,
-                       index: nephew_index
-                     }
-                   ]
-                 },
-                 tokens: %{
-                   params: [],
-                   on_conflict: :nothing
-                 },
-                 address_token_balances: %{
-                   params: []
-                 },
-                 transactions: %{
-                   params: [],
-                   on_conflict: :nothing
+               Fetcher.import(
+                 %Block.Fetcher{json_rpc_named_arguments: json_rpc_named_arguments, task_supervisor: nil},
+                 %{
+                   addresses: %{
+                     params: [
+                       %{hash: miner_hash}
+                     ]
+                   },
+                   address_hash_to_fetched_balance_block_number: %{miner_hash => block_number},
+                   address_coin_balances: %{
+                     params: [
+                       %{
+                         address_hash: miner_hash,
+                         block_number: block_number
+                       }
+                     ]
+                   },
+                   blocks: %{
+                     params: [
+                       %{
+                         difficulty: 0,
+                         gas_limit: 21000,
+                         gas_used: 21000,
+                         miner_hash: miner_hash,
+                         nonce: 0,
+                         number: block_number,
+                         parent_hash:
+                           block_hash()
+                           |> to_string(),
+                         size: 0,
+                         timestamp: DateTime.utc_now(),
+                         total_difficulty: 0,
+                         hash: nephew_hash
+                       }
+                     ]
+                   },
+                   block_rewards: %{errors: [], params: []},
+                   block_second_degree_relations: %{
+                     params: [
+                       %{
+                         nephew_hash: nephew_hash,
+                         uncle_hash: uncle_hash,
+                         index: nephew_index
+                       }
+                     ]
+                   },
+                   tokens: %{
+                     params: [],
+                     on_conflict: :nothing
+                   },
+                   address_token_balances: %{
+                     params: []
+                   },
+                   transactions: %{
+                     params: [],
+                     on_conflict: :nothing
+                   }
                  }
-               })
+               )
 
       assert_receive {:uncles, [{^nephew_hash_bytes, ^nephew_index}]}
     end
@@ -184,9 +188,9 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceCurrent.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       MissingRangesCollector.start_link([])
-      MissingRangesManipulator.start_link([])
 
       latest_block_number = 2
       latest_block_quantity = integer_to_quantity(latest_block_number)
@@ -325,7 +329,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                Fetcher.task(%Fetcher{
                  block_fetcher: %Block.Fetcher{
                    callback_module: Fetcher,
-                   json_rpc_named_arguments: json_rpc_named_arguments
+                   json_rpc_named_arguments: json_rpc_named_arguments,
+                   task_supervisor: Indexer.Block.Catchup.TaskSupervisor
                  }
                })
 
@@ -344,9 +349,9 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceCurrent.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       MissingRangesCollector.start_link([])
-      MissingRangesManipulator.start_link([])
 
       latest_block_number = 2
       latest_block_quantity = integer_to_quantity(latest_block_number)
@@ -480,7 +485,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                Fetcher.task(%Fetcher{
                  block_fetcher: %Block.Fetcher{
                    callback_module: Fetcher,
-                   json_rpc_named_arguments: json_rpc_named_arguments
+                   json_rpc_named_arguments: json_rpc_named_arguments,
+                   task_supervisor: Indexer.Block.Catchup.TaskSupervisor
                  }
                })
 
@@ -501,9 +507,9 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-      TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      TokenBalanceCurrent.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
       MissingRangesCollector.start_link([])
-      MissingRangesManipulator.start_link([])
 
       latest_block_number = 2
       latest_block_quantity = integer_to_quantity(latest_block_number)
@@ -630,7 +636,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                Fetcher.task(%Fetcher{
                  block_fetcher: %Block.Fetcher{
                    callback_module: Fetcher,
-                   json_rpc_named_arguments: json_rpc_named_arguments
+                   json_rpc_named_arguments: json_rpc_named_arguments,
+                   task_supervisor: Indexer.Block.Catchup.TaskSupervisor
                  }
                })
 
@@ -646,7 +653,6 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       Application.put_env(:indexer, :block_ranges, "0..1")
       start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
       MissingRangesCollector.start_link([])
-      MissingRangesManipulator.start_link([])
 
       EthereumJSONRPC.Mox
       |> expect(:json_rpc, 1, fn
@@ -686,7 +692,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                Fetcher.task(%Fetcher{
                  block_fetcher: %Block.Fetcher{
                    callback_module: Fetcher,
-                   json_rpc_named_arguments: json_rpc_named_arguments
+                   json_rpc_named_arguments: json_rpc_named_arguments,
+                   task_supervisor: Indexer.Block.Catchup.TaskSupervisor
                  }
                })
 
@@ -705,9 +712,9 @@ defmodule Indexer.Block.Catchup.FetcherTest do
         CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
         InternalTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
         Token.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
-        TokenBalance.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+        TokenBalanceHistorical.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+        TokenBalanceCurrent.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
         MissingRangesCollector.start_link([])
-        MissingRangesManipulator.start_link([])
 
         latest_block_number = 3
         latest_block_quantity = integer_to_quantity(latest_block_number)
@@ -843,7 +850,8 @@ defmodule Indexer.Block.Catchup.FetcherTest do
                  Fetcher.task(%Fetcher{
                    block_fetcher: %Block.Fetcher{
                      callback_module: Fetcher,
-                     json_rpc_named_arguments: json_rpc_named_arguments
+                     json_rpc_named_arguments: json_rpc_named_arguments,
+                     task_supervisor: Indexer.Block.Catchup.TaskSupervisor
                    }
                  })
 

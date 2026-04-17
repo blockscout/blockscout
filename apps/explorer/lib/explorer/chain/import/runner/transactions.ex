@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   alias Explorer.Chain.{Block, Hash, Import, PendingOperationsHelper, PendingTransactionOperation, Transaction}
   alias Explorer.Chain.Import.Runner.TokenTransfers
   alias Explorer.Prometheus.Instrumenter
-  alias Explorer.Utility.MissingRangesManipulator
+  alias Explorer.Utility.MissingBlockRange
 
   @behaviour Import.Runner
 
@@ -125,6 +125,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
         sorted_pending_ops =
           inserted_transactions
           |> RangesHelper.filter_by_height_range(&RangesHelper.traceable_block_number?(&1.block_number))
+          |> Transaction.filter_non_traceable_transactions()
           |> Enum.reject(&is_nil(&1.block_number))
           |> Enum.map(&%{transaction_hash: &1.hash})
           |> Enum.sort()
@@ -726,7 +727,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
 
         PendingOperationsHelper.delete_related_transaction_operations(transaction_hashes)
 
-        MissingRangesManipulator.add_ranges_by_block_numbers(result)
+        MissingBlockRange.add_ranges_by_block_numbers(result)
 
         {:ok, result}
       rescue

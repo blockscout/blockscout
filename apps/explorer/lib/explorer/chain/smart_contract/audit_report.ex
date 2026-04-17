@@ -8,6 +8,7 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
   alias Explorer.{Chain, Helper, Repo}
   alias Explorer.Chain.Hash
   alias Explorer.ThirdPartyIntegrations.AirTableAuditReport
+  alias Utils.ConfigHelper, as: UtilsConfigHelper
 
   @max_reports_per_day_for_contract 5
 
@@ -86,7 +87,7 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
   end
 
   defp valid_url?(field, url) do
-    if Helper.valid_url?(url) do
+    if UtilsConfigHelper.valid_url?(url) do
       []
     else
       [{field, "invalid url"}]
@@ -109,6 +110,38 @@ defmodule Explorer.Chain.SmartContract.AuditReport do
     %__MODULE__{}
     |> changeset(attrs)
     |> AirTableAuditReport.submit()
+    |> Repo.insert()
+  end
+
+  @doc """
+    Import a new audit report from admin panel.
+  """
+  @spec import(map()) :: {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
+  def import(%{
+        address_hash: address_hash,
+        audit_report_url: audit_report_url,
+        audit_publish_date: audit_publish_date,
+        audit_company_name: audit_company_name
+      }) do
+    attrs = %{
+      address_hash: address_hash,
+      audit_report_url: audit_report_url,
+      audit_publish_date: audit_publish_date,
+      audit_company_name: audit_company_name,
+      is_approved: true,
+      submitter_name: "api",
+      submitter_email: "api",
+      is_project_owner: true,
+      project_name: "api",
+      project_url: "api"
+    }
+
+    %__MODULE__{}
+    |> cast(attrs, @optional_fields ++ @required_fields)
+    |> unique_constraint([:address_hash, :audit_report_url, :audit_publish_date, :audit_company_name],
+      message: "the report was submitted before",
+      name: :audit_report_unique_index
+    )
     |> Repo.insert()
   end
 

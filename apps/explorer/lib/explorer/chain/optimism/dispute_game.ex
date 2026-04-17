@@ -101,14 +101,8 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
   def l2_block_number_from_extra_data(nil), do: 0
 
   def l2_block_number_from_extra_data(%Data{bytes: extra_data}) do
-    current_chain_id =
-      case ChainId.get_id() do
-        nil -> Application.get_env(:block_scout_web, :chain_id)
-        chain_id -> chain_id
-      end
-
     first_bits =
-      if current_chain_id in [
+      if ChainId.get_id() in [
            @chain_id_bob_mainnet,
            @chain_id_bob_sepolia,
            @chain_id_megaeth_mainnet,

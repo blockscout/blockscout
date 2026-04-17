@@ -15,8 +15,11 @@ defmodule Explorer.Chain.Cache.Counters.ContractsCount do
     enable_consolidation: [:explorer, [__MODULE__, :enable_consolidation]],
     update_interval_in_milliseconds: [:explorer, [__MODULE__, :update_interval_in_milliseconds]]
 
-  alias Explorer.Chain
+  import Ecto.Query, only: [from: 2]
+
+  alias Explorer.Chain.Address
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
+  alias Explorer.Repo
 
   @counter_type "contracts_count"
 
@@ -69,7 +72,7 @@ defmodule Explorer.Chain.Cache.Counters.ContractsCount do
   Consolidates the info by populating the `last_fetched_counters` table with the current database information.
   """
   def consolidate do
-    all_counter = Chain.count_contracts()
+    all_counter = count_contracts()
 
     params = %{
       counter_type: @counter_type,
@@ -92,4 +95,15 @@ defmodule Explorer.Chain.Cache.Counters.ContractsCount do
   `config :explorer, Explorer.Chain.Cache.Counters.ContractsCount, enable_consolidation: false`
   """
   def enable_consolidation?, do: @enable_consolidation
+
+  defp count_contracts do
+    query =
+      from(address in Address,
+        select: address,
+        where: not is_nil(address.contract_code)
+      )
+
+    query
+    |> Repo.aggregate(:count, timeout: :infinity)
+  end
 end

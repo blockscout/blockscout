@@ -11,10 +11,11 @@ ExUnit.start()
 
 {:ok, _} = Application.ensure_all_started(:ex_machina)
 
+Explorer.TestHelper.run_necessary_background_migrations()
+
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Account, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonEdge, :auto)
-Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.PolygonZkevm, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.RSK, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Shibarium, :auto)
 Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo.Suave, :auto)

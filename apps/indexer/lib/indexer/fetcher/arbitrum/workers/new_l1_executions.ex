@@ -286,7 +286,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
         json_rpc_named_arguments
       )
 
-    if length(logs) > 0 do
+    unless Enum.empty?(logs) do
       log_debug("Found #{length(logs)} OutBoxTransactionExecuted logs")
     end
 

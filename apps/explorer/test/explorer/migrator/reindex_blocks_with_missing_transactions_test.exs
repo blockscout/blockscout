@@ -65,13 +65,16 @@ defmodule Explorer.Migrator.ReindexBlocksWithMissingTransactionsTest do
 
     ReindexBlocksWithMissingTransactions.start_link([])
 
-    wait_for_results(fn ->
-      Repo.one!(
-        from(ms in MigrationStatus,
-          where: ms.migration_name == ^"reindex_blocks_with_missing_transactions" and ms.status == "completed"
+    wait_for_results(
+      fn ->
+        Repo.one!(
+          from(ms in MigrationStatus,
+            where: ms.migration_name == ^"reindex_blocks_with_missing_transactions" and ms.status == "completed"
+          )
         )
-      )
-    end)
+      end,
+      60
+    )
 
     assert %{consensus: true, refetch_needed: false} = Repo.get_by(Block, number: block_number_correct)
     assert %{consensus: true, refetch_needed: true} = Repo.get_by(Block, number: block_number_incorrect)

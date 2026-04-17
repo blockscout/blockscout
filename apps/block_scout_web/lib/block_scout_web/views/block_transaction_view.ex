@@ -7,6 +7,10 @@ defmodule BlockScoutWeb.BlockTransactionView do
     gettext("Easy Cowboy! This block does not exist yet!")
   end
 
+  def block_not_found_message({:error, :not_found}) do
+    gettext("Easy Cowboy! This block does not exist yet!")
+  end
+
   def block_not_found_message({:ok, false}) do
     gettext("This block has not been processed yet.")
   end

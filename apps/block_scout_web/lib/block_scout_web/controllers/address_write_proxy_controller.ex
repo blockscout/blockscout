@@ -18,14 +18,15 @@ defmodule BlockScoutWeb.AddressWriteProxyController do
         :names => :optional,
         :smart_contract => :optional,
         :token => :optional,
-        Address.contract_creation_transaction_associations() => :optional
+        Address.contract_creation_transaction_association() => :optional
       },
+      preload_contract_creation_internal_transaction: true,
       ip: ip
     ]
 
     with false <- AddressView.contract_interaction_disabled?(),
          {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-         {:ok, address} <- Chain.find_contract_address(address_hash, address_options),
+         {:ok, address} <- Address.find_contract_address(address_hash, address_options),
          false <- is_nil(address.smart_contract),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       render(

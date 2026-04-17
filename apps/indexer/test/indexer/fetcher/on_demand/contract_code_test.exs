@@ -86,7 +86,15 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
       address = assert(Repo.get(Address, address_hash))
       assert is_nil(address.contract_code)
 
-      attempts = Repo.get(AddressContractCodeFetchAttempt, address_hash)
+      attempts =
+        wait_for_results(fn ->
+          Repo.one!(
+            from(attempt in AddressContractCodeFetchAttempt,
+              where: attempt.address_hash == ^address_hash and attempt.retries_number == 1
+            )
+          )
+        end)
+
       assert attempts.retries_number == 1
 
       refute_receive({:chain_event, :fetched_bytecode, :on_demand, [^address_hash, "0x"]})
@@ -110,7 +118,15 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
       address = assert(Repo.get(Address, address_hash))
       assert is_nil(address.contract_code)
 
-      attempts = Repo.get(AddressContractCodeFetchAttempt, address_hash)
+      attempts =
+        wait_for_results(fn ->
+          Repo.one!(
+            from(attempt in AddressContractCodeFetchAttempt,
+              where: attempt.address_hash == ^address_hash and attempt.retries_number == 1
+            )
+          )
+        end)
+
       assert attempts.retries_number == 1
 
       refute_receive({:chain_event, :fetched_bytecode, :on_demand, [^address_hash, "0x"]})
@@ -127,7 +143,16 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
       address = assert(Repo.get(Address, address_hash))
       assert is_nil(address.contract_code)
 
-      refute is_nil(Repo.get(AddressContractCodeFetchAttempt, address_hash))
+      attempts =
+        wait_for_results(fn ->
+          Repo.one!(
+            from(attempt in AddressContractCodeFetchAttempt,
+              where: attempt.address_hash == ^address_hash and attempt.retries_number == 1
+            )
+          )
+        end)
+
+      assert attempts.retries_number == 1
 
       refute_receive({:chain_event, :fetched_bytecode, :on_demand, [^address_hash, ^contract_code]})
 
@@ -220,23 +245,13 @@ defmodule Indexer.Fetcher.OnDemand.ContractCodeTest do
     end
 
     defp parse_time_env_var(env_var, default_value) do
-      case env_var |> safe_get_env(default_value) |> String.downcase() |> Integer.parse() do
+      case env_var |> Utils.ConfigHelper.safe_get_env(default_value) |> String.downcase() |> Integer.parse() do
         {milliseconds, "ms"} -> milliseconds
         {hours, "h"} -> :timer.hours(hours)
         {minutes, "m"} -> :timer.minutes(minutes)
         {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)
         _ -> 0
       end
-    end
-
-    defp safe_get_env(env_var, default_value) do
-      env_var
-      |> System.get_env(default_value)
-      |> case do
-        "" -> default_value
-        value -> value
-      end
-      |> to_string()
     end
   end
 

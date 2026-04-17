@@ -13,9 +13,15 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
   setup :verify_on_exit!
 
   setup do
-    initial_env = Application.get_all_env(:ethereum_jsonrpc)
-    on_exit(fn -> Application.put_all_env([{:ethereum_jsonrpc, initial_env}]) end)
-    EthereumJSONRPC.Case.Geth.Mox.setup()
+    initial_ethereum_jsonrpc_env = Application.get_all_env(:ethereum_jsonrpc)
+    initial_json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    %{json_rpc_named_arguments: json_rpc_named_arguments} = EthereumJSONRPC.Case.Geth.Mox.setup()
+    Application.put_env(:explorer, :json_rpc_named_arguments, json_rpc_named_arguments)
+
+    on_exit(fn ->
+      Application.put_all_env([{:ethereum_jsonrpc, initial_ethereum_jsonrpc_env}])
+      Application.put_env(:explorer, :json_rpc_named_arguments, initial_json_rpc_named_arguments)
+    end)
   end
 
   test "fetch_by_transaction/2" do
@@ -46,19 +52,13 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
 
     Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, tracer: "call_tracer", debug_trace_timeout: "5s")
 
-    opts = [
-      necessity_by_association: %{
-        [transaction: [:from_address]] => :required
-      }
-    ]
-
     assert [
              %InternalTransaction{
                created_contract_address_hash: created_contract_address_hash,
                from_address_hash: from_address_hash,
-               transaction: %{from_address: %{}, block_hash: ^block_hash}
+               transaction: %{block_hash: ^block_hash}
              }
-           ] = InternalTransactionOnDemand.fetch_by_transaction(transaction, opts)
+           ] = InternalTransactionOnDemand.fetch_by_transaction(transaction)
 
     assert to_string(created_contract_address_hash) == "0x205a6b72ce16736c9d87172568a9c0cb9304de0d"
     assert to_string(from_address_hash) == "0x117b358218da5a4f647072ddb50ded038ed63d17"
@@ -67,7 +67,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
   test "fetch_by_block/2" do
     block = build(:block)
     block_quantity = EthereumJSONRPC.integer_to_quantity(block.number)
-    block_hash = block.hash
+    block_number = block.number
 
     expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, params: [^block_quantity, _]}], _ ->
       {:ok,
@@ -111,14 +111,14 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
       block_traceable?: true
     )
 
-    assert [%InternalTransaction{block_hash: ^block_hash, index: 1}] =
+    assert [%InternalTransaction{block_number: ^block_number, index: 1}] =
              InternalTransactionOnDemand.fetch_by_block(block, [])
   end
 
   test "fetch_by_block/2 (block_traceable?: false)" do
     transaction = :transaction |> insert() |> with_block()
     transaction_hash_str = to_string(transaction.hash)
-    block_hash = transaction.block_hash
+    block_number = transaction.block_number
 
     expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, params: [^transaction_hash_str, _]}], _ ->
       {:ok,
@@ -157,14 +157,14 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
       block_traceable?: false
     )
 
-    assert [%InternalTransaction{block_hash: ^block_hash, index: 1}] =
+    assert [%InternalTransaction{block_number: ^block_number, index: 1}] =
              InternalTransactionOnDemand.fetch_by_block(transaction.block, [])
   end
 
   test "fetch_by_address/2" do
     address = insert(:address)
     address_hash_str = to_string(address.hash)
-    id_to_hash = insert(:address_id_to_address_hash, address_hash: address.hash)
+    id_to_hash = insert(:address_id_to_address_hash, address: address)
 
     insert(:deleted_internal_transactions_address_placeholder,
       address_id: id_to_hash.address_id,

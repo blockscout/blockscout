@@ -50,18 +50,10 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
       |> Enum.map(fn address_hash_string ->
         case validate_address(address_hash_string, params) do
           {:ok, _address_hash, address} ->
-            contract_creation_internal_transaction_with_transaction_association = [
-              contract_creation_internal_transaction: {
-                Address.contract_creation_internal_transaction_preload_query(),
-                :transaction
-              }
-            ]
-
             Address.maybe_preload_smart_contract_associations(
               address,
               [
-                Address.contract_creation_transaction_association(),
-                contract_creation_internal_transaction_with_transaction_association
+                Address.contract_creation_transaction_association()
               ],
               @api_true
             )
@@ -131,29 +123,32 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   end
 
   def verify_via_sourcify(conn, %{"addressHash" => address_hash} = input) do
-    files =
-      if Map.has_key?(input, "files") do
-        input["files"]
-      else
-        []
-      end
+    files = sourcify_files(input)
 
-    if SmartContract.verified_with_full_match?(address_hash) do
-      render(conn, :error, error: @verified)
+    with false <- SmartContract.verified_with_full_match?(address_hash),
+         {:ok, _verified_status} <- Sourcify.check_by_address(address_hash) do
+      get_metadata_and_publish(address_hash, conn)
     else
-      case Sourcify.check_by_address(address_hash) do
-        {:ok, _verified_status} ->
-          get_metadata_and_publish(address_hash, conn)
+      true -> render(conn, :error, error: @verified)
+      _ -> verify_via_sourcify_with_files(conn, address_hash, files)
+    end
+  end
 
-        _ ->
-          with {:ok, files_array} <- prepare_params(files),
-               {:ok, validated_files} <- validate_files(files_array) do
-            verify_and_publish(address_hash, validated_files, conn)
-          else
-            {:error, error} ->
-              render(conn, :error, error: error)
-          end
-      end
+  defp verify_via_sourcify_with_files(conn, address_hash, files) do
+    with {:ok, files_array} <- prepare_params(files),
+         {:ok, validated_files} <- validate_files(files_array) do
+      verify_and_publish(address_hash, validated_files, conn)
+    else
+      {:error, error} ->
+        render(conn, :error, error: error)
+    end
+  end
+
+  defp sourcify_files(input) do
+    if Map.has_key?(input, "files") do
+      input["files"]
+    else
+      []
     end
   end
 
@@ -355,7 +350,7 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         files_array
         |> Enum.filter(fn file -> SmartContractHelper.sol_file?(file.filename) end)
 
-      if length(jsons) > 0 and length(sols) > 0 do
+      if not Enum.empty?(jsons) and not Enum.empty?(sols) do
         {:ok, files_array}
       else
         {:error, "You should attach at least one *.json and one *.sol files"}

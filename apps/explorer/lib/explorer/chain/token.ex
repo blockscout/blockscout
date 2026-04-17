@@ -69,6 +69,7 @@ defmodule Explorer.Chain.Token do
   * ERC-1155
   * ERC-404
   * ZRC-2 (for Zilliqa chain type)
+  * ERC-7984
 
   ## Token Specifications
 
@@ -78,7 +79,9 @@ defmodule Explorer.Chain.Token do
   * [ERC-1155](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md)
   * [ERC-404](https://github.com/Pandora-Labs-Org/erc404)
   * [ZRC-2](https://github.com/Zilliqa/ZRC/blob/main/zrcs/zrc-2.md)
+  * [ERC-7984](https://github.com/ethereum/ERCs/blob/39197cde3e32d8fc7fde74c7d0ce5e67ad4de409/ERCS/erc-7984.md)
   """
+  require Logger
 
   use Explorer.Schema
 
@@ -89,7 +92,8 @@ defmodule Explorer.Chain.Token do
   alias Ecto.{Changeset, Multi}
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{Address, BridgedToken, Hash, Search, Token}
-  alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Cache.{BackgroundMigrations, BlockNumber}
+  alias Explorer.Chain.Cache.Counters.{TokenHoldersCount, TokenTransfersCount}
   alias Explorer.Chain.Import.Runner
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Repo
@@ -213,7 +217,7 @@ defmodule Explorer.Chain.Token do
   """
   @spec stream_cataloged_tokens(
           initial :: accumulator,
-          reducer :: (entry :: Token.t(), accumulator -> accumulator),
+          reducer :: (entry :: __MODULE__.t(), accumulator -> accumulator),
           some_time_ago_updated :: integer(),
           limited? :: boolean()
         ) :: {:ok, accumulator}
@@ -221,7 +225,7 @@ defmodule Explorer.Chain.Token do
   def stream_cataloged_tokens(initial, reducer, some_time_ago_updated \\ 2880, limited? \\ false)
       when is_function(reducer, 2) do
     some_time_ago_updated
-    |> Token.cataloged_tokens()
+    |> cataloged_tokens()
     |> Chain.add_fetcher_limit(limited?)
     |> order_by(asc_nulls_first: :metadata_updated_at)
     |> Repo.stream_reduce(initial, reducer)
@@ -233,9 +237,10 @@ defmodule Explorer.Chain.Token do
   As part of updating token, an additional record is inserted for
   naming the address for reference if a name is provided for a token.
   """
-  @spec update(Token.t(), map(), boolean(), :base | :metadata_update) :: {:ok, Token.t()} | {:error, Ecto.Changeset.t()}
+  @spec update(__MODULE__.t(), map(), boolean(), :base | :metadata_update) ::
+          {:ok, __MODULE__.t()} | {:error, Ecto.Changeset.t()}
   def update(
-        %Token{contract_address_hash: address_hash} = token,
+        %__MODULE__{contract_address_hash: address_hash} = token,
         params \\ %{},
         info_from_admin_panel? \\ false,
         operation_type \\ :base
@@ -251,7 +256,7 @@ defmodule Explorer.Chain.Token do
 
     token_changeset =
       token
-      |> Token.changeset(
+      |> __MODULE__.changeset(
         filtered_params
         |> Map.put(:updated_at, DateTime.utc_now())
       )
@@ -354,7 +359,7 @@ defmodule Explorer.Chain.Token do
           | {:token_type, [String.t()]}
           | {:necessity_by_association, map()}
           | Chain.show_scam_tokens?()
-        ]) :: [Token.t()]
+        ]) :: [__MODULE__.t()]
   def list_top(filter, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
     token_type = Keyword.get(options, :token_type, nil)
@@ -374,17 +379,62 @@ defmodule Explorer.Chain.Token do
       |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
 
     filtered_query =
-      case filter && filter !== "" && Search.prepare_search_term(filter) do
-        {:some, filter_term} ->
-          sorted_paginated_query
-          |> where(fragment("to_tsvector('english', symbol || ' ' || name) @@ to_tsquery(?)", ^filter_term))
+      case filter && Chain.string_to_address_hash(filter) do
+        {:ok, address_hash} ->
+          from(t in sorted_paginated_query, where: t.contract_address_hash == ^address_hash)
 
         _ ->
-          sorted_paginated_query
+          case filter && filter !== "" && Search.prepare_search_term(filter) do
+            {:some, filter_term} -> apply_fts_filter(sorted_paginated_query, filter_term)
+            _ -> sorted_paginated_query
+          end
       end
 
     filtered_query
     |> Chain.select_repo(options).all()
+  end
+
+  @doc """
+  Applies full-text search filtering to a token query.
+
+  This function handles tokens with and without symbols differently:
+  - For tokens with a symbol, it searches across both symbol and name.
+  - For tokens without a symbol (e.g., ERC-1155), it searches only the name field.
+
+  ## Parameters
+  - `query`: The Ecto query to filter.
+  - `filter_term`: The prepared search term (from Search.prepare_search_term/1).
+
+  ## Returns
+  - An Ecto query with FTS filtering applied.
+  """
+  @spec apply_fts_filter(Ecto.Query.t(), String.t()) :: Ecto.Query.t()
+  def apply_fts_filter(query, filter_term) do
+    if BackgroundMigrations.get_heavy_indexes_create_tokens_name_partial_fts_index_finished() do
+      query
+      |> where(
+        [token],
+        (not is_nil(token.symbol) and
+           fragment(
+             "to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)",
+             token.symbol,
+             token.name,
+             ^filter_term
+           )) or
+          (is_nil(token.symbol) and
+             fragment(
+               "to_tsvector('english', ?) @@ to_tsquery(?)",
+               token.name,
+               ^filter_term
+             ))
+      )
+    else
+      query
+      |> where(
+        [token],
+        fragment("to_tsvector('english', ? || ' ' || ?) @@ to_tsquery(?)", token.symbol, token.name, ^filter_term)
+      )
+    end
   end
 
   defp apply_filter(query, empty_type) when empty_type in [nil, []], do: query
@@ -406,7 +456,7 @@ defmodule Explorer.Chain.Token do
     Gets tokens with given contract address hashes.
   """
   @spec get_by_contract_address_hashes([Hash.Address.t()], [Chain.api?() | Chain.necessity_by_association_option()]) ::
-          [Token.t()]
+          [__MODULE__.t()]
   def get_by_contract_address_hashes(hashes, options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
 
@@ -534,5 +584,155 @@ defmodule Explorer.Chain.Token do
       "ZRC-2" -> true
       _ -> false
     end
+  end
+
+  @doc """
+  Fetches token counters (transfers count and holders count) for a given token address.
+
+  This function spawns two async tasks to fetch the token transfers count and
+  token holders count concurrently. If a task times out or exits, it falls back
+  to fetching the cached value.
+
+  ## Parameters
+  - `address_hash`: The contract address hash of the token
+  - `timeout`: The timeout in milliseconds for the async tasks
+
+  ## Returns
+  - A tuple `{transfers_count, holders_count}` where each value is an integer or nil
+  """
+  @spec fetch_token_counters(Hash.Address.t(), timeout()) :: {integer() | nil, integer() | nil}
+  def fetch_token_counters(address_hash, timeout) do
+    total_token_transfers_task =
+      Task.async(fn ->
+        TokenTransfersCount.fetch(address_hash)
+      end)
+
+    total_token_holders_task =
+      Task.async(fn ->
+        TokenHoldersCount.fetch(address_hash)
+      end)
+
+    [total_token_transfers_task, total_token_holders_task]
+    |> Task.yield_many(timeout)
+    |> Enum.map(fn {task, res} ->
+      case res do
+        {:ok, result} ->
+          result
+
+        {:exit, reason} ->
+          Logger.warning("Query fetching token counters terminated: #{inspect(reason)}")
+
+          fallback_cached_value_based_on_async_task_pid(
+            task.pid,
+            total_token_transfers_task.pid,
+            total_token_holders_task.pid,
+            address_hash
+          )
+
+        nil ->
+          Logger.warning("Query fetching token counters timed out.")
+
+          fallback_cached_value_based_on_async_task_pid(
+            task.pid,
+            total_token_transfers_task.pid,
+            total_token_holders_task.pid,
+            address_hash
+          )
+      end
+    end)
+    |> List.to_tuple()
+  end
+
+  defp fallback_cached_value_based_on_async_task_pid(
+         task_pid,
+         total_token_transfers_task_pid,
+         total_token_holders_task_pid,
+         address_hash
+       ) do
+    case task_pid do
+      ^total_token_transfers_task_pid ->
+        TokenTransfersCount.fetch_count_from_cache(address_hash)
+
+      ^total_token_holders_task_pid ->
+        TokenHoldersCount.fetch_count_from_cache(address_hash)
+    end
+  end
+
+  @doc """
+  Checks if a `t:Explorer.Chain.Token.t/0` with the given `hash` exists.
+
+  Returns `:ok` if found
+
+      iex> address = insert(:address)
+      iex> insert(:token, contract_address: address)
+      iex> Explorer.Chain.Token.check_token_exists(address.hash)
+      :ok
+
+  Returns `:not_found` if not found
+
+      iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+      iex> Explorer.Chain.Token.check_token_exists(hash)
+      :not_found
+  """
+  @spec check_token_exists(Hash.Address.t()) :: :ok | :not_found
+  def check_token_exists(hash) do
+    hash
+    |> token_exists?()
+    |> Chain.boolean_to_check_result()
+  end
+
+  # Checks if a `t:Explorer.Chain.Token.t/0` with the given `hash` exists.
+
+  # Returns `true` if found
+
+  #     iex> address = insert(:address)
+  #     iex> insert(:token, contract_address: address)
+  #     iex> Explorer.Chain.token_exists?(address.hash)
+  #     true
+
+  # Returns `false` if not found
+
+  #     iex> {:ok, hash} = Explorer.Chain.string_to_address_hash("0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+  #     iex> Explorer.Chain.token_exists?(hash)
+  #     false
+  @spec token_exists?(Hash.Address.t()) :: boolean()
+  defp token_exists?(hash) do
+    query =
+      from(
+        token in Token,
+        where: token.contract_address_hash == ^hash
+      )
+
+    Repo.exists?(query)
+  end
+
+  @doc """
+  Gets the token type for a given contract address hash.
+  """
+  @spec get_token_type(Hash.Address.t()) :: String.t() | nil
+  def get_token_type(hash) do
+    query =
+      from(
+        token in __MODULE__,
+        where: token.contract_address_hash == ^hash,
+        select: token.type
+      )
+
+    Repo.one(query)
+  end
+
+  @doc """
+  Gets the token types for a list of contract address hashes.
+  """
+  @spec get_token_types([Hash.Address.t()]) :: [{Hash.Address.t(), String.t()}]
+  def get_token_types(hashes) do
+    query =
+      from(
+        token in __MODULE__,
+        where: token.contract_address_hash in ^hashes,
+        select: {token.contract_address_hash, token.type}
+      )
+
+    Repo.all(query)
   end
 end

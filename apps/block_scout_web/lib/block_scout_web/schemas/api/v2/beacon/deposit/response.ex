@@ -11,8 +11,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Beacon.Deposit.Response do
     Deposit.schema()
     |> Helper.extend_schema(
       title: "BeaconDepositResponse",
-      description: "BeaconDeposit response",
-      additionalProperties: false
+      description: "BeaconDeposit response"
     )
   )
 end

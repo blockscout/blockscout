@@ -20,7 +20,7 @@ defmodule Explorer.Mixfile do
       lockfile: "../../mix.lock",
       package: package(),
       start_permanent: Mix.env() == :prod,
-      version: "9.3.0",
+      version: "11.0.0",
       xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper, Indexer.Fetcher.InternalTransaction]]
     ]
   end
@@ -92,14 +92,14 @@ defmodule Explorer.Mixfile do
       {:logger_json, "~> 7.0"},
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
-      {:mox, "~> 1.1.0"},
+      {:mox, "~> 1.2.0"},
       {:poison, "~> 5.0.0"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
       {:prometheus, "~> 6.0", override: true},
       # Prometheus metrics for query duration
       {:prometheus_ecto, "~> 1.4.3"},
-      {:prometheus_ex, "~> 5.0.0", override: true},
+      {:prometheus_ex, "~> 5.1.0", override: true},
       # bypass optional dependency
       {:plug_cowboy, "~> 2.2", only: [:dev, :test]},
       {:que, "~> 0.10.1"},
@@ -111,11 +111,11 @@ defmodule Explorer.Mixfile do
       # `:spandex` tracing of `:ecto`
       {:spandex_ecto, "~> 0.7.0"},
       # Attach `:prometheus_ecto` to `:ecto`
-      {:telemetry, "~> 1.3.0"},
+      {:telemetry, "~> 1.4.1"},
       # `Timex.Duration` for `Explorer.Chain.Cache.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
       {:con_cache, "~> 1.0"},
-      {:tesla, "~> 1.15.3"},
+      {:tesla, "~> 1.16.0"},
       {:cbor, "~> 1.0"},
       {:cloak_ecto, "~> 1.3.0"},
       {:redix, "~> 1.1"},
@@ -129,12 +129,14 @@ defmodule Explorer.Mixfile do
       {:oauth2, "~> 2.0"},
       {:siwe, github: "royal-markets/siwe-ex", ref: "51c9c08240eb7eea3c35693011f8d260cd9bb3be"},
       {:joken, "~> 2.6"},
+      {:joken_jwks, "~> 1.7.0"},
       {:utils, in_umbrella: true},
       {:dns, "~> 2.4.0"},
       {:inet_cidr, "~> 1.0.0"},
       {:hammer, "~> 7.0"},
       {:ton, "~> 0.5.0"},
-      {:mint, "~> 1.0"}
+      {:mint, "~> 1.0"},
+      {:oban, "~> 2.19"}
     ]
   end
 

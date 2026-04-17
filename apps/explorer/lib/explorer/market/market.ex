@@ -37,8 +37,7 @@ defmodule Explorer.Market do
   def handle_continue(attempt, _state) do
     attempt |> Kernel.**(3) |> :timer.seconds() |> :timer.sleep()
 
-    case Node.list()
-         |> Enum.filter(&Helper.indexer_node?/1) do
+    case Node.list() |> Enum.filter(&Helper.indexer_node?/1) do
       [] ->
         if attempt < 5 do
           {:noreply, nil, {:continue, attempt + 1}}
@@ -54,7 +53,7 @@ defmodule Explorer.Market do
 
         :persistent_term.put(@history_key, !is_nil(history_pid))
         :persistent_term.put(@tokens_key, !is_nil(token_pid))
-        {:stop, :normal}
+        {:stop, :normal, nil}
 
       multiple_indexers ->
         if attempt < 5 do
@@ -144,5 +143,22 @@ defmodule Explorer.Market do
     :persistent_term.get(@history_key, false)
   end
 
-  defp find_history_and_token_fetchers, do: {GenServer.whereis(HistoryFetcher), GenServer.whereis(TokenFetcher)}
+  @doc """
+  Locates the running processes for the market history and token fiat value fetchers.
+
+  This function checks whether the `Explorer.Market.Fetcher.History` and
+  `Explorer.Market.Fetcher.Token` GenServer processes are currently running
+  and returns their process identifiers.
+
+  ## Parameters
+  None.
+
+  ## Returns
+  - A tuple `{history_fetcher, token_fetcher}` where each element is:
+    - `nil` if the corresponding fetcher process is not running
+    - A `pid()` if the process is registered locally
+    - A `{atom(), atom()}` tuple if registered via `:global` or `:via`
+  """
+  @spec find_history_and_token_fetchers() :: {nil | pid() | {atom(), atom()}, nil | pid() | {atom(), atom()}}
+  def find_history_and_token_fetchers, do: {GenServer.whereis(HistoryFetcher), GenServer.whereis(TokenFetcher)}
 end

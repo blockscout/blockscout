@@ -43,6 +43,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   import Indexer.Block.Fetcher,
     only: [
       async_import_token_balances: 2,
+      async_import_current_token_balances: 2,
       async_import_tokens: 2
     ]
 
@@ -360,6 +361,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
 
     async_import_tokens(imported, calling_module == Indexer.Block.Realtime.Fetcher)
     async_import_token_balances(imported, calling_module == Indexer.Block.Realtime.Fetcher)
+    async_import_current_token_balances(imported, calling_module == Indexer.Block.Realtime.Fetcher)
 
     fetch_zrc2_token_adapters(
       logs,
@@ -447,52 +449,10 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
 
     zrc2_token_adapters =
       logs
-      |> Enum.filter(fn log ->
-        with false <- is_nil(log.first_topic),
-             true <- Hash.to_string(log.first_topic) == @zrc2_transfer_success_event,
-             # only ZRC-2 is supported
-             params = zrc2_event_params(log.data),
-             true <- Map.has_key?(params, :sender) && Map.has_key?(params, :recipient) && Map.has_key?(params, :amount),
-             true <- is_nil(zrc2_log_adapter_address_hash(log, adapter_address_hash_by_zrc2_address_hash)) do
-          transaction_input = transaction_by_hash[log.transaction_hash].input.bytes
-
-          method_id =
-            if byte_size(transaction_input) >= 4 do
-              <<method_id::binary-size(4), _::binary>> = transaction_input
-              "0x" <> Base.encode16(method_id, case: :lower)
-            end
-
-          method_id == TokenTransfer.transfer_function_signature()
-        else
-          _ -> false
-        end
-      end)
-      |> Enum.reduce([], fn log, acc ->
-        transaction_hash = log.transaction_hash
-        to_address_hash = transaction_by_hash[transaction_hash].to_address_hash
-
-        # are there any `Transfer` logs emitted by the `to_address_hash` in this transaction?
-        erc20_transfer_event_found =
-          logs
-          |> Enum.filter(&(&1.transaction_hash == transaction_hash))
-          |> Enum.any?(
-            &(!is_nil(&1.first_topic) and Hash.to_string(&1.first_topic) == TokenTransfer.constant() and
-                &1.address_hash == to_address_hash)
-          )
-
-        if erc20_transfer_event_found do
-          acc
-        else
-          # if the `Transfer` log is not found, this is ERC-20 adapter contract address
-          [
-            %{
-              adapter_address_hash: Hash.to_string(to_address_hash),
-              zrc2_address_hash: Hash.to_string(log.address_hash)
-            }
-            | acc
-          ]
-        end
-      end)
+      |> Enum.filter(
+        &valid_zrc2_transfer_log?(&1, transaction_by_hash, adapter_address_hash_by_zrc2_address_hash, logs)
+      )
+      |> Enum.reduce([], &build_zrc2_adapters(&1, &2, transaction_by_hash, logs))
       |> Enum.uniq()
 
     if zrc2_token_adapters != [] do
@@ -508,6 +468,63 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
           timeout: :infinity
         })
     end
+  end
+
+  # Checks if log is a valid ZRC-2 transfer log with correct event signature and method ID
+  defp valid_zrc2_transfer_log?(log, transaction_by_hash, adapter_address_hash_by_zrc2_address_hash, _logs) do
+    with false <- is_nil(log.first_topic),
+         true <- Hash.to_string(log.first_topic) == @zrc2_transfer_success_event,
+         # only ZRC-2 is supported
+         params = zrc2_event_params(log.data),
+         true <- Map.has_key?(params, :sender) && Map.has_key?(params, :recipient) && Map.has_key?(params, :amount),
+         true <- is_nil(zrc2_log_adapter_address_hash(log, adapter_address_hash_by_zrc2_address_hash)) do
+      transaction_input = transaction_by_hash[log.transaction_hash].input.bytes
+
+      method_id =
+        if byte_size(transaction_input) >= 4 do
+          <<method_id::binary-size(4), _::binary>> = transaction_input
+          "0x" <> Base.encode16(method_id, case: :lower)
+        else
+          nil
+        end
+
+      method_id == TokenTransfer.transfer_function_signature()
+    else
+      _ -> false
+    end
+  end
+
+  # Builds ZRC-2 token adapter from a log if no ERC-20 transfer was found in the same transaction
+  defp build_zrc2_adapters(log, acc, transaction_by_hash, logs) do
+    transaction_hash = log.transaction_hash
+    to_address_hash = transaction_by_hash[transaction_hash].to_address_hash
+
+    # are there any `Transfer` logs emitted by the `to_address_hash` in this transaction?
+    erc20_transfer_event_found =
+      has_erc20_transfer_for_address?(logs, transaction_hash, to_address_hash)
+
+    if erc20_transfer_event_found do
+      acc
+    else
+      # if the `Transfer` log is not found, this is ERC-20 adapter contract address
+      [
+        %{
+          adapter_address_hash: Hash.to_string(to_address_hash),
+          zrc2_address_hash: Hash.to_string(log.address_hash)
+        }
+        | acc
+      ]
+    end
+  end
+
+  # Checks if there are `Transfer` logs emitted by the given address in the transaction
+  defp has_erc20_transfer_for_address?(logs, transaction_hash, to_address_hash) do
+    logs
+    |> Enum.filter(&(&1.transaction_hash == transaction_hash))
+    |> Enum.any?(
+      &(!is_nil(&1.first_topic) and Hash.to_string(&1.first_topic) == TokenTransfer.constant() and
+          &1.address_hash == to_address_hash)
+    )
   end
 
   # Scans the `zilliqa_zrc2_token_transfers` table for the rows that have corresponding
@@ -554,6 +571,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
 
       async_import_tokens(imported, false)
       async_import_token_balances(imported, false)
+      async_import_current_token_balances(imported, false)
     end
 
     Enum.each(token_transfers, fn tt ->

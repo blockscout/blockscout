@@ -22,12 +22,14 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     graphql_max_complexity: [:block_scout_web, [Api.GraphQL, :max_complexity]],
     graphql_token_limit: [:block_scout_web, [Api.GraphQL, :token_limit]],
     reading_enabled: [:block_scout_web, [__MODULE__, :reading_enabled]],
-    writing_enabled: [:block_scout_web, [__MODULE__, :writing_enabled]]
+    writing_enabled: [:block_scout_web, [__MODULE__, :writing_enabled]],
+    mud_enabled_compile_time?: [:explorer, [Explorer.Chain.Mud, :enabled]]
 
   use Utils.RuntimeEnvHelper,
     mud_enabled?: [:explorer, [Explorer.Chain.Mud, :enabled]]
 
   alias BlockScoutWeb.Routers.{
+    AccountRouter,
     AddressBadgesApiV2Router,
     APIKeyV2Router,
     SmartContractsApiV2Router,
@@ -36,7 +38,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   }
 
   alias BlockScoutWeb.Plug.{CheckApiV2, CheckFeature}
-  alias BlockScoutWeb.Routers.AccountRouter
 
   @max_query_string_length 5_000
 
@@ -76,7 +77,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
-    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.ApiSpec)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.Specs.Public)
   end
 
   pipeline :api_v2_no_session do
@@ -121,6 +122,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     delete("/token-info", V2.ImportController, :delete_token_info)
 
     get("/smart-contracts/:address_hash_param", V2.ImportController, :try_to_search_contract)
+    post("/smart-contracts/:address_hash_param/audit-reports", V2.ImportController, :import_audit_report)
 
     if @chain_type == :optimism do
       post("/optimism/interop/", V2.OptimismController, :interop_import)
@@ -138,25 +140,25 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     end
 
     scope "/config" do
+      get("/backend", V2.ConfigController, :backend)
       get("/backend-version", V2.ConfigController, :backend_version)
       get("/csv-export", V2.ConfigController, :csv_export)
       get("/indexer", V2.ConfigController, :indexer)
       get("/public-metrics", V2.ConfigController, :public_metrics)
       get("/smart-contracts/languages", V2.ConfigController, :languages_list)
+      get("/db-background-migrations", V2.ConfigController, :db_background_migrations)
 
       if @chain_identity == {:optimism, :celo} do
         get("/celo", V2.ConfigController, :celo)
       end
     end
 
+    get("/csv-exports/:uuid_param", V2.CsvExportController, :get_csv_export)
+
     scope "/transactions" do
       get("/", V2.TransactionController, :transactions)
       get("/watchlist", V2.TransactionController, :watchlist_transactions)
       get("/stats", V2.TransactionController, :stats)
-
-      if @chain_type == :polygon_zkevm do
-        get("/zkevm-batch/:batch_number_param", V2.TransactionController, :polygon_zkevm_batch)
-      end
 
       if @chain_type == :zksync do
         get("/zksync-batch/:batch_number_param", V2.TransactionController, :zksync_batch)
@@ -182,6 +184,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:transaction_hash_param/token-transfers", V2.TransactionController, :token_transfers)
       get("/:transaction_hash_param/internal-transactions", V2.TransactionController, :internal_transactions)
       get("/:transaction_hash_param/logs", V2.TransactionController, :logs)
+      get("/:transaction_hash_param/fhe-operations", V2.TransactionController, :fhe_operations)
+
       get("/:transaction_hash_param/raw-trace", V2.TransactionController, :raw_trace)
       get("/:transaction_hash_param/state-changes", V2.TransactionController, :state_changes)
       get("/:transaction_hash_param/summary", V2.TransactionController, :summary)
@@ -274,11 +278,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/optimism-deposits", V2.OptimismController, :main_page_deposits)
       end
 
-      if @chain_type == :polygon_zkevm do
-        get("/zkevm/batches/confirmed", V2.PolygonZkevmController, :batches_confirmed)
-        get("/zkevm/batches/latest-number", V2.PolygonZkevmController, :batch_latest_number)
-      end
-
       if @chain_type == :zksync do
         get("/zksync/batches/confirmed", V2.ZkSyncController, :batches_confirmed)
         get("/zksync/batches/latest-number", V2.ZkSyncController, :batch_latest_number)
@@ -304,9 +303,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     if @chain_type == :optimism do
       scope "/optimism" do
-        get("/txn-batches", V2.OptimismController, :transaction_batches)
-        get("/txn-batches/count", V2.OptimismController, :transaction_batches_count)
-        get("/txn-batches/:l2_block_range_start/:l2_block_range_end", V2.OptimismController, :transaction_batches)
         get("/batches", V2.OptimismController, :batches)
         get("/batches/count", V2.OptimismController, :batches_count)
         get("/batches/da/celestia/:height/:commitment", V2.OptimismController, :batch_by_celestia_blob)
@@ -358,18 +354,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     scope "/withdrawals" do
       get("/", V2.WithdrawalController, :withdrawals_list)
       get("/counters", V2.WithdrawalController, :withdrawals_counters)
-    end
-
-    scope "/zkevm" do
-      if @chain_type == :polygon_zkevm do
-        get("/batches", V2.PolygonZkevmController, :batches)
-        get("/batches/count", V2.PolygonZkevmController, :batches_count)
-        get("/batches/:batch_number", V2.PolygonZkevmController, :batch)
-        get("/deposits", V2.PolygonZkevmController, :deposits)
-        get("/deposits/count", V2.PolygonZkevmController, :deposits_count)
-        get("/withdrawals", V2.PolygonZkevmController, :withdrawals)
-        get("/withdrawals/count", V2.PolygonZkevmController, :withdrawals_count)
-      end
     end
 
     scope "/proxy" do
@@ -458,17 +442,19 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       end
     end
 
-    scope "/mud" do
-      pipe_through(:mud)
-      get("/worlds", V2.MudController, :worlds)
-      get("/worlds/count", V2.MudController, :worlds_count)
-      get("/worlds/:world/tables", V2.MudController, :world_tables)
-      get("/worlds/:world/systems", V2.MudController, :world_systems)
-      get("/worlds/:world/systems/:system", V2.MudController, :world_system)
-      get("/worlds/:world/tables/count", V2.MudController, :world_tables_count)
-      get("/worlds/:world/tables/:table_id/records", V2.MudController, :world_table_records)
-      get("/worlds/:world/tables/:table_id/records/count", V2.MudController, :world_table_records_count)
-      get("/worlds/:world/tables/:table_id/records/:record_id", V2.MudController, :world_table_record)
+    if @mud_enabled_compile_time? do
+      scope "/mud" do
+        pipe_through(:mud)
+        get("/worlds", V2.MudController, :worlds)
+        get("/worlds/count", V2.MudController, :worlds_count)
+        get("/worlds/:world/tables", V2.MudController, :world_tables)
+        get("/worlds/:world/systems", V2.MudController, :world_systems)
+        get("/worlds/:world/systems/:system", V2.MudController, :world_system)
+        get("/worlds/:world/tables/count", V2.MudController, :world_tables_count)
+        get("/worlds/:world/tables/:table_id/records", V2.MudController, :world_table_records)
+        get("/worlds/:world/tables/:table_id/records/count", V2.MudController, :world_table_records_count)
+        get("/worlds/:world/tables/:table_id/records/:record_id", V2.MudController, :world_table_record)
+      end
     end
 
     scope "/arbitrum" do

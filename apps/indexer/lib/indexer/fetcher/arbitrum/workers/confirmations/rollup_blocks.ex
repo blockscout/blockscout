@@ -100,14 +100,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
           )
 
         # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-        if length(confirmed_blocks) > 0 do
+        if Enum.empty?(confirmed_blocks) do
+          log_info("Either no unconfirmed blocks found or DB inconsistency error discovered")
+          []
+        else
           log_info("Found #{length(confirmed_blocks)} confirmed blocks")
 
           add_confirmation_transaction(confirmed_blocks, block_to_l1_transactions[block_number].l1_transaction_hash) ++
             updated_rollup_blocks
-        else
-          log_info("Either no unconfirmed blocks found or DB inconsistency error discovered")
-          []
         end
       end)
     end
@@ -220,22 +220,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
            not genesis_reached?(first_unconfirmed_block, rollup_first_block) do
         log_info("End of the batch #{batch.number} discovered, moving to the previous batch")
 
-        {status, updated_rollup_blocks} =
-          discover_rollup_blocks_belonging_to_one_confirmation(
-            first_unconfirmed_block - 1,
-            confirmation_desc,
-            outbox_config,
-            rollup_first_block,
-            new_cache
-          )
-
-        case status do
-          :error -> {:error, []}
-          # updated_rollup_blocks will contain either [] if the previous batch
-          # already confirmed or list of unconfirmed blocks of all previous
-          # unconfirmed batches
-          :ok -> {:ok, unconfirmed_rollup_blocks ++ updated_rollup_blocks}
-        end
+        discover_previous_batch_blocks(
+          first_unconfirmed_block,
+          confirmation_desc,
+          outbox_config,
+          rollup_first_block,
+          new_cache,
+          unconfirmed_rollup_blocks,
+          raw_unconfirmed_rollup_blocks
+        )
       else
         # During the process of new confirmations discovery it will show "N of N",
         # for the process of historical confirmations discovery it will show "N of M".
@@ -245,6 +238,33 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
 
         {:ok, unconfirmed_rollup_blocks}
       end
+    end
+  end
+
+  defp discover_previous_batch_blocks(
+         first_unconfirmed_block,
+         confirmation_desc,
+         outbox_config,
+         rollup_first_block,
+         new_cache,
+         unconfirmed_rollup_blocks,
+         _raw_unconfirmed_rollup_blocks
+       ) do
+    {status, updated_rollup_blocks} =
+      discover_rollup_blocks_belonging_to_one_confirmation(
+        first_unconfirmed_block - 1,
+        confirmation_desc,
+        outbox_config,
+        rollup_first_block,
+        new_cache
+      )
+
+    case status do
+      :error -> {:error, []}
+      # updated_rollup_blocks will contain either [] if the previous batch
+      # already confirmed or list of unconfirmed blocks of all previous
+      # unconfirmed batches
+      :ok -> {:ok, unconfirmed_rollup_blocks ++ updated_rollup_blocks}
     end
   end
 

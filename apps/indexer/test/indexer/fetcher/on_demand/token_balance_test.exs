@@ -64,9 +64,20 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalanceTest do
 
       TokenBalanceOnDemand.trigger_fetch(address.hash)
 
-      Process.sleep(200)
+      updated_ctb =
+        wait_for_results(fn ->
+          Repo.one!(
+            from(
+              ctb in CurrentTokenBalance,
+              where:
+                ctb.address_hash == ^address.hash and
+                  ctb.token_contract_address_hash == ^token_contract_address_hash and
+                  not is_nil(ctb.value)
+            )
+          )
+        end)
 
-      [%{value: updated_value} = updated_ctb] = Repo.all(CurrentTokenBalance)
+      updated_value = updated_ctb.value
 
       assert updated_value == Decimal.new(1_000_000_000_000_000_000_000_000)
       refute is_nil(updated_ctb.value_fetched_at)
@@ -97,9 +108,21 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalanceTest do
         token_balance.block_number
       )
 
-      Process.sleep(100)
+      updated_tb =
+        wait_for_results(fn ->
+          Repo.one!(
+            from(
+              tb in TokenBalance,
+              where:
+                tb.address_hash == ^token_balance.address_hash and
+                  tb.token_contract_address_hash == ^token_balance.token_contract_address_hash and
+                  tb.block_number == ^token_balance.block_number and
+                  not is_nil(tb.value)
+            )
+          )
+        end)
 
-      [%{value: updated_value} = updated_tb] = Repo.all(TokenBalance)
+      updated_value = updated_tb.value
 
       assert updated_value == Decimal.new(1_000_000_000_000_000_000_000_000)
       refute is_nil(updated_tb.value_fetched_at)

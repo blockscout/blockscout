@@ -19,10 +19,9 @@ defmodule BlockScoutWeb.Mixfile do
       lockfile: "../../mix.lock",
       package: package(),
       start_permanent: Mix.env() == :prod,
-      version: "9.3.0",
+      version: "11.0.0",
       xref: [
         exclude: [
-          Explorer.Chain.PolygonZkevm.Reader,
           Explorer.Chain.Beacon.Reader,
           Explorer.Chain.Cache.OptimismFinalizationPeriod,
           Explorer.Chain.Optimism.OutputRoot,
@@ -122,14 +121,15 @@ defmodule BlockScoutWeb.Mixfile do
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:number, "~> 1.0.1"},
-      {:phoenix, "== 1.6.16"},
+      {:phoenix, "== 1.8.3"},
       {:phoenix_ecto, "~> 4.1"},
-      {:phoenix_html, "== 4.2.1"},
+      {:phoenix_html, "== 4.3.0"},
       {:phoenix_html_helpers, "~> 1.0"},
       {:phoenix_live_reload, "~> 1.6", only: [:dev]},
       {:phoenix_live_view, "~> 1.1"},
       {:phoenix_pubsub, "~> 2.0"},
-      {:prometheus_ex, "~> 5.0.0", override: true},
+      {:phoenix_view, "~> 2.0"},
+      {:prometheus_ex, "~> 5.1.0", override: true},
       # use `:cowboy` for WebServer with `:plug`
       {:plug_cowboy, "~> 2.2"},
       # Waiting for the Pretty Print to be implemented at the Jason lib

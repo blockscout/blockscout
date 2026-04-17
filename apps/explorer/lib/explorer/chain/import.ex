@@ -215,7 +215,15 @@ defmodule Explorer.Chain.Import do
     changeset_function_name = Map.get(options, :with, :changeset)
     struct = ecto_schema_module.__struct__()
 
+    prepare_data_function =
+      if Map.has_key?(Enum.into(runner.__info__(:functions), %{}), :prepare_data) do
+        &runner.prepare_data(&1)
+      else
+        & &1
+      end
+
     params
+    |> prepare_data_function.()
     |> Stream.map(&apply(ecto_schema_module, changeset_function_name, [struct, &1]))
     |> Enum.reduce({:ok, []}, fn
       changeset = %Changeset{valid?: false}, {:ok, _} ->
@@ -445,7 +453,7 @@ defmodule Explorer.Chain.Import do
   end
 
   defp handle_partially_imported_blocks(%{blocks: %{params: blocks_params}}) do
-    block_numbers = Enum.map(blocks_params, & &1.number)
+    block_numbers = blocks_params |> Enum.map(& &1.number) |> Enum.uniq()
     Block.set_refetch_needed(block_numbers)
     Import.Runner.Blocks.process_blocks_consensus(blocks_params)
 

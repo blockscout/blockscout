@@ -5,11 +5,12 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
 
   import BlockScoutWeb.Chain, only: [address_to_internal_transactions: 2]
 
-  alias Explorer.Chain.{Address, Hash, Transaction, Wei}
-  alias Explorer.Chain.CsvExport.Helper
+  alias Explorer.Chain.{Address, Hash, InternalTransaction, Transaction, Wei}
+  alias Explorer.Chain.CsvExport.{AsyncHelper, Helper}
 
-  @spec export(Hash.Address.t(), String.t(), String.t(), String.t() | nil, String.t() | nil) :: Enumerable.t()
-  def export(address_hash, from_period, to_period, _options, filter_type \\ nil, filter_value \\ nil) do
+  @spec export(Hash.Address.t(), String.t(), String.t(), Keyword.t(), String.t() | nil, String.t() | nil) ::
+          Enumerable.t()
+  def export(address_hash, from_period, to_period, _options, filter_type, filter_value) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
 
     address_hash
@@ -33,9 +34,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
       |> Keyword.put(:paging_options, paging_options)
       |> Keyword.put(:from_block, from_block)
       |> Keyword.put(:to_block, to_block)
-      |> Keyword.put(:necessity_by_association, %{
-        :transaction => :optional
-      })
+      |> Keyword.put(:timeout, AsyncHelper.db_timeout())
       |> (&if(Helper.valid_filter?(filter_type, filter_value, "internal_transactions"),
             do: &1 |> Keyword.put(:direction, String.to_atom(filter_value)),
             else: &1
@@ -49,9 +48,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
       "TxHash",
       "Index",
       "BlockNumber",
-      "BlockHash",
       "TxIndex",
-      "BlockIndex",
       "UnixTimestamp",
       "FromAddress",
       "ToAddress",
@@ -79,18 +76,16 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
           to_string(internal_transaction.transaction_hash),
           internal_transaction.index,
           internal_transaction.block_number,
-          internal_transaction.block_hash,
-          internal_transaction.block_index,
           internal_transaction.transaction_index,
-          internal_transaction.block.timestamp,
+          internal_transaction.block && internal_transaction.block.timestamp,
           Address.checksum(internal_transaction.from_address_hash),
           Address.checksum(internal_transaction.to_address_hash),
           Address.checksum(internal_transaction.created_contract_address_hash),
           internal_transaction.type,
-          internal_transaction.call_type,
-          internal_transaction.gas,
+          InternalTransaction.call_type(internal_transaction),
+          internal_transaction.gas || "0",
           internal_transaction.gas_used,
-          Wei.to(internal_transaction.value, :wei),
+          Wei.to(internal_transaction.value || Wei.zero(), :wei),
           internal_transaction.input,
           internal_transaction.output,
           internal_transaction.error,

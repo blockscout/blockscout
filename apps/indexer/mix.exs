@@ -14,7 +14,7 @@ defmodule Indexer.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "9.3.0",
+      version: "11.0.0",
       xref: [
         exclude: [
           Explorer.Chain.Optimism.Deposit,
@@ -53,20 +53,20 @@ defmodule Indexer.MixProject do
       {:ethereum_jsonrpc, in_umbrella: true},
       {:ex_eth_bls, "~> 0.1.0"},
       # Brotli compression/decompression
-      {:ex_brotli, "~> 0.5.0"},
+      {:ex_brotli, "~> 0.6.0"},
       {:ex_keccak, "~> 0.7.5"},
       # RLP encoding
       {:ex_rlp, "~> 0.6.0"},
       # Importing to database
       {:explorer, in_umbrella: true},
       # ex_secp256k1 crypto functions
-      {:ex_secp256k1, "~> 0.7.0"},
+      {:ex_secp256k1, "~> 0.8.0"},
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
       {:logger_json, "~> 7.0"},
       # Mocking `EthereumJSONRPC.Transport`, so we avoid hitting real chains for local testing
-      {:mox, "~> 1.1.0"},
-      {:prometheus_ex, "~> 5.0.0", override: true},
+      {:mox, "~> 1.2.0"},
+      {:prometheus_ex, "~> 5.1.0", override: true},
       # Tracing
       {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog

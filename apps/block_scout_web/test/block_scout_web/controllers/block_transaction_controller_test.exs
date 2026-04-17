@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
 
   import BlockScoutWeb.Routers.WebRouter.Helpers, only: [block_transaction_path: 3]
 
+  alias BlockScoutWeb.TestHelper
+
   describe "GET index/2" do
     test "with invalid block number", %{conn: conn} do
       conn = get(conn, block_transaction_path(conn, :index, "unknown"))
@@ -57,7 +59,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
 
       conn = get(conn, block_transaction_path(conn, :index, block.number))
 
-      assert_block_above_tip(conn)
+      TestHelper.assert_block_above_tip(conn)
     end
 
     test "non-consensus block number above consensus block number is treated as consensus number above tip", %{
@@ -71,7 +73,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
 
       conn = get(conn, block_transaction_path(conn, :index, block.number))
 
-      assert_block_above_tip(conn)
+      TestHelper.assert_block_above_tip(conn)
     end
 
     test "returns transactions for consensus block hash", %{conn: conn} do
@@ -192,15 +194,5 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
       conn = get(conn, block_transaction_path(conn, :index, block))
       assert html_response(conn, 200) =~ miner_name
     end
-  end
-
-  defp assert_block_above_tip(conn) do
-    assert conn
-           |> html_response(404)
-           |> Floki.parse_fragment()
-           |> elem(1)
-           |> Floki.find(~S|.error-descr|)
-           |> Floki.text()
-           |> String.trim() == "Easy Cowboy! This block does not exist yet!"
   end
 end

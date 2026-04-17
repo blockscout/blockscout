@@ -169,6 +169,9 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       start_supervised!(AverageBlockTime)
       Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 
+      Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.BlockNumber.child_id())
+
       on_exit(fn ->
         Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
       end)
@@ -183,7 +186,11 @@ defmodule BlockScoutWeb.API.RPC.BlockControllerTest do
       first_timestamp = Timex.now()
 
       for i <- 1..current_block_number do
-        insert(:block, number: i, timestamp: Timex.shift(first_timestamp, seconds: i * average_block_time))
+        insert(:block,
+          number: i,
+          timestamp: Timex.shift(first_timestamp, seconds: i * average_block_time),
+          consensus: true
+        )
       end
 
       AverageBlockTime.refresh()

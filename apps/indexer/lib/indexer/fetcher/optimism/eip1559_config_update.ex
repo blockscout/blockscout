@@ -37,10 +37,10 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
   alias EthereumJSONRPC.Blocks
   alias Explorer.Chain
+  alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Block.Reader.General, as: BlockGeneralReader
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Chain.Hash
   alias Explorer.Chain.Optimism.EIP1559ConfigUpdate
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
@@ -320,57 +320,15 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
     case fetch_blocks_by_numbers(block_numbers, json_rpc_named_arguments, false) do
       {:ok, %Blocks{blocks_params: blocks_params}} ->
         # we only keep block numbers for the existing blocks
-        block_numbers_existing =
-          block_numbers
-          |> Enum.filter(fn block_number ->
-            Enum.any?(blocks_params, fn b ->
-              !is_nil(b) and b.number == block_number
-            end)
-          end)
+        block_numbers_existing = existing_block_numbers(block_numbers, blocks_params)
+        blocks_by_number = blocks_params_by_number(blocks_params)
 
         last_block_number = List.last(block_numbers_existing)
 
         Enum.reduce(block_numbers_existing, 0, fn block_number, acc ->
-          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          block = Enum.find(blocks_params, %{extra_data: "0x"}, fn b -> b.number == block_number end)
+          block = Map.get(blocks_by_number, block_number, %{extra_data: "0x"})
 
-          extra_data = hash_to_binary(block.extra_data)
-
-          return =
-            with {:valid_format, true} <- {:valid_format, byte_size(extra_data) >= 9},
-                 <<version::size(8), denominator::size(32), elasticity::size(32), rest_extra_data::binary>> =
-                   extra_data,
-                 prev_config = EIP1559ConfigUpdate.actual_config_for_block(block.number),
-                 new_config =
-                   (if version == 0 do
-                      {denominator, elasticity, nil}
-                    else
-                      <<min_base_fee::size(64), _::binary>> = rest_extra_data
-                      {denominator, elasticity, min_base_fee}
-                    end),
-                 {:updated_config, true} <- {:updated_config, prev_config != new_config} do
-              update_config(block.number, block.hash, new_config)
-
-              Logger.info(
-                "Config was updated at block #{block.number}. Previous one: #{inspect(prev_config)}. New one: #{inspect(new_config)}."
-              )
-
-              acc + 1
-            else
-              {:valid_format, false} ->
-                Logger.warning("extraData of the block ##{block_number} has invalid format. Ignoring it.")
-                acc
-
-              {:updated_config, false} ->
-                acc
-            end
-
-          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          if block.number == last_block_number do
-            Optimism.set_last_block_hash(block.hash, @counter_type_last_l2_block_hash)
-          end
-
-          return
+          process_block_config(block, block_number, last_block_number, acc)
         end)
 
       {_, message_or_errors} ->
@@ -388,6 +346,63 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
         )
 
         handle_updates(block_numbers, json_rpc_named_arguments)
+    end
+  end
+
+  defp existing_block_numbers(block_numbers, blocks_params) do
+    existing_numbers =
+      blocks_params
+      |> Enum.reject(&is_nil/1)
+      |> MapSet.new(& &1.number)
+
+    Enum.filter(block_numbers, &MapSet.member?(existing_numbers, &1))
+  end
+
+  defp blocks_params_by_number(blocks_params) do
+    blocks_params
+    |> Enum.reject(&is_nil/1)
+    |> Map.new(&{&1.number, &1})
+  end
+
+  defp process_block_config(block, block_number, last_block_number, acc) do
+    extra_data = hash_to_binary(block.extra_data)
+
+    return =
+      with {:valid_format, true} <- {:valid_format, byte_size(extra_data) >= 9},
+           <<version::size(8), denominator::size(32), elasticity::size(32), rest_extra_data::binary>> =
+             extra_data,
+           prev_config = EIP1559ConfigUpdate.actual_config_for_block(block.number),
+           new_config = build_eip1559_config(version, denominator, elasticity, rest_extra_data),
+           {:updated_config, true} <- {:updated_config, prev_config != new_config} do
+        update_config(block.number, block.hash, new_config)
+
+        Logger.info(
+          "Config was updated at block #{block.number}. Previous one: #{inspect(prev_config)}. New one: #{inspect(new_config)}."
+        )
+
+        acc + 1
+      else
+        {:valid_format, false} ->
+          Logger.warning("extraData of the block ##{block_number} has invalid format. Ignoring it.")
+          acc
+
+        {:updated_config, false} ->
+          acc
+      end
+
+    if block.number == last_block_number do
+      Optimism.set_last_block_hash(block.hash, @counter_type_last_l2_block_hash)
+    end
+
+    return
+  end
+
+  defp build_eip1559_config(version, denominator, elasticity, rest_extra_data) do
+    if version == 0 do
+      {denominator, elasticity, nil}
+    else
+      <<min_base_fee::size(64), _::binary>> = rest_extra_data
+      {denominator, elasticity, min_base_fee}
     end
   end
 
@@ -655,7 +670,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   defp block_hash_by_number(block_number, json_rpc_named_arguments) do
     hash_from_db =
       [block_number]
-      |> Chain.block_hash_by_number()
+      |> Block.block_hash_by_number()
       |> Map.get(block_number)
 
     if is_nil(hash_from_db) do

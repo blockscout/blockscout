@@ -63,7 +63,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          _ <- PublishHelper.sourcify_check(address_hash_string),
          {:not_found, {:ok, %Address{} = address}} <-
-           {:not_found, Chain.find_contract_address(address_hash, smart_contract_address_options())} do
+           {:not_found, Address.find_contract_address(address_hash, smart_contract_address_options())} do
       implementations = SmartContractHelper.pre_fetch_implementations(address)
 
       conn
@@ -273,10 +273,10 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   defp contract_creation_transaction_associations do
     case chain_type() do
       :filecoin ->
-        Address.contract_creation_transaction_with_from_address_associations()
+        [Address.contract_creation_transaction_with_from_address_association()]
 
       _ ->
-        Address.contract_creation_transaction_associations()
+        [Address.contract_creation_transaction_association()]
     end
   end
 
@@ -286,7 +286,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       necessity_by_association: %{
         [smart_contract: :smart_contract_additional_sources] => :optional,
         contract_creation_transaction_associations() => :optional
-      }
+      },
+      preload_contract_creation_internal_transaction: true
     ]
     |> Keyword.merge(@api_true)
   end
@@ -297,7 +298,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       necessity_by_association: %{
         [:token, :names, :proxy_implementations] => :optional,
         contract_creation_transaction_associations() => :optional
-      }
+      },
+      preload_contract_creation_internal_transaction: true
     ]
     |> Keyword.merge(@api_true)
   end

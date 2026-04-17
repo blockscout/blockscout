@@ -7,7 +7,7 @@ defmodule Indexer.PendingOpsCleaner do
 
   require Logger
 
-  alias Explorer.Chain
+  alias Explorer.Chain.Block
 
   @interval :timer.minutes(60)
 
@@ -38,7 +38,7 @@ defmodule Indexer.PendingOpsCleaner do
   end
 
   defp clean_nonconsensus_pending_ops do
-    :ok = Chain.remove_nonconsensus_blocks_from_pending_ops()
+    :ok = Block.remove_nonconsensus_blocks_from_pending_ops()
 
     Logger.debug(fn -> "Non-consensus pending ops are cleaned" end)
   end

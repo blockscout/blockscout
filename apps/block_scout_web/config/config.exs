@@ -69,11 +69,12 @@ config :block_scout_web, BlockScoutWeb.Routers.ApiRouter,
   writing_enabled: !ConfigHelper.parse_bool_env_var("API_V1_WRITE_METHODS_DISABLED"),
   reading_enabled: !ConfigHelper.parse_bool_env_var("API_V1_READ_METHODS_DISABLED")
 
-config :block_scout_web, BlockScoutWeb.Routers.WebRouter, enabled: !ConfigHelper.parse_bool_env_var("DISABLE_WEBAPP")
+config :block_scout_web, BlockScoutWeb.Routers.WebRouter,
+  enabled: !ConfigHelper.parse_bool_env_var("DISABLE_WEBAPP", "true")
 
 config :block_scout_web, BlockScoutWeb.CSPHeader,
-  mixpanel_url: System.get_env("MIXPANEL_URL", "https://api-js.mixpanel.com"),
-  amplitude_url: System.get_env("AMPLITUDE_URL", "https://api2.amplitude.com/2/httpapi")
+  mixpanel_url: ConfigHelper.parse_url_env_var("MIXPANEL_URL", "https://api-js.mixpanel.com"),
+  amplitude_url: ConfigHelper.parse_url_env_var("AMPLITUDE_URL", "https://api2.amplitude.com/2/httpapi")
 
 config :block_scout_web, Api.GraphQL,
   enabled: ConfigHelper.parse_bool_env_var("API_GRAPHQL_ENABLED", "true"),

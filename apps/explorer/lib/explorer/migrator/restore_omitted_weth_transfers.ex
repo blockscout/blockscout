@@ -118,7 +118,7 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
   # fetch token balances
   @impl true
   def handle_info(:migrate, %{queue: queue, current_concurrency: current_concurrency} = state) do
-    if Enum.count(queue) > 0 and current_concurrency < concurrency() do
+    if not Enum.empty?(queue) and current_concurrency < concurrency() do
       to_take = batch_size() * (concurrency() - current_concurrency)
       {to_process, remainder} = Enum.split(queue, to_take)
 
@@ -174,13 +174,7 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
                log,
              [amount] <- Helper.decode_data(data, [{:uint, 256}]) do
           {from_address_hash, to_address_hash, balance_address_hash} =
-            if log.first_topic == TokenTransfer.weth_deposit_signature() do
-              to_address_hash = Helper.truncate_address_hash(to_string(second_topic))
-              {burn_address_hash_string(), to_address_hash, to_address_hash}
-            else
-              from_address_hash = Helper.truncate_address_hash(to_string(second_topic))
-              {from_address_hash, burn_address_hash_string(), from_address_hash}
-            end
+            determine_weth_address_hashes(log, second_topic)
 
           token_transfer = %{
             amount: Decimal.new(amount || 0),
@@ -240,6 +234,16 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
     end
   end
 
+  defp determine_weth_address_hashes(log, second_topic) do
+    if log.first_topic == TokenTransfer.weth_deposit_signature() do
+      to_address_hash = Helper.truncate_address_hash(to_string(second_topic))
+      {burn_address_hash_string(), to_address_hash, to_address_hash}
+    else
+      from_address_hash = Helper.truncate_address_hash(to_string(second_topic))
+      {from_address_hash, burn_address_hash_string(), from_address_hash}
+    end
+  end
+
   defp run_task(batch) do
     Task.Supervisor.async_nolink(Explorer.WETHMigratorSupervisor, fn ->
       migrate_batch(batch)
@@ -248,7 +252,7 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
 
   defp check_token_types(token_address_hashes) do
     token_address_hashes
-    |> Chain.get_token_types()
+    |> Token.get_token_types()
     |> Enum.reduce(true, fn {token_hash, token_type}, acc ->
       if token_type == "ERC-20" do
         acc

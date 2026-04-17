@@ -4,6 +4,7 @@ defmodule Explorer.Chain.Cache.Counters.Helper do
   """
 
   alias Explorer.Chain
+  alias Explorer.Chain.Block
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
 
   @block_number_threshold_1 10_000
@@ -119,7 +120,7 @@ defmodule Explorer.Chain.Cache.Counters.Helper do
   def evaluate_count(cache_key, nil, estimated_count_fun) do
     cached_value_from_db =
       cache_key
-      |> LastFetchedCounter.get()
+      |> LastFetchedCounter.get(api?: true)
       |> case do
         nil -> 0
         value -> Decimal.to_integer(value)
@@ -177,7 +178,7 @@ defmodule Explorer.Chain.Cache.Counters.Helper do
   @spec ttl(atom, String.t()) :: non_neg_integer()
   def ttl(module, management_variable) do
     min_blockchain_block_number = Application.get_env(:indexer, :first_block)
-    max_block_number = Chain.fetch_max_block_number()
+    max_block_number = Block.fetch_max_block_number()
     blocks_amount = max_block_number - min_blockchain_block_number
     global_ttl_from_var = Application.get_env(:explorer, module)[:global_ttl]
 
@@ -260,6 +261,23 @@ defmodule Explorer.Chain.Cache.Counters.Helper do
   @spec estimated_pending_block_operations_count() :: non_neg_integer()
   def estimated_pending_block_operations_count do
     count = estimated_count_from("pending_block_operations")
+
+    if is_nil(count), do: 0, else: max(count, 0)
+  end
+
+  @doc """
+  Returns the estimated count of pending transaction operations.
+
+  This function retrieves the estimated count from the "pending_transaction_operations" cache.
+  If the count is `nil`, it returns `0`. Otherwise, it ensures the count is non-negative
+  by returning the maximum of the count and `0`.
+
+  ## Returns
+    - `integer`: The estimated count of pending transaction operations, or `0` if the count is `nil`.
+  """
+  @spec estimated_pending_transaction_operations_count() :: non_neg_integer()
+  def estimated_pending_transaction_operations_count do
+    count = estimated_count_from("pending_transaction_operations")
 
     if is_nil(count), do: 0, else: max(count, 0)
   end

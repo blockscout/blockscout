@@ -137,7 +137,7 @@ defmodule Explorer.Stats.HotSmartContracts do
            BlockReaderGeneral.timestamp_to_block_number(now, :before, options[:api?] || false, true) do
       from_block
       |> aggregate_hot_smart_contracts_for_block_interval_query(to_block)
-      |> ExplorerHelper.maybe_hide_scam_addresses(:to_address_hash, options)
+      |> ExplorerHelper.maybe_hide_scam_addresses({:to_address, :hash}, options)
       |> SortingHelper.apply_sorting(sorting_options, default_sorting)
       |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting)
       |> Chain.select_repo(options).all()

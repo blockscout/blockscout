@@ -744,10 +744,16 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           insert(:token, type: "ERC-404")
         end
 
+      erc_7984_tokens =
+        for _i <- 0..50 do
+          insert(:token, type: "ERC-7984")
+        end
+
       check_tokens_pagination(erc_20_tokens, conn, %{"type" => "ERC-20"})
       check_tokens_pagination(erc_721_tokens |> Enum.reverse(), conn, %{"type" => "ERC-721"})
       check_tokens_pagination(erc_1155_tokens |> Enum.reverse(), conn, %{"type" => "ERC-1155"})
       check_tokens_pagination(erc_404_tokens |> Enum.reverse(), conn, %{"type" => "ERC-404"})
+      check_tokens_pagination(erc_7984_tokens |> Enum.reverse(), conn, %{"type" => "ERC-7984"})
     end
 
     test "tokens are filtered by multiple type", %{conn: conn} do
@@ -771,6 +777,11 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           insert(:token, type: "ERC-404")
         end
 
+      erc_7984_tokens =
+        for _i <- 0..24 do
+          insert(:token, type: "ERC-7984")
+        end
+
       check_tokens_pagination(
         erc_721_tokens |> Kernel.++(erc_1155_tokens) |> Enum.reverse(),
         conn,
@@ -792,6 +803,14 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         conn,
         %{
           "type" => "[erc-20,ERC-404]"
+        }
+      )
+
+      check_tokens_pagination(
+        erc_7984_tokens |> Enum.reverse() |> Kernel.++(erc_20_tokens),
+        conn,
+        %{
+          "type" => "[erc-20,ERC-7984]"
         }
       )
     end
@@ -1139,7 +1158,12 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> insert()
         |> with_block()
 
-      instance = insert(:token_instance, token_id: 0, token_contract_address_hash: token.contract_address_hash)
+      instance =
+        insert(:token_instance,
+          token_id: 0,
+          token_contract_address_hash: token.contract_address_hash,
+          skip_metadata_url: true
+        )
 
       _transfer =
         insert(:token_transfer,
@@ -1175,6 +1199,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       insert(:token_instance,
         token_id: 0,
         token_contract_address_hash: token.contract_address_hash,
+        skip_metadata_url: true,
         metadata: %{
           "image_url" => "ipfs://QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/gm%20gm%20feelin%20blue%204k.png"
         }
@@ -1211,6 +1236,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       insert(:token_instance,
         token_id: 0,
         token_contract_address_hash: token.contract_address_hash,
+        skip_metadata_url: true,
         metadata: %{
           "image_url" => "ipfs://QmTQBtvkCQKnxbUejwYHrs2G74JR2qFwxPUqRb3BQ6BM3S/123.png"
         }
@@ -1769,8 +1795,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -1812,8 +1840,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -1880,8 +1910,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -1943,8 +1975,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, "error"]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, reason: "error"},
+                       payload: %{token_id: ^token_id_string, reason: "error"},
                        event: "not_fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -2012,8 +2046,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -2051,8 +2087,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          [^token_contract_address_hash_string, ^token_id, ^metadata]}
       )
 
+      token_id_string = to_string(token_id)
+
       assert_receive %Phoenix.Socket.Message{
-                       payload: %{token_id: ^token_id, fetched_metadata: ^metadata},
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
                        event: "fetched_token_instance_metadata",
                        topic: ^topic
                      },
@@ -2115,7 +2153,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> put_req_header("scoped-recaptcha-bypass-token", "wrong_scoped_token")
         |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
-      assert %{"message" => "Too Many Requests"} = json_response(request, 429)
+      assert %{"message" => "Too many requests. Increase limits now at https://dev.blockscout.com"} =
+               json_response(request, 429)
 
       :timer.sleep(100)
 
@@ -2209,7 +2248,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> put_req_header("scoped-recaptcha-bypass-token", "some_token_that_does_not_exist")
         |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
-      assert %{"message" => "Too Many Requests"} = json_response(request, 429)
+      assert %{"message" => "Too many requests. Increase limits now at https://dev.blockscout.com"} =
+               json_response(request, 429)
 
       request =
         Phoenix.ConnTest.build_conn()
@@ -2217,7 +2257,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> put_req_header("scoped-recaptcha-bypass-token", "")
         |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
 
-      assert %{"message" => "Too Many Requests"} = json_response(request, 429)
+      assert %{"message" => "Too many requests. Increase limits now at https://dev.blockscout.com"} =
+               json_response(request, 429)
 
       :timer.sleep(100)
 
@@ -2603,6 +2644,54 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         assert %{"items" => items, "next_page_params" => next_page_params} = response
         assert length(items) == 1
         assert next_page_params == nil
+      end
+
+      test "regression: sort and order params are applied for bridged tokens", %{conn: conn} do
+        parameter_names =
+          BlockScoutWeb.API.V2.TokenController.open_api_operation(:bridged_tokens_list).parameters
+          |> Enum.map(fn
+            %OpenApiSpex.Parameter{name: name} -> to_string(name)
+            %OpenApiSpex.Reference{} -> nil
+          end)
+          |> Enum.reject(&is_nil/1)
+
+        assert "sort" in parameter_names
+        assert "order" in parameter_names
+
+        high_fiat_token = insert(:token, %{total_supply: 20_000, name: "BridgeTokenHigh", fiat_value: 200})
+        low_fiat_token = insert(:token, %{total_supply: 10_000, name: "BridgeTokenLow", fiat_value: 100})
+
+        for token <- [high_fiat_token, low_fiat_token] do
+          Explorer.Repo.update_all(
+            from(t in Explorer.Chain.Token, where: t.contract_address_hash == ^token.contract_address_hash),
+            set: [bridged: true]
+          )
+
+          {:ok, _bridged_token} =
+            Explorer.Repo.insert(%Explorer.Chain.BridgedToken{
+              home_token_contract_address_hash: token.contract_address_hash,
+              foreign_chain_id: 1,
+              foreign_token_contract_address_hash: build(:address).hash,
+              type: "omni"
+            })
+        end
+
+        base_params = %{
+          "q" => "BridgeToken",
+          "chain_ids" => "1",
+          "sort" => "fiat_value"
+        }
+
+        request_asc = get(conn, "/api/v2/tokens/bridged", Map.put(base_params, "order", "asc"))
+        request_desc = get(conn, "/api/v2/tokens/bridged", Map.put(base_params, "order", "desc"))
+
+        assert %{"items" => [asc_first | _] = asc_items} = json_response(request_asc, 200)
+        assert %{"items" => [desc_first | _] = desc_items} = json_response(request_desc, 200)
+        assert length(asc_items) == 2
+        assert length(desc_items) == 2
+
+        assert asc_first["address_hash"] == Address.checksum(low_fiat_token.contract_address_hash)
+        assert desc_first["address_hash"] == Address.checksum(high_fiat_token.contract_address_hash)
       end
     end
   end

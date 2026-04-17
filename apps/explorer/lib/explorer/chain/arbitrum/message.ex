@@ -13,6 +13,8 @@ defmodule Explorer.Chain.Arbitrum.Message do
 
   alias Explorer.Chain.Hash
 
+  @insert_result_key :insert_arbitrum_messages
+
   @optional_attrs ~w(originator_address originating_transaction_hash origination_timestamp originating_transaction_block_number completion_transaction_hash)a
 
   @required_attrs ~w(direction message_id status)a
@@ -83,4 +85,10 @@ defmodule Explorer.Chain.Arbitrum.Message do
     |> validate_required(@required_attrs)
     |> unique_constraint([:direction, :message_id])
   end
+
+  @doc """
+  Shared result key used by import runners to return inserted Arbitrum messages.
+  """
+  @spec insert_result_key() :: atom()
+  def insert_result_key, do: @insert_result_key
 end

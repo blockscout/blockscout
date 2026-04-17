@@ -19,15 +19,16 @@ defmodule BlockScoutWeb.AddressContractController do
         :names => :optional,
         [smart_contract: :smart_contract_additional_sources] => :optional,
         :token => :optional,
-        Address.contract_creation_transaction_associations() => :optional
+        Address.contract_creation_transaction_association() => :optional
       },
+      preload_contract_creation_internal_transaction: true,
       ip: ip
     ]
 
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          _ <- PublishHelper.sourcify_check(address_hash_string),
-         {:ok, address} <- Chain.find_contract_address(address_hash, address_options) do
+         {:ok, address} <- Address.find_contract_address(address_hash, address_options) do
       render(
         conn,
         "index.html",

@@ -7,8 +7,9 @@ defmodule Explorer.Migrator.BackfillMetadataURL do
   import Ecto.Query
 
   alias EthereumJSONRPC.NFT
-  alias Explorer.{Chain, MetadataURIValidator, Repo}
+  alias Explorer.Chain.Token
   alias Explorer.Chain.Token.Instance
+  alias Explorer.{MetadataURIValidator, Repo}
   alias Explorer.Migrator.FillingMigration
 
   require Logger
@@ -33,7 +34,7 @@ defmodule Explorer.Migrator.BackfillMetadataURL do
 
     current_token_type_map =
       tokens_address_hashes_to_preload_from_db
-      |> Chain.get_token_types()
+      |> Token.get_token_types()
       |> Enum.map(fn {address_hash, type} -> {address_hash.bytes, type} end)
       |> Enum.into(%{})
       |> Map.merge(tokens_address_hash_to_type)

@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.WithdrawalController do
 
   alias BlockScoutWeb.{Controller, WithdrawalView}
   alias Explorer.Chain
-  alias Explorer.Chain.Wei
+  alias Explorer.Chain.{Wei, Withdrawal}
   alias Phoenix.View
 
   def index(conn, %{"type" => "JSON"} = params) do
@@ -35,8 +35,8 @@ defmodule BlockScoutWeb.WithdrawalController do
     render(conn, "index.html",
       current_path: Controller.current_full_path(conn),
       page_number: params |> fetch_page_number() |> Integer.to_string(),
-      withdrawals_count: Chain.count_withdrawals_from_cache(),
-      withdrawals_sum: Chain.sum_withdrawals_from_cache() |> Wei.from(:wei)
+      withdrawals_count: Withdrawal.count_withdrawals_from_cache(),
+      withdrawals_sum: Withdrawal.sum_withdrawals_from_cache() |> Wei.from(:wei)
     )
   end
 end

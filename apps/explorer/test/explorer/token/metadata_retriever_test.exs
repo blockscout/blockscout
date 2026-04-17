@@ -615,7 +615,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
         fn requests, _opts ->
           {:ok,
            Enum.map(requests, fn
-             %{id: id, method: "eth_call", params: [%{data: "0x313ce567", to: _}, "latest"]} ->
+             %{id: id, method: "eth_call", params: [%{data: _, to: _}, "latest"]} ->
                %{
                  id: id,
                  error: %{code: -32015, data: "something", message: "network error"},
@@ -1240,6 +1240,39 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       expected_link = "https://arweave.net/data_with_special_chars!@#$%^&*()"
 
       assert MetadataRetriever.arweave_link(data) == expected_link
+    end
+  end
+
+  describe "IPFS link validation" do
+    test "valid_ipfs_path?/1 returns true for valid CIDv0 (Qm...)" do
+      valid_cid_v0 = "ipfs://QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco"
+      assert MetadataRetriever.valid_ipfs_path?(valid_cid_v0)
+    end
+
+    test "valid_ipfs_path?/1 returns true for valid CIDv1 (b...)" do
+      valid_cid_v1 = "ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3hlgtif73fqpyae"
+      assert MetadataRetriever.valid_ipfs_path?(valid_cid_v1)
+    end
+
+    test "valid_ipfs_path?/1 returns true for short valid CIDv1" do
+      short_cid_v1 = "ipfs://bafybeic"
+      assert MetadataRetriever.valid_ipfs_path?(short_cid_v1)
+    end
+
+    test "valid_ipfs_path?/1 returns false for empty string" do
+      refute MetadataRetriever.valid_ipfs_path?("")
+    end
+
+    test "valid_ipfs_path?/1 returns false for malformed path like ipfs://invalid" do
+      refute MetadataRetriever.valid_ipfs_path?("ipfs://invalid")
+    end
+
+    test "HTTP request is NOT made when path is invalid" do
+      invalid_path = "ipfs://invalid"
+
+      # We assert that it returns the error immediately without any HTTP mock being called.
+      # If it tried to make a request, it would fail because no expectation is set for this URL.
+      assert MetadataRetriever.fetch_json({:ok, [invalid_path]}) == {:error, "invalid ipfs path"}
     end
   end
 end

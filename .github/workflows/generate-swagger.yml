@@ -1,4 +1,4 @@
-name: Generate Swagger
+name: Generate OpenAPI Specs
 
 on:
   push:
@@ -17,7 +17,7 @@ on:
 env:
   OTP_VERSION: '27.3.4.6'
   ELIXIR_VERSION: '1.19.4'
-  RELEASE_VERSION: 9.3.0
+  RELEASE_VERSION: 11.0.0
 
 jobs:
   matrix-builder:
@@ -34,20 +34,21 @@ jobs:
             const chainTypes = [
               "default",
               "arbitrum",
+              "arc",
               "blackfort",
               "ethereum",
               "filecoin",
+              "neon",
               "optimism",
               "optimism-celo",
-              "polygon_zkevm",
               "rsk",
               "scroll",
               "shibarium",
               "stability",
+              "suave",
               "zetachain",
               "zilliqa",
-              "zksync",
-              "neon"
+              "zksync"
             ];
 
             const matrix = { "chain-type": ${{ 'chainTypes' }} };
@@ -124,15 +125,32 @@ jobs:
 
       - name: mix openapi.spec.yaml
         run: |
-          mix openapi.spec.yaml --spec BlockScoutWeb.ApiSpec openapi.${{ matrix.chain-type }}.yaml --start-app=false
+          mix openapi.spec.yaml --spec BlockScoutWeb.Specs.Public openapi.${{ matrix.chain-type }}.yaml --start-app=false
         env:
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
+          MUD_INDEXER_ENABLED: false
+
+      - name: Generate MUD-enabled spec for Optimism
+        if: matrix.chain-type == 'optimism'
+        run: |
+          mix openapi.spec.yaml --spec BlockScoutWeb.Specs.Public openapi.mud.yaml --start-app=false
+        env:
+          CHAIN_TYPE: optimism
+          MUD_INDEXER_ENABLED: true
 
       - name: Upload OpenAPI spec
         uses: actions/upload-artifact@v4
         with:
           name: openapi-spec-${{ matrix.chain-type }}
           path: openapi.${{ matrix.chain-type }}.yaml
+          retention-days: 1
+
+      - name: Upload MUD-enabled spec
+        if: matrix.chain-type == 'optimism'
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi-spec-mud
+          path: openapi.mud.yaml
           retention-days: 1
 
   push-specs:
@@ -143,13 +161,17 @@ jobs:
     name: Push all OpenAPI specs
     steps:
       - name: Validate required secrets
+        id: validate
         run: |
           if [ -z "${{ secrets.API_SPECS_PAT }}" ]; then
-            echo "Error: API_SPECS_PAT secret is not set"
-            exit 1
+            echo "::warning::API_SPECS_PAT secret is not set, skipping push to specs repository"
+            echo "has_pat=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_pat=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Checkout specs repository
+        if: steps.validate.outputs.has_pat == 'true'
         uses: actions/checkout@v5
         with:
           repository: ${{ vars.API_SPECS_REPOSITORY }}
@@ -157,31 +179,104 @@ jobs:
           path: api-specs
 
       - name: Download all swagger specs
+        if: steps.validate.outputs.has_pat == 'true'
         uses: actions/download-artifact@v5
         with:
           pattern: openapi-spec-*
           merge-multiple: true
           path: temp-specs
 
+      - name: Merge all OpenAPI specs into all-in-one spec
+        if: steps.validate.outputs.has_pat == 'true'
+        run: |
+          npm install js-yaml
+          cat > merge-specs.js << 'SCRIPT_EOF'
+          const fs = require('fs');
+          const path = require('path');
+          const yaml = require('js-yaml');
+
+          const specDir = './temp-specs';
+          const outputFile = path.join(specDir, 'openapi.all.yaml');
+
+          const files = fs.readdirSync(specDir)
+            .filter(f => f.endsWith('.yaml'))
+            .sort();
+
+          let merged = null;
+
+          for (const file of files) {
+            const content = yaml.load(fs.readFileSync(path.join(specDir, file), 'utf8'));
+            if (!merged) {
+              merged = JSON.parse(JSON.stringify(content));
+              continue;
+            }
+            // Union merge paths (first definition wins for duplicates)
+            if (content.paths) {
+              merged.paths = merged.paths || {};
+              for (const [p, def] of Object.entries(content.paths)) {
+                if (!merged.paths[p]) {
+                  merged.paths[p] = def;
+                }
+              }
+            }
+            // Union merge components (first definition wins for duplicates)
+            if (content.components) {
+              merged.components = merged.components || {};
+              for (const [section, defs] of Object.entries(content.components)) {
+                if (!merged.components[section]) {
+                  merged.components[section] = defs;
+                } else {
+                  for (const [name, def] of Object.entries(defs)) {
+                    if (!merged.components[section][name]) {
+                      merged.components[section][name] = def;
+                    }
+                  }
+                }
+              }
+            }
+            // Union merge tags (by name)
+            if (content.tags) {
+              merged.tags = merged.tags || [];
+              const existingTagNames = new Set(merged.tags.map(t => t.name));
+              for (const tag of content.tags) {
+                if (!existingTagNames.has(tag.name)) {
+                  merged.tags.push(tag);
+                  existingTagNames.add(tag.name);
+                }
+              }
+            }
+          }
+
+          fs.writeFileSync(outputFile, yaml.dump(merged, { lineWidth: -1 }));
+          console.log(`Merged ${files.length} specs into ${outputFile}`);
+          SCRIPT_EOF
+          node merge-specs.js
+
       - name: Create specs directory structure
+        if: steps.validate.outputs.has_pat == 'true'
         run: |
           VERSION=${{ github.event_name == 'release' && env.RELEASE_VERSION || 'master' }}
 
           for SPEC_FILE in temp-specs/*; do
             if [ -f "$SPEC_FILE" ]; then
-              # Extract chain type from filename
-              CHAIN_TYPE=$(echo $SPEC_FILE | cut -d'.' -f2)
+              FILENAME=$(basename "$SPEC_FILE")
               
-              # Create directory
-              mkdir -p "api-specs/blockscout/${VERSION}/${CHAIN_TYPE}"
-              
-              # Copy spec files
-              cp "$SPEC_FILE" "api-specs/blockscout/${VERSION}/${CHAIN_TYPE}/swagger.yaml"
+              # Handle MUD spec specially
+              if [ "$FILENAME" = "openapi.mud.yaml" ]; then
+                mkdir -p "api-specs/blockscout/${VERSION}/mud"
+                cp "$SPEC_FILE" "api-specs/blockscout/${VERSION}/mud/swagger.yaml"
+              else
+                # Extract chain type from filename (openapi.CHAINTYPE.yaml)
+                CHAIN_TYPE=$(echo "$FILENAME" | sed 's/openapi\.\(.*\)\.yaml/\1/')
+                mkdir -p "api-specs/blockscout/${VERSION}/${CHAIN_TYPE}"
+                cp "$SPEC_FILE" "api-specs/blockscout/${VERSION}/${CHAIN_TYPE}/swagger.yaml"
+              fi
             fi
           done
 
 
       - name: Commit and push changes
+        if: steps.validate.outputs.has_pat == 'true'
         working-directory: api-specs
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"

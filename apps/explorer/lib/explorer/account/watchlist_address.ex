@@ -84,9 +84,12 @@ defmodule Explorer.Account.WatchlistAddress do
   alias Explorer.Account.Notifier.ForbiddenAddress
   alias Explorer.Account.Watchlist
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Hash, Transaction}
 
   import Explorer.Chain, only: [hash_to_lower_case_string: 1]
+
+  @default_page_size 50
+  @default_paging_options %PagingOptions{page_size: @default_page_size}
 
   @watchlist_not_found "Watchlist not found"
 
@@ -215,12 +218,12 @@ defmodule Explorer.Account.WatchlistAddress do
     end
   end
 
-  def watchlist_addresses_by_watchlist_id_query(watchlist_id) when not is_nil(watchlist_id) do
+  defp watchlist_addresses_by_watchlist_id_query(watchlist_id) when not is_nil(watchlist_id) do
     __MODULE__
     |> where([wl_address], wl_address.watchlist_id == ^watchlist_id)
   end
 
-  def watchlist_addresses_by_watchlist_id_query(_), do: nil
+  defp watchlist_addresses_by_watchlist_id_query(_), do: nil
 
   @doc """
     Query paginated watchlist addresses by watchlist id
@@ -359,4 +362,86 @@ defmodule Explorer.Account.WatchlistAddress do
        )}
     end)
   end
+
+  @doc """
+  Fetches the watchlist transactions for the given watchlist ID and options.
+  """
+  @spec fetch_watchlist_transactions(integer(), keyword()) ::
+          {%{Hash.Address.t() => %{label: String.t(), display_name: String.t()}}, [Transaction.t()]}
+  def fetch_watchlist_transactions(watchlist_id, options) do
+    watchlist_addresses =
+      watchlist_id
+      |> watchlist_addresses_by_watchlist_id_query()
+      |> Repo.account_repo().all()
+
+    address_hashes = Enum.map(watchlist_addresses, fn wa -> wa.address_hash end)
+
+    watchlist_names =
+      Enum.reduce(watchlist_addresses, %{}, fn wa, acc ->
+        Map.put(acc, wa.address_hash, %{label: wa.name, display_name: wa.name})
+      end)
+
+    {watchlist_names, address_hashes_to_mined_transactions_without_rewards(address_hashes, options)}
+  end
+
+  defp address_hashes_to_mined_transactions_without_rewards(address_hashes, options) do
+    paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+
+    address_hashes
+    |> address_hashes_to_mined_transactions_tasks(options)
+    |> Transaction.wait_for_address_transactions()
+    |> Enum.sort_by(&{&1.block_number, &1.index}, &>=/2)
+    |> Enum.dedup_by(& &1.hash)
+    |> Enum.take(paging_options.page_size)
+    |> Chain.select_repo(options).preload(Map.keys(necessity_by_association))
+  end
+
+  defp address_hashes_to_mined_transactions_tasks(address_hashes, options) do
+    direction = Keyword.get(options, :direction)
+
+    options
+    |> Transaction.address_to_transactions_tasks_query(true)
+    |> Transaction.not_pending_transactions()
+    |> Transaction.matching_address_queries_list(direction, address_hashes)
+    |> Enum.map(fn query ->
+      Task.async(fn ->
+        query
+        |> Transaction.put_has_token_transfers_to_transaction(false, aliased?: true)
+        |> Chain.select_repo(options).all()
+      end)
+    end)
+  end
+
+  @doc """
+  Retrieves the ID of a WatchlistAddress entry for a given watchlist and address.
+
+  This function queries the WatchlistAddress table to find an entry that matches
+  both the provided watchlist ID and address hash. It returns the ID of the first
+  matching entry, if found.
+
+  ## Parameters
+  - `watchlist_id`: The ID of the watchlist to search within.
+  - `address_hash`: The address hash to look for, as a `Hash.Address.t()` struct.
+
+  ## Returns
+  - An integer representing the ID of the matching WatchlistAddress entry, if found.
+  - `nil` if no matching entry is found or if either input is `nil`.
+  """
+  @spec select_watchlist_address_id(integer() | nil, Hash.Address.t() | nil) :: integer() | nil
+  def select_watchlist_address_id(watchlist_id, address_hash)
+      when not is_nil(watchlist_id) and not is_nil(address_hash) do
+    wa_ids =
+      __MODULE__
+      |> where([wa], wa.watchlist_id == ^watchlist_id and wa.address_hash_hash == ^address_hash)
+      |> select([wa], wa.id)
+      |> Repo.account_repo().all()
+
+    case wa_ids do
+      [wa_id | _] -> wa_id
+      _ -> nil
+    end
+  end
+
+  def select_watchlist_address_id(_watchlist_id, _address_hash), do: nil
 end

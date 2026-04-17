@@ -124,7 +124,7 @@ defmodule Explorer.History.Process do
   defp calculate_delay_until_next_midnight do
     now = DateTime.utc_now()
     # was added for testing possibility
-    time_to_fetch_at = config_or_default(:time_to_fetch_at, Time.new!(0, 0, 0, 0))
+    time_to_fetch_at = config_or_default(:time_to_fetch_at, Time.new!(0, 0, 1, 0))
     days_to_add = config_or_default(:days_to_add, 1)
     tomorrow = DateTime.new!(Date.add(Date.utc_today(), days_to_add), time_to_fetch_at, now.time_zone)
 

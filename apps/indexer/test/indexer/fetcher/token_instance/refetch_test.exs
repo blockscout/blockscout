@@ -7,7 +7,6 @@ defmodule Indexer.Fetcher.TokenInstance.RefetchTest do
   alias Explorer.Chain.Token.Instance
   alias Indexer.Fetcher.TokenInstance.Refetch
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
-  alias Plug.Conn
 
   describe "child_spec/1" do
     test "merges default options with provided options" do
@@ -76,7 +75,7 @@ defmodule Indexer.Fetcher.TokenInstance.RefetchTest do
     test "filters and fetches token instances marked to refetch" do
       bypass = Bypass.open()
 
-      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+      # Mock HTTP responses via Tesla.Test instead of real adapter
 
       json = """
       {
@@ -157,21 +156,10 @@ defmodule Indexer.Fetcher.TokenInstance.RefetchTest do
         end
       )
 
-      Bypass.expect_once(
-        bypass,
-        "GET",
-        "/api/card/0000000000000000000000000000000000000000000000000000000000000001",
-        fn conn ->
-          Conn.resp(conn, 200, json)
-        end
-      )
-
-      Bypass.expect_once(
-        bypass,
-        "GET",
-        "/api/card/0000000000000000000000000000000000000000000000000000000000000002",
-        fn conn ->
-          Conn.resp(conn, 200, json)
+      Tesla.Test.expect_tesla_call(
+        times: 2,
+        returns: fn %{url: _url}, _opts ->
+          {:ok, %Tesla.Env{status: 200, body: json, headers: [{"content-type", "application/json"}]}}
         end
       )
 

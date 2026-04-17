@@ -21,6 +21,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     Import,
     PendingBlockOperation,
     PendingOperationsHelper,
+    SmartContract,
     Token,
     Token.Instance,
     TokenTransfer,
@@ -36,7 +37,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Zilliqa.Zrc2.TokenTransfer, as: Zrc2TokenTransfer
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
-  alias Explorer.Utility.MissingRangesManipulator
+  alias Explorer.Utility.MissingBlockRange
 
   alias Explorer.Chain.Celo.AggregatedElectionReward, as: CeloAggregatedElectionReward
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
@@ -520,10 +521,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   defp on_conflict_chain_type_extension(_), do: nil
 
-  defp consensus_block_numbers(blocks_changes) when is_list(blocks_changes) do
+  defp consensus_block_identifiers(blocks_changes) when is_list(blocks_changes) do
     blocks_changes
     |> Enum.filter(& &1.consensus)
-    |> Enum.map(& &1.number)
+    |> Enum.reduce({[], []}, fn block_change, {numbers, hashes} ->
+      {[block_change.number | numbers], [block_change.hash | hashes]}
+    end)
   end
 
   # Handles block consensus loss.
@@ -546,7 +549,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          } = _opts
        ) do
     hashes = Enum.map(changes_list, & &1.hash)
-    consensus_block_numbers = consensus_block_numbers(changes_list)
+    {consensus_block_numbers, consensus_hashes} = consensus_block_identifiers(changes_list)
 
     acquire_query =
       from(
@@ -595,7 +598,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         join: s in subquery(acquire_query),
         on: transaction.block_hash == s.hash,
         # we don't want to remove consensus from blocks that will be upserted
-        where: transaction.block_hash not in ^hashes
+        where: transaction.block_hash not in ^consensus_hashes
       ),
       [set: [block_consensus: false, updated_at: updated_at]],
       timeout: timeout
@@ -605,11 +608,42 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       from(
         token_transfer in TokenTransfer,
         join: s in subquery(acquire_query),
-        on: token_transfer.block_number == s.number,
+        on: token_transfer.block_number == s.number and token_transfer.block_hash == s.hash,
         # we don't want to remove consensus from blocks that will be upserted
-        where: token_transfer.block_hash not in ^hashes
+        where: token_transfer.block_hash not in ^consensus_hashes
       ),
       [set: [block_consensus: false, updated_at: updated_at]],
+      timeout: timeout
+    )
+
+    # Query to find addresses created in lost consensus blocks
+    created_contract_addresses_query =
+      from(
+        t in Transaction,
+        join: s in subquery(acquire_query),
+        on: t.block_hash == s.hash,
+        # we don't want to remove contract code from blocks that will be upserted
+        where: t.block_hash not in ^consensus_hashes,
+        where: not is_nil(t.created_contract_address_hash),
+        select: t.created_contract_address_hash
+      )
+
+    # Delete smart contracts for addresses created in lost consensus blocks
+    repo.delete_all(
+      from(
+        sc in SmartContract,
+        where: sc.address_hash in subquery(created_contract_addresses_query)
+      ),
+      timeout: timeout
+    )
+
+    # Clear contract code from addresses created in lost consensus blocks
+    repo.update_all(
+      from(
+        address in Address,
+        where: address.hash in subquery(created_contract_addresses_query)
+      ),
+      [set: [contract_code: nil, updated_at: updated_at]],
       timeout: timeout
     )
 
@@ -618,8 +652,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         from(
           zrc2_token_transfer in Zrc2TokenTransfer,
           join: s in subquery(acquire_query),
-          on: zrc2_token_transfer.block_number == s.number,
-          where: zrc2_token_transfer.block_hash not in ^hashes
+          on: zrc2_token_transfer.block_number == s.number and zrc2_token_transfer.block_hash == s.hash,
+          where: zrc2_token_transfer.block_hash not in ^consensus_hashes
         ),
         timeout: timeout
       )
@@ -627,7 +661,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     removed_consensus_block_numbers
     |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
-    |> MissingRangesManipulator.add_ranges_by_block_numbers()
+    |> MissingBlockRange.add_ranges_by_block_numbers()
 
     {:ok, removed_consensus_blocks}
   rescue
