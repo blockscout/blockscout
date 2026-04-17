@@ -104,7 +104,8 @@ defmodule Explorer.Application do
         recv_timeout: 60_000,
         timeout: 60_000,
         max_connections: Application.get_env(:explorer, :hackney_default_pool_size)
-      )
+      ),
+      Explorer.Promo.Autoscout
     ]
 
     children = base_children ++ configurable_children()
