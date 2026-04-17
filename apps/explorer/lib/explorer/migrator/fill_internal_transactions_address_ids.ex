@@ -8,6 +8,7 @@ defmodule Explorer.Migrator.FillInternalTransactionsAddressIds do
   import Ecto.Query
   import Explorer.QueryHelper, only: [select_ctid: 1, join_on_ctid: 2]
 
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.InternalTransaction
   alias Explorer.Migrator.FillingMigration
   alias Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError
@@ -137,5 +138,7 @@ defmodule Explorer.Migrator.FillInternalTransactionsAddressIds do
   end
 
   @impl FillingMigration
-  def update_cache, do: :ok
+  def update_cache do
+    BackgroundMigrations.set_fill_internal_transactions_address_ids_finished(true)
+  end
 end

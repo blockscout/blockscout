@@ -15,6 +15,9 @@
 
 ### 🐛 Bug Fixes
 
+- Fix OnDemand.InternalTransaction fetcher ([#14242](https://github.com/blockscout/blockscout/pull/14242))
+- Guard missing ETS table in contract creator fetcher ([#14241](https://github.com/blockscout/blockscout/pull/14241))
+- Address ids usage improvements ([#14240](https://github.com/blockscout/blockscout/pull/14240))
 - Fix timeouts for API v1 tokentx endpoint ([#14185](https://github.com/blockscout/blockscout/issues/14185))
 - Remove internal transaction error field references ([#14213](https://github.com/blockscout/blockscout/pull/14213))
 - Handle partial errors in ContractCode fetch_codes ([#14211](https://github.com/blockscout/blockscout/pull/14211))

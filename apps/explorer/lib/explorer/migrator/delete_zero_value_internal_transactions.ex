@@ -110,7 +110,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   defp do_clear_internal_transactions(dynamic_condition) do
     Repo.transaction(
       fn ->
-        condition = dynamic([it], ^dynamic_condition and it.type == ^:call and it.value == ^0)
+        condition = dynamic([it], ^dynamic_condition and it.type == ^:call and (is_nil(it.value) or it.value == ^0))
 
         locked_internal_transactions_to_delete_query =
           from(
@@ -122,18 +122,19 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
           )
 
         delete_query =
-          InternalTransaction
-          |> join(:inner, [it], locked_it in subquery(locked_internal_transactions_to_delete_query),
-            on: join_on_ctid(it, locked_it)
+          from(
+            it in InternalTransaction,
+            inner_join: locked_it in subquery(locked_internal_transactions_to_delete_query),
+            on: join_on_ctid(it, locked_it),
+            select: %{
+              from_address_hash: it.from_address_hash,
+              from_address_id: it.from_address_id,
+              to_address_hash: it.to_address_hash,
+              to_address_id: it.to_address_id,
+              block_number: it.block_number,
+              index: it.index
+            }
           )
-          |> InternalTransaction.join_address_query(:from_address, :inner)
-          |> InternalTransaction.join_address_query(:to_address, :inner)
-          |> select([it], %{
-            from_address_hash: as(:from_address).hash,
-            to_address_hash: as(:to_address).hash,
-            block_number: it.block_number,
-            index: it.index
-          })
 
         {_count, deleted_internal_transactions} = Repo.delete_all(delete_query, timeout: :infinity)
 
@@ -164,14 +165,17 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
                 inner_acc
 
               internal_transaction, inner_acc ->
-                from_address_hash = internal_transaction.from_address_hash
-                to_address_hash = internal_transaction.to_address_hash
+                from_address_id =
+                  internal_transaction.from_address_id || address_to_id_map[internal_transaction.from_address_hash]
+
+                to_address_id =
+                  internal_transaction.to_address_id || address_to_id_map[internal_transaction.to_address_hash]
 
                 inner_acc
                 |> Map.update(
-                  from_address_hash,
+                  from_address_id,
                   %{
-                    address_id: address_to_id_map[from_address_hash],
+                    address_id: from_address_id,
                     block_number: block_number,
                     count_tos: 0,
                     count_froms: 1
@@ -181,9 +185,9 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
                   end
                 )
                 |> Map.update(
-                  to_address_hash,
+                  to_address_id,
                   %{
-                    address_id: address_to_id_map[to_address_hash],
+                    address_id: to_address_id,
                     block_number: block_number,
                     count_tos: 1,
                     count_froms: 0
