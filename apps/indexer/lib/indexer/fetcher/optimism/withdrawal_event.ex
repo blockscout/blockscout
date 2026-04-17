@@ -14,9 +14,9 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Optimism.WithdrawalEvent
-  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
+  alias Indexer.RollupReorgMonitorQueue
 
   @fetcher_name :optimism_withdrawal_events
   @counter_type "optimism_withdrawal_events_fetcher_last_l1_block_hash"
@@ -124,7 +124,7 @@ defmodule Indexer.Fetcher.Optimism.WithdrawalEvent do
           )
         end
 
-        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           {deleted_count, _} = Repo.delete_all(from(we in WithdrawalEvent, where: we.l1_block_number >= ^reorg_block))

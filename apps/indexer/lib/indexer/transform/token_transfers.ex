@@ -1,6 +1,6 @@
 defmodule Indexer.Transform.TokenTransfers do
   @moduledoc """
-  Helper functions for transforming data for known token standards (ERC-20, ERC-721, ERC-1155, ERC-404) transfers.
+  Helper functions for transforming data for known token standards (ERC-20, ERC-721, ERC-1155, ERC-404, ERC-7984) transfers.
   """
 
   require Logger
@@ -69,13 +69,22 @@ defmodule Indexer.Transform.TokenTransfers do
       end)
       |> Enum.reduce(initial_acc, &do_parse(&1, &2, :erc404))
 
+    erc7984_token_transfers =
+      logs
+      |> Enum.filter(fn log ->
+        log.first_topic == TokenTransfer.erc7984_transfer_event()
+      end)
+      |> Enum.reduce(initial_acc, &do_parse(&1, &2, :erc7984))
+
     rough_tokens =
-      erc404_token_transfers.tokens ++
+      erc7984_token_transfers.tokens ++
+        erc404_token_transfers.tokens ++
         erc1155_token_transfers.tokens ++
         erc20_and_erc721_token_transfers.tokens ++ weth_transfers.tokens
 
     rough_token_transfers =
-      erc404_token_transfers.token_transfers ++
+      erc7984_token_transfers.token_transfers ++
+        erc404_token_transfers.token_transfers ++
         erc1155_token_transfers.token_transfers ++
         erc20_and_erc721_token_transfers.token_transfers ++ weth_transfers.token_transfers
 
@@ -196,7 +205,7 @@ defmodule Indexer.Transform.TokenTransfers do
 
   defp token_type_priority(nil), do: -1
 
-  @token_types_priority_order ["ERC-20", "ERC-721", "ERC-1155", "ERC-404"]
+  @token_types_priority_order ["ERC-20", "ERC-721", "ERC-1155", "ERC-404", "ERC-7984"]
   defp token_type_priority(token_type) do
     Enum.find_index(@token_types_priority_order, &(&1 == token_type))
   end
@@ -206,6 +215,7 @@ defmodule Indexer.Transform.TokenTransfers do
       case type do
         :erc1155 -> parse_erc1155_params(log)
         :erc404 -> parse_erc404_params(log)
+        :erc7984 -> parse_erc7984_params(log)
         _ -> parse_params(log)
       end
 
@@ -611,6 +621,44 @@ defmodule Indexer.Transform.TokenTransfers do
   defp arc_native_token_transfer_event?(log) do
     chain_type() == :arc and log.first_topic == TokenTransfer.constant() and
       log.address_hash == arc_native_token_address()
+  end
+
+  @spec parse_erc7984_params(map()) ::
+          nil
+          | {%{
+               contract_address_hash: Hash.Address.t(),
+               type: String.t()
+             }, map()}
+  defp parse_erc7984_params(
+         %{
+           second_topic: second_topic,
+           third_topic: third_topic,
+           fourth_topic: fourth_topic
+         } = log
+       )
+       when not is_nil(second_topic) and not is_nil(third_topic) and not is_nil(fourth_topic) do
+    from_address_hash = truncate_address_hash(second_topic)
+    to_address_hash = truncate_address_hash(third_topic)
+
+    token_transfer = %{
+      block_number: log.block_number,
+      block_hash: log.block_hash,
+      log_index: log.index,
+      from_address_hash: from_address_hash,
+      to_address_hash: to_address_hash,
+      token_contract_address_hash: log.address_hash,
+      transaction_hash: log.transaction_hash,
+      token_type: "ERC-7984",
+      token_ids: nil,
+      amount: nil
+    }
+
+    token = %{
+      contract_address_hash: log.address_hash,
+      type: "ERC-7984"
+    }
+
+    {token, token_transfer}
   end
 
   def filter_tokens_for_supply_update(token_transfers) do

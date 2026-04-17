@@ -30,13 +30,12 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       reputation_association() => :optional
     }
   ]
-  @internal_transaction_necessity_by_association [
-    necessity_by_association: %{
-      [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
-        :optional,
-      [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-      [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
-    }
+  @internal_transaction_address_preloads [
+    address_preloads: [
+      created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+      from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+      to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
+    ]
   ]
 
   @doc """
@@ -227,9 +226,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   end
 
   defp fetch_internal_transactions(transaction) do
-    full_options =
-      @internal_transaction_necessity_by_association
-      |> Keyword.merge(@api_true)
+    full_options = Keyword.merge(@internal_transaction_address_preloads, @api_true)
 
     transaction
     |> transaction_to_internal_transactions(full_options)
@@ -395,12 +392,12 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
         type: 0,
         value: "0",
         method: Transaction.method_name(mock_transaction, Transaction.format_decoded_input(decoded_input), true),
-        status: user_op["status"],
-        actions: [],
+        status: (user_op["status"] && :ok) || :error,
         transaction_types: [],
         raw_input: user_op_call_data,
         decoded_input: decoded_input_json,
-        token_transfers: prepared_token_transfers
+        token_transfers: prepared_token_transfers,
+        internal_transactions: []
       },
       logs_data: %{items: prepared_logs},
       chain_id: :block_scout_web |> Application.get_env(:chain_id) |> ExplorerHelper.parse_integer()

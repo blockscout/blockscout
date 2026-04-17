@@ -204,12 +204,7 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
          {:ok, maybe_actor_type_string} <- Map.fetch(body_json, "actor_type") do
       robust_address_string =
         if maybe_robust_address_string in ["", "<empty>"] do
-          operation.address_hash
-          |> NativeAddress.cast()
-          |> case do
-            {:ok, native_address} -> to_string(native_address)
-            _ -> nil
-          end
+          cast_native_address(operation.address_hash)
         else
           maybe_robust_address_string
         end
@@ -236,6 +231,15 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
       error ->
         Logger.error("Error processing Beryx API response: #{inspect(error)}")
         :error
+    end
+  end
+
+  defp cast_native_address(address_hash) do
+    address_hash
+    |> NativeAddress.cast()
+    |> case do
+      {:ok, native_address} -> to_string(native_address)
+      _ -> nil
     end
   end
 

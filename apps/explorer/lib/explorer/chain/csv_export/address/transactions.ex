@@ -4,13 +4,13 @@ defmodule Explorer.Chain.CsvExport.Address.Transactions do
   """
 
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, Transaction, Wei}
-  alias Explorer.Chain.CsvExport.Helper
+  alias Explorer.Chain.CsvExport.{AsyncHelper, Helper}
   alias Explorer.Market
   alias Explorer.Market.MarketHistory
 
   @spec export(Hash.Address.t(), String.t(), String.t(), Keyword.t(), String.t() | nil, String.t() | nil) ::
           Enumerable.t()
-  def export(address_hash, from_period, to_period, _options, filter_type \\ nil, filter_value \\ nil) do
+  def export(address_hash, from_period, to_period, _options, filter_type, filter_value) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
     exchange_rate = Market.get_coin_exchange_rate()
 
@@ -33,6 +33,7 @@ defmodule Explorer.Chain.CsvExport.Address.Transactions do
       |> Keyword.put(:paging_options, paging_options)
       |> Keyword.put(:from_block, from_block)
       |> Keyword.put(:to_block, to_block)
+      |> Keyword.put(:timeout, AsyncHelper.db_timeout())
       |> (&if(Helper.valid_filter?(filter_type, filter_value, "transactions"),
             do: &1 |> Keyword.put(:direction, String.to_atom(filter_value)),
             else: &1

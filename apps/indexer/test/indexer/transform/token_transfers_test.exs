@@ -448,6 +448,44 @@ defmodule Indexer.Transform.TokenTransfersTest do
              }
     end
 
+    test "parses erc7984 confidential token transfer" do
+      log = %{
+        address_hash: "0x1234567890123456789012345678901234567890",
+        block_number: 12_345_678,
+        data: "0x",
+        first_topic: "0x67500e8d0ed826d2194f514dd0d8124f35648ab6e3fb5e6ed867134cffe661e9",
+        second_topic: "0x000000000000000000000000a1b2c3d4e5f6789012345678901234567890abcd",
+        third_topic: "0x000000000000000000000000b2c3d4e5f67890123456789012345678901abcde",
+        fourth_topic: "0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
+        index: 10,
+        transaction_hash: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+        block_hash: "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321"
+      }
+
+      assert TokenTransfers.parse([log]) == %{
+               token_transfers: [
+                 %{
+                   block_hash: "0xfedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321",
+                   block_number: 12_345_678,
+                   from_address_hash: "0xa1b2c3d4e5f6789012345678901234567890abcd",
+                   log_index: 10,
+                   to_address_hash: "0xb2c3d4e5f67890123456789012345678901abcde",
+                   token_contract_address_hash: "0x1234567890123456789012345678901234567890",
+                   amount: nil,
+                   token_ids: nil,
+                   token_type: "ERC-7984",
+                   transaction_hash: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+                 }
+               ],
+               tokens: [
+                 %{
+                   contract_address_hash: "0x1234567890123456789012345678901234567890",
+                   type: "ERC-7984"
+                 }
+               ]
+             }
+    end
+
     test "Filters WETH transfers from not whitelisted tokens" do
       logs = [
         %{

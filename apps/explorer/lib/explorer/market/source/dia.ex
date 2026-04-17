@@ -177,36 +177,44 @@ defmodule Explorer.Market.Source.DIA do
              []
            ) do
       tokens
-      |> Enum.reduce([], fn
-        %{
-          "Asset" => %{
-            "Address" => token_contract_address_hash_string,
-            "Decimals" => decimals
-          }
-        },
-        acc ->
-          case (is_nil(coin_address_hash) ||
-                  String.downcase(token_contract_address_hash_string) != String.downcase(coin_address_hash)) &&
-                 Hash.Address.cast(token_contract_address_hash_string) do
-            {:ok, token_contract_address_hash} ->
-              token = %{
-                contract_address_hash: token_contract_address_hash,
-                decimals: decimals
-              }
-
-              [token | acc]
-
-            _ ->
-              acc
-          end
-
-        _, acc ->
-          acc
-      end)
+      |> Enum.reduce([], &reduce_dia_token(&1, &2, coin_address_hash))
     else
       nil -> {:error, "Blockchain not specified"}
       {:error, reason} -> {:error, reason}
     end
+  end
+
+  defp reduce_dia_token(
+         %{
+           "Asset" => %{
+             "Address" => token_contract_address_hash_string,
+             "Decimals" => decimals
+           }
+         },
+         acc,
+         coin_address_hash
+       ) do
+    same_as_coin? =
+      !is_nil(coin_address_hash) &&
+        String.downcase(token_contract_address_hash_string) == String.downcase(coin_address_hash)
+
+    if same_as_coin? do
+      acc
+    else
+      case Hash.Address.cast(token_contract_address_hash_string) do
+        {:ok, token_contract_address_hash} -> [build_dia_token(token_contract_address_hash, decimals) | acc]
+        _ -> acc
+      end
+    end
+  end
+
+  defp reduce_dia_token(_, acc, _coin_address_hash), do: acc
+
+  defp build_dia_token(token_contract_address_hash, decimals) do
+    %{
+      contract_address_hash: token_contract_address_hash,
+      decimals: decimals
+    }
   end
 
   defp do_fetch_coin_price_history(previous_days, secondary_coin?) do
@@ -228,31 +236,7 @@ defmodule Explorer.Market.Source.DIA do
            ) do
       values
       |> Enum.reduce_while(%{}, fn value, acc ->
-        with time when not is_nil(time) <- List.first(value),
-             {:ok, datetime, _} <- DateTime.from_iso8601(time),
-             date = DateTime.to_date(datetime),
-             price when not is_nil(price) <- List.last(value) do
-          {:cont,
-           Map.update(
-             acc,
-             date,
-             %{
-               closing_price: Source.to_decimal(price),
-               date: date,
-               opening_price: Source.to_decimal(price),
-               secondary_coin: secondary_coin?
-             },
-             fn existing_entry ->
-               %{
-                 existing_entry
-                 | opening_price: Source.to_decimal(price)
-               }
-             end
-           )}
-        else
-          _ ->
-            {:halt, {:error, "Wrong format of DIA coin price history response: #{inspect(value)}"}}
-        end
+        reduce_dia_price_history_entry(value, acc, secondary_coin?)
       end)
       |> case do
         {:error, _reason} = error ->
@@ -266,6 +250,34 @@ defmodule Explorer.Market.Source.DIA do
       {:blockchain, nil} -> {:error, "Blockchain not specified"}
       {:ok, _} -> {:ok, []}
       {:error, _reason} = error -> error
+    end
+  end
+
+  defp reduce_dia_price_history_entry(value, acc, secondary_coin?) do
+    with time when not is_nil(time) <- List.first(value),
+         {:ok, datetime, _} <- DateTime.from_iso8601(time),
+         date = DateTime.to_date(datetime),
+         price when not is_nil(price) <- List.last(value) do
+      {:cont,
+       Map.update(
+         acc,
+         date,
+         %{
+           closing_price: Source.to_decimal(price),
+           date: date,
+           opening_price: Source.to_decimal(price),
+           secondary_coin: secondary_coin?
+         },
+         fn existing_entry ->
+           %{
+             existing_entry
+             | opening_price: Source.to_decimal(price)
+           }
+         end
+       )}
+    else
+      _ ->
+        {:halt, {:error, "Wrong format of DIA coin price history response: #{inspect(value)}"}}
     end
   end
 

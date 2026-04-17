@@ -99,7 +99,15 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionControllerTest do
     test "return 422 on invalid operation hash", %{conn: conn} do
       request = get(conn, "/api/v2/proxy/account-abstraction/operations/0x/summary?just_request_body=true")
 
-      assert %{"message" => "Invalid parameter(s)"} = json_response(request, 422)
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{64})$/",
+                   "source" => %{"pointer" => "/operation_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
     end
 
     test "return 404 on non existing operation", %{conn: conn, aa_bypass: aa_bypass, ti_bypass: ti_bypass} do
@@ -211,7 +219,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionControllerTest do
       assert operation_hash == data["hash"]
       assert 0 == data["type"]
       assert "0" == data["value"]
-      assert true == data["status"]
+      assert "ok" == data["status"]
 
       assert Enum.count(data["token_transfers"]) == 50
     end

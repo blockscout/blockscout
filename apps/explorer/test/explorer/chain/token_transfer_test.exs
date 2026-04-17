@@ -400,4 +400,41 @@ defmodule Explorer.Chain.TokenTransferTest do
       assert {:ok, []} = TokenTransfer.uncataloged_token_transfer_block_numbers()
     end
   end
+
+  describe "ERC-7984 token transfers" do
+    test "filters ERC-7984 token transfers correctly" do
+      erc7984_token = insert(:token, type: "ERC-7984")
+      erc20_token = insert(:token, type: "ERC-20")
+
+      transaction = insert(:transaction) |> with_block()
+
+      erc7984_transfer =
+        insert(
+          :token_transfer,
+          token_type: "ERC-7984",
+          amount: nil,
+          token_ids: nil,
+          token: erc7984_token,
+          token_contract_address: erc7984_token.contract_address,
+          transaction: transaction
+        )
+
+      _erc20_transfer =
+        insert(
+          :token_transfer,
+          token_type: "ERC-20",
+          token: erc20_token,
+          token_contract_address: erc20_token.contract_address,
+          transaction: transaction
+        )
+
+      # Test that ERC-7984 transfers can be queried
+      transfers = TokenTransfer.fetch_token_transfers_from_token_hash(erc7984_token.contract_address_hash, [])
+
+      assert length(transfers) == 1
+      assert hd(transfers).token_type == "ERC-7984"
+      assert hd(transfers).amount == nil
+      assert hd(transfers).token_ids == nil
+    end
+  end
 end

@@ -68,10 +68,17 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
 
       assert TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance) == :ok
 
-      :timer.sleep(100)
-
       token_instance_from_db =
-        Repo.get_by(TokenInstance, token_id: token_id, token_contract_address_hash: token.contract_address_hash)
+        wait_for_results(fn ->
+          Repo.one!(
+            from(ti in TokenInstance,
+              where:
+                ti.token_id == ^token_id and
+                  ti.token_contract_address_hash == ^token.contract_address_hash and
+                  ti.metadata == ^metadata
+            )
+          )
+        end)
 
       assert(token_instance_from_db)
       refute is_nil(token_instance_from_db.metadata)
@@ -121,10 +128,17 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
 
       assert TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance) == :ok
 
-      :timer.sleep(100)
-
       token_instance_from_db =
-        Repo.get_by(TokenInstance, token_id: token_id, token_contract_address_hash: token.contract_address_hash)
+        wait_for_results(fn ->
+          Repo.one!(
+            from(ti in TokenInstance,
+              where:
+                ti.token_id == ^token_id and
+                  ti.token_contract_address_hash == ^token.contract_address_hash and
+                  ti.metadata == ^metadata
+            )
+          )
+        end)
 
       assert(token_instance_from_db)
       assert token_instance_from_db.metadata == metadata

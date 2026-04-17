@@ -13,10 +13,11 @@ defmodule Explorer.Chain.Cache.Counters.PendingBlockOperationCount do
 
   require Logger
 
+  alias EthereumJSONRPC.Utility.RangesHelper
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Cache.Counters.Helper, as: CacheCountersHelper
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.PendingBlockOperation
-  alias Explorer.Repo
 
   @cache_key "pending_block_operations_count"
 
@@ -46,7 +47,10 @@ defmodule Explorer.Chain.Cache.Counters.PendingBlockOperationCount do
     {:ok, task} =
       Task.start_link(fn ->
         try do
-          result = Repo.aggregate(PendingBlockOperation, :count, timeout: :infinity)
+          min_blockchain_trace_block_number =
+            RangesHelper.get_min_block_number_from_range_string(Application.get_env(:indexer, :trace_block_ranges))
+
+          result = PendingBlockOperation.blocks_count_in_range(min_blockchain_trace_block_number, BlockNumber.get_max())
 
           params = %{
             counter_type: @cache_key,
@@ -55,7 +59,10 @@ defmodule Explorer.Chain.Cache.Counters.PendingBlockOperationCount do
 
           LastFetchedCounter.upsert(params)
 
-          set_count(%ConCache.Item{ttl: CacheCountersHelper.ttl(__MODULE__, "CACHE_PBO_COUNT_PERIOD"), value: result})
+          set_count(%ConCache.Item{
+            ttl: CacheCountersHelper.ttl(__MODULE__, "CACHE_PENDING_OPERATIONS_COUNT_PERIOD"),
+            value: result
+          })
         rescue
           e ->
             Logger.debug([
