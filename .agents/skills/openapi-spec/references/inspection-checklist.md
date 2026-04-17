@@ -14,6 +14,8 @@ Read the controller action function. Identify every key it reads from:
 
 Cross-reference with the `parameters:` list in the `operation` macro. Every parameter that affects the endpoint's behavior should be declared.
 
+Spec-side enumeration in one command: `oastools walk parameters -path <X> -method <Y> -q .ai/tmp/openapi_public.yaml`. Controller side still needs to be read for the comparison.
+
 **Known exceptions**: cross-cutting headers (`show-scam-tokens`, recaptcha headers) are conventionally undeclared. See `references/request-body-security-headers.md` for the gap details and recommended approach.
 
 ### 1b. Every declared parameter should be used
@@ -29,6 +31,8 @@ For each **path** parameter, verify:
 
 Read the route definition in the router file, the `%Parameter{}` definition, and the controller action head.
 
+Spec side: `oastools walk parameters -in path -path <X> -method <Y> -detail -format json .ai/tmp/openapi_public.yaml | jq '.parameter.name'`.
+
 ### 1d. Parameter types are accurate
 
 For each parameter:
@@ -40,6 +44,8 @@ For each parameter:
 ### 1e. No duplicated inline parameters
 
 For each inline `%Parameter{}` struct in the operation, scan the other operations in the same controller for identical or near-identical structs (same `name`, `in`, `schema`, and `description`). Duplicated inline parameters are a maintenance risk — changing one without updating the other creates silent inconsistencies.
+
+Mechanical scan across the whole domain: recipe E in `references/oastools-audit-recipes.md` groups same-name parameters across all endpoints under one path prefix in a single pass.
 
 If duplication is found, extract the parameter into a reusable helper function:
 - **Generic concept** (address hashes, transaction hashes, block numbers — useful across multiple controllers): add a helper to `general.ex` following the conventions in `references/parameter-discovery.md`.
@@ -57,6 +63,8 @@ Compare:
 - **Extra schema properties** (in schema but not in view): if in `required:`, this will cause test failures. If optional, it's technically valid but misleading.
 - **Extra view keys** (in view but not in schema): if schema has `additionalProperties: false`, this will cause test failures. Otherwise it's undocumented output.
 - **Type mismatches**: verify that each view output value matches its schema type (string, integer, object, array, nullable).
+
+Schema-side key list in one command: `oastools walk schemas -name <Schema> -detail -format json .ai/tmp/openapi_public.yaml | jq '.[0].schema.properties | keys'`.
 
 ### 2b. Type precision — check Ecto schemas for enums and constraints
 
@@ -78,13 +86,17 @@ Every key the view always emits should be in `required:`. Keys that are conditio
 - Not be in `required:` (if the key might be absent)
 - Be in `required:` but have `nullable: true` on the schema (if the key is always present but sometimes null)
 
+See `references/schema-conventions.md` section "Nullable fields" for the full nullable handling rules, including why `type: :null` / `anyOf: [%Schema{type: :null}, …]` (OpenAPI 3.1) is invalid here.
+
 ### 2d. additionalProperties: false is set
 
 Check that `additionalProperties: false` is present on all object schemas. This is a project-wide convention that enables test-time enforcement.
 
+Spec-wide audit: recipe A in `references/oastools-audit-recipes.md` lists every component object schema that violates this. Error-response schemas (`NotFoundResponse`, `ForbiddenResponse`, etc.) intentionally omit it — real domain-schema drift is typically the remainder.
+
 ### 2e. Chain-type fields are aligned
 
-If the view has chain-type dispatching (check for `chain_type` case statements or `with_chain_type_fields` calls), the schema should also have a `ChainTypeCustomizations` module applying the same fields. Verify both sides handle the same chain types.
+If the view has chain-type dispatching (check for `chain_type` case statements or `with_chain_type_fields` calls), the schema should also have a `ChainTypeCustomizations` module applying the same fields. Verify both sides handle the same chain types. See `references/schema-conventions.md` section "Chain-type customization pattern" for the dispatch mechanism and where `ChainTypeCustomizations` modules are conventionally placed.
 
 ### 2f. Property descriptions are adequate
 
@@ -100,6 +112,8 @@ Flag properties that fail this test. Common patterns to watch for:
 
 Self-documenting compound names (`origination_transaction_block_number`) and well-known primitives (`token.symbol`) don't need descriptions.
 
+Mechanical shortlist of properties lacking `description:`: recipe C in `references/oastools-audit-recipes.md`. Human review still needed — tautologies pass this filter.
+
 See `references/schema-conventions.md` section "Property descriptions" for the full guidelines and before/after examples.
 
 ### 2g. `oneOf`/`anyOf` variant reachability
@@ -113,6 +127,8 @@ For each property in the response schema that uses `oneOf` or `anyOf`, verify th
 
 **If unreachable variants are found:** The schema overpromises to API consumers. Create a narrowed schema via `extend_schema` that overrides only the polymorphic property, keeping just the reachable variants. See `references/schema-conventions.md` section "Helper.extend_schema/2".
 
+To find all endpoints whose 200 response currently uses `oneOf` (for precedent), run recipe G in `references/oastools-audit-recipes.md`.
+
 This check is especially important for endpoints that filter by a specific discriminator value (e.g., a DA-type lookup that always returns one DA variant, but references a shared batch schema containing all DA variants).
 
 ## 3. Convention compliance
@@ -122,17 +138,24 @@ This check is especially important for endpoints that filter by a specific discr
 Verify the controller has:
 - `use OpenApiSpex.ControllerSpecs`
 - `plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)`
-- `tags(["domain-tag"])` — tag should match the router scope/resource group
+- `tags(["domain-tag"])` — kebab-case (e.g. `"internal-transactions"`, `"smart-contracts"`, `"account-abstraction"`); should match the router scope/resource group
+- The tag is registered in `specs/public.ex` — in `@default_api_categories` (base), in the appropriate `case @chain_identity` branch of `chain_type_category/0` (chain-type), or already pinned as `"legacy"`. An un-registered tag still renders per-operation but has no guaranteed ordering in the generated spec.
+
+Spec-wide tripwire: recipe I in `references/oastools-audit-recipes.md` returns any tag containing `_`. The baseline is `[]` — any hit likely means a controller predates the kebab-case convention.
 
 ### 3b. base_params() is included
 
 Every public API operation should include `base_params()` in its parameters. Check that `base_params()` is present and isn't accidentally duplicated.
+
+Spec-wide audit: recipe F in `references/oastools-audit-recipes.md` lists operations missing `apikey`.
 
 ### 3c. Error responses are appropriate
 
 Check which error cases the controller action handles (not_found, forbidden, etc.) and verify corresponding error responses are declared. See `references/error-response-patterns.md` for the status-code-to-module mapping.
 
 At minimum, every operation should declare `:unprocessable_entity: JsonErrorResponse.response()` since CastAndValidate can always fail.
+
+Spec-wide audit: recipe B in `references/oastools-audit-recipes.md` lists operations missing 422. Some are likely-intentional (legacy endpoints, CSV exports) — triage per endpoint.
 
 ### 3d. Summary and description
 
@@ -164,39 +187,15 @@ See `references/schema-conventions.md` for full conventions.
 
 ## 5. Verification
 
-After identifying and fixing issues from sections 1-4, run the verification ladder. Each step catches a different class of problems, and earlier steps are faster.
+After identifying and fixing issues from sections 1-4, run the verification ladder described in the "Verification" section of `SKILL.md` (compile → generate-spec → controller tests). Each step catches a different class of problems, and earlier steps are faster.
 
-### 5a. Compile
-
-```bash
-mix compile
-```
-
-Catches: missing schema modules, undefined parameter helper functions, operation names that don't match action functions, syntax errors in annotations. This is the fastest check — run it first.
-
-### 5b. Generate the spec
-
-```bash
-.claude/skills/openapi-spec/scripts/generate-spec.sh
-```
-
-Catches: schema resolution failures, circular references, malformed schema structures that compile but can't be inlined into the spec. See `references/spec-generation-and-verification.md` for script options and `oastools` verification commands.
-
-### 5c. Run controller tests
-
-```bash
-mix test apps/block_scout_web/test/block_scout_web/controllers/api/v2/<domain>_controller_test.exs
-```
-
-Catches: response schema mismatches — extra keys (via `additionalProperties: false`), missing required keys, type mismatches. Every `json_response/2` call in tests automatically validates the response body against the OpenAPI schema.
-
-### 5d. Test coverage check
+### 5a. Test coverage check
 
 Check that tests exist and exercise the endpoint:
 
 1. **Test file exists**: `test/block_scout_web/controllers/api/v2/<domain>_controller_test.exs`
 2. **Tests hit the endpoint**: grep for the endpoint path in the test file
-3. **All declared status codes are tested**: enumerate every status code in the operation's `responses:` and verify at least one test exercises each. Pay special attention to status codes with multiple triggering conditions (e.g., multiple 400 branches) — each condition ideally has its own test case
+3. **All declared status codes are tested**: enumerate every status code in the operation's `responses:` and verify at least one test exercises each. Pay special attention to status codes with multiple triggering conditions (e.g., multiple 400 branches) — each condition ideally has its own test case. Spec-side enumeration: `oastools walk responses -path <X> -method <Y> -q .ai/tmp/openapi_public.yaml`.
 
 ### Minimal test templates
 
@@ -231,6 +230,17 @@ test "returns 422 on invalid input", %{conn: conn} do
   assert %{"errors" => [_]} = json_response(request, 422)
 end
 ```
+
+## 6. Spec-wide sweep
+
+Independent of any single-endpoint audit, run this sweep once per work session to catch drift introduced elsewhere in the codebase. Regenerate the spec first — stale YAML produces false positives.
+
+- Recipe A — object schemas missing `additionalProperties: false`
+- Recipe B — operations missing 422
+- Recipe F — operations missing `apikey` (base_params)
+- Recipe I — tags violating kebab-case
+
+Full recipes in `references/oastools-audit-recipes.md`. Results belong in the "Convention deviations" section of the audit output below.
 
 ## Audit output
 

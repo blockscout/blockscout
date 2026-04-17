@@ -38,6 +38,8 @@ Domain subdirectories (e.g., `arbitrum/`, `optimism/`) can also contain leaf sch
 
 **When to extract:** When 2+ schemas in the same domain directory define an identical inline structure — either an object sub-schema with the same properties/types, or an enum with the same values. The trigger is duplication, not speculation: don't pre-extract a structure used by only one schema.
 
+To find duplicates mechanically: recipe D in `references/oastools-audit-recipes.md` enumerates every inline enum in the spec (group by `.enum` array); recipe N gives a property-set subset/superset scan for shared object structures.
+
 **Why it matters:**
 - **For sub-objects** (e.g., a `commitment_transaction` block with 4 properties): if the structure changes, every inline copy must be found and updated. A shared schema eliminates this drift risk.
 - **For enums** (e.g., a `batch_data_container` enum): each inline copy needs its own "keep in sync with Ecto" comment (see "Required: Ecto.Enum sync comments" below). A shared enum schema consolidates that comment to one location — the leaf module — so there's one place to update when Ecto enum values change.
@@ -150,7 +152,7 @@ OpenApiSpex.schema(%{
 ```
 
 Key conventions:
-- **`additionalProperties: false`** — always set on object schemas. This enables test-time enforcement: any key the view emits that isn't in the schema causes a test failure.
+- **`additionalProperties: false`** — always set on object schemas. This enables test-time enforcement: any key the view emits that isn't in the schema causes a test failure. Spec-wide audit: recipe A in `references/oastools-audit-recipes.md`.
 - **`required:`** — list all keys that the view always emits.
 - **Property values** can be schema modules (like `General.IntegerStringNullable`) or inline `%Schema{}` structs.
 
@@ -158,7 +160,7 @@ Key conventions:
 
 When a view branches on a discriminator field and emits different object shapes per branch, model the property using `oneOf`. Each variant is a standalone `%Schema{type: :object}` with its own properties and `additionalProperties: false`. The discriminator field (the field the view branches on) must appear in every variant so validation can match exactly one.
 
-**Existing precedent:** `transaction.ex` uses `oneOf` for the `revert_reason` property (line ~392), which can be either a decoded input object or a raw hex string wrapper.
+**Existing precedent:** `transaction.ex` uses `oneOf` for the `revert_reason` property (line ~392), which can be either a decoded input object or a raw hex string wrapper. For the full list of endpoints whose 200 response currently uses `oneOf`, run recipe G in `references/oastools-audit-recipes.md`.
 
 **Structural pattern:**
 
@@ -181,6 +183,43 @@ polymorphic_field: %Schema{
   description: "Structure varies by `discriminator` value."
 }
 ```
+
+**Constrain the discriminator per variant.** Each variant's discriminator property must be narrowed to the specific value(s) that identify it — use an inline `%Schema{type: :string, enum: [...]}` instead of referencing the shared enum schema. This prevents logically invalid combinations from passing validation (e.g., `batch_data_container: "in_calldata"` paired with `data_hash` + `signers` fields that only exist on the `in_anytrust` variant).
+
+**Concrete template (batch data availability with 2 variants shown):**
+
+```elixir
+data_availability: %Schema{
+  oneOf: [
+    # Variant: nil / in_blob4844 / in_calldata (no extra fields)
+    %Schema{
+      type: :object,
+      properties: %{
+        batch_data_container: %Schema{type: :string, enum: ["in_blob4844", "in_calldata"], nullable: true}
+      },
+      required: [:batch_data_container],
+      additionalProperties: false
+    },
+    # Variant: in_anytrust
+    %Schema{
+      type: :object,
+      properties: %{
+        batch_data_container: %Schema{type: :string, enum: ["in_anytrust"]},
+        data_hash: %Schema{type: :string, nullable: true},
+        timeout: %Schema{type: :string, nullable: true},
+        bls_signature: %Schema{type: :string, nullable: true},
+        signers: %Schema{type: :array, items: %Schema{type: :string}}
+      },
+      required: [:batch_data_container, :data_hash, :timeout, :bls_signature, :signers],
+      additionalProperties: false
+    }
+    # ... additional variants (each with its own enum constraint)
+  ],
+  description: "Data availability info. Structure varies by `batch_data_container`."
+}
+```
+
+**Catch-all branch.** If the view has a fallthrough clause (e.g., `value -> %{"field" => to_string(value)}`), model it as the minimal variant containing only the discriminator.
 
 **Notes:**
 - `discriminator:` (the OpenAPI 3.0 keyword) is optional in OpenApiSpex — the `oneOf` alone is sufficient for validation. OpenApiSpex checks each variant and requires exactly one to match.
@@ -231,6 +270,8 @@ When multiple endpoints render the same underlying entity with different levels 
 1. Compare the property sets of the existing and new schemas.
 2. Determine which is the subset (fewer properties) and which is the superset.
 3. Cross-reference with the Ecto schema to see which OpenAPI schema most closely matches the full entity.
+
+Mechanical candidate detection across all component schemas: recipe N in `references/oastools-audit-recipes.md`.
 
 **Naming convention:**
 - The schema whose properties most closely match the Ecto schema should be named after the entity: `<Entity>` (e.g., `Message`). This is the "full" representation.
@@ -474,6 +515,8 @@ Add a description when the property name alone doesn't convey what the value rep
 ### Quality standard
 
 A description should tell the consumer something they cannot infer from the property name alone. If you can delete the description and the property is equally clear, it wasn't worth writing.
+
+To list undocumented properties on a given schema deterministically: recipe C in `references/oastools-audit-recipes.md`. Tautologies pass that filter — still read each description.
 
 ### Where to find the meaning
 

@@ -25,12 +25,16 @@ Parameter helpers follow the naming convention `<descriptive_name>_param` for si
 
 Grep for `def.*_param` in `general.ex` to see the full list. There are ~48 helpers organized into functional categories (described below).
 
+To see which parameter names actually reach the generated spec, run recipe K in `references/oastools-audit-recipes.md`. The spec surfaces ~92 distinct names — diff against `general.ex` to find zombie helpers (defined but never used) and inline-only names (declared in controllers, candidates for promotion to `general.ex`).
+
 ### Find which controllers use a helper
 
 Grep for the function name across `controllers/api/v2/`:
 ```
 grep "transaction_hash_param()" in controllers/api/v2/**/*.ex
 ```
+
+`oastools walk parameters -name <helper_name> -q .ai/tmp/openapi_public.yaml` (recipe J) is authoritative about which endpoints *declare* the parameter in the spec — it doesn't see controller-private helpers or inline `%Parameter{}` structs, but it won't miss anything wired into the public spec.
 
 ## Naming conventions
 

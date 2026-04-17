@@ -84,7 +84,7 @@ To check which are auto-aliased, read the `:controller` quote block in `block_sc
 
 Look at the controller action to identify which error paths exist:
 
-1. **Every operation** should include `:unprocessable_entity: JsonErrorResponse.response()` — CastAndValidate can always fail.
+1. **Every operation** should include `:unprocessable_entity: JsonErrorResponse.response()` — CastAndValidate can always fail. Spec-wide audit of operations currently missing 422: recipe B in `references/oastools-audit-recipes.md`.
 2. If the action does a resource lookup (e.g., `Chain.hash_to_transaction`), include `:not_found`.
 3. If the action checks authorization (e.g., `AccessHelper.restricted_access?`), include `:forbidden`.
 4. If the action requires authentication, include `:unauthorized`.
