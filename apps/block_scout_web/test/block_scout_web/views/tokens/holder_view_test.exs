@@ -70,5 +70,12 @@ defmodule BlockScoutWeb.Tokens.HolderViewTest do
 
       assert HolderView.format_token_balance_value(token_balance.value, nil, token) == 1
     end
+
+    test "returns '*confidential*' for ERC-7984 tokens" do
+      token = build(:token, type: "ERC-7984", decimals: Decimal.new(18))
+      token_balance = build(:token_balance, value: 1_000_000)
+
+      assert HolderView.format_token_balance_value(token_balance.value, nil, token) == "*confidential*"
+    end
   end
 end

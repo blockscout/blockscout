@@ -19,7 +19,7 @@ defmodule EthereumJSONRPC.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "9.3.2"
+      version: "11.0.0"
     ]
   end
 
@@ -70,12 +70,12 @@ defmodule EthereumJSONRPC.MixProject do
       {:logger_json, "~> 7.0"},
       # Mocking `EthereumJSONRPC.Transport` and `EthereumJSONRPC.HTTP` so we avoid hitting real chains for local testing
       {:mox, "~> 1.2.0", only: [:test]},
-      {:prometheus_ex, "~> 5.0.0", override: true},
+      {:prometheus_ex, "~> 5.1.0", override: true},
       # Tracing
       {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog
       {:spandex_datadog, "~> 1.0"},
-      {:tesla, "~> 1.15.3"},
+      {:tesla, "~> 1.16.0"},
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.7.1"},
       # Encode/decode function names and arguments

@@ -1,5 +1,5 @@
 defmodule Indexer.Transform.AddressCoinBalancesTest do
-  use ExUnit.Case, async: true
+  use Explorer.DataCase, async: true
 
   alias Explorer.Factory
   alias Indexer.Transform.AddressCoinBalances
@@ -77,7 +77,7 @@ defmodule Indexer.Transform.AddressCoinBalancesTest do
 
       params_set = AddressCoinBalances.params_set(%{internal_transactions_params: [internal_transaction_params]})
 
-      assert MapSet.size(params_set) == 1
+      assert MapSet.size(params_set) == 2
       assert MapSet.member?(params_set, %{address_hash: created_contract_address_hash, block_number: block_number})
     end
 

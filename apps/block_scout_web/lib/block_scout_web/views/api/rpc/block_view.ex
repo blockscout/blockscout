@@ -9,14 +9,14 @@ defmodule BlockScoutWeb.API.RPC.BlockView do
   def render("block_reward.json", %{block: %Block{rewards: [_ | _]} = block}) do
     reward_as_string =
       block.rewards
-      |> Enum.find(%{reward: %Wei{value: Decimal.new(0)}}, &(&1.address_type == :validator))
+      |> Enum.find(%{reward: Wei.zero()}, &(&1.address_type == :validator))
       |> Map.get(:reward)
       |> Wei.to(:wei)
       |> Decimal.to_string(:normal)
 
     static_reward =
       block.rewards
-      |> Enum.find(%{reward: %Wei{value: Decimal.new(0)}}, &(&1.address_type == :emission_funds))
+      |> Enum.find(%{reward: Wei.zero()}, &(&1.address_type == :emission_funds))
       |> Map.get(:reward)
       |> Wei.to(:wei)
 

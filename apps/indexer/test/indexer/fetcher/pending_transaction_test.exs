@@ -60,9 +60,19 @@ defmodule Indexer.Fetcher.PendingTransactionTest do
 
       PendingTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
-      wait_for_results(fn ->
-        Repo.one!(from(transaction in Transaction, where: is_nil(transaction.block_hash), limit: 1))
-      end)
+      pending_hash = "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6"
+
+      wait_for_results(
+        fn ->
+          Repo.one!(
+            from(transaction in Transaction,
+              where: is_nil(transaction.block_hash) and transaction.hash == ^pending_hash,
+              limit: 1
+            )
+          )
+        end,
+        60
+      )
 
       assert Repo.aggregate(Transaction, :count, :hash) >= 1
     end

@@ -20,11 +20,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
       async_import_created_contract_codes: 2,
       async_import_filecoin_addresses_info: 2,
       async_import_internal_transactions: 2,
-      async_import_polygon_zkevm_bridge_l1_tokens: 1,
       async_import_realtime_coin_balances: 1,
       async_import_replaced_transactions: 2,
       async_import_signed_authorizations_statuses: 2,
       async_import_token_balances: 2,
+      async_import_current_token_balances: 2,
       async_import_token_instances: 1,
       async_import_tokens: 2,
       async_import_uncles: 2,
@@ -61,13 +61,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
             last_realtime_blocks: %{}
 
   @type t :: %__MODULE__{
-          block_fetcher: %Block.Fetcher{
-            broadcast: term(),
-            callback_module: __MODULE__,
-            json_rpc_named_arguments: EthereumJSONRPC.json_rpc_named_arguments(),
-            receipts_batch_size: pos_integer(),
-            receipts_concurrency: pos_integer()
-          },
+          block_fetcher: Block.Fetcher.t(__MODULE__),
           subscription: Subscription.t(),
           previous_number: pos_integer() | nil,
           timer: reference(),
@@ -399,13 +393,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
     Indexer.Fetcher.Optimism.Withdrawal.remove(reorg_block_number)
   end
 
-  # Removes all rows from `polygon_zkevm_bridge` table
-  # previously written starting from the reorg block number
-  defp do_remove_assets_by_number(:polygon_zkevm, reorg_block) do
-    # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-    Indexer.Fetcher.PolygonZkevm.BridgeL2.reorg_handle(reorg_block)
-  end
-
   # Removes all rows from `shibarium_bridge` table
   # previously written starting from the reorg block number
   defp do_remove_assets_by_number(:shibarium, reorg_block) do
@@ -546,11 +533,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
     async_import_internal_transactions(imported, realtime?)
     async_import_tokens(imported, realtime?)
     async_import_token_balances(imported, realtime?)
+    async_import_current_token_balances(imported, realtime?)
     async_import_token_instances(imported)
     async_import_uncles(imported, realtime?)
     async_import_replaced_transactions(imported, realtime?)
     async_import_blobs(imported, realtime?)
-    async_import_polygon_zkevm_bridge_l1_tokens(imported)
     async_import_celo_epoch_block_operations(imported, realtime?)
     async_import_celo_accounts(imported, realtime?)
     async_import_filecoin_addresses_info(imported, realtime?)

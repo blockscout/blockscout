@@ -315,6 +315,7 @@ defmodule Indexer.BufferedTask do
     :max_batch_size
   ]
   defstruct init_task: nil,
+            init_task_delay: 0,
             flush_timer: nil,
             callback_module: nil,
             callback_module_state: nil,
@@ -332,8 +333,10 @@ defmodule Indexer.BufferedTask do
   @typedoc """
   BufferedTask struct:
   * `init_task` - reference to the initial streaming task. This field holds the
-    `Task.t()` for the initial data population process. It's used to track the
+    `reference()` for the initial data population process. It's used to track the
     completion of the initial data streaming.
+  * `init_task_delay` - delay between running init tasks.
+    It increases if the last init task added nothing to queue and resets to 0 otherwise.
   * `flush_timer` - reference to the timer for periodic buffer flushing. This
     field stores the timer reference returned by `Process.send_after/3`, which
     is scheduled using the `flush_interval`. When the timer triggers, it sends
@@ -385,7 +388,8 @@ defmodule Indexer.BufferedTask do
     results and retries.
   """
   @type t :: %__MODULE__{
-          init_task: Task.t() | :complete | nil,
+          init_task: reference() | :complete | :delay | nil,
+          init_task_delay: non_neg_integer(),
           flush_timer: reference() | nil,
           callback_module: module(),
           callback_module_state: term(),
@@ -753,8 +757,17 @@ defmodule Indexer.BufferedTask do
   end
 
   # Handles the normal termination of the initial streaming task, marking it as complete.
-  def handle_info({:DOWN, ref, :process, _pid, :normal}, %__MODULE__{init_task: ref} = state) do
-    {:noreply, %__MODULE__{state | init_task: :complete}}
+  def handle_info(
+        {:DOWN, ref, :process, _pid, :normal},
+        %__MODULE__{init_task: ref, bound_queue: %{size: size}} = state
+      ) do
+    init_task_delay =
+      case size do
+        0 -> increased_delay()
+        _ -> 0
+      end
+
+    {:noreply, %__MODULE__{state | init_task: :complete, init_task_delay: init_task_delay}}
   end
 
   # Handles the normal termination of a non-initial task, no action needed.
@@ -973,7 +986,7 @@ defmodule Indexer.BufferedTask do
   # ## Returns
   # - Updated `state` with the new `init_task` reference and scheduled buffer flush.
   @spec do_initial_stream(%__MODULE__{
-          init_task: Task.t() | :complete | nil,
+          init_task: reference() | :complete | :delay | nil,
           callback_module: module(),
           max_batch_size: pos_integer(),
           task_supervisor: GenServer.name(),
@@ -1239,9 +1252,13 @@ defmodule Indexer.BufferedTask do
           bound_queue: BoundQueue.t(term()),
           task_ref_to_batch: %{reference() => [term(), ...]}
         }) :: t()
-  defp schedule_next(%__MODULE__{poll: true, bound_queue: %BoundQueue{size: 0}, task_ref_to_batch: tasks} = state)
-       when tasks == %{} do
-    do_initial_stream(state)
+  defp schedule_next(
+         %__MODULE__{poll: true, init_task: init_task, bound_queue: %BoundQueue{size: 0}, task_ref_to_batch: tasks} =
+           state
+       )
+       when tasks == %{} and init_task in [:complete, nil] do
+    Process.send_after(self(), :initial_stream, state.init_task_delay)
+    schedule_next_buffer_flush(%{state | init_task: :delay})
   end
 
   defp schedule_next(%__MODULE__{} = state) do
@@ -1411,4 +1428,6 @@ defmodule Indexer.BufferedTask do
     |> push_front(front_entries)
     |> flush()
   end
+
+  defp increased_delay, do: Application.get_env(:indexer, :fetcher_init_delay)
 end

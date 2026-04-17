@@ -7,7 +7,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   @doc """
   Returns the name of the migration. The name is used to track the operation's status in
   `Explorer.Migrator.MigrationStatus`.
-  Heavy DB migration is either `heavy_indexes_create_{lower_case_index_name}` or `heavy_indexes_drop_{lower_case_index_name}`
+  Heavy DB migration is either `heavy_indexes_create_{lower_case_index_name}`, `heavy_indexes_drop_{lower_case_index_name}`, or `heavy_indexes_rename_{lower_case_index_name}`
   """
   @callback migration_name :: String.t()
 
@@ -32,15 +32,16 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
               | :smart_contracts
               | :arbitrum_batch_l2_blocks
               | :smart_contracts_additional_sources
-
+              | :tokens
   @doc """
   Specifies the type of operation to be performed on the database index.
 
   ## Returns
   - `:create` - Indicates that the operation is to add a new index.
   - `:drop` - Indicates that the operation is to drop an existing index.
+  - `:rename` - Indicates that the operation is to rename an existing index.
   """
-  @callback operation_type :: :create | :drop
+  @callback operation_type :: :create | :drop | :rename
 
   @doc """
   Returns the name of the index as a string.
@@ -180,8 +181,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
                {:db_index_operation_status, db_index_operation_status()} do
           if db_operation_is_ready_to_start?() do
             MigrationStatus.set_status(migration_name(), "started")
-            db_index_operation()
-            schedule_next_db_operation_status_check()
+            timeout = (db_index_operation() == :ok && 0) || nil
+            schedule_next_db_operation_status_check(timeout)
           else
             schedule_next_db_operation_readiness_check()
           end

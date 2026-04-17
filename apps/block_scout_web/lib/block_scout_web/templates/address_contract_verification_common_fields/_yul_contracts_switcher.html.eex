@@ -1,20 +1,20 @@
 <div class="smart-contract-form-group">
   <div class="smart-contract-form-group-inner-wrapper">
-    <%= label @f, :is_yul, gettext("Is Yul contract") %>
+    <%= label @f, :language, gettext("Is Yul contract") %>
     <div class="center-column">
       <div class="form-radios-group">
         <div class="radio-big">
-          <%= radio_button @f, :is_yul, false, class: "form-check-input autodetectfalse" %>
+          <%= radio_button @f, :language, "solidity", class: "form-check-input language-solidity" %>
         <div class="radio-icon"></div>
-          <%= label @f, :is_yul_false, gettext("No"), class: "radio-text" %>
+          <%= label @f, :language_solidity, gettext("No"), class: "radio-text" %>
         </div>
         <div class="radio-big">
-          <%= radio_button @f, :is_yul, true, class: "form-check-input autodetecttrue", "aria-describedby": "is_yul-help-block" %>
+          <%= radio_button @f, :language, "yul", class: "form-check-input language-yul", "aria-describedby": "language-help-block" %>
         <div class="radio-icon"></div>
-          <%= label @f, :is_yul_true, gettext("Yes"), class: "radio-text" %>
+          <%= label @f, :language_yul, gettext("Yes"), class: "radio-text" %>
         </div>
       </div>
-      <%= error_tag @f, :is_yul, id: "is_yul-help-block", class: "text-danger form-error" %>
+      <%= error_tag @f, :language, id: "language-help-block", class: "text-danger form-error" %>
     </div>
     <div class="smart-contract-form-group-tooltip"><%= gettext("Select Yes if you want to verify Yul contract.") %></div>
   </div>

@@ -13,32 +13,15 @@ defmodule BlockScoutWeb.VisualizeSol2umlController do
       ip: AccessHelper.conn_to_ip_string(conn)
     ]
 
-    if Sol2uml.enabled?() do
-      with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
-           {:ok, address} <- Address.find_contract_address(address_hash, address_options),
-           # check that contract is verified. partial and bytecode twin verification is ok for this case
-           false <- is_nil(address.smart_contract) do
-        sources =
-          address.smart_contract.smart_contract_additional_sources
-          |> Enum.map(fn additional_source -> {additional_source.file_name, additional_source.contract_source_code} end)
-          |> Enum.into(%{})
-          |> Map.merge(%{
-            get_contract_filename(address.smart_contract.file_path) => address.smart_contract.contract_source_code
-          })
-
-        params = %{
-          sources: sources
-        }
-
-        case Sol2uml.visualize_contracts(params) do
-          {:ok, svg} -> json(conn, %{"address" => address.hash, "contract_svg" => svg, "error" => nil})
-          {:error, error} -> json(conn, %{"address" => address.hash, "contract_svg" => nil, "error" => error})
-        end
-      else
-        _ -> json(conn, %{error: "contract not found or unverified"})
-      end
+    with true <- Sol2uml.enabled?(),
+         {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
+         {:ok, address} <- Address.find_contract_address(address_hash, address_options),
+         # check that contract is verified. partial and bytecode twin verification is ok for this case
+         false <- is_nil(address.smart_contract) do
+      render_visualize_json(conn, address)
     else
-      not_found(conn)
+      false -> not_found(conn)
+      _ -> json(conn, %{error: "contract not found or unverified"})
     end
   end
 
@@ -64,6 +47,23 @@ defmodule BlockScoutWeb.VisualizeSol2umlController do
 
   def index(conn, _) do
     not_found(conn)
+  end
+
+  defp render_visualize_json(conn, address) do
+    sources =
+      address.smart_contract.smart_contract_additional_sources
+      |> Enum.map(fn additional_source -> {additional_source.file_name, additional_source.contract_source_code} end)
+      |> Enum.into(%{})
+      |> Map.merge(%{
+        get_contract_filename(address.smart_contract.file_path) => address.smart_contract.contract_source_code
+      })
+
+    params = %{sources: sources}
+
+    case Sol2uml.visualize_contracts(params) do
+      {:ok, svg} -> json(conn, %{"address" => address.hash, "contract_svg" => svg, "error" => nil})
+      {:error, error} -> json(conn, %{"address" => address.hash, "contract_svg" => nil, "error" => error})
+    end
   end
 
   def get_contract_filename(nil), do: "main.sol"

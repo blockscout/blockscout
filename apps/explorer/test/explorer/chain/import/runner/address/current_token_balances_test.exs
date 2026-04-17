@@ -307,7 +307,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
       assert current_token_balance.value == Decimal.new(200)
     end
 
-    test "ignores when the new value_fetched_at not set", %{
+    test "updates when the new block number is greater even if value_fetched_at is not set", %{
       address: %Address{hash: address_hash} = address,
       token: %Token{contract_address_hash: token_contract_address_hash},
       options: options
@@ -323,7 +323,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
 
       update_holder_count!(token_contract_address_hash, 1)
 
-      assert {:ok, %{address_current_token_balances: [], address_current_token_balances_update_token_holder_counts: []}} =
+      assert {:ok, %{address_current_token_balances_update_token_holder_counts: []}} =
                run_changes(
                  %{
                    address_hash: address_hash,
@@ -336,8 +336,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
 
       current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address_hash)
 
-      assert current_token_balance.block_number == 1
-      assert current_token_balance.value == Decimal.new(200)
+      assert current_token_balance.block_number == 2
+      assert current_token_balance.value == Decimal.new(100)
     end
 
     test "ignores when the new block number is lesser", %{

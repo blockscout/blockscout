@@ -538,11 +538,8 @@ defmodule Explorer.Chain.TransactionTest do
 
       %InternalTransaction{created_contract_address: address} =
         insert(:internal_transaction_create,
-          transaction: transaction,
           index: 0,
           block_number: transaction.block_number,
-          block_hash: transaction.block_hash,
-          block_index: 0,
           transaction_index: transaction.index
         )
 
@@ -1027,6 +1024,19 @@ defmodule Explorer.Chain.TransactionTest do
                |> Transaction.recent_pending_transactions()
                |> Enum.map(& &1.hash)
                |> Enum.reverse()
+    end
+  end
+
+  describe "filter_non_traceable_transactions/1" do
+    test "does not raise when transaction params do not include type on zetachain" do
+      chain_type = Application.get_env(:explorer, :chain_type)
+      Application.put_env(:explorer, :chain_type, :zetachain)
+
+      on_exit(fn -> Application.put_env(:explorer, :chain_type, chain_type) end)
+
+      transaction_params = %{block_number: 13_393_871, hash: "0x123", index: 427}
+
+      assert [transaction_params] == Transaction.filter_non_traceable_transactions([transaction_params])
     end
   end
 end

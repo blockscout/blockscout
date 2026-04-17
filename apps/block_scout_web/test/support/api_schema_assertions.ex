@@ -20,43 +20,45 @@ defmodule BlockScoutWeb.TestApiSchemaAssertions do
     json
   end
 
-  defp maybe_assert_schema(%Plug.Conn{method: "GET", request_path: request_path} = _conn, status_code, json)
+  defp maybe_assert_schema(%Plug.Conn{method: method, request_path: request_path} = _conn, status_code, json)
        when is_integer(status_code) and is_binary(request_path) do
-    if String.starts_with?(request_path, "/api/v2") do
-      spec = BlockScoutWeb.ApiSpec.spec()
+    method_atom = String.downcase(method) |> String.to_atom()
+    public_spec = BlockScoutWeb.Specs.Public.spec()
+    private_spec = BlockScoutWeb.Specs.Private.spec()
 
-      with {:path_item, {:ok, %PathItem{} = path_item}} <- {:path_item, find_path_item(spec, request_path)},
-           {:operation, %Operation{} = operation} <- {:operation, Map.get(path_item, :get)},
-           {:schema, {:ok, schema}} <- {:schema, find_response_schema(operation, status_code)} do
-        Logger.info("Validated response against schema for path: #{request_path} and status code: #{status_code}")
+    with {:path_item, {:ok, spec, %PathItem{} = path_item}} <-
+           {:path_item, find_path_item([public_spec, private_spec], request_path)},
+         {:operation, %Operation{} = operation} <- {:operation, Map.get(path_item, method_atom)},
+         {:schema, {:ok, schema}} <- {:schema, find_response_schema(operation, status_code)} do
+      Logger.info("Validated response against schema for path: #{request_path} and status code: #{status_code}")
 
-        OpenApiSpex.TestAssertions.assert_raw_schema(json, schema, spec)
-      else
-        {:path_item, :error} ->
-          Logger.warning("No schema found for path: #{request_path}")
-          :ok
+      OpenApiSpex.TestAssertions.assert_raw_schema(json, schema, spec)
+    else
+      {:path_item, :error} ->
+        Logger.warning("No schema found for path: #{request_path}")
+        :ok
 
-        {:operation, _} ->
-          Logger.warning("No GET operation found for path: #{request_path}")
-          :ok
+      {:operation, _} ->
+        Logger.warning("No #{method} operation found for path: #{request_path}")
+        :ok
 
-        {:schema, :error} ->
-          Logger.warning("No schema found for path: #{request_path} and status code: #{status_code}")
-          :ok
-      end
+      {:schema, :error} ->
+        Logger.warning("No schema found for path: #{request_path} and status code: #{status_code}")
+        :ok
     end
   end
 
   defp maybe_assert_schema(_conn, _status_code, _json), do: :ok
 
-  defp find_path_item(%{paths: paths} = _spec, request_path) when is_map(paths) do
+  defp find_path_item(specs, request_path) do
     api_relative = strip_api_prefix(request_path)
 
-    with {:ok, {_, path_item}} <- match_template_path(paths, api_relative) do
-      {:ok, path_item}
-    else
-      _ -> :error
-    end
+    Enum.reduce_while(specs, :error, fn %{paths: paths} = spec, acc ->
+      case match_template_path(paths, api_relative) do
+        {:ok, {_, path_item}} -> {:halt, {:ok, spec, path_item}}
+        _ -> {:cont, acc}
+      end
+    end)
   end
 
   defp strip_api_prefix("/api" <> rest), do: rest

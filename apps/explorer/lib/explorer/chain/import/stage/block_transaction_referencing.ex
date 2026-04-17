@@ -12,9 +12,9 @@ defmodule Explorer.Chain.Import.Stage.BlockTransactionReferencing do
     Runner.Transaction.Forks,
     Runner.Block.Rewards,
     Runner.Block.SecondDegreeRelations,
-    Runner.TransactionActions,
     Runner.Withdrawals,
-    Runner.SignedAuthorizations
+    Runner.SignedAuthorizations,
+    Runner.FheOperations
   ]
 
   @impl Stage

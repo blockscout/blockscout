@@ -61,7 +61,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
     {:noreply, state}
   end
 
-  defp sanitize_pending_transactions(json_rpc_named_arguments) do
+  def sanitize_pending_transactions(json_rpc_named_arguments) do
     receipts_batch_size = Application.get_env(:indexer, :receipts_batch_size)
     pending_transactions_list_from_db = Transaction.pending_transactions_list()
     id_to_params = id_to_params(pending_transactions_list_from_db)
@@ -75,16 +75,7 @@ defmodule Indexer.PendingTransactionsSanitizer do
         %{id: id, result: result} ->
           pending_transaction = Map.fetch!(id_to_params, id)
 
-          if result do
-            fetch_block_and_invalidate_wrapper(pending_transaction, to_string(pending_transaction.hash), result)
-          else
-            Logger.debug(
-              "Transaction with hash #{pending_transaction.hash} doesn't exist in the node anymore. We should remove it from Blockscout DB.",
-              fetcher: :pending_transactions_to_refetch
-            )
-
-            fetch_pending_transaction_and_delete(pending_transaction)
-          end
+          handle_pending_transaction_result(pending_transaction, result)
 
         error ->
           Logger.error("Error while fetching pending transaction receipt: #{inspect(error)}")
@@ -94,6 +85,19 @@ defmodule Indexer.PendingTransactionsSanitizer do
     Logger.debug("Pending transactions are sanitized",
       fetcher: :pending_transactions_to_refetch
     )
+  end
+
+  defp handle_pending_transaction_result(pending_transaction, result) do
+    if result do
+      fetch_block_and_invalidate_wrapper(pending_transaction, to_string(pending_transaction.hash), result)
+    else
+      Logger.debug(
+        "Transaction with hash #{pending_transaction.hash} doesn't exist in the node anymore. We should remove it from Blockscout DB.",
+        fetcher: :pending_transactions_to_refetch
+      )
+
+      fetch_pending_transaction_and_delete(pending_transaction)
+    end
   end
 
   defp get_transaction_receipt_requests(id_to_params) do
@@ -165,24 +169,33 @@ defmodule Indexer.PendingTransactionsSanitizer do
   end
 
   defp invalidate_block(block, pending_transaction, transaction) do
+    transaction_info = to_elixir(transaction)
+
+    pending_transaction
+    |> Transaction.changeset(%{
+      gas_price: transaction_info["effectiveGasPrice"] || pending_transaction.gas_price,
+      created_contract_address_hash: transaction_info["contractAddress"]
+    })
+    |> Changeset.put_change(:cumulative_gas_used, transaction_info["cumulativeGasUsed"])
+    |> Changeset.put_change(:gas_used, transaction_info["gasUsed"])
+    |> Changeset.put_change(:index, transaction_info["transactionIndex"])
+    |> Changeset.put_change(:status, transaction_info["status"])
+    |> Changeset.put_change(:block_number, block.number)
+    |> Changeset.put_change(:block_hash, block.hash)
+    |> Changeset.put_change(:block_timestamp, block.timestamp)
+    |> Changeset.put_change(:block_consensus, block.consensus)
+    |> Repo.update()
+    |> case do
+      {:ok, _result} ->
+        :ok
+
+      {:error, error} ->
+        Logger.error("Failed to update pending transaction with hash #{pending_transaction.hash}: #{inspect(error)}")
+    end
+
     if block.consensus do
       Block.set_refetch_needed(block.number)
     else
-      transaction_info = to_elixir(transaction)
-
-      changeset =
-        pending_transaction
-        |> Transaction.changeset()
-        |> Changeset.put_change(:cumulative_gas_used, transaction_info["cumulativeGasUsed"])
-        |> Changeset.put_change(:gas_used, transaction_info["gasUsed"])
-        |> Changeset.put_change(:index, transaction_info["transactionIndex"])
-        |> Changeset.put_change(:block_number, block.number)
-        |> Changeset.put_change(:block_hash, block.hash)
-        |> Changeset.put_change(:block_timestamp, block.timestamp)
-        |> Changeset.put_change(:block_consensus, false)
-
-      Repo.update(changeset)
-
       Logger.debug(
         "Pending transaction with hash #{pending_transaction.hash} assigned to block ##{block.number} with hash #{block.hash}"
       )

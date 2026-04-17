@@ -26,7 +26,6 @@ for repo <- [
       Explorer.Repo.Mud,
       Explorer.Repo.Optimism,
       Explorer.Repo.PolygonEdge,
-      Explorer.Repo.PolygonZkevm,
       Explorer.Repo.RSK,
       Explorer.Repo.Scroll,
       Explorer.Repo.Shibarium,

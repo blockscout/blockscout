@@ -160,24 +160,7 @@ defmodule Explorer.Market.Source.CoinMarketCap do
         for {%{"timestamp" => date, "quote" => %{^currency_id => %{"price" => opening_price}}}, closing_quote} <-
               Stream.zip(quotes, Stream.concat(closing_quotes, [nil])) do
           date = Source.maybe_get_date(date)
-
-          case closing_quote do
-            %{"quote" => %{^currency_id => %{"price" => closing_price}}} ->
-              %{
-                closing_price: Source.to_decimal(closing_price),
-                date: date && DateTime.to_date(date),
-                opening_price: Source.to_decimal(opening_price),
-                secondary_coin: secondary_coin?
-              }
-
-            _ ->
-              %{
-                closing_price: Source.to_decimal(opening_price),
-                date: date && DateTime.to_date(date),
-                opening_price: Source.to_decimal(opening_price),
-                secondary_coin: secondary_coin?
-              }
-          end
+          build_price_history_entry(closing_quote, currency_id, opening_price, date, secondary_coin?)
         end
 
       {:ok, result}
@@ -187,6 +170,21 @@ defmodule Explorer.Market.Source.CoinMarketCap do
       {:ok, unexpected_response} -> {:error, Source.unexpected_response_error("CoinMarketCap", unexpected_response)}
       {:error, _reason} = error -> error
     end
+  end
+
+  defp build_price_history_entry(closing_quote, currency_id, opening_price, date, secondary_coin?) do
+    closing_price =
+      case closing_quote do
+        %{"quote" => %{^currency_id => %{"price" => value}}} -> value
+        _ -> opening_price
+      end
+
+    %{
+      closing_price: Source.to_decimal(closing_price),
+      date: date && DateTime.to_date(date),
+      opening_price: Source.to_decimal(opening_price),
+      secondary_coin: secondary_coin?
+    }
   end
 
   defp base_url do

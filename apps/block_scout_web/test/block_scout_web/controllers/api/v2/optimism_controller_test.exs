@@ -4,10 +4,27 @@ defmodule BlockScoutWeb.API.V2.OptimismControllerTest do
 
   import Mox
 
-  alias Explorer.Chain.Data
+  alias Explorer.Chain.{Address, Data}
+  alias Explorer.Chain.Optimism.Deposit
   alias Explorer.TestHelper
 
   setup :set_mox_global
+
+  describe "/optimism/deposits" do
+    if @chain_type == :optimism do
+      test "deposits with next_page_params", %{conn: conn} do
+        deposits = insert_list(51, :op_deposit)
+
+        request = get(conn, "/api/v2/optimism/deposits")
+        assert response = json_response(request, 200)
+
+        request_2nd_page = get(conn, "/api/v2/optimism/deposits", response["next_page_params"])
+        assert response_2nd_page = json_response(request_2nd_page, 200)
+
+        check_paginated_response(response, response_2nd_page, deposits)
+      end
+    end
+  end
 
   describe "/optimism/interop/messages" do
     if @chain_type == :optimism do
@@ -37,5 +54,25 @@ defmodule BlockScoutWeb.API.V2.OptimismControllerTest do
                } = json_response(conn, 200)
       end
     end
+  end
+
+  defp check_paginated_response(first_page_resp, second_page_resp, items) do
+    assert Enum.count(first_page_resp["items"]) == 50
+    assert first_page_resp["next_page_params"] != nil
+    compare_item(Enum.at(items, 50), Enum.at(first_page_resp["items"], 0))
+    compare_item(Enum.at(items, 1), Enum.at(first_page_resp["items"], 49))
+
+    assert Enum.count(second_page_resp["items"]) == 1
+    assert second_page_resp["next_page_params"] == nil
+    compare_item(Enum.at(items, 0), Enum.at(second_page_resp["items"], 0))
+  end
+
+  defp compare_item(%Deposit{} = deposit, json) do
+    assert deposit.l1_block_number == json["l1_block_number"]
+    assert DateTime.to_iso8601(deposit.l1_block_timestamp) == json["l1_block_timestamp"]
+    assert to_string(deposit.l1_transaction_hash) == json["l1_transaction_hash"]
+    assert Address.checksum(deposit.l1_transaction_origin) == Address.checksum(json["l1_transaction_origin"])
+    assert to_string(deposit.l2_transaction.hash) == json["l2_transaction_hash"]
+    assert to_string(deposit.l2_transaction.gas) == json["l2_transaction_gas_limit"]
   end
 end
