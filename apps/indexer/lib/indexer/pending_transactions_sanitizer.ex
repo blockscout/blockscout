@@ -172,12 +172,14 @@ defmodule Indexer.PendingTransactionsSanitizer do
     transaction_info = to_elixir(transaction)
 
     pending_transaction
-    |> Transaction.changeset()
+    |> Transaction.changeset(%{
+      gas_price: transaction_info["effectiveGasPrice"] || pending_transaction.gas_price,
+      created_contract_address_hash: transaction_info["contractAddress"]
+    })
     |> Changeset.put_change(:cumulative_gas_used, transaction_info["cumulativeGasUsed"])
     |> Changeset.put_change(:gas_used, transaction_info["gasUsed"])
     |> Changeset.put_change(:index, transaction_info["transactionIndex"])
     |> Changeset.put_change(:status, transaction_info["status"])
-    |> Changeset.put_change(:created_contract_address_hash, transaction_info["contractAddress"])
     |> Changeset.put_change(:block_number, block.number)
     |> Changeset.put_change(:block_hash, block.hash)
     |> Changeset.put_change(:block_timestamp, block.timestamp)
