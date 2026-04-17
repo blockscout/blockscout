@@ -35,16 +35,16 @@ defmodule BlockScoutWeb.Specs.Public do
 
   # todo: if new chain type is covered with OpenAPI specs
   # modify this to support proper ordering:
-  # 1. base endpoints
+  # 1. default endpoints
   # 2. chain-type specific endpoints (e.g. optimism, celo, scroll, zilliqa)
   # 3. legacy endpoints
   case @chain_identity do
     {:optimism, :celo} ->
-      @chain_type_category [%Tag{name: "optimism"}, %Tag{name: "celo"}]
-      defp chain_type_category, do: @chain_type_category
+      @chain_type_category_tags [%Tag{name: "optimism"}, %Tag{name: "celo"}]
+      defp chain_type_category_tags, do: @chain_type_category_tags
 
     {:optimism, nil} ->
-      defp chain_type_category do
+      defp chain_type_category_tags do
         if mud_enabled?() do
           [%Tag{name: "optimism"}, %Tag{name: "mud"}]
         else
@@ -53,12 +53,12 @@ defmodule BlockScoutWeb.Specs.Public do
       end
 
     {chain_type, nil} when chain_type in [:scroll, :zilliqa] ->
-      @chain_type_category [%Tag{name: to_string(chain_type)}]
-      defp chain_type_category, do: @chain_type_category
+      @chain_type_category_tags [%Tag{name: to_string(chain_type)}]
+      defp chain_type_category_tags, do: @chain_type_category_tags
 
     _ ->
-      @chain_type_category []
-      defp chain_type_category, do: @chain_type_category
+      @chain_type_category_tags []
+      defp chain_type_category_tags, do: @chain_type_category_tags
   end
 
   @impl OpenApi
@@ -81,7 +81,7 @@ defmodule BlockScoutWeb.Specs.Public do
         |> Map.merge(Paths.from_routes(Specs.routes_with_prefix(SmartContractsApiV2Router, "/v2/smart-contracts"))),
       tags:
         Enum.map(@default_api_categories, fn category -> %Tag{name: category} end) ++
-          chain_type_category() ++ [%Tag{name: "legacy"}]
+          chain_type_category_tags() ++ [%Tag{name: "legacy"}]
     }
     |> OpenApiSpex.resolve_schema_modules()
   end
