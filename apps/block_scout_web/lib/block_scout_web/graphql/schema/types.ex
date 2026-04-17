@@ -107,9 +107,10 @@ end
 
 defmodule BlockScoutWeb.GraphQL.Schema.Types do
   @moduledoc false
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   require BlockScoutWeb.GraphQL.Schema.{Transaction, SmartContracts}
+
+  alias Ecto.Enum
 
   use Absinthe.Schema.Notation
   use Absinthe.Relay.Schema.Notation, :modern
@@ -124,23 +125,9 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
 
   alias BlockScoutWeb.GraphQL.Schema.SmartContracts, as: SmartContractsSchema
   alias BlockScoutWeb.GraphQL.Schema.Transaction, as: TransactionSchema
+  alias Explorer.Chain.SmartContract
 
-  # TODO: leverage `Ecto.Enum.values(SmartContract, :language)` to deduplicate
-  # language definitions
-  @default_languages ~w(solidity vyper yul)a
-
-  case @chain_type do
-    :arbitrum ->
-      @chain_type_languages ~w(stylus_rust)a
-
-    :zilliqa ->
-      @chain_type_languages ~w(scilla)a
-
-    _ ->
-      @chain_type_languages ~w()a
-  end
-
-  enum(:language, values: @default_languages ++ @chain_type_languages)
+  enum(:language, values: Enum.values(SmartContract, :language))
 
   import_types(Absinthe.Type.Custom)
   import_types(BlockScoutWeb.GraphQL.Schema.Scalars)
@@ -226,8 +213,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
     field(:transaction_hash, :full_hash)
     field(:block_number, :integer)
     field(:transaction_index, :integer)
-    field(:block_hash, :full_hash)
-    field(:block_index, :integer)
   end
 
   @desc """

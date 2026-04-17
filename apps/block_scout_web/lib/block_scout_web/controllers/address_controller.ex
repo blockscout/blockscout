@@ -27,14 +27,12 @@ defmodule BlockScoutWeb.AddressController do
     :filecoin ->
       @contract_address_preloads [
         :smart_contract,
-        [contract_creation_internal_transaction: :from_address],
         [contract_creation_transaction: :from_address]
       ]
 
     _ ->
       @contract_address_preloads [
         :smart_contract,
-        :contract_creation_internal_transaction,
         :contract_creation_transaction
       ]
   end

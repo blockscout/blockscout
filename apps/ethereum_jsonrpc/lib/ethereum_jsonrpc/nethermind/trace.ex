@@ -44,7 +44,7 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
         trace_address: [],
         transaction_hash: "0x3a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6",
         type: "create",
-        value: 0,
+        value: nil,
         transaction_index: 0
       }
 
@@ -78,7 +78,7 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
         trace_address: [],
         transaction_hash: "0x3c624bb4852fb5e35a8f45644cec7a486211f6ba89034768a2b763194f22f97d",
         type: "create",
-        value: 0,
+        value: nil,
         transaction_index: 0
       }
 
@@ -121,7 +121,7 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
         gas_used: 27770,
         input: "0x10855269000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
         output: "0x",
-        value: 0
+        value: nil
       }
 
   Calls can error and be reverted
@@ -196,7 +196,7 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
         trace_address: [0],
         transaction_hash: "0xb012b8c53498c669d87d85ed90f57385848b86d3f44ed14b2784ec685d6fda98",
         type: "selfdestruct",
-        value: 0,
+        value: nil,
         transaction_index: 0
       }
 
@@ -231,7 +231,7 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
       to_address_hash: to_address_hash,
       gas: gas,
       input: input,
-      value: value
+      value: if(value == 0, do: nil, else: value)
     }
     |> put_if_present(elixir, [
       {"error", :error}
@@ -261,7 +261,7 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
       trace_address: trace_address,
       transaction_hash: transaction_hash,
       type: type,
-      value: value,
+      value: if(value == 0, do: nil, else: value),
       transaction_index: transaction_index
     }
     |> put_if_present(elixir, [
@@ -296,7 +296,7 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
       trace_address: trace_address,
       transaction_hash: transaction_hash,
       type: "selfdestruct",
-      value: value,
+      value: if(value == 0, do: nil, else: value),
       transaction_index: transaction_index
     }
   end

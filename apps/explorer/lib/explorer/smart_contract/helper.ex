@@ -88,13 +88,11 @@ defmodule Explorer.SmartContract.Helper do
   end
 
   @doc """
-  Escapes only <, > and & symbols
+  Escapes only < and > symbols
   """
   @spec escape_minimal(any()) :: any()
   def escape_minimal(input) when is_binary(input) do
     input
-    # should always be the first to replace
-    |> String.replace("&", "&amp;")
     |> String.replace("<", "&lt;")
     |> String.replace(">", "&gt;")
   end
@@ -231,7 +229,7 @@ defmodule Explorer.SmartContract.Helper do
   defp internal_transaction_to_metadata(internal_transaction, init) do
     %{
       "blockNumber" => to_string(internal_transaction.block_number),
-      "transactionHash" => to_string(internal_transaction.transaction_hash),
+      "transactionHash" => to_string(internal_transaction.transaction.hash),
       "transactionIndex" => to_string(internal_transaction.transaction_index),
       "deployer" => to_string(internal_transaction.from_address_hash),
       "creationCode" => to_string(init)
@@ -247,6 +245,23 @@ defmodule Explorer.SmartContract.Helper do
 
   def prepare_license_type(binary) when is_binary(binary), do: Helper.parse_integer(binary) || binary
   def prepare_license_type(_), do: nil
+
+  @doc """
+  Parses contract language for the Solidity verification flow.
+
+  Accepts `"language"` or `:language` set to `"yul"` or `:yul` and returns
+  `:yul`. For all other values, defaults to `:solidity`.
+  """
+  @spec parse_solidity_verification_language(map()) :: :solidity | :yul
+  def parse_solidity_verification_language(params) do
+    language = params["language"] || params[:language]
+
+    if language in ["yul", :yul] do
+      :yul
+    else
+      :solidity
+    end
+  end
 
   @doc """
   Pre-fetches implementation for unverified smart-contract or verified proxy smart-contract

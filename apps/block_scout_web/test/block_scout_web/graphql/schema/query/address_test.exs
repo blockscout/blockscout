@@ -97,6 +97,39 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.AddressTest do
              }
     end
 
+    test "smart_contract language field returns all supported languages", %{conn: conn} do
+      for language <- [:solidity, :vyper, :yul, :geas] do
+        address = insert(:address, fetched_coin_balance: 100)
+        insert(:smart_contract, address_hash: address.hash, contract_code_md5: "123", language: language)
+
+        query = """
+        query ($hash: AddressHash!) {
+          address(hash: $hash) {
+            smart_contract {
+              language
+            }
+          }
+        }
+        """
+
+        variables = %{"hash" => to_string(address.hash)}
+
+        conn = get(conn, "/api/v1/graphql", query: query, variables: variables)
+
+        expected = language |> to_string() |> String.upcase()
+
+        assert %{
+                 "data" => %{
+                   "address" => %{
+                     "smart_contract" => %{
+                       "language" => ^expected
+                     }
+                   }
+                 }
+               } = json_response(conn, 200)
+      end
+    end
+
     test "errors for non-existent address hash", %{conn: conn} do
       address = build(:address)
 

@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
 
   use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
 
+  alias Explorer.Chain.CsvExport.Helper, as: CsvHelper
   alias Explorer.Chain.SmartContract
   alias Explorer.Migrator.MigrationStatus
   alias OpenApiSpex.Schema
@@ -79,16 +80,17 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
     responses: [
       ok:
         {"CSV export limits.", "application/json",
-         %Schema{type: :object, properties: %{limit: %Schema{type: :integer}}}},
+         %Schema{type: :object, properties: %{limit: %Schema{type: :integer}, async_enabled: %Schema{type: :boolean}}}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
   def csv_export(conn, _params) do
-    limit = Application.get_env(:explorer, :csv_export_limit)
+    limit = CsvHelper.limit()
+    async_enabled? = CsvHelper.async_enabled?()
 
     conn
     |> put_status(200)
-    |> json(%{limit: limit})
+    |> json(%{limit: limit, async_enabled: async_enabled?})
   end
 
   operation :indexer,
