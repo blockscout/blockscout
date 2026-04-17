@@ -99,7 +99,7 @@ defmodule Explorer.Chain.Zilliqa.Staker do
   def paginated_active_stakers(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, Chain.default_paging_options())
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
-    sorting = Keyword.get(options, :sorting, [])
+    sorting = Keyword.get(options, :sorting_options, [])
 
     active_stakers_query()
     |> Chain.join_associations(necessity_by_association)
@@ -113,6 +113,6 @@ defmodule Explorer.Chain.Zilliqa.Staker do
   """
   @spec next_page_params(t()) :: map()
   def next_page_params(%__MODULE__{index: index}) do
-    %{"index" => index}
+    %{index: index}
   end
 end

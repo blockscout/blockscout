@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
 
   alias BlockScoutWeb.{AccessHelper, Controller, InternalTransactionView, TransactionController}
   alias Explorer.{Chain, Market}
-  alias Explorer.Chain.{DenormalizationHelper, Transaction}
+  alias Explorer.Chain.Transaction
   alias Phoenix.View
 
   def index(conn, %{"transaction_id" => transaction_hash_string, "type" => "JSON"} = params) do
@@ -22,17 +22,12 @@ defmodule BlockScoutWeb.TransactionInternalTransactionController do
          {:ok, false} <- AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
       full_options =
         [
-          necessity_by_association: %{
-            [created_contract_address: :names] => :optional,
-            [from_address: :names] => :optional,
-            [to_address: :names] => :optional,
-            [created_contract_address: :smart_contract] => :optional,
-            [from_address: :smart_contract] => :optional,
-            [to_address: :smart_contract] => :optional,
-            :transaction => :optional
-          }
+          address_preloads: [
+            created_contract_address: [:names, :smart_contract],
+            from_address: [:names, :smart_contract],
+            to_address: [:names, :smart_contract]
+          ]
         ]
-        |> DenormalizationHelper.extend_transaction_block_necessity(:optional)
         |> Keyword.merge(paging_options(params))
 
       internal_transactions_plus_one = transaction_to_internal_transactions(transaction, full_options)

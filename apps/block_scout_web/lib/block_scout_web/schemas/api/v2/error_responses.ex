@@ -10,16 +10,15 @@ defmodule BlockScoutWeb.Schemas.API.V2.ErrorResponses do
     @moduledoc false
     OpenApiSpex.schema(%{
       title: "ForbiddenResponse",
-      description: "Response returned when the user is not authorized to access the resource",
+      description: "Response returned when the user is forbidden to access the resource",
       type: :object,
       properties: %{
         message: %Schema{
           type: :string,
-          description: "Error message indicating the user is not authorized to access the resource",
-          example: "Restricted access"
+          description: "Error message indicating the user is forbidden to access the resource",
+          example: "Unverified email"
         }
-      },
-      additionalProperties: false
+      }
     })
 
     @spec response() :: {String.t(), String.t(), module()}
@@ -46,6 +45,69 @@ defmodule BlockScoutWeb.Schemas.API.V2.ErrorResponses do
     @spec response() :: {String.t(), String.t(), module()}
     def response do
       {"Not Found", "application/json", __MODULE__}
+    end
+  end
+
+  defmodule UnauthorizedResponse do
+    @moduledoc false
+    OpenApiSpex.schema(%{
+      title: "UnauthorizedResponse",
+      description: "Response returned when the user is not authorized to access the resource",
+      type: :object,
+      properties: %{
+        message: %Schema{
+          type: :string,
+          description: "Error message indicating the user is not authorized to access the resource",
+          example: "Unauthorized"
+        }
+      }
+    })
+
+    @spec response() :: {String.t(), String.t(), module()}
+    def response do
+      {"Unauthorized", "application/json", __MODULE__}
+    end
+  end
+
+  defmodule BadRequestResponse do
+    @moduledoc false
+    OpenApiSpex.schema(%{
+      title: "BadRequestResponse",
+      description: "Response returned when the request is invalid",
+      type: :object,
+      properties: %{
+        message: %Schema{
+          type: :string,
+          description: "Error message indicating the request is invalid",
+          example: "Invalid request"
+        }
+      }
+    })
+
+    @spec response() :: {String.t(), String.t(), module()}
+    def response do
+      {"Bad Request", "application/json", __MODULE__}
+    end
+  end
+
+  defmodule NotImplementedResponse do
+    @moduledoc false
+    OpenApiSpex.schema(%{
+      title: "NotImplementedResponse",
+      description: "Response returned when the feature is not implemented",
+      type: :object,
+      properties: %{
+        message: %Schema{
+          type: :string,
+          description: "Error message indicating the feature is not implemented",
+          example: "Feature not implemented"
+        }
+      }
+    })
+
+    @spec response() :: {String.t(), String.t(), module()}
+    def response do
+      {"Not Implemented", "application/json", __MODULE__}
     end
   end
 end

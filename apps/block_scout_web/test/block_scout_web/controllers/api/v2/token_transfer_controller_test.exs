@@ -129,6 +129,39 @@ defmodule BlockScoutWeb.API.V2.TokenTransferControllerTest do
       assert response["next_page_params"] == nil
     end
 
+    test "filters by ERC-7984 type", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      erc7984_token = insert(:token, type: "ERC-7984")
+
+      insert(:token_transfer,
+        transaction: transaction,
+        token: erc7984_token,
+        token_contract_address: erc7984_token.contract_address,
+        token_type: "ERC-7984",
+        amount: nil
+      )
+
+      erc20_token = insert(:token, type: "ERC-20")
+
+      insert(:token_transfer,
+        transaction: transaction,
+        token: erc20_token,
+        token_contract_address: erc20_token.contract_address,
+        token_type: "ERC-20"
+      )
+
+      request = get(conn, "/api/v2/token-transfers?type=ERC-7984")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] == nil
+      assert List.first(response["items"])["token_type"] == "ERC-7984"
+    end
+
     test "returns all transfers if filter is incorrect", %{conn: conn} do
       transaction =
         :transaction

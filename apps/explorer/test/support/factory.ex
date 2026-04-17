@@ -25,6 +25,9 @@ defmodule Explorer.Factory do
   alias Explorer.Admin.Administrator
   alias Explorer.Chain.Beacon.{Blob, BlobTransaction, Deposit}
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
+  alias Explorer.Chain.Scroll.Batch, as: ScrollBatch
+  alias Explorer.Chain.Scroll.BatchBundle, as: ScrollBatchBundle
+  alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
 
   alias Explorer.Chain.{
@@ -37,6 +40,7 @@ defmodule Explorer.Factory do
     Block,
     ContractMethod,
     Data,
+    FheOperation,
     Hash,
     InternalTransaction,
     InternalTransaction.DeleteQueue,
@@ -51,6 +55,7 @@ defmodule Explorer.Factory do
     TokenTransfer,
     Token.Instance,
     Transaction,
+    TransactionError,
     Wei,
     Withdrawal
   }
@@ -60,6 +65,9 @@ defmodule Explorer.Factory do
   alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
   alias Explorer.Chain.Zilliqa.Staker, as: ZilliqaStaker
 
+  alias Explorer.Chain.Optimism.Deposit, as: OptimismDeposit
+
+  alias Explorer.Chain.Celo.AggregatedElectionReward, as: CeloAggregatedElectionReward
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
   alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
 
@@ -74,6 +82,7 @@ defmodule Explorer.Factory do
     AddressIdToAddressHash,
     EventNotification,
     InternalTransactionsAddressPlaceholder,
+    MassiveBlock,
     MissingBalanceOfToken,
     MissingBlockRange
   }
@@ -328,7 +337,7 @@ defmodule Explorer.Factory do
   def address_id_to_address_hash_factory do
     %AddressIdToAddressHash{
       address_id: sequence("address_id", & &1),
-      address_hash: address_hash()
+      address: build(:address)
     }
   end
 
@@ -773,18 +782,6 @@ defmodule Explorer.Factory do
     |> Repo.update!()
   end
 
-  def with_contract_creation(%InternalTransaction{} = internal_transaction, %Address{
-        contract_code: contract_code,
-        hash: contract_address_hash
-      }) do
-    internal_transaction
-    |> InternalTransaction.changeset(%{
-      contract_code: contract_code,
-      created_contract_address_hash: contract_address_hash
-    })
-    |> Repo.update!()
-  end
-
   def data(sequence_name) do
     unpadded =
       sequence_name
@@ -813,68 +810,107 @@ defmodule Explorer.Factory do
   end
 
   def multichain_search_db_main_export_queue_factory do
-    %MultichainSearchDb.MainExportQueue{}
+    %MultichainSearchDb.MainExportQueue{
+      hash: address_hash().bytes,
+      hash_type: :address
+    }
   end
 
   def multichain_search_db_export_balances_queue_factory do
-    %MultichainSearchDb.BalancesExportQueue{}
+    %MultichainSearchDb.BalancesExportQueue{
+      address_hash: address_hash().bytes,
+      token_contract_address_hash_or_native: "native"
+    }
   end
 
-  def internal_transaction_factory() do
+  def multichain_search_db_export_counters_queue_factory do
+    %MultichainSearchDb.CountersExportQueue{
+      timestamp: DateTime.utc_now(),
+      counter_type: :global,
+      data: %{
+        "daily_transactions_count" => 100,
+        "total_transactions_count" => 10000,
+        "total_addresses_count" => 5000
+      }
+    }
+  end
+
+  def internal_transaction_factory(attrs) do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
 
+    all_attrs =
+      attrs
+      |> adjust_internal_transaction_addresses_attrs([:from_address, :to_address])
+      |> adjust_internal_transaction_error_attr()
+
     %InternalTransaction{
-      from_address: build(:address),
-      to_address: build(:address),
       call_type: :delegatecall,
       gas: gas,
       gas_used: gas_used,
       input: %Data{bytes: <<1>>},
       output: %Data{bytes: <<2>>},
       # caller MUST supply `index`
-      trace_address: [],
+      trace_address: nil,
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
       # caller MUST supply `block_hash` (usually the same as the transaction's)
-      # caller MUST supply `block_index`
       type: :call,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
+    |> merge_attributes(all_attrs)
+    |> evaluate_lazy_attributes()
   end
 
-  def internal_transaction_create_factory() do
+  def internal_transaction_create_factory(attrs) do
     gas = Enum.random(21_000..100_000)
     gas_used = Enum.random(0..gas)
 
     contract_code = Map.fetch!(contract_code_info(), :bytecode)
 
+    all_attrs =
+      attrs
+      |> adjust_internal_transaction_addresses_attrs([:from_address, :created_contract_address], contract_code)
+      |> adjust_internal_transaction_error_attr()
+
     %InternalTransaction{
       created_contract_code: contract_code,
-      created_contract_address: build(:address, contract_code: contract_code),
-      from_address: build(:address),
       gas: gas,
       gas_used: gas_used,
       # caller MUST supply `index`
       init: data(:internal_transaction_init),
-      trace_address: [],
+      trace_address: nil,
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
       # caller MUST supply `block_hash` (usually the same as the transaction's)
-      # caller MUST supply `block_index`
       type: :create,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
     }
+    |> merge_attributes(all_attrs)
+    |> evaluate_lazy_attributes()
   end
 
-  def internal_transaction_selfdestruct_factory() do
+  def internal_transaction_selfdestruct_factory(attrs) do
+    all_attrs =
+      attrs
+      |> adjust_internal_transaction_addresses_attrs([:from_address, :to_address])
+      |> adjust_internal_transaction_error_attr()
+
     %InternalTransaction{
       from_address: build(:address),
-      trace_address: [],
+      trace_address: nil,
       # caller MUST supply `transaction` because it can't be built lazily to allow overrides without creating an extra
       # transaction
       type: :selfdestruct,
       value: sequence("internal_transaction_value", &Decimal.new(&1))
+    }
+    |> merge_attributes(all_attrs)
+    |> evaluate_lazy_attributes()
+  end
+
+  def transaction_error_factory do
+    %TransactionError{
+      message: "error_#{sequence("transaction_error_message", & &1)}"
     }
   end
 
@@ -912,6 +948,24 @@ defmodule Explorer.Factory do
 
   def unique_token_factory do
     Map.replace(token_factory(), :name, sequence("Infinite Token"))
+  end
+
+  def massive_block_factory do
+    %MassiveBlock{
+      number: block_number()
+    }
+  end
+
+  def erc7984_token_factory do
+    %Token{
+      name: "Confidential Token",
+      symbol: "CT",
+      total_supply: 1_000_000_000,
+      decimals: 18,
+      contract_address: build(:address),
+      type: "ERC-7984",
+      cataloged: true
+    }
   end
 
   def token_transfer_log_factory do
@@ -1001,6 +1055,57 @@ defmodule Explorer.Factory do
     }
   end
 
+  def erc7984_token_transfer_log_factory do
+    from_address = build(:address)
+    to_address = build(:address)
+    token_address = insert(:contract_address)
+    transaction = build(:transaction)
+
+    # ConfidentialTransfer(address indexed from, address indexed to, bytes32 indexed amount)
+    # Event signature: 0x67500e8d0ed826d2194f514dd0d8124f35648ab6e3fb5e6ed867134cffe661e9
+    amount_pointer =
+      sequence("erc7984_amount_pointer", &("0x" <> String.pad_leading(Integer.to_string(&1, 16), 64, "0")))
+
+    log_params = %{
+      first_topic: "0x67500e8d0ed826d2194f514dd0d8124f35648ab6e3fb5e6ed867134cffe661e9",
+      second_topic: zero_padded_address_hash_string(from_address.hash),
+      third_topic: zero_padded_address_hash_string(to_address.hash),
+      fourth_topic: amount_pointer,
+      address_hash: token_address.hash,
+      address: token_address,
+      data: "0x",
+      transaction: transaction
+    }
+
+    build(:log, log_params)
+  end
+
+  def erc7984_token_transfer_factory do
+    log = build(:erc7984_token_transfer_log)
+    to_address_hash = address_hash_from_zero_padded_hash_string(log.third_topic)
+    from_address_hash = address_hash_from_zero_padded_hash_string(log.second_topic)
+
+    to_address = build(:address, hash: to_address_hash)
+    from_address = build(:address, hash: from_address_hash)
+
+    _token = insert(:erc7984_token, contract_address: log.address)
+    block = build(:block)
+
+    %TokenTransfer{
+      block: block,
+      amount: nil,
+      block_number: block.number,
+      from_address: from_address,
+      to_address: to_address,
+      token_contract_address: log.address,
+      token_type: "ERC-7984",
+      transaction: log.transaction,
+      log_index: log.index,
+      token_ids: nil,
+      block_consensus: true
+    }
+  end
+
   def market_history_factory do
     %MarketHistory{
       closing_price: price(),
@@ -1042,6 +1147,7 @@ defmodule Explorer.Factory do
   def transaction_factory do
     %Transaction{
       from_address: build(:address),
+      fhe_operations_count: 0,
       gas: Enum.random(21_000..100_000),
       gas_price: Enum.random(10..99) * 1_000_000_00,
       hash: transaction_hash(),
@@ -1279,6 +1385,59 @@ defmodule Explorer.Factory do
     }
   end
 
+  defp adjust_internal_transaction_addresses_attrs(attrs, addresses_fields, contract_code \\ nil) do
+    hash_fields = Enum.map(addresses_fields, &String.to_existing_atom("#{&1}_hash"))
+    {address_related_attrs, other_attrs} = Map.split(attrs, addresses_fields ++ hash_fields)
+
+    addresses_fields
+    |> Enum.reduce(address_related_attrs, fn address_field, acc ->
+      hash_field = String.to_existing_atom("#{address_field}_hash")
+
+      additional_fields =
+        case address_field do
+          :created_contract_address -> %{contract_code: contract_code}
+          _ -> %{}
+        end
+
+      address =
+        case Map.has_key?(acc, address_field) && Map.get(acc, address_field) do
+          nil ->
+            nil
+
+          false ->
+            address_params =
+              Map.merge(additional_fields, if(hash = Map.get(acc, hash_field), do: %{hash: hash}, else: %{}))
+
+            case Map.get(address_params, :hash) && Repo.get_by(Address, hash: address_params.hash) do
+              nil ->
+                built_address = build(:address, address_params)
+                insert(built_address)
+                built_address
+
+              _ ->
+                build(:address, address_params)
+            end
+
+          address ->
+            address
+        end
+
+      Map.merge(acc, %{
+        address_field => address,
+        hash_field => address && address.hash,
+        :"#{address_field}_mapping" => address && AddressIdToAddressHash.find_or_create(address.hash)
+      })
+    end)
+    |> Map.merge(other_attrs)
+  end
+
+  defp adjust_internal_transaction_error_attr(attrs) do
+    case Map.get(attrs, :error) do
+      nil -> attrs
+      error -> Map.put(attrs, :error_id, Map.get(attrs, :error_id) || TransactionError.find_or_create(error))
+    end
+  end
+
   defp block_hash_to_next_transaction_index(block_hash) do
     import Kernel, except: [+: 2]
 
@@ -1416,6 +1575,31 @@ defmodule Explorer.Factory do
     }
   end
 
+  def op_deposit_factory do
+    block = insert(:block)
+    gas_used = Enum.random(21_000..100_000)
+
+    l2_transaction =
+      insert(
+        :transaction,
+        block_number: block.number,
+        block_hash: block.hash,
+        cumulative_gas_used: gas_used,
+        gas_used: gas_used,
+        index: 0,
+        status: :ok
+      )
+
+    %OptimismDeposit{
+      l1_block_number: block_number(),
+      l1_block_timestamp: DateTime.utc_now(),
+      l1_transaction_hash: transaction_hash(),
+      l1_transaction_origin: address_hash(),
+      l2_transaction_hash: l2_transaction.hash,
+      l2_transaction: l2_transaction
+    }
+  end
+
   def db_migration_status_factory do
     %MigrationStatus{
       migration_name: nil,
@@ -1441,6 +1625,39 @@ defmodule Explorer.Factory do
     hash
   end
 
+  def scroll_bridge_factory do
+    %ScrollBridge{
+      type: :deposit,
+      index: sequence("scroll_bridge_index", & &1),
+      l1_transaction_hash: transaction_hash(),
+      l2_transaction_hash: transaction_hash(),
+      amount: Enum.random(1..100_000),
+      block_number: block_number(),
+      block_timestamp: DateTime.utc_now(),
+      message_hash: transaction_hash()
+    }
+  end
+
+  def scroll_batch_factory do
+    %ScrollBatch{
+      number: sequence("scroll_batch_index", & &1),
+      commit_transaction_hash: transaction_hash(),
+      commit_block_number: block_number(),
+      commit_timestamp: DateTime.utc_now(),
+      bundle_id: 0,
+      container: :in_calldata
+    }
+  end
+
+  def scroll_batch_bundle_factory do
+    %ScrollBatchBundle{
+      final_batch_number: 50,
+      finalize_transaction_hash: transaction_hash(),
+      finalize_block_number: block_number(),
+      finalize_timestamp: DateTime.utc_now()
+    }
+  end
+
   def random_bool, do: Enum.random([true, false])
 
   def celo_epoch_factory do
@@ -1454,10 +1671,19 @@ defmodule Explorer.Factory do
     }
   end
 
+  def celo_aggregated_election_reward_factory do
+    %CeloAggregatedElectionReward{
+      epoch_number: sequence("celo_aggregated_election_reward_epoch_number", & &1),
+      type: Enum.random(CeloElectionReward.types()),
+      sum: Enum.random(1..100_000),
+      count: Enum.random(0..100)
+    }
+  end
+
   def celo_election_reward_factory do
     %CeloElectionReward{
       amount: Enum.random(1..100_000),
-      type: Enum.random([:voter, :validator, :group, :delegated_payment]),
+      type: Enum.random(CeloElectionReward.types()),
       epoch_number: sequence("celo_election_reward_epoch_number", & &1),
       account_address_hash: insert(:address).hash,
       associated_account_address_hash: insert(:address).hash
@@ -1677,6 +1903,31 @@ defmodule Explorer.Factory do
       from_address: insert(:address),
       block: transaction.block,
       transaction: transaction
+    }
+  end
+
+  def fhe_operation_factory do
+    transaction = insert(:transaction) |> with_block()
+    block = transaction.block
+    caller = insert(:address)
+
+    %FheOperation{
+      transaction_hash: transaction.hash,
+      log_index: sequence("fhe_operation_log_index", & &1),
+      block_hash: block.hash,
+      block_number: block.number,
+      operation: sequence("fhe_operation", fn i -> "FheAdd#{i}" end),
+      operation_type: "arithmetic",
+      fhe_type: "Uint8",
+      is_scalar: false,
+      hcu_cost: sequence("fhe_operation_hcu_cost", fn i -> Kernel.+(100, i) end),
+      hcu_depth: sequence("fhe_operation_hcu_depth", fn i -> Kernel.+(1, rem(i, 5)) end),
+      caller: caller.hash,
+      result_handle: sequence("fhe_operation_result_handle", &<<&1::256>>),
+      input_handles: %{
+        "lhs" => "0x" <> Base.encode16(<<1::256>>, case: :lower),
+        "rhs" => "0x" <> Base.encode16(<<2::256>>, case: :lower)
+      }
     }
   end
 

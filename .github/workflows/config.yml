@@ -4,26 +4,12 @@ on:
   push:
     branches:
       - master
-      - production-arbitrum
-      - production-core
-      - production-eth-sepolia
-      - production-filecoin
-      - production-fuse
-      - production-optimism
-      - production-immutable
-      - production-iota
-      - production-lukso
-      - production-rsk
-      - production-sokol
-      - production-xdai
-      - production-zkevm
-      - production-zksync
-      - staging-l2
     paths-ignore:
       - "CHANGELOG.md"
       - "**/README.md"
       - "docker/*"
       - "docker-compose/*"
+  workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
     branches:
@@ -58,7 +44,6 @@ jobs:
               "filecoin",
               "optimism",
               "optimism-celo",
-              "polygon_zkevm",
               "rsk",
               "scroll",
               "shibarium",
@@ -270,7 +255,7 @@ jobs:
             ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-${{ matrix.chain-type }}-${{ matrix.bridged-tokens }}-dialyzer-mixlockhash-
 
       - name: Conditionally build Dialyzer Cache
-        if: steps.dialyzer-cache.output.cache-hit != 'true'
+        if: steps.dialyzer-cache.outputs.cache-hit != 'true'
         run: |
           mkdir -p priv/plts
           mix dialyzer --plt
@@ -655,6 +640,9 @@ jobs:
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
           WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
           BRIDGED_TOKENS_ENABLED: ${{ matrix.bridged-tokens }}
+          MARKET_HISTORY_FETCHER_ENABLED: "false"
+          MARKET_COIN_FETCHER_ENABLED: "false"
+          MARKET_TOKENS_FETCHER_ENABLED: "false"
 
   test_nethermind_mox_indexer:
     strategy:
@@ -724,6 +712,9 @@ jobs:
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
           WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
           BRIDGED_TOKENS_ENABLED: ${{ matrix.bridged-tokens }}
+          MARKET_HISTORY_FETCHER_ENABLED: "false"
+          MARKET_COIN_FETCHER_ENABLED: "false"
+          MARKET_TOKENS_FETCHER_ENABLED: "false"
 
   test_nethermind_mox_block_scout_web:
     strategy:
@@ -827,3 +818,7 @@ jobs:
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
           WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
           BRIDGED_TOKENS_ENABLED: ${{ matrix.bridged-tokens }}
+          DISABLE_WEBAPP: "false"
+          MARKET_HISTORY_FETCHER_ENABLED: "false"
+          MARKET_COIN_FETCHER_ENABLED: "false"
+          MARKET_TOKENS_FETCHER_ENABLED: "false"

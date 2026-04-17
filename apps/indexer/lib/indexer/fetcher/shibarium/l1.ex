@@ -24,10 +24,10 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
     only: [calc_operation_hash: 5, prepare_insert_items: 2, recalculate_cached_count: 0]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.RollupReorgMonitorQueue
   alias Explorer.Chain.Shibarium.Bridge
   alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
+  alias Indexer.RollupReorgMonitorQueue
   alias Indexer.Transform.Addresses
 
   @block_check_interval_range_size 100
@@ -135,7 +135,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
          {last_l1_block_number, last_l1_transaction_hash} <- get_last_l1_item(),
          {:start_block_valid, true} <-
            {:start_block_valid, start_block <= last_l1_block_number || last_l1_block_number == 0},
-         json_rpc_named_arguments = json_rpc_named_arguments(rpc),
+         json_rpc_named_arguments = Helper.json_rpc_named_arguments(rpc),
          {:ok, last_l1_transaction} <-
            Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
          {:l1_transaction_not_found, false} <-
@@ -281,7 +281,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
           )
         end
 
-        reorg_block = RollupReorgMonitorQueue.reorg_block_pop(__MODULE__)
+        reorg_block = RollupReorgMonitorQueue.pop(__MODULE__)
 
         if !is_nil(reorg_block) && reorg_block > 0 do
           reorg_handle(reorg_block)
@@ -557,21 +557,6 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
       ],
       topic0
     )
-  end
-
-  defp json_rpc_named_arguments(rpc_url) do
-    [
-      transport: EthereumJSONRPC.HTTP,
-      transport_options: [
-        http: EthereumJSONRPC.HTTP.Tesla,
-        urls: [rpc_url],
-        http_options: [
-          recv_timeout: :timer.minutes(10),
-          timeout: :timer.minutes(10),
-          pool: :ethereum_jsonrpc
-        ]
-      ]
-    ]
   end
 
   defp prepare_operations(events, json_rpc_named_arguments) do

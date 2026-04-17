@@ -14,7 +14,8 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
   import Explorer.Helper, only: [decode_data: 2, parse_integer: 1]
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.Log
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
+  alias Explorer.Chain.{Data, Hash}
   alias Explorer.Chain.Optimism.Withdrawal, as: OptimismWithdrawal
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
@@ -42,7 +43,24 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     {:ok, %{}, {:continue, args[:json_rpc_named_arguments]}}
   end
 
+  # Initialization function which is used instead of `init` to avoid Supervisor's stop in case of any critical issues
+  # during initialization. It checks the values of env variables, gets last L2 block number to start the scanning from,
+  # and calculates an average block check interval (for realtime part of the logic).
+  #
+  # When the initialization succeeds, the `:continue` message is sent to GenServer to start the catchup loop
+  # retrieving and saving the withdrawal events.
+  #
+  # ## Parameters
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection to L2 RPC node.
+  # - `state`: Initial state of the fetcher (empty map when starting).
+  #
+  # ## Returns
+  # - `{:noreply, state}` when the initialization is successful and the fetching can start. The `state` contains
+  #                       necessary parameters needed for the fetching.
+  # - `{:stop, :normal, %{}}` in case of error.
   @impl GenServer
+  @spec handle_continue(EthereumJSONRPC.json_rpc_named_arguments(), map()) ::
+          {:noreply, map()} | {:stop, :normal, map()}
   def handle_continue(json_rpc_named_arguments, state) do
     Logger.metadata(fetcher: @fetcher_name)
 
@@ -69,7 +87,6 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
       {:noreply,
        %{
          start_block: max(start_block_l2, last_l2_block_number),
-         start_block_l2: start_block_l2,
          safe_block: safe_block,
          safe_block_is_latest: safe_block_is_latest,
          message_passer: env[:message_passer],
@@ -108,24 +125,18 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     end
   end
 
+  # Performs the catchup handling loop for the specified block range. The block range is split into chunks.
+  # Max size of a chunk is defined by INDEXER_OPTIMISM_L2_ETH_GET_LOGS_RANGE_SIZE env variable.
+  #
+  # ## Parameters
+  # - `:continue`: The GenServer message.
+  # - `state`: The current state of the fetcher containing block range, max chunk size, etc.
+  #
+  # ## Returns
+  # - `{:stop, :normal, state}` tuple.
   @impl GenServer
   def handle_info(
         :continue,
-        %{
-          start_block_l2: start_block_l2,
-          message_passer: message_passer,
-          json_rpc_named_arguments: json_rpc_named_arguments,
-          eth_get_logs_range_size: eth_get_logs_range_size
-        } = state
-      ) do
-    fill_msg_nonce_gaps(start_block_l2, message_passer, json_rpc_named_arguments, eth_get_logs_range_size)
-    Process.send(self(), :find_new_events, [])
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_info(
-        :find_new_events,
         %{
           start_block: start_block,
           safe_block: safe_block,
@@ -142,7 +153,14 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     if not safe_block_is_latest do
       # find and fill all events between "safe" and "latest" block (excluding "safe")
       {:ok, latest_block} = Helper.get_block_number_by_tag("latest", json_rpc_named_arguments)
-      fill_block_range(safe_block + 1, latest_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size)
+
+      fill_block_range(
+        safe_block + 1,
+        latest_block,
+        message_passer,
+        json_rpc_named_arguments,
+        eth_get_logs_range_size
+      )
     end
 
     {:stop, :normal, state}
@@ -154,10 +172,44 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     {:noreply, state}
   end
 
+  @doc """
+  Removes all withdrawals created starting from the given block.
+
+  ## Parameters
+  - `starting_block`: The starting block number.
+
+  ## Returns
+  - Nothing.
+  """
+  @spec remove(non_neg_integer()) :: any()
   def remove(starting_block) do
     Repo.delete_all(from(w in OptimismWithdrawal, where: w.l2_block_number >= ^starting_block))
+    LastFetchedCounter.delete(@counter_type)
   end
 
+  @doc """
+  Prepares a Withdrawal map to write into database.
+
+  ## Parameters
+  - `second_topic`: The second topic of the MessagePassed event containing the withdrawal message nonce.
+  - `data`: The data of the MessagePassed event. The data encodes the withdrawal value, gas limit, data, and hash.
+  - `l2_transaction_hash`: The hash of the transaction containing the MessagePassed event.
+  - `l2_block_number`: The number of the block containing the MessagePassed event.
+
+  ## Returns
+  - The Withdrawal map ready to be imported to the database.
+  """
+  @spec event_to_withdrawal(
+          Hash.t() | String.t(),
+          Data.t() | String.t(),
+          Hash.t() | String.t(),
+          non_neg_integer() | String.t()
+        ) :: %{
+          :msg_nonce => Decimal.t(),
+          :hash => String.t(),
+          :l2_transaction_hash => Hash.t() | String.t(),
+          :l2_block_number => non_neg_integer()
+        }
   def event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number) do
     [_value, _gas_limit, _data, hash] = decode_data(data, [{:uint, 256}, {:uint, 256}, :bytes, {:bytes, 32}])
 
@@ -175,83 +227,46 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     }
   end
 
-  defp msg_nonce_gap_starts(nonce_max) do
-    Repo.all(
-      from(w in OptimismWithdrawal,
-        select: w.l2_block_number,
-        order_by: w.msg_nonce,
-        where:
-          fragment(
-            "NOT EXISTS (SELECT msg_nonce FROM op_withdrawals WHERE msg_nonce = (? + 1)) AND msg_nonce != ?",
-            w.msg_nonce,
-            ^nonce_max
-          )
-      ),
-      timeout: :infinity
-    )
-  end
-
-  defp msg_nonce_gap_ends(nonce_min) do
-    Repo.all(
-      from(w in OptimismWithdrawal,
-        select: w.l2_block_number,
-        order_by: w.msg_nonce,
-        where:
-          fragment(
-            "NOT EXISTS (SELECT msg_nonce FROM op_withdrawals WHERE msg_nonce = (? - 1)) AND msg_nonce != ?",
-            w.msg_nonce,
-            ^nonce_min
-          )
-      ),
-      timeout: :infinity
-    )
-  end
-
-  defp find_and_save_withdrawals(
-         scan_db,
-         message_passer,
-         block_start,
-         block_end,
-         json_rpc_named_arguments
-       ) do
+  # Scans the given block range for the MessagePassed events using RPC node and
+  # records the found withdrawal messages into the database.
+  #
+  # ## Parameters
+  # - `message_passer`: The L2 address of the L2ToL1MessagePasser contract to scan the events of.
+  # - `block_start`: The start block of the block range.
+  # - `block_end`: The end block of the block range.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection to L2 RPC node.
+  #
+  # ## Returns
+  # - The number of withdrawals found in the given block range.
+  @spec find_and_save_withdrawals(
+          binary(),
+          non_neg_integer(),
+          non_neg_integer(),
+          EthereumJSONRPC.json_rpc_named_arguments()
+        ) :: non_neg_integer()
+  defp find_and_save_withdrawals(message_passer, block_start, block_end, json_rpc_named_arguments) do
     message_passed_event = OptimismWithdrawal.message_passed_event()
 
+    {:ok, result} =
+      Helper.get_logs(
+        block_start,
+        block_end,
+        message_passer,
+        [message_passed_event],
+        json_rpc_named_arguments,
+        0,
+        Helper.infinite_retries_number()
+      )
+
     withdrawals =
-      if scan_db do
-        query =
-          from(log in Log,
-            select: {log.second_topic, log.data, log.transaction_hash, log.block_number},
-            where:
-              log.first_topic == ^message_passed_event and log.address_hash == ^message_passer and
-                log.block_number >= ^block_start and log.block_number <= ^block_end
-          )
-
-        query
-        |> Repo.all(timeout: :infinity)
-        |> Enum.map(fn {second_topic, data, l2_transaction_hash, l2_block_number} ->
-          event_to_withdrawal(second_topic, data, l2_transaction_hash, l2_block_number)
-        end)
-      else
-        {:ok, result} =
-          Helper.get_logs(
-            block_start,
-            block_end,
-            message_passer,
-            [message_passed_event],
-            json_rpc_named_arguments,
-            0,
-            3
-          )
-
-        Enum.map(result, fn event ->
-          event_to_withdrawal(
-            Enum.at(event["topics"], 1),
-            event["data"],
-            event["transactionHash"],
-            event["blockNumber"]
-          )
-        end)
-      end
+      Enum.map(result, fn event ->
+        event_to_withdrawal(
+          Enum.at(event["topics"], 1),
+          event["data"],
+          event["transactionHash"],
+          event["blockNumber"]
+        )
+      end)
 
     {:ok, _} =
       Chain.import(%{
@@ -262,38 +277,53 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
     Enum.count(withdrawals)
   end
 
+  # Scans the given block range for the MessagePassed events using RPC node and
+  # records the found withdrawal messages into the database. The process prints the progress logs.
+  # The block range is split into chunks that have a size limited by the given parameter.
+  #
+  # ## Parameters
+  # - `l2_block_start`: The start block of the block range.
+  # - `l2_block_end`: The end block of the block range.
+  # - `message_passer`: The L2 address of the L2ToL1MessagePasser contract to scan the events of.
+  # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection to L2 RPC node.
+  # - `eth_get_logs_range_size`: Max size of the block chunk.
+  #
+  # ## Returns
+  # - Nothing.
+  @spec fill_block_range(
+          non_neg_integer(),
+          non_neg_integer(),
+          binary(),
+          EthereumJSONRPC.json_rpc_named_arguments(),
+          non_neg_integer()
+        ) :: any()
+  defp fill_block_range(
+         l2_block_start,
+         l2_block_end,
+         _message_passer,
+         _json_rpc_named_arguments,
+         _eth_get_logs_range_size
+       )
+       when l2_block_start > l2_block_end, do: nil
+
   defp fill_block_range(
          l2_block_start,
          l2_block_end,
          message_passer,
          json_rpc_named_arguments,
-         eth_get_logs_range_size,
-         scan_db
+         eth_get_logs_range_size
        ) do
-    chunks_number =
-      if scan_db do
-        1
-      else
-        ceil((l2_block_end - l2_block_start + 1) / eth_get_logs_range_size)
-      end
-
+    chunks_number = ceil((l2_block_end - l2_block_start + 1) / eth_get_logs_range_size)
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
 
-    Enum.reduce(chunk_range, 0, fn current_chunk, withdrawals_count_acc ->
+    Enum.each(chunk_range, fn current_chunk ->
       chunk_start = l2_block_start + eth_get_logs_range_size * current_chunk
-
-      chunk_end =
-        if scan_db do
-          l2_block_end
-        else
-          min(chunk_start + eth_get_logs_range_size - 1, l2_block_end)
-        end
+      chunk_end = min(chunk_start + eth_get_logs_range_size - 1, l2_block_end)
 
       Helper.log_blocks_chunk_handling(chunk_start, chunk_end, l2_block_start, l2_block_end, nil, :L2)
 
       withdrawals_count =
         find_and_save_withdrawals(
-          scan_db,
           message_passer,
           chunk_start,
           chunk_end,
@@ -309,71 +339,8 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
         :L2
       )
 
-      withdrawals_count_acc + withdrawals_count
+      Optimism.set_last_block_hash_by_number(chunk_end, @counter_type, json_rpc_named_arguments)
     end)
-  end
-
-  defp fill_block_range(start_block, end_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size) do
-    if start_block <= end_block do
-      fill_block_range(start_block, end_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size, true)
-      fill_msg_nonce_gaps(start_block, message_passer, json_rpc_named_arguments, eth_get_logs_range_size, false)
-      {last_l2_block_number, _, _} = get_last_l2_item()
-
-      fill_block_range(
-        max(start_block, last_l2_block_number),
-        end_block,
-        message_passer,
-        json_rpc_named_arguments,
-        eth_get_logs_range_size,
-        false
-      )
-
-      Optimism.set_last_block_hash_by_number(end_block, @counter_type, json_rpc_named_arguments)
-    end
-  end
-
-  defp fill_msg_nonce_gaps(
-         start_block_l2,
-         message_passer,
-         json_rpc_named_arguments,
-         eth_get_logs_range_size,
-         scan_db \\ true
-       ) do
-    nonce_min = Repo.aggregate(OptimismWithdrawal, :min, :msg_nonce)
-    nonce_max = Repo.aggregate(OptimismWithdrawal, :max, :msg_nonce)
-
-    with true <- !is_nil(nonce_min) and !is_nil(nonce_max),
-         starts = msg_nonce_gap_starts(nonce_max),
-         ends = msg_nonce_gap_ends(nonce_min),
-         min_block_l2 = l2_block_number_by_msg_nonce(nonce_min),
-         {new_starts, new_ends} =
-           if(start_block_l2 < min_block_l2,
-             do: {[start_block_l2 | starts], [min_block_l2 | ends]},
-             else: {starts, ends}
-           ),
-         true <- Enum.count(new_starts) == Enum.count(new_ends) do
-      new_starts
-      |> Enum.zip(new_ends)
-      |> Enum.each(fn {l2_block_start, l2_block_end} ->
-        withdrawals_count =
-          fill_block_range(
-            l2_block_start,
-            l2_block_end,
-            message_passer,
-            json_rpc_named_arguments,
-            eth_get_logs_range_size,
-            scan_db
-          )
-
-        if withdrawals_count > 0 do
-          log_fill_msg_nonce_gaps(scan_db, l2_block_start, l2_block_end, withdrawals_count)
-        end
-      end)
-
-      if scan_db do
-        fill_msg_nonce_gaps(start_block_l2, message_passer, json_rpc_named_arguments, eth_get_logs_range_size, false)
-      end
-    end
   end
 
   # Determines the last saved L2 block number, the last saved transaction hash, and the transaction info for withdrawals.
@@ -383,17 +350,16 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
   # ## Parameters
   # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
   #                               Used to get transaction info by its hash from the RPC node.
-  #                               Can be `nil` if the transaction info is not needed.
   #
   # ## Returns
   # - A tuple `{last_block_number, last_transaction_hash, last_transaction}` where
   #   `last_block_number` is the last block number found in the corresponding table (0 if not found),
   #   `last_transaction_hash` is the last transaction hash found in the corresponding table (nil if not found),
-  #   `last_transaction` is the transaction info got from the RPC (nil if not found or not needed).
+  #   `last_transaction` is the transaction info got from the RPC (nil if not found).
   # - A tuple `{:error, message}` in case the `eth_getTransactionByHash` RPC request failed.
-  @spec get_last_l2_item(EthereumJSONRPC.json_rpc_named_arguments() | nil) ::
+  @spec get_last_l2_item(EthereumJSONRPC.json_rpc_named_arguments()) ::
           {non_neg_integer(), binary() | nil, map() | nil} | {:error, any()}
-  defp get_last_l2_item(json_rpc_named_arguments \\ nil) do
+  defp get_last_l2_item(json_rpc_named_arguments) do
     Optimism.get_last_item(
       :L2,
       &OptimismWithdrawal.last_withdrawal_l2_block_number_query/0,
@@ -401,17 +367,5 @@ defmodule Indexer.Fetcher.Optimism.Withdrawal do
       json_rpc_named_arguments,
       @counter_type
     )
-  end
-
-  defp log_fill_msg_nonce_gaps(scan_db, l2_block_start, l2_block_end, withdrawals_count) do
-    find_place = if scan_db, do: "in DB", else: "through RPC"
-
-    Logger.info(
-      "Filled gaps between L2 blocks #{l2_block_start} and #{l2_block_end}. #{withdrawals_count} event(s) were found #{find_place} and written to op_withdrawals table."
-    )
-  end
-
-  defp l2_block_number_by_msg_nonce(nonce) do
-    Repo.one(from(w in OptimismWithdrawal, select: w.l2_block_number, where: w.msg_nonce == ^nonce))
   end
 end

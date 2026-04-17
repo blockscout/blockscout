@@ -10,6 +10,7 @@ defmodule Utils.ConfigHelper do
   def parse_time_value(value) do
     case value |> String.downcase() |> Integer.parse() do
       {milliseconds, "ms"} -> milliseconds
+      {days, "d"} -> :timer.hours(24) * days
       {hours, "h"} -> :timer.hours(hours)
       {minutes, "m"} -> :timer.minutes(minutes)
       {seconds, s} when s in ["s", ""] -> :timer.seconds(seconds)

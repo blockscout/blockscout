@@ -13,7 +13,7 @@ defmodule Explorer.Visualize.Sol2uml do
     http_post_request(visualize_contracts_url(), body)
   end
 
-  def http_post_request(url, body) do
+  defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
     case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do

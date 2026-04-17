@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
   use OpenApiSpex.ControllerSpecs
 
-  alias BlockScoutWeb.AccessHelper
+  alias BlockScoutWeb.{AccessHelper, AuthenticationHelper}
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.{Chain, PagingOptions}
@@ -34,7 +34,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       tokens_sorting: 1
     ]
 
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.BENS,
+    only: [maybe_preload_ens: 1, maybe_preload_ens_for_token_transfers: 1]
+
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
@@ -181,7 +183,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> put_view(TransactionView)
       |> render(:token_transfers, %{
         token_transfers:
-          token_transfers |> Instance.preload_nft(@api_true) |> maybe_preload_ens() |> maybe_preload_metadata(),
+          token_transfers
+          |> Instance.preload_nft(@api_true)
+          |> maybe_preload_ens_for_token_transfers()
+          |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -439,7 +444,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:token_transfers, %{
-        token_transfers: token_transfers |> maybe_preload_ens() |> maybe_preload_metadata(),
+        token_transfers: token_transfers |> maybe_preload_ens_for_token_transfers() |> maybe_preload_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -616,7 +621,12 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     description: "Retrieves a paginated list of bridged tokens with optional filtering and sorting.",
     parameters:
       base_params() ++
-        [chain_ids_param(), q_param()] ++
+        [
+          chain_ids_param(),
+          q_param(),
+          sort_param(["fiat_value", "holders_count", "circulating_market_cap"]),
+          order_param()
+        ] ++
         define_paging_params([
           "contract_address_hash",
           "fiat_value",
@@ -741,10 +751,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     address_hash_string = params[:address_hash_param]
     ip = AccessHelper.conn_to_ip_string(conn)
 
-    with {:sensitive_endpoints_api_key, api_key} when not is_nil(api_key) <-
-           {:sensitive_endpoints_api_key, Application.get_env(:block_scout_web, :sensitive_endpoints_api_key)},
-         {:api_key, ^api_key} <-
-           {:api_key, get_api_key(conn)},
+    with :ok <- AuthenticationHelper.validate_sensitive_endpoints_api_key(get_api_key(conn)),
          {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},

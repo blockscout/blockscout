@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
   alias Explorer.Chain.Wei
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
-  alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
   setup :set_mox_global
 
@@ -251,7 +250,7 @@ defmodule BlockScoutWeb.TransactionStateControllerTest do
       full_text = Enum.join(items)
 
       assert(length(items) == 3)
-      assert(String.contains?(full_text, format_wei_value(%Wei{value: Decimal.new(0)}, :ether)))
+      assert(String.contains?(full_text, format_wei_value(Wei.zero(), :ether)))
 
       1 |> :timer.seconds() |> :timer.sleep()
       conn = get(conn, transaction_state_path(conn, :index, transaction), %{type: "JSON"})

@@ -20,6 +20,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
   # This is the keccak-256 hash of "org.zeppelinos.proxy.implementation"
   @storage_slot_openzeppelin_contract_address "0x7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3"
 
+  @impl true
   def quick_resolve_implementations(_proxy_address, proxy_type) do
     storage_slot =
       case proxy_type do
@@ -39,20 +40,23 @@ defmodule Explorer.Chain.SmartContract.Proxy.EIP1967 do
     end
   end
 
+  @impl true
   def resolve_implementations(_proxy_address, proxy_type, prefetched_values) do
     with {:ok, value} <- Map.fetch(prefetched_values, :implementation_slot),
          {:ok, stored_address_hash} <- Proxy.extract_address_hash(value) do
-      if proxy_type == :eip1967_beacon do
-        with {:ok, value} <- Proxy.fetch_value({:call, @implementation_signature}, stored_address_hash),
-             {:ok, implementation_address_hash} <- Proxy.extract_address_hash(value) do
-          {:ok, [implementation_address_hash]}
-        end
-      else
-        {:ok, [stored_address_hash]}
-      end
+      resolve_stored_implementation(proxy_type, stored_address_hash)
     else
       :error -> :error
       _ -> nil
     end
   end
+
+  defp resolve_stored_implementation(:eip1967_beacon, stored_address_hash) do
+    with {:ok, value} <- Proxy.fetch_value({:call, @implementation_signature}, stored_address_hash),
+         {:ok, implementation_address_hash} <- Proxy.extract_address_hash(value) do
+      {:ok, [implementation_address_hash]}
+    end
+  end
+
+  defp resolve_stored_implementation(_, stored_address_hash), do: {:ok, [stored_address_hash]}
 end
