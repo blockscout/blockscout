@@ -53,7 +53,7 @@ defmodule Indexer.MixProject do
       {:ethereum_jsonrpc, in_umbrella: true},
       {:ex_eth_bls, "~> 0.1.0"},
       # Brotli compression/decompression
-      {:ex_brotli, "~> 0.5.0"},
+      {:ex_brotli, "~> 0.6.0"},
       {:ex_keccak, "~> 0.7.5"},
       # RLP encoding
       {:ex_rlp, "~> 0.6.0"},
