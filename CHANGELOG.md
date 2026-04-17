@@ -15,6 +15,7 @@
 
 ### 🐛 Bug Fixes
 
+- Internal transactions on-demand fetcher: check existence of deleted internal transactions address placeholders ([#14249](https://github.com/blockscout/blockscout/pull/14249))
 - Fix OnDemand.InternalTransaction fetcher ([#14242](https://github.com/blockscout/blockscout/pull/14242))
 - Guard missing ETS table in contract creator fetcher ([#14241](https://github.com/blockscout/blockscout/pull/14241))
 - Address ids usage improvements ([#14240](https://github.com/blockscout/blockscout/pull/14240))
