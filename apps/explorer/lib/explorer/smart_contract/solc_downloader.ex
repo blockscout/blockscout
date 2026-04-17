@@ -26,7 +26,13 @@ defmodule Explorer.SmartContract.SolcDownloader do
         end
 
       if version in compiler_versions do
-        GenServer.call(__MODULE__, {:ensure_exists, version}, 60_000)
+        # Download in the calling process so it uses the caller's configured
+        # Tesla adapter (avoids race conditions when tests override the adapter
+        # globally via Application.put_env). The fetch? guard here avoids an
+        # unnecessary HTTP request when the file already exists; the same check
+        # inside handle_call guards against a concurrent writer finishing first.
+        contents = if fetch?(version, path), do: download(version), else: nil
+        GenServer.call(__MODULE__, {:ensure_exists, version, contents}, 60_000)
       else
         false
       end
@@ -47,13 +53,14 @@ defmodule Explorer.SmartContract.SolcDownloader do
 
   # sobelow_skip ["Traversal"]
   @impl true
-  def handle_call({:ensure_exists, version}, _from, state) do
+  def handle_call({:ensure_exists, version, contents}, _from, state) do
     path = file_path(version)
 
-    if fetch?(version, path) do
+    # contents is non-nil only when a download was performed (fetch? was true
+    # at call time).  We re-check fetch? here to skip writing when a concurrent
+    # caller already wrote the file while this message was queued.
+    if contents != nil && fetch?(version, path) do
       temp_path = file_path("#{version}-tmp")
-
-      contents = download(version)
 
       file = File.open!(temp_path, [:write, :exclusive])
 

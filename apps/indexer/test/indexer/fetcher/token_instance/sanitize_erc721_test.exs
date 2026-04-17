@@ -152,6 +152,16 @@ defmodule Indexer.Fetcher.TokenInstance.SanitizeERC721Test do
     end
 
     test "takes into account the last processed token address hash" do
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn requests, _options ->
+        {:ok,
+         Enum.map(requests, fn %{id: id} ->
+           %{
+             id: id,
+             error: %{code: -32000, message: "execution reverted"}
+           }
+         end)}
+      end)
+
       tokens =
         for x <- 0..5 do
           erc_721_token = insert(:token, type: "ERC-721")
