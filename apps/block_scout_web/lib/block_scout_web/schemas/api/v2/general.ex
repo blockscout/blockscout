@@ -285,7 +285,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :type,
       in: :query,
-      schema: %Schema{type: :string, enum: ["uncle", "reorg", "block"]},
+      schema: %Schema{type: :string, enum: ["uncle", "reorg", "block"], default: "block"},
       required: false,
       description: """
       Filter by block type:

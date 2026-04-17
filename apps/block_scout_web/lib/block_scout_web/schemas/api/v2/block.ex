@@ -424,10 +424,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
           description: "Block number (zero-based index from genesis)."
         },
         timestamp: General.Timestamp,
-        transactions_count: %Schema{type: :integer, nullable: false},
+        transactions_count: %Schema{type: :integer, nullable: false, minimum: 0},
         internal_transactions_count: %Schema{
           type: :integer,
           nullable: true,
+          minimum: 0,
           description: "Number of internal transactions in this block; null when the count is unavailable."
         },
         miner: %Schema{
@@ -438,6 +439,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
         size: %Schema{
           type: :integer,
           nullable: true,
+          minimum: 0,
           description: "Block size in bytes (length of the RLP-encoded block)."
         },
         hash: General.FullHash,
@@ -454,7 +456,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
         gas_used: General.IntegerString,
         gas_limit: General.IntegerString,
         nonce: %Schema{
-          allOf: [General.HexStringNullable],
+          allOf: [General.HexString],
           description: "Proof-of-work nonce used to satisfy the difficulty target. Zero on proof-of-stake chains."
         },
         base_fee_per_gas: %Schema{
@@ -489,7 +491,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
           nullable: false,
           description: "Percent above the EIP-1559 elasticity target (gas_used vs. gas_limit / elasticity_multiplier)."
         },
-        gas_used_percentage: %Schema{type: :number, format: :float, nullable: false},
+        gas_used_percentage: %Schema{
+          type: :number,
+          format: :float,
+          nullable: false,
+          description: "Gas used in this block as a percentage of `gas_limit`."
+        },
         burnt_fees_percentage: %Schema{
           type: :number,
           format: :float,
