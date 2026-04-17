@@ -174,7 +174,18 @@ defmodule BlockScoutWeb.API.V2.BlockController do
 
   operation :blocks,
     summary: "List blocks with optional filtering by block type",
-    description: "Retrieves a paginated list of blocks with optional filtering by block type.",
+    description: """
+    Retrieves a paginated list of blocks ordered by descending block number.
+
+    When the `type` query parameter is omitted, only main-chain consensus blocks
+    (equivalent to `type=block`) are returned. Use `type=uncle` to list ommer
+    blocks (valid but not in the main chain) and `type=reorg` to list blocks
+    that lost consensus during a chain reorganization.
+
+    Pagination is cursor-based: the response contains `next_page_params` with
+    `block_number` and `items_count` — pass these back as query parameters on
+    the next request to fetch the following page.
+    """,
     parameters:
       base_params() ++
         [block_type_param()] ++

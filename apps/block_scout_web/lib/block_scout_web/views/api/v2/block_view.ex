@@ -50,6 +50,8 @@ defmodule BlockScoutWeb.API.V2.BlockView do
     %{
       "height" => block.number,
       "timestamp" => block.timestamp,
+      # Callers must preload :transactions; Block.aggregate_transactions/1 leaves
+      # transactions_count as nil when transactions is %NotLoaded{}.
       "transactions_count" => block.transactions_count,
       "internal_transactions_count" => count_internal_transactions(block),
       "miner" => Helper.address_with_info(nil, block.miner, block.miner_hash, false),
