@@ -270,11 +270,6 @@ defmodule Indexer.BufferedTaskTest do
 
       start_supervised!({Task.Supervisor, name: BufferedTaskSup})
 
-      ShrinkableTask
-      |> expect(:init, fn initial, reducer, _ ->
-        Enum.reduce([2, 3, 4], initial, reducer)
-      end)
-
       assert {:noreply, %BufferedTask{flush_timer: flush_timer}} =
                BufferedTask.handle_info(:flush, %BufferedTask{
                  callback_module: ShrinkableTask,
@@ -289,14 +284,7 @@ defmodule Indexer.BufferedTaskTest do
 
       refute flush_timer == nil
 
-      assert_receive {:"$gen_call", from1, {:push_back, [2, 3]}}, @assert_receive_timeout
-
-      GenServer.reply(from1, :ok)
-
-      assert_receive {:"$gen_call", from2, {:push_back, [4]}}, @assert_receive_timeout
-
-      GenServer.reply(from2, :ok)
-
+      assert_receive :initial_stream, @assert_receive_timeout
       assert_receive :flush, @assert_receive_timeout
     end
   end

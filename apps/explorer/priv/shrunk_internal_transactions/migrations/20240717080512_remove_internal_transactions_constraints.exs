@@ -4,7 +4,7 @@ defmodule Explorer.Repo.ShrunkInternalTransactions.Migrations.RemoveInternalTran
   def change do
     drop(constraint(:internal_transactions, :call_has_input, check: "type != 'call' OR input IS NOT NULL"))
 
-    drop(
+    drop_if_exists(
       constraint(:internal_transactions, :call_has_error_or_result,
         check: """
         type != 'call' OR

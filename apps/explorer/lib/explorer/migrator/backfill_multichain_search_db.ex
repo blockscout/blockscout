@@ -77,10 +77,10 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDB do
             |> Repo.all(timeout: :infinity)
           end)
 
-        block_hashes = blocks |> Enum.map(& &1.hash)
+        block_numbers = Enum.map(blocks, & &1.number)
 
         internal_transactions_query =
-          from(internal_transaction in InternalTransaction, where: internal_transaction.block_hash in ^block_hashes)
+          from(internal_transaction in InternalTransaction, where: internal_transaction.block_number in ^block_numbers)
 
         internal_transactions_task =
           Task.async(fn ->

@@ -43,11 +43,18 @@ defmodule Explorer.GraphQL do
   Returns an internal transaction for a given transaction hash and index.
   """
   @spec get_internal_transaction(map()) :: {:ok, InternalTransaction.t()} | {:error, String.t()}
-  def get_internal_transaction(%{transaction_hash: _, index: _} = clauses) do
-    if internal_transaction = Repo.replica().get_by(InternalTransaction.where_nonpending_block(), clauses) do
-      {:ok, internal_transaction}
-    else
-      {:error, "Internal transaction not found."}
+  def get_internal_transaction(%{transaction_hash: transaction_hash, index: index}) do
+    InternalTransaction
+    |> InternalTransaction.join_transaction_query()
+    |> where([it], as(:transaction).hash == ^transaction_hash)
+    |> where([it], it.index == ^index)
+    |> InternalTransaction.where_nonpending_operation()
+    |> Repo.replica().one()
+    |> InternalTransaction.preload_transaction(Repo.replica())
+    |> InternalTransaction.preload_addresses([], Repo.replica())
+    |> case do
+      nil -> {:error, "Internal transaction not found."}
+      internal_transaction -> {:ok, internal_transaction}
     end
   end
 
@@ -60,16 +67,11 @@ defmodule Explorer.GraphQL do
   def transaction_to_internal_transactions_query(%Transaction{
         hash: %Hash{byte_count: unquote(Hash.Full.byte_count())} = hash
       }) do
-    query =
-      from(
-        it in InternalTransaction,
-        inner_join: t in assoc(it, :transaction),
-        order_by: [asc: it.index],
-        where: it.transaction_hash == ^hash
-      )
-
-    query
-    |> InternalTransaction.where_nonpending_block()
+    InternalTransaction
+    |> InternalTransaction.join_transaction_query()
+    |> where([it], as(:transaction).hash == ^hash)
+    |> order_by([it], it.index)
+    |> InternalTransaction.where_nonpending_operation()
     |> InternalTransaction.where_is_different_from_parent_transaction()
   end
 

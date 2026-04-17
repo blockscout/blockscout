@@ -48,7 +48,7 @@ defmodule Explorer.Tags.AddressTag.Cataloger do
     all_tags
     |> Enum.each(fn %{label: tag_name} ->
       if tag_name !== "validator" && tag_name !== "amb bridge mediators" && tag_name !== "omni bridge" &&
-           tag_name !== "l2" && !String.contains?(tag_name, "chainlink") do
+           tag_name !== "l2" && tag_name !== "fhe" && !String.contains?(tag_name, "chainlink") do
         env_var_name = "CUSTOM_CONTRACT_ADDRESSES_#{tag_name_to_env_var_part(tag_name)}"
         set_tag_for_env_var_multiple_addresses(env_var_name, tag_name)
       end

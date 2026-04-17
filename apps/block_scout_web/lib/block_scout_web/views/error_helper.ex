@@ -56,4 +56,16 @@ defmodule BlockScoutWeb.ErrorHelper do
       Gettext.dgettext(BlockScoutWeb.Gettext, "errors", msg, opts)
     end
   end
+
+  @doc """
+  Converts a changeset to a list of errors.
+  """
+  @spec changeset_to_errors(Changeset.t()) :: any()
+  def changeset_to_errors(changeset) do
+    Changeset.traverse_errors(changeset, fn {msg, opts} ->
+      Regex.replace(~r"%{(\w+)}", msg, fn _, key ->
+        opts |> Keyword.get(String.to_existing_atom(key), key) |> to_string()
+      end)
+    end)
+  end
 end

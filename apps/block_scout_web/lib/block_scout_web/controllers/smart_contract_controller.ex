@@ -29,30 +29,10 @@ defmodule BlockScoutWeb.SmartContractController do
       implementation_address_hash_string = implementation_address_hash(contract_type, address)
 
       functions =
-        if action == "write" do
-          if contract_type == "proxy" do
-            Writer.write_functions_proxy(implementation_address_hash_string)
-          else
-            Writer.write_functions(address.smart_contract)
-          end
-        else
-          if contract_type == "proxy" do
-            Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string, nil)
-          else
-            Reader.read_only_functions(address.smart_contract, address_hash, params["from"])
-          end
-        end
+        load_functions(action, contract_type, implementation_address_hash_string, address, address_hash, params)
 
       read_functions_required_wallet =
-        if action == "read" do
-          if contract_type == "proxy" do
-            Reader.read_functions_required_wallet_proxy(implementation_address_hash_string)
-          else
-            Reader.read_functions_required_wallet(address.smart_contract)
-          end
-        else
-          []
-        end
+        load_read_functions_required_wallet(action, contract_type, implementation_address_hash_string, address)
 
       contract_abi = Poison.encode!(address.smart_contract.abi)
 
@@ -99,10 +79,31 @@ defmodule BlockScoutWeb.SmartContractController do
 
   def index(conn, _), do: not_found(conn)
 
+  defp load_functions("write", "proxy", implementation_address_hash_string, _address, _address_hash, _params),
+    do: Writer.write_functions_proxy(implementation_address_hash_string)
+
+  defp load_functions("write", _contract_type, _implementation_address_hash_string, address, _address_hash, _params),
+    do: Writer.write_functions(address.smart_contract)
+
+  defp load_functions(_action, "proxy", implementation_address_hash_string, _address, address_hash, _params),
+    do: Reader.read_only_functions_proxy(address_hash, implementation_address_hash_string, nil)
+
+  defp load_functions(_action, _contract_type, _implementation_address_hash_string, address, address_hash, params),
+    do: Reader.read_only_functions(address.smart_contract, address_hash, params["from"])
+
+  defp load_read_functions_required_wallet("read", "proxy", implementation_address_hash_string, _address),
+    do: Reader.read_functions_required_wallet_proxy(implementation_address_hash_string)
+
+  defp load_read_functions_required_wallet("read", _contract_type, _implementation_address_hash_string, address),
+    do: Reader.read_functions_required_wallet(address.smart_contract)
+
+  defp load_read_functions_required_wallet(_action, _contract_type, _implementation_address_hash_string, _address),
+    do: []
+
   defp implementation_address_hash(contract_type, address) do
     if contract_type == "proxy" do
       implementation = Implementation.get_implementation(address.smart_contract)
-      (implementation && implementation.address_hashes |> List.first()) || burn_address_hash_string()
+      (implementation && (implementation.address_hashes || []) |> List.first()) || burn_address_hash_string()
     else
       burn_address_hash_string()
     end
@@ -159,8 +160,9 @@ defmodule BlockScoutWeb.SmartContractController do
         :names => :optional,
         :smart_contract => :optional,
         :token => :optional,
-        Address.contract_creation_transaction_associations() => :optional
+        Address.contract_creation_transaction_association() => :optional
       },
+      preload_contract_creation_internal_transaction: true,
       ip: AccessHelper.conn_to_ip_string(conn)
     ]
 
@@ -172,36 +174,10 @@ defmodule BlockScoutWeb.SmartContractController do
          {:ok, address} <- Address.find_contract_address(address_hash, address_options) do
       contract_type = if params["type"] == "proxy", do: :proxy, else: :regular
 
-      args =
-        if is_nil(params["args_count"]) do
-          # we should convert: %{"0" => _, "1" => _} to [_, _]
-          params["args"] |> convert_map_to_array()
-        else
-          {args_count, _} = Integer.parse(params["args_count"])
-
-          if args_count < 1,
-            do: [],
-            else: for(x <- 0..(args_count - 1), do: params["arg_" <> to_string(x)] |> convert_map_to_array())
-        end
+      args = build_query_args(params)
 
       %{output: outputs, names: names} =
-        if custom_abi do
-          Reader.query_function_with_names_custom_abi(
-            address_hash,
-            %{method_id: params["method_id"], args: args},
-            params["from"],
-            custom_abi.abi
-          )
-        else
-          Reader.query_function_with_names(
-            address_hash,
-            %{method_id: params["method_id"], args: args},
-            contract_type,
-            params["from"],
-            address.smart_contract && address.smart_contract.abi,
-            true
-          )
-        end
+        query_function_with_names(custom_abi, address_hash, params, args, contract_type, address)
 
       conn
       |> put_status(200)
@@ -223,6 +199,41 @@ defmodule BlockScoutWeb.SmartContractController do
 
       _ ->
         not_found(conn)
+    end
+  end
+
+  defp build_query_args(%{"args_count" => nil} = params) do
+    # we should convert: %{"0" => _, "1" => _} to [_, _]
+    params["args"] |> convert_map_to_array()
+  end
+
+  defp build_query_args(%{"args_count" => args_count} = params) do
+    {parsed_args_count, _} = Integer.parse(args_count)
+
+    if parsed_args_count < 1,
+      do: [],
+      else: for(x <- 0..(parsed_args_count - 1), do: params["arg_" <> to_string(x)] |> convert_map_to_array())
+  end
+
+  defp build_query_args(params), do: params["args"] |> convert_map_to_array()
+
+  defp query_function_with_names(custom_abi, address_hash, params, args, contract_type, address) do
+    if custom_abi do
+      Reader.query_function_with_names_custom_abi(
+        address_hash,
+        %{method_id: params["method_id"], args: args},
+        params["from"],
+        custom_abi.abi
+      )
+    else
+      Reader.query_function_with_names(
+        address_hash,
+        %{method_id: params["method_id"], args: args},
+        contract_type,
+        params["from"],
+        address.smart_contract && address.smart_contract.abi,
+        true
+      )
     end
   end
 

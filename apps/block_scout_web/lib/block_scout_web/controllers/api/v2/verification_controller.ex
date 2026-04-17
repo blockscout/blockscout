@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   alias Explorer.Chain
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.{CompilerVersion, RustVerifierInterface, Solidity.CodeCompiler, StylusVerifierInterface}
+  alias Explorer.SmartContract.Helper
   alias Explorer.SmartContract.Solidity.PublisherWorker, as: SolidityPublisherWorker
   alias Explorer.SmartContract.Solidity.PublishHelper
   alias Explorer.SmartContract.Stylus.PublisherWorker, as: StylusPublisherWorker
@@ -121,7 +122,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
         |> Map.put("constructor_arguments", Map.get(params, "constructor_args", ""))
         |> Map.put("name", Map.get(params, "contract_name", ""))
         |> Map.put("external_libraries", Map.get(params, "libraries", %{}))
-        |> Map.put("is_yul", Map.get(params, "is_yul_contract", false))
+        |> Map.put("language", verification_language(params))
         |> Map.put("license_type", Map.get(params, "license_type"))
 
       log_sc_verification_started(address_hash_string)
@@ -412,6 +413,12 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     with {:not_found, true} <- {:not_found, RustVerifierInterface.enabled?()} do
       :verifier_enabled
     end
+  end
+
+  defp verification_language(params) do
+    params
+    |> Helper.parse_solidity_verification_language()
+    |> Atom.to_string()
   end
 
   defp log_sc_verification_started(address_hash_string) do

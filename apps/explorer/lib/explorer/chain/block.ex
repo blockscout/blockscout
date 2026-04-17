@@ -190,7 +190,7 @@ defmodule Explorer.Chain.Block.Schema do
         has_many(:transactions, Transaction, references: :hash)
         has_many(:transaction_forks, Transaction.Fork, foreign_key: :uncle_hash, references: :hash)
 
-        has_many(:internal_transactions, InternalTransaction, foreign_key: :block_hash, references: :hash)
+        has_many(:internal_transactions, InternalTransaction, foreign_key: :block_number, references: :number)
 
         has_many(:rewards, Reward, foreign_key: :block_hash, references: :hash)
 
@@ -217,6 +217,11 @@ defmodule Explorer.Chain.Block do
   use Explorer.Schema
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
+  use Utils.RuntimeEnvHelper,
+    miner_gets_burnt_fees?: [:explorer, [Explorer.Chain.Transaction, :block_miner_gets_burnt_fees?]]
+
+  alias EthereumJSONRPC.Utility.RangesHelper
+
   alias Explorer.Chain.{
     Block,
     DenormalizationHelper,
@@ -230,6 +235,7 @@ defmodule Explorer.Chain.Block do
 
   alias Explorer.{Chain, Helper, PagingOptions, Repo}
   alias Explorer.Chain.Block.{EmissionReward, Reward, SecondDegreeRelation}
+  alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
   alias Explorer.Utility.MissingBlockRange
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
@@ -428,7 +434,7 @@ defmodule Explorer.Chain.Block do
   """
   @spec burnt_fees(list(), Decimal.t() | nil) :: Decimal.t()
   def burnt_fees(transactions, base_fee_per_gas) do
-    if is_nil(base_fee_per_gas) do
+    if is_nil(base_fee_per_gas) or miner_gets_burnt_fees?() do
       Decimal.new(0)
     else
       transactions
@@ -464,7 +470,7 @@ defmodule Explorer.Chain.Block do
           where: fragment("int8range(?, ?) <@ ?", ^block_number, ^(block_number + 1), er.block_range),
           select: er.reward
         )
-      ) || %Wei{value: Decimal.new(0)}
+      ) || Wei.zero()
 
     uncles_count = if is_list(block.uncles), do: Enum.count(block.uncles), else: 0
 
@@ -616,6 +622,56 @@ defmodule Explorer.Chain.Block do
     |> Decimal.div_int(base_fee_max_change_denominator)
   end
 
+  @doc """
+  Queues blocks for a full refetch and marks them as needing refetch.
+
+  This function accepts either a block ranges string, a list of block numbers,
+  or a single block number. When given a ranges string, it parses the string into
+  individual block numbers. It then enqueues the blocks for internal transaction
+  cleanup and marks the corresponding blocks with `refetch_needed: true` inside a
+  single database transaction.
+
+  ## Parameters
+
+    - `block_ranges_string_or_numbers`: A block ranges string, a list of block numbers, or a single block number.
+
+  ## Returns
+
+    - The result of `Repo.transaction/2` for range strings and lists.
+    - The delegated result for a single block number.
+
+  ## Examples
+
+      iex> full_refetch("1..3,5..6")
+      {:ok, _}
+
+      iex> full_refetch([10, 11, 12])
+      {:ok, _}
+
+      iex> full_refetch(15)
+      {:ok, _}
+
+  """
+  @spec full_refetch(binary() | [integer()] | integer()) :: {:ok, any()} | {:error, any()}
+  def full_refetch(block_ranges_string) when is_binary(block_ranges_string) do
+    block_ranges_string
+    |> RangesHelper.parse_block_ranges_to_numbers()
+    |> full_refetch()
+  end
+
+  def full_refetch(block_numbers) when is_list(block_numbers) do
+    Repo.transaction(
+      fn ->
+        # TODO: delete other crucial entities as well
+        InternalTransactionDeleteQueue.batch_insert(block_numbers)
+        set_refetch_needed(block_numbers)
+      end,
+      timeout: :infinity
+    )
+  end
+
+  def full_refetch(block_number), do: full_refetch([block_number])
+
   @spec set_refetch_needed(integer | [integer]) :: :ok
   def set_refetch_needed(block_numbers) when is_list(block_numbers) do
     query =
@@ -730,7 +786,7 @@ defmodule Explorer.Chain.Block do
       end
 
     burnt_fees =
-      if is_nil(block_base_fee_per_gas) do
+      if is_nil(block_base_fee_per_gas) or miner_gets_burnt_fees?() do
         acc.burnt_fees
       else
         transaction.gas_used
@@ -808,7 +864,7 @@ defmodule Explorer.Chain.Block do
     |> Wei.cast()
     |> case do
       {:ok, value} -> value
-      _ -> %Wei{value: Decimal.new(0)}
+      _ -> Wei.zero()
     end
   end
 
@@ -1056,7 +1112,7 @@ defmodule Explorer.Chain.Block do
 
     initial_gas_payments =
       block_hashes
-      |> Enum.map(&{&1, %Wei{value: Decimal.new(0)}})
+      |> Enum.map(&{&1, Wei.zero()})
       |> Enum.into(%{})
 
     existing_data =
@@ -1083,5 +1139,25 @@ defmodule Explorer.Chain.Block do
     query
     |> Repo.all()
     |> Enum.into(%{})
+  end
+
+  @doc """
+  Fetches the second block in the database ordered by number in ascending order.
+  """
+  @spec fetch_second_block_in_database() :: {:ok, __MODULE__.t()} | {:error, :not_found}
+  def fetch_second_block_in_database do
+    query =
+      from(block in __MODULE__,
+        where: block.consensus == true,
+        order_by: [asc: block.number],
+        offset: 1,
+        limit: 1,
+        select: block
+      )
+
+    case Repo.one(query) do
+      nil -> {:error, :not_found}
+      block -> {:ok, block}
+    end
   end
 end

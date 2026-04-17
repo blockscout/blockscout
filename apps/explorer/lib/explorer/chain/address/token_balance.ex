@@ -164,9 +164,9 @@ defmodule Explorer.Chain.Address.TokenBalance do
     |> Repo.stream_reduce(initial, reducer)
   end
 
-  defp add_token_balances_fetcher_limit(query, false), do: query
+  def add_token_balances_fetcher_limit(query, false), do: query
 
-  defp add_token_balances_fetcher_limit(query, true) do
+  def add_token_balances_fetcher_limit(query, true) do
     token_balances_fetcher_limit = Application.get_env(:indexer, :token_balances_fetcher_init_limit)
 
     limit(query, ^token_balances_fetcher_limit)

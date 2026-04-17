@@ -195,6 +195,23 @@ defmodule Indexer.Fetcher.ContractCode do
         code_addresses_params = Addresses.extract_addresses(%{codes: params})
         {:ok, code_addresses_params}
 
+      {:ok, %{params_list: params, errors: errors}} ->
+        unique_errors =
+          errors
+          |> Enum.map(fn
+            %{message: message} ->
+              message
+
+            error ->
+              inspect(error)
+          end)
+          |> Enum.uniq()
+
+        Logger.error(fn -> ["failed to fetch some contract codes: ", inspect(unique_errors)] end)
+
+        code_addresses_params = Addresses.extract_addresses(%{codes: params})
+        {:ok, code_addresses_params}
+
       error ->
         error
     end
