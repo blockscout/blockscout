@@ -22,10 +22,19 @@ defmodule Explorer.MarketTest do
 
       # Simulate the history fetcher being enabled without starting the real GenServer,
       # which would make HTTP calls via the Mock Tesla adapter and raise Mox.UnexpectedCallError.
+      previous_market_history_fetcher_enabled =
+        :persistent_term.get(:market_history_fetcher_enabled, :__market_history_fetcher_enabled_not_set__)
+
       :persistent_term.put(:market_history_fetcher_enabled, true)
 
       on_exit(fn ->
-        :persistent_term.erase(:market_history_fetcher_enabled)
+        case previous_market_history_fetcher_enabled do
+          :__market_history_fetcher_enabled_not_set__ ->
+            :persistent_term.erase(:market_history_fetcher_enabled)
+
+          previous_value ->
+            :persistent_term.put(:market_history_fetcher_enabled, previous_value)
+        end
       end)
 
       today = Date.utc_today()
