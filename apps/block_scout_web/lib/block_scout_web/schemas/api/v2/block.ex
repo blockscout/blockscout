@@ -345,6 +345,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
     :is_pending_update
   ]
 
+  # List-response variant: `type` is the machine-readable enum.
   @rewards_schema %Schema{
     type: :array,
     description:
@@ -353,11 +354,34 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
       type: :object,
       properties: %{
         reward: General.IntegerString,
+        # Enum values must be kept in sync with
+        # Explorer.Chain.Block.Reward.AddressType :t/0.
         type: %Schema{
           type: :string,
           nullable: false,
-          description:
-            "Reward category. For list responses this is a machine-readable identifier (typically `validator`, `emission_funds`, or `uncle`); for a single-block response it is a human-readable label."
+          enum: ["emission_funds", "uncle", "validator"],
+          description: "Reward category (machine-readable identifier)."
+        }
+      },
+      required: [:type, :reward],
+      additionalProperties: false
+    },
+    nullable: false
+  }
+
+  # Single-block-response variant: `type` is a human-readable label.
+  @rewards_schema_single_block %Schema{
+    type: :array,
+    description:
+      "Block rewards grouped by recipient category. Single-block variant: `type` is a human-readable label rather than a machine identifier.",
+    items: %Schema{
+      type: :object,
+      properties: %{
+        reward: General.IntegerString,
+        type: %Schema{
+          type: :string,
+          nullable: false,
+          description: "Human-readable reward category label (e.g. \"Miner Reward\", \"Uncle Reward\")."
         }
       },
       required: [:type, :reward],
@@ -367,10 +391,17 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
   }
 
   @doc """
-    Returns the common rewards schema for block.
+    Returns the common rewards schema for block (list-response variant).
   """
   @spec rewards_schema() :: Schema.t()
   def rewards_schema, do: @rewards_schema
+
+  @doc """
+    Returns the rewards schema for a single-block response, where `type` is a
+    human-readable label rather than the `Explorer.Chain.Block.Reward.AddressType` enum.
+  """
+  @spec rewards_schema_single_block() :: Schema.t()
+  def rewards_schema_single_block, do: @rewards_schema_single_block
 
   @doc """
     Returns the list of required fields for the block schema.
@@ -417,7 +448,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
         },
         total_difficulty: %Schema{
           allOf: [General.IntegerStringNullable],
-          description: "Cumulative chain difficulty through this block (sum of `difficulty` of this block and all ancestors)."
+          description:
+            "Cumulative chain difficulty through this block (sum of `difficulty` of this block and all ancestors)."
         },
         gas_used: General.IntegerString,
         gas_limit: General.IntegerString,
@@ -427,7 +459,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
         },
         base_fee_per_gas: %Schema{
           allOf: [General.IntegerStringNullable],
-          description: "EIP-1559 base fee per gas, in wei. Null on blocks produced before EIP-1559 activation or on chains that do not implement EIP-1559."
+          description:
+            "EIP-1559 base fee per gas, in wei. Null on blocks produced before EIP-1559 activation or on chains that do not implement EIP-1559."
         },
         burnt_fees: %Schema{
           allOf: [General.IntegerStringNullable],
@@ -484,7 +517,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
         is_pending_update: %Schema{
           type: :boolean,
           nullable: true,
-          description: "True when the block is scheduled for re-fetch; its fields may change once re-fetching completes."
+          description:
+            "True when the block is scheduled for re-fetch; its fields may change once re-fetching completes."
         }
       },
       required: required_fields(),
