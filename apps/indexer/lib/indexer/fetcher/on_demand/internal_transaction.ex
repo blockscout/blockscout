@@ -37,7 +37,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
          true <- InternalTransaction.present_in_db?(min_block_number) do
       false
     else
-      _ -> true
+      _ -> not InternalTransactionsAddressPlaceholder.empty?()
     end
   end
 

@@ -6,6 +6,8 @@ defmodule Explorer.Utility.InternalTransactionsAddressPlaceholder do
 
   use Explorer.Schema
 
+  alias Explorer.Repo
+
   @primary_key false
   typed_schema "deleted_internal_transactions_address_placeholders" do
     field(:address_id, :integer, primary_key: true)
@@ -17,5 +19,10 @@ defmodule Explorer.Utility.InternalTransactionsAddressPlaceholder do
   @doc false
   def changeset(placeholder \\ %__MODULE__{}, params) do
     cast(placeholder, params, [:address_id, :block_number, :count_tos, :count_froms])
+  end
+
+  @spec empty?() :: boolean()
+  def empty? do
+    not Repo.exists?(__MODULE__)
   end
 end
