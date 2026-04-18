@@ -86,6 +86,15 @@ Every key the view always emits should be in `required:`. Keys that are conditio
 - Not be in `required:` (if the key might be absent)
 - Be in `required:` but have `nullable: true` on the schema (if the key is always present but sometimes null)
 
+**Scope.** "Always emits" and "sometimes `nil`" refer to the render paths reachable via the **endpoints that currently reference this schema** in their `operation/2` `responses:`. Before flagging a `nullable: false` property as wrong:
+
+1. Enumerate those call sites mechanically: `Grep "Schemas\.<SchemaName>\b" apps/block_scout_web/lib/block_scout_web/controllers`.
+2. For each call site, check the controller's `necessity_by_association` / explicit `Repo.preload/2` / other data-shaping code to determine whether the value can in fact reach the view as `nil`.
+3. Only flag if at least one spec-declared render path can produce `nil`. A hedge of the form "*if* any of those readers skips preloading X" or "the shared schema *may* be over-constrained" is not a finding — it is a note that you haven't finished step 2. Either complete the enumeration and cite a specific `controller.ex:line` where the preload is absent, or drop the concern.
+4. Each finding must be actionable on the endpoint being audited. If step 2 shows "this could be wrong for a peer endpoint, but `/v2/X` itself is fine," don't raise it as Major/Minor on the `/v2/X` audit. Drop it, or downgrade to a Nit that names the specific peer endpoints as a suggested follow-up audit. A "Major that requires no action on the audited endpoint" is a contradiction — it either has a concrete action here (Major/Minor) or it doesn't (Nit / separate audit).
+
+Don't flag based on "a future endpoint might not preload X." If a future endpoint is added without the required preload, that new endpoint's audit owns the fix — it is not the shared schema's job to pre-accommodate code that hasn't been written yet.
+
 See `references/schema-conventions.md` section "Nullable fields" for the full nullable handling rules, including why `type: :null` / `anyOf: [%Schema{type: :null}, …]` (OpenAPI 3.1) is invalid here.
 
 ### 2d. additionalProperties: false is set

@@ -512,6 +512,10 @@ Add a description when the property name alone doesn't convey what the value rep
 - **Well-known token primitives.** `token.symbol`, `token.name`, `token.decimals` — universally understood in the domain.
 - **Context from the parent schema.** If the schema-level `description:` already explains the object's role and the property name is unambiguous within that context, a per-property description is redundant.
 
+### Avoid backend jargon
+
+API consumers don't read Blockscout source, so keep database columns (`refetch_needed`), Ecto terms ("preloaded", `NotLoaded`), and indexer/cache internals out of descriptions. Describe what the value means or why it can be null from the client's perspective: prefer "null when the count is unavailable" over "null when the association was not preloaded", and "true when the block is scheduled for re-fetch" over "mirrors the `refetch_needed` DB column".
+
 ### Quality standard
 
 A description should tell the consumer something they cannot infer from the property name alone. If you can delete the description and the property is equally clear, it wasn't worth writing.
