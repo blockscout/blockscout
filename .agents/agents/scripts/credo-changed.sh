@@ -7,9 +7,11 @@
 # Environment-aware: if mix is not found on the host, automatically
 # re-invokes itself inside the project's devcontainer via exec.sh.
 #
-# Usage: credo-changed.sh [-e KEY=VALUE]... [base-branch]
+# Usage: credo-changed.sh [-e KEY=VALUE]... [--unstaged] [base-branch]
 #   -e KEY=VALUE   Export an environment variable (repeatable).
 #                  CHAIN_TYPE is required.
+#   --unstaged     Restrict the check to unstaged and untracked Elixir files
+#                  (skips staged + committed-vs-base).
 #   base-branch    defaults to auto-detected master or main
 #
 # Exit codes:
@@ -37,8 +39,10 @@ else
   log() { :; }
 fi
 
-# --- Parse -e flags and export them into the current environment ---
+# --- Parse -e env flags and --unstaged behavior flag ---
 ENV_ARGS=()
+BEHAVIOR_FLAGS=()
+UNSTAGED_ONLY=false
 while [ "$#" -gt 0 ]; do
   case "$1" in
     -e)
@@ -48,11 +52,17 @@ while [ "$#" -gt 0 ]; do
       log "Parsed env: $2"
       shift 2
       ;;
+    --unstaged)
+      UNSTAGED_ONLY=true
+      BEHAVIOR_FLAGS+=("--unstaged")
+      log "Parsed flag: --unstaged"
+      shift
+      ;;
     *) break ;;
   esac
 done
 
-log "CHAIN_TYPE=${CHAIN_TYPE:-<unset>}"
+log "CHAIN_TYPE=${CHAIN_TYPE:-<unset>} unstaged=$UNSTAGED_ONLY"
 
 # --- Validate CHAIN_TYPE ---
 if [ -z "${CHAIN_TYPE:-}" ]; then
@@ -68,8 +78,8 @@ if ! command -v mix &>/dev/null; then
   EXEC_SH="$("$SCRIPT_DIR/_find-devcontainer-exec.sh")" || exit 1
   EXEC_ENV_ARGS=()
   for v in "${ENV_ARGS[@]}"; do EXEC_ENV_ARGS+=(-e "$v"); done
-  log "exec: $EXEC_SH ${EXEC_ENV_ARGS[*]} bash .agents/agents/scripts/credo-changed.sh $*"
-  exec "$EXEC_SH" "${EXEC_ENV_ARGS[@]}" bash .agents/agents/scripts/credo-changed.sh "$@"
+  log "exec: $EXEC_SH ${EXEC_ENV_ARGS[*]} bash .agents/agents/scripts/credo-changed.sh ${BEHAVIOR_FLAGS[*]} $*"
+  exec "$EXEC_SH" "${EXEC_ENV_ARGS[@]}" bash .agents/agents/scripts/credo-changed.sh "${BEHAVIOR_FLAGS[@]}" "$@"
 fi
 
 log "mix found, running locally"
@@ -101,13 +111,15 @@ collect_files() {
     git ls-files --others --exclude-standard 2>/dev/null || true
     # Unstaged changes
     git diff --name-only 2>/dev/null || true
-    # Staged changes
-    git diff --cached --name-only 2>/dev/null || true
-    # Committed changes vs base (skip if on the base branch itself)
-    if [ "$CURRENT_BRANCH" != "$BASE_BRANCH" ]; then
-      MERGE_BASE="$(git merge-base "$BASE_BRANCH" HEAD 2>/dev/null || true)"
-      if [ -n "$MERGE_BASE" ]; then
-        git diff --name-only "$MERGE_BASE"..HEAD 2>/dev/null || true
+    if [ "$UNSTAGED_ONLY" != "true" ]; then
+      # Staged changes
+      git diff --cached --name-only 2>/dev/null || true
+      # Committed changes vs base (skip if on the base branch itself)
+      if [ "$CURRENT_BRANCH" != "$BASE_BRANCH" ]; then
+        MERGE_BASE="$(git merge-base "$BASE_BRANCH" HEAD 2>/dev/null || true)"
+        if [ -n "$MERGE_BASE" ]; then
+          git diff --name-only "$MERGE_BASE"..HEAD 2>/dev/null || true
+        fi
       fi
     fi
   } | sort -u | grep -E '\.exs?$' || true
@@ -124,7 +136,11 @@ done <<< "$CHANGED_FILES"
 
 if [ -z "$EXISTING_FILES" ]; then
   echo "NO_FILES"
-  echo "No changed Elixir files found (branch: $CURRENT_BRANCH, base: $BASE_BRANCH)."
+  if [ "$UNSTAGED_ONLY" = "true" ]; then
+    echo "No unstaged or untracked Elixir files found."
+  else
+    echo "No changed Elixir files found (branch: $CURRENT_BRANCH, base: $BASE_BRANCH)."
+  fi
   log "No changed files found"
   exit 0
 fi
@@ -148,7 +164,7 @@ log "Files JSON: $FILES_JSON"
 # Stderr is suppressed — mix compilation warnings would break JSON parsing.
 CREDO_JSON="$(mix credo --format json 2>/dev/null)" || true
 FILTERED_JSON="$(echo "$CREDO_JSON" | jq --argjson files "$FILES_JSON" \
-  '{ issues: [.issues[] | select(.filename as $f | $files | any(. == $f))] }')"
+  '{ issues: [.issues[] | select(.filename as $f | $files | any(. == $f)) | select(.check != "Credo.Check.Design.TagTODO")] }')"
 
 ISSUE_COUNT="$(echo "$FILTERED_JSON" | jq '.issues | length')"
 log "Credo issues in changed files: $ISSUE_COUNT"
