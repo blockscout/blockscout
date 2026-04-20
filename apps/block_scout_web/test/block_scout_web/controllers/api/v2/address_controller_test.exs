@@ -3937,7 +3937,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert Enum.count(tokens_response["items"]) == 1
 
       assert List.first(tokens_response["items"])["token"]["address_hash"] ==
-               to_string(legit_balance.token_contract_address_hash)
+               Address.checksum(legit_balance.token_contract_address_hash)
     end
 
     test "get 200 on non existing address", %{conn: conn} do
