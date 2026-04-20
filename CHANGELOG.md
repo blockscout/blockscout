@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- /api/legacy/* wrappers for three ES-compatible RPC endpoints ([#14239](https://github.com/blockscout/blockscout/pull/14239))
 - Make token balances import chunk size configurable ([#14250](https://github.com/blockscout/blockscout/pull/14250))
 - Async CSV export ([#14028](https://github.com/blockscout/blockscout/issues/14028))
 - Add toggle to disable transactions / token transfers BENS preload ([#14159](https://github.com/blockscout/blockscout/issues/14159))
