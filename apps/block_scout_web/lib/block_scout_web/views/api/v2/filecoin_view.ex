@@ -33,7 +33,11 @@ defmodule BlockScoutWeb.API.V2.FilecoinView do
           }) ::
             map()
     def preload_and_put_filecoin_robust_address(result, %{address_hash: address_hash} = params) do
-      address = address_hash && Address.get(address_hash, @api_true)
+      address =
+        case address_hash do
+          hash when is_binary(hash) and hash != "" -> Address.get(hash, @api_true)
+          _ -> nil
+        end
 
       put_filecoin_robust_address(result, Map.put(params, :address, address))
     end
