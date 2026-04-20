@@ -39,7 +39,10 @@ defmodule BlockScoutWeb.API.V2.FilecoinView do
           _ -> nil
         end
 
-      put_filecoin_robust_address(result, Map.put(params, :address, address))
+      params
+      |> Map.put_new(:field_prefix, nil)
+      |> Map.put(:address, address)
+      |> then(&put_filecoin_robust_address(result, &1))
     end
 
     def preload_and_put_filecoin_robust_address(result, _params) do
