@@ -29,10 +29,11 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionViewTest do
       }
 
       result = InternalTransactionView.prepare_internal_transaction(internal_transaction, nil)
+      expected_type = InternalTransaction.call_type(internal_transaction) || internal_transaction.type
 
       assert result["success"] == true
       assert result["error"] == nil
-      assert result["type"] in [:call, "call"]
+      assert result["type"] == expected_type
       assert result["block_number"] == 10
       assert result["index"] == 0
       assert Decimal.equal?(result["gas_limit"], Decimal.new(21_000))
