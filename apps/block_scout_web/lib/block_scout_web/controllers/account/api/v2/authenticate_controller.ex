@@ -9,7 +9,6 @@ defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   alias BlockScoutWeb.API.V2.ApiView
   alias Explorer.Account.{Authentication, Identity}
   alias Explorer.Chain
-  alias Explorer.Chain.Address
   alias Plug.Conn
 
   action_fallback(BlockScoutWeb.Account.API.V2.FallbackController)
