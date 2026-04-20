@@ -43,7 +43,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
 
   plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
 
-  tags(["main_page"])
+  tags(["main-page"])
 
   operation :blocks,
     summary: "Retrieve recent blocks as displayed on Blockscout homepage",
