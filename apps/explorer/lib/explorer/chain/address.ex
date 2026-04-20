@@ -472,9 +472,20 @@ defmodule Explorer.Chain.Address do
     do: address
 
   def maybe_preload_smart_contract_associations(%__MODULE__{contract_code: _} = address, associations, options) do
+    repo = Chain.select_repo(options)
+
     address
-    |> Chain.select_repo(options).preload(associations)
-    |> preload_contract_creation_internal_transaction(Chain.select_repo(options))
+    |> repo.preload(associations)
+    |> maybe_preload_contract_creation_internal_transaction(repo)
+  end
+
+  @spec maybe_preload_contract_creation_internal_transaction(__MODULE__.t(), module()) :: __MODULE__.t()
+  defp maybe_preload_contract_creation_internal_transaction(address, repo) do
+    if Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false) do
+      address
+    else
+      preload_contract_creation_internal_transaction(address, repo)
+    end
   end
 
   @doc """
