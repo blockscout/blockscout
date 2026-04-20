@@ -980,8 +980,8 @@ defmodule Explorer.Chain.Address do
   def contract_creation_transaction_associations(include_internal_transaction \\ true) do
     if include_internal_transaction do
       [
-        contract_creation_transaction_association(),
-        contract_creation_internal_transaction_association()
+        contract_creation_transaction_association()
+        # contract_creation_internal_transaction_association()
       ]
     else
       [contract_creation_transaction_association()]
