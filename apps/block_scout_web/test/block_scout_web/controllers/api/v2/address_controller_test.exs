@@ -3899,6 +3899,47 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   end
 
   describe "/addresses/{address_hash}/tabs-counters" do
+    test "token_balances_count excludes scam tokens when hide_scam_addresses is true", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      address = insert(:address)
+
+      legit_balance =
+        insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+          address: address,
+          token_type: "ERC-20",
+          token_id: Enum.random(1..100_000)
+        )
+
+      scam_balance =
+        insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+          address: address,
+          token_type: "ERC-20",
+          token_id: Enum.random(1..100_000)
+        )
+
+      insert(:scam_badge_to_address, address_hash: scam_balance.token_contract_address_hash)
+
+      response =
+        conn
+        |> get("/api/v2/addresses/#{address.hash}/tabs-counters")
+        |> json_response(200)
+
+      assert response["token_balances_count"] == 1
+
+      tokens_response =
+        conn
+        |> get("/api/v2/addresses/#{address.hash}/tokens?type=ERC-20")
+        |> json_response(200)
+
+      assert Enum.count(tokens_response["items"]) == 1
+
+      assert List.first(tokens_response["items"])["token"]["address_hash"] ==
+               to_string(legit_balance.token_contract_address_hash)
+    end
+
     test "get 200 on non existing address", %{conn: conn} do
       address = build(:address)
 

@@ -34,6 +34,8 @@ defmodule Explorer.Chain.Address.Counters do
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
 
+  alias Explorer.Helper, as: ExplorerHelper
+
   require Logger
 
   @typep counter :: non_neg_integer() | nil
@@ -73,7 +75,7 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   def check_if_tokens_at_address(address_hash, options \\ []) do
-    select_repo(options).exists?(address_hash_to_token_balances_query(address_hash))
+    select_repo(options).exists?(address_hash_to_token_balances_query(address_hash, options))
   end
 
   @spec check_if_withdrawals_at_address(Hash.Address.t()) :: boolean()
@@ -176,12 +178,13 @@ defmodule Explorer.Chain.Address.Counters do
     Repo.aggregate(query, :count, timeout: :infinity)
   end
 
-  def address_hash_to_token_balances_query(address_hash) do
+  def address_hash_to_token_balances_query(address_hash, options \\ []) do
     from(
       tb in CurrentTokenBalance,
       where: tb.address_hash == ^address_hash,
       where: tb.value > 0 or tb.token_type == "ERC-7984"
     )
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
   end
 
   @doc """
@@ -414,7 +417,7 @@ defmodule Explorer.Chain.Address.Counters do
       configure_task(
         :token_balances,
         cached_counters,
-        address_hash_to_token_balances_query(address_hash),
+        address_hash_to_token_balances_query(address_hash, options),
         address_hash,
         options
       )
