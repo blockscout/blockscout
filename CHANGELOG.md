@@ -17,6 +17,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix filecoin view error ([#14255](https://github.com/blockscout/blockscout/pull/14255))
 - Internal transactions on-demand fetcher: check existence of deleted internal transactions address placeholders ([#14249](https://github.com/blockscout/blockscout/pull/14249))
 - Fix OnDemand.InternalTransaction fetcher ([#14242](https://github.com/blockscout/blockscout/pull/14242))
 - Guard missing ETS table in contract creator fetcher ([#14241](https://github.com/blockscout/blockscout/pull/14241))
