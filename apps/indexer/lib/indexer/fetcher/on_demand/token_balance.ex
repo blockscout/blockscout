@@ -114,6 +114,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
         |> Map.put(:block_number, latest_block_number)
         |> Map.put(:token_id, ctb.token_id && Decimal.to_integer(ctb.token_id))
         |> Map.put(:token_contract_address_hash, to_string(ctb.token_contract_address_hash))
+        |> Map.put(:address_hash, to_string(ctb.address_hash))
 
       result =
         if ctb.token_type == "ERC-1155" do
@@ -154,7 +155,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
       {:fetch,
        %{
          token_contract_address_hash: stale_current_token_balance.token_contract_address_hash,
-         address_hash: to_string(stale_current_token_balance.address_hash),
+         address_hash: stale_current_token_balance.address_hash,
          block_number: nil,
          token_id: token_id,
          token_type: stale_current_token_balance.token_type,
@@ -268,7 +269,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   end
 
   defp ctb_to_key(ctb) do
-    {ctb.token_contract_address_hash.bytes, ctb.token_type, ctb.token_id && Decimal.to_integer(ctb.token_id)}
+    {ctb.address_hash.bytes, ctb.token_contract_address_hash.bytes, ctb.token_type,
+     ctb.token_id && Decimal.to_integer(ctb.token_id)}
   end
 
   defp prepare_updated_balance({{:ok, updated_balance}, stale_current_token_balance}, block_number) do
