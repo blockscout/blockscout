@@ -285,15 +285,26 @@ defmodule Explorer.Market.Fetcher.TokenTest do
         insert(:token,
           fiat_value: Decimal.new("5.0"),
           circulating_market_cap: Decimal.new("1000"),
-          volume_24h: Decimal.new("500")
+          volume_24h: Decimal.new("500"),
+          circulating_supply: Decimal.new("2000")
         )
 
-      # Token that source will NOT return — should be nullified
+      # Token that source will NOT return — should be nullified across all market fields
       token_stale =
         insert(:token,
           fiat_value: Decimal.new("3.0"),
           circulating_market_cap: Decimal.new("800"),
-          volume_24h: Decimal.new("200")
+          volume_24h: Decimal.new("200"),
+          circulating_supply: Decimal.new("1500")
+        )
+
+      # Token with nil fiat_value — WHERE clause should leave it alone even if not in seen set
+      token_already_nil =
+        insert(:token,
+          fiat_value: nil,
+          circulating_market_cap: nil,
+          volume_24h: Decimal.new("999"),
+          circulating_supply: Decimal.new("3000")
         )
 
       coins_list = [
@@ -329,14 +340,22 @@ defmodule Explorer.Market.Fetcher.TokenTest do
       assert returned.fiat_value
       assert returned.circulating_market_cap
 
-      # Stale token has market data nullified
+      # Stale token has all market data fields nullified
       stale = Repo.get_by(Token, contract_address_hash: token_stale.contract_address_hash)
       assert is_nil(stale.fiat_value)
       assert is_nil(stale.circulating_market_cap)
       assert is_nil(stale.volume_24h)
+      assert is_nil(stale.circulating_supply)
+
+      # Token with nil fiat_value is skipped by the WHERE clause — other fields untouched
+      skipped = Repo.get_by(Token, contract_address_hash: token_already_nil.contract_address_hash)
+      assert Decimal.equal?(skipped.volume_24h, Decimal.new("999"))
+      assert Decimal.equal?(skipped.circulating_supply, Decimal.new("3000"))
     end
 
-    test "skips nullification when source returns no tokens", %{bypass: bypass} do
+    test "does not nullify when source errors out (empty coin list)", %{bypass: bypass} do
+      # Empty /coins/list makes CoinGecko return {:error, "Tokens not found..."}, exercising
+      # the error branch in handle_info — nullify is never called.
       token_with_data = insert(:token, fiat_value: Decimal.new("5.0"), circulating_market_cap: Decimal.new("1000"))
 
       Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
@@ -346,14 +365,54 @@ defmodule Explorer.Market.Fetcher.TokenTest do
       GenServer.start_link(TokenFetcher, [])
       :timer.sleep(200)
 
-      # Token should keep its data — empty-set guard prevents wipe
       token = Repo.get_by(Token, contract_address_hash: token_with_data.contract_address_hash)
       assert token.fiat_value
     end
 
+    test "skips nullification when all returned tokens are filtered out (empty seen set)", %{bypass: bypass} do
+      # Source returns a token, but with $0 — zero_or_nil? filter drops it.
+      # seen_token_hashes ends up empty → `!Enum.empty?` guard prevents any DB writes.
+      token_existing = insert(:token, fiat_value: Decimal.new("5.0"), circulating_market_cap: Decimal.new("1000"))
+
+      filtered_out_address = "0x00000000000000000000000000000000000000aa"
+
+      coins_list = [
+        %{
+          "id" => "zero_token",
+          "symbol" => "ZT",
+          "name" => "Zero Token",
+          "platforms" => %{"ethereum" => filtered_out_address}
+        }
+      ]
+
+      Bypass.expect_once(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, Jason.encode!(coins_list))
+      end)
+
+      Bypass.expect_once(bypass, "GET", "/simple/price", fn conn ->
+        Conn.resp(conn, 200, Jason.encode!(%{"zero_token" => %{"usd" => 0, "usd_market_cap" => 0, "usd_24h_vol" => 0}}))
+      end)
+
+      GenServer.start_link(TokenFetcher, [])
+      :timer.sleep(200)
+
+      # Pre-existing token was NOT in the (empty) seen set, yet still retains data because
+      # the guard short-circuits before the UPDATE runs.
+      token = Repo.get_by(Token, contract_address_hash: token_existing.contract_address_hash)
+      assert Decimal.equal?(token.fiat_value, Decimal.new("5.0"))
+      assert Decimal.equal?(token.circulating_market_cap, Decimal.new("1000"))
+    end
+
     test "tokens with $0 fiat_value are filtered out and their market data is nullified", %{bypass: bypass} do
       # Token that source returns with $0 price — filtered out, not added to seen set
-      token_zero_price = insert(:token, fiat_value: Decimal.new("2.0"), circulating_market_cap: Decimal.new("500"))
+      token_zero_price =
+        insert(:token,
+          fiat_value: Decimal.new("2.0"),
+          circulating_market_cap: Decimal.new("500"),
+          volume_24h: Decimal.new("50"),
+          circulating_supply: Decimal.new("123")
+        )
+
       # A second token with a real price — goes into seen set, triggering nullification of the $0 token
       token_real_price = insert(:token, fiat_value: Decimal.new("1.0"))
 
@@ -396,11 +455,12 @@ defmodule Explorer.Market.Fetcher.TokenTest do
       GenServer.start_link(TokenFetcher, [])
       :timer.sleep(200)
 
-      # $0-price token is not in seen set → gets nullified
+      # $0-price token is not in seen set → gets nullified across all market fields
       token = Repo.get_by(Token, contract_address_hash: token_zero_price.contract_address_hash)
       assert is_nil(token.fiat_value)
       assert is_nil(token.circulating_market_cap)
       assert is_nil(token.volume_24h)
+      assert is_nil(token.circulating_supply)
 
       # Real-price token is in seen set → retains its data
       real = Repo.get_by(Token, contract_address_hash: token_real_price.contract_address_hash)

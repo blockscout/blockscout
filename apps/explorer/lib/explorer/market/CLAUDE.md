@@ -1,1 +1,1 @@
-See AGENT.md in this directory for context.
+@AGENTS.md

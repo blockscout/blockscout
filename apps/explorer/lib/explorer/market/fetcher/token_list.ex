@@ -8,13 +8,13 @@ defmodule Explorer.Market.Fetcher.TokenList do
   """
   use GenServer, restart: :transient
 
-  require Logger
-
   use Utils.RuntimeEnvHelper,
     chain_id: [:explorer, :chain_id]
 
   alias Explorer.{Chain, HttpClient}
   alias Explorer.Chain.Import.Runner.Tokens
+
+  require Logger
 
   defstruct [:url, :refetch_interval]
 
