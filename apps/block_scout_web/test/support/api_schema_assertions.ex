@@ -51,18 +51,13 @@ defmodule BlockScoutWeb.TestApiSchemaAssertions do
   defp maybe_assert_schema(_conn, _status_code, _json), do: :ok
 
   defp find_path_item(specs, request_path) do
-    api_relative = strip_api_prefix(request_path)
-
     Enum.reduce_while(specs, :error, fn %{paths: paths} = spec, acc ->
-      case match_template_path(paths, api_relative) do
+      case match_template_path(paths, request_path) do
         {:ok, {_, path_item}} -> {:halt, {:ok, spec, path_item}}
         _ -> {:cont, acc}
       end
     end)
   end
-
-  defp strip_api_prefix("/api" <> rest), do: rest
-  defp strip_api_prefix(path), do: path
 
   defp match_template_path(paths_map, actual_path) do
     actual_segments = split_path(actual_path)

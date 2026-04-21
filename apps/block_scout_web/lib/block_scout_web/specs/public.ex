@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.Specs.Public do
   def spec do
     %OpenApi{
       servers: [
-        %Server{url: to_string(Helper.instance_url() |> URI.append_path("/api"))}
+        %Server{url: to_string(Helper.instance_url())}
       ],
       info: %Info{
         title: "Blockscout",
@@ -76,9 +76,10 @@ defmodule BlockScoutWeb.Specs.Public do
       },
       paths:
         ApiRouter
-        |> Paths.from_router()
-        |> Map.merge(Paths.from_routes(Specs.routes_with_prefix(TokensApiV2Router, "/v2/tokens")))
-        |> Map.merge(Paths.from_routes(Specs.routes_with_prefix(SmartContractsApiV2Router, "/v2/smart-contracts"))),
+        |> Specs.routes_with_prefix("/api")
+        |> Paths.from_routes()
+        |> Map.merge(Paths.from_routes(Specs.routes_with_prefix(TokensApiV2Router, "/api/v2/tokens")))
+        |> Map.merge(Paths.from_routes(Specs.routes_with_prefix(SmartContractsApiV2Router, "/api/v2/smart-contracts"))),
       tags:
         Enum.map(@default_api_categories, fn category -> %Tag{name: category} end) ++
           chain_type_category_tags() ++ [%Tag{name: "legacy"}]
