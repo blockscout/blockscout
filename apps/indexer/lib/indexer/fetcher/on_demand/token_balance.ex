@@ -259,11 +259,16 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
 
   defp filter_imported_ctbs(imported_ctbs, balances_map) do
     Enum.filter(imported_ctbs, fn ctb ->
-      if balance = balances_map[ctb_to_key(ctb)] do
-        Decimal.compare(balance, ctb.value) != :eq
-      else
-        Logger.error("Imported unknown balance")
-        true
+      case Map.fetch(balances_map, ctb_to_key(ctb)) do
+        {:ok, nil} ->
+          true
+
+        {:ok, balance} ->
+          Decimal.compare(balance, ctb.value) != :eq
+
+        :error ->
+          Logger.error("Imported unknown balance #{inspect(ctb)}")
+          true
       end
     end)
   end
