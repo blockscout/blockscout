@@ -780,6 +780,48 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       check_paginated_response(response, response_2nd_page, logs)
     end
+
+    test "includes called method ABI and arguments", %{conn: conn} do
+      event_abi = %{
+        "name" => "Set",
+        "type" => "event",
+        "inputs" => [%{"name" => "x", "type" => "uint256", "indexed" => false, "internalType" => "uint256"}],
+        "anonymous" => false
+      }
+
+      contract_address = insert(:contract_address)
+      insert(:smart_contract, address_hash: contract_address.hash, abi: [event_abi])
+
+      topic1_bytes = ExKeccak.hash_256("Set(uint256)")
+      topic1 = "0x" <> Base.encode16(topic1_bytes, case: :lower)
+
+      log_data = "0x0000000000000000000000000000000000000000000000000000000000000032"
+
+      transaction = :transaction |> insert() |> with_block()
+
+      insert(:log,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        address: contract_address,
+        first_topic: TestHelper.topic(topic1),
+        data: log_data
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/logs")
+
+      assert response = json_response(request, 200)
+      assert [log_from_api] = response["items"]
+
+      assert log_from_api["decoded"]["abi"]["name"] == "Set"
+      assert log_from_api["decoded"]["abi"]["type"] == "event"
+
+      assert log_from_api["decoded"]["abi"]["inputs"] == [
+               %{"indexed" => false, "internalType" => "uint256", "name" => "x", "type" => "uint256"}
+             ]
+
+      refute Map.has_key?(log_from_api, "called_method")
+    end
   end
 
   describe "/transactions/{transaction_hash}/token-transfers" do
@@ -2990,7 +3032,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       log_from_api = Enum.at(response["logs_data"]["items"], 0)
       assert not is_nil(log_from_api["decoded"])
 
-      assert log_from_api["decoded"] == %{
+      assert Map.drop(log_from_api["decoded"], ["abi"]) == %{
                "method_call" =>
                  "OptionSettled(uint256 indexed accountId, address option, uint256 subId, int256 amount, int256 value)",
                "method_id" => "d20a68b2",
@@ -3027,6 +3069,9 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  }
                ]
              }
+
+      assert log_from_api["decoded"]["abi"]["name"] == "OptionSettled"
+      assert log_from_api["decoded"]["abi"]["type"] == "event"
     end
 
     test "test corner case, when preload functions face absent smart contract", %{conn: conn} do

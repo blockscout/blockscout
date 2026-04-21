@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General.DecodedLogInput do
     properties: %{
       method_id: %Schema{type: :string, nullable: true},
       method_call: %Schema{type: :string, nullable: true},
+      abi: %Schema{type: :object, nullable: true},
       parameters: %Schema{
         type: :array,
         items: %Schema{

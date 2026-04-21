@@ -788,11 +788,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   """
   @spec logs(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def logs(conn, %{transaction_hash_param: transaction_hash_string} = params) do
-    with {:ok, _transaction, transaction_hash} <- validate_transaction(transaction_hash_string, params) do
+    with {:ok, transaction, transaction_hash} <- validate_transaction(transaction_hash_string, params) do
       full_options =
         [
           necessity_by_association: %{
             [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional,
+            [transaction: [to_address: [:smart_contract, proxy_implementations_smart_contracts_association()]]] =>
+              :optional,
             :block => :optional
           }
         ]
@@ -810,6 +812,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:logs, %{
+        transaction: transaction,
         transaction_hash: transaction_hash,
         logs: logs |> maybe_preload_ens() |> maybe_preload_metadata(),
         next_page_params: next_page_params
