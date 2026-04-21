@@ -27,7 +27,9 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       internal_transaction_call_type_options: 1
     ]
 
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1, maybe_preload_ens_for_transactions: 1]
+  import Explorer.MicroserviceInterfaces.BENS,
+    only: [maybe_preload_ens: 1, maybe_preload_ens_for_blocks: 1, maybe_preload_ens_for_transactions: 1]
+
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
@@ -211,7 +213,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     conn
     |> put_status(200)
     |> render(:blocks, %{
-      blocks: blocks |> maybe_preload_ens() |> maybe_preload_metadata(),
+      blocks: blocks |> maybe_preload_ens_for_blocks() |> maybe_preload_metadata(),
       next_page_params: next_page_params
     })
   end
@@ -258,7 +260,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     conn
     |> put_status(200)
     |> render(:blocks, %{
-      blocks: blocks |> maybe_preload_ens() |> maybe_preload_metadata(),
+      blocks: blocks |> maybe_preload_ens_for_blocks() |> maybe_preload_metadata(),
       next_page_params: next_page_params
     })
   end
@@ -306,7 +308,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     conn
     |> put_status(200)
     |> render(:blocks, %{
-      blocks: blocks |> maybe_preload_ens() |> maybe_preload_metadata(),
+      blocks: blocks |> maybe_preload_ens_for_blocks() |> maybe_preload_metadata(),
       next_page_params: next_page_params
     })
   end
@@ -354,7 +356,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     conn
     |> put_status(200)
     |> render(:blocks, %{
-      blocks: blocks |> maybe_preload_ens() |> maybe_preload_metadata(),
+      blocks: blocks |> maybe_preload_ens_for_blocks() |> maybe_preload_metadata(),
       next_page_params: next_page_params
     })
   end
