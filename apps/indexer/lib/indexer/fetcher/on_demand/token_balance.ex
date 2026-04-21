@@ -21,20 +21,11 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
 
   @behaviour BufferedTask
 
-  @max_batch_size 500
-  @max_concurrency 4
-  @defaults [
-    flush_interval: :timer.seconds(3),
-    max_concurrency: @max_concurrency,
-    max_batch_size: @max_batch_size,
-    task_supervisor: Indexer.Fetcher.OnDemand.TokenBalance.TaskSupervisor,
-    metadata: [fetcher: :token_balance_on_demand]
-  ]
-
   @spec trigger_fetch(String.t() | nil, Hash.Address.t()) :: :ok
   def trigger_fetch(caller \\ nil, address_hash) do
     if not __MODULE__.Supervisor.disabled?() and RateLimiter.check_rate(caller, :on_demand) == :allow do
-      BufferedTask.buffer(__MODULE__, [{:fetch, address_hash}], false)
+      fetch_data = prepare_fetch_entries_for_buffer(address_hash, latest_block_number())
+      BufferedTask.buffer(__MODULE__, fetch_data, false)
     end
   end
 
@@ -59,7 +50,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   @doc false
   def child_spec([init_options, gen_server_options]) do
     merged_init_opts =
-      @defaults
+      defaults()
       |> Keyword.merge(init_options)
       |> Keyword.put(:state, %{})
 
@@ -106,42 +97,26 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   defp prepare_fetch_requests(nil, _latest_block_number),
     do: %{nft_balances: [], ft_balances: [], tokens: %{}, balances_map: %{}}
 
-  defp prepare_fetch_requests(address_hashes, latest_block_number) do
+  defp prepare_fetch_requests(entries, latest_block_number) do
     initial_acc = %{nft_balances: [], ft_balances: [], tokens: %{}, balances_map: %{}}
 
-    case stale_balance_window(latest_block_number) do
-      {:error, _} ->
-        initial_acc
-
-      stale_balance_window ->
-        address_hashes
-        |> Enum.uniq()
-        |> Chain.fetch_last_token_balances_include_unfetched()
-        |> delete_invalid_balances()
-        |> Enum.filter(fn current_token_balance -> current_token_balance.block_number < stale_balance_window end)
-        |> prepare_ctb_params(initial_acc, latest_block_number)
-    end
-  end
-
-  defp prepare_ctb_params(current_token_balances, initial_acc, block_number) do
-    Enum.reduce(current_token_balances, initial_acc, fn %{token_id: token_id} = stale_current_token_balance, acc ->
-      prepared_ctb = %{
-        token_contract_address_hash: to_string(stale_current_token_balance.token_contract_address_hash),
-        address_hash: to_string(stale_current_token_balance.address_hash),
-        block_number: block_number,
-        token_id: token_id && Decimal.to_integer(token_id),
-        token_type: stale_current_token_balance.token_type
-      }
-
+    Enum.reduce(entries, initial_acc, fn ctb, acc ->
       updated_tokens =
         Map.put_new(
           acc[:tokens],
-          stale_current_token_balance.token_contract_address_hash.bytes,
-          stale_current_token_balance.token
+          ctb.token.contract_address_hash.bytes,
+          ctb.token
         )
 
+      prepared_ctb =
+        ctb
+        |> Map.drop([:token, :stale_value])
+        |> Map.put(:block_number, latest_block_number)
+        |> Map.put(:token_id, ctb.token_id && Decimal.to_integer(ctb.token_id))
+        |> Map.put(:token_contract_address_hash, to_string(ctb.token_contract_address_hash))
+
       result =
-        if stale_current_token_balance.token_type == "ERC-1155" do
+        if ctb.token_type == "ERC-1155" do
           Map.put(acc, :nft_balances, [prepared_ctb | acc[:nft_balances]])
         else
           Map.put(acc, :ft_balances, [prepared_ctb | acc[:ft_balances]])
@@ -150,13 +125,42 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
       updated_balances_map =
         Map.put(
           acc[:balances_map],
-          ctb_to_key(stale_current_token_balance),
-          stale_current_token_balance.value
+          ctb_to_key(ctb),
+          ctb.stale_value
         )
 
       result
       |> Map.put(:tokens, updated_tokens)
       |> Map.put(:balances_map, updated_balances_map)
+    end)
+  end
+
+  defp prepare_fetch_entries_for_buffer(address_hash, latest_block_number) do
+    case stale_balance_window(latest_block_number) do
+      {:error, _} ->
+        []
+
+      stale_balance_window ->
+        address_hash
+        |> Chain.fetch_last_token_balances_include_unfetched()
+        |> delete_invalid_balances()
+        |> Enum.filter(fn current_token_balance -> current_token_balance.block_number < stale_balance_window end)
+        |> prepare_ctb_params_for_buffer()
+    end
+  end
+
+  defp prepare_ctb_params_for_buffer(current_token_balances) do
+    Enum.map(current_token_balances, fn %{token_id: token_id} = stale_current_token_balance ->
+      {:fetch,
+       %{
+         token_contract_address_hash: stale_current_token_balance.token_contract_address_hash,
+         address_hash: to_string(stale_current_token_balance.address_hash),
+         block_number: nil,
+         token_id: token_id,
+         token_type: stale_current_token_balance.token_type,
+         token: stale_current_token_balance.token,
+         stale_value: stale_current_token_balance.value
+       }}
     end)
   end
 
@@ -319,5 +323,15 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
           block_number - div(threshold, average_block_time)
         end
     end
+  end
+
+  defp defaults do
+    [
+      flush_interval: :timer.seconds(3),
+      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency],
+      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size],
+      task_supervisor: Indexer.Fetcher.OnDemand.TokenBalance.TaskSupervisor,
+      metadata: [fetcher: :token_balance_on_demand]
+    ]
   end
 end

@@ -181,15 +181,23 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalanceTest do
 
       success_eth_call_expectation("0x00000000000000000000000000000000000000000000d3c21bcecceda1000000")
 
-      assert TokenBalanceOnDemand.run(
-               [{:fetch, address.hash}],
-               nil
-             ) == :ok
+      TokenBalanceOnDemand.trigger_fetch(address.hash)
 
-      token_balance_updated = Repo.get_by(CurrentTokenBalance, address_hash: address.hash)
+      updated_ctb =
+        wait_for_results(fn ->
+          Repo.one!(
+            from(
+              ctb in CurrentTokenBalance,
+              where:
+                ctb.address_hash == ^address.hash and
+                  ctb.token_contract_address_hash == ^token_contract_address.hash and
+                  not is_nil(ctb.value)
+            )
+          )
+        end)
 
-      assert token_balance_updated.value == Decimal.new(1_000_000_000_000_000_000_000_000)
-      assert token_balance_updated.value_fetched_at != nil
+      assert updated_ctb.value == Decimal.new(1_000_000_000_000_000_000_000_000)
+      assert updated_ctb.value_fetched_at != nil
     end
   end
 
