@@ -6,7 +6,7 @@
   "private": true,
   "name": "blockscout",
   "author": "Blockscout",
-  "license": "GPL-3.0",
+  "license": "SEE LICENSE IN ../../LICENSE",
   "engines": {
     "node": "18.x",
     "npm": "8.x"
