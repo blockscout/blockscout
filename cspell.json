@@ -4,7 +4,7 @@
     // Version of the setting file.  Always 0.2
     "version": "0.2",
     // language - current active spelling language
-    "language": "en",
+    "language": "en,en-GB",
     // enabled - enable code editor suggestions
     "enabled": true,
     // files - glob patterns of files to be checked
@@ -388,7 +388,6 @@
         "libraryaddress",
         "libraryname",
         "libsecp",
-        "Licence",
         "Limegreen",
         "linecap",
         "linejoin",
