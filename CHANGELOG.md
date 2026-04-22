@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- restore BENS preloads on the main page under toggle and add blocks BENS preload toggle ([#14262](https://github.com/blockscout/blockscout/pull/14262))
 - /api/legacy/* wrappers for three ES-compatible RPC endpoints ([#14239](https://github.com/blockscout/blockscout/pull/14239))
 - Make token balances import chunk size configurable ([#14250](https://github.com/blockscout/blockscout/pull/14250))
 - Async CSV export ([#14028](https://github.com/blockscout/blockscout/issues/14028))
