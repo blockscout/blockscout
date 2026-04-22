@@ -3449,7 +3449,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       old_env = Application.get_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance)
       configuration = Application.get_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance.Supervisor)
       Application.put_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance.Supervisor, disabled?: false)
-      Indexer.Fetcher.OnDemand.TokenBalance.Supervisor.Case.start_supervised!()
+      Indexer.Fetcher.OnDemand.TokenBalance.Supervisor.Case.start_supervised!(max_batch_size: 100)
 
       Application.put_env(
         :indexer,
