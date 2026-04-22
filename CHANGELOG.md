@@ -4,7 +4,7 @@
 
 ### 🚀 Features
 
-- restore BENS preloads on the main page under toggle and add blocks BENS preload toggle ([#14262](https://github.com/blockscout/blockscout/pull/14262))
+- Restore BENS preloads on the main page under toggle and add blocks BENS preload toggle ([#14262](https://github.com/blockscout/blockscout/pull/14262))
 - /api/legacy/* wrappers for three ES-compatible RPC endpoints ([#14239](https://github.com/blockscout/blockscout/pull/14239))
 - Make token balances import chunk size configurable ([#14250](https://github.com/blockscout/blockscout/pull/14250))
 - Async CSV export ([#14028](https://github.com/blockscout/blockscout/issues/14028))
@@ -63,6 +63,7 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Update LICENCE ([#14201](https://github.com/blockscout/blockscout/pull/14201))
+- Remove "transaction_hash", "block_hash" and "block_index" from internal transactions, migrate Address Hashes to Address IDs ([#14099](https://github.com/blockscout/blockscout/issues/14099))
 - Remove timeout for test for FillInternalTransactionsAddressIds ([#14266](https://github.com/blockscout/blockscout/pull/14266))
 - Increase default timeout for FillInternalTransactionsAddressIds ([#14264](https://github.com/blockscout/blockscout/pull/14264))
 - Expand action of API_DISABLE_CONTRACT_CREATION_INTERNAL_TRANSACTION_ASSOCIATION flag to preload smart-contract associations ((#14257)[https://github.com/blockscout/blockscout/pull/14257])
@@ -74,7 +75,6 @@
 - FillInternalTransactionsAddressIds improvements ([#14208](https://github.com/blockscout/blockscout/pull/14208))
 - Remove timeout between successful migrations ([#14198](https://github.com/blockscout/blockscout/issues/14198))
 - Add batch size env for FillInternalTransactionsAddressIds migration ([#14204](https://github.com/blockscout/blockscout/issues/14204))
-- Remove transaction_hash from internal transactions ([#14099](https://github.com/blockscout/blockscout/issues/14099))
 - Add Celo OpenAPI specs ([#14197](https://github.com/blockscout/blockscout/issues/14197), [#14229](https://github.com/blockscout/blockscout/pull/14229))
 - Cover counters to multichain export with unit tests ([#14193](https://github.com/blockscout/blockscout/issues/14193))
 - Update credo config ([#14147](https://github.com/blockscout/blockscout/issues/14147))
