@@ -4,15 +4,15 @@
 
 ### 🚀 Features
 
+- Async CSV export ([#14028](https://github.com/blockscout/blockscout/issues/14028))
+- FHE operations and tags ([#13742](https://github.com/blockscout/blockscout/issues/13742))
 - Restore BENS preloads on the main page under toggle and add blocks BENS preload toggle ([#14262](https://github.com/blockscout/blockscout/pull/14262))
 - /api/legacy/* wrappers for three ES-compatible RPC endpoints ([#14239](https://github.com/blockscout/blockscout/pull/14239))
 - Make token balances import chunk size configurable ([#14250](https://github.com/blockscout/blockscout/pull/14250))
-- Async CSV export ([#14028](https://github.com/blockscout/blockscout/issues/14028))
 - Add toggle to disable transactions / token transfers BENS preload ([#14159](https://github.com/blockscout/blockscout/issues/14159))
 - Add ENS and metadata preloading in block channel ([#12074](https://github.com/blockscout/blockscout/issues/12074))
 - Add validation for IPFS links before sending requests to gateway ([#14131](https://github.com/blockscout/blockscout/issues/14131))
 - Add search by token address hash in /api/v2/tokens ([#14102](https://github.com/blockscout/blockscout/issues/14102))
-- FHE operations and tags ([#13742](https://github.com/blockscout/blockscout/issues/13742))
 - Add :rename heavy index db operation type and implement zero-downtime index replacement for transactions table ([#14052](https://github.com/blockscout/blockscout/issues/14052))
 - Use libraries field from eth bytecode db response ([#13948](https://github.com/blockscout/blockscout/issues/13948))
 
@@ -28,7 +28,6 @@
 - Handle partial errors in ContractCode fetch_codes ([#14211](https://github.com/blockscout/blockscout/pull/14211))
 - Include bridged token query params in OpenAPI spec ([#14209](https://github.com/blockscout/blockscout/pull/14209))
 - Update changed constraint name in shrink IT migration ([#14205](https://github.com/blockscout/blockscout/pull/14205))
-- Optimize token1155tx API v1 endpoint ([#14202](https://github.com/blockscout/blockscout/issues/14202))
 - Fix contract internal transactions preload ([#14203](https://github.com/blockscout/blockscout/issues/14203))
 - Handle RPC errors in ContractCreator, limit retries to 5 ([#14136](https://github.com/blockscout/blockscout/issues/14136))
 - Prevent duplicate missing block range inserts ([#14138](https://github.com/blockscout/blockscout/issues/14138))
@@ -55,6 +54,7 @@
 
 ### ⚡ Performance
 
+- Optimize token1155tx API v1 endpoint ([#14202](https://github.com/blockscout/blockscout/issues/14202))
 - Optimize optional address preloads across tx endpoints ([#14165](https://github.com/blockscout/blockscout/pull/14165))
 - Optimize on demand hot contracts performance ([#14150](https://github.com/blockscout/blockscout/issues/14150))
 - Remove join to "blocks" in api/v2/blocks/:block_number/transactions API endpoint ([#14162](https://github.com/blockscout/blockscout/issues/14162))
