@@ -61,6 +61,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Update LICENCE ([#14201](https://github.com/blockscout/blockscout/pull/14201))
 - Remove timeout for test for FillInternalTransactionsAddressIds ([#14266](https://github.com/blockscout/blockscout/pull/14266))
 - Increase default timeout for FillInternalTransactionsAddressIds ([#14264](https://github.com/blockscout/blockscout/pull/14264))
 - Expand action of API_DISABLE_CONTRACT_CREATION_INTERNAL_TRANSACTION_ASSOCIATION flag to preload smart-contract associations ((#14257)[https://github.com/blockscout/blockscout/pull/14257])
