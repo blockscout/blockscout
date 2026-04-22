@@ -17,6 +17,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   alias Explorer.Chain.{Address, Block, Hash, Token}
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.Cache.BackgroundMigrations
+  alias Explorer.Utility.MissingBalanceOfToken
 
   @default_paging_options %PagingOptions{page_size: 50}
 
@@ -350,6 +351,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
         when accumulator: term()
   def stream_unfetched_current_token_balances(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
     unfetched_current_token_balances()
+    |> MissingBalanceOfToken.filter_token_balances_query()
     |> TokenBalance.add_token_balances_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
   end
