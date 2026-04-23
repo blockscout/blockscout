@@ -148,6 +148,36 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     }
   ]
 
+  @base_counter_name_to_json_field_name %{
+    validations: :validations_count,
+    transactions: :transactions_count,
+    token_transfers: :token_transfers_count,
+    token_balances: :token_balances_count,
+    logs: :logs_count,
+    withdrawals: :withdrawals_count,
+    internal_transactions: :internal_transactions_count
+  }
+
+  case @chain_identity do
+    {:optimism, :celo} ->
+      @chain_identity_counter_name_to_json_field_name %{celo_election_rewards: :celo_election_rewards_count}
+
+    _ ->
+      @chain_identity_counter_name_to_json_field_name %{}
+  end
+
+  case @chain_type do
+    :ethereum ->
+      @chain_type_counter_name_to_json_field_name %{beacon_deposits: :beacon_deposits_count}
+
+    _ ->
+      @chain_type_counter_name_to_json_field_name %{}
+  end
+
+  @counter_name_to_json_field_name @base_counter_name_to_json_field_name
+                                   |> Map.merge(@chain_identity_counter_name_to_json_field_name)
+                                   |> Map.merge(@chain_type_counter_name_to_json_field_name)
+
   @spec include_internal_transaction_association?() :: boolean()
   defp include_internal_transaction_association? do
     !Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false)
@@ -1170,25 +1200,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   @spec tabs_counters(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def tabs_counters(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
-      counter_name_to_json_field_name = %{
-        validations: :validations_count,
-        transactions: :transactions_count,
-        token_transfers: :token_transfers_count,
-        token_balances: :token_balances_count,
-        logs: :logs_count,
-        withdrawals: :withdrawals_count,
-        internal_transactions: :internal_transactions_count,
-        celo_election_rewards: :celo_election_rewards_count,
-        beacon_deposits: :beacon_deposits_count
-      }
-
       case Chain.hash_to_address(address_hash, hash_to_address_options(@address_options)) do
         {:ok, _address} ->
           counters_json =
             address_hash
             |> Counters.address_limited_counters(@api_true)
             |> Enum.reduce(%{}, fn {counter_name, counter_value}, acc ->
-              counter_name_to_json_field_name
+              @counter_name_to_json_field_name
               |> Map.fetch(counter_name)
               # credo:disable-for-next-line
               |> case do
@@ -1206,7 +1224,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
         _ ->
           counters_json =
-            counter_name_to_json_field_name
+            @counter_name_to_json_field_name
             |> Enum.reduce(%{}, fn {_counter_type, json_field}, acc ->
               Map.put(acc, json_field, 0)
             end)

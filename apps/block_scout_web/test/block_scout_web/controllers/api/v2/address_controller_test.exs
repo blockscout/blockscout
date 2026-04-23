@@ -2,7 +2,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ConnCase
   use EthereumJSONRPC.Case, async: false
   use BlockScoutWeb.ChannelCase
-  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
+
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
 
   alias ABI.{TypeDecoder, TypeEncoder}
   alias Explorer.{Chain, Repo, TestHelper}
@@ -3905,16 +3908,31 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
       response = json_response(request, 200)
 
-      assert %{
-               "validations_count" => 0,
-               "transactions_count" => 0,
-               "token_transfers_count" => 0,
-               "token_balances_count" => 0,
-               "logs_count" => 0,
-               "withdrawals_count" => 0,
-               "internal_transactions_count" => 0,
-               "celo_election_rewards_count" => 0
-             } = response
+      expected_response =
+        %{
+          "validations_count" => 0,
+          "transactions_count" => 0,
+          "token_transfers_count" => 0,
+          "token_balances_count" => 0,
+          "logs_count" => 0,
+          "withdrawals_count" => 0,
+          "internal_transactions_count" => 0
+        }
+        |> then(fn expected_response ->
+          case @chain_identity do
+            {:optimism, :celo} -> Map.put(expected_response, "celo_election_rewards_count", 0)
+            _ -> expected_response
+          end
+        end)
+        |> then(fn expected_response ->
+          if @chain_type == :ethereum do
+            Map.put(expected_response, "beacon_deposits_count", 0)
+          else
+            expected_response
+          end
+        end)
+
+      assert expected_response == response
     end
 
     test "get 422 on invalid address", %{conn: conn} do
