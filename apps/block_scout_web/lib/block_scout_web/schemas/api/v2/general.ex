@@ -528,8 +528,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   defp sort_description(sort_fields) do
     field_descriptions =
       sort_fields
-      |> Enum.map(fn field -> "* #{field} - #{sort_field_description(field)}" end)
-      |> Enum.join("\n")
+      |> Enum.map_join("\n", fn field -> "* #{field} - #{sort_field_description(field)}" end)
 
     """
     Sort results by:
