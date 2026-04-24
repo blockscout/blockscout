@@ -573,6 +573,11 @@ config :explorer, Explorer.Market.Fetcher.History,
       ConfigHelper.parse_integer_env_var("EXCHANGE_RATES_HISTORY_FIRST_FETCH_DAY_COUNT", 365)
     )
 
+config :explorer, Explorer.Chain.PendingOperationsHelper,
+  transactions_batch_size:
+    ConfigHelper.parse_integer_env_var("PENDING_OPERATIONS_HELPER_TRANSACTIONS_BATCH_SIZE", 1000, min: 1),
+  blocks_batch_size: ConfigHelper.parse_integer_env_var("PENDING_OPERATIONS_HELPER_BLOCKS_BATCH_SIZE", 10, min: 1)
+
 config :explorer, Explorer.Chain.Transaction,
   block_miner_gets_burnt_fees?: ConfigHelper.parse_bool_env_var("BLOCK_MINER_GETS_BURNT_FEES"),
   suave_bid_contracts: System.get_env("SUAVE_BID_CONTRACTS", ""),
