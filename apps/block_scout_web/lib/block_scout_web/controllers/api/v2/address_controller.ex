@@ -53,6 +53,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Explorer.Chain.{Address, Beacon.Deposit, Block, Hash, Token, Transaction}
   alias Explorer.Chain.Address.{CoinBalance, Counters}
 
+  alias Explorer.Chain.Token.FiatValue
   alias Explorer.Chain.Token.Instance
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
@@ -1448,26 +1449,15 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   @spec celo_election_rewards_paging_options(map()) :: PagingOptions.t()
   defp celo_election_rewards_paging_options(params) do
-    with %{
-           epoch_number: epoch_number_string,
-           amount: amount_string,
-           associated_account_address_hash: associated_account_address_hash_string,
-           type: type_string
-         }
-         when is_binary(epoch_number_string) and
-                is_binary(amount_string) and
-                is_binary(associated_account_address_hash_string) and
-                is_binary(type_string) <- params,
-         {:ok, epoch_number} <- safe_parse_non_negative_integer(epoch_number_string),
-         {amount, ""} <- Decimal.parse(amount_string),
-         {:ok, associated_account_address_hash} <-
-           Hash.Address.cast(associated_account_address_hash_string),
-         sanitized_type_string <-
-           type_string
-           |> String.trim()
-           |> String.downcase()
-           |> String.replace("-", "_"),
-         {:ok, type} <- CeloElectionReward.type_from_string(sanitized_type_string) do
+    with {:ok, epoch_number_string} <- fetch_key(params, ["epoch_number", :epoch_number]),
+         {:ok, amount_string} <- fetch_key(params, ["amount", :amount]),
+         {:ok, associated_account_address_hash_string} <-
+           fetch_key(params, ["associated_account_address_hash", :associated_account_address_hash]),
+         {:ok, type_string} <- fetch_key(params, ["type", :type]),
+         {:ok, epoch_number} <- parse_non_negative_integer_string(epoch_number_string),
+         {:ok, amount} <- FiatValue.cast(amount_string),
+         {:ok, associated_account_address_hash} <- Hash.Address.cast(associated_account_address_hash_string),
+         {:ok, type} <- parse_celo_reward_type_string(type_string) do
       %{
         PagingOptions.default_paging_options()
         | key: %{
@@ -1482,6 +1472,36 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         PagingOptions.default_paging_options()
     end
   end
+
+  defp fetch_key(map, keys) when is_list(keys) do
+    Enum.find_value(keys, :error, fn key ->
+      case Map.fetch(map, key) do
+        {:ok, value} -> {:ok, value}
+        :error -> nil
+      end
+    end)
+  end
+
+  @spec parse_non_negative_integer_string(String.t()) :: {:ok, non_neg_integer()} | :error
+  defp parse_non_negative_integer_string(value) when is_binary(value),
+    do: safe_parse_non_negative_integer(value)
+
+  defp parse_non_negative_integer_string(_), do: :error
+
+  @spec parse_celo_reward_type_string(String.t() | atom()) :: {:ok, CeloElectionReward.type()} | :error
+  defp parse_celo_reward_type_string(value) when is_atom(value) do
+    if value in CeloElectionReward.types(), do: {:ok, value}, else: :error
+  end
+
+  defp parse_celo_reward_type_string(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> String.downcase()
+    |> String.replace("-", "_")
+    |> CeloElectionReward.type_from_string()
+  end
+
+  defp parse_celo_reward_type_string(_), do: :error
 
   operation :beacon_deposits,
     summary: "List Beacon Deposits for a specific address",
