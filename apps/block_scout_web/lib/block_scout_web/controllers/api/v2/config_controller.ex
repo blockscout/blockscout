@@ -2,7 +2,9 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.RuntimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
 
   alias Explorer.Chain.CsvExport.Helper, as: CsvHelper
   alias Explorer.Chain.SmartContract
@@ -47,10 +49,15 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
 
   @spec chain_type_translate_to_openapi_spec_folder_name() :: String.t()
   defp chain_type_translate_to_openapi_spec_folder_name do
-    if Application.get_env(:explorer, Explorer.Chain.Mud)[:enabled] do
-      "mud"
-    else
-      chain_type() || "default"
+    cond do
+      Application.get_env(:explorer, Explorer.Chain.Mud)[:enabled] ->
+        "mud"
+
+      chain_identity() == {:optimism, :celo} ->
+        "optimism-celo"
+
+      true ->
+        chain_type() || "default"
     end
   end
 
