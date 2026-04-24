@@ -172,7 +172,7 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
     describe "/api/v2/celo/epochs/:number/election-rewards/:type" do
       test "returns empty list", %{conn: conn} do
         request = get(conn, "/api/v2/celo/epochs/1/election-rewards/voter")
-        assert response = Phoenix.ConnTest.json_response(request, 200)
+        assert response = json_response(request, 200)
         assert response["items"] == []
         assert response["next_page_params"] == nil
       end
@@ -202,7 +202,7 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
         end)
 
         request = get(conn, "/api/v2/celo/epochs/1/election-rewards/voter")
-        assert response = Phoenix.ConnTest.json_response(request, 200)
+        assert response = json_response(request, 200)
 
         assert Enum.count(response["items"]) == 50
         assert response["next_page_params"] != nil
@@ -213,7 +213,7 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
         request_2nd_page =
           get(conn, "/api/v2/celo/epochs/1/election-rewards/voter", response["next_page_params"])
 
-        assert response_2nd_page = Phoenix.ConnTest.json_response(request_2nd_page, 200)
+        assert response_2nd_page = json_response(request_2nd_page, 200)
 
         assert Enum.count(response_2nd_page["items"]) == 1
         assert response_2nd_page["next_page_params"] == nil
