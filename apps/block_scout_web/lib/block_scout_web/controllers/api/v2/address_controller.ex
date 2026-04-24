@@ -53,6 +53,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Explorer.Chain.{Address, Beacon.Deposit, Block, Hash, Token, Transaction}
   alias Explorer.Chain.Address.{CoinBalance, Counters}
 
+  alias Explorer.Chain.Token.FiatValue
   alias Explorer.Chain.Token.Instance
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
@@ -1454,7 +1455,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
            fetch_key(params, ["associated_account_address_hash", :associated_account_address_hash]),
          {:ok, type_string} <- fetch_key(params, ["type", :type]),
          {:ok, epoch_number} <- parse_non_negative_integer_string(epoch_number_string),
-         {:ok, amount} <- parse_decimal_string(amount_string),
+         {:ok, amount} <- FiatValue.cast(amount_string),
          {:ok, associated_account_address_hash} <- Hash.Address.cast(associated_account_address_hash_string),
          {:ok, type} <- parse_celo_reward_type_string(type_string) do
       %{
@@ -1486,16 +1487,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     do: safe_parse_non_negative_integer(value)
 
   defp parse_non_negative_integer_string(_), do: :error
-
-  @spec parse_decimal_string(String.t()) :: {:ok, Decimal.t()} | :error
-  defp parse_decimal_string(value) when is_binary(value) do
-    case Decimal.parse(value) do
-      {amount, ""} -> {:ok, amount}
-      _ -> :error
-    end
-  end
-
-  defp parse_decimal_string(_), do: :error
 
   @spec parse_celo_reward_type_string(String.t() | atom()) :: {:ok, CeloElectionReward.type()} | :error
   defp parse_celo_reward_type_string(value) when is_atom(value) do
