@@ -172,9 +172,52 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
     describe "/api/v2/celo/epochs/:number/election-rewards/:type" do
       test "returns empty list", %{conn: conn} do
         request = get(conn, "/api/v2/celo/epochs/1/election-rewards/voter")
-        assert response = json_response(request, 200)
+        assert response = Phoenix.ConnTest.json_response(request, 200)
         assert response["items"] == []
         assert response["next_page_params"] == nil
+      end
+
+      test "paginates election rewards across two pages", %{conn: conn} do
+        epoch =
+          insert(:celo_epoch,
+            number: 1,
+            fetched?: true,
+            start_block_number: 0,
+            end_block_number: 17_279
+          )
+
+        account_address = insert(:address)
+
+        1..51
+        |> Enum.each(fn amount ->
+          associated_account_address = insert(:address)
+
+          insert(:celo_election_reward,
+            epoch_number: epoch.number,
+            type: :voter,
+            amount: amount,
+            account_address_hash: account_address.hash,
+            associated_account_address_hash: associated_account_address.hash
+          )
+        end)
+
+        request = get(conn, "/api/v2/celo/epochs/1/election-rewards/voter")
+        assert response = Phoenix.ConnTest.json_response(request, 200)
+
+        assert Enum.count(response["items"]) == 50
+        assert response["next_page_params"] != nil
+
+        assert Enum.at(response["items"], 0)["amount"] == "51"
+        assert Enum.at(response["items"], 49)["amount"] == "2"
+
+        request_2nd_page =
+          get(conn, "/api/v2/celo/epochs/1/election-rewards/voter", response["next_page_params"])
+
+        assert response_2nd_page = Phoenix.ConnTest.json_response(request_2nd_page, 200)
+
+        assert Enum.count(response_2nd_page["items"]) == 1
+        assert response_2nd_page["next_page_params"] == nil
+        assert Enum.at(response_2nd_page["items"], 0)["amount"] == "1"
       end
 
       test "returns 422 for invalid epoch number", %{conn: conn} do
