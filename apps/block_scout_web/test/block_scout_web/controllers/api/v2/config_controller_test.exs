@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.API.V2.ConfigControllerTest do
           request = get(conn, "/api/v2/config/backend")
           response = json_response(request, 200)
 
-          assert %{"openapi_spec_folder_name" => "celo"} = response
+          assert %{"openapi_spec_folder_name" => "optimism-celo"} = response
         end
 
       _ ->

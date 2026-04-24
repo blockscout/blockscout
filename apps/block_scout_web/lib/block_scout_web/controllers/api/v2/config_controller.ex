@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
         "mud"
 
       chain_identity() == {:optimism, :celo} ->
-        "celo"
+        "optimism-celo"
 
       true ->
         chain_type() || "default"
