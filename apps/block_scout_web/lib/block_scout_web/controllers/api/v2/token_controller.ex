@@ -686,7 +686,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         [
           address_hash_param(),
           token_id_param(),
-          recaptcha_response_param()
+          recaptcha_response_param(),
+          scoped_recaptcha_bypass_token_param()
         ],
     responses: [
       ok:

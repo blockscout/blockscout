@@ -2035,7 +2035,11 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> subscribe_and_join(topic)
 
       request =
-        patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
+        patch(
+          conn,
+          "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata?scoped_recaptcha_bypass_token=#{scoped_bypass_token}",
+          %{}
+        )
 
       assert %{"message" => "OK"} = json_response(request, 200)
 
@@ -2075,8 +2079,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       request =
         Phoenix.ConnTest.build_conn()
         |> put_req_header("user-agent", "test-agent")
-        |> put_req_header("scoped-recaptcha-bypass-token", scoped_bypass_token)
-        |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
+        |> patch(
+          "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata?scoped_recaptcha_bypass_token=#{scoped_bypass_token}",
+          %{}
+        )
 
       assert %{"message" => "OK"} = json_response(request, 200)
 
@@ -2101,6 +2107,40 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert(token_instance_from_db)
       assert token_instance_from_db.metadata == metadata
+
+      # Verify header-based scoped bypass token also works (prevent regression)
+      request =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("user-agent", "test-agent")
+        |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
+
+      assert json_response(request, 429)
+
+      TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
+
+      token_instance_success_metadata_expectation(url, metadata)
+
+      request =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("user-agent", "test-agent")
+        |> put_req_header("scoped-recaptcha-bypass-token", scoped_bypass_token)
+        |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
+
+      assert %{"message" => "OK"} = json_response(request, 200)
+
+      :timer.sleep(100)
+
+      assert_receive(
+        {:chain_event, :fetched_token_instance_metadata, :on_demand,
+         [^token_contract_address_hash_string, ^token_id, ^metadata]}
+      )
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
+                       event: "fetched_token_instance_metadata",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
     end
 
     test "falls back to normal reCAPTCHA when incorrect scoped bypass api key is supplied", %{
