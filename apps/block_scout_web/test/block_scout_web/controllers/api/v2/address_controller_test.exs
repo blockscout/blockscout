@@ -3449,13 +3449,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       old_env = Application.get_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance)
       configuration = Application.get_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance.Supervisor)
       Application.put_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance.Supervisor, disabled?: false)
-      Indexer.Fetcher.OnDemand.TokenBalance.Supervisor.Case.start_supervised!()
 
       Application.put_env(
         :indexer,
         Indexer.Fetcher.OnDemand.TokenBalance,
-        Keyword.put(old_env, :fallback_threshold_in_blocks, 0)
+        old_env
+        |> Keyword.put(:fallback_threshold_in_blocks, 0)
+        |> Keyword.put(:address_queue_flush_interval, 50)
       )
+
+      Indexer.Fetcher.OnDemand.TokenBalance.Supervisor.Case.start_supervised!(max_batch_size: 100)
 
       on_exit(fn ->
         Application.put_env(:indexer, Indexer.Fetcher.OnDemand.TokenBalance.Supervisor, configuration)

@@ -1117,7 +1117,13 @@ config :indexer, Indexer.Fetcher.TokenCountersUpdater,
 
 config :indexer, Indexer.Fetcher.OnDemand.TokenBalance,
   threshold: ConfigHelper.parse_time_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD", "1h"),
-  fallback_threshold_in_blocks: 500
+  fallback_threshold_in_blocks: 500,
+  batch_size: ConfigHelper.parse_integer_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_BATCH_SIZE", 500),
+  concurrency: ConfigHelper.parse_integer_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_CONCURRENCY", 4),
+  address_queue_batch_size:
+    ConfigHelper.parse_integer_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_ADDRESS_QUEUE_BATCH_SIZE", 50),
+  address_queue_flush_interval:
+    ConfigHelper.parse_time_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_ADDRESS_QUEUE_FLUSH_INTERVAL", "1s")
 
 config :indexer, Indexer.Fetcher.OnDemand.CoinBalance,
   threshold: ConfigHelper.parse_time_env_var("COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD", "1h"),

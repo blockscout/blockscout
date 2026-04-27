@@ -2449,7 +2449,7 @@ defmodule Explorer.Chain do
   end
 
   @spec fetch_last_token_balances_include_unfetched([Hash.Address.t()], [api?]) :: []
-  def fetch_last_token_balances_include_unfetched(address_hashes, options \\ []) do
+  def fetch_last_token_balances_include_unfetched(address_hashes, options \\ []) when is_list(address_hashes) do
     address_hashes
     |> CurrentTokenBalance.last_token_balances_include_unfetched()
     |> select_repo(options).all()
