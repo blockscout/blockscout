@@ -364,10 +364,11 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance.AddressQueue do
 
   @behaviour Indexer.BufferedTask
 
+  alias Explorer.Chain.Hash
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.OnDemand.TokenBalance
 
-  @spec enqueue(term()) :: :ok
+  @spec enqueue(Hash.Address.t()) :: :ok
   def enqueue(address_hash) do
     BufferedTask.buffer(__MODULE__, [address_hash], false)
   end
