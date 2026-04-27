@@ -638,7 +638,7 @@ defmodule Explorer.Chain.InternalTransaction do
     address_id_field = String.to_existing_atom("#{address_field}_id")
 
     cond do
-      address_id_or_ids in [[], nil] or not address_ids_indexes_exists?() ->
+      not address_ids_indexes_exists?() ->
         dynamic([it], field(it, ^address_hash_field) in ^address_hashes)
 
       address_ids_filled?() ->
