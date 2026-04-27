@@ -24,8 +24,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   @spec trigger_fetch(String.t() | nil, Hash.Address.t()) :: :ok
   def trigger_fetch(caller \\ nil, address_hash) do
     if not __MODULE__.Supervisor.disabled?() and RateLimiter.check_rate(caller, :on_demand) == :allow do
-      fetch_data = prepare_fetch_entries_for_buffer(address_hash, latest_block_number())
-      BufferedTask.buffer(__MODULE__, fetch_data, false)
+      __MODULE__.AddressQueue.enqueue(address_hash)
     end
   end
 
@@ -54,7 +53,19 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
       |> Keyword.merge(init_options)
       |> Keyword.put(:state, %{})
 
-    Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_opts}, gen_server_options]}, id: __MODULE__)
+    children = [
+      {Task.Supervisor, name: __MODULE__.AddressQueue.TaskSupervisor},
+      __MODULE__.AddressQueue,
+      {BufferedTask, [{__MODULE__, merged_init_opts}, gen_server_options]}
+    ]
+
+    %{
+      id: __MODULE__,
+      start:
+        {Supervisor, :start_link,
+         [children, [strategy: :one_for_one, name: Module.concat(__MODULE__, InternalSupervisor)]]},
+      type: :supervisor
+    }
   end
 
   @impl BufferedTask
@@ -136,16 +147,17 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
     end)
   end
 
-  defp prepare_fetch_entries_for_buffer(address_hash, latest_block_number) do
+  def prepare_batch_fetch_entries_for_buffer(address_hashes, latest_block_number) do
     case stale_balance_window(latest_block_number) do
       {:error, _} ->
         []
 
       stale_balance_window ->
-        address_hash
+        address_hashes
+        |> Enum.uniq()
         |> Chain.fetch_last_token_balances_include_unfetched()
         |> delete_invalid_balances()
-        |> Enum.filter(fn current_token_balance -> current_token_balance.block_number < stale_balance_window end)
+        |> Enum.filter(fn ctb -> ctb.block_number < stale_balance_window end)
         |> prepare_ctb_params_for_buffer()
     end
   end
@@ -307,7 +319,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
     nil
   end
 
-  defp latest_block_number do
+  def latest_block_number do
     BlockNumber.get_max()
   end
 
@@ -340,5 +352,52 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
       task_supervisor: Indexer.Fetcher.OnDemand.TokenBalance.TaskSupervisor,
       metadata: [fetcher: :token_balance_on_demand]
     ]
+  end
+end
+
+defmodule Indexer.Fetcher.OnDemand.TokenBalance.AddressQueue do
+  @moduledoc """
+  Buffers incoming address hashes from `trigger_fetch/2` and flushes them in batches.
+  Each batch fetches token balances for all addresses in a single DB query,
+  then forwards the results to the main TokenBalance BufferedTask.
+  """
+
+  @behaviour Indexer.BufferedTask
+
+  alias Indexer.BufferedTask
+  alias Indexer.Fetcher.OnDemand.TokenBalance
+
+  @spec enqueue(term()) :: :ok
+  def enqueue(address_hash) do
+    BufferedTask.buffer(__MODULE__, [address_hash], false)
+  end
+
+  def child_spec(_opts \\ []) do
+    init_opts = [
+      flush_interval: :timer.seconds(1),
+      max_concurrency: 1,
+      max_batch_size: Application.get_env(:indexer, TokenBalance)[:address_queue_batch_size],
+      task_supervisor: __MODULE__.TaskSupervisor,
+      metadata: [fetcher: :token_balance_on_demand_address_queue],
+      state: %{}
+    ]
+
+    Supervisor.child_spec({BufferedTask, [{__MODULE__, init_opts}, [name: __MODULE__]]}, id: __MODULE__)
+  end
+
+  @impl BufferedTask
+  def init(initial, _, _), do: initial
+
+  @impl BufferedTask
+  def run(address_hashes, _) do
+    latest_block_number = TokenBalance.latest_block_number()
+
+    fetch_data = TokenBalance.prepare_batch_fetch_entries_for_buffer(address_hashes, latest_block_number)
+
+    unless Enum.empty?(fetch_data) do
+      BufferedTask.buffer(TokenBalance, fetch_data, false)
+    end
+
+    :ok
   end
 end
