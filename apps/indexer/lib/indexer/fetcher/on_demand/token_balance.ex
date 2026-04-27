@@ -374,7 +374,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance.AddressQueue do
 
   def child_spec(_opts \\ []) do
     init_opts = [
-      flush_interval: :timer.seconds(1),
+      flush_interval: Application.get_env(:indexer, TokenBalance)[:address_queue_flush_interval],
       max_concurrency: 1,
       max_batch_size: Application.get_env(:indexer, TokenBalance)[:address_queue_batch_size],
       task_supervisor: __MODULE__.TaskSupervisor,
