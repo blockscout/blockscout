@@ -25,19 +25,34 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   @max_json_rpc_retries 5
 
   def start_link(_) do
-    :ets.new(@table_name, [
-      :set,
-      :named_table,
-      :public,
-      read_concurrency: true,
-      write_concurrency: true
-    ])
+    if :ets.whereis(@table_name) == :undefined do
+      :ets.new(@table_name, [
+        :set,
+        :named_table,
+        :public,
+        read_concurrency: true,
+        write_concurrency: true
+      ])
+    end
 
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
   @spec trigger_fetch(Address.t()) :: :ok | :ignore
   def trigger_fetch(address) do
+    if :ets.whereis(@table_name) == :undefined do
+      Logger.warning(
+        "ContractCreator ETS table is not available, skipping on-demand fetch for address #{to_string(address.hash)}"
+      )
+
+      :ignore
+    else
+      do_trigger_fetch(address)
+    end
+  end
+
+  @spec do_trigger_fetch(Address.t()) :: :ok | :ignore
+  defp do_trigger_fetch(address) do
     # we expect here, that address has 'contract_creation_internal_transaction' and 'contract_creation_transaction' preloads
     creation_transaction = Address.creation_transaction(address)
     creator_hash = creation_transaction && creation_transaction.from_address_hash
