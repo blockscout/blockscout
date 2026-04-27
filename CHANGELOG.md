@@ -1,5 +1,28 @@
 # Changelog
 
+## 11.0.1
+
+### 🐛 Bug Fixes
+
+- Add fill IT addresses dependency into drop index migrations ([#14280](https://github.com/blockscout/blockscout/issues/14280))
+- Fix incorrect batch size in Indexer.Fetcher.OnDemand.TokenBalance ([#14265](https://github.com/blockscout/blockscout/issues/14265))
+- Prevent ETS crash in ContractCreator on GenServer restart ([#14221](https://github.com/blockscout/blockscout/issues/14221))
+- Fix internal transactions address dynamic condition ([#14278](https://github.com/blockscout/blockscout/issues/14278))
+- Remove addresses preload in celo parse_internal_transactions ([#14272](https://github.com/blockscout/blockscout/issues/14272))
+- Parse celo reward cursor params for address pagination ([#14275](https://github.com/blockscout/blockscout/issues/14275))
+- Map optimism-celo to celo OpenAPI folder ([#14274](https://github.com/blockscout/blockscout/issues/14274))
+- Make "sort_param" description endpoint-agnostic in OpenAPI spec ([#14270](https://github.com/blockscout/blockscout/issues/14270))
+- Fix Celo epochs list pagination ([#14269](https://github.com/blockscout/blockscout/issues/14269))
+
+### 🚜 Refactor
+
+- Move contract creation internal tx association flag to Chain.hash_to_address ([#14279](https://github.com/blockscout/blockscout/issues/14279))
+
+### ⚙️ Miscellaneous Tasks
+
+- Make pending operations helper batching configurable ([#14273](https://github.com/blockscout/blockscout/issues/14273))
+
+
 ## 11.0.0
 
 ### 🚀 Features
