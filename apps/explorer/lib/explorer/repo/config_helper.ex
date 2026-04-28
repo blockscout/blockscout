@@ -18,6 +18,8 @@ defmodule Explorer.Repo.ConfigHelper do
     database: "PGDATABASE"
   ]
 
+  @ecto_ssl_modes ~w(disable allow prefer require verify-ca verify-full)
+
   def get_db_config(opts) do
     url_encoded = opts[:url]
     url = url_encoded && URI.decode(url_encoded)
@@ -64,7 +66,42 @@ defmodule Explorer.Repo.ConfigHelper do
     {:ok, opts |> Keyword.put(:url, remove_search_path(db_url)) |> Keyword.merge(Keyword.take(merged, [:search_path]))}
   end
 
-  def ssl_enabled?, do: String.equivalent?(System.get_env("ECTO_USE_SSL") || "true", "true")
+  def ecto_ssl_mode(database_url \\ nil), do: ecto_ssl_mode(database_url, &System.get_env/1)
+
+  def ecto_ssl_mode(database_url, env_function) do
+    mode =
+      env_function.("ECTO_SSL_MODE") ||
+        ssl_mode_from_database_url(database_url) ||
+        "require"
+
+    normalize_ssl_mode!(mode)
+  end
+
+  def ssl_options(database_url \\ nil), do: ssl_options(database_url, &System.get_env/1)
+
+  def ssl_options(database_url, env_function) do
+    case ecto_ssl_mode(database_url, env_function) do
+      "disable" ->
+        [ssl: false]
+
+      # Postgrex cannot emulate allow/prefer fallback semantics exactly,
+      # so both modes are mapped to encrypted, non-verified transport.
+      mode when mode in ["allow", "prefer", "require"] ->
+        [ssl: [verify: :verify_none]]
+
+      "verify-ca" ->
+        [
+          ssl: [
+            cacerts: :public_key.cacerts_get(),
+            verify: :verify_peer,
+            server_name_indication: :disable
+          ]
+        ]
+
+      "verify-full" ->
+        [ssl: true]
+    end
+  end
 
   def extract_parameters(empty) when empty == nil or empty == "", do: []
 
@@ -118,6 +155,33 @@ defmodule Explorer.Repo.ConfigHelper do
         env_value -> Keyword.put(opts, name, env_value)
       end
     end)
+  end
+
+  defp ssl_mode_from_database_url(nil), do: nil
+  defp ssl_mode_from_database_url(""), do: nil
+
+  defp ssl_mode_from_database_url(database_url) do
+    case URI.parse(database_url) do
+      %{query: nil} ->
+        nil
+
+      %{query: query} ->
+        query
+        |> URI.decode_query()
+        |> Map.get("sslmode")
+    end
+  end
+
+  defp normalize_ssl_mode!(mode) when is_binary(mode) do
+    normalized_mode = mode |> String.trim() |> String.downcase()
+
+    if normalized_mode in @ecto_ssl_modes do
+      normalized_mode
+    else
+      raise ArgumentError,
+            "Unsupported ECTO_SSL_MODE value: #{inspect(mode)}. " <>
+              "Supported values: #{Enum.join(@ecto_ssl_modes, ", ")}."
+    end
   end
 
   def network_path do

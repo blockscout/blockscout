@@ -11,7 +11,7 @@ source /etc/environment
 
 export DATABASE_URL
 export POOL_SIZE
-export ECTO_USE_SSL
+export ECTO_SSL_MODE
 
 mix ecto.create
 mix ecto.migrate

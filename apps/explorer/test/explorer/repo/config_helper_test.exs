@@ -128,4 +128,98 @@ defmodule Explorer.Repo.ConfigHelperTest do
       assert result[:database] == "test_database"
     end
   end
+
+  describe "ecto_ssl_mode/2" do
+    test "defaults to require when mode is not set" do
+      assert ConfigHelper.ecto_ssl_mode(nil, fn _ -> nil end) == "require"
+    end
+
+    test "reads sslmode from database url" do
+      database_url = "postgresql://test:test@localhost:5432/test_db?sslmode=verify-full"
+
+      assert ConfigHelper.ecto_ssl_mode(database_url, fn _ -> nil end) == "verify-full"
+    end
+
+    test "ECTO_SSL_MODE has precedence over database url sslmode" do
+      database_url = "postgresql://test:test@localhost:5432/test_db?sslmode=disable"
+
+      env_func = fn
+        "ECTO_SSL_MODE" -> "verify-ca"
+        _ -> nil
+      end
+
+      assert ConfigHelper.ecto_ssl_mode(database_url, env_func) == "verify-ca"
+    end
+
+    test "raises on invalid ssl mode" do
+      env_func = fn
+        "ECTO_SSL_MODE" -> "invalid-mode"
+        _ -> nil
+      end
+
+      assert_raise ArgumentError, ~r/Unsupported ECTO_SSL_MODE value/, fn ->
+        ConfigHelper.ecto_ssl_mode(nil, env_func)
+      end
+    end
+  end
+
+  describe "ssl_options/2" do
+    test "maps disable to ssl false" do
+      env_func = fn
+        "ECTO_SSL_MODE" -> "disable"
+        _ -> nil
+      end
+
+      assert ConfigHelper.ssl_options(nil, env_func) == [ssl: false]
+    end
+
+    test "maps allow to verify_none SSL" do
+      env_func = fn
+        "ECTO_SSL_MODE" -> "allow"
+        _ -> nil
+      end
+
+      assert ConfigHelper.ssl_options(nil, env_func) == [ssl: [verify: :verify_none]]
+    end
+
+    test "maps prefer to verify_none SSL" do
+      env_func = fn
+        "ECTO_SSL_MODE" -> "prefer"
+        _ -> nil
+      end
+
+      assert ConfigHelper.ssl_options(nil, env_func) == [ssl: [verify: :verify_none]]
+    end
+
+    test "maps require to verify_none SSL" do
+      env_func = fn
+        "ECTO_SSL_MODE" -> "require"
+        _ -> nil
+      end
+
+      assert ConfigHelper.ssl_options(nil, env_func) == [ssl: [verify: :verify_none]]
+    end
+
+    test "maps verify-ca to peer verification without SNI" do
+      env_func = fn
+        "ECTO_SSL_MODE" -> "verify-ca"
+        _ -> nil
+      end
+
+      ssl_options = ConfigHelper.ssl_options(nil, env_func)[:ssl]
+
+      assert ssl_options[:verify] == :verify_peer
+      assert ssl_options[:server_name_indication] == :disable
+      assert ssl_options[:cacerts] == :public_key.cacerts_get()
+    end
+
+    test "maps verify-full to secure Postgrex defaults" do
+      env_func = fn
+        "ECTO_SSL_MODE" -> "verify-full"
+        _ -> nil
+      end
+
+      assert ConfigHelper.ssl_options(nil, env_func) == [ssl: true]
+    end
+  end
 end
