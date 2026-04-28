@@ -231,7 +231,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         insert(:smart_contract,
           name: "Implementation",
           external_libraries: [],
-          constructor_arguments: "",
+          constructor_arguments: nil,
           abi: [
             %{
               "type" => "constructor",
