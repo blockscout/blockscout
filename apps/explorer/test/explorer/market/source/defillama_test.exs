@@ -10,19 +10,27 @@ defmodule Explorer.Market.Source.DefiLlamaTest do
     defillama_configuration = Application.get_env(:explorer, DefiLlama)
     source_configuration = Application.get_env(:explorer, Explorer.Market.Source)
 
-    Application.put_env(:explorer, Explorer.Market.Source,
-      native_coin_source: DefiLlama,
-      secondary_coin_source: DefiLlama,
-      tokens_source: DefiLlama,
-      native_coin_history_source: DefiLlama,
-      secondary_coin_history_source: DefiLlama,
-      market_cap_history_source: DefiLlama,
-      tvl_history_source: DefiLlama
+    Application.put_env(
+      :explorer,
+      Explorer.Market.Source,
+      Keyword.merge(source_configuration || [],
+        native_coin_source: DefiLlama,
+        secondary_coin_source: DefiLlama,
+        tokens_source: DefiLlama,
+        native_coin_history_source: DefiLlama,
+        secondary_coin_history_source: DefiLlama,
+        market_cap_history_source: DefiLlama,
+        tvl_history_source: DefiLlama
+      )
     )
 
-    Application.put_env(:explorer, DefiLlama,
-      base_url: "http://localhost:#{bypass.port}",
-      coin_id: "Ethereum"
+    Application.put_env(
+      :explorer,
+      DefiLlama,
+      Keyword.merge(defillama_configuration || [],
+        base_url: "http://localhost:#{bypass.port}",
+        coin_id: "Ethereum"
+      )
     )
 
     Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)

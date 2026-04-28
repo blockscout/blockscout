@@ -335,7 +335,17 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       ],
       where:
         fragment(
-          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.decimals, EXCLUDED.icon_url) IS DISTINCT FROM (?, ?, ?, ?)",
+          """
+          (COALESCE(?, EXCLUDED.name), COALESCE(?, EXCLUDED.symbol), COALESCE(?, EXCLUDED.decimals),
+           CASE WHEN ? THEN ? ELSE COALESCE(EXCLUDED.icon_url, ?) END)
+          IS DISTINCT FROM (?, ?, ?, ?)
+          """,
+          token.name,
+          token.symbol,
+          token.decimals,
+          token.is_verified_via_admin_panel,
+          token.icon_url,
+          token.icon_url,
           token.name,
           token.symbol,
           token.decimals,

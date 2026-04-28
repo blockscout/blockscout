@@ -46,7 +46,7 @@ defmodule Explorer.Market.Source.CoinMarketCapTest do
 
     test "returns false if coin_id is not configured" do
       config = Application.get_env(:explorer, CoinMarketCap)
-      Application.put_env(:explorer, CoinMarketCap, Keyword.merge(config, coin_id: nil))
+      Application.put_env(:explorer, CoinMarketCap, Keyword.merge(config || [], coin_id: nil))
 
       on_exit(fn -> Application.put_env(:explorer, CoinMarketCap, config) end)
 
@@ -61,7 +61,7 @@ defmodule Explorer.Market.Source.CoinMarketCapTest do
 
     test "returns false if secondary_coin_id is not configured" do
       config = Application.get_env(:explorer, CoinMarketCap)
-      Application.put_env(:explorer, CoinMarketCap, Keyword.merge(config, secondary_coin_id: nil))
+      Application.put_env(:explorer, CoinMarketCap, Keyword.merge(config || [], secondary_coin_id: nil))
 
       on_exit(fn -> Application.put_env(:explorer, CoinMarketCap, config) end)
 
@@ -136,7 +136,7 @@ defmodule Explorer.Market.Source.CoinMarketCapTest do
 
     test "returns false if coin_id is not configured" do
       config = Application.get_env(:explorer, CoinMarketCap)
-      Application.put_env(:explorer, CoinMarketCap, Keyword.merge(config, coin_id: nil))
+      Application.put_env(:explorer, CoinMarketCap, Keyword.merge(config || [], coin_id: nil))
 
       on_exit(fn -> Application.put_env(:explorer, CoinMarketCap, config) end)
 
