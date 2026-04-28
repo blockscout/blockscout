@@ -929,7 +929,8 @@ defmodule Explorer.Token.MetadataRetriever do
   @spec fetch_metadata_from_uri(String.t(), keyword(), String.t() | nil) :: {:ok, %{metadata: any}} | {:error, binary()}
   def fetch_metadata_from_uri(uri, ipfs_params, hex_token_id \\ nil) do
     case Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper)[:host_filtering_enabled?] &&
-           !ipfs?(ipfs_params) && !arweave?(ipfs_params) && MetadataURIValidator.validate_uri(uri) do
+           !ipfs?(ipfs_params) && !arweave?(ipfs_params) && !swarm?(ipfs_params) &&
+           MetadataURIValidator.validate_uri(uri) do
       {:error, reason} ->
         if reason == :blacklist do
           Logger.warning(
