@@ -554,6 +554,109 @@ defmodule EthereumJSONRPC.GethTest do
 
       assert uppercase_result == lowercase_result
     end
+
+    test "fallback 'to' field to the parent object for selfdestruct", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      transaction_hash = "0xb342cafc6ac552c3be2090561453204c8784caf025ac8267320834e4cd163d96"
+      block_number = 3_287_375
+      transaction_index = 13
+
+      transaction_params = %{
+        block_number: block_number,
+        transaction_index: transaction_index,
+        hash_data: transaction_hash
+      }
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn
+        [%{id: id, params: [^transaction_hash, %{"tracer" => "callTracer"}]}], _ ->
+          {:ok,
+           [
+             %{
+               id: id,
+               result: %{
+                 "calls" => [
+                   %{
+                     "from" => "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+                     "gas" => "0x12816",
+                     "gasUsed" => "0x229e",
+                     "input" => "0x",
+                     "output" => "0x",
+                     "to" => "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                     "type" => "CALL",
+                     "value" => "0x0"
+                   },
+                   %{
+                     "from" => "0x0000000000000000000000000000000000000000",
+                     "gas" => "0x0",
+                     "gasUsed" => "0x0",
+                     "input" => "0x",
+                     "type" => "SELFDESTRUCT"
+                   }
+                 ],
+                 "from" => "0xd2ca697bb0114ca4f6a2ed28a5896d280a46d61b",
+                 "gas" => "0x6799",
+                 "gasUsed" => "0x6642",
+                 "input" => "0x092a5cce",
+                 "to" => "0x97f09972913935c098096d364a286c7b941070b3",
+                 "type" => "CALL",
+                 "value" => "0x0"
+               }
+             }
+           ]}
+      end)
+
+      Application.put_env(:ethereum_jsonrpc, Geth, tracer: "call_tracer", debug_trace_timeout: "5s")
+
+      assert {:ok,
+              [
+                %{
+                  index: 0,
+                  input: "0x092a5cce",
+                  output: "0x",
+                  type: "call",
+                  value: nil,
+                  call_type: "call",
+                  block_number: ^block_number,
+                  gas_used: 26178,
+                  transaction_hash: ^transaction_hash,
+                  transaction_index: 13,
+                  gas: 26521,
+                  from_address_hash: "0xd2ca697bb0114ca4f6a2ed28a5896d280a46d61b",
+                  to_address_hash: "0x97f09972913935c098096d364a286c7b941070b3",
+                  trace_address: []
+                },
+                %{
+                  index: 1,
+                  input: "0x",
+                  output: "0x",
+                  type: "call",
+                  value: nil,
+                  call_type: "call",
+                  block_number: ^block_number,
+                  gas_used: 8862,
+                  transaction_hash: ^transaction_hash,
+                  transaction_index: 13,
+                  gas: 75798,
+                  from_address_hash: "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+                  to_address_hash: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+                  trace_address: [0]
+                },
+                %{
+                  index: 2,
+                  type: "selfdestruct",
+                  value: nil,
+                  block_number: ^block_number,
+                  gas_used: 0,
+                  transaction_hash: ^transaction_hash,
+                  transaction_index: 13,
+                  gas: 0,
+                  from_address_hash: "0x0000000000000000000000000000000000000000",
+                  to_address_hash: "0x97f09972913935c098096d364a286c7b941070b3",
+                  trace_address: [1]
+                }
+              ]} = Geth.fetch_internal_transactions([transaction_params], json_rpc_named_arguments)
+    end
   end
 
   describe "fetch_block_internal_transactions/1" do

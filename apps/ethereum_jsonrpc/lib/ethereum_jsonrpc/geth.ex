@@ -413,17 +413,23 @@ defmodule EthereumJSONRPC.Geth do
     end
   end
 
-  defp parse_call_tracer_calls(calls, acc, trace_address, inner? \\ true)
-  defp parse_call_tracer_calls([], acc, _trace_address, _inner?), do: acc
-  defp parse_call_tracer_calls({%{"type" => 0}, _}, acc, _trace_address, _inner?), do: acc
+  defp parse_call_tracer_calls(calls, acc, trace_address, inner?, parent \\ nil)
+  defp parse_call_tracer_calls([], acc, _trace_address, _inner?, _parent), do: acc
+  defp parse_call_tracer_calls({%{"type" => 0}, _}, acc, _trace_address, _inner?, _parent), do: acc
 
-  defp parse_call_tracer_calls({%{"type" => type}, _}, [last | acc], _trace_address, _inner?)
+  defp parse_call_tracer_calls({%{"type" => type}, _}, [last | acc], _trace_address, _inner?, _parent)
        when type in ["STOP", "stop"] do
     [Map.put(last, "error", "execution stopped") | acc]
   end
 
   # credo:disable-for-next-line /Complexity/
-  defp parse_call_tracer_calls({%{"type" => upcase_type, "from" => from} = call, index}, acc, trace_address, inner?) do
+  defp parse_call_tracer_calls(
+         {%{"type" => upcase_type, "from" => from} = call, index},
+         acc,
+         trace_address,
+         inner?,
+         parent
+       ) do
     case String.downcase(upcase_type) do
       type when type in ~w(call callcode delegatecall staticcall create create2 selfdestruct revert stop invalid) ->
         new_trace_address = [index | trace_address]
@@ -432,7 +438,7 @@ defmodule EthereumJSONRPC.Geth do
           "type" => if(type in ~w(call callcode delegatecall staticcall), do: "call", else: type),
           "callType" => type,
           "from" => from,
-          "to" => Map.get(call, "to", "0x"),
+          "to" => Map.get(call, "to", if(type == "selfdestruct", do: parent["to"], else: "0x")),
           "createdContractAddressHash" => Map.get(call, "to", "0x"),
           "value" => Map.get(call, "value", "0x0"),
           "gas" => Map.get(call, "gas", "0x0"),
@@ -448,7 +454,9 @@ defmodule EthereumJSONRPC.Geth do
         parse_call_tracer_calls(
           Map.get(call, "calls", []),
           [formatted_call | acc],
-          if(inner?, do: new_trace_address, else: [])
+          if(inner?, do: new_trace_address, else: []),
+          true,
+          call
         )
 
       "" ->
@@ -461,15 +469,15 @@ defmodule EthereumJSONRPC.Geth do
     end
   end
 
-  defp parse_call_tracer_calls({%{} = call, _}, acc, _trace_address, _inner?) do
+  defp parse_call_tracer_calls({%{} = call, _}, acc, _trace_address, _inner?, _parent) do
     if !allow_empty_traces?(), do: log_unknown_type(call)
     acc
   end
 
-  defp parse_call_tracer_calls(calls, acc, trace_address, _inner) when is_list(calls) do
+  defp parse_call_tracer_calls(calls, acc, trace_address, inner?, parent) when is_list(calls) do
     calls
     |> Stream.with_index()
-    |> Enum.reduce(acc, &parse_call_tracer_calls(&1, &2, trace_address))
+    |> Enum.reduce(acc, &parse_call_tracer_calls(&1, &2, trace_address, inner?, parent))
   end
 
   defp log_unknown_type(call) do
