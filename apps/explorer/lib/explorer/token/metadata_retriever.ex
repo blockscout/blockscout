@@ -575,13 +575,19 @@ defmodule Explorer.Token.MetadataRetriever do
   """
   @spec swarm_link(uid :: any()) :: String.t()
   def swarm_link(uid) do
+    uid = to_string(uid)
+
     base_url =
       :indexer
       |> Application.get_env(:swarm, [])
       |> Keyword.get(:gateway_url, "https://gateway.ethswarm.org")
       |> String.trim_trailing("/")
 
-    "#{base_url}/bzz/#{uid}/"
+    if String.contains?(uid, "/") do
+      "#{base_url}/bzz/#{uid}"
+    else
+      "#{base_url}/bzz/#{uid}/"
+    end
   end
 
   defp maybe_add_ipfs_gateway_params_to_url?(url, true), do: url
@@ -809,9 +815,8 @@ defmodule Explorer.Token.MetadataRetriever do
         fetch_from_swarm_if_valid_hash(uid, hex_token_id)
 
       %URI{scheme: _, path: "/bzz/" <> resource_id} ->
-        # https://gateway.ethswarm.org/bzz/<hash>[/path] — strip trailing path
-        hash = resource_id |> String.split("/") |> List.first()
-        fetch_from_swarm_if_valid_hash(hash, hex_token_id)
+        # https://gateway.ethswarm.org/bzz/<hash>[/path] — preserve deep path
+        fetch_from_swarm_if_valid_hash(resource_id, hex_token_id)
 
       %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
         fetch_from_ipfs_if_valid_path(resource_id, hex_token_id)
