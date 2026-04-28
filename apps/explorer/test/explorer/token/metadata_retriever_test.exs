@@ -1275,4 +1275,147 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       assert MetadataRetriever.fetch_json({:ok, [invalid_path]}) == {:error, "invalid ipfs path"}
     end
   end
+
+  describe "swarm_link/1" do
+    @swarm_hash String.duplicate("a", 64)
+
+    test "returns default gateway URL when no config override is set" do
+      original = Application.get_env(:indexer, :swarm, [])
+      Application.put_env(:indexer, :swarm, [])
+
+      expected = "https://gateway.ethswarm.org/bzz/#{@swarm_hash}/"
+      assert MetadataRetriever.swarm_link(@swarm_hash) == expected
+
+      Application.put_env(:indexer, :swarm, original)
+    end
+
+    test "uses configured gateway_url" do
+      original = Application.get_env(:indexer, :swarm, [])
+      Application.put_env(:indexer, :swarm, gateway_url: "https://my-swarm-node.example.com")
+
+      expected = "https://my-swarm-node.example.com/bzz/#{@swarm_hash}/"
+      assert MetadataRetriever.swarm_link(@swarm_hash) == expected
+
+      Application.put_env(:indexer, :swarm, original)
+    end
+
+    test "strips trailing slash from configured gateway_url" do
+      original = Application.get_env(:indexer, :swarm, [])
+      Application.put_env(:indexer, :swarm, gateway_url: "https://my-swarm-node.example.com/")
+
+      expected = "https://my-swarm-node.example.com/bzz/#{@swarm_hash}/"
+      assert MetadataRetriever.swarm_link(@swarm_hash) == expected
+
+      Application.put_env(:indexer, :swarm, original)
+    end
+  end
+
+  describe "swarm_headers/0" do
+    test "returns only default headers when no bearer token is configured" do
+      original = Application.get_env(:indexer, :swarm, [])
+      Application.put_env(:indexer, :swarm, [])
+
+      assert MetadataRetriever.swarm_headers() == [{"User-Agent", "blockscout-11.0.1"}]
+
+      Application.put_env(:indexer, :swarm, original)
+    end
+
+    test "prepends Authorization header when bearer_token is configured" do
+      original = Application.get_env(:indexer, :swarm, [])
+      Application.put_env(:indexer, :swarm, bearer_token: "secret-token")
+
+      headers = MetadataRetriever.swarm_headers()
+      assert {"Authorization", "Bearer secret-token"} in headers
+      assert {"User-Agent", "blockscout-11.0.1"} in headers
+
+      Application.put_env(:indexer, :swarm, original)
+    end
+  end
+
+  describe "valid_swarm_hash?/1" do
+    @valid_hash String.duplicate("a1", 32)
+
+    test "returns true for a 64-character lowercase hex hash" do
+      assert MetadataRetriever.valid_swarm_hash?(@valid_hash)
+    end
+
+    test "returns true for a hash embedded in a path" do
+      assert MetadataRetriever.valid_swarm_hash?("#{@valid_hash}/path/to/resource")
+    end
+
+    test "returns false for uppercase hex" do
+      refute MetadataRetriever.valid_swarm_hash?(String.upcase(@valid_hash))
+    end
+
+    test "returns false for a hash that is too short" do
+      refute MetadataRetriever.valid_swarm_hash?(String.duplicate("a", 63))
+    end
+
+    test "returns false for a hash that is too long" do
+      refute MetadataRetriever.valid_swarm_hash?(String.duplicate("a", 65))
+    end
+
+    test "returns false for an empty string" do
+      refute MetadataRetriever.valid_swarm_hash?("")
+    end
+
+    test "returns false for non-binary" do
+      refute MetadataRetriever.valid_swarm_hash?(nil)
+    end
+  end
+
+  describe "ETH Swarm URI routing" do
+    @valid_hash String.duplicate("b2", 32)
+    @swarm_metadata %{"name" => "Swarm NFT", "description" => "stored on Swarm"}
+
+    test "fetch_json resolves bzz:// URI scheme via Swarm gateway" do
+      Application.put_env(:indexer, :swarm, gateway_url: "https://gateway.ethswarm.org")
+
+      expected_url = "https://gateway.ethswarm.org/bzz/#{@valid_hash}/"
+
+      EthereumJSONRPC.Mox
+      |> stub(:json_rpc, fn _req, _opts -> {:ok, []} end)
+
+      Explorer.HttpClient.Mox
+      |> expect(:get, fn ^expected_url, _headers, _opts ->
+        {:ok,
+         %{
+           status_code: 200,
+           body: Jason.encode!(@swarm_metadata),
+           headers: [{"content-type", "application/json"}]
+         }}
+      end)
+
+      assert {:ok, %{metadata: metadata}} =
+               MetadataRetriever.fetch_json({:ok, ["bzz://#{@valid_hash}"]})
+
+      assert metadata["name"] == "Swarm NFT"
+    end
+
+    test "fetch_json resolves https://gateway.ethswarm.org/bzz/<hash>/ URL" do
+      Application.put_env(:indexer, :swarm, gateway_url: "https://gateway.ethswarm.org")
+
+      url = "https://gateway.ethswarm.org/bzz/#{@valid_hash}/"
+
+      Explorer.HttpClient.Mox
+      |> expect(:get, fn ^url, _headers, _opts ->
+        {:ok,
+         %{
+           status_code: 200,
+           body: Jason.encode!(@swarm_metadata),
+           headers: [{"content-type", "application/json"}]
+         }}
+      end)
+
+      assert {:ok, %{metadata: metadata}} =
+               MetadataRetriever.fetch_json({:ok, [url]})
+
+      assert metadata["description"] == "stored on Swarm"
+    end
+
+    test "fetch_json returns error for invalid Swarm hash in bzz:// URI" do
+      assert MetadataRetriever.fetch_json({:ok, ["bzz://not-a-valid-hash"]}) ==
+               {:error, "invalid swarm path"}
+    end
+  end
 end
