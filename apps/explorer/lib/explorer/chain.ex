@@ -879,11 +879,7 @@ defmodule Explorer.Chain do
     query
     |> join_associations(necessity_by_association)
     |> select_repo(options).one()
-    |> then(fn address ->
-      if Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false),
-        do: address,
-        else: Address.preload_contract_creation_internal_transaction(address, select_repo(options))
-    end)
+    |> Address.maybe_preload_contract_creation_internal_transaction(select_repo(options))
     |> SmartContract.compose_address_for_unverified_smart_contract(hash, options)
     |> case do
       nil -> {:error, :not_found}
