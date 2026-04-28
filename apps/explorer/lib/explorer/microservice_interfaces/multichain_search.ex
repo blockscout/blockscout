@@ -140,7 +140,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   """
   @spec batch_export_token_info([
           %{
-            :address_hash => binary(),
+            :address_hash => Hash.Address.t() | binary(),
             :data_type => :metadata | :total_supply | :counters | :market_data,
             :data => map()
           }
@@ -430,7 +430,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     - A map ready to send to Multichain service via HTTP.
   """
   @spec token_info_queue_item_to_http_item(%{
-          :address_hash => binary(),
+          :address_hash => Hash.Address.t() | binary(),
           :data_type => :metadata | :total_supply | :counters | :market_data,
           :data => map()
         }) ::
@@ -438,7 +438,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           | %{:address_hash => String.t(), :counters => map()}
           | %{:address_hash => String.t(), :price_data => map()}
   def token_info_queue_item_to_http_item(item_from_db_queue) do
-    token = %{address_hash: "0x" <> Base.encode16(item_from_db_queue.address_hash, case: :lower)}
+    token = %{address_hash: item_from_db_queue.address_hash |> cast_address_hash!() |> Hash.to_string()}
 
     case item_from_db_queue.data_type do
       :metadata -> Map.put(token, :metadata, item_from_db_queue.data)
@@ -463,12 +463,12 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
           | %{:address_hash => String.t(), :counters => map()}
           | %{:address_hash => String.t(), :price_data => map()}
         ) :: %{
-          :address_hash => binary(),
+          :address_hash => Hash.Address.t(),
           :data_type => :metadata | :total_supply | :counters | :market_data,
           :data => map()
         }
   def token_info_http_item_to_queue_item(%{address_hash: "0x" <> address_string} = http_item) do
-    {:ok, address_hash} = Base.decode16(address_string, case: :mixed)
+    address_hash = cast_address_hash!("0x" <> address_string)
 
     metadata = Map.get(http_item, :metadata)
 
@@ -746,7 +746,10 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     # - `:ok` if the data is accepted for insertion.
     # - `:ignore` if the Multichain service is not used.
   """
-  @spec send_token_info_to_queue(%{binary() => map()}, :metadata | :total_supply | :counters | :market_data) ::
+  @spec send_token_info_to_queue(
+          %{(Hash.Address.t() | binary()) => map()},
+          :metadata | :total_supply | :counters | :market_data
+        ) ::
           :ok | :ignore
   def send_token_info_to_queue(entries, entries_type) do
     if enabled?() do
@@ -768,19 +771,26 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   end
 
   @spec extract_token_info_entries_into_chunks(
-          %{binary() => map()},
+          %{(Hash.Address.t() | binary()) => map()},
           :metadata | :total_supply | :counters | :market_data
         ) :: list()
   defp extract_token_info_entries_into_chunks(entries, entries_type) do
     entries
     |> Enum.map(fn {address_hash, data} ->
       %{
-        address_hash: address_hash,
+        address_hash: cast_address_hash!(address_hash),
         data_type: entries_type,
         data: data
       }
     end)
     |> Enum.chunk_every(token_info_chunk_size())
+  end
+
+  defp cast_address_hash!(address_hash) do
+    case Hash.Address.cast(address_hash) do
+      {:ok, cast_address_hash} -> cast_address_hash
+      :error -> raise ArgumentError, "invalid token info address_hash: #{inspect(address_hash)}"
+    end
   end
 
   @doc """
