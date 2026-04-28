@@ -47,7 +47,7 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
 
     test "returns false if coin_id is not configured" do
       config = Application.get_env(:explorer, CoinGecko)
-      Application.put_env(:explorer, CoinGecko, Keyword.merge(config, coin_id: nil))
+      Application.put_env(:explorer, CoinGecko, Keyword.merge(config || [], coin_id: nil))
 
       on_exit(fn -> Application.put_env(:explorer, CoinGecko, config) end)
 
@@ -88,7 +88,7 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
 
     test "returns false if secondary_coin_id is not configured" do
       config = Application.get_env(:explorer, CoinGecko)
-      Application.put_env(:explorer, CoinGecko, Keyword.merge(config, secondary_coin_id: nil))
+      Application.put_env(:explorer, CoinGecko, Keyword.merge(config || [], secondary_coin_id: nil))
 
       on_exit(fn -> Application.put_env(:explorer, CoinGecko, config) end)
 
@@ -129,7 +129,7 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
 
     test "returns false if platform is not configured" do
       config = Application.get_env(:explorer, CoinGecko)
-      Application.put_env(:explorer, CoinGecko, Keyword.merge(config, platform: nil))
+      Application.put_env(:explorer, CoinGecko, Keyword.merge(config || [], platform: nil))
 
       on_exit(fn -> Application.put_env(:explorer, CoinGecko, config) end)
 
@@ -255,7 +255,7 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
 
     test "returns false if coin_id is not configured" do
       config = Application.get_env(:explorer, CoinGecko)
-      Application.put_env(:explorer, CoinGecko, Keyword.merge(config, coin_id: nil))
+      Application.put_env(:explorer, CoinGecko, Keyword.merge(config || [], coin_id: nil))
 
       on_exit(fn -> Application.put_env(:explorer, CoinGecko, config) end)
 
@@ -302,7 +302,7 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
 
     test "returns false if secondary_coin_id is not configured" do
       config = Application.get_env(:explorer, CoinGecko)
-      Application.put_env(:explorer, CoinGecko, Keyword.merge(config, secondary_coin_id: nil))
+      Application.put_env(:explorer, CoinGecko, Keyword.merge(config || [], secondary_coin_id: nil))
 
       on_exit(fn -> Application.put_env(:explorer, CoinGecko, config) end)
 
@@ -349,7 +349,7 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
 
     test "returns false if coin_id is not configured" do
       config = Application.get_env(:explorer, CoinGecko)
-      Application.put_env(:explorer, CoinGecko, Keyword.merge(config, coin_id: nil))
+      Application.put_env(:explorer, CoinGecko, Keyword.merge(config || [], coin_id: nil))
 
       on_exit(fn -> Application.put_env(:explorer, CoinGecko, config) end)
 

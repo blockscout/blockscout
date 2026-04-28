@@ -75,6 +75,7 @@ defmodule Explorer.Market.Fetcher.TokenList do
       end
     else
       {:ok, %{status_code: status}} -> {:error, {:http_status, status}}
+      {:ok, _invalid_payload} -> {:error, :invalid_token_list}
       {:error, _} = error -> error
     end
   end

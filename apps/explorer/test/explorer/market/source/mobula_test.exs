@@ -11,21 +11,29 @@ defmodule Explorer.Market.Source.MobulaTest do
     mobula_configuration = Application.get_env(:explorer, Mobula)
     source_configuration = Application.get_env(:explorer, Explorer.Market.Source)
 
-    Application.put_env(:explorer, Explorer.Market.Source,
-      native_coin_source: Mobula,
-      secondary_coin_source: Mobula,
-      tokens_source: Mobula,
-      native_coin_history_source: Mobula,
-      secondary_coin_history_source: Mobula,
-      market_cap_history_source: Mobula,
-      tvl_history_source: Mobula
+    Application.put_env(
+      :explorer,
+      Explorer.Market.Source,
+      Keyword.merge(source_configuration || [],
+        native_coin_source: Mobula,
+        secondary_coin_source: Mobula,
+        tokens_source: Mobula,
+        native_coin_history_source: Mobula,
+        secondary_coin_history_source: Mobula,
+        market_cap_history_source: Mobula,
+        tvl_history_source: Mobula
+      )
     )
 
-    Application.put_env(:explorer, Mobula,
-      base_url: "http://localhost:#{bypass.port}",
-      coin_id: "native_coin",
-      secondary_coin_id: "secondary_coin",
-      platform: "test_platform"
+    Application.put_env(
+      :explorer,
+      Mobula,
+      Keyword.merge(mobula_configuration || [],
+        base_url: "http://localhost:#{bypass.port}",
+        coin_id: "native_coin",
+        secondary_coin_id: "secondary_coin",
+        platform: "test_platform"
+      )
     )
 
     Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)

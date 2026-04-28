@@ -85,7 +85,7 @@ defmodule Explorer.Market.Source.CryptoCompareTest do
 
     test "returns false if coin_symbol is not configured" do
       config = Application.get_env(:explorer, CryptoCompare)
-      Application.put_env(:explorer, CryptoCompare, Keyword.merge(config, coin_symbol: nil))
+      Application.put_env(:explorer, CryptoCompare, Keyword.merge(config || [], coin_symbol: nil))
 
       on_exit(fn -> Application.put_env(:explorer, CryptoCompare, config) end)
 

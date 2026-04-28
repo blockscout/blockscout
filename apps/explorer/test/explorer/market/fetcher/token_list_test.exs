@@ -12,10 +12,14 @@ defmodule Explorer.Market.Fetcher.TokenListTest do
     original_config = Application.get_env(:explorer, TokenList)
     original_chain_id = Application.get_env(:explorer, :chain_id)
 
-    Application.put_env(:explorer, TokenList,
-      enabled: true,
-      token_list_url: "http://localhost:#{bypass.port}/tokens.json",
-      refetch_interval: :timer.hours(24)
+    Application.put_env(
+      :explorer,
+      TokenList,
+      Keyword.merge(original_config || [],
+        enabled: true,
+        token_list_url: "http://localhost:#{bypass.port}/tokens.json",
+        refetch_interval: :timer.hours(24)
+      )
     )
 
     Application.put_env(:explorer, :chain_id, "77")

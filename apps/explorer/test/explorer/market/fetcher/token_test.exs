@@ -238,13 +238,13 @@ defmodule Explorer.Market.Fetcher.TokenTest do
       Application.put_env(
         :explorer,
         Explorer.Market.Source,
-        Keyword.merge(source_configuration, tokens_source: Explorer.Market.Source.CoinGecko)
+        Keyword.merge(source_configuration || [], tokens_source: Explorer.Market.Source.CoinGecko)
       )
 
       Application.put_env(
         :explorer,
         Explorer.Market.Fetcher.Token,
-        Keyword.merge(fetcher_configuration,
+        Keyword.merge(fetcher_configuration || [],
           enabled: true,
           interval: 0,
           refetch_interval: 10_000,
@@ -264,8 +264,7 @@ defmodule Explorer.Market.Fetcher.TokenTest do
 
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
-      # FiatValue.load returns nil unless the token fetcher is considered enabled.
-      # Simulate it being enabled so we can assert on loaded fiat_value fields.
+      previous_fetcher_enabled = :persistent_term.get(:market_token_fetcher_enabled, false)
       :persistent_term.put(:market_token_fetcher_enabled, true)
 
       on_exit(fn ->
@@ -273,7 +272,7 @@ defmodule Explorer.Market.Fetcher.TokenTest do
         Application.put_env(:explorer, Explorer.Market.Fetcher.Token, fetcher_configuration)
         Application.put_env(:explorer, Explorer.Market.Source.CoinGecko, coin_gecko_configuration)
         Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-        :persistent_term.put(:market_token_fetcher_enabled, false)
+        :persistent_term.put(:market_token_fetcher_enabled, previous_fetcher_enabled)
       end)
 
       {:ok, %{bypass: bypass}}

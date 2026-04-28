@@ -17,6 +17,7 @@ defmodule Explorer.Market.TokenTest do
       assert token.symbol == nil
       assert token.fiat_value == nil
       assert token.volume_24h == nil
+      assert token.circulating_supply == nil
       assert token.image_url == nil
     end
   end
