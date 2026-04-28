@@ -479,15 +479,6 @@ defmodule Explorer.Chain.Address do
     |> maybe_preload_contract_creation_internal_transaction(repo)
   end
 
-  @spec maybe_preload_contract_creation_internal_transaction(__MODULE__.t(), module()) :: __MODULE__.t()
-  defp maybe_preload_contract_creation_internal_transaction(address, repo) do
-    if Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false) do
-      address
-    else
-      preload_contract_creation_internal_transaction(address, repo)
-    end
-  end
-
   @doc """
   Counts all the addresses where the `fetched_coin_balance` is > 0.
   """
@@ -866,30 +857,38 @@ defmodule Explorer.Chain.Address do
     - A single address with `:contract_creation_internal_transaction`
       populated when the input is a single struct
   """
-  @spec preload_contract_creation_internal_transaction([__MODULE__.t()] | __MODULE__.t() | nil, module()) ::
+  @spec maybe_preload_contract_creation_internal_transaction([__MODULE__.t()] | __MODULE__.t() | nil, module()) ::
           [__MODULE__.t()] | __MODULE__.t() | nil
-  def preload_contract_creation_internal_transaction(addresses, repo \\ Repo)
+  def maybe_preload_contract_creation_internal_transaction(addresses, repo \\ Repo)
 
-  def preload_contract_creation_internal_transaction([], _repo), do: []
-  def preload_contract_creation_internal_transaction(nil, _repo), do: nil
+  def maybe_preload_contract_creation_internal_transaction([], _repo), do: []
+  def maybe_preload_contract_creation_internal_transaction(nil, _repo), do: nil
 
-  def preload_contract_creation_internal_transaction(addresses, repo) when is_list(addresses) do
-    address_hashes = Enum.map(addresses, & &1.hash)
+  def maybe_preload_contract_creation_internal_transaction(addresses, repo) when is_list(addresses) do
+    if Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false) do
+      addresses
+    else
+      address_hashes = Enum.map(addresses, & &1.hash)
 
-    internal_transactions_map =
-      contract_creation_internal_transaction_preload_query()
-      |> InternalTransaction.where_address_match(:created_contract_address, address_hashes)
-      |> repo.all()
-      |> InternalTransaction.preload_addresses([], repo)
-      |> Map.new(&{&1.created_contract_address_hash, &1})
+      internal_transactions_map =
+        contract_creation_internal_transaction_preload_query()
+        |> InternalTransaction.where_address_match(:created_contract_address, address_hashes)
+        |> repo.all()
+        |> InternalTransaction.preload_addresses([], repo)
+        |> Map.new(&{&1.created_contract_address_hash, &1})
 
-    Enum.map(addresses, &%{&1 | contract_creation_internal_transaction: internal_transactions_map[&1.hash]})
+      Enum.map(addresses, &%{&1 | contract_creation_internal_transaction: internal_transactions_map[&1.hash]})
+    end
   end
 
-  def preload_contract_creation_internal_transaction(address, repo) do
-    [address]
-    |> preload_contract_creation_internal_transaction(repo)
-    |> List.first()
+  def maybe_preload_contract_creation_internal_transaction(address, repo) do
+    if Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false) do
+      address
+    else
+      [address]
+      |> maybe_preload_contract_creation_internal_transaction(repo)
+      |> List.first()
+    end
   end
 
   @doc """
@@ -1058,7 +1057,7 @@ defmodule Explorer.Chain.Address do
     |> Chain.select_repo(options).one()
     |> then(fn address ->
       if Keyword.get(options, :preload_contract_creation_internal_transaction, false) do
-        Address.preload_contract_creation_internal_transaction(address)
+        Address.maybe_preload_contract_creation_internal_transaction(address)
       else
         address
       end
