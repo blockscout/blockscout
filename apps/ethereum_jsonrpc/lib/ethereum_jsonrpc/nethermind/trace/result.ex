@@ -39,4 +39,6 @@ defmodule EthereumJSONRPC.Nethermind.Trace.Result do
   defp entry_to_elixir({key, quantity}) when key in ~w(gasUsed) do
     {key, quantity_to_integer(quantity)}
   end
+
+  defp entry_to_elixir({_, _}), do: {:ignore, :ignore}
 end
