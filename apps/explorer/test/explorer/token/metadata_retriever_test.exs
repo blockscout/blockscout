@@ -1336,6 +1336,22 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       assert {"Authorization", "Bearer secret-token"} in headers
       assert headers == [{"Authorization", "Bearer secret-token"} | MetadataRetriever.ar_headers()]
     end
+
+    test "does not prepend Authorization header when bearer_token is empty" do
+      original = Application.get_env(:indexer, :swarm, [])
+      on_exit(fn -> Application.put_env(:indexer, :swarm, original) end)
+      Application.put_env(:indexer, :swarm, bearer_token: "")
+
+      assert MetadataRetriever.swarm_headers() == MetadataRetriever.ar_headers()
+    end
+
+    test "does not prepend Authorization header when bearer_token is whitespace" do
+      original = Application.get_env(:indexer, :swarm, [])
+      on_exit(fn -> Application.put_env(:indexer, :swarm, original) end)
+      Application.put_env(:indexer, :swarm, bearer_token: "   ")
+
+      assert MetadataRetriever.swarm_headers() == MetadataRetriever.ar_headers()
+    end
   end
 
   describe "valid_swarm_hash?/1" do

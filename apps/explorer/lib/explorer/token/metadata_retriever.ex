@@ -677,7 +677,7 @@ defmodule Explorer.Token.MetadataRetriever do
     swarm_params = Application.get_env(:indexer, :swarm, [])
     bearer_token = Keyword.get(swarm_params, :bearer_token)
 
-    if bearer_token do
+    if is_binary(bearer_token) and String.trim(bearer_token) != "" do
       [{"Authorization", "Bearer #{bearer_token}"} | @default_headers]
     else
       @default_headers
