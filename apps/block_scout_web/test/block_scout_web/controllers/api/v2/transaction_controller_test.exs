@@ -679,6 +679,40 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       check_paginated_response(response, response_2nd_page, internal_transactions)
     end
+
+    test "returns pending status when transaction block is pending", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["status"] == 2
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "returns pending status when transaction is in pending_transaction_operations", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["status"] == 2
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+    end
   end
 
   describe "/transactions/{transaction_hash}/logs" do

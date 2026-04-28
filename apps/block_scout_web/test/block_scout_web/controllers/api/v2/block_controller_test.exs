@@ -907,6 +907,51 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
 
       check_paginated_response(response, response_2nd_page, internal_transactions)
     end
+
+    test "returns pending status when block is in pending_block_operations", %{conn: conn} do
+      block = insert(:block)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      refute Map.has_key?(response, "status")
+      refute Map.has_key?(response, "message")
+
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["status"] == 2
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "returns pending status when block has pending transaction operations", %{conn: conn} do
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      refute Map.has_key?(response, "status")
+      refute Map.has_key?(response, "message")
+
+      insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["status"] == 2
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+    end
   end
 
   if @chain_type == :ethereum do

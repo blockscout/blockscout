@@ -2271,6 +2271,61 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(internal_transaction_to, Enum.at(response["items"], 0))
     end
 
+    test "returns pending status when scope includes pending operations", %{conn: conn} do
+      address = insert(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      refute Map.has_key?(response, "status")
+      refute Map.has_key?(response, "message")
+
+      block = insert(:block)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["status"] == 2
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "returns pending status for pending transaction operation", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        from_address: insert(:address)
+      )
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      refute Map.has_key?(response, "status")
+      refute Map.has_key?(response, "message")
+
+      insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["status"] == 2
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+    end
+
     test "returns gas_limit as 0 for selfdestruct without gas", %{conn: conn} do
       address = insert(:address)
 

@@ -6,7 +6,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     chain_identity: [:explorer, :chain_identity],
     miner_gets_burnt_fees?: [:explorer, [Explorer.Chain.Transaction, :block_miner_gets_burnt_fees?]]
 
-  alias BlockScoutWeb.API.V2.{ApiView, Helper, InternalTransactionView, TokenTransferView, TokenView}
+  alias BlockScoutWeb.API.V2.{
+    ApiView,
+    Helper,
+    InternalTransactionsPendingStatusHelper,
+    InternalTransactionView,
+    TokenTransferView,
+    TokenView
+  }
 
   alias BlockScoutWeb.Models.GetTransactionTags
   alias BlockScoutWeb.{TransactionStateView, TransactionView}
@@ -162,25 +169,33 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     TokenTransferView.prepare_token_transfer(token_transfer, conn, decoded_transaction)
   end
 
-  def render("internal_transactions.json", %{
-        internal_transactions: internal_transactions,
-        next_page_params: next_page_params,
-        block: block
-      }) do
+  def render(
+        "internal_transactions.json",
+        %{
+          internal_transactions: internal_transactions,
+          next_page_params: next_page_params,
+          block: block
+        } = assigns
+      ) do
     %{
       "items" => Enum.map(internal_transactions, &InternalTransactionView.prepare_internal_transaction(&1, block)),
       "next_page_params" => next_page_params
     }
+    |> maybe_put_pending_status(Map.get(assigns, :pending_status?, false))
   end
 
-  def render("internal_transactions.json", %{
-        internal_transactions: internal_transactions,
-        next_page_params: next_page_params
-      }) do
+  def render(
+        "internal_transactions.json",
+        %{
+          internal_transactions: internal_transactions,
+          next_page_params: next_page_params
+        } = assigns
+      ) do
     %{
       "items" => Enum.map(internal_transactions, &InternalTransactionView.prepare_internal_transaction(&1)),
       "next_page_params" => next_page_params
     }
+    |> maybe_put_pending_status(Map.get(assigns, :pending_status?, false))
   end
 
   def render("logs.json", %{logs: logs, next_page_params: next_page_params, transaction_hash: transaction_hash}) do
@@ -260,6 +275,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "max_depth_hcu" => max_depth_hcu,
       "operation_count" => operation_count
     }
+  end
+
+  defp maybe_put_pending_status(response, false), do: response
+
+  defp maybe_put_pending_status(response, true) do
+    response
+    |> Map.put("status", 2)
+    |> Map.put("message", InternalTransactionsPendingStatusHelper.pending_message())
   end
 
   @doc """
