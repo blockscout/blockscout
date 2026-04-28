@@ -15,13 +15,87 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
   setup do
     initial_ethereum_jsonrpc_env = Application.get_all_env(:ethereum_jsonrpc)
     initial_json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+    initial_on_demand_internal_transaction_config =
+      Application.get_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction)
+
     %{json_rpc_named_arguments: json_rpc_named_arguments} = EthereumJSONRPC.Case.Geth.Mox.setup()
     Application.put_env(:explorer, :json_rpc_named_arguments, json_rpc_named_arguments)
 
     on_exit(fn ->
       Application.put_all_env([{:ethereum_jsonrpc, initial_ethereum_jsonrpc_env}])
       Application.put_env(:explorer, :json_rpc_named_arguments, initial_json_rpc_named_arguments)
+
+      if is_nil(initial_on_demand_internal_transaction_config) do
+        Application.delete_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction)
+      else
+        Application.put_env(
+          :indexer,
+          Indexer.Fetcher.OnDemand.InternalTransaction,
+          initial_on_demand_internal_transaction_config
+        )
+      end
     end)
+  end
+
+  test "returns empty results when internal transactions fetcher is disabled" do
+    initial_on_demand_internal_transaction_config =
+      Application.get_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction)
+
+    on_exit(fn ->
+      if is_nil(initial_on_demand_internal_transaction_config) do
+        Application.delete_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction)
+      else
+        Application.put_env(
+          :indexer,
+          Indexer.Fetcher.OnDemand.InternalTransaction,
+          initial_on_demand_internal_transaction_config
+        )
+      end
+    end)
+
+    Application.put_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction, disabled?: true)
+
+    transaction = :transaction |> insert() |> with_block()
+    block = transaction.block
+    address = insert(:address)
+    opts = [paging_options: %PagingOptions{page_size: 5}]
+
+    assert [] = InternalTransactionOnDemand.fetch_latest(opts)
+    assert [] = InternalTransactionOnDemand.fetch_by_transaction(transaction, opts)
+    assert [] = InternalTransactionOnDemand.fetch_by_block(block, opts)
+    assert [] = InternalTransactionOnDemand.fetch_by_address(address.hash, opts)
+  end
+
+  test "should_fetch?/2 returns false when internal transactions fetcher is disabled" do
+    initial_on_demand_internal_transaction_config =
+      Application.get_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction)
+
+    on_exit(fn ->
+      if is_nil(initial_on_demand_internal_transaction_config) do
+        Application.delete_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction)
+      else
+        Application.put_env(
+          :indexer,
+          Indexer.Fetcher.OnDemand.InternalTransaction,
+          initial_on_demand_internal_transaction_config
+        )
+      end
+    end)
+
+    Application.put_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction, disabled?: true)
+
+    address = insert(:address)
+    id_to_hash = insert(:address_id_to_address_hash, address: address)
+
+    insert(:deleted_internal_transactions_address_placeholder,
+      address_id: id_to_hash.address_id,
+      block_number: 1,
+      count_tos: 1,
+      count_froms: 1
+    )
+
+    refute InternalTransactionOnDemand.should_fetch?([], 10)
   end
 
   test "fetch_by_transaction/2" do

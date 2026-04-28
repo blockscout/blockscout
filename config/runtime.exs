@@ -1141,6 +1141,9 @@ config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
 config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor,
   disabled?: trace_url_missing? or ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER")
 
+config :indexer, Indexer.Fetcher.OnDemand.InternalTransaction,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER")
+
 disable_coin_balances_fetcher? = ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ADDRESS_COIN_BALANCE_FETCHER")
 
 config :indexer, Indexer.Fetcher.CoinBalance.Catchup.Supervisor, disabled?: disable_coin_balances_fetcher?
