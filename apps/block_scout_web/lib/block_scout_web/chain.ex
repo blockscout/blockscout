@@ -142,7 +142,7 @@ defmodule BlockScoutWeb.Chain do
           nil
 
         _ ->
-          current_count = params[:state_changes_count] || params["state_changes_count"] || 0
+          current_count = params[:state_changes_count] || parse_integer(params["state_changes_count"]) || 0
           %{state_changes_count: current_count + Enum.count(items)}
       end
 

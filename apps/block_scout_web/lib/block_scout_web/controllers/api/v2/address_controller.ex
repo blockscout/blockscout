@@ -1453,7 +1453,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param()] ++
-        define_paging_params(["deposit_index"]),
+        define_paging_params(["index"]),
     responses: [
       ok:
         {"Beacon deposits for the specified address.", "application/json",

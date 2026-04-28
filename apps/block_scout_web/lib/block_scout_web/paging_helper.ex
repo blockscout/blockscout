@@ -533,7 +533,7 @@ defmodule BlockScoutWeb.PagingHelper do
     }
 
   defp maybe_override_page_size(paging_options_keyword, params) do
-    case params[:items_count] do
+    case params[:items_count] || params["items_count"] do
       count when is_integer(count) and count > 0 ->
         clamped = min(count, max_page_size())
 

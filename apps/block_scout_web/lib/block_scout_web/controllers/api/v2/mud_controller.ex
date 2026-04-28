@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
 
   import BlockScoutWeb.Chain,
     only: [
+      paging_options: 1,
       paginate_list: 4
     ]
 
@@ -441,6 +442,8 @@ defmodule BlockScoutWeb.API.V2.MudController do
   end
 
   defp mud_paging_options(params, keys, types) do
+    base_options = paging_options(params)
+
     page_key =
       keys
       |> Enum.zip(types)
@@ -454,9 +457,11 @@ defmodule BlockScoutWeb.API.V2.MudController do
       end)
 
     if page_key == %{} do
-      [paging_options: default_paging_options()]
+      base_options
     else
-      [paging_options: %{default_paging_options() | key: page_key}]
+      Keyword.update(base_options, :paging_options, default_paging_options(), fn paging_options ->
+        %{paging_options | key: page_key}
+      end)
     end
   end
 end
