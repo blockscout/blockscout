@@ -16,7 +16,7 @@
 
 ### 🚜 Refactor
 
-- Move contract creation internal tx association flag to Chain.hash_to_address ([#14279](https://github.com/blockscout/blockscout/issues/14279))
+- Move preload contract creation internal transaction under runtime toggle ([#14279](https://github.com/blockscout/blockscout/issues/14279), ([#14287](https://github.com/blockscout/blockscout/pull/14287)))
 
 ### ⚙️ Miscellaneous Tasks
 
