@@ -1,5 +1,6 @@
 defmodule BlockScoutWeb.API.V2.ArbitrumController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
     only: [
@@ -11,6 +12,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   import Explorer.Chain.Arbitrum.DaMultiPurposeRecord.Helper, only: [calculate_celestia_data_key: 2]
 
+  alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.BadRequestResponse
+  alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.Arbitrum.ClaimRollupMessage
   alias Explorer.Chain.Arbitrum.{L1Batch, Message}
   alias Explorer.Chain.Hash
@@ -21,13 +24,319 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags(["arbitrum"])
+
   @batch_necessity_by_association %{:commitment_transaction => :required}
+
+  @direction_param %OpenApiSpex.Parameter{
+    name: :direction,
+    in: :path,
+    required: true,
+    schema: %Schema{type: :string, enum: ["from-rollup", "to-rollup"]},
+    description: "Message direction: `from-rollup` for Rollup to Parent chain, `to-rollup` for Parent chain to Rollup."
+  }
+
+  operation :messages,
+    summary: "List cross-chain messages.",
+    description: "Retrieves a paginated list of Arbitrum cross-chain messages filtered by the specified direction.",
+    parameters: [@direction_param | base_params()] ++ define_paging_params(["id", "items_count"]),
+    responses: [
+      ok:
+        {"Paginated list of cross-chain messages.", "application/json",
+         paginated_response(
+           items: Schemas.Arbitrum.Message,
+           next_page_params_example: %{"id" => 123}
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  operation :messages_count,
+    summary: "Get cross-chain messages count.",
+    description: "Retrieves the total count of Arbitrum cross-chain messages for the specified direction.",
+    parameters: [@direction_param | base_params()],
+    responses: [
+      ok:
+        {"Total count of cross-chain messages for the specified direction.", "application/json",
+         %Schema{type: :integer, minimum: 0}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  operation :claim_message,
+    summary: "Get claim data for a withdrawal.",
+    description:
+      "Returns the ABI-encoded calldata and outbox contract address required to execute a Rollup withdrawal on the Parent chain.",
+    parameters: [
+      %OpenApiSpex.Parameter{
+        name: :message_id,
+        in: :path,
+        schema: %Schema{type: :integer, minimum: 0},
+        required: true,
+        description: "Withdrawal message ID."
+      }
+      | base_params()
+    ],
+    responses: [
+      ok: {"Claim data for the withdrawal.", "application/json", Schemas.Arbitrum.ClaimMessage},
+      bad_request:
+        {"Withdrawal cannot be claimed. Returned when the withdrawal is unconfirmed, just initiated, or already executed.",
+         "application/json", BadRequestResponse},
+      not_found: NotFoundResponse.response(),
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  operation :withdrawals,
+    summary: "Get withdrawal messages for a transaction.",
+    description: "Returns the list of Rollup withdrawal messages (L2ToL1Tx events) emitted by the given transaction.",
+    parameters: [
+      %OpenApiSpex.Parameter{
+        name: :transaction_hash,
+        in: :path,
+        schema: Schemas.General.FullHash,
+        required: true,
+        description: "Transaction hash."
+      }
+      | base_params()
+    ],
+    responses: [
+      ok:
+        {"Withdrawal messages for the transaction.", "application/json",
+         %OpenApiSpex.Schema{
+           type: :object,
+           properties: %{
+             items: %OpenApiSpex.Schema{type: :array, items: Schemas.Arbitrum.Withdrawal}
+           },
+           required: [:items],
+           additionalProperties: false
+         }},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  operation :batch,
+    summary: "Get batch by number.",
+    description: "Retrieves detailed information about an Arbitrum batch by its number.",
+    parameters: [
+      %OpenApiSpex.Parameter{
+        name: :batch_number,
+        in: :path,
+        schema: %Schema{type: :integer, minimum: 0},
+        required: true,
+        description: "Batch number."
+      }
+      | base_params()
+    ],
+    responses: [
+      ok: {"Batch info.", "application/json", Schemas.Arbitrum.Batch},
+      not_found: NotFoundResponse.response(),
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  operation :batch_by_anytrust_da_info,
+    summary: "Get batch by AnyTrust data hash.",
+    description:
+      "Retrieves an Arbitrum batch associated with the given AnyTrust data hash. " <>
+        "By default, returns the most recently associated batch. " <>
+        "When `type=all`, returns a paginated list of all batches referencing this data hash.",
+    parameters:
+      [
+        %OpenApiSpex.Parameter{
+          name: :data_hash,
+          in: :path,
+          required: true,
+          schema: Schemas.General.FullHash,
+          description: "AnyTrust data hash."
+        }
+        | base_params()
+      ] ++
+        [
+          %OpenApiSpex.Parameter{
+            name: :type,
+            in: :query,
+            required: false,
+            schema: %Schema{type: :string, enum: ["all"]},
+            description: "When set to `all`, returns a paginated list of all batches for this data hash."
+          }
+        ] ++ define_paging_params(["number", "items_count"]),
+    responses: [
+      ok:
+        {"Batch info, or paginated batch list when `type=all`.", "application/json",
+         %Schema{
+           oneOf: [
+             Schemas.Arbitrum.BatchByAnytrust,
+             paginated_response(
+               items: Schemas.Arbitrum.BatchForList,
+               next_page_params_example: %{"number" => 123}
+             )
+           ]
+         }},
+      not_found: NotFoundResponse.response(),
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  operation :batch_by_eigenda_da_info,
+    summary: "Get batch by EigenDA data hash.",
+    description:
+      "Retrieves an Arbitrum batch associated with the given EigenDA data hash. " <>
+        "By default, returns the most recently associated batch. " <>
+        "When `type=all`, returns a paginated list of all batches referencing this data hash.",
+    parameters:
+      [
+        %OpenApiSpex.Parameter{
+          name: :data_hash,
+          in: :path,
+          required: true,
+          schema: Schemas.General.FullHash,
+          description: "EigenDA data hash (Keccak-256 of the blob header)."
+        }
+        | base_params()
+      ] ++
+        [
+          %OpenApiSpex.Parameter{
+            name: :type,
+            in: :query,
+            required: false,
+            schema: %Schema{type: :string, enum: ["all"]},
+            description: "When set to `all`, returns a paginated list of all batches for this data hash."
+          }
+        ] ++ define_paging_params(["number", "items_count"]),
+    responses: [
+      ok:
+        {"Batch info, or paginated batch list when `type=all`.", "application/json",
+         %Schema{
+           oneOf: [
+             Schemas.Arbitrum.BatchByEigenda,
+             paginated_response(
+               items: Schemas.Arbitrum.BatchForList,
+               next_page_params_example: %{"number" => 123}
+             )
+           ]
+         }},
+      not_found: NotFoundResponse.response(),
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  operation :batch_by_celestia_da_info,
+    summary: "Get batch by Celestia blob reference.",
+    description:
+      "Retrieves an Arbitrum batch whose data availability blob is identified by the given " <>
+        "Celestia block height and transaction commitment hash.",
+    parameters: [
+      %OpenApiSpex.Parameter{
+        name: :height,
+        in: :path,
+        required: true,
+        schema: %Schema{type: :integer, minimum: 0},
+        description: "Celestia block height."
+      },
+      %OpenApiSpex.Parameter{
+        name: :transaction_commitment,
+        in: :path,
+        required: true,
+        schema: Schemas.General.FullHash,
+        description: "Celestia transaction commitment hash."
+      }
+      | base_params()
+    ],
+    responses: [
+      ok: {"Batch info.", "application/json", Schemas.Arbitrum.BatchByCelestia},
+      not_found: NotFoundResponse.response(),
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  operation :batches_count,
+    summary: "Get batches count.",
+    description: "Retrieves the total count of Arbitrum batches committed to the Parent chain.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Total count of batches.", "application/json", %Schema{type: :integer, minimum: 0}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  operation :batches,
+    summary: "List batches.",
+    description: "Retrieves a paginated list of Arbitrum batches committed to the Parent chain.",
+    parameters:
+      base_params() ++
+        [
+          %OpenApiSpex.Parameter{
+            name: :batch_numbers,
+            in: :query,
+            required: false,
+            schema: %Schema{type: :array, items: %Schema{type: :integer, minimum: 0}},
+            description: "Optional list of specific batch numbers to retrieve."
+          }
+        ] ++ define_paging_params(["number", "items_count"]),
+    responses: [
+      ok:
+        {"Paginated list of Arbitrum batches.", "application/json",
+         paginated_response(
+           items: Schemas.Arbitrum.BatchForList,
+           next_page_params_example: %{"number" => 123}
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  operation :batch_latest_number,
+    summary: "Get the latest batch number.",
+    description:
+      "Retrieves the number of the most recent Arbitrum batch submitted to the Parent chain. Returns 0 if no batches exist.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Latest Arbitrum batch number.", "application/json", %Schema{type: :integer, minimum: 0}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  operation :recent_messages_to_l2,
+    summary: "List recent Parent chain to Rollup messages on the main page.",
+    description: "Retrieves the most recent relayed messages from Parent chain to Rollup, displayed on the main page.",
+    parameters: base_params(),
+    responses: [
+      ok:
+        {"List of recent Parent chain to Rollup messages.", "application/json",
+         %Schema{
+           type: :object,
+           properties: %{
+             items: %Schema{
+               type: :array,
+               items: Schemas.Arbitrum.MinimalMessage,
+               nullable: false
+             }
+           },
+           required: [:items],
+           additionalProperties: false
+         }},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  operation :batches_committed,
+    summary: "List committed batches on the main page.",
+    description:
+      "Retrieves a list of Arbitrum batches that have been committed to the Parent chain, displayed on the main page.",
+    parameters: base_params(),
+    responses: [
+      ok:
+        {"List of committed Arbitrum batches.", "application/json",
+         %Schema{
+           type: :object,
+           properties: %{
+             items: %Schema{
+               type: :array,
+               items: Schemas.Arbitrum.BatchForList,
+               nullable: false
+             }
+           },
+           required: [:items],
+           additionalProperties: false
+         }},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/arbitrum/messages/:direction` endpoint.
   """
   @spec messages(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def messages(conn, %{"direction" => direction} = params) do
+  def messages(conn, %{direction: direction} = params) do
     options =
       params
       |> paging_options()
@@ -58,7 +367,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     Function to handle GET requests to `/api/v2/arbitrum/messages/:direction/count` endpoint.
   """
   @spec messages_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def messages_count(conn, %{"direction" => direction} = _params) do
+  def messages_count(conn, %{direction: direction} = _params) do
     conn
     |> put_status(200)
     |> render(:arbitrum_messages_count, %{count: MessagesReader.messages_count(direction)})
@@ -68,9 +377,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     Function to handle GET requests to `/api/v2/arbitrum/messages/claim/:message_id` endpoint.
   """
   @spec claim_message(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def claim_message(conn, %{"message_id" => message_id} = _params) do
-    message_id = String.to_integer(message_id)
-
+  def claim_message(conn, %{message_id: message_id} = _params) do
     case ClaimRollupMessage.claim(message_id) do
       {:ok, [contract_address: outbox_contract_address, calldata: calldata]} ->
         conn
@@ -108,7 +415,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     Function to handle GET requests to `/api/v2/arbitrum/messages/withdrawals/:transaction_hash` endpoint.
   """
   @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def withdrawals(conn, %{"transaction_hash" => transaction_hash} = _params) do
+  def withdrawals(conn, %{transaction_hash: transaction_hash} = _params) do
     hash =
       case Hash.Full.cast(transaction_hash) do
         {:ok, address} -> address
@@ -126,7 +433,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     Function to handle GET requests to `/api/v2/arbitrum/batches/:batch_number` endpoint.
   """
   @spec batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def batch(conn, %{"batch_number" => batch_number} = _params) do
+  def batch(conn, %{batch_number: batch_number} = _params) do
     case SettlementReader.batch(batch_number, necessity_by_association: @batch_necessity_by_association) do
       {:ok, batch} ->
         conn
@@ -139,46 +446,47 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   end
 
   @doc """
-    Function to handle GET requests to `/api/v2/arbitrum/batches/da/.../:data_hash` or
-    `/api/v2/arbitrum/batches/da/celestia/:transaction_commitment/:height` endpoints.
-
-    For AnyTrust and EigenDA data hash, the function can be called in two ways:
-    1. Without type parameter - returns the most recent batch for the data hash
-    2. With type=all parameter - returns all batches for the data hash
-
-    ## Parameters
-    - `conn`: The connection struct
-    - `params`: A map that may contain:
-      * `data_hash` - The AnyTrust or EigenDA data hash
-      * `transaction_commitment` and `height` - For Celestia data
-      * `type` - Optional parameter to specify return type ("all" for all batches)
+    Function to handle GET requests to `/api/v2/arbitrum/batches/da/anytrust/:data_hash` endpoint.
   """
-  @spec batch_by_data_availability_info(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def batch_by_data_availability_info(conn, %{"data_hash" => data_hash} = params) do
-    # In case of AnyTrust or EigenDA, `data_key` is the hash of the data itself
-    case Map.get(params, "type") do
+  @spec batch_by_anytrust_da_info(Plug.Conn.t(), map()) :: Plug.Conn.t() | {:error, :not_found}
+  # For AnyTrust, data_key is the hash of the data itself
+  def batch_by_anytrust_da_info(conn, %{data_hash: data_hash} = params) do
+    case Map.get(params, :type) do
       "all" -> all_batches_by_data_availability_info(conn, data_hash, params)
       _ -> one_batch_by_data_availability_info(conn, data_hash, params)
     end
   end
 
-  def batch_by_data_availability_info(
+  @doc """
+    Function to handle GET requests to `/api/v2/arbitrum/batches/da/eigenda/:data_hash` endpoint.
+  """
+  @spec batch_by_eigenda_da_info(Plug.Conn.t(), map()) :: Plug.Conn.t() | {:error, :not_found}
+  # For EigenDA, data_key is the hash of the data itself
+  def batch_by_eigenda_da_info(conn, %{data_hash: data_hash} = params) do
+    case Map.get(params, :type) do
+      "all" -> all_batches_by_data_availability_info(conn, data_hash, params)
+      _ -> one_batch_by_data_availability_info(conn, data_hash, params)
+    end
+  end
+
+  @doc """
+    Function to handle GET requests to `/api/v2/arbitrum/batches/da/celestia/:height/:transaction_commitment` endpoint.
+  """
+  @spec batch_by_celestia_da_info(Plug.Conn.t(), map()) :: Plug.Conn.t() | {:error, :not_found}
+  def batch_by_celestia_da_info(
         conn,
-        %{"transaction_commitment" => transaction_commitment, "height" => height} = _params
+        %{transaction_commitment: transaction_commitment, height: height} = _params
       ) do
-    # In case of Celestia, `data_key` is the hash of the height and the commitment hash
-    with {:ok, :hash, transaction_commitment_hash} <- parse_block_hash_or_number_param(transaction_commitment),
-         key <- calculate_celestia_data_key(height, transaction_commitment_hash) do
+    with {:ok, :hash, transaction_commitment_hash} <- parse_block_hash_or_number_param(transaction_commitment) do
+      key = calculate_celestia_data_key(height, transaction_commitment_hash)
+
       case SettlementReader.get_da_record_by_data_key(key) do
         {:ok, {batch_number, _}} ->
-          batch(conn, %{"batch_number" => batch_number})
+          batch(conn, %{batch_number: batch_number})
 
         {:error, :not_found} = res ->
           res
       end
-    else
-      res ->
-        res
     end
   end
 
@@ -191,11 +499,12 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   #
   # ## Returns
   # - The connection struct with rendered response
-  @spec one_batch_by_data_availability_info(Plug.Conn.t(), binary(), map()) :: Plug.Conn.t()
+  @spec one_batch_by_data_availability_info(Plug.Conn.t(), binary(), map()) ::
+          Plug.Conn.t() | {:error, :not_found}
   defp one_batch_by_data_availability_info(conn, data_hash, _params) do
     case SettlementReader.get_da_record_by_data_key(data_hash) do
       {:ok, {batch_number, _}} ->
-        batch(conn, %{"batch_number" => batch_number})
+        batch(conn, %{batch_number: batch_number})
 
       {:error, :not_found} = res ->
         res
@@ -211,11 +520,12 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   #
   # ## Returns
   # - The connection struct with rendered response
-  @spec all_batches_by_data_availability_info(Plug.Conn.t(), binary(), map()) :: Plug.Conn.t()
+  @spec all_batches_by_data_availability_info(Plug.Conn.t(), binary(), map()) ::
+          Plug.Conn.t() | {:error, :not_found}
   defp all_batches_by_data_availability_info(conn, data_hash, params) do
     case SettlementReader.get_all_da_records_by_data_key(data_hash) do
       {:ok, {batch_numbers, _}} ->
-        params = Map.put(params, "batch_numbers", batch_numbers)
+        params = Map.put(params, :batch_numbers, batch_numbers)
         batches(conn, params)
 
       {:error, :not_found} = res ->
@@ -282,6 +592,10 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   # ## Returns
   # - The options keyword list, potentially extended with batch_numbers
   @spec maybe_add_batch_numbers(Keyword.t(), map()) :: Keyword.t()
+  defp maybe_add_batch_numbers(options, %{batch_numbers: batch_numbers}) when is_list(batch_numbers) do
+    Keyword.put(options, :batch_numbers, batch_numbers)
+  end
+
   defp maybe_add_batch_numbers(options, %{"batch_numbers" => batch_numbers}) when is_list(batch_numbers) do
     Keyword.put(options, :batch_numbers, batch_numbers)
   end

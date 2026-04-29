@@ -379,16 +379,15 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # - `data`: Binary data containing the finalizeInboundTransfer calldata
   #
   # ## Returns
-  # - Map containing token contract `address`, `destination` address, token `amount`,
+  # - Map containing token contract `address_hash`, `destination_address_hash`, token `amount`,
   #   token `name`, `symbol` and `decimals` if the data corresponds to finalizeInboundTransfer selector
   # - `nil` if data is void or doesn't match finalizeInboundTransfer method (which
   #   happens when the L2->L1 message is for arbitrary data transfer, such as a remote
   #   call of a smart contract on L1)
   @spec obtain_token_withdrawal_data(binary()) ::
           %{
-            address_hash: Explorer.Chain.Hash.Address.t(),
-            address: Explorer.Chain.Hash.Address.t(),
-            destination: Explorer.Chain.Hash.Address.t(),
+            address_hash: Explorer.Chain.Hash.Address.t() | nil,
+            destination_address_hash: Explorer.Chain.Hash.Address.t() | nil,
             amount: non_neg_integer(),
             decimals: non_neg_integer() | nil,
             name: binary() | nil,
