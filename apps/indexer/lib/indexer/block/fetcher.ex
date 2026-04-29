@@ -39,14 +39,17 @@ defmodule Indexer.Block.Fetcher do
   alias Indexer.{Prometheus, TokenBalances, Tracer}
 
   alias Indexer.Fetcher.{
+    AddressImporter,
     AddressNonceUpdater,
     Beacon.Blob,
     BlockReward,
     ContractCode,
+    CurrentTokenBalanceImporter,
     InternalTransaction,
     ReplacedTransaction,
     SignedAuthorizationStatus,
     Token,
+    TokenInstanceImporter,
     UncleBlock
   }
 
@@ -94,8 +97,8 @@ defmodule Indexer.Block.Fetcher do
   @callback import(
               t(module()),
               %{
-                address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
-                addresses: Import.Runner.options(),
+                optional(:address_hash_to_fetched_balance_block_number) => address_hash_to_fetched_balance_block_number,
+                optional(:addresses) => Import.Runner.options(),
                 address_coin_balances: Import.Runner.options(),
                 address_coin_balances_daily: Import.Runner.options(),
                 address_token_balances: Import.Runner.options(),
@@ -236,25 +239,18 @@ defmodule Indexer.Block.Fetcher do
          token_transfers_with_token = token_transfers_merge_token(token_transfers, tokens),
          address_token_balances =
            AddressTokenBalances.params_set(%{token_transfers_params: token_transfers_with_token}),
-         token_instances = TokenInstances.params_set(%{token_transfers_params: token_transfers}),
          stability_validators = StabilityValidators.parse(blocks),
-         addresses_without_nonce = process_addresses_nonce(addresses),
          basic_import_options = %{
-           addresses: %{params: addresses_without_nonce},
+           addresses: %{params: addresses},
            address_coin_balances: %{params: coin_balances_params_set},
            address_token_balances: %{params: address_token_balances},
-           address_current_token_balances: %{
-             params: address_token_balances |> MapSet.to_list() |> TokenBalances.to_address_current_token_balances()
-           },
            blocks: %{params: blocks},
            block_second_degree_relations: %{params: block_second_degree_relations_params},
            block_rewards: %{errors: beneficiaries_errors, params: beneficiaries_with_gas_payment},
            logs: %{params: logs},
            token_transfers: %{params: token_transfers},
-           tokens: %{params: tokens},
            transactions: %{params: transactions_with_receipts},
            withdrawals: %{params: withdrawals_params},
-           token_instances: %{params: token_instances},
            signed_authorizations: %{params: SignedAuthorizations.parse(transactions_with_receipts)},
            fhe_operations: %{params: fhe_operations}
          },
@@ -274,7 +270,10 @@ defmodule Indexer.Block.Fetcher do
          {:ok, inserted} <-
            __MODULE__.import(
              state,
-             basic_import_options |> Map.merge(additional_options) |> import_options(chain_type_import_options)
+             basic_import_options
+             |> Map.merge(additional_options)
+             |> import_options(chain_type_import_options)
+             |> extend_with_asyncable_import_options(tokens, token_transfers, address_token_balances)
            ) do
       Prometheus.Instrumenter.set_block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
@@ -422,10 +421,14 @@ defmodule Indexer.Block.Fetcher do
     import_options
     |> Map.put_new(:celo_pending_account_operations, %{params: celo_pending_account_operations})
     |> Map.put_new(:celo_epochs, %{params: celo_epochs})
-    |> Map.put(
-      :tokens,
-      %{params: (tokens ++ celo_gas_tokens) |> Enum.uniq()}
-    )
+    |> then(fn options ->
+      if enable_partial_async_import?() do
+        TokenInstanceImporter.add(celo_gas_tokens, [])
+        options
+      else
+        Map.put(options, :tokens, %{params: Enum.uniq(tokens ++ celo_gas_tokens)})
+      end
+    end)
   end
 
   defp do_chain_identity_import_options(_, basic_import_options, _chain_specific_import_options) do
@@ -440,6 +443,31 @@ defmodule Indexer.Block.Fetcher do
       zilliqa_nested_quorum_certificates: Map.get(fetched_blocks, :zilliqa_nested_quorum_certificates_params, [])
     })
   end
+
+  defp extend_with_asyncable_import_options(import_options, tokens, token_transfers, token_balances) do
+    current_token_balances_params =
+      token_balances
+      |> MapSet.to_list()
+      |> TokenBalances.to_address_current_token_balances()
+
+    if enable_partial_async_import?() do
+      TokenInstanceImporter.add(tokens, token_transfers)
+      CurrentTokenBalanceImporter.add(current_token_balances_params)
+      import_options
+    else
+      token_instances = TokenInstances.params_set(%{token_transfers_params: token_transfers})
+      addresses_without_nonce = process_addresses_nonce(import_options[:addresses][:params])
+
+      Map.merge(import_options, %{
+        addresses: %{params: addresses_without_nonce},
+        address_current_token_balances: %{params: current_token_balances_params},
+        tokens: %{params: tokens},
+        token_instances: %{params: token_instances}
+      })
+    end
+  end
+
+  defp enable_partial_async_import?, do: Application.get_env(:indexer, :enable_partial_async_import?)
 
   defp update_block_cache([], _), do: :ok
 
@@ -514,13 +542,21 @@ defmodule Indexer.Block.Fetcher do
       pop_address_hash_to_fetched_balance_block_number(options)
 
     options_with_broadcast =
-      Map.merge(
-        import_options,
-        %{
-          address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
-          broadcast: broadcast
-        }
-      )
+      if enable_partial_async_import?() do
+        AddressImporter.add(import_options[:addresses][:params])
+
+        import_options
+        |> Map.merge(%{broadcast: broadcast})
+        |> Map.delete(:addresses)
+      else
+        Map.merge(
+          import_options,
+          %{
+            address_hash_to_fetched_balance_block_number: address_hash_to_fetched_balance_block_number,
+            broadcast: broadcast
+          }
+        )
+      end
 
     {import_time, result} = :timer.tc(fn -> callback_module.import(state, options_with_broadcast) end)
 
@@ -560,18 +596,11 @@ defmodule Indexer.Block.Fetcher do
     |> BlockReward.async_fetch(realtime?)
   end
 
-  def async_import_coin_balances(%{addresses: addresses}, %{
-        address_hash_to_fetched_balance_block_number: address_hash_to_block_number
-      }) do
-    addresses
-    |> Enum.map(fn %Address{hash: address_hash} ->
-      block_number = Map.fetch!(address_hash_to_block_number, to_string(address_hash))
-      %{address_hash: address_hash, block_number: block_number}
-    end)
-    |> CoinBalanceCatchup.async_fetch_balances()
+  def async_import_coin_balances(%{address_coin_balances: balances}) do
+    CoinBalanceCatchup.async_fetch_balances(balances)
   end
 
-  def async_import_coin_balances(_, _), do: :ok
+  def async_import_coin_balances(_), do: :ok
 
   def async_import_realtime_coin_balances(%{address_coin_balances: balances}) do
     CoinBalanceRealtime.async_fetch_balances(balances)
