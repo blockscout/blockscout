@@ -232,7 +232,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     if PendingOperationsHelper.blocks_pending?(start_block_number, end_block_number) do
       render(conn, :pending_internal_transaction,
         message: @block_range_not_yet_processed_message,
-        data: internal_transactions
+        data: []
       )
     else
       render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
