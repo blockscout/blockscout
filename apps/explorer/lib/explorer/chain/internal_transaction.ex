@@ -1297,11 +1297,15 @@ defmodule Explorer.Chain.InternalTransaction do
   def include_zero_value(query, true), do: query
 
   def include_zero_value(query, false) do
-    where(
-      query,
-      [internal_transaction],
-      (internal_transaction.type == :call and internal_transaction.value > ^0) or internal_transaction.type != :call
-    )
+    if BackgroundMigrations.get_delete_zero_value_internal_transactions_finished() do
+      query
+    else
+      where(
+        query,
+        [internal_transaction],
+        (internal_transaction.type == :call and internal_transaction.value > ^0) or internal_transaction.type != :call
+      )
+    end
   end
 
   @doc """

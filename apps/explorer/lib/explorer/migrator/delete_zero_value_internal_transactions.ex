@@ -35,6 +35,14 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   @spec border_number() :: non_neg_integer() | nil
   def border_number, do: get_border_number()
 
+  @doc """
+  Checks if this migration has completed.
+  """
+  @spec migration_finished?() :: boolean()
+  def migration_finished? do
+    MigrationStatus.get_status(@migration_name) == "completed"
+  end
+
   @impl true
   def init(_) do
     {:ok, %{}, {:continue, :ok}}

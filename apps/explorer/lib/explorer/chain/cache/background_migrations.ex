@@ -68,7 +68,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished,
     key: :heavy_indexes_create_addresses_hash_contract_code_not_null_index_finished,
     key: :heavy_indexes_create_address_ids_internal_transactions_indexes_finished,
-    key: :fill_internal_transactions_address_ids_finished
+    key: :fill_internal_transactions_address_ids_finished,
+    key: :delete_zero_value_internal_transactions_finished
 
   @dialyzer :no_match
 
@@ -77,6 +78,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     AddressTokenBalanceTokenType,
     ArbitrumDaRecordsNormalization,
     BackfillMultichainSearchDB,
+    DeleteZeroValueInternalTransactions,
     EmptyInternalTransactionsData,
     FillInternalTransactionsAddressIds,
     SanitizeDuplicatedLogIndexLogs,
@@ -411,6 +413,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       FillInternalTransactionsAddressIds,
       &set_fill_internal_transactions_address_ids_finished/1
+    )
+  end
+
+  defp handle_fallback(:delete_zero_value_internal_transactions_finished) do
+    set_and_return_migration_status(
+      DeleteZeroValueInternalTransactions,
+      &set_delete_zero_value_internal_transactions_finished/1
     )
   end
 
