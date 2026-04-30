@@ -2956,11 +2956,11 @@ defmodule Explorer.Chain.Transaction do
   @doc """
   Returns pending transactions list from the DB
   """
-  @spec pending_transactions_list() :: Ecto.Schema.t() | term()
-  def pending_transactions_list do
+  @spec pending_transactions_list(non_neg_integer()) :: Ecto.Schema.t() | term()
+  def pending_transactions_list(window_size \\ 86_400_000) do
     __MODULE__
     |> pending_transactions_query()
-    |> where([t], t.inserted_at < ago(1, "day"))
+    |> where([t], t.inserted_at < ago(^window_size, "millisecond"))
     |> Repo.all(timeout: :infinity)
   end
 
