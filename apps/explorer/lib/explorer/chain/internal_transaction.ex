@@ -641,14 +641,8 @@ defmodule Explorer.Chain.InternalTransaction do
       not address_ids_indexes_exists?() ->
         adjust_address_match_dynamic(address_hash_field, address_hashes)
 
-      address_ids_filled?() ->
-        adjust_address_match_dynamic(address_id_field, address_ids)
-
       true ->
-        dynamic(
-          [it],
-          field(it, ^address_id_field) in ^address_ids or field(it, ^address_hash_field) in ^address_hashes
-        )
+        adjust_address_match_dynamic(address_id_field, address_ids)
     end
   end
 
@@ -657,10 +651,6 @@ defmodule Explorer.Chain.InternalTransaction do
 
   defp address_ids_indexes_exists? do
     BackgroundMigrations.get_heavy_indexes_create_address_ids_internal_transactions_indexes_finished()
-  end
-
-  defp address_ids_filled? do
-    BackgroundMigrations.get_fill_internal_transactions_address_ids_finished()
   end
 
   def where_is_different_from_parent_transaction(query) do
