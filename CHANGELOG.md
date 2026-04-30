@@ -4,6 +4,7 @@
 
 ### 🐛 Bug Fixes
 
+- Use inner join for verified contract addresses instead of lateral join ([#14294](https://github.com/blockscout/blockscout/pull/14294))
 - Disable on-demand internal tx fetch when corresponding flag is provided ([#14289](https://github.com/blockscout/blockscout/pull/14289))
 - Add fill IT addresses dependency into drop index migrations ([#14280](https://github.com/blockscout/blockscout/issues/14280))
 - Fix incorrect batch size in Indexer.Fetcher.OnDemand.TokenBalance ([#14265](https://github.com/blockscout/blockscout/issues/14265))
