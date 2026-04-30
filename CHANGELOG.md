@@ -21,6 +21,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add window_size for PendingTransactionsSanitizer ([#14292](https://github.com/blockscout/blockscout/pull/14292))
 - Make pending operations helper batching configurable ([#14273](https://github.com/blockscout/blockscout/issues/14273))
 
 
