@@ -5,7 +5,7 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQueryTest do
   alias Explorer.PagingOptions
 
   describe "list/1" do
-    test "uses default strategy and orders by smart_contract id desc when sorting is absent" do
+    test "orders by smart_contract id desc when sorting is absent" do
       contracts = insert_list(4, :smart_contract)
 
       addresses = VerifiedContractAddressesQuery.list()
@@ -14,7 +14,7 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQueryTest do
                contracts |> Enum.map(& &1.id) |> Enum.sort(:desc)
     end
 
-    test "uses sorting strategy and pages with cursor key" do
+    test "pages with cursor key when sorting is present" do
       for balance <- 0..5 do
         address = insert(:address, fetched_coin_balance: balance, verified: true)
         insert(:smart_contract, address_hash: address.hash, address: address)
@@ -69,7 +69,7 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQueryTest do
       assert hash_result.hash == hash_contract.address_hash
     end
 
-    test "treats %, _ and \\ literally in search with default strategy" do
+    test "treats %, _ and \\ literally in search when sorting is absent" do
       # cspell:disable
       fixtures = [
         %{target: "literal%percent-contract", decoy: "literalXpercent-contract"},
@@ -87,7 +87,7 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQueryTest do
       end
     end
 
-    test "treats %, _ and \\ literally in search with sorting strategy" do
+    test "treats %, _ and \\ literally in search when sorting is present" do
       options = [sorting: []]
 
       # cspell:disable
