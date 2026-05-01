@@ -4,6 +4,7 @@
 
 ### 🐛 Bug Fixes
 
+- Update OnDemand.InternalTransaction etherscan fields ([#14297](https://github.com/blockscout/blockscout/pull/14297))
 - Use inner join for verified contract addresses instead of lateral join ([#14294](https://github.com/blockscout/blockscout/pull/14294))
 - Disable on-demand internal tx fetch when corresponding flag is provided ([#14289](https://github.com/blockscout/blockscout/pull/14289))
 - Add fill IT addresses dependency into drop index migrations ([#14280](https://github.com/blockscout/blockscout/issues/14280))
@@ -22,6 +23,8 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Cover all RPC API stats endpoints and stabilize flaky specs ([#14299](https://github.com/blockscout/blockscout/pull/14299))
+- Change "coinsupply" RPC API response to fit JSON RPC requirements ([#14298](https://github.com/blockscout/blockscout/pull/14298))
 - Optimize internal transactions address_match_dynamic ([#14293](https://github.com/blockscout/blockscout/pull/14293))
 - Add window_size for PendingTransactionsSanitizer ([#14292](https://github.com/blockscout/blockscout/pull/14292))
 - Make pending operations helper batching configurable ([#14273](https://github.com/blockscout/blockscout/issues/14273))
