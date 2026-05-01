@@ -170,6 +170,16 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
   end
 
   describe "ethsupply" do
+    setup do
+      original_sum = AddressesCoinBalanceSum.get_sum()
+
+      on_exit(fn ->
+        AddressesCoinBalanceSum.set_sum(original_sum)
+      end)
+
+      :ok
+    end
+
     test "returns cached total supply from counter", %{conn: conn} do
       AddressesCoinBalanceSum.set_sum(Decimal.new("3400000000000000000"))
 
@@ -191,6 +201,16 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
   end
 
   describe "coinsupply" do
+    setup do
+      original_sum_minus_burnt = AddressesCoinBalanceSumMinusBurnt.get_sum_minus_burnt()
+
+      on_exit(fn ->
+        AddressesCoinBalanceSumMinusBurnt.set_sum_minus_burnt(original_sum_minus_burnt)
+      end)
+
+      :ok
+    end
+
     test "returns value from cached sum minus burnt when it is positive", %{conn: conn} do
       AddressesCoinBalanceSumMinusBurnt.set_sum_minus_burnt(Decimal.new("2000000000000000000"))
 
@@ -211,27 +231,40 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
     end
 
     test "falls back to last fetched counter when cached sum minus burnt is non-positive", %{conn: conn} do
-      AddressesCoinBalanceSumMinusBurnt.set_sum_minus_burnt(Decimal.new(0))
+      original_last_fetched_counter = LastFetchedCounter.get("sum_coin_total_supply_minus_burnt", nullable: true)
 
-      LastFetchedCounter.upsert(%{
-        counter_type: "sum_coin_total_supply_minus_burnt",
-        value: Decimal.new("1500000000000000000")
-      })
+      try do
+        AddressesCoinBalanceSumMinusBurnt.set_sum_minus_burnt(Decimal.new(0))
 
-      params = %{
-        "module" => "stats",
-        "action" => "coinsupply"
-      }
+        LastFetchedCounter.upsert(%{
+          counter_type: "sum_coin_total_supply_minus_burnt",
+          value: Decimal.new("1500000000000000000")
+        })
 
-      assert response =
-               conn
-               |> get("/api", params)
-               |> json_response(200)
+        params = %{
+          "module" => "stats",
+          "action" => "coinsupply"
+        }
 
-      assert response["result"] == "1.5"
-      assert response["status"] == "1"
-      assert response["message"] == "OK"
-      assert :ok = ExJsonSchema.Validator.validate(coinsupply_schema(), response)
+        assert response =
+                 conn
+                 |> get("/api", params)
+                 |> json_response(200)
+
+        assert response["result"] == "1.5"
+        assert response["status"] == "1"
+        assert response["message"] == "OK"
+        assert :ok = ExJsonSchema.Validator.validate(coinsupply_schema(), response)
+      after
+        if is_nil(original_last_fetched_counter) do
+          LastFetchedCounter.delete("sum_coin_total_supply_minus_burnt")
+        else
+          LastFetchedCounter.upsert(%{
+            counter_type: "sum_coin_total_supply_minus_burnt",
+            value: original_last_fetched_counter
+          })
+        end
+      end
     end
   end
 
