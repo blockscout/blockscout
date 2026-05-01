@@ -27,6 +27,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :tt_denormalization_finished,
     key: :sanitize_duplicated_log_index_logs_finished,
     key: :backfill_multichain_search_db_finished,
+    key: :backfill_multichain_search_db_current_token_balances_finished,
     key: :arbitrum_da_records_normalization_finished,
     key: :sanitize_verified_addresses_finished,
     key: :backfill_call_type_enum_finished,
@@ -77,6 +78,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     AddressTokenBalanceTokenType,
     ArbitrumDaRecordsNormalization,
     BackfillMultichainSearchDB,
+    BackfillMultichainSearchDbCurrentTokenBalances,
     EmptyInternalTransactionsData,
     FillInternalTransactionsAddressIds,
     SanitizeDuplicatedLogIndexLogs,
@@ -162,6 +164,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       BackfillMultichainSearchDB,
       &set_backfill_multichain_search_db_finished/1
+    )
+  end
+
+  defp handle_fallback(:backfill_multichain_search_db_current_token_balances_finished) do
+    set_and_return_migration_status(
+      BackfillMultichainSearchDbCurrentTokenBalances,
+      &set_backfill_multichain_search_db_current_token_balances_finished/1
     )
   end
 
