@@ -474,7 +474,8 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
                from_address_hash: from_address_hash,
                to_address_hash: nil,
                block_timestamp: ^block_timestamp,
-               transaction_hash: ^transaction_hash
+               transaction_hash: ^transaction_hash,
+               error: nil
              }
            ] = InternalTransactionOnDemand.etherscan_fetch_by_transaction(transaction, %{})
 
