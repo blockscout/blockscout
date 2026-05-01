@@ -149,16 +149,22 @@ defmodule Utils.JSON do
   end
 
   defp normalize_for_encoding(%_{} = term) do
-    cond do
-      JSON.Encoder.impl_for(term) ->
-        term
+    case JSON.Encoder.impl_for(term) do
+      nil ->
+        case Jason.Encoder.impl_for(term) do
+          Jason.Encoder.Any ->
+            term
 
-      Jason.Encoder.impl_for(term) ->
-        term
-        |> Jason.encode!()
-        |> JSON.decode!()
+          nil ->
+            term
 
-      true ->
+          _impl ->
+            term
+            |> Jason.encode!()
+            |> JSON.decode!()
+        end
+
+      _impl ->
         term
     end
   end
