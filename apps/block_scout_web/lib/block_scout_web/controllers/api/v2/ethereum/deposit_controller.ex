@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  import BlockScoutWeb.Chain, only: [next_page_params: 5, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [next_page_params: 4, split_list_by_page: 1]
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
 
@@ -18,15 +18,14 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
   operation :list,
     summary: "Lists all beacon deposits",
     description: "Retrieves a paginated list of all beacon deposits.",
-    parameters: base_params() ++ define_paging_params(["deposit_index", "items_count"]),
+    parameters: base_params() ++ define_paging_params(["deposit_index"]),
     responses: [
       ok:
         {"List of Beacon Deposits, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Beacon.Deposit,
            next_page_params_example: %{
-             "index" => 123,
-             "items_count" => 50
+             "index" => 123
            }
          )},
       forbidden: ForbiddenResponse.response()
@@ -68,7 +67,7 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
 
     next_page_params =
       next_page
-      |> next_page_params(deposits, params, false, paging_function())
+      |> next_page_params(deposits, params, paging_function())
 
     conn
     |> put_status(200)
