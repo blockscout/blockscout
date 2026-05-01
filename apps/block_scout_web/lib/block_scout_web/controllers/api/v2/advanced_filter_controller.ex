@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   use BlockScoutWeb, :controller
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  import BlockScoutWeb.Chain, only: [paginate_list: 4, fetch_scam_token_toggle: 2]
+  import BlockScoutWeb.Chain, only: [paginate_list: 4, fetch_scam_token_toggle: 2, maybe_override_page_size: 2]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   alias BlockScoutWeb.AccessHelper
@@ -64,6 +64,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       params
       |> extract_filters()
       |> Keyword.merge(paging_options(params))
+      |> maybe_override_page_size(params)
       |> Keyword.merge(@api_true)
       |> fetch_scam_token_toggle(conn)
 

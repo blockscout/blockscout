@@ -36,7 +36,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
     description: "Retrieves a paginated list of token transfers across all token types (ERC-20, ERC-721, ERC-1155).",
     parameters:
       base_params() ++
-        [token_type_param(), limit_param()] ++
+        [token_type_param()] ++
         define_paging_params([
           "index",
           "block_number",

@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
   import BlockScoutWeb.Chain,
     only: [
+      maybe_override_page_size: 2,
       paginate_list: 4
     ]
 
@@ -59,14 +60,16 @@ defmodule BlockScoutWeb.API.V2.CeloController do
         _ -> default_paging_options()
       end
 
-    options = [
-      necessity_by_association: %{
-        :end_processing_block => :optional,
-        :distribution => :optional
-      },
-      paging_options: paging_options,
-      api?: true
-    ]
+    options =
+      [
+        necessity_by_association: %{
+          :end_processing_block => :optional,
+          :distribution => :optional
+        },
+        paging_options: paging_options,
+        api?: true
+      ]
+      |> maybe_override_page_size(params)
 
     filtered_params =
       params
@@ -181,14 +184,16 @@ defmodule BlockScoutWeb.API.V2.CeloController do
          {:ok, reward_type_atom} <- parse_celo_reward_type(reward_type) do
       address_associations = [:names, :smart_contract, proxy_implementations_association()]
 
-      full_options = [
-        necessity_by_association: %{
-          [account_address: address_associations] => :optional,
-          [associated_account_address: address_associations] => :optional
-        },
-        paging_options: election_rewards_paging_options(params),
-        api?: true
-      ]
+      full_options =
+        [
+          necessity_by_association: %{
+            [account_address: address_associations] => :optional,
+            [associated_account_address: address_associations] => :optional
+          },
+          paging_options: election_rewards_paging_options(params),
+          api?: true
+        ]
+        |> maybe_override_page_size(params)
 
       rewards_plus_one =
         ElectionReward.epoch_number_and_type_to_rewards(

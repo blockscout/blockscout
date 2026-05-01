@@ -21,6 +21,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
 
   import BlockScoutWeb.Chain,
     only: [
+      maybe_override_page_size: 2,
       paginate_list: 4,
       paging_options: 1
     ]
@@ -200,6 +201,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     options =
       @api_true
       |> Keyword.merge(paging_options: paging_options)
+      |> maybe_override_page_size(params)
       |> Keyword.merge(sorting_options: sorting_options)
 
     {validators, next_page_params} =

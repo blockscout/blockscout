@@ -1503,8 +1503,12 @@ defmodule BlockScoutWeb.Chain do
     |> Enum.take(limit)
   end
 
-  defp maybe_override_page_size(paging_options_keyword, params) do
-    case params[:items_count] || params["items_count"] do
+  @doc """
+  Overrides page size in paging options based on `items_count` parameter.
+  """
+  @spec maybe_override_page_size(keyword(), map()) :: keyword()
+  def maybe_override_page_size(paging_options_keyword, params) do
+    case parse_items_count(params[:items_count] || params["items_count"]) do
       count when is_integer(count) and count > 0 ->
         clamped = min(count, Explorer.PagingOptions.max_page_size())
 
@@ -1516,6 +1520,17 @@ defmodule BlockScoutWeb.Chain do
         paging_options_keyword
     end
   end
+
+  defp parse_items_count(count) when is_integer(count), do: count
+
+  defp parse_items_count(count) when is_binary(count) do
+    case Integer.parse(count) do
+      {parsed, ""} -> parsed
+      _ -> nil
+    end
+  end
+
+  defp parse_items_count(_), do: nil
 
   defp map_to_string_keys(map) do
     map

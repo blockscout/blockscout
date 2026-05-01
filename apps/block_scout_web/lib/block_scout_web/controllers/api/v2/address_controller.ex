@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       paginate_list: 4,
       token_transfers_next_page_params: 3,
       paging_options: 1,
+      maybe_override_page_size: 2,
       current_filter: 1,
       paging_params_with_fiat_value: 1,
       fetch_scam_token_toggle: 2,
@@ -1358,6 +1359,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           :paging_options,
           celo_election_rewards_paging_options(params)
         )
+        |> maybe_override_page_size(params)
 
       results_plus_one = CeloElectionReward.address_hash_to_rewards(address_hash, full_options)
 
