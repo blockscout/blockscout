@@ -82,4 +82,23 @@ defmodule EthereumJSONRPC.HTTP.Helper do
       body
     end
   end
+
+  @spec request_compression_enabled?(binary() | term(), keyword() | nil) :: boolean()
+  def request_compression_enabled?(method, config \\ Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP, [])) do
+    request_compression_all_methods_enabled? =
+      Keyword.get(config, :request_compression_all_methods_enabled?, false)
+
+    request_compression_heavy_methods_enabled? =
+      Keyword.get(config, :request_compression_heavy_methods_enabled?, true)
+
+    request_compression_all_methods_enabled? ||
+      (request_compression_heavy_methods_enabled? && heavy_request_method?(method))
+  end
+
+  @spec heavy_request_method?(binary() | term()) :: boolean()
+  def heavy_request_method?(method) when is_binary(method) do
+    String.starts_with?(method, ["trace_", "debug_"]) || method == "eth_getBlockReceipts"
+  end
+
+  def heavy_request_method?(_method), do: false
 end

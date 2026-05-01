@@ -16,12 +16,13 @@ defmodule Utils.HttpClient.TeslaHelper do
   ## Returns
   - A Tesla client struct with configured middleware
   """
-  @spec client(keyword() | map()) :: Tesla.Client.t()
-  def client(options) do
+  @spec client(keyword() | map(), list()) :: Tesla.Client.t()
+  def client(options, additional_middleware \\ []) do
     options[:recv_timeout]
     |> add_timeout_middleware()
     |> add_follow_redirect_middleware(options[:follow_redirect])
     |> add_basic_auth_middleware(options[:basic_auth])
+    |> add_additional_middleware(additional_middleware)
     |> Tesla.client()
   end
 
@@ -64,6 +65,10 @@ defmodule Utils.HttpClient.TeslaHelper do
   end
 
   defp add_basic_auth_middleware(middleware, _basic_auth), do: middleware
+
+  defp add_additional_middleware(middleware, additional_middleware) when is_list(additional_middleware) do
+    middleware ++ additional_middleware
+  end
 
   defp add_recv_timeout_option(options, nil), do: options
 
