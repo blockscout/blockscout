@@ -128,7 +128,8 @@ defmodule Explorer.Market.Source.Mobula do
          symbol: data["symbol"],
          fiat_value: Source.to_decimal(data["price"]),
          volume_24h: Source.to_decimal(data["off_chain_volume"]),
-         image_url: Source.handle_image_url(data["logo"])
+         image_url: Source.handle_image_url(data["logo"]),
+         circulating_supply: Source.to_decimal(data["circulating_supply"])
        }}
     else
       nil ->

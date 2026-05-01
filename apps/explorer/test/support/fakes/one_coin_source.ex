@@ -17,7 +17,8 @@ defmodule Explorer.Market.Source.OneCoinSource do
     symbol: Explorer.coin(),
     fiat_value: Decimal.new(1),
     volume_24h: Decimal.new(1),
-    image_url: nil
+    image_url: nil,
+    circulating_supply: Decimal.new(10_000_000)
   }
 
   {:ok, address_hash} = Hash.Address.cast("0x0000000000000000000000000000000000000001")

@@ -128,7 +128,8 @@ defmodule Explorer.Market.Source.CryptoRank do
          symbol: String.upcase(coin["symbol"]),
          fiat_value: Source.to_decimal(coin_data["price"]),
          volume_24h: Source.to_decimal(coin_data["volume24h"]),
-         image_url: Source.handle_image_url(coin["images"]["60x60"] || coin["images"]["16x16"])
+         image_url: Source.handle_image_url(coin["images"]["60x60"] || coin["images"]["16x16"]),
+         circulating_supply: Source.to_decimal(coin["circulatingSupply"])
        }}
     else
       nil -> {:error, coin_id_not_specified_error}

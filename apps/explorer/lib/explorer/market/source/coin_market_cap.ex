@@ -119,7 +119,8 @@ defmodule Explorer.Market.Source.CoinMarketCap do
          symbol: String.upcase(token_properties["symbol"]),
          fiat_value: Source.to_decimal(currency_id["price"]),
          volume_24h: Source.to_decimal(currency_id["volume_24h"]),
-         image_url: nil
+         image_url: nil,
+         circulating_supply: Source.to_decimal(token_properties["circulating_supply"])
        }}
     else
       nil ->
