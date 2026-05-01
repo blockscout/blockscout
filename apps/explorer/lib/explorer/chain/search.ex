@@ -1032,8 +1032,7 @@ defmodule Explorer.Chain.Search do
   def search_ens_name_in_bens(search_query) do
     trimmed_query = String.trim(search_query)
 
-    with true <- Regex.match?(~r/\w+\.\w+/, trimmed_query),
-         %{address_hash: address_hash_string_or_nil} = result <- ens_domain_name_lookup(search_query),
+    with %{address_hash: address_hash_string_or_nil} = result <- ens_domain_name_lookup(trimmed_query),
          address_hash <- address_hash_string_or_nil && Chain.string_to_address_hash_or_nil(address_hash_string_or_nil) do
       {result, address_hash}
     else
