@@ -30,8 +30,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
     parameters:
       base_params() ++
         define_paging_params([
-          "number",
-          "items_count"
+          "number"
         ]),
     responses: [
       ok:
@@ -154,8 +153,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
         define_paging_params([
           "amount",
           "account_address_hash",
-          "associated_account_address_hash",
-          "items_count"
+          "associated_account_address_hash"
         ]),
     responses: [
       ok:
