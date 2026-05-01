@@ -28,7 +28,7 @@ defmodule Utils.JSON do
   @spec encode!(term(), [option()]) :: binary()
   def encode!(term, options \\ []) do
     pretty = Keyword.get(options, :pretty, false)
-    result = JSON.encode!(term)
+    result = term |> normalize_for_encoding() |> JSON.encode!()
 
     if pretty do
       pretty_print(result, Keyword.get(options, :space, 2))
@@ -49,7 +49,7 @@ defmodule Utils.JSON do
   @spec encode_to_iodata!(term(), [option()]) :: iodata()
   def encode_to_iodata!(term, options \\ []) do
     pretty = Keyword.get(options, :pretty, false)
-    result = JSON.encode_to_iodata!(term)
+    result = term |> normalize_for_encoding() |> JSON.encode_to_iodata!()
 
     if pretty do
       pretty_print(IO.iodata_to_binary(result), Keyword.get(options, :space, 2))
@@ -140,6 +140,36 @@ defmodule Utils.JSON do
   end
 
   defp atomize_keys(term) do
+    term
+  end
+
+  @spec normalize_for_encoding(term()) :: term()
+  defp normalize_for_encoding(term) when is_list(term) do
+    Enum.map(term, &normalize_for_encoding/1)
+  end
+
+  defp normalize_for_encoding(%_{} = term) do
+    cond do
+      JSON.Encoder.impl_for(term) ->
+        term
+
+      Jason.Encoder.impl_for(term) ->
+        term
+        |> Jason.encode!()
+        |> JSON.decode!()
+
+      true ->
+        term
+    end
+  end
+
+  defp normalize_for_encoding(map) when is_map(map) do
+    Map.new(map, fn {key, value} ->
+      {normalize_for_encoding(key), normalize_for_encoding(value)}
+    end)
+  end
+
+  defp normalize_for_encoding(term) do
     term
   end
 

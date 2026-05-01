@@ -34,7 +34,7 @@ defmodule Explorer.SmartContract.Vyper.CodeCompiler do
         {:ok, abi} ->
           {:ok, %{"abi" => abi, "bytecode" => bytecode}}
 
-        {:error, %Jason.DecodeError{}} ->
+        {:error, _reason} ->
           {:error, :compilation}
       end
     else
