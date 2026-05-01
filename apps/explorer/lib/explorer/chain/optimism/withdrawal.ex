@@ -9,7 +9,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   alias Explorer.Chain
   alias Explorer.Chain.{Block, Hash, Log, Transaction}
   alias Explorer.Chain.Cache.OptimismFinalizationPeriod
-  alias Explorer.Chain.Optimism.{DisputeGame, OutputRoot, WithdrawalEvent}
+  alias Explorer.Chain.Optimism.{DisputeGame, OutputRoot, SuperchainConfig, WithdrawalEvent}
   alias Explorer.{Helper, PagingOptions, Repo}
 
   @game_status_defender_wins 2
@@ -482,18 +482,6 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   """
   @spec portal_contract_address() :: String.t() | nil
   def portal_contract_address do
-    portal_address = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:portal]
-
-    if Indexer.Helper.address_correct?(portal_address) do
-      portal_address
-    else
-      Constants.get_constant_value(portal_contract_address_constant(), @api_true)
-    end
+    SuperchainConfig.optimism_l1_portal_contract()
   end
-
-  @doc """
-  Returns the name of the optimism_portal_contract_address constant.
-  """
-  @spec portal_contract_address_constant() :: binary()
-  def portal_contract_address_constant, do: "optimism_portal_contract_address"
 end

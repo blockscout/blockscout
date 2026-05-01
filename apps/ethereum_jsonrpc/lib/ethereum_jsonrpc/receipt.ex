@@ -4,7 +4,6 @@ defmodule EthereumJSONRPC.Receipt do
   [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionreceipt).
   """
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
-  use Utils.RuntimeEnvHelper, op_isthmus_timestamp: [:indexer, [Indexer.Fetcher.Optimism, :isthmus_timestamp_l2]]
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
@@ -252,9 +251,11 @@ defmodule EthereumJSONRPC.Receipt do
       end
 
     :optimism ->
+      alias Explorer.Chain.Optimism.SuperchainConfig
+
       defp chain_type_fields(params, elixir) do
         {operator_fee_scalar_default, operator_fee_constant_default} =
-          if is_nil(op_isthmus_timestamp()) do
+          if is_nil(SuperchainConfig.isthmus_timestamp_l2()) do
             {nil, nil}
           else
             {0, 0}

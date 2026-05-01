@@ -42,6 +42,7 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Events.Subscriber
   alias Explorer.Chain.Optimism.EIP1559ConfigUpdate
+  alias Explorer.Chain.Optimism.SuperchainConfig
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper
 
@@ -106,8 +107,8 @@ defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
 
     env = Application.get_all_env(:indexer)[__MODULE__]
     optimism_env = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism]
-    timestamp_holocene = env[:holocene_timestamp_l2]
-    timestamp_jovian = env[:jovian_timestamp_l2]
+    timestamp_holocene = SuperchainConfig.holocene_timestamp_l2()
+    timestamp_jovian = SuperchainConfig.jovian_timestamp_l2()
 
     with false <- is_nil(timestamp_holocene),
          {:jovian_after_holocene, true} <- {:jovian_after_holocene, timestamp_jovian >= timestamp_holocene},
