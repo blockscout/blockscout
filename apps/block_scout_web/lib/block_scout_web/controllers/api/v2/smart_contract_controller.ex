@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   import BlockScoutWeb.Chain,
     only: [
       fetch_scam_token_toggle: 2,
+      maybe_override_page_size: 2,
       paginate_list: 4
     ]
 
@@ -118,6 +119,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       |> Keyword.merge(current_filter(params))
       |> Keyword.merge(search_query(params))
       |> Keyword.merge(smart_contract_addresses_paging_options(params))
+      |> maybe_override_page_size(params)
       |> Keyword.merge(smart_contract_addresses_sorting(params))
       |> fetch_scam_token_toggle(conn)
 
