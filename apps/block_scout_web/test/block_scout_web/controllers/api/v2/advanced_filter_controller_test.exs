@@ -1338,7 +1338,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
         to_timestamp = List.last(transactions).block.timestamp
 
         params = %{
-          "tx_types" => "coin_transfer,ERC-20",
+          "transaction_types" => "COIN_TRANSFER,ERC-20",
           "methods" => method_id_string,
           "age_from" => from_timestamp |> DateTime.to_iso8601(),
           "age_to" => to_timestamp |> DateTime.to_iso8601(),
@@ -1360,7 +1360,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
         check_paginated_response(
           AdvancedFilter.list(
-            tx_types: ["COIN_TRANSFER", "ERC-20"],
+            transaction_types: ["COIN_TRANSFER", "ERC-20"],
             methods: ["0xa9059cbb"],
             age: [from: from_timestamp, to: to_timestamp],
             from_address_hashes: [
@@ -1389,9 +1389,30 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
     end
   end
 
+  describe "/advanced_filters/methods" do
+    test "returns default list of methods", %{conn: conn} do
+      request = get(conn, "/api/v2/advanced-filters/methods")
+      assert response = json_response(request, 200)
+      assert is_list(response)
+      assert length(response) > 0
+
+      Enum.each(response, fn method ->
+        assert %{"method_id" => method_id, "name" => name} = method
+        assert method_id =~ ~r/^0x[0-9a-f]{8}$/
+        assert is_binary(name) and name != ""
+      end)
+    end
+  end
+
   describe "/advanced_filters/methods?q=" do
     test "returns empty list if method does not exist", %{conn: conn} do
       request = get(conn, "/api/v2/advanced-filters/methods", %{"q" => "foo"})
+      assert response = json_response(request, 200)
+      assert response == []
+    end
+
+    test "returns empty list for empty q", %{conn: conn} do
+      request = get(conn, "/api/v2/advanced-filters/methods", %{"q" => ""})
       assert response = json_response(request, 200)
       assert response == []
     end
