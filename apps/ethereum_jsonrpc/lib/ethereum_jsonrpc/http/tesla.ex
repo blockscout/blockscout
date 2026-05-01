@@ -16,6 +16,8 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
   @impl HTTP
   def json_rpc(url, json, headers, options) when is_binary(url) and is_list(options) do
     method = Helper.get_method_from_json_string(json)
+    request_compression_enabled? = Helper.request_compression_enabled?(method)
+    client = TeslaHelper.client(options, compression_middleware(request_compression_enabled?))
 
     Instrumenter.json_rpc_requests(method)
 
@@ -26,7 +28,9 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
           Instrumenter.json_rpc_errors(method)
         end
 
-        {:ok, %{body: Helper.try_unzip(body, headers), status_code: status_code}}
+        response_body = if request_compression_enabled?, do: body, else: Helper.try_unzip(body, headers)
+
+        {:ok, %{body: response_body, status_code: status_code}}
 
       {:error, error} ->
         Instrumenter.json_rpc_errors(method)
@@ -38,7 +42,9 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
   def json_rpc(url, _json, _headers, _options) when is_nil(url), do: {:error, "URL is nil"}
 
   defp do_post(url, json, headers, options) do
-    Tesla.post(TeslaHelper.client(options), url, json, headers: headers, opts: TeslaHelper.request_opts(options))
+    request_compression_enabled? = Helper.request_compression_enabled?(method)
+    client = TeslaHelper.client(options, compression_middleware(request_compression_enabled?))
+    Tesla.post(client, url, json, headers: headers, opts: TeslaHelper.request_opts(options))
   rescue
     error ->
       if timeout_middleware_exception?(__STACKTRACE__) do
@@ -66,4 +72,7 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
       "Normalized timeout in do_post/4 source=#{source} url=#{inspect(url)} timeout=#{inspect(options[:timeout])} recv_timeout=#{inspect(options[:recv_timeout])} headers_count=#{length(headers)}"
     )
   end
+
+  defp compression_middleware(true), do: [{Tesla.Middleware.Compression, format: "gzip"}]
+  defp compression_middleware(false), do: []
 end
