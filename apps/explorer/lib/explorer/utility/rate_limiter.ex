@@ -2,6 +2,8 @@ defmodule Explorer.Utility.RateLimiter do
   @moduledoc """
   Rate limit logic with separation by action type and exponential backoff for bans.
   """
+
+  alias Explorer.Helper
   alias Explorer.Utility.Hammer
 
   use GenServer
@@ -15,8 +17,18 @@ defmodule Explorer.Utility.RateLimiter do
     config = Application.get_env(:explorer, __MODULE__)
 
     case config[:storage] do
-      :redis -> Redix.start_link(config[:redis_url], name: @redis_conn_name)
-      :ets -> GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+      :redis ->
+        config[:redis_url]
+        |> Helper.redix_opts(
+          config[:redis_ssl],
+          config[:redis_sentinel_urls],
+          config[:redis_sentinel_master_name]
+        )
+        |> Keyword.merge(name: @redis_conn_name)
+        |> Redix.start_link()
+
+      :ets ->
+        GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
     end
   end
 
