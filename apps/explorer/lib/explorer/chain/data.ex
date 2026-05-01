@@ -409,7 +409,6 @@ defmodule Explorer.Chain.Data do
     end
   end
 
-
   defimpl Jason.Encoder do
     alias Jason.Encode
 

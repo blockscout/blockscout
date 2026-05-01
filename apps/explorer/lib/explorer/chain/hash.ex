@@ -225,7 +225,6 @@ defmodule Explorer.Chain.Hash do
     end
   end
 
-
   defimpl Jason.Encoder do
     alias Jason.Encode
 

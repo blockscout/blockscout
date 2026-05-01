@@ -189,7 +189,9 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
 
   def http_post_request_rust_microservice(url, body) do
     request =
-      HttpClient.post(url, Utils.JSON.encode!(body), [{"Content-Type", "application/json"}], recv_timeout: @post_timeout)
+      HttpClient.post(url, Utils.JSON.encode!(body), [{"Content-Type", "application/json"}],
+        recv_timeout: @post_timeout
+      )
 
     case request do
       {:ok, %{body: body, status_code: 200}} ->

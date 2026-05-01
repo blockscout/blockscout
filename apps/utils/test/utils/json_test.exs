@@ -193,5 +193,11 @@ defmodule Utils.JSONTest do
 
       assert decoded == data
     end
+
+    test "encodes nested structs that only implement Jason.Encoder" do
+      data = %{"value" => %Explorer.Chain.Wei{value: Decimal.new(100)}}
+
+      assert Utils.JSON.encode!(data) == ~s({"value":"100"})
+    end
   end
 end
