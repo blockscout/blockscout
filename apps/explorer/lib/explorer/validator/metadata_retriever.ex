@@ -95,6 +95,6 @@ defmodule Explorer.Validator.MetadataRetriever do
     :explorer
     |> Application.app_dir("priv/contracts_abi/poa/#{file_name}")
     |> File.read!()
-    |> Jason.decode!()
+    |> Utils.JSON.decode!()
   end
 end

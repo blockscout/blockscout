@@ -139,7 +139,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
   end
 
   def handle_frame({:text, text}, state) do
-    case Jason.decode(text) do
+    case Utils.JSON.decode(text) do
       {:ok, json} ->
         handle_response(json, state)
 
@@ -283,7 +283,7 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClient do
   end
 
   defp frame(request) do
-    {:text, Jason.encode!(request)}
+    {:text, Utils.JSON.encode!(request)}
   end
 
   defp handle_response(

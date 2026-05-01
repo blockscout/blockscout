@@ -122,7 +122,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
       case compiler do
         :solc ->
           json
-          |> Jason.decode!()
+          |> Utils.JSON.decode!()
           |> Map.fetch!("builds")
           |> remove_unsupported_versions(compiler)
           |> format_versions(compiler)
@@ -130,7 +130,7 @@ defmodule Explorer.SmartContract.CompilerVersion do
 
         :vyper ->
           json
-          |> Jason.decode!()
+          |> Utils.JSON.decode!()
           |> remove_unsupported_versions(compiler)
           |> format_versions(compiler)
           |> Enum.sort(fn version1, version2 ->

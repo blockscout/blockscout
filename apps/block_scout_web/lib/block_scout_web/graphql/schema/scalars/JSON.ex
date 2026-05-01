@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.GraphQL.Schema.Scalars.JSON do
   end
 
   defp decode(%Absinthe.Blueprint.Input.String{value: value}) do
-    case Jason.decode(value) do
+    case Utils.JSON.decode(value) do
       {:ok, result} -> {:ok, result}
       _ -> :error
     end
@@ -29,5 +29,5 @@ defmodule BlockScoutWeb.GraphQL.Schema.Scalars.JSON do
     :error
   end
 
-  defp encode(value), do: Jason.encode!(value)
+  defp encode(value), do: Utils.JSON.encode!(value)
 end

@@ -18,7 +18,7 @@ defmodule EthereumJSONRPC.HTTP.HTTPoison do
 
     case HTTPoison.post(url, json, headers, HTTPoisonHelper.request_opts(options)) do
       {:ok, %HTTPoison.Response{body: body, status_code: status_code, headers: headers}} ->
-        with {:ok, decoded_body} <- Jason.decode(body),
+        with {:ok, decoded_body} <- Utils.JSON.decode(body),
              true <- Helper.response_body_has_error?(decoded_body) do
           Instrumenter.json_rpc_errors(method)
         end

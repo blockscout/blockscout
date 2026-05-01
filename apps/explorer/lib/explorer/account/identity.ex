@@ -5,7 +5,6 @@ defmodule Explorer.Account.Identity do
   use Explorer.Schema
 
   require Logger
-  require Poison
 
   alias BlockScoutWeb.Chain
   alias Ecto.Multi

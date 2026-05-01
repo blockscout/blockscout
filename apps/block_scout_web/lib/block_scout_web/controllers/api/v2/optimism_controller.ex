@@ -1057,7 +1057,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
       with {:ok, %{body: response_body, status: 200}} <-
              Tesla.get(client, url, opts: [adapter: [timeout: recv_timeout, transport_opts: [timeout: timeout]]]),
-           {:ok, %{"public_key" => "0x" <> key}} <- Jason.decode(response_body),
+           {:ok, %{"public_key" => "0x" <> key}} <- Utils.JSON.decode(response_body),
            {:ok, key_binary} <- Base.decode16(key, case: :mixed),
            true <- byte_size(key_binary) > 0 do
         ConCache.put(InteropMessage.interop_instance_api_url_to_public_key_cache(), instance_api_url, key_binary)

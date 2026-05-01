@@ -63,8 +63,7 @@ defmodule EthereumJSONRPC.MixProject do
       {:ex_keccak, "~> 0.7.5"},
       # JSONRPC HTTP Post calls
       {:httpoison, "~> 2.0"},
-      # Decode/Encode JSON for JSONRPC
-      {:jason, "~> 1.3"},
+
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
       {:logger_json, "~> 7.0"},

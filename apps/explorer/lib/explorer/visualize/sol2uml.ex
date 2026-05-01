@@ -16,7 +16,7 @@ defmodule Explorer.Visualize.Sol2uml do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+    case HttpClient.post(url, Utils.JSON.encode!(body), headers, recv_timeout: @post_timeout) do
       {:ok, %{body: body, status_code: 200}} ->
         process_visualizer_response(body)
 
@@ -41,7 +41,7 @@ defmodule Explorer.Visualize.Sol2uml do
   end
 
   def process_visualizer_response(body) when is_binary(body) do
-    case Jason.decode(body) do
+    case Utils.JSON.decode(body) do
       {:ok, decoded} ->
         process_visualizer_response(decoded)
 

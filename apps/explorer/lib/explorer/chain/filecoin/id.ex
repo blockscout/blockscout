@@ -4,7 +4,6 @@ defmodule Explorer.Chain.Filecoin.IDAddress do
   """
 
   alias Explorer.Chain.Filecoin.NativeAddress
-  alias Poison.Encoder.BitString
 
   require Integer
 
@@ -134,14 +133,6 @@ defmodule Explorer.Chain.Filecoin.IDAddress do
   defimpl String.Chars do
     def to_string(address) do
       @for.to_string(address)
-    end
-  end
-
-  defimpl Poison.Encoder do
-    def encode(address, options) do
-      address
-      |> to_string()
-      |> BitString.encode(options)
     end
   end
 

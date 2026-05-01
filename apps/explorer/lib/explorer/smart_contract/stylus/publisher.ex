@@ -118,7 +118,7 @@ defmodule Explorer.SmartContract.Stylus.Publisher do
       |> Map.put("package_name", package_name)
       |> Map.put("github_repository_metadata", github_repository_metadata)
 
-    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"))
+    publish_smart_contract(address_hash, prepared_params, Utils.JSON.decode!(abi_string || "null"))
   end
 
   # Stores information about a verified Stylus smart contract in the database.

@@ -960,9 +960,9 @@ defmodule Explorer.Token.MetadataRetriever do
   defp check_type(json, hex_token_id) when is_map(json) do
     metadata =
       case json
-           |> Jason.encode!()
+           |> Utils.JSON.encode!()
            |> String.replace(@erc1155_token_id_placeholder, hex_token_id)
-           |> Jason.decode() do
+           |> Utils.JSON.decode() do
         {:ok, map} ->
           map
 

@@ -40,14 +40,6 @@ defmodule Explorer.Chain.BridgedToken do
   # keccak 256 from token1()
   @token1_signature "0xd21220a7"
 
-  @derive {Poison.Encoder,
-           except: [
-             :__meta__,
-             :home_token_contract_address,
-             :inserted_at,
-             :updated_at
-           ]}
-
   @derive {Jason.Encoder,
            except: [
              :__meta__,

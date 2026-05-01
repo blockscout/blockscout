@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.ChainController do
       average_block_time: AverageBlockTime.average_block_time(),
       exchange_rate: exchange_rate,
       chart_config: chart_config,
-      chart_config_json: Jason.encode!(chart_config),
+      chart_config_json: Utils.JSON.encode!(chart_config),
       chart_data_paths: chart_data_paths,
       market_cap_calculation: market_cap_calculation,
       transaction_estimated_count: transactions_count,

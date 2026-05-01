@@ -31,7 +31,7 @@ defmodule Explorer.ThirdPartyIntegrations.NovesFi do
       conn.query_params
       |> Map.drop(["hashes"])
 
-    case HttpClient.post(url, Jason.encode!(hashes), headers, recv_timeout: @recv_timeout, params: prepared_params) do
+    case HttpClient.post(url, Utils.JSON.encode!(hashes), headers, recv_timeout: @recv_timeout, params: prepared_params) do
       {:ok, %{status_code: status, body: body}} ->
         {Helper.decode_json(body), status}
 

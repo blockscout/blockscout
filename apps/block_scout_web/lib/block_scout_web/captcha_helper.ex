@@ -109,7 +109,7 @@ defmodule BlockScoutWeb.CaptchaHelper do
              headers
            ) do
       {:ok, %{status_code: 200, body: body}} ->
-        body |> Jason.decode!() |> success?()
+        body |> Utils.JSON.decode!() |> success?()
 
       false ->
         true

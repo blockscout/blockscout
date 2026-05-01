@@ -81,7 +81,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
     bytecode_hash = Keyword.get(params, :bytecode_hash, "default")
     external_libs = Keyword.get(params, :external_libs, %{})
 
-    external_libs_string = Jason.encode!(external_libs)
+    external_libs_string = Utils.JSON.encode!(external_libs)
 
     checked_evm_version =
       if evm_version in evm_versions(:solidity) do
@@ -109,7 +109,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
           ]
         )
 
-      with {:ok, decoded} <- Jason.decode(response),
+      with {:ok, decoded} <- Utils.JSON.decode(response),
            {:ok, contracts} <- get_contracts(decoded),
            %{
              "abi" => abi,
@@ -153,7 +153,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
                  path
                ]
              ),
-           {:ok, decoded} <- Jason.decode(response),
+           {:ok, decoded} <- Utils.JSON.decode(response),
            {:ok, contracts} <- get_contracts_standard_input_verification(decoded) do
         fetch_candidates(contracts, name)
       else
@@ -176,7 +176,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   end
 
   defp tune_json(json_input) when is_binary(json_input) do
-    case Jason.decode(json_input) do
+    case Utils.JSON.decode(json_input) do
       {:ok, map_input} ->
         map_set_input_keys = map_input |> Map.keys() |> MapSet.new()
         map_set_required_keys = MapSet.new(@required_standard_input_fields)
@@ -184,7 +184,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
         if MapSet.subset?(map_set_required_keys, map_set_input_keys) do
           settings = Map.fetch!(map_input, "settings")
           new_settings = Map.put(settings, "outputSelection", @default_output_selection)
-          map_input |> Map.replace("settings", new_settings) |> Jason.encode()
+          map_input |> Map.replace("settings", new_settings) |> Utils.JSON.encode()
         else
           {:error, :json}
         end

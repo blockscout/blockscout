@@ -413,9 +413,9 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageQueue do
     headers = [{"Content-Type", "application/json"}]
     opts = [adapter: [timeout: recv_timeout, transport_opts: [timeout: timeout]]]
 
-    case Tesla.post(client, url, Jason.encode!(body), headers: headers, opts: opts) do
+    case Tesla.post(client, url, Utils.JSON.encode!(body), headers: headers, opts: opts) do
       {:ok, %{body: response_body, status: 200}} ->
-        case Jason.decode(response_body) do
+        case Utils.JSON.decode(response_body) do
           {:ok, response} ->
             response
 

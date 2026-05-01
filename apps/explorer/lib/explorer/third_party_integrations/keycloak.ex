@@ -151,7 +151,7 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   @doc false
   def find_users_by_email(email) do
     case admin_get(users_path(), %{email: email, exact: true}) do
-      {:ok, %{status_code: 200, body: body}} -> {:ok, Jason.decode!(body)}
+      {:ok, %{status_code: 200, body: body}} -> {:ok, Utils.JSON.decode!(body)}
       {:ok, %{status_code: 404}} -> {:ok, []}
       error -> handle_error(error, "Failed to search user by email")
     end
@@ -160,7 +160,7 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   @doc false
   def find_users_by_address(address) do
     case admin_get(users_path(), %{q: "address:#{String.downcase(address)}"}) do
-      {:ok, %{status_code: 200, body: body}} -> {:ok, Jason.decode!(body)}
+      {:ok, %{status_code: 200, body: body}} -> {:ok, Utils.JSON.decode!(body)}
       {:ok, %{status_code: 404}} -> {:ok, []}
       error -> handle_error(error, "Failed to search user by address")
     end
@@ -219,7 +219,7 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   @doc false
   def get_user(user_id) do
     case admin_get("#{users_path()}/#{user_id}") do
-      {:ok, %{status_code: 200, body: body}} -> {:ok, Jason.decode!(body)}
+      {:ok, %{status_code: 200, body: body}} -> {:ok, Utils.JSON.decode!(body)}
       {:ok, %{status_code: 404}} -> {:error, "User not found"}
       error -> handle_error(error, "Failed to get user")
     end
@@ -244,7 +244,7 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
     with {:ok, token} <- get_admin_token() do
       HttpClient.post(
         build_url(path),
-        Jason.encode!(body),
+        Utils.JSON.encode!(body),
         auth_headers(token) ++ @json_headers
       )
     end
@@ -256,7 +256,7 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
         :put,
         build_url(path),
         auth_headers(token) ++ @json_headers,
-        Jason.encode!(body)
+        Utils.JSON.encode!(body)
       )
     end
   end
@@ -292,7 +292,7 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
 
     case HttpClient.post(url, body, headers) do
       {:ok, %{status_code: 200, body: resp_body}} ->
-        case Jason.decode(resp_body) do
+        case Utils.JSON.decode(resp_body) do
           {:ok, %{"access_token" => token, "expires_in" => ttl}} ->
             Redix.command(:redix, ["SET", admin_token_key(), Vault.encrypt!(token), "EX", ttl - 1])
             {:ok, token}
@@ -458,7 +458,7 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
 
   defp do_send_registration_webhook(email, webhook_url) when not is_nil(webhook_url) do
     payload =
-      Jason.encode!(%{
+      Utils.JSON.encode!(%{
         email: email,
         name: email,
         labels: [Helper.get_app_host()]

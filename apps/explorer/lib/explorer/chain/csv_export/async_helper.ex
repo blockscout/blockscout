@@ -127,7 +127,7 @@ defmodule Explorer.Chain.CsvExport.AsyncHelper do
       )
 
     with {:ok, %{status_code: 200, body: body}} <- result,
-         {:ok, %{"FileInfo" => %{"Id" => file_id, "ExpireAt" => expires_at_unix_timestamp}}} <- Jason.decode(body),
+         {:ok, %{"FileInfo" => %{"Id" => file_id, "ExpireAt" => expires_at_unix_timestamp}}} <- Utils.JSON.decode(body),
          {:ok, expires_at} <- DateTime.from_unix(expires_at_unix_timestamp) do
       {:ok, file_id, expires_at}
     else

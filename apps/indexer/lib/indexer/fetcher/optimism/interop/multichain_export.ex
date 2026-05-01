@@ -242,7 +242,7 @@ defmodule Indexer.Fetcher.Optimism.Interop.MultichainExport do
     recv_timeout = 5_000
 
     client = Tesla.client([{Tesla.Middleware.Timeout, timeout: recv_timeout}], Tesla.Adapter.Mint)
-    json_body = Jason.encode!(body)
+    json_body = Utils.JSON.encode!(body)
     headers = [{"Content-Type", "application/json"}]
 
     # Mint adapter doesn't support sending more than 65535 bytes when using HTTP/2, so we use HTTP/1

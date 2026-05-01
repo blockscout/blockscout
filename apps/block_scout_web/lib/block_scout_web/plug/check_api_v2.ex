@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Plug.CheckApiV2 do
     else
       conn
       |> put_resp_content_type("application/json")
-      |> send_resp(404, Jason.encode!(%{message: "API V2 is disabled"}))
+      |> send_resp(404, Utils.JSON.encode!(%{message: "API V2 is disabled"}))
       |> halt()
     end
   end

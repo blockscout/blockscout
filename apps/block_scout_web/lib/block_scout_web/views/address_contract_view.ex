@@ -18,7 +18,7 @@ defmodule BlockScoutWeb.AddressContractView do
     render_scripts(conn, "address_contract/code_highlighting.js")
   end
 
-  def format_smart_contract_abi(abi) when not is_nil(abi), do: Poison.encode!(abi, %{pretty: false})
+  def format_smart_contract_abi(abi) when not is_nil(abi), do: Utils.JSON.encode!(abi, pretty: false)
 
   @doc """
   Returns the correct format for the optimization text.

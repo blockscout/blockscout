@@ -100,7 +100,7 @@ defmodule Explorer.SmartContract.VyperDownloader do
       releases_path
       |> HttpClient.get!([], timeout: 60_000, recv_timeout: 60_000)
       |> Map.get(:body)
-      |> Jason.decode!()
+      |> Utils.JSON.decode!()
 
     release =
       releases_body

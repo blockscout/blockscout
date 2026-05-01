@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.API.V1.GasPriceOracleController do
 
   defp result(gas_prices) do
     %{slow: gas_prices[:slow][:price], average: gas_prices[:average][:price], fast: gas_prices[:fast][:price]}
-    |> Jason.encode!()
+    |> Utils.JSON.encode!()
   end
 
   def error({:error, error}) do
@@ -45,6 +45,6 @@ defmodule BlockScoutWeb.API.V1.GasPriceOracleController do
       "error_title" => "Error",
       "error_description" => "Internal server error"
     }
-    |> Jason.encode!()
+    |> Utils.JSON.encode!()
   end
 end

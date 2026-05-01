@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.Beacon.Client do
   defp http_get_request(url) do
     case HttpClient.get(url) do
       {:ok, %{body: body, status_code: 200}} ->
-        Jason.decode(body)
+        Utils.JSON.decode(body)
 
       {:ok, %{body: body, status_code: _}} ->
         {:error, body}

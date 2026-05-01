@@ -151,7 +151,7 @@ defmodule Mix.Tasks.FetchCeloCoreContracts do
           atom_to_contract_name[:fee_handler] => fee_handler_events
         }
       }
-      |> Jason.encode!()
+      |> Utils.JSON.encode!()
 
     IO.puts("CELO_CORE_CONTRACTS=#{core_contracts_json}")
   end

@@ -933,12 +933,12 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HttpClient.post(url, Jason.encode!(body), headers,
+    case HttpClient.post(url, Utils.JSON.encode!(body), headers,
            recv_timeout: @post_timeout,
            pool: false
          ) do
       {:ok, %{body: response_body, status_code: 200}} ->
-        response_body |> Jason.decode()
+        response_body |> Utils.JSON.decode()
 
       {:ok, %{body: response_body, status_code: status_code}} ->
         {:error,

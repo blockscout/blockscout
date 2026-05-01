@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.TransactionRawTraceView do
 
   def raw_traces_with_lines(raw_traces) do
     raw_traces
-    |> Jason.encode!(pretty: true)
+    |> Utils.JSON.encode!(pretty: true)
     |> String.split("\n")
     |> Enum.with_index(1)
   end

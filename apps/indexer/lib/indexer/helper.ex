@@ -814,7 +814,7 @@ defmodule Indexer.Helper do
     case Tesla.get(client, url, opts: [adapter: [timeout: recv_timeout, transport_opts: [timeout: connect_timeout]]]) do
       {:ok, %{body: body, status: 200}} ->
         if response_format == :json do
-          Jason.decode(body)
+          Utils.JSON.decode(body)
         else
           {:ok, body}
         end

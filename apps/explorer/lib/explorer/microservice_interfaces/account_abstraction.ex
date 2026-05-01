@@ -141,7 +141,7 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
     case HttpClient.get(url, [], params: query_params) do
       {:ok, %{body: body, status_code: status_code}}
       when status_code in [200, 404] ->
-        {:ok, response_json} = Jason.decode(body)
+        {:ok, response_json} = Utils.JSON.decode(body)
         {status_code, response_json}
 
       {_, %{body: body, status_code: status_code} = error} ->
@@ -156,7 +156,7 @@ defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
         end)
 
         Logger.configure(truncate: old_truncate)
-        {:ok, response_json} = Jason.decode(body)
+        {:ok, response_json} = Utils.JSON.decode(body)
         {status_code, response_json}
 
       {:error, reason} ->

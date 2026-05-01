@@ -86,15 +86,26 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelper do
       )
 
     config
-    |> Jason.decode(
-      keys: fn key ->
-        if to_atom?[key] do
-          String.to_atom(key)
-        else
-          key
-        end
-      end
-    )
+    |> Utils.JSON.decode()
+    |> case do
+      {:ok, decoded} -> {:ok, atomize_keys(decoded, to_atom?)}
+      error -> error
+    end
+  end
+
+  defp atomize_keys(value, to_atom?) when is_map(value) do
+    Map.new(value, fn {key, val} ->
+      new_key = if is_binary(key) && to_atom?[key], do: String.to_atom(key), else: key
+      {new_key, atomize_keys(val, to_atom?)}
+    end)
+  end
+
+  defp atomize_keys(list, to_atom?) when is_list(list) do
+    Enum.map(list, &atomize_keys(&1, to_atom?))
+  end
+
+  defp atomize_keys(value, _to_atom?) do
+    value
   end
 
   defp parse_config(config) do

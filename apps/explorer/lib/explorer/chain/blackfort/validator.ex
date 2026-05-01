@@ -150,7 +150,7 @@ defmodule Explorer.Chain.Blackfort.Validator do
 
     with {:url, true} <- {:url, UtilsConfigHelper.valid_url?(url)},
          {:ok, %{status_code: 200, body: body}} <- HttpClient.get(validator_url(), [], follow_redirect: true) do
-      body |> Jason.decode() |> parse_validators_info()
+      body |> Utils.JSON.decode() |> parse_validators_info()
     else
       {:url, false} ->
         :error

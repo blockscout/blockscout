@@ -106,9 +106,9 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+    case HttpClient.post(url, Utils.JSON.encode!(body), headers, recv_timeout: @post_timeout) do
       {:ok, %{body: body, status_code: 200}} ->
-        Jason.decode(body)
+        Utils.JSON.decode(body)
 
       {_, error} ->
         old_truncate = Application.get_env(:logger, :truncate)
@@ -129,7 +129,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   defp http_get_request(url, query_params) do
     case HttpClient.get(url, [], params: query_params) do
       {:ok, %{body: body, status_code: 200}} ->
-        Jason.decode(body)
+        Utils.JSON.decode(body)
 
       {_, error} ->
         old_truncate = Application.get_env(:logger, :truncate)

@@ -104,9 +104,9 @@ defmodule Explorer.SmartContract.SigProviderInterface do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+    case HttpClient.post(url, Utils.JSON.encode!(body), headers, recv_timeout: @post_timeout) do
       {:ok, %{body: body, status_code: 200}} ->
-        body |> Jason.decode()
+        body |> Utils.JSON.decode()
 
       error ->
         old_truncate = Application.get_env(:logger, :truncate)
@@ -125,7 +125,7 @@ defmodule Explorer.SmartContract.SigProviderInterface do
   end
 
   defp process_sig_provider_response(body) when is_binary(body) do
-    case Jason.decode(body) do
+    case Utils.JSON.decode(body) do
       {:ok, decoded} ->
         process_sig_provider_response(decoded)
 

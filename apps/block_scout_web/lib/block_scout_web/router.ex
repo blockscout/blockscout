@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.Router do
       length: 100_000,
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
-      json_decoder: Poison
+      json_decoder: JSON
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
@@ -40,7 +40,7 @@ defmodule BlockScoutWeb.Router do
       length: 20_000_000,
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
-      json_decoder: Poison
+      json_decoder: JSON
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :api)
@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.Router do
     plug(
       Plug.Parsers,
       parsers: [:json, Absinthe.Plug.Parser],
-      json_decoder: Poison,
+      json_decoder: JSON,
       body_reader: {BlockScoutWeb.GraphQL.BodyReader, :read_body, []}
     )
 
