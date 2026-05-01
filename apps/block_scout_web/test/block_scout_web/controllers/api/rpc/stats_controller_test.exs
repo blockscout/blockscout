@@ -302,7 +302,8 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
         symbol: symbol,
         fiat_value: Decimal.new("1.0"),
         volume_24h: Decimal.new("1000.0"),
-        image_url: nil
+        image_url: nil,
+        circulating_supply: nil
       }
 
       Coin.handle_info({nil, {{:ok, eth}, false}}, %{})
@@ -368,7 +369,8 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
         symbol: symbol,
         fiat_value: Decimal.new("1.0"),
         volume_24h: Decimal.new("1000.0"),
-        image_url: nil
+        image_url: nil,
+        circulating_supply: nil
       }
 
       Coin.handle_info({nil, {{:ok, eth}, false}}, %{})

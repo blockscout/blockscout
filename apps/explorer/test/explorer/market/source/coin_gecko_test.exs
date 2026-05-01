@@ -76,7 +76,8 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
                 symbol: "ETH",
                 fiat_value: Decimal.new("123"),
                 volume_24h: Decimal.new("66154765984"),
-                image_url: "https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628"
+                image_url: "https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628",
+                circulating_supply: Decimal.new("120547760.0137619")
               }} == CoinGecko.fetch_native_coin()
     end
   end
@@ -117,7 +118,8 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
                 symbol: "ETH",
                 fiat_value: Decimal.new("324"),
                 volume_24h: Decimal.new("66154765984"),
-                image_url: "https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628"
+                image_url: "https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1696501628",
+                circulating_supply: Decimal.new("120547760.0137619")
               }} == CoinGecko.fetch_secondary_coin()
     end
   end

@@ -77,7 +77,8 @@ defmodule Explorer.Market.Fetcher.CoinTest do
         symbol: "test_symbol",
         fiat_value: Decimal.new("1.0"),
         volume_24h: Decimal.new("1000.0"),
-        image_url: nil
+        image_url: nil,
+        circulating_supply: nil
       }
 
       assert {:noreply, ^state} = Coin.handle_info({nil, {{:ok, expected_token}, false}}, state)

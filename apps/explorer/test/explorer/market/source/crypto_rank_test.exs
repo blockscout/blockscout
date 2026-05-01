@@ -62,7 +62,8 @@ defmodule Explorer.Market.Source.CryptoRankTest do
                 symbol: "ETH",
                 total_supply: Decimal.new("120723694"),
                 tvl: nil,
-                volume_24h: Decimal.new("5826359746")
+                volume_24h: Decimal.new("5826359746"),
+                circulating_supply: Decimal.new("120723694")
               }} ==
                CryptoRank.fetch_native_coin()
     end
@@ -99,7 +100,8 @@ defmodule Explorer.Market.Source.CryptoRankTest do
                 symbol: "ETH",
                 total_supply: Decimal.new("120723694"),
                 tvl: nil,
-                volume_24h: Decimal.new("5826359746")
+                volume_24h: Decimal.new("5826359746"),
+                circulating_supply: Decimal.new("120723694")
               }} ==
                CryptoRank.fetch_secondary_coin()
     end

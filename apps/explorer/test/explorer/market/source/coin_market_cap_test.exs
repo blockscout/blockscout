@@ -100,7 +100,8 @@ defmodule Explorer.Market.Source.CoinMarketCapTest do
                 symbol: "BTC",
                 fiat_value: Decimal.new("10.1"),
                 volume_24h: Decimal.new("28724591782.645985"),
-                image_url: nil
+                image_url: nil,
+                circulating_supply: Decimal.new("19824162")
               }} == CoinMarketCap.fetch_native_coin()
     end
   end
@@ -124,7 +125,8 @@ defmodule Explorer.Market.Source.CoinMarketCapTest do
                 symbol: "BTC",
                 fiat_value: Decimal.new("20.2"),
                 volume_24h: Decimal.new("28724591782.645985"),
-                image_url: nil
+                image_url: nil,
+                circulating_supply: Decimal.new("19824162")
               }} == CoinMarketCap.fetch_secondary_coin()
     end
   end

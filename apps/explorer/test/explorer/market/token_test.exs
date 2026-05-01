@@ -39,7 +39,8 @@ defmodule Explorer.Market.TokenTest do
         symbol: "TST",
         fiat_value: Decimal.new("10"),
         volume_24h: Decimal.new("500"),
-        image_url: "https://example.com/test.png"
+        image_url: "https://example.com/test.png",
+        circulating_supply: nil
       }
 
       refute Token.null?(token)

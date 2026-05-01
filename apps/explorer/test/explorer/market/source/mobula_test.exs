@@ -79,7 +79,8 @@ defmodule Explorer.Market.Source.MobulaTest do
                 symbol: "ETH",
                 fiat_value: Decimal.new("2500.5"),
                 volume_24h: Decimal.new("15000000000"),
-                image_url: "https://example.com/eth.png"
+                image_url: "https://example.com/eth.png",
+                circulating_supply: Decimal.new("120000000")
               }} == Mobula.fetch_native_coin()
     end
 
@@ -123,7 +124,8 @@ defmodule Explorer.Market.Source.MobulaTest do
                 symbol: "ETH",
                 fiat_value: Decimal.new("9.5E+4"),
                 volume_24h: Decimal.new("15000000000"),
-                image_url: "https://example.com/eth.png"
+                image_url: "https://example.com/eth.png",
+                circulating_supply: Decimal.new("120000000")
               }} == Mobula.fetch_secondary_coin()
     end
 
