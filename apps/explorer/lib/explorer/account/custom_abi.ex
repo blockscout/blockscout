@@ -86,7 +86,7 @@ defmodule Explorer.Account.CustomABI do
   defp validate_custom_abi(custom_abi), do: custom_abi
 
   defp check_is_abi_valid?(%{abi: abi} = custom_abi) when is_binary(abi) do
-    with {:ok, decoded} <- Jason.decode(abi),
+    with {:ok, decoded} <- Utils.JSON.decode(abi),
          true <- is_list(decoded) do
       custom_abi
       |> Map.put(:abi, decoded)
@@ -112,7 +112,7 @@ defmodule Explorer.Account.CustomABI do
         custom_abi
         |> Map.put(:abi, "")
         |> (&if(is_nil(given_abi),
-              do: Map.put(&1, :given_abi, Jason.encode!(abi)),
+              do: Map.put(&1, :given_abi, Utils.JSON.encode!(abi)),
               else: Map.put(&1, :given_abi, given_abi)
             )).()
         |> Map.put(:abi_validating_error, "ABI must contain functions")

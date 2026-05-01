@@ -408,27 +408,6 @@ defmodule Explorer.Chain.Transaction do
   """
   @type wei_per_gas :: Wei.t()
 
-  @derive {Poison.Encoder,
-           only: [
-             :block_number,
-             :block_timestamp,
-             :cumulative_gas_used,
-             :error,
-             :gas,
-             :gas_price,
-             :gas_used,
-             :index,
-             :created_contract_code_indexed_at,
-             :input,
-             :nonce,
-             :r,
-             :s,
-             :v,
-             :status,
-             :value,
-             :revert_reason
-           ]}
-
   @derive {Jason.Encoder,
            only: [
              :block_number,

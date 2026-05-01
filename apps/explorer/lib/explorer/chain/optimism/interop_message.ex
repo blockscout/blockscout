@@ -804,7 +804,7 @@ defmodule Explorer.Chain.Optimism.InteropMessage do
 
     with {:ok, %{body: body, status: 200}} <-
            Tesla.get(client, url, opts: [adapter: [timeout: recv_timeout, transport_opts: [timeout: connect_timeout]]]),
-         {:ok, response} <- Jason.decode(body),
+         {:ok, response} <- Utils.JSON.decode(body),
          explorer = response |> Map.get("explorers", []) |> Enum.at(0),
          false <- is_nil(explorer),
          explorer_url = Map.get(explorer, "url"),

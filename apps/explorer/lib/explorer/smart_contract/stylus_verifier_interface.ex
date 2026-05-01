@@ -55,7 +55,7 @@ defmodule Explorer.SmartContract.StylusVerifierInterface do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+    case HttpClient.post(url, Utils.JSON.encode!(body), headers, recv_timeout: @post_timeout) do
       {:ok, %{body: body, status_code: _}} ->
         process_verifier_response(body)
 
@@ -106,7 +106,7 @@ defmodule Explorer.SmartContract.StylusVerifierInterface do
 
   @spec process_verifier_response(binary()) :: {:ok, map() | [String.t()]} | {:error, any()}
   defp process_verifier_response(body) when is_binary(body) do
-    case Jason.decode(body) do
+    case Utils.JSON.decode(body) do
       {:ok, decoded} ->
         process_verifier_response(decoded)
 

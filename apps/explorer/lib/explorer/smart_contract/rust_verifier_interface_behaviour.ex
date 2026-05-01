@@ -78,7 +78,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       def http_post_request(url, body, options \\ []) do
         headers = [{"Content-Type", "application/json"}]
 
-        case HttpClient.post(url, Jason.encode!(body), put_api_key_header(headers), recv_timeout: @post_timeout) do
+        case HttpClient.post(url, Utils.JSON.encode!(body), put_api_key_header(headers), recv_timeout: @post_timeout) do
           {:ok, %{body: body, status_code: _}} ->
             process_verifier_response(body, options)
 
@@ -141,7 +141,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       end
 
       def process_verifier_response(body, options) when is_binary(body) do
-        case Jason.decode(body) do
+        case Utils.JSON.decode(body) do
           {:ok, decoded} ->
             process_verifier_response(decoded, options)
 

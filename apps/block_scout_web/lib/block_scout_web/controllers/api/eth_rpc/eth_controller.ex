@@ -38,7 +38,7 @@ defmodule BlockScoutWeb.API.EthRPC.EthController do
     # nil and the body being the key (as in a CURL request w/ no content type header)
     decoded_request =
       with [{single_key, nil}] <- Map.to_list(request),
-           {:ok, decoded} <- Jason.decode(single_key) do
+           {:ok, decoded} <- Utils.JSON.decode(single_key) do
         decoded
       else
         _ -> request

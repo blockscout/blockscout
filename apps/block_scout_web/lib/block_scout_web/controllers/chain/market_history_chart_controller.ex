@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.Chain.MarketHistoryChartController do
 
   def available_supply({:ok, supply_for_days}, _exchange_rate) do
     supply_for_days
-    |> Jason.encode()
+    |> Utils.JSON.encode()
     |> case do
       {:ok, _data} ->
         current_date =
@@ -61,9 +61,9 @@ defmodule BlockScoutWeb.Chain.MarketHistoryChartController do
       |> Map.put(:market_cap, market_cap)
       |> Map.take([:closing_price, :market_cap, :tvl, :date])
     end)
-    |> Jason.encode()
+    |> Utils.JSON.encode()
     |> case do
-      {:ok, data} -> Jason.decode!(data)
+      {:ok, data} -> Utils.JSON.decode!(data)
       _ -> []
     end
   end

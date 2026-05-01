@@ -97,7 +97,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
 
     %{^file_name => contract_source_code} = sources
 
-    compiler_settings = Jason.decode!(compiler_settings_string)
+    compiler_settings = Utils.JSON.decode!(compiler_settings_string)
 
     prepared_params =
       %{}
@@ -121,7 +121,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       |> Map.put("license_type", initial_params["license_type"])
       |> Map.put("is_blueprint", source["isBlueprint"])
 
-    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string), save_file_path?)
+    publish_smart_contract(address_hash, prepared_params, Utils.JSON.decode!(abi_string), save_file_path?)
   end
 
   def publish_smart_contract(address_hash, params, abi, verification_with_files?) do

@@ -34,7 +34,7 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartController do
 
   defp encode_transaction_history_data(transaction_history_data) do
     transaction_history_data
-    |> Jason.encode()
+    |> Utils.JSON.encode()
     |> case do
       {:ok, data} -> data
       _ -> []

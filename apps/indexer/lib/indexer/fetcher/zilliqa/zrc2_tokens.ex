@@ -689,7 +689,7 @@ defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
     log_data
     |> decode_data([:string])
     |> Enum.at(0)
-    |> Jason.decode!()
+    |> Utils.JSON.decode!()
     |> Map.get("params", nil)
     |> Enum.map(fn param -> {String.to_atom(param["vname"]), param["value"]} end)
     |> Enum.into(%{})

@@ -35,7 +35,7 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
   defp http_get_request(url, query_params) do
     case HttpClient.get(url, [], params: query_params) do
       {:ok, %{body: body, status_code: 200}} ->
-        case Jason.decode(body) do
+        case Utils.JSON.decode(body) do
           {:ok, decoded_body} ->
             {:ok, decoded_body}
 

@@ -104,7 +104,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
 
     case HttpClient.get(url, headers, params: params, recv_timeout: @request_timeout) do
       {:ok, %{body: body, status_code: 200}} ->
-        body |> Jason.decode() |> parsing_function.()
+        body |> Utils.JSON.decode() |> parsing_function.()
 
       {_, error} ->
         Logger.error(fn ->
@@ -121,7 +121,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   defp http_get_request_for_proxy_method(url, params, parsing_function) do
     case HttpClient.get(url, [], params: params, recv_timeout: config()[:proxy_requests_timeout]) do
       {:ok, %{body: body, status_code: 200}} ->
-        {200, body |> Jason.decode() |> parsing_function.()}
+        {200, body |> Utils.JSON.decode() |> parsing_function.()}
 
       {_, %{body: body, status_code: status_code} = error} ->
         old_truncate = Application.get_env(:logger, :truncate)
@@ -135,7 +135,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
         end)
 
         Logger.configure(truncate: old_truncate)
-        {:ok, response_json} = Jason.decode(body)
+        {:ok, response_json} = Utils.JSON.decode(body)
         {status_code, response_json}
 
       {:error, reason} ->
@@ -203,7 +203,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   defp decode_meta(other), do: other
 
   defp decode_meta_in_tag(%{"meta" => meta} = tag) do
-    Map.put(tag, "meta", Jason.decode!(meta))
+    Map.put(tag, "meta", Utils.JSON.decode!(meta))
   end
 
   defp prepare_addresses_response({:ok, %{"items" => addresses} = response}) do

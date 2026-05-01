@@ -198,7 +198,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
     with :verifier_enabled <- check_microservice(),
          :validated <- validate_address(conn, params),
          libraries <- Map.get(params, "libraries", "{}"),
-         {:libs_format, {:ok, json}} <- {:libs_format, Jason.decode(libraries)} do
+         {:libs_format, {:ok, json}} <- {:libs_format, Utils.JSON.decode(libraries)} do
       verification_params =
         %{
           "address_hash" => String.downcase(address_hash_string),
@@ -366,7 +366,7 @@ defmodule BlockScoutWeb.API.V2.VerificationController do
   defp parse_interfaces(interfaces) do
     cond do
       is_binary(interfaces) ->
-        case Jason.decode(interfaces) do
+        case Utils.JSON.decode(interfaces) do
           {:ok, map} ->
             map
 

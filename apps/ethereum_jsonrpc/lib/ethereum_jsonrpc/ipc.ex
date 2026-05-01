@@ -63,8 +63,8 @@ defmodule EthereumJSONRPC.IPC do
   # Client
 
   def request(pid, payload) do
-    with {:ok, response} <- post(pid, Jason.encode!(payload)),
-         {:ok, decoded_body} <- Jason.decode(response) do
+    with {:ok, response} <- post(pid, Utils.JSON.encode!(payload)),
+         {:ok, decoded_body} <- Utils.JSON.decode(response) do
       case decoded_body do
         %{"error" => error} ->
           {:error, error}

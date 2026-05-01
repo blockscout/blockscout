@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Plug.CheckAccountAPI do
     else
       conn
       |> put_resp_content_type("application/json")
-      |> send_resp(404, Jason.encode!(%{message: "Account functionality is disabled"}))
+      |> send_resp(404, Utils.JSON.encode!(%{message: "Account functionality is disabled"}))
       |> halt()
     end
   end

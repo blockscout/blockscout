@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.Plug.GraphQLSchemaIntrospection do
   @introspection_json BlockScoutWeb.GraphQL.Schema
                       |> Schema.introspect()
                       |> (case do
-                            {:ok, data} -> Jason.encode!(data)
+                            {:ok, data} -> Utils.JSON.encode!(data)
                             {:error, _} -> raise "Failed to introspect schema"
                           end)
 

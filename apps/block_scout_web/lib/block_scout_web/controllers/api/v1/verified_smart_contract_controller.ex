@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.API.V1.VerifiedSmartContractController do
   end
 
   defp encode(data) do
-    Jason.encode!(data)
+    Utils.JSON.encode!(data)
   end
 
   defp fetch_external_libraries(params) do

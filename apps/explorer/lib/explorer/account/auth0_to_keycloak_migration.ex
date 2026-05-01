@@ -252,7 +252,7 @@ defmodule Explorer.Account.Auth0ToKeycloakMigration do
           text
           |> String.split("\n", trim: true)
           |> Map.new(fn line ->
-            {:ok, %{"user_id" => user_id} = user} = Jason.decode(line)
+            {:ok, %{"user_id" => user_id} = user} = Utils.JSON.decode(line)
             {user_id, user}
           end)
 
@@ -724,9 +724,9 @@ defmodule Explorer.Account.Auth0ToKeycloakMigration do
     with {:ok, token} <- get_keycloak_admin_token() do
       url = keycloak_url("/admin/realms/#{URI.encode(keycloak_realm())}/partialImport")
 
-      case HttpClient.post(url, Jason.encode!(body), keycloak_auth_headers(token) ++ @json_headers) do
+      case HttpClient.post(url, Utils.JSON.encode!(body), keycloak_auth_headers(token) ++ @json_headers) do
         {:ok, %{status_code: 200, body: resp_body}} ->
-          Jason.decode(resp_body)
+          Utils.JSON.decode(resp_body)
 
         {:ok, %{status_code: status, body: resp_body}} ->
           {:error, "HTTP #{status}: #{resp_body}"}
@@ -764,7 +764,7 @@ defmodule Explorer.Account.Auth0ToKeycloakMigration do
 
     case HttpClient.post(url, body, [{"content-type", "application/x-www-form-urlencoded"}]) do
       {:ok, %{status_code: 200, body: resp_body}} ->
-        case Jason.decode(resp_body) do
+        case Utils.JSON.decode(resp_body) do
           {:ok, %{"access_token" => token, "expires_in" => ttl}} ->
             Process.put(:keycloak_admin_token, {token, System.system_time(:second) + ttl - 30})
             {:ok, token}

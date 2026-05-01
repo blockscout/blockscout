@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.Account.API.V2.EmailController do
         "user_id" => user.uid
       }
 
-      case HttpClient.post(url, Jason.encode!(body), headers) do
+      case HttpClient.post(url, Utils.JSON.encode!(body), headers) do
         {:ok, %{body: _body, status_code: 201}} ->
           identity
           |> Identity.changeset(%{verification_email_sent_at: DateTime.utc_now()})

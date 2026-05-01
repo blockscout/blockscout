@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
                  "message" =>
                    "There are no new blocks in the DB for the last 3000 mins. Check the healthiness of the JSON RPC archive node or the DB."
                }
-             } == Poison.decode!(request.resp_body)["metadata"]["blocks"]
+             } == Utils.JSON.decode!(request.resp_body)["metadata"]["blocks"]
     end
 
     test "returns ok when last block is not stale", %{conn: conn, current_block_number: current_block_number} do
@@ -95,7 +95,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
 
       request = get(conn, api_health_path(conn, :health))
 
-      result = Poison.decode!(request.resp_body)
+      result = Utils.JSON.decode!(request.resp_body)
 
       assert %{
                "latest_block" => %{
@@ -150,7 +150,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
                "message" =>
                  "There are no new blocks in the DB for the last 3000 mins. Check the healthiness of the JSON RPC archive node or the DB."
              }
-           } == Poison.decode!(request.resp_body)["metadata"]["blocks"]
+           } == Utils.JSON.decode!(request.resp_body)["metadata"]["blocks"]
   end
 
   defp api_health_path(conn, action) do

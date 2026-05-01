@@ -270,13 +270,13 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
   TransactionSchema.generate()
 
   def token_transfer_id_fetcher(%{transaction_hash: transaction_hash, log_index: log_index}, _) do
-    Jason.encode!(%{transaction_hash: to_string(transaction_hash), log_index: log_index})
+    Utils.JSON.encode!(%{transaction_hash: to_string(transaction_hash), log_index: log_index})
   end
 
   def transaction_id_fetcher(%{hash: hash}, _), do: to_string(hash)
 
   def internal_transaction_id_fetcher(%{transaction_hash: transaction_hash, index: index}, _) do
-    Jason.encode!(%{transaction_hash: to_string(transaction_hash), index: index})
+    Utils.JSON.encode!(%{transaction_hash: to_string(transaction_hash), index: index})
   end
 
   defp process_complexity(params, child_complexity) do

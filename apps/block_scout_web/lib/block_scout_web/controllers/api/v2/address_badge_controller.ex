@@ -55,7 +55,7 @@ defmodule BlockScoutWeb.API.V2.AddressBadgeController do
 
   def show_badge_addresses(conn, _) do
     with {:ok, body, _conn} <- Conn.read_body(conn, []),
-         {:ok, %{"api_key" => provided_api_key}} <- Jason.decode(body),
+         {:ok, %{"api_key" => provided_api_key}} <- Utils.JSON.decode(body),
          :ok <- AuthenticationHelper.validate_sensitive_endpoints_api_key(provided_api_key) do
       badge_to_address_list = ScamBadgeToAddress.get(@api_true)
 

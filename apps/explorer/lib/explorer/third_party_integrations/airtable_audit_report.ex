@@ -44,11 +44,11 @@ defmodule Explorer.ThirdPartyIntegrations.AirTableAuditReport do
       "records" => [%{"fields" => map}]
     }
 
-    request = HttpClient.post(url, Jason.encode!(body), headers)
+    request = HttpClient.post(url, Utils.JSON.encode!(body), headers)
 
     case request do
       {:ok, %{body: body, status_code: 200}} ->
-        request_id = Enum.at(Jason.decode!(body)["records"], 0)["fields"]["request_id"]
+        request_id = Enum.at(Utils.JSON.decode!(body)["records"], 0)["fields"]["request_id"]
 
         success_callback.(request_id)
 

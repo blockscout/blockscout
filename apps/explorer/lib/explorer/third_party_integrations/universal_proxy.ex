@@ -373,7 +373,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxy do
   end
 
   defp safe_parse_config_string(config_string, update_cache? \\ false) do
-    case Jason.decode(config_string) do
+    case Utils.JSON.decode(config_string) do
       {:ok, config} ->
         if update_cache?, do: :persistent_term.put(@cache_name, config_string)
         config

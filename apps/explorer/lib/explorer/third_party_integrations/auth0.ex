@@ -47,9 +47,9 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
       "grant_type" => "client_credentials"
     }
 
-    case HttpClient.post("https://#{config[:domain]}/oauth/token", Jason.encode!(body), @json_content_type) do
+    case HttpClient.post("https://#{config[:domain]}/oauth/token", Utils.JSON.encode!(body), @json_content_type) do
       {:ok, %{status_code: 200, body: body}} ->
-        case Jason.decode!(body) do
+        case Utils.JSON.decode!(body) do
           %{"access_token" => token, "expires_in" => ttl} ->
             cache_token(token, ttl - 1)
 

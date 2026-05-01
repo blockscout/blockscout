@@ -18,7 +18,7 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
 
     case Tesla.post(TeslaHelper.client(options), url, json, headers: headers, opts: TeslaHelper.request_opts(options)) do
       {:ok, %Tesla.Env{body: body, status: status_code, headers: headers}} ->
-        with {:ok, decoded_body} <- Jason.decode(body),
+        with {:ok, decoded_body} <- Utils.JSON.decode(body),
              true <- Helper.response_body_has_error?(decoded_body) do
           Instrumenter.json_rpc_errors(method)
         end

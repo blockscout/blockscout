@@ -207,7 +207,7 @@ defmodule Explorer.Helper do
   end
 
   defp safe_decode_json(data, error_as_tuple?) do
-    case Jason.decode(data) do
+    case Utils.JSON.decode(data) do
       {:ok, decoded} -> decoded
       {:error, reason} -> if error_as_tuple?, do: {:error, reason}, else: %{error: data}
     end

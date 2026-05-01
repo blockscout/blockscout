@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.Routers.APIKeyV2Router do
       length: 10_000,
       query_string_length: 5_000,
       pass: ["*/*"],
-      json_decoder: Poison
+      json_decoder: JSON
     )
 
     plug(Logger, application: :api_v2)

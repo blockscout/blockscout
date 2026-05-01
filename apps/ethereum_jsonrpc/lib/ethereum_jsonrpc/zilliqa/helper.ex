@@ -51,7 +51,7 @@ defmodule EthereumJSONRPC.Zilliqa.Helper do
   @spec legacy_bit_vector_to_signers(binary()) :: Zilliqa.signers()
   def legacy_bit_vector_to_signers(bit_list_json_string) do
     bit_list_json_string
-    |> Jason.decode!()
+    |> Utils.JSON.decode!()
     |> Enum.with_index()
     |> Enum.filter(fn {bit, _} -> bit == 1 end)
     |> Enum.map(fn {_, index} -> index end)

@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Routers.AddressBadgesApiV2Router do
       parsers: [:urlencoded, :multipart, :json],
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
-      json_decoder: Poison
+      json_decoder: JSON
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.Routers.AddressBadgesApiV2Router do
       length: 20_000_000,
       query_string_length: 5_000,
       pass: ["*/*"],
-      json_decoder: Poison
+      json_decoder: JSON
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)

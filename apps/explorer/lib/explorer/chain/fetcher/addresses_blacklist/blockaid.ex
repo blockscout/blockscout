@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Fetcher.AddressesBlacklist.Blockaid do
     case HttpClient.get(AddressesBlacklist.url(), [], recv_timeout: @timeout, timeout: @timeout) do
       {:ok, %{status_code: 200, body: body}} ->
         body
-        |> Jason.decode()
+        |> Utils.JSON.decode()
         |> parse_blacklist()
 
       _ ->

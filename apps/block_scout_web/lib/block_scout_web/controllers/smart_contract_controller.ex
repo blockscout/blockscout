@@ -34,13 +34,13 @@ defmodule BlockScoutWeb.SmartContractController do
       read_functions_required_wallet =
         load_read_functions_required_wallet(action, contract_type, implementation_address_hash_string, address)
 
-      contract_abi = Poison.encode!(address.smart_contract.abi)
+      contract_abi = Utils.JSON.encode!(address.smart_contract.abi)
 
       implementation_abi =
         if contract_type == "proxy" do
           implementation_address_hash_string
           |> SmartContract.get_abi()
-          |> Poison.encode!()
+          |> Utils.JSON.encode!()
         else
           []
         end
@@ -128,7 +128,7 @@ defmodule BlockScoutWeb.SmartContractController do
           []
         end
 
-      contract_abi = Poison.encode!(abi)
+      contract_abi = Utils.JSON.encode!(abi)
 
       conn
       |> put_status(200)

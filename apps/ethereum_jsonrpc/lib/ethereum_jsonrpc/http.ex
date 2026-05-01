@@ -126,13 +126,13 @@ defmodule EthereumJSONRPC.HTTP do
     end
   end
 
-  defp encode_json(data), do: Jason.encode_to_iodata!(data)
+  defp encode_json(data), do: Utils.JSON.encode_to_iodata!(data)
 
   defp decode_json(named_arguments) when is_list(named_arguments) do
     response = Keyword.fetch!(named_arguments, :response)
     response_body = Keyword.fetch!(response, :body)
 
-    with {:error, _} <- Jason.decode(response_body) do
+    with {:error, _} <- Utils.JSON.decode(response_body) do
       case Keyword.fetch!(response, :status_code) do
         # CloudFlare protected server return HTML errors for 502, so the JSON decode will fail
         502 ->

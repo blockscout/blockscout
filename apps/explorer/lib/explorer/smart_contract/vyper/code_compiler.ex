@@ -29,11 +29,11 @@ defmodule Explorer.SmartContract.Vyper.CodeCompiler do
       abi_row = response_data |> Enum.at(0)
       bytecode = response_data |> Enum.at(1)
 
-      case Jason.decode(abi_row) do
+      case Utils.JSON.decode(abi_row) do
         {:ok, abi} ->
           {:ok, %{"abi" => abi, "bytecode" => bytecode}}
 
-        {:error, %Jason.DecodeError{}} ->
+        {:error, _reason} ->
           {:error, :compilation}
       end
     else

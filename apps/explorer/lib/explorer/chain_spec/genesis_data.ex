@@ -167,7 +167,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   # sobelow_skip ["Traversal"]
   defp fetch_from_file(path) do
     with {:ok, data} <- File.read(path) do
-      Jason.decode(data)
+      Utils.JSON.decode(data)
     end
   end
 
@@ -176,7 +176,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   defp fetch_from_url(url) do
     case HttpClient.get(url, [], timeout: 60_000, recv_timeout: 60_000) do
       {:ok, %{body: body, status_code: 200}} ->
-        {:ok, Jason.decode!(body)}
+        {:ok, Utils.JSON.decode!(body)}
 
       reason ->
         {:error, reason}
@@ -304,7 +304,7 @@ defmodule Explorer.ChainSpec.GenesisData do
         constructor_arguments: nil,
         external_libraries: [],
         secondary_sources: [],
-        abi: Jason.decode!(contract["abi"]),
+        abi: Utils.JSON.decode!(contract["abi"]),
         verified_via_sourcify: false,
         verified_via_eth_bytecode_db: false,
         verified_via_verifier_alliance: false,

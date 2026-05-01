@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
   end
 
   def render("getabi.json", %{abi: abi}) do
-    RPCView.render("show.json", data: Jason.encode!(abi))
+    RPCView.render("show.json", data: Utils.JSON.encode!(abi))
   end
 
   def render("getsourcecode.json", %{contract: contract}) do
@@ -140,7 +140,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
       if is_nil(address.smart_contract) do
         "Contract source code not verified"
       else
-        Jason.encode!(contract.abi)
+        Utils.JSON.encode!(contract.abi)
       end
 
     contract_optimization =
@@ -224,7 +224,7 @@ defmodule BlockScoutWeb.API.RPC.ContractView do
     smart_contract_info =
       %{
         "Address" => to_string(hash),
-        "ABI" => Jason.encode!(contract.abi),
+        "ABI" => Utils.JSON.encode!(contract.abi),
         "ContractName" => contract.name,
         "CompilerVersion" => contract.compiler_version,
         "OptimizationUsed" => if(contract.optimization, do: "1", else: "0")

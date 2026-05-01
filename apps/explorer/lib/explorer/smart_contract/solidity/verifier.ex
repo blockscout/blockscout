@@ -186,7 +186,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
     case solc_output do
       {:ok, candidates} ->
-        case Jason.decode(json_input) do
+        case Utils.JSON.decode(json_input) do
           {:ok, map_json_input} ->
             Enum.reduce_while(candidates, %{}, fn candidate, _acc ->
               file_path = candidate["file_path"]

@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.PendingTransactionControllerTest do
           "hash" => Hash.to_string(hash)
         })
 
-      {:ok, %{"items" => pending_transactions}} = Poison.decode(conn.resp_body)
+      {:ok, %{"items" => pending_transactions}} = Utils.JSON.decode(conn.resp_body)
 
       assert length(pending_transactions) == length(second_page_hashes)
     end

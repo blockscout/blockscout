@@ -64,43 +64,22 @@ defmodule BlockScoutWeb.API.EthRPC.View do
   Encodes error into JSON string
   """
   @spec sanitize_error(any(), :jason | :poison) :: String.t()
-  def sanitize_error(error, json_encoder) do
-    case json_encoder do
-      :jason -> if is_map(error), do: Jason.encode!(error), else: "\"#{error}\""
-      :poison -> if is_map(error), do: Poison.encode!(error), else: "\"#{error}\""
-    end
+  def sanitize_error(error, _json_encoder) do
+    if is_map(error), do: Utils.JSON.encode!(error), else: "\"#{error}\""
   end
 
   @doc """
-  Pass "jsonrpc":"2.0" to use in Poison.Encoder and Jason.Encoder below
+  Pass "jsonrpc":"2.0" to use in Jason.Encoder below
   """
   @spec jsonrpc_2_0() :: String.t()
   def jsonrpc_2_0, do: @jsonrpc_2_0
-
-  defimpl Poison.Encoder, for: BlockScoutWeb.API.EthRPC.View do
-    alias BlockScoutWeb.API.EthRPC.View
-
-    def encode(%View{result: result, id: id, error: error}, _options) when is_nil(error) do
-      result = Poison.encode!(result)
-
-      """
-      {#{View.jsonrpc_2_0()},"result": #{result},"id": #{View.sanitize_id(id)}}
-      """
-    end
-
-    def encode(%View{id: id, error: error}, _options) do
-      """
-      {#{View.jsonrpc_2_0()},"error": #{View.sanitize_error(error, :poison)},"id": #{View.sanitize_id(id)}}
-      """
-    end
-  end
 
   defimpl Jason.Encoder, for: BlockScoutWeb.API.EthRPC.View do
     # credo:disable-for-next-line
     alias BlockScoutWeb.API.EthRPC.View
 
     def encode(%View{result: result, id: id, error: error}, _options) when is_nil(error) do
-      result = Jason.encode!(result)
+      result = Utils.JSON.encode!(result)
 
       """
       {#{View.jsonrpc_2_0()},"result": #{result},"id": #{View.sanitize_id(id)}}
