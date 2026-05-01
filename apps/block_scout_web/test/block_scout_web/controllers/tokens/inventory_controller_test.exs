@@ -75,7 +75,7 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
 
       {:ok, %{"items" => items}} =
         conn.resp_body
-        |> Poison.decode()
+        |> Utils.JSON.decode()
 
       assert Enum.count(items) == Enum.count(second_page_token_balances)
     end
@@ -108,7 +108,7 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
 
       {:ok, %{"next_page_path" => next_page_path}} =
         conn.resp_body
-        |> Poison.decode()
+        |> Utils.JSON.decode()
 
       assert next_page_path
     end
@@ -133,7 +133,7 @@ defmodule BlockScoutWeb.Tokens.InventoryControllerTest do
 
       {:ok, %{"next_page_path" => next_page_path}} =
         conn.resp_body
-        |> Poison.decode()
+        |> Utils.JSON.decode()
 
       refute next_page_path
     end

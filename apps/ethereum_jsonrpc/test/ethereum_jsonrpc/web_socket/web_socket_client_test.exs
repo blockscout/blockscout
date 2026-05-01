@@ -49,14 +49,14 @@ defmodule EthereumJSONRPC.WebSocket.WebSocketClientTest do
   describe "handle_frame/2" do
     setup :example_state
 
-    test "Jason.decode errors are broadcast to all subscribers", %{state: %WebSocketClient{url: url} = state} do
+    test "JSON decode errors are broadcast to all subscribers", %{state: %WebSocketClient{url: url} = state} do
       subscription_id = 1
       subscription_reference = make_ref()
       subscription = subscription(%{url: url, reference: subscription_reference})
       state = put_subscription(state, subscription_id, subscription)
 
       assert {:ok, ^state} = WebSocketClient.handle_frame({:text, ""}, state)
-      assert_receive {^subscription, {:error, %Jason.DecodeError{}}}
+      assert_receive {^subscription, {:error, {:unexpected_end, 0}}}
     end
   end
 

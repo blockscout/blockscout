@@ -71,7 +71,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
 
       assert json_response(conn, 200)
 
-      {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
+      {:ok, %{"items" => items}} = conn.resp_body |> Utils.JSON.decode()
 
       assert Enum.count(items) == 2
     end
@@ -103,7 +103,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
           "type" => "JSON"
         })
 
-      {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
+      {:ok, %{"items" => items}} = conn.resp_body |> Utils.JSON.decode()
 
       refute Enum.count(items) == 3
     end
@@ -128,7 +128,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
       conn =
         get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash), %{type: "JSON"})
 
-      {:ok, %{"next_page_path" => path}} = conn.resp_body |> Poison.decode()
+      {:ok, %{"next_page_path" => path}} = conn.resp_body |> Utils.JSON.decode()
 
       assert path
     end
@@ -153,7 +153,7 @@ defmodule BlockScoutWeb.TransactionTokenTransferControllerTest do
       conn =
         get(conn, transaction_token_transfer_path(BlockScoutWeb.Endpoint, :index, transaction.hash), %{type: "JSON"})
 
-      {:ok, %{"next_page_path" => path}} = conn.resp_body |> Poison.decode()
+      {:ok, %{"next_page_path" => path}} = conn.resp_body |> Utils.JSON.decode()
 
       refute path
     end
