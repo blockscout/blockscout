@@ -1228,37 +1228,34 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   defp get_smart_contract_name(smart_contract, proxy_implementations) do
     contract_name = smart_contract.name
 
-    # Check if this is a proxy contract and if implementation names are available
-    case is_proxy_with_implementations?(smart_contract, proxy_implementations) do
-      {true, implementation_names} when is_list(implementation_names) and length(implementation_names) > 0 ->
-        # Combine proxy name with implementation names
-        "#{contract_name} → #{Enum.join(implementation_names, ", ")}"
-
-      _ ->
+    case proxy_implementation_names(smart_contract, proxy_implementations) do
+      [] ->
         contract_name
+
+      implementation_names ->
+        "#{contract_name} → #{Enum.join(implementation_names, ", ")}"
     end
   end
 
-  # Checks if contract is a proxy and extracts implementation names
-  defp is_proxy_with_implementations?(smart_contract, proxy_implementations) do
+  defp proxy_implementation_names(smart_contract, proxy_implementations) do
     case proxy_implementations do
       %NotLoaded{} ->
-        {false, []}
+        []
 
       nil ->
-        {false, []}
+        []
 
       %{names: names} ->
         case Proxy.proxy_contract?(smart_contract) do
           true ->
-            {true, Enum.filter(names, &(!is_nil(&1)))}
+            Enum.reject(names, &is_nil/1)
 
           false ->
-            {false, []}
+            []
         end
 
       _ ->
-        {false, []}
+        []
     end
   end
 
