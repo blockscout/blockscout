@@ -1879,7 +1879,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
     end
 
-    test "returns status = 2 for internal transactions not yet processed", %{conn: conn, params: params} do
+    test "returns status = 2 and empty result when blocks are pending, even if partial data exists", %{conn: conn, params: params} do
       address = insert(:address)
       address_2 = insert(:address)
 
@@ -1902,44 +1902,23 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         block_number: block.number
       )
 
-      internal_transaction =
-        :internal_transaction
-        |> insert(
-          transaction: transaction,
-          transaction_index: transaction.index,
-          index: 1,
-          value: 2,
-          from_address: address,
-          to_address: address_2,
-          block_number: block.number
-        )
-
-      expected_result = [
-        %{
-          "blockNumber" => "#{transaction.block_number}",
-          "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
-          "from" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.from_address_id)}",
-          "to" => "#{AddressIdToAddressHash.id_to_hash(internal_transaction.to_address_id)}",
-          "value" => "#{internal_transaction.value.value}",
-          "contractAddress" => "",
-          "input" => "#{internal_transaction.input}",
-          "type" => "#{internal_transaction.type}",
-          "callType" => "#{internal_transaction.call_type}",
-          "gas" => "#{internal_transaction.gas}",
-          "gasUsed" => "#{internal_transaction.gas_used}",
-          "index" => "#{internal_transaction.index}",
-          "transactionHash" => "#{transaction.hash}",
-          "isError" => "0",
-          "errCode" => "#{internal_transaction.error}"
-        }
-      ]
+      :internal_transaction
+      |> insert(
+        transaction: transaction,
+        transaction_index: transaction.index,
+        index: 1,
+        value: 2,
+        from_address: address,
+        to_address: address_2,
+        block_number: block.number
+      )
 
       assert response =
                conn
                |> get("/api/v1", params)
                |> json_response(200)
 
-      assert response["result"] == expected_result
+      assert response["result"] == []
       assert response["status"] == "2"
       assert response["message"] == "Some internal transactions within this block range have not yet been processed"
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
@@ -2864,6 +2843,46 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
+    test "returns status = 2 and empty result when blocks are pending, even if partial data exists", %{conn: conn} do
+      address = insert(:address)
+      address_2 = insert(:address)
+
+      block = insert(:block)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address, to_address: address_2)
+        |> with_block(block)
+
+      :internal_transaction
+      |> insert(
+        transaction: transaction,
+        transaction_index: transaction.index,
+        index: 0,
+        value: 1,
+        from_address: address,
+        to_address: address_2,
+        block_number: block.number
+      )
+
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "address" => "#{address.hash}"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["result"] == []
+      assert response["status"] == "2"
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
     end
   end
