@@ -6,12 +6,8 @@ defmodule BlockScoutWeb.Tokens.HolderController do
   alias Explorer.Chain
   alias Phoenix.View
 
-  import BlockScoutWeb.Chain,
-    only: [
-      split_list_by_page: 1,
-      paging_options: 1,
-      next_page_params: 3
-    ]
+  import BlockScoutWeb.Chain, only: [paging_options: 1]
+  import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 3, split_list_by_page: 1]
 
   def index(conn, %{"token_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),

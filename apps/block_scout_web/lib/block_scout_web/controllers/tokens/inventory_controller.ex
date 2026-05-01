@@ -9,10 +9,11 @@ defmodule BlockScoutWeb.Tokens.InventoryController do
 
   import BlockScoutWeb.Chain,
     only: [
-      split_list_by_page: 1,
       unique_tokens_paging_options: 1,
       unique_tokens_next_page: 3
     ]
+
+  import BlockScoutWeb.LegacyPagingHelper, only: [split_list_by_page: 1]
 
   def index(conn, %{"token_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),

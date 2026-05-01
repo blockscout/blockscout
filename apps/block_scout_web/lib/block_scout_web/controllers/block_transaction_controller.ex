@@ -5,10 +5,10 @@ defmodule BlockScoutWeb.BlockTransactionController do
     only: [
       paging_options: 1,
       put_key_value_to_paging_options: 3,
-      next_page_params: 3,
-      split_list_by_page: 1,
       parse_block_hash_or_number_param: 1
     ]
+
+  import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 3, split_list_by_page: 1]
 
   import Explorer.Chain, only: [hash_to_block: 2, number_to_block: 2]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]

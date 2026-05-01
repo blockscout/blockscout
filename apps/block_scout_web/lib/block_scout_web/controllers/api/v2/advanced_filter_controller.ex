@@ -2,7 +2,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   use BlockScoutWeb, :controller
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 5, fetch_scam_token_toggle: 2]
+  import BlockScoutWeb.Chain, only: [paginate_list: 4, fetch_scam_token_toggle: 2, maybe_override_page_size: 2]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   alias BlockScoutWeb.AccessHelper
@@ -64,20 +64,19 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       params
       |> extract_filters()
       |> Keyword.merge(paging_options(params))
+      |> maybe_override_page_size(params)
       |> Keyword.merge(@api_true)
       |> fetch_scam_token_toggle(conn)
 
     advanced_filters_plus_one = AdvancedFilter.list(full_options)
 
-    {advanced_filters, next_page} = split_list_by_page(advanced_filters_plus_one)
+    {advanced_filters, next_page_params} =
+      paginate_list(advanced_filters_plus_one, %{}, full_options[:paging_options], paging_function: &paging_params/1)
 
     decoded_transactions =
       advanced_filters
       |> Enum.map(fn af -> %Transaction{to_address: af.to_address, input: af.input, hash: af.hash} end)
       |> Transaction.decode_transactions(true, @api_true)
-
-    next_page_params =
-      next_page |> next_page_params(advanced_filters, Map.take(params, ["items_count"]), false, &paging_params/1)
 
     render(conn, :advanced_filters,
       advanced_filters: advanced_filters,

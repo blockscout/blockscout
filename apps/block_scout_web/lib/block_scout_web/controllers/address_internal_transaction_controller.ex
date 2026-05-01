@@ -11,10 +11,10 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
     only: [
       current_filter: 1,
       paging_options: 1,
-      next_page_params: 3,
-      split_list_by_page: 1,
       address_to_internal_transactions: 2
     ]
+
+  import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 3, split_list_by_page: 1]
 
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 

@@ -10,8 +10,8 @@ defmodule BlockScoutWeb.AddressTokenTransferController do
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Phoenix.View
 
-  import BlockScoutWeb.Chain,
-    only: [current_filter: 1, next_page_params: 3, paging_options: 1, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [current_filter: 1, paging_options: 1]
+  import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 3, split_list_by_page: 1]
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 

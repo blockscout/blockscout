@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
   use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
-    only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+    only: [paging_options: 1, paginate_list: 3]
 
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
@@ -19,15 +19,14 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
       "Retrieves a paginated list of withdrawals, typically for proof-of-stake networks supporting validator withdrawals.",
     parameters:
       base_params() ++
-        define_paging_params(["index", "items_count"]),
+        define_paging_params(["index"]),
     responses: [
       ok:
         {"List of withdrawals with pagination.", "application/json",
          paginated_response(
            items: Schemas.Withdrawal,
            next_page_params_example: %{
-             "index" => 50,
-             "items_count" => 50
+             "index" => 50
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
@@ -45,9 +44,8 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
       |> Keyword.merge(paging_options(params))
 
     withdrawals_plus_one = Chain.list_withdrawals(full_options)
-    {withdrawals, next_page} = split_list_by_page(withdrawals_plus_one)
 
-    next_page_params = next_page |> next_page_params(withdrawals, params)
+    {withdrawals, next_page_params} = paginate_list(withdrawals_plus_one, params, full_options[:paging_options])
 
     conn
     |> put_status(200)

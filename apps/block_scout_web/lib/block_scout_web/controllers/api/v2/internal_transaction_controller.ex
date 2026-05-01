@@ -2,19 +2,16 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain
 
   alias Explorer.Chain.Cache.BackgroundMigrations
 
   import BlockScoutWeb.Chain,
     only: [
-      split_list_by_page: 1,
+      paginate_list: 3,
       paging_options: 1,
-      next_page_params: 3,
       fetch_internal_transactions: 1
     ]
-
-  import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -31,7 +28,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
     parameters:
       base_params() ++
         [query_transaction_hash_param(), limit_param()] ++
-        define_paging_params(["index", "block_number", "transaction_index", "items_count"]),
+        define_paging_params(["index", "block_number", "transaction_index"]),
     responses: [
       ok:
         {"List of internal transactions with pagination information.", "application/json",
@@ -40,8 +37,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
            next_page_params_example: %{
              "index" => 50,
              "transaction_index" => 68,
-             "block_number" => 22_133_247,
-             "items_count" => 50
+             "block_number" => 22_133_247
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
@@ -59,15 +55,10 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
       paging_options = paging_options(params)
       options = options(paging_options, %{transaction_hash: transaction_hash, limit: params[:limit]})
 
-      result =
+      {internal_transactions, next_page_params} =
         options
         |> fetch_internal_transactions()
-        |> split_list_by_page()
-
-      {internal_transactions, next_page} = result
-
-      next_page_params =
-        next_page |> next_page_params(internal_transactions, params)
+        |> paginate_list(params, options[:paging_options])
 
       conn
       |> put_status(200)
@@ -94,12 +85,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
     paging_options
     |> Keyword.put(:transaction_hash, params.transaction_hash)
     |> Keyword.put(:exclude_origin_internal_transaction, true)
-    |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
-                                                                      page_size: page_size
-                                                                    } = paging_options ->
-      maybe_parsed_limit = params[:limit]
-      %PagingOptions{paging_options | page_size: min(page_size, maybe_parsed_limit && abs(maybe_parsed_limit))}
-    end)
     |> Keyword.merge(@api_true)
   end
 

@@ -8,9 +8,8 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 3,
-      paging_options: 1,
-      split_list_by_page: 1
+      paginate_list: 3,
+      paging_options: 1
     ]
 
   alias Explorer.Account.Api.Key, as: ApiKey
@@ -48,12 +47,11 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
          {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)},
          {:watchlist, %{watchlists: [watchlist | _]}} <-
            {:watchlist, Repo.account_repo().preload(identity, :watchlists)} do
-      results_plus_one = WatchlistAddress.get_watchlist_addresses_by_watchlist_id(watchlist.id, paging_options(params))
+      watchlist_paging_opts = paging_options(params)
+      results_plus_one = WatchlistAddress.get_watchlist_addresses_by_watchlist_id(watchlist.id, watchlist_paging_opts)
 
-      {watchlist_addresses, next_page} = split_list_by_page(results_plus_one)
-
-      next_page_params =
-        next_page |> next_page_params(watchlist_addresses, params)
+      {watchlist_addresses, next_page_params} =
+        paginate_list(results_plus_one, params, watchlist_paging_opts[:paging_options])
 
       watchlist_addresses_prepared =
         Enum.map(watchlist_addresses, fn %WatchlistAddress{} = wa ->
@@ -234,11 +232,10 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
   def tags_address(conn, params) do
     with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
          {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)} do
-      results_plus_one = TagAddress.get_tags_address_by_identity_id(identity.id, paging_options(params))
+      tags_paging_opts = paging_options(params)
+      results_plus_one = TagAddress.get_tags_address_by_identity_id(identity.id, tags_paging_opts)
 
-      {tags, next_page} = split_list_by_page(results_plus_one)
-
-      next_page_params = next_page |> next_page_params(tags, params)
+      {tags, next_page_params} = paginate_list(results_plus_one, params, tags_paging_opts[:paging_options])
 
       conn
       |> put_status(200)
@@ -293,11 +290,10 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
   def tags_transaction(conn, params) do
     with {:auth, %{id: uid}} <- {:auth, current_user(conn)},
          {:identity, %Identity{} = identity} <- {:identity, Identity.find_identity(uid)} do
-      results_plus_one = TagTransaction.get_tags_transaction_by_identity_id(identity.id, paging_options(params))
+      tx_tags_paging_opts = paging_options(params)
+      results_plus_one = TagTransaction.get_tags_transaction_by_identity_id(identity.id, tx_tags_paging_opts)
 
-      {tags, next_page} = split_list_by_page(results_plus_one)
-
-      next_page_params = next_page |> next_page_params(tags, params)
+      {tags, next_page_params} = paginate_list(results_plus_one, params, tx_tags_paging_opts[:paging_options])
 
       conn
       |> put_status(200)

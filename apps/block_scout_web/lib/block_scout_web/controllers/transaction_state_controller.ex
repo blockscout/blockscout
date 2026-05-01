@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.TransactionStateController do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
   import BlockScoutWeb.Models.GetTransactionTags, only: [get_transaction_with_addresses_tags: 2]
-  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params_for_state_changes: 3]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
@@ -30,18 +30,19 @@ defmodule BlockScoutWeb.TransactionStateController do
            AccessHelper.restricted_access?(to_string(transaction.from_address_hash), params),
          {:ok, false} <-
            AccessHelper.restricted_access?(to_string(transaction.to_address_hash), params) do
-      state_changes_plus_next_page =
-        transaction
-        |> TransactionStateHelper.state_changes(
-          params
-          |> paging_options()
-          |> Keyword.put(:ip, AccessHelper.conn_to_ip_string(conn))
-        )
+      full_options =
+        params
+        |> paging_options()
+        |> Keyword.put(:ip, AccessHelper.conn_to_ip_string(conn))
 
-      {state_changes, next_page} = split_list_by_page(state_changes_plus_next_page)
+      state_changes_plus_next_page =
+        TransactionStateHelper.state_changes(transaction, full_options)
+
+      {state_changes, next_page_params} =
+        next_page_params_for_state_changes(state_changes_plus_next_page, params, full_options[:paging_options])
 
       next_page_url =
-        case next_page_params(next_page, state_changes, params) do
+        case next_page_params do
           nil ->
             nil
 

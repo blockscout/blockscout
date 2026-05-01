@@ -1,8 +1,8 @@
 defmodule BlockScoutWeb.BlockWithdrawalController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain,
-    only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [paging_options: 1]
+  import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 3, split_list_by_page: 1]
 
   import BlockScoutWeb.BlockTransactionController, only: [param_block_hash_or_number_to_block: 2, block_above_tip: 1]
 

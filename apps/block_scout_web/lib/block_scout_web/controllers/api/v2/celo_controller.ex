@@ -6,8 +6,8 @@ defmodule BlockScoutWeb.API.V2.CeloController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 5,
-      split_list_by_page: 1
+      maybe_override_page_size: 2,
+      paginate_list: 4
     ]
 
   import Explorer.PagingOptions, only: [default_paging_options: 0]
@@ -31,8 +31,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
     parameters:
       base_params() ++
         define_paging_params([
-          "number",
-          "items_count"
+          "number"
         ]),
     responses: [
       ok:
@@ -61,32 +60,25 @@ defmodule BlockScoutWeb.API.V2.CeloController do
         _ -> default_paging_options()
       end
 
-    options = [
-      necessity_by_association: %{
-        :end_processing_block => :optional,
-        :distribution => :optional
-      },
-      paging_options: paging_options,
-      api?: true
-    ]
-
-    {epochs, next_page} =
-      options
-      |> Epoch.all()
-      |> split_list_by_page()
+    options =
+      [
+        necessity_by_association: %{
+          :end_processing_block => :optional,
+          :distribution => :optional
+        },
+        paging_options: paging_options,
+        api?: true
+      ]
+      |> maybe_override_page_size(params)
 
     filtered_params =
       params
       |> Map.drop([:number])
 
-    next_page_params =
-      next_page_params(
-        next_page,
-        epochs,
-        filtered_params,
-        false,
-        &%{number: &1.number}
-      )
+    {epochs, next_page_params} =
+      options
+      |> Epoch.all()
+      |> paginate_list(filtered_params, options[:paging_options], paging_function: &%{number: &1.number})
 
     conn
     |> render(:celo_epochs, %{
@@ -164,8 +156,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
         define_paging_params([
           "amount",
           "account_address_hash",
-          "associated_account_address_hash",
-          "items_count"
+          "associated_account_address_hash"
         ]),
     responses: [
       ok:
@@ -193,14 +184,16 @@ defmodule BlockScoutWeb.API.V2.CeloController do
          {:ok, reward_type_atom} <- parse_celo_reward_type(reward_type) do
       address_associations = [:names, :smart_contract, proxy_implementations_association()]
 
-      full_options = [
-        necessity_by_association: %{
-          [account_address: address_associations] => :optional,
-          [associated_account_address: address_associations] => :optional
-        },
-        paging_options: election_rewards_paging_options(params),
-        api?: true
-      ]
+      full_options =
+        [
+          necessity_by_association: %{
+            [account_address: address_associations] => :optional,
+            [associated_account_address: address_associations] => :optional
+          },
+          paging_options: election_rewards_paging_options(params),
+          api?: true
+        ]
+        |> maybe_override_page_size(params)
 
       rewards_plus_one =
         ElectionReward.epoch_number_and_type_to_rewards(
@@ -208,8 +201,6 @@ defmodule BlockScoutWeb.API.V2.CeloController do
           reward_type_atom,
           full_options
         )
-
-      {rewards, next_page} = split_list_by_page(rewards_plus_one)
 
       filtered_params =
         params
@@ -221,17 +212,14 @@ defmodule BlockScoutWeb.API.V2.CeloController do
           :associated_account_address_hash
         ])
 
-      next_page_params =
-        next_page_params(
-          next_page,
-          rewards,
-          filtered_params,
-          false,
-          &%{
-            amount: &1.amount,
-            account_address_hash: &1.account_address_hash,
-            associated_account_address_hash: &1.associated_account_address_hash
-          }
+      {rewards, next_page_params} =
+        paginate_list(rewards_plus_one, filtered_params, full_options[:paging_options],
+          paging_function:
+            &%{
+              amount: &1.amount,
+              account_address_hash: &1.account_address_hash,
+              associated_account_address_hash: &1.associated_account_address_hash
+            }
         )
 
       conn

@@ -1,12 +1,11 @@
 defmodule BlockScoutWeb.API.V2.TokenTransferController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain
   alias Explorer.Chain.{TokenTransfer, Transaction}
 
   import BlockScoutWeb.Chain,
     only: [
-      split_list_by_page: 1,
       paging_options: 1,
       token_transfers_next_page_params: 3,
       fetch_scam_token_toggle: 2
@@ -21,7 +20,6 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
     only: [maybe_preload_ens_for_token_transfers: 1]
 
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
-  import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   alias Explorer.Chain.Token.Instance
 
@@ -38,7 +36,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
     description: "Retrieves a paginated list of token transfers across all token types (ERC-20, ERC-721, ERC-1155).",
     parameters:
       base_params() ++
-        [token_type_param(), limit_param()] ++
+        [token_type_param()] ++
         define_paging_params([
           "index",
           "block_number",
@@ -69,24 +67,17 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
 
     options =
       paging_options
-      |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
-                                                                        page_size: page_size
-                                                                      } = paging_options ->
-        maybe_parsed_limit = params[:limit]
-        %PagingOptions{paging_options | page_size: min(page_size, maybe_parsed_limit && abs(maybe_parsed_limit))}
-      end)
       |> Keyword.merge(token_transfers_types_options(params))
       |> Keyword.merge(@api_true)
       |> fetch_scam_token_toggle(conn)
 
-    result =
+    results =
       options
       |> TokenTransfer.fetch()
       |> Chain.flat_1155_batch_token_transfers()
       |> Chain.paginate_1155_batch_token_transfers(paging_options)
-      |> split_list_by_page()
 
-    {token_transfers, next_page} = result
+    {token_transfers, next_page_params} = token_transfers_next_page_params(results, params, options[:paging_options])
 
     transactions =
       token_transfers
@@ -99,9 +90,6 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
       transactions
       |> Enum.zip(decoded_transactions)
       |> Enum.into(%{}, fn {%{hash: hash}, decoded_input} -> {hash, decoded_input} end)
-
-    next_page_params =
-      next_page |> token_transfers_next_page_params(token_transfers, params)
 
     conn
     |> put_status(200)

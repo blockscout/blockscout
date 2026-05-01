@@ -6,13 +6,12 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     chain_type: [:explorer, :chain_type],
     chain_identity: [:explorer, :chain_identity]
 
-  import BlockScoutWeb.PagingHelper, only: [hot_smart_contracts_sorting: 1, delete_items_count_from_next_page_params: 1]
+  import BlockScoutWeb.PagingHelper, only: [hot_smart_contracts_sorting: 1]
 
   import BlockScoutWeb.Chain,
     only: [
       hot_smart_contracts_paging_options: 1,
-      split_list_by_page: 1,
-      next_page_params: 5,
+      paginate_list: 4,
       fetch_scam_token_toggle: 2
     ]
 
@@ -259,8 +258,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
         define_paging_params([
           "transactions_count_positive",
           "total_gas_used",
-          "contract_address_hash_not_nullable",
-          "items_count"
+          "contract_address_hash_not_nullable"
         ]),
     responses: [
       ok:
@@ -270,8 +268,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
            next_page_params_example: %{
              "transactions_count" => 100,
              "total_gas_used" => "100",
-             "contract_address_hash" => "0x01a2A10583675E0e5dF52DE1b62734109201477a",
-             "items_count" => 50
+             "contract_address_hash" => "0x01a2A10583675E0e5dF52DE1b62734109201477a"
            }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -287,19 +284,14 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       |> Keyword.merge(@api_true)
       |> fetch_scam_token_toggle(conn)
 
-    {hot_smart_contracts, next_page} =
+    {hot_smart_contracts, next_page_params} =
       scale
       |> HotSmartContracts.paginated(options)
       |> case do
         {:error, :not_found} -> []
         hot_smart_contracts -> hot_smart_contracts
       end
-      |> split_list_by_page()
-
-    next_page_params =
-      next_page
-      |> next_page_params(hot_smart_contracts, params, false, &hot_smart_contracts_paging_params/1)
-      |> delete_items_count_from_next_page_params()
+      |> paginate_list(params, options[:paging_options], paging_function: &hot_smart_contracts_paging_params/1)
 
     conn
     |> put_status(200)

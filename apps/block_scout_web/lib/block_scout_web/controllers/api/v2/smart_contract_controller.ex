@@ -8,8 +8,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
   import BlockScoutWeb.Chain,
     only: [
       fetch_scam_token_toggle: 2,
-      next_page_params: 5,
-      split_list_by_page: 1
+      maybe_override_page_size: 2,
+      paginate_list: 4
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -94,8 +94,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
           "smart_contract_id",
           "coin_balance",
           "address_hash",
-          "transactions_count",
-          "items_count"
+          "transactions_count"
         ]),
     responses: [
       ok:
@@ -103,8 +102,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
          paginated_response(
            items: Schemas.SmartContract,
            next_page_params_example: %{
-             "smart_contract_id" => 1_947_801,
-             "items_count" => 50
+             "smart_contract_id" => 1_947_801
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
@@ -120,11 +118,11 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       |> Keyword.merge(current_filter(params))
       |> Keyword.merge(search_query(params))
       |> Keyword.merge(smart_contract_addresses_paging_options(params))
+      |> maybe_override_page_size(params)
       |> Keyword.merge(smart_contract_addresses_sorting(params))
       |> fetch_scam_token_toggle(conn)
 
     addresses_plus_one = SmartContract.verified_contract_addresses(full_options)
-    {addresses, next_page} = split_list_by_page(addresses_plus_one)
 
     # If no sorting options are provided, we sort by `id` descending only. If
     # there are some sorting options supplied, we sort by `:hash` ascending as a
@@ -138,14 +136,8 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
         &%{smart_contract_id: &1.smart_contract.id}
       end
 
-    next_page_params =
-      next_page
-      |> next_page_params(
-        addresses,
-        params,
-        false,
-        pager
-      )
+    {addresses, next_page_params} =
+      paginate_list(addresses_plus_one, params, full_options[:paging_options], paging_function: pager)
 
     conn
     |> put_status(200)

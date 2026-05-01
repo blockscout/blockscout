@@ -1,7 +1,8 @@
 defmodule BlockScoutWeb.TokensController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [paging_options: 1]
+  import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 3, split_list_by_page: 1]
   alias BlockScoutWeb.{Controller, TokensView}
   alias Explorer.Chain.Token
   alias Phoenix.View
@@ -35,16 +36,6 @@ defmodule BlockScoutWeb.TokensController do
           )
       end
 
-    items_count_str = Map.get(params, "items_count")
-
-    items_count =
-      if items_count_str do
-        {items_count, _} = Integer.parse(items_count_str)
-        items_count
-      else
-        0
-      end
-
     items =
       tokens_page
       |> Enum.with_index(1)
@@ -53,7 +44,7 @@ defmodule BlockScoutWeb.TokensController do
           TokensView,
           "_tile.html",
           token: token,
-          index: items_count + index,
+          index: index,
           conn: conn
         )
       end)

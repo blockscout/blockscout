@@ -2,76 +2,114 @@ defmodule BlockScoutWeb.ChainTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.{Address, Block, Transaction, TokenTransfer}
+  alias Explorer.PagingOptions
   alias BlockScoutWeb.Chain
 
-  describe "next_page_params/4" do
-    # https://github.com/blockscout/blockscout/issues/12984
-    test "does not return duplicated keys" do
-      assert Chain.next_page_params([nil], [%{id: 123}], %{"id" => 178}, false, fn x -> x end) == %{
-               items_count: 1,
-               id: 123
-             }
+  describe "paginate_list/3" do
+    test "returns all items and nil when list is shorter than page_size" do
+      paging_options = %PagingOptions{page_size: 11}
+      items = Enum.to_list(1..5)
+
+      assert {^items, nil} = Chain.paginate_list(items, %{}, paging_options)
+    end
+
+    test "splits list and generates next_page_params when list has overflow" do
+      paging_options = %PagingOptions{page_size: 3}
+      items = [%{id: 3}, %{id: 2}, %{id: 1}]
+
+      {result, next_page_params} = Chain.paginate_list(items, %{}, paging_options, paging_function: fn item -> item end)
+
+      assert result == [%{id: 3}, %{id: 2}]
+      assert next_page_params == %{id: 2}
+    end
+
+    test "returns empty list and nil for empty input" do
+      paging_options = %PagingOptions{page_size: 11}
+      assert {[], nil} = Chain.paginate_list([], %{}, paging_options)
+    end
+
+    test "strips items_count from next_page_params" do
+      paging_options = %PagingOptions{page_size: 2}
+      items = [%{id: 2}, %{id: 1}]
+
+      {_result, next_page_params} =
+        Chain.paginate_list(items, %{items_count: 10}, paging_options, paging_function: fn item -> item end)
+
+      refute Map.has_key?(next_page_params, :items_count)
+      refute Map.has_key?(next_page_params, "items_count")
     end
   end
 
   describe "token_transfers_next_page_params/3" do
     # https://github.com/blockscout/blockscout/issues/12984
     test "does not return duplicated keys" do
-      assert Chain.token_transfers_next_page_params(
-               [%TokenTransfer{block_number: 1, log_index: 3}],
-               [%TokenTransfer{block_number: 1, log_index: 2}],
-               %{
-                 "block_number" => 5,
-                 "index" => 4
-               }
-             ) == %{
+      paging_options = %PagingOptions{page_size: 2}
+
+      {_items, next_page_params} =
+        Chain.token_transfers_next_page_params(
+          [
+            %TokenTransfer{block_number: 1, log_index: 2},
+            %TokenTransfer{block_number: 1, log_index: 3}
+          ],
+          %{
+            "block_number" => 5,
+            "index" => 4
+          },
+          paging_options
+        )
+
+      assert next_page_params == %{
                block_number: 1,
                index: 2
              }
     end
 
     test "does not return duplicated keys with batch transfer" do
-      assert Chain.token_transfers_next_page_params(
-               [
-                 %TokenTransfer{
-                   block_number: 1,
-                   log_index: 2,
-                   block_hash: "0x123",
-                   transaction_hash: "0x456",
-                   index_in_batch: 1
-                 }
-               ],
-               [
-                 %TokenTransfer{
-                   block_number: 1,
-                   log_index: 2,
-                   block_hash: "0xabc",
-                   transaction_hash: "0xdef",
-                   index_in_batch: 3
-                 },
-                 %TokenTransfer{
-                   block_number: 1,
-                   log_index: 2,
-                   block_hash: "0x123",
-                   transaction_hash: "0x456",
-                   index_in_batch: 2
-                 }
-               ],
-               %{
-                 "block_number" => 5,
-                 "index" => 4,
-                 "batch_log_index" => 3,
-                 "batch_block_hash" => "0x789",
-                 "batch_transaction_hash" => "0xabc",
-                 "index_in_batch" => 2
-               }
-             ) == %{
-               :block_number => 1,
-               :index => 2,
-               :batch_block_hash => "0x123",
-               :batch_log_index => 2,
-               :batch_transaction_hash => "0x456",
-               :index_in_batch => 2
+      paging_options = %PagingOptions{page_size: 3}
+
+      {_items, next_page_params} =
+        Chain.token_transfers_next_page_params(
+          [
+            %TokenTransfer{
+              block_number: 1,
+              log_index: 2,
+              block_hash: "0xabc",
+              transaction_hash: "0xdef",
+              index_in_batch: 3
+            },
+            %TokenTransfer{
+              block_number: 1,
+              log_index: 2,
+              block_hash: "0x123",
+              transaction_hash: "0x456",
+              index_in_batch: 2
+            },
+            %TokenTransfer{
+              block_number: 1,
+              log_index: 2,
+              block_hash: "0x123",
+              transaction_hash: "0x456",
+              index_in_batch: 1
+            }
+          ],
+          %{
+            "block_number" => 5,
+            "index" => 4,
+            "batch_log_index" => 3,
+            "batch_block_hash" => "0x789",
+            "batch_transaction_hash" => "0xabc",
+            "index_in_batch" => 2
+          },
+          paging_options
+        )
+
+      assert next_page_params == %{
+               block_number: 1,
+               index: 2,
+               batch_block_hash: "0x123",
+               batch_log_index: 2,
+               batch_transaction_hash: "0x456",
+               index_in_batch: 2
              }
     end
   end

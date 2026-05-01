@@ -3,9 +3,8 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 5,
-      paging_options: 1,
-      split_list_by_page: 1
+      paginate_list: 4,
+      paging_options: 1
     ]
 
   alias Explorer.Chain.ZkSync.{Reader, TransactionBatch}
@@ -43,21 +42,17 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
   """
   @spec batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batches(conn, params) do
-    {batches, next_page} =
+    zksync_options =
       params
       |> paging_options()
       |> Keyword.put(:necessity_by_association, @batch_necessity_by_association)
       |> Keyword.put(:api?, true)
-      |> Reader.batches()
-      |> split_list_by_page()
 
-    next_page_params =
-      next_page_params(
-        next_page,
-        batches,
-        params,
-        false,
-        fn %TransactionBatch{number: number} -> %{"number" => number} end
+    {batches, next_page_params} =
+      zksync_options
+      |> Reader.batches()
+      |> paginate_list(params, zksync_options[:paging_options],
+        paging_function: fn %TransactionBatch{number: number} -> %{"number" => number} end
       )
 
     conn
