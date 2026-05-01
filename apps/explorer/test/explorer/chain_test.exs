@@ -1404,6 +1404,43 @@ defmodule Explorer.ChainTest do
       assert Repo.aggregate(MainExportQueue, :count, :hash) == 5
     end
 
+    test "populates main multichain export queue with proxy contract implementations" do
+      Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
+      multichain_configuration = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, multichain_configuration)
+      end)
+
+      bypass = Bypass.open()
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+        service_url: "http://localhost:#{bypass.port}",
+        addresses_chunk_size: 7_000
+      )
+
+      proxy_hash = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+      implementation_1 = insert(:address)
+      implementation_2 = insert(:address)
+
+      insert(:proxy_implementation,
+        proxy_address_hash: proxy_hash,
+        proxy_type: "eip1167",
+        address_hashes: [implementation_1.hash, implementation_2.hash],
+        names: ["Test1", "Test2"]
+      )
+
+      insert(:smart_contract, address_hash: implementation_1.hash, name: "TestContract1", contract_code_md5: "123")
+      # insert(:smart_contract, address_hash: implementation_2.hash, name: "TestContract2", contract_code_md5: "456")
+
+      TestHelper.get_chain_id_mock()
+      Chain.import(@import_data)
+
+      # 3 addresses + 2 implementations + 1 block + 1 transaction
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 7
+    end
+
     test "doesn't populate main multichain export queue from on_demand fetcher, if the address is inactive on the chain" do
       Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
       Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
