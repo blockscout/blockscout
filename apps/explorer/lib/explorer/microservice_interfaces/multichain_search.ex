@@ -7,6 +7,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   alias Explorer.Chain.{Address, Block, Hash, Token, Transaction, Wei}
   alias Explorer.Chain.Block.Range
   alias Explorer.Chain.Cache.ChainId
+  alias Explorer.Chain.SmartContract.Proxy
 
   alias Explorer.Chain.MultichainSearchDb.{
     BalancesExportQueue,
@@ -997,7 +998,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     {addresses, coin_balances_from_addresses_list} =
       params
       |> Map.get(:addresses, [])
-      |> Repo.preload([:token, :smart_contract])
+      |> Repo.preload([:token, :smart_contract, :proxy_implementations])
       |> Enum.reduce({[], []}, fn address, {acc_addresses, acc_coin_balances} ->
         {[format_address(address) | acc_addresses], [format_address_coin_balance(address) | acc_coin_balances]}
       end)
@@ -1154,7 +1155,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       hash: Hash.to_string(address.hash),
       is_contract: !is_nil(address.contract_code),
       is_verified_contract: address.verified,
-      contract_name: get_smart_contract_name(address.smart_contract)
+      contract_name: get_smart_contract_name(address.smart_contract, address.proxy_implementations)
     }
   end
 
@@ -1220,11 +1221,43 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     }
   end
 
-  defp get_smart_contract_name(nil), do: nil
+  defp get_smart_contract_name(nil, _proxy_implementations), do: nil
 
-  defp get_smart_contract_name(%NotLoaded{}), do: nil
+  defp get_smart_contract_name(%NotLoaded{}, _proxy_implementations), do: nil
 
-  defp get_smart_contract_name(smart_contract), do: smart_contract.name
+  defp get_smart_contract_name(smart_contract, proxy_implementations) do
+    contract_name = smart_contract.name
+
+    case proxy_implementation_names(smart_contract, proxy_implementations) do
+      [] ->
+        contract_name
+
+      implementation_names ->
+        "#{contract_name} → #{Enum.join(implementation_names, ", ")}"
+    end
+  end
+
+  defp proxy_implementation_names(smart_contract, proxy_implementations) do
+    case proxy_implementations do
+      %NotLoaded{} ->
+        []
+
+      nil ->
+        []
+
+      %{names: names} ->
+        case Proxy.proxy_contract?(smart_contract) do
+          true ->
+            Enum.reject(names, &is_nil/1)
+
+          false ->
+            []
+        end
+
+      _ ->
+        []
+    end
+  end
 
   defp get_block_ranges([]), do: []
 
