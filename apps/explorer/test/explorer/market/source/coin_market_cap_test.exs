@@ -39,6 +39,48 @@ defmodule Explorer.Market.Source.CoinMarketCapTest do
     {:ok, bypass: bypass}
   end
 
+  describe "native_coin_fetching_enabled?" do
+    test "returns true if coin_id is configured" do
+      assert CoinMarketCap.native_coin_fetching_enabled?()
+    end
+
+    test "returns false if coin_id is not configured" do
+      config = Application.get_env(:explorer, CoinMarketCap)
+      Application.put_env(:explorer, CoinMarketCap, Keyword.merge(config || [], coin_id: nil))
+
+      on_exit(fn -> Application.put_env(:explorer, CoinMarketCap, config) end)
+
+      refute CoinMarketCap.native_coin_fetching_enabled?()
+    end
+  end
+
+  describe "secondary_coin_fetching_enabled?" do
+    test "returns true if secondary_coin_id is configured" do
+      assert CoinMarketCap.secondary_coin_fetching_enabled?()
+    end
+
+    test "returns false if secondary_coin_id is not configured" do
+      config = Application.get_env(:explorer, CoinMarketCap)
+      Application.put_env(:explorer, CoinMarketCap, Keyword.merge(config || [], secondary_coin_id: nil))
+
+      on_exit(fn -> Application.put_env(:explorer, CoinMarketCap, config) end)
+
+      refute CoinMarketCap.secondary_coin_fetching_enabled?()
+    end
+  end
+
+  describe "tokens_fetching_enabled?" do
+    test "ignored" do
+      assert CoinMarketCap.tokens_fetching_enabled?() == :ignore
+    end
+  end
+
+  describe "fetch_tokens/2" do
+    test "ignored" do
+      assert CoinMarketCap.fetch_tokens(nil, 10) == :ignore
+    end
+  end
+
   describe "fetch_native_coin/0" do
     test "fetches native coin", %{bypass: bypass} do
       Bypass.expect_once(bypass, "GET", "/cryptocurrency/quotes/latest", fn conn ->
@@ -58,7 +100,8 @@ defmodule Explorer.Market.Source.CoinMarketCapTest do
                 symbol: "BTC",
                 fiat_value: Decimal.new("10.1"),
                 volume_24h: Decimal.new("28724591782.645985"),
-                image_url: nil
+                image_url: nil,
+                circulating_supply: Decimal.new("19824162")
               }} == CoinMarketCap.fetch_native_coin()
     end
   end
@@ -82,8 +125,36 @@ defmodule Explorer.Market.Source.CoinMarketCapTest do
                 symbol: "BTC",
                 fiat_value: Decimal.new("20.2"),
                 volume_24h: Decimal.new("28724591782.645985"),
-                image_url: nil
+                image_url: nil,
+                circulating_supply: Decimal.new("19824162")
               }} == CoinMarketCap.fetch_secondary_coin()
+    end
+  end
+
+  describe "market_cap_history_fetching_enabled?" do
+    test "returns true if coin_id is configured" do
+      assert CoinMarketCap.market_cap_history_fetching_enabled?()
+    end
+
+    test "returns false if coin_id is not configured" do
+      config = Application.get_env(:explorer, CoinMarketCap)
+      Application.put_env(:explorer, CoinMarketCap, Keyword.merge(config || [], coin_id: nil))
+
+      on_exit(fn -> Application.put_env(:explorer, CoinMarketCap, config) end)
+
+      refute CoinMarketCap.market_cap_history_fetching_enabled?()
+    end
+  end
+
+  describe "tvl_history_fetching_enabled?" do
+    test "ignored" do
+      assert CoinMarketCap.tvl_history_fetching_enabled?() == :ignore
+    end
+  end
+
+  describe "fetch_tvl_history/1" do
+    test "ignored" do
+      assert CoinMarketCap.fetch_tvl_history(3) == :ignore
     end
   end
 

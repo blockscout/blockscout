@@ -266,6 +266,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
           circulating_market_cap:
             fragment("COALESCE(EXCLUDED.circulating_market_cap, ?)", token.circulating_market_cap),
           volume_24h: fragment("COALESCE(EXCLUDED.volume_24h, ?)", token.volume_24h),
+          circulating_supply: fragment("COALESCE(EXCLUDED.circulating_supply, ?)", token.circulating_supply),
           icon_url: fragment("COALESCE(?, EXCLUDED.icon_url)", token.icon_url),
           decimals: fragment("COALESCE(?, EXCLUDED.decimals)", token.decimals),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token.inserted_at),
@@ -274,13 +275,14 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       ],
       where:
         fragment(
-          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.type, EXCLUDED.fiat_value, EXCLUDED.circulating_market_cap, EXCLUDED.volume_24h, EXCLUDED.icon_url, EXCLUDED.decimals) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.type, EXCLUDED.fiat_value, EXCLUDED.circulating_market_cap, EXCLUDED.volume_24h, EXCLUDED.circulating_supply, EXCLUDED.icon_url, EXCLUDED.decimals) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?)",
           token.name,
           token.symbol,
           token.type,
           token.fiat_value,
           token.circulating_market_cap,
           token.volume_24h,
+          token.circulating_supply,
           token.icon_url,
           token.decimals
         )
@@ -299,10 +301,61 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
     `:volume_24h`
   """
   @spec market_data_fields_to_update() :: [
-          :name | :symbol | :type | :fiat_value | :circulating_market_cap | :volume_24h | :decimals
+          :name
+          | :symbol
+          | :type
+          | :fiat_value
+          | :circulating_market_cap
+          | :volume_24h
+          | :circulating_supply
+          | :decimals
         ]
   def market_data_fields_to_update do
-    [:name, :symbol, :type, :fiat_value, :circulating_market_cap, :volume_24h, :decimals]
+    [:name, :symbol, :type, :fiat_value, :circulating_market_cap, :volume_24h, :circulating_supply, :decimals]
+  end
+
+  def token_list_on_conflict do
+    from(
+      token in Token,
+      update: [
+        set: [
+          name: fragment("COALESCE(?, EXCLUDED.name)", token.name),
+          symbol: fragment("COALESCE(?, EXCLUDED.symbol)", token.symbol),
+          decimals: fragment("COALESCE(?, EXCLUDED.decimals)", token.decimals),
+          icon_url:
+            fragment(
+              "CASE WHEN ? THEN ? ELSE COALESCE(EXCLUDED.icon_url, ?) END",
+              token.is_verified_via_admin_panel,
+              token.icon_url,
+              token.icon_url
+            ),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.updated_at)
+        ]
+      ],
+      where:
+        fragment(
+          """
+          (COALESCE(?, EXCLUDED.name), COALESCE(?, EXCLUDED.symbol), COALESCE(?, EXCLUDED.decimals),
+           CASE WHEN ? THEN ? ELSE COALESCE(EXCLUDED.icon_url, ?) END)
+          IS DISTINCT FROM (?, ?, ?, ?)
+          """,
+          token.name,
+          token.symbol,
+          token.decimals,
+          token.is_verified_via_admin_panel,
+          token.icon_url,
+          token.icon_url,
+          token.name,
+          token.symbol,
+          token.decimals,
+          token.icon_url
+        )
+    )
+  end
+
+  def token_list_fields_to_update do
+    [:name, :symbol, :decimals, :icon_url]
   end
 
   defp should_update?(_new_token, nil, _fields_to_replace), do: true

@@ -42,6 +42,57 @@ defmodule Explorer.Market.Source.CryptoCompareTest do
     {:ok, bypass: bypass}
   end
 
+  describe "native_coin_fetching_enabled?" do
+    test "ignored" do
+      assert CryptoCompare.native_coin_fetching_enabled?() == :ignore
+    end
+  end
+
+  describe "fetch_native_coin/0" do
+    test "ignored" do
+      assert CryptoCompare.fetch_native_coin() == :ignore
+    end
+  end
+
+  describe "secondary_coin_fetching_enabled?" do
+    test "ignored" do
+      assert CryptoCompare.secondary_coin_fetching_enabled?() == :ignore
+    end
+  end
+
+  describe "fetch_secondary_coin/0" do
+    test "ignored" do
+      assert CryptoCompare.fetch_secondary_coin() == :ignore
+    end
+  end
+
+  describe "tokens_fetching_enabled?" do
+    test "ignored" do
+      assert CryptoCompare.tokens_fetching_enabled?() == :ignore
+    end
+  end
+
+  describe "fetch_tokens/2" do
+    test "ignored" do
+      assert CryptoCompare.fetch_tokens(nil, 10) == :ignore
+    end
+  end
+
+  describe "native_coin_price_history_fetching_enabled?" do
+    test "returns true if coin_symbol is configured" do
+      assert CryptoCompare.native_coin_price_history_fetching_enabled?()
+    end
+
+    test "returns false if coin_symbol is not configured" do
+      config = Application.get_env(:explorer, CryptoCompare)
+      Application.put_env(:explorer, CryptoCompare, Keyword.merge(config || [], coin_symbol: nil))
+
+      on_exit(fn -> Application.put_env(:explorer, CryptoCompare, config) end)
+
+      refute CryptoCompare.native_coin_price_history_fetching_enabled?()
+    end
+  end
+
   describe "fetch_native_coin_price_history/1" do
     test "fetches native coin price history", %{bypass: bypass} do
       Bypass.expect_once(bypass, "GET", "data/v2/histoday", fn conn ->
@@ -72,6 +123,45 @@ defmodule Explorer.Market.Source.CryptoCompareTest do
                   secondary_coin: false
                 }
               ]} == CryptoCompare.fetch_native_coin_price_history(3)
+    end
+  end
+
+  describe "secondary_coin_price_history_fetching_enabled?" do
+    test "returns true if secondary_coin_symbol is configured" do
+      assert CryptoCompare.secondary_coin_price_history_fetching_enabled?()
+    end
+
+    test "returns false if secondary_coin_symbol is not configured" do
+      config = Application.get_env(:explorer, CryptoCompare)
+      Application.put_env(:explorer, CryptoCompare, Keyword.merge(config, secondary_coin_symbol: nil))
+
+      on_exit(fn -> Application.put_env(:explorer, CryptoCompare, config) end)
+
+      refute CryptoCompare.secondary_coin_price_history_fetching_enabled?()
+    end
+  end
+
+  describe "market_cap_history_fetching_enabled?" do
+    test "ignored" do
+      assert CryptoCompare.market_cap_history_fetching_enabled?() == :ignore
+    end
+  end
+
+  describe "fetch_market_cap_history/1" do
+    test "ignored" do
+      assert CryptoCompare.fetch_market_cap_history(3) == :ignore
+    end
+  end
+
+  describe "tvl_history_fetching_enabled?" do
+    test "ignored" do
+      assert CryptoCompare.tvl_history_fetching_enabled?() == :ignore
+    end
+  end
+
+  describe "fetch_tvl_history/1" do
+    test "ignored" do
+      assert CryptoCompare.fetch_tvl_history(3) == :ignore
     end
   end
 

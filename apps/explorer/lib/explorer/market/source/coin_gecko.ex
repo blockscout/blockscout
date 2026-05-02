@@ -147,7 +147,8 @@ defmodule Explorer.Market.Source.CoinGecko do
          symbol: String.upcase(data["symbol"]),
          fiat_value: Source.to_decimal(market_data["current_price"][config(:currency)]),
          volume_24h: Source.to_decimal(market_data["total_volume"][config(:currency)]),
-         image_url: Source.handle_image_url(data["image"]["small"] || data["image"]["thumb"])
+         image_url: Source.handle_image_url(data["image"]["small"] || data["image"]["thumb"]),
+         circulating_supply: Source.to_decimal(market_data["circulating_supply"])
        }}
     else
       nil -> {:error, coin_id_not_specified_error}
