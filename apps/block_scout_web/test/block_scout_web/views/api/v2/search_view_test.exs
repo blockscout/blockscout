@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.API.V2.SearchViewTest do
         type: "token",
         name: "Token",
         symbol: "TKN",
-        address_hash: "0x123",
+        address_hash: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
         icon_url: "https://example.com/token.png",
         token_type: "ERC-20",
         verified: true,
@@ -35,8 +35,8 @@ defmodule BlockScoutWeb.API.V2.SearchViewTest do
       assert item["name"] == "Token"
       assert item["exchange_rate"] == "1.5"
       assert item["certified"] == false
-      assert item["token_url"] =~ "/token/0x123"
-      assert item["address_url"] =~ "/address/0x123"
+      assert item["token_url"] =~ "/token/0xdAC17F958D2ee523a2206206994597C13D831ec7"
+      assert item["address_url"] =~ "/address/0xdAC17F958D2ee523a2206206994597C13D831ec7"
 
       assert result["next_page_params"] == %{"q" => "token", "type" => nil}
     end
