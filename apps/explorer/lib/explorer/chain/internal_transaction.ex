@@ -1229,7 +1229,8 @@ defmodule Explorer.Chain.InternalTransaction do
           Keyword.merge(options,
             address_preloads: [
               from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
-              to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
+              to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+              created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
             ]
           )
 
