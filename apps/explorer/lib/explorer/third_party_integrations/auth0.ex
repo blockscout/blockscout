@@ -4,7 +4,7 @@ defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   """
   require Logger
 
-  alias Explorer.{Account, Helper, HttpClient, Vault}
+  alias Explorer.{Helper, HttpClient, Vault}
   alias Explorer.Account.{Authentication, Identity}
   alias Explorer.ThirdPartyIntegrations.Auth0.Internal
   alias Explorer.ThirdPartyIntegrations.Dynamic
