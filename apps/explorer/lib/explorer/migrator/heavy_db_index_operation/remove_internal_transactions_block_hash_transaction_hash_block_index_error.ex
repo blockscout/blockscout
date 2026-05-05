@@ -169,7 +169,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
   defp do_drop_transactions_foreign_key do
     Repo.transaction(
       fn ->
-        with {:ok, _} <- Repo.query(lock_transactions_query_string(), [], timeout: :infinity),
+        with {:ok, _} <- Repo.query(lock_internal_transactions_query_string(), [], timeout: :infinity),
+             {:ok, _} <- Repo.query(lock_transactions_query_string(), [], timeout: :infinity),
              {:ok, _} <- Repo.query(drop_transactions_foreign_key_query_string(), [], timeout: :infinity) do
           Logger.info(
             "Migration RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError finished transactions"
@@ -193,6 +194,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
   defp lock_transactions_query_string do
     """
     LOCK TABLE transactions IN ACCESS EXCLUSIVE MODE;
+    """
+  end
+
+  defp lock_internal_transactions_query_string do
+    """
+    LOCK TABLE internal_transactions IN ACCESS EXCLUSIVE MODE;
     """
   end
 
