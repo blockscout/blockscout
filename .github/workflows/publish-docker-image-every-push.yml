@@ -1,9 +1,10 @@
-name: Publish Docker image on every push to master branch
+name: Publish Docker image on every push to master/dev branches
 
 on:
   push:
     branches:
       - master
+      - dev
     paths-ignore:
       - 'CHANGELOG.md'
       - '**/README.md'
@@ -40,7 +41,7 @@ jobs:
           push: true
           cache-from: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache
           cache-to: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache,mode=max
-          tags: ghcr.io/blockscout/blockscout-private:master, ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
+          tags: ghcr.io/blockscout/blockscout-private:${{ github.ref_name }}, ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64
