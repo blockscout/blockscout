@@ -109,22 +109,10 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
 
   # sobelow_skip ["SQL"]
   defp drop_blocks_foreign_key do
-    dropped? =
-      case Repo.query("""
-           SELECT EXISTS (
-             SELECT 1
-             FROM pg_constraint
-             WHERE conname = 'internal_transactions_block_hash_fkey'
-           );
-           """) do
-        {:ok, %Postgrex.Result{rows: [[false]]}} -> true
-        {:ok, %Postgrex.Result{rows: [[true]]}} -> false
-      end
-
-    if dropped? do
-      {:ok, :dropped}
-    else
+    if foreign_key_exists?("internal_transactions_block_hash_fkey") do
       do_drop_blocks_foreign_key()
+    else
+      {:ok, :dropped}
     end
   end
 
@@ -146,22 +134,10 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
 
   # sobelow_skip ["SQL"]
   defp drop_transactions_foreign_key do
-    dropped? =
-      case Repo.query("""
-           SELECT EXISTS (
-             SELECT 1
-             FROM pg_constraint
-             WHERE conname = 'internal_transactions_transaction_hash_fkey'
-           );
-           """) do
-        {:ok, %Postgrex.Result{rows: [[false]]}} -> true
-        {:ok, %Postgrex.Result{rows: [[true]]}} -> false
-      end
-
-    if dropped? do
-      {:ok, :dropped}
-    else
+    if foreign_key_exists?("internal_transactions_transaction_hash_fkey") do
       do_drop_transactions_foreign_key()
+    else
+      {:ok, :dropped}
     end
   end
 
@@ -183,6 +159,20 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
       end,
       timeout: :infinity
     )
+  end
+
+  # sobelow_skip ["SQL"]
+  defp foreign_key_exists?(foreign_key_name) do
+    {:ok, %Postgrex.Result{rows: [[exists?]]}} =
+      Repo.query("""
+      SELECT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = '#{foreign_key_name}'
+      );
+      """)
+
+    exists?
   end
 
   defp lock_blocks_query_string do
