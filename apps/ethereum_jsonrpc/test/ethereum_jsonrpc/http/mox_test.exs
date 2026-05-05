@@ -6,6 +6,8 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
 
   use ExUnit.Case, async: true
 
+  import ExUnit.CaptureLog, only: [capture_log: 1]
+
   import EthereumJSONRPC, only: [request: 1]
   import EthereumJSONRPC.HTTP.Case
   import Mox
@@ -27,6 +29,8 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
 
   setup :verify_on_exit!
 
+  @moduletag :capture_log
+
   describe "json_rpc/2" do
     # regression test for https://github.com/poanetwork/blockscout/issues/254
     #
@@ -36,6 +40,13 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
     test "transparently splits batch payloads that would trigger a 413 Request Entity Too Large", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP, Keyword.put(config, :batch_size, 15000))
+
+      on_exit(fn ->
+        Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP, config)
+      end)
+
       if json_rpc_named_arguments[:transport_options][:http] == EthereumJSONRPC.HTTP.Mox do
         EthereumJSONRPC.HTTP.Mox
         |> expect(:json_rpc, 2, fn _url, json, _headers, _options ->
@@ -280,6 +291,57 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
         end)
 
       assert MapSet.equal?(response_block_number_set, block_number_set)
+    end
+
+    test "splits batch into chunks with configured batch_size", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP, Keyword.put(config, :batch_size, 2))
+
+      on_exit(fn ->
+        Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP, config)
+      end)
+
+      if json_rpc_named_arguments[:transport_options][:http] == EthereumJSONRPC.HTTP.Mox do
+        EthereumJSONRPC.HTTP.Mox
+        |> expect(:json_rpc, 5, fn _url, json, _headers, _options ->
+          assert [%{}, %{}] = decoded = Jason.decode!(json)
+
+          body =
+            decoded
+            |> Enum.map(fn %{"id" => id} ->
+              %{jsonrpc: "2.0", id: id, result: %{number: EthereumJSONRPC.integer_to_quantity(id)}}
+            end)
+            |> Jason.encode!()
+
+          {:ok, %{body: body, status_code: 200}}
+        end)
+      end
+
+      block_numbers = 0..9
+
+      payload =
+        block_numbers
+        |> Stream.with_index()
+        |> Enum.map(&get_block_by_number_request/1)
+
+      log =
+        capture_log(fn ->
+          assert {:ok, responses} = EthereumJSONRPC.json_rpc(payload, json_rpc_named_arguments)
+          assert Enum.count(responses) == Enum.count(block_numbers)
+
+          block_number_set = MapSet.new(block_numbers)
+
+          response_block_number_set =
+            Enum.into(responses, MapSet.new(), fn %{result: %{"number" => quantity}} ->
+              EthereumJSONRPC.quantity_to_integer(quantity)
+            end)
+
+          assert MapSet.equal?(response_block_number_set, block_number_set)
+        end)
+
+      assert log =~ "Big amount of node requests in batch: 10, request: %{"
     end
   end
 
