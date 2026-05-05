@@ -176,7 +176,7 @@ config :block_scout_web, :api_rate_limit,
   eth_json_rpc_max_batch_size: ConfigHelper.parse_integer_env_var("ETH_JSON_RPC_MAX_BATCH_SIZE", 5),
   redis_url: if(api_rate_limit_redis_url == "", do: nil, else: api_rate_limit_redis_url),
   redis_ssl: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_HAMMER_REDIS_SSL_ENABLED", "false"),
-  redis_sentinel_urls: api_rate_limit_redis_sentinel_urls,
+  redis_sentinel_urls: if(api_rate_limit_redis_sentinel_urls == "", do: nil, else: api_rate_limit_redis_sentinel_urls),
   redis_sentinel_master_name: ConfigHelper.safe_get_env("API_RATE_LIMIT_HAMMER_REDIS_SENTINEL_MASTER_NAME", ""),
   rate_limit_backend:
     if(api_rate_limit_redis_url == "" and api_rate_limit_redis_sentinel_urls == "",
