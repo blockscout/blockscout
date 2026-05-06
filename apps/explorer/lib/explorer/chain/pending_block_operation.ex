@@ -28,6 +28,8 @@ defmodule Explorer.Chain.PendingBlockOperation do
       type: Hash.Full,
       null: false
     )
+
+    field(:priority, :integer)
   end
 
   def changeset(%__MODULE__{} = pending_ops, attrs) do
@@ -80,7 +82,7 @@ defmodule Explorer.Chain.PendingBlockOperation do
           limited? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_blocks_with_unfetched_internal_transactions(initial, reducer, limited? \\ false)
+  def stream_blocks_with_unfetched_internal_transactions(initial, reducer, limited? \\ false, with_priority? \\ false)
       when is_function(reducer, 2) do
     direction = Application.get_env(:indexer, :internal_transactions_fetch_order)
 
@@ -93,7 +95,16 @@ defmodule Explorer.Chain.PendingBlockOperation do
       )
 
     query
+    |> maybe_add_priority_filter(with_priority?)
     |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
+  end
+
+  defp maybe_add_priority_filter(query, false), do: query
+
+  defp maybe_add_priority_filter(query, true) do
+    from(pbo in query,
+      where: not is_nil(pbo.priority)
+    )
   end
 end

@@ -698,11 +698,23 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   defp new_pending_block_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
     case PendingOperationsHelper.pending_operations_type() do
       "blocks" ->
-        sorted_pending_ops =
+        traceable_consensus_blocks =
           inserted_blocks
           |> RangesHelper.filter_by_height_range(&RangesHelper.traceable_block_number?(&1.number))
           |> Enum.filter(& &1.consensus)
-          |> Enum.map(&%{block_hash: &1.hash, block_number: &1.number})
+
+        traceable_consensus_block_numbers = Enum.map(traceable_consensus_blocks, & &1.number)
+        block_numbers_with_priorities = MissingBlockRange.find_priority_by_numbers(traceable_consensus_block_numbers)
+
+        sorted_pending_ops =
+          traceable_consensus_blocks
+          |> Enum.map(
+            &%{
+              block_hash: &1.hash,
+              block_number: &1.number,
+              priority: Map.get(block_numbers_with_priorities, &1.number)
+            }
+          )
           |> Enum.sort()
 
         Import.insert_changes_list(

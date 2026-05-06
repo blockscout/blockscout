@@ -125,12 +125,18 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
   defp new_pending_transaction_operations(repo, inserted_transactions, %{timeout: timeout, timestamps: timestamps}) do
     case PendingOperationsHelper.pending_operations_type() do
       "transactions" ->
-        sorted_pending_ops =
+        traceable_consensus_transactions =
           inserted_transactions
           |> RangesHelper.filter_by_height_range(&RangesHelper.traceable_block_number?(&1.block_number))
           |> Transaction.filter_non_traceable_transactions()
+
+        traceable_consensus_block_numbers = Enum.map(traceable_consensus_transactions, & &1.block_number) |> Enum.uniq()
+        block_numbers_with_priorities = MissingBlockRange.find_priority_by_numbers(traceable_consensus_block_numbers)
+
+        sorted_pending_ops =
+          traceable_consensus_transactions
           |> Enum.reject(&is_nil(&1.block_number))
-          |> Enum.map(&%{transaction_hash: &1.hash})
+          |> Enum.map(&%{transaction_hash: &1.hash, priority: Map.get(block_numbers_with_priorities, &1.block_number)})
           |> Enum.sort()
 
         Import.insert_changes_list(
