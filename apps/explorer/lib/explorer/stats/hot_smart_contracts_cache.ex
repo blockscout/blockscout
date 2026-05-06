@@ -17,18 +17,25 @@ defmodule Explorer.Stats.HotSmartContractsCache do
           [HotSmartContracts.t()] | {:error, :not_found}
   def fetch(scale, options, fallback_fn) when is_function(fallback_fn, 0) do
     if cacheable_scale?(scale) do
-      cache_key = {scale, options}
-
-      case ConCache.get(@cache_name, cache_key) do
-        nil ->
-          fallback_fn.()
-          |> maybe_put_into_cache(cache_key, scale)
-
-        cached_value ->
-          cached_value
-      end
+      fetch_cached({scale, options}, scale, fallback_fn)
     else
       fallback_fn.()
+    end
+  end
+
+  defp fetch_cached(cache_key, scale, fallback_fn) do
+    case ConCache.fetch_or_store(@cache_name, cache_key, fn ->
+           store_value(fallback_fn, scale)
+         end) do
+      {:ok, value} -> value
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp store_value(fallback_fn, scale) do
+    case fallback_fn.() do
+      {:error, _reason} = error -> error
+      result -> {:ok, %ConCache.Item{value: result, ttl: ttl(scale)}}
     end
   end
 
@@ -38,18 +45,7 @@ defmodule Explorer.Stats.HotSmartContractsCache do
   @spec ttl(scale()) :: non_neg_integer()
   def ttl(scale) do
     :explorer
-    |> Application.get_env(__MODULE__, [])
-    |> ttl_by_scale(scale)
-  end
-
-  defp ttl_by_scale(config, scale) when is_map(config), do: Map.get(config, scale, 0)
-
-  defp maybe_put_into_cache(result, cache_key, scale) do
-    if match?({:error, _reason}, result) do
-      result
-    else
-      ConCache.put(@cache_name, cache_key, %ConCache.Item{value: result, ttl: ttl(scale)})
-      result
-    end
+    |> Application.get_env(__MODULE__)
+    |> Map.get(scale, 0)
   end
 end
