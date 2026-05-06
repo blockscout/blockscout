@@ -878,7 +878,13 @@ defmodule Explorer.Factory do
 
     all_attrs =
       attrs
-      |> adjust_internal_transaction_addresses_attrs([:from_address, :created_contract_address], contract_code)
+      |> then(fn attrs ->
+        Map.put(attrs, :to_address, Map.get(attrs, :to_address) || Map.get(attrs, :created_contract_address))
+      end)
+      |> adjust_internal_transaction_addresses_attrs(
+        [:from_address, :created_contract_address, :to_address],
+        contract_code
+      )
       |> adjust_internal_transaction_error_attr()
 
     %InternalTransaction{
