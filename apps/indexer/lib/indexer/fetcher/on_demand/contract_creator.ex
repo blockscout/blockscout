@@ -14,11 +14,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   alias Explorer.Chain.{Address, Block}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Utility.MissingBlockRange
-
-  import Indexer.Block.Fetcher,
-    only: [
-      async_import_internal_transactions: 2
-    ]
+  alias Indexer.Fetcher.InternalTransaction
 
   @table_name :contract_creator_lookup
   @pending_blocks_cache_key "pending_blocks"
@@ -176,7 +172,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     address_hash = address.hash
     :ets.insert(@table_name, {address_cache_name(address_hash), :in_progress})
 
-    Task.Supervisor.start_child(Indexer.TaskSupervisor, fn ->
+    Task.start(fn ->
       result = fetch_contract_creator_address_hash(address_hash)
       GenServer.cast(__MODULE__, {:fetch_result, address_hash, result})
     end)
@@ -206,7 +202,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     :ets.insert(@table_name, {address_cache_name(address_hash), contract_creation_block_number})
     :ets.insert(@table_name, {@pending_blocks_cache_key, updated_pending_blocks})
 
-    unless Block.indexed?(contract_creation_block_number) do
+    if InternalTransaction.disabled?() or not Block.indexed?(contract_creation_block_number) do
       # Change `1` to specific label when `priority` field becomes `Ecto.Enum`.
       MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], 1)
     end
@@ -294,8 +290,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
           contract_creation_block =
             find_contract_creation_block_in_imported(imported, pending_block.block_number)
 
-          internal_transactions_import_params = [%{blocks: [contract_creation_block]}]
-          async_import_internal_transactions(internal_transactions_import_params, true)
+          [contract_creation_block.number]
+          |> InternalTransaction.async_fetch([], true, true, 10_000)
 
           # todo: emit event that contract creator updated for the contract. This was the purpose keeping address_hash_string in that cache key.
           :ets.delete(@table_name, pending_block.address_hash_string)
