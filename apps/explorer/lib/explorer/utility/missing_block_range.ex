@@ -732,7 +732,7 @@ defmodule Explorer.Utility.MissingBlockRange do
     query =
       from(i in fragment("SELECT unnest(?::int[]) AS number", ^numbers),
         left_join: m in __MODULE__,
-        on: fragment("? BETWEEN ? AND ?", i.number, m.from_number, m.to_number),
+        on: fragment("? BETWEEN ? AND ?", i.number, m.to_number, m.from_number),
         select: {i.number, m.priority}
       )
 
