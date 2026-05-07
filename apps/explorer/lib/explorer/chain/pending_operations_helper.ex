@@ -6,8 +6,13 @@ defmodule Explorer.Chain.PendingOperationsHelper do
   alias Explorer.Chain.{Hash, PendingBlockOperation, PendingTransactionOperation, Transaction}
   alias Explorer.{Helper, Repo}
 
-  @transactions_batch_size 1000
-  @blocks_batch_size 10
+  defp transactions_batch_size,
+    do:
+      Application.get_env(:explorer, Explorer.Chain.PendingOperationsHelper)[:transactions_batch_size] ||
+        1000
+
+  defp blocks_batch_size,
+    do: Application.get_env(:explorer, Explorer.Chain.PendingOperationsHelper)[:blocks_batch_size] || 10
 
   def pending_operations_type do
     if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.Geth and
@@ -70,12 +75,14 @@ defmodule Explorer.Chain.PendingOperationsHelper do
   end
 
   defp from_transactions_to_blocks_function do
+    batch_size = transactions_batch_size()
+
     pbo_params_query =
       from(
         pto in PendingTransactionOperation,
         join: t in assoc(pto, :transaction),
         select: %{block_hash: t.block_hash, block_number: t.block_number},
-        limit: @transactions_batch_size
+        limit: ^batch_size
       )
 
     case Repo.all(pbo_params_query) do
@@ -102,7 +109,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
   end
 
   defp from_blocks_to_transactions_function do
-    from_blocks_to_transactions_function(@blocks_batch_size)
+    from_blocks_to_transactions_function(blocks_batch_size())
   end
 
   defp from_blocks_to_transactions_function(blocks_batch_size) do

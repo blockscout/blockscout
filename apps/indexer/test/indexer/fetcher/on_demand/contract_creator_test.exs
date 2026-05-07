@@ -66,7 +66,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
       assert :ignore =
                ContractCreatorOnDemand.trigger_fetch(
                  contract_address
-                 |> Address.preload_contract_creation_internal_transaction()
+                 |> Address.maybe_preload_contract_creation_internal_transaction()
                )
     end
 
@@ -80,7 +80,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
                ContractCreatorOnDemand.trigger_fetch(
                  contract_address
                  |> Repo.preload([:contract_creation_transaction])
-                 |> Address.preload_contract_creation_internal_transaction()
+                 |> Address.maybe_preload_contract_creation_internal_transaction()
                )
     end
 
@@ -94,7 +94,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
                ContractCreatorOnDemand.trigger_fetch(
                  contract_address
                  |> Repo.preload([:contract_creation_transaction])
-                 |> Address.preload_contract_creation_internal_transaction()
+                 |> Address.maybe_preload_contract_creation_internal_transaction()
                )
     end
 
@@ -113,7 +113,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
                ContractCreatorOnDemand.trigger_fetch(
                  contract_address
                  |> Repo.preload([:contract_creation_transaction])
-                 |> Address.preload_contract_creation_internal_transaction()
+                 |> Address.maybe_preload_contract_creation_internal_transaction()
                )
     end
 
@@ -127,7 +127,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
                ContractCreatorOnDemand.trigger_fetch(
                  contract_address
                  |> Repo.preload([:contract_creation_transaction])
-                 |> Address.preload_contract_creation_internal_transaction()
+                 |> Address.maybe_preload_contract_creation_internal_transaction()
                )
     end
 
@@ -153,7 +153,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
                ContractCreatorOnDemand.trigger_fetch(
                  contract_address
                  |> Repo.preload([:contract_creation_transaction])
-                 |> Address.preload_contract_creation_internal_transaction()
+                 |> Address.maybe_preload_contract_creation_internal_transaction()
                )
 
       :timer.sleep(300)
@@ -163,6 +163,14 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
       assert :ets.lookup(:contract_creator_lookup, "pending_blocks") == [
                {"pending_blocks", [%{block_number: 3, address_hash_string: contract_address_hash}]}
              ]
+    end
+
+    test "returns :ignore when ETS table does not exist (GenServer not started)" do
+      :ets.delete(:contract_creator_lookup)
+
+      address = insert(:address, contract_code: "0x1234")
+
+      assert :ignore = ContractCreatorOnDemand.trigger_fetch(address)
     end
   end
 
@@ -188,7 +196,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
              ContractCreatorOnDemand.trigger_fetch(
                contract_address
                |> Repo.preload([:contract_creation_transaction])
-               |> Address.preload_contract_creation_internal_transaction()
+               |> Address.maybe_preload_contract_creation_internal_transaction()
              )
 
     :timer.sleep(300)
@@ -223,7 +231,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
              ContractCreatorOnDemand.trigger_fetch(
                contract_address
                |> Repo.preload([:contract_creation_transaction])
-               |> Address.preload_contract_creation_internal_transaction()
+               |> Address.maybe_preload_contract_creation_internal_transaction()
              )
 
     :timer.sleep(300)
@@ -260,7 +268,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
              ContractCreatorOnDemand.trigger_fetch(
                contract_address
                |> Repo.preload([:contract_creation_transaction])
-               |> Address.preload_contract_creation_internal_transaction()
+               |> Address.maybe_preload_contract_creation_internal_transaction()
              )
 
     :timer.sleep(1200)
@@ -292,7 +300,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
              ContractCreatorOnDemand.trigger_fetch(
                contract_address
                |> Repo.preload([:contract_creation_transaction])
-               |> Address.preload_contract_creation_internal_transaction()
+               |> Address.maybe_preload_contract_creation_internal_transaction()
              )
 
     :timer.sleep(5400)
@@ -328,7 +336,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
              ContractCreatorOnDemand.trigger_fetch(
                contract_address
                |> Repo.preload([:contract_creation_transaction])
-               |> Address.preload_contract_creation_internal_transaction()
+               |> Address.maybe_preload_contract_creation_internal_transaction()
              )
 
     :timer.sleep(300)
@@ -373,7 +381,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
              ContractCreatorOnDemand.trigger_fetch(
                contract_address
                |> Repo.preload([:contract_creation_transaction])
-               |> Address.preload_contract_creation_internal_transaction()
+               |> Address.maybe_preload_contract_creation_internal_transaction()
              )
 
     :timer.sleep(300)

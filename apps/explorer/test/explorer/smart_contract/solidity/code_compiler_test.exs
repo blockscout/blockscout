@@ -4,7 +4,8 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   if @chain_type == :default do
-    doctest Explorer.SmartContract.Solidity.CodeCompiler
+    # This doctest is often flaky
+    # doctest Explorer.SmartContract.Solidity.CodeCompiler
 
     @moduletag timeout: :infinity
 

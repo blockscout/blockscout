@@ -136,8 +136,6 @@ defmodule Explorer.Chain do
   @type paging_options :: {:paging_options, PagingOptions.t()}
   @typep balance_by_day :: %{date: String.t(), value: Wei.t()}
   @type api? :: {:api?, true | false}
-  @type include_internal_transaction_association? ::
-          {:include_internal_transaction_association?, true | false}
   @type ip :: {:ip, String.t()}
   @type show_scam_tokens? :: {:show_scam_tokens?, true | false}
   @type timeout_option :: {:timeout, timeout() | nil}
@@ -863,7 +861,7 @@ defmodule Explorer.Chain do
   """
   @spec hash_to_address(
           Hash.Address.t() | binary(),
-          [necessity_by_association_option | api? | include_internal_transaction_association?]
+          [necessity_by_association_option | api?]
         ) ::
           {:ok, Address.t()} | {:error, :not_found}
   def hash_to_address(
@@ -872,9 +870,6 @@ defmodule Explorer.Chain do
           necessity_by_association: default_hash_to_address_necessity_by_association()
         ]
       ) do
-    include_internal_transaction_association? =
-      Keyword.get(options, :include_internal_transaction_association?, true)
-
     necessity_by_association =
       options
       |> Keyword.get(:necessity_by_association, default_hash_to_address_necessity_by_association())
@@ -884,11 +879,7 @@ defmodule Explorer.Chain do
     query
     |> join_associations(necessity_by_association)
     |> select_repo(options).one()
-    |> then(fn address ->
-      if include_internal_transaction_association?,
-        do: Address.preload_contract_creation_internal_transaction(address, select_repo(options)),
-        else: address
-    end)
+    |> Address.maybe_preload_contract_creation_internal_transaction(select_repo(options))
     |> SmartContract.compose_address_for_unverified_smart_contract(hash, options)
     |> case do
       nil -> {:error, :not_found}
@@ -2454,7 +2445,7 @@ defmodule Explorer.Chain do
   end
 
   @spec fetch_last_token_balances_include_unfetched([Hash.Address.t()], [api?]) :: []
-  def fetch_last_token_balances_include_unfetched(address_hashes, options \\ []) do
+  def fetch_last_token_balances_include_unfetched(address_hashes, options \\ []) when is_list(address_hashes) do
     address_hashes
     |> CurrentTokenBalance.last_token_balances_include_unfetched()
     |> select_repo(options).all()

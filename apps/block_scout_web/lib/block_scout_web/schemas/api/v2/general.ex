@@ -492,10 +492,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
-  Returns a parameter definition for sorting transactions by specified fields.
+  Returns a parameter definition for sorting by specified fields.
   """
   @spec sort_param([String.t()]) :: Parameter.t()
   def sort_param(sort_fields) do
+    description = sort_description(sort_fields)
+
     %Parameter{
       name: :sort,
       in: :query,
@@ -504,20 +506,38 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
         enum: sort_fields
       },
       required: false,
-      description: """
-      Sort transactions by:
-      * block_number - Sort by block number
-      * value - Sort by transaction value
-      * fee - Sort by transaction fee
-      * balance - Sort by account balance
-      * transactions_count - Sort by number of transactions on address
-      * fiat_value - Sort by fiat value of the token transfer
-      * holders_count - Sort by number of token holders
-      * circulating_market_cap - Sort by circulating market cap of the token
-      Should be used together with `order` parameter.
-      """
+      description: description
     }
   end
+
+  @sort_field_descriptions %{
+    "balance" => "Sort by account balance",
+    "block_number" => "Sort by block number",
+    "circulating_market_cap" => "Sort by circulating market cap of the token",
+    "fee" => "Sort by transaction fee",
+    "fiat_value" => "Sort by fiat value",
+    "holders_count" => "Sort by number of token holders",
+    "key0" => "Sort by MUD record key0",
+    "key1" => "Sort by MUD record key1",
+    "key_bytes" => "Sort by MUD record key_bytes",
+    "total_gas_used" => "Sort by total gas used",
+    "transactions_count" => "Sort by number of transactions",
+    "value" => "Sort by transaction value"
+  }
+
+  defp sort_description(sort_fields) do
+    field_descriptions =
+      sort_fields
+      |> Enum.map_join("\n", fn field -> "* #{field} - #{sort_field_description(field)}" end)
+
+    """
+    Sort results by:
+    #{field_descriptions}
+    Should be used together with `order` parameter.
+    """
+  end
+
+  defp sort_field_description(field), do: Map.get(@sort_field_descriptions, field, "Sort by #{field}")
 
   @doc """
   Returns a parameter definition for sorting order (asc/desc).

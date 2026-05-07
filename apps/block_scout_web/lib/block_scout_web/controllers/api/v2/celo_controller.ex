@@ -31,7 +31,8 @@ defmodule BlockScoutWeb.API.V2.CeloController do
     parameters:
       base_params() ++
         define_paging_params([
-          "number"
+          "number",
+          "items_count"
         ]),
     responses: [
       ok:
@@ -39,7 +40,8 @@ defmodule BlockScoutWeb.API.V2.CeloController do
          paginated_response(
            items: Schemas.Celo.Epoch,
            next_page_params_example: %{
-             "number" => 100
+             "number" => 100,
+             "items_count" => 50
            },
            title_prefix: "CeloEpochs"
          )},
@@ -162,7 +164,8 @@ defmodule BlockScoutWeb.API.V2.CeloController do
         define_paging_params([
           "amount",
           "account_address_hash",
-          "associated_account_address_hash"
+          "associated_account_address_hash",
+          "items_count"
         ]),
     responses: [
       ok:
@@ -172,7 +175,8 @@ defmodule BlockScoutWeb.API.V2.CeloController do
            next_page_params_example: %{
              "amount" => "1000000000000000000",
              "account_address_hash" => "0x1234567890123456789012345678901234567890",
-             "associated_account_address_hash" => "0x0987654321098765432109876543210987654321"
+             "associated_account_address_hash" => "0x0987654321098765432109876543210987654321",
+             "items_count" => 50
            },
            title_prefix: "CeloEpochElectionRewards"
          )},
@@ -266,14 +270,19 @@ defmodule BlockScoutWeb.API.V2.CeloController do
     end
   end
 
-  @spec parse_epoch_number(String.t()) ::
+  @spec parse_epoch_number(non_neg_integer() | String.t()) ::
           {:ok, non_neg_integer()} | {:error, {:invalid, :number}}
-  defp parse_epoch_number(number) do
+  defp parse_epoch_number(epoch_number) when is_integer(epoch_number) and epoch_number >= 0 and epoch_number < 32_768,
+    do: {:ok, epoch_number}
+
+  defp parse_epoch_number(number) when is_binary(number) do
     case safe_parse_non_negative_integer(number) do
       {:ok, epoch_number} when epoch_number < 32_768 -> {:ok, epoch_number}
       _ -> {:error, {:invalid, :number}}
     end
   end
+
+  defp parse_epoch_number(_), do: {:error, {:invalid, :number}}
 
   # Parses a reward type value produced by CastAndValidate.
   #

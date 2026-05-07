@@ -123,14 +123,25 @@ defmodule ConfigHelper do
     |> :timer.seconds()
   end
 
-  @spec parse_integer_env_var(String.t(), integer()) :: non_neg_integer()
-  def parse_integer_env_var(env_var, default_value) do
-    env_var
-    |> safe_get_env(to_string(default_value))
-    |> Integer.parse()
-    |> case do
-      {integer, _} -> integer
-      _ -> 0
+  @spec parse_integer_env_var(String.t(), integer(), keyword()) :: integer()
+  def parse_integer_env_var(env_var, default_value, opts \\ []) do
+    raw_value = safe_get_env(env_var, to_string(default_value))
+
+    result =
+      case Integer.parse(raw_value) do
+        {integer, _} -> integer
+        _ -> raise "#{env_var} must be an integer, got: #{raw_value}"
+      end
+
+    case Keyword.get(opts, :min) do
+      nil ->
+        result
+
+      min when result < min ->
+        raise "#{env_var} must be >= #{min}, got: #{result}"
+
+      _ ->
+        result
     end
   end
 

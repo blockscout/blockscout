@@ -1,9 +1,10 @@
-name: Blockscout
+name: Blockscout main CI
 
 on:
   push:
     branches:
       - master
+      - dev
     paths-ignore:
       - "CHANGELOG.md"
       - "**/README.md"
@@ -14,6 +15,7 @@ on:
     types: [opened, synchronize, reopened, labeled]
     branches:
       - master
+      - dev
 
 env:
   MIX_ENV: test
@@ -70,7 +72,7 @@ jobs:
               ciLabels.includes("ci:" + chainType)
             );
 
-            // Chain type matrix we use in PRs to master branch
+            // Chain type matrix we use in PRs to master/dev branches
             const ciChainTypes = labeledChainTypes.length > 0 ? labeledChainTypes : defaultChainTypes;
 
             // Check for bridged tokens label
