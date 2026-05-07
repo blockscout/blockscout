@@ -285,7 +285,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     responses: [
       ok: {"Latest Arbitrum batch number.", "application/json", %Schema{type: :integer, minimum: 0}},
       unprocessable_entity: JsonErrorResponse.response()
-    ]
+    ],
+    tags: ["main-page"]
 
   operation :recent_messages_to_l2,
     summary: "List recent Parent chain to Rollup messages on the main page.",
@@ -307,7 +308,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
            additionalProperties: false
          }},
       unprocessable_entity: JsonErrorResponse.response()
-    ]
+    ],
+    tags: ["main-page"]
 
   operation :batches_committed,
     summary: "List committed batches on the main page.",
@@ -330,7 +332,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
            additionalProperties: false
          }},
       unprocessable_entity: JsonErrorResponse.response()
-    ]
+    ],
+    tags: ["main-page"]
 
   @doc """
     Function to handle GET requests to `/api/v2/arbitrum/messages/:direction` endpoint.
@@ -593,10 +596,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   # - The options keyword list, potentially extended with batch_numbers
   @spec maybe_add_batch_numbers(Keyword.t(), map()) :: Keyword.t()
   defp maybe_add_batch_numbers(options, %{batch_numbers: batch_numbers}) when is_list(batch_numbers) do
-    Keyword.put(options, :batch_numbers, batch_numbers)
-  end
-
-  defp maybe_add_batch_numbers(options, %{"batch_numbers" => batch_numbers}) when is_list(batch_numbers) do
     Keyword.put(options, :batch_numbers, batch_numbers)
   end
 

@@ -177,6 +177,10 @@ After regeneration, sweep the spec for convention violations a single-endpoint t
 
 The generated spec is cache-like, so regeneration must come first. A stale `.ai/tmp/openapi_public.yaml` produces false positives for every recipe that counts violations — e.g., it may report tag-casing hits that no longer exist in the codebase.
 
+### 2b. Tag audit (run after creating, moving, or retagging operations)
+
+`mix test` does not check tags. Run Recipe O (registry coverage — Step 4e) and Recipe P (URL prefix vs operation tag — Step 4d) from `references/oastools-audit-recipes.md`.
+
 ### 3. Run controller tests (`mix test`)
 
 Run the specific controller test file. Every `json_response/2` call automatically validates the response body against the OpenAPI schema. This catches response-level issues: extra keys (via `additionalProperties: false`), missing required keys, and type mismatches.
@@ -279,6 +283,14 @@ If the endpoint is paginated **and** has path parameters, those path params will
 3. If missing, add it among the other atom-key entries at the top of the list.
 
 The existing list already includes common path params like `:address_hash_param`, `:batch_number_param`, `:block_hash_or_number_param`, `:transaction_hash_param`. New path params need to be added as they are introduced.
+
+### Step 4d: Pick the right tag(s) when URL prefix and controller domain disagree
+
+If the operation's URL lives under a cross-cutting prefix that is itself a tag (e.g., `/v2/main-page/...`), add `tags: ["<cross-cutting>"]` per-operation. OpenApiSpex appends to module-level `tags(...)`, so the operation will appear under both groups (dual-tagging — the default). For exclusive relocation, see `references/schema-conventions.md` §"Cross-cutting URL prefixes and tags".
+
+### Step 4e: Register a new tag in the registry
+
+If the controller's `tags([...])` declares a tag not already in `@default_api_categories` or any `chain_type_category_tags/0` clause in `specs/public.ex`, add it. Base tag → `@default_api_categories`; chain-type tag → matching `case @chain_identity` branch. See "Tag registry" in Core patterns for branch shapes.
 
 ### Step 5: Ensure test coverage
 

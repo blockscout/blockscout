@@ -556,3 +556,11 @@ Three patterns exist, all optional:
 3. **`next_page_params_example`**: passed to `paginated_response/1` for unstructured paging objects
 
 Convention: use examples when the type is generic and readers need real-value context. Don't add examples to leaf pattern-based schemas (`FullHash`, `AddressHash`, etc.) — their type and pattern are self-documenting.
+
+## Cross-cutting URL prefixes and tags
+
+**Merge behavior.** Per-operation `tags: [...]` is **appended** to the module-level `tags(...)`, not substituted. So an operation in a controller with `tags(["arbitrum"])` and a per-operation `tags: ["main-page"]` ends up with both tags and appears under both Swagger groups (dual-tagging).
+
+**When to dual-tag.** When the operation's URL lives under a cross-cutting prefix that is itself a registered tag (`/v2/main-page/...`, `/v2/csv-exports/...`), add `tags: ["<cross-cutting>"]` per-operation. Default for these cases — keeps the operation discoverable both via the chain/domain group and the cross-cutting group.
+
+**When to exclusively relocate.** Remove module-level `tags(...)` and add `tags: [...]` to every operation in the controller. This is what `csv_export_controller.ex` does — every export action sits under its consuming domain (`tokens`, `addresses`) instead of `csv-export`. Use only when the operation truly does not belong in the controller's domain group, or when a reviewer explicitly asks for exclusive grouping.

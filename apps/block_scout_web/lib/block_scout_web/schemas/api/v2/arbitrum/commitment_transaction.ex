@@ -21,6 +21,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.CommitmentTransaction do
       timestamp: General.TimestampNullable,
       status: %Schema{
         type: :string,
+        enum: ["unfinalized", "finalized"],
         nullable: true,
         description: "Finalization status of the Parent chain transaction."
       }

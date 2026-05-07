@@ -83,6 +83,40 @@ Baseline: 0 hits. Any hit likely means a controller predates the kebab-case conv
 
 Used by: `inspection-checklist.md` §3a, `SKILL.md` §"Controller prerequisites".
 
+### O. Tags used by operations but missing from the top-level `tags:` registry
+
+```bash
+oastools walk operations -detail -format json $F \
+  | jq -rs --slurpfile spec <(yq -o=json '.tags // []' $F) \
+      '([.[] | .operation.tags[]?] | unique) as $used
+       | ($spec[0] | map(.name)) as $declared
+       | $used - $declared'
+```
+
+Baseline: 0 hits. Any hit means a controller emits a tag not registered in `specs/public.ex` — Swagger UI will still show the tag on the operation, but ordering is undefined and the top-level `tags:` array is incomplete. Fix by adding the tag to `@default_api_categories` (base) or the appropriate `chain_type_category_tags/0` clause (chain-type), per `SKILL.md` §"Tag registry".
+
+This recipe is the mechanical safety net for the rule in Workflow A Step 4d — schema validation in tests does not check tags, so without this recipe the registration is silently missed.
+
+Used by: `SKILL.md` §Workflow A Step 4d, `SKILL.md` §"Tag registry".
+
+### P. URL prefix vs operation tag mismatch (heuristic)
+
+For each known cross-cutting URL prefix (`/v2/main-page/`, `/v2/csv-exports/`, etc.), find operations under that prefix whose tag list does not include the corresponding category tag.
+
+```bash
+# main-page check
+oastools walk operations -detail -format json $F \
+  | jq -rs '[.[] | select(.path | startswith("/v2/main-page/"))
+                 | select((.operation.tags // []) | index("main-page") | not)
+                 | "\(.method) \(.path) tags=\(.operation.tags)"]'
+```
+
+Baseline: 0 hits expected. Repeat with other prefixes (`/v2/csv-exports/`, etc.) as needed. A hit means an operation under a cross-cutting URL prefix is tagged only by its hosting controller's domain — see `tagging-conventions.md` for whether to dual-tag or relocate.
+
+This recipe is heuristic — false positives are possible if a `/v2/main-page/...` URL genuinely should not be grouped with the rest of the main-page surface. Read the operation before applying a fix.
+
+Used by: `SKILL.md` §Workflow A Step 4d, `schema-conventions.md` §"Cross-cutting URL prefixes and tags".
+
 ---
 
 ## Reuse and dedup scans

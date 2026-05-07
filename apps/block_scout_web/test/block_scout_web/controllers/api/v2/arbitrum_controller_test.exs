@@ -286,9 +286,20 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
         commitment_json = response["commitment_transaction"]
         assert to_string(batch.commitment_transaction.hash) == commitment_json["hash"]
         assert batch.commitment_transaction.block_number == commitment_json["block_number"]
+        assert commitment_json["status"] == "finalized"
 
         assert response["data_availability"] != nil
         assert response["data_availability"]["batch_data_container"] == nil
+      end
+
+      test "returns batch with unfinalized commitment transaction status", %{conn: conn} do
+        lifecycle_tx = insert(:arbitrum_lifecycle_transaction, status: :unfinalized)
+        batch = insert(:arbitrum_l1_batch, commitment_id: lifecycle_tx.id)
+
+        request = get(conn, "/api/v2/arbitrum/batches/#{batch.number}")
+        assert response = json_response(request, 200)
+
+        assert response["commitment_transaction"]["status"] == "unfinalized"
       end
 
       test "returns batch with celestia data availability info", %{conn: conn} do
