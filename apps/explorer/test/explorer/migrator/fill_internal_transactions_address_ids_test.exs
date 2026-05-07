@@ -45,6 +45,8 @@ defmodule Explorer.Migrator.FillInternalTransactionsAddressIdsTest do
 
     assert MigrationStatus.get_status("fill_internal_transactions_address_ids") == nil
 
+    Application.put_env(:explorer, FillInternalTransactionsAddressIds, batch_size: 100, timeout: 0)
+
     FillInternalTransactionsAddressIds.start_link([])
 
     wait_for_results(fn ->

@@ -7,7 +7,7 @@ defmodule BlockScout.Mixfile do
     [
       # app: :block_scout,
       # aliases: aliases(config_env()),
-      version: "11.0.0",
+      version: "11.0.2",
       apps_path: "apps",
       deps: deps(),
       dialyzer: dialyzer(),
@@ -105,7 +105,7 @@ defmodule BlockScout.Mixfile do
     [
       {:prometheus_ex, "~> 5.1.0", override: true},
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.8", override: true},
-      {:tesla, "~> 1.16.0"},
+      {:tesla, "~> 1.17.0"},
       {:mint, "~> 1.7.1"},
       # Documentation
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false},

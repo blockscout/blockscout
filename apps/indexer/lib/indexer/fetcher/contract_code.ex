@@ -258,6 +258,9 @@ defmodule Indexer.Fetcher.ContractCode do
         Accounts.drop(addresses)
         {:ok, addresses}
 
+      {:ok, _} ->
+        {:ok, []}
+
       {:error, step, reason, _changes_so_far} ->
         Logger.error(
           fn ->

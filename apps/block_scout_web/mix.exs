@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.Mixfile do
       lockfile: "../../mix.lock",
       package: package(),
       start_permanent: Mix.env() == :prod,
-      version: "11.0.0",
+      version: "11.0.2",
       xref: [
         exclude: [
           Explorer.Chain.Beacon.Reader,
@@ -189,7 +189,7 @@ defmodule BlockScoutWeb.Mixfile do
   defp package do
     [
       maintainers: ["Blockscout"],
-      licenses: ["GPL 3.0"],
+      licenses: ["Blockscout Software Licence"],
       links: %{"GitHub" => "https://github.com/blockscout/blockscout"}
     ]
   end

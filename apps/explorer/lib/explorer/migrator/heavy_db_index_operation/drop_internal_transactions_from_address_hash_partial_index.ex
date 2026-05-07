@@ -5,7 +5,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAd
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.{FillInternalTransactionsAddressIds, HeavyDbIndexOperation, MigrationStatus}
 
   alias Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsCreatedContractAddressHashIndex
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
@@ -25,7 +25,10 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAd
 
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
-    do: [DropInternalTransactionsCreatedContractAddressHashIndex.migration_name()]
+    do: [
+      FillInternalTransactionsAddressIds.migration_name(),
+      DropInternalTransactionsCreatedContractAddressHashIndex.migration_name()
+    ]
 
   @impl HeavyDbIndexOperation
   def db_index_operation do
