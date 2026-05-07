@@ -11,7 +11,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2]
 
   alias EthereumJSONRPC.Nonce
-  alias Explorer.Chain.{Address, Block}
+  alias Explorer.Chain.{Address, Block, PendingOperationsHelper}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Utility.MissingBlockRange
   alias Indexer.Fetcher.InternalTransaction
@@ -202,9 +202,22 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     :ets.insert(@table_name, {address_cache_name(address_hash), contract_creation_block_number})
     :ets.insert(@table_name, {@pending_blocks_cache_key, updated_pending_blocks})
 
-    if InternalTransaction.disabled?() or not Block.indexed?(contract_creation_block_number) do
-      # Change `1` to specific label when `priority` field becomes `Ecto.Enum`.
-      MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], 1)
+    # Change `1` to specific label when `priority` field becomes `Ecto.Enum`.
+    priority = 1
+
+    if InternalTransaction.disabled?() do
+      if Block.indexed?(contract_creation_block_number) do
+        {block_numbers, transactions} =
+          PendingOperationsHelper.insert_pending_operations([contract_creation_block_number], priority)
+
+        InternalTransaction.async_fetch(block_numbers, transactions, false, true, 10_000)
+      else
+        MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], priority)
+      end
+    else
+      unless Block.indexed?(contract_creation_block_number) do
+        MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], priority)
+      end
     end
 
     {:noreply, state}
@@ -228,7 +241,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
       |> Map.get(:blocks, [])
       |> Enum.map(&Map.get(&1, :number))
 
-    maybe_update_pending_contract_creator_cache(imported, imported_block_numbers)
+    maybe_update_pending_contract_creator_cache(imported_block_numbers)
 
     {:noreply, state}
   end
@@ -269,30 +282,24 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     :ok
   end
 
-  defp maybe_update_pending_contract_creator_cache(_imported, []), do: :ok
+  defp maybe_update_pending_contract_creator_cache([]), do: :ok
 
-  defp maybe_update_pending_contract_creator_cache(imported, imported_block_numbers) do
+  defp maybe_update_pending_contract_creator_cache(imported_block_numbers) do
     case pending_blocks_cache() do
       [{@pending_blocks_cache_key, pending_blocks}] ->
-        update_pending_contract_creator_blocks(pending_blocks, imported_block_numbers, imported)
+        update_pending_contract_creator_blocks(pending_blocks, imported_block_numbers)
 
       [] ->
         :ok
     end
   end
 
-  defp update_pending_contract_creator_blocks([], _imported_block_numbers, _imported), do: []
+  defp update_pending_contract_creator_blocks([], _imported_block_numbers), do: []
 
-  defp update_pending_contract_creator_blocks(pending_blocks, imported_block_numbers, imported) do
+  defp update_pending_contract_creator_blocks(pending_blocks, imported_block_numbers) do
     updated_pending_block_numbers =
       Enum.filter(pending_blocks, fn pending_block ->
         if Enum.member?(imported_block_numbers, pending_block.block_number) do
-          contract_creation_block =
-            find_contract_creation_block_in_imported(imported, pending_block.block_number)
-
-          [contract_creation_block.number]
-          |> InternalTransaction.async_fetch([], true, true, 10_000)
-
           # todo: emit event that contract creator updated for the contract. This was the purpose keeping address_hash_string in that cache key.
           :ets.delete(@table_name, pending_block.address_hash_string)
           false
@@ -305,11 +312,5 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
       @table_name,
       {@pending_blocks_cache_key, updated_pending_block_numbers}
     )
-  end
-
-  defp find_contract_creation_block_in_imported(imported, contract_creation_block_number) do
-    Enum.find(imported[:blocks], fn %Explorer.Chain.Block{number: block_number} ->
-      block_number == contract_creation_block_number
-    end)
   end
 end
