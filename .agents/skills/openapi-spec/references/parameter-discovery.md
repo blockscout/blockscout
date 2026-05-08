@@ -88,6 +88,16 @@ end
 
 Place it in `general.ex` near other helpers of the same category. The file is organized roughly by category, though not strictly enforced.
 
+### Extract before you copy
+
+If the same structural payload shows up at 2+ sites, extract it. The rule is the same on both sides of the spec:
+
+- **Whole-`%Parameter{}` duplication** (same `name`, `schema`, `description`) → promote to a helper in `general.ex` (or a controller-private helper for chain-specific concerns), per "When to create a helper vs inline" above.
+- **Same `schema:` payload across parameters with distinct `name`/`description`/`example`** → extract the payload to a leaf schema in `schemas/api/v2/general/<name>.ex` and reference it via `schema: General.<Name>` from each `%Parameter{}`. The per-parameter description stays on the `%Parameter{}` struct, so the leaf can be description-less. Existing precedent: `IntegerString`, `Timestamp`, `FullHash`.
+- **Same regex literal in multiple `pattern:` fields** → promote it to an accessor in `general.ex` alongside `integer_pattern/0`, `non_negative_integer_pattern/0`, `address_hash_pattern/0`, etc., and reuse via `General.<name>_pattern()`.
+
+This mirrors the schema-side dedup rule in `references/schema-conventions.md §"Domain-scoped shared schemas"` — same principle, applied wherever the duplication actually lives.
+
 ### Inline parameter template
 
 For one-off parameters, define directly in the `operation` macro arguments:

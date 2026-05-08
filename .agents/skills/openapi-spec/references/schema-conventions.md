@@ -260,6 +260,19 @@ schema_map
 )
 ```
 
+**Reusing a leaf primitive with a per-property override.** When you want the type/format/nullable of a `general/` leaf (`Timestamp`, `IntegerString`, `FullHash`, …) *and* a per-property field like `description:`, `example:`, or a flipped `nullable:`, use `Helper.extend_schema` at the property position:
+
+```elixir
+timestamp:
+  Helper.extend_schema(General.Timestamp.schema(),
+    description: "Block timestamp of the parent transaction."
+  )
+```
+
+This inlines the leaf's shape and overlays the description, no `allOf` casting layer involved.
+
+Avoid `%Schema{allOf: [Leaf], description: "..."}` as the overlay mechanism. `allOf` is for *object* composition: it works fine for object leaves like `Address` (and `advanced_filter.ex` does this for `from`/`to`/`created_contract`), but for primitive leaves with a non-trivial `format:` cast — `Timestamp`'s `format: :"date-time"` casts strings to `%DateTime{}`, `Decimal`-typed leaves cast to `%Decimal{}` — `OpenApiSpex.Cast.AllOf` enumerates the per-branch results as maps and fails on non-Enumerable structs. The `extend_schema` form sidesteps the cast composition entirely.
+
 ### Schema reuse and naming for related schemas
 
 When multiple endpoints render the same underlying entity with different levels of detail (e.g., a list endpoint emits 7 fields while a main-page widget emits only 4), avoid duplicating properties across standalone schemas. Instead, use `extend_schema` to build one from the other.
@@ -426,13 +439,21 @@ The view layer is lossy about types — it renders everything as JSON primitives
 2. Read the Ecto schema's `schema` block and `@type` definition to see the field types.
 3. Grep for `Ecto.Enum` in the file to find enum fields.
 
+### Computed values (no direct Ecto field)
+
+Sometimes the view emits a key whose value is not bound to a single Ecto field — it is produced by a helper such as `assign_<name>/1`, `prepare_<name>/1`, or a `case` expression in `prepare_*`. The Ecto schema alone won't tell you the value's shape; you have to read the helper.
+
+Read the helper's branches. If every branch returns a value drawn from a closed set — string literals, atoms converted to strings, calls into `Module.valid_types/0`, `Ecto.Enum.values/2` — model the property as `enum` and assemble the values from every source the helper consults. The sync comment should name each source so a future maintainer knows what to update if any of them changes.
+
+If the helper has an open branch (e.g. a `_ -> error_reason` clause that propagates a free-form string), the set is not closed and `enum` would misrepresent the API. Keep `type: :string` in that case and lean on the description to enumerate the well-known values.
+
 ### Ecto type → OpenAPI type mapping
 
 | Ecto type | OpenAPI schema | Notes |
 |---|---|---|
 | `Ecto.Enum` with values | `%Schema{type: :string, enum: [...values...]}` | Extract the atom values list from the Ecto schema. Convert atoms to strings for the enum. |
 | `:string` | `%Schema{type: :string}` | |
-| `:integer` | `%Schema{type: :integer}` | If the view converts large integers to strings (common for Wei values), use `IntegerString` instead |
+| `:integer` | `%Schema{type: :integer}` | If the view converts large integers to strings (common for Wei values), use a string-typed schema — see "Leaf primitives encode the most permissive form" below before reaching for `IntegerString`. |
 | `:boolean` | `%Schema{type: :boolean}` | |
 | `:decimal` | `%Schema{type: :string}` or `FloatString` | Decimals are typically serialized as strings to preserve precision |
 | `Explorer.Chain.Hash.Full` | `General.FullHash` | 0x + 64 hex chars |
@@ -440,6 +461,20 @@ The view layer is lossy about types — it renders everything as JSON primitives
 | `:utc_datetime_usec` | `General.Timestamp` or `General.TimestampNullable` | ISO 8601 datetime string |
 | `:map` | `%Schema{type: :object}` | Check what keys the view actually emits |
 | `{:array, inner_type}` | `%Schema{type: :array, items: ...}` | Map the inner type recursively |
+
+### Leaf primitives encode the most permissive form
+
+Leaf schemas in `general/` are deliberately loose so they can be reused widely. `IntegerString`, for instance, accepts any integer literal — *including negative ones* — because nothing about the name commits it to a sign. Before reusing such a leaf, check whether the property's domain is actually stricter: a Wei amount, a gas value, a fee, a balance, a count, an index — these are non-negative by definition; a fixed-length identifier has a length constraint; a hex-only field has a character-set constraint.
+
+If the leaf is looser than the domain warrants, **define a stricter pattern or a stricter leaf** rather than reusing the loose one and accepting the accidental permissiveness. Reuse should narrow when the domain narrows, not widen the schema to match the loosest available helper.
+
+The pragmatic ordering:
+
+1. If a stricter helper already exists in `general.ex` (e.g. `non_negative_integer_pattern/0`, `address_hash_pattern/0`), use it via `pattern: General.<helper>()`.
+2. If 2+ properties want the same stricter shape and no helper exists, add the helper or extract a stricter leaf — see "Domain-scoped shared schemas" and the parameter-discovery reference for the dedup rule.
+3. Only inline a one-off `pattern:` literal when the constraint really is unique to a single property.
+
+Note: `minimum:` is a JSON-Schema *numeric* keyword and is silently ignored on `type: :string` schemas. To express "non-negative" on a string-encoded integer, use a pattern that excludes the leading `-`, not `minimum: 0`.
 
 ### Required: Ecto.Enum sync comments
 

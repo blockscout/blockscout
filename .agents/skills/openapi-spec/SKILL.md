@@ -257,7 +257,7 @@ Add the `operation/2` call above the controller action. Follow the structure in 
 - `parameters:` includes `base_params()` and all path/query params
 - `responses:` covers the success case and all error cases the action can return. If multiple controller branches share the same status code with different error messages, use a custom description tuple instead of the generic `Module.response()` helper — see `references/error-response-patterns.md` section "Multiple error branches sharing one status code".
 
-If the controller lacks the `use OpenApiSpex.ControllerSpecs` line and `CastAndValidate` plug, add them (see "Controller prerequisites").
+If the controller lacks the `use OpenApiSpex.ControllerSpecs` line and `CastAndValidate` plug, add them (see "Controller prerequisites"). If the `tags([...])` string is brand-new (not already present in `@default_api_categories` or any `chain_type_category_tags/0` clause in `specs/public.ex`), proceed through Step 4e before verification — without registration the tag still renders per-operation but has no ordering guarantee.
 
 ### Step 4b: Update paging_options if the endpoint is paginated
 
