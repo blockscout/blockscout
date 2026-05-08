@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token, TokenTransfer}
+  alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -16,13 +17,25 @@ defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter do
     type: :object,
     properties: %{
       hash: General.FullHash,
+      # Keep this enum in sync with `Explorer.Chain.AdvancedFilter.assign_type/1`
+      # (the `coin_transfer`/`contract_interaction`/`contract_creation` branches) and
+      # `Explorer.Chain.Token.valid_types/0` (the `ERC-*` token-transfer labels).
       type: %Schema{
         type: :string,
+        enum: [
+          "coin_transfer",
+          "contract_interaction",
+          "contract_creation",
+          "ERC-20",
+          "ERC-721",
+          "ERC-1155",
+          "ERC-404",
+          "ERC-7984"
+        ],
         description:
-          "Kind of activity represented by the item. Values include `coin_transfer`, `contract_interaction`, " <>
-            "and `contract_creation` for top-level transactions and internal transactions, as well as " <>
-            "token-transfer type labels (e.g. `ERC-20`, `ERC-721`, `ERC-1155`, `ERC-404`, `ERC-7984`) " <>
-            "for token transfers.",
+          "Kind of activity represented by the item. Values `coin_transfer`, `contract_interaction`, and " <>
+            "`contract_creation` apply to top-level transactions and internal transactions; the `ERC-*` " <>
+            "values apply to token transfers.",
         nullable: false
       },
       status: %Schema{
@@ -50,7 +63,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter do
       },
       value: %Schema{
         type: :string,
-        pattern: General.integer_pattern(),
+        pattern: General.non_negative_integer_pattern(),
         nullable: true,
         description:
           "Native coin amount transferred, in the chain's base unit (e.g. wei). `null` for token-transfer items."
@@ -71,12 +84,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter do
         nullable: true,
         description: "Token contract metadata. Populated only for token-transfer items; `null` otherwise."
       },
-      timestamp: %Schema{
-        type: :string,
-        format: :"date-time",
-        nullable: false,
-        description: "Block timestamp of the parent transaction."
-      },
+      timestamp:
+        Helper.extend_schema(General.Timestamp.schema(),
+          description: "Block timestamp of the parent transaction."
+        ),
       block_number: %Schema{
         type: :integer,
         minimum: 0,
@@ -115,7 +126,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter do
       },
       fee: %Schema{
         type: :string,
-        pattern: General.integer_pattern(),
+        pattern: General.non_negative_integer_pattern(),
         nullable: false,
         description: "Transaction fee paid by the sender, in the chain's base unit (e.g. wei)."
       }

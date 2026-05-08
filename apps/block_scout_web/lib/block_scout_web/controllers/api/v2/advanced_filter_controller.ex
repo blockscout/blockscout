@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
   alias BlockScoutWeb.AccessHelper
   alias BlockScoutWeb.API.V2.CsvExportController
+  alias BlockScoutWeb.Schemas.API.V2.General
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.{Address.Reputation, AdvancedFilter, ContractMethod, Data, Token, Transaction}
   alias Explorer.Chain.CsvExport.AdvancedFilter, as: CsvExportAdvancedFilter
@@ -188,7 +189,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     %OpenApiSpex.Parameter{
       name: :block_number,
       in: :query,
-      schema: %OpenApiSpex.Schema{type: :string, pattern: ~r/^(?:[1-9][0-9]*|0)$/},
+      schema: %OpenApiSpex.Schema{type: :string, pattern: General.non_negative_integer_pattern()},
       required: false,
       description: "Keyset cursor: block number of the last item from the previous page.",
       example: "23532302"
@@ -196,7 +197,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     %OpenApiSpex.Parameter{
       name: :transaction_index,
       in: :query,
-      schema: %OpenApiSpex.Schema{type: :string, pattern: ~r/^(?:[1-9][0-9]*|0)$/},
+      schema: %OpenApiSpex.Schema{type: :string, pattern: General.non_negative_integer_pattern()},
       required: false,
       description: "Keyset cursor: transaction index within the block of the last item from the previous page.",
       example: "1"
@@ -204,12 +205,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     %OpenApiSpex.Parameter{
       name: :internal_transaction_index,
       in: :query,
-      schema: %OpenApiSpex.Schema{
-        oneOf: [
-          %OpenApiSpex.Schema{type: :string, pattern: ~r/^(?:[1-9][0-9]*|0)$/},
-          %OpenApiSpex.Schema{type: :string, enum: ["", "null"]}
-        ]
-      },
+      schema: General.IntegerStringOrEmptyOrNullLiteral,
       required: false,
       description:
         "Keyset cursor: internal-transaction index of the last item from the previous page. " <>
@@ -218,12 +214,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     %OpenApiSpex.Parameter{
       name: :token_transfer_index,
       in: :query,
-      schema: %OpenApiSpex.Schema{
-        oneOf: [
-          %OpenApiSpex.Schema{type: :string, pattern: ~r/^(?:[1-9][0-9]*|0)$/},
-          %OpenApiSpex.Schema{type: :string, enum: ["", "null"]}
-        ]
-      },
+      schema: General.IntegerStringOrEmptyOrNullLiteral,
       required: false,
       description:
         "Keyset cursor: token-transfer index of the last item from the previous page. " <>
@@ -232,12 +223,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     %OpenApiSpex.Parameter{
       name: :token_transfer_batch_index,
       in: :query,
-      schema: %OpenApiSpex.Schema{
-        oneOf: [
-          %OpenApiSpex.Schema{type: :string, pattern: ~r/^(?:[1-9][0-9]*|0)$/},
-          %OpenApiSpex.Schema{type: :string, enum: ["", "null"]}
-        ]
-      },
+      schema: General.IntegerStringOrEmptyOrNullLiteral,
       required: false,
       description:
         "Keyset cursor: index within an ERC-1155 batch token transfer. " <>

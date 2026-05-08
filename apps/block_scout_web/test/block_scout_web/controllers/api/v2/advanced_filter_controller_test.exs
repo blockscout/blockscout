@@ -98,6 +98,23 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert response["next_page_params"] == nil
     end
 
+    # Regression: keyset cursor params accept the literal string "null" in addition
+    # to an empty string, signalling that the previous-page item was not of the
+    # corresponding kind (internal transaction / token transfer / batch item).
+    # Locks in the second branch of `General.IntegerStringOrEmptyOrNullLiteral`.
+    test "accepts the literal \"null\" in keyset cursor params", %{conn: conn} do
+      cursor_params = %{
+        "block_number" => "0",
+        "transaction_index" => "0",
+        "internal_transaction_index" => "null",
+        "token_transfer_index" => "null",
+        "token_transfer_batch_index" => "null"
+      }
+
+      request = get(conn, "/api/v2/advanced-filters", cursor_params)
+      assert json_response(request, 200)
+    end
+
     test "get and paginate advanced filter (transactions split between pages)", %{conn: conn} do
       first_transaction = :transaction |> insert() |> with_block()
       insert_list(3, :token_transfer, transaction: first_transaction)

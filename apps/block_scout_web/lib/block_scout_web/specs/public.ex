@@ -30,7 +30,8 @@ defmodule BlockScoutWeb.Specs.Public do
     "stats",
     "csv-export",
     "account-abstraction",
-    "withdrawals"
+    "withdrawals",
+    "advanced-filters"
   ]
 
   # todo: if new chain type is covered with OpenAPI specs
