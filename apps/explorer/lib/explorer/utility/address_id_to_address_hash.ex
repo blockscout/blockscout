@@ -76,7 +76,7 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
       end)
       |> Enum.sort()
 
-    Repo.insert_all(
+    Repo.safe_insert_all(
       __MODULE__,
       Enum.map(filtered_address_hashes, &%{address_hash: &1}),
       on_conflict: :nothing
