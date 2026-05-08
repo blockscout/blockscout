@@ -11,6 +11,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2]
 
   alias EthereumJSONRPC.Nonce
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain.{Address, Block, PendingOperationsHelper}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Utility.MissingBlockRange
@@ -207,10 +208,13 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
     if InternalTransaction.disabled?() do
       if Block.indexed?(contract_creation_block_number) do
-        {block_numbers, transactions} =
-          PendingOperationsHelper.insert_pending_operations([contract_creation_block_number], priority)
+        # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+        if RangesHelper.traceable_block_number?(contract_creation_block_number) do
+          {block_numbers, transactions} =
+            PendingOperationsHelper.insert_pending_operations([contract_creation_block_number], priority)
 
-        InternalTransaction.async_fetch(block_numbers, transactions, false, true, 10_000)
+          InternalTransaction.async_fetch(block_numbers, transactions, false, true, 10_000)
+        end
       else
         MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], priority)
       end
