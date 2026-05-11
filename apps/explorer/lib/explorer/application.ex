@@ -141,8 +141,8 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Chain.Cache.Counters.AddressTokenTransfersCount, :api),
         configure_mode_dependent_process(Explorer.Chain.Cache.Counters.AddressTransactionsGasUsageSum, :api),
         configure_mode_dependent_process(Explorer.Chain.Cache.Counters.AddressTokensUsdSum, :api),
-        configure_mode_dependent_process(Explorer.Chain.Cache.Counters.TokenHoldersCount, :api),
-        configure_mode_dependent_process(Explorer.Chain.Cache.Counters.TokenTransfersCount, :api),
+        configure(Explorer.Chain.Cache.Counters.TokenHoldersCount),
+        configure(Explorer.Chain.Cache.Counters.TokenTransfersCount),
         configure_mode_dependent_process(Explorer.Chain.Cache.Counters.BlockBurntFeeCount, :api),
         configure_mode_dependent_process(Explorer.Chain.Cache.Counters.BlockPriorityFeeCount, :api),
         configure(Explorer.Chain.Cache.Counters.AverageBlockTime),
@@ -156,7 +156,7 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.SmartContract.CertifiedSmartContractCataloger, :indexer),
         configure_mode_dependent_process(MinMissingBlockNumber, :indexer),
         configure_mode_dependent_process(Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, :api),
-        configure_mode_dependent_process(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, :api),
+        configure(Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand),
         configure_mode_dependent_process(Explorer.TokenInstanceOwnerAddressMigration.Supervisor, :indexer),
         Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand
         |> configure_sc_microservice()
