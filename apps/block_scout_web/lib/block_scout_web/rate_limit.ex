@@ -239,8 +239,6 @@ defmodule BlockScoutWeb.RateLimit do
   end
 
   defp get_query_param_or_nil(conn, param_name) do
-    conn = Conn.fetch_query_params(conn)
-
     case Map.get(conn.query_params, param_name) do
       value when is_binary(value) ->
         value
