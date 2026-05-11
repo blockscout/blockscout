@@ -314,6 +314,10 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
     [:name, :symbol, :type, :fiat_value, :circulating_market_cap, :volume_24h, :circulating_supply, :decimals]
   end
 
+  @doc """
+  Returns an Ecto query that defines the conflict resolution strategy when importing tokens from a token list
+  """
+  @spec token_list_on_conflict() :: Ecto.Query.t()
   def token_list_on_conflict do
     from(
       token in Token,
@@ -354,6 +358,10 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
     )
   end
 
+  @doc """
+  Returns a list of token fields that should be updated when importing from a token list.
+  """
+  @spec token_list_fields_to_update() :: [:name | :symbol | :decimals | :icon_url]
   def token_list_fields_to_update do
     [:name, :symbol, :decimals, :icon_url]
   end
