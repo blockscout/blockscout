@@ -640,6 +640,316 @@ defmodule Indexer.Transform.TokenTransfersTest do
     end
   end
 
+  if Application.compile_env(:explorer, :chain_type) == :arc do
+    describe "parse/1 on Arc chain" do
+      @arc_native_token "0x3600000000000000000000000000000000000000"
+      @arc_system "0x1800000000000000000000000000000000000000"
+      @wei_1e18 "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
+      @wei_1e6 "0x00000000000000000000000000000000000000000000000000000000000f4240"
+
+      setup do
+        original_indexer_arc = Application.get_env(:indexer, :arc)
+
+        on_exit(fn ->
+          Application.put_env(:indexer, :arc, original_indexer_arc)
+        end)
+
+        Application.put_env(:indexer, :arc,
+          arc_native_token_decimals: 6,
+          arc_native_token_address: @arc_native_token,
+          arc_native_token_system_address: @arc_system
+        )
+
+        :ok
+      end
+
+      test "ignores ERC-20 Transfer from synthetic native token contract" do
+        log = %{
+          address_hash: @arc_native_token,
+          block_number: 1,
+          block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          data: @wei_1e6,
+          first_topic: Explorer.Chain.TokenTransfer.constant(),
+          fourth_topic: nil,
+          index: 0,
+          second_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+          third_topic: topic_padded_address("0x2000000000000000000000000000000000000002"),
+          transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+
+        assert %{tokens: [], token_transfers: []} = TokenTransfers.parse([log])
+      end
+
+      test "maps native EIP-7708 Transfer to synthetic native token with decimal normalization" do
+        log = %{
+          address_hash: Explorer.Chain.TokenTransfer.eip7708_system_address(),
+          block_number: 1,
+          block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          data: @wei_1e18,
+          first_topic: Explorer.Chain.TokenTransfer.constant(),
+          fourth_topic: nil,
+          index: 0,
+          second_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+          third_topic: topic_padded_address("0x2000000000000000000000000000000000000002"),
+          transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+
+        assert %{tokens: [token], token_transfers: [tt]} = TokenTransfers.parse([log])
+        assert token == %{contract_address_hash: @arc_native_token, type: "ERC-20"}
+        assert tt.from_address_hash == "0x1000000000000000000000000000000000000001"
+        assert tt.to_address_hash == "0x2000000000000000000000000000000000000002"
+        assert tt.token_contract_address_hash == @arc_native_token
+        assert tt.log_index == 0
+        assert tt.amount == Decimal.new(1_000_000)
+      end
+
+      test "maps EIP-7708 + ERC-20 Transfer to synthetic native token with decimal normalization" do
+        logs = [
+          %{
+            address_hash: Explorer.Chain.TokenTransfer.eip7708_system_address(),
+            block_number: 1,
+            block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            data: @wei_1e18,
+            first_topic: Explorer.Chain.TokenTransfer.constant(),
+            fourth_topic: nil,
+            index: 0,
+            second_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+            third_topic: topic_padded_address("0x2000000000000000000000000000000000000002"),
+            transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          %{
+            address_hash: @arc_native_token,
+            block_number: 1,
+            block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            data: @wei_1e6,
+            first_topic: Explorer.Chain.TokenTransfer.constant(),
+            fourth_topic: nil,
+            index: 1,
+            second_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+            third_topic: topic_padded_address("0x2000000000000000000000000000000000000002"),
+            transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ]
+
+        assert %{tokens: [token], token_transfers: [tt]} = TokenTransfers.parse(logs)
+        assert token == %{contract_address_hash: @arc_native_token, type: "ERC-20"}
+        assert tt.from_address_hash == "0x1000000000000000000000000000000000000001"
+        assert tt.to_address_hash == "0x2000000000000000000000000000000000000002"
+        assert tt.token_contract_address_hash == @arc_native_token
+        assert tt.log_index == 0
+        assert tt.amount == Decimal.new(1_000_000)
+      end
+
+      test "maps native legacy NativeCoinTransferred to synthetic native token with decimal normalization" do
+        log = %{
+          address_hash: @arc_system,
+          block_number: 1,
+          block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          data: @wei_1e18,
+          first_topic: Explorer.Chain.TokenTransfer.arc_native_coin_transferred_event(),
+          fourth_topic: nil,
+          index: 0,
+          second_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+          third_topic: topic_padded_address("0x2000000000000000000000000000000000000002"),
+          transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+
+        assert %{tokens: [token], token_transfers: [tt]} = TokenTransfers.parse([log])
+        assert token.contract_address_hash == @arc_native_token
+        assert tt.token_contract_address_hash == @arc_native_token
+        assert tt.log_index == 0
+        assert tt.amount == Decimal.new(1_000_000)
+      end
+
+      test "maps legacy NativeCoinTransferred + ERC-20 Transfer to synthetic native token with decimal normalization" do
+        logs = [
+          %{
+            address_hash: @arc_system,
+            block_number: 1,
+            block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            data: @wei_1e18,
+            first_topic: Explorer.Chain.TokenTransfer.arc_native_coin_transferred_event(),
+            fourth_topic: nil,
+            index: 0,
+            second_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+            third_topic: topic_padded_address("0x2000000000000000000000000000000000000002"),
+            transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          %{
+            address_hash: @arc_native_token,
+            block_number: 1,
+            block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            data: @wei_1e6,
+            first_topic: Explorer.Chain.TokenTransfer.constant(),
+            fourth_topic: nil,
+            index: 1,
+            second_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+            third_topic: topic_padded_address("0x2000000000000000000000000000000000000002"),
+            transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ]
+
+        assert %{tokens: [token], token_transfers: [tt]} = TokenTransfers.parse(logs)
+        assert token.contract_address_hash == @arc_native_token
+        assert tt.token_contract_address_hash == @arc_native_token
+        assert tt.log_index == 0
+        assert tt.amount == Decimal.new(1_000_000)
+      end
+
+      test "maps EIP-7708 + ERC-20 Mint to synthetic native token with decimal normalization" do
+        logs = [
+          %{
+            address_hash: Explorer.Chain.TokenTransfer.eip7708_system_address(),
+            block_number: 1,
+            block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            data: @wei_1e18,
+            first_topic: Explorer.Chain.TokenTransfer.constant(),
+            fourth_topic: nil,
+            index: 0,
+            second_topic: topic_padded_address("0x0000000000000000000000000000000000000000"),
+            third_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+            transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          %{
+            address_hash: @arc_native_token,
+            block_number: 1,
+            block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            data: @wei_1e6,
+            first_topic: Explorer.Chain.TokenTransfer.constant(),
+            fourth_topic: nil,
+            index: 1,
+            second_topic: topic_padded_address("0x0000000000000000000000000000000000000000"),
+            third_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+            transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ]
+
+        assert %{tokens: [token], token_transfers: [tt]} = TokenTransfers.parse(logs)
+        assert token == %{contract_address_hash: @arc_native_token, type: "ERC-20"}
+        assert tt.from_address_hash == "0x0000000000000000000000000000000000000000"
+        assert tt.to_address_hash == "0x1000000000000000000000000000000000000001"
+        assert tt.token_contract_address_hash == @arc_native_token
+        assert tt.log_index == 0
+        assert tt.amount == Decimal.new(1_000_000)
+      end
+
+      test "maps legacy NativeCoinMinted + ERC-20 Transfer to synthetic native token with decimal normalization" do
+        logs = [
+          %{
+            address_hash: @arc_system,
+            block_number: 1,
+            block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            data: @wei_1e18,
+            first_topic: Explorer.Chain.TokenTransfer.arc_native_coin_minted_event(),
+            fourth_topic: nil,
+            index: 0,
+            second_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+            third_topic: nil,
+            transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          %{
+            address_hash: @arc_native_token,
+            block_number: 1,
+            block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            data: @wei_1e6,
+            first_topic: Explorer.Chain.TokenTransfer.constant(),
+            fourth_topic: nil,
+            index: 1,
+            second_topic: topic_padded_address("0x0000000000000000000000000000000000000000"),
+            third_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+            transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ]
+
+        assert %{tokens: [token], token_transfers: [tt]} = TokenTransfers.parse(logs)
+        assert token == %{contract_address_hash: @arc_native_token, type: "ERC-20"}
+        assert tt.from_address_hash == "0x0000000000000000000000000000000000000000"
+        assert tt.to_address_hash == "0x1000000000000000000000000000000000000001"
+        assert tt.token_contract_address_hash == @arc_native_token
+        assert tt.log_index == 0
+        assert tt.amount == Decimal.new(1_000_000)
+      end
+
+      test "maps EIP-7708 + ERC-20 Burn to synthetic native token with decimal normalization" do
+        logs = [
+          %{
+            address_hash: Explorer.Chain.TokenTransfer.eip7708_system_address(),
+            block_number: 1,
+            block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            data: @wei_1e18,
+            first_topic: Explorer.Chain.TokenTransfer.constant(),
+            fourth_topic: nil,
+            index: 0,
+            second_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+            third_topic: topic_padded_address("0x0000000000000000000000000000000000000000"),
+            transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          %{
+            address_hash: @arc_native_token,
+            block_number: 1,
+            block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            data: @wei_1e6,
+            first_topic: Explorer.Chain.TokenTransfer.constant(),
+            fourth_topic: nil,
+            index: 1,
+            second_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+            third_topic: topic_padded_address("0x0000000000000000000000000000000000000000"),
+            transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ]
+
+        assert %{tokens: [token], token_transfers: [tt]} = TokenTransfers.parse(logs)
+        assert token == %{contract_address_hash: @arc_native_token, type: "ERC-20"}
+        assert tt.from_address_hash == "0x1000000000000000000000000000000000000001"
+        assert tt.to_address_hash == "0x0000000000000000000000000000000000000000"
+        assert tt.token_contract_address_hash == @arc_native_token
+        assert tt.log_index == 0
+        assert tt.amount == Decimal.new(1_000_000)
+      end
+
+      test "maps legacy NativeCoinBurned + ERC-20 Transfer to synthetic native token with decimal normalization" do
+        logs = [
+          %{
+            address_hash: @arc_system,
+            block_number: 1,
+            block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            data: @wei_1e18,
+            first_topic: Explorer.Chain.TokenTransfer.arc_native_coin_burned_event(),
+            fourth_topic: nil,
+            index: 0,
+            second_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+            third_topic: nil,
+            transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          %{
+            address_hash: @arc_native_token,
+            block_number: 1,
+            block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            data: @wei_1e6,
+            first_topic: Explorer.Chain.TokenTransfer.constant(),
+            fourth_topic: nil,
+            index: 1,
+            second_topic: topic_padded_address("0x1000000000000000000000000000000000000001"),
+            third_topic: topic_padded_address("0x0000000000000000000000000000000000000000"),
+            transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          }
+        ]
+
+        assert %{tokens: [token], token_transfers: [tt]} = TokenTransfers.parse(logs)
+        assert token == %{contract_address_hash: @arc_native_token, type: "ERC-20"}
+        assert tt.from_address_hash == "0x1000000000000000000000000000000000000001"
+        assert tt.to_address_hash == "0x0000000000000000000000000000000000000000"
+        assert tt.token_contract_address_hash == @arc_native_token
+        assert tt.log_index == 0
+        assert tt.amount == Decimal.new(1_000_000)
+      end
+    end
+
+    defp topic_padded_address("0x" <> addr_hex) when byte_size(addr_hex) == 40 do
+      "0x000000000000000000000000#{addr_hex}"
+    end
+  end
+
   defp truncated_hash("0x000000000000000000000000" <> rest) do
     "0x" <> rest
   end
