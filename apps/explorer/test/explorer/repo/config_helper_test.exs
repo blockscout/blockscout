@@ -164,6 +164,10 @@ defmodule Explorer.Repo.ConfigHelperTest do
   end
 
   describe "ssl_options/2" do
+    test "defaults to require (verify_none) when mode is not set" do
+      assert ConfigHelper.ssl_options(nil, fn _ -> nil end) == [ssl: [verify: :verify_none]]
+    end
+
     test "maps disable to ssl false" do
       env_func = fn
         "ECTO_SSL_MODE" -> "disable"

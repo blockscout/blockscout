@@ -66,6 +66,11 @@ defmodule Explorer.Repo.ConfigHelper do
     {:ok, opts |> Keyword.put(:url, remove_search_path(db_url)) |> Keyword.merge(Keyword.take(merged, [:search_path]))}
   end
 
+  @doc """
+  Determines the Ecto SSL mode based on the ECTO_SSL_MODE environment variable, the
+  sslmode parameter in the database URL, or defaults to "require" if neither is set.
+  """
+  @spec ecto_ssl_mode(database_url :: String.t() | nil) :: String.t()
   def ecto_ssl_mode(database_url \\ nil), do: ecto_ssl_mode(database_url, &System.get_env/1)
 
   def ecto_ssl_mode(database_url, env_function) do
@@ -77,6 +82,10 @@ defmodule Explorer.Repo.ConfigHelper do
     normalize_ssl_mode!(mode)
   end
 
+  @doc """
+  Returns SSL options for Postgrex based on the ECTO_SSL_MODE environment variable or ssl
+  """
+  @spec ssl_options(database_url :: String.t() | nil) :: Keyword.t()
   def ssl_options(database_url \\ nil), do: ssl_options(database_url, &System.get_env/1)
 
   def ssl_options(database_url, env_function) do
