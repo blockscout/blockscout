@@ -32,8 +32,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
     parameters:
       base_params() ++
         define_paging_params([
-          "number",
-          "items_count"
+          "number"
         ]),
     responses: [
       ok:
@@ -41,8 +40,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
          paginated_response(
            items: Schemas.Celo.Epoch,
            next_page_params_example: %{
-             "number" => 100,
-             "items_count" => 50
+             "number" => 100
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
@@ -163,8 +161,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
         define_paging_params([
           "amount",
           "account_address_hash",
-          "associated_account_address_hash",
-          "items_count"
+          "associated_account_address_hash"
         ]),
     responses: [
       ok:
@@ -174,8 +171,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
            next_page_params_example: %{
              "amount" => "1000000000000000000",
              "account_address_hash" => "0x1234567890123456789012345678901234567890",
-             "associated_account_address_hash" => "0x0987654321098765432109876543210987654321",
-             "items_count" => 50
+             "associated_account_address_hash" => "0x0987654321098765432109876543210987654321"
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
