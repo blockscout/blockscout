@@ -73,21 +73,26 @@ defmodule Explorer.Repo.ConfigHelper do
   @spec ecto_ssl_mode(database_url :: String.t() | nil) :: String.t()
   def ecto_ssl_mode(database_url \\ nil), do: ecto_ssl_mode(database_url, &System.get_env/1)
 
+  @spec ecto_ssl_mode(database_url :: String.t() | nil, env_function :: (String.t() -> String.t() | nil)) :: String.t()
   def ecto_ssl_mode(database_url, env_function) do
     mode =
-      env_function.("ECTO_SSL_MODE") ||
+      blank_to_nil(env_function.("ECTO_SSL_MODE")) ||
         ssl_mode_from_database_url(database_url) ||
         "require"
 
     normalize_ssl_mode!(mode)
   end
 
+  defp blank_to_nil(value) when value in [nil, ""], do: nil
+  defp blank_to_nil(value), do: value
+
   @doc """
-  Returns SSL options for Postgrex based on the ECTO_SSL_MODE environment variable or ssl
+  Returns SSL options for Postgrex based on the ECTO_SSL_MODE environment variable or ssl mode parameter in the database URL.
   """
   @spec ssl_options(database_url :: String.t() | nil) :: Keyword.t()
   def ssl_options(database_url \\ nil), do: ssl_options(database_url, &System.get_env/1)
 
+  @spec ssl_options(database_url :: String.t() | nil, env_function :: (String.t() -> String.t() | nil)) :: Keyword.t()
   def ssl_options(database_url, env_function) do
     case ecto_ssl_mode(database_url, env_function) do
       "disable" ->
