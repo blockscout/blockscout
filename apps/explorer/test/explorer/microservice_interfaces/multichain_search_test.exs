@@ -5,7 +5,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
   alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.MultichainSearchDb.{MainExportQueue, TokenInfoExportQueue}
-  alias Explorer.Chain.{Token, Wei}
+  alias Explorer.Chain.{Hash, Token, Wei}
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.{Repo, TestHelper}
   alias Plug.Conn
@@ -667,13 +667,13 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
   describe "token_info_http_item_to_queue_item/1" do
     test "returns correct map to add to queue" do
       address_hash_string = "0x000102030405060708090a0b0c0d0e0f10111213"
-      address_hash_binary = Base.decode16!("000102030405060708090a0b0c0d0e0f10111213", case: :mixed)
+      {:ok, address_hash} = Hash.Address.cast(address_hash_string)
 
       assert MultichainSearch.token_info_http_item_to_queue_item(%{
                address_hash: address_hash_string,
                metadata: %{token_type: "ERC-20", name: "TestToken", symbol: "TEST", decimals: 18, total_supply: "1000"}
              }) == %{
-               address_hash: address_hash_binary,
+               address_hash: address_hash,
                data_type: :metadata,
                data: %{token_type: "ERC-20", name: "TestToken", symbol: "TEST", decimals: 18, total_supply: "1000"}
              }
@@ -682,7 +682,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                address_hash: address_hash_string,
                metadata: %{token_type: "ERC-20"}
              }) == %{
-               address_hash: address_hash_binary,
+               address_hash: address_hash,
                data_type: :metadata,
                data: %{token_type: "ERC-20"}
              }
@@ -691,7 +691,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                address_hash: address_hash_string,
                metadata: %{total_supply: "1000"}
              }) == %{
-               address_hash: address_hash_binary,
+               address_hash: address_hash,
                data_type: :total_supply,
                data: %{total_supply: "1000"}
              }
@@ -700,7 +700,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                address_hash: address_hash_string,
                counters: %{holders_count: "123", transfers_count: "456"}
              }) == %{
-               address_hash: address_hash_binary,
+               address_hash: address_hash,
                data_type: :counters,
                data: %{holders_count: "123", transfers_count: "456"}
              }
@@ -709,7 +709,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                address_hash: address_hash_string,
                price_data: %{fiat_value: "123.456", circulating_market_cap: "1000.0001"}
              }) == %{
-               address_hash: address_hash_binary,
+               address_hash: address_hash,
                data_type: :market_data,
                data: %{fiat_value: "123.456", circulating_market_cap: "1000.0001"}
              }
@@ -940,8 +940,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                :ok
 
       [record] = Repo.all(TokenInfoExportQueue)
+      {:ok, address_hash} = Hash.Address.cast(address_hash_binary)
 
-      assert record.address_hash == address_hash_binary && record.data_type == :total_supply &&
+      assert record.address_hash == address_hash && record.data_type == :total_supply &&
                record.data == %{"total_supply" => "123"}
     end
 
@@ -972,15 +973,19 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       assert MultichainSearch.send_token_info_to_queue(entries, :total_supply) == :ok
 
       records = Repo.all(TokenInfoExportQueue)
+      {:ok, address1_hash} = Hash.Address.cast(address1_hash_binary)
+      {:ok, address2_hash} = Hash.Address.cast(address2_hash_binary)
+      {:ok, address3_hash} = Hash.Address.cast(address3_hash_binary)
+      {:ok, address4_hash} = Hash.Address.cast(address4_hash_binary)
 
       assert Enum.all?(records, fn record ->
-               (record.address_hash == address1_hash_binary && record.data_type == :total_supply &&
+               (record.address_hash == address1_hash && record.data_type == :total_supply &&
                   record.data == %{"total_supply" => "123"}) ||
-                 (record.address_hash == address2_hash_binary && record.data_type == :total_supply &&
+                 (record.address_hash == address2_hash && record.data_type == :total_supply &&
                     record.data == %{"total_supply" => "124"}) ||
-                 (record.address_hash == address3_hash_binary && record.data_type == :total_supply &&
+                 (record.address_hash == address3_hash && record.data_type == :total_supply &&
                     record.data == %{"total_supply" => "125"}) ||
-                 (record.address_hash == address4_hash_binary && record.data_type == :total_supply &&
+                 (record.address_hash == address4_hash && record.data_type == :total_supply &&
                     record.data == %{"total_supply" => "126"})
              end)
     end
@@ -1004,8 +1009,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                :ok
 
       [record] = Repo.all(TokenInfoExportQueue)
+      {:ok, address_hash} = Hash.Address.cast(address_hash_binary)
 
-      assert record.address_hash == address_hash_binary && record.data_type == :total_supply &&
+      assert record.address_hash == address_hash && record.data_type == :total_supply &&
                record.data == %{"total_supply" => "123"}
 
       assert MultichainSearch.send_token_info_to_queue(%{address_hash_binary => %{total_supply: "124"}}, :total_supply) ==
@@ -1013,7 +1019,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
       [record_new] = Repo.all(TokenInfoExportQueue)
 
-      assert record_new.address_hash == address_hash_binary && record_new.data_type == :total_supply &&
+      assert record_new.address_hash == address_hash && record_new.data_type == :total_supply &&
                record_new.data == %{"total_supply" => "124"} &&
                DateTime.compare(record_new.updated_at, record.updated_at) == :gt
     end
