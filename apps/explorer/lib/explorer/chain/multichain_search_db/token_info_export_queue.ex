@@ -87,7 +87,7 @@ defmodule Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue do
     ## Returns
     - An `Ecto.Query` struct containing the delete operation.
   """
-  @spec delete_query(%{:address_hash => Hash.Address.t(), :data_type => atom(), optional(:data) => map()}) ::
+  @spec delete_query(%{:address_hash => Hash.Address.t() | binary(), :data_type => atom(), optional(:data) => map()}) ::
           Ecto.Query.t()
   def delete_query(queue_item) do
     from(q in __MODULE__,
