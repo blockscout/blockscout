@@ -28,7 +28,7 @@ When adding or modifying processes started by `Explorer.Application`, `Indexer.A
 - Data migrators (`Explorer.Migrator.*`) — one-time or ongoing data transformations.
 - Catalogers and tag importers (`AddressTag.Cataloger`, `CertifiedSmartContractCataloger`).
 - Block gap scanning (`MinMissingBlockNumber`).
-- Indexer-specific caches that are written and read by indexer only (`TransactionActionTokensData`, `TransactionActionUniswapPools`, `LatestL1BlockNumber`).
+- Indexer-specific caches that are written and read by indexer only (`LatestL1BlockNumber`).
 
 **Start in `:api` mode only:**
 - Passive on-demand ETS/in-memory caches — GenServers that manage an ETS table and populate it on API request (e.g., `AddressTransactionsCount`, `TokenHoldersCount`, `BlockBurntFeeCount`, `AverageBlockTime`). ETS is local to the process, so these must run on the instance serving requests.
