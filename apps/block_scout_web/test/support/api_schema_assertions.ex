@@ -67,15 +67,34 @@ defmodule BlockScoutWeb.TestApiSchemaAssertions do
   defp match_template_path(paths_map, actual_path) do
     actual_segments = split_path(actual_path)
 
-    Enum.find_value(paths_map, fn {template_path, %PathItem{} = item} ->
-      template_segments = split_path(template_path)
-
-      if segments_match?(template_segments, actual_segments) do
-        {:ok, {template_path, item}}
-      else
-        false
-      end
-    end) || :error
+    # The OpenAPI spec paths map is unordered, so when multiple templates match
+    # the same request path, Enum.find_value would pick one non-deterministically.
+    # This matters because the router has many sibling routes where a literal
+    # segment coexists with a dynamic parameter at the same position, e.g.:
+    #
+    #   GET /batches/count          → :batches_count
+    #   GET /batches/{batch_number} → :batch
+    #
+    # Phoenix resolves these by declaration order (literal first), but here we
+    # match against the spec map, where both templates satisfy segments_match?.
+    # To mirror Phoenix's behaviour we prefer the template with the fewest
+    # dynamic segments — the more specific (literal) path always wins.
+    paths_map
+    |> Enum.filter(fn {template_path, %PathItem{}} ->
+      segments_match?(split_path(template_path), actual_segments)
+    end)
+    |> Enum.min_by(
+      fn {template_path, _} ->
+        segments = split_path(template_path)
+        dynamic_count = Enum.count(segments, &dynamic_segment?/1)
+        {dynamic_count, length(segments), template_path}
+      end,
+      fn -> nil end
+    )
+    |> case do
+      {_, %PathItem{}} = match -> {:ok, match}
+      nil -> :error
+    end
   end
 
   defp split_path(path) when is_binary(path) do

@@ -1,20 +1,99 @@
 # Changelog
 
+## 11.0.3
+
+### 🐛 Bug Fixes
+
+- Insert AddressIdToAddressHash via safe_insert_all ([#14333](https://github.com/blockscout/blockscout/pull/14333))
+- Force search for contract creator if internal transactions module is disabled ([#14324](https://github.com/blockscout/blockscout/issues/14324))
+- Add transactions uniqueness before insert ([#14329](https://github.com/blockscout/blockscout/issues/14329))
+
+### ⚙️ Miscellaneous Tasks
+
+- Don't lock tables if foreign keys are already dropped ([#14321](https://github.com/blockscout/blockscout/issues/14321))
+- Dev branch + CI, remove obsolete GA workflows ([#14317](https://github.com/blockscout/blockscout/issues/14317))
+
+
+## 11.0.2
+
+### 🐛 Bug Fixes
+
+- Process empty list of changes on fetching contract codes ([#14312](https://github.com/blockscout/blockscout/pull/14312))
+- Add fallback for empty "to" in Geth selfdestruct ([#14256](https://github.com/blockscout/blockscout/issues/14256))
+- Trim contractaddresses in getcontractcreation ([#14306](https://github.com/blockscout/blockscout/issues/14306))
+- Adapt maybe_reject_zero_value for empty blocks ([#14309](https://github.com/blockscout/blockscout/issues/14309))
+- Add missing internal transactions address preload ([#14308](https://github.com/blockscout/blockscout/issues/14308))
+- Fix some web tests ([#14310](https://github.com/blockscout/blockscout/pull/14310))
+
+### ⚙️ Miscellaneous Tasks
+
+- Disable on-demand IT fetcher test for rsk and filecoin ([#14314](https://github.com/blockscout/blockscout/pull/14314))
+- Disable flaky contract code compiler doctest ([#14313](https://github.com/blockscout/blockscout/pull/14313))
+- Add coverage for core API v2 views ([#14254](https://github.com/blockscout/blockscout/issues/14254))
+
+
+## 11.0.1
+
+### 🐛 Bug Fixes
+
+- Update OnDemand.InternalTransaction etherscan fields ([#14297](https://github.com/blockscout/blockscout/pull/14297))
+- Use inner join for verified contract addresses instead of lateral join ([#14294](https://github.com/blockscout/blockscout/pull/14294))
+- Disable on-demand internal tx fetch when corresponding flag is provided ([#14289](https://github.com/blockscout/blockscout/pull/14289))
+- Add fill IT addresses dependency into drop index migrations ([#14280](https://github.com/blockscout/blockscout/issues/14280))
+- Fix incorrect batch size in Indexer.Fetcher.OnDemand.TokenBalance ([#14265](https://github.com/blockscout/blockscout/issues/14265))
+- Prevent ETS crash in ContractCreator on GenServer restart ([#14221](https://github.com/blockscout/blockscout/issues/14221))
+- Fix internal transactions address dynamic condition ([#14278](https://github.com/blockscout/blockscout/issues/14278))
+- Remove addresses preload in celo parse_internal_transactions ([#14272](https://github.com/blockscout/blockscout/issues/14272))
+- Parse celo reward cursor params for address pagination ([#14275](https://github.com/blockscout/blockscout/issues/14275))
+- Map optimism-celo to celo OpenAPI folder ([#14274](https://github.com/blockscout/blockscout/issues/14274))
+- Make "sort_param" description endpoint-agnostic in OpenAPI spec ([#14270](https://github.com/blockscout/blockscout/issues/14270))
+- Fix Celo epochs list pagination ([#14269](https://github.com/blockscout/blockscout/issues/14269))
+
+### 🚜 Refactor
+
+- Move preload contract creation internal transaction under runtime toggle ([#14279](https://github.com/blockscout/blockscout/issues/14279), ([#14287](https://github.com/blockscout/blockscout/pull/14287)))
+
+### ⚙️ Miscellaneous Tasks
+
+- Cover all RPC API stats endpoints and stabilize flaky specs ([#14299](https://github.com/blockscout/blockscout/pull/14299))
+- Change "coinsupply" RPC API response to fit JSON RPC requirements ([#14298](https://github.com/blockscout/blockscout/pull/14298))
+- Optimize internal transactions address_match_dynamic ([#14293](https://github.com/blockscout/blockscout/pull/14293))
+- Add window_size for PendingTransactionsSanitizer ([#14292](https://github.com/blockscout/blockscout/pull/14292))
+- Make pending operations helper batching configurable ([#14273](https://github.com/blockscout/blockscout/issues/14273))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `INDEXER_PENDING_TRANSACTIONS_WINDOW_SIZE`                    | Time offset for pending transactions sanitizer. Implemented in [#14292](https://github.com/blockscout/blockscout/pull/14292).                                                                                                                                                                                                                                                                                                                                                                                                    | Version: v11.0.1\+ <br />Default: `1d` <br />Applications: Indexer                                          |
+| `TOKEN_BALANCE_ON_DEMAND_FETCHER_BATCH_SIZE`          | Batch size for Indexer.Fetcher.OnDemand.TokenBalance. Introduced in [#14265](https://github.com/poanetwork/blockscout/pull/14265)                                                                                                                                                                                                                             | Version: v11.0.1\+ <br />Default: `500` <br />Applications: API, Indexer     |
+| `TOKEN_BALANCE_ON_DEMAND_FETCHER_CONCURRENCY`         | Concurrency for Indexer.Fetcher.OnDemand.TokenBalance. Introduced in [#14265](https://github.com/poanetwork/blockscout/pull/14265)                                                                                                                                                                                                                            | Version: v11.0.1\+ <br />Default: `4` <br />Applications: API, Indexer       |
+| `TOKEN_BALANCE_ON_DEMAND_FETCHER_ADDRESS_QUEUE_FLUSH_INTERVAL` | How often the on-demand token balance address queue is flushed to processing. Use a shorter interval for lower latency, or a longer interval to accumulate larger batches and reduce query frequency. Introduced in [#14265](https://github.com/poanetwork/blockscout/pull/14265)                                                                    | Version: v11.0.1\+ <br />Default: `1s` <br />Applications: API, Indexer       |
+| `TOKEN_BALANCE_ON_DEMAND_FETCHER_ADDRESS_QUEUE_BATCH_SIZE` | Batch size for on-demand token balance address queue. Introduced in [#14265](https://github.com/poanetwork/blockscout/pull/14265)                                                                                                                                                                                                                        | Version: v11.0.1\+ <br />Default: `50` <br />Applications: API, Indexer       |
+| `PENDING_OPERATIONS_HELPER_TRANSACTIONS_BATCH_SIZE`           | Batch size for transactions when processing pending operations. Implemented in [#14273](https://github.com/blockscout/blockscout/pull/14273).                                                                                                                                                                                                                                                                                                                                                                                    | Version: v11.0.1\+ <br />Default: `1000` <br />Applications: Indexer                                         |
+| `PENDING_OPERATIONS_HELPER_BLOCKS_BATCH_SIZE`                 | Batch size for blocks when processing pending operations. Implemented in [#14273](https://github.com/blockscout/blockscout/pull/14273).                                                                                                                                                                                                                                                                                                                                                                                          | Version: v11.0.1\+ <br />Default: `10` <br />Applications: Indexer                                           |
+
+
+
 ## 11.0.0
 
 ### 🚀 Features
 
 - Async CSV export ([#14028](https://github.com/blockscout/blockscout/issues/14028))
+- FHE operations and tags ([#13742](https://github.com/blockscout/blockscout/issues/13742))
+- Restore BENS preloads on the main page under toggle and add blocks BENS preload toggle ([#14262](https://github.com/blockscout/blockscout/pull/14262))
+- /api/legacy/* wrappers for three ES-compatible RPC endpoints ([#14239](https://github.com/blockscout/blockscout/pull/14239))
+- Make token balances import chunk size configurable ([#14250](https://github.com/blockscout/blockscout/pull/14250))
 - Add toggle to disable transactions / token transfers BENS preload ([#14159](https://github.com/blockscout/blockscout/issues/14159))
 - Add ENS and metadata preloading in block channel ([#12074](https://github.com/blockscout/blockscout/issues/12074))
 - Add validation for IPFS links before sending requests to gateway ([#14131](https://github.com/blockscout/blockscout/issues/14131))
 - Add search by token address hash in /api/v2/tokens ([#14102](https://github.com/blockscout/blockscout/issues/14102))
-- FHE operations and tags ([#13742](https://github.com/blockscout/blockscout/issues/13742))
 - Add :rename heavy index db operation type and implement zero-downtime index replacement for transactions table ([#14052](https://github.com/blockscout/blockscout/issues/14052))
 - Use libraries field from eth bytecode db response ([#13948](https://github.com/blockscout/blockscout/issues/13948))
 
 ### 🐛 Bug Fixes
 
+- Fix filecoin view error ([#14255](https://github.com/blockscout/blockscout/pull/14255))
 - Internal transactions on-demand fetcher: check existence of deleted internal transactions address placeholders ([#14249](https://github.com/blockscout/blockscout/pull/14249))
 - Fix OnDemand.InternalTransaction fetcher ([#14242](https://github.com/blockscout/blockscout/pull/14242))
 - Guard missing ETS table in contract creator fetcher ([#14241](https://github.com/blockscout/blockscout/pull/14241))
@@ -24,7 +103,6 @@
 - Handle partial errors in ContractCode fetch_codes ([#14211](https://github.com/blockscout/blockscout/pull/14211))
 - Include bridged token query params in OpenAPI spec ([#14209](https://github.com/blockscout/blockscout/pull/14209))
 - Update changed constraint name in shrink IT migration ([#14205](https://github.com/blockscout/blockscout/pull/14205))
-- Optimize token1155tx API v1 endpoint ([#14202](https://github.com/blockscout/blockscout/issues/14202))
 - Fix contract internal transactions preload ([#14203](https://github.com/blockscout/blockscout/issues/14203))
 - Handle RPC errors in ContractCreator, limit retries to 5 ([#14136](https://github.com/blockscout/blockscout/issues/14136))
 - Prevent duplicate missing block range inserts ([#14138](https://github.com/blockscout/blockscout/issues/14138))
@@ -51,6 +129,7 @@
 
 ### ⚡ Performance
 
+- Optimize token1155tx API v1 endpoint ([#14202](https://github.com/blockscout/blockscout/issues/14202))
 - Optimize optional address preloads across tx endpoints ([#14165](https://github.com/blockscout/blockscout/pull/14165))
 - Optimize on demand hot contracts performance ([#14150](https://github.com/blockscout/blockscout/issues/14150))
 - Remove join to "blocks" in api/v2/blocks/:block_number/transactions API endpoint ([#14162](https://github.com/blockscout/blockscout/issues/14162))
@@ -58,6 +137,11 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Update LICENCE ([#14201](https://github.com/blockscout/blockscout/pull/14201))
+- Remove "transaction_hash", "block_hash" and "block_index" from internal transactions, migrate Address Hashes to Address IDs ([#14099](https://github.com/blockscout/blockscout/issues/14099))
+- Remove timeout for test for FillInternalTransactionsAddressIds ([#14266](https://github.com/blockscout/blockscout/pull/14266))
+- Increase default timeout for FillInternalTransactionsAddressIds ([#14264](https://github.com/blockscout/blockscout/pull/14264))
+- Expand action of API_DISABLE_CONTRACT_CREATION_INTERNAL_TRANSACTION_ASSOCIATION flag to preload smart-contract associations ((#14257)[https://github.com/blockscout/blockscout/pull/14257])
 - Add Autoscout promo in the logs ([#14234](https://github.com/blockscout/blockscout/pull/14234))
 - Improve internal transactions migrations ([#14233](https://github.com/blockscout/blockscout/pull/14233))
 - Remove unused Explorer.Chain.Address.find_contract_addresses/2 function ([#14220](https://github.com/blockscout/blockscout/pull/14220))
@@ -66,7 +150,6 @@
 - FillInternalTransactionsAddressIds improvements ([#14208](https://github.com/blockscout/blockscout/pull/14208))
 - Remove timeout between successful migrations ([#14198](https://github.com/blockscout/blockscout/issues/14198))
 - Add batch size env for FillInternalTransactionsAddressIds migration ([#14204](https://github.com/blockscout/blockscout/issues/14204))
-- Remove transaction_hash from internal transactions ([#14099](https://github.com/blockscout/blockscout/issues/14099))
 - Add Celo OpenAPI specs ([#14197](https://github.com/blockscout/blockscout/issues/14197), [#14229](https://github.com/blockscout/blockscout/pull/14229))
 - Cover counters to multichain export with unit tests ([#14193](https://github.com/blockscout/blockscout/issues/14193))
 - Update credo config ([#14147](https://github.com/blockscout/blockscout/issues/14147))
@@ -90,10 +173,12 @@
 |-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
 | `DISABLE_BLOCK_BROADCAST_ENRICHMENT`                    | If `true`, disables ENS and metadata enrichment for `new_block` WebSocket broadcasts. Implemented in [#12074](https://github.com/blockscout/blockscout/pull/12074).                                                                                                                                                                                                                                                                                | Version: v11.0.0\+ <br />Default: (empty) <br />Applications: API                                                                                                                                                                                                                                                                                                                |
 | `INDEXER_MASSIVE_BLOCK_THRESHOLD`                             | Max transactions count in a single block after which the block is treated as massive. Implemented in [#13994](https://github.com/blockscout/blockscout/pull/13994).                                                                                                                                                                                                                                                                                                                                                              | Version: v11.0.0\+ <br />Default: `1000` <br />Applications: Indexer                                         |
+| `INDEXER_CURRENT_TOKEN_BALANCES_IMPORT_CHUNK_SIZE`            | Number of CurrentTokenBalances items processed per chunk in token balances import. Default is 50; effective minimum is 1. Implemented in [#14250](https://github.com/blockscout/blockscout/pull/14250).                                                                                                                                                                                                                                                                                                                          | Version: v11.0.0\+ <br />Default: `50` <br />Applications: Indexer                                         |
 | `INDEXER_FHE_OPERATIONS_ENABLED`                              | Flag to enable parsing of Fully Homomorphic Encryption (FHE) operations from transactions. Implemented in [#13742](https://github.com/blockscout/blockscout/pull/13742).                                                                                                                                                                                                                                                                                                                                                         | Version: v11.0.0\+ <br />Default: `false` <br />Applications: Indexer                                      |
 | `MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_BATCH_SIZE`     | Number of internal transactions to fill their address ids in the batch. Implemented in [#14204](https://github.com/blockscout/blockscout/pull/14204).                                                                                                                                                                                                                 | Version: v11.0.0\+ <br />Default: `30` <br />Applications: Indexer          |
-| `MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_TIMEOUT`     | Timeout between filling internal transactions address ids batches processing. Implemented in [#14208](https://github.com/blockscout/blockscout/pull/14208).                                                                                                                                                                                                              | Version: v11.0.0\+ <br />Default: `0s` <br />Applications: Indexer          |
-| `DISABLE_TRANSACTIONS_BENS_PRELOAD`       | If `true`, skips ENS name preloading in responses for transaction list endpoints: `/api/v2/transactions`, `/api/v2/addresses/:hash/transactions`, `/api/v2/blocks/:hash/transactions`.                            | Version: v11.0.0+ <br />Default: `false` <br />Applications: API |
+| `MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_TIMEOUT`     | Timeout between filling internal transactions address ids batches processing. Implemented in [#14208](https://github.com/blockscout/blockscout/pull/14208).                                                                                                                                                                                                              | Version: v11.0.0\+ <br />Default: `5s` <br />Applications: Indexer          |
+| `DISABLE_BLOCKS_BENS_PRELOAD`             | If `true`, skips ENS name preloading in responses for block list endpoints: `/api/v2/blocks`, `/api/v2/main-page/blocks`, `/api/v2/blocks/optimism-batch/:batch_number`, `/api/v2/blocks/scroll-batch/:batch_number`.           | Version: v11.0.0+ <br />Default: `false` <br />Applications: API |
+| `DISABLE_TRANSACTIONS_BENS_PRELOAD`       | If `true`, skips ENS name preloading in responses for transaction list endpoints: `/api/v2/transactions`, `/api/v2/transactions/watchlist`, `/api/v2/main-page/transactions`, `/api/v2/main-page/transactions/watchlist`, `/api/v2/addresses/:hash/transactions`, `/api/v2/blocks/:hash/transactions`.                            | Version: v11.0.0+ <br />Default: `false` <br />Applications: API |
 | `DISABLE_TOKEN_TRANSFERS_BENS_PRELOAD`    | If `true`, skips ENS name preloading in responses for token transfer list endpoints: `/api/v2/token-transfers`, `/api/v2/addresses/:hash/token-transfers`, `/api/v2/tokens/:address_hash_param/transfers`.        | Version: v11.0.0+ <br />Default: `false` <br />Applications: API |
 | `CSV_EXPORT_ASYNC_ENABLED`                       | Enables async CSV export for supported endpoints. When enabled, the API returns `202 Accepted` with a `request_id` and processes exports through Oban instead of streaming them directly. Implemented in [#14028](https://github.com/blockscout/blockscout/pull/14028) | Version: v11.0.0\+ Required: No <br />Default: `false` <br />Applications: API                                                          |
 | `CSV_EXPORT_ASYNC_OBAN_CONCURRENCY`              | Sets Oban concurrency for the `csv_export` queue used by async CSV exports. Implemented in [#14028](https://github.com/blockscout/blockscout/pull/14028)                                     | Version: v11.0.0\+ Required: No <br />Default: `10` <br />Applications: API                                                             |

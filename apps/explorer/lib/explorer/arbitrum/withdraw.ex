@@ -21,8 +21,8 @@ defmodule Explorer.Arbitrum.Withdraw do
                otherwise the transaction will fail. Typically this field contain calldata for
                `finalizeInboundTransfer(address,address,address,uint256,bytes)` method of the
                Bridge contract and it intended to withdraw supported tokens instead of native coins.
-    * `token_address` - extracted L1 address of the token to withdraw in case of `data` field represents Bridge transaction
-    * `token_destination` - extracted L1 receiver address in case of `data` field represents Bridge transaction
+    * `token_address_hash` - extracted L1 address of the token to withdraw in case of `data` field represents Bridge transaction
+    * `token_destination_address_hash` - extracted L1 receiver address in case of `data` field represents Bridge transaction
     * `token_amount` - extracted token amount in case of `data` field represents Bridge transaction
     * `token_decimals` - how many decimal places the associated L1 token has
     * `token_name` - the name of the associated L1 token
@@ -42,8 +42,8 @@ defmodule Explorer.Arbitrum.Withdraw do
           data: data,
           token:
             %{
-              address: token_address,
-              destination: token_destination,
+              address_hash: token_address_hash,
+              destination_address_hash: token_destination_address_hash,
               amount: token_amount,
               decimals: token_decimals,
               name: token_name,
@@ -62,8 +62,8 @@ defmodule Explorer.Arbitrum.Withdraw do
   @typep l2_timestamp :: non_neg_integer()
   @typep callvalue :: non_neg_integer()
   @typep data :: binary()
-  @typep token_address :: Hash.Address.t()
-  @typep token_destination :: Hash.Address.t()
+  @typep token_address_hash :: Hash.Address.t() | nil
+  @typep token_destination_address_hash :: Hash.Address.t() | nil
   @typep token_amount :: non_neg_integer()
   @typep token_decimals :: non_neg_integer() | nil
   @typep token_name :: binary() | nil

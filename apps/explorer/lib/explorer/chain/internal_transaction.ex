@@ -638,11 +638,11 @@ defmodule Explorer.Chain.InternalTransaction do
     address_id_field = String.to_existing_atom("#{address_field}_id")
 
     cond do
-      address_id_or_ids in [[], nil] or not address_ids_indexes_exists?() ->
-        dynamic([it], field(it, ^address_hash_field) in ^address_hashes)
+      not address_ids_indexes_exists?() ->
+        adjust_address_match_dynamic(address_hash_field, address_hashes)
 
       address_ids_filled?() ->
-        dynamic([it], field(it, ^address_id_field) in ^address_ids)
+        adjust_address_match_dynamic(address_id_field, address_ids)
 
       true ->
         dynamic(
@@ -651,6 +651,9 @@ defmodule Explorer.Chain.InternalTransaction do
         )
     end
   end
+
+  defp adjust_address_match_dynamic(field, [value]), do: dynamic([it], field(it, ^field) == ^value)
+  defp adjust_address_match_dynamic(field, values), do: dynamic([it], field(it, ^field) in ^values)
 
   defp address_ids_indexes_exists? do
     BackgroundMigrations.get_heavy_indexes_create_address_ids_internal_transactions_indexes_finished()
@@ -1226,7 +1229,8 @@ defmodule Explorer.Chain.InternalTransaction do
           Keyword.merge(options,
             address_preloads: [
               from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
-              to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
+              to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
+              created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
             ]
           )
 

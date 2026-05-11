@@ -145,6 +145,9 @@ default_global_api_rate_limit = 25
 default_api_rate_limit_by_key = 10
 api_rate_limit_redis_url = ConfigHelper.safe_get_env("API_RATE_LIMIT_HAMMER_REDIS_URL", nil)
 
+api_rate_limit_redis_sentinel_urls =
+  ConfigHelper.safe_get_env("API_RATE_LIMIT_HAMMER_REDIS_SENTINEL_URLS", "")
+
 config :block_scout_web, :api_rate_limit,
   disabled: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_DISABLED"),
   static_api_key_value: System.get_env("API_RATE_LIMIT_STATIC_API_KEY"),
@@ -172,8 +175,11 @@ config :block_scout_web, :api_rate_limit,
   api_v2_token_ttl: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_UI_V2_TOKEN_TTL", "30m"),
   eth_json_rpc_max_batch_size: ConfigHelper.parse_integer_env_var("ETH_JSON_RPC_MAX_BATCH_SIZE", 5),
   redis_url: if(api_rate_limit_redis_url == "", do: nil, else: api_rate_limit_redis_url),
+  redis_ssl: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_HAMMER_REDIS_SSL_ENABLED", "false"),
+  redis_sentinel_urls: if(api_rate_limit_redis_sentinel_urls == "", do: nil, else: api_rate_limit_redis_sentinel_urls),
+  redis_sentinel_master_name: ConfigHelper.safe_get_env("API_RATE_LIMIT_HAMMER_REDIS_SENTINEL_MASTER_NAME", ""),
   rate_limit_backend:
-    if(api_rate_limit_redis_url == "",
+    if(api_rate_limit_redis_url == "" and api_rate_limit_redis_sentinel_urls == "",
       do: BlockScoutWeb.RateLimit.Hammer.ETS,
       else: BlockScoutWeb.RateLimit.Hammer.Redis
     ),
@@ -320,6 +326,8 @@ config :explorer,
      end),
   addresses_blacklist: System.get_env("ADDRESSES_BLACKLIST"),
   addresses_blacklist_key: System.get_env("ADDRESSES_BLACKLIST_KEY"),
+  token_balances_import_chunk_size:
+    ConfigHelper.parse_integer_env_var("INDEXER_CURRENT_TOKEN_BALANCES_IMPORT_CHUNK_SIZE", 50),
   elasticity_multiplier: ConfigHelper.parse_integer_env_var("EIP_1559_ELASTICITY_MULTIPLIER", 2),
   base_fee_max_change_denominator: ConfigHelper.parse_integer_env_var("EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR", 8),
   base_fee_lower_bound: ConfigHelper.parse_integer_env_var("EIP_1559_BASE_FEE_LOWER_BOUND_WEI", 0),
@@ -562,6 +570,13 @@ config :explorer, Explorer.Market.Fetcher.Token,
       ConfigHelper.parse_integer_env_var("TOKEN_EXCHANGE_RATE_MAX_BATCH_SIZE", 500)
     )
 
+token_list_url = ConfigHelper.parse_url_env_var("TOKEN_LIST_URL")
+
+config :explorer, Explorer.Market.Fetcher.TokenList,
+  enabled: !is_nil(token_list_url),
+  token_list_url: token_list_url,
+  refetch_interval: ConfigHelper.parse_time_env_var("TOKEN_LIST_REFETCH_INTERVAL", "24h")
+
 config :explorer, Explorer.Market.Fetcher.History,
   enabled: !disable_exchange_rates? && ConfigHelper.parse_bool_env_var("MARKET_HISTORY_FETCHER_ENABLED", "true"),
   history_fetch_interval: ConfigHelper.parse_time_env_var("MARKET_HISTORY_FETCH_INTERVAL", "1h"),
@@ -570,6 +585,11 @@ config :explorer, Explorer.Market.Fetcher.History,
       "MARKET_HISTORY_FIRST_FETCH_DAY_COUNT",
       ConfigHelper.parse_integer_env_var("EXCHANGE_RATES_HISTORY_FIRST_FETCH_DAY_COUNT", 365)
     )
+
+config :explorer, Explorer.Chain.PendingOperationsHelper,
+  transactions_batch_size:
+    ConfigHelper.parse_integer_env_var("PENDING_OPERATIONS_HELPER_TRANSACTIONS_BATCH_SIZE", 1000, min: 1),
+  blocks_batch_size: ConfigHelper.parse_integer_env_var("PENDING_OPERATIONS_HELPER_BLOCKS_BATCH_SIZE", 10, min: 1)
 
 config :explorer, Explorer.Chain.Transaction,
   block_miner_gets_burnt_fees?: ConfigHelper.parse_bool_env_var("BLOCK_MINER_GETS_BURNT_FEES"),
@@ -698,6 +718,7 @@ config :explorer, Explorer.MicroserviceInterfaces.BENS,
   service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_BENS_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_BENS_ENABLED"),
   protocols: ConfigHelper.parse_list_env_var("MICROSERVICE_BENS_PROTOCOLS"),
+  disable_blocks_bens_preload: ConfigHelper.parse_bool_env_var("DISABLE_BLOCKS_BENS_PRELOAD", "false"),
   disable_transactions_bens_preload: ConfigHelper.parse_bool_env_var("DISABLE_TRANSACTIONS_BENS_PRELOAD", "false"),
   disable_token_transfers_bens_preload: ConfigHelper.parse_bool_env_var("DISABLE_TOKEN_TRANSFERS_BENS_PRELOAD", "false")
 
@@ -892,7 +913,7 @@ config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions,
 
 config :explorer, Explorer.Migrator.FillInternalTransactionsAddressIds,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_BATCH_SIZE", 30),
-  timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_TIMEOUT", "0s")
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_TIMEOUT", "5s")
 
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
@@ -927,10 +948,14 @@ config :explorer, Explorer.Chain.Fetcher.AddressesBlacklist,
   provider: ConfigHelper.parse_catalog_value("ADDRESSES_BLACKLIST_PROVIDER", ["blockaid"], false, "blockaid")
 
 rate_limiter_redis_url = ConfigHelper.parse_url_env_var("RATE_LIMITER_REDIS_URL")
+rate_limiter_redis_sentinel_urls = ConfigHelper.safe_get_env("RATE_LIMITER_REDIS_SENTINEL_URLS", "")
 
 config :explorer, Explorer.Utility.RateLimiter,
-  storage: (rate_limiter_redis_url && :redis) || :ets,
+  storage: if(rate_limiter_redis_url || rate_limiter_redis_sentinel_urls != "", do: :redis, else: :ets),
   redis_url: rate_limiter_redis_url,
+  redis_ssl: ConfigHelper.parse_bool_env_var("RATE_LIMITER_REDIS_SSL_ENABLED", "false"),
+  redis_sentinel_urls: rate_limiter_redis_sentinel_urls,
+  redis_sentinel_master_name: ConfigHelper.safe_get_env("RATE_LIMITER_REDIS_SENTINEL_MASTER_NAME", ""),
   on_demand: [
     time_interval_limit: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_TIME_INTERVAL", "5s"),
     limit_by_ip: ConfigHelper.parse_integer_env_var("RATE_LIMITER_ON_DEMAND_LIMIT_BY_IP", 50),
@@ -939,7 +964,10 @@ config :explorer, Explorer.Utility.RateLimiter,
     limitation_period: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_LIMITATION_PERIOD", "1h")
   ],
   hammer_backend_module:
-    if(rate_limiter_redis_url, do: Explorer.Utility.Hammer.Redis, else: Explorer.Utility.Hammer.ETS)
+    if(rate_limiter_redis_url || rate_limiter_redis_sentinel_urls != "",
+      do: Explorer.Utility.Hammer.Redis,
+      else: Explorer.Utility.Hammer.ETS
+    )
 
 universal_proxy_config_url =
   ConfigHelper.parse_url_env_var(
@@ -1080,7 +1108,8 @@ config :indexer, Indexer.Transform.FheOperations,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_FHE_OPERATIONS_ENABLED", "false")
 
 config :indexer, Indexer.PendingTransactionsSanitizer,
-  interval: ConfigHelper.parse_time_env_var("INDEXER_PENDING_TRANSACTIONS_SANITIZER_INTERVAL", "1h")
+  interval: ConfigHelper.parse_time_env_var("INDEXER_PENDING_TRANSACTIONS_SANITIZER_INTERVAL", "1h"),
+  window_size: ConfigHelper.parse_time_env_var("INDEXER_PENDING_TRANSACTIONS_WINDOW_SIZE", "1d")
 
 config :indexer, Indexer.TokenTransferBlockConsensusSanitizer,
   interval: ConfigHelper.parse_time_env_var("INDEXER_TOKEN_TRANSFER_BLOCK_CONSENSUS_SANITIZER_INTERVAL", "20m")
@@ -1109,7 +1138,13 @@ config :indexer, Indexer.Fetcher.TokenCountersUpdater,
 
 config :indexer, Indexer.Fetcher.OnDemand.TokenBalance,
   threshold: ConfigHelper.parse_time_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD", "1h"),
-  fallback_threshold_in_blocks: 500
+  fallback_threshold_in_blocks: 500,
+  batch_size: ConfigHelper.parse_integer_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_BATCH_SIZE", 500),
+  concurrency: ConfigHelper.parse_integer_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_CONCURRENCY", 4),
+  address_queue_batch_size:
+    ConfigHelper.parse_integer_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_ADDRESS_QUEUE_BATCH_SIZE", 50),
+  address_queue_flush_interval:
+    ConfigHelper.parse_time_env_var("TOKEN_BALANCE_ON_DEMAND_FETCHER_ADDRESS_QUEUE_FLUSH_INTERVAL", "1s")
 
 config :indexer, Indexer.Fetcher.OnDemand.CoinBalance,
   threshold: ConfigHelper.parse_time_env_var("COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD", "1h"),
@@ -1124,8 +1159,13 @@ config :indexer, Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch,
 config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BLOCK_REWARD_FETCHER")
 
-config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor,
+config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: trace_url_missing?
+
+config :indexer, Indexer.Fetcher.InternalTransaction,
   disabled?: trace_url_missing? or ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER")
+
+config :indexer, Indexer.Fetcher.OnDemand.InternalTransaction,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER")
 
 disable_coin_balances_fetcher? = ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_ADDRESS_COIN_BALANCE_FETCHER")
 

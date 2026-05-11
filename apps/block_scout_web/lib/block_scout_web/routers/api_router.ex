@@ -111,7 +111,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(CheckFeature, feature_check: &mud_enabled?/0)
   end
 
-  alias BlockScoutWeb.API.V2
+  alias BlockScoutWeb.API.{Legacy, V2}
 
   forward("/account", AccountRouter)
 
@@ -466,13 +466,13 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/batches", V2.ArbitrumController, :batches)
         get("/batches/count", V2.ArbitrumController, :batches_count)
         get("/batches/:batch_number", V2.ArbitrumController, :batch)
-        get("/batches/da/anytrust/:data_hash", V2.ArbitrumController, :batch_by_data_availability_info)
-        get("/batches/da/eigenda/:data_hash", V2.ArbitrumController, :batch_by_data_availability_info)
+        get("/batches/da/anytrust/:data_hash", V2.ArbitrumController, :batch_by_anytrust_da_info)
+        get("/batches/da/eigenda/:data_hash", V2.ArbitrumController, :batch_by_eigenda_da_info)
 
         get(
           "/batches/da/celestia/:height/:transaction_commitment",
           V2.ArbitrumController,
-          :batch_by_data_availability_info
+          :batch_by_celestia_da_info
         )
       end
     end
@@ -481,6 +481,19 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/", V2.AdvancedFilterController, :list)
       get("/csv", V2.AdvancedFilterController, :list_csv)
       get("/methods", V2.AdvancedFilterController, :list_methods)
+    end
+  end
+
+  scope "/legacy" do
+    pipe_through(:api_v2)
+
+    scope "/logs" do
+      get("/get-logs", Legacy.LogsController, :get_logs)
+    end
+
+    scope "/block" do
+      get("/get-block-number-by-time", Legacy.BlockController, :get_block_number_by_time)
+      get("/eth-block-number", Legacy.BlockController, :eth_block_number)
     end
   end
 

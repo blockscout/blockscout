@@ -25,7 +25,6 @@ defmodule Indexer.Fetcher.InternalTransaction do
   alias Explorer.Chain.{Block, Hash, PendingBlockOperation, PendingTransactionOperation, Transaction}
   alias Explorer.Chain.Cache.{Accounts, Blocks}
   alias Indexer.{BufferedTask, Tracer}
-  alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
   alias Indexer.Transform.{AddressCoinBalances, Addresses, AddressTokenBalances}
   alias Indexer.Transform.Celo.TransactionTokenTransfers, as: CeloTransactionTokenTransfers
 
@@ -50,9 +49,10 @@ defmodule Indexer.Fetcher.InternalTransaction do
   *Note*: The internal transactions for individual transactions cannot be paginated,
   so the total number of internal transactions that could be produced is unknown.
   """
-  @spec async_fetch([Block.block_number()], [Transaction.t()], boolean()) :: :ok
-  def async_fetch(block_numbers, transactions, realtime?, timeout \\ 5000) when is_list(block_numbers) do
-    if InternalTransactionSupervisor.disabled?() do
+  @spec async_fetch([Block.block_number()], [Transaction.t()], boolean(), boolean(), integer()) :: :ok
+  def async_fetch(block_numbers, transactions, realtime?, for_contract_creator? \\ false, timeout \\ 5000)
+      when is_list(block_numbers) do
+    if disabled?() && !for_contract_creator? do
       :ok
     else
       data =
@@ -95,16 +95,42 @@ defmodule Indexer.Fetcher.InternalTransaction do
   def init(initial, reducer, json_rpc_named_arguments) do
     stream_reducer = RangesHelper.stream_reducer_traceable(reducer)
 
-    {:ok, final} =
-      case queue_data_type(json_rpc_named_arguments) do
-        :block_number ->
-          PendingBlockOperation.stream_blocks_with_unfetched_internal_transactions(initial, stream_reducer)
+    if disabled?() do
+      {:ok, final} =
+        case queue_data_type(json_rpc_named_arguments) do
+          :block_number ->
+            PendingBlockOperation.stream_blocks_with_unfetched_internal_transactions(
+              initial,
+              stream_reducer,
+              false,
+              true
+            )
 
-        :transaction_params ->
-          PendingTransactionOperation.stream_transactions_with_unfetched_internal_transactions(initial, stream_reducer)
-      end
+          :transaction_params ->
+            PendingTransactionOperation.stream_transactions_with_unfetched_internal_transactions(
+              initial,
+              stream_reducer,
+              false,
+              true
+            )
+        end
 
-    final
+      final
+    else
+      {:ok, final} =
+        case queue_data_type(json_rpc_named_arguments) do
+          :block_number ->
+            PendingBlockOperation.stream_blocks_with_unfetched_internal_transactions(initial, stream_reducer)
+
+          :transaction_params ->
+            PendingTransactionOperation.stream_transactions_with_unfetched_internal_transactions(
+              initial,
+              stream_reducer
+            )
+        end
+
+      final
+    end
   end
 
   defp params(%{block_number: block_number, hash: hash, index: index}) when is_integer(block_number) do
@@ -449,7 +475,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   def defaults do
     [
-      poll: false,
+      poll: true,
       flush_interval: :timer.seconds(3),
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
       max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
@@ -482,5 +508,15 @@ defmodule Indexer.Fetcher.InternalTransaction do
     else
       error -> Logger.error("Failed to cast string to hash: #{inspect(error)}")
     end
+  end
+
+  @doc """
+  Returns whether the internal transaction fetcher is disabled.
+
+   This can be used to conditionally disable fetching internal transactions, for example, in a staging environment where the load on the JSON-RPC should be minimized.
+  """
+  @spec disabled? :: boolean()
+  def disabled? do
+    Application.get_env(:indexer, __MODULE__, [])[:disabled?] == true
   end
 end

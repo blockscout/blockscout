@@ -11,17 +11,9 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueue do
 
   alias Explorer.Repo
 
-  alias Explorer.Chain.{
-    Block,
-    InternalTransaction,
-    PendingBlockOperation,
-    PendingOperationsHelper,
-    PendingTransactionOperation,
-    Transaction
-  }
+  alias Explorer.Chain.{InternalTransaction, PendingOperationsHelper}
 
   alias Explorer.Chain.InternalTransaction.DeleteQueue
-  alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.InternalTransaction, as: InternalTransactionFetcher
   alias Indexer.Helper, as: IndexerHelper
@@ -68,7 +60,7 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueue do
         |> where([it], it.block_number in ^block_numbers)
         |> Repo.delete_all(timeout: :infinity)
 
-        insert_pending_operations(block_numbers)
+        PendingOperationsHelper.insert_pending_operations(block_numbers)
       end)
 
     case result do
@@ -82,36 +74,6 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueue do
       {:error, error} ->
         Logger.error("Unable to clean internal transactions for reorg: #{inspect(error)}")
         {:retry, block_numbers}
-    end
-  end
-
-  defp insert_pending_operations(block_numbers) do
-    case PendingOperationsHelper.pending_operations_type() do
-      "transactions" ->
-        transactions = Transaction.get_transactions_of_block_numbers(block_numbers)
-
-        pto_params =
-          transactions
-          |> Transaction.filter_non_traceable_transactions()
-          |> Enum.map(&%{transaction_hash: &1.hash})
-          |> ExplorerHelper.add_timestamps()
-
-        Repo.insert_all(PendingTransactionOperation, pto_params, on_conflict: :nothing)
-        {[], transactions}
-
-      "blocks" ->
-        pbo_params =
-          Block
-          |> where([b], b.number in ^block_numbers)
-          |> where([b], b.consensus == true)
-          |> select([b], %{block_hash: b.hash, block_number: b.number})
-          |> Repo.all()
-          |> ExplorerHelper.add_timestamps()
-
-        {_total, inserted} =
-          Repo.insert_all(PendingBlockOperation, pbo_params, on_conflict: :nothing, returning: [:block_number])
-
-        {Enum.map(inserted, & &1.block_number), []}
     end
   end
 

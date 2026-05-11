@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
 
   plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
 
-  tags(["token_transfers"])
+  tags(["token-transfers"])
 
   @api_true [api?: true]
 

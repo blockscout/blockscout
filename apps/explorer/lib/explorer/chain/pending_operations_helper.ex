@@ -3,11 +3,16 @@ defmodule Explorer.Chain.PendingOperationsHelper do
 
   import Ecto.Query
 
-  alias Explorer.Chain.{Hash, PendingBlockOperation, PendingTransactionOperation, Transaction}
+  alias Explorer.Chain.{Block, Hash, PendingBlockOperation, PendingTransactionOperation, Transaction}
   alias Explorer.{Helper, Repo}
 
-  @transactions_batch_size 1000
-  @blocks_batch_size 10
+  defp transactions_batch_size,
+    do:
+      Application.get_env(:explorer, Explorer.Chain.PendingOperationsHelper)[:transactions_batch_size] ||
+        1000
+
+  defp blocks_batch_size,
+    do: Application.get_env(:explorer, Explorer.Chain.PendingOperationsHelper)[:blocks_batch_size] || 10
 
   def pending_operations_type do
     if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.Geth and
@@ -70,12 +75,14 @@ defmodule Explorer.Chain.PendingOperationsHelper do
   end
 
   defp from_transactions_to_blocks_function do
+    batch_size = transactions_batch_size()
+
     pbo_params_query =
       from(
         pto in PendingTransactionOperation,
         join: t in assoc(pto, :transaction),
-        select: %{block_hash: t.block_hash, block_number: t.block_number},
-        limit: @transactions_batch_size
+        select: %{block_hash: t.block_hash, block_number: t.block_number, priority: pto.priority},
+        limit: ^batch_size
       )
 
     case Repo.all(pbo_params_query) do
@@ -102,7 +109,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
   end
 
   defp from_blocks_to_transactions_function do
-    from_blocks_to_transactions_function(@blocks_batch_size)
+    from_blocks_to_transactions_function(blocks_batch_size())
   end
 
   defp from_blocks_to_transactions_function(blocks_batch_size) do
@@ -238,5 +245,83 @@ defmodule Explorer.Chain.PendingOperationsHelper do
     min_block_number
     |> block_range_in_query(max_block_number)
     |> Repo.exists?()
+  end
+
+  @doc """
+    Inserts pending operations for the given block numbers.
+  """
+  @spec insert_pending_operations([integer()], integer() | nil) :: {[integer()], [Explorer.Chain.Transaction.t()]}
+  def insert_pending_operations(block_numbers, priority \\ nil) do
+    case pending_operations_type() do
+      "transactions" ->
+        default_on_conflict = default_pto_on_conflict()
+        transactions = Transaction.get_transactions_of_block_numbers(block_numbers)
+
+        pto_params =
+          transactions
+          |> Transaction.filter_non_traceable_transactions()
+          |> Enum.map(&%{transaction_hash: &1.hash, priority: priority})
+          |> Helper.add_timestamps()
+
+        Repo.insert_all(PendingTransactionOperation, pto_params,
+          on_conflict: default_on_conflict,
+          conflict_target: [:transaction_hash]
+        )
+
+        {[], transactions}
+
+      "blocks" ->
+        default_on_conflict = default_pbo_on_conflict()
+
+        pbo_params =
+          Block
+          |> where([b], b.number in ^block_numbers)
+          |> where([b], b.consensus == true)
+          |> select([b], %{block_hash: b.hash, block_number: b.number})
+          |> Repo.all()
+          |> add_priority(priority)
+          |> Helper.add_timestamps()
+
+        {_total, inserted} =
+          Repo.insert_all(PendingBlockOperation, pbo_params,
+            on_conflict: default_on_conflict,
+            conflict_target: [:block_hash],
+            returning: [:block_number]
+          )
+
+        {Enum.map(inserted, & &1.block_number), []}
+    end
+  end
+
+  defp default_pbo_on_conflict do
+    from(
+      pending_block_operation in PendingBlockOperation,
+      update: [
+        set: [
+          priority: fragment("EXCLUDED.priority"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", pending_block_operation.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", pending_block_operation.updated_at)
+        ]
+      ],
+      where: is_nil(pending_block_operation.priority) and fragment("EXCLUDED.priority IS NOT NULL")
+    )
+  end
+
+  defp default_pto_on_conflict do
+    from(
+      pending_transaction_operation in PendingTransactionOperation,
+      update: [
+        set: [
+          priority: fragment("EXCLUDED.priority"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", pending_transaction_operation.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", pending_transaction_operation.updated_at)
+        ]
+      ],
+      where: is_nil(pending_transaction_operation.priority) and fragment("EXCLUDED.priority IS NOT NULL")
+    )
+  end
+
+  defp add_priority(params, priority) do
+    Enum.map(params, &Map.merge(&1, %{priority: priority}))
   end
 end

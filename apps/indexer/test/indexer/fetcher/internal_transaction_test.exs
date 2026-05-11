@@ -134,9 +134,18 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   end
 
   describe "init/2" do
+    setup do
+      initial_env = Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction, initial_env)
+      end)
+    end
+
     test "buffers blocks with unfetched internal transactions", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction, disabled?: false)
       block = insert(:block)
       insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
 
@@ -330,41 +339,6 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
       assert %{block_hash: ^block_hash} = Repo.get(PendingBlockOperation, block_hash)
     end
-  end
-
-  test "doesn't delete pending block operations after block import if no async process was requested", %{
-    json_rpc_named_arguments: json_rpc_named_arguments
-  } do
-    fetcher_options =
-      Keyword.merge([poll: true, json_rpc_named_arguments: json_rpc_named_arguments], InternalTransaction.defaults())
-
-    if fetcher_options[:poll] do
-      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _options ->
-        {:ok, [%{id: id, result: []}]}
-      end)
-    end
-
-    InternalTransaction.Supervisor.Case.start_supervised!(fetcher_options)
-
-    %Ecto.Changeset{valid?: true, changes: block_changes} =
-      Block.changeset(%Block{}, params_for(:block, miner_hash: insert(:address).hash, number: 1))
-
-    changes_list = [block_changes]
-    timestamp = DateTime.utc_now()
-    options = %{timestamps: %{inserted_at: timestamp, updated_at: timestamp}}
-
-    assert [] = Repo.all(PendingBlockOperation)
-
-    {:ok, %{blocks: [%{number: block_number, hash: block_hash}]}} =
-      Multi.new()
-      |> Blocks.run(changes_list, options)
-      |> Repo.transaction()
-
-    assert %{block_number: ^block_number, block_hash: ^block_hash} = Repo.one(PendingBlockOperation)
-
-    Process.sleep(4000)
-
-    assert %{block_number: ^block_number, block_hash: ^block_hash} = Repo.one(PendingBlockOperation)
   end
 
   if Application.compile_env(:explorer, :chain_type) == :arbitrum do

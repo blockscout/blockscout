@@ -98,4 +98,5 @@ defmodule EthereumJSONRPC.Withdrawal do
 
   defp entry_to_elixir({key, value}) when key in ~w(index validatorIndex amount), do: {key, quantity_to_integer(value)}
   defp entry_to_elixir({key, value}) when key in ~w(address), do: {key, value}
+  defp entry_to_elixir({_, _}), do: {:ignore, :ignore}
 end

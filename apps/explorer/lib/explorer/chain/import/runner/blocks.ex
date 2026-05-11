@@ -19,7 +19,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     BlockNumberHelper,
     DenormalizationHelper,
     Import,
-    PendingBlockOperation,
     PendingOperationsHelper,
     SmartContract,
     Token,
@@ -104,16 +103,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :address_referencing,
         :blocks,
         :blocks
-      )
-    end)
-    |> Multi.run(:new_pending_block_operations, fn repo, %{blocks: blocks} ->
-      Instrumenter.block_import_stage_runner(
-        fn ->
-          new_pending_block_operations(repo, blocks, insert_options)
-        end,
-        :address_referencing,
-        :blocks,
-        :new_pending_block_operations
       )
     end)
     |> Multi.run(:uncle_fetched_block_second_degree_relations, fn repo, _ ->
@@ -693,32 +682,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         }
 
     lose_consensus(repo, blocks_changes, opts)
-  end
-
-  defp new_pending_block_operations(repo, inserted_blocks, %{timeout: timeout, timestamps: timestamps}) do
-    case PendingOperationsHelper.pending_operations_type() do
-      "blocks" ->
-        sorted_pending_ops =
-          inserted_blocks
-          |> RangesHelper.filter_by_height_range(&RangesHelper.traceable_block_number?(&1.number))
-          |> Enum.filter(& &1.consensus)
-          |> Enum.map(&%{block_hash: &1.hash, block_number: &1.number})
-          |> Enum.sort()
-
-        Import.insert_changes_list(
-          repo,
-          sorted_pending_ops,
-          conflict_target: :block_hash,
-          on_conflict: :nothing,
-          for: PendingBlockOperation,
-          returning: true,
-          timeout: timeout,
-          timestamps: timestamps
-        )
-
-      _other_type ->
-        {:ok, []}
-    end
   end
 
   defp delete_address_coin_balances(_repo, [], _options), do: {:ok, []}

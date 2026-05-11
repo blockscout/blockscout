@@ -298,6 +298,13 @@ defmodule Indexer.Block.FetcherTest do
     test "can import range with all synchronous imported schemas", %{
       block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
     } do
+      initial_env = Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction, initial_env)
+      end)
+
+      Application.put_env(:indexer, Indexer.Fetcher.InternalTransaction, disabled?: false)
       block_number = @first_full_block_number
 
       if Application.get_env(:explorer, :chain_type) == :filecoin do

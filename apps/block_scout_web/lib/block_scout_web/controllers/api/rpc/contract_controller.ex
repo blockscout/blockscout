@@ -45,7 +45,9 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   def getcontractcreation(conn, %{"contractaddresses" => contract_address_hash_strings} = params) do
     addresses =
       contract_address_hash_strings
-      |> String.split(",")
+      |> String.split(",", trim: true)
+      |> Enum.map(&String.trim/1)
+      |> Enum.reject(&(&1 == ""))
       |> Enum.take(@addresses_limit)
       |> Enum.map(fn address_hash_string ->
         case validate_address(address_hash_string, params) do

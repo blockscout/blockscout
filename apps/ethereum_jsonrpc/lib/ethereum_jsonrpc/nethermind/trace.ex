@@ -484,4 +484,5 @@ defmodule EthereumJSONRPC.Nethermind.Trace do
   end
 
   defp entry_to_elixir({"transactionIndex", index} = entry) when is_integer(index), do: entry
+  defp entry_to_elixir({_, _}), do: {:ignore, :ignore}
 end

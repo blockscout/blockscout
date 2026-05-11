@@ -1103,6 +1103,49 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert creation_bytecode == to_string(transaction.input)
     end
 
+    test "returns contract creation info for addresses separated by comma and whitespace", %{conn: conn, params: params} do
+      {:ok, block_timestamp, _} = DateTime.from_iso8601("2021-05-05T21:42:11.000000Z")
+
+      address = insert(:contract_address)
+      address_1 = insert(:contract_address)
+
+      transaction =
+        insert(:transaction,
+          created_contract_address: address,
+          block_timestamp: block_timestamp
+        )
+
+      transaction_1 =
+        insert(:transaction,
+          created_contract_address: address_1,
+          block_timestamp: block_timestamp
+        )
+
+      %{
+        "status" => "1",
+        "message" => "OK",
+        "result" => result
+      } =
+        conn
+        |> get(
+          "/api",
+          Map.put(params, "contractaddresses", "#{to_string(address)}, #{to_string(address_1)}")
+        )
+        |> json_response(200)
+
+      assert length(result) == 2
+
+      assert Enum.map(result, & &1["contractAddress"]) == [
+               to_string(address.hash),
+               to_string(address_1.hash)
+             ]
+
+      assert Enum.map(result, & &1["txHash"]) == [
+               to_string(transaction.hash),
+               to_string(transaction_1.hash)
+             ]
+    end
+
     test "get contract creation info via internal transaction", %{conn: conn, params: params} do
       {:ok, block_timestamp, _} = DateTime.from_iso8601("2021-05-05T21:42:11.000000Z")
       unix_timestamp = DateTime.to_unix(block_timestamp, :second)
