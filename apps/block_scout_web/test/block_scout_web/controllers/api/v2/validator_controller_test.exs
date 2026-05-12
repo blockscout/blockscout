@@ -151,6 +151,11 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
 
         check_paginated_response(response, response_2nd_page, validators)
       end
+
+      test "returns 422 for an invalid query parameter", %{conn: conn} do
+        request = get(conn, "/api/v2/validators/stability", %{"order" => "bogus"})
+        assert json_response(request, 422)
+      end
     end
 
     describe "/validators/stability/counters" do

@@ -70,8 +70,8 @@ defmodule BlockScoutWeb.PagingHelper do
   def paging_options(_params, _filter), do: [paging_options: @default_paging_options]
 
   @spec stability_validators_state_options(map()) :: [{:state, list()}, ...]
-  def stability_validators_state_options(%{"state_filter" => state}) do
-    [state: filters_to_list(state, @allowed_stability_validators_states, :downcase)]
+  def stability_validators_state_options(%{state_filter: state}) do
+    [state: parse_filter(state, @allowed_stability_validators_states)]
   end
 
   def stability_validators_state_options(_), do: [state: []]
@@ -106,9 +106,7 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def nft_types_options(_), do: [token_type: []]
 
-  defp filters_to_list(filters, allowed, variant \\ :upcase)
-  defp filters_to_list(filters, allowed, :downcase), do: filters |> String.downcase() |> parse_filter(allowed)
-  defp filters_to_list(filters, allowed, :upcase), do: filters |> String.upcase() |> parse_filter(allowed)
+  defp filters_to_list(filters, allowed), do: filters |> String.upcase() |> parse_filter(allowed)
 
   def filter_options(%{"filter" => filter}, fallback) do
     filter = filter |> parse_filter(@allowed_filter_labels) |> Enum.map(&String.to_existing_atom/1)
@@ -273,6 +271,9 @@ defmodule BlockScoutWeb.PagingHelper do
       :token_id,
       :type,
       :apikey,
+      :sort,
+      :order,
+      :state_filter,
       "apikey",
       "block_hash_or_number",
       "block_hash_or_number_param",
@@ -397,10 +398,10 @@ defmodule BlockScoutWeb.PagingHelper do
 
   defp do_address_transaction_sorting(_, _), do: []
 
-  @spec validators_stability_sorting(%{required(String.t()) => String.t()}) :: [
+  @spec validators_stability_sorting(map()) :: [
           {:sorting, SortingHelper.sorting_params()}
         ]
-  def validators_stability_sorting(%{"sort" => sort_field, "order" => order}) do
+  def validators_stability_sorting(%{sort: sort_field, order: order}) do
     [sorting: do_validators_stability_sorting(sort_field, order)]
   end
 
