@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.ShibariumController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
     only: [
@@ -12,9 +13,44 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
   alias Explorer.Chain.Cache.Counters.Shibarium.DepositsAndWithdrawalsCount
   alias Explorer.Chain.Shibarium.Reader
 
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags(["shibarium"])
+
   @api_true [api?: true]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
+
+  operation :deposits,
+    summary: "List Shibarium deposits.",
+    description: """
+    Retrieves a paginated list of completed Shibarium deposits ordered by parent chain block number descending.
+    A deposit is "completed" when both the parent-chain and Shibarium sides of the bridge have been observed.
+    """,
+    parameters:
+      base_params() ++
+        Enum.map(
+          define_paging_params(["items_count", "block_number"]),
+          fn
+            %OpenApiSpex.Parameter{name: :block_number} = param ->
+              %{param | description: "Parent chain block number for paging (cursor on `l1_block_number`)."}
+
+            param ->
+              param
+          end
+        ),
+    responses: [
+      ok:
+        {"List of Shibarium deposits.", "application/json",
+         paginated_response(
+           items: Schemas.Shibarium.Deposit,
+           next_page_params_example: %{
+             "items_count" => 50,
+             "block_number" => 17_500_000
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @spec deposits(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def deposits(conn, params) do
@@ -35,6 +71,8 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
     })
   end
 
+  operation :deposits_count, false
+
   @spec deposits_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def deposits_count(conn, _params) do
     count =
@@ -47,6 +85,8 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
     |> put_status(200)
     |> render(:shibarium_items_count, %{count: count})
   end
+
+  operation :withdrawals, false
 
   @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def withdrawals(conn, params) do
@@ -66,6 +106,8 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
       next_page_params: next_page_params
     })
   end
+
+  operation :withdrawals_count, false
 
   @spec withdrawals_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def withdrawals_count(conn, _params) do

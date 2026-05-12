@@ -43,8 +43,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
            next_page_params_example: %{
              "number" => 100,
              "items_count" => 50
-           },
-           title_prefix: "CeloEpochs"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -178,8 +177,7 @@ defmodule BlockScoutWeb.API.V2.CeloController do
              "account_address_hash" => "0x1234567890123456789012345678901234567890",
              "associated_account_address_hash" => "0x0987654321098765432109876543210987654321",
              "items_count" => 50
-           },
-           title_prefix: "CeloEpochElectionRewards"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]

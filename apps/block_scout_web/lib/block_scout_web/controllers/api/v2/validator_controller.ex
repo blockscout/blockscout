@@ -245,8 +245,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
            next_page_params_example: %{
              "index" => 55,
              "items_count" => 50
-           },
-           title_prefix: "Validators"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
