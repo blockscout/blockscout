@@ -758,18 +758,21 @@ defmodule BlockScoutWeb.Chain do
   end
 
   # Clause for `Explorer.Chain.Stability.Validator`,
-  #  returned by `BlockScoutWeb.API.V2.ValidatorController.stability_validators_list/2` (`/api/v2/validators/stability`)
+  #  returned by `BlockScoutWeb.API.V2.ValidatorController.stability_validators_list/2` (`/api/v2/validators/stability`).
+  # The endpoint is OpenAPI-spec'd, so `CastAndValidate` delivers atom-keyed params with the
+  # `blocks_validated` value already cast to an integer.
   def paging_options(%{
-        "state" => state,
-        "address_hash" => address_hash_string,
-        "blocks_validated" => blocks_validated_string
-      }) do
+        state: state,
+        address_hash: address_hash_string,
+        blocks_validated: blocks_validated
+      })
+      when is_integer(blocks_validated) do
     [
       paging_options: %{
         @default_paging_options
         | key: %{
             address_hash: parse_address_hash(address_hash_string),
-            blocks_validated: parse_integer(blocks_validated_string),
+            blocks_validated: blocks_validated,
             state: if(state in PagingHelper.allowed_stability_validators_states(), do: state)
           }
       }

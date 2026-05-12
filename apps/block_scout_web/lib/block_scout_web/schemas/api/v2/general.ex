@@ -513,15 +513,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @sort_field_descriptions %{
+    "address_hash" => "Sort by address hash",
     "balance" => "Sort by account balance",
     "block_number" => "Sort by block number",
+    "blocks_validated" => "Sort by number of blocks validated by the validator",
     "circulating_market_cap" => "Sort by circulating market cap of the token",
     "fee" => "Sort by transaction fee",
     "fiat_value" => "Sort by fiat value",
     "holders_count" => "Sort by number of token holders",
+    "index" => "Sort by validator index",
     "key0" => "Sort by MUD record key0",
     "key1" => "Sort by MUD record key1",
     "key_bytes" => "Sort by MUD record key_bytes",
+    "state" => "Sort by validator operational state",
     "total_gas_used" => "Sort by total gas used",
     "transactions_count" => "Sort by number of transactions",
     "value" => "Sort by transaction value"
