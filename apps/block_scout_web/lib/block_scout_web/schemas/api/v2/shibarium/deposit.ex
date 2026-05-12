@@ -16,19 +16,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.Shibarium.Deposit do
       l1_block_number: %Schema{
         type: :integer,
         minimum: 0,
-        description: "Number of the parent chain block that contains the deposit transaction."
+        description: "Parent chain block in which the deposit was initiated."
       },
       l1_transaction_hash: %Schema{
-        allOf: [General.FullHash],
+        allOf: [General.FullHashNullable],
         description: "Hash of the parent chain transaction that initiates the deposit."
       },
       l2_transaction_hash: %Schema{
-        allOf: [General.FullHash],
+        allOf: [General.FullHashNullable],
         description: "Hash of the Shibarium transaction that completes the deposit."
       },
       user: %Schema{
         allOf: [Address],
-        description: "Initiator of the deposit on the parent chain."
+        description:
+          "Address of the user that initiated the deposit on the parent chain; the same address acts as the recipient on Shibarium."
       },
       timestamp:
         Helper.extend_schema(General.TimestampNullable.schema(),

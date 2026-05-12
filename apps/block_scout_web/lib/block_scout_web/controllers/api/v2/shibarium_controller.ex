@@ -27,6 +27,9 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
     Retrieves a paginated list of completed Shibarium deposits ordered by parent chain block number descending.
     A deposit is "completed" when both the parent-chain and Shibarium sides of the bridge have been observed.
     """,
+    # The `Enum.map` block below is mirrored in :withdrawals. The only delta is the `block_number`
+    # description, so the block is duplicated intentionally rather than hidden behind a helper for
+    # two call sites.
     parameters:
       base_params() ++
         Enum.map(
@@ -86,7 +89,39 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
     |> render(:shibarium_items_count, %{count: count})
   end
 
-  operation :withdrawals, false
+  operation :withdrawals,
+    summary: "List Shibarium withdrawals.",
+    description: """
+    Retrieves a paginated list of completed Shibarium withdrawals ordered by Shibarium block number descending.
+    A withdrawal is "completed" when both the Shibarium and parent-chain sides of the bridge have been observed.
+    """,
+    # The `Enum.map` block below is mirrored in :deposits. The only delta is the `block_number`
+    # description, so the block is duplicated intentionally rather than hidden behind a helper for
+    # two call sites.
+    parameters:
+      base_params() ++
+        Enum.map(
+          define_paging_params(["items_count", "block_number"]),
+          fn
+            %OpenApiSpex.Parameter{name: :block_number} = param ->
+              %{param | description: "Shibarium block number for paging (cursor on `l2_block_number`)."}
+
+            param ->
+              param
+          end
+        ),
+    responses: [
+      ok:
+        {"List of Shibarium withdrawals.", "application/json",
+         paginated_response(
+           items: Schemas.Shibarium.Withdrawal,
+           next_page_params_example: %{
+             "items_count" => 50,
+             "block_number" => 5_000_000
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def withdrawals(conn, params) do
