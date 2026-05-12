@@ -129,7 +129,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General.FullHash do
   require OpenApiSpex
   alias BlockScoutWeb.Schemas.API.V2.General
 
-  OpenApiSpex.schema(%{type: :string, pattern: General.full_hash_pattern(), nullable: false})
+  OpenApiSpex.schema(%{type: :string, pattern: General.full_hash_pattern()})
 end
 ```
 
@@ -507,6 +507,8 @@ batch_data_container: %Schema{
 ```
 
 ### Nullable fields
+
+`nullable: false` is the OpenAPI 3.0 default — never declare it explicitly. Only set `nullable: true` when the field can be `nil`.
 
 If the Ecto schema field can be `nil` (not in `@required_attrs`, or the view conditionally emits it), the OpenAPI property should have `nullable: true`. If the key is always present but sometimes null, keep it in `required:` and set `nullable: true`. If the key is sometimes absent entirely, remove it from `required:`.
 

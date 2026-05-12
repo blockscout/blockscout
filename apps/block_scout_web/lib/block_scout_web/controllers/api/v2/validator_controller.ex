@@ -134,7 +134,14 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     |> render(:stability_validators, %{validators: validators, next_page_params: next_page_params})
   end
 
-  operation :stability_validators_counters, false
+  operation :stability_validators_counters,
+    summary: "Get Stability validators counters.",
+    description: "Retrieves aggregate counters for the Stability chain validator set.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Stability validators counters.", "application/json", Schemas.Stability.Counters},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/validators/stability/counters` endpoint.

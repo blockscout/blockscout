@@ -191,6 +191,25 @@ defmodule BlockScoutWeb.API.V2.ValidatorControllerTest do
                  "validators_count" => "9"
                } = json_response(request, 200)
       end
+
+      test "returns null percentage when there are no validators", %{conn: conn} do
+        ValidatorsCount.consolidate()
+        :timer.sleep(500)
+
+        request = get(conn, "/api/v2/validators/stability/counters")
+
+        assert %{
+                 "active_validators_count" => "0",
+                 "active_validators_percentage" => nil,
+                 "new_validators_count_24h" => "0",
+                 "validators_count" => "0"
+               } = json_response(request, 200)
+      end
+
+      test "returns 422 for an unexpected query parameter", %{conn: conn} do
+        request = get(conn, "/api/v2/validators/stability/counters", %{"bogus" => "1"})
+        assert json_response(request, 422)
+      end
     end
   end
 
