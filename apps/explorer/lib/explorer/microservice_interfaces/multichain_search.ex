@@ -1217,7 +1217,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       hash: Hash.to_string(address[:hash]),
       is_contract: true,
       is_verified_contract: false,
-      contract_name: address[:name]
+      contract_name: get_smart_contract_name(address)
     }
   end
 
@@ -1287,7 +1287,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp get_smart_contract_name(%NotLoaded{}), do: nil
 
-  defp get_smart_contract_name(smart_contract), do: smart_contract.name
+  defp get_smart_contract_name(smart_contract) when is_struct(smart_contract), do: smart_contract.name
+
+  defp get_smart_contract_name(smart_contract), do: smart_contract[:name]
 
   defp get_block_ranges([]), do: []
 
