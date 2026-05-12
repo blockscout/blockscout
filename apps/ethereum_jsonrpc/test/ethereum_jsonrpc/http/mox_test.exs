@@ -341,7 +341,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
           assert MapSet.equal?(response_block_number_set, block_number_set)
         end)
 
-      assert log =~ "Big amount of node requests in batch: 10, request: %{"
+      assert log =~ "Big amount of node requests in batch: 10, 1st_chunk_1st_request: %{"
     end
   end
 
