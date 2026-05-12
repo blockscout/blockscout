@@ -55,7 +55,7 @@ defmodule EthereumJSONRPC.HTTP do
 
   defp maybe_log_big_batch([first_chunk | _] = batch) do
     Logger.warning(
-      "Big amount of node requests in batch: #{batch |> Enum.map(&length/1) |> Enum.sum()}, request: #{inspect(List.first(first_chunk))}"
+      "Big amount of node requests in batch: #{batch |> Enum.map(&length/1) |> Enum.sum()}, 1st_chunk_1st_request: #{inspect(List.first(first_chunk))}"
     )
   end
 
