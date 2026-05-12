@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.TokenInstanceImporter do
   @moduledoc """
   Periodically updates token instances accumulated from block fetcher

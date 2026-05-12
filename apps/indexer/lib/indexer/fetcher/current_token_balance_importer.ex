@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.CurrentTokenBalanceImporter do
   @moduledoc """
   Periodically updates current token balances accumulated from block fetcher

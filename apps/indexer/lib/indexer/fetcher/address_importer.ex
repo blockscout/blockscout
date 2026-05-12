@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.AddressImporter do
   @moduledoc """
   Periodically updates addresses accumulated from block fetcher
