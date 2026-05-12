@@ -54,6 +54,26 @@ defmodule BlockScoutWeb.API.V2.ShibariumControllerTest do
       end
     end
 
+    describe "/api/v2/shibarium/deposits/count" do
+      test "returns 0 when no deposits exist", %{conn: conn} do
+        request = get(conn, "/api/v2/shibarium/deposits/count")
+        assert json_response(request, 200) == 0
+      end
+
+      test "returns deposits count", %{conn: conn} do
+        insert_list(3, :address) |> Enum.each(&insert_shibarium_deposit(&1.hash))
+
+        request = get(conn, "/api/v2/shibarium/deposits/count")
+        assert response = json_response(request, 200)
+        assert is_integer(response) and response >= 0
+      end
+
+      test "rejects unexpected query parameter with 422", %{conn: conn} do
+        request = get(conn, "/api/v2/shibarium/deposits/count", %{"unknown" => "x"})
+        assert json_response(request, 422)
+      end
+    end
+
     describe "/api/v2/shibarium/withdrawals" do
       test "returns empty list when no withdrawals exist", %{conn: conn} do
         request = get(conn, "/api/v2/shibarium/withdrawals")
@@ -99,6 +119,26 @@ defmodule BlockScoutWeb.API.V2.ShibariumControllerTest do
 
       test "rejects malformed block_number with 422", %{conn: conn} do
         request = get(conn, "/api/v2/shibarium/withdrawals", %{"block_number" => "not-a-number"})
+        assert json_response(request, 422)
+      end
+    end
+
+    describe "/api/v2/shibarium/withdrawals/count" do
+      test "returns 0 when no withdrawals exist", %{conn: conn} do
+        request = get(conn, "/api/v2/shibarium/withdrawals/count")
+        assert json_response(request, 200) == 0
+      end
+
+      test "returns withdrawals count", %{conn: conn} do
+        insert_list(3, :address) |> Enum.each(&insert_shibarium_withdrawal(&1.hash))
+
+        request = get(conn, "/api/v2/shibarium/withdrawals/count")
+        assert response = json_response(request, 200)
+        assert is_integer(response) and response >= 0
+      end
+
+      test "rejects unexpected query parameter with 422", %{conn: conn} do
+        request = get(conn, "/api/v2/shibarium/withdrawals/count", %{"unknown" => "x"})
         assert json_response(request, 422)
       end
     end
