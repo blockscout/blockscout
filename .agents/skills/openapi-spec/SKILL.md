@@ -229,7 +229,7 @@ For each parameter the controller reads:
    - **Domain-specific but used by multiple operations in the same controller?** Add a private helper function in the controller itself. This avoids polluting `general.ex` with chain-specific concerns while preventing duplication across operations.
    - **Truly one-off (single operation)?** Define an inline `%OpenApiSpex.Parameter{}` struct directly in the `operation` macro arguments.
 
-3. **For pagination parameters**, use `define_paging_params(field_names)` — pass the cursor field names as strings, and always include `"items_count"` (the `next_page_params` helper adds it to every cursor automatically). See `references/parameter-discovery.md` section "The `define_paging_params` factory" for details.
+3. **For pagination parameters**, use `define_paging_params(field_names)` — pass the cursor field names as strings. See `references/parameter-discovery.md` section "The `define_paging_params` factory" for details.
 
 ### Step 3: Create or locate response schema
 

@@ -232,14 +232,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     }
   ]
 
-  @items_count_param %OpenApiSpex.Parameter{
-    name: :items_count,
-    in: :query,
-    schema: %OpenApiSpex.Schema{type: :integer, minimum: 1},
-    required: false,
-    description: "Cumulative number of items already returned across previous pages."
-  }
-
   operation :list,
     summary: "List transactions, internal transactions and token transfers matching the advanced filter criteria",
     description:
@@ -247,8 +239,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
         "transfers — filtered by transaction type, contract method, time window, address relations, value range " <>
         "and/or token contract. The response also echoes the resolved human-readable names of the methods and " <>
         "tokens referenced in the request filters.",
-    parameters:
-      base_params() ++ @advanced_filter_query_params ++ @advanced_filter_keyset_params ++ [@items_count_param],
+    parameters: base_params() ++ @advanced_filter_query_params ++ @advanced_filter_keyset_params,
     responses: [
       ok:
         {"List of matching items with pagination information and resolved search params.", "application/json",
