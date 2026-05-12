@@ -1043,7 +1043,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
             []
           end
 
-        {[format_address(address) | acc_addresses] ++ implementations,
+        {[format_address(address) | implementations ++ acc_addresses],
          [format_address_coin_balance(address) | acc_coin_balances]}
       end)
 

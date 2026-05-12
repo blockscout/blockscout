@@ -1404,7 +1404,7 @@ defmodule Explorer.ChainTest do
       assert Repo.aggregate(MainExportQueue, :count, :hash) == 5
     end
 
-    test "populates main multichain export queue with proxy contract implementations" do
+    test "populates main multichain export queue with proxy contract implementations (verified and not verified)" do
       Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
       Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
       multichain_configuration = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
@@ -1432,7 +1432,6 @@ defmodule Explorer.ChainTest do
       )
 
       insert(:smart_contract, address_hash: implementation_1.hash, name: "TestContract1", contract_code_md5: "123")
-      # insert(:smart_contract, address_hash: implementation_2.hash, name: "TestContract2", contract_code_md5: "456")
 
       TestHelper.get_chain_id_mock()
       Chain.import(@import_data)
