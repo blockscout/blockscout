@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Scroll.Batch do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "Scroll.Batch",
     description: "Scroll Batch struct.",
     type: :object,
     properties: %{

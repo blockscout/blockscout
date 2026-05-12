@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.ZkSyncController do
   use BlockScoutWeb, :controller
+  use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
     only: [
@@ -9,7 +10,12 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
       split_list_by_page: 1
     ]
 
+  alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.Chain.ZkSync.{Reader, TransactionBatch}
+
+  plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
+
+  tags(["zksync"])
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -19,11 +25,21 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
     :execute_transaction => :optional
   }
 
+  operation :batch,
+    summary: "Get batch by number.",
+    description: "Retrieves detailed information about a ZkSync batch by its number.",
+    parameters: [batch_number_param() | base_params()],
+    responses: [
+      ok: {"Batch info.", "application/json", Schemas.ZkSync.Batch},
+      not_found: NotFoundResponse.response(),
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
   @doc """
-    Function to handle GET requests to `/api/v2/zksync/batches/:batch_number` endpoint.
+    Function to handle GET requests to `/api/v2/zksync/batches/:batch_number_param` endpoint.
   """
   @spec batch(Plug.Conn.t(), map()) :: Plug.Conn.t()
-  def batch(conn, %{"batch_number" => batch_number} = _params) do
+  def batch(conn, %{batch_number_param: batch_number} = _params) do
     case Reader.batch(
            batch_number,
            necessity_by_association: @batch_necessity_by_association,
@@ -38,6 +54,8 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
         res
     end
   end
+
+  operation :batches, false
 
   @doc """
     Function to handle GET requests to `/api/v2/zksync/batches` endpoint.
@@ -68,6 +86,8 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
     })
   end
 
+  operation :batches_count, false
+
   @doc """
     Function to handle GET requests to `/api/v2/zksync/batches/count` endpoint.
   """
@@ -77,6 +97,8 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
     |> put_status(200)
     |> render(:zksync_batches_count, %{count: Reader.batches_count(api?: true)})
   end
+
+  operation :batches_confirmed, false
 
   @doc """
     Function to handle GET requests to `/api/v2/main-page/zksync/batches/confirmed` endpoint.
@@ -94,6 +116,8 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
     |> put_status(200)
     |> render(:zksync_batches, %{batches: batches})
   end
+
+  operation :batch_latest_number, false
 
   @doc """
     Function to handle GET requests to `/api/v2/main-page/zksync/batches/latest-number` endpoint.
