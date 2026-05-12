@@ -16,6 +16,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     TokenInfoExportQueue
   }
 
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation,
+    only: [proxy_implementations_smart_contracts_association: 0]
+
   alias Explorer.{Helper, HttpClient, Repo}
   alias Explorer.Utility.Microservice
 
@@ -1008,9 +1011,41 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     {addresses, coin_balances_from_addresses_list} =
       params
       |> Map.get(:addresses, [])
-      |> Repo.preload([:token, :smart_contract])
+      |> Repo.preload([:token, :smart_contract, proxy_implementations_smart_contracts_association()])
       |> Enum.reduce({[], []}, fn address, {acc_addresses, acc_coin_balances} ->
-        {[format_address(address) | acc_addresses], [format_address_coin_balance(address) | acc_coin_balances]}
+        proxy_implementations = address.proxy_implementations
+
+        implementations =
+          if proxy_implementations do
+            not_verified_implementations =
+              proxy_implementations.address_hashes
+              |> Enum.zip(proxy_implementations.names)
+              |> Enum.reject(fn {address_hash, _name} ->
+                # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+                Enum.any?(proxy_implementations.smart_contracts, fn smart_contract ->
+                  smart_contract.address_hash == address_hash
+                end)
+              end)
+              |> Enum.map(fn {address_hash, name} ->
+                %{
+                  hash: address_hash,
+                  name: name
+                }
+              end)
+
+            verified_formatted_implementations =
+              proxy_implementations.smart_contracts |> Enum.map(&format_smart_contract/1)
+
+            not_verified_formatted_implementations =
+              not_verified_implementations |> Enum.map(&format_not_verified_implementation/1)
+
+            verified_formatted_implementations ++ not_verified_formatted_implementations
+          else
+            []
+          end
+
+        {[format_address(address) | implementations ++ acc_addresses],
+         [format_address_coin_balance(address) | acc_coin_balances]}
       end)
 
     address_coin_balances =
@@ -1169,6 +1204,24 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     }
   end
 
+  defp format_smart_contract(smart_contract) do
+    %{
+      hash: Hash.to_string(smart_contract.address_hash),
+      is_contract: true,
+      is_verified_contract: true,
+      contract_name: get_smart_contract_name(smart_contract)
+    }
+  end
+
+  defp format_not_verified_implementation(address) do
+    %{
+      hash: Hash.to_string(address[:hash]),
+      is_contract: true,
+      is_verified_contract: false,
+      contract_name: get_smart_contract_name(address)
+    }
+  end
+
   defp format_address_coin_balance(address) do
     %{
       address_hash: Hash.to_string(address.hash),
@@ -1235,7 +1288,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp get_smart_contract_name(%NotLoaded{}), do: nil
 
-  defp get_smart_contract_name(smart_contract), do: smart_contract.name
+  defp get_smart_contract_name(smart_contract) when is_struct(smart_contract), do: smart_contract.name
+
+  defp get_smart_contract_name(smart_contract), do: smart_contract[:name]
 
   defp get_block_ranges([]), do: []
 
