@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.BlockNumber do
   @moduledoc """
   Cache for max and min block numbers.

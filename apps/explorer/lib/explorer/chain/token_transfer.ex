@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.TokenTransfer.Schema do
   @moduledoc """
     Models token transfers.

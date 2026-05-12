@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.RSK.Migrations.AddRootstockFieldsToBlocks do
   use Ecto.Migration
 

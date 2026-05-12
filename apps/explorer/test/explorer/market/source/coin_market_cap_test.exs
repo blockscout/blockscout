@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.Source.CoinMarketCapTest do
   use ExUnit.Case
 

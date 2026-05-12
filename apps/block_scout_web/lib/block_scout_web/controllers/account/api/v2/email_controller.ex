@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Account.API.V2.EmailController do
   use BlockScoutWeb, :controller
   use Utils.CompileTimeEnvHelper, invalid_session_key: [:block_scout_web, :invalid_session_key]

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Withdrawal do
   @moduledoc """
   A stored representation of withdrawal introduced in [EIP-4895](https://eips.ethereum.org/EIPS/eip-4895)

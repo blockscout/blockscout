@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Admin do
   @moduledoc """
   Context for performing administrative tasks.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.FilecoinPendingAddressOperations do
   @moduledoc """
   Creates a pending address operation for each address missing Filecoin address

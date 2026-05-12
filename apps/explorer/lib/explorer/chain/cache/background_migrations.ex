@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.BackgroundMigrations do
   @moduledoc """
   Caches the completion status of various background database operations in the Blockscout system.

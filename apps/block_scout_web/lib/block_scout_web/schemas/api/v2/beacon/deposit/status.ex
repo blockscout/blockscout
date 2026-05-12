@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Beacon.Deposit.Status do
   @moduledoc false
   require OpenApiSpex

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Filecoin.NativeAddressTest do
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 

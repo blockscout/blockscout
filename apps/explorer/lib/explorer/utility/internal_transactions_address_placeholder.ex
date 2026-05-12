@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Utility.InternalTransactionsAddressPlaceholder do
   @moduledoc """
   Module is responsible for keeping the information about the presence of internal transactions

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.ChainTest do
   use Explorer.DataCase
   use EthereumJSONRPC.Case

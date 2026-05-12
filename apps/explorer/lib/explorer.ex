@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer do
   @moduledoc """
   Explorer keeps the contexts that define your domain

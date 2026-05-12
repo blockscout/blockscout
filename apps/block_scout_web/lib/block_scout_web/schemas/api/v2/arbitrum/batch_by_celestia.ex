@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchByCelestia do
   @moduledoc """
   Arbitrum batch schema narrowed to Celestia data availability.

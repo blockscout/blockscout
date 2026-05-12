@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Token.MetadataRetriever do
   @moduledoc """
   Reads Token's fields using Smart Contract functions from the blockchain.

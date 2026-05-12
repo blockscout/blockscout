@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Etherscan.LogsTest do
   use Explorer.DataCase
 

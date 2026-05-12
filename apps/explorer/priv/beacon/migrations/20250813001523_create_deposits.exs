@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Beacon.Migrations.CreateDeposits do
   use Ecto.Migration
 

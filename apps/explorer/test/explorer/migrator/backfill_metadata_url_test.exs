@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.BackfillMetadataURLTest do
   use Explorer.DataCase, async: false
   use EthereumJSONRPC.Case, async: false

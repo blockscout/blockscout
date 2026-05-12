@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.OnDemand.FirstTrace do
   @moduledoc """
     On demand fetcher of first transaction's trace

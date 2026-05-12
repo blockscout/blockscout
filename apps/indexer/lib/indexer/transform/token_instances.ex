@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.TokenInstances do
   @moduledoc """
     Module extracts token instances from token transfers

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Filecoin.Migrations.AddChainTypeFieldsToAddress do
   use Ecto.Migration
 

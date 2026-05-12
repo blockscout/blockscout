@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
   @moduledoc """
     This behaviour module was created in order to add possibility to extend the functionality of RustVerifierInterface

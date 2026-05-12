@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   @moduledoc """
     Fills op_transaction_batches, op_frame_sequence, and op_frame_sequence_blobs DB tables.

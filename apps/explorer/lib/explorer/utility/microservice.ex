@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Utility.Microservice do
   @moduledoc """
   Module is responsible for common utils related to microservices.

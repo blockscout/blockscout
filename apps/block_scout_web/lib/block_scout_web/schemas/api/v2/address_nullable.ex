@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.AddressNullable do
   @moduledoc """
   This module defines the schema for nullable address struct.

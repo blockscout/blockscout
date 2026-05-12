@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Neon.LinkedSolanaTransactions do
   @moduledoc """
   A relation table  between a regular EVM transaction and multiple Solana transactions

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.PendingBlockOperation do
   @moduledoc """
   Tracks a block that has pending operations.

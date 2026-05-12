@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.CsvExport.Worker do
   @moduledoc """
   Oban worker for asynchronous CSV export jobs.

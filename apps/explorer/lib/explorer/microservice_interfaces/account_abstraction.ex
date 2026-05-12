@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.MicroserviceInterfaces.AccountAbstraction do
   @moduledoc """
     Interface to interact with Blockscout Account Abstraction (EIP-4337) microservice

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Routers.APIKeyV2Router do
   @moduledoc """
     Router for /api/v2/key. This route has separate router in order to avoid rate limiting

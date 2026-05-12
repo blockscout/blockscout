@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.RateLimitTest do
   use BlockScoutWeb.ConnCase, async: false
   alias BlockScoutWeb.RateLimit

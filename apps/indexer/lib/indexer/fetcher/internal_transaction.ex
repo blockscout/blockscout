@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.InternalTransaction do
   @moduledoc """
   Fetches and indexes `t:Explorer.Chain.InternalTransaction.t/0`.

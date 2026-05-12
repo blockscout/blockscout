@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Zilliqa.AggregateQuorumCertificate do
   @moduledoc """
   A stored representation of a Zilliqa aggregate quorum certificate in the

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Optimism.Interop.Message do
   @moduledoc """
     Fills op_interop_messages DB table by catching `SentMessage` and `RelayedMessage` events.

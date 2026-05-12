@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.AddressCoinBalancesDaily do
   @moduledoc """
   Extracts `Explorer.Chain.Address.CoinBalanceDaily` params from other schema's params.

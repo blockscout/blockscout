@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Utility.RateLimiter do
   @moduledoc """
   Rate limit logic with separation by action type and exponential backoff for bans.

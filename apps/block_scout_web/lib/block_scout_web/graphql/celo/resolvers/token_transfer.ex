@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.GraphQL.Celo.Resolvers.TokenTransfer do
   @moduledoc """
   Resolvers for token transfers, used in the CELO schema.

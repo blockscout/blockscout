@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Blob do
   @moduledoc "OpenAPI schema for Blob responses."
 

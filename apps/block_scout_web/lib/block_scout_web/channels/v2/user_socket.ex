@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.V2.UserSocket do
   @moduledoc """
     Module to distinct new and old UI websocket connections

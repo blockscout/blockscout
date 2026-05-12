@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Supply.ExchangeRate do
   @moduledoc """
   Defines the supply API for calculating supply for coins from exchange_rate..

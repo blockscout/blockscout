@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesHashContractCodeNotNullIndex do
   @moduledoc """
   Create partial B-tree index on `addresses` table filtering by `contract_code IS NOT NULL`

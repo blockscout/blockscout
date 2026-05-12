@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.TestApiSchemaAssertions do
   @moduledoc """
   Test helper that automatically validates JSON responses against the OpenAPI schema

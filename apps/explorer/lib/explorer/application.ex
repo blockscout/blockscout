@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Application do
   @moduledoc """
   This is the Application module for Explorer.

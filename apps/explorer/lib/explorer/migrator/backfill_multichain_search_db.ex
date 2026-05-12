@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.BackfillMultichainSearchDB do
   @moduledoc """
   Copies existing data from Blockscout instance to Multichain Search DB instance.

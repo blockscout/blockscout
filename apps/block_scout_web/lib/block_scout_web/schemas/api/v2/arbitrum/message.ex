@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Message do
   @moduledoc """
   Full Arbitrum cross-chain message schema.

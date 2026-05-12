@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex do
   @moduledoc """
   Create partial B-tree index on `arbitrum_batch_l2_blocks` table filtering by `confirmation_id IS NULL`.

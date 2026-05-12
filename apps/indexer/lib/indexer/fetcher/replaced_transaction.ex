@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.ReplacedTransaction do
   @moduledoc """
   Finds and updates replaced transactions.

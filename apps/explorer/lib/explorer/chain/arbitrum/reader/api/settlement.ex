@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Arbitrum.Reader.API.Settlement do
   @moduledoc """
     Provides API-specific functions for querying Arbitrum settlement data from the database.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Account.API.V2.UserController do
   alias Explorer.ThirdPartyIntegrations.Auth0
   use BlockScoutWeb, :controller

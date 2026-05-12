@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Utility.Hammer.ETS do
   @moduledoc false
   use Hammer, backend: Hammer.ETS

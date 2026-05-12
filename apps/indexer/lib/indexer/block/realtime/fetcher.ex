@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Block.Realtime.Fetcher do
   @moduledoc """
   Fetches and indexes block ranges from latest block forward using a WebSocket.

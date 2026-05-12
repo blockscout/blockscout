@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.FheOperatorPrices do
   @moduledoc """
   HCU (Homomorphic Computation Units) price data for FHE operations.

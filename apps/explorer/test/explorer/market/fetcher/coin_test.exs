@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.Fetcher.CoinTest do
   use Explorer.DataCase
 

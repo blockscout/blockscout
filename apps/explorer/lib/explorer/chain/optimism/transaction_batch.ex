@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Optimism.TransactionBatch do
   @moduledoc """
     Models a batch of transactions for Optimism.

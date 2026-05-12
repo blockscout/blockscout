@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.TransactionError do
   @moduledoc """
   Stores errors for transactions and internal transactions.

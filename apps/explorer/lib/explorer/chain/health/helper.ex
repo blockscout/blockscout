@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Health.Helper do
   @moduledoc """
   Helper functions for /api/health endpoints

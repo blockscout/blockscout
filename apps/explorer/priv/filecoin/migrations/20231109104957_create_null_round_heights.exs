@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Filecoin.Migrations.CreateNullRoundHeights do
   use Ecto.Migration
 

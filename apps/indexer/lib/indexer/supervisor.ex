@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Supervisor do
   @moduledoc """
   Supervisor of all indexer worker supervision trees

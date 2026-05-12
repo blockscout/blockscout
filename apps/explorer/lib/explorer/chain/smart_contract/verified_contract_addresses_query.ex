@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQuery do
   @moduledoc """
   Query functions for fetching verified smart-contract addresses.

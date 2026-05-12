@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue do
   @moduledoc """
   Exports token and coin balances to Multichain Search DB service from the queue.

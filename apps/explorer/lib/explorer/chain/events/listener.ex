@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Events.Listener do
   @moduledoc """
   Listens and publishes events from PG

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.AddressTokenBalanceTokenTypeTest do
   use Explorer.DataCase, async: false
 

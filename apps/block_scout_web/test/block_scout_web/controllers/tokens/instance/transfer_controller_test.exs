@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Tokens.Instance.TransferControllerTest do
   use BlockScoutWeb.ConnCase, async: false
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Optimism.Withdrawal do
   @moduledoc "Models Optimism withdrawal."
 

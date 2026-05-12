@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter do
   @moduledoc """
   Schema for a single item returned by the `/api/v2/advanced-filters` endpoint.

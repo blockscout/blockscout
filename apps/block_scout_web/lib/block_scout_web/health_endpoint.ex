@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.HealthEndpoint do
   @moduledoc """
   Health endpoint for health checks in case of indexer-only/standalone_media_worker setup

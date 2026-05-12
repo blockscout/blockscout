@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.MethodIdentifier do
   @moduledoc """
   The first four bytes of the [KECCAK-256](https://en.wikipedia.org/wiki/SHA-3) hash of a contract method or event.

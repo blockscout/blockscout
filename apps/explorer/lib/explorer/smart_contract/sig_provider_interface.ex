@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.SigProviderInterface do
   @moduledoc """
     Adapter for decoding events and function calls with https://github.com/blockscout/blockscout-rs/tree/main/sig-provider

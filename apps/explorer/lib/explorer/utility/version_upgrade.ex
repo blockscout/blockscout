@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Utility.VersionUpgrade do
   @moduledoc """
   Provides validation logic for application version upgrades.

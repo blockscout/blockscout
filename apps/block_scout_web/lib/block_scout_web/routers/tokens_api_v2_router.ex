@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 # This file in ignore list of `sobelow`, be careful while adding new endpoints here
 defmodule BlockScoutWeb.Routers.TokensApiV2Router do
   @moduledoc """

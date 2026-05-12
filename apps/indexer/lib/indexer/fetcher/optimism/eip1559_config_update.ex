@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Optimism.EIP1559ConfigUpdate do
   @moduledoc """
     Fills op_eip1559_config_updates DB table.

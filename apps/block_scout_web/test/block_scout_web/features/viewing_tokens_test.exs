@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.ViewingTokensTest do
   use BlockScoutWeb.FeatureCase, async: true
 

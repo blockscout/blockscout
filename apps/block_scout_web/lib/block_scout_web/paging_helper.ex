@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.PagingHelper do
   @moduledoc """
     Helper for fetching filters and other url query parameters

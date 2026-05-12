@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Prometheus.Instrumenter do
   @moduledoc """
   Explorer metrics for `Prometheus`.

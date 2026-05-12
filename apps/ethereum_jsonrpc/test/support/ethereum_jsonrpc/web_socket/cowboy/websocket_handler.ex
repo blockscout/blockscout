@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 # See https://github.com/ninenines/cowboy/blob/2.6.1/examples/websocket/src/ws_h.erl
 # See https://ninenines.eu/docs/en/cowboy/2.6/guide/ws_handlers/
 defmodule EthereumJSONRPC.WebSocket.Cowboy.WebSocketHandler do

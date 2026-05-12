@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Arbitrum.Migrations.RenameTxHashFieldArbitrum do
   use Ecto.Migration
 

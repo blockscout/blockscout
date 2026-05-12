@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Accounts do
   @moduledoc """
   Entrypoint for modifying user account information.

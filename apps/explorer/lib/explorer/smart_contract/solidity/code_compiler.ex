@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.Solidity.CodeCompiler do
   @moduledoc """
   Module responsible to compile the Solidity code of a given Smart Contract.

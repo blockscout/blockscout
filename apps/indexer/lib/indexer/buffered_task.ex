@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.BufferedTask do
   @moduledoc """
   Provides a behaviour for batched task running with retries and memory-aware buffering.

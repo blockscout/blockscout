@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Block.Catchup.Fetcher do
   @moduledoc """
   Fetches and indexes block ranges from the block before the latest block to genesis (0) that are missing.

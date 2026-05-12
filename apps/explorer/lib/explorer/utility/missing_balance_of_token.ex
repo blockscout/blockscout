@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Utility.MissingBalanceOfToken do
   @moduledoc """
   Module is responsible for keeping address hashes of tokens that does not support the balanceOf function

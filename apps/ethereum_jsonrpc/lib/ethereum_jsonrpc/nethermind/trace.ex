@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Nethermind.Trace do
   @moduledoc """
   Trace returned by

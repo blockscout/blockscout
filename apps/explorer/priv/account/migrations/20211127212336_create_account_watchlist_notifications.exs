@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Account.Migrations.CreateAccountWatchlistNotifications do
   use Ecto.Migration
 

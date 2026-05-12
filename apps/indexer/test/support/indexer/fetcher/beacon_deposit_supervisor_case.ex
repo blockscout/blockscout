@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Beacon.Deposit.Supervisor.Case do
   alias Indexer.Fetcher.Beacon.Deposit
 

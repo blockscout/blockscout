@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.MapCache do
   @moduledoc """
   Behaviour for a map-like cache of elements.

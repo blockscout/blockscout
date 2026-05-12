@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchDataContainer do
   @moduledoc """
   Data availability container type for Arbitrum batches.

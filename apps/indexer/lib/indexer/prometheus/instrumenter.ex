@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Prometheus.Instrumenter do
   @moduledoc """
   Blockchain data fetch and import metrics for `Prometheus`.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Routers.AdminRouter do
   @moduledoc """
   Router for admin pages.

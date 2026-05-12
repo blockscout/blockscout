@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.MergeAdjacentMissingBlockRanges do
   @moduledoc """
   Merges adjacent missing block ranges (like 10..5, 4..3) into one (10..3).

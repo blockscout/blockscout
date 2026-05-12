@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.EthRpcHelper do
   @moduledoc """
   Helper module for Explorer.EthRPC. Mostly contains functions to validate input args

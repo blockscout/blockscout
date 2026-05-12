@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Block.Fetcher do
   @moduledoc """
   Fetches and indexes block ranges.

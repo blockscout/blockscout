@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Account.Watchlist do
   @moduledoc """
     Watchlist is root entity for WatchlistAddresses

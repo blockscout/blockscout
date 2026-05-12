@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.FetchedBeneficiaries do
   @moduledoc """
   Beneficiaries and errors from batch requests to `trace_block`.

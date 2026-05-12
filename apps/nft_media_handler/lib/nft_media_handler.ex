@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule NFTMediaHandler do
   @moduledoc """
   Module resizes and uploads images to R2/S3 bucket.

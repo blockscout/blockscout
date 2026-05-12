@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Migrations.AdditionalInternalTransactionConstraints do
   @moduledoc """
   Use `priv/repo/migrations/scripts/20181108205650_additional_internal_transaction_constraints.sql` to migrate data and

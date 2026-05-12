@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources do
   @moduledoc """
   Sanitizes the smart_contract_additional_sources table by removing duplicates.

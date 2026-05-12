@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.TokenBalance.HistoricalTest do
   use EthereumJSONRPC.Case
   use Explorer.DataCase

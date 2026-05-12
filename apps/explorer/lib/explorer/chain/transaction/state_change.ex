@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Transaction.StateChange do
   @moduledoc """
     Helper functions and struct for storing state changes

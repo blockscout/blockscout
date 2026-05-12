@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Zilliqa.Hash.BLSPublicKey do
   @moduledoc """
   Staker's `blsPubKey`

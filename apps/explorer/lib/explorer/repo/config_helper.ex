@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.ConfigHelper do
   @moduledoc """
   Extracts values from environment and adds them to application config.

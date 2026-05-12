@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Celo.EpochBlockOperations.DelegatedPaymentsPriorL2Migration do
   @moduledoc """
   Fetches delegated validator payments for the epoch block.

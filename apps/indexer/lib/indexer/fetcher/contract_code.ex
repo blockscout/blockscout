@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.ContractCode do
   @moduledoc """
   Fetches `contract_code` `t:Explorer.Chain.Address.t/0`.

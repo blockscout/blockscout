@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.TokenCountersUpdater do
   @moduledoc """
   Updates counters for cataloged tokens.

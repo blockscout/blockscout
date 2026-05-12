@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   use BlockScoutWeb.ConnCase, async: false
 

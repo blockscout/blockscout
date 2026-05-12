@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.Source do
   @moduledoc """
   Defines behaviors and utilities for fetching cryptocurrency market data from multiple sources.

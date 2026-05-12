@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.AddressCoinBalanceByDayController do
   @moduledoc """
   Manages the grouping by day of the coin balance history of an address

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.SmartContract.Proxy.VerificationStatus do
   @moduledoc """
     Represents single proxy verification submission

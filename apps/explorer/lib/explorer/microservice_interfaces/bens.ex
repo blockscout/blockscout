@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.MicroserviceInterfaces.BENS do
   @moduledoc """
     Interface to interact with Blockscout ENS microservice

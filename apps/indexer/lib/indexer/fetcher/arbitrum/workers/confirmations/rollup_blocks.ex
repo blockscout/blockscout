@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
   @moduledoc """
   Handles the discovery and marking of confirmed rollup blocks in Arbitrum.

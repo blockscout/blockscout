@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Helper do
   @moduledoc """
   Auxiliary common functions for indexers.

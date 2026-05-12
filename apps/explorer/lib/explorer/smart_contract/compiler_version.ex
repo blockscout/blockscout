@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.CompilerVersion do
   @moduledoc """
   Adapter for fetching compiler versions from https://binaries.soliditylang.org/bin/list.json.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Arbitrum.Withdraw do
   @moduledoc """
     Models an L2->L1 withdraw on Arbitrum.

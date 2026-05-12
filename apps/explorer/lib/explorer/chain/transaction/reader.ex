@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Transaction.Reader do
   @moduledoc """
   Functions for reading transaction data.

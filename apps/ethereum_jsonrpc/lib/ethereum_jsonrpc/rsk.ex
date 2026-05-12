@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.RSK do
   @moduledoc """
   Ethereum JSONRPC methods that are/are not supported by [RSK](https://www.rsk.co/).

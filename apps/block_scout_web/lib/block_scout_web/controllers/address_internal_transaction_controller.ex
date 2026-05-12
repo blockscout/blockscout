@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.AddressInternalTransactionController do
   @moduledoc """
     Manages the displaying of information about internal transactions as they relate to addresses

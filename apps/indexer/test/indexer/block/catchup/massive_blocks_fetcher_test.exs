@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Block.Catchup.MassiveBlocksFetcherTest do
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase

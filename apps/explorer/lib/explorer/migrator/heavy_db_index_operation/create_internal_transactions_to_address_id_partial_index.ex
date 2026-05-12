@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsToAddressIdPartialIndex do
   @moduledoc """
   Create partial B-tree index `internal_transactions_to_address_id_partial_index` on `internal_transactions` table for (`to_address_id`, `block_number` DESC, `transaction_index` DESC, `index` DESC) columns.

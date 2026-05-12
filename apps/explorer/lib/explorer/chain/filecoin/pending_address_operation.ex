@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Filecoin.PendingAddressOperation do
   @moduledoc """
   Tracks an address that is pending for fetching of filecoin address info.

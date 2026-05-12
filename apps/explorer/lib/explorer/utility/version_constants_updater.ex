@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Utility.VersionConstantsUpdater do
   @moduledoc """
   Module responsible for updating current and previous backend version in table `constants`.

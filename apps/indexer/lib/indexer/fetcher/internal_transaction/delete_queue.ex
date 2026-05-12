@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.InternalTransaction.DeleteQueue do
   @moduledoc """
   Deletes internal transactions for block from the queue and inserts new pending operations for them.

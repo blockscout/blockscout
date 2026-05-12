@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Optimism.Deposit do
   @moduledoc """
   Fills op_deposits DB table.

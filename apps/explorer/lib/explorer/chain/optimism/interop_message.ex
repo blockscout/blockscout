@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Optimism.InteropMessage do
   @moduledoc "Models interop message for Optimism."
 

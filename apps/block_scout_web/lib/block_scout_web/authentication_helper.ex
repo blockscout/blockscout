@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.AuthenticationHelper do
   @moduledoc """
   Helper module for authentication.

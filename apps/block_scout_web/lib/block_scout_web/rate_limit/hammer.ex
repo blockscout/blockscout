@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.RateLimit.Hammer.ETS do
   @moduledoc false
   use Hammer, backend: Hammer.ETS

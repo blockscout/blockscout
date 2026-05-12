@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.Optimism.Deposits do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Deposit.t/0`.

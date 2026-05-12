@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.SignedAuthorization do
   @moduledoc "Models a transaction extension with authorization tuples from eip7702 set code transactions."
 

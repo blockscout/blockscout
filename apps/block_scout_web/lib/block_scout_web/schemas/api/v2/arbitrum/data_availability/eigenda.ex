@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.DataAvailability.Eigenda do
   @moduledoc """
   Data availability information for batches stored via EigenDA.

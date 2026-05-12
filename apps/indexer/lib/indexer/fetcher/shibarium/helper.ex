@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Shibarium.Helper do
   @moduledoc """
   Common functions for Indexer.Fetcher.Shibarium.* modules.

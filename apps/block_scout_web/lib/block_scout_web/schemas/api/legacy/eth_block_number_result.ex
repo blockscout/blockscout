@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.Legacy.EthBlockNumberResult do
   @moduledoc false
   require OpenApiSpex

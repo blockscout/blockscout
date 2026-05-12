@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule NFTMediaHandler.R2.Uploader do
   @moduledoc """
   Uploads an image to R2/S3

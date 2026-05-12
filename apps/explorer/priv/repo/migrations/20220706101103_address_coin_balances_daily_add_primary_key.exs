@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Migrations.AddressCoinBalancesDailyAddPrimaryKey do
   use Ecto.Migration
 

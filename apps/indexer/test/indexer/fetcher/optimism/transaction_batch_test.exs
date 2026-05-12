@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 if Application.get_env(:explorer, :chain_type) == :optimism do
   defmodule Indexer.Fetcher.Optimism.TransactionBatchTest do
     use EthereumJSONRPC.Case, async: false

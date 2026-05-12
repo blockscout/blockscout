@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Beacon.Client do
   @moduledoc """
     HTTP Client for Beacon Chain RPC

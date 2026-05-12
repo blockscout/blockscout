@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.MultichainSearchDb.MainExportQueue do
   @moduledoc """
   Tracks main blockchain data: block, transaction hashes, addresses with the metadata and block ranges,

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.HelperTest do
   use ExUnit.Case
   alias Explorer.Helper

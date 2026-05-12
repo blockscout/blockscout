@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Optimism do
   @moduledoc """
   Contains common functions for Optimism* fetchers.

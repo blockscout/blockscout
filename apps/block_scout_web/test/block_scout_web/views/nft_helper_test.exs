@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.NFTHelperTest do
   use BlockScoutWeb.ConnCase, async: true
 

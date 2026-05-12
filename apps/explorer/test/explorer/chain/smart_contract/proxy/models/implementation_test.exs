@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
   use Explorer.DataCase, async: false
 

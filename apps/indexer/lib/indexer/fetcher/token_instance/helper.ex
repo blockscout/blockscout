@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.TokenInstance.Helper do
   @moduledoc """
     Common functions for Indexer.Fetcher.TokenInstance fetchers

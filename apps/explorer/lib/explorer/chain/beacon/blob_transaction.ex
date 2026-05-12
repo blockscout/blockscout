@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Beacon.BlobTransaction do
   @moduledoc "Models a transaction extension with extra fields from eip4844 blob transactions."
 

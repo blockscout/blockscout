@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Scroll.Migrations.AddBridgeTable do
   use Ecto.Migration
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.Utils.Rpc do
   @moduledoc """
     Common functions to simplify RPC routines for Indexer.Fetcher.Arbitrum fetchers

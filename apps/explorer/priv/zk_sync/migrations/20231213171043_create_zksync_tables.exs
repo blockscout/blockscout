@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.ZkSync.Migrations.CreateZkSyncTables do
   use Ecto.Migration
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
   use BlockScoutWeb.ConnCase
   use BlockScoutWeb.ChannelCase, async: false

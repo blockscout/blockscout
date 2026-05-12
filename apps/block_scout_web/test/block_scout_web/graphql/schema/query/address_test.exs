@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.GraphQL.Schema.Query.AddressTest do
   use BlockScoutWeb.ConnCase
 

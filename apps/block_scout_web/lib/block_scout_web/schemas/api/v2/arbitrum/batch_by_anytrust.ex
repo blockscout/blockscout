@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchByAnytrust do
   @moduledoc """
   Arbitrum batch schema narrowed to AnyTrust data availability.

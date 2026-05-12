@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.BackfillMetadataURL do
   @moduledoc """
   Backfills the metadata_url field for token instances

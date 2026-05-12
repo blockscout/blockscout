@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Game do
   @moduledoc """
   This module defines the schema for the Optimism Dispute Game struct.

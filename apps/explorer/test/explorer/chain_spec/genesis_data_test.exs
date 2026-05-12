@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 # apps/explorer/test/explorer/chain_spec/geth/genesis_data.exs
 defmodule Explorer.ChainSpec.GenesisDataTest do
   use ExUnit.Case, async: false

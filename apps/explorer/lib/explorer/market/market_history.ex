@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.MarketHistory do
   @moduledoc """
   Represents market history of configured coin to USD.

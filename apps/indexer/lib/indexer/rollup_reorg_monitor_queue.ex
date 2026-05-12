@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.RollupReorgMonitorQueue do
   @moduledoc """
   Queue registry used by rollup reorg monitoring fetchers.

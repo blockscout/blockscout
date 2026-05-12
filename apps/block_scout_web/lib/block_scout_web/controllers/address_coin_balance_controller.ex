@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.AddressCoinBalanceController do
   @moduledoc """
   Manages the displaying of information about the coin balance history of an address

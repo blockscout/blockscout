@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.CommonComponentsView do
   use BlockScoutWeb, :view
 

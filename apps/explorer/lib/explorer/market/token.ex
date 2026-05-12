@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.Token do
   @moduledoc """
   Data container for modeling an exchange rate for a currency/token.

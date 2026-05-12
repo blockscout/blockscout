@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.CertifiedSmartContractCatalogerTest do
   use Explorer.DataCase
 

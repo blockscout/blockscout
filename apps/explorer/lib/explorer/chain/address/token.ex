@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Address.Token do
   @moduledoc """
   A projection that represents the relation between a Token and a specific Address.

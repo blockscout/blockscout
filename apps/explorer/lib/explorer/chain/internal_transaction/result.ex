@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.InternalTransaction.Result do
   @moduledoc """
   The result of performing the `t:EthereumJSONRPC.Nethermind.Action.t/0` in a `t:EthereumJSONRPC.Nethermind.Trace.t/0`.

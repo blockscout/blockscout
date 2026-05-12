@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Account.API.V2.AuthenticateController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs

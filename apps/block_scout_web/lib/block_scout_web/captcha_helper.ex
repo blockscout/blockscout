@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.CaptchaHelper do
   @moduledoc """
   A helper for CAPTCHA

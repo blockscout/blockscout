@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand do
   @moduledoc """
     On demand fetcher info about validator

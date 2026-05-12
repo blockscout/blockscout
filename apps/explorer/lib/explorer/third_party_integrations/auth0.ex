@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.ThirdPartyIntegrations.Auth0 do
   @moduledoc """
   Auth0 Management REST API client for user management.

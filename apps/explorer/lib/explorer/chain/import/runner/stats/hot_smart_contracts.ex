@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.Stats.HotSmartContracts do
   @moduledoc """
   Bulk imports `t:Explorer.Stats.HotSmartContracts.t/0` rows (hot_smart_contracts_daily).

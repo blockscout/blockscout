@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Supply.ProofOfAuthority do
   @moduledoc """
   Defines the supply API for calculating supply for POA.

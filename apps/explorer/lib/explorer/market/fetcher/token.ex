@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.Fetcher.Token do
   @moduledoc """
   Periodically fetches fiat value of tokens.

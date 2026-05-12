@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Log.Schema do
   @moduledoc false
   use Utils.CompileTimeEnvHelper,

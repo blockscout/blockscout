@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.TokenBalance.Helper do
   @moduledoc """
   Common functions for `Indexer.Fetcher.TokenBalance.Historical` and `Indexer.Fetcher.TokenBalance.Current` modules

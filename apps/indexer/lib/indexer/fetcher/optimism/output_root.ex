@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Optimism.OutputRoot do
   @moduledoc """
   Fills op_output_roots DB table.

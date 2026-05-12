@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.SmartContractView do
   use BlockScoutWeb, :view
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]

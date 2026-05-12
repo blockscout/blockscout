@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Plug.RedisCookie do
   @moduledoc """
     Extended version of Plug.Session.COOKIE from https://github.com/elixir-plug/plug/blob/main/lib/plug/session/cookie.ex

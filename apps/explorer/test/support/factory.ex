@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Factory do
   use ExMachina.Ecto, repo: Explorer.Repo
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]

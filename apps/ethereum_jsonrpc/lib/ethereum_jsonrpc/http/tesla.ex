@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.HTTP.Tesla do
   @moduledoc """
   Uses `Tesla.Mint` for `EthereumJSONRPC.HTTP`

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.TokenInstance.SanitizeERC1155Test do
   use Explorer.DataCase
 

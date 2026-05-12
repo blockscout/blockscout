@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   @moduledoc """
   Adapter for contracts verification with https://sourcify.dev/

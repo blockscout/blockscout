@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.Counters.AddressTabsElementsCount do
   @moduledoc """
     Cache for tabs counters on address

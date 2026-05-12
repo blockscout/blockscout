@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueueTest do
   use ExUnit.Case
   use Explorer.DataCase

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Block.Countdown do
   @moduledoc """
   This module defines the schema for block countdown response from /api/v2/blocks/:block_number/countdown.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   @moduledoc """
   Ensures that we have a smart-contract creator address indexed.

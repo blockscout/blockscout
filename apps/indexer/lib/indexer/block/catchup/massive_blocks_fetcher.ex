@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Block.Catchup.MassiveBlocksFetcher do
   @moduledoc """
   Fetches and indexes blocks by numbers from massive_blocks table.

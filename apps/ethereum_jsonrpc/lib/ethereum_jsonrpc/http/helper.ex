@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.HTTP.Helper do
   @moduledoc """
   Helper functions for `EthereumJSONRPC.HTTP` implementations.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Stats.HotSmartContractsTest do
   # MUST be `async: false` due to use of named GenServer
   use EthereumJSONRPC.Case, async: false

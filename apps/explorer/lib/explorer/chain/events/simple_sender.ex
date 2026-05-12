@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Events.SimpleSender do
   @moduledoc """
   Publishes events through Registry without intermediate levels.

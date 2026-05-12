@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.AddressView do
   use BlockScoutWeb, :view
   use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]

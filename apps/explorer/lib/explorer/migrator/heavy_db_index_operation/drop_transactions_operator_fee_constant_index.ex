@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsOperatorFeeConstantIndex do
   @moduledoc """
   Drops index "transactions_operator_fee_constant_index" btree (operator_fee_constant IS NULL).

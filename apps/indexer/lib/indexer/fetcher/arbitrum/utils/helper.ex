@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.Utils.Helper do
   alias Explorer.Chain.Arbitrum.LifecycleTransaction
   alias Explorer.Chain.Cache.BackgroundMigrations

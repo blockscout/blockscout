@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.SanitizeEmptyContractCodeAddresses do
   @moduledoc """
   Migration that sets contract code to `"0x"` for addresses where contract code

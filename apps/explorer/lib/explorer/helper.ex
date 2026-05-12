@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Helper do
   @moduledoc """
   Auxiliary common functions.

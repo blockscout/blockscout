@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.CsvExport.AdvancedFilter do
   @moduledoc """
   Module responsible for exporting advanced filters to CSV.

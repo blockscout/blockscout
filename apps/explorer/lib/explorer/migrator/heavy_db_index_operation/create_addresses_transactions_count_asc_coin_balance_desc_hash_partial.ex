@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCountAscCoinBalanceDescHashPartialIndex do
   @moduledoc """
   Create partial B-tree index on `addresses` table filtering by `fetched_coin_balance > 0`

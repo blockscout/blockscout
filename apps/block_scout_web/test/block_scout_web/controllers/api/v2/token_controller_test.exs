@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   use EthereumJSONRPC.Case, async: false
   use BlockScoutWeb.ConnCase

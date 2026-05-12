@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 # credo:disable-for-this-file
 defmodule Explorer.Migrator.FillingMigration do
   @moduledoc """

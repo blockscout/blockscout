@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Plug.CheckFeature do
   @moduledoc """
   A configurable plug that conditionally allows access to an endpoint based on

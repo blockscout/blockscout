@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Specs.PublicLegacyTagTest do
   use ExUnit.Case, async: true
 

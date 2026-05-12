@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.WithdrawalControllerTest do
   use BlockScoutWeb.ConnCase
 

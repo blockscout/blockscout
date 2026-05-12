@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 # cspell:disable
 defmodule Explorer.Market.Source.MobulaTest do
   use ExUnit.Case

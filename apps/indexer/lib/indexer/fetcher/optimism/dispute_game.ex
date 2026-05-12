@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Optimism.DisputeGame do
   @moduledoc """
   Fills op_dispute_games DB table.

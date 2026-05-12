@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.AddressContractViewTest do
   use BlockScoutWeb.ConnCase, async: true
 

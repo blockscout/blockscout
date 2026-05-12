@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.RPC.RPCTranslatorTest do
   use BlockScoutWeb.ConnCase
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchByEigenda do
   @moduledoc """
   Arbitrum batch schema narrowed to EigenDA data availability.

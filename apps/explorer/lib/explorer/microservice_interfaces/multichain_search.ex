@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   @moduledoc """
   Module to interact with Multichain search microservice

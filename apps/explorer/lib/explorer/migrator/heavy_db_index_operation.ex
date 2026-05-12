@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation do
   @moduledoc """
   Provides a template for making heavy DB operations such as creation/deletion of new indexes in the large tables

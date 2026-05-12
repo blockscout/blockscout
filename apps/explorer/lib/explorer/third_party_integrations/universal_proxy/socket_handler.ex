@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.ThirdPartyIntegrations.UniversalProxy.SocketHandler do
   @moduledoc """
   A simple WebSocket proxy handler that relays messages between a client and a target WebSocket server.

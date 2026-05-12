@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Variant do
   @moduledoc """
   A variant of the Ethereum JSONRPC API.  Each Ethereum client supports slightly different versions of the non-standard

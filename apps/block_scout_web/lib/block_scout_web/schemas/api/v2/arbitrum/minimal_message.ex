@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.MinimalMessage do
   @moduledoc """
   Minimal Arbitrum cross-chain message schema with origination and completion fields only.

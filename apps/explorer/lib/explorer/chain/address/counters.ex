@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Address.Counters do
   @moduledoc """
     Functions related to Explorer.Chain.Address counters

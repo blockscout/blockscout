@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.ClaimMessage do
   @moduledoc "Schema for Arbitrum claim message response."
 

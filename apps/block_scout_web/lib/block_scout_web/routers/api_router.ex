@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule RPCTranslatorForwarder do
   @moduledoc """
   Phoenix router limits forwarding,

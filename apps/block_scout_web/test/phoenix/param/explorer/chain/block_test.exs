@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Phoenix.Param.Explorer.Chain.BlockTest do
   use ExUnit.Case
 

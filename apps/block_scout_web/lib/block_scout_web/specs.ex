@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Specs do
   @moduledoc """
   Provides utility functions for working with Phoenix router routes in API specification modules.

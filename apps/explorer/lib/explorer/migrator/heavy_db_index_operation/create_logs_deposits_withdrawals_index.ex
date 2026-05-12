@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsIndex do
   @moduledoc """
   Create partial B-tree index `logs_deposits_withdrawals_index` on `logs` table for (`transaction_hash`, `block_hash`, `index`, `address_hash`) columns, filtered by first_topic IN

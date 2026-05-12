@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Application.Constants do
   @moduledoc """
     Tracks some kv info

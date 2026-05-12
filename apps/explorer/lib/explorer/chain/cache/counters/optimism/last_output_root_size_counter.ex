@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount do
   @moduledoc """
   Caches number of transactions in last output root.

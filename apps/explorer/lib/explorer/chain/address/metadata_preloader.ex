@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Address.MetadataPreloader do
   @moduledoc """
   Module responsible for preloading metadata (from BENS, Metadata microservices) to addresses.

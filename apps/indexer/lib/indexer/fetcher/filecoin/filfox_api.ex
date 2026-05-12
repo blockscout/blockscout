@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Filecoin.FilfoxAPI do
   @moduledoc """
   Interacts with the Filfox API to fetch account information based on an Ethereum

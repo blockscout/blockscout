@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.GraphQL.Schema.Scalars.JSON do
   @moduledoc """
   The JSON scalar type allows arbitrary JSON values to be passed in and out.

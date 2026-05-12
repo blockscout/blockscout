@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Transaction.RawTrace do
   @moduledoc """
   This module defines the schema for a transaction raw trace API response.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   @moduledoc """
   Module for DB queries to get indexer health metrics

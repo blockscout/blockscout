@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.PolygonEdge.Migrations.CreatePolygonEdgeDepositTables do
   use Ecto.Migration
 

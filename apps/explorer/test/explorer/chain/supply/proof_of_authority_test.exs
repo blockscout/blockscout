@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Supply.ProofOfAuthorityTest do
   use Explorer.DataCase
 

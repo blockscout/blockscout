@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.Blocks.Base do
   @moduledoc """
   Default block transformer to be used.

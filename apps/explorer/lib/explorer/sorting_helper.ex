@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SortingHelper do
   @moduledoc """
   Module that order and paginate queries dynamically based on default and provided sorting parameters.

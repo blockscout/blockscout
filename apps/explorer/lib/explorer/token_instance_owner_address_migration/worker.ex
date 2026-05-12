@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.TokenInstanceOwnerAddressMigration.Worker do
   @moduledoc """
     GenServer for filling  owner_address_hash, owner_updated_at_block and owner_updated_at_log_index

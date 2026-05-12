@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.CsvExport.AsyncHelper do
   @moduledoc """
   Async CSV export helper functions.

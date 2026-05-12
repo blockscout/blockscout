@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Celo.EpochReward do
   @moduledoc """
   Represents the distributions in the Celo epoch. Each log index points to a

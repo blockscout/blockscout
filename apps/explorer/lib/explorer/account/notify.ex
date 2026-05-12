@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Account.Notify do
   @moduledoc """
     Interface for notifier, for import and call from other modules

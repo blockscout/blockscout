@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Optimism.OperatorFee do
   @moduledoc """
   Retrieves and saves operator fee for historic transactions from their receipts using RPC calls

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.ViewingAddressesTest do
   use BlockScoutWeb.FeatureCase,
     # Because ETS tables is shared for `Explorer.Counters.*`

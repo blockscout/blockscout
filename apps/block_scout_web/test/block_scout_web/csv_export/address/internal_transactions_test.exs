@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
   use Explorer.DataCase
 

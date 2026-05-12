@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.TokenTransferTokenType do
   @moduledoc """
   Migrates all token_transfers to have set token_type

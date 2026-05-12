@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Tools do
   @moduledoc """
     Internal database utility functions for Arbitrum-related data processing.

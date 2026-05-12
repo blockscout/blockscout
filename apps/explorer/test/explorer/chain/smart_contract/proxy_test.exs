@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.SmartContract.ProxyTest do
   use Explorer.DataCase, async: false
   import Mox

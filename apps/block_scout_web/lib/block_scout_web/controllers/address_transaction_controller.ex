@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.AddressTransactionController do
   @moduledoc """
     Display all the Transactions that terminate at this Address.

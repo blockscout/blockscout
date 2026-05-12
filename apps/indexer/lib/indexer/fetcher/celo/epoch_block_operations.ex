@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Celo.EpochBlockOperations do
   @moduledoc """
   Tracks epoch blocks awaiting processing by the epoch fetcher.

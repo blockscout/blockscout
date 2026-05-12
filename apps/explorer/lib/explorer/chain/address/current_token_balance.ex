@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Address.CurrentTokenBalance do
   @moduledoc """
   Represents the current token balance from addresses according to the last block.

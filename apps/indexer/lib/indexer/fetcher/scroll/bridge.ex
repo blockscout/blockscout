@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Scroll.Bridge do
   @moduledoc """
   Contains common functions for Indexer.Fetcher.Scroll.Bridge* modules.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Tokens.SmartContractViewTest do
   use BlockScoutWeb.ConnCase, async: true
 

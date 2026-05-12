@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Utility.ReplicaAccessibilityManager do
   @moduledoc """
   Module responsible for periodically checking replica accessibility.

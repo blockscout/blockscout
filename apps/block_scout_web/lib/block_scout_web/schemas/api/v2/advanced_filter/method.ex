@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter.Method do
   @moduledoc "Schema for a contract method (id + name pair) returned by the advanced filters methods endpoint."
 

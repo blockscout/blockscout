@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Plug.GraphQLSchemaIntrospection do
   @moduledoc """
   A plug that handles GraphQL introspection queries by returning a pre-computed

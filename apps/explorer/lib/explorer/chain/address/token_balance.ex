@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Address.TokenBalance do
   @moduledoc """
   Represents a token balance from an address.

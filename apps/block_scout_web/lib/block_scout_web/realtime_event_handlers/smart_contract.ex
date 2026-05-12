@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.RealtimeEventHandlers.SmartContract do
   @moduledoc """
   Subscribing process for smart contract verification related broadcast events from realtime.

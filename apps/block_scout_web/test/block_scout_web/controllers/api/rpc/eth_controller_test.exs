@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.RPC.EthControllerTest do
   use BlockScoutWeb.ConnCase, async: false
 

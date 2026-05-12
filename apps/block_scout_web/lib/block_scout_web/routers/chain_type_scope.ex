@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Routers.ChainTypeScope do
   @moduledoc """
   Provides macros for defining chain-specific routes that are checked at

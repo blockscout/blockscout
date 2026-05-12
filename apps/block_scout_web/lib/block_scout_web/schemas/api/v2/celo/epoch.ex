@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Celo.Epoch do
   @moduledoc """
   This module defines the schema for a Celo epoch list item.

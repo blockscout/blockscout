@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArguments do
   @moduledoc """
   Module for fetching proxy implementation from clone contracts with immutable arguments.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.BenchmarkCase do
   @moduledoc """
   This module defines the benchmark case to be used by benchmarks.

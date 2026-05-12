@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Block.Reader.General do
   @moduledoc """
   Provides general methods for reading block data from the database.

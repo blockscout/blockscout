@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.HTTP.HTTPoison do
   @moduledoc """
   Uses `HTTPoison` for `EthereumJSONRPC.HTTP`

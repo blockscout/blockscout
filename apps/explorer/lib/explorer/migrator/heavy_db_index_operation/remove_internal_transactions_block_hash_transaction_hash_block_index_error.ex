@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError do
   @moduledoc """
   Removes `block_hash`, `transaction_hash`, `block_index` and `error` columns from `internal_transactions`

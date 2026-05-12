@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.BloomFilter do
   @moduledoc """
   Eth Bloom filter realization. Reference: https://github.com/NethermindEth/nethermind/blob/d61c78af6de2d0a89bd4efd6bfed62cb6b774f59/src/Nethermind/Nethermind.Core/Bloom.cs

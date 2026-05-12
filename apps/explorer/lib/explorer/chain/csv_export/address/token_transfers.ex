@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
   @moduledoc """
   Exports token transfers to a csv file.

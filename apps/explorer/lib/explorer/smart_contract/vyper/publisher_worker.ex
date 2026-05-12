@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.Vyper.PublisherWorker do
   @moduledoc """
   Background smart contract verification worker.

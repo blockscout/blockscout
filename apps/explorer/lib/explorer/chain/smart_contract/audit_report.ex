@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.SmartContract.AuditReport do
   @moduledoc """
     The representation of an audit report for a smart contract.

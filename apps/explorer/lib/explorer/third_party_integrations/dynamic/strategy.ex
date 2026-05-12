@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.ThirdPartyIntegrations.Dynamic.Strategy do
   @moduledoc """
   JWKS fetching strategy for Dynamic

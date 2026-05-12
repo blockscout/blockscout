@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.RealtimeEventHandlers.TokenTransfer do
   @moduledoc """
   Subscribing process for token transfer broadcast events from realtime.

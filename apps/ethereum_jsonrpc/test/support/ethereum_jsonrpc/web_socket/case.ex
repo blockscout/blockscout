@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.WebSocket.Case do
   use ExUnit.CaseTemplate
 

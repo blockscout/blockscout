@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Withdrawal do
   @moduledoc "Schema for an Arbitrum Rollup withdrawal message (L2ToL1Tx event)."
 

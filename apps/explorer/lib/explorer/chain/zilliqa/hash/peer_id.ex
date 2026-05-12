@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Zilliqa.Hash.PeerID do
   @moduledoc """
   libp2p peer ID, corresponding to the staker's `blsPubKey`

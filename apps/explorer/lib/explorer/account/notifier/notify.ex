@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Account.Notifier.Notify do
   @moduledoc """
     Composing notification, store and send it to email

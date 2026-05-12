@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
   @moduledoc """
   Methods for processing the data from `trace_replayTransaction` and `trace_replayBlockTransactions` JSON RPC methods

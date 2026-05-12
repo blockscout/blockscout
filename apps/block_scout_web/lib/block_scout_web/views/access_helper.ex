@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.AccessHelper do
   @moduledoc """
   Helper to restrict access to some pages filtering by address

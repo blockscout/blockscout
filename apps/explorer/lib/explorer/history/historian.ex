@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.History.Historian do
   @moduledoc """
   Interface for compiling, saving, and fetching historical records.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Arbitrum.LifecycleTransaction do
   @moduledoc """
     Models an L1 lifecycle transaction for Arbitrum. Lifecycle transactions are transactions that change the state of transactions and blocks on Arbitrum rollups.

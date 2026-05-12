@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Plug.Admin.CheckOwnerRegistered do
   @moduledoc """
   Checks that an admin owner has registered.

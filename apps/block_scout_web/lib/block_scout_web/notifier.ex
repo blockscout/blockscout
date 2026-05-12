@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Notifier do
   @moduledoc """
   Responds to events by sending appropriate channel updates to front-end.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.SolcDownloader do
   @moduledoc """
   Checks to see if the requested solc compiler version exists, and if not it

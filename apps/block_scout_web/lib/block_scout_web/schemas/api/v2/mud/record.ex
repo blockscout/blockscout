@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.MUD.Record do
   @moduledoc """
   This module defines the schema for the MUD Record struct.

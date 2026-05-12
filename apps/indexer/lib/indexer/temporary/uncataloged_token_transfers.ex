@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Temporary.UncatalogedTokenTransfers do
   @moduledoc """
   Catalogs token transfer logs missing an accompanying token transfer record.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.Solidity.Publisher do
   @moduledoc """
   Module responsible to control the contract verification.

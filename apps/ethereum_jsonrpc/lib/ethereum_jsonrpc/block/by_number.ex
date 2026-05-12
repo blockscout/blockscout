@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Block.ByNumber do
   @moduledoc """
     Provides functionality to compose JSON-RPC requests for fetching Ethereum blocks by their number.

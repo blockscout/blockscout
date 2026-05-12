@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Notifiers.Optimism do
   @moduledoc """
   Module to handle and broadcast OP related events.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.PendingTransactionsSanitizer do
   @moduledoc """
   Periodically checks pending transactions status in order to detect that transaction already included to the block

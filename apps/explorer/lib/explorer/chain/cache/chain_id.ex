@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.ChainId do
   @moduledoc """
     Caches the blockchain's chain ID to reduce repeated JSON-RPC calls.

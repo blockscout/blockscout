@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex do
   @moduledoc """
   Create unique B-tree index `internal_transactions_block_number_transaction_index_index_index` on `internal_transactions` table for (`block_number`, `transaction_index`, `index`) columns.

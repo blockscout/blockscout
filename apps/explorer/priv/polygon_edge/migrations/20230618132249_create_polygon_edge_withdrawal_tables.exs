@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.PolygonEdge.Migrations.CreatePolygonEdgeWithdrawalTables do
   use Ecto.Migration
 

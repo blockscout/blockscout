@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.StateChanges do
   @moduledoc """
   Caches the transaction state changes for pagination

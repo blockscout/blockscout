@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.Source.CryptoRank do
   @moduledoc """
   Adapter for fetching market history from https://cryptorank.io/.

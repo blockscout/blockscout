@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Migrations.AllowNilTransactionGasPrice do
   use Ecto.Migration
 

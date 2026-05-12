@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Application do
   @moduledoc """
   Supervises `BlockScoutWeb.Endpoint` in order to serve Web UI.

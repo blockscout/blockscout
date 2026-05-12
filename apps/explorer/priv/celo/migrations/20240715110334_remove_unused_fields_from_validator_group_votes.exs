@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Celo.Migrations.RemoveUnusedFieldsFromValidatorGroupVotes do
   use Ecto.Migration
 

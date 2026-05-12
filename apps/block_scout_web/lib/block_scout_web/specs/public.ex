@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Specs.Public do
   @moduledoc """
   This module defines the public API specification for the BlockScoutWeb application.

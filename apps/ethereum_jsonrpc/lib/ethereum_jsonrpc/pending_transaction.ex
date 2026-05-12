@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.PendingTransaction do
   @moduledoc """
    Defines pending transactions fetching functions

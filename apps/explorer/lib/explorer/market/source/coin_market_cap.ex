@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.Source.CoinMarketCap do
   @moduledoc """
   Adapter for fetching exchange rates from https://coinmarketcap.com/api/

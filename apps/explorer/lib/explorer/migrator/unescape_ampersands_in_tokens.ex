@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.UnescapeAmpersandsInTokens do
   @moduledoc """
   Unescapes ampersands in `name` and `symbol` token fields

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.Source.CryptoCompareTest do
   use ExUnit.Case, async: false
 

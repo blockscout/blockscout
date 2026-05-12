@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.CertifiedSmartContractCataloger do
   @moduledoc """
   Actualizes certified smart-contracts.

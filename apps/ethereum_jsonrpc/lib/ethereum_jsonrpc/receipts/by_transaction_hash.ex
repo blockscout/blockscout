@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Receipts.ByTransactionHash do
   @moduledoc """
     Provides functionality to compose JSON-RPC requests for fetching Ethereum transaction receipt by the transaction hash.

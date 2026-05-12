@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.HTTP.MoxTest do
   @moduledoc """
   Tests differences in behavior of `EthereumJSONRPC` when `EthereumJSONRPC.HTTP` is used as the transport that are too

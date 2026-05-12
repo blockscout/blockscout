@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
   @moduledoc """
   Continuously deletes all zero-value calls older than

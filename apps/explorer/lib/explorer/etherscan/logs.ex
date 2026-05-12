@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Etherscan.Logs do
   @moduledoc """
   This module contains functions for working with logs, as they pertain to the

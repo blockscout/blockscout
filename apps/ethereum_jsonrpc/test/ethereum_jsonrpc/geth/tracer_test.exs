@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Geth.TracerTest do
   use EthereumJSONRPC.Case, async: false
 

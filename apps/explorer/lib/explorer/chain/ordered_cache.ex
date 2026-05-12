@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.OrderedCache do
   @moduledoc """
   Behaviour for a cache of ordered elements.

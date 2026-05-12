@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.HTTP do
   @moduledoc """
   JSONRPC over HTTP

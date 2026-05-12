@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
   @moduledoc """
   Implements core batch discovery functionality for the Arbitrum rollup indexer.

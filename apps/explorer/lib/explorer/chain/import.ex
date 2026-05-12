@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import do
   @moduledoc """
   Bulk importing of data into `Explorer.Repo`

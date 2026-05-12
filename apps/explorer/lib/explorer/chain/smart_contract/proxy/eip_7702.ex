@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.SmartContract.Proxy.EIP7702 do
   @moduledoc """
   Module for fetching EOA delegate from https://eips.ethereum.org/EIPS/eip-7702

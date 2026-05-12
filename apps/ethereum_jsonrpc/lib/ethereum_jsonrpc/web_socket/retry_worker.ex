@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.WebSocket.RetryWorker do
   @moduledoc """
   Stores the unavailable websocket endpoint state and periodically checks if it is already available.

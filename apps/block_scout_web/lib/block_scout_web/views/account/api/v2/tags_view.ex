@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Account.API.V2.TagsView do
   def render("address_tags.json", %{tags_map: tags_map}) do
     tags_map

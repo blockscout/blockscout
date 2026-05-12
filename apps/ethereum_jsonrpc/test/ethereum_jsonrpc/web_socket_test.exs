@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.WebSocketTest do
   use EthereumJSONRPC.WebSocket.Case, async: true
 

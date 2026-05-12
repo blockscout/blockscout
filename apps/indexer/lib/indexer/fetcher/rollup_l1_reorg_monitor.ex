@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.RollupL1ReorgMonitor do
   @moduledoc """
   A module to monitor and catch L1 reorgs and make queue of the reorg blocks

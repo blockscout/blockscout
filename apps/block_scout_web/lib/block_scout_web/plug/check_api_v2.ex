@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Plug.CheckApiV2 do
   @moduledoc """
     Checks if the API V2 enabled.

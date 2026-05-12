@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Token.Instance.Thumbnails do
   @moduledoc """
   Module defines thumbnails type for token instances

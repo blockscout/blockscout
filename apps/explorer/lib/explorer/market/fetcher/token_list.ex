@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.Fetcher.TokenList do
   @moduledoc """
   Periodically fetches a token list from a URL conforming to the

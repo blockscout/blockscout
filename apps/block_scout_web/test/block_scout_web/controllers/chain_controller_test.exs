@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.ChainControllerTest do
   use BlockScoutWeb.ConnCase,
     # ETS table is shared in `Explorer.Chain.Cache.Counters.AddressesCount`

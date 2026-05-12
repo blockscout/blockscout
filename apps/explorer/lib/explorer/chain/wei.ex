@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Wei do
   @moduledoc """
   The smallest fractional unit of Ether. Using wei instead of ether allows code to do integer match instead of using

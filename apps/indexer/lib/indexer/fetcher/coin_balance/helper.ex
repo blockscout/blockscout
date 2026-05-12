@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.CoinBalance.Helper do
   @moduledoc """
   Common functions for `Indexer.Fetcher.CoinBalance.Catchup` and `Indexer.Fetcher.CoinBalance.Realtime` modules

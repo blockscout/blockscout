@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Block.Catchup.MissingRangesCollector do
   @moduledoc """
   Collects and manages missing block ranges in the blockchain.

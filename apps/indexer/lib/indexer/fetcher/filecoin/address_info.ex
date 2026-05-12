@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Filecoin.AddressInfo do
   @moduledoc """
   A task for fetching Filecoin addresses info in the Address table using the

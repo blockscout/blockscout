@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.BridgedTokensView do
   use BlockScoutWeb, :view
 

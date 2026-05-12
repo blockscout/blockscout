@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Account.WatchlistAddressController do
   use BlockScoutWeb, :controller
 

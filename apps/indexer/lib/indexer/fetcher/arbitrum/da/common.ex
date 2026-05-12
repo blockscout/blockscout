@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.DA.Common do
   @moduledoc """
     This module provides common functionalities for handling data availability (DA)

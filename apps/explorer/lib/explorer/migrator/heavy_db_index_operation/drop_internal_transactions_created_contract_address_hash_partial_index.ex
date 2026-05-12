@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsCreatedContractAddressHashPartialIndex do
   @moduledoc """
   Drops index "internal_transactions_created_contract_address_hash_partial_index" on internal_transactions(created_contract_address_hash, block_number DESC, transaction_index DESC, index DESC).

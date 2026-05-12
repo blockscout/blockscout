@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.Counters.VerifiedContractsCount do
   @moduledoc """
   Caches the number of verified contracts.

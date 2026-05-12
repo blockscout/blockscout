@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdIndex do
   @moduledoc """
   Create B-tree index on `internal_transactions` table for `created_contract_address_id` column.

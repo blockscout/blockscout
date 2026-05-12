@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
   @moduledoc false
   alias BlockScoutWeb.API.V2.ZkSyncView

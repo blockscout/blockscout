@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.Celo.PendingAccountOperations do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Celo.PendingAccountOperation.t/0`.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.UserOperation do
   @moduledoc """
   This module defines the schema for the UserOperation struct.

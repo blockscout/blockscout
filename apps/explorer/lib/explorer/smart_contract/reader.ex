@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.Reader do
   @moduledoc """
   Reads Smart Contract functions from the blockchain.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.GraphQL.Middleware.ApiEnabled do
   @moduledoc """
   Middleware to check if the GraphQL API is enabled.

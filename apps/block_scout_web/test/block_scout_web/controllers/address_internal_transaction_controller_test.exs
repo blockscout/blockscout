@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
   use BlockScoutWeb.ConnCase, async: true
 

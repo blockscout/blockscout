@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Arbitrum.Migrations.AddDaInfo do
   use Ecto.Migration
 

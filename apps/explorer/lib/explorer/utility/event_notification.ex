@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Utility.EventNotification do
   @moduledoc """
   An auxiliary schema for sending postgres notifications.

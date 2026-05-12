@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Account.TagAddress do
   @moduledoc """
     User created custom address tags.

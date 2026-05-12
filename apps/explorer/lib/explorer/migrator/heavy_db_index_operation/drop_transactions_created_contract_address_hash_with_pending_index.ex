@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndex do
   @moduledoc """
   Drops index "transactions_created_contract_address_hash_with_pending_index" btree (created_contract_address_hash, block_number DESC, index DESC, inserted_at DESC, hash).

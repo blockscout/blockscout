@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.Counters.AddressesCoinBalanceSum do
   @moduledoc """
   Cache for address sum.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Block.EmissionReward do
   @moduledoc """
   Represents the static reward given to the miner of a block in a range of block numbers.

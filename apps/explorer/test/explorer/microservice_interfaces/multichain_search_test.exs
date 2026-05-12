@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
   use ExUnit.Case
   use Explorer.DataCase

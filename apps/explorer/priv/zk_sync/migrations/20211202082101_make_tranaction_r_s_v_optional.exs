@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.ZkSync.Migrations.MakeTransactionRSVOptional do
   use Ecto.Migration
 

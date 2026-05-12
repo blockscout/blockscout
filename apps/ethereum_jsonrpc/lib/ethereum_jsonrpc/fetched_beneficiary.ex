@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.FetchedBeneficiary do
   @moduledoc """
   A single balance request params for the beneficiary of a block.

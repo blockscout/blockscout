@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 

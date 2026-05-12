@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Zilliqa.Zrc2Tokens do
   @moduledoc """
   Fills `zilliqa_zrc2_token_transfers` (or `token_transfers`) and `zilliqa_zrc2_token_adapters` table

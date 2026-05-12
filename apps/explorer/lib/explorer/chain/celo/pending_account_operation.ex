@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Celo.PendingAccountOperation do
   @moduledoc """
   Tracks an address that is pending for fetching of celo account info.

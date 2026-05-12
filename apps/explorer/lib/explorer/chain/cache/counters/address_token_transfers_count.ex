@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.Counters.AddressTokenTransfersCount do
   @moduledoc """
   Caches Address token transfers count.

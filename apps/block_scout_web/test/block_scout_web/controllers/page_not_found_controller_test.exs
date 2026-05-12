@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.PageNotFoundControllerTest do
   use BlockScoutWeb.ConnCase
 

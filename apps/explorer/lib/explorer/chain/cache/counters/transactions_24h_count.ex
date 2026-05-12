@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.Counters.Transactions24hCount do
   @moduledoc """
   Caches number of transactions for last 24 hours, sum of transaction fees for last 24 hours and average transaction fee for last 24 hours counters.

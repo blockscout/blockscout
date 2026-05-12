@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Api.V2.Ethereum.DepositControllerTest do
   use BlockScoutWeb.ConnCase
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]

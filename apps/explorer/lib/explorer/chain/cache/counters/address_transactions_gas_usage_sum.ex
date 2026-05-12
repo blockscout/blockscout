@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.Counters.AddressTransactionsGasUsageSum do
   @moduledoc """
   Caches Address transactions gas usage count.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Utility.AddressIdToAddressHash do
   @moduledoc """
   Module is responsible for keeping the address_id to address_hash correspondence.

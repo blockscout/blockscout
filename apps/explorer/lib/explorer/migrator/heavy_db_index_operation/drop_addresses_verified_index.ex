@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.DropAddressesVerifiedIndex do
   @moduledoc """
   Drops index "addresses_verified_index" on the addresses table.

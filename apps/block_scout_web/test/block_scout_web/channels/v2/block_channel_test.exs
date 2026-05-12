@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.V2.BlockChannelTest do
   use BlockScoutWeb.ChannelCase
 

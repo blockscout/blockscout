@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Arbitrum.ClaimRollupMessage do
   @moduledoc """
     Provides functionality to read L2->L1 messages and prepare withdrawal claims in the Arbitrum protocol.

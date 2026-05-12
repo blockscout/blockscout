@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.Stability.Validators do
   @moduledoc """
   Bulk updates `t:Explorer.Chain.Stability.Validator.t/0` blocks_validated counters.

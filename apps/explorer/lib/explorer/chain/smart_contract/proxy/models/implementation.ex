@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   @moduledoc """
   The representation of proxy smart-contract implementation.

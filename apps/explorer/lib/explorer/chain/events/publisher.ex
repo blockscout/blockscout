@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Events.Publisher do
   @moduledoc """
   Publishes events related to the Chain context.

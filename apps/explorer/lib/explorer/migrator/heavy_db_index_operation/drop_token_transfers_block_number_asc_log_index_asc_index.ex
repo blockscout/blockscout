@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.DropTokenTransfersBlockNumberAscLogIndexAscIndex do
   @moduledoc """
   Drops index "token_transfers_block_number_ASC_log_index_ASC_index" btree (block_number, log_index).

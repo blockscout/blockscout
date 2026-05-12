@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Tokens.Helper do
   @moduledoc """
   Helper functions for interacting with `t:BlockScoutWeb.Chain.Token` attributes.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTokensOrdFiatHolderNameIndex do
   @moduledoc """
   Create B-tree index `idx_tokens_ord_fiat_holder_name` on `tokens` table for

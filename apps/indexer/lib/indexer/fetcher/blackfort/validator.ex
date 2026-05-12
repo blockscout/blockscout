@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Blackfort.Validator do
   @moduledoc """
   GenServer responsible for updating the list of blackfort validators in the database.

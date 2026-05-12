@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.CeloL2Epochs do
   @moduledoc """
   Backfills Celo L2 epochs data. It processes logs related to epoch processing

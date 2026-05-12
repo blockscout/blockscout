@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.EthRPC do
   @moduledoc """
   Ethereum JSON RPC methods logic implementation.

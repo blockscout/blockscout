@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.Solidity.PublishHelper do
   @moduledoc """
     Module responsible for preparing and publishing smart contracts

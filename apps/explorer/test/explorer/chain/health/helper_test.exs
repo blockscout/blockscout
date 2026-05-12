@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Health.HelperTest do
   use Explorer.DataCase
   alias Explorer.Chain.Health.Helper, as: HealthHelper

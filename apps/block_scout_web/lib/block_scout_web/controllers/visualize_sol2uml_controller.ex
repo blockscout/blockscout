@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.VisualizeSol2umlController do
   use BlockScoutWeb, :controller
   alias BlockScoutWeb.AccessHelper
