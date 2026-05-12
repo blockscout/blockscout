@@ -86,7 +86,9 @@ Every key the view always emits should be in `required:`. Keys that are conditio
 - Not be in `required:` (if the key might be absent)
 - Be in `required:` but have `nullable: true` on the schema (if the key is always present but sometimes null)
 
-**Scope.** "Always emits" and "sometimes `nil`" refer to the render paths reachable via the **endpoints that currently reference this schema** in their `operation/2` `responses:`. Before flagging a `nullable: false` property as wrong:
+`nullable: false` is the OpenAPI 3.0 default — file a nullability finding only when a nilable field lacks `nullable: true`, never to add or change `nullable: false`.
+
+**Scope.** "Always emits" and "sometimes `nil`" refer to the render paths reachable via the **endpoints that currently reference this schema** in their `operation/2` `responses:`. Before flagging a not-nullable property as wrong (i.e., claiming it should be `nullable: true`):
 
 1. Enumerate those call sites mechanically: `Grep "Schemas\.<SchemaName>\b" apps/block_scout_web/lib/block_scout_web/controllers`.
 2. For each call site, check the controller's `necessity_by_association` / explicit `Repo.preload/2` / other data-shaping code to determine whether the value can in fact reach the view as `nil`.
@@ -250,6 +252,22 @@ Independent of any single-endpoint audit, run this sweep once per work session t
 - Recipe I — tags violating kebab-case
 
 Full recipes in `references/oastools-audit-recipes.md`. Results belong in the "Convention deviations" section of the audit output below.
+
+## 7. Finding-quality gates
+
+Apply these gates **after** identifying a candidate issue but **before** writing it into the report. They reduce two failure modes: overengineered suggested fixes, and Minor/Nit findings that are taste rather than rule violations.
+
+### Gate 1 — Suggested fix is minimum-viable
+
+Propose the smallest edit that resolves the finding. Do not bundle new modules, shared schemas, or helpers into the fix unless **≥2 real duplicates already exist** in the audited code.
+
+If a larger refactor is also worth doing, file it as a separate Nit titled `Follow-up: consolidate <X>`. Severity is independent of fix size — a trivial fix does not downgrade a Critical finding.
+
+### Gate 2 — Minor and Nit findings must cite a rule
+
+Every Minor/Nit finding must cite a section in one of the references (e.g., `inspection-checklist.md §2b`, `schema-conventions.md` "Nullable fields", `oastools-audit-recipes.md` Recipe N). If no section fits, drop the finding — or, if it actually violates an implicit rule, raise the severity and cite.
+
+**Critical/Major are exempt.** They may violate implicit rules that no single section captures cleanly. Do not downgrade Critical/Major to Nit to make this gate applicable — that is the failure mode this gate is *not* trying to enable.
 
 ## Audit output
 
