@@ -44,7 +44,19 @@ defmodule EthereumJSONRPC.HTTP do
   end
 
   def json_rpc(batch_request, options) when is_list(batch_request) do
-    chunked_json_rpc([batch_request], options, [])
+    batch_size = Application.get_env(:ethereum_jsonrpc, __MODULE__)[:batch_size]
+    chunked_batch_request = Enum.chunk_every(batch_request, batch_size)
+    maybe_log_big_batch(chunked_batch_request)
+    chunked_json_rpc(chunked_batch_request, options, [])
+  end
+
+  defp maybe_log_big_batch([]), do: :ok
+  defp maybe_log_big_batch([_]), do: :ok
+
+  defp maybe_log_big_batch([first_chunk | _] = batch) do
+    Logger.warning(
+      "Big amount of node requests in batch: #{batch |> Enum.map(&length/1) |> Enum.sum()}, 1st_chunk_1st_request: #{inspect(List.first(first_chunk))}"
+    )
   end
 
   defp chunked_json_rpc([], _options, decoded_response_bodies) when is_list(decoded_response_bodies) do
