@@ -1020,6 +1020,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
               proxy_implementations.address_hashes
               |> Enum.zip(proxy_implementations.names)
               |> Enum.reject(fn {address_hash, _name} ->
+                # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
                 Enum.any?(proxy_implementations.smart_contracts, fn smart_contract ->
                   smart_contract.address_hash == address_hash
                 end)
@@ -1213,10 +1214,10 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
   defp format_not_verified_implementation(address) do
     %{
-      hash: Hash.to_string(address.hash),
+      hash: Hash.to_string(address[:hash]),
       is_contract: true,
       is_verified_contract: false,
-      contract_name: get_smart_contract_name(address)
+      contract_name: address[:name]
     }
   end
 
