@@ -44,8 +44,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
            next_page_params_example: %{
              "world" => "0x82cb040ff4463bff3395d52b558fd77c61583b27",
              "items_count" => 50
-           },
-           title_prefix: "Worlds"
+           }
          )}
     ]
 
@@ -127,8 +126,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
            next_page_params_example: %{
              "table_id" => "0x746243484553545f5641554c5400000043686573744163636573730000000000",
              "items_count" => 50
-           },
-           title_prefix: "Tables"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -257,8 +255,7 @@ defmodule BlockScoutWeb.API.V2.MudController do
                "key_bytes" => "0x73796269746c7900000000000000000043686573743332000000000000000000",
                "key0" => "0x73796269746c7900000000000000000043686573743332000000000000000000",
                "items_count" => 50
-             },
-             title_prefix: "Records"
+             }
            ),
            properties: %{
              table: Schemas.MUD.Table,

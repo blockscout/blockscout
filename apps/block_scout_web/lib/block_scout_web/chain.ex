@@ -1083,6 +1083,18 @@ defmodule BlockScoutWeb.Chain do
     %{"number" => number}
   end
 
+  # Shibarium Deposits — must precede the Optimism Deposits clause since the
+  # Shibarium reader map also contains :l1_block_number and :l2_transaction_hash;
+  # :user is present only in the Shibarium-shaped map.
+  defp paging_params(%{l1_block_number: block_number, user: _}) do
+    %{block_number: block_number}
+  end
+
+  # Shibarium Withdrawals — kept next to deposits for symmetry; :user is the discriminator.
+  defp paging_params(%{l2_block_number: block_number, user: _}) do
+    %{block_number: block_number}
+  end
+
   # clause for Optimism Deposits
   defp paging_params(%{l1_block_number: l1_block_number, l2_transaction_hash: l2_transaction_hash}) do
     %{l1_block_number: l1_block_number, transaction_hash: l2_transaction_hash}
@@ -1091,16 +1103,6 @@ defmodule BlockScoutWeb.Chain do
   # clause for Optimism Withdrawals
   defp paging_params(%{msg_nonce: nonce}) do
     %{nonce: nonce}
-  end
-
-  # clause for Shibarium Deposits
-  defp paging_params(%{l1_block_number: block_number}) do
-    %{"block_number" => block_number}
-  end
-
-  # clause for Shibarium Withdrawals
-  defp paging_params(%{l2_block_number: block_number}) do
-    %{"block_number" => block_number}
   end
 
   @spec paging_params_with_fiat_value(CurrentTokenBalance.t()) :: %{
