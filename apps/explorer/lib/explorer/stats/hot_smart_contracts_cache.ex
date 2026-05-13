@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Stats.HotSmartContractsCache do
   @moduledoc """
   Cache for hot smart contracts computed from realtime transaction cohorts.
