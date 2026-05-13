@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   alias Explorer.Chain.Cache.GasPriceOracle
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
-  alias Explorer.Stats.HotSmartContracts
+  alias Explorer.Stats.{HotSmartContracts, HotSmartContractsCache}
   alias Plug.Conn
   alias Timex.Duration
 
@@ -288,7 +288,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
 
     {hot_smart_contracts, next_page} =
       scale
-      |> HotSmartContracts.paginated(options)
+      |> HotSmartContractsCache.fetch(options, fn -> HotSmartContracts.paginated(scale, options) end)
       |> case do
         {:error, :not_found} -> []
         hot_smart_contracts -> hot_smart_contracts
