@@ -159,7 +159,15 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
     |> render(:zksync_batches, %{batches: batches})
   end
 
-  operation :batch_latest_number, false
+  operation :batch_latest_number,
+    summary: "Get the latest batch number.",
+    description: "Retrieves the number of the most recent ZkSync rollup batch. Returns 0 if no batches exist.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Latest ZkSync batch number.", "application/json", %Schema{type: :integer, minimum: 0}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ],
+    tags: ["main-page"]
 
   @doc """
     Function to handle GET requests to `/api/v2/main-page/zksync/batches/latest-number` endpoint.

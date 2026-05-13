@@ -251,5 +251,26 @@ defmodule BlockScoutWeb.API.V2.ZkSyncControllerTest do
         assert json_response(request, 422)
       end
     end
+
+    describe "/main-page/zksync/batches/latest-number" do
+      test "returns 0 when there are no batches", %{conn: conn} do
+        request = get(conn, "/api/v2/main-page/zksync/batches/latest-number")
+        assert json_response(request, 200) == 0
+      end
+
+      test "returns the highest batch number when batches exist", %{conn: conn} do
+        insert(:zksync_transaction_batch, number: 42)
+        insert(:zksync_transaction_batch, number: 100)
+        insert(:zksync_transaction_batch, number: 7)
+
+        request = get(conn, "/api/v2/main-page/zksync/batches/latest-number")
+        assert json_response(request, 200) == 100
+      end
+
+      test "returns 422 when an undeclared query parameter is supplied", %{conn: conn} do
+        request = get(conn, "/api/v2/main-page/zksync/batches/latest-number", %{"unknown" => "1"})
+        assert json_response(request, 422)
+      end
+    end
   end
 end
