@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   use OpenApiSpex.ControllerSpecs
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 5, fetch_scam_token_toggle: 2]
+  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 4, fetch_scam_token_toggle: 2]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   alias BlockScoutWeb.AccessHelper
@@ -232,14 +232,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     }
   ]
 
-  @items_count_param %OpenApiSpex.Parameter{
-    name: :items_count,
-    in: :query,
-    schema: %OpenApiSpex.Schema{type: :integer, minimum: 1},
-    required: false,
-    description: "Cumulative number of items already returned across previous pages."
-  }
-
   operation :list,
     summary: "List transactions, internal transactions and token transfers matching the advanced filter criteria",
     description:
@@ -247,8 +239,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
         "transfers — filtered by transaction type, contract method, time window, address relations, value range " <>
         "and/or token contract. The response also echoes the resolved human-readable names of the methods and " <>
         "tokens referenced in the request filters.",
-    parameters:
-      base_params() ++ @advanced_filter_query_params ++ @advanced_filter_keyset_params ++ [@items_count_param],
+    parameters: base_params() ++ @advanced_filter_query_params ++ @advanced_filter_keyset_params,
     responses: [
       ok:
         {"List of matching items with pagination information and resolved search params.", "application/json",
@@ -278,7 +269,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       |> Transaction.decode_transactions(true, @api_true)
 
     next_page_params =
-      next_page |> next_page_params(advanced_filters, Map.take(params, [:items_count]), false, &paging_params/1)
+      next_page |> next_page_params(advanced_filters, %{}, &paging_params/1)
 
     render(conn, :advanced_filters,
       advanced_filters: advanced_filters,

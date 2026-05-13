@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 5,
+      next_page_params: 4,
       paging_options: 1,
       split_list_by_page: 1,
       parse_block_hash_or_number_param: 1
@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
   operation :messages,
     summary: "List cross-chain messages.",
     description: "Retrieves a paginated list of Arbitrum cross-chain messages filtered by the specified direction.",
-    parameters: [@direction_param | base_params()] ++ define_paging_params(["id", "items_count"]),
+    parameters: [@direction_param | base_params()] ++ define_paging_params(["id"]),
     responses: [
       ok:
         {"Paginated list of cross-chain messages.", "application/json",
@@ -158,7 +158,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
             schema: %Schema{type: :string, enum: ["all"]},
             description: "When set to `all`, returns a paginated list of all batches for this data hash."
           }
-        ] ++ define_paging_params(["number", "items_count"]),
+        ] ++ define_paging_params(["number"]),
     responses: [
       ok:
         {"Batch info, or paginated batch list when `type=all`.", "application/json",
@@ -200,7 +200,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
             schema: %Schema{type: :string, enum: ["all"]},
             description: "When set to `all`, returns a paginated list of all batches for this data hash."
           }
-        ] ++ define_paging_params(["number", "items_count"]),
+        ] ++ define_paging_params(["number"]),
     responses: [
       ok:
         {"Batch info, or paginated batch list when `type=all`.", "application/json",
@@ -267,7 +267,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
             schema: %Schema{type: :array, items: %Schema{type: :integer, minimum: 0}},
             description: "Optional list of specific batch numbers to retrieve."
           }
-        ] ++ define_paging_params(["number", "items_count"]),
+        ] ++ define_paging_params(["number"]),
     responses: [
       ok:
         {"Paginated list of Arbitrum batches.", "application/json",
@@ -355,7 +355,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
         next_page,
         messages,
         params,
-        false,
         fn %Message{message_id: message_id} -> %{"id" => message_id} end
       )
 
@@ -575,7 +574,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
         next_page,
         batches,
         params,
-        false,
         fn %L1Batch{number: number} -> %{"number" => number} end
       )
 

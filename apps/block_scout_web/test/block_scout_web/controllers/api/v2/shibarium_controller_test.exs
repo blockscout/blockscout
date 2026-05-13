@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.API.V2.ShibariumControllerTest do
         assert Enum.count(response["items"]) == 50
         assert response["next_page_params"] != nil
         assert response["next_page_params"]["block_number"] != nil
-        assert response["next_page_params"]["items_count"] == 50
+        refute response["next_page_params"]["items_count"]
 
         compare_deposit(Enum.at(deposits, 50), Enum.at(response["items"], 0))
         compare_deposit(Enum.at(deposits, 1), Enum.at(response["items"], 49))
@@ -93,7 +93,7 @@ defmodule BlockScoutWeb.API.V2.ShibariumControllerTest do
         assert Enum.count(response["items"]) == 50
         assert response["next_page_params"] != nil
         assert response["next_page_params"]["block_number"] != nil
-        assert response["next_page_params"]["items_count"] == 50
+        refute response["next_page_params"]["items_count"]
 
         compare_withdrawal(Enum.at(withdrawals, 50), Enum.at(response["items"], 0))
         compare_withdrawal(Enum.at(withdrawals, 1), Enum.at(response["items"], 49))

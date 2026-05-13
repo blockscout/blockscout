@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     only: [
       split_list_by_page: 1,
       paging_options: 1,
-      next_page_params: 5
+      next_page_params: 4
     ]
 
   @api_true api?: true
@@ -87,7 +87,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
             required: false,
             description: "Cursor field — number of blocks validated from the previous page's `next_page_params`."
           }
-        ] ++ define_paging_params(["items_count"]),
+        ],
     responses: [
       ok:
         {"List of Stability validators.", "application/json",
@@ -96,8 +96,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
            next_page_params_example: %{
              "state" => "active",
              "address_hash" => "0x0000000000000000000000000000000000000805",
-             "blocks_validated" => 100,
-             "items_count" => 50
+             "blocks_validated" => 100
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
@@ -126,7 +125,6 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       |> next_page_params(
         validators,
         params,
-        false,
         &ValidatorStability.next_page_params/1
       )
 
@@ -188,7 +186,6 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       |> next_page_params(
         validators,
         params,
-        false,
         &ValidatorBlackfort.next_page_params/1
       )
 
@@ -232,7 +229,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     description: "Retrieves the list of Zilliqa validators.",
     parameters:
       base_params() ++
-        define_paging_params(["index", "items_count"]) ++
+        define_paging_params(["index"]) ++
         [
           sort_param(["index"]),
           order_param()
@@ -243,8 +240,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
          paginated_response(
            items: Schemas.Zilliqa.Staker,
            next_page_params_example: %{
-             "index" => 55,
-             "items_count" => 50
+             "index" => 55
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
@@ -283,7 +279,6 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       |> next_page_params(
         validators,
         params,
-        false,
         &ValidatorZilliqa.next_page_params/1
       )
 
