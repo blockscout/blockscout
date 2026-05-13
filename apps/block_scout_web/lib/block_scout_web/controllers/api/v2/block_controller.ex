@@ -186,7 +186,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     that lost consensus during a chain reorganization.
 
     Pagination is cursor-based: the response contains `next_page_params` with
-    `block_number` and `items_count` — pass these back as query parameters on
+    `block_number` — pass these back as query parameters on
     the next request to fetch the following page.
     """,
     parameters:

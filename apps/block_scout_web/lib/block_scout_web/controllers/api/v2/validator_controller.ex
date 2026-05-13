@@ -87,7 +87,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
             required: false,
             description: "Cursor field — number of blocks validated from the previous page's `next_page_params`."
           }
-        ] ++ define_paging_params(["items_count"]),
+        ],
     responses: [
       ok:
         {"List of Stability validators.", "application/json",
@@ -96,8 +96,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
            next_page_params_example: %{
              "state" => "active",
              "address_hash" => "0x0000000000000000000000000000000000000805",
-             "blocks_validated" => 100,
-             "items_count" => 50
+             "blocks_validated" => 100
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
