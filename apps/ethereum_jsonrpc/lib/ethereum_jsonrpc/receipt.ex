@@ -132,8 +132,8 @@ defmodule EthereumJSONRPC.Receipt do
           l1_fee_scalar: 0,\
           l1_gas_price: 0,\
           l1_gas_used: 0,\
-          operator_fee_scalar: nil,\
-          operator_fee_constant: nil,\
+          operator_fee_scalar: 0,\
+          operator_fee_constant: 0,\
           da_footprint_gas_scalar: nil\
       """
     :scroll -> """
@@ -187,8 +187,8 @@ defmodule EthereumJSONRPC.Receipt do
           l1_fee_scalar: 0,\
           l1_gas_price: 0,\
           l1_gas_used: 0,\
-          operator_fee_scalar: nil,\
-          operator_fee_constant: nil,\
+          operator_fee_scalar: 0,\
+          operator_fee_constant: 0,\
           da_footprint_gas_scalar: nil\
       """
     :scroll -> """
@@ -252,24 +252,15 @@ defmodule EthereumJSONRPC.Receipt do
       end
 
     :optimism ->
-      alias Explorer.Chain.Optimism.SuperchainConfig
-
       defp chain_type_fields(params, elixir) do
-        {operator_fee_scalar_default, operator_fee_constant_default} =
-          if is_nil(SuperchainConfig.isthmus_timestamp_l2()) do
-            {nil, nil}
-          else
-            {0, 0}
-          end
-
         params
         |> Map.merge(%{
           l1_fee: Map.get(elixir, "l1Fee", 0),
           l1_fee_scalar: Map.get(elixir, "l1FeeScalar", 0),
           l1_gas_price: Map.get(elixir, "l1GasPrice", 0),
           l1_gas_used: Map.get(elixir, "l1GasUsed", 0),
-          operator_fee_scalar: Map.get(elixir, "operatorFeeScalar", operator_fee_scalar_default),
-          operator_fee_constant: Map.get(elixir, "operatorFeeConstant", operator_fee_constant_default),
+          operator_fee_scalar: Map.get(elixir, "operatorFeeScalar", 0),
+          operator_fee_constant: Map.get(elixir, "operatorFeeConstant", 0),
           da_footprint_gas_scalar: Map.get(elixir, "daFootprintGasScalar")
         })
       end
