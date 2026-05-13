@@ -14,6 +14,11 @@ defmodule Explorer.Stats.HotSmartContractsCache do
   @spec cache_name() :: atom()
   def cache_name, do: @cache_name
 
+  @doc """
+  Fetches hot smart contracts for the given scale and options, using the cache if applicable.
+  If the scale is cacheable, it attempts to fetch from the cache or store the result of the fallback function.
+  If the scale is not cacheable, it directly calls the fallback function.
+  """
   @spec fetch(scale(), keyword(), (-> [HotSmartContracts.t()] | {:error, :not_found})) ::
           [HotSmartContracts.t()] | {:error, :not_found}
   def fetch(scale, options, fallback_fn) when is_function(fallback_fn, 0) do
