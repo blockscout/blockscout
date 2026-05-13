@@ -52,9 +52,10 @@ defmodule EthereumJSONRPC.HTTP.Helper do
   """
   @spec try_unzip(binary(), [{binary(), binary()}]) :: binary()
   def try_unzip(body, headers) do
-    gzip_enabled? = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP)[:gzip_enabled?]
+    request_compression_all_methods_enabled? =
+      Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP)[:request_compression_all_methods_enabled?]
 
-    if gzip_enabled? do
+    if request_compression_all_methods_enabled? do
       do_unzip(body, headers)
     else
       body

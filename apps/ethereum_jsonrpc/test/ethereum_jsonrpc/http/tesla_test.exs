@@ -27,7 +27,7 @@ defmodule EthereumJSONRPC.HTTP.TeslaTest do
       Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP,
         request_compression_heavy_methods_enabled?: true,
         request_compression_all_methods_enabled?: false,
-        gzip_enabled?: false
+        request_compression_all_methods_enabled?: false
       )
 
       response_body = ~s({"jsonrpc":"2.0","id":1,"result":"0x1"})
@@ -58,7 +58,7 @@ defmodule EthereumJSONRPC.HTTP.TeslaTest do
       Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP,
         request_compression_heavy_methods_enabled?: true,
         request_compression_all_methods_enabled?: false,
-        gzip_enabled?: false
+        request_compression_all_methods_enabled?: false
       )
 
       response_body = ~s({"jsonrpc":"2.0","id":1,"result":"0x10"})
@@ -88,7 +88,7 @@ defmodule EthereumJSONRPC.HTTP.TeslaTest do
       Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP,
         request_compression_heavy_methods_enabled?: false,
         request_compression_all_methods_enabled?: true,
-        gzip_enabled?: false
+        request_compression_all_methods_enabled?: false
       )
 
       response_body = ~s({"jsonrpc":"2.0","id":1,"result":"0x10"})
