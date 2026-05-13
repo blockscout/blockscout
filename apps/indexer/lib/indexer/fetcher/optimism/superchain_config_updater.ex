@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Optimism.SuperchainConfigUpdater do
   @moduledoc """
   Runs once on startup to populate Optimism constants from Superchain TOML

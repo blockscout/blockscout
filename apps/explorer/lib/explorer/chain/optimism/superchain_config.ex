@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Optimism.SuperchainConfig do
   @moduledoc """
   Loads selected Optimism chain parameters from a Superchain TOML file,
