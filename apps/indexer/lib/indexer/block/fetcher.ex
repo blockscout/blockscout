@@ -16,7 +16,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Block, Hash, Import, Transaction, Wei, Withdrawal}
+  alias Explorer.Chain.{Block, Hash, Import, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
@@ -462,7 +462,7 @@ defmodule Indexer.Block.Fetcher do
       Map.merge(import_options, %{
         addresses: %{params: addresses_without_nonce},
         address_current_token_balances: %{params: current_token_balances_params},
-        tokens: %{params: tokens},
+        tokens: Map.get(import_options, :tokens) || %{params: tokens},
         token_instances: %{params: token_instances}
       })
     end
