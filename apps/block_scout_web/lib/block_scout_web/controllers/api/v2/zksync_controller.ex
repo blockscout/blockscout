@@ -55,7 +55,27 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
     end
   end
 
-  operation :batches, false
+  operation :batches,
+    summary: "List batches.",
+    description: "Retrieves a paginated list of ZkSync rollup batches, newest first.",
+    parameters:
+      base_params() ++
+        define_paging_params([
+          "number",
+          "items_count"
+        ]),
+    responses: [
+      ok:
+        {"List of batches.", "application/json",
+         paginated_response(
+           items: Schemas.ZkSync.BatchListItem,
+           next_page_params_example: %{
+             "items_count" => 50,
+             "number" => 502_655
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/zksync/batches` endpoint.
@@ -75,7 +95,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
         next_page,
         batches,
         params,
-        fn %TransactionBatch{number: number} -> %{"number" => number} end
+        fn %TransactionBatch{number: number} -> %{number: number} end
       )
 
     conn
