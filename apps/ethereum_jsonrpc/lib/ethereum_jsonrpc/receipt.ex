@@ -26,8 +26,8 @@ defmodule EthereumJSONRPC.Receipt do
                              l1_fee_scalar: non_neg_integer(),
                              l1_gas_price: non_neg_integer(),
                              l1_gas_used: non_neg_integer(),
-                             operator_fee_scalar: non_neg_integer(),
-                             operator_fee_constant: non_neg_integer(),
+                             operator_fee_scalar: non_neg_integer() | nil,
+                             operator_fee_constant: non_neg_integer() | nil,
                              da_footprint_gas_scalar: non_neg_integer() | nil
                            ]
                          )
@@ -132,8 +132,8 @@ defmodule EthereumJSONRPC.Receipt do
           l1_fee_scalar: 0,\
           l1_gas_price: 0,\
           l1_gas_used: 0,\
-          operator_fee_scalar: 0,\
-          operator_fee_constant: 0,\
+          operator_fee_scalar: nil,\
+          operator_fee_constant: nil,\
           da_footprint_gas_scalar: nil\
       """
     :scroll -> """
@@ -187,8 +187,8 @@ defmodule EthereumJSONRPC.Receipt do
           l1_fee_scalar: 0,\
           l1_gas_price: 0,\
           l1_gas_used: 0,\
-          operator_fee_scalar: 0,\
-          operator_fee_constant: 0,\
+          operator_fee_scalar: nil,\
+          operator_fee_constant: nil,\
           da_footprint_gas_scalar: nil\
       """
     :scroll -> """
