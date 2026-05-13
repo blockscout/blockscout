@@ -106,7 +106,14 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
     })
   end
 
-  operation :batches_count, false
+  operation :batches_count,
+    summary: "Get batches count.",
+    description: "Retrieves the total count of ZkSync rollup batches.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Total count of batches.", "application/json", %Schema{type: :integer, minimum: 0}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/zksync/batches/count` endpoint.

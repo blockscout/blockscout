@@ -182,6 +182,25 @@ defmodule BlockScoutWeb.API.V2.ZkSyncControllerTest do
       end
     end
 
+    describe "/zksync/batches/count" do
+      test "returns 0 when there are no batches", %{conn: conn} do
+        request = get(conn, "/api/v2/zksync/batches/count")
+        assert json_response(request, 200) == 0
+      end
+
+      test "returns the total count of batches when batches exist", %{conn: conn} do
+        insert_list(3, :zksync_transaction_batch)
+
+        request = get(conn, "/api/v2/zksync/batches/count")
+        assert json_response(request, 200) == 3
+      end
+
+      test "returns 422 when an undeclared query parameter is supplied", %{conn: conn} do
+        request = get(conn, "/api/v2/zksync/batches/count", %{"unknown" => "1"})
+        assert json_response(request, 422)
+      end
+    end
+
     describe "/main-page/zksync/batches/confirmed" do
       test "returns an empty list when there are no committed batches", %{conn: conn} do
         request = get(conn, "/api/v2/main-page/zksync/batches/confirmed")
