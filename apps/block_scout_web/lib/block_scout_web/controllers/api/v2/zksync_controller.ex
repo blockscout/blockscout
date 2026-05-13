@@ -121,8 +121,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
 
   operation :batches_confirmed,
     summary: "List confirmed batches on the main page.",
-    description:
-      "Retrieves up to ten most-recently-committed ZkSync rollup batches, displayed on the main page.",
+    description: "Retrieves up to ten most-recently-committed ZkSync rollup batches, displayed on the main page.",
     parameters: base_params(),
     responses: [
       ok:
