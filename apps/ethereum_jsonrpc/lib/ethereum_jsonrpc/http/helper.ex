@@ -85,6 +85,20 @@ defmodule EthereumJSONRPC.HTTP.Helper do
     end
   end
 
+  @doc """
+  Determines whether HTTP request compression should be enabled for a given JSON-RPC method.
+
+  Compression is enabled when either the all-methods flag is true, or when the
+  heavy-methods flag is true and the method is classified as heavy. Heavy methods
+  include trace_*, debug_*, and eth_getBlockReceipts.
+
+  ## Parameters
+  - `method`: The JSON-RPC method name (binary) or term
+  - `config`: Optional keyword list of configuration options (defaults to application environment)
+
+  ## Returns
+  - `true` if request compression should be enabled, `false` otherwise
+  """
   @spec request_compression_enabled?(binary() | term(), keyword() | nil) :: boolean()
   def request_compression_enabled?(method, config \\ Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP, [])) do
     request_compression_all_methods_enabled? =
@@ -97,6 +111,19 @@ defmodule EthereumJSONRPC.HTTP.Helper do
       (request_compression_heavy_methods_enabled? && heavy_request_method?(method))
   end
 
+  @doc """
+  Determines whether a JSON-RPC method is classified as a "heavy" request.
+
+  Heavy methods are those with high payload or computational requirements,
+  specifically methods starting with trace_ or debug_ prefixes, or the
+  eth_getBlockReceipts method.
+
+  ## Parameters
+  - `method`: The JSON-RPC method name (binary) or any term
+
+  ## Returns
+  - `true` if the method is classified as heavy, `false` otherwise
+  """
   @spec heavy_request_method?(binary() | term()) :: boolean()
   def heavy_request_method?(method) when is_binary(method) do
     String.starts_with?(method, ["trace_", "debug_"]) || method == "eth_getBlockReceipts"
