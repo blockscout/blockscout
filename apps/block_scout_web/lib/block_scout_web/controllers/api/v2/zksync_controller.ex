@@ -118,7 +118,29 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
     |> render(:zksync_batches_count, %{count: Reader.batches_count(api?: true)})
   end
 
-  operation :batches_confirmed, false
+  operation :batches_confirmed,
+    summary: "List confirmed batches on the main page.",
+    description:
+      "Retrieves up to ten most-recently-committed ZkSync rollup batches, displayed on the main page.",
+    parameters: base_params(),
+    responses: [
+      ok:
+        {"List of confirmed ZkSync batches.", "application/json",
+         %Schema{
+           type: :object,
+           properties: %{
+             items: %Schema{
+               type: :array,
+               items: Schemas.ZkSync.ConfirmedBatchListItem,
+               nullable: false
+             }
+           },
+           required: [:items],
+           additionalProperties: false
+         }},
+      unprocessable_entity: JsonErrorResponse.response()
+    ],
+    tags: ["main-page"]
 
   @doc """
     Function to handle GET requests to `/api/v2/main-page/zksync/batches/confirmed` endpoint.

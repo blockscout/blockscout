@@ -181,5 +181,75 @@ defmodule BlockScoutWeb.API.V2.ZkSyncControllerTest do
         assert json_response(request, 422)
       end
     end
+
+    describe "/main-page/zksync/batches/confirmed" do
+      test "returns an empty list when there are no committed batches", %{conn: conn} do
+        request = get(conn, "/api/v2/main-page/zksync/batches/confirmed")
+        assert response = json_response(request, 200)
+
+        assert response["items"] == []
+      end
+
+      test "returns only batches that have a commit transaction, newest first", %{conn: conn} do
+        # Sealed (no commit) — should be excluded.
+        _sealed_batch = insert(:zksync_transaction_batch)
+
+        commit_tx = insert(:zksync_lifecycle_transaction)
+        sent_batch = insert(:zksync_transaction_batch, commit_id: commit_tx.id)
+
+        prove_tx = insert(:zksync_lifecycle_transaction)
+
+        validated_batch =
+          insert(:zksync_transaction_batch, commit_id: commit_tx.id, prove_id: prove_tx.id)
+
+        execute_tx = insert(:zksync_lifecycle_transaction)
+
+        executed_batch =
+          insert(:zksync_transaction_batch,
+            commit_id: commit_tx.id,
+            prove_id: prove_tx.id,
+            execute_id: execute_tx.id
+          )
+
+        request = get(conn, "/api/v2/main-page/zksync/batches/confirmed")
+        assert response = json_response(request, 200)
+
+        items_by_number = Enum.into(response["items"], %{}, &{&1["number"], &1})
+
+        assert Map.keys(items_by_number) |> Enum.sort() ==
+                 Enum.sort([sent_batch.number, validated_batch.number, executed_batch.number])
+
+        sent_item = Map.fetch!(items_by_number, sent_batch.number)
+        assert sent_item["status"] == "Sent to L1"
+        assert sent_item["commit_transaction_hash"] == to_string(commit_tx.hash)
+        assert sent_item["commit_transaction_timestamp"] == DateTime.to_iso8601(commit_tx.timestamp)
+
+        assert sent_item["transactions_count"] ==
+                 sent_batch.l1_transaction_count + sent_batch.l2_transaction_count
+
+        validated_item = Map.fetch!(items_by_number, validated_batch.number)
+        assert validated_item["status"] == "Validated on L1"
+        assert validated_item["prove_transaction_hash"] == to_string(prove_tx.hash)
+
+        executed_item = Map.fetch!(items_by_number, executed_batch.number)
+        assert executed_item["status"] == "Executed on L1"
+        assert executed_item["execute_transaction_hash"] == to_string(execute_tx.hash)
+      end
+
+      test "caps the response at ten batches", %{conn: conn} do
+        commit_tx = insert(:zksync_lifecycle_transaction)
+        insert_list(11, :zksync_transaction_batch, commit_id: commit_tx.id)
+
+        request = get(conn, "/api/v2/main-page/zksync/batches/confirmed")
+        assert response = json_response(request, 200)
+
+        assert length(response["items"]) == 10
+      end
+
+      test "returns 422 when an undeclared query parameter is supplied", %{conn: conn} do
+        request = get(conn, "/api/v2/main-page/zksync/batches/confirmed", %{"unknown" => "1"})
+        assert json_response(request, 422)
+      end
+    end
   end
 end
