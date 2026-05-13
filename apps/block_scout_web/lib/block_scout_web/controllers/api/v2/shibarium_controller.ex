@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
     parameters:
       base_params() ++
         Enum.map(
-          define_paging_params(["items_count", "block_number"]),
+          define_paging_params(["block_number"]),
           fn
             %OpenApiSpex.Parameter{name: :block_number} = param ->
               %{param | description: "Parent chain block number for paging (cursor on `l1_block_number`)."}
@@ -48,7 +48,6 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
          paginated_response(
            items: Schemas.Shibarium.Deposit,
            next_page_params_example: %{
-             "items_count" => 50,
              "block_number" => 17_500_000
            }
          )},
@@ -113,7 +112,7 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
     parameters:
       base_params() ++
         Enum.map(
-          define_paging_params(["items_count", "block_number"]),
+          define_paging_params(["block_number"]),
           fn
             %OpenApiSpex.Parameter{name: :block_number} = param ->
               %{param | description: "Shibarium block number for paging (cursor on `l2_block_number`)."}
@@ -128,7 +127,6 @@ defmodule BlockScoutWeb.API.V2.ShibariumController do
          paginated_response(
            items: Schemas.Shibarium.Withdrawal,
            next_page_params_example: %{
-             "items_count" => 50,
              "block_number" => 5_000_000
            }
          )},
