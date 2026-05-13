@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Shibarium.Deposit do
   @moduledoc """
   This module defines the schema for the Shibarium Deposit struct.
