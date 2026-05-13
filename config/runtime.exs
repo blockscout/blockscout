@@ -432,6 +432,12 @@ config :explorer, Explorer.Chain.Cache.Counters.AverageBlockTime,
 config :explorer, Explorer.Market.MarketHistoryCache,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_MARKET_HISTORY_PERIOD", "1h")
 
+config :explorer, Explorer.Stats.HotSmartContractsCache, %{
+  "5m" => ConfigHelper.parse_time_env_var("CACHE_HOT_SMART_CONTRACTS_5M_PERIOD", "30s"),
+  "1h" => ConfigHelper.parse_time_env_var("CACHE_HOT_SMART_CONTRACTS_1H_PERIOD", "6m"),
+  "3h" => ConfigHelper.parse_time_env_var("CACHE_HOT_SMART_CONTRACTS_3H_PERIOD", "18m")
+}
+
 config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TRANSACTIONS_COUNTER_PERIOD", "1h")
 

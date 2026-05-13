@@ -39,6 +39,7 @@ defmodule Explorer.Application do
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo.PrometheusLogger
+  alias Explorer.Stats.HotSmartContractsCache
   alias Explorer.Utility.Hammer
   alias Oban.Telemetry, as: ObanTelemetry
   alias Utils.ConfigHelper
@@ -94,6 +95,10 @@ defmodule Explorer.Application do
       Uncles,
       AddressTabsElementsCount,
       con_cache_child_spec(MarketHistoryCache.cache_name()),
+      con_cache_child_spec(HotSmartContractsCache.cache_name(),
+        ttl_check_interval: :timer.seconds(1),
+        global_ttl: :infinity
+      ),
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
       {Redix, redix_opts()},
       {Explorer.Utility.ReplicaAccessibilityManager, []},
