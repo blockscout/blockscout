@@ -26,7 +26,6 @@ defmodule EthereumJSONRPC.HTTP.TeslaTest do
     test "compresses request body for heavy methods by default" do
       Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP,
         request_compression_heavy_methods_enabled?: true,
-        request_compression_all_methods_enabled?: false,
         request_compression_all_methods_enabled?: false
       )
 
@@ -57,7 +56,6 @@ defmodule EthereumJSONRPC.HTTP.TeslaTest do
     test "does not compress non-heavy method when all-methods flag is disabled" do
       Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP,
         request_compression_heavy_methods_enabled?: true,
-        request_compression_all_methods_enabled?: false,
         request_compression_all_methods_enabled?: false
       )
 
@@ -87,8 +85,7 @@ defmodule EthereumJSONRPC.HTTP.TeslaTest do
     test "compresses non-heavy method when all-methods flag is enabled" do
       Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP,
         request_compression_heavy_methods_enabled?: false,
-        request_compression_all_methods_enabled?: true,
-        request_compression_all_methods_enabled?: false
+        request_compression_all_methods_enabled?: true
       )
 
       response_body = ~s({"jsonrpc":"2.0","id":1,"result":"0x10"})
