@@ -58,8 +58,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
            next_page_params_example: %{
              "id" => 394_591,
              "items_count" => 50
-           },
-           title_prefix: "Batches"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -241,8 +240,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
            next_page_params_example: %{
              "index" => 8829,
              "items_count" => 50
-           },
-           title_prefix: "OutputRoots"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -303,8 +301,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
            next_page_params_example: %{
              "index" => 12967,
              "items_count" => 50
-           },
-           title_prefix: "Games"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -371,8 +368,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
              "items_count" => 50,
              "l1_block_number" => 23_937_283,
              "transaction_hash" => "0x5dc155c382d95353c5876e735d675d284e3b29b1379e5859dc35cfd4a1dd5188"
-           },
-           title_prefix: "Deposits"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -597,8 +593,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
            next_page_params_example: %{
              "items_count" => 50,
              "nonce" => "1766847064778384329583297500742918515827483896875618958121606201292650102"
-           },
-           title_prefix: "Withdrawals"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]

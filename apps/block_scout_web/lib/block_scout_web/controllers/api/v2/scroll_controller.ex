@@ -81,8 +81,7 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
            next_page_params_example: %{
              "items_count" => 50,
              "number" => 502_655
-           },
-           title_prefix: "Batches"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -145,8 +144,7 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
            next_page_params_example: %{
              "items_count" => 50,
              "id" => 986_043
-           },
-           title_prefix: "Deposits"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -212,8 +210,7 @@ defmodule BlockScoutWeb.API.V2.ScrollController do
            next_page_params_example: %{
              "items_count" => 50,
              "id" => 220_243
-           },
-           title_prefix: "Withdrawals"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
