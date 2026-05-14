@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias Explorer.Migrator.BackfillMetadataURL
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
+  alias Indexer.Fetcher.TokenInstance.Helper, as: TokenInstanceHelper
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
   alias Plug.Conn
 
@@ -385,6 +386,75 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         token_instance: updated_token_instance,
         token: token
       })
+    end
+  end
+
+  operation :media_type,
+    summary: "Fetch media type for a specific NFT instance",
+    description:
+      "Determines and returns the media type categories (image/video/html) for the image and animation URLs of a specific NFT instance. Fetches via HTTP HEAD if not yet determined and stores the result.",
+    parameters:
+      base_params() ++
+        [
+          address_hash_param(),
+          token_id_param()
+        ],
+    responses: [
+      ok:
+        {"Media type categories for the NFT instance.", "application/json",
+         %Schema{
+           type: :object,
+           properties: %{
+             image_media_type: %Schema{
+               type: :string,
+               enum: ["image", "video", "html"],
+               nullable: true
+             },
+             animation_media_type: %Schema{
+               type: :string,
+               enum: ["image", "video", "html"],
+               nullable: true
+             }
+           }
+         }},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/instances/:token_id_param/media-type` endpoint.
+  """
+  @spec media_type(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def media_type(conn, %{address_hash_param: address_hash_string, token_id_param: token_id_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @token_options)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token) or Token.zrc_2_token?(token)},
+         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)},
+         {:ok, token_instance} <-
+           Instance.nft_instance_by_token_id_and_token_address(token_id, address_hash, @api_true) do
+      case TokenInstanceHelper.fetch_media_types(token_instance) do
+        {:ok, %{image_type: image_type, animation_type: animation_type}} ->
+          conn
+          |> put_status(200)
+          |> json(%{
+            image_media_type: Instance.mime_to_media_category(image_type),
+            animation_media_type: Instance.mime_to_media_category(animation_type)
+          })
+
+        {:error, :metadata_not_found} ->
+          conn
+          |> put_status(422)
+          |> json(%{message: "Metadata is not fetched yet"})
+
+        {:error, :already_fetched} ->
+          conn
+          |> put_status(200)
+          |> json(%{
+            image_media_type: Instance.mime_to_media_category(token_instance.image_type),
+            animation_media_type: Instance.mime_to_media_category(token_instance.animation_type)
+          })
+      end
     end
   end
 

@@ -121,7 +121,9 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "is_unique" => instance.is_unique,
       "thumbnails" => instance.thumbnails,
       "media_type" => instance.media_type,
-      "media_url" => Instance.get_media_url_from_metadata_for_nft_media_handler(instance.metadata)
+      "media_url" => Instance.get_media_url_from_metadata_for_nft_media_handler(instance.metadata),
+      "image_media_type" => Instance.mime_to_media_category(instance.image_type),
+      "animation_media_type" => Instance.mime_to_media_category(instance.animation_type)
     }
   end
 

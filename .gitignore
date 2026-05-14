@@ -58,6 +58,7 @@ dump.rdb
 *.iml
 
 .vscode
+.cursor/
 .cursorignore
 .cursorrules
 .elixir_ls
