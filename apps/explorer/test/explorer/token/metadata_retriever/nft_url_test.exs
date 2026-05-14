@@ -21,11 +21,11 @@ defmodule Explorer.Token.MetadataRetriever.NftUrlTest do
     end
 
     test "classifies ar:// URL" do
-      assert {:arweave, _resource_id} = MetadataRetriever.classify_nft_url("ar://abc123")
+      assert {:arweave, "abc123"} = MetadataRetriever.classify_nft_url("ar://abc123")
     end
 
     test "classifies ar:// URL with path" do
-      assert {:arweave, "/metadata.json"} = MetadataRetriever.classify_nft_url("ar://abc123/metadata.json")
+      assert {:arweave, "abc123/metadata.json"} = MetadataRetriever.classify_nft_url("ar://abc123/metadata.json")
     end
 
     test "classifies https URL with /ipfs/ path" do
@@ -57,10 +57,17 @@ defmodule Explorer.Token.MetadataRetriever.NftUrlTest do
       assert is_list(headers)
     end
 
+    test "resolves ar:// URL to arweave.net" do
+      {url, headers} = MetadataRetriever.resolve_nft_media_url("ar://abc123")
+
+      assert url == "https://arweave.net/abc123"
+      assert is_list(headers)
+    end
+
     test "resolves ar:// URL with path to arweave.net" do
       {url, headers} = MetadataRetriever.resolve_nft_media_url("ar://abc123/metadata.json")
 
-      assert url == "https://arweave.net//metadata.json"
+      assert url == "https://arweave.net/abc123/metadata.json"
       assert is_list(headers)
     end
 

@@ -632,7 +632,8 @@ defmodule Explorer.Token.MetadataRetriever do
       %URI{scheme: "ipfs", host: host, path: path} ->
         {:ipfs, extract_ipfs_resource_id(host, path)}
 
-      %URI{scheme: "ar", host: _host, path: resource_id} ->
+      %URI{scheme: "ar", host: host, path: path} when is_binary(host) and host != "" ->
+        resource_id = if is_binary(path) and path != "", do: host <> path, else: host
         {:arweave, resource_id}
 
       %URI{scheme: _, path: "/ipfs/" <> resource_id} ->

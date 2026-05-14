@@ -87,7 +87,7 @@ defmodule Utils.TokenInstanceHelper do
   end
 
   defp process_missing_extension(media_src, headers) do
-    case HTTPoison.head(media_src, headers, follow_redirect: true) do
+    case HTTPoison.head(media_src, headers, follow_redirect: true, timeout: 30_000, recv_timeout: 30_000) do
       {:ok, %HTTPoison.Response{status_code: 200, headers: headers}} ->
         headers_map = Map.new(headers, fn {key, value} -> {String.downcase(key), value} end)
         headers_map["content-type"]
@@ -98,7 +98,7 @@ defmodule Utils.TokenInstanceHelper do
   end
 
   defp process_missing_extension_detailed(media_src, headers) do
-    case HTTPoison.head(media_src, headers, follow_redirect: true) do
+    case HTTPoison.head(media_src, headers, follow_redirect: true, timeout: 30_000, recv_timeout: 30_000) do
       {:ok, %HTTPoison.Response{status_code: 200, headers: headers}} ->
         headers_map = Map.new(headers, fn {key, value} -> {String.downcase(key), value} end)
 
