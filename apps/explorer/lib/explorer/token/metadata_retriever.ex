@@ -627,6 +627,7 @@ defmodule Explorer.Token.MetadataRetriever do
           {:ipfs, binary() | nil} | {:arweave, binary()} | {:regular, binary()} | {:bare_path, binary() | nil}
 
   @spec classify_nft_url(binary()) :: nft_url_class()
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def classify_nft_url(url) do
     case URI.parse(url) do
       %URI{scheme: "ipfs", host: host, path: path} ->
