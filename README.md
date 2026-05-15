@@ -1,17 +1,27 @@
-<h1 align="center">Blockscout</h1>
-<p align="center">Blockchain Explorer for inspecting and analyzing EVM Chains.</p>
+# Blockscout
+
+<p align="center">
+  Blockchain Explorer for inspecting and analyzing EVM Chains.
+</p>
+
 <div align="center">
 
 [![Discord](https://img.shields.io/badge/chat-Blockscout-green.svg)](https://discord.gg/blockscout)
 
 </div>
 
-
 Blockscout provides a comprehensive, easy-to-use interface for users to view, confirm, and inspect transactions on EVM (Ethereum Virtual Machine) blockchains. This includes Ethereum Mainnet, Ethereum Classic, Optimism, Gnosis Chain and many other **Ethereum testnets, private networks, L2s and sidechains**.
 
 See our [project documentation](https://docs.blockscout.com/) for detailed information and setup instructions.
 
 For questions, comments and feature requests see the [discussions section](https://github.com/blockscout/blockscout/discussions) or via [Discord](https://discord.com/invite/blockscout).
+
+## Quick Links
+
+- **[Chain Directory](https://chains.blockscout.com)** — Browse hundreds of EVM chains
+- **[Live Demo](https://blockscout.com)** — Try Blockscout in action
+- **[Documentation](https://docs.blockscout.com)** — Full setup and API guides
+- **[GitHub Discussions](https://github.com/blockscout/blockscout/discussions)** — Questions & feature requests
 
 ## About Blockscout
 
