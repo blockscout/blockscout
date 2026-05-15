@@ -244,34 +244,58 @@ OpenApiSpex.schema(
 
 The pattern is: base schema -> extend with metadata -> apply chain-type fields.
 
-### Helper.extend_schema/2
+### Helper.extend_schema/2 — define a new schema by extending another
 
-Located at `schemas/helper.ex`. Merges `:properties`, `:required`, `:title`, `:description`, `:nullable`, and `:enum` into an existing schema map:
-- Properties are merged (new keys added, existing overwritten)
-- Required lists are concatenated
-- Scalar fields (title, description, nullable) are replaced
+Located at `schemas/helper.ex`. Merges `:properties`, `:required`, `:title`, `:description`, `:nullable`, `:enum` into a base schema. Properties are merged, required lists concatenated, scalars replaced.
+
+**Use only inside an outer `OpenApiSpex.schema(…)` macro** that re-establishes a new component identity (fresh `:title` + `x-struct`). Examples: `AddressNullable` (extends `Address` with `nullable: true`), `Arbitrum.Message` (extends `MinimalMessage`), `*Response` wrappers.
 
 ```elixir
-schema_map
-|> Helper.extend_schema(
-  title: "ExtendedSchema",
-  properties: %{new_field: %Schema{type: :string}},
-  required: [:new_field]
+OpenApiSpex.schema(
+  Base.schema()
+  |> Helper.extend_schema(
+    title: "Extended",                  # REQUIRED on every extend — see "Schema reuse and naming"
+    properties: %{new_field: ...},
+    required: [:new_field]
+  )
 )
 ```
 
-**Reusing a leaf primitive with a per-property override.** When you want the type/format/nullable of a `general/` leaf (`Timestamp`, `IntegerString`, `FullHash`, …) *and* a per-property field like `description:`, `example:`, or a flipped `nullable:`, use `Helper.extend_schema` at the property position:
+**Do not use at a property position** to overlay attributes on a `general/` leaf (`Timestamp`, `IntegerString`, `FullHash`, …). The result keeps the leaf's `:title` and `x-struct`, so `OpenApiSpex.resolve_schema_modules/1` re-registers it as `components.schemas.<Title>` (last-encounter wins). The overlay leaks onto the global component and every `$ref` to it across the spec.
+
+### Helper.describe_inline/2 — per-property description overlay on a primitive leaf
+
+Use at a property position when you want a leaf's exact type/format/nullable plus a per-property `description:`. Strips `:title` and `x-struct` (sets both to `nil`) so the result renders inline at the call site and the global component is untouched.
 
 ```elixir
 timestamp:
-  Helper.extend_schema(General.Timestamp.schema(),
-    description: "Block timestamp of the parent transaction."
+  Helper.describe_inline(
+    General.Timestamp.schema(),
+    "Block timestamp of the parent transaction."
   )
 ```
 
-This inlines the leaf's shape and overlays the description, no `allOf` casting layer involved.
+**Intentionally narrow — description only.** If a property needs a different `pattern:`, flipped `nullable:`, or any other constraint, define a new primitive in `schemas/api/v2/general/` and reference it. Do not reach for `extend_schema` at the property position to bend a leaf.
 
-Avoid `%Schema{allOf: [Leaf], description: "..."}` as the overlay mechanism. `allOf` is for *object* composition: it works fine for object leaves like `Address` (and `advanced_filter.ex` does this for `from`/`to`/`created_contract`), but for primitive leaves with a non-trivial `format:` cast — `Timestamp`'s `format: :"date-time"` casts strings to `%DateTime{}`, `Decimal`-typed leaves cast to `%Decimal{}` — `OpenApiSpex.Cast.AllOf` enumerates the per-branch results as maps and fails on non-Enumerable structs. The `extend_schema` form sidesteps the cast composition entirely.
+### Picking the right per-property overlay
+
+Two leaf shapes exist; treat them separately:
+
+- **Primitive leaf** — `type: :string` / `:integer` / `:number` / `:boolean`. Examples: `General.Timestamp`, `General.IntegerString`, `General.FullHash`, `General.AddressHash`. The schema body is 1–3 fields; inlining is cheap.
+- **Object leaf** — `type: :object` with its own `properties`. Examples: `Address`, `Token`, `Arbitrum.MinimalMessage`. The schema body is many fields; inlining duplicates the entire structure at every call site and breaks `$ref` dedup.
+
+| Goal | Mechanism | Why |
+|---|---|---|
+| Description on a primitive leaf | `Helper.describe_inline(Leaf.schema(), "…")` | Inlines 1–3 fields cheaply; `$ref` dedup not meaningful at that size. `allOf` would crash at runtime when the leaf has a `format:` cast (`Timestamp` → `%DateTime{}`, `Decimal` → `%Decimal{}`) because `OpenApiSpex.Cast.AllOf` enumerates per-branch results as maps and fails on non-Enumerable structs. |
+| Description (and/or `nullable:` flip) on an object leaf | `%Schema{allOf: [Leaf], description: "…", nullable: true}` | Keeps `$ref: '#/components/schemas/<Leaf>'`, so the object's properties stay deduplicated across the spec. No runtime crash because object branches all cast to maps. See `advanced_filter.ex` `from`/`to`/`created_contract`. |
+| Any per-property override beyond description on either leaf shape (pattern, enum, narrower bounds, …) | Define a new primitive in `general/`, then reference it | Pushes `general/` to grow as a real library of reusable primitives instead of every domain bending a leaf locally. |
+| Derived schema with its own component identity (response wrapper, nullable variant of an object, …) | `OpenApiSpex.schema(Base.schema() \|> Helper.extend_schema(title: …, …))` | The outer macro re-establishes `:title` + `x-struct`, so the result is a new registered component, not a property-position overlay. |
+
+**Anti-patterns — do not use:**
+
+- `Helper.extend_schema(Leaf.schema(), description: "…")` at a property position → leaks the description onto `components.schemas.<Leaf>` (last-encounter wins) and pollutes every `$ref` to that leaf across the spec.
+- `Helper.describe_inline(ObjectLeaf.schema(), "…")` at a property position → technically works, but inlines the entire object structure at every call site and kills `$ref` dedup; tests still pass, so the bloat goes unnoticed in review.
+- `%Schema{allOf: [PrimitiveLeaf], description: "…"}` at a property position → crashes at runtime on primitive leaves with `format:` casts.
 
 ### Schema reuse and naming for related schemas
 

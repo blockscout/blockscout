@@ -15,16 +15,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.Stability.Counters do
     type: :object,
     properties: %{
       validators_count:
-        Helper.extend_schema(General.NonNegativeIntegerString.schema(),
-          description: "Total number of validators known on the Stability chain across all operational states."
+        Helper.describe_inline(
+          General.NonNegativeIntegerString.schema(),
+          "Total number of validators known on the Stability chain across all operational states."
         ),
       new_validators_count_24h:
-        Helper.extend_schema(General.NonNegativeIntegerString.schema(),
-          description: "Number of validators that joined the set within the last 24 hours."
+        Helper.describe_inline(
+          General.NonNegativeIntegerString.schema(),
+          "Number of validators that joined the set within the last 24 hours."
         ),
       active_validators_count:
-        Helper.extend_schema(General.NonNegativeIntegerString.schema(),
-          description: "Number of validators currently in the `active` operational state."
+        Helper.describe_inline(
+          General.NonNegativeIntegerString.schema(),
+          "Number of validators currently in the `active` operational state."
         ),
       active_validators_percentage: %Schema{
         type: :number,
