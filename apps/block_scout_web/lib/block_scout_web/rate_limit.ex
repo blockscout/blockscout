@@ -80,8 +80,15 @@ defmodule BlockScoutWeb.RateLimit do
   @spec rate_limit_with_config(Plug.Conn.t(), map()) ::
           {:allow, -1} | {:deny, integer(), integer(), integer()} | {:allow, integer(), integer(), integer()}
   def rate_limit_with_config(conn, config) do
+    recaptcha_disabled = recaptcha_disabled?()
+
+    limit_multiplier =
+      if (config[:recaptcha_to_bypass_429] || config[:temporary_token]) && recaptcha_disabled,
+        do: recaptcha_disabled_limit_multiplier(),
+        else: 1
+
     config
-    |> prepare_pipeline(conn)
+    |> prepare_pipeline(conn, limit_multiplier)
     |> Enum.reject(&(is_nil(&1) || &1 == false))
     |> Enum.reduce_while(nil, fn fun, _acc ->
       case fun.(conn) do
@@ -92,7 +99,7 @@ defmodule BlockScoutWeb.RateLimit do
     |> maybe_check_recaptcha_response(
       conn,
       get_user_agent(conn),
-      config[:recaptcha_to_bypass_429],
+      config[:recaptcha_to_bypass_429] && !recaptcha_disabled,
       config[:bypass_token_scope]
     )
     |> case do
@@ -105,7 +112,7 @@ defmodule BlockScoutWeb.RateLimit do
     end
   end
 
-  defp prepare_pipeline(config, conn) do
+  defp prepare_pipeline(config, conn, limit_multiplier) do
     global_config = Application.get_env(:block_scout_web, :api_rate_limit)
 
     [
@@ -117,7 +124,8 @@ defmodule BlockScoutWeb.RateLimit do
            &1,
            config[:temporary_token],
            global_config[:temporary_token],
-           config[:bucket_key_prefix]
+           config[:bucket_key_prefix],
+           limit_multiplier
          )),
       config[:static_api_key] &&
         (&rate_limit_by_static_api_key(
@@ -125,14 +133,16 @@ defmodule BlockScoutWeb.RateLimit do
            config[:static_api_key],
            global_config[:static_api_key],
            global_config,
-           config[:bucket_key_prefix]
+           config[:bucket_key_prefix],
+           limit_multiplier
          )),
       config[:account_api_key] &&
         (&rate_limit_by_account_api_key(
            &1,
            config[:account_api_key],
            global_config[:account_api_key],
-           config[:bucket_key_prefix]
+           config[:bucket_key_prefix],
+           limit_multiplier
          )),
       config[:whitelisted_ip] &&
         (&rate_limit_by_whitelisted_ip(
@@ -140,10 +150,11 @@ defmodule BlockScoutWeb.RateLimit do
            config[:whitelisted_ip],
            global_config[:whitelisted_ip],
            global_config,
-           config[:bucket_key_prefix]
+           config[:bucket_key_prefix],
+           limit_multiplier
          )),
       config[:ip] &&
-        (&rate_limit_by_ip(&1, config[:ip], global_config[:ip], config[:bucket_key_prefix]))
+        (&rate_limit_by_ip(&1, config[:ip], global_config[:ip], config[:bucket_key_prefix], limit_multiplier))
     ]
   end
 
@@ -249,21 +260,21 @@ defmodule BlockScoutWeb.RateLimit do
     end
   end
 
-  defp rate_limit_by_static_api_key(conn, route_config, default_config, global_config, bucket_key_prefix) do
+  defp rate_limit_by_static_api_key(conn, route_config, default_config, global_config, bucket_key_prefix, limit_multiplier) do
     config = config_or_default(route_config, default_config)
     static_api_key = global_config[:static_api_key_value]
     user_api_key = get_api_key(conn)
 
     if valid_api_key?(user_api_key) && user_api_key == static_api_key do
-      rate_limit(static_api_key, config[:period], config[:limit], config[:cost] || 1, bucket_key_prefix)
+      rate_limit(static_api_key, config[:period], config[:limit] * limit_multiplier, config[:cost] || 1, bucket_key_prefix)
     else
       :skip
     end
   end
 
-  @spec rate_limit_by_account_api_key(any(), any(), any(), String.t()) ::
+  @spec rate_limit_by_account_api_key(any(), any(), any(), String.t(), integer()) ::
           :skip | {:allow, -1} | {:deny, integer(), integer(), integer()} | {:allow, integer(), integer(), integer()}
-  defp rate_limit_by_account_api_key(conn, route_config, global_config, bucket_key_prefix) do
+  defp rate_limit_by_account_api_key(conn, route_config, global_config, bucket_key_prefix, limit_multiplier) do
     config = config_or_default(route_config, global_config)
     plan = get_plan(conn)
 
@@ -273,7 +284,7 @@ defmodule BlockScoutWeb.RateLimit do
       rate_limit(
         api_key,
         config[:period],
-        config[:limit] || plan.max_req_per_second,
+        (config[:limit] || plan.max_req_per_second) * limit_multiplier,
         config[:cost] || 1,
         bucket_key_prefix
       )
@@ -282,34 +293,34 @@ defmodule BlockScoutWeb.RateLimit do
     end
   end
 
-  defp rate_limit_by_whitelisted_ip(conn, route_config, default_config, global_config, bucket_key_prefix) do
+  defp rate_limit_by_whitelisted_ip(conn, route_config, default_config, global_config, bucket_key_prefix, limit_multiplier) do
     config = config_or_default(route_config, default_config)
     ip_string = AccessHelper.conn_to_ip_string(conn)
 
     if Enum.member?(whitelisted_ips(global_config), ip_string) do
-      rate_limit(ip_string, config[:period], config[:limit], config[:cost] || 1, bucket_key_prefix)
+      rate_limit(ip_string, config[:period], config[:limit] * limit_multiplier, config[:cost] || 1, bucket_key_prefix)
     else
       :skip
     end
   end
 
-  defp rate_limit_by_temporary_token(conn, route_config, default_config, bucket_key_prefix) do
+  defp rate_limit_by_temporary_token(conn, route_config, default_config, bucket_key_prefix, limit_multiplier) do
     config = config_or_default(route_config, default_config)
     ip_string = AccessHelper.conn_to_ip_string(conn)
     token = get_ui_v2_token(conn, ip_string)
 
     if token && !is_nil(get_user_agent(conn)) do
-      rate_limit(token, config[:period], config[:limit], config[:cost] || 1, bucket_key_prefix)
+      rate_limit(token, config[:period], config[:limit] * limit_multiplier, config[:cost] || 1, bucket_key_prefix)
     else
       :skip
     end
   end
 
-  defp rate_limit_by_ip(conn, route_config, default_config, bucket_key_prefix) do
+  defp rate_limit_by_ip(conn, route_config, default_config, bucket_key_prefix, limit_multiplier) do
     config = config_or_default(route_config, default_config)
     ip_string = AccessHelper.conn_to_ip_string(conn)
 
-    rate_limit(ip_string, config[:period], config[:limit], config[:cost] || 1, bucket_key_prefix)
+    rate_limit(ip_string, config[:period], config[:limit] * limit_multiplier, config[:cost] || 1, bucket_key_prefix)
   end
 
   @spec config_or_default(any(), any()) :: any()
@@ -417,5 +428,13 @@ defmodule BlockScoutWeb.RateLimit do
       _ ->
         nil
     end
+  end
+
+  defp recaptcha_disabled? do
+    Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] || false
+  end
+
+  defp recaptcha_disabled_limit_multiplier do
+    Application.get_env(:block_scout_web, :api_rate_limit)[:recaptcha_disabled_limit_multiplier] || 2
   end
 end

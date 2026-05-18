@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.CaptchaHelper do
     do_recaptcha_passed?(re_captcha_v2_secret_key, recaptcha_response)
   end
 
-  def recaptcha_passed?(_), do: Application.get_env(:block_scout_web, :recaptcha)[:is_disabled]
+  def recaptcha_passed?(_), do: false
 
   @doc """
     Same as recaptcha_passed/1, but with scoped tokens authentication method.
@@ -113,7 +113,7 @@ defmodule BlockScoutWeb.CaptchaHelper do
         body |> Jason.decode!() |> success?()
 
       false ->
-        true
+        false
 
       error ->
         Logger.error("Failed to verify reCAPTCHA: #{inspect(error)}")

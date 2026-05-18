@@ -184,6 +184,8 @@ config :block_scout_web, :api_rate_limit,
       do: BlockScoutWeb.RateLimit.Hammer.ETS,
       else: BlockScoutWeb.RateLimit.Hammer.Redis
     ),
+  recaptcha_disabled_limit_multiplier:
+    ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_RECAPTCHA_DISABLED_LIMIT_MULTIPLIER", 2),
   config_url: ConfigHelper.parse_url_env_var("API_RATE_LIMIT_CONFIG_URL")
 
 config :block_scout_web, :remote_ip,
