@@ -13,10 +13,13 @@ defmodule Explorer.Chain.CsvExport.Token.Transfers do
     ]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, DenormalizationHelper, Hash, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, DenormalizationHelper, Hash, Token, TokenTransfer, Transaction}
   alias Explorer.Chain.CsvExport.{AsyncHelper, Helper}
   alias Explorer.{PagingOptions, Repo}
 
+  @doc """
+  Exports token transfers for a specific token to CSV format within the given time period.
+  """
   @spec export(Hash.Address.t(), String.t(), String.t(), Keyword.t(), String.t() | nil, String.t() | nil) ::
           Enumerable.t()
   def export(token_address_hash, from_period, to_period, _options, _filter_type, _filter_value) do
@@ -42,30 +45,13 @@ defmodule Explorer.Chain.CsvExport.Token.Transfers do
     |> Repo.replica().all(timeout: AsyncHelper.db_timeout())
   end
 
-  defp token_transfers_query(token_address_hash, from_block, to_block)
-       when not is_nil(from_block) and not is_nil(to_block) do
+  defp token_transfers_query(token_address_hash, from_block, to_block) do
     TokenTransfer.only_consensus_transfers_query()
     |> where([tt], tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number))
     |> where([tt], tt.block_number >= ^from_block and tt.block_number <= ^to_block)
   end
 
-  defp token_transfers_query(token_address_hash, from_block, nil) when not is_nil(from_block) do
-    TokenTransfer.only_consensus_transfers_query()
-    |> where([tt], tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number))
-    |> where([tt], tt.block_number >= ^from_block)
-  end
-
-  defp token_transfers_query(token_address_hash, nil, to_block) when not is_nil(to_block) do
-    TokenTransfer.only_consensus_transfers_query()
-    |> where([tt], tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number))
-    |> where([tt], tt.block_number <= ^to_block)
-  end
-
-  defp token_transfers_query(token_address_hash, _from_block, _to_block) do
-    TokenTransfer.only_consensus_transfers_query()
-    |> where([tt], tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number))
-  end
-
+  @spec to_csv_format([TokenTransfer.t()], Token.t()) :: Enumerable.t()
   defp to_csv_format(token_transfers, token) do
     row_names = [
       "TxHash",
@@ -104,6 +90,7 @@ defmodule Explorer.Chain.CsvExport.Token.Transfers do
     Stream.concat([row_names], token_transfer_lists)
   end
 
+  @spec fee(Transaction.t()) :: non_neg_integer() | String.t()
   defp fee(transaction) do
     transaction
     |> Transaction.fee(:wei)

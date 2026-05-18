@@ -94,6 +94,10 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
     ],
     tags: ["tokens"]
 
+  @doc """
+  Performs CSV export of token transfers for a given token address.
+  Endpoint: `/api/v2/tokens/:address_hash_param/transfers/csv`
+  """
   @spec export_token_transfers(Conn.t(), map()) :: Conn.t()
   def export_token_transfers(conn, %{address_hash_param: address_hash_string, from_period: _, to_period: _} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
