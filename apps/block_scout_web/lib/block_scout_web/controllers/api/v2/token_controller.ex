@@ -386,7 +386,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> render(:token_instance, %{
-        token_instance: updated_token_instance,
+        token_instance: updated_token_instance |> maybe_preload_ens() |> maybe_preload_metadata(),
         token: token
       })
     end
