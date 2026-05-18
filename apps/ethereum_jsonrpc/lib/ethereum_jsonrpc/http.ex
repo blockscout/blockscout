@@ -279,15 +279,6 @@ defmodule EthereumJSONRPC.HTTP do
   end
 
   defp headers do
-    gzip_enabled? = Application.get_env(:ethereum_jsonrpc, __MODULE__)[:gzip_enabled?]
-
-    additional_headers =
-      if gzip_enabled? do
-        [{"Accept-Encoding", "gzip"}]
-      else
-        []
-      end
-
-    Application.get_env(:ethereum_jsonrpc, __MODULE__)[:headers] ++ additional_headers
+    Application.get_env(:ethereum_jsonrpc, __MODULE__)[:headers]
   end
 end
