@@ -256,13 +256,26 @@ defmodule BlockScoutWeb.RateLimit do
     end
   end
 
-  defp rate_limit_by_static_api_key(conn, route_config, default_config, global_config, bucket_key_prefix, limit_multiplier) do
+  defp rate_limit_by_static_api_key(
+         conn,
+         route_config,
+         default_config,
+         global_config,
+         bucket_key_prefix,
+         limit_multiplier
+       ) do
     config = config_or_default(route_config, default_config)
     static_api_key = global_config[:static_api_key_value]
     user_api_key = get_api_key(conn)
 
     if valid_api_key?(user_api_key) && user_api_key == static_api_key do
-      rate_limit(static_api_key, config[:period], config[:limit] * limit_multiplier, config[:cost] || 1, bucket_key_prefix)
+      rate_limit(
+        static_api_key,
+        config[:period],
+        config[:limit] * limit_multiplier,
+        config[:cost] || 1,
+        bucket_key_prefix
+      )
     else
       :skip
     end
@@ -289,7 +302,14 @@ defmodule BlockScoutWeb.RateLimit do
     end
   end
 
-  defp rate_limit_by_whitelisted_ip(conn, route_config, default_config, global_config, bucket_key_prefix, limit_multiplier) do
+  defp rate_limit_by_whitelisted_ip(
+         conn,
+         route_config,
+         default_config,
+         global_config,
+         bucket_key_prefix,
+         limit_multiplier
+       ) do
     config = config_or_default(route_config, default_config)
     ip_string = AccessHelper.conn_to_ip_string(conn)
 
