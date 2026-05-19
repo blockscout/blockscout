@@ -81,11 +81,7 @@ defmodule BlockScoutWeb.RateLimit do
           {:allow, -1} | {:deny, integer(), integer(), integer()} | {:allow, integer(), integer(), integer()}
   def rate_limit_with_config(conn, config) do
     recaptcha_disabled = recaptcha_disabled?()
-
-    limit_multiplier =
-      if (config[:recaptcha_to_bypass_429] || config[:temporary_token]) && recaptcha_disabled,
-        do: recaptcha_disabled_limit_multiplier(),
-        else: 1
+    limit_multiplier = limit_multiplier(config, recaptcha_disabled)
 
     config
     |> prepare_pipeline(conn, limit_multiplier)
@@ -430,11 +426,17 @@ defmodule BlockScoutWeb.RateLimit do
     end
   end
 
+  defp limit_multiplier(config, recaptcha_disabled) do
+    if (config[:recaptcha_to_bypass_429] || config[:temporary_token]) && recaptcha_disabled,
+      do: recaptcha_disabled_limit_multiplier(),
+      else: 1
+  end
+
   defp recaptcha_disabled? do
     Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] || false
   end
 
   defp recaptcha_disabled_limit_multiplier do
-    Application.get_env(:block_scout_web, :api_rate_limit)[:recaptcha_disabled_limit_multiplier] || 2
+    Application.get_env(:block_scout_web, :api_rate_limit)[:recaptcha_disabled_limit_multiplier]
   end
 end
