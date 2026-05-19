@@ -163,7 +163,7 @@ defmodule Explorer.Chain.CsvExport.Token.TransfersTest do
       assert length(rows) == 1
     end
 
-    test "respects pagination with many transfers", %{from_period: from_period, to_period: to_period} do
+    test "respects export limit with many transfers", %{from_period: from_period, to_period: to_period} do
       token = insert(:token, type: "ERC-20", decimals: 18, symbol: "TKN")
 
       Enum.each(1..200, fn _i ->
