@@ -7,6 +7,10 @@ defmodule Explorer.Chain.Address.CoinBalance do
 
   use Explorer.Schema
 
+  use Utils.RuntimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    arc_native_token_address: [:indexer, [:arc, :arc_native_token_address]]
+
   alias Explorer.{Chain, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Address.CoinBalance
@@ -288,7 +292,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
       |> Chain.select_repo(options).one()
 
     if is_nil(transaction_hash) do
-      if Application.get_env(:explorer, :chain_type) == :arc do
+      if chain_type() == :arc do
         balance
         |> preload_arc_native_token_transfer_query()
         |> Chain.select_repo(options).one()
@@ -306,8 +310,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
   # don't show up in transaction `value` or internal transactions; the indexer
   # normalizes them into `TokenTransfer` rows under the synthetic native token.
   defp preload_arc_native_token_transfer_query(balance) do
-    native_token_address_hash_string = Application.get_env(:indexer, :arc)[:arc_native_token_address]
-    {:ok, native_token_address_hash} = Chain.string_to_address_hash(native_token_address_hash_string)
+    {:ok, native_token_address_hash} = Chain.string_to_address_hash(arc_native_token_address())
 
     TokenTransfer
     |> where(
