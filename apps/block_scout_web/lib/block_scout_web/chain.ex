@@ -713,12 +713,12 @@ defmodule BlockScoutWeb.Chain do
   #  returned by `BlockScoutWeb.API.V2.ValidatorController.stability_validators_list/2` (`/api/v2/validators/stability`).
   # The endpoint is OpenAPI-spec'd, so `CastAndValidate` delivers atom-keyed params with the
   # `blocks_validated` value already cast to an integer.
-  defp paging_options(%{
-        state: state,
-        address_hash: address_hash_string,
-        blocks_validated: blocks_validated
-      })
-      when is_integer(blocks_validated) do
+  defp do_paging_options(%{
+         state: state,
+         address_hash: address_hash_string,
+         blocks_validated: blocks_validated
+       })
+       when is_integer(blocks_validated) do
     [
       paging_options: %{
         @default_paging_options
