@@ -879,7 +879,7 @@ defmodule Explorer.EthRPC do
           true ->
             Map.put(acc, index, request)
 
-          {:error, error} ->
+          {:error, _reason} = error ->
             Map.put(acc, index, error)
 
           false ->
