@@ -1,5 +1,38 @@
 # Changelog
 
+## 11.1.0
+
+### 🚀 Features
+
+- Fetch token circulating supply along with circulating market cap ([#11969](https://github.com/blockscout/blockscout/issues/11969))
+- Support token lists import ([#11801](https://github.com/blockscout/blockscout/issues/11801))
+- transform ECTO_USE_SSL to sslmode param ([#8818](https://github.com/blockscout/blockscout/issues/8818))
+
+### 🐛 Bug Fixes
+
+- MissingBalanceOfToken fixes ([#14267](https://github.com/blockscout/blockscout/pull/14267))
+- Improvements of OpenAPI specification for `/v2/blocks` ([#14251](https://github.com/blockscout/blockscout/issues/14251))
+- Normalize Tesla timeout middleware exceptions ([#14059](https://github.com/blockscout/blockscout/issues/14059))
+
+### 🚜 Refactor
+
+- Change multichain_search_db_export_token_info_queue.address_hash field type from :binary to Hash.Address ([#12894](https://github.com/blockscout/blockscout/issues/12894))
+- Refactor json rpc response parsers to ignore unknown fields ([#10334](https://github.com/blockscout/blockscout/issues/10334))
+
+### 📚 Documentation
+
+- Add verification websocket subscription guide ([#14259](https://github.com/blockscout/blockscout/issues/14259))
+
+### ⚙️ Miscellaneous Tasks
+
+- Add SPDX attribution ([#14360](https://github.com/blockscout/blockscout/issues/14360))
+- Eliminate horizontal scroll in the main LICENSE file ([#14359](https://github.com/blockscout/blockscout/issues/14359))
+- Partial async import ([#14277](https://github.com/blockscout/blockscout/issues/14277))
+- OpenAPI specifications for all `/api/v2/advanced-filters` endpoints ([#14227](https://github.com/blockscout/blockscout/issues/14227))
+- OpenAPI spec for Arbitrum-related endpoints ([#14169](https://github.com/blockscout/blockscout/issues/14169))
+- Audit mode dependent processes ([#13925](https://github.com/blockscout/blockscout/issues/13925))
+- Delete fiat_value for token if it disappears in coingecko ([#8932](https://github.com/blockscout/blockscout/issues/8932))
+
 ## 11.0.3
 
 ### 🐛 Bug Fixes

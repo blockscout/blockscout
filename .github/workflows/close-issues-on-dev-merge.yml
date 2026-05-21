@@ -1,0 +1,123 @@
+name: Close issues on dev merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [dev]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  close-linked-issues:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close issues linked via closing keywords
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ISSUE_REF_PATTERN =
+              /(?:^|[\s(])(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+((?:[\w.-]+\/[\w.-]+)?#\d+(?:\s*(?:,\s*|\s+and\s+)(?:[\w.-]+\/[\w.-]+)?#\d+)*)/gi;
+
+            const parseIssueNumbers = (text, { owner, repo }) => {
+              if (!text) return [];
+
+              const issueNumbers = new Set();
+              let match;
+
+              ISSUE_REF_PATTERN.lastIndex = 0;
+
+              while ((match = ISSUE_REF_PATTERN.exec(text)) !== null) {
+                const refs = match[1];
+                const refPattern = /(?:(?<repo>[\w.-]+\/[\w.-]+))?#(?<number>\d+)/g;
+                let refMatch;
+
+                while ((refMatch = refPattern.exec(refs)) !== null) {
+                  const { repo: refRepo, number } = refMatch.groups;
+
+                  if (refRepo && refRepo.toLowerCase() !== `${owner}/${repo}`.toLowerCase()) {
+                    continue;
+                  }
+
+                  issueNumbers.add(Number(number));
+                }
+              }
+
+              return [...issueNumbers];
+            };
+
+            const { owner, repo } = context.repo;
+            const pull_number = context.payload.pull_request.number;
+            const pr = context.payload.pull_request;
+
+            const commits = await github.paginate(
+              github.rest.pulls.listCommits,
+              { owner, repo, pull_number }
+            );
+
+            const commitMessages = commits
+              .map((commit) => commit.commit.message)
+              .join("\n");
+
+            const texts = [pr.title, pr.body, commitMessages].filter(Boolean);
+            const repoContext = { owner, repo };
+            const issueNumbers = [
+              ...new Set(
+                texts.flatMap((text) => parseIssueNumbers(text, repoContext))
+              ),
+            ];
+
+            if (issueNumbers.length === 0) {
+              core.info("No issues to close (no closing keywords found).");
+              return;
+            }
+
+            core.info(`Closing issues: ${issueNumbers.join(", ")}`);
+
+            for (const issue_number of issueNumbers) {
+              try {
+                const { data: issue } = await github.rest.issues.get({
+                  owner,
+                  repo,
+                  issue_number,
+                });
+
+                if (issue.state === "closed") {
+                  core.info(`Issue #${issue_number} is already closed.`);
+                  continue;
+                }
+
+                if (issue.pull_request) {
+                  core.info(`Skipping #${issue_number}: not an issue.`);
+                  continue;
+                }
+
+                await github.rest.issues.update({
+                  owner,
+                  repo,
+                  issue_number,
+                  state: "closed",
+                  state_reason: "completed",
+                });
+
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number,
+                  body:
+                    `Closed by merge of #${pull_number} into \`dev\`.\n\n` +
+                    `GitHub closes linked issues automatically only when merging into the default branch. ` +
+                    `This comment was added by the [\`close-issues-on-dev-merge\`](${context.serverUrl}/${owner}/${repo}/actions/workflows/close-issues-on-dev-merge.yml) workflow.`,
+                });
+
+                core.info(`Closed issue #${issue_number}.`);
+              } catch (error) {
+                if (error.status === 404) {
+                  core.warning(`Issue #${issue_number} not found in ${owner}/${repo}.`);
+                } else {
+                  core.setFailed(`Failed to close issue #${issue_number}: ${error.message}`);
+                }
+              }
+            }

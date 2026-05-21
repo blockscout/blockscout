@@ -63,6 +63,7 @@ defmodule Explorer.Application do
     # Children to start in all environments
     base_children = [
       Explorer.Repo,
+      Explorer.Repo.Replica1,
       Explorer.Vault,
       Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor},
@@ -124,7 +125,6 @@ defmodule Explorer.Application do
   defp configurable_children do
     configurable_children_set =
       [
-        only_in_mode(Explorer.Repo.Replica1, :api),
         only_in_mode(Explorer.SmartContract.SolcDownloader, :api),
         only_in_mode(Explorer.SmartContract.VyperDownloader, :api),
         only_in_mode({Admin.Recovery, [[], [name: Admin.Recovery]]}, :api),

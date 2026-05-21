@@ -5,7 +5,7 @@ defmodule Utils.MixProject do
   def project do
     [
       app: :utils,
-      version: "11.0.3",
+      version: "11.1.0",
       build_path: "../../_build",
       # config_path: "../../config/config.exs",
       deps_path: "../../deps",
