@@ -3,15 +3,12 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.GetBlockNumberByTimeResult do
   @moduledoc false
   require OpenApiSpex
   alias BlockScoutWeb.Schemas.API.V2.General
-  alias OpenApiSpex.Schema
+  alias BlockScoutWeb.Schemas.Helper
 
   OpenApiSpex.schema(%{
     type: :object,
     properties: %{
-      blockNumber: %Schema{
-        description: "Decimal-string block number.",
-        allOf: [General.IntegerString]
-      }
+      blockNumber: Helper.describe_inline(General.IntegerString.schema(), "Decimal-string block number.")
     },
     required: [:blockNumber],
     additionalProperties: false,

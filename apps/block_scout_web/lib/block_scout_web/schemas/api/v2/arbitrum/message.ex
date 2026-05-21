@@ -24,10 +24,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Message do
           minimum: 0,
           description: "Unique cross-chain message identifier assigned by the protocol."
         },
-        origination_address_hash: %Schema{
-          allOf: [General.AddressHashNullable],
-          description: "Address that initiated the message on the originating chain."
-        },
+        origination_address_hash:
+          Helper.describe_inline(
+            General.AddressHashNullable.schema(),
+            "Address that initiated the message on the originating chain."
+          ),
         # Enum values must be kept in sync with Explorer.Chain.Arbitrum.Message :status field.
         status: %Schema{
           type: :string,

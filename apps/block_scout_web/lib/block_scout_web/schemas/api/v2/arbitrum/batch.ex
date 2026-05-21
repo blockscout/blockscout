@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Batch do
   alias BlockScoutWeb.Schemas.API.V2.Arbitrum.CommitmentTransaction
   alias BlockScoutWeb.Schemas.API.V2.Arbitrum.DataAvailability
   alias BlockScoutWeb.Schemas.API.V2.General
+  alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -30,18 +31,18 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Batch do
         minimum: 0,
         description: "Last Rollup block included in the batch."
       },
-      before_acc_hash: %Schema{
-        allOf: [General.FullHash],
-        description:
+      before_acc_hash:
+        Helper.describe_inline(
+          General.FullHash.schema(),
           "Accumulator hash of the sequencer inbox before this batch was appended. " <>
             "Forms a hash chain: must equal `after_acc_hash` of the previous batch."
-      },
-      after_acc_hash: %Schema{
-        allOf: [General.FullHash],
-        description:
+        ),
+      after_acc_hash:
+        Helper.describe_inline(
+          General.FullHash.schema(),
           "Accumulator hash of the sequencer inbox after this batch was appended. " <>
             "Must equal `before_acc_hash` of the next batch."
-      },
+        ),
       commitment_transaction: CommitmentTransaction,
       data_availability: %Schema{
         oneOf: [

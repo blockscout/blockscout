@@ -316,6 +316,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
   This module defines common schema fields for block.
   """
   alias BlockScoutWeb.Schemas.API.V2.{Address, General}
+  alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
   @required_fields [
@@ -445,34 +446,38 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
         },
         hash: General.FullHash,
         parent_hash: General.FullHash,
-        difficulty: %Schema{
-          allOf: [General.IntegerStringNullable],
-          description: "Proof-of-work difficulty of this block. Zero on proof-of-stake chains."
-        },
-        total_difficulty: %Schema{
-          allOf: [General.IntegerStringNullable],
-          description:
+        difficulty:
+          Helper.describe_inline(
+            General.IntegerStringNullable.schema(),
+            "Proof-of-work difficulty of this block. Zero on proof-of-stake chains."
+          ),
+        total_difficulty:
+          Helper.describe_inline(
+            General.IntegerStringNullable.schema(),
             "Cumulative chain difficulty through this block (sum of `difficulty` of this block and all ancestors)."
-        },
+          ),
         gas_used: General.IntegerString,
         gas_limit: General.IntegerString,
-        nonce: %Schema{
-          allOf: [General.HexString],
-          description: "Proof-of-work nonce used to satisfy the difficulty target. Zero on proof-of-stake chains."
-        },
-        base_fee_per_gas: %Schema{
-          allOf: [General.IntegerStringNullable],
-          description:
+        nonce:
+          Helper.describe_inline(
+            General.HexString.schema(),
+            "Proof-of-work nonce used to satisfy the difficulty target. Zero on proof-of-stake chains."
+          ),
+        base_fee_per_gas:
+          Helper.describe_inline(
+            General.IntegerStringNullable.schema(),
             "EIP-1559 base fee per gas, in wei. Null on blocks produced before EIP-1559 activation or on chains that do not implement EIP-1559."
-        },
-        burnt_fees: %Schema{
-          allOf: [General.IntegerStringNullable],
-          description: "Sum of EIP-1559 base fees burned by transactions in this block, in wei."
-        },
-        priority_fee: %Schema{
-          allOf: [General.IntegerStringNullable],
-          description: "Sum of validator tips (EIP-1559 priority fees) paid by transactions in this block, in wei."
-        },
+          ),
+        burnt_fees:
+          Helper.describe_inline(
+            General.IntegerStringNullable.schema(),
+            "Sum of EIP-1559 base fees burned by transactions in this block, in wei."
+          ),
+        priority_fee:
+          Helper.describe_inline(
+            General.IntegerStringNullable.schema(),
+            "Sum of validator tips (EIP-1559 priority fees) paid by transactions in this block, in wei."
+          ),
         uncles_hashes: %Schema{
           type: :array,
           description: "Hashes of ommer (uncle) blocks referenced by this block.",
@@ -512,10 +517,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
           description:
             "Block classification: `block` = main-chain consensus block; `uncle` = ommer (valid but not in main chain); `reorg` = former main-chain block lost to reorganization."
         },
-        transaction_fees: %Schema{
-          allOf: [General.IntegerString],
-          description: "Sum of transaction fees (gas price × gas used) paid by transactions in this block, in wei."
-        },
+        transaction_fees:
+          Helper.describe_inline(
+            General.IntegerString.schema(),
+            "Sum of transaction fees (gas price × gas used) paid by transactions in this block, in wei."
+          ),
         withdrawals_count: %Schema{
           type: :integer,
           minimum: 0,

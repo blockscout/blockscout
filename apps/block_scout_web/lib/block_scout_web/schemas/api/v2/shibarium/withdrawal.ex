@@ -19,22 +19,25 @@ defmodule BlockScoutWeb.Schemas.API.V2.Shibarium.Withdrawal do
         minimum: 0,
         description: "Shibarium block in which the withdrawal was initiated."
       },
-      l2_transaction_hash: %Schema{
-        allOf: [General.FullHashNullable],
-        description: "Hash of the Shibarium transaction that initiates the withdrawal."
-      },
-      l1_transaction_hash: %Schema{
-        allOf: [General.FullHashNullable],
-        description: "Hash of the parent chain transaction that completes the withdrawal."
-      },
+      l2_transaction_hash:
+        Helper.describe_inline(
+          General.FullHashNullable.schema(),
+          "Hash of the Shibarium transaction that initiates the withdrawal."
+        ),
+      l1_transaction_hash:
+        Helper.describe_inline(
+          General.FullHashNullable.schema(),
+          "Hash of the parent chain transaction that completes the withdrawal."
+        ),
       user: %Schema{
         allOf: [Address],
         description:
           "Address of the user that initiated the withdrawal on Shibarium; the same address acts as the recipient on the parent chain."
       },
       timestamp:
-        Helper.extend_schema(General.TimestampNullable.schema(),
-          description: "Timestamp of the Shibarium block that contains the withdrawal transaction."
+        Helper.describe_inline(
+          General.TimestampNullable.schema(),
+          "Timestamp of the Shibarium block that contains the withdrawal transaction."
         )
     },
     required: [
