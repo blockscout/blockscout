@@ -439,7 +439,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if @chain_type == :zksync do
         get("/batches", V2.ZkSyncController, :batches)
         get("/batches/count", V2.ZkSyncController, :batches_count)
-        get("/batches/:batch_number", V2.ZkSyncController, :batch)
+        get("/batches/:batch_number_param", V2.ZkSyncController, :batch)
       end
     end
 

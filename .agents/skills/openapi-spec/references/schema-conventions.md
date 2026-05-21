@@ -28,9 +28,9 @@ Create a subdirectory when 2+ sub-schemas exist for a domain entity. Simple leaf
 
 ### Shared primitives in `general/`
 
-`general/` contains ~22 reusable type schemas: `AddressHash`, `FullHash`, `IntegerString`, `Timestamp`, nullable variants, etc. These are leaf schemas referenced by property types across all domain schemas.
+`general/` contains ~24 reusable type schemas: `AddressHash`, `FullHash`, `IntegerString`, `Timestamp`, nullable variants, etc. These are leaf schemas referenced by property types across all domain schemas.
 
-To discover available primitives, glob `schemas/api/v2/general/*.ex`.
+To discover available primitives, consult the auto-generated catalog at `references/cache/leaf-schemas/catalog.md` — it lists every leaf with its type, constraints, and intended purpose, and is the fastest way to pick the right primitive without reading 24 source files. The catalog is maintained by the `leaf-schemas-cataloger` agent (see SKILL.md §"Leaf-schemas catalog (bootstrap step)"). If the catalog is unavailable, fall back to globbing `schemas/api/v2/general/*.ex` and reading individual files.
 
 ### Domain-scoped shared schemas
 
@@ -112,6 +112,8 @@ Note: the "keep in sync" comment lives in the leaf module. Schemas that referenc
 ### Chain-specific schemas
 
 Chain-specific schemas get top-level subdirectories: `optimism/`, `scroll/`, `celo/`, `zilliqa/`, `beacon/`. These map to chain-conditional router scopes.
+
+**Every schema under a chain subdir must set `title: "<Chain>.<Name>"` explicitly.** Without it, OpenApiSpex auto-derives the title from the bare module name (`Batch`, `Message`, …) and the all-in-one swagger merge in `.github/workflows/generate-swagger.yml` (first-wins union over `components.schemas`) silently drops same-keyed schemas from other chains. The prefix tracks the directory: `arbitrum/batch.ex` → `"Arbitrum.Batch"`. Chain-agnostic schemas keep their bare title.
 
 ### File naming
 
@@ -502,14 +504,14 @@ Note: `minimum:` is a JSON-Schema *numeric* keyword and is silently ignored on `
 
 ### Required: Ecto.Enum sync comments
 
-**Every `enum:` property in an OpenAPI schema must have a comment pointing to the source Ecto field.** There is no automatic sync between Ecto enums and OpenAPI enums — if someone adds a new value to the Ecto enum without updating the OpenAPI schema, `CastAndValidate` will reject the new value on input, and test-time validation will fail on output only if a test exercises that specific value. The comment is the only signal that tells the next developer where to look.
+**Every `enum:` property whose values are listed literally in the OpenAPI schema must have a comment pointing to the source Ecto field.** There is no automatic sync between Ecto enums and OpenAPI enums — if someone adds a new value to the Ecto enum without updating the OpenAPI schema, `CastAndValidate` will reject the new value on input, and test-time validation will fail on output only if a test exercises that specific value. The comment is the only signal that tells the next developer where to look.
 
 Format:
 ```elixir
 # Enum values must be kept in sync with Explorer.Chain.<Module> :<field_name> field.
 ```
 
-When using a shared enum leaf schema (see "Domain-scoped shared schemas" above), the comment lives in the leaf module only — schemas that reference it don't need their own copy. When using an inline enum, the comment goes directly above the `%Schema{type: :string, enum: [...]}` definition.
+When the property pulls values from the source at compile time — a shared enum leaf schema, a helper call like `SomeView.status_enum()`, or a module attribute — there is no separate copy to drift, so no sync comment is needed (the shared leaf module, if any, still carries the comment). When using a literal inline enum, the comment goes directly above the `%Schema{type: :string, enum: [...]}` definition.
 
 Before writing an inline enum, check existing schemas in the same domain — if another schema already defines the same enum, extract it into a shared leaf schema instead of duplicating it (and the comment).
 

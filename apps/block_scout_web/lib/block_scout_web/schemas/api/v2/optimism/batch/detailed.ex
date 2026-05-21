@@ -14,6 +14,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Batch.Detailed do
   OpenApiSpex.schema(
     Batch.schema()
     |> Helper.extend_schema(
+      title: "Optimism.Batch.Detailed",
       nullable: true,
       properties: %{
         blobs: %Schema{

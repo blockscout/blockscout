@@ -1282,6 +1282,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "Smart-contract ID for paging"
     },
+    # TODO: tighten `schema` to `%Schema{type: :integer, minimum: 0}`. Every current consumer of
+    # this paging param keys off a non-negative identifier (batch number, etc.), so accepting
+    # negative integers is wider than the domain. The change is shared across multiple chains'
+    # endpoints (e.g., Arbitrum/Optimism/Scroll/ZkSync batch listings), so it must be done as a
+    # separate sweep that audits every caller of `define_paging_params([..., "number", ...])`.
     "number" => %Parameter{
       name: :number,
       in: :query,

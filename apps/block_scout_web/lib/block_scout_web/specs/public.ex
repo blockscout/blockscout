@@ -54,7 +54,7 @@ defmodule BlockScoutWeb.Specs.Public do
         end
       end
 
-    {chain_type, nil} when chain_type in [:arbitrum, :scroll, :shibarium, :stability, :zilliqa] ->
+    {chain_type, nil} when chain_type in [:arbitrum, :scroll, :shibarium, :stability, :zilliqa, :zksync] ->
       @chain_type_category_tags [%Tag{name: to_string(chain_type)}]
       defp chain_type_category_tags, do: @chain_type_category_tags
 
