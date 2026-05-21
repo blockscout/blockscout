@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.TokenTransfersTest do
   use Explorer.DataCase
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import ExUnit.CaptureLog
 
@@ -641,7 +642,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
     end
   end
 
-  if Application.compile_env(:explorer, :chain_type) == :arc do
+  if @chain_type == :arc do
     describe "parse/1 on Arc chain" do
       @arc_native_token "0x3600000000000000000000000000000000000000"
       @arc_system "0x1800000000000000000000000000000000000000"
