@@ -25,12 +25,13 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Close linked issues when PRs merge into dev ([#14384](https://github.com/blockscout/blockscout/pull/14384), [#14385](https://github.com/blockscout/blockscout/pull/14385))
 - Add SPDX attribution ([#14360](https://github.com/blockscout/blockscout/issues/14360))
 - Eliminate horizontal scroll in the main LICENSE file ([#14359](https://github.com/blockscout/blockscout/issues/14359))
 - Partial async import ([#14277](https://github.com/blockscout/blockscout/issues/14277))
 - OpenAPI specifications for all `/api/v2/advanced-filters` endpoints ([#14227](https://github.com/blockscout/blockscout/issues/14227))
 - OpenAPI spec for Arbitrum-related endpoints ([#14169](https://github.com/blockscout/blockscout/issues/14169))
-- Audit mode dependent processes ([#13925](https://github.com/blockscout/blockscout/issues/13925))
+- Audit mode dependent processes ([#13925](https://github.com/blockscout/blockscout/issues/13925), [#14383](https://github.com/blockscout/blockscout/pull/14383))
 - Delete fiat_value for token if it disappears in coingecko ([#8932](https://github.com/blockscout/blockscout/issues/8932))
 
 ## 11.0.3

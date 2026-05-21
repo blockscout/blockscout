@@ -18,8 +18,26 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const ISSUE_REF_PATTERN =
-              /(?:^|[\s(])(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+((?:[\w.-]+\/[\w.-]+)?#\d+(?:\s*(?:,\s*|\s+and\s+)(?:[\w.-]+\/[\w.-]+)?#\d+)*)/gi;
+            const SINGLE_ISSUE_REF =
+              "(?:[\\w.-]+\\/[\\w.-]+)?#\\d+" +
+              "|https?:\\/\\/github\\.com\\/[\\w.-]+\\/[\\w.-]+\\/issues\\/\\d+";
+
+            const ISSUE_REF_PATTERN = new RegExp(
+              `(?:^|[\\s(])(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\\s+((?:${SINGLE_ISSUE_REF})(?:\\s*(?:,\\s*|\\s+and\\s+)(?:${SINGLE_ISSUE_REF}))*)`,
+              "gi"
+            );
+
+            const HASH_REF_PATTERN = /(?:(?<repo>[\w.-]+\/[\w.-]+))?#(?<number>\d+)/g;
+            const URL_REF_PATTERN =
+              /https?:\/\/github\.com\/(?<owner>[\w.-]+)\/(?<repoName>[\w.-]+)\/issues\/(?<number>\d+)/gi;
+
+            const addIssueFromRef = (issueNumbers, { refRepo, number }, { owner, repo }) => {
+              if (refRepo && refRepo.toLowerCase() !== `${owner}/${repo}`.toLowerCase()) {
+                return;
+              }
+
+              issueNumbers.add(Number(number));
+            };
 
             const parseIssueNumbers = (text, { owner, repo }) => {
               if (!text) return [];
@@ -31,17 +49,21 @@ jobs:
 
               while ((match = ISSUE_REF_PATTERN.exec(text)) !== null) {
                 const refs = match[1];
-                const refPattern = /(?:(?<repo>[\w.-]+\/[\w.-]+))?#(?<number>\d+)/g;
                 let refMatch;
 
-                while ((refMatch = refPattern.exec(refs)) !== null) {
-                  const { repo: refRepo, number } = refMatch.groups;
+                HASH_REF_PATTERN.lastIndex = 0;
 
-                  if (refRepo && refRepo.toLowerCase() !== `${owner}/${repo}`.toLowerCase()) {
-                    continue;
-                  }
+                while ((refMatch = HASH_REF_PATTERN.exec(refs)) !== null) {
+                  addIssueFromRef(issueNumbers, refMatch.groups, { owner, repo });
+                }
 
-                  issueNumbers.add(Number(number));
+                URL_REF_PATTERN.lastIndex = 0;
+
+                while ((refMatch = URL_REF_PATTERN.exec(refs)) !== null) {
+                  const { owner: refOwner, repoName, number } = refMatch.groups;
+                  const refRepo = `${refOwner}/${repoName}`;
+
+                  addIssueFromRef(issueNumbers, { refRepo, number }, { owner, repo });
                 }
               }
 
