@@ -45,6 +45,18 @@ defmodule Explorer.EthRPCTest do
     assert response == %{id: 1, result: "1"}
   end
 
+  test "proxy validation errors are returned without re-dispatching locally" do
+    request = %{
+      "id" => 1,
+      "jsonrpc" => "2.0",
+      "method" => "eth_getCode",
+      "params" => ["not-an-address", "latest"]
+    }
+
+    assert [response] = EthRPC.responses([request])
+    assert response == %{error: %{code: -32_602, message: "Invalid address"}, id: 1}
+  end
+
   test "default proxy methods remain available when feature flag is disabled" do
     set_extended_proxy_methods_enabled(false)
 

@@ -993,8 +993,11 @@ defmodule Explorer.EthRPC do
       [] ->
         map
         |> Enum.map(fn
-          {_index, elem} ->
-            {:error, elem}
+          {_index, {:error, _}} = elem ->
+            elem
+
+          {index, elem} ->
+            {index, {:error, elem}}
         end)
         |> Enum.into(%{})
 
