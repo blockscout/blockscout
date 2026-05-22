@@ -60,6 +60,7 @@ dump.rdb
 .vscode
 .cursorignore
 .cursorrules
+.cursor
 .elixir_ls
 .claude/settings.local.json
 
