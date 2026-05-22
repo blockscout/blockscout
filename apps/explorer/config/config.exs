@@ -132,6 +132,7 @@ for migrator <- [
       Explorer.Migrator.SanitizeDuplicatedLogIndexLogs,
       Explorer.Migrator.RefetchContractCodes,
       Explorer.Migrator.BackfillMultichainSearchDB,
+      Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalances,
       Explorer.Migrator.SanitizeVerifiedAddresses,
       Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
       Explorer.Migrator.BackfillMetadataURL,
