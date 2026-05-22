@@ -4,6 +4,7 @@
 
 ### 🚀 Features
 
+- Forward new BENS fields to search ([#14389](https://github.com/blockscout/blockscout/pull/14389))
 - Fetch token circulating supply along with circulating market cap ([#11969](https://github.com/blockscout/blockscout/issues/11969))
 - Support token lists import ([#11801](https://github.com/blockscout/blockscout/issues/11801))
 - transform ECTO_USE_SSL to sslmode param ([#8818](https://github.com/blockscout/blockscout/issues/8818))
