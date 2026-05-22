@@ -12,8 +12,7 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   import BlockScoutWeb.Chain,
     only: [
       hot_smart_contracts_paging_options: 1,
-      split_list_by_page: 1,
-      next_page_params: 4,
+      paginate_list: 4,
       fetch_scam_token_toggle: 2
     ]
 
@@ -286,18 +285,14 @@ defmodule BlockScoutWeb.API.V2.StatsController do
       |> Keyword.merge(@api_true)
       |> fetch_scam_token_toggle(conn)
 
-    {hot_smart_contracts, next_page} =
+    {hot_smart_contracts, next_page_params} =
       scale
       |> HotSmartContractsCache.fetch(options, fn -> HotSmartContracts.paginated(scale, options) end)
       |> case do
         {:error, :not_found} -> []
         hot_smart_contracts -> hot_smart_contracts
       end
-      |> split_list_by_page()
-
-    next_page_params =
-      next_page
-      |> next_page_params(hot_smart_contracts, params, &hot_smart_contracts_paging_params/1)
+      |> paginate_list(params, options[:paging_options], paging_function: &hot_smart_contracts_paging_params/1)
 
     conn
     |> put_status(200)
