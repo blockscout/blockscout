@@ -57,6 +57,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_transactions_from_address_hash_with_pending_index_finished,
     key: :heavy_indexes_drop_transactions_to_address_hash_with_pending_index_finished,
     key: :heavy_indexes_create_logs_deposits_withdrawals_index_finished,
+    key: :heavy_indexes_create_updated_logs_deposits_withdrawals_index_finished,
     key: :heavy_indexes_create_addresses_transactions_count_desc_partial_index_finished,
     key: :heavy_indexes_create_addresses_transactions_count_asc_coin_balance_desc_hash_partial_index_finished,
     key: :heavy_indexes_drop_token_instances_token_id_index_finished,
@@ -66,6 +67,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_create_idx_tokens_ord_fiat_holder_name_finished,
     key: :heavy_indexes_create_idx_tokens_ord_holder_name_finished,
     key: :heavy_indexes_update_internal_transactions_primary_key_finished,
+    key: :heavy_indexes_update_logs_primary_key_finished,
     key: :empty_internal_transactions_data_finished,
     key: :heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished,
     key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished,
@@ -111,6 +113,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateTokensOrdMcapFiatHolderNameIndex,
     CreateTransactionsCreatedContractAddressHashWPendingIndex,
     CreateTransactionsTokenTransferMethodIdOrderedIndex,
+    CreateUpdatedLogsDepositsWithdrawalsIndex,
     DropInternalTransactionsCreatedContractAddressHashPartialIndex,
     DropInternalTransactionsFromAddressHashIndex,
     DropLogsAddressHashIndex,
@@ -127,7 +130,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     DropTransactionsCreatedContractAddressHashWithPendingIndexA,
     DropTransactionsFromAddressHashWithPendingIndex,
     DropTransactionsToAddressHashWithPendingIndex,
-    UpdateInternalTransactionsPrimaryKey
+    UpdateInternalTransactionsPrimaryKey,
+    UpdateLogsPrimaryKey
   }
 
   defp handle_fallback(:transactions_denormalization_finished) do
@@ -342,6 +346,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     )
   end
 
+  defp handle_fallback(:heavy_indexes_create_updated_logs_deposits_withdrawals_index_finished) do
+    set_and_return_migration_status(
+      CreateUpdatedLogsDepositsWithdrawalsIndex,
+      &set_heavy_indexes_create_updated_logs_deposits_withdrawals_index_finished/1
+    )
+  end
+
   defp handle_fallback(:arbitrum_da_records_normalization_finished) do
     set_and_return_migration_status(
       ArbitrumDaRecordsNormalization,
@@ -418,6 +429,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       UpdateInternalTransactionsPrimaryKey,
       &set_heavy_indexes_update_internal_transactions_primary_key_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_update_logs_primary_key_finished) do
+    set_and_return_migration_status(
+      UpdateLogsPrimaryKey,
+      &set_heavy_indexes_update_logs_primary_key_finished/1
     )
   end
 
