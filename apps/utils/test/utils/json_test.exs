@@ -10,8 +10,7 @@ defmodule Utils.JSONTest do
 
     test "encodes map to JSON string" do
       result = Utils.JSON.encode!(%{"key" => "value", "num" => 42})
-      # Order may vary, so check both keys are present
-      assert String.contains?(result, [~s("key":"value"), ~s("num":42)])
+      assert Utils.JSON.decode!(result) == %{"key" => "value", "num" => 42}
     end
 
     test "encodes with pretty option" do
@@ -173,6 +172,14 @@ defmodule Utils.JSONTest do
       # Verify it's valid JSON with pretty format
       parsed = Utils.JSON.decode!(result)
       assert parsed == data
+    end
+
+    test "does not format structural characters inside string values" do
+      data = %{"pattern" => "a:b,c{d}[e]"}
+      result = Utils.JSON.encode!(data, pretty: true)
+
+      assert Utils.JSON.decode!(result) == data
+      assert String.contains?(result, ~s("pattern": "a:b,c{d}[e]"))
     end
   end
 

@@ -136,8 +136,11 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
         end)
 
         Logger.configure(truncate: old_truncate)
-        {:ok, response_json} = Utils.JSON.decode(body)
-        {status_code, response_json}
+
+        case Utils.JSON.decode(body) do
+          {:ok, response_json} -> {status_code, response_json}
+          {:error, _} -> {status_code, %{error: body}}
+        end
 
       {:error, reason} ->
         {500, %{error: reason}}

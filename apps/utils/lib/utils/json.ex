@@ -130,7 +130,7 @@ defmodule Utils.JSON do
   @spec atomize_keys(term()) :: term()
   defp atomize_keys(map) when is_map(map) do
     Map.new(map, fn
-      {k, v} when is_binary(k) -> {String.to_atom(k), atomize_keys(v)}
+      {k, v} when is_binary(k) -> {binary_key_to_atom(k), atomize_keys(v)}
       {k, v} -> {k, atomize_keys(v)}
     end)
   end
@@ -141,6 +141,14 @@ defmodule Utils.JSON do
 
   defp atomize_keys(term) do
     term
+  end
+
+  defp binary_key_to_atom(key) do
+    try do
+      String.to_existing_atom(key)
+    rescue
+      ArgumentError -> key
+    end
   end
 
   @spec normalize_for_encoding(term()) :: term()
@@ -183,61 +191,112 @@ defmodule Utils.JSON do
   defp pretty_print(json, spaces) do
     json
     |> String.graphemes()
-    |> format_graphemes(0, spaces, [])
+    |> format_graphemes(0, spaces, [], false, false)
     |> Enum.join()
   end
 
-  @spec format_graphemes([String.t()], non_neg_integer(), non_neg_integer(), [String.t()]) :: [
+  @spec format_graphemes([String.t()], non_neg_integer(), non_neg_integer(), [String.t()], boolean(), boolean()) :: [
           String.t()
         ]
-  defp format_graphemes([], _level, _spaces, acc) do
+  defp format_graphemes([], _level, _spaces, acc, _in_string, _escaped) do
     Enum.reverse(acc)
   end
 
-  defp format_graphemes(["{" | rest], level, spaces, acc) do
-    format_graphemes(rest, level + 1, spaces, [
-      "{\n" | [String.duplicate(" ", (level + 1) * spaces) | acc]
-    ])
+  defp format_graphemes([char | rest], level, spaces, acc, in_string, true) do
+    format_graphemes(rest, level, spaces, [char | acc], in_string, false)
   end
 
-  defp format_graphemes(["}" | rest], level, spaces, acc) do
+  defp format_graphemes(["\\" | rest], level, spaces, acc, true, false) do
+    format_graphemes(rest, level, spaces, ["\\" | acc], true, true)
+  end
+
+  defp format_graphemes(["\"" | rest], level, spaces, acc, in_string, false) do
+    format_graphemes(rest, level, spaces, ["\"" | acc], not in_string, false)
+  end
+
+  defp format_graphemes([char | rest], level, spaces, acc, true, false) do
+    format_graphemes(rest, level, spaces, [char | acc], true, false)
+  end
+
+  defp format_graphemes(["{" | rest], level, spaces, acc, false, false) do
+    format_graphemes(
+      rest,
+      level + 1,
+      spaces,
+      [
+        "{\n" | [String.duplicate(" ", (level + 1) * spaces) | acc]
+      ],
+      false,
+      false
+    )
+  end
+
+  defp format_graphemes(["}" | rest], level, spaces, acc, false, false) do
     new_level = max(0, level - 1)
 
-    format_graphemes(rest, new_level, spaces, [
-      "}" | ["\n" | [String.duplicate(" ", new_level * spaces) | acc]]
-    ])
+    format_graphemes(
+      rest,
+      new_level,
+      spaces,
+      [
+        "}" | ["\n" | [String.duplicate(" ", new_level * spaces) | acc]]
+      ],
+      false,
+      false
+    )
   end
 
-  defp format_graphemes(["[" | rest], level, spaces, acc) do
-    format_graphemes(rest, level + 1, spaces, [
-      "[\n" | [String.duplicate(" ", (level + 1) * spaces) | acc]
-    ])
+  defp format_graphemes(["[" | rest], level, spaces, acc, false, false) do
+    format_graphemes(
+      rest,
+      level + 1,
+      spaces,
+      [
+        "[\n" | [String.duplicate(" ", (level + 1) * spaces) | acc]
+      ],
+      false,
+      false
+    )
   end
 
-  defp format_graphemes(["]" | rest], level, spaces, acc) do
+  defp format_graphemes(["]" | rest], level, spaces, acc, false, false) do
     new_level = max(0, level - 1)
 
-    format_graphemes(rest, new_level, spaces, [
-      "]" | ["\n" | [String.duplicate(" ", new_level * spaces) | acc]]
-    ])
+    format_graphemes(
+      rest,
+      new_level,
+      spaces,
+      [
+        "]" | ["\n" | [String.duplicate(" ", new_level * spaces) | acc]]
+      ],
+      false,
+      false
+    )
   end
 
-  defp format_graphemes(["," | rest], level, spaces, acc) do
-    format_graphemes(rest, level, spaces, [
-      ",\n" | [String.duplicate(" ", level * spaces) | acc]
-    ])
+  defp format_graphemes(["," | rest], level, spaces, acc, false, false) do
+    format_graphemes(
+      rest,
+      level,
+      spaces,
+      [
+        ",\n" | [String.duplicate(" ", level * spaces) | acc]
+      ],
+      false,
+      false
+    )
   end
 
-  defp format_graphemes([":" | rest], level, spaces, acc) do
-    format_graphemes(rest, level, spaces, [": " | acc])
+  defp format_graphemes([":" | rest], level, spaces, acc, false, false) do
+    format_graphemes(rest, level, spaces, [": " | acc], false, false)
   end
 
-  defp format_graphemes([char | rest], level, spaces, acc) when char in [" ", "\n", "\t"] do
-    # Skip whitespace in compact JSON
-    format_graphemes(rest, level, spaces, acc)
+  defp format_graphemes([char | rest], level, spaces, acc, false, false)
+       when char in [" ", "\n", "\t"] do
+    format_graphemes(rest, level, spaces, acc, false, false)
   end
 
-  defp format_graphemes([char | rest], level, spaces, acc) do
-    format_graphemes(rest, level, spaces, [char | acc])
+  defp format_graphemes([char | rest], level, spaces, acc, false, false) do
+    format_graphemes(rest, level, spaces, [char | acc], false, false)
   end
 end

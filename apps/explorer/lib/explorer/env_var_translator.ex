@@ -11,7 +11,8 @@ defmodule Explorer.EnvVarTranslator do
     if env_var do
       try do
         env_var
-        |> Utils.JSON.decode!(keys: :atoms)
+        |> Utils.JSON.decode!()
+        |> atomize_new_tag_entries()
       rescue
         _ ->
           []
@@ -19,5 +20,12 @@ defmodule Explorer.EnvVarTranslator do
     else
       []
     end
+  end
+
+  defp atomize_new_tag_entries(entries) when is_list(entries) do
+    Enum.map(entries, fn
+      %{"tag" => tag, "title" => title} -> %{tag: tag, title: title}
+      entry -> entry
+    end)
   end
 end

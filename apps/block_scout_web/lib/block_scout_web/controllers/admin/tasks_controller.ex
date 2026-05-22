@@ -6,8 +6,8 @@ defmodule BlockScoutWeb.Admin.TaskController do
 
   alias Explorer.Chain.ContractMethod
 
-  @ok_resp Utils.JSON.encode!(%{status: "success"})
-  @not_ok_resp Utils.JSON.encode!(%{status: "failure"})
+  @ok_resp %{status: "success"}
+  @not_ok_resp %{status: "failure"}
 
   def create_contract_methods(conn, _) do
     case ContractMethod.import_all() do
