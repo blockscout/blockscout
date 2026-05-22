@@ -26,6 +26,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_CONCURRENCY ([#14390](https://github.com/blockscout/blockscout/pull/14390))
 - Close linked issues when PRs merge into dev ([#14384](https://github.com/blockscout/blockscout/pull/14384), [#14385](https://github.com/blockscout/blockscout/pull/14385))
 - Add SPDX attribution ([#14360](https://github.com/blockscout/blockscout/issues/14360))
 - Eliminate horizontal scroll in the main LICENSE file ([#14359](https://github.com/blockscout/blockscout/issues/14359))
@@ -43,6 +44,7 @@
 | `TOKEN_LIST_REFETCH_INTERVAL`                | Interval to update data from token list. Implemented in [#14206](https://github.com/blockscout/blockscout/pull/14206).                                                                                                                                                                                               | Version: v11.1.0\+ <br />Default: (empty) <br />Applications: Indexer                                       |
 | `ECTO_SSL_MODE`                     | SSL mode for Ecto DB connections. Supported values: `disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full`. Resolution order: `ECTO_SSL_MODE` has highest priority, then `sslmode` in `DATABASE_URL`, otherwise defaults to `require`. | Version: v11.1.0\++ <br />Default: `require` <br />Applications: API, Indexer               |
 | `INDEXER_ENABLE_PARTIAL_ASYNC_IMPORT`                         | If `true`, addresses, current token balances, tokens and token instances are imported asynchronously. Implemented in [#14277](https://github.com/blockscout/blockscout/pull/14277).                                                                                                                                                                                                                                                                                                                                              | Version: v11.1.0\+ <br />Default: `false` <br />Applications: Indexer                                         |
+| `MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_CONCURRENCY`     | Number of parallel processes filling internal transactions address ids. Implemented in [#14390](https://github.com/blockscout/blockscout/pull/14390).                                                                                                                                                                                                                 | Version: v11.1.0\+ <br />Default: `10` <br />Applications: Indexer          |
 
 ### Deprecated ENV variables
 

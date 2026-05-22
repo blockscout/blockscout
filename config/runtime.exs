@@ -914,6 +914,7 @@ config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions,
 
 config :explorer, Explorer.Migrator.FillInternalTransactionsAddressIds,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_BATCH_SIZE", 30),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_CONCURRENCY", 10),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_TIMEOUT", "5s")
 
 config :explorer, Explorer.Chain.BridgedToken,
