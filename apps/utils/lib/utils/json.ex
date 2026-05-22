@@ -144,11 +144,9 @@ defmodule Utils.JSON do
   end
 
   defp binary_key_to_atom(key) do
-    try do
-      String.to_existing_atom(key)
-    rescue
-      ArgumentError -> key
-    end
+    String.to_existing_atom(key)
+  rescue
+    ArgumentError -> key
   end
 
   @spec normalize_for_encoding(term()) :: term()
