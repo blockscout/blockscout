@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.EthRPCTest do
   use Explorer.DataCase, async: false
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.PagingHelperTest do
   use ExUnit.Case, async: true
 

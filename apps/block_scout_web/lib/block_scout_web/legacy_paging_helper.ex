@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.LegacyPagingHelper do
   @moduledoc """
   Legacy pagination helpers for old UI controllers.
