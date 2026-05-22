@@ -4,6 +4,13 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalances do
 
   This migration exports only records from `address_current_token_balances` and
   intentionally does not export coin balances.
+
+  Requires `MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_LAST_BLOCK_NUMBER`
+  to be set. Only balances with `block_number` less than or equal to that value are
+  exported. The migration does not start when the variable is unset.
+
+  When `TRACE_BLOCK_RANGES` is configured, only balances whose `block_number` falls
+  within `EthereumJSONRPC.Utility.RangesHelper.get_trace_block_ranges/0` are exported.
   """
 
   require Logger
@@ -12,6 +19,7 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalances do
 
   import Ecto.Query
 
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.MicroserviceInterfaces.MultichainSearch
@@ -29,7 +37,8 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalances do
 
     from(ctb in CurrentTokenBalance,
       where: ctb.id > ^last_processed_id,
-      where: ctb.block_number >= ^min_block_number(),
+      where: ctb.block_number <= ^max_block_number(),
+      where: ^traceable_block_numbers_dynamic_query(),
       order_by: [asc: ctb.id],
       select: ctb.id
     )
@@ -90,7 +99,25 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalances do
     BackgroundMigrations.set_backfill_multichain_search_db_current_token_balances_finished(true)
   end
 
-  defp min_block_number do
-    Application.get_env(:explorer, __MODULE__)[:min_block_number] || 0
+  defp max_block_number do
+    Application.fetch_env!(:explorer, __MODULE__)[:max_block_number]
+  end
+
+  defp traceable_block_numbers_dynamic_query do
+    if RangesHelper.trace_ranges_present?() do
+      block_ranges = RangesHelper.get_trace_block_ranges()
+
+      Enum.reduce(block_ranges, dynamic([_], false), fn
+        first..last//_step, acc ->
+          min_block = min(first, last)
+          max_block = max(first, last)
+          dynamic([ctb], ^acc or (ctb.block_number >= ^min_block and ctb.block_number <= ^max_block))
+
+        num_to_latest, acc ->
+          dynamic([ctb], ^acc or ctb.block_number >= ^num_to_latest)
+      end)
+    else
+      dynamic([_], true)
+    end
   end
 end

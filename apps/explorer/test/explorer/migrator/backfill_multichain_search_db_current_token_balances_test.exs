@@ -10,6 +10,7 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalancesTest d
 
     original_multichain_env = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, [])
     original_tesla_adapter = Application.get_env(:tesla, :adapter)
+    original_trace_block_ranges = Application.get_env(:indexer, :trace_block_ranges)
 
     Repo.delete_all(
       from(ms in MigrationStatus,
@@ -23,21 +24,22 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalancesTest d
       Application.put_env(:explorer, BackfillMultichainSearchDbCurrentTokenBalances, original_migrator_env)
       Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, original_multichain_env)
       Application.put_env(:tesla, :adapter, original_tesla_adapter)
+      Application.put_env(:indexer, :trace_block_ranges, original_trace_block_ranges)
     end)
 
     :ok
   end
 
-  test "last_unprocessed_identifiers filters by configured min block and updates cursor state" do
+  test "last_unprocessed_identifiers filters by configured last block and updates cursor state" do
     Application.put_env(:explorer, BackfillMultichainSearchDbCurrentTokenBalances,
       batch_size: 2,
       concurrency: 1,
-      min_block_number: 100
+      max_block_number: 100
     )
 
-    insert(:address_current_token_balance, block_number: 90, token_type: "ERC-20")
-    balance_1 = insert(:address_current_token_balance, block_number: 100, token_type: "ERC-20")
-    balance_2 = insert(:address_current_token_balance, block_number: 101, token_type: "ERC-20")
+    balance_1 = insert(:address_current_token_balance, block_number: 90, token_type: "ERC-20")
+    balance_2 = insert(:address_current_token_balance, block_number: 100, token_type: "ERC-20")
+    insert(:address_current_token_balance, block_number: 101, token_type: "ERC-20")
 
     {ids, state} = BackfillMultichainSearchDbCurrentTokenBalances.last_unprocessed_identifiers(%{})
 
@@ -46,6 +48,25 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalancesTest d
 
     assert {[], %{"last_processed_id" => balance_2.id}} ==
              BackfillMultichainSearchDbCurrentTokenBalances.last_unprocessed_identifiers(state)
+  end
+
+  test "last_unprocessed_identifiers filters by trace block ranges" do
+    Application.put_env(:explorer, BackfillMultichainSearchDbCurrentTokenBalances,
+      batch_size: 2,
+      concurrency: 1,
+      max_block_number: 100
+    )
+
+    Application.put_env(:indexer, :trace_block_ranges, "50..80")
+
+    balance_in_range = insert(:address_current_token_balance, block_number: 60, token_type: "ERC-20")
+    insert(:address_current_token_balance, block_number: 40, token_type: "ERC-20")
+    insert(:address_current_token_balance, block_number: 90, token_type: "ERC-20")
+
+    {ids, state} = BackfillMultichainSearchDbCurrentTokenBalances.last_unprocessed_identifiers(%{})
+
+    assert ids == [balance_in_range.id]
+    assert state == %{"last_processed_id" => balance_in_range.id}
   end
 
   test "update_batch exports only token balances payload" do
@@ -101,7 +122,7 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalancesTest d
     Application.put_env(:explorer, BackfillMultichainSearchDbCurrentTokenBalances,
       batch_size: 1,
       concurrency: 1,
-      min_block_number: 100
+      max_block_number: 100
     )
 
     Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch,

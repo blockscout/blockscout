@@ -862,19 +862,21 @@ config :explorer, Explorer.Migrator.BackfillMultichainSearchDB,
   concurrency: 1,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_BATCH_SIZE", 10)
 
+max_block_number =
+  ConfigHelper.parse_integer_or_nil_env_var(
+    "MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_LAST_BLOCK_NUMBER"
+  )
+
 config :explorer, Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalances,
   enabled:
     !ConfigHelper.parse_bool_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_DISABLED") &&
-      !is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")),
+      !is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")) &&
+      !is_nil(max_block_number),
   batch_size:
     ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_BATCH_SIZE", 100),
   concurrency:
     ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_CONCURRENCY", 4),
-  min_block_number:
-    ConfigHelper.parse_integer_env_var(
-      "MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_MIN_BLOCK_NUMBER",
-      0
-    )
+  max_block_number: max_block_number
 
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation,
   check_interval: ConfigHelper.parse_time_env_var("MIGRATION_HEAVY_INDEX_OPERATIONS_CHECK_INTERVAL", "10m")
