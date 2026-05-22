@@ -12,8 +12,8 @@ defmodule BlockScoutWeb.CaptchaHelper do
   @doc """
     Verifies if the CAPTCHA challenge has been passed based on the provided parameters.
 
-    This function first checks for a bypass token, then handles both reCAPTCHA v3 and v2
-    responses, as well as cases where CAPTCHA is disabled.
+    This function first checks for a bypass token, then handles both reCAPTCHA v3
+    and v2 responses. Disabled or missing CAPTCHA input is treated as not passed.
 
     ## Parameters
     - `params`: A map containing CAPTCHA response parameters or nil. Can include:
@@ -22,8 +22,9 @@ defmodule BlockScoutWeb.CaptchaHelper do
       * `"recaptcha_response"` - A reCAPTCHA v2 response token
 
     ## Returns
-    - `true` if the CAPTCHA challenge is passed or disabled, or if a valid bypass token is provided.
-    - `false` if the CAPTCHA challenge fails or an error occurs during verification.
+    - `true` if the CAPTCHA challenge is passed or if a valid bypass token is provided.
+    - `false` if the CAPTCHA challenge fails, input is missing, CAPTCHA is disabled,
+      or an error occurs during verification.
   """
   @spec recaptcha_passed?(%{String.t() => String.t()} | nil) :: bool
   def recaptcha_passed?(%{"recaptcha_bypass_token" => given_bypass_token}) do
