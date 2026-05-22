@@ -1028,7 +1028,9 @@ defmodule Explorer.Chain.Search do
                expiry_date: any(),
                name: any(),
                names_count: non_neg_integer(),
-               protocol: any()
+               protocol: any(),
+               protocol_dapp_url: binary() | nil,
+               protocol_dapp_logo: binary() | nil
              }, Hash.Address.t() | nil}
   def search_ens_name_in_bens(search_query) do
     trimmed_query = String.trim(search_query)
