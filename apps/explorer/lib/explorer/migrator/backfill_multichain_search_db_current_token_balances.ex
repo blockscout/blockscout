@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalances do
   @moduledoc """
   Backfills current token balances from Blockscout DB to Multichain Search DB.
