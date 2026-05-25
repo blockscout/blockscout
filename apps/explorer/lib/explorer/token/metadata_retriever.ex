@@ -623,6 +623,78 @@ defmodule Explorer.Token.MetadataRetriever do
     @default_headers
   end
 
+  @type nft_url_class ::
+          {:ipfs, binary() | nil} | {:arweave, binary()} | {:regular, binary()} | {:bare_path, binary() | nil}
+
+  @doc """
+  Classifies an NFT URL into one of: `{:ipfs, resource_id}`, `{:arweave, resource_id}`, `{:regular, url}`, or `{:bare_path, path}`.
+  """
+  @spec classify_nft_url(binary()) :: nft_url_class()
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  def classify_nft_url(url) do
+    case URI.parse(url) do
+      %URI{scheme: "ipfs", host: host, path: path} ->
+        {:ipfs, extract_ipfs_resource_id(host, path)}
+
+      %URI{scheme: "ar", host: host, path: path} when is_binary(host) and host != "" ->
+        resource_id = if is_binary(path) and path != "", do: host <> path, else: host
+        {:arweave, resource_id}
+
+      %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
+        {:ipfs, resource_id}
+
+      %URI{scheme: _, path: "ipfs/" <> resource_id} ->
+        {:ipfs, resource_id}
+
+      %URI{scheme: scheme} when not is_nil(scheme) ->
+        {:regular, url}
+
+      %URI{path: path} ->
+        {:bare_path, path}
+    end
+  end
+
+  @doc """
+  Resolves an NFT media URL to a fetchable gateway URL with appropriate headers (e.g. IPFS gateway, Arweave gateway).
+  """
+  @spec resolve_nft_media_url(binary()) :: {binary(), list()}
+  def resolve_nft_media_url(url) do
+    case classify_nft_url(url) do
+      {:ipfs, resource_id} ->
+        if is_binary(resource_id) and valid_ipfs_path?(public_ipfs_link(resource_id)) do
+          {ipfs_link(resource_id), ipfs_headers()}
+        else
+          {url, []}
+        end
+
+      {:arweave, resource_id} ->
+        {arweave_link(resource_id), ar_headers()}
+
+      {:regular, url} ->
+        {url, []}
+
+      {:bare_path, path} ->
+        if is_binary(path) and valid_ipfs_path?(public_ipfs_link(path)) do
+          {ipfs_link(path), ipfs_headers()}
+        else
+          {url, []}
+        end
+    end
+  end
+
+  defp extract_ipfs_resource_id(host, path) do
+    cond do
+      host == "ipfs" and is_binary(path) and String.starts_with?(path, "/") ->
+        String.replace_leading(path, "/", "")
+
+      is_binary(host) and host != "" ->
+        if is_nil(path), do: host, else: host <> path
+
+      true ->
+        path
+    end
+  end
+
   @doc """
     Fetch/parse metadata using smart-contract's response
   """
@@ -720,38 +792,17 @@ defmodule Explorer.Token.MetadataRetriever do
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp fetch_from_ipfs_or_ar?(token_uri_string, ipfs_params, token_id, hex_token_id, from_base_uri?) do
-    case URI.parse(token_uri_string) do
-      %URI{scheme: "ipfs", host: host, path: path} ->
-        resource_id =
-          cond do
-            host == "ipfs" and is_binary(path) and String.starts_with?(path, "/") ->
-              String.replace_leading(path, "/", "")
-
-            is_binary(host) and is_binary(path) ->
-              host <> path
-
-            is_binary(host) and is_nil(path) ->
-              host
-
-            true ->
-              nil
-          end
-
+    case classify_nft_url(token_uri_string) do
+      {:ipfs, resource_id} ->
         fetch_from_ipfs_if_valid_path(resource_id, hex_token_id)
 
-      %URI{scheme: "ar", host: _host, path: resource_id} ->
+      {:arweave, resource_id} ->
         fetch_from_arweave(resource_id, hex_token_id)
 
-      %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
-        fetch_from_ipfs_if_valid_path(resource_id, hex_token_id)
+      {:regular, url} ->
+        fetch_metadata_inner(url, ipfs_params, token_id, hex_token_id, from_base_uri?)
 
-      %URI{scheme: _, path: "ipfs/" <> resource_id} ->
-        fetch_from_ipfs_if_valid_path(resource_id, hex_token_id)
-
-      %URI{scheme: scheme} when not is_nil(scheme) ->
-        fetch_metadata_inner(token_uri_string, ipfs_params, token_id, hex_token_id, from_base_uri?)
-
-      %URI{path: path} ->
+      {:bare_path, path} ->
         if is_binary(path) and valid_ipfs_path?(public_ipfs_link(path)) do
           fetch_from_ipfs(path, hex_token_id)
         else

@@ -1209,6 +1209,13 @@ config :indexer, Indexer.Fetcher.OnDemand.ContractCode,
 config :indexer, Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch,
   threshold: ConfigHelper.parse_time_env_var("TOKEN_INSTANCE_METADATA_REFETCH_ON_DEMAND_FETCHER_THRESHOLD", "5s")
 
+config :indexer, Indexer.Fetcher.TokenInstance.MediaType.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_MEDIA_TYPE_FETCHER")
+
+config :indexer, Indexer.Fetcher.TokenInstance.MediaType,
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_MEDIA_TYPE_CONCURRENCY", 5),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_MEDIA_TYPE_BATCH_SIZE", 10)
+
 config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BLOCK_REWARD_FETCHER")
 

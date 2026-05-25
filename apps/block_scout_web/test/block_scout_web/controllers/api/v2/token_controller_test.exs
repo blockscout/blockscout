@@ -2766,4 +2766,80 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       end
     )
   end
+
+  describe "/tokens/{address_hash}/instances/{token_id}/media-type" do
+    test "get 404 on non existing address", %{conn: conn} do
+      token = build(:token)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0/media-type")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/tokens/0x/instances/0/media-type")
+
+      assert %{"errors" => _} = json_response(request, 422)
+    end
+
+    test "returns already fetched media types without re-fetching", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 1,
+        metadata: %{"image" => "https://example.com/img.png"},
+        image_type: "image/png",
+        animation_type: ""
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/1/media-type")
+      response = json_response(request, 200)
+
+      assert response["image_media_type"] == "image"
+      assert response["animation_media_type"] == nil
+    end
+
+    test "returns 422 when metadata is nil", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 1,
+        metadata: nil,
+        image_type: nil,
+        animation_type: nil
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/1/media-type")
+
+      assert %{"message" => "Metadata is not fetched yet"} = Phoenix.ConnTest.json_response(request, 422)
+    end
+
+    test "fetches and returns media types for instance with metadata", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 1,
+        metadata: %{"image_url" => "https://example.com/image.png", "animation_url" => "https://example.com/anim.mp4"},
+        image_type: nil,
+        animation_type: nil
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/1/media-type")
+      response = json_response(request, 200)
+
+      assert response["image_media_type"] == "image"
+      assert response["animation_media_type"] == "video"
+    end
+
+    test "get 404 for non-existing instance", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/999/media-type")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+  end
 end
