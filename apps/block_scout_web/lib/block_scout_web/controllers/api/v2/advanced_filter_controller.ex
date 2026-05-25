@@ -505,26 +505,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   end
 
   defp extract_filters(params) do
-    address_token_hashes =
-      params[:token_contract_address_hashes_to_include]
-      |> prepare_include_exclude_address_hashes(
-        params[:token_contract_address_hashes_to_exclude],
-        &prepare_token_address_hash/1
-      )
-
-    symbol_token_hashes =
-      prepare_include_exclude_address_hashes_from_symbols(
-        params[:token_contract_symbols_to_include],
-        params[:token_contract_symbols_to_exclude]
-      )
-
-    token_contract_address_hashes =
-      merge_token_hashes(address_token_hashes, symbol_token_hashes)
-      |> Enum.map(fn
-        {key, value} when is_list(value) -> {key, Enum.take(value, @tokens_filter_limit)}
-        key_value -> key_value
-      end)
-
     [
       transaction_types: prepare_transaction_types(params[:transaction_types]),
       methods: merge_methods(prepare_methods(params[:methods]), prepare_methods_from_names(params[:methods_names])),
@@ -543,7 +523,16 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
         ),
       address_relation: prepare_address_relation(params[:address_relation]),
       amount: prepare_amount(params[:amount_from], params[:amount_to]),
-      token_contract_address_hashes: token_contract_address_hashes
+      token_contract_address_hashes:
+        params[:token_contract_address_hashes_to_include]
+        |> prepare_include_exclude_address_hashes(
+          params[:token_contract_address_hashes_to_exclude],
+          &prepare_token_address_hash/1
+        )
+        |> Enum.map(fn
+          {key, value} when is_list(value) -> {key, Enum.take(value, @tokens_filter_limit)}
+          key_value -> key_value
+        end)
     ]
   end
 
@@ -638,42 +627,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       "native" -> ["native"]
       _ -> prepare_address_hash(token_address_hash)
     end
-  end
-
-  defp prepare_include_exclude_address_hashes_from_symbols(include_symbols, exclude_symbols) do
-    [
-      include: resolve_symbols_to_address_hashes(include_symbols),
-      exclude: resolve_symbols_to_address_hashes(exclude_symbols)
-    ]
-  end
-
-  defp resolve_symbols_to_address_hashes(symbols_str) when is_binary(symbols_str) do
-    case symbols_str |> String.split(",") |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == "")) do
-      [] ->
-        nil
-
-      symbols ->
-        symbols
-        |> Token.get_by_symbols(@api_true)
-        |> Enum.map(& &1.contract_address_hash)
-    end
-  end
-
-  defp resolve_symbols_to_address_hashes(_), do: nil
-
-  defp merge_token_hashes(address_based, symbol_based) do
-    [:include, :exclude]
-    |> Enum.map(fn key ->
-      merged =
-        case {address_based[key], symbol_based[key]} do
-          {nil, nil} -> nil
-          {a, nil} -> a
-          {nil, b} -> b
-          {a, b} -> Enum.uniq(a ++ b)
-        end
-
-      {key, merged}
-    end)
   end
 
   defp prepare_address_relation(relation) do
