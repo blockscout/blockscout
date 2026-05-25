@@ -469,16 +469,6 @@ defmodule Explorer.Chain.Token do
   end
 
   @doc """
-    Gets tokens whose symbol matches any of the given symbols (case-sensitive).
-  """
-  @spec get_by_symbols([String.t()], [Chain.api?()]) :: [__MODULE__.t()]
-  def get_by_symbols(symbols, options) do
-    __MODULE__
-    |> where([t], t.symbol in ^symbols)
-    |> Chain.select_repo(options).all()
-  end
-
-  @doc """
     For usage in Indexer.Fetcher.TokenInstance.SanitizeERC721
   """
   @spec ordered_erc_721_token_address_hashes_list_query(integer(), Hash.Address.t() | nil) :: Ecto.Query.t()
