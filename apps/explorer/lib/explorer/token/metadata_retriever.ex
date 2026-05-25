@@ -626,6 +626,9 @@ defmodule Explorer.Token.MetadataRetriever do
   @type nft_url_class ::
           {:ipfs, binary() | nil} | {:arweave, binary()} | {:regular, binary()} | {:bare_path, binary() | nil}
 
+  @doc """
+  Classifies an NFT URL into one of: `{:ipfs, resource_id}`, `{:arweave, resource_id}`, `{:regular, url}`, or `{:bare_path, path}`.
+  """
   @spec classify_nft_url(binary()) :: nft_url_class()
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def classify_nft_url(url) do
@@ -651,6 +654,9 @@ defmodule Explorer.Token.MetadataRetriever do
     end
   end
 
+  @doc """
+  Resolves an NFT media URL to a fetchable gateway URL with appropriate headers (e.g. IPFS gateway, Arweave gateway).
+  """
   @spec resolve_nft_media_url(binary()) :: {binary(), list()}
   def resolve_nft_media_url(url) do
     case classify_nft_url(url) do

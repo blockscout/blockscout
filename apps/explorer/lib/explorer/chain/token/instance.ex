@@ -32,7 +32,7 @@ defmodule Explorer.Chain.Token.Instance do
   * `retries_count` - number of times the token instance has been retried
   * `is_banned` - if the token instance is banned
   * `thumbnails` - info for deriving thumbnails urls. Stored as array: [file_path, sizes, original_uploaded?]
-  * `media_type` - mime type of media
+  * `media_type` - mime type of original media that was processed to create thumbnails
   * `cdn_upload_error` - error while processing(resizing)/uploading media to CDN
   * `metadata_url` - URL where metadata is fetched from
   * `skip_metadata_url` - bool flag indicating if metadata_url intentionally skipped
@@ -835,6 +835,9 @@ defmodule Explorer.Chain.Token.Instance do
 
   def get_media_url_from_metadata_for_nft_media_handler(nil), do: nil
 
+  @doc """
+  Extracts image URL from NFT metadata. Checks `image_url`, `image`, and `properties.image` fields in order.
+  """
   @spec get_image_url_from_metadata(nil | map()) :: nil | binary()
   def get_image_url_from_metadata(metadata) when is_map(metadata) do
     result =
@@ -850,6 +853,9 @@ defmodule Explorer.Chain.Token.Instance do
 
   def get_image_url_from_metadata(nil), do: nil
 
+  @doc """
+  Extracts `animation_url` from NFT metadata. Returns `nil` if absent or blank.
+  """
   @spec get_animation_url_from_metadata(nil | map()) :: nil | binary()
   def get_animation_url_from_metadata(metadata) when is_map(metadata) do
     url = metadata["animation_url"]
@@ -904,6 +910,9 @@ defmodule Explorer.Chain.Token.Instance do
     "#{type}/#{subtype}"
   end
 
+  @doc """
+  Maps a MIME type string to a high-level media category: `"image"`, `"video"`, `"html"`, or `nil`.
+  """
   @spec mime_to_media_category(String.t() | nil) :: String.t() | nil
   def mime_to_media_category(nil), do: nil
   def mime_to_media_category(""), do: nil
@@ -1121,6 +1130,9 @@ defmodule Explorer.Chain.Token.Instance do
     |> Repo.stream_reduce(initial, reducer)
   end
 
+  @doc """
+  Streams token instances that have metadata but missing `image_type` or `animation_type`.
+  """
   @spec stream_token_instances_with_unfetched_media_type(
           initial :: accumulator,
           reducer :: (entry :: map(), accumulator -> accumulator)
@@ -1139,6 +1151,9 @@ defmodule Explorer.Chain.Token.Instance do
     |> Repo.stream_reduce(initial, reducer)
   end
 
+  @doc """
+  Upserts `image_type` and `animation_type` for a batch of token instances.
+  """
   @spec batch_update_media_types([map()]) :: {non_neg_integer(), nil}
   def batch_update_media_types([]), do: {0, nil}
 
