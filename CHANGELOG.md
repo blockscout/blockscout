@@ -11,6 +11,7 @@
 
 ### 🐛 Bug Fixes
 
+- Properly start VersionUpgrade on application launch ([#14396](https://github.com/blockscout/blockscout/pull/14396))
 - MissingBalanceOfToken fixes ([#14267](https://github.com/blockscout/blockscout/pull/14267))
 - Improvements of OpenAPI specification for `/v2/blocks` ([#14251](https://github.com/blockscout/blockscout/issues/14251))
 - Normalize Tesla timeout middleware exceptions ([#14059](https://github.com/blockscout/blockscout/issues/14059))
