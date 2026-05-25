@@ -1,5 +1,11 @@
 # Changelog
 
+## 11.1.1
+
+### 🐛 Bug Fixes
+
+- Declare missing OpenAPI params for advanced-filters endpoint ([#14399](https://github.com/blockscout/blockscout/issues/14399))
+
 ## 11.1.0
 
 ### 🚀 Features
