@@ -1181,7 +1181,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {:ok, _address} ->
           counters_json =
             address_hash
-            |> Counters.address_limited_counters(@api_true)
+            |> Counters.address_limited_counters(@api_true |> fetch_scam_token_toggle(conn))
             |> Enum.reduce(%{}, fn {counter_name, counter_value}, acc ->
               @counter_name_to_json_field_name
               |> Map.fetch(counter_name)
