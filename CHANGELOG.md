@@ -1,5 +1,11 @@
 # Changelog
 
+## 11.1.1
+
+### 🐛 Bug Fixes
+
+- Declare missing OpenAPI params for advanced-filters endpoint ([#14401](https://github.com/blockscout/blockscout/pull/14401), [#14399](https://github.com/blockscout/blockscout/issues/14399))
+
 ## 11.1.0
 
 ### 🚀 Features
@@ -11,6 +17,7 @@
 
 ### 🐛 Bug Fixes
 
+- Properly start VersionUpgrade on application launch ([#14396](https://github.com/blockscout/blockscout/pull/14396))
 - MissingBalanceOfToken fixes ([#14267](https://github.com/blockscout/blockscout/pull/14267))
 - Improvements of OpenAPI specification for `/v2/blocks` ([#14251](https://github.com/blockscout/blockscout/issues/14251))
 - Normalize Tesla timeout middleware exceptions ([#14059](https://github.com/blockscout/blockscout/issues/14059))
@@ -26,6 +33,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add SPDX license identifier to Elixir source and test files ([#14393](https://github.com/blockscout/blockscout/pull/14393))
 - Publish OpenAPI specs on dev branch pushes ([#14391](https://github.com/blockscout/blockscout/pull/14391))
 - Add MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_CONCURRENCY ([#14390](https://github.com/blockscout/blockscout/pull/14390))
 - Close linked issues when PRs merge into dev ([#14384](https://github.com/blockscout/blockscout/pull/14384), [#14385](https://github.com/blockscout/blockscout/pull/14385))

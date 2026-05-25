@@ -183,6 +183,30 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
         "Comma-separated list of token contract address hashes to exclude. Use the literal `native` to also " <>
           "exclude native coin transfers. Each list (include and exclude) is capped to 20 entries separately.",
       example: "0x0000000000000000000000000000000000000000"
+    },
+    %OpenApiSpex.Parameter{
+      name: :methods_names,
+      in: :query,
+      schema: %OpenApiSpex.Schema{type: :string, nullable: true},
+      required: false,
+      description: "Comma-separated list of human-readable method names corresponding to the `methods` selectors.",
+      example: "transfer,approve"
+    },
+    %OpenApiSpex.Parameter{
+      name: :token_contract_symbols_to_include,
+      in: :query,
+      schema: %OpenApiSpex.Schema{type: :string, nullable: true},
+      required: false,
+      description: "Comma-separated list of token symbols to include.",
+      example: "USDT,USDC"
+    },
+    %OpenApiSpex.Parameter{
+      name: :token_contract_symbols_to_exclude,
+      in: :query,
+      schema: %OpenApiSpex.Schema{type: :string, nullable: true},
+      required: false,
+      description: "Comma-separated list of token symbols to exclude.",
+      example: "USDT,USDC"
     }
   ]
 
@@ -473,7 +497,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   defp extract_filters(params) do
     [
       transaction_types: prepare_transaction_types(params[:transaction_types]),
-      methods: params[:methods] |> prepare_methods(),
+      methods: merge_methods(prepare_methods(params[:methods]), prepare_methods_from_names(params[:methods_names])),
       age: prepare_age(params[:age_from], params[:age_to]),
       from_address_hashes:
         prepare_include_exclude_address_hashes(
@@ -540,6 +564,28 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   end
 
   defp prepare_methods(_), do: nil
+
+  defp prepare_methods_from_names(names) when is_binary(names) do
+    names
+    |> String.split(",")
+    |> Enum.map(&(String.trim(&1) |> String.downcase()))
+    |> Enum.flat_map(fn name -> List.wrap(Map.get(@methods_name_to_id_map, name)) end)
+    |> Enum.uniq()
+  end
+
+  defp prepare_methods_from_names(_), do: nil
+
+  defp merge_methods(nil, nil), do: nil
+
+  defp merge_methods(a, b) do
+    (List.wrap(a) ++ List.wrap(b))
+    |> Enum.uniq()
+    |> Enum.take(@methods_filter_limit)
+    |> case do
+      [] -> nil
+      list -> list
+    end
+  end
 
   defp prepare_age(from, to), do: [from: parse_date(from), to: parse_date(to)]
 
