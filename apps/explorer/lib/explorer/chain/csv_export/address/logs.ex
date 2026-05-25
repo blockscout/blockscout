@@ -49,10 +49,10 @@ defmodule Explorer.Chain.CsvExport.Address.Logs do
       logs
       |> Stream.map(fn log ->
         [
-          to_string(log.transaction_hash),
+          to_string(log.transaction.hash),
           log.index,
           log.block_number,
-          log.block_hash,
+          log.block.hash,
           Address.checksum(log.address_hash),
           to_string(log.data),
           to_string(log.first_topic),

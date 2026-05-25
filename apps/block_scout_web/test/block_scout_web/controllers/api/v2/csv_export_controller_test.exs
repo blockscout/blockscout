@@ -1021,6 +1021,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 0,
         transaction: transaction,
+        transaction_index: transaction.index,
         block: transaction.block,
         block_number: transaction.block_number
       )
@@ -1071,6 +1072,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 3,
         transaction: transaction_1,
+        transaction_index: transaction_1.index,
         block: transaction_1.block,
         block_number: transaction_1.block_number
       )
@@ -1084,6 +1086,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 1,
         transaction: transaction_2,
+        transaction_index: transaction_2.index,
         block: transaction_2.block,
         block_number: transaction_2.block_number
       )
@@ -1097,6 +1100,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 2,
         transaction: transaction_3,
+        transaction_index: transaction_3.index,
         block: transaction_3.block,
         block_number: transaction_3.block_number
       )
@@ -1140,6 +1144,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 3,
         transaction: transaction,
+        transaction_index: transaction.index,
         block: transaction.block,
         block_number: transaction.block_number
       )

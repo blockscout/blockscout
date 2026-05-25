@@ -8,6 +8,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransacti
 
   require Logger
 
+  alias Explorer.Chain.Cache.BackgroundMigrations
+
   alias Explorer.Migrator.{
     DeleteNonConsensusLogs,
     HeavyDbIndexOperation,
@@ -63,5 +65,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransacti
   end
 
   @impl HeavyDbIndexOperation
-  def update_cache, do: :ok
+  def update_cache do
+    BackgroundMigrations.set_create_logs_block_number_transaction_index_index_unique_index_finished(true)
+  end
 end

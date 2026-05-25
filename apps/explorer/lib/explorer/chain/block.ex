@@ -347,6 +347,14 @@ defmodule Explorer.Chain.Block do
     )
   end
 
+  def by_numbers_query(query \\ __MODULE__, block_numbers) do
+    where(query, [b], b.number in ^block_numbers)
+  end
+
+  def consensus_query(query \\ __MODULE__, consensus) do
+    where(query, [b], b.consensus == ^consensus)
+  end
+
   @doc """
     Returns a query that filters blocks where consensus is true.
 

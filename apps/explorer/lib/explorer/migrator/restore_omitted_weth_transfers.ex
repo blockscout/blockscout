@@ -18,6 +18,8 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
   @migration_timeout 250
   @migration_name "restore_omitted_weth_transfers"
 
+  def migration_name, do: @migration_name
+
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end

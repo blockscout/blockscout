@@ -19,6 +19,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
   @migration_name "sanitize_incorrect_nft"
   @default_batch_size 500
 
+  def migration_name, do: @migration_name
+
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end

@@ -74,7 +74,9 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_create_addresses_hash_contract_code_not_null_index_finished,
     key: :heavy_indexes_create_address_ids_internal_transactions_indexes_finished,
     key: :fill_internal_transactions_address_ids_finished,
-    key: :heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished
+    key: :heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished,
+    key: :create_logs_block_number_transaction_index_index_unique_index_finished,
+    key: :fill_logs_transaction_index_finished
 
   @dialyzer :no_match
 
@@ -86,6 +88,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     BackfillMultichainSearchDbCurrentTokenBalances,
     EmptyInternalTransactionsData,
     FillInternalTransactionsAddressIds,
+    FillLogsTransactionIndex,
     SanitizeDuplicatedLogIndexLogs,
     TokenTransferTokenType,
     TransactionHasTokenTransfers,
@@ -105,6 +108,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateLogsAddressHashBlockNumberDescIndexDescIndex,
     CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
     CreateLogsBlockHashIndex,
+    CreateLogsBlockNumberTransactionIndexIndexUniqueIndex,
     CreateLogsDepositsWithdrawalsIndex,
     CreateSmartContractsLanguageIndex,
     CreateTokensNamePartialFtsIndex,
@@ -450,6 +454,20 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       FillInternalTransactionsAddressIds,
       &set_fill_internal_transactions_address_ids_finished/1
+    )
+  end
+
+  defp handle_fallback(:create_logs_block_number_transaction_index_index_unique_index_finished) do
+    set_and_return_migration_status(
+      CreateLogsBlockNumberTransactionIndexIndexUniqueIndex,
+      &set_create_logs_block_number_transaction_index_index_unique_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:fill_logs_transaction_index_finished) do
+    set_and_return_migration_status(
+      FillLogsTransactionIndex,
+      &set_fill_logs_transaction_index_finished/1
     )
   end
 

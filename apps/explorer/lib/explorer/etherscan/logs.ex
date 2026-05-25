@@ -6,10 +6,11 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
-  import Ecto.Query, only: [from: 2, where: 3, subquery: 1, order_by: 3]
+  import Ecto.Query
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{DenormalizationHelper, Log, Transaction}
+  alias Explorer.Utility.LogHelper
 
   @base_filter %{
     from_block: nil,
@@ -34,8 +35,7 @@ defmodule Explorer.Etherscan.Logs do
     :third_topic,
     :fourth_topic,
     :index,
-    :address_hash,
-    :transaction_hash
+    :address_hash
   ]
 
   @default_paging_options %{block_number: nil, log_index: nil}
@@ -86,23 +86,23 @@ defmodule Explorer.Etherscan.Logs do
 
     if DenormalizationHelper.transactions_denormalization_finished?() do
       all_transaction_logs_query =
-        from(log in subquery(logs_query),
-          join: transaction in Transaction,
-          on: log.transaction_hash == transaction.hash and log.block_hash == transaction.block_hash,
-          where: transaction.block_consensus == true,
-          select: map(log, ^@log_fields),
-          select_merge: %{
-            gas_price: transaction.gas_price,
-            gas_used: transaction.gas_used,
-            transaction_index: transaction.index,
-            block_hash: transaction.block_hash,
-            block_number: transaction.block_number,
-            block_timestamp: transaction.block_timestamp,
-            block_consensus: transaction.block_consensus
-          },
-          order_by: [asc: transaction.block_number, asc: log.index],
-          limit: 1000
-        )
+        logs_query
+        |> subquery()
+        |> Log.join_transaction_query()
+        |> where(as(:transaction).block_consensus == true)
+        |> select([log], map(log, ^@log_fields))
+        |> select_merge(%{
+          gas_price: as(:transaction).gas_price,
+          gas_used: as(:transaction).gas_used,
+          transaction_index: as(:transaction).index,
+          block_hash: as(:transaction).block_hash,
+          block_number: as(:transaction).block_number,
+          block_timestamp: as(:transaction).block_timestamp,
+          block_consensus: as(:transaction).block_consensus,
+          transaction_hash: as(:transaction).hash
+        })
+        |> order_by([log], asc: as(:transaction).block_number, asc: log.index)
+        |> limit(1000)
 
       all_transaction_logs_query
       |> Chain.wrapped_union_subquery()
@@ -110,29 +110,31 @@ defmodule Explorer.Etherscan.Logs do
       |> Repo.replica().all()
     else
       all_transaction_logs_query =
-        from(log in subquery(logs_query),
-          join: transaction in Transaction,
-          on: log.transaction_hash == transaction.hash and log.block_hash == transaction.block_hash,
-          inner_join: block in assoc(transaction, :block),
-          where: block.consensus == true,
-          select: map(log, ^@log_fields),
-          select_merge: %{
-            gas_price: transaction.gas_price,
-            gas_used: transaction.gas_used,
-            transaction_index: transaction.index,
-            block_hash: transaction.block_hash,
-            block_number: transaction.block_number,
-            block_timestamp: block.timestamp,
-            block_consensus: block.consensus
-          },
-          order_by: [asc: block.number, asc: log.index],
-          limit: 1000
-        )
+        logs_query
+        |> subquery()
+        |> Log.join_transaction_query()
+        |> join(:inner, [l, t], block in assoc(t, :block))
+        |> where([_l, _t, block], block.consensus == true)
+        |> select([log], map(log, ^@log_fields))
+        |> select_merge([_l, transaction, block], %{
+          gas_price: transaction.gas_price,
+          gas_used: transaction.gas_used,
+          transaction_index: transaction.index,
+          block_hash: transaction.block_hash,
+          block_number: transaction.block_number,
+          block_timestamp: block.timestamp,
+          block_consensus: block.consensus,
+          transaction_hash: transaction.hash
+        })
+        |> order_by([log, _t, block], asc: block.number, asc: log.index)
+        |> limit(1000)
 
       all_transaction_logs_query
       |> Chain.wrapped_union_subquery()
       |> order_by([log], asc: log.block_number, asc: log.index)
       |> Repo.replica().all()
+      |> Log.preload_block()
+      |> Log.preload_transaction([], Repo.replica())
     end
   end
 
@@ -140,6 +142,7 @@ defmodule Explorer.Etherscan.Logs do
   # topic filter has been applied, so we use a different
   # query that is optimized for a logs filter over an
   # address_hash
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def list_logs(filter, paging_options) do
     paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
@@ -164,16 +167,38 @@ defmodule Explorer.Etherscan.Logs do
         )
 
       query_with_block_transaction_data =
-        from(log in logs_query,
-          join: block_transaction_data in subquery(block_transaction_query),
-          on:
-            block_transaction_data.transaction_hash == log.transaction_hash and
-              block_transaction_data.block_hash == log.block_hash,
-          order_by: block_transaction_data.block_number,
-          limit: 1000,
-          select: block_transaction_data,
-          select_merge: map(log, ^@log_fields)
-        )
+        logs_query
+        |> then(fn query ->
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          cond do
+            LogHelper.transaction_hash_migration_finished?() ->
+              join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
+                on:
+                  block_transaction_data.transaction_index == log.transaction_index and
+                    block_transaction_data.block_number == log.block_number
+              )
+
+            LogHelper.transaction_hash_migration_started?() ->
+              join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
+                on:
+                  (block_transaction_data.transaction_hash == log.transaction_hash and
+                     block_transaction_data.block_hash == log.block_hash) or
+                    (block_transaction_data.transaction_index == log.transaction_index and
+                       block_transaction_data.block_number == log.block_number)
+              )
+
+            true ->
+              join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
+                on:
+                  block_transaction_data.transaction_hash == log.transaction_hash and
+                    block_transaction_data.block_hash == log.block_hash
+              )
+          end
+        end)
+        |> order_by([_l, block_transaction_data], block_transaction_data.block_number)
+        |> limit(1000)
+        |> select([_l, block_transaction_data], block_transaction_data)
+        |> select_merge([log], map(log, ^@log_fields))
 
       query_with_block_transaction_data
       |> order_by([log], asc: log.index)
@@ -199,14 +224,38 @@ defmodule Explorer.Etherscan.Logs do
         )
 
       query_with_block_transaction_data =
-        from(log in logs_query,
-          join: block_transaction_data in subquery(block_transaction_query),
-          on: block_transaction_data.transaction_hash == log.transaction_hash,
-          order_by: block_transaction_data.block_number,
-          limit: 1000,
-          select: block_transaction_data,
-          select_merge: map(log, ^@log_fields)
-        )
+        logs_query
+        |> then(fn query ->
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          cond do
+            LogHelper.transaction_hash_migration_finished?() ->
+              join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
+                on:
+                  block_transaction_data.transaction_index == log.transaction_index and
+                    block_transaction_data.block_number == log.block_number
+              )
+
+            LogHelper.transaction_hash_migration_started?() ->
+              join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
+                on:
+                  (block_transaction_data.transaction_hash == log.transaction_hash and
+                     block_transaction_data.block_hash == log.block_hash) or
+                    (block_transaction_data.transaction_index == log.transaction_index and
+                       block_transaction_data.block_number == log.block_number)
+              )
+
+            true ->
+              join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
+                on:
+                  block_transaction_data.transaction_hash == log.transaction_hash and
+                    block_transaction_data.block_hash == log.block_hash
+              )
+          end
+        end)
+        |> order_by([_l, block_transaction_data], block_transaction_data.block_number)
+        |> limit(1000)
+        |> select([_l, block_transaction_data], block_transaction_data)
+        |> select_merge([log], map(log, ^@log_fields))
 
       query_with_block_transaction_data
       |> order_by([log], asc: log.index)

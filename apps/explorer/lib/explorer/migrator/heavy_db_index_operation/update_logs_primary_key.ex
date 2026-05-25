@@ -169,7 +169,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateLogsPrimaryKey do
   end
 
   defp add_old_pk_query_string do
-    "ALTER TABLE #{@table_name} ADD PRIMARY KEY (block_number, transaction_index, index);"
+    "ALTER TABLE #{@table_name} ADD PRIMARY KEY (block_hash, transaction_hash, index);"
   end
 
   defp drop_transaction_hash_not_null_query_string do

@@ -45,20 +45,20 @@ defmodule Explorer.Migrator.CeloL2Epochs do
 
   @impl FillingMigration
   def unprocessed_data_query do
-    epochs_start_processing_block_hashes =
-      from(epoch in Epoch, select: epoch.start_processing_block_hash)
+    epochs_start_processing_block_numbers =
+      from(epoch in Epoch, join: block in assoc(epoch, :start_processing_block), select: block.number)
 
-    epochs_end_processing_block_hashes =
-      from(epoch in Epoch, select: epoch.end_processing_block_hash)
+    epochs_end_processing_block_numbers =
+      from(epoch in Epoch, join: block in assoc(epoch, :end_processing_block), select: block.number)
 
     from(
       log in Log,
       where:
         log.address_hash == ^epoch_manager_contract_address_hash() and
           ((log.first_topic == ^@epoch_processing_started_topic and
-              log.block_hash not in subquery(epochs_start_processing_block_hashes)) or
+              log.block_number not in subquery(epochs_start_processing_block_numbers)) or
              (log.first_topic == ^@epoch_processing_ended_topic and
-                log.block_hash not in subquery(epochs_end_processing_block_hashes))),
+                log.block_number not in subquery(epochs_end_processing_block_numbers))),
       order_by: [asc: log.block_number]
     )
   end
@@ -67,6 +67,7 @@ defmodule Explorer.Migrator.CeloL2Epochs do
   def update_batch(logs) do
     changes_list =
       logs
+      |> Log.preload_block()
       |> Enum.reduce(%{}, fn log, epochs_acc ->
         # Extract epoch number from the log
         [epoch_number] = log.second_topic |> to_string() |> Helper.decode_data([{:uint, 256}])
@@ -78,10 +79,10 @@ defmodule Explorer.Migrator.CeloL2Epochs do
           |> to_string()
           |> case do
             @epoch_processing_started_topic ->
-              Map.put(current_epoch, :start_processing_block_hash, log.block_hash)
+              Map.put(current_epoch, :start_processing_block_hash, log.block.hash)
 
             @epoch_processing_ended_topic ->
-              Map.put(current_epoch, :end_processing_block_hash, log.block_hash)
+              Map.put(current_epoch, :end_processing_block_hash, log.block.hash)
           end
 
         Map.put(epochs_acc, epoch_number, updated_epoch)

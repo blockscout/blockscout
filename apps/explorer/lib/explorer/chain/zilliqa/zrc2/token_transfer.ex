@@ -115,27 +115,22 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenTransfer do
           }
         ]
   def read_block_logs(block_number, transfer_events) do
-    Repo.all(
-      from(
-        l in Log,
-        inner_join: b in Block,
-        on: b.hash == l.block_hash and b.consensus == true,
-        left_join: a in TokenAdapter,
-        on: a.zrc2_address_hash == l.address_hash,
-        where: l.block_number == ^block_number and l.first_topic in ^transfer_events,
-        select: %{
-          first_topic: l.first_topic,
-          data: l.data,
-          address_hash: l.address_hash,
-          transaction_hash: l.transaction_hash,
-          index: l.index,
-          block_number: l.block_number,
-          block_hash: l.block_hash,
-          adapter_address_hash: a.adapter_address_hash
-        }
-      ),
-      timeout: :infinity
-    )
+    Log
+    |> join(:inner, [l], b in Block, on: b.number == l.block_number and b.consensus == true)
+    |> Log.join_transaction_query()
+    |> join(:left, [l], a in TokenAdapter, on: a.zrc2_address_hash == l.address_hash)
+    |> where([l], l.block_number == ^block_number and l.first_topic in ^transfer_events)
+    |> select([l, b, t, a], %{
+      first_topic: l.first_topic,
+      data: l.data,
+      address_hash: l.address_hash,
+      transaction_hash: t.hash,
+      index: l.index,
+      block_number: l.block_number,
+      block_hash: b.hash,
+      adapter_address_hash: a.adapter_address_hash
+    })
+    |> Repo.all(timeout: :infinity)
   end
 
   @doc """

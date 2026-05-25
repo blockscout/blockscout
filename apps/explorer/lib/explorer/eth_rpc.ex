@@ -18,6 +18,7 @@ defmodule Explorer.EthRPC do
     DenormalizationHelper,
     Hash,
     Hash.Address,
+    Log,
     Transaction,
     Transaction.Status,
     Wei
@@ -1171,7 +1172,8 @@ defmodule Explorer.EthRPC do
           |> encode_quantity(),
         "from" => transaction.from_address_hash,
         "gasUsed" => encode_quantity(transaction.gas_used),
-        "logs" => Enum.map(transaction.logs, &render_log(&1, transaction)),
+        "logs" =>
+          transaction.logs |> Log.preload_block() |> Log.preload_transaction() |> Enum.map(&render_log(&1, transaction)),
         "logsBloom" => "0x" <> (transaction.logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
         "status" => encode_quantity(status),
         "to" => transaction.to_address_hash,

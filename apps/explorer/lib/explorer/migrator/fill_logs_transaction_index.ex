@@ -9,7 +9,7 @@ defmodule Explorer.Migrator.FillLogsTransactionIndex do
   import Ecto.Query
 
   alias Explorer.Chain.Cache.{BackgroundMigrations, BlockNumber}
-  alias Explorer.Chain.Log
+  alias Explorer.Chain.{Log, Transaction}
   alias Explorer.Migrator.FillingMigration
   alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransactionIndexIndexUniqueIndex
   alias Explorer.Repo
@@ -54,6 +54,6 @@ defmodule Explorer.Migrator.FillLogsTransactionIndex do
 
   @impl FillingMigration
   def update_cache do
-    BackgroundMigrations.set_fill_internal_transactions_address_ids_finished(true)
+    BackgroundMigrations.set_fill_logs_transaction_index_finished(true)
   end
 end
