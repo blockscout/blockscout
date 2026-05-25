@@ -4,7 +4,7 @@
 
 ### 🐛 Bug Fixes
 
-- Declare missing OpenAPI params for advanced-filters endpoint ([#14399](https://github.com/blockscout/blockscout/issues/14399))
+- Declare missing OpenAPI params for advanced-filters endpoint ([#14401](https://github.com/blockscout/blockscout/pull/14401), [#14399](https://github.com/blockscout/blockscout/issues/14399))
 
 ## 11.1.0
 
