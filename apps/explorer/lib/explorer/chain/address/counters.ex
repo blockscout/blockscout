@@ -164,12 +164,13 @@ defmodule Explorer.Chain.Address.Counters do
     Repo.aggregate(to_address_query, :sum, :gas_used, timeout: :infinity)
   end
 
-  def address_to_token_transfer_count_query(address_hash) do
+  def address_to_token_transfer_count_query(address_hash, options \\ []) do
     from(
       token_transfer in TokenTransfer,
       where: token_transfer.to_address_hash == ^address_hash,
       or_where: token_transfer.from_address_hash == ^address_hash
     )
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
   end
 
   @spec address_to_token_transfer_count(Address.t()) :: non_neg_integer()
@@ -409,7 +410,7 @@ defmodule Explorer.Chain.Address.Counters do
       configure_task(
         :token_transfers,
         cached_counters,
-        address_to_token_transfer_count_query(address_hash),
+        address_to_token_transfer_count_query(address_hash, options),
         address_hash,
         options
       )
