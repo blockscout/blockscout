@@ -27,6 +27,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add SPDX license identifier to Elixir source and test files ([#14393](https://github.com/blockscout/blockscout/pull/14393))
 - Publish OpenAPI specs on dev branch pushes ([#14391](https://github.com/blockscout/blockscout/pull/14391))
 - Add MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_CONCURRENCY ([#14390](https://github.com/blockscout/blockscout/pull/14390))
 - Close linked issues when PRs merge into dev ([#14384](https://github.com/blockscout/blockscout/pull/14384), [#14385](https://github.com/blockscout/blockscout/pull/14385))
