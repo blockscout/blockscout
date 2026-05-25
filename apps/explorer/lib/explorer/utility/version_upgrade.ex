@@ -24,6 +24,8 @@ defmodule Explorer.Utility.VersionUpgrade do
   If no rule matches the target version, the upgrade is allowed by default.
   """
 
+  use GenServer
+
   alias Explorer.Application.Constants
   alias Explorer.Chain.Block
   alias Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey
@@ -37,6 +39,16 @@ defmodule Explorer.Utility.VersionUpgrade do
       required_completed_migrations: [UpdateInternalTransactionsPrimaryKey.migration_name()]
     }
   ]
+
+  @spec start_link(term()) :: GenServer.on_start()
+  def start_link(_) do
+    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+  end
+
+  def init(_) do
+    validate_current_upgrade()
+    :ignore
+  end
 
   def validate_current_upgrade do
     previous_version = Constants.get_previous_backend_version()

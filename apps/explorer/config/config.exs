@@ -114,6 +114,8 @@ config :explorer, Explorer.Chain.Mud, enabled: ConfigHelper.parse_bool_env_var("
 
 config :explorer, Explorer.Utility.VersionConstantsUpdater, enabled: true
 
+config :explorer, Explorer.Utility.VersionUpgrade, enabled: true
+
 for migrator <- [
       # Background migrations
       Explorer.Migrator.TransactionsDenormalization,
