@@ -559,6 +559,147 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert Enum.count(response["items"]) == 21
     end
 
+    test "filter by methods_names alone", %{conn: conn} do
+      contract_address = insert(:contract_address)
+      transfer_selector = "0xa9059cbb"
+      mint_selector = "0xa0712d68"
+      {:ok, transfer_input} = Data.cast(transfer_selector <> "ab0ba0")
+      {:ok, mint_input} = Data.cast(mint_selector <> "ab0ba0")
+
+      3
+      |> insert_list(:transaction,
+        to_address: contract_address,
+        to_address_hash: contract_address.hash,
+        input: transfer_input
+      )
+      |> with_block()
+
+      5
+      |> insert_list(:transaction,
+        to_address: contract_address,
+        to_address_hash: contract_address.hash,
+        input: mint_input
+      )
+      |> with_block()
+
+      request = get(conn, "/api/v2/advanced-filters", %{"methods_names" => "transfer"})
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 3
+
+      assert Enum.all?(response["items"], fn item ->
+               String.slice(item["method"], 0..9) == transfer_selector
+             end)
+    end
+
+    test "filter by methods_names merges with methods param", %{conn: conn} do
+      contract_address = insert(:contract_address)
+      transfer_selector = "0xa9059cbb"
+      mint_selector = "0xa0712d68"
+      {:ok, transfer_input} = Data.cast(transfer_selector <> "ab0ba0")
+      {:ok, mint_input} = Data.cast(mint_selector <> "ab0ba0")
+
+      3
+      |> insert_list(:transaction,
+        to_address: contract_address,
+        to_address_hash: contract_address.hash,
+        input: transfer_input
+      )
+      |> with_block()
+
+      5
+      |> insert_list(:transaction,
+        to_address: contract_address,
+        to_address_hash: contract_address.hash,
+        input: mint_input
+      )
+      |> with_block()
+
+      2 |> insert_list(:transaction) |> with_block()
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "methods_names" => "transfer",
+          "methods" => mint_selector
+        })
+
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 8
+
+      assert Enum.all?(response["items"], fn item ->
+               String.slice(item["method"], 0..9) in [transfer_selector, mint_selector]
+             end)
+    end
+
+    test "filter by token_contract_symbols_to_include", %{conn: conn} do
+      token_a = insert(:token, symbol: "SYMINCL_A")
+      token_b = insert(:token, symbol: "SYMINCL_B")
+      token_c = insert(:token, symbol: "SYMINCL_C")
+
+      transaction = :transaction |> insert() |> with_block()
+
+      [token_a, token_b, token_c, token_a, token_b, token_c]
+      |> Enum.with_index()
+      |> Enum.each(fn {token, i} ->
+        insert(:token_transfer,
+          token_contract_address: token.contract_address,
+          transaction: transaction,
+          block_number: transaction.block_number,
+          log_index: i
+        )
+      end)
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "token_contract_symbols_to_include" => "SYMINCL_A,SYMINCL_B"
+        })
+
+      assert response = json_response(request, 200)
+
+      # Include filter: only token transfers whose contract matches — the parent
+      # transaction itself has no token contract so it is excluded.
+      assert Enum.count(response["items"]) == 4
+
+      assert Enum.all?(response["items"], fn item ->
+               item["token"]["symbol"] in ["SYMINCL_A", "SYMINCL_B"]
+             end)
+    end
+
+    test "filter by token_contract_symbols_to_exclude", %{conn: conn} do
+      token_a = insert(:token, symbol: "SYMEXCL_A")
+      token_b = insert(:token, symbol: "SYMEXCL_B")
+      token_c = insert(:token, symbol: "SYMEXCL_C")
+
+      transaction = :transaction |> insert() |> with_block()
+
+      [token_a, token_b, token_c, token_a, token_b, token_c]
+      |> Enum.with_index()
+      |> Enum.each(fn {token, i} ->
+        insert(:token_transfer,
+          token_contract_address: token.contract_address,
+          transaction: transaction,
+          block_number: transaction.block_number,
+          log_index: i
+        )
+      end)
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "token_contract_symbols_to_exclude" => "SYMEXCL_C"
+        })
+
+      assert response = json_response(request, 200)
+
+      # Exclude filter: 4 token transfers (A×2 + B×2) plus the parent transaction
+      # itself (which has no token contract and is therefore not excluded).
+      assert Enum.count(response["items"]) == 5
+
+      assert Enum.all?(response["items"], fn item ->
+               is_nil(item["token"]) or item["token"]["symbol"] != "SYMEXCL_C"
+             end)
+    end
+
     test "filter by age", %{conn: conn} do
       [_, transaction_a, _, transaction_b, _] =
         for i <- 0..4 do
