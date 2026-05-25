@@ -183,6 +183,30 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
         "Comma-separated list of token contract address hashes to exclude. Use the literal `native` to also " <>
           "exclude native coin transfers. Each list (include and exclude) is capped to 20 entries separately.",
       example: "0x0000000000000000000000000000000000000000"
+    },
+    %OpenApiSpex.Parameter{
+      name: :methods_names,
+      in: :query,
+      schema: %OpenApiSpex.Schema{type: :string, nullable: true},
+      required: false,
+      description: "Comma-separated list of human-readable method names corresponding to the `methods` selectors.",
+      example: "transfer,approve"
+    },
+    %OpenApiSpex.Parameter{
+      name: :token_contract_symbols_to_include,
+      in: :query,
+      schema: %OpenApiSpex.Schema{type: :string, nullable: true},
+      required: false,
+      description: "Comma-separated list of token symbols to include.",
+      example: "USDT,USDC"
+    },
+    %OpenApiSpex.Parameter{
+      name: :token_contract_symbols_to_exclude,
+      in: :query,
+      schema: %OpenApiSpex.Schema{type: :string, nullable: true},
+      required: false,
+      description: "Comma-separated list of token symbols to exclude.",
+      example: "USDT,USDC"
     }
   ]
 
