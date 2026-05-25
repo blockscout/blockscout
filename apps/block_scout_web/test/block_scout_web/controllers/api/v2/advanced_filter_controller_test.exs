@@ -586,6 +586,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert response = json_response(request, 200)
 
       assert Enum.count(response["items"]) == 3
+
       assert Enum.all?(response["items"], fn item ->
                String.slice(item["method"], 0..9) == transfer_selector
              end)
@@ -625,6 +626,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert response = json_response(request, 200)
 
       assert Enum.count(response["items"]) == 8
+
       assert Enum.all?(response["items"], fn item ->
                String.slice(item["method"], 0..9) in [transfer_selector, mint_selector]
              end)
@@ -658,6 +660,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       # Include filter: only token transfers whose contract matches — the parent
       # transaction itself has no token contract so it is excluded.
       assert Enum.count(response["items"]) == 4
+
       assert Enum.all?(response["items"], fn item ->
                item["token"]["symbol"] in ["SYMINCL_A", "SYMINCL_B"]
              end)
@@ -691,6 +694,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       # Exclude filter: 4 token transfers (A×2 + B×2) plus the parent transaction
       # itself (which has no token contract and is therefore not excluded).
       assert Enum.count(response["items"]) == 5
+
       assert Enum.all?(response["items"], fn item ->
                is_nil(item["token"]) or item["token"]["symbol"] != "SYMEXCL_C"
              end)
