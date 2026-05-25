@@ -5,7 +5,8 @@ defmodule Explorer.EthRPC do
   """
   import Explorer.EthRpcHelper
 
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+  # Migrated from CompileTimeEnvHelper to RuntimeEnvHelper
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Ecto.Type, as: EctoType
   alias Explorer.{BloomFilter, Chain, Helper, Repo}
@@ -904,7 +905,7 @@ defmodule Explorer.EthRPC do
   end
 
   defp chain_type_transaction_necessity_by_association do
-    if Application.get_env(:explorer, :chain_type) == :ethereum do
+    if chain_type() == :ethereum do
       %{:beacon_blob_transaction => :optional}
     else
       %{}
@@ -992,7 +993,7 @@ defmodule Explorer.EthRPC do
   defp maybe_add_access_list(props, _transaction), do: props
 
   defp maybe_add_chain_type_extra_transaction_info_properties(props, %{beacon_blob_transaction: beacon_blob_transaction}) do
-    if Application.get_env(:explorer, :chain_type) == :ethereum && beacon_blob_transaction do
+    if chain_type() == :ethereum && beacon_blob_transaction do
       props
       |> Map.put("maxFeePerBlobGas", Helper.decimal_to_hex(beacon_blob_transaction.max_fee_per_blob_gas))
       |> Map.put("blobVersionedHashes", beacon_blob_transaction.blob_versioned_hashes)
@@ -1004,7 +1005,7 @@ defmodule Explorer.EthRPC do
   defp maybe_add_chain_type_extra_transaction_info_properties(props, _transaction), do: props
 
   defp maybe_add_chain_type_extra_receipt_properties(props, %{beacon_blob_transaction: beacon_blob_transaction}) do
-    if Application.get_env(:explorer, :chain_type) == :ethereum && beacon_blob_transaction do
+    if chain_type() == :ethereum && beacon_blob_transaction do
       props
       |> Map.put("blobGasPrice", Helper.decimal_to_hex(beacon_blob_transaction.blob_gas_price))
       |> Map.put("blobGasUsed", Helper.decimal_to_hex(beacon_blob_transaction.blob_gas_used))
