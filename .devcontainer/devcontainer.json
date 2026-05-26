@@ -4,9 +4,8 @@
 	"service": "elixir",
 	"workspaceFolder": "/workspace",
 	"postCreateCommand": {
-		"safe-directory": "git config --global --add safe.directory ${containerWorkspaceFolder}",
 		"deps": "mix deps.get",
-		"known_hosts": "sudo chown vscode:vscode /home/vscode/.ssh && ssh-keyscan github.com > /home/vscode/.ssh/known_hosts"
+		"chromedriver": "sudo apt-get update -qq -o Acquire::AllowInsecureRepositories=true 2>/dev/null; sudo apt-get install -y -qq --no-install-recommends chromium chromium-driver"
 	},
 	"remoteEnv": {
 		"PATH": "${containerEnv:PATH}:${containerWorkspaceFolder}/.devcontainer/bin"
@@ -18,10 +17,7 @@
 			// Add the IDs of extensions you want installed when the container is created.
 			"extensions": [
 				"JakeBecker.elixir-ls",
-				"ckolkman.vscode-postgres",
-				"GitHub.copilot",
-				"GitHub.copilot-chat",
-				"GitHub.vscode-pull-request-github"
+				"ckolkman.vscode-postgres"
 			]
 		}
 	},
