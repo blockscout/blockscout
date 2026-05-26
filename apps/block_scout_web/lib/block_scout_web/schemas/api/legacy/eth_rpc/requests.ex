@@ -145,7 +145,7 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.EthRpc.Requests do
         "jsonrpc" => "2.0",
         "id" => 4,
         "method" => "eth_getStorageAt",
-        "params" => ["0x1643E812aE58766192Cf7D2Cf9567dF2C37e9B7F", "0x", "latest"]
+        "params" => ["0x1643E812aE58766192Cf7D2Cf9567dF2C37e9B7F", "0x0", "latest"]
       }
     )
   end
