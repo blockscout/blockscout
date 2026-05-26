@@ -496,6 +496,13 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/get-block-number-by-time", Legacy.BlockController, :get_block_number_by_time)
       get("/eth-block-number", Legacy.BlockController, :eth_block_number)
     end
+
+    scope "/eth" do
+      post("/eth-call", Legacy.EthController, :eth_call)
+      post("/eth-get-balance", Legacy.EthController, :eth_get_balance)
+      post("/eth-get-storage-at", Legacy.EthController, :eth_get_storage_at)
+      post("/eth-send-raw-transaction", Legacy.EthController, :eth_send_raw_transaction)
+    end
   end
 
   scope "/v1/graphql" do
