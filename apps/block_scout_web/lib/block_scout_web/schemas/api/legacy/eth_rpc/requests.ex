@@ -71,8 +71,9 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.EthRpc.Requests do
         maxItems: 2,
         items: %Schema{anyOf: [@eth_call_object_schema, BlockTag]},
         description:
-          "Two-element array: `[<eth_call object>, <block tag>]`. " <>
-            "The first element is the call object; the second is the block at which to execute."
+          "Two-element array `[<call object>, <block tag>]`: " <>
+            "the call object specifies the target contract and call data; " <>
+            "the block tag selects the chain state to execute against."
       },
       example: %{
         "jsonrpc" => "2.0",
@@ -103,8 +104,9 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.EthRpc.Requests do
         maxItems: 2,
         items: %Schema{anyOf: [General.AddressHash, BlockTag]},
         description:
-          "One- or two-element array: `[<address>]` or `[<address>, <block tag>]`. " <>
-            "When the block tag is omitted, `latest` is used."
+          "One- or two-element array `[<address>]` or `[<address>, <block tag>]`: " <>
+            "the address is the account to query; " <>
+            "the block tag selects the chain state to read from and defaults to `\"latest\"` when omitted."
       },
       example: %{
         "jsonrpc" => "2.0",
@@ -133,7 +135,11 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.EthRpc.Requests do
             BlockTag
           ]
         },
-        description: "Three-element array: `[<address>, <storage position (hex)>, <block tag>]`."
+        description:
+          "Three-element array `[<address>, <storage position (hex)>, <block tag>]`: " <>
+            "the address is the contract to query; " <>
+            "the storage position is a hex-encoded slot index; " <>
+            "the block tag selects the chain state to read from."
       },
       example: %{
         "jsonrpc" => "2.0",
@@ -155,7 +161,9 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.EthRpc.Requests do
         type: :array,
         minItems: 1,
         maxItems: 1,
-        description: "Single-element array: `[<signed transaction data>]`.",
+        description:
+          "Single-element array `[<signed transaction data>]`: " <>
+            "the signed transaction data is the RLP-encoded transaction bytes, hex-encoded with a `0x` prefix.",
         items: %Schema{
           type: :string,
           pattern: ~r/^0x[0-9a-fA-F]+$/,

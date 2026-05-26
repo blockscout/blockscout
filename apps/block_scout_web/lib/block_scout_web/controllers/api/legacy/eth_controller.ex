@@ -46,12 +46,6 @@ defmodule BlockScoutWeb.API.Legacy.EthController do
     Performs a read-only EVM call against the given contract at the given block,
     without creating a transaction or modifying chain state — useful for
     querying contract data without spending gas.
-
-    The `params` field is a two-element array `[<call object>, <block tag>]`,
-    where the call object specifies the target contract and call data, and the
-    block tag selects the chain state to execute against. Returns the call's
-    raw return data as a hex-encoded string (`0x` if the call produced no
-    output).
     """,
     parameters: General.base_params(),
     request_body: Requests.eth_call(),
@@ -67,9 +61,7 @@ defmodule BlockScoutWeb.API.Legacy.EthController do
   operation :eth_get_balance,
     summary: "Get an address balance (eth_getBalance)",
     description: """
-    Returns the wei balance of the given address at the given block. The
-    block parameter is optional and defaults to `latest`. The result is a
-    hex-encoded wei amount.
+    Returns the wei balance of the given address at the given block.
     """,
     parameters: General.base_params(),
     request_body: Requests.eth_get_balance(),
@@ -87,12 +79,6 @@ defmodule BlockScoutWeb.API.Legacy.EthController do
     description: """
     Returns the raw storage value at the given slot of the given contract
     address at the given block.
-
-    The `params` field is a three-element array
-    `[<address>, <storage position>, <block tag>]`, where the address is the
-    contract to query, the storage position is a hex-encoded slot index, and
-    the block tag selects the chain state to read from. The result is a
-    hex-encoded 32-byte storage word.
     """,
     parameters: General.base_params(),
     request_body: Requests.eth_get_storage_at(),
@@ -110,10 +96,6 @@ defmodule BlockScoutWeb.API.Legacy.EthController do
     description: """
     Submits a pre-signed transaction to the underlying JSON-RPC node for
     inclusion in the mempool, and returns the transaction hash on acceptance.
-
-    The `params` field is a single-element array `[<signed transaction data>]`,
-    where the signed transaction data is the RLP-encoded transaction bytes,
-    hex-encoded with a `0x` prefix. The result is a 32-byte transaction hash.
     """,
     parameters: General.base_params(),
     request_body: Requests.eth_send_raw_transaction(),
