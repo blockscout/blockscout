@@ -1,5 +1,11 @@
 # Changelog
 
+## 11.1.2
+
+### 🐛 Bug Fixes
+
+- Fix VersionUpgrade check for empty previous version ([#14410](https://github.com/blockscout/blockscout/issues/14410))
+
 ## 11.1.1
 
 ### 🐛 Bug Fixes
