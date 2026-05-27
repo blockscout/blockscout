@@ -12,7 +12,9 @@ defmodule BlockScoutWeb.API.Legacy.EthControllerTest do
 
   import Mox
 
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
+  alias Explorer.Chain.Transaction
 
   setup do
     mocked_json_rpc_named_arguments = [
@@ -426,6 +428,149 @@ defmodule BlockScoutWeb.API.Legacy.EthControllerTest do
 
       assert response["jsonrpc"] == "2.0"
       assert response["error"] =~ "Batch requests are not supported"
+    end
+  end
+
+  describe "POST /api/legacy/eth/eth-block-number" do
+    setup do
+      Supervisor.terminate_child(Explorer.Supervisor, BlockNumber.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, BlockNumber.child_id())
+      :ok
+    end
+
+    test "returns hex-encoded latest block number", %{conn: conn} do
+      insert(:block)
+
+      response =
+        conn
+        |> post_json("/api/legacy/eth/eth-block-number", %{"jsonrpc" => "2.0", "method" => "eth_blockNumber", "id" => 1})
+        |> json_response(200)
+
+      assert response["jsonrpc"] == "2.0"
+      assert response["id"] == 1
+      assert is_binary(response["result"])
+      assert String.starts_with?(response["result"], "0x")
+    end
+
+    test "empty database — result is \"0x0\"", %{conn: conn} do
+      response =
+        conn
+        |> post_json("/api/legacy/eth/eth-block-number", %{"jsonrpc" => "2.0", "method" => "eth_blockNumber", "id" => 1})
+        |> json_response(200)
+
+      assert response["jsonrpc"] == "2.0"
+      assert response["result"] == "0x0"
+    end
+
+    test "method mismatch — JSON-RPC error envelope", %{conn: conn} do
+      response =
+        conn
+        |> post_json("/api/legacy/eth/eth-block-number", jsonrpc_body("eth_chainId", [], 7))
+        |> json_response(200)
+
+      assert response["jsonrpc"] == "2.0"
+      assert response["id"] == 7
+      assert response["error"] =~ "must be `eth_blockNumber`"
+    end
+
+    test "batch body rejected — JSON-RPC error envelope", %{conn: conn} do
+      batch = [%{"jsonrpc" => "2.0", "method" => "eth_blockNumber", "id" => 0}]
+
+      response =
+        conn
+        |> post_json("/api/legacy/eth/eth-block-number", batch)
+        |> json_response(200)
+
+      assert response["jsonrpc"] == "2.0"
+      assert response["error"] =~ "Batch requests are not supported"
+    end
+
+    test "parity with v1 /api/eth-rpc", %{conn: conn} do
+      insert(:block)
+
+      body = %{"jsonrpc" => "2.0", "method" => "eth_blockNumber", "id" => 1}
+
+      v1_response = conn |> post("/api/eth-rpc", body) |> json_response(200)
+      legacy_response = conn |> post_json("/api/legacy/eth/eth-block-number", body) |> json_response(200)
+
+      assert v1_response == legacy_response
+    end
+  end
+
+  describe "POST /api/legacy/eth/eth-get-logs" do
+    test "method mismatch — JSON-RPC error envelope", %{conn: conn} do
+      response =
+        conn
+        |> post(
+          "/api/legacy/eth/eth-get-logs",
+          jsonrpc_body("eth_getBalance", ["0x0000000000000000000000000000000000000001"], 3)
+        )
+        |> json_response(200)
+
+      assert response["jsonrpc"] == "2.0"
+      assert response["id"] == 3
+      assert response["error"] =~ "must be `eth_getLogs`"
+    end
+
+    test "batch body rejected — JSON-RPC error envelope", %{conn: conn} do
+      filter = %{"fromBlock" => "0x1", "toBlock" => "0xa"}
+      batch = [jsonrpc_body("eth_getLogs", [filter], 0)]
+
+      response =
+        conn
+        |> post_json("/api/legacy/eth/eth-get-logs", batch)
+        |> json_response(200)
+
+      assert response["jsonrpc"] == "2.0"
+      assert response["error"] =~ "Batch requests are not supported"
+    end
+
+    test "success — returns logs matching filter in JSON-RPC 2.0 format", %{conn: conn} do
+      contract_address = insert(:contract_address)
+
+      %Transaction{block: block} =
+        transaction =
+        :transaction
+        |> insert(to_address: contract_address)
+        |> with_block()
+
+      insert(:log,
+        address: contract_address,
+        transaction: transaction,
+        block: block,
+        block_number: block.number
+      )
+
+      filter = %{
+        "fromBlock" => "0x" <> Integer.to_string(block.number, 16),
+        "toBlock" => "0x" <> Integer.to_string(block.number, 16),
+        "address" => to_string(contract_address.hash)
+      }
+
+      response =
+        conn
+        |> post("/api/legacy/eth/eth-get-logs", jsonrpc_body("eth_getLogs", [filter], 1))
+        |> json_response(200)
+
+      assert response["jsonrpc"] == "2.0"
+      assert response["id"] == 1
+      assert is_list(response["result"])
+      assert length(response["result"]) == 1
+      [log_entry] = response["result"]
+      assert log_entry["address"] == to_string(contract_address.hash)
+      assert log_entry["transactionHash"] == to_string(transaction.hash)
+      assert Map.has_key?(log_entry, "blockHash")
+      assert Map.has_key?(log_entry, "removed")
+    end
+
+    test "parity with v1 /api/eth-rpc — filter with no results", %{conn: conn} do
+      filter = %{"fromBlock" => "0x1", "toBlock" => "0xa", "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b"}
+      body = jsonrpc_body("eth_getLogs", [filter], 0)
+
+      v1_response = conn |> post("/api/eth-rpc", body) |> json_response(200)
+      legacy_response = conn |> post("/api/legacy/eth/eth-get-logs", body) |> json_response(200)
+
+      assert v1_response == legacy_response
     end
   end
 end

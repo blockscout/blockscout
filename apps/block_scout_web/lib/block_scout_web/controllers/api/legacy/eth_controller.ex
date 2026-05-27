@@ -27,12 +27,13 @@ defmodule BlockScoutWeb.API.Legacy.EthController do
 
   alias BlockScoutWeb.API.EthRPC.EthController, as: V1EthController
   alias BlockScoutWeb.API.EthRPC.View, as: EthRPCView
-  alias BlockScoutWeb.Schemas.API.Legacy.Envelope
+  alias BlockScoutWeb.Schemas.API.Legacy.{Envelope, EthBlockNumberResult}
   alias BlockScoutWeb.Schemas.API.V2.General
 
   alias BlockScoutWeb.Schemas.API.Legacy.EthRpc.{
     EthCallResult,
     EthGetBalanceResult,
+    EthGetLogsResult,
     EthGetStorageAtResult,
     EthSendRawTransactionResult,
     Requests
@@ -107,6 +108,39 @@ defmodule BlockScoutWeb.API.Legacy.EthController do
 
   @spec eth_send_raw_transaction(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def eth_send_raw_transaction(conn, params), do: dispatch(conn, params, "eth_sendRawTransaction")
+
+  operation :eth_block_number,
+    summary: "Get the latest block number (eth_blockNumber)",
+    description: """
+    Returns the latest block number as a hex-encoded string in a JSON-RPC 2.0 response.
+    """,
+    parameters: General.base_params(),
+    request_body: Requests.eth_block_number(),
+    responses: [
+      ok:
+        {"JSON-RPC 2.0 envelope (success or error; HTTP 200 regardless).", "application/json",
+         Envelope.eth_rpc_envelope(EthBlockNumberResult)}
+    ]
+
+  @spec eth_block_number(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def eth_block_number(conn, params), do: dispatch(conn, params, "eth_blockNumber")
+
+  operation :eth_get_logs,
+    summary: "Get event logs (eth_getLogs)",
+    description: """
+    Returns event logs matching the supplied filter object, in JSON-RPC 2.0 format.
+    Up to a maximum of 1,000 log entries are returned per request.
+    """,
+    parameters: General.base_params(),
+    request_body: Requests.eth_get_logs(),
+    responses: [
+      ok:
+        {"JSON-RPC 2.0 envelope (success or error; HTTP 200 regardless).", "application/json",
+         Envelope.eth_rpc_envelope(%OpenApiSpex.Schema{type: :array, items: EthGetLogsResult, nullable: true})}
+    ]
+
+  @spec eth_get_logs(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def eth_get_logs(conn, params), do: dispatch(conn, params, "eth_getLogs")
 
   @spec dispatch(Plug.Conn.t(), map(), String.t()) :: Plug.Conn.t()
   defp dispatch(conn, params, expected_method) do

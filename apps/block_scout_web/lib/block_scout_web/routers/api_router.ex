@@ -488,13 +488,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   scope "/legacy" do
     pipe_through(:api_v2)
 
-    scope "/logs" do
-      get("/get-logs", Legacy.LogsController, :get_logs)
-    end
-
     scope "/block" do
       get("/get-block-number-by-time", Legacy.BlockController, :get_block_number_by_time)
-      get("/eth-block-number", Legacy.BlockController, :eth_block_number)
     end
 
     scope "/eth" do
@@ -502,6 +497,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       post("/eth-get-balance", Legacy.EthController, :eth_get_balance)
       post("/eth-get-storage-at", Legacy.EthController, :eth_get_storage_at)
       post("/eth-send-raw-transaction", Legacy.EthController, :eth_send_raw_transaction)
+      post("/eth-block-number", Legacy.EthController, :eth_block_number)
+      post("/eth-get-logs", Legacy.EthController, :eth_get_logs)
     end
   end
 

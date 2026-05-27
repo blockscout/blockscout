@@ -9,9 +9,9 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.LogItem do
     type: :object,
     properties: %{
       address: General.AddressHash,
-      # Each topic slot is nullable: LogsView.get_topics/1 at logs_view.ex:31-38
-      # always returns a 4-element list, filling unset slots with nil. A non-
-      # nullable items schema would fail validation on any real log with <4 topics.
+      # Each topic slot is nullable: RPC.LogsView.get_topics/1 always returns a
+      # 4-element list, filling unset slots with nil. A non-nullable items schema
+      # would fail validation on any real log with <4 topics.
       topics: %Schema{
         type: :array,
         minItems: 4,

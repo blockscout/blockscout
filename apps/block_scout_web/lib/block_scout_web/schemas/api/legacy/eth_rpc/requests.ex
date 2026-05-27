@@ -179,6 +179,98 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.EthRpc.Requests do
     )
   end
 
+  @doc """
+  Request body schema for `POST /api/legacy/eth/eth-block-number`.
+  """
+  @spec eth_block_number() :: RequestBody.t()
+  def eth_block_number do
+    method = "eth_blockNumber"
+
+    %RequestBody{
+      required: true,
+      description: "JSON-RPC 2.0 request body. `method` must be `#{method}`. No `params` field is needed.",
+      content: %{
+        "application/json" => %MediaType{
+          schema: %Schema{
+            type: :object,
+            properties: %{
+              jsonrpc: @jsonrpc_schema,
+              id: @id_schema,
+              method: %Schema{
+                type: :string,
+                enum: [method],
+                description: "JSON-RPC method name. Must be `#{method}` for this endpoint."
+              }
+            },
+            required: [:jsonrpc, :method, :id],
+            example: %{
+              "jsonrpc" => "2.0",
+              "id" => 1,
+              "method" => method
+            }
+          }
+        }
+      }
+    }
+  end
+
+  @doc """
+  Request body schema for `POST /api/legacy/eth/eth-get-logs`.
+  """
+  @spec eth_get_logs() :: RequestBody.t()
+  def eth_get_logs do
+    json_rpc_body(
+      method: "eth_getLogs",
+      params_schema: %Schema{
+        type: :array,
+        minItems: 1,
+        maxItems: 1,
+        description: "Single-element array containing a filter object.",
+        items: %Schema{
+          type: :object,
+          description:
+            "Log filter object. At least one of `address`, `topics` must be provided " <>
+              "alongside `fromBlock` and `toBlock`.",
+          properties: %{
+            fromBlock: Helper.describe_inline(BlockTag.schema(), "Start of the block range to search."),
+            toBlock: Helper.describe_inline(BlockTag.schema(), "End of the block range to search."),
+            address:
+              Helper.describe_inline(
+                General.AddressHash.schema(),
+                "Contract address to filter logs by. Optional."
+              ),
+            topics: %Schema{
+              type: :array,
+              description:
+                "Up to four topic filters. Each element is either a 32-byte hex topic string, " <>
+                  "an array of topic strings (OR semantics), or `null` to match any value in that position.",
+              items: %Schema{
+                nullable: true,
+                anyOf: [
+                  %Schema{type: :string, pattern: ~r/^0x[0-9a-fA-F]{64}$/},
+                  %Schema{type: :array, items: %Schema{type: :string, pattern: ~r/^0x[0-9a-fA-F]{64}$/}}
+                ]
+              }
+            }
+          }
+        }
+      },
+      example: %{
+        "jsonrpc" => "2.0",
+        "id" => 0,
+        "method" => "eth_getLogs",
+        "params" => [
+          %{
+            "fromBlock" => "0x5",
+            "toBlock" => "0xa",
+            "address" => "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+            "topics" => ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"]
+          }
+        ]
+      }
+    )
+  end
+
   defp json_rpc_body(opts) do
     method = Keyword.fetch!(opts, :method)
     params_schema = Keyword.fetch!(opts, :params_schema)
