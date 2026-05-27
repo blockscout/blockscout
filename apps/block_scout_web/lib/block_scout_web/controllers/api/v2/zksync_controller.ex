@@ -85,7 +85,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncController do
       zksync_options
       |> Reader.batches()
       |> paginate_list(params, zksync_options[:paging_options],
-        paging_function: fn %TransactionBatch{number: number} -> %{number: number} end
+        paging_function: fn %TransactionBatch{number: number} -> %{"number" => number} end
       )
 
     conn

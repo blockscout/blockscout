@@ -23,8 +23,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.ZkSync.Batch do
           "with the corresponding parent-chain lifecycle data.",
       properties: %{
         root_hash:
-          Helper.extend_schema(General.FullHash.schema(),
-            description: "State root hash committed for this batch on the parent chain."
+          Helper.describe_inline(
+            General.FullHash.schema(),
+            "State root hash committed for this batch on the parent chain."
           ),
         l1_transactions_count: %Schema{
           type: :integer,
@@ -37,12 +38,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.ZkSync.Batch do
           description: "Number of transactions in the batch originating on the rollup."
         },
         l1_gas_price:
-          Helper.extend_schema(General.NonNegativeIntegerString.schema(),
-            description: "Parent-chain gas price observed for this batch, in wei."
+          Helper.describe_inline(
+            General.NonNegativeIntegerString.schema(),
+            "Parent-chain gas price observed for this batch, in wei."
           ),
         l2_fair_gas_price:
-          Helper.extend_schema(General.NonNegativeIntegerString.schema(),
-            description: "Rollup fair gas price for this batch, in wei."
+          Helper.describe_inline(
+            General.NonNegativeIntegerString.schema(),
+            "Rollup fair gas price for this batch, in wei."
           ),
         start_block_number: %Schema{
           type: :integer,
