@@ -34,8 +34,10 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
       assert response = json_response(request, 200)
       assert response["items"] == []
       assert response["next_page_params"] == nil
-      assert response["status"] == 2
-      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
     end
 
     test "returns pending status when transaction hash is in pending_transaction_operations", %{conn: conn} do
@@ -50,8 +52,10 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
 
       assert response = json_response(request, 200)
       assert response["next_page_params"] == nil
-      assert response["status"] == 2
-      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
     end
 
     test "non empty list", %{conn: conn} do

@@ -182,7 +182,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "items" => Enum.map(internal_transactions, &InternalTransactionView.prepare_internal_transaction(&1, block)),
       "next_page_params" => next_page_params
     }
-    |> maybe_put_pending_status(Map.get(assigns, :pending_status?, false))
+    |> put_pending_status(Map.get(assigns, :pending_status?, false))
   end
 
   def render(
@@ -196,7 +196,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "items" => Enum.map(internal_transactions, &InternalTransactionView.prepare_internal_transaction(&1)),
       "next_page_params" => next_page_params
     }
-    |> maybe_put_pending_status(Map.get(assigns, :pending_status?, false))
+    |> put_pending_status(Map.get(assigns, :pending_status?, false))
   end
 
   def render("logs.json", %{logs: logs, next_page_params: next_page_params, transaction_hash: transaction_hash}) do
@@ -278,12 +278,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     }
   end
 
-  defp maybe_put_pending_status(response, false), do: response
+  defp put_pending_status(response, true) do
+    Map.put(response, "meta", %{"status" => 2, "message" => InternalTransactionsPendingStatusHelper.pending_message()})
+  end
 
-  defp maybe_put_pending_status(response, true) do
-    response
-    |> Map.put("status", 2)
-    |> Map.put("message", InternalTransactionsPendingStatusHelper.pending_message())
+  defp put_pending_status(response, _) do
+    Map.put(response, "meta", %{"status" => 1, "message" => nil})
   end
 
   @doc """

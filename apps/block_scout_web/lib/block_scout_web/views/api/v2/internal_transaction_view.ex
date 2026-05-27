@@ -28,7 +28,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionView do
       "items" => Enum.map(internal_transactions, &prepare_internal_transaction(&1, &1.block)),
       "next_page_params" => next_page_params
     }
-    |> maybe_put_pending_status(Map.get(assigns, :pending_status?, false))
+    |> put_pending_status(Map.get(assigns, :pending_status?, false))
   end
 
   @doc """
@@ -61,11 +61,11 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionView do
     }
   end
 
-  defp maybe_put_pending_status(response, false), do: response
+  defp put_pending_status(response, true) do
+    Map.put(response, "meta", %{"status" => 2, "message" => InternalTransactionsPendingStatusHelper.pending_message()})
+  end
 
-  defp maybe_put_pending_status(response, true) do
-    response
-    |> Map.put("status", 2)
-    |> Map.put("message", InternalTransactionsPendingStatusHelper.pending_message())
+  defp put_pending_status(response, _) do
+    Map.put(response, "meta", %{"status" => 1, "message" => nil})
   end
 end

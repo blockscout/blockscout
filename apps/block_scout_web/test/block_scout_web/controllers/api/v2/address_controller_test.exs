@@ -2282,8 +2282,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response = json_response(request, 200)
       assert response["items"] == []
       assert response["next_page_params"] == nil
-      refute Map.has_key?(response, "status")
-      refute Map.has_key?(response, "message")
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
 
       block = insert(:block)
       insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
@@ -2293,8 +2293,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response = json_response(request, 200)
       assert response["items"] == []
       assert response["next_page_params"] == nil
-      assert response["status"] == 2
-      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
     end
 
     test "returns pending status for pending transaction operation", %{conn: conn} do
@@ -2318,16 +2320,18 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response = json_response(request, 200)
       assert response["items"] == []
       assert response["next_page_params"] == nil
-      refute Map.has_key?(response, "status")
-      refute Map.has_key?(response, "message")
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
 
       insert(:pending_transaction_operation, transaction_hash: transaction.hash)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
 
       assert response = json_response(request, 200)
-      assert response["status"] == 2
-      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
     end
 
     test "returns gas_limit as 0 for selfdestruct without gas", %{conn: conn} do

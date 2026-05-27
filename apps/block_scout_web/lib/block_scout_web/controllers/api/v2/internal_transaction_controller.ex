@@ -5,7 +5,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
 
   alias BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper
   alias Explorer.Chain
-  alias Explorer.Chain.PendingOperationsHelper
 
   alias Explorer.Chain.Cache.BackgroundMigrations
 
@@ -109,8 +108,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
       :error -> :invalid
     end
   end
-
-  defp pending_status?([], nil), do: PendingOperationsHelper.any_pending_operations?()
 
   defp pending_status?(internal_transactions, transaction_hash) do
     InternalTransactionsPendingStatusHelper.internal_transactions_pending?(internal_transactions, transaction_hash)

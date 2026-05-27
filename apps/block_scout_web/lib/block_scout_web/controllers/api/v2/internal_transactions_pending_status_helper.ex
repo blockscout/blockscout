@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper do
   @moduledoc """
   Helpers for calculating whether internal-transactions API v2 responses should
@@ -39,10 +40,20 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper do
 
   @doc """
   Checks whether the address internal-transactions endpoint scope contains pending operations.
+
+  Only checks block-range pending operations — tx-hash checking is not meaningful here
+  because internal transactions are imported atomically per transaction: if any internal
+  transaction exists for a given tx_hash, all of them are already imported.
   """
   @spec address_internal_transactions_pending?(list()) :: boolean()
   def address_internal_transactions_pending?(internal_transactions) do
-    internal_transactions_pending?(internal_transactions)
+    {min_block_number, max_block_number} =
+      internal_transactions
+      |> extract_block_numbers()
+      |> expand_block_range()
+      |> then(&(&1 || {nil, nil}))
+
+    PendingOperationsHelper.pending_operations_in_block_range?(min_block_number, max_block_number)
   end
 
   @doc """

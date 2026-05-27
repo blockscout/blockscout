@@ -1052,20 +1052,27 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       }
     }
 
-    properties =
+    {properties, required} =
       if include_pending_status? do
-        Map.merge(properties, %{
-          status: %Schema{type: :integer, enum: [2]},
-          message: %Schema{type: :string}
-        })
+        meta_schema = %Schema{
+          type: :object,
+          nullable: false,
+          properties: %{
+            status: %Schema{type: :integer, enum: [1, 2]},
+            message: %Schema{type: :string, nullable: true}
+          },
+          required: [:status, :message]
+        }
+
+        {Map.put(properties, :meta, meta_schema), [:items, :next_page_params, :meta]}
       else
-        properties
+        {properties, [:items, :next_page_params]}
       end
 
     %Schema{
       type: :object,
       properties: properties,
-      required: [:items, :next_page_params],
+      required: required,
       nullable: false,
       additionalProperties: false
     }
