@@ -333,6 +333,17 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @spec include_zero_value_param() :: Parameter.t()
+  def include_zero_value_param do
+    %Parameter{
+      name: :include_zero_value,
+      in: :query,
+      schema: %Schema{type: :boolean, default: true},
+      required: false,
+      description: "If `false`, zero-value call-type internal transactions are excluded from results."
+    }
+  end
+
   @doc """
   Returns a reusable OpenApiSpex.RequestBody for audit report submission.
   """

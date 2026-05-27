@@ -706,6 +706,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       "Retrieves internal transactions generated during the execution of a specific transaction. Useful for analyzing contract interactions and debugging failed transactions.",
     parameters:
       [transaction_hash_param() | base_params()] ++
+        [include_zero_value_param()] ++
         define_paging_params(["index", "block_number", "transaction_index"]),
     responses: [
       ok:
@@ -733,6 +734,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         @internal_transaction_address_preloads
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(@api_true)
+        |> Keyword.put(:include_zero_value, Map.get(params, :include_zero_value, true))
 
       internal_transactions_plus_one = transaction_to_internal_transactions(transaction, full_options)
 

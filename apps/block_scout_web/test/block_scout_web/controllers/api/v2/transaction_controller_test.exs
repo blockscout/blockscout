@@ -727,11 +727,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
 
     test "returns pending status when transaction block is pending", %{conn: conn} do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
       insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
 
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
@@ -762,6 +757,53 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       assert response["meta"]["message"] ==
                "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "include_zero_value=false excludes zero-value call internal transactions", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 0,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      request =
+        get(
+          conn,
+          "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions",
+          %{"include_zero_value" => "false"}
+        )
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert List.first(response["items"])["index"] == 2
+
+      request_default = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
+      assert response_default = json_response(request_default, 200)
+      assert Enum.count(response_default["items"]) == 2
     end
   end
 
