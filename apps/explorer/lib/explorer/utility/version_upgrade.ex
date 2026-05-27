@@ -39,10 +39,10 @@ defmodule Explorer.Utility.VersionUpgrade do
   ]
 
   def validate_current_upgrade do
-    previous_version = Constants.get_previous_backend_version()
-    current_version = Constants.get_current_backend_version()
+    stored_current_version = Constants.get_current_backend_version()
+    current_version = to_string(Application.spec(:explorer, :vsn))
 
-    validate_upgrade(previous_version, current_version)
+    validate_upgrade(stored_current_version, current_version)
   end
 
   def validate_upgrade(nil, to_version) do
