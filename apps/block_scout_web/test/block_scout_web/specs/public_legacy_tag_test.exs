@@ -3,13 +3,13 @@ defmodule BlockScoutWeb.Specs.PublicLegacyTagTest do
   use ExUnit.Case, async: true
 
   @legacy_paths [
-    {:get, "/api/legacy/logs/get-logs"},
     {:get, "/api/legacy/block/get-block-number-by-time"},
-    {:get, "/api/legacy/block/eth-block-number"},
     {:post, "/api/legacy/eth/eth-call"},
     {:post, "/api/legacy/eth/eth-get-balance"},
     {:post, "/api/legacy/eth/eth-get-storage-at"},
-    {:post, "/api/legacy/eth/eth-send-raw-transaction"}
+    {:post, "/api/legacy/eth/eth-send-raw-transaction"},
+    {:post, "/api/legacy/eth/eth-block-number"},
+    {:post, "/api/legacy/eth/eth-get-logs"}
   ]
 
   setup_all do
