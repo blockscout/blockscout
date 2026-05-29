@@ -493,7 +493,7 @@ defmodule Explorer.Chain.ImportTest do
     end
 
     test "with empty map" do
-      assert {:ok, %{}} == Import.all(%{})
+      assert {:ok, %{set_statement_timeout: :done}} == Import.all(%{})
     end
 
     test "with invalid data" do
@@ -1848,7 +1848,7 @@ defmodule Explorer.Chain.ImportTest do
                blocks: %{
                  params: []
                }
-             }) == {:ok, %{}}
+             }) == {:ok, %{set_statement_timeout: :done}}
     end
 
     # https://github.com/poanetwork/blockscout/issues/868 regression test
