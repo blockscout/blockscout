@@ -3994,6 +3994,74 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                Address.checksum(legit_transfer.token_contract_address_hash)
     end
 
+    test "token_balances_count includes scam tokens when show_scam_tokens cookie is true even if hide_scam_addresses is true",
+         %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      address = insert(:address)
+
+      insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+        address: address,
+        token_type: "ERC-20",
+        token_id: Enum.random(1..100_000)
+      )
+
+      scam_balance =
+        insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+          address: address,
+          token_type: "ERC-20",
+          token_id: Enum.random(1..100_000)
+        )
+
+      insert(:scam_badge_to_address, address_hash: scam_balance.token_contract_address_hash)
+
+      response =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/addresses/#{address.hash}/tabs-counters")
+        |> json_response(200)
+
+      assert response["token_balances_count"] == 2
+    end
+
+    test "token_transfers_count includes scam tokens when show_scam_tokens cookie is true even if hide_scam_addresses is true",
+         %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      address = insert(:address)
+
+      transaction = insert(:transaction) |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        to_address: address
+      )
+
+      scam_transfer =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          to_address: address
+        )
+
+      insert(:scam_badge_to_address, address_hash: scam_transfer.token_contract_address_hash)
+
+      response =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/addresses/#{address.hash}/tabs-counters")
+        |> json_response(200)
+
+      assert response["token_transfers_count"] == 2
+    end
+
     test "get 200 on non existing address", %{conn: conn} do
       address = build(:address)
 
