@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Import do
   Bulk importing of data into `Explorer.Repo`
   """
 
-  alias Ecto.Changeset
+  alias Ecto.{Changeset, Multi}
   alias Explorer.Account.Notify
   alias Explorer.Chain.{Block, Import}
   alias Explorer.Chain.Events.Publisher
@@ -436,10 +436,26 @@ defmodule Explorer.Chain.Import do
   end
 
   defp import_transaction(multi, options) when is_map(options) do
-    Repo.logged_transaction(multi, timeout: Map.get(options, :timeout, @transaction_timeout))
+    timeout = Map.get(options, :timeout, @transaction_timeout)
+
+    multi
+    |> add_statement_timeout(timeout)
+    |> Repo.logged_transaction(timeout: timeout)
   rescue
     exception -> {:exception, exception, __STACKTRACE__}
   end
+
+  defp add_statement_timeout(multi, timeout) when is_integer(timeout) do
+    prefix_multi =
+      Multi.run(Multi.new(), :set_statement_timeout, fn repo, _ ->
+        repo.query!("SET LOCAL statement_timeout = #{timeout}")
+        {:ok, :done}
+      end)
+
+    Multi.prepend(multi, prefix_multi)
+  end
+
+  defp add_statement_timeout(multi, _timeout), do: multi
 
   defp handle_task_results(task_results, acc_changes) do
     Enum.reduce_while(task_results, {:ok, acc_changes}, fn task_result, {:ok, acc_changes_inner} ->
