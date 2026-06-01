@@ -15,13 +15,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.UserOperation do
       hash: General.FullHash,
       sender: Address,
       nonce: General.FullHash,
-      call_data: General.HexString,
+      call_data: General.HexData,
       call_gas_limit: General.IntegerString,
       verification_gas_limit: General.IntegerString,
       pre_verification_gas: General.IntegerString,
       max_fee_per_gas: General.IntegerString,
       max_priority_fee_per_gas: General.IntegerString,
-      signature: General.HexString,
+      signature: General.HexData,
       raw: %Schema{
         description: "Raw user operation data.",
         anyOf: [
@@ -31,15 +31,15 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.UserOperation do
             properties: %{
               sender: General.AddressHash,
               nonce: General.IntegerString,
-              init_code: General.HexString,
-              call_data: General.HexString,
+              init_code: General.HexData,
+              call_data: General.HexData,
               call_gas_limit: General.IntegerString,
               verification_gas_limit: General.IntegerString,
               pre_verification_gas: General.IntegerString,
               max_fee_per_gas: General.IntegerString,
               max_priority_fee_per_gas: General.IntegerString,
-              paymaster_and_data: General.HexString,
-              signature: General.HexString
+              paymaster_and_data: General.HexData,
+              signature: General.HexData
             },
             required: [
               :sender,
@@ -63,13 +63,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.UserOperation do
             properties: %{
               sender: General.AddressHash,
               nonce: General.IntegerString,
-              init_code: General.HexString,
-              call_data: General.HexString,
+              init_code: General.HexData,
+              call_data: General.HexData,
               account_gas_limits: General.FullHash,
               pre_verification_gas: General.IntegerString,
               gas_fees: General.FullHash,
-              paymaster_and_data: General.HexString,
-              signature: General.HexString
+              paymaster_and_data: General.HexData,
+              signature: General.HexData
             },
             required: [
               :sender,
@@ -88,7 +88,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.UserOperation do
         ]
       },
       aggregator: General.AddressHashNullable,
-      aggregator_signature: General.HexStringNullable,
+      aggregator_signature: General.HexDataNullable,
       entry_point: Address,
       entry_point_version: %Schema{
         type: :string,
@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.UserOperation do
       factory: AddressNullable,
       paymaster: AddressNullable,
       status: %Schema{type: :boolean, nullable: false},
-      revert_reason: General.HexStringNullable,
+      revert_reason: General.HexDataNullable,
       gas: General.IntegerString,
       gas_price: General.IntegerString,
       gas_used: General.IntegerString,
@@ -119,7 +119,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.UserOperation do
       consensus: %Schema{type: :boolean, nullable: true},
       timestamp: General.TimestampNullable,
       execute_target: AddressNullable,
-      execute_call_data: General.HexStringNullable,
+      execute_call_data: General.HexDataNullable,
       decoded_call_data: %Schema{allOf: [General.DecodedInput], nullable: true},
       decoded_execute_call_data: %Schema{allOf: [General.DecodedInput], nullable: true}
     },

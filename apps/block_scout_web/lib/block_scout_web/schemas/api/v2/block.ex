@@ -202,7 +202,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
         nullable: false,
         properties: %{
           view: %Schema{type: :integer, nullable: false},
-          signature: General.HexString,
+          signature: General.HexData,
           signers: %Schema{type: :array, items: %Schema{type: :integer, nullable: false}, nullable: false}
         },
         required: [:view, :signature, :signers],
@@ -213,7 +213,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
         nullable: false,
         properties: %{
           view: %Schema{type: :integer, nullable: false},
-          signature: General.HexString,
+          signature: General.HexData,
           signers: %Schema{type: :array, items: %Schema{type: :integer, nullable: false}, nullable: false},
           nested_quorum_certificates: %Schema{
             type: :array,
@@ -221,7 +221,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
               type: :object,
               properties: %{
                 view: %Schema{type: :integer, nullable: false},
-                signature: General.HexString,
+                signature: General.HexData,
                 proposed_by_validator_index: %Schema{type: :integer, nullable: false},
                 signers: %Schema{type: :array, items: %Schema{type: :integer, nullable: false}, nullable: false}
               },
@@ -261,9 +261,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
         |> Helper.extend_schema(
           properties: %{
             minimum_gas_price: General.IntegerString,
-            bitcoin_merged_mining_header: General.HexString,
-            bitcoin_merged_mining_coinbase_transaction: General.HexString,
-            bitcoin_merged_mining_merkle_proof: General.HexString,
+            bitcoin_merged_mining_header: General.HexData,
+            bitcoin_merged_mining_coinbase_transaction: General.HexData,
+            bitcoin_merged_mining_merkle_proof: General.HexData,
             hash_for_merged_mining: General.FullHash
           }
         )
@@ -460,7 +460,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
         gas_limit: General.IntegerString,
         nonce:
           Helper.describe_inline(
-            General.HexString.schema(),
+            General.HexData.schema(),
             "Proof-of-work nonce used to satisfy the difficulty target. Zero on proof-of-stake chains."
           ),
         base_fee_per_gas:

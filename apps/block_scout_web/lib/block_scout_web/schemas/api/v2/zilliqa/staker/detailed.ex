@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Zilliqa.Staker.Detailed do
     |> Helper.extend_schema(
       title: "StakerDetailed",
       properties: %{
-        peer_id: General.HexStringNullable,
+        peer_id: General.HexDataNullable,
         control_address: AddressNullable,
         reward_address: AddressNullable,
         signing_address: AddressNullable,

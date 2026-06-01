@@ -50,10 +50,10 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.EthRpc.Requests do
           General.AddressHash.schema(),
           "Caller address used as `msg.sender` during execution. Optional."
         ),
-      gas: Helper.describe_inline(General.HexString.schema(), "Hex-encoded gas limit."),
-      gasPrice: Helper.describe_inline(General.HexString.schema(), "Hex-encoded gas price in wei."),
-      value: Helper.describe_inline(General.HexString.schema(), "Hex-encoded value sent with the call, in wei."),
-      input: Helper.describe_inline(General.HexString.schema(), "Hex-encoded calldata.")
+      gas: Helper.describe_inline(General.HexQuantity.schema(), "Hex-encoded gas limit."),
+      gasPrice: Helper.describe_inline(General.HexQuantity.schema(), "Hex-encoded gas price in wei."),
+      value: Helper.describe_inline(General.HexQuantity.schema(), "Hex-encoded value sent with the call, in wei."),
+      input: Helper.describe_inline(General.HexData.schema(), "Hex-encoded calldata.")
     },
     required: [:to]
   }
@@ -131,7 +131,7 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.EthRpc.Requests do
         items: %Schema{
           anyOf: [
             General.AddressHash,
-            General.HexString,
+            General.HexQuantity,
             BlockTag
           ]
         },
@@ -166,7 +166,7 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.EthRpc.Requests do
             "the signed transaction data is the RLP-encoded transaction bytes, hex-encoded with a `0x` prefix.",
         items: %Schema{
           type: :string,
-          pattern: ~r/^0x[0-9a-fA-F]+$/,
+          pattern: General.hex_quantity_pattern(),
           description: "Hex-encoded signed transaction bytes."
         }
       },
@@ -247,8 +247,8 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.EthRpc.Requests do
               items: %Schema{
                 nullable: true,
                 anyOf: [
-                  %Schema{type: :string, pattern: ~r/^0x[0-9a-fA-F]{64}$/},
-                  %Schema{type: :array, items: %Schema{type: :string, pattern: ~r/^0x[0-9a-fA-F]{64}$/}}
+                  General.FullHash,
+                  %Schema{type: :array, items: General.FullHash}
                 ]
               }
             }

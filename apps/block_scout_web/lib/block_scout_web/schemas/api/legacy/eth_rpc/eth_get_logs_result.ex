@@ -15,17 +15,17 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.EthRpc.EthGetLogsResult do
       blockHash: General.FullHash,
       blockNumber: %Schema{
         type: :string,
-        pattern: ~r/^0x[0-9a-fA-F]+$/,
+        pattern: General.hex_quantity_pattern(),
         description: "Hex-encoded block number."
       },
       data: %Schema{
         type: :string,
-        pattern: ~r/^0x[0-9a-fA-F]*$/,
+        pattern: General.hex_data_pattern(),
         description: "Hex-encoded event data payload."
       },
       logIndex: %Schema{
         type: :string,
-        pattern: ~r/^0x[0-9a-fA-F]+$/,
+        pattern: General.hex_quantity_pattern(),
         description: "Hex-encoded position of the log within the block."
       },
       removed: %Schema{
@@ -35,16 +35,12 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.EthRpc.EthGetLogsResult do
       topics: %Schema{
         type: :array,
         description: "Indexed event topics. Up to four 32-byte hex strings; unused slots are `null`.",
-        items: %Schema{
-          type: :string,
-          pattern: ~r/^0x[0-9a-fA-F]{64}$/,
-          nullable: true
-        }
+        items: General.FullHashNullable
       },
       transactionHash: General.FullHash,
       transactionIndex: %Schema{
         type: :string,
-        pattern: ~r/^0x[0-9a-fA-F]+$/,
+        pattern: General.hex_quantity_pattern(),
         description: "Hex-encoded position of the transaction within the block."
       }
     },

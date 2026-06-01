@@ -146,7 +146,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
           %OpenApiSpex.Parameter{
             name: :commitment,
             in: :path,
-            schema: Schemas.General.HexString,
+            schema: Schemas.General.HexData,
             required: true,
             description: "Celestia blob commitment in the path."
           }
