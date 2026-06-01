@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     EmptyString,
     FloatString,
     FullHash,
-    HexString,
+    HexData,
     IntegerString,
     IntegerStringNullable,
     NullString
@@ -28,7 +28,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @float_pattern ~r"^([1-9][0-9]*|0)(\.[0-9]+)?$"
   @address_hash_pattern ~r"^0x([A-Fa-f0-9]{40})$"
   @full_hash_pattern ~r"^0x([A-Fa-f0-9]{64})$"
-  @hex_string_pattern ~r"^0x([A-Fa-f0-9]*)$"
+  @hex_quantity_pattern ~r"^0x([A-Fa-f0-9]+)$"
+  @hex_data_pattern ~r"^0x([A-Fa-f0-9]*)$"
 
   if @chain_type == :zilliqa do
     @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2|ERC-7984)(,(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2|ERC-7984))*\]?$/i
@@ -643,7 +644,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :topic,
       in: :query,
-      schema: HexString,
+      schema: HexData,
       required: false,
       description: "Log topic param in the query"
     }
@@ -848,7 +849,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :record_id,
       in: :path,
-      schema: HexString,
+      schema: HexData,
       required: true,
       description: "MUD record ID in the path"
     }
@@ -1432,7 +1433,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     "key_bytes" => %Parameter{
       name: :key_bytes,
       in: :query,
-      schema: HexString,
+      schema: HexData,
       required: false,
       description: "MUD record key_bytes for paging"
     },
@@ -1628,8 +1629,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   def full_hash_pattern, do: @full_hash_pattern
 
   @doc """
-  Returns the regex pattern for validating hex strings.
+  Returns the regex pattern for validating hex-encoded quantities (JSON-RPC QUANTITY).
   """
-  @spec hex_string_pattern() :: Regex.t()
-  def hex_string_pattern, do: @hex_string_pattern
+  @spec hex_quantity_pattern() :: Regex.t()
+  def hex_quantity_pattern, do: @hex_quantity_pattern
+
+  @doc """
+  Returns the regex pattern for validating hex-encoded data (JSON-RPC DATA).
+  """
+  @spec hex_data_pattern() :: Regex.t()
+  def hex_data_pattern, do: @hex_data_pattern
 end

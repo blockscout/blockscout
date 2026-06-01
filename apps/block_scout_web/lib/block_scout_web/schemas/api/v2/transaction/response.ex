@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.Response.ChainTypeCustomizati
     nullable: false,
     properties: %{
       nonce: %Schema{type: :integer, minimum: 0},
-      payload: General.HexString,
+      payload: General.HexData,
       relay_chain: %Schema{
         type: :object,
         properties: %{

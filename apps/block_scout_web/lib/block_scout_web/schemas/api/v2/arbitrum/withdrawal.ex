@@ -57,7 +57,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Withdrawal do
         ),
       data:
         Helper.describe_inline(
-          General.HexString.schema(),
+          General.HexData.schema(),
           "ABI-encoded calldata passed to the destination address when the withdrawal is executed on the Parent chain. " <>
             "Empty (`0x`) for plain native coin transfers."
         ),
