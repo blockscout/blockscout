@@ -130,6 +130,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
       import Ecto.Query
 
       alias Ecto.Adapters.SQL
+      alias Explorer.Chain.Block
       alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
       alias Explorer.Migrator.MigrationStatus
       alias Explorer.Repo
@@ -152,7 +153,22 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
 
       @impl true
       def init(_) do
-        {:ok, %{}, {:continue, :ok}}
+        with {:green_install?, true} <- {:green_install?, not Repo.exists?(Block)},
+             {:migration_finished?, false} <- {:migration_finished?, migration_finished?()},
+             {:dependent_from_migrations_completed?, true} <-
+               {:dependent_from_migrations_completed?, dependent_from_migrations_completed?()},
+             {:db_index_operation, :ok} <- {:db_index_operation, db_index_operation()} do
+          MigrationStatus.set_status(migration_name(), "completed")
+          update_cache()
+          :ignore
+        else
+          {:migration_finished?, true} ->
+            update_cache()
+            :ignore
+
+          _ ->
+            {:ok, %{}, {:continue, :ok}}
+        end
       end
 
       @impl true
@@ -226,16 +242,20 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
         if running_other_heavy_migration_exists?(migration_name()) do
           false
         else
-          if Enum.empty?(dependent_from_migrations()) do
-            true
-          else
-            all_statuses =
-              MigrationStatus.fetch_migration_statuses(dependent_from_migrations())
+          dependent_from_migrations_completed?()
+        end
+      end
 
-            all_statuses_completed? = not Enum.empty?(all_statuses) && all_statuses |> Enum.all?(&(&1 == "completed"))
+      defp dependent_from_migrations_completed? do
+        if Enum.empty?(dependent_from_migrations()) do
+          true
+        else
+          all_statuses =
+            MigrationStatus.fetch_migration_statuses(dependent_from_migrations())
 
-            all_statuses_completed? && Enum.count(all_statuses) == Enum.count(dependent_from_migrations())
-          end
+          all_statuses_completed? = not Enum.empty?(all_statuses) && all_statuses |> Enum.all?(&(&1 == "completed"))
+
+          all_statuses_completed? && Enum.count(all_statuses) == Enum.count(dependent_from_migrations())
         end
       end
 
