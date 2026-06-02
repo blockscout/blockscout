@@ -174,10 +174,9 @@ defmodule Explorer.Chain.MapCache do
       end
 
       def do_raw(function, propagate \\ true) do
-        case Explorer.mode() do
-          mode when mode in [:all, :api] ->
-            function.()
+        function.()
 
+        case Explorer.mode() do
           :indexer ->
             if propagate do
               Node.list() |> :erpc.multicast(__MODULE__, :do_raw, [function, false])

@@ -291,17 +291,16 @@ defmodule Explorer.Chain.OrderedCache do
       def update(element), do: update([element])
 
       def do_raw_update(prepared_elements, propagate) do
+        ConCache.update(cache_name(), ids_list_key(), fn ids ->
+          updated_list =
+            prepared_elements
+            |> merge_and_update(ids || [], max_size())
+
+          # ids_list is set to never expire
+          {:ok, %ConCache.Item{value: updated_list, ttl: :infinity}}
+        end)
+
         case Explorer.mode() do
-          mode when mode in [:all, :api] ->
-            ConCache.update(cache_name(), ids_list_key(), fn ids ->
-              updated_list =
-                prepared_elements
-                |> merge_and_update(ids || [], max_size())
-
-              # ids_list is set to never expire
-              {:ok, %ConCache.Item{value: updated_list, ttl: :infinity}}
-            end)
-
           :indexer ->
             if propagate do
               Node.list() |> :erpc.multicast(__MODULE__, :do_raw_update, [prepared_elements, false])
