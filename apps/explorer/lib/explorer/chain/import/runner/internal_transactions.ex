@@ -557,12 +557,21 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   defp maybe_reject_zero_value(internal_transactions) do
     with true <- Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled],
          border_number when is_integer(border_number) <- DeleteZeroValueInternalTransactions.border_number() do
-      Enum.reject(
-        internal_transactions,
-        &(Map.has_key?(&1, :type) and
-            (&1.block_number <= border_number and &1.type == :call and
-               (is_nil(Map.get(&1, :value)) || Decimal.eq?(&1.value.value, 0))))
-      )
+      Enum.reject(internal_transactions, fn
+        %{type: type, block_number: block_number} = internal_transaction ->
+          # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+          value =
+            case Map.get(internal_transaction, :value) do
+              %{value: decimal_value} -> decimal_value
+              integer_value when is_integer(integer_value) -> integer_value
+              nil -> 0
+            end
+
+          block_number <= border_number and type in [:call, "call"] and Decimal.eq?(value, 0)
+
+        _ ->
+          false
+      end)
     else
       _ -> internal_transactions
     end
