@@ -231,11 +231,11 @@ defmodule Explorer.Application do
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
           :indexer
         ),
-        configure_mode_dependent_process(Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex,
           :indexer
         ),
+        configure_mode_dependent_process(Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberDescIndexDescIndex,
           :indexer
@@ -390,10 +390,6 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError,
-          :indexer
-        ),
-        configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsFromAddressIdPartialIndex,
           :indexer
         ),
@@ -407,6 +403,10 @@ defmodule Explorer.Application do
         ),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberCreatedContractAddressIdPartialIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError,
           :indexer
         ),
         configure_mode_dependent_process(
