@@ -45,6 +45,12 @@ defmodule Explorer.Chain.MapCache do
   - `{:return, value}` that will cause the value to be returned but not stored
   This allows to define of a default value or perform some actions.
   By default it will simply `{:return, nil}`
+
+  ## Distributed writes
+
+  In split API/indexer deployments, `set/2` and `update/2` use `do_raw/2`: the write runs on
+  the local `ConCache` first, then indexer nodes multicast the same operation to other cluster
+  nodes via `:erpc` (`propagate: false` on receivers). Reads are not distributed.
   """
 
   @type key :: atom()
@@ -173,6 +179,13 @@ defmodule Explorer.Chain.MapCache do
         do_raw(fn -> ConCache.update(cache_name(), key, fn old_val -> handle_update(key, old_val, value) end) end)
       end
 
+      @doc """
+      Applies a ConCache write locally, then propagates it from indexer nodes.
+
+      With the default `propagate: true`, the given zero-arity function runs on this node first.
+      When `Explorer.mode/0` is `:indexer`, the same function is multicast to `Node.list/0` with
+      `propagate: false` so API nodes apply the write without re-propagating.
+      """
       def do_raw(function, propagate \\ true) do
         function.()
 

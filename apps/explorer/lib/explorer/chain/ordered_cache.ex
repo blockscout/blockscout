@@ -36,6 +36,12 @@ defmodule Explorer.Chain.OrderedCache do
   and `c:element_to_id/1` callbacks.
   For typechecking purposes it's also recommended to override the `t:element/0`
   and `t:id/0` type definitions.
+
+  ## Distributed writes
+
+  In split API/indexer deployments, `update/1` uses `do_raw_update/2`: the ids list and
+  elements are written to the local `ConCache` first, then indexer nodes multicast the prepared
+  update to other cluster nodes via `:erpc` (`propagate: false` on receivers).
   """
 
   @type element :: struct()
@@ -290,6 +296,13 @@ defmodule Explorer.Chain.OrderedCache do
 
       def update(element), do: update([element])
 
+      @doc """
+      Merges prepared elements into the local ordered cache, then propagates from indexer nodes.
+
+      Always updates the local ids list and element entries first. When `Explorer.mode/0` is
+      `:indexer` and `propagate` is `true`, multicasts the same prepared elements to `Node.list/0`
+      with `propagate: false` so API nodes apply the write without re-propagating.
+      """
       def do_raw_update(prepared_elements, propagate) do
         ConCache.update(cache_name(), ids_list_key(), fn ids ->
           updated_list =
