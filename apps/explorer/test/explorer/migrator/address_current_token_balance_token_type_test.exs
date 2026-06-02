@@ -9,6 +9,8 @@ defmodule Explorer.Migrator.AddressCurrentTokenBalanceTokenTypeTest do
 
   describe "Migrate current token balances" do
     test "Set token_type for not processed current token balances" do
+      insert(:block)
+
       Enum.each(0..10, fn _x ->
         current_token_balance = insert(:address_current_token_balance, token_type: nil)
         assert %{token_type: nil} = current_token_balance
