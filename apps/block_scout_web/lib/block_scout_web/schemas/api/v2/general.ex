@@ -1042,18 +1042,38 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   def paginated_response(options) do
     items_schema = Keyword.fetch!(options, :items)
     next_page_params_example = Keyword.fetch!(options, :next_page_params_example)
+    include_pending_status? = Keyword.get(options, :include_pending_status?, false)
+
+    properties = %{
+      items: %Schema{type: :array, items: items_schema, nullable: false},
+      next_page_params: %Schema{
+        type: :object,
+        nullable: true,
+        example: next_page_params_example
+      }
+    }
+
+    {properties, required} =
+      if include_pending_status? do
+        meta_schema = %Schema{
+          type: :object,
+          nullable: false,
+          properties: %{
+            status: %Schema{type: :integer, enum: [1, 2]},
+            message: %Schema{type: :string, nullable: true}
+          },
+          required: [:status, :message]
+        }
+
+        {Map.put(properties, :meta, meta_schema), [:items, :next_page_params, :meta]}
+      else
+        {properties, [:items, :next_page_params]}
+      end
 
     %Schema{
       type: :object,
-      properties: %{
-        items: %Schema{type: :array, items: items_schema, nullable: false},
-        next_page_params: %Schema{
-          type: :object,
-          nullable: true,
-          example: next_page_params_example
-        }
-      },
-      required: [:items, :next_page_params],
+      properties: properties,
+      required: required,
       nullable: false,
       additionalProperties: false
     }

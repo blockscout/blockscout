@@ -45,6 +45,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     BlockView,
     Ethereum.DepositController,
     Ethereum.DepositView,
+    InternalTransactionsPendingStatusHelper,
     TransactionView,
     WithdrawalView
   }
@@ -616,6 +617,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {"All internal transactions for the specified address.", "application/json",
          paginated_response(
            items: Schemas.InternalTransaction,
+           include_pending_status?: true,
            next_page_params_example: %{
              "block_number" => 22_530_770,
              "index" => 8,
@@ -662,21 +664,28 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           {internal_transactions, next_page_params} =
             paginate_list(results_plus_one, params, full_options[:paging_options])
 
+          pending_status? =
+            InternalTransactionsPendingStatusHelper.address_internal_transactions_pending?(internal_transactions)
+
           conn
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:internal_transactions, %{
             internal_transactions: internal_transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
-            next_page_params: next_page_params
+            next_page_params: next_page_params,
+            pending_status?: pending_status?
           })
 
         _ ->
+          pending_status? = InternalTransactionsPendingStatusHelper.address_internal_transactions_pending?([])
+
           conn
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:internal_transactions, %{
             internal_transactions: [],
-            next_page_params: nil
+            next_page_params: nil,
+            pending_status?: pending_status?
           })
       end
     end

@@ -51,7 +51,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   require Logger
 
   alias BlockScoutWeb.AccessHelper
-  alias BlockScoutWeb.API.V2.{BlobView, Ethereum.DepositController, Ethereum.DepositView}
+
+  alias BlockScoutWeb.API.V2.{
+    BlobView,
+    Ethereum.DepositController,
+    Ethereum.DepositView,
+    InternalTransactionsPendingStatusHelper
+  }
+
   alias BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation, as: TransactionInterpretationService
   alias BlockScoutWeb.Models.TransactionStateHelper
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.{ForbiddenResponse, NotFoundResponse}
@@ -705,6 +712,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         {"Internal transactions for the specified transaction, with pagination.", "application/json",
          paginated_response(
            items: Schemas.InternalTransaction,
+           include_pending_status?: true,
            next_page_params_example: %{
              "index" => 50,
              "block_number" => 22_133_247,
@@ -731,11 +739,19 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       {internal_transactions, next_page_params} =
         paginate_list(internal_transactions_plus_one, params, full_options[:paging_options])
 
+      pending_status? =
+        InternalTransactionsPendingStatusHelper.transaction_internal_transactions_pending?(
+          internal_transactions,
+          transaction.hash,
+          transaction.block_number
+        )
+
       conn
       |> put_status(200)
       |> render(:internal_transactions, %{
         internal_transactions: internal_transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
-        next_page_params: next_page_params
+        next_page_params: next_page_params,
+        pending_status?: pending_status?
       })
     end
   end
