@@ -132,6 +132,8 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalancesTest d
       addresses_chunk_size: 7000
     )
 
+    insert(:block)
+
     balance = insert(:address_current_token_balance, block_number: 100, token_type: "ERC-20")
 
     assert MigrationStatus.get_status("backfill_multichain_search_db_current_token_balances") == nil
