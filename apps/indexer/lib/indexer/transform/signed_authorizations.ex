@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.SignedAuthorizations do
   @moduledoc """
     Helper functions for extracting signed authorizations from EIP-7702 transactions.

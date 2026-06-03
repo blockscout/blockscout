@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Withdrawal do
   @moduledoc """
   This module defines the schema for the Optimism Withdrawal struct.
@@ -16,7 +17,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Withdrawal do
       l1_transaction_hash: General.FullHashNullable,
       l2_timestamp: General.TimestampNullable,
       l2_transaction_hash: General.FullHash,
-      msg_data: General.HexStringNullable,
+      msg_data: General.HexDataNullable,
       msg_gas_limit: General.IntegerStringNullable,
       msg_nonce: %Schema{type: :integer},
       msg_nonce_raw: General.IntegerString,

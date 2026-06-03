@@ -4,127 +4,442 @@ Effective Date: 2026-04-22
 Version: 1.0
 Previous Version: N/A
 
-PLEASE READ THIS LICENCE CAREFULLY. BY DOWNLOADING, ACCESSING, COPYING, MODIFYING, DISTRIBUTING, DEPLOYING, OR OTHERWISE USING THE SOFTWARE, YOU CONFIRM THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO BE LEGALLY BOUND BY THE TERMS OF THIS LICENCE IN FULL. IF YOU DO NOT AGREE TO THESE TERMS, YOU MUST NOT DOWNLOAD, USE, COPY, MODIFY, OR DISTRIBUTE THE SOFTWARE.
+PLEASE READ THIS LICENCE CAREFULLY. BY DOWNLOADING, ACCESSING, COPYING, 
+MODIFYING, DISTRIBUTING, DEPLOYING, OR OTHERWISE USING THE SOFTWARE, YOU 
+CONFIRM THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO BE LEGALLY BOUND BY 
+THE TERMS OF THIS LICENCE IN FULL. IF YOU DO NOT AGREE TO THESE TERMS, 
+YOU MUST NOT DOWNLOAD, USE, COPY, MODIFY, OR DISTRIBUTE THE SOFTWARE.
 
 1. Definitions
 
-“Commercial Licence” means a separate written commercial licence agreement entered into between you and the Licensor, which expressly references this Licence and supplements its terms by granting additional rights, or permitting uses, that are not granted or permitted under this Licence.
+“Commercial Licence” means a separate written commercial licence 
+agreement entered into between you and the Licensor, which expressly 
+references this Licence and supplements its terms by granting additional 
+rights, or permitting uses, that are not granted or permitted under this 
+Licence.
 
-“Derivative Work” means any work, whether in source or object form, that is based on or derived from the Software and in which any editorial revisions, annotations, elaborations, additions, deletions, or other modifications, taken as a whole, constitute an original work of authorship. For the avoidance of doubt, Derivative Works do not include works that remain separable from, or merely link to, the Software.
+“Derivative Work” means any work, whether in source or object form, that 
+is based on or derived from the Software and in which any editorial 
+revisions, annotations, elaborations, additions, deletions, or other 
+modifications, taken as a whole, constitute an original work of 
+authorship. For the avoidance of doubt, Derivative Works do not include 
+works that remain separable from, or merely link to, the Software.
 
-“Feedback” means any comments, suggestions, recommendations, ideas, proposals, or other feedback, whether oral or written, provided by you in connection with or relating to the Software.
+“Feedback” means any comments, suggestions, recommendations, ideas, 
+proposals, or other feedback, whether oral or written, provided by you in 
+connection with or relating to the Software.
 
-“Group” means, in respect of an entity, that entity together with any other entity that directly or indirectly controls, is controlled by, or is under common control with, that entity. For the purposes of this definition, “control” means the direct or indirect ownership of more than fifty per cent (50%) of the voting securities or other ownership interest of an entity, or the power to direct or cause the direction of the management and policies of that entity (whether by ownership, contract, or otherwise).
+“Group” means, in respect of an entity, that entity together with any 
+other entity that directly or indirectly controls, is controlled by, or 
+is under common control with, that entity. For the purposes of this 
+definition, “control” means the direct or indirect ownership of more than 
+fifty per cent (50%) of the voting securities or other ownership interest 
+of an entity, or the power to direct or cause the direction of the 
+management and policies of that entity (whether by ownership, contract, 
+or otherwise).
 
-“Licence” means this Blockscout Software Licence, as amended or updated from time to time.
+“Licence” means this Blockscout Software Licence, as amended or updated 
+from time to time.
 
-“Licensor” means Blockscout Limited, an international business company incorporated under the laws of the Republic of Seychelles.
+“Licensor” means Blockscout Limited, an international business company 
+incorporated under the laws of the Republic of Seychelles.
 
-“Prior Software” means any prior version, release, build, or component of the Software that was made available by or on behalf of the Licensor before the Effective Date, and that is not distributed under this Licence.
+“Prior Software” means any prior version, release, build, or component of 
+the Software that was made available by or on behalf of the Licensor 
+before the Effective Date, and that is not distributed under this Licence.
 
-“Software” means the Blockscout blockchain explorer, a tool for inspecting and analyzing blockchain networks, as made available by the Licensor under this Licence, including the source code, object code, executable files, configuration and deployment materials, documentation, APIs/SDKs (if any), and any part or portion thereof.
+“Software” means the Blockscout blockchain explorer, a tool for 
+inspecting and analyzing blockchain networks, as made available by the 
+Licensor under this Licence, including the source code, object code, 
+executable files, configuration and deployment materials, documentation, 
+APIs/SDKs (if any), and any part or portion thereof.
 
-“You” or “your” means the individual who accepts this Licence. Where you act on behalf of an entity, “you” shall refer to both: (i) you as an individual exercising rights under this Licence; and (ii) the entity on whose behalf you are acting.
+“You” or “your” means the individual who accepts this Licence. Where you 
+act on behalf of an entity, “you” shall refer to both: (i) you as an 
+individual exercising rights under this Licence; and (ii) the entity on 
+whose behalf you are acting.
 
 2. Licence and Attribution
 
-  a. Licence. Subject to and conditional upon your compliance with this Licence, the Licensor hereby grants you a temporary, worldwide, non-exclusive, royalty-free, revocable, non-transferable, and non-sublicensable licence to download, review, use, deploy, copy, modify, and create Derivative Works of the Software. All rights not expressly granted under this Licence are reserved by the Licensor.
+  a. Licence. Subject to and conditional upon your compliance with this 
+  Licence, the Licensor hereby grants you a temporary, worldwide, 
+  non-exclusive, royalty-free, revocable, non-transferable, and 
+  non-sublicensable licence to download, review, use, deploy, copy, 
+  modify, and create Derivative Works of the Software. All rights not 
+  expressly granted under this Licence are reserved by the Licensor.
   
-  b. Branding and Attribution. You shall preserve all copyright, patent, trademark, branding, and attribution notices included in or displayed by the Software, and shall not remove, obscure, conceal, replace, alter, disable, or otherwise interfere with the display or integrity of such notices.
+  b. Branding and Attribution. You shall preserve all copyright, patent, 
+  trademark, branding, and attribution notices included in or displayed 
+  by the Software, and shall not remove, obscure, conceal, replace, 
+  alter, disable, or otherwise interfere with the display or integrity of 
+  such notices.
 
-  c. Interface Attribution. Where the Software is used to power, enable, or provide functionality for any user interface (including any website, web application, mobile application, or other frontend), you shall ensure that such interface includes clear and reasonably prominent attribution to the Licensor at all times while you use the Software. Such attribution shall (i) prominently identify the Licensor by the brand name “Blockscout” (such as “Made with Blockscout” or “Powered by Blockscout”), and (ii) include the respective attribution text, link (or a hyperlink) to the website https://blockscout.com and any branding or notices provided by the Licensor, in each case in the same form and manner as displayed in the footer of the following website: https://eth.blockscout.com.
+  c. Interface Attribution. Where the Software is used to power, enable, 
+  or provide functionality for any user interface (including any website, 
+  web application, mobile application, or other frontend), you shall 
+  ensure that such interface includes clear and reasonably prominent 
+  attribution to the Licensor at all times while you use the Software. 
+  Such attribution shall (i) prominently identify the Licensor by the 
+  brand name “Blockscout” (such as “Made with Blockscout” or “Powered by 
+  Blockscout”), and (ii) include the respective attribution text, link 
+  (or a hyperlink) to the website https://blockscout.com and any branding 
+  or notices provided by the Licensor, in each case in the same form and 
+  manner as displayed in the footer of the following website:
+  https://eth.blockscout.com.
   
-  d. No Endorsement or Service Provision. Except as expressly agreed in writing by the Licensor, the Licensor does not provide, and shall not be deemed to provide, any product or service that you (or any third party) offer, operate, or make available using the Software, and the Licensor is not a party to, and has no responsibility or liability for, any relationship, transaction or interaction between you and any end user or other third party. The Licensor does not endorse, sponsor, approve, or recommend you, your business, or any of your products or services. Except as expressly agreed in writing by the Licensor, you shall not (and shall not authorise or permit any third party to) state, represent, imply, or otherwise hold out that: (i) the Licensor provides any services to or for you; (ii) the Licensor acts on your behalf; (iii) you are acting as an agent, representative, partner, or affiliate of the Licensor; or (iv) the Licensor endorses, sponsors, approves, or recommends you, your business, or any of your products or services.
+  d. No Endorsement or Service Provision. Except as expressly agreed in 
+  writing by the Licensor, the Licensor does not provide, and shall not 
+  be deemed to provide, any product or service that you (or any third 
+  party) offer, operate, or make available using the Software, and the 
+  Licensor is not a party to, and has no responsibility or liability for, 
+  any relationship, transaction or interaction between you and any end 
+  user or other third party. The Licensor does not endorse, sponsor, 
+  approve, or recommend you, your business, or any of your products or 
+  services. Except as expressly agreed in writing by the Licensor, you 
+  shall not (and shall not authorise or permit any third party to) state, 
+  represent, imply, or otherwise hold out that: (i) the Licensor provides 
+  any services to or for you; (ii) the Licensor acts on your behalf; 
+  (iii) you are acting as an agent, representative, partner, or affiliate 
+  of the Licensor; or (iv) the Licensor endorses, sponsors, approves, or 
+  recommends you, your business, or any of your products or services.
 
 3. Scope and Updates
   
-  a. Scope. Subject to Third-Party Licences clause, this Licence applies solely to the version of the Software (and its components) with which it is distributed by or on behalf of the Licensor. This Licence does not apply to any Prior Software.
+  a. Scope. Subject to Third-Party Licences clause, this Licence applies 
+  solely to the version of the Software (and its components) with which 
+  it is distributed by or on behalf of the Licensor. This Licence does 
+  not apply to any Prior Software.
 
 
-  b. Software Changes. The Software is under active development and may be modified, updated, improved, withdrawn, suspended, or discontinued by the Licensor at any time, in whole or in part, with or without notice. The Licensor does not warrant or guarantee that any particular features, functionality, integrations, interfaces, or components of the Software will remain available, unchanged, or compatible with any prior or future versions. You acknowledge and agree that the Software may change over time and that continued use of the Software is at your sole risk.
+  b. Software Changes. The Software is under active development and may 
+  be modified, updated, improved, withdrawn, suspended, or discontinued 
+  by the Licensor at any time, in whole or in part, with or without 
+  notice. The Licensor does not warrant or guarantee that any particular 
+  features, functionality, integrations, interfaces, or components of the 
+  Software will remain available, unchanged, or compatible with any prior 
+  or future versions. You acknowledge and agree that the Software may 
+  change over time and that continued use of the Software is at your sole 
+  risk.
 
 
-  c. Licence Updates. The Licensor may amend, replace, or update this Licence at any time in its sole discretion, with or without notice. Where you continue to access, use, deploy, copy, modify, or otherwise use the Software after the effective date of an updated Licence, you acknowledge and agree that your continued use constitutes acceptance of, and you shall comply with, the updated Licence. For the avoidance of doubt, an updated Licence may introduce additional restrictions or permissions, including requiring a Commercial Licence for certain uses.
+  c. Licence Updates. The Licensor may amend, replace, or update this 
+  Licence at any time in its sole discretion, with or without notice. 
+  Where you continue to access, use, deploy, copy, modify, or otherwise 
+  use the Software after the effective date of an updated Licence, you 
+  acknowledge and agree that your continued use constitutes acceptance 
+  of, and you shall comply with, the updated Licence. For the avoidance 
+  of doubt, an updated Licence may introduce additional restrictions or 
+  permissions, including requiring a Commercial Licence for certain uses.
 
 4. Restricted Uses and Commercial Licence
 
-  a. Restricted Commercial or Monetised Use (including SaaS and RaaS). Unless and until you obtain a Commercial Licence, you shall not, and shall not authorise or permit any third party to exercise any rights granted under this Licence to (directly or indirectly) sell, license, monetise, commercialise, or otherwise make available the Software or its functionality to any third party in exchange for any fee or other consideration (including without limitation fees for hosting, access, subscriptions, support, consulting, implementation, customisation, maintenance, managed services, or any other services), where such product or service incorporates, uses, depends on, or is materially enabled by the Software (including offering the Software or its functionality on a hosted, “as-a-service”, or managed basis).
+  a. Restricted Commercial or Monetised Use (including SaaS and RaaS). 
+  Unless and until you obtain a Commercial Licence, you shall not, and 
+  shall not authorise or permit any third party to exercise any rights 
+  granted under this Licence to (directly or indirectly) sell, license, 
+  monetise, commercialise, or otherwise make available the Software or 
+  its functionality to any third party in exchange for any fee or other 
+  consideration (including without limitation fees for hosting, access, 
+  subscriptions, support, consulting, implementation, customisation, 
+  maintenance, managed services, or any other services), where such 
+  product or service incorporates, uses, depends on, or is materially 
+  enabled by the Software (including offering the Software or its 
+  functionality on a hosted, “as-a-service”, or managed basis).
 
-  b. Obtaining Commercial Licence. If you intend to exercise any rights or engage in any uses of the Software that are prohibited, restricted, or not granted under this Licence, you must, prior to such use, contact the Licensor at https://eaas.blockscout.com/#contact to request a Commercial Licence and applicable pricing and terms. Any such rights or uses are unauthorised unless and until a Commercial Licence has been expressly agreed in writing by the Licensor. Nothing in this Licence obliges the Licensor to grant any Commercial Licence or to enter into any agreement with you.
+  b. Obtaining Commercial Licence. If you intend to exercise any rights 
+  or engage in any uses of the Software that are prohibited, restricted, 
+  or not granted under this Licence, you must, prior to such use, contact 
+  the Licensor at https://eaas.blockscout.com/#contact to request a 
+  Commercial Licence and applicable pricing and terms. Any such rights or 
+  uses are unauthorised unless and until a Commercial Licence has been 
+  expressly agreed in writing by the Licensor. Nothing in this Licence 
+  obliges the Licensor to grant any Commercial Licence or to enter into 
+  any agreement with you.
 
-  c. Compliance Verification. Upon the Licensor’s reasonable request, you shall promptly provide the Licensor with such information and documentation as the Licensor may reasonably require to verify your compliance with this Licence, including (without limitation) to confirm whether your use of the Software requires a Commercial Licence. The Licensor shall use any such information solely for compliance verification purposes.
+  c. Compliance Verification. Upon the Licensor’s reasonable request, you 
+  shall promptly provide the Licensor with such information and 
+  documentation as the Licensor may reasonably require to verify your 
+  compliance with this Licence, including (without limitation) to confirm 
+  whether your use of the Software requires a Commercial Licence. The 
+  Licensor shall use any such information solely for compliance 
+  verification purposes.
 
-  d. Name and Branding Restrictions. You shall not distribute, market, or otherwise make available the Software or any Derivative Works under any name, designation, branding, or identifier that is identical or confusingly similar to the Licensor’s product names, trademarks, service marks, or trade names, or that is likely to cause confusion as to the origin, sponsorship, affiliation, or endorsement by the Licensor.
+  d. Name and Branding Restrictions. You shall not distribute, market, or 
+  otherwise make available the Software or any Derivative Works under any 
+  name, designation, branding, or identifier that is identical or 
+  confusingly similar to the Licensor’s product names, trademarks, 
+  service marks, or trade names, or that is likely to cause confusion as 
+  to the origin, sponsorship, affiliation, or endorsement by the Licensor.
 
 5. Derivative Works
 
-  a. Permission. Subject to and conditional upon your compliance with this Licence, you may create Derivative Works of the Software solely for your internal use of the Software. 
+  a. Permission. Subject to and conditional upon your compliance with 
+  this Licence, you may create Derivative Works of the Software solely 
+  for your internal use of the Software. 
 
-  b. Restrictions. You shall not distribute, sublicense, sell, license, make available, or otherwise provide any Derivative Works, in whole or in part, to any third party without first obtaining a Commercial Licence.
+  b. Restrictions. You shall not distribute, sublicense, sell, license, 
+  make available, or otherwise provide any Derivative Works, in whole or 
+  in part, to any third party without first obtaining a Commercial 
+  Licence.
 
-  c. Ownership and Licence. Except as expressly provided in this Licence, ownership of any Derivative Works shall remain with you. Notwithstanding the foregoing, you hereby grant the Licensor a perpetual, irrevocable, worldwide, royalty-free, non-exclusive, transferable, and sublicensable licence to use, reproduce, modify, adapt, incorporate, and otherwise exploit any Derivative Works for any purpose, including to develop, improve, or distribute the Software.
+  c. Ownership and Licence. Except as expressly provided in this Licence, 
+  ownership of any Derivative Works shall remain with you. 
+  Notwithstanding the foregoing, you hereby grant the Licensor a 
+  perpetual, irrevocable, worldwide, royalty-free, non-exclusive, 
+  transferable, and sublicensable licence to use, reproduce, modify, 
+  adapt, incorporate, and otherwise exploit any Derivative Works for any 
+  purpose, including to develop, improve, or distribute the Software.
 
-  d. Tracking of Changes. Where you modify the Software or create any Derivative Works, you shall ensure that any modified files carry prominent notices stating that you have modified the Software and indicating the date of such modification. Any such notices shall not be construed as modifying, limiting, or otherwise affecting this Licence.
+  d. Tracking of Changes. Where you modify the Software or create any 
+  Derivative Works, you shall ensure that any modified files carry 
+  prominent notices stating that you have modified the Software and 
+  indicating the date of such modification. Any such notices shall not be 
+  construed as modifying, limiting, or otherwise affecting this Licence.
 
-  e. Warranties. You represent and warrant that you own or otherwise have all necessary rights to create and license any Derivative Works as contemplated by this Licence, and that such Derivative Works do not infringe any third-party intellectual property rights, violate this Licence, or breach any applicable laws or regulations.
+  e. Warranties. You represent and warrant that you own or otherwise have 
+  all necessary rights to create and license any Derivative Works as 
+  contemplated by this Licence, and that such Derivative Works do not 
+  infringe any third-party intellectual property rights, violate this 
+  Licence, or breach any applicable laws or regulations.
 
 6. Feedback
 
-  a. Permission and Rights. You may, but are not obliged to, provide Feedback. Where you provide any Feedback, you acknowledge and agree that the Licensor may, in its sole discretion, use, reproduce, disclose, make publicly available, and otherwise exploit such Feedback for any purpose, commercial or otherwise, without restriction and without any obligation to you, including without acknowledgment or compensation.
+  a. Permission and Rights. You may, but are not obliged to, provide 
+  Feedback. Where you provide any Feedback, you acknowledge and agree 
+  that the Licensor may, in its sole discretion, use, reproduce, 
+  disclose, make publicly available, and otherwise exploit such Feedback 
+  for any purpose, commercial or otherwise, without restriction and 
+  without any obligation to you, including without acknowledgment or 
+  compensation.
 
-  b. Licence. You hereby grant the Licensor a perpetual, irrevocable, worldwide, royalty-free, transferable, and sublicensable licence to use, reproduce, modify, adapt, publish, translate, distribute, publicly perform, publicly display, and otherwise exploit the Feedback, in whole or in part, in any manner and for any purpose. To the extent permitted by applicable law, you waive, and agree not to assert, any moral rights or similar rights you may have in the Feedback. 
+  b. Licence. You hereby grant the Licensor a perpetual, irrevocable, 
+  worldwide, royalty-free, transferable, and sublicensable licence to 
+  use, reproduce, modify, adapt, publish, translate, distribute, publicly 
+  perform, publicly display, and otherwise exploit the Feedback, in whole 
+  or in part, in any manner and for any purpose. To the extent permitted 
+  by applicable law, you waive, and agree not to assert, any moral rights 
+  or similar rights you may have in the Feedback. 
 
-  c. Warranties. You represent and warrant that you own or otherwise have all necessary rights to grant the licence set out in this clause, and that the Feedback does not infringe any third-party rights or applicable laws.
+  c. Warranties. You represent and warrant that you own or otherwise have 
+  all necessary rights to grant the licence set out in this clause, and 
+  that the Feedback does not infringe any third-party rights or 
+  applicable laws.
 
 7. Ownership
 
-  a. Ownership. The Licensor is and shall remain the sole owner (or, where applicable, the authorised licensor) of the Software. Nothing in this Licence shall operate to assign, transfer, or otherwise convey to you any right, title, or interest in or to the Software, save for the limited licence expressly granted under this Licence and the Commercial Licence, if applicable. All rights are licensed, not sold. You shall not take, or assist others in taking, any action that may diminish the Licensor's rights in the Software.
+  a. Ownership. The Licensor is and shall remain the sole owner (or, 
+  where applicable, the authorised licensor) of the Software. Nothing in 
+  this Licence shall operate to assign, transfer, or otherwise convey to 
+  you any right, title, or interest in or to the Software, save for the 
+  limited licence expressly granted under this Licence and the Commercial 
+  Licence, if applicable. All rights are licensed, not sold. You shall 
+  not take, or assist others in taking, any action that may diminish the 
+  Licensor's rights in the Software.
 
-  b. Branding. Subject to your compliance with this Licence, the Licensor hereby grants you a temporary, worldwide, non-exclusive, royalty-free, revocable, non-transferable, and non-sublicensable licence to display the Licensor’s trademarks, trade names, and logos as provided along with the Software or as required under this Licence, solely for attribution purposes as required under this Licence. Except for the foregoing, no rights in any trademarks, trade names, or logos of the Licensor or its affiliates are granted under this Licence.
+  b. Branding. Subject to your compliance with this Licence, the Licensor 
+  hereby grants you a temporary, worldwide, non-exclusive, royalty-free, 
+  revocable, non-transferable, and non-sublicensable licence to display 
+  the Licensor’s trademarks, trade names, and logos as provided along 
+  with the Software or as required under this Licence, solely for 
+  attribution purposes as required under this Licence. Except for the 
+  foregoing, no rights in any trademarks, trade names, or logos of the 
+  Licensor or its affiliates are granted under this Licence.
 
-  c. Third-Party Licences. While the Software is made available in its entirety under this Licence, certain components of the Software may incorporate or be derived from third-party open-source software provided under permissive licences. Such specific third-party open-source software components are distributed under the terms of the applicable third-party licences. To the extent required by such third-party licences, applicable copyright notices, licence texts, and attribution requirements shall be preserved. Subject to the foregoing, the Software as a whole, and all parts thereof, is licensed under this Licence.
+  c. Third-Party Licences. While the Software is made available in its 
+  entirety under this Licence, certain components of the Software may 
+  incorporate or be derived from third-party open-source software 
+  provided under permissive licences. Such specific third-party 
+  open-source software components are distributed under the terms of the 
+  applicable third-party licences. To the extent required by such 
+  third-party licences, applicable copyright notices, licence texts, and 
+  attribution requirements shall be preserved. Subject to the foregoing, 
+  the Software as a whole, and all parts thereof, is licensed under this 
+  Licence.
 
 8. Disclaimers
 
-To the maximum extent permitted by applicable law, the Software is provided on an “AS IS” and “AS AVAILABLE” basis and is used at your sole risk. The Licensor disclaims all warranties of any kind, whether express, implied, statutory, or otherwise, including (without limitation) any implied warranties of merchantability, satisfactory quality, fitness for a particular purpose, non-infringement, and title, and any warranties arising out of course of dealing, course of performance, or usage of trade. Without limiting the foregoing, the Licensor makes no representation or warranty that the Software will function as expected, meet your requirements, operate in combination with any other software, have any specific functionality, be uninterrupted, timely, secure, accurate, complete, or error-free, or that any defects or errors will be corrected. Nothing in this Licence excludes or limits any warranty, liability, or other term to the extent it cannot be excluded or limited under applicable law. The Software is provided for informational and technical purposes only and does not constitute legal, financial, tax, investment, or other professional advice. You are solely responsible for determining whether use of the Software is appropriate for your purposes.
+To the maximum extent permitted by applicable law, the Software is 
+provided on an “AS IS” and “AS AVAILABLE” basis and is used at your sole 
+risk. The Licensor disclaims all warranties of any kind, whether express, 
+implied, statutory, or otherwise, including (without limitation) any 
+implied warranties of merchantability, satisfactory quality, fitness for 
+a particular purpose, non-infringement, and title, and any warranties 
+arising out of course of dealing, course of performance, or usage of 
+trade. Without limiting the foregoing, the Licensor makes no 
+representation or warranty that the Software will function as expected, 
+meet your requirements, operate in combination with any other software, 
+have any specific functionality, be uninterrupted, timely, secure, 
+accurate, complete, or error-free, or that any defects or errors will be 
+corrected. Nothing in this Licence excludes or limits any warranty, 
+liability, or other term to the extent it cannot be excluded or limited 
+under applicable law. The Software is provided for informational and 
+technical purposes only and does not constitute legal, financial, tax, 
+investment, or other professional advice. You are solely responsible for 
+determining whether use of the Software is appropriate for your purposes.
 
 9. Limitation of Liability
 
-Nothing in this Licence excludes or limits liability for: (i) death or personal injury caused by negligence; (ii) fraud or fraudulent misrepresentation; or (iii) any other liability which cannot be excluded or limited under applicable law. Subject to the foregoing, to the maximum extent permitted by applicable law, the Licensor shall not be liable to you for any loss or damage whatsoever (whether direct, indirect, incidental, special, punitive or consequential), or for any loss of profits, revenue, business, business opportunity, anticipated savings, goodwill or data, or for any business interruption, arising out of or in connection with the use of, or inability to use, the Software, whether in contract, tort (including negligence), misrepresentation, restitution, breach of statutory duty, or otherwise, even if advised of the possibility of such loss or damage. To the extent that the Licensor is held liable notwithstanding the above, the total aggregate liability arising out of or in connection with this Licence or the Software shall not exceed the total amounts actually paid by you to the Licensor under this Licence in the twelve (12) months preceding the event giving rise to the claim (or, if no such amounts were paid, USD 100).
+Nothing in this Licence excludes or limits liability for: (i) death or 
+personal injury caused by negligence; (ii) fraud or fraudulent 
+misrepresentation; or (iii) any other liability which cannot be excluded 
+or limited under applicable law. Subject to the foregoing, to the maximum 
+extent permitted by applicable law, the Licensor shall not be liable to 
+you for any loss or damage whatsoever (whether direct, indirect, 
+incidental, special, punitive or consequential), or for any loss of 
+profits, revenue, business, business opportunity, anticipated savings, 
+goodwill or data, or for any business interruption, arising out of or in 
+connection with the use of, or inability to use, the Software, whether in 
+contract, tort (including negligence), misrepresentation, restitution, 
+breach of statutory duty, or otherwise, even if advised of the 
+possibility of such loss or damage. To the extent that the Licensor is 
+held liable notwithstanding the above, the total aggregate liability 
+arising out of or in connection with this Licence or the Software shall 
+not exceed the total amounts actually paid by you to the Licensor under 
+this Licence in the twelve (12) months preceding the event giving rise to 
+the claim (or, if no such amounts were paid, USD 100).
 
 10. Term and Termination
 
-  a. Automatic Termination. This Licence shall automatically terminate, without any further action by the Licensor, upon any breach by you of its terms.
+  a. Automatic Termination. This Licence shall automatically terminate, 
+  without any further action by the Licensor, upon any breach by you of 
+  its terms.
 
-  b. Termination by the Licensor. The Licensor may terminate this Licence at any time in its sole discretion. Where reasonably practicable, the Licensor will use reasonable efforts to provide you with advance notice of termination.
+  b. Termination by the Licensor. The Licensor may terminate this Licence 
+  at any time in its sole discretion. Where reasonably practicable, the 
+  Licensor will use reasonable efforts to provide you with advance notice 
+  of termination.
 
-  c. Effect of Termination. Upon termination of this Licence for any reason: (i) all rights granted to you under this Licence shall immediately cease; (ii) all Commercial Licences executed with you shall automatically terminate simultaneously with this Licence; (iii) you shall immediately cease all access to and use of the Software and any Derivative Works; (iv) you shall uninstall and delete the Software and any Derivative Works from all systems under your control and destroy all copies in your possession or control (in each case including any copies held by your contractors or service providers), except to the extent retention is required by applicable law; (v) you shall immediately cease all distribution or making available of the Software and any Derivative Works; and (vi) any provisions of this Licence which by their nature are intended to survive termination shall survive, including without limitation provisions relating to ownership, trademarks, feedback, disclaimers, limitation of liability, and governing law and jurisdiction.
+  c. Effect of Termination. Upon termination of this Licence for any 
+  reason: (i) all rights granted to you under this Licence shall 
+  immediately cease; (ii) all Commercial Licences executed with you shall 
+  automatically terminate simultaneously with this Licence; (iii) you 
+  shall immediately cease all access to and use of the Software and any 
+  Derivative Works; (iv) you shall uninstall and delete the Software and 
+  any Derivative Works from all systems under your control and destroy 
+  all copies in your possession or control (in each case including any 
+  copies held by your contractors or service providers), except to the 
+  extent retention is required by applicable law; (v) you shall 
+  immediately cease all distribution or making available of the Software 
+  and any Derivative Works; and (vi) any provisions of this Licence which 
+  by their nature are intended to survive termination shall survive, 
+  including without limitation provisions relating to ownership, 
+  trademarks, feedback, disclaimers, limitation of liability, and 
+  governing law and jurisdiction.
 
 11. Governing Law and Arbitration
 
-  a. Governing Law. This Licence and any dispute or claim (including non-contractual disputes or claims) arising out of or in connection with it or its subject matter or formation shall be governed by and construed in accordance with the law of England and Wales, excluding its conflict of law rules. For the avoidance of doubt, the provisions of the United Nations Convention on the International Sale of Goods shall not apply to this Licence.
+  a. Governing Law. This Licence and any dispute or claim (including 
+  non-contractual disputes or claims) arising out of or in connection 
+  with it or its subject matter or formation shall be governed by and 
+  construed in accordance with the law of England and Wales, excluding 
+  its conflict of law rules. For the avoidance of doubt, the provisions 
+  of the United Nations Convention on the International Sale of Goods 
+  shall not apply to this Licence.
 
-  b. Dispute Resolution. The parties shall first attempt to resolve any dispute arising out of or in connection with this Licence informally. You may initiate such informal discussions by giving notice to the Licensor by email at info@blockscout.com. If the dispute is not resolved within thirty (30) days of such notice, the dispute shall be referred to and finally resolved by arbitration under the LCIA Rules, which Rules are deemed incorporated by reference into this clause. The seat (legal place) of arbitration shall be London, United Kingdom. The tribunal shall consist of one (1) arbitrator. The language of the arbitration shall be English. The governing law of this arbitration agreement shall be the laws of England and Wales. To the maximum extent permitted by applicable law, you may bring claims against the Licensor only in your individual capacity and not as a claimant or class member in any purported class, collective, consolidated, or representative proceeding. Any notices, requests, demands, or other communications given in connection with the arbitration may be sent in electronic form, including via email or any electronic filing system operated by the LCIA, and shall be deemed received when successfully transmitted to the recipient (as evidenced by no delivery failure notice).
+  b. Dispute Resolution. The parties shall first attempt to resolve any 
+  dispute arising out of or in connection with this Licence informally. 
+  You may initiate such informal discussions by giving notice to the 
+  Licensor by email at info@blockscout.com. If the dispute is not 
+  resolved within thirty (30) days of such notice, the dispute shall be 
+  referred to and finally resolved by arbitration under the LCIA Rules, 
+  which Rules are deemed incorporated by reference into this clause. The 
+  seat (legal place) of arbitration shall be London, United Kingdom. The 
+  tribunal shall consist of one (1) arbitrator. The language of the 
+  arbitration shall be English. The governing law of this arbitration 
+  agreement shall be the laws of England and Wales. To the maximum extent 
+  permitted by applicable law, you may bring claims against the Licensor 
+  only in your individual capacity and not as a claimant or class member 
+  in any purported class, collective, consolidated, or representative 
+  proceeding. Any notices, requests, demands, or other communications 
+  given in connection with the arbitration may be sent in electronic 
+  form, including via email or any electronic filing system operated by 
+  the LCIA, and shall be deemed received when successfully transmitted to 
+  the recipient (as evidenced by no delivery failure notice).
 
 12. Miscellaneous
 
-  a. Injunctive Relief. You acknowledge and agree that any breach of this Licence (including any breach of the restrictions on use of the Software) may cause the Licensor irreparable harm for which damages may not be an adequate remedy. Accordingly, the Licensor shall be entitled to seek injunctive relief, specific performance, and/or any other equitable relief for any such breach, in addition to any other rights or remedies available at law.
+  a. Injunctive Relief. You acknowledge and agree that any breach of this 
+  Licence (including any breach of the restrictions on use of the 
+  Software) may cause the Licensor irreparable harm for which damages may 
+  not be an adequate remedy. Accordingly, the Licensor shall be entitled 
+  to seek injunctive relief, specific performance, and/or any other 
+  equitable relief for any such breach, in addition to any other rights 
+  or remedies available at law.
   
-  b. Rights and Remedies. The rights and remedies provided under this Licence are cumulative and are in addition to, and not exclusive of, any rights or remedies provided by law. Any right or remedy may be exercised as often as required.
+  b. Rights and Remedies. The rights and remedies provided under this 
+  Licence are cumulative and are in addition to, and not exclusive of, 
+  any rights or remedies provided by law. Any right or remedy may be 
+  exercised as often as required.
 
-  c. Assignment. Unless otherwise permitted under this Licence, you shall not assign, transfer, charge, subcontract, declare a trust over, or deal in any other manner with any of your rights or obligations under this Licence without the prior written consent of the Licensor. The Licensor may at any time assign, transfer, charge, subcontract, or otherwise deal with any of its rights or obligations under this Licence without your consent or notice to you. 
+  c. Assignment. Unless otherwise permitted under this Licence, you shall 
+  not assign, transfer, charge, subcontract, declare a trust over, or 
+  deal in any other manner with any of your rights or obligations under 
+  this Licence without the prior written consent of the Licensor. The 
+  Licensor may at any time assign, transfer, charge, subcontract, or 
+  otherwise deal with any of its rights or obligations under this Licence 
+  without your consent or notice to you. 
 
-  d. Severability. If any provision (or part of a provision) of this Licence is found by any court or competent authority to be invalid, illegal, or unenforceable, that provision (or part-provision) shall be deemed modified to the minimum extent necessary to make it valid, legal, and enforceable. If such modification is not possible, the relevant provision (or part-provision) shall be deemed deleted. Any modification to or deletion of a provision (or part-provision) under this clause shall not affect the validity and enforceability of the remainder of this Licence.
+  d. Severability. If any provision (or part of a provision) of this 
+  Licence is found by any court or competent authority to be invalid, 
+  illegal, or unenforceable, that provision (or part-provision) shall be 
+  deemed modified to the minimum extent necessary to make it valid, 
+  legal, and enforceable. If such modification is not possible, the 
+  relevant provision (or part-provision) shall be deemed deleted. Any 
+  modification to or deletion of a provision (or part-provision) under 
+  this clause shall not affect the validity and enforceability of the 
+  remainder of this Licence.
 
-  e. Entire Agreement. This Licence (together with the Commercial Licence, if any) constitutes the entire agreement between you and the Licensor in relation to its subject matter and supersedes and extinguishes all prior and contemporaneous agreements, understandings, negotiations, representations, and arrangements between the parties, whether written or oral. You acknowledge and agree that you shall have no remedies in respect of any statement, representation, assurance, or warranty (whether made innocently or negligently) that is not set out in this Licence (or the Commercial Licence).
+  e. Entire Agreement. This Licence (together with the Commercial 
+  Licence, if any) constitutes the entire agreement between you and the 
+  Licensor in relation to its subject matter and supersedes and 
+  extinguishes all prior and contemporaneous agreements, understandings, 
+  negotiations, representations, and arrangements between the parties, 
+  whether written or oral. You acknowledge and agree that you shall have 
+  no remedies in respect of any statement, representation, assurance, or 
+  warranty (whether made innocently or negligently) that is not set out 
+  in this Licence (or the Commercial Licence).
 
-  f. Commercial Licence. If a Commercial Licence is in place, it forms an integral part of this Licence. In the event of any conflict or inconsistency between the terms of this Licence and the Commercial Licence, the terms of the Commercial Licence shall prevail to the extent of such conflict or inconsistency.
+  f. Commercial Licence. If a Commercial Licence is in place, it forms an 
+  integral part of this Licence. In the event of any conflict or 
+  inconsistency between the terms of this Licence and the Commercial 
+  Licence, the terms of the Commercial Licence shall prevail to the 
+  extent of such conflict or inconsistency.
 
-  g. Notices. Any notice or other communication given by the Licensor under or in connection with this Licence may be given using any available means reasonably selected by the Licensor, including (without limitation) publication of notice in the Software repository, on the Licensor’s website, or through any other communication channel reasonably selected by the Licensor. Where you have a Commercial Licence in force, any notice or other communication given by the Licensor under or in connection with this Licence shall be in writing and may be delivered by email to the email address(es) specified for notices in the executed Commercial Licence. A notice sent by email shall be deemed received: (i) if sent during normal business hours, at the time of transmission; or (ii) if sent outside normal business hours, at 9:00 a.m. on the next business day. Notices sent by email shall be legally effective.
+  g. Notices. Any notice or other communication given by the Licensor 
+  under or in connection with this Licence may be given using any 
+  available means reasonably selected by the Licensor, including (without 
+  limitation) publication of notice in the Software repository, on the 
+  Licensor’s website, or through any other communication channel 
+  reasonably selected by the Licensor. Where you have a Commercial 
+  Licence in force, any notice or other communication given by the 
+  Licensor under or in connection with this Licence shall be in writing 
+  and may be delivered by email to the email address(es) specified for 
+  notices in the executed Commercial Licence. A notice sent by email 
+  shall be deemed received: (i) if sent during normal business hours, at 
+  the time of transmission; or (ii) if sent outside normal business 
+  hours, at 9:00 a.m. on the next business day. Notices sent by email 
+  shall be legally effective.
 
-  h. Waiver. No failure or delay by the Licensor to exercise any right or remedy under this Licence or by law shall constitute a waiver of that or any other right or remedy, nor shall it prevent or restrict any further exercise of that or any other right or remedy. No single or partial exercise of any right or remedy shall prevent or restrict the further exercise of that or any other right or remedy.
+  h. Waiver. No failure or delay by the Licensor to exercise any right or 
+  remedy under this Licence or by law shall constitute a waiver of that 
+  or any other right or remedy, nor shall it prevent or restrict any 
+  further exercise of that or any other right or remedy. No single or 
+  partial exercise of any right or remedy shall prevent or restrict the 
+  further exercise of that or any other right or remedy.
 
-  i. Third Party Rights. Except as expressly provided in this clause, a person who is not a party to this Licence shall not have any rights under the Contracts (Rights of Third Parties) Act 1999 to enforce any term of this Licence. Notwithstanding the foregoing, the Licensor’s affiliates and the Licensor’s directors, officers, employees, contractors, agents, representatives, and other personnel shall be entitled, pursuant to the Contracts (Rights of Third Parties) Act 1999, to enforce and rely on any provision of this Licence that limits or excludes the liability of the Licensor (including any limitations and exclusions of liability and any indemnities in favour of the Licensor) as if they were parties to this Licence. This Licence may be amended, varied, terminated, or rescinded (in whole or in part) without the consent of any such person.
+  i. Third Party Rights. Except as expressly provided in this clause, a 
+  person who is not a party to this Licence shall not have any rights 
+  under the Contracts (Rights of Third Parties) Act 1999 to enforce any 
+  term of this Licence. Notwithstanding the foregoing, the Licensor’s 
+  affiliates and the Licensor’s directors, officers, employees, 
+  contractors, agents, representatives, and other personnel shall be 
+  entitled, pursuant to the Contracts (Rights of Third Parties) Act 1999, 
+  to enforce and rely on any provision of this Licence that limits or 
+  excludes the liability of the Licensor (including any limitations and 
+  exclusions of liability and any indemnities in favour of the Licensor) 
+  as if they were parties to this Licence. This Licence may be amended, 
+  varied, terminated, or rescinded (in whole or in part) without the 
+  consent of any such person.
 
 END OF THE LICENCE
 

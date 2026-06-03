@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Migrations.ChangeTransactionErrorConstraint do
   use Ecto.Migration
 

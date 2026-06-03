@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Migrations.AddIsVerifiedViaAdminPanel do
   use Ecto.Migration
 

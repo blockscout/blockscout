@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Celo.ElectionReward do
   @moduledoc """
   Represents the rewards distributed in an epoch election. Each reward has a

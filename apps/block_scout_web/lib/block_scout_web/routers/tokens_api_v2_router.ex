@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 # This file in ignore list of `sobelow`, be careful while adding new endpoints here
 defmodule BlockScoutWeb.Routers.TokensApiV2Router do
   @moduledoc """
@@ -70,8 +71,10 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
     get("/:address_hash_param/transfers", V2.TokenController, :transfers)
     get("/:address_hash_param/holders", V2.TokenController, :holders)
     get("/:address_hash_param/holders/csv", V2.CsvExportController, :export_token_holders)
+    get("/:address_hash_param/transfers/csv", V2.CsvExportController, :export_token_transfers)
     get("/:address_hash_param/instances", V2.TokenController, :instances)
     get("/:address_hash_param/instances/:token_id_param", V2.TokenController, :instance)
+    get("/:address_hash_param/instances/:token_id_param/media-type", V2.TokenController, :media_type)
     get("/:address_hash_param/instances/:token_id_param/transfers", V2.TokenController, :transfers_by_instance)
     get("/:address_hash_param/instances/:token_id_param/holders", V2.TokenController, :holders_by_instance)
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.Celo.Epochs do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Celo.Epoch.t/0`.

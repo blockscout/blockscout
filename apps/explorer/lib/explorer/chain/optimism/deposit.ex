@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Optimism.Deposit do
   @moduledoc "Models a deposit for Optimism."
 

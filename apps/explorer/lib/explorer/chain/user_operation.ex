@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.UserOperation do
   @moduledoc """
   The representation of a user operation for account abstraction (EIP-4337).

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.FheContractChecker do
   @moduledoc """
   Helper module to check if a contract is a Confidential/FHE contract.

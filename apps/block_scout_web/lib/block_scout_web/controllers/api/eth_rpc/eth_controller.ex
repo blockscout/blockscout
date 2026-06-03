@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.EthRPC.EthController do
   use BlockScoutWeb, :controller
 

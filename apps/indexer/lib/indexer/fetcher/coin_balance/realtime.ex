@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.CoinBalance.Realtime do
   @moduledoc """
   Separate version of `Indexer.Fetcher.CoinBalance.Catchup` for fetching balances from realtime block fetcher

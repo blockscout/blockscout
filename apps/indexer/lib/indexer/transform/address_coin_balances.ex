@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.AddressCoinBalances do
   @moduledoc """
   Extracts `Explorer.Chain.Address.CoinBalance` params from other schema's params.
@@ -10,6 +11,9 @@ defmodule Indexer.Transform.AddressCoinBalances do
     arc_native_token_system_address: [:indexer, [:arc, :arc_native_token_system_address]]
 
   import Explorer.Helper, only: [truncate_address_hash: 1]
+  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+
+  @burn_address_hash_string burn_address_hash_string()
 
   alias Explorer.Chain.TokenTransfer
 
@@ -52,7 +56,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
       end)
       |> Enum.reject(fn val -> is_nil(val) end)
 
-    # for :arc chain type we also need to parse the `NativeCoinTransferred`, `NativeCoinMinted`, `NativeCoinBurned` events
+    # for :arc chain type we also need to parse the `NativeCoinTransferred`, `NativeCoinMinted`, `NativeCoinBurned`, EIP-7708 events
     filtered_arc_logs =
       if chain_type() == :arc do
         handle_arc_transfer_logs(logs_params)
@@ -100,6 +104,8 @@ defmodule Indexer.Transform.AddressCoinBalances do
     arc_native_coin_minted_event = TokenTransfer.arc_native_coin_minted_event()
     arc_native_coin_burned_event = TokenTransfer.arc_native_coin_burned_event()
     arc_native_token_system_address = arc_native_token_system_address()
+    eip7708_transfer_topic = TokenTransfer.constant()
+    eip7708_system_address = TokenTransfer.eip7708_system_address()
 
     logs_params
     |> Enum.flat_map(fn
@@ -107,6 +113,20 @@ defmodule Indexer.Transform.AddressCoinBalances do
         type: "pending"
       } ->
         []
+
+      %{
+        first_topic: ^eip7708_transfer_topic,
+        second_topic: second_topic,
+        third_topic: third_topic,
+        address_hash: ^eip7708_system_address,
+        block_number: block_number
+      }
+      when is_integer(block_number) and is_binary(second_topic) and is_binary(third_topic) ->
+        [
+          %{address_hash: truncate_address_hash(second_topic), block_number: block_number},
+          %{address_hash: truncate_address_hash(third_topic), block_number: block_number}
+        ]
+        |> Enum.filter(fn %{address_hash: address_hash} -> address_hash != @burn_address_hash_string end)
 
       %{
         first_topic: ^arc_native_coin_transferred_event,
@@ -204,10 +224,6 @@ defmodule Indexer.Transform.AddressCoinBalances do
   end
 
   if @chain_identity == {:optimism, :celo} do
-    import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
-
-    @burn_address_hash_string burn_address_hash_string()
-
     # todo: subject for deprecation, since celo transactions with
     # gatewayFeeRecipient are deprecated
     defp transactions_params_chain_type_fields_reducer(

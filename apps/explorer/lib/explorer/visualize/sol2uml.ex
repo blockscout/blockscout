@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Visualize.Sol2uml do
   @moduledoc """
     Adapter for sol2uml visualizer with https://github.com/blockscout/blockscout-rs/blob/main/visualizer

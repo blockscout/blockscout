@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.GraphQL do
   @moduledoc """
   The GraphQL context.

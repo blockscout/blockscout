@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.CeloControllerTest do
   use BlockScoutWeb.ConnCase
 
@@ -76,6 +77,51 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
         assert item["start_block_number"] == epoch.start_block_number
         assert item["end_block_number"] == epoch.end_block_number
         assert item["is_finalized"] == true
+      end
+
+      test "returns epochs ordered by number descending", %{conn: conn} do
+        for i <- 1..3 do
+          insert(:celo_epoch,
+            number: i,
+            fetched?: true,
+            start_block_number: (i - 1) * 17_280,
+            end_block_number: i * 17_280 - 1
+          )
+        end
+
+        request = get(conn, "/api/v2/celo/epochs")
+        assert response = json_response(request, 200)
+        numbers = Enum.map(response["items"], & &1["number"])
+        assert numbers == [3, 2, 1]
+      end
+
+      test "paginates epochs across two pages", %{conn: conn} do
+        for i <- 1..51 do
+          insert(:celo_epoch,
+            number: i,
+            fetched?: true,
+            start_block_number: (i - 1) * 17_280,
+            end_block_number: i * 17_280 - 1
+          )
+        end
+
+        request = get(conn, "/api/v2/celo/epochs")
+        assert response = json_response(request, 200)
+
+        assert Enum.count(response["items"]) == 50
+        assert response["next_page_params"] != nil
+
+        assert Enum.at(response["items"], 0)["number"] == 51
+        assert Enum.at(response["items"], 49)["number"] == 2
+
+        request_2nd_page =
+          get(conn, "/api/v2/celo/epochs", response["next_page_params"])
+
+        assert response_2nd_page = json_response(request_2nd_page, 200)
+
+        assert Enum.count(response_2nd_page["items"]) == 1
+        assert response_2nd_page["next_page_params"] == nil
+        assert Enum.at(response_2nd_page["items"], 0)["number"] == 1
       end
     end
 
@@ -231,6 +277,67 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
 
         request = get(conn, "/api/v2/celo/epochs/1/election-rewards/delegated_payment")
         assert %{"items" => []} = json_response(request, 200)
+      end
+
+      test "returns reward with account and associated_account info", %{conn: conn} do
+        insert(:celo_epoch,
+          number: 1,
+          fetched?: true,
+          start_block_number: 0,
+          end_block_number: 17_279
+        )
+
+        account_address = insert(:address)
+        associated_account_address = insert(:address)
+
+        insert(:celo_election_reward,
+          epoch_number: 1,
+          type: :voter,
+          amount: 500,
+          account_address_hash: account_address.hash,
+          associated_account_address_hash: associated_account_address.hash
+        )
+
+        request = get(conn, "/api/v2/celo/epochs/1/election-rewards/voter")
+        assert response = json_response(request, 200)
+        assert [item] = response["items"]
+
+        assert item["amount"] == "500"
+        assert item["account"]["hash"] == to_string(account_address.hash)
+        assert item["associated_account"]["hash"] == to_string(associated_account_address.hash)
+      end
+
+      test "filters rewards by type", %{conn: conn} do
+        insert(:celo_epoch,
+          number: 1,
+          fetched?: true,
+          start_block_number: 0,
+          end_block_number: 17_279
+        )
+
+        for type <- ElectionReward.types() do
+          account_address = insert(:address)
+          associated_account_address = insert(:address)
+
+          insert(:celo_election_reward,
+            epoch_number: 1,
+            type: type,
+            amount: 100,
+            account_address_hash: account_address.hash,
+            associated_account_address_hash: associated_account_address.hash
+          )
+        end
+
+        for type <- ElectionReward.types() do
+          request = get(conn, "/api/v2/celo/epochs/1/election-rewards/#{type}")
+          assert response = json_response(request, 200)
+          assert Enum.count(response["items"]) == 1
+        end
+      end
+
+      test "returns 422 for invalid reward type", %{conn: conn} do
+        request = get(conn, "/api/v2/celo/epochs/1/election-rewards/invalid_type")
+        assert json_response(request, 422)
       end
     end
   end

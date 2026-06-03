@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Account do
   @moduledoc """
   Provides OpenAPI specification schemas for account-related API V2 endpoints.

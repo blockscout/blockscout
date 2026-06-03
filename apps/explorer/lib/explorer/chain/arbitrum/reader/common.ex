@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Arbitrum.Reader.Common do
   @moduledoc """
     Provides common database query functions for Arbitrum-specific data that are shared

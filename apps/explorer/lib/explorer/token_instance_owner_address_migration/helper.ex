@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.TokenInstanceOwnerAddressMigration.Helper do
   @moduledoc """
     Auxiliary functions for TokenInstanceOwnerAddressMigration.{Worker and Supervisor}

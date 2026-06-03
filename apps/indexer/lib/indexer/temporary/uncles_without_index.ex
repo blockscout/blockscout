@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Temporary.UnclesWithoutIndex do
   @moduledoc """
   Fetches `index`es for unfetched `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`.

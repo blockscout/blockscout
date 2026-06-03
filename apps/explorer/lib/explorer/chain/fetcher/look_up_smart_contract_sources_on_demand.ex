@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   @moduledoc """
     On demand fetcher sources for unverified smart contract from

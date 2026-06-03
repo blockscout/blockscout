@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 # credo:disable-for-this-file
 defmodule Explorer.Migrator.FillingMigration do
   @moduledoc """
@@ -170,6 +171,7 @@ defmodule Explorer.Migrator.FillingMigration do
 
       import Ecto.Query
 
+      alias Explorer.Chain.Block
       alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
       alias Explorer.Migrator.MigrationStatus
       alias Explorer.Repo
@@ -194,7 +196,13 @@ defmodule Explorer.Migrator.FillingMigration do
 
       @impl true
       def init(_) do
-        {:ok, %{}, {:continue, :ok}}
+        if Repo.exists?(Block) do
+          {:ok, %{}, {:continue, :ok}}
+        else
+          MigrationStatus.set_status(migration_name(), "completed")
+          update_cache()
+          :ignore
+        end
       end
 
       # Called once when the GenServer starts to initialize the migration process by checking its

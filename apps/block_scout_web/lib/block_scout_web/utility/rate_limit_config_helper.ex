@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Utility.RateLimitConfigHelper do
   @moduledoc """
   Fetches the rate limit config from the config url and parses it into a map.

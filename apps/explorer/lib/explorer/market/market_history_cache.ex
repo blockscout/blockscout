@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.MarketHistoryCache do
   @moduledoc """
   Caches recent market history.

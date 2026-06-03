@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.Source.DIA do
   @moduledoc """
   Adapter for fetching exchange rates from https://www.diadata.org/
@@ -155,7 +156,8 @@ defmodule Explorer.Market.Source.DIA do
          symbol: data["Symbol"],
          fiat_value: Source.to_decimal(data["Price"]),
          volume_24h: Source.to_decimal(data["VolumeYesterdayUSD"]),
-         image_url: nil
+         image_url: nil,
+         circulating_supply: nil
        }}
     else
       {:coin, nil} -> {:error, coin_address_hash_not_specified_error}

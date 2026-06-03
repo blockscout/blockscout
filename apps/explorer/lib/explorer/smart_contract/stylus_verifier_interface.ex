@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.StylusVerifierInterface do
   @moduledoc """
     Provides an interface for verifying Stylus smart contracts by interacting with a verification

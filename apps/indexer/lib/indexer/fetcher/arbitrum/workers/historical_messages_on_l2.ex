@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   @moduledoc """
   Handles the discovery and processing of historical messages between Layer 1 (L1)  and Layer 2 (L2) within an Arbitrum rollup.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Geth.Tracer do
   @moduledoc """
   Elixir implementation of a custom tracer (`priv/js/ethereum_jsonrpc/geth/debug_traceTransaction/tracer.js`)

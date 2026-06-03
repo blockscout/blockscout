@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.PendingTransactionTest do
   # `async: false` due to use of named GenServer
   use EthereumJSONRPC.Case, async: false

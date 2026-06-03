@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo do
   use Ecto.Repo,
     otp_app: :explorer,

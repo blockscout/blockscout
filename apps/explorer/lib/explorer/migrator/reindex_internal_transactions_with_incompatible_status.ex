@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
   @moduledoc """
   Searches for all failed transactions for which all internal transactions are successful

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArgumentsTest do
   use Explorer.DataCase
 

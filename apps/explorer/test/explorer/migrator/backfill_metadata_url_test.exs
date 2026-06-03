@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.BackfillMetadataURLTest do
   use Explorer.DataCase, async: false
   use EthereumJSONRPC.Case, async: false
@@ -30,6 +31,7 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
 
   describe "BackfillMetadataURL" do
     test "complete migration" do
+      insert(:block)
       token = insert(:token, type: "ERC-721")
 
       insert(:token_instance,
@@ -126,6 +128,7 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
     end
 
     test "Resolve domain" do
+      insert(:block)
       token = insert(:token, type: "ERC-721")
       env = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper)
       Application.put_env(:explorer, Explorer.Migrator.BackfillMetadataURL, batch_size: 1, concurrency: 1)
@@ -278,6 +281,7 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
     end
 
     test "drop metadata on invalid token uri response" do
+      insert(:block)
       token = insert(:token, type: "ERC-1155")
       env = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper)
       Application.put_env(:explorer, Explorer.Migrator.BackfillMetadataURL, batch_size: 1, concurrency: 1)
@@ -348,6 +352,7 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
     end
 
     test "regression for https://github.com/blockscout/blockscout/issues/12389" do
+      insert(:block)
       token = insert(:token, type: "ERC-721")
 
       insert(:token_instance,

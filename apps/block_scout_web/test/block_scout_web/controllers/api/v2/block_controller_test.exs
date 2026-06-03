@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.BlockControllerTest do
   use BlockScoutWeb.ConnCase
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
@@ -207,6 +208,20 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, uncles)
+    end
+
+    test "return 422 on invalid type", %{conn: conn} do
+      request = get(conn, "/api/v2/blocks", %{"type" => "bogus"})
+
+      assert %{
+               "errors" => [
+                 %{
+                   "source" => %{"pointer" => "/type"},
+                   "title" => "Invalid value"
+                 }
+                 | _
+               ]
+             } = json_response(request, 422)
     end
   end
 
@@ -907,6 +922,55 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
 
       check_paginated_response(response, response_2nd_page, internal_transactions)
     end
+
+    test "returns pending status when block is in pending_block_operations", %{conn: conn} do
+      block = insert(:block)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
+
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "returns pending status when block has pending transaction operations", %{conn: conn} do
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
+
+      insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
   end
 
   if @chain_type == :ethereum do
@@ -1058,5 +1122,54 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
     assert Enum.count(second_page_resp["items"]) == 1
     assert second_page_resp["next_page_params"] == nil
     compare_item(Enum.at(list, 0), Enum.at(second_page_resp["items"], 0))
+  end
+
+  if @chain_type == :arbitrum do
+    describe "/blocks/arbitrum-batch/:batch_number_param" do
+      test "returns empty list when batch has no blocks", %{conn: conn} do
+        batch = insert(:arbitrum_l1_batch)
+
+        request = get(conn, "/api/v2/blocks/arbitrum-batch/#{batch.number}")
+        assert response = json_response(request, 200)
+        assert response["items"] == []
+        assert response["next_page_params"] == nil
+      end
+
+      test "returns blocks in the batch", %{conn: conn} do
+        batch = insert(:arbitrum_l1_batch)
+        block = insert(:block, consensus: true)
+
+        insert(:arbitrum_batch_block, batch_number: batch.number, block_number: block.number)
+
+        request = get(conn, "/api/v2/blocks/arbitrum-batch/#{batch.number}")
+        assert response = json_response(request, 200)
+        assert length(response["items"]) == 1
+        assert hd(response["items"])["height"] == block.number
+      end
+
+      test "can paginate blocks in Arbitrum batch", %{conn: conn} do
+        batch = insert(:arbitrum_l1_batch)
+        blocks = insert_list(51, :block, consensus: true)
+
+        Enum.each(blocks, fn block ->
+          insert(:arbitrum_batch_block, batch_number: batch.number, block_number: block.number)
+        end)
+
+        request = get(conn, "/api/v2/blocks/arbitrum-batch/#{batch.number}")
+        assert response = json_response(request, 200)
+
+        request_2nd_page =
+          get(conn, "/api/v2/blocks/arbitrum-batch/#{batch.number}", response["next_page_params"])
+
+        assert response_2nd_page = json_response(request_2nd_page, 200)
+
+        check_paginated_response(response, response_2nd_page, blocks)
+      end
+
+      test "returns 422 for non-integer batch_number_param", %{conn: conn} do
+        request = get(conn, "/api/v2/blocks/arbitrum-batch/invalid")
+        assert %{"errors" => [_]} = json_response(request, 422)
+      end
+    end
   end
 end

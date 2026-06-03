@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.EmptyInternalTransactionsData do
   @moduledoc """
   Searches for all internal transactions with non-empty `trace_address` and empties it.

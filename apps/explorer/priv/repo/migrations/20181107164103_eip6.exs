@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Migrations.EIP6 do
   @moduledoc """
   Use `priv/repo/migrations/scripts/20181107164103_eip6.sql` to migrate data and validate constraint.

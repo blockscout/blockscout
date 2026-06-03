@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.MUD.TableWithSchema do
   @moduledoc """
   This module defines the schema for the MUD Table with TableSchema struct.

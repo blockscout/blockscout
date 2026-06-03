@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Gettext do
   @moduledoc """
   A module providing Internationalization with a gettext-based API.

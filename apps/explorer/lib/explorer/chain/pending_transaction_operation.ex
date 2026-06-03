@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.PendingTransactionOperation do
   @moduledoc """
   Tracks a transaction that has pending operations.
@@ -26,6 +27,8 @@ defmodule Explorer.Chain.PendingTransactionOperation do
       type: Hash.Full,
       null: false
     )
+
+    field(:priority, :integer)
   end
 
   def changeset(%__MODULE__{} = pending_ops, attrs) do
@@ -69,10 +72,17 @@ defmodule Explorer.Chain.PendingTransactionOperation do
   """
   @spec stream_transactions_with_unfetched_internal_transactions(
           initial :: accumulator,
-          reducer :: (entry :: term(), accumulator -> accumulator)
+          reducer :: (entry :: term(), accumulator -> accumulator),
+          limited? :: boolean(),
+          with_priority? :: boolean()
         ) :: {:ok, accumulator}
         when accumulator: term()
-  def stream_transactions_with_unfetched_internal_transactions(initial, reducer, limited? \\ false)
+  def stream_transactions_with_unfetched_internal_transactions(
+        initial,
+        reducer,
+        limited? \\ false,
+        with_priority? \\ false
+      )
       when is_function(reducer, 2) do
     direction = Application.get_env(:indexer, :internal_transactions_fetch_order)
 
@@ -85,7 +95,16 @@ defmodule Explorer.Chain.PendingTransactionOperation do
       )
 
     query
+    |> maybe_add_priority_filter(with_priority?)
     |> add_fetcher_limit(limited?)
     |> Repo.stream_reduce(initial, reducer)
+  end
+
+  defp maybe_add_priority_filter(query, false), do: query
+
+  defp maybe_add_priority_filter(query, true) do
+    from(pto in query,
+      where: not is_nil(pto.priority)
+    )
   end
 end

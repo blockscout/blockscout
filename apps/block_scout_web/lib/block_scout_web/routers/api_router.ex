@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule RPCTranslatorForwarder do
   @moduledoc """
   Phoenix router limits forwarding,
@@ -438,7 +439,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if @chain_type == :zksync do
         get("/batches", V2.ZkSyncController, :batches)
         get("/batches/count", V2.ZkSyncController, :batches_count)
-        get("/batches/:batch_number", V2.ZkSyncController, :batch)
+        get("/batches/:batch_number_param", V2.ZkSyncController, :batch)
       end
     end
 
@@ -466,13 +467,13 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/batches", V2.ArbitrumController, :batches)
         get("/batches/count", V2.ArbitrumController, :batches_count)
         get("/batches/:batch_number", V2.ArbitrumController, :batch)
-        get("/batches/da/anytrust/:data_hash", V2.ArbitrumController, :batch_by_data_availability_info)
-        get("/batches/da/eigenda/:data_hash", V2.ArbitrumController, :batch_by_data_availability_info)
+        get("/batches/da/anytrust/:data_hash", V2.ArbitrumController, :batch_by_anytrust_da_info)
+        get("/batches/da/eigenda/:data_hash", V2.ArbitrumController, :batch_by_eigenda_da_info)
 
         get(
           "/batches/da/celestia/:height/:transaction_commitment",
           V2.ArbitrumController,
-          :batch_by_data_availability_info
+          :batch_by_celestia_da_info
         )
       end
     end
@@ -487,13 +488,17 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
   scope "/legacy" do
     pipe_through(:api_v2)
 
-    scope "/logs" do
-      get("/get-logs", Legacy.LogsController, :get_logs)
-    end
-
     scope "/block" do
       get("/get-block-number-by-time", Legacy.BlockController, :get_block_number_by_time)
-      get("/eth-block-number", Legacy.BlockController, :eth_block_number)
+    end
+
+    scope "/eth" do
+      post("/eth-call", Legacy.EthController, :eth_call)
+      post("/eth-get-balance", Legacy.EthController, :eth_get_balance)
+      post("/eth-get-storage-at", Legacy.EthController, :eth_get_storage_at)
+      post("/eth-send-raw-transaction", Legacy.EthController, :eth_send_raw_transaction)
+      post("/eth-block-number", Legacy.EthController, :eth_block_number)
+      post("/eth-get-logs", Legacy.EthController, :eth_get_logs)
     end
   end
 

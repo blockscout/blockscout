@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Vault do
   @moduledoc """
     Module responsible for encrypt/decrypt GenServer initialization

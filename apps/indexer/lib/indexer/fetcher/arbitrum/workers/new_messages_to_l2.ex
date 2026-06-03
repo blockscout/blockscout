@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   @moduledoc """
   Manages the discovery and processing of new and historical L1-to-L2 messages initiated on L1 for an Arbitrum rollup.

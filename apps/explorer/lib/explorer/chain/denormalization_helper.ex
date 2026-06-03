@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.DenormalizationHelper do
   @moduledoc """
   Helper functions for dynamic logic based on denormalization migration completeness

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Fhe.Parser do
   @moduledoc """
   Logic for parsing FHE operations from transaction logs.

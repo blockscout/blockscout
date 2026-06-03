@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
   use BlockScoutWeb.ConnCase, async: true
 
@@ -491,8 +492,7 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
         address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash, %{
           block_number: number,
           index: 11,
-          transaction_index: transaction_index,
-          items_count: "50"
+          transaction_index: transaction_index
         })
 
       assert expected_response == json_response(conn, 200)["next_page_path"]

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Migrations.RemoveDecompiledSmartContractsTable do
   use Ecto.Migration
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Specs.Private do
   @moduledoc """
   This module defines the private API specification for the BlockScoutWeb application.
@@ -14,7 +15,7 @@ defmodule BlockScoutWeb.Specs.Private do
   def spec do
     %OpenApi{
       servers: [
-        %Server{url: to_string(Helper.instance_url() |> URI.append_path("/api"))}
+        %Server{url: to_string(Helper.instance_url())}
       ],
       info: %Info{
         title: "Blockscout Private API",
@@ -23,7 +24,7 @@ defmodule BlockScoutWeb.Specs.Private do
           email: "info@blockscout.com"
         }
       },
-      paths: Paths.from_routes(Specs.routes_with_prefix(AccountRouter, "/account")),
+      paths: Paths.from_routes(Specs.routes_with_prefix(AccountRouter, "/api/account")),
       components: %Components{
         securitySchemes: %{"dynamic_jwt" => %SecurityScheme{type: "http", scheme: "bearer", bearerFormat: "JWT"}}
       }

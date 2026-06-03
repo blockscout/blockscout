@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.ConfigView do
   def render("backend_version.json", %{version: version}) do
     %{

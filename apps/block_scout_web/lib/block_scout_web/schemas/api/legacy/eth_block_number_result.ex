@@ -1,6 +1,9 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.Legacy.EthBlockNumberResult do
   @moduledoc false
   require OpenApiSpex
+
+  alias BlockScoutWeb.Schemas.API.V2.General
 
   # nullable: true is kept defensively. In practice, BlockNumber.get_max/0
   # delegates to Block.fetch_max_block_number/0 which returns Repo.one(query) || 0
@@ -9,7 +12,7 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.EthBlockNumberResult do
   # implementation ever changes.
   OpenApiSpex.schema(%{
     type: :string,
-    pattern: ~r/^0x[0-9a-fA-F]+$/,
+    pattern: General.hex_quantity_pattern(),
     nullable: true,
     description:
       "Hex-encoded latest block number on the chain. " <>

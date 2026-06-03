@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Account.Notifier.Email do
   @moduledoc """
     Composing an email to sendgrid

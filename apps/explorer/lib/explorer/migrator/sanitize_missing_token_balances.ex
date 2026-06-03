@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.SanitizeMissingTokenBalances do
   @moduledoc """
   Deletes empty current token balances if the related highest block_number historical token balance is filled.

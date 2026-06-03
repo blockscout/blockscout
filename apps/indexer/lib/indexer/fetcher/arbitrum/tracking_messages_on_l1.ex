@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
   @moduledoc """
     Manages the tracking and processing of new and historical cross-chain messages initiated on L1 for an Arbitrum rollup.

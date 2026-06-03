@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   @moduledoc """
   Keycloak Admin REST API client for user management.

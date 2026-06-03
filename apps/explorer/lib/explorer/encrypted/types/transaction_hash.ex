@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Encrypted.Types.TransactionHash do
   @moduledoc """
     An `Ecto.Type` to encrypt transaction_hash fields.

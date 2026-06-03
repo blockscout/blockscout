@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.UserSocket do
   use Phoenix.Socket
   use Absinthe.Phoenix.Socket, schema: BlockScoutWeb.GraphQL.Schema

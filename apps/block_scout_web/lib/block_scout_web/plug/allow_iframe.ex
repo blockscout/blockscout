@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Plug.AllowIframe do
   @moduledoc """
   Allows for iframes by deleting the

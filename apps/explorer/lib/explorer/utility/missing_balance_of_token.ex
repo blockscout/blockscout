@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Utility.MissingBalanceOfToken do
   @moduledoc """
   Module is responsible for keeping address hashes of tokens that does not support the balanceOf function
@@ -52,6 +53,25 @@ defmodule Explorer.Utility.MissingBalanceOfToken do
     __MODULE__
     |> where([mbot], mbot.token_contract_address_hash in ^token_contract_address_hashes)
     |> Repo.update_all(set: [currently_implemented: true])
+  end
+
+  @doc """
+  Filters provided token balances query by presence of record with the same `token_contract_address_hash`
+  and above or equal `block_number` in `missing_balance_of_tokens`.
+  """
+  @spec filter_token_balances_query(Ecto.Query.t()) :: Ecto.Query.t()
+  def filter_token_balances_query(query) do
+    query
+    |> join(:left, [tb], mbot in __MODULE__,
+      on: tb.token_contract_address_hash == mbot.token_contract_address_hash,
+      as: :mbot
+    )
+    |> where(
+      [tb],
+      is_nil(as(:mbot).token_contract_address_hash) or
+        (as(:mbot).currently_implemented == true and tb.block_number > as(:mbot).block_number) or
+        tb.block_number > as(:mbot).block_number + ^missing_balance_of_window()
+    )
   end
 
   @doc """

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.NFTMediaHandler.Queue do
   @moduledoc """
   Queue for fetching media

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.ContractMethod do
   @moduledoc """
   The representation of an individual item from the ABI of a verified smart contract.

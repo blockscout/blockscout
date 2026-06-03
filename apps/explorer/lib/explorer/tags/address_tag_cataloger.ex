@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Tags.AddressTag.Cataloger do
   @moduledoc """
   Actualizes address tags.

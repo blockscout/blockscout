@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 import Config
 
 alias EthereumJSONRPC.Variant

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Token.ChainTypeCustomizations do
   @moduledoc false
   require OpenApiSpex
@@ -60,6 +61,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         total_supply: General.IntegerStringNullable,
         icon_url: General.URLNullable,
         circulating_market_cap: General.FloatStringNullable,
+        circulating_supply: General.FloatStringNullable,
         reputation: %Schema{
           type: :string,
           enum: Reputation.enum_values(),
@@ -87,6 +89,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         :total_supply,
         :icon_url,
         :circulating_market_cap,
+        :circulating_supply,
         :reputation
       ],
       additionalProperties: false

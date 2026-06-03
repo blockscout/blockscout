@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.HelperTest do
   use ExUnit.Case, async: true
 

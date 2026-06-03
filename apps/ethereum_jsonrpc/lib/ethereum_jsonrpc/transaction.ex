@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Transaction do
   @moduledoc """
   Transaction format included in the return of

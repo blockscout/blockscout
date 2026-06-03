@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.Arbitrum.L1Batches do
   @moduledoc """
     Bulk imports of Explorer.Chain.Arbitrum.L1Batch.

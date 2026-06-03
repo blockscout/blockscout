@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Events.Subscriber do
   @moduledoc """
   Subscribes to events related to the Chain context.

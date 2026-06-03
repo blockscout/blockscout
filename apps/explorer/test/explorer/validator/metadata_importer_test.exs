@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Validator.MetadataImporterTest do
   use Explorer.DataCase
 

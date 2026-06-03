@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
   use BlockScoutWeb.ConnCase
 

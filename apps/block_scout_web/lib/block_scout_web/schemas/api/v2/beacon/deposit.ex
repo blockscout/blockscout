@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Beacon.Deposit do
   @moduledoc """
   This module defines the schema for the Beacon.Deposit struct.

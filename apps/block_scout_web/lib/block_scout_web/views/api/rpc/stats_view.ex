@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.RPC.StatsView do
   use BlockScoutWeb, :view
 
@@ -16,7 +17,7 @@ defmodule BlockScoutWeb.API.RPC.StatsView do
   end
 
   def render("coinsupply.json", %{total_supply: total_supply}) do
-    RPCView.render("show_value.json", data: total_supply)
+    RPCView.render("show.json", data: total_supply)
   end
 
   def render("ethprice.json", %{rates: rates}) do

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Blob do
   @moduledoc "OpenAPI schema for Blob responses."
 
@@ -7,10 +8,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.Blob do
   OpenApiSpex.schema(%{
     type: :object,
     properties: %{
-      blob_data: General.HexString,
+      blob_data: General.HexData,
       hash: General.FullHash,
-      kzg_commitment: General.HexString,
-      kzg_proof: General.HexString
+      kzg_commitment: General.HexData,
+      kzg_proof: General.HexData
     },
     required: [:blob_data, :hash, :kzg_commitment, :kzg_proof],
     additionalProperties: false

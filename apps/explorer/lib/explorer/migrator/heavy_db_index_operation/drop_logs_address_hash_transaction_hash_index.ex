@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashTransactionHashIndex do
   @moduledoc """
   Drops index "logs_address_hash_transaction_hash_index" btree (address_hash, transaction_hash).

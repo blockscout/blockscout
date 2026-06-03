@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Fetcher.AddressesBlacklist.Blockaid do
   @moduledoc """
   Fetcher for addresses blacklist from blockaid provider

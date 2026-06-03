@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Scroll.L1FeeParam do
   @moduledoc """
     Fills scroll_l1_fee_params DB table.

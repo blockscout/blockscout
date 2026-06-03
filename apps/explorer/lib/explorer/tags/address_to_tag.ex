@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Tags.AddressToTag do
   @moduledoc """
   Represents Address to Tag relation.

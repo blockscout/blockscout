@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Optimism.Migrations.GameAddressFieldInWithdrawals do
   use Ecto.Migration
 

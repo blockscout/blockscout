@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V1.VerifiedControllerTest do
   use BlockScoutWeb.ConnCase
 

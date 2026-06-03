@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.SuaveView do
   alias BlockScoutWeb.API.V2.Helper, as: APIHelper
   alias BlockScoutWeb.API.V2.TransactionView

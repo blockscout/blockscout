@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Migrations.ResetSanitizeDuplicatedLogsMigration do
   use Ecto.Migration
 

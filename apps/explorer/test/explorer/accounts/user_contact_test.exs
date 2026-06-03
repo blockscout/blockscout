@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Accounts.UserContactTest do
   use Explorer.DataCase
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Admin.TaskController do
   use BlockScoutWeb, :controller
 

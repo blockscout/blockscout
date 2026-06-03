@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
   @moduledoc """
   Recovers WETH token transfers that were accidentally deleted from the database by previous version of Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Account.WatchlistNotification do
   @moduledoc """
     Stored notification about event

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
   @moduledoc """
   Monitors and verifies the availability of Ethereum JSON-RPC endpoints.

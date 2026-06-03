@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Stats.HotSmartContracts do
   @moduledoc """
   This module defines the HotSmartContracts schema and functions for aggregating and paginating hot contracts.

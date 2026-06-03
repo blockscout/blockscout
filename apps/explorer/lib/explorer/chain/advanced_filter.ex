@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.AdvancedFilter do
   @moduledoc """
   Models an advanced filter.

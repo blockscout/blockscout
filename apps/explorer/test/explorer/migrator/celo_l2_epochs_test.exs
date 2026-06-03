@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.CeloL2EpochsTest do
   use Explorer.DataCase, async: false
 

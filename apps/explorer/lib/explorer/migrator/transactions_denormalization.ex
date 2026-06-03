@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.TransactionsDenormalization do
   @moduledoc """
   Migrates all transactions to have set block_consensus and block_timestamp

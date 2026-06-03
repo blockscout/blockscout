@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
   @moduledoc """
     Handles backfilling of missing Arbitrum-specific data for indexed blocks and their

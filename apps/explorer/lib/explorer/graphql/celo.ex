@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.GraphQL.Celo do
   @moduledoc """
   Defines Ecto queries to fetch Celo blockchain data for the legacy GraphQL

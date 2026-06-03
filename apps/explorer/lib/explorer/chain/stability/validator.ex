@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Stability.Validator do
   @moduledoc """
     Stability validators
@@ -231,7 +232,7 @@ defmodule Explorer.Chain.Stability.Validator do
   """
   @spec next_page_params(t()) :: map()
   def next_page_params(%__MODULE__{state: state, address_hash: address_hash, blocks_validated: blocks_validated}) do
-    %{"state" => state, "address_hash" => address_hash, "blocks_validated" => blocks_validated}
+    %{state: state, address_hash: address_hash, blocks_validated: blocks_validated}
   end
 
   @doc """

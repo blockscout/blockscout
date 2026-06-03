@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.PendingTransactionControllerTest do
   use BlockScoutWeb.ConnCase
   alias Explorer.Chain.{Hash, Transaction}

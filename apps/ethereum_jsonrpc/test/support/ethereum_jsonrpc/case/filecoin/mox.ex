@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Case.Filecoin.Mox do
   @moduledoc """
   `EthereumJSONRPC.Case` for mocking connecting to Filecoin using `Mox`

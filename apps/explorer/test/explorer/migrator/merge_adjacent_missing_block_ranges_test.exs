@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.MergeAdjacentMissingBlockRangesTest do
   use Explorer.DataCase, async: false
 
@@ -6,6 +7,8 @@ defmodule Explorer.Migrator.MergeAdjacentMissingBlockRangesTest do
   alias Explorer.Utility.MissingBlockRange
 
   test "Merges adjacent ranges" do
+    insert(:block)
+
     Repo.delete_all(MissingBlockRange)
 
     insert(:missing_block_range, from_number: 100, to_number: 70, priority: nil)

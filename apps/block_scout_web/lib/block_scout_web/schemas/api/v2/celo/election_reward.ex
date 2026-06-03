@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Celo.ElectionReward do
   @moduledoc """
   This module defines the schema for the CeloElectionReward struct.
@@ -23,8 +24,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Celo.ElectionReward do
     required: [
       :amount,
       :account,
-      :associated_account,
-      :epoch_number
+      :associated_account
     ],
     additionalProperties: false
   })

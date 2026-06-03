@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.BufferedTaskTest do
   use ExUnit.Case
 

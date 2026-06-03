@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.ZkSync.StatusTracking.Committed do
   @moduledoc """
     Functionality to discover committed batches

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Address.Name do
   @moduledoc """
   Represents a name for an Address.

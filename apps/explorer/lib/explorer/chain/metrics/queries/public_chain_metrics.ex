@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Metrics.Queries.PublicChainMetrics do
   @moduledoc """
   Module for DB queries to get chain metrics exposed at /public-metrics endpoint

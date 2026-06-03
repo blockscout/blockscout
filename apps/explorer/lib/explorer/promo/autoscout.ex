@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Promo.Autoscout do
   @moduledoc """
   Module responsible for logging the Autoscout promo message on application startup

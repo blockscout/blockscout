@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.TokenController do
   use BlockScoutWeb, :controller
   use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
@@ -6,26 +7,28 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.{AccessHelper, AuthenticationHelper}
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
-  alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
   alias Explorer.Migrator.BackfillMetadataURL
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
+  alias Indexer.Fetcher.TokenInstance.Helper, as: TokenInstanceHelper
   alias Plug.Conn
 
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
   import BlockScoutWeb.Chain,
     only: [
-      split_list_by_page: 1,
+      paginate_list: 3,
       paging_options: 1,
-      next_page_params: 3,
       token_transfers_next_page_params: 3,
       unique_tokens_paging_options: 1,
       unique_tokens_next_page: 3,
       fetch_scam_token_toggle: 2
     ]
+
+  import BlockScoutWeb.LegacyPagingHelper, only: [split_list_by_page: 1]
 
   import BlockScoutWeb.PagingHelper,
     only: [
@@ -38,7 +41,6 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     only: [maybe_preload_ens: 1, maybe_preload_ens_for_token_transfers: 1]
 
   import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
-  import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -172,11 +174,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         |> Chain.flat_1155_batch_token_transfers()
         |> Chain.paginate_1155_batch_token_transfers(paging_options)
 
-      {token_transfers, next_page} = split_list_by_page(results)
-
-      next_page_params =
-        next_page
-        |> token_transfers_next_page_params(token_transfers, params)
+      {token_transfers, next_page_params} =
+        token_transfers_next_page_params(results, params, paging_options[:paging_options])
 
       conn
       |> put_status(200)
@@ -199,7 +198,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     parameters:
       base_params() ++
         [address_hash_param()] ++
-        define_paging_params(["address_hash_param", "value", "items_count"]),
+        define_paging_params(["address_hash_param", "value"]),
     responses: [
       ok:
         {"Holders of the specified token, with pagination.", "application/json",
@@ -207,8 +206,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
            items: Schemas.Token.Holder,
            next_page_params_example: %{
              "address_hash" => "0x48bb9b14483e43c7726df702b271d410e7460656",
-             "value" => "200000000000000",
-             "items_count" => 50
+             "value" => "200000000000000"
            }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -223,12 +221,12 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, true} <- {:not_found, Token.by_contract_address_hash_exists?(address_hash, @api_true)} do
+      holders_paging_opts = paging_options(params)
+
       results_plus_one =
-        Chain.fetch_token_holders_from_token_hash(address_hash, Keyword.merge(paging_options(params), @api_true))
+        Chain.fetch_token_holders_from_token_hash(address_hash, Keyword.merge(holders_paging_opts, @api_true))
 
-      {token_balances, next_page} = split_list_by_page(results_plus_one)
-
-      next_page_params = next_page |> next_page_params(token_balances, params)
+      {token_balances, next_page_params} = paginate_list(results_plus_one, params, holders_paging_opts[:paging_options])
 
       conn
       |> put_status(200)
@@ -391,6 +389,75 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
+  operation :media_type,
+    summary: "Fetch media type for a specific NFT instance",
+    description:
+      "Determines and returns the media type categories (image/video/html) for the image and animation URLs of a specific NFT instance. Fetches via HTTP HEAD if not yet determined and stores the result.",
+    parameters:
+      base_params() ++
+        [
+          address_hash_param(),
+          token_id_param()
+        ],
+    responses: [
+      ok:
+        {"Media type categories for the NFT instance.", "application/json",
+         %Schema{
+           type: :object,
+           properties: %{
+             image_media_type: %Schema{
+               type: :string,
+               enum: ["image", "video", "html"],
+               nullable: true
+             },
+             animation_media_type: %Schema{
+               type: :string,
+               enum: ["image", "video", "html"],
+               nullable: true
+             }
+           }
+         }},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/instances/:token_id_param/media-type` endpoint.
+  """
+  @spec media_type(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def media_type(conn, %{address_hash_param: address_hash_string, token_id_param: token_id_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @token_options)},
+         {:not_found, false} <- {:not_found, Chain.erc_20_token?(token) or Token.zrc_2_token?(token)},
+         {:format, {token_id, ""}} <- {:format, Integer.parse(token_id_string)},
+         {:ok, token_instance} <-
+           Instance.nft_instance_by_token_id_and_token_address(token_id, address_hash, @api_true) do
+      case TokenInstanceHelper.fetch_media_types(token_instance) do
+        {:ok, %{image_type: image_type, animation_type: animation_type}} ->
+          conn
+          |> put_status(200)
+          |> json(%{
+            image_media_type: Instance.mime_to_media_category(image_type),
+            animation_media_type: Instance.mime_to_media_category(animation_type)
+          })
+
+        {:error, :metadata_not_found} ->
+          conn
+          |> put_status(422)
+          |> json(%{message: "Metadata is not fetched yet"})
+
+        {:error, :already_fetched} ->
+          conn
+          |> put_status(200)
+          |> json(%{
+            image_media_type: Instance.mime_to_media_category(token_instance.image_type),
+            animation_media_type: Instance.mime_to_media_category(token_instance.animation_type)
+          })
+      end
+    end
+  end
+
   operation :transfers_by_instance,
     summary: "List token transfers for a specific token instance",
     description: "Retrieves token transfers for a specific token instance (by token address and token ID).",
@@ -434,11 +501,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         |> Chain.flat_1155_batch_token_transfers(Decimal.new(token_id))
         |> Chain.paginate_1155_batch_token_transfers(paging_options)
 
-      {token_transfers, next_page} = split_list_by_page(results)
-
-      next_page_params =
-        next_page
-        |> token_transfers_next_page_params(token_transfers, params)
+      {token_transfers, next_page_params} =
+        token_transfers_next_page_params(results, params, paging_options[:paging_options])
 
       conn
       |> put_status(200)
@@ -457,7 +521,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     parameters:
       base_params() ++
         [address_hash_param(), token_id_param()] ++
-        define_paging_params(["address_hash_param", "items_count", "token_id", "value"]),
+        define_paging_params(["address_hash_param", "token_id", "value"]),
     responses: [
       ok:
         {"Current holders of the specified NFT instance, with pagination.", "application/json",
@@ -465,7 +529,6 @@ defmodule BlockScoutWeb.API.V2.TokenController do
            items: Schemas.Token.Holder,
            next_page_params_example: %{
              "address_hash" => "0x1d2c163fbda9486c3a384b6fa5e34c96fe948e9a",
-             "items_count" => 50,
              "token_id" => "0",
              "value" => "4217417051704137590935"
            }
@@ -493,11 +556,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
           Keyword.merge(paging_options, @api_true)
         )
 
-      {token_holders, next_page} = split_list_by_page(results)
-
-      next_page_params =
-        next_page
-        |> next_page_params(token_holders, params)
+      {token_holders, next_page_params} = paginate_list(results, params, paging_options[:paging_options])
 
       conn
       |> put_status(200)
@@ -565,8 +624,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
           "holders_count",
           "is_name_null",
           "market_cap",
-          "name",
-          "items_count"
+          "name"
         ]),
     responses: [
       ok:
@@ -579,8 +637,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
              "holders_count" => 59_731,
              "is_name_null" => false,
              "market_cap" => "570958125.135513",
-             "name" => "Wrapped Staked ETH",
-             "items_count" => 50
+             "name" => "Wrapped Staked ETH"
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
@@ -596,20 +653,12 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     options =
       params
       |> paging_options()
-      |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
-                                                                        page_size: page_size
-                                                                      } = paging_options ->
-        maybe_parsed_limit = params[:limit]
-        %PagingOptions{paging_options | page_size: min(page_size, maybe_parsed_limit && abs(maybe_parsed_limit))}
-      end)
       |> Keyword.merge(token_transfers_types_options(params))
       |> Keyword.merge(tokens_sorting(params))
       |> Keyword.merge(@api_true)
       |> fetch_scam_token_toggle(conn)
 
-    {tokens, next_page} = filter |> Token.list_top(options) |> split_list_by_page()
-
-    next_page_params = next_page |> next_page_params(tokens, params)
+    {tokens, next_page_params} = filter |> Token.list_top(options) |> paginate_list(params, options[:paging_options])
 
     conn
     |> put_status(200)
@@ -633,8 +682,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
           "holders_count",
           "is_name_null",
           "market_cap",
-          "name",
-          "items_count"
+          "name"
         ]),
     responses: [
       ok:
@@ -647,8 +695,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
              "holders_count" => 59_731,
              "is_name_null" => false,
              "market_cap" => "570958125.135513",
-             "name" => "Wrapped Staked ETH",
-             "items_count" => 50
+             "name" => "Wrapped Staked ETH"
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
@@ -668,9 +715,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> Keyword.merge(tokens_sorting(params))
       |> Keyword.merge(@api_true)
 
-    {tokens, next_page} = filter |> BridgedToken.list_top_bridged_tokens(options) |> split_list_by_page()
-
-    next_page_params = next_page |> next_page_params(tokens, params)
+    {tokens, next_page_params} =
+      filter |> BridgedToken.list_top_bridged_tokens(options) |> paginate_list(params, options[:paging_options])
 
     conn
     |> put_status(200)
@@ -686,7 +732,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         [
           address_hash_param(),
           token_id_param(),
-          recaptcha_response_param()
+          recaptcha_response_param(),
+          scoped_recaptcha_bypass_token_param()
         ],
     responses: [
       ok:

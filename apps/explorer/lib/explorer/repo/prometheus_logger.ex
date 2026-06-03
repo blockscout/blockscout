@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.PrometheusLogger do
   @moduledoc """
   Log `Ecto` query durations as `Prometheus` metrics.

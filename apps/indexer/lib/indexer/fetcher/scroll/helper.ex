@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Scroll.Helper do
   @moduledoc """
     A module to define common Scroll indexer functions.

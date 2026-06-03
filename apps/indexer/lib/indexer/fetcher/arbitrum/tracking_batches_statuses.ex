@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   @moduledoc """
     Manages the tracking and updating of the statuses of rollup batches,

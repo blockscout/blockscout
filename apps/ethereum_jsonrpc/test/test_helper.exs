@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 # https://github.com/CircleCI-Public/circleci-demo-elixir-phoenix/blob/a89de33a01df67b6773ac90adc74c34367a4a2d6/test/test_helper.exs#L1-L3
 junit_folder = Mix.Project.build_path() <> "/junit/#{Mix.Project.config()[:app]}"
 File.mkdir_p!(junit_folder)
@@ -11,6 +12,8 @@ Mox.defmock(EthereumJSONRPC.Mox, for: EthereumJSONRPC.Transport)
 Mox.defmock(EthereumJSONRPC.HTTP.Mox, for: EthereumJSONRPC.HTTP)
 # for when we need to simulate WebSocket-specific stuff
 Mox.defmock(EthereumJSONRPC.WebSocket.Mox, for: EthereumJSONRPC.WebSocket)
+# for when we need to assert Tesla request/response adapter-level behavior
+Mox.defmock(EthereumJSONRPC.TeslaAdapter.Mox, for: Tesla.Adapter)
 
 ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter])
 ExUnit.start()

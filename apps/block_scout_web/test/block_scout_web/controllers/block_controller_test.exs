@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.BlockControllerTest do
   use BlockScoutWeb.ConnCase
   alias Explorer.Chain.Block
@@ -98,7 +99,7 @@ defmodule BlockScoutWeb.BlockControllerTest do
 
       conn = get(conn, blocks_path(conn, :index), %{"type" => "JSON"})
 
-      expected_path = blocks_path(conn, :index, block_number: number, items_count: "50", block_type: "Block")
+      expected_path = blocks_path(conn, :index, block_number: number, block_type: "Block")
 
       assert Map.get(json_response(conn, 200), "next_page_path") == expected_path
     end

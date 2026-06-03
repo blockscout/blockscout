@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.AddressInternalTransactionView do
   use BlockScoutWeb, :view
 

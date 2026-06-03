@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Celo.Helper do
   @moduledoc """
   Common helper functions for Celo.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.FheOperations do
   @moduledoc """
   Bulk imports FHE operations parsed from transaction logs.

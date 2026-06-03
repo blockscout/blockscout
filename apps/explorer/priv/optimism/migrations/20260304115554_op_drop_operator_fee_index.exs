@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Optimism.Migrations.OPDropOperatorFeeIndex do
   use Ecto.Migration
 

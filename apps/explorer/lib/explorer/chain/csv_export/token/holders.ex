@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.CsvExport.Token.Holders do
   @moduledoc """
   Exports token holders to a csv file.

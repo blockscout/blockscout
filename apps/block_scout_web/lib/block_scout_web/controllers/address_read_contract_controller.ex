@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 # credo:disable-for-this-file
 #
 # When moving the calls to ajax, this controller became very similar to the

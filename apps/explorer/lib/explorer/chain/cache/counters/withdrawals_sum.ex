@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.Counters.WithdrawalsSum do
   @moduledoc """
   Caches the sum of all withdrawals.

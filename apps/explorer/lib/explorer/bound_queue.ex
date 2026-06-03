@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.BoundQueue do
   @moduledoc """
   A queue that tracks its size and can have its size bound to a maximum.

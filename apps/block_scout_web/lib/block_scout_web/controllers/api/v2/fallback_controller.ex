@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.FallbackController do
   use Phoenix.Controller, namespace: BlockScoutWeb
 

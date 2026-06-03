@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Zilliqa.Staker.Detailed do
   @moduledoc """
   This module defines the schema for Zilliqa validator info response from /api/v2/validators/zilliqa/:bls_public_key
@@ -14,7 +15,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Zilliqa.Staker.Detailed do
     |> Helper.extend_schema(
       title: "StakerDetailed",
       properties: %{
-        peer_id: General.HexStringNullable,
+        peer_id: General.HexDataNullable,
         control_address: AddressNullable,
         reward_address: AddressNullable,
         signing_address: AddressNullable,

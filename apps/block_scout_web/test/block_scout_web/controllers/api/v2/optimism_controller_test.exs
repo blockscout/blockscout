@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.OptimismControllerTest do
   use BlockScoutWeb.ConnCase
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]

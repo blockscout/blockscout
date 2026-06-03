@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Promo.AutoscoutTest do
   use ExUnit.Case, async: false
 

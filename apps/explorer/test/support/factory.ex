@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Factory do
   use ExMachina.Ecto, repo: Explorer.Repo
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
@@ -25,10 +26,17 @@ defmodule Explorer.Factory do
   alias Explorer.Admin.Administrator
   alias Explorer.Chain.Beacon.{Blob, BlobTransaction, Deposit}
   alias Explorer.Chain.Block.{EmissionReward, Range, Reward}
+  alias Explorer.Chain.Arbitrum.BatchBlock, as: ArbitrumBatchBlock
+  alias Explorer.Chain.Arbitrum.BatchTransaction, as: ArbitrumBatchTransaction
+  alias Explorer.Chain.Arbitrum.L1Batch, as: ArbitrumL1Batch
+  alias Explorer.Chain.Arbitrum.LifecycleTransaction, as: ArbitrumLifecycleTransaction
+  alias Explorer.Chain.Arbitrum.Message, as: ArbitrumMessage
   alias Explorer.Chain.Scroll.Batch, as: ScrollBatch
   alias Explorer.Chain.Scroll.BatchBundle, as: ScrollBatchBundle
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
+  alias Explorer.Chain.ZkSync.LifecycleTransaction, as: ZkSyncLifecycleTransaction
+  alias Explorer.Chain.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
 
   alias Explorer.Chain.{
     Address,
@@ -321,7 +329,7 @@ defmodule Explorer.Factory do
       end
 
     %MultichainSearchDb.TokenInfoExportQueue{
-      address_hash: address_hash().bytes,
+      address_hash: address_hash(),
       data_type: data_type,
       data: data
     }
@@ -1937,5 +1945,83 @@ defmodule Explorer.Factory do
       status: "started",
       meta: nil
     }
+  end
+
+  def arbitrum_lifecycle_transaction_factory do
+    %ArbitrumLifecycleTransaction{
+      id: sequence("arbitrum_lifecycle_tx_id", & &1, start_at: 1),
+      hash: transaction_hash(),
+      block_number: block_number(),
+      timestamp: DateTime.utc_now(),
+      status: :finalized
+    }
+  end
+
+  def arbitrum_l1_batch_factory do
+    lifecycle_tx = insert(:arbitrum_lifecycle_transaction)
+    start = Enum.random(1..100_000)
+
+    %ArbitrumL1Batch{
+      number: sequence("arbitrum_l1_batch_number", & &1),
+      transactions_count: Enum.random(1..100),
+      start_block: start,
+      end_block: Kernel.+(start, 10),
+      before_acc: block_hash(),
+      after_acc: block_hash(),
+      commitment_id: lifecycle_tx.id
+    }
+  end
+
+  def zksync_lifecycle_transaction_factory do
+    %ZkSyncLifecycleTransaction{
+      id: sequence("zksync_lifecycle_tx_id", & &1, start_at: 1),
+      hash: transaction_hash(),
+      timestamp: DateTime.utc_now()
+    }
+  end
+
+  def zksync_transaction_batch_factory do
+    start_block = Enum.random(1..100_000)
+
+    %ZkSyncTransactionBatch{
+      number: sequence("zksync_transaction_batch_number", & &1),
+      timestamp: DateTime.utc_now(),
+      l1_transaction_count: Enum.random(0..50),
+      l2_transaction_count: Enum.random(0..100),
+      root_hash: block_hash(),
+      l1_gas_price: %Wei{value: Decimal.new(Enum.random(1..1_000_000_000))},
+      l2_fair_gas_price: %Wei{value: Decimal.new(Enum.random(1..1_000_000_000))},
+      start_block: start_block,
+      end_block: Kernel.+(start_block, 10)
+    }
+  end
+
+  def arbitrum_message_factory do
+    %ArbitrumMessage{
+      direction: :to_l2,
+      message_id: sequence("arbitrum_message_id", & &1, start_at: 1),
+      originator_address: address_hash(),
+      originating_transaction_hash: transaction_hash(),
+      origination_timestamp: DateTime.utc_now(),
+      originating_transaction_block_number: block_number(),
+      completion_transaction_hash: transaction_hash(),
+      status: :relayed
+    }
+  end
+
+  # Pure association factory — callers must supply `:batch_number` and `:block_number`
+  # as overrides referencing existing records. Both are required foreign keys on
+  # `Explorer.Chain.Arbitrum.BatchBlock`, so `insert(:arbitrum_batch_block)` without
+  # overrides will raise.
+  def arbitrum_batch_block_factory do
+    %ArbitrumBatchBlock{}
+  end
+
+  # Pure association factory — callers must supply `:batch_number` and `:transaction_hash`
+  # as overrides referencing existing records. Both are required foreign keys on
+  # `Explorer.Chain.Arbitrum.BatchTransaction`, so `insert(:arbitrum_batch_transaction)`
+  # without overrides will raise.
+  def arbitrum_batch_transaction_factory do
+    %ArbitrumBatchTransaction{}
   end
 end

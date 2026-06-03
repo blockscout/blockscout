@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Transaction.RawTrace do
   @moduledoc """
   This module defines the schema for a transaction raw trace API response.
@@ -12,11 +13,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.RawTrace do
     properties: %{
       callType: %Schema{type: :string, enum: ["call", "callcode", "delegatecall", "staticcall"]},
       from: General.AddressHash,
-      gas: General.HexString,
-      input: General.HexString,
-      init: General.HexString,
+      gas: General.HexData,
+      input: General.HexData,
+      init: General.HexData,
       to: General.AddressHash,
-      value: General.HexString
+      value: General.HexData
     },
     required: [:from, :gas, :input, :value],
     additionalProperties: false
@@ -25,8 +26,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.RawTrace do
   result_schema = %Schema{
     type: :object,
     properties: %{
-      gasUsed: General.HexString,
-      output: General.HexString
+      gasUsed: General.HexData,
+      output: General.HexData
     },
     required: [:gasUsed, :output],
     additionalProperties: false

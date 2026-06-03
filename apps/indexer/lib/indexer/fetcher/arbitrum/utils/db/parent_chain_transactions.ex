@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.Utils.Db.ParentChainTransactions do
   @moduledoc """
     Manages database operations for Arbitrum L1 (parent chain) lifecycle transactions.

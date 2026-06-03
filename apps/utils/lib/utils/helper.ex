@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Utils.Helper do
   @moduledoc """
   This module contains helper functions for the entire application.

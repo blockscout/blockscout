@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.Vyper.Publisher do
   @moduledoc """
   Module responsible to control Vyper contract verification.

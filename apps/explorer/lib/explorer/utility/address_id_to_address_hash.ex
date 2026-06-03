@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Utility.AddressIdToAddressHash do
   @moduledoc """
   Module is responsible for keeping the address_id to address_hash correspondence.
@@ -76,7 +77,7 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
       end)
       |> Enum.sort()
 
-    Repo.insert_all(
+    Repo.safe_insert_all(
       __MODULE__,
       Enum.map(filtered_address_hashes, &%{address_hash: &1}),
       on_conflict: :nothing

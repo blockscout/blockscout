@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.TokenBalance.Current do
   @moduledoc """
   Fetches current token balances and sends the ones that were fetched to be imported in `Address.CurrentTokenBalance`.

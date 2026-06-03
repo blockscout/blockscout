@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.ContractCode do
   @moduledoc """
   Fetches `contract_code` `t:Explorer.Chain.Address.t/0`.
@@ -257,6 +258,9 @@ defmodule Indexer.Fetcher.ContractCode do
       {:ok, %{addresses: addresses}} ->
         Accounts.drop(addresses)
         {:ok, addresses}
+
+      {:ok, _} ->
+        {:ok, []}
 
       {:error, step, reason, _changes_so_far} ->
         Logger.error(

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.ZkSync.LifecycleTransactions do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.ZkSync.LifecycleTransaction.t/0`.

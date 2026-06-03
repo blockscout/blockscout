@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 import Config
 
 # Import all plugins from `rel/plugins`
@@ -71,7 +72,7 @@ end
 # will be used by default
 
 release :blockscout do
-  set version: "11.0.1"
+  set version: "11.1.3"
   set applications: [
     :runtime_tools,
     block_scout_web: :permanent,

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.QueryHelper do
   @moduledoc """
   Helping functions for `Ecto.Query` building.

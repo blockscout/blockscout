@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
   @moduledoc """
   Imports any chain type specific tables.

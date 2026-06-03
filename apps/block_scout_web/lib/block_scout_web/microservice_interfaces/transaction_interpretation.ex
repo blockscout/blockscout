@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   @moduledoc """
     Module to interact with Transaction Interpretation Service

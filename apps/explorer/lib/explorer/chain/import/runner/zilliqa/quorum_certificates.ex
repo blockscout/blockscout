@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.Zilliqa.QuorumCertificates do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Zilliqa.QuorumCertificate.t/0`.

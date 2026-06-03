@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.OptimismFinalizationPeriod do
   @moduledoc """
   Caches Optimism Finalization period.

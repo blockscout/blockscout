@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Events do
   @moduledoc """
   Provides functionality for retrieving Arbitrum `SequencerBatchDelivered` event logs.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.BridgedTokens.SetOmniBridgedMetadataForTokens do
   @moduledoc """
     Periodically checks unprocessed tokens and sets bridged status.

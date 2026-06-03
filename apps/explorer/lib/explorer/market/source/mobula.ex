@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.Source.Mobula do
   @moduledoc """
   Adapter for fetching exchange rates from https://mobula.io
@@ -75,6 +76,7 @@ defmodule Explorer.Market.Source.Mobula do
       fiat_value: Source.to_decimal(token["price"]),
       volume_24h: Source.to_decimal(token["off_chain_volume"]),
       circulating_market_cap: Source.to_decimal(token["market_cap"]),
+      circulating_supply: Source.to_decimal(token["circulating_supply"]),
       icon_url: Source.handle_image_url(token["logo"]),
       contract_address_hash: token_contract_address_hash,
       type: "ERC-20"
@@ -127,7 +129,8 @@ defmodule Explorer.Market.Source.Mobula do
          symbol: data["symbol"],
          fiat_value: Source.to_decimal(data["price"]),
          volume_24h: Source.to_decimal(data["off_chain_volume"]),
-         image_url: Source.handle_image_url(data["logo"])
+         image_url: Source.handle_image_url(data["logo"]),
+         circulating_supply: Source.to_decimal(data["circulating_supply"])
        }}
     else
       nil ->

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.ThirdPartyIntegrations.NovesFi do
   @moduledoc """
   Module for Noves.Fi API integration https://blockscout.noves.fi/swagger/index.html

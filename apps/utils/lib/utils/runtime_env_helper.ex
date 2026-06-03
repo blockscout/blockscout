@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Utils.RuntimeEnvHelper do
   @moduledoc """
   A module that provides runtime access to environment variables with a similar

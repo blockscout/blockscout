@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.RequestCoordinator do
   @moduledoc """
   Coordinates requests with a backoff strategy.

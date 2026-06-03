@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.MultichainSearchDb.CountersFetcherTest do
   use ExUnit.Case
   use Explorer.DataCase, async: false

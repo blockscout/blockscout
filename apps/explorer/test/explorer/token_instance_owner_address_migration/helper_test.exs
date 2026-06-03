@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.TokenInstanceOwnerAddressMigration.HelperTest do
   use Explorer.DataCase
 

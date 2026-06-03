@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Optimism.OutputRoot do
   @moduledoc "Models an output root for Optimism."
 

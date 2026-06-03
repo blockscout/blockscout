@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Data do
   @moduledoc """
   The Elixir-native representation of `t:EthereumJSONRPC.data/0`.

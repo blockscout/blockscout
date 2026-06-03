@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.SignedAuthorization do
   @moduledoc """
   The format of authorization tuples returned for

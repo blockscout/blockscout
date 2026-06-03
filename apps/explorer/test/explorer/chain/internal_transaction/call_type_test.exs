@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.InternalTransaction.CallTypeTest do
   use ExUnit.Case, async: true
 

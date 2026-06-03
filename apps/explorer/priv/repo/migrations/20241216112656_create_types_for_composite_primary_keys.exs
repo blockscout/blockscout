@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Migrations.CreateTypesForCompositePrimaryKeys do
   use Ecto.Migration
 

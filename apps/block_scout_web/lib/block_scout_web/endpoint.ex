@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :block_scout_web
   use Absinthe.Phoenix.Endpoint

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Beacon.DepositTest do
   use EthereumJSONRPC.Case
   use Explorer.DataCase, async: false

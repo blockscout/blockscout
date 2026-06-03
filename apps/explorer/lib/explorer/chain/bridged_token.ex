@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.BridgedToken do
   @moduledoc """
     Represents a bridged token.

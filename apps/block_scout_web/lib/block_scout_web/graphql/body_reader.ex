@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.GraphQL.BodyReader do
   @moduledoc """
   This module is responsible for reading the body of a graphql request and counting the number of queries in the body.

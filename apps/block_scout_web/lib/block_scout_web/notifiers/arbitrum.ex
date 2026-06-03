@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Notifiers.Arbitrum do
   @moduledoc """
   Module to handle and broadcast Arbitrum related events.

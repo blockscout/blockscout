@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.DecodingHelper do
   @moduledoc """
   Data decoding functions

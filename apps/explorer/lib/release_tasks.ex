@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.ReleaseTasks do
   @moduledoc """
   Release tasks used to migrate or generate seeds.

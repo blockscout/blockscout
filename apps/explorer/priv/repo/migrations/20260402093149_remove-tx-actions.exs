@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule :"Elixir.Explorer.Repo.Migrations.Remove-tx-actions" do
   use Ecto.Migration
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.MixProject do
   use Mix.Project
 
@@ -19,7 +20,7 @@ defmodule EthereumJSONRPC.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "11.0.1"
+      version: "11.1.3"
     ]
   end
 
@@ -75,7 +76,7 @@ defmodule EthereumJSONRPC.MixProject do
       {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog
       {:spandex_datadog, "~> 1.0"},
-      {:tesla, "~> 1.16.0"},
+      {:tesla, "~> 1.18.2"},
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.7.1"},
       # Encode/decode function names and arguments

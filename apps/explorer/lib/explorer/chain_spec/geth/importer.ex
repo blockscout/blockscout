@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.ChainSpec.Geth.Importer do
   @moduledoc """
   Imports data from Geth genesis.json.

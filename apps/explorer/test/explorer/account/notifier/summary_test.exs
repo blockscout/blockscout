@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Account.Notifier.SummaryTest do
   use Explorer.DataCase
 

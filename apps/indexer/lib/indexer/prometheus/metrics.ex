@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Prometheus.Metrics do
   @moduledoc """
   Module responsible for periodically setting indexer metrics.

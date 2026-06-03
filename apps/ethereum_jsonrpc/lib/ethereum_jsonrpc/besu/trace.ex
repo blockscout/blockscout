@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Besu.Trace do
   @moduledoc """
   Trace returned by
@@ -44,4 +45,5 @@ defmodule EthereumJSONRPC.Besu.Trace do
   end
 
   defp entry_to_elixir({"transactionIndex", index} = entry) when is_integer(index), do: entry
+  defp entry_to_elixir({_, _}), do: {:ignore, :ignore}
 end

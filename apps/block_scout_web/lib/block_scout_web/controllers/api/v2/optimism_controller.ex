@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.OptimismController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
@@ -6,9 +7,8 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 3,
-      paging_options: 1,
-      split_list_by_page: 1
+      paginate_list: 3,
+      paging_options: 1
     ]
 
   import Explorer.Helper, only: [hash_to_binary: 1]
@@ -45,20 +45,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a paginated list of batches.",
     parameters:
       base_params() ++
-        define_paging_params([
-          "id",
-          "items_count"
-        ]),
+        define_paging_params(["id"]),
     responses: [
       ok:
         {"List of batches.", "application/json",
          paginated_response(
            items: Schemas.Optimism.Batch,
            next_page_params_example: %{
-             "id" => 394_591,
-             "items_count" => 50
-           },
-           title_prefix: "Batches"
+             "id" => 394_591
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -68,15 +63,16 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   """
   @spec batches(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def batches(conn, params) do
-    {batches, next_page} =
+    options =
       params
       |> paging_options()
       |> Keyword.put(:api?, true)
       |> Keyword.put(:only_view_ready?, true)
-      |> FrameSequence.list()
-      |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, batches, params)
+    {batches, next_page_params} =
+      options
+      |> FrameSequence.list()
+      |> paginate_list(params, options[:paging_options])
 
     items =
       batches
@@ -150,7 +146,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
           %OpenApiSpex.Parameter{
             name: :commitment,
             in: :path,
-            schema: Schemas.General.HexString,
+            schema: Schemas.General.HexData,
             required: true,
             description: "Celestia blob commitment in the path."
           }
@@ -228,20 +224,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a paginated list of output roots.",
     parameters:
       base_params() ++
-        define_paging_params([
-          "index",
-          "items_count"
-        ]),
+        define_paging_params(["index"]),
     responses: [
       ok:
         {"List of output roots.", "application/json",
          paginated_response(
            items: Schemas.Optimism.OutputRoot,
            next_page_params_example: %{
-             "index" => 8829,
-             "items_count" => 50
-           },
-           title_prefix: "OutputRoots"
+             "index" => 8829
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -251,14 +242,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   """
   @spec output_roots(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def output_roots(conn, params) do
-    {roots, next_page} =
+    roots_options =
       params
       |> paging_options()
       |> Keyword.put(:api?, true)
-      |> OutputRoot.list()
-      |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, roots, params)
+    {roots, next_page_params} =
+      roots_options
+      |> OutputRoot.list()
+      |> paginate_list(params, roots_options[:paging_options])
 
     conn
     |> put_status(200)
@@ -290,20 +282,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a paginated list of games.",
     parameters:
       base_params() ++
-        define_paging_params([
-          "index",
-          "items_count"
-        ]),
+        define_paging_params(["index"]),
     responses: [
       ok:
         {"List of games.", "application/json",
          paginated_response(
            items: Schemas.Optimism.Game,
            next_page_params_example: %{
-             "index" => 12967,
-             "items_count" => 50
-           },
-           title_prefix: "Games"
+             "index" => 12967
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -313,14 +300,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   """
   @spec games(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def games(conn, params) do
-    {games, next_page} =
+    games_options =
       params
       |> paging_options()
       |> Keyword.put(:api?, true)
-      |> DisputeGame.list()
-      |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, games, params)
+    {games, next_page_params} =
+      games_options
+      |> DisputeGame.list()
+      |> paginate_list(params, games_options[:paging_options])
 
     conn
     |> put_status(200)
@@ -356,22 +344,16 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a paginated list of deposits.",
     parameters:
       base_params() ++
-        define_paging_params([
-          "items_count",
-          "l1_block_number",
-          "transaction_hash"
-        ]),
+        define_paging_params(["l1_block_number", "transaction_hash"]),
     responses: [
       ok:
         {"List of deposits.", "application/json",
          paginated_response(
            items: Schemas.Optimism.Deposit,
            next_page_params_example: %{
-             "items_count" => 50,
              "l1_block_number" => 23_937_283,
              "transaction_hash" => "0x5dc155c382d95353c5876e735d675d284e3b29b1379e5859dc35cfd4a1dd5188"
-           },
-           title_prefix: "Deposits"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -381,14 +363,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   """
   @spec deposits(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def deposits(conn, params) do
-    {deposits, next_page} =
+    deposits_options =
       params
       |> paging_options()
       |> Keyword.put(:api?, true)
-      |> Deposit.list()
-      |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, deposits, params)
+    {deposits, next_page_params} =
+      deposits_options
+      |> Deposit.list()
+      |> paginate_list(params, deposits_options[:paging_options])
 
     conn
     |> put_status(200)
@@ -530,16 +513,17 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   def interop_messages(conn, params) do
     current_chain_id = ChainId.get_id()
 
-    {messages, next_page} =
+    interop_options =
       params
       |> interop_extract_message_filters()
       |> Keyword.merge(paging_options(params))
       |> Keyword.merge(@api_true)
       |> Keyword.merge(current_chain_id: current_chain_id)
-      |> InteropMessage.list()
-      |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, messages, Map.take(params, ["items_count"]))
+    {messages, next_page_params} =
+      interop_options
+      |> InteropMessage.list()
+      |> paginate_list(%{}, interop_options[:paging_options])
 
     messages_extended =
       messages
@@ -584,20 +568,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
     description: "Retrieves a paginated list of withdrawals.",
     parameters:
       base_params() ++
-        define_paging_params([
-          "items_count",
-          "nonce"
-        ]),
+        define_paging_params(["nonce"]),
     responses: [
       ok:
         {"List of withdrawals.", "application/json",
          paginated_response(
            items: Schemas.Optimism.Withdrawal,
            next_page_params_example: %{
-             "items_count" => 50,
              "nonce" => "1766847064778384329583297500742918515827483896875618958121606201292650102"
-           },
-           title_prefix: "Withdrawals"
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -607,14 +586,15 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   """
   @spec withdrawals(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def withdrawals(conn, params) do
-    {withdrawals, next_page} =
+    withdrawals_options =
       params
       |> paging_options()
       |> Keyword.put(:api?, true)
-      |> Withdrawal.list()
-      |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, withdrawals, params)
+    {withdrawals, next_page_params} =
+      withdrawals_options
+      |> Withdrawal.list()
+      |> paginate_list(params, withdrawals_options[:paging_options])
 
     conn
     |> put_status(200)

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Optimism.Migrations.OPWithdrawalEventsKey do
   use Ecto.Migration
 

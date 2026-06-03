@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Events do
   @moduledoc """
   Provides functionality for fetching and parsing Arbitrum's SendRootUpdated events.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.Stability.Validators do
   @moduledoc """
   Helper functions for transforming blocks into stability validator counter updates.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 import Config
 
 [__DIR__ | ~w(config_helper.exs)]
@@ -145,6 +146,9 @@ default_global_api_rate_limit = 25
 default_api_rate_limit_by_key = 10
 api_rate_limit_redis_url = ConfigHelper.safe_get_env("API_RATE_LIMIT_HAMMER_REDIS_URL", nil)
 
+api_rate_limit_redis_sentinel_urls =
+  ConfigHelper.safe_get_env("API_RATE_LIMIT_HAMMER_REDIS_SENTINEL_URLS", "")
+
 config :block_scout_web, :api_rate_limit,
   disabled: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_DISABLED"),
   static_api_key_value: System.get_env("API_RATE_LIMIT_STATIC_API_KEY"),
@@ -172,11 +176,16 @@ config :block_scout_web, :api_rate_limit,
   api_v2_token_ttl: ConfigHelper.parse_time_env_var("API_RATE_LIMIT_UI_V2_TOKEN_TTL", "30m"),
   eth_json_rpc_max_batch_size: ConfigHelper.parse_integer_env_var("ETH_JSON_RPC_MAX_BATCH_SIZE", 5),
   redis_url: if(api_rate_limit_redis_url == "", do: nil, else: api_rate_limit_redis_url),
+  redis_ssl: ConfigHelper.parse_bool_env_var("API_RATE_LIMIT_HAMMER_REDIS_SSL_ENABLED", "false"),
+  redis_sentinel_urls: if(api_rate_limit_redis_sentinel_urls == "", do: nil, else: api_rate_limit_redis_sentinel_urls),
+  redis_sentinel_master_name: ConfigHelper.safe_get_env("API_RATE_LIMIT_HAMMER_REDIS_SENTINEL_MASTER_NAME", ""),
   rate_limit_backend:
-    if(api_rate_limit_redis_url == "",
+    if(api_rate_limit_redis_url == "" and api_rate_limit_redis_sentinel_urls == "",
       do: BlockScoutWeb.RateLimit.Hammer.ETS,
       else: BlockScoutWeb.RateLimit.Hammer.Redis
     ),
+  recaptcha_disabled_limit_multiplier:
+    ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_RECAPTCHA_DISABLED_LIMIT_MULTIPLIER", 2, min: 1),
   config_url: ConfigHelper.parse_url_env_var("API_RATE_LIMIT_CONFIG_URL")
 
 config :block_scout_web, :remote_ip,
@@ -264,7 +273,14 @@ config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
     %{"Content-Type" => "application/json"}
     |> Map.merge(ConfigHelper.parse_json_env_var("ETHEREUM_JSONRPC_HTTP_HEADERS", "{}"))
     |> Map.to_list(),
-  gzip_enabled?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_HTTP_GZIP_ENABLED", "false")
+  batch_size: ConfigHelper.parse_integer_env_var("ETHEREUM_JSONRPC_HTTP_BATCH_SIZE", 500),
+  request_compression_heavy_methods_enabled?:
+    ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_HTTP_REQUEST_COMPRESSION_HEAVY_METHODS_ENABLED", "true"),
+  request_compression_all_methods_enabled?:
+    ConfigHelper.parse_bool_env_var(
+      "ETHEREUM_JSONRPC_HTTP_REQUEST_COMPRESSION_ALL_METHODS_ENABLED",
+      "false"
+    )
 
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
   block_traceable?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_GETH_TRACE_BY_BLOCK"),
@@ -329,6 +345,11 @@ config :explorer,
   shrink_internal_transactions_enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),
   replica_max_lag: ConfigHelper.parse_time_env_var("REPLICA_MAX_LAG", "5m"),
   hackney_default_pool_size: ConfigHelper.parse_integer_env_var("HACKNEY_DEFAULT_POOL_SIZE", 1_000)
+
+config :explorer, Explorer.PagingOptions, max_page_size: ConfigHelper.parse_integer_env_var("MAX_ITEMS_PER_PAGE", 100)
+
+config :explorer, Explorer.EthRPC,
+  extended_proxy_methods_enabled: ConfigHelper.parse_bool_env_var("API_ETH_RPC_EXTENDED_PROXY_METHODS_ENABLED", "false")
 
 config :explorer, Explorer.Chain.Health.Monitor,
   check_interval: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_CHECK_INTERVAL", "1m"),
@@ -423,6 +444,12 @@ config :explorer, Explorer.Chain.Cache.Counters.AverageBlockTime,
 
 config :explorer, Explorer.Market.MarketHistoryCache,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_MARKET_HISTORY_PERIOD", "1h")
+
+config :explorer, Explorer.Stats.HotSmartContractsCache, %{
+  "5m" => ConfigHelper.parse_time_env_var("CACHE_HOT_SMART_CONTRACTS_5M_PERIOD", "30s"),
+  "1h" => ConfigHelper.parse_time_env_var("CACHE_HOT_SMART_CONTRACTS_1H_PERIOD", "6m"),
+  "3h" => ConfigHelper.parse_time_env_var("CACHE_HOT_SMART_CONTRACTS_3H_PERIOD", "18m")
+}
 
 config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TRANSACTIONS_COUNTER_PERIOD", "1h")
@@ -563,6 +590,13 @@ config :explorer, Explorer.Market.Fetcher.Token,
       "MARKET_TOKENS_MAX_BATCH_SIZE",
       ConfigHelper.parse_integer_env_var("TOKEN_EXCHANGE_RATE_MAX_BATCH_SIZE", 500)
     )
+
+token_list_url = ConfigHelper.parse_url_env_var("TOKEN_LIST_URL")
+
+config :explorer, Explorer.Market.Fetcher.TokenList,
+  enabled: !is_nil(token_list_url),
+  token_list_url: token_list_url,
+  refetch_interval: ConfigHelper.parse_time_env_var("TOKEN_LIST_REFETCH_INTERVAL", "24h")
 
 config :explorer, Explorer.Market.Fetcher.History,
   enabled: !disable_exchange_rates? && ConfigHelper.parse_bool_env_var("MARKET_HISTORY_FETCHER_ENABLED", "true"),
@@ -830,6 +864,22 @@ config :explorer, Explorer.Migrator.BackfillMultichainSearchDB,
   concurrency: 1,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_BATCH_SIZE", 10)
 
+max_block_number =
+  ConfigHelper.parse_integer_or_nil_env_var(
+    "MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_LAST_BLOCK_NUMBER"
+  )
+
+config :explorer, Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalances,
+  enabled:
+    !ConfigHelper.parse_bool_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_DISABLED") &&
+      !is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")) &&
+      !is_nil(max_block_number),
+  batch_size:
+    ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_BATCH_SIZE", 100),
+  concurrency:
+    ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_CONCURRENCY", 4),
+  max_block_number: max_block_number
+
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation,
   check_interval: ConfigHelper.parse_time_env_var("MIGRATION_HEAVY_INDEX_OPERATIONS_CHECK_INTERVAL", "10m")
 
@@ -900,6 +950,7 @@ config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions,
 
 config :explorer, Explorer.Migrator.FillInternalTransactionsAddressIds,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_BATCH_SIZE", 30),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_CONCURRENCY", 10),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_TIMEOUT", "5s")
 
 config :explorer, Explorer.Chain.BridgedToken,
@@ -935,10 +986,14 @@ config :explorer, Explorer.Chain.Fetcher.AddressesBlacklist,
   provider: ConfigHelper.parse_catalog_value("ADDRESSES_BLACKLIST_PROVIDER", ["blockaid"], false, "blockaid")
 
 rate_limiter_redis_url = ConfigHelper.parse_url_env_var("RATE_LIMITER_REDIS_URL")
+rate_limiter_redis_sentinel_urls = ConfigHelper.safe_get_env("RATE_LIMITER_REDIS_SENTINEL_URLS", "")
 
 config :explorer, Explorer.Utility.RateLimiter,
-  storage: (rate_limiter_redis_url && :redis) || :ets,
+  storage: if(rate_limiter_redis_url || rate_limiter_redis_sentinel_urls != "", do: :redis, else: :ets),
   redis_url: rate_limiter_redis_url,
+  redis_ssl: ConfigHelper.parse_bool_env_var("RATE_LIMITER_REDIS_SSL_ENABLED", "false"),
+  redis_sentinel_urls: rate_limiter_redis_sentinel_urls,
+  redis_sentinel_master_name: ConfigHelper.safe_get_env("RATE_LIMITER_REDIS_SENTINEL_MASTER_NAME", ""),
   on_demand: [
     time_interval_limit: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_TIME_INTERVAL", "5s"),
     limit_by_ip: ConfigHelper.parse_integer_env_var("RATE_LIMITER_ON_DEMAND_LIMIT_BY_IP", 50),
@@ -947,7 +1002,10 @@ config :explorer, Explorer.Utility.RateLimiter,
     limitation_period: ConfigHelper.parse_time_env_var("RATE_LIMITER_ON_DEMAND_LIMITATION_PERIOD", "1h")
   ],
   hammer_backend_module:
-    if(rate_limiter_redis_url, do: Explorer.Utility.Hammer.Redis, else: Explorer.Utility.Hammer.ETS)
+    if(rate_limiter_redis_url || rate_limiter_redis_sentinel_urls != "",
+      do: Explorer.Utility.Hammer.Redis,
+      else: Explorer.Utility.Hammer.ETS
+    )
 
 universal_proxy_config_url =
   ConfigHelper.parse_url_env_var(
@@ -1040,6 +1098,20 @@ disable_multichain_search_db_export_counters_queue_fetcher =
 optimism_l2_isthmus_timestamp =
   ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_ISTHMUS_TIMESTAMP")
 
+superchain_config_file_path =
+  case System.get_env("INDEXER_OPTIMISM_SUPERCHAIN_CONFIG_FILE_PATH") do
+    nil ->
+      nil
+
+    value ->
+      value
+      |> String.trim()
+      |> case do
+        "" -> nil
+        trimmed -> trimmed
+      end
+  end
+
 config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
   chain_id: System.get_env("CHAIN_ID"),
@@ -1050,6 +1122,7 @@ config :indexer,
   trace_block_ranges: trace_block_ranges,
   trace_first_block: trace_first_block,
   trace_last_block: trace_last_block,
+  enable_partial_async_import?: ConfigHelper.parse_bool_env_var("INDEXER_ENABLE_PARTIAL_ASYNC_IMPORT", "false"),
   fetch_rewards_way: System.get_env("FETCH_REWARDS_WAY", "trace_block"),
   memory_limit: ConfigHelper.indexer_memory_limit(),
   system_memory_percentage: ConfigHelper.parse_integer_env_var("INDEXER_SYSTEM_MEMORY_PERCENTAGE", 60),
@@ -1088,7 +1161,8 @@ config :indexer, Indexer.Transform.FheOperations,
   enabled: ConfigHelper.parse_bool_env_var("INDEXER_FHE_OPERATIONS_ENABLED", "false")
 
 config :indexer, Indexer.PendingTransactionsSanitizer,
-  interval: ConfigHelper.parse_time_env_var("INDEXER_PENDING_TRANSACTIONS_SANITIZER_INTERVAL", "1h")
+  interval: ConfigHelper.parse_time_env_var("INDEXER_PENDING_TRANSACTIONS_SANITIZER_INTERVAL", "1h"),
+  window_size: ConfigHelper.parse_time_env_var("INDEXER_PENDING_TRANSACTIONS_WINDOW_SIZE", "1d")
 
 config :indexer, Indexer.TokenTransferBlockConsensusSanitizer,
   interval: ConfigHelper.parse_time_env_var("INDEXER_TOKEN_TRANSFER_BLOCK_CONSENSUS_SANITIZER_INTERVAL", "20m")
@@ -1135,10 +1209,19 @@ config :indexer, Indexer.Fetcher.OnDemand.ContractCode,
 config :indexer, Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch,
   threshold: ConfigHelper.parse_time_env_var("TOKEN_INSTANCE_METADATA_REFETCH_ON_DEMAND_FETCHER_THRESHOLD", "5s")
 
+config :indexer, Indexer.Fetcher.TokenInstance.MediaType.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_MEDIA_TYPE_FETCHER")
+
+config :indexer, Indexer.Fetcher.TokenInstance.MediaType,
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_MEDIA_TYPE_CONCURRENCY", 5),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_MEDIA_TYPE_BATCH_SIZE", 10)
+
 config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BLOCK_REWARD_FETCHER")
 
-config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor,
+config :indexer, Indexer.Fetcher.InternalTransaction.Supervisor, disabled?: trace_url_missing?
+
+config :indexer, Indexer.Fetcher.InternalTransaction,
   disabled?: trace_url_missing? or ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER")
 
 config :indexer, Indexer.Fetcher.OnDemand.InternalTransaction,
@@ -1392,6 +1475,7 @@ config :indexer, Indexer.Fetcher.Optimism.Interop.MultichainExport.Supervisor,
       ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_OPTIMISM_INTEROP_MULTICHAIN_EXPORT", "true")
 
 config :indexer, Indexer.Fetcher.Optimism,
+  superchain_config_file_path: superchain_config_file_path,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
   optimism_l1_system_config: System.get_env("INDEXER_OPTIMISM_L1_SYSTEM_CONFIG_CONTRACT"),
   l1_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L1_ETH_GET_LOGS_RANGE_SIZE", 250),
@@ -1455,7 +1539,9 @@ config :indexer, Indexer.Fetcher.Optimism.OperatorFee,
   init_limit: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_INIT_QUERY_LIMIT", 1_000)
 
 config :indexer, Indexer.Fetcher.Optimism.OperatorFee.Supervisor,
-  disabled?: is_nil(optimism_l2_isthmus_timestamp) or ConfigHelper.chain_type() != :optimism
+  disabled?:
+    (is_nil(optimism_l2_isthmus_timestamp) and is_nil(superchain_config_file_path)) or
+      ConfigHelper.chain_type() != :optimism
 
 config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_WITHDRAWALS_FETCHER", "true") == "true"

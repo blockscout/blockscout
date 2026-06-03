@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.General.DecodedLogInput do
   @moduledoc false
   require OpenApiSpex

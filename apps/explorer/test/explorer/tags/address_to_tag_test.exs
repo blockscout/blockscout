@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Tags.AddressToTagTest do
   use Explorer.DataCase
 

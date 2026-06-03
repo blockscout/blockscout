@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.Transaction.Forks do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Transaction.Fork.t/0`.

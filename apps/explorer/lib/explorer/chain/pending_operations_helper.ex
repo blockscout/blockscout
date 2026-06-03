@@ -1,9 +1,10 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.PendingOperationsHelper do
   @moduledoc false
 
   import Ecto.Query
 
-  alias Explorer.Chain.{Hash, PendingBlockOperation, PendingTransactionOperation, Transaction}
+  alias Explorer.Chain.{Block, Hash, PendingBlockOperation, PendingTransactionOperation, Transaction}
   alias Explorer.{Helper, Repo}
 
   defp transactions_batch_size,
@@ -81,7 +82,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
       from(
         pto in PendingTransactionOperation,
         join: t in assoc(pto, :transaction),
-        select: %{block_hash: t.block_hash, block_number: t.block_number},
+        select: %{block_hash: t.block_hash, block_number: t.block_number, priority: pto.priority},
         limit: ^batch_size
       )
 
@@ -196,6 +197,28 @@ defmodule Explorer.Chain.PendingOperationsHelper do
   end
 
   @doc """
+  Generates a query to find pending block operations that match any of the given block numbers.
+  """
+  @spec block_number_in_query([non_neg_integer()]) :: Ecto.Query.t()
+  def block_number_in_query(block_numbers) do
+    from(
+      pending_ops in PendingBlockOperation,
+      where: pending_ops.block_number in ^block_numbers
+    )
+  end
+
+  @doc """
+  Generates a query to find pending transaction operations that match any of the given transaction hashes.
+  """
+  @spec transaction_hash_in_query([Hash.Full.t()]) :: Ecto.Query.t()
+  def transaction_hash_in_query(transaction_hashes) do
+    from(
+      pending_ops in PendingTransactionOperation,
+      where: pending_ops.transaction_hash in ^transaction_hashes
+    )
+  end
+
+  @doc """
   Checks if a block with the given hash is pending.
   A block is considered pending if there exists a corresponding entry in the `PendingBlockOperation` table.
   """
@@ -203,6 +226,30 @@ defmodule Explorer.Chain.PendingOperationsHelper do
   def block_pending?(block_hash) do
     [block_hash]
     |> block_hash_in_query()
+    |> Repo.exists?()
+  end
+
+  @doc """
+  Checks if at least one block number from the provided list is pending.
+  """
+  @spec block_numbers_pending?([non_neg_integer()]) :: boolean()
+  def block_numbers_pending?([]), do: false
+
+  def block_numbers_pending?(block_numbers) do
+    block_numbers
+    |> block_number_in_query()
+    |> Repo.exists?()
+  end
+
+  @doc """
+  Checks if at least one transaction hash from the provided list is pending.
+  """
+  @spec transaction_hashes_pending?([Hash.Full.t()]) :: boolean()
+  def transaction_hashes_pending?([]), do: false
+
+  def transaction_hashes_pending?(transaction_hashes) do
+    transaction_hashes
+    |> transaction_hash_in_query()
     |> Repo.exists?()
   end
 
@@ -235,6 +282,37 @@ defmodule Explorer.Chain.PendingOperationsHelper do
     )
   end
 
+  @spec transaction_block_range_in_query(non_neg_integer() | nil, non_neg_integer() | nil) :: Ecto.Query.t()
+  defp transaction_block_range_in_query(min_block_number, max_block_number)
+       when is_integer(min_block_number) and is_integer(max_block_number) do
+    from(
+      pending_ops in PendingTransactionOperation,
+      join: t in assoc(pending_ops, :transaction),
+      where: t.block_number >= ^min_block_number and t.block_number <= ^max_block_number
+    )
+  end
+
+  defp transaction_block_range_in_query(min_block_number, max_block_number)
+       when is_nil(min_block_number) and is_nil(max_block_number) do
+    from(pending_ops in PendingTransactionOperation)
+  end
+
+  defp transaction_block_range_in_query(min_block_number, max_block_number) when is_nil(min_block_number) do
+    from(
+      pending_ops in PendingTransactionOperation,
+      join: t in assoc(pending_ops, :transaction),
+      where: t.block_number <= ^max_block_number
+    )
+  end
+
+  defp transaction_block_range_in_query(min_block_number, max_block_number) when is_nil(max_block_number) do
+    from(
+      pending_ops in PendingTransactionOperation,
+      join: t in assoc(pending_ops, :transaction),
+      where: t.block_number >= ^min_block_number
+    )
+  end
+
   @doc """
   Checks if there are any pending blocks within the specified range of block numbers.
   A block is considered pending if there exists a corresponding entry in the `PendingBlockOperation`
@@ -245,5 +323,140 @@ defmodule Explorer.Chain.PendingOperationsHelper do
     min_block_number
     |> block_range_in_query(max_block_number)
     |> Repo.exists?()
+  end
+
+  @doc """
+    Inserts pending operations for the given block numbers.
+  """
+  @spec insert_pending_operations([integer()], integer() | nil) :: {[integer()], [Explorer.Chain.Transaction.t()]}
+  def insert_pending_operations(block_numbers, priority \\ nil) do
+    case pending_operations_type() do
+      "transactions" ->
+        default_on_conflict = default_pto_on_conflict()
+        transactions = Transaction.get_transactions_of_block_numbers(block_numbers)
+
+        pto_params =
+          transactions
+          |> Transaction.filter_non_traceable_transactions()
+          |> Enum.map(&%{transaction_hash: &1.hash, priority: priority})
+          |> Helper.add_timestamps()
+
+        Repo.insert_all(PendingTransactionOperation, pto_params,
+          on_conflict: default_on_conflict,
+          conflict_target: [:transaction_hash]
+        )
+
+        {[], transactions}
+
+      "blocks" ->
+        default_on_conflict = default_pbo_on_conflict()
+
+        pbo_params =
+          Block
+          |> where([b], b.number in ^block_numbers)
+          |> where([b], b.consensus == true)
+          |> select([b], %{block_hash: b.hash, block_number: b.number})
+          |> Repo.all()
+          |> add_priority(priority)
+          |> Helper.add_timestamps()
+
+        {_total, inserted} =
+          Repo.insert_all(PendingBlockOperation, pbo_params,
+            on_conflict: default_on_conflict,
+            conflict_target: [:block_hash],
+            returning: [:block_number]
+          )
+
+        {Enum.map(inserted, & &1.block_number), []}
+    end
+  end
+
+  defp default_pbo_on_conflict do
+    from(
+      pending_block_operation in PendingBlockOperation,
+      update: [
+        set: [
+          priority: fragment("EXCLUDED.priority"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", pending_block_operation.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", pending_block_operation.updated_at)
+        ]
+      ],
+      where: is_nil(pending_block_operation.priority) and fragment("EXCLUDED.priority IS NOT NULL")
+    )
+  end
+
+  defp default_pto_on_conflict do
+    from(
+      pending_transaction_operation in PendingTransactionOperation,
+      update: [
+        set: [
+          priority: fragment("EXCLUDED.priority"),
+          inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", pending_transaction_operation.inserted_at),
+          updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", pending_transaction_operation.updated_at)
+        ]
+      ],
+      where: is_nil(pending_transaction_operation.priority) and fragment("EXCLUDED.priority IS NOT NULL")
+    )
+  end
+
+  defp add_priority(params, priority) do
+    Enum.map(params, &Map.merge(&1, %{priority: priority}))
+  end
+
+  @doc """
+  Checks if there are any pending transactions within the specified block range.
+  """
+  @spec transactions_pending_in_block_range?(non_neg_integer() | nil, non_neg_integer() | nil) :: boolean()
+  def transactions_pending_in_block_range?(min_block_number, max_block_number) do
+    min_block_number
+    |> transaction_block_range_in_query(max_block_number)
+    |> Repo.exists?()
+  end
+
+  @doc """
+  Checks if there are any pending block or transaction operations within the specified block range.
+  """
+  @spec pending_operations_in_block_range?(non_neg_integer() | nil, non_neg_integer() | nil) :: boolean()
+  def pending_operations_in_block_range?(min_block_number, max_block_number) do
+    blocks_pending?(min_block_number, max_block_number) ||
+      transactions_pending_in_block_range?(min_block_number, max_block_number)
+  end
+
+  @doc """
+  Checks if there are any pending block or transaction operations in the system.
+  """
+  @spec any_pending_operations?() :: boolean()
+  def any_pending_operations? do
+    Repo.exists?(PendingBlockOperation) || Repo.exists?(PendingTransactionOperation)
+  end
+
+  @doc """
+  Checks if there are pending operations for any of the provided block numbers or transaction hashes.
+  """
+  @spec pending_operations_for_blocks_or_transactions?([non_neg_integer()], [Hash.Full.t()]) :: boolean()
+  def pending_operations_for_blocks_or_transactions?(block_numbers, transaction_hashes) do
+    block_numbers_pending?(block_numbers) || transaction_hashes_pending?(transaction_hashes)
+  end
+
+  @doc """
+  Checks if there are pending operations in a block-number range or among provided transaction hashes.
+  """
+  @spec pending_operations_for_block_range_or_transactions?(
+          non_neg_integer() | nil,
+          non_neg_integer() | nil,
+          [Hash.Full.t()]
+        ) :: boolean()
+  def pending_operations_for_block_range_or_transactions?(min_block_number, max_block_number, transaction_hashes) do
+    pending_operations_in_block_range?(min_block_number, max_block_number) ||
+      transaction_hashes_pending?(transaction_hashes)
+  end
+
+  @doc """
+  Checks if there are pending operations for a single transaction scope.
+  """
+  @spec pending_operations_for_transaction?(Hash.Full.t(), non_neg_integer() | nil) :: boolean()
+  def pending_operations_for_transaction?(transaction_hash, block_number \\ nil) do
+    transaction_hashes_pending?([transaction_hash]) ||
+      if(is_nil(block_number), do: false, else: blocks_pending?(block_number, block_number))
   end
 end

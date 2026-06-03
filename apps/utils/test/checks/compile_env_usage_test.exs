@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Utils.Credo.Checks.CompileEnvUsageTest do
   use Credo.Test.Case
 

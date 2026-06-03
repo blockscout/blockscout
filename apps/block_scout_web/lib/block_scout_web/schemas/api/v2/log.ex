@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Log do
   @moduledoc """
   This module defines the schema for the Log struct.
@@ -12,8 +13,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Log do
     properties: %{
       transaction_hash: General.FullHash,
       address: Address,
-      topics: %Schema{type: :array, items: General.HexStringNullable, nullable: false},
-      data: General.HexString,
+      topics: %Schema{type: :array, items: General.HexDataNullable, nullable: false},
+      data: General.HexData,
       index: %Schema{type: :integer, nullable: false},
       decoded: %Schema{allOf: [General.DecodedLogInput], nullable: true},
       smart_contract: %Schema{allOf: [Address], nullable: true},

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.SignedAuthorizations do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.SignedAuthorization.t/0`.

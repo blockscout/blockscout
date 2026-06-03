@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Scroll.Batch do
   @moduledoc """
   This module defines the schema for the Scroll Batch struct.
@@ -8,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Scroll.Batch do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "Scroll.Batch",
     description: "Scroll Batch struct.",
     type: :object,
     properties: %{

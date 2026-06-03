@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.UnescapeAmpersandsInTokensTest do
   use Explorer.DataCase, async: false
 
@@ -5,6 +6,8 @@ defmodule Explorer.Migrator.UnescapeAmpersandsInTokensTest do
   alias Explorer.Repo
 
   test "Unescapes ampersands in tokens" do
+    insert(:block)
+
     escaped_name_token = insert(:token, name: "Rock &amp; Roll")
     escaped_symbol_token = insert(:token, symbol: "R&amp;R")
     escaped_both_token = insert(:token, name: "Tom &amp; Jerry", symbol: "T&amp;J")

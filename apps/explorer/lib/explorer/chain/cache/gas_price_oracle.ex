@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.GasPriceOracle do
   @moduledoc """
   Cache for gas price oracle (safelow/average/fast gas prices).

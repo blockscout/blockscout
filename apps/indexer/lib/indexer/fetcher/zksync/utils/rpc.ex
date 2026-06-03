@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
   @moduledoc """
     Common functions to handle RPC calls for Indexer.Fetcher.ZkSync fetchers

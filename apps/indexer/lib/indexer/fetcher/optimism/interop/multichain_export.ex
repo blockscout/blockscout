@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Optimism.Interop.MultichainExport do
   @moduledoc """
     Finds messages without `sent_to_multichain` flag in the `op_interop_messages` database table and

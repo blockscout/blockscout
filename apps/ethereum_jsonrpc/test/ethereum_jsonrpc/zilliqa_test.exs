@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.ZilliqaTest do
   use ExUnit.Case, async: true
 

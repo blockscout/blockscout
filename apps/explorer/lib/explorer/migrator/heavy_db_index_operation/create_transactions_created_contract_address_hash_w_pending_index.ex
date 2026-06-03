@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContractAddressHashWPendingIndex do
   @moduledoc """
   Creates partial index "transactions_created_contract_address_hash_w_pending_index" on transactions (created_contract_address_hash, block_number ASC NULLS LAST, index ASC NULLS LAST, inserted_at ASC, hash DESC) WHERE created_contract_address_hash IS NOT NULL.

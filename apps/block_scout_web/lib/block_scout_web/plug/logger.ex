@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Plug.Logger do
   @moduledoc """
     Extended version of Plug.Logger from https://github.com/elixir-plug/plug/blob/v1.14.0/lib/plug/logger.ex

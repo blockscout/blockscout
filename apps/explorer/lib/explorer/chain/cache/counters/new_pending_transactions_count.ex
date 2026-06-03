@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.Counters.NewPendingTransactionsCount do
   @moduledoc """
   Caches number of pending transactions for last 30 minutes.

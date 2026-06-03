@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Validator.MetadataRetriever do
   @moduledoc """
   Consults the configured smart contracts to fetch the validators' metadata

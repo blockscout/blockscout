@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.BlocksTest do
   use Explorer.DataCase
 
@@ -537,50 +538,6 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       Process.sleep(200)
 
       assert %{from_number: ^block_number, to_number: ^block_number} = Repo.one(MissingBlockRange)
-    end
-
-    test "inserts pending_block_operations only for consensus blocks",
-         %{consensus_block: %{miner_hash: miner_hash}, options: options} do
-      %{number: number, hash: hash} = new_block = params_for(:block, miner_hash: miner_hash, consensus: true)
-      new_block1 = params_for(:block, miner_hash: miner_hash, consensus: false)
-
-      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, new_block)
-      %Ecto.Changeset{valid?: true, changes: block_changes1} = Block.changeset(%Block{}, new_block1)
-
-      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
-      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
-
-      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
-
-      Multi.new()
-      |> Blocks.run([block_changes, block_changes1], options)
-      |> Repo.transaction()
-
-      assert %{block_number: ^number, block_hash: ^hash} = Repo.one(PendingBlockOperation)
-    end
-
-    test "inserts pending_block_operations only for actually inserted blocks",
-         %{consensus_block: %{miner_hash: miner_hash}, options: options} do
-      %{number: number, hash: hash} = new_block = params_for(:block, miner_hash: miner_hash, consensus: true)
-      new_block1 = params_for(:block, miner_hash: miner_hash, consensus: true)
-
-      miner = Repo.get_by(Address, hash: miner_hash)
-
-      insert(:block, Map.put(new_block1, :miner, miner))
-
-      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, new_block)
-      %Ecto.Changeset{valid?: true, changes: block_changes1} = Block.changeset(%Block{}, new_block1)
-
-      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
-      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
-
-      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
-
-      Multi.new()
-      |> Blocks.run([block_changes, block_changes1], options)
-      |> Repo.transaction()
-
-      assert %{block_number: ^number, block_hash: ^hash} = Repo.one(PendingBlockOperation)
     end
 
     test "change instance owner if was token transfer in older blocks",

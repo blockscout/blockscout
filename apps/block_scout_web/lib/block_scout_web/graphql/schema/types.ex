@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.GraphQL.Schema.Transaction do
   @moduledoc false
   use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]

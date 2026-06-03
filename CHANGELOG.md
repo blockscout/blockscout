@@ -1,9 +1,121 @@
 # Changelog
 
+## 11.1.3
+
+### 🐛 Bug Fixes
+
+- Run background migrations immediately on green install ([#14424](https://github.com/blockscout/blockscout/issues/14424))
+- Adapt maybe_reject_zero_value for pre-changeset values ([#14425](https://github.com/blockscout/blockscout/issues/14425))
+
+### ⚙️ Miscellaneous Tasks
+
+- Distributed MapCache ([#14411](https://github.com/blockscout/blockscout/pull/14411))
+
+## 11.1.2
+
+### 🐛 Bug Fixes
+
+- Fix VersionUpgrade check for empty previous version ([#14410](https://github.com/blockscout/blockscout/issues/14410))
+
+## 11.1.1
+
+### 🐛 Bug Fixes
+
+- Declare missing OpenAPI params for advanced-filters endpoint ([#14401](https://github.com/blockscout/blockscout/pull/14401), [#14399](https://github.com/blockscout/blockscout/issues/14399))
+
+## 11.1.0
+
+### 🚀 Features
+
+- Forward new BENS fields to search ([#14389](https://github.com/blockscout/blockscout/pull/14389))
+- Fetch token circulating supply along with circulating market cap ([#11969](https://github.com/blockscout/blockscout/issues/11969))
+- Support token lists import ([#11801](https://github.com/blockscout/blockscout/issues/11801))
+- transform ECTO_USE_SSL to sslmode param ([#8818](https://github.com/blockscout/blockscout/issues/8818))
+
+### 🐛 Bug Fixes
+
+- Properly start VersionUpgrade on application launch ([#14396](https://github.com/blockscout/blockscout/pull/14396))
+- MissingBalanceOfToken fixes ([#14267](https://github.com/blockscout/blockscout/pull/14267))
+- Improvements of OpenAPI specification for `/v2/blocks` ([#14251](https://github.com/blockscout/blockscout/issues/14251))
+- Normalize Tesla timeout middleware exceptions ([#14059](https://github.com/blockscout/blockscout/issues/14059))
+
+### 🚜 Refactor
+
+- Change multichain_search_db_export_token_info_queue.address_hash field type from :binary to Hash.Address ([#12894](https://github.com/blockscout/blockscout/issues/12894))
+- Refactor json rpc response parsers to ignore unknown fields ([#10334](https://github.com/blockscout/blockscout/issues/10334))
+
+### 📚 Documentation
+
+- Add verification websocket subscription guide ([#14259](https://github.com/blockscout/blockscout/issues/14259))
+
+### ⚙️ Miscellaneous Tasks
+
+- Add SPDX license identifier to Elixir source and test files ([#14393](https://github.com/blockscout/blockscout/pull/14393))
+- Publish OpenAPI specs on dev branch pushes ([#14391](https://github.com/blockscout/blockscout/pull/14391))
+- Add MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_CONCURRENCY ([#14390](https://github.com/blockscout/blockscout/pull/14390))
+- Close linked issues when PRs merge into dev ([#14384](https://github.com/blockscout/blockscout/pull/14384), [#14385](https://github.com/blockscout/blockscout/pull/14385))
+- Add SPDX attribution ([#14360](https://github.com/blockscout/blockscout/issues/14360))
+- Eliminate horizontal scroll in the main LICENSE file ([#14359](https://github.com/blockscout/blockscout/issues/14359))
+- Partial async import ([#14277](https://github.com/blockscout/blockscout/issues/14277))
+- OpenAPI specifications for all `/api/v2/advanced-filters` endpoints ([#14227](https://github.com/blockscout/blockscout/issues/14227))
+- OpenAPI spec for Arbitrum-related endpoints ([#14169](https://github.com/blockscout/blockscout/issues/14169))
+- Audit mode dependent processes ([#13925](https://github.com/blockscout/blockscout/issues/13925), [#14383](https://github.com/blockscout/blockscout/pull/14383))
+- Delete fiat_value for token if it disappears in coingecko ([#8932](https://github.com/blockscout/blockscout/issues/8932))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `TOKEN_LIST_URL`                             | URL for token list standard https://tokenlists.org/. Implemented in [#14206](https://github.com/blockscout/blockscout/pull/14206).                                                                                                                                                                                   | Version: v11.1.0\+ <br />Default: (empty) <br />Applications: Indexer                                       |
+| `TOKEN_LIST_REFETCH_INTERVAL`                | Interval to update data from token list. Implemented in [#14206](https://github.com/blockscout/blockscout/pull/14206).                                                                                                                                                                                               | Version: v11.1.0\+ <br />Default: (empty) <br />Applications: Indexer                                       |
+| `ECTO_SSL_MODE`                     | SSL mode for Ecto DB connections. Supported values: `disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full`. Resolution order: `ECTO_SSL_MODE` has highest priority, then `sslmode` in `DATABASE_URL`, otherwise defaults to `require`. | Version: v11.1.0\++ <br />Default: `require` <br />Applications: API, Indexer               |
+| `INDEXER_ENABLE_PARTIAL_ASYNC_IMPORT`                         | If `true`, addresses, current token balances, tokens and token instances are imported asynchronously. Implemented in [#14277](https://github.com/blockscout/blockscout/pull/14277).                                                                                                                                                                                                                                                                                                                                              | Version: v11.1.0\+ <br />Default: `false` <br />Applications: Indexer                                         |
+| `MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_CONCURRENCY`     | Number of parallel processes filling internal transactions address ids. Implemented in [#14390](https://github.com/blockscout/blockscout/pull/14390).                                                                                                                                                                                                                 | Version: v11.1.0\+ <br />Default: `10` <br />Applications: Indexer          |
+
+### Deprecated ENV variables
+
+| Variable | Description | Default | Version | Need recompile | Deprecated in Version |
+| -------- | ----------- | ------- | ------- | -------------- | --------------------- |
+| <span style={{color: "red"}}>Deprecated</span> `ECTO_USE_SSL` | Boolean SSL toggle for Ecto DB connections. Replaced with `ECTO_SSL_MODE`. | `TRUE` | All | | v11.1.0+ |
+
+## 11.0.3
+
+### 🐛 Bug Fixes
+
+- Insert AddressIdToAddressHash via safe_insert_all ([#14333](https://github.com/blockscout/blockscout/pull/14333))
+- Force search for contract creator if internal transactions module is disabled ([#14324](https://github.com/blockscout/blockscout/issues/14324))
+- Add transactions uniqueness before insert ([#14329](https://github.com/blockscout/blockscout/issues/14329))
+
+### ⚙️ Miscellaneous Tasks
+
+- Don't lock tables if foreign keys are already dropped ([#14321](https://github.com/blockscout/blockscout/issues/14321))
+- Dev branch + CI, remove obsolete GA workflows ([#14317](https://github.com/blockscout/blockscout/issues/14317))
+
+
+## 11.0.2
+
+### 🐛 Bug Fixes
+
+- Process empty list of changes on fetching contract codes ([#14312](https://github.com/blockscout/blockscout/pull/14312))
+- Add fallback for empty "to" in Geth selfdestruct ([#14256](https://github.com/blockscout/blockscout/issues/14256))
+- Trim contractaddresses in getcontractcreation ([#14306](https://github.com/blockscout/blockscout/issues/14306))
+- Adapt maybe_reject_zero_value for empty blocks ([#14309](https://github.com/blockscout/blockscout/issues/14309))
+- Add missing internal transactions address preload ([#14308](https://github.com/blockscout/blockscout/issues/14308))
+- Fix some web tests ([#14310](https://github.com/blockscout/blockscout/pull/14310))
+
+### ⚙️ Miscellaneous Tasks
+
+- Disable on-demand IT fetcher test for rsk and filecoin ([#14314](https://github.com/blockscout/blockscout/pull/14314))
+- Disable flaky contract code compiler doctest ([#14313](https://github.com/blockscout/blockscout/pull/14313))
+- Add coverage for core API v2 views ([#14254](https://github.com/blockscout/blockscout/issues/14254))
+
+
 ## 11.0.1
 
 ### 🐛 Bug Fixes
 
+- Update OnDemand.InternalTransaction etherscan fields ([#14297](https://github.com/blockscout/blockscout/pull/14297))
+- Use inner join for verified contract addresses instead of lateral join ([#14294](https://github.com/blockscout/blockscout/pull/14294))
 - Disable on-demand internal tx fetch when corresponding flag is provided ([#14289](https://github.com/blockscout/blockscout/pull/14289))
 - Add fill IT addresses dependency into drop index migrations ([#14280](https://github.com/blockscout/blockscout/issues/14280))
 - Fix incorrect batch size in Indexer.Fetcher.OnDemand.TokenBalance ([#14265](https://github.com/blockscout/blockscout/issues/14265))
@@ -21,7 +133,24 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Cover all RPC API stats endpoints and stabilize flaky specs ([#14299](https://github.com/blockscout/blockscout/pull/14299))
+- Change "coinsupply" RPC API response to fit JSON RPC requirements ([#14298](https://github.com/blockscout/blockscout/pull/14298))
+- Optimize internal transactions address_match_dynamic ([#14293](https://github.com/blockscout/blockscout/pull/14293))
+- Add window_size for PendingTransactionsSanitizer ([#14292](https://github.com/blockscout/blockscout/pull/14292))
 - Make pending operations helper batching configurable ([#14273](https://github.com/blockscout/blockscout/issues/14273))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `INDEXER_PENDING_TRANSACTIONS_WINDOW_SIZE`                    | Time offset for pending transactions sanitizer. Implemented in [#14292](https://github.com/blockscout/blockscout/pull/14292).                                                                                                                                                                                                                                                                                                                                                                                                    | Version: v11.0.1\+ <br />Default: `1d` <br />Applications: Indexer                                          |
+| `TOKEN_BALANCE_ON_DEMAND_FETCHER_BATCH_SIZE`          | Batch size for Indexer.Fetcher.OnDemand.TokenBalance. Introduced in [#14265](https://github.com/poanetwork/blockscout/pull/14265)                                                                                                                                                                                                                             | Version: v11.0.1\+ <br />Default: `500` <br />Applications: API, Indexer     |
+| `TOKEN_BALANCE_ON_DEMAND_FETCHER_CONCURRENCY`         | Concurrency for Indexer.Fetcher.OnDemand.TokenBalance. Introduced in [#14265](https://github.com/poanetwork/blockscout/pull/14265)                                                                                                                                                                                                                            | Version: v11.0.1\+ <br />Default: `4` <br />Applications: API, Indexer       |
+| `TOKEN_BALANCE_ON_DEMAND_FETCHER_ADDRESS_QUEUE_FLUSH_INTERVAL` | How often the on-demand token balance address queue is flushed to processing. Use a shorter interval for lower latency, or a longer interval to accumulate larger batches and reduce query frequency. Introduced in [#14265](https://github.com/poanetwork/blockscout/pull/14265)                                                                    | Version: v11.0.1\+ <br />Default: `1s` <br />Applications: API, Indexer       |
+| `TOKEN_BALANCE_ON_DEMAND_FETCHER_ADDRESS_QUEUE_BATCH_SIZE` | Batch size for on-demand token balance address queue. Introduced in [#14265](https://github.com/poanetwork/blockscout/pull/14265)                                                                                                                                                                                                                        | Version: v11.0.1\+ <br />Default: `50` <br />Applications: API, Indexer       |
+| `PENDING_OPERATIONS_HELPER_TRANSACTIONS_BATCH_SIZE`           | Batch size for transactions when processing pending operations. Implemented in [#14273](https://github.com/blockscout/blockscout/pull/14273).                                                                                                                                                                                                                                                                                                                                                                                    | Version: v11.0.1\+ <br />Default: `1000` <br />Applications: Indexer                                         |
+| `PENDING_OPERATIONS_HELPER_BLOCKS_BATCH_SIZE`                 | Batch size for blocks when processing pending operations. Implemented in [#14273](https://github.com/blockscout/blockscout/pull/14273).                                                                                                                                                                                                                                                                                                                                                                                          | Version: v11.0.1\+ <br />Default: `10` <br />Applications: Indexer                                           |
+
 
 
 ## 11.0.0

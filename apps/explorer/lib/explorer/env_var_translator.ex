@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.EnvVarTranslator do
   @moduledoc """
   The module for transformation of environment variables

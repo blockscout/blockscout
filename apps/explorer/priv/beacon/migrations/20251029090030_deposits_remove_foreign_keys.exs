@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Beacon.Migrations.DepositsRemoveForeignKeys do
   use Ecto.Migration
 

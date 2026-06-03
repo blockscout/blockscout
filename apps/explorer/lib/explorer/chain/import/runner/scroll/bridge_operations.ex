@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.Scroll.BridgeOperations do
   @moduledoc """
   Bulk imports `Explorer.Chain.Scroll.Bridge`.

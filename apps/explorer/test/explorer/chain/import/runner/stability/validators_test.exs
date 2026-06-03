@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 if Application.compile_env(:explorer, :chain_type) == :stability do
   defmodule Explorer.Chain.Import.Runner.Stability.ValidatorsTest do
     use Explorer.DataCase

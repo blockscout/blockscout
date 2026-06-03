@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Beacon.Deposit.StatusTest do
   use Explorer.DataCase, async: false
 

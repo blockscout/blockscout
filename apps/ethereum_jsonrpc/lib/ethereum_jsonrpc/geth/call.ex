@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Geth.Call do
   @moduledoc """
   A single call returned from [debug_traceTransaction](https://github.com/ethereum/go-ethereum/wiki/Management-APIs#debug_tracetransaction)
@@ -306,9 +307,8 @@ defmodule EthereumJSONRPC.Geth.Call do
 
   defp entry_to_elixir({"error", nil} = entry), do: entry
 
-  defp entry_to_elixir({key, value} = entry)
-       when key in ~w(callType createdContractAddressHash createdContractCode error from init input output to transactionHash type) and
-              is_binary(value),
+  defp entry_to_elixir({key, _value} = entry)
+       when key in ~w(callType createdContractAddressHash createdContractCode error from init input output to transactionHash type),
        do: entry
 
   defp entry_to_elixir({key, value} = entry) when key in ~w(blockNumber index transactionIndex) and is_integer(value),
@@ -323,6 +323,8 @@ defmodule EthereumJSONRPC.Geth.Call do
 
     entry
   end
+
+  defp entry_to_elixir({_, _}), do: {:ignore, :ignore}
 
   defp elixir_to_internal_transaction_params(
          %{

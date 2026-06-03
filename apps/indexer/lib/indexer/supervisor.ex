@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Supervisor do
   @moduledoc """
   Supervisor of all indexer worker supervision trees
@@ -41,9 +42,11 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.TokenInstance.SanitizeERC721, as: TokenInstanceSanitizeERC721
 
   alias Indexer.Fetcher.{
+    AddressImporter,
     AddressNonceUpdater,
     BlockReward,
     ContractCode,
+    CurrentTokenBalanceImporter,
     EmptyBlocksSanitizer,
     InternalTransaction,
     PendingBlockOperationsSanitizer,
@@ -52,6 +55,7 @@ defmodule Indexer.Supervisor do
     RootstockData,
     Token,
     TokenCountersUpdater,
+    TokenInstanceImporter,
     TokenTotalSupplyUpdater,
     TokenUpdater,
     UncleBlock,
@@ -302,6 +306,7 @@ defmodule Indexer.Supervisor do
 
     all_fetchers =
       basic_fetchers
+      |> maybe_add_async_importers()
       |> maybe_add_bridged_tokens_fetchers()
       |> add_chain_type_dependent_fetchers()
       |> maybe_add_block_reward_fetcher(
@@ -313,6 +318,14 @@ defmodule Indexer.Supervisor do
       all_fetchers,
       strategy: :one_for_one
     )
+  end
+
+  defp maybe_add_async_importers(basic_fetchers) do
+    if Application.get_env(:indexer, :enable_partial_async_import?) do
+      [AddressImporter, TokenInstanceImporter, CurrentTokenBalanceImporter | basic_fetchers]
+    else
+      basic_fetchers
+    end
   end
 
   defp maybe_add_bridged_tokens_fetchers(basic_fetchers) do

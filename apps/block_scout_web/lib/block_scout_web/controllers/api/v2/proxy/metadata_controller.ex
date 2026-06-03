@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.Proxy.MetadataController do
   @moduledoc """
   Controller for the metadata service

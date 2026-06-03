@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Models.GetTransactionTags do
   @moduledoc """
   Get various types of tags associated with the transaction

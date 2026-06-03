@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.DecodeError do
   @moduledoc """
   An error has occurred decoding the response to an `EthereumJSONRPC.json_rpc` request.

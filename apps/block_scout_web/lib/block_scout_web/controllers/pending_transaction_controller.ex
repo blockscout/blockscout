@@ -1,7 +1,9 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.PendingTransactionController do
   use BlockScoutWeb, :controller
 
-  import BlockScoutWeb.Chain, only: [paging_options: 1, next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.Chain, only: [paging_options: 1]
+  import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 3, split_list_by_page: 1]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   alias BlockScoutWeb.{Controller, TransactionView}

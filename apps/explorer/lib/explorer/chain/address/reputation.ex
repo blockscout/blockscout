@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Address.Reputation do
   @moduledoc """
   This module defines the reputation enum values.

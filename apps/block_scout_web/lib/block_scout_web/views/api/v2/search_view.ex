@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.SearchView do
   use BlockScoutWeb, :view
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
@@ -173,12 +174,12 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     %{"type" => "address", "parameter" => Address.checksum(item.hash)}
   end
 
-  defp redirect_search_results(%{address_hash: address_hash}) when not is_nil(address_hash) do
-    %{"type" => "address", "parameter" => address_hash}
-  end
-
   defp redirect_search_results(%{name: name, protocol: _protocol}) do
     %{"type" => "ens_domain", "parameter" => name}
+  end
+
+  defp redirect_search_results(%{address_hash: address_hash}) when not is_nil(address_hash) do
+    %{"type" => "address", "parameter" => address_hash}
   end
 
   defp redirect_search_results(%Block{} = item) do

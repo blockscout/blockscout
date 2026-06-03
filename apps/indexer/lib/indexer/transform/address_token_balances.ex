@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.AddressTokenBalances do
   @moduledoc """
   Extracts `Explorer.Address.TokenBalance` params from other schema's params.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Temporary.UncatalogedTokenTransfersTest do
   use Explorer.DataCase
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.DataCase do
   @moduledoc """
   This module defines the setup for tests requiring

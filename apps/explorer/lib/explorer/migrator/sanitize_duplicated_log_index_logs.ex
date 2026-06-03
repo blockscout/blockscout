@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
   @moduledoc """
   This module is responsible for sanitizing duplicate log index entries in the database.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Health.Monitor do
   @moduledoc """
   This module provides functionality for monitoring of the application health.

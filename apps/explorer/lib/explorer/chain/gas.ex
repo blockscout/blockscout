@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Gas do
   @moduledoc """
   A measurement roughly equivalent to computational steps.  Every operation has a gas expenditure; for most operations

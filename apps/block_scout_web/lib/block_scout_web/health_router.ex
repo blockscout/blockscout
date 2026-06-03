@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.HealthRouter do
   @moduledoc """
   Router for health checks in case of indexer-only setup

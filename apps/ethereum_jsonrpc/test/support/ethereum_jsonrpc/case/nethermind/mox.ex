@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Case.Nethermind.Mox do
   @moduledoc """
   `EthereumJSONRPC.Case` for mocking connecting to Nethermind using `Mox`

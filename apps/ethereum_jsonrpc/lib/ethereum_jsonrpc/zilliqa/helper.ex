@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Zilliqa.Helper do
   @moduledoc """
   Helper functions for processing consensus data.

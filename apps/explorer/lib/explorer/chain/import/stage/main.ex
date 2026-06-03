@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Stage.Main do
   @moduledoc """
   Imports main data (address_coin_balances, address_coin_balances_daily, tokens, transactions).

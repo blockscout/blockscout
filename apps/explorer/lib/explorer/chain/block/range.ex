@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Block.Range do
   @moduledoc """
   Represents a range of block numbers.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Zilliqa.Migrations.DecreaseScillaLanguageIndexByOne do
   @moduledoc """
   Migration to update the language identifier for Scilla smart contracts in Zilliqa.

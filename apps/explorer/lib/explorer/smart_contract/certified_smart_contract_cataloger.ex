@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.CertifiedSmartContractCataloger do
   @moduledoc """
   Actualizes certified smart-contracts.
@@ -24,6 +25,6 @@ defmodule Explorer.SmartContract.CertifiedSmartContractCataloger do
 
     SmartContract.set_smart_contracts_certified_flag(certified_contracts_list)
 
-    {:noreply, state}
+    {:stop, :normal, state}
   end
 end

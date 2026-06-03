@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.FillInternalTransactionsAddressIds do
   @moduledoc """
   Clears `*_address_hash` fields in internal transactions and fills their `*_address_id` copies.

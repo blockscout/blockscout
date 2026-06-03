@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Zilliqa.Staker do
   @moduledoc """
   Represents Zilliqa staker (i.e. validator) in the database. This is the

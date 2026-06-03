@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.SearchController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
@@ -76,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.SearchController do
              redirect: %Schema{type: :boolean, nullable: true},
              type: %Schema{
                type: :string,
-               enum: ["address", "block", "transaction", "user_operation", "blob"],
+               enum: ["address", "block", "transaction", "user_operation", "blob", "ens_domain"],
                nullable: true
              }
            }

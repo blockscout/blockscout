@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.TokenInstanceChannel do
   @moduledoc """
   Establishes pub/sub channel for live updates of token instances events.

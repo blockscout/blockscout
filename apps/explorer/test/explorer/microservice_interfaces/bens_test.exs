@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.MicroserviceInterfaces.BENSTest do
   use ExUnit.Case, async: false
 

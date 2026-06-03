@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Accounts.UserContact do
   @moduledoc """
   A individual form of contacting the user.

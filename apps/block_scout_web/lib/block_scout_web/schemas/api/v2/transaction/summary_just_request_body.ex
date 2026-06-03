@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Transaction.SummaryJustRequestBody do
   @moduledoc """
   OpenAPI schema for the transaction summary just request body response.

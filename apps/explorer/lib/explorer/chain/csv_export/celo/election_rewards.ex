@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.CsvExport.Address.Celo.ElectionRewards do
   @moduledoc """
   Exports Celo election rewards to a csv file.

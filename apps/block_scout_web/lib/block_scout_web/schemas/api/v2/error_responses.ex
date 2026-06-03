@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.ErrorResponses do
   @moduledoc """
   This module contains the schemas for the error responses.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
   @moduledoc """
     Manages the discovery and importation of new and historical batches of transactions for an Arbitrum rollup.

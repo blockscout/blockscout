@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Plug.Admin.RequireAdminRoleTest do
   use BlockScoutWeb.ConnCase
 

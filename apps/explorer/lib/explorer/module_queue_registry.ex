@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.ModuleQueueRegistry do
   @moduledoc """
   Generic registry for module-scoped ETS-backed queues.

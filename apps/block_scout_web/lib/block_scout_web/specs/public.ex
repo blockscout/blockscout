@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Specs.Public do
   @moduledoc """
   This module defines the public API specification for the BlockScoutWeb application.
@@ -30,7 +31,8 @@ defmodule BlockScoutWeb.Specs.Public do
     "stats",
     "csv-export",
     "account-abstraction",
-    "withdrawals"
+    "withdrawals",
+    "advanced-filters"
   ]
 
   # todo: if new chain type is covered with OpenAPI specs
@@ -52,7 +54,7 @@ defmodule BlockScoutWeb.Specs.Public do
         end
       end
 
-    {chain_type, nil} when chain_type in [:scroll, :zilliqa] ->
+    {chain_type, nil} when chain_type in [:arbitrum, :scroll, :shibarium, :stability, :zilliqa, :zksync] ->
       @chain_type_category_tags [%Tag{name: to_string(chain_type)}]
       defp chain_type_category_tags, do: @chain_type_category_tags
 
@@ -65,7 +67,7 @@ defmodule BlockScoutWeb.Specs.Public do
   def spec do
     %OpenApi{
       servers: [
-        %Server{url: to_string(Helper.instance_url() |> URI.append_path("/api"))}
+        %Server{url: to_string(Helper.instance_url())}
       ],
       info: %Info{
         title: "Blockscout",
@@ -76,9 +78,10 @@ defmodule BlockScoutWeb.Specs.Public do
       },
       paths:
         ApiRouter
-        |> Paths.from_router()
-        |> Map.merge(Paths.from_routes(Specs.routes_with_prefix(TokensApiV2Router, "/v2/tokens")))
-        |> Map.merge(Paths.from_routes(Specs.routes_with_prefix(SmartContractsApiV2Router, "/v2/smart-contracts"))),
+        |> Specs.routes_with_prefix("/api")
+        |> Paths.from_routes()
+        |> Map.merge(Paths.from_routes(Specs.routes_with_prefix(TokensApiV2Router, "/api/v2/tokens")))
+        |> Map.merge(Paths.from_routes(Specs.routes_with_prefix(SmartContractsApiV2Router, "/api/v2/smart-contracts"))),
       tags:
         Enum.map(@default_api_categories, fn category -> %Tag{name: category} end) ++
           chain_type_category_tags() ++ [%Tag{name: "legacy"}]

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.ThirdPartyIntegrations.Auth0.Migrated do
   @moduledoc """
   Module for internal usage, not supposed to be used directly, if

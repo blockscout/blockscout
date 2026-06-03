@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.FilecoinView do
   @moduledoc """
   View functions for rendering Filecoin-related data in JSON format.

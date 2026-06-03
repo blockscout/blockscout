@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Tokens.TokenControllerTest do
   use BlockScoutWeb.ConnCase, async: true
 

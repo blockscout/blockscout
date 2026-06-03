@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Scroll.Batch do
   @moduledoc """
   The module for scanning L1 RPC node for the `CommitBatch` and `FinalizeBatch` events

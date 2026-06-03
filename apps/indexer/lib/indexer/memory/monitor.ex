@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Memory.Monitor do
   @moduledoc """
   Monitors memory usage of Erlang VM.

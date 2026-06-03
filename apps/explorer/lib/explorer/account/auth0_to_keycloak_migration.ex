@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Account.Auth0ToKeycloakMigration do
   @moduledoc """
   Migrates users from Auth0 to Keycloak in bulk using batch APIs.

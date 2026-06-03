@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Celo.Legacy.Events do
   @moduledoc """
     Helper methods and event groups which define Celo contract event topics

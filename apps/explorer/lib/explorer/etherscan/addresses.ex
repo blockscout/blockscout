@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Etherscan.Addresses do
   @moduledoc """
   This module contains functions for working with addresses, as they pertain to the

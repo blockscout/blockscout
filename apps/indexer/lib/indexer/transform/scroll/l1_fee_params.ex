@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.Scroll.L1FeeParams do
   @moduledoc """
     Helper functions for transforming data for Scroll L1 fee parameters

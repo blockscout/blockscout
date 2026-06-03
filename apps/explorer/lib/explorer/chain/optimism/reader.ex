@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Optimism.Reader do
   @moduledoc "Contains read functions for Optimism modules."
   import Ecto.Query,

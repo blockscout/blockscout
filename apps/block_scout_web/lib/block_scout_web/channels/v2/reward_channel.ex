@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.V2.RewardChannel do
   @moduledoc """
   Establishes pub/sub channel for live updates of block reward events for API V2.

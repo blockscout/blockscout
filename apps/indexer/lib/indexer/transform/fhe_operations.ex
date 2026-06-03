@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.FheOperations do
   @moduledoc """
   Parses FHE (Fully Homomorphic Encryption) operations from transaction logs during indexing.

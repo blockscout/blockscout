@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Metrics.PublicMetrics do
   @moduledoc """
   Module responsible for periodically setting current chain metrics.

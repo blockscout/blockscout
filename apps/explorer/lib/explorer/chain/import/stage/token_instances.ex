@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Stage.TokenInstances do
   @moduledoc """
   Import token instances.

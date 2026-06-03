@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Token.Response do
   @moduledoc """
   This module defines the schema for token response from /api/v2/tokens/:token_address_param.

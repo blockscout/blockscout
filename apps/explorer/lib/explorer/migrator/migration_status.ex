@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.MigrationStatus do
   @moduledoc """
   Module is responsible for keeping the current status of background migrations.

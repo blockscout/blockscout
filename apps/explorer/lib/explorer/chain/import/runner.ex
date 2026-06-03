@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner do
   @moduledoc """
   Behaviour used by `Explorer.Chain.Import.all/1` to import data into separate tables.

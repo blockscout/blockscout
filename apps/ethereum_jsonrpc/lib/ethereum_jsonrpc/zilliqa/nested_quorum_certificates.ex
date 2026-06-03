@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Zilliqa.NestedQuorumCertificates do
   @moduledoc """
   Represents a list of quorum certificates that were proposed by different

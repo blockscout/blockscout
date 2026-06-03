@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.CsvExport.Request do
   @moduledoc """
   Represents an asynchronous CSV export request.

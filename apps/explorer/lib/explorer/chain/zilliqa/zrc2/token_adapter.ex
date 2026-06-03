@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Zilliqa.Zrc2.TokenAdapter do
   @moduledoc """
   Represents a list of `ERC-20 adapter contract address <-> ZRC-2 token contract address` pairs.

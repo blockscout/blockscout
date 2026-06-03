@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Address.Schema do
   @moduledoc """
     A stored representation of a web3 address.

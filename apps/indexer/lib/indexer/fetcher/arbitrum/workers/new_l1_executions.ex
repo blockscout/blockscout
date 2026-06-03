@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   @moduledoc """
     Coordinates the discovery and processing of new and historical L2-to-L1 message executions for an Arbitrum rollup.

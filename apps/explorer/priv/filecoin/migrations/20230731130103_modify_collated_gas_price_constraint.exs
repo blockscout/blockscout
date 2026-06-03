@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Filecoin.Migrations.ModifyCollatedGasPriceConstraint do
   use Ecto.Migration
 

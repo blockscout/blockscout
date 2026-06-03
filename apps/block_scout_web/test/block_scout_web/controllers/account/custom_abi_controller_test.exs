@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Account.CustomABIControllerTest do
   use BlockScoutWeb.ConnCase
 

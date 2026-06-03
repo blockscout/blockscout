@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.BoundInterval do
   @moduledoc """
   An interval for `Process.send_after` that is restricted to being between a `minimum` and `maximum` value

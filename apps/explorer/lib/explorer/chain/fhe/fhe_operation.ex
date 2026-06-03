@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.FheOperation do
   @moduledoc """
   Represents a single FHE (Fully Homomorphic Encryption) operation within a transaction.

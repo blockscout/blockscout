@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.ArbitrumDaRecordsNormalization do
   @moduledoc """
   Normalizes batch-to-blob associations by moving them from arbitrum_da_multi_purpose to a dedicated

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.TokenInstance.Helper do
   @moduledoc """
     Common functions for Indexer.Fetcher.TokenInstance fetchers
@@ -6,8 +7,10 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   alias EthereumJSONRPC.NFT
   alias Explorer.Chain.Token
   alias Explorer.Chain.Token.Instance
+  alias Explorer.MetadataURIValidator
   alias Explorer.Token.MetadataRetriever
   alias Indexer.NFTMediaHandler.Queue
+  alias Utils.TokenInstanceHelper
 
   require Logger
 
@@ -211,4 +214,95 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
         |> upsert_with_rescue(true)
       end
   end
+
+  @doc """
+  Fetches media types for a token instance, saves to DB, and returns the result.
+
+  Returns:
+  - `{:ok, %{image_type: String.t(), animation_type: String.t()}}` on success
+  - `{:error, :metadata_not_found}` when metadata is nil
+  - `{:error, :already_fetched}` when both types are already set (non-nil)
+  """
+  @spec fetch_media_types(Instance.t()) ::
+          {:ok, %{image_type: String.t(), animation_type: String.t()}}
+          | {:error, :metadata_not_found | :already_fetched}
+  def fetch_media_types(%Instance{metadata: nil}), do: {:error, :metadata_not_found}
+
+  def fetch_media_types(%Instance{image_type: image_type, animation_type: animation_type})
+      when not is_nil(image_type) and not is_nil(animation_type),
+      do: {:error, :already_fetched}
+
+  def fetch_media_types(%Instance{
+        token_contract_address_hash: address_hash,
+        token_id: token_id,
+        metadata: metadata
+      }) do
+    image_url = Instance.get_image_url_from_metadata(metadata)
+    animation_url = Instance.get_animation_url_from_metadata(metadata)
+
+    image_type = determine_media_type(image_url)
+    animation_type = determine_media_type(animation_url)
+
+    Instance.batch_update_media_types([
+      %{
+        token_contract_address_hash: address_hash,
+        token_id: token_id,
+        image_type: image_type,
+        animation_type: animation_type
+      }
+    ])
+
+    {:ok, %{image_type: image_type, animation_type: animation_type}}
+  end
+
+  @doc """
+  Determines the MIME type string for a given URL.
+
+  Returns:
+  - `""` when URL is nil (no URL in metadata, sentinel to prevent re-processing)
+  - full MIME string like `"image/png"` when type is determined
+  - `""` when host is blacklisted or type cannot be determined
+  """
+  @spec determine_media_type(binary() | nil) :: String.t()
+  def determine_media_type(nil), do: ""
+
+  def determine_media_type("data:" <> _ = url) do
+    case TokenInstanceHelper.media_type_detailed(url) do
+      {:ok, {type, subtype}} ->
+        mime_tuple_to_string({type, subtype})
+
+      {:error, reason} ->
+        Logger.warning("Failed to determine media type for data URI: #{String.slice(url, 0, 100)}, reason: #{reason}")
+        ""
+    end
+  end
+
+  def determine_media_type(url) do
+    {resolved_url, headers} = MetadataRetriever.resolve_nft_media_url(url)
+
+    with {:host, :ok} <- {:host, host_allowed?(resolved_url)},
+         {:media_type, {:ok, {type, subtype}}} <-
+           {:media_type, TokenInstanceHelper.media_type_detailed(resolved_url, headers)} do
+      mime_tuple_to_string({type, subtype})
+    else
+      {:host, {:error, reason}} ->
+        Logger.warning("Host is not allowed for media type detection: #{url}, reason: #{inspect(reason)}")
+        ""
+
+      {:media_type, {:error, reason}} ->
+        Logger.warning("Failed to determine media type for URL: #{url}, reason: #{inspect(reason)}")
+        ""
+    end
+  end
+
+  defp host_allowed?(url) do
+    if Application.get_env(:indexer, __MODULE__)[:host_filtering_enabled?] do
+      MetadataURIValidator.validate_uri(url)
+    else
+      :ok
+    end
+  end
+
+  defp mime_tuple_to_string({type, ""}), do: type
+  defp mime_tuple_to_string({type, subtype}), do: "#{type}/#{subtype}"
 end

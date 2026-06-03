@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Account.API.V2.UserView do
   use BlockScoutWeb, :view
 

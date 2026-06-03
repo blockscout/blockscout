@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
   @moduledoc """
     Interface to interact with Tac Operation Lifecycle Service (https://github.com/blockscout/blockscout-rs/tree/main/tac-operation-lifecycle)

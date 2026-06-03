@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.BlockControllerBenchmark do
   @moduledoc """
   Benchmark for the Block API V2 controller.

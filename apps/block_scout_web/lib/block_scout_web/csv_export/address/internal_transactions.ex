@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
   @moduledoc """
   Exports internal transactions to a csv file.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Prometheus.Collector.FilecoinPendingAddressOperations do
   @moduledoc """
   Custom collector to count number of records in filecoin_pending_address_operations table.

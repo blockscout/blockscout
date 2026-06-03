@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.FetchedCode do
   @moduledoc """
   A single code fetched from `eth_getCode`.

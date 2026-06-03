@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.CsvExport.RequestsSanitizer do
   @moduledoc """
   Oban cron worker that periodically deletes expired CSV export requests.

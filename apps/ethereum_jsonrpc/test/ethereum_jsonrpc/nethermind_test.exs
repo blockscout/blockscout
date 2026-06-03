@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.NethermindTest do
   use ExUnit.Case, async: true
   use EthereumJSONRPC.Case

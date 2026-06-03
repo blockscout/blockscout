@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Transport do
   @moduledoc """
   The transport over which JSONRPC calls occur.

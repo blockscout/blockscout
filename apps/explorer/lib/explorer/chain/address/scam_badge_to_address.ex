@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Address.ScamBadgeToAddress do
   @moduledoc """
   Defines Address.ScamBadgeToAddress.t() mapping with Address.t()

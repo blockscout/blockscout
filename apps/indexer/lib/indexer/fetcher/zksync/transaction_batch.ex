@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
   @moduledoc """
     Discovers new batches and populates the `zksync_transaction_batches` table.

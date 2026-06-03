@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Filecoin.AddressInfo do
   @moduledoc """
   A task for fetching Filecoin addresses info in the Address table using the
@@ -118,7 +119,7 @@ defmodule Indexer.Fetcher.Filecoin.AddressInfo do
   @impl BufferedTask
   @decorate trace(
               name: "fetch",
-              resource: "Indexer.Fetcher.InternalTransaction.run/2",
+              resource: "Indexer.Fetcher.Filecoin.AddressInfo.run/2",
               service: :indexer,
               tracer: Tracer
             )

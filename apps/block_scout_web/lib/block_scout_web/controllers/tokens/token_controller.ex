@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Tokens.TokenController do
   use BlockScoutWeb, :controller
 

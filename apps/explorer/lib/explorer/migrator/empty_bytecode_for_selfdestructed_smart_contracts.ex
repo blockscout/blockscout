@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
   @moduledoc """
   Finds all existing selfdestruct internal transactions and empties the contract_code

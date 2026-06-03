@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.CeloCoreContractsTest do
   use ExUnit.Case, async: true
 

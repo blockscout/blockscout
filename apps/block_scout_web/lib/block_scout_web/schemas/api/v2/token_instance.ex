@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
   @moduledoc """
   This module defines the schema for the TokenInstance struct.
@@ -41,7 +42,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
         description: "Mime type of the media in media_url",
         nullable: true
       },
-      media_url: General.URLNullable
+      media_url: General.URLNullable,
+      image_media_type: %Schema{
+        type: :string,
+        enum: ["image", "video", "html"],
+        description: "Media type category of the token instance image URL",
+        nullable: true
+      },
+      animation_media_type: %Schema{
+        type: :string,
+        enum: ["image", "video", "html"],
+        description: "Media type category of the token instance animation URL",
+        nullable: true
+      }
     },
     required: [
       :id,

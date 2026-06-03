@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.TokenTransfer.Schema do
   @moduledoc """
     Models token transfers.
@@ -173,6 +174,9 @@ defmodule Explorer.Chain.TokenTransfer do
   @arc_native_coin_burned_event "0xaaf1ef013644e67c5cea90217acdf0accd334f8437fc9a89a53cfc9b25fb5c25"
   @erc7984_transfer_event "0x67500e8d0ed826d2194f514dd0d8124f35648ab6e3fb5e6ed867134cffe661e9"
 
+  # EIP-7708: log `address` for protocol-emitted ETH/native transfer logs
+  @eip7708_system_address "0xfffffffffffffffffffffffffffffffffffffffe"
+
   @transfer_function_signature "0xa9059cbb"
 
   @typedoc """
@@ -247,6 +251,11 @@ defmodule Explorer.Chain.TokenTransfer do
   def arc_native_coin_burned_event, do: @arc_native_coin_burned_event
 
   def erc7984_transfer_event, do: @erc7984_transfer_event
+
+  @doc """
+  EIP-7708 [`SYSTEM_ADDRESS`](https://eips.ethereum.org/EIPS/eip-7708) — log emitter for protocol `Transfer` events.
+  """
+  def eip7708_system_address, do: @eip7708_system_address
 
   @doc """
   ERC 20's transfer(address,uint256) function signature

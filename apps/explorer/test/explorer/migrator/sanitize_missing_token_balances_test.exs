@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.SanitizeMissingTokenBalancesTest do
   use Explorer.DataCase, async: false
 
@@ -7,6 +8,8 @@ defmodule Explorer.Migrator.SanitizeMissingTokenBalancesTest do
 
   describe "Migrate token balances" do
     test "Unset value and value_fetched_at for token balances related to not processed current token balances" do
+      insert(:block)
+
       Enum.each(0..10, fn _x ->
         token_balance = insert(:token_balance)
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.OnDemand.NeonSolanaTransactions do
   @moduledoc """
   A caching proxy service getting linked solana transactions from NeonEVM Node.

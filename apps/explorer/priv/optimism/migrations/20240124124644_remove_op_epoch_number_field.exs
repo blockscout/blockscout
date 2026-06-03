@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Migrations.RemoveOpEpochNumberField do
   use Ecto.Migration
 

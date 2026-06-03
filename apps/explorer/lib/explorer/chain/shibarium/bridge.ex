@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Shibarium.Bridge do
   @moduledoc "Models Shibarium Bridge operation."
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.CsvExport.RequestTest do
   use Explorer.DataCase, async: false
   use Oban.Testing, repo: Explorer.Repo

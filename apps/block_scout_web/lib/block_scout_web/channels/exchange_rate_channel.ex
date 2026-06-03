@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.ExchangeRateChannel do
   @moduledoc """
   Establishes pub/sub channel for exchange rate live updates.

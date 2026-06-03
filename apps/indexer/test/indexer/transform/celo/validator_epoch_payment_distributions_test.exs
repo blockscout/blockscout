@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.Celo.ValidatorEpochPaymentDistributionsTest do
   use EthereumJSONRPC.Case
   use Explorer.DataCase

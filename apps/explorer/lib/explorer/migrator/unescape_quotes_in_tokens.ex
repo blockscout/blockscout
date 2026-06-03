@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.UnescapeQuotesInTokens do
   @moduledoc """
   Unescapes single and double quotes in `name` and `symbol` token fields

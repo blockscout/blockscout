@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Validator.MetadataImporter do
   @moduledoc """
   module that upserts validator metadata from a list of maps

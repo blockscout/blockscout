@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.InternalTransaction.DeleteQueue do
   @moduledoc """
   Stores numbers for blocks, whose internal transactions should be deleted and refetched

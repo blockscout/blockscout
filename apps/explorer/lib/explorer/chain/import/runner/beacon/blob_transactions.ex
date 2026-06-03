@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.Beacon.BlobTransactions do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Beacon.BlobTransaction.t/0`.

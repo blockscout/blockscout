@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.ZkSyncView do
   use BlockScoutWeb, :view
 
@@ -5,6 +6,12 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
   alias Explorer.Chain.ZkSync.TransactionBatch
 
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
+
+  @status_executed_on_l1 "Executed on L1"
+  @status_validated_on_l1 "Validated on L1"
+  @status_sent_to_l1 "Sent to L1"
+  @status_sealed_on_l2 "Sealed on L2"
+  @status_processed_on_l2 "Processed on L2"
 
   @doc """
     Function to render GET requests to `/api/v2/zksync/batches/:batch_number` endpoint.
@@ -147,7 +154,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
 
     out_json
     |> Map.merge(%{
-      "status" => batch_status(zksync_item),
+      "status" => lifecycle_status(zksync_item),
       "commit_transaction_hash" => APIV2Helper.get_2map_data(l1_transactions, :commit_transaction, :hash),
       "commit_transaction_timestamp" => APIV2Helper.get_2map_data(l1_transactions, :commit_transaction, :ts),
       "prove_transaction_hash" => APIV2Helper.get_2map_data(l1_transactions, :prove_transaction, :hash),
@@ -176,30 +183,56 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
     end)
   end
 
-  # Inspects L1 transactions of the batch to determine the batch status.
+  # Inspects L1 transactions of the zksync entity to determine its lifecycle
+  # status.
   #
   # ## Parameters
   # - `zksync_item`: A batch, transaction, or block.
   #
   # ## Returns
-  # A string with one of predefined statuses
-  defp batch_status(zksync_item) do
+  # A string with one of the predefined statuses.
+  defp lifecycle_status(zksync_item) do
     cond do
-      APIV2Helper.specified?(zksync_item.execute_transaction) -> "Executed on L1"
-      APIV2Helper.specified?(zksync_item.prove_transaction) -> "Validated on L1"
-      APIV2Helper.specified?(zksync_item.commit_transaction) -> "Sent to L1"
+      APIV2Helper.specified?(zksync_item.execute_transaction) -> @status_executed_on_l1
+      APIV2Helper.specified?(zksync_item.prove_transaction) -> @status_validated_on_l1
+      APIV2Helper.specified?(zksync_item.commit_transaction) -> @status_sent_to_l1
       # Batch entity itself has no batch_number
-      not Map.has_key?(zksync_item, :batch_number) -> "Sealed on L2"
-      not is_nil(zksync_item.batch_number) -> "Sealed on L2"
-      true -> "Processed on L2"
+      not Map.has_key?(zksync_item, :batch_number) -> @status_sealed_on_l2
+      not is_nil(zksync_item.batch_number) -> @status_sealed_on_l2
+      true -> @status_processed_on_l2
     end
   end
 
   @doc """
-  Returns a list of possible batch statuses.
+  Returns the full list of lifecycle statuses reachable for rollup blocks and
+  rollup transactions (i.e., items that *go into* a batch). Includes
+  `"Processed on L2"`, which is emitted only for entities that carry a
+  `:batch_number` field whose value is `nil`.
   """
-  @spec batch_status_enum() :: [String.t()]
-  def batch_status_enum do
-    ["Executed on L1", "Validated on L1", "Sent to L1", "Sealed on L2", "Processed on L2"]
+  @spec batched_item_lifecycle_status_enum() :: [String.t()]
+  def batched_item_lifecycle_status_enum do
+    [
+      @status_executed_on_l1,
+      @status_validated_on_l1,
+      @status_sent_to_l1,
+      @status_sealed_on_l2,
+      @status_processed_on_l2
+    ]
+  end
+
+  @doc """
+  Returns the list of lifecycle statuses reachable for an `%Explorer.Chain.ZkSync.TransactionBatch{}`
+  item — the strict subset of `batched_item_lifecycle_status_enum/0` excluding
+  `"Processed on L2"`, which cannot apply to a batch (the batch *is* the unit
+  of sealing).
+  """
+  @spec batch_lifecycle_status_enum() :: [String.t()]
+  def batch_lifecycle_status_enum do
+    [
+      @status_executed_on_l1,
+      @status_validated_on_l1,
+      @status_sent_to_l1,
+      @status_sealed_on_l2
+    ]
   end
 end

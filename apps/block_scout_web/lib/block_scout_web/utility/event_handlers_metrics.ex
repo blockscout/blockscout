@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Utility.EventHandlersMetrics do
   @moduledoc """
   Module responsible for periodically setting current event handlers queue length metrics.

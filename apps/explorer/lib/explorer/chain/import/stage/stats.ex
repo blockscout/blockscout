@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Stage.Stats do
   @moduledoc """
   Imports stats data (hot_smart_contracts_daily).

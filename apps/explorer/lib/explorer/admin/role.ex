@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Admin.Administrator.Role do
   @moduledoc """
   Supported roles for an administrator.

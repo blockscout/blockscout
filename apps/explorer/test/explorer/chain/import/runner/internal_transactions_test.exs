@@ -1,9 +1,11 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
   use Explorer.DataCase
 
   alias Ecto.Multi
   alias Explorer.Chain.{Block, Data, Wei, PendingBlockOperation, Transaction, InternalTransaction}
   alias Explorer.Chain.Import.Runner.InternalTransactions
+  alias Explorer.Migrator.DeleteZeroValueInternalTransactions
 
   setup do
     config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
@@ -591,6 +593,126 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       # Should not raise an error
       assert {:ok, _} = run_internal_transactions([selfdestruct_changes])
+    end
+  end
+
+  describe "prepare_data/1 zero value filtering" do
+    setup do
+      original_config = Application.get_env(:explorer, DeleteZeroValueInternalTransactions)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, DeleteZeroValueInternalTransactions, original_config)
+      end)
+
+      :ok
+    end
+
+    test "removes zero-value call internal transactions before border block" do
+      Application.put_env(:explorer, DeleteZeroValueInternalTransactions, enabled: true, storage_period: 0)
+      block = insert(:block)
+
+      params = [
+        %{
+          type: :call,
+          block_number: block.number - 1,
+          value: Wei.from(Decimal.new(0), :wei)
+        },
+        %{
+          type: :call,
+          block_number: block.number - 1,
+          value: Wei.from(Decimal.new(1), :wei)
+        },
+        %{
+          type: "call",
+          block_number: block.number - 1,
+          value: 0
+        }
+      ]
+
+      result = InternalTransactions.prepare_data(params)
+
+      assert length(result) == 1
+      assert hd(result).value.value == Decimal.new(1)
+    end
+
+    test "does not remove zero-value calls after border block" do
+      Application.put_env(:explorer, DeleteZeroValueInternalTransactions, enabled: true, storage_period: 0)
+      block = insert(:block)
+
+      params = [
+        %{
+          type: :call,
+          block_number: block.number + 1,
+          value: Wei.from(Decimal.new(0), :wei)
+        },
+        %{
+          type: "call",
+          block_number: block.number + 1,
+          value: 0
+        }
+      ]
+
+      assert [_, _] = InternalTransactions.prepare_data(params)
+    end
+
+    test "does not remove non-call internal transactions" do
+      Application.put_env(:explorer, DeleteZeroValueInternalTransactions, enabled: true, storage_period: 0)
+      block = insert(:block)
+
+      params = [
+        %{
+          type: :create,
+          block_number: block.number - 1,
+          value: Wei.from(Decimal.new(0), :wei)
+        },
+        %{
+          type: "create",
+          block_number: block.number - 1,
+          value: 0
+        }
+      ]
+
+      assert [_, _] = InternalTransactions.prepare_data(params)
+    end
+
+    test "treats nil value as zero" do
+      Application.put_env(:explorer, DeleteZeroValueInternalTransactions, enabled: true, storage_period: 0)
+      block = insert(:block)
+
+      params = [
+        %{
+          type: :call,
+          block_number: block.number - 1,
+          value: nil
+        },
+        %{
+          type: "call",
+          block_number: block.number - 1,
+          value: nil
+        }
+      ]
+
+      assert [] == InternalTransactions.prepare_data(params)
+    end
+
+    test "does not filter anything when feature is disabled" do
+      Application.put_env(:explorer, DeleteZeroValueInternalTransactions, enabled: false, storage_period: 0)
+      block = insert(:block)
+
+      params = [
+        %{
+          type: :call,
+          block_number: block.number - 1,
+          value: Wei.from(Decimal.new(0), :wei)
+        },
+        %{
+          type: "call",
+          block_number: block.number - 1,
+          value: 0
+        }
+      ]
+
+      assert [_, _] = InternalTransactions.prepare_data(params)
     end
   end
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Migrations.TokenAddBridgedColumn do
   use Ecto.Migration
 

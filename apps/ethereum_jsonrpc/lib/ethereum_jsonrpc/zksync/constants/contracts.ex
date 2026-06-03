@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.ZkSync.Constants.Contracts do
   @moduledoc """
   Provides constants and ABI definitions for zkSync-specific smart contracts.

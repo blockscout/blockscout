@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Zilliqa.Migrations.CreateZRC2TokenTables do
   use Ecto.Migration
 

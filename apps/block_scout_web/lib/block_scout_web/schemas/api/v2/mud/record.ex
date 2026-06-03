@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.MUD.Record do
   @moduledoc """
   This module defines the schema for the MUD Record struct.
@@ -11,18 +12,18 @@ defmodule BlockScoutWeb.Schemas.API.V2.MUD.Record do
     description: "MUD Record struct.",
     type: :object,
     properties: %{
-      id: General.HexString,
+      id: General.HexData,
       raw: %Schema{
         type: :object,
         properties: %{
           block_number: General.IntegerString,
           log_index: General.IntegerString,
-          dynamic_data: General.HexString,
+          dynamic_data: General.HexData,
           encoded_lengths: General.FullHash,
           key0: General.FullHash,
           key1: General.FullHash,
-          key_bytes: General.HexString,
-          static_data: General.HexString
+          key_bytes: General.HexData,
+          static_data: General.HexData
         },
         nullable: false
       },

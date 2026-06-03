@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Account.Migrations.AccountV2 do
   use Ecto.Migration
 

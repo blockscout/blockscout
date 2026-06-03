@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Optimism.DisputeGame do
   @moduledoc "Models a dispute game for Optimism."
 

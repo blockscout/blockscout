@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.Transactions do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Transaction.t/0`.
@@ -10,7 +11,17 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
 
   alias Ecto.{Multi, Repo}
   alias EthereumJSONRPC.Utility.RangesHelper
-  alias Explorer.Chain.{Block, Hash, Import, PendingOperationsHelper, PendingTransactionOperation, Transaction}
+
+  alias Explorer.Chain.{
+    Block,
+    Hash,
+    Import,
+    PendingBlockOperation,
+    PendingOperationsHelper,
+    PendingTransactionOperation,
+    Transaction
+  }
+
   alias Explorer.Chain.Import.Runner.TokenTransfers
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Utility.MissingBlockRange
@@ -66,14 +77,14 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
         :transactions
       )
     end)
-    |> Multi.run(:new_pending_transaction_operations, fn repo, %{transactions: transactions} ->
+    |> Multi.run(:new_pending_operations, fn repo, %{transactions: transactions} ->
       Instrumenter.block_import_stage_runner(
         fn ->
-          new_pending_transaction_operations(repo, transactions, insert_options)
+          new_pending_operations(repo, transactions, insert_options)
         end,
         :block_referencing,
         :transactions,
-        :new_pending_transaction_operations
+        :new_pending_operations
       )
     end)
   end
@@ -105,7 +116,10 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.hash)
+    ordered_changes_list =
+      changes_list
+      |> Enum.uniq_by(& &1.hash)
+      |> Enum.sort_by(& &1.hash)
 
     Import.insert_changes_list(
       repo,
@@ -119,15 +133,21 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     )
   end
 
-  defp new_pending_transaction_operations(repo, inserted_transactions, %{timeout: timeout, timestamps: timestamps}) do
+  defp new_pending_operations(repo, inserted_transactions, %{timeout: timeout, timestamps: timestamps}) do
+    traceable_consensus_transactions =
+      inserted_transactions
+      |> RangesHelper.filter_by_height_range(&RangesHelper.traceable_block_number?(&1.block_number))
+      |> Transaction.filter_non_traceable_transactions()
+
+    traceable_consensus_block_numbers = Enum.map(traceable_consensus_transactions, & &1.block_number) |> Enum.uniq()
+    block_numbers_with_priorities = MissingBlockRange.find_priority_by_numbers(traceable_consensus_block_numbers)
+
     case PendingOperationsHelper.pending_operations_type() do
       "transactions" ->
         sorted_pending_ops =
-          inserted_transactions
-          |> RangesHelper.filter_by_height_range(&RangesHelper.traceable_block_number?(&1.block_number))
-          |> Transaction.filter_non_traceable_transactions()
+          traceable_consensus_transactions
           |> Enum.reject(&is_nil(&1.block_number))
-          |> Enum.map(&%{transaction_hash: &1.hash})
+          |> Enum.map(&%{transaction_hash: &1.hash, priority: Map.get(block_numbers_with_priorities, &1.block_number)})
           |> Enum.sort()
 
         Import.insert_changes_list(
@@ -141,8 +161,29 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           timestamps: timestamps
         )
 
-      _other_type ->
-        {:ok, []}
+      "blocks" ->
+        sorted_pending_ops =
+          traceable_consensus_transactions
+          |> Enum.reject(&is_nil(&1.block_number))
+          |> Enum.map(
+            &%{
+              block_hash: &1.block_hash,
+              block_number: &1.block_number,
+              priority: Map.get(block_numbers_with_priorities, &1.block_number)
+            }
+          )
+          |> Enum.sort()
+
+        Import.insert_changes_list(
+          repo,
+          sorted_pending_ops,
+          conflict_target: :block_hash,
+          on_conflict: :nothing,
+          for: PendingBlockOperation,
+          returning: true,
+          timeout: timeout,
+          timestamps: timestamps
+        )
     end
   end
 

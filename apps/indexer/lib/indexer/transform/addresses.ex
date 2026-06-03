@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.Addresses do
   @moduledoc """
   Extract Addresses from data fetched from the Blockchain and structured as Blocks, InternalTransactions,

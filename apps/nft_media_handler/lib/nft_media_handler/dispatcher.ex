@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule NFTMediaHandler.Dispatcher do
   @moduledoc """
   Module responsible for spawning tasks for uploading image

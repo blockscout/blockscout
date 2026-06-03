@@ -1,20 +1,19 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   use BlockScoutWeb, :controller
   use OpenApiSpex.ControllerSpecs
 
-  alias Explorer.{Chain, PagingOptions}
+  alias BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper
+  alias Explorer.Chain
 
   alias Explorer.Chain.Cache.BackgroundMigrations
 
   import BlockScoutWeb.Chain,
     only: [
-      split_list_by_page: 1,
+      paginate_list: 3,
       paging_options: 1,
-      next_page_params: 3,
       fetch_internal_transactions: 1
     ]
-
-  import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -31,17 +30,17 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
     parameters:
       base_params() ++
         [query_transaction_hash_param(), limit_param()] ++
-        define_paging_params(["index", "block_number", "transaction_index", "items_count"]),
+        define_paging_params(["index", "block_number", "transaction_index"]),
     responses: [
       ok:
         {"List of internal transactions with pagination information.", "application/json",
          paginated_response(
            items: Schemas.InternalTransaction,
+           include_pending_status?: true,
            next_page_params_example: %{
              "index" => 50,
              "transaction_index" => 68,
-             "block_number" => 22_133_247,
-             "items_count" => 50
+             "block_number" => 22_133_247
            }
          )},
       unprocessable_entity: JsonErrorResponse.response()
@@ -52,41 +51,44 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   """
   @spec internal_transactions(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def internal_transactions(conn, params) do
+    transaction_hash = transaction_hash_from_params(params)
+
     with true <-
            BackgroundMigrations.get_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(),
-         transaction_hash = transaction_hash_from_params(params),
          false <- transaction_hash == :invalid do
       paging_options = paging_options(params)
       options = options(paging_options, %{transaction_hash: transaction_hash, limit: params[:limit]})
 
-      result =
+      {internal_transactions, next_page_params} =
         options
         |> fetch_internal_transactions()
-        |> split_list_by_page()
+        |> paginate_list(params, options[:paging_options])
 
-      {internal_transactions, next_page} = result
-
-      next_page_params =
-        next_page |> next_page_params(internal_transactions, params)
+      pending_status? =
+        pending_status?(internal_transactions, transaction_hash)
 
       conn
       |> put_status(200)
       |> render(:internal_transactions, %{
         internal_transactions: internal_transactions,
-        next_page_params: next_page_params
+        next_page_params: next_page_params,
+        pending_status?: pending_status?
       })
     else
       _ ->
-        empty_response(conn)
+        empty_response(conn, if(transaction_hash == :invalid, do: nil, else: transaction_hash))
     end
   end
 
-  defp empty_response(conn) do
+  defp empty_response(conn, transaction_hash) do
+    pending_status? = pending_status?([], transaction_hash)
+
     conn
     |> put_status(200)
     |> render(:internal_transactions, %{
       internal_transactions: [],
-      next_page_params: nil
+      next_page_params: nil,
+      pending_status?: pending_status?
     })
   end
 
@@ -94,12 +96,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
     paging_options
     |> Keyword.put(:transaction_hash, params.transaction_hash)
     |> Keyword.put(:exclude_origin_internal_transaction, true)
-    |> Keyword.update(:paging_options, default_paging_options(), fn %PagingOptions{
-                                                                      page_size: page_size
-                                                                    } = paging_options ->
-      maybe_parsed_limit = params[:limit]
-      %PagingOptions{paging_options | page_size: min(page_size, maybe_parsed_limit && abs(maybe_parsed_limit))}
-    end)
     |> Keyword.merge(@api_true)
   end
 
@@ -111,5 +107,9 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
       nil -> nil
       :error -> :invalid
     end
+  end
+
+  defp pending_status?(internal_transactions, transaction_hash) do
+    InternalTransactionsPendingStatusHelper.internal_transactions_pending?(internal_transactions, transaction_hash)
   end
 end

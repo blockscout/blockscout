@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
   @moduledoc """
   Inserts missed WETH token transfers

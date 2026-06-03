@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.ChainSpec.POA.Importer do
   @moduledoc """
   Imports emission reward range for POA chain.

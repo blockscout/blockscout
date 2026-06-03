@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule NFTMediaHandler.Media.Fetcher do
   @moduledoc """
     Module fetches media from various sources

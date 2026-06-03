@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Import.Runner.Shibarium.BridgeOperations do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.Shibarium.Bridge.t/0`.

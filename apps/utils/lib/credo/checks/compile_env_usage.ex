@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Utils.Credo.Checks.CompileEnvUsage do
   @moduledoc """
   Disallows usage of Application.compile_env throughout the codebase,

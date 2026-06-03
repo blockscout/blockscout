@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.CaptchaHelper do
   @moduledoc """
   A helper for CAPTCHA
@@ -11,8 +12,8 @@ defmodule BlockScoutWeb.CaptchaHelper do
   @doc """
     Verifies if the CAPTCHA challenge has been passed based on the provided parameters.
 
-    This function first checks for a bypass token, then handles both reCAPTCHA v3 and v2
-    responses, as well as cases where CAPTCHA is disabled.
+    This function first checks for a bypass token, then handles both reCAPTCHA v3
+    and v2 responses. Disabled or missing CAPTCHA input is treated as not passed.
 
     ## Parameters
     - `params`: A map containing CAPTCHA response parameters or nil. Can include:
@@ -21,8 +22,9 @@ defmodule BlockScoutWeb.CaptchaHelper do
       * `"recaptcha_response"` - A reCAPTCHA v2 response token
 
     ## Returns
-    - `true` if the CAPTCHA challenge is passed or disabled, or if a valid bypass token is provided.
-    - `false` if the CAPTCHA challenge fails or an error occurs during verification.
+    - `true` if the CAPTCHA challenge is passed or if a valid bypass token is provided.
+    - `false` if the CAPTCHA challenge fails, input is missing, CAPTCHA is disabled,
+      or an error occurs during verification.
   """
   @spec recaptcha_passed?(%{String.t() => String.t()} | nil) :: bool
   def recaptcha_passed?(%{"recaptcha_bypass_token" => given_bypass_token}) do
@@ -46,7 +48,7 @@ defmodule BlockScoutWeb.CaptchaHelper do
     do_recaptcha_passed?(re_captcha_v2_secret_key, recaptcha_response)
   end
 
-  def recaptcha_passed?(_), do: Application.get_env(:block_scout_web, :recaptcha)[:is_disabled]
+  def recaptcha_passed?(_), do: false
 
   @doc """
     Same as recaptcha_passed/1, but with scoped tokens authentication method.
@@ -112,7 +114,7 @@ defmodule BlockScoutWeb.CaptchaHelper do
         body |> Jason.decode!() |> success?()
 
       false ->
-        true
+        false
 
       error ->
         Logger.error("Failed to verify reCAPTCHA: #{inspect(error)}")

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.ReceiptTest do
   use ExUnit.Case, async: true
 

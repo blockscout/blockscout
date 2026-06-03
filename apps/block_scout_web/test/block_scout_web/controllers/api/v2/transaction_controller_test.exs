@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
@@ -41,6 +42,51 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response = json_response(request, 200)
       assert Enum.count(response["items"]) == 1
       assert response["next_page_params"] == nil
+    end
+
+    test "items_count=10 returns 10 items with next_page_params", %{conn: conn} do
+      15
+      |> insert_list(:transaction)
+      |> with_block()
+
+      request = get(conn, "/api/v2/transactions", %{"items_count" => "10"})
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 10
+      assert response["next_page_params"] != nil
+
+      request_2nd_page =
+        get(conn, "/api/v2/transactions", Map.merge(response["next_page_params"], %{"items_count" => "10"}))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response_2nd_page["items"]) == 5
+      assert response_2nd_page["next_page_params"] == nil
+    end
+
+    test "items_count=1 returns 1 item with valid cursor", %{conn: conn} do
+      3
+      |> insert_list(:transaction)
+      |> with_block()
+
+      request = get(conn, "/api/v2/transactions", %{"items_count" => "1"})
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] != nil
+      refute Map.has_key?(response["next_page_params"], "items_count")
+    end
+
+    test "absent items_count returns default 50", %{conn: conn} do
+      51
+      |> insert_list(:transaction)
+      |> with_block()
+
+      request = get(conn, "/api/v2/transactions")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
     end
 
     test "transactions with next_page_params", %{conn: conn} do
@@ -678,6 +724,44 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, internal_transactions)
+    end
+
+    test "returns pending status when transaction block is pending", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "returns pending status when transaction is in pending_transaction_operations", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
     end
   end
 
@@ -1573,7 +1657,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         |> with_block(status: :ok)
 
       request =
-        get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes?items_count=50&state_changes=null")
+        get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes?state_changes_count=50")
 
       assert %{} = json_response(request, 200)
     end
@@ -3380,6 +3464,55 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                    "title" => "Invalid value"
                  }
                ]
+      end
+    end
+  end
+
+  if @chain_type == :arbitrum do
+    describe "/transactions/arbitrum-batch/:batch_number_param" do
+      test "returns empty list when batch has no transactions", %{conn: conn} do
+        batch = insert(:arbitrum_l1_batch)
+
+        request = get(conn, "/api/v2/transactions/arbitrum-batch/#{batch.number}")
+        assert response = json_response(request, 200)
+        assert response["items"] == []
+        assert response["next_page_params"] == nil
+      end
+
+      test "returns transactions in the batch", %{conn: conn} do
+        batch = insert(:arbitrum_l1_batch)
+        transaction = :transaction |> insert() |> with_block()
+
+        insert(:arbitrum_batch_transaction, batch_number: batch.number, transaction_hash: transaction.hash)
+
+        request = get(conn, "/api/v2/transactions/arbitrum-batch/#{batch.number}")
+        assert response = json_response(request, 200)
+        assert length(response["items"]) == 1
+        assert hd(response["items"])["hash"] == to_string(transaction.hash)
+      end
+
+      test "can paginate transactions in Arbitrum batch", %{conn: conn} do
+        batch = insert(:arbitrum_l1_batch)
+        transactions = 51 |> insert_list(:transaction) |> with_block()
+
+        Enum.each(transactions, fn tx ->
+          insert(:arbitrum_batch_transaction, batch_number: batch.number, transaction_hash: tx.hash)
+        end)
+
+        request = get(conn, "/api/v2/transactions/arbitrum-batch/#{batch.number}")
+        assert response = json_response(request, 200)
+
+        request_2nd_page =
+          get(conn, "/api/v2/transactions/arbitrum-batch/#{batch.number}", response["next_page_params"])
+
+        assert response_2nd_page = json_response(request_2nd_page, 200)
+
+        check_paginated_response(response, response_2nd_page, transactions)
+      end
+
+      test "returns 422 for non-integer batch_number_param", %{conn: conn} do
+        request = get(conn, "/api/v2/transactions/arbitrum-batch/invalid")
+        assert %{"errors" => [_]} = json_response(request, 422)
       end
     end
   end

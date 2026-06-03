@@ -1,9 +1,10 @@
-name: Publish Docker image on every push to master branch
+name: Publish Docker image on every push to master/dev branches
 
 on:
   push:
     branches:
       - master
+      - dev
     paths-ignore:
       - 'CHANGELOG.md'
       - '**/README.md'
@@ -11,7 +12,7 @@ on:
 env:
   OTP_VERSION: '27.3.4.6'
   ELIXIR_VERSION: '1.19.4'
-  RELEASE_VERSION: 11.0.1
+  RELEASE_VERSION: 11.1.3
 
 permissions:
   contents: read
@@ -40,7 +41,7 @@ jobs:
           push: true
           cache-from: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache
           cache-to: type=registry,ref=ghcr.io/blockscout/blockscout-private:buildcache,mode=max
-          tags: ghcr.io/blockscout/blockscout-private:master, ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
+          tags: ghcr.io/blockscout/blockscout-private:${{ github.ref_name }}, ghcr.io/blockscout/blockscout-private:${{ env.RELEASE_VERSION }}.commit.${{ env.SHORT_SHA }}
           labels: ${{ steps.setup.outputs.docker-labels }}
           platforms: |
             linux/amd64

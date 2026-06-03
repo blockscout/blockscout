@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
   @moduledoc """
   Helper functions for generating ERC20 token transfers from native Celo coin

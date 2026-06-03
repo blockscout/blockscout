@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Utility.MassiveBlock do
   @moduledoc """
   Module is responsible for keeping the block numbers that are too large for regular import

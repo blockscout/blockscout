@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Accounts.User.Authenticate do
   @moduledoc """
   Represents the data required to authenticate a user.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Account.CustomABIController do
   use BlockScoutWeb, :controller
 

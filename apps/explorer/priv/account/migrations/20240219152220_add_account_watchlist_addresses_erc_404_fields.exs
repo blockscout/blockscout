@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Repo.Account.Migrations.AddAccountWatchlistAddressesErc404Fields do
   use Ecto.Migration
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Address.Counters do
   @moduledoc """
     Functions related to Explorer.Chain.Address counters
@@ -33,6 +34,8 @@ defmodule Explorer.Chain.Address.Counters do
 
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
+
+  alias Explorer.Helper, as: ExplorerHelper
 
   require Logger
 
@@ -73,7 +76,7 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   def check_if_tokens_at_address(address_hash, options \\ []) do
-    select_repo(options).exists?(address_hash_to_token_balances_query(address_hash))
+    select_repo(options).exists?(address_hash_to_token_balances_query(address_hash, options))
   end
 
   @spec check_if_withdrawals_at_address(Hash.Address.t()) :: boolean()
@@ -161,12 +164,13 @@ defmodule Explorer.Chain.Address.Counters do
     Repo.aggregate(to_address_query, :sum, :gas_used, timeout: :infinity)
   end
 
-  def address_to_token_transfer_count_query(address_hash) do
+  def address_to_token_transfer_count_query(address_hash, options \\ []) do
     from(
       token_transfer in TokenTransfer,
       where: token_transfer.to_address_hash == ^address_hash,
       or_where: token_transfer.from_address_hash == ^address_hash
     )
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
   end
 
   @spec address_to_token_transfer_count(Address.t()) :: non_neg_integer()
@@ -176,12 +180,13 @@ defmodule Explorer.Chain.Address.Counters do
     Repo.aggregate(query, :count, timeout: :infinity)
   end
 
-  def address_hash_to_token_balances_query(address_hash) do
+  def address_hash_to_token_balances_query(address_hash, options \\ []) do
     from(
       tb in CurrentTokenBalance,
       where: tb.address_hash == ^address_hash,
       where: tb.value > 0 or tb.token_type == "ERC-7984"
     )
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
   end
 
   @doc """
@@ -303,10 +308,15 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   @spec address_limited_counters(Hash.t(), Keyword.t()) :: %{atom() => counter}
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def address_limited_counters(address_hash, options) do
+    show_scam_tokens? = options[:show_scam_tokens?] || false
+
     cached_counters =
       Enum.reduce(@types, %{}, fn type, acc ->
-        case AddressTabsElementsCount.get_counter(type, address_hash) do
+        scam_flag = if type in [:token_transfers, :token_balances], do: show_scam_tokens?, else: false
+
+        case AddressTabsElementsCount.get_counter(type, address_hash, scam_flag) do
           {_datetime, counter, status} ->
             Map.put(acc, type, {status, counter})
 
@@ -405,7 +415,7 @@ defmodule Explorer.Chain.Address.Counters do
       configure_task(
         :token_transfers,
         cached_counters,
-        address_to_token_transfer_count_query(address_hash),
+        address_to_token_transfer_count_query(address_hash, options),
         address_hash,
         options
       )
@@ -414,7 +424,7 @@ defmodule Explorer.Chain.Address.Counters do
       configure_task(
         :token_balances,
         cached_counters,
-        address_hash_to_token_balances_query(address_hash),
+        address_hash_to_token_balances_query(address_hash, options),
         address_hash,
         options
       )
@@ -535,11 +545,24 @@ defmodule Explorer.Chain.Address.Counters do
     end
   end
 
+  defp run_or_ignore({ok, _counter}, _type, _address_hash, _show_scam_tokens?, _fun)
+       when ok in [:up_to_date, :limit_value],
+       do: nil
+
+  defp run_or_ignore(_, type, address_hash, show_scam_tokens?, fun) do
+    if !AddressTabsElementsCount.get_task(type, address_hash, show_scam_tokens?) do
+      AddressTabsElementsCount.set_task(type, address_hash, show_scam_tokens?)
+
+      Task.async(fun)
+    end
+  end
+
   defp configure_task(counter_type, cache, query, address_hash, options) do
     address_hash = to_string(address_hash)
+    show_scam_tokens? = options[:show_scam_tokens?] || false
     start = System.monotonic_time()
 
-    run_or_ignore(cache[counter_type], counter_type, address_hash, fn ->
+    run_or_ignore(cache[counter_type], counter_type, address_hash, show_scam_tokens?, fn ->
       result =
         query
         |> count(options, counter_type)
@@ -549,8 +572,8 @@ defmodule Explorer.Chain.Address.Counters do
 
       Logger.info("Time consumed for #{counter_type} counter task for #{address_hash} is #{diff}ms")
 
-      AddressTabsElementsCount.set_counter(counter_type, address_hash, result)
-      AddressTabsElementsCount.drop_task(counter_type, address_hash)
+      AddressTabsElementsCount.set_counter(counter_type, address_hash, result, show_scam_tokens?)
+      AddressTabsElementsCount.drop_task(counter_type, address_hash, show_scam_tokens?)
 
       {counter_type, result}
     end)

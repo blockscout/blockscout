@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Views.ScriptHelper do
   @moduledoc """
   Helper for rendering view specific script tags.

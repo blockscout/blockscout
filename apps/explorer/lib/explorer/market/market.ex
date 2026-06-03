@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market do
   @moduledoc """
   Context for data related to the cryptocurrency market.

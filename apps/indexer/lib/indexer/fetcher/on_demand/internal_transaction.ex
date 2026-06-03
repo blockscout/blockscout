@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 # credo:disable-for-this-file
 defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
   @moduledoc """
@@ -774,8 +775,12 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
   end
 
   defp etherscan_serialize(internal_transaction) do
+    internal_transaction_fields =
+      Etherscan.internal_transaction_fields() ++
+        [:transaction_hash, :from_address_hash, :to_address_hash, :created_contract_address_hash, :error]
+
     internal_transaction
-    |> Map.take(Etherscan.internal_transaction_fields())
+    |> Map.take(internal_transaction_fields)
     |> Map.put(:block_timestamp, internal_transaction.block.timestamp)
   end
 end

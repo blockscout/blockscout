@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 alias Explorer.Chain.{Address, Block, Hash, Transaction}
 
 defimpl Phoenix.Param, for: Transaction do

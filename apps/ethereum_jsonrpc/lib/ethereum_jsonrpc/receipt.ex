@@ -1,10 +1,10 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Receipt do
   @moduledoc """
   Receipts format as returned by
   [`eth_getTransactionReceipt`](https://github.com/ethereum/wiki/wiki/JSON-RPC/e8e0771b9f3677693649d945956bc60e886ceb2b#eth_gettransactionreceipt).
   """
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
-  use Utils.RuntimeEnvHelper, op_isthmus_timestamp: [:indexer, [Indexer.Fetcher.Optimism, :isthmus_timestamp_l2]]
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
@@ -132,8 +132,8 @@ defmodule EthereumJSONRPC.Receipt do
           l1_fee_scalar: 0,\
           l1_gas_price: 0,\
           l1_gas_used: 0,\
-          operator_fee_scalar: nil,\
-          operator_fee_constant: nil,\
+          operator_fee_scalar: 0,\
+          operator_fee_constant: 0,\
           da_footprint_gas_scalar: nil\
       """
     :scroll -> """
@@ -187,8 +187,8 @@ defmodule EthereumJSONRPC.Receipt do
           l1_fee_scalar: 0,\
           l1_gas_price: 0,\
           l1_gas_used: 0,\
-          operator_fee_scalar: nil,\
-          operator_fee_constant: nil,\
+          operator_fee_scalar: 0,\
+          operator_fee_constant: 0,\
           da_footprint_gas_scalar: nil\
       """
     :scroll -> """
@@ -253,21 +253,14 @@ defmodule EthereumJSONRPC.Receipt do
 
     :optimism ->
       defp chain_type_fields(params, elixir) do
-        {operator_fee_scalar_default, operator_fee_constant_default} =
-          if is_nil(op_isthmus_timestamp()) do
-            {nil, nil}
-          else
-            {0, 0}
-          end
-
         params
         |> Map.merge(%{
           l1_fee: Map.get(elixir, "l1Fee", 0),
           l1_fee_scalar: Map.get(elixir, "l1FeeScalar", 0),
           l1_gas_price: Map.get(elixir, "l1GasPrice", 0),
           l1_gas_used: Map.get(elixir, "l1GasUsed", 0),
-          operator_fee_scalar: Map.get(elixir, "operatorFeeScalar", operator_fee_scalar_default),
-          operator_fee_constant: Map.get(elixir, "operatorFeeConstant", operator_fee_constant_default),
+          operator_fee_scalar: Map.get(elixir, "operatorFeeScalar", 0),
+          operator_fee_constant: Map.get(elixir, "operatorFeeConstant", 0),
           da_footprint_gas_scalar: Map.get(elixir, "daFootprintGasScalar")
         })
       end

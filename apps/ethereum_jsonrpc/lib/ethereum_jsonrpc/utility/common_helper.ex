@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Utility.CommonHelper do
   @moduledoc """
     Common helper functions

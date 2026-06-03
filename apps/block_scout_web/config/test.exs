@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 import Config
 
 config :block_scout_web, :sql_sandbox, true

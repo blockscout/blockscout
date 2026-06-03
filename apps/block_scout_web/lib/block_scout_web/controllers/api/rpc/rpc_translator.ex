@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.RPC.RPCTranslator do
   @moduledoc """
   Converts an RPC-style request into a controller action.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.BlockTransactionView do
   use BlockScoutWeb, :view
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError do
   @moduledoc """
   Removes `block_hash`, `transaction_hash`, `block_index` and `error` columns from `internal_transactions`
@@ -109,6 +110,15 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
 
   # sobelow_skip ["SQL"]
   defp drop_blocks_foreign_key do
+    if foreign_key_exists?("internal_transactions_block_hash_fkey") do
+      do_drop_blocks_foreign_key()
+    else
+      {:ok, :dropped}
+    end
+  end
+
+  # sobelow_skip ["SQL"]
+  defp do_drop_blocks_foreign_key do
     Repo.transaction(
       fn ->
         with {:ok, _} <- Repo.query(lock_blocks_query_string(), [], timeout: :infinity),
@@ -125,9 +135,19 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
 
   # sobelow_skip ["SQL"]
   defp drop_transactions_foreign_key do
+    if foreign_key_exists?("internal_transactions_transaction_hash_fkey") do
+      do_drop_transactions_foreign_key()
+    else
+      {:ok, :dropped}
+    end
+  end
+
+  # sobelow_skip ["SQL"]
+  defp do_drop_transactions_foreign_key do
     Repo.transaction(
       fn ->
-        with {:ok, _} <- Repo.query(lock_transactions_query_string(), [], timeout: :infinity),
+        with {:ok, _} <- Repo.query(lock_internal_transactions_query_string(), [], timeout: :infinity),
+             {:ok, _} <- Repo.query(lock_transactions_query_string(), [], timeout: :infinity),
              {:ok, _} <- Repo.query(drop_transactions_foreign_key_query_string(), [], timeout: :infinity) do
           Logger.info(
             "Migration RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError finished transactions"
@@ -142,6 +162,20 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
     )
   end
 
+  # sobelow_skip ["SQL"]
+  defp foreign_key_exists?(foreign_key_name) do
+    {:ok, %Postgrex.Result{rows: [[exists?]]}} =
+      Repo.query("""
+      SELECT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = '#{foreign_key_name}'
+      );
+      """)
+
+    exists?
+  end
+
   defp lock_blocks_query_string do
     """
     LOCK TABLE blocks IN ACCESS EXCLUSIVE MODE;
@@ -151,6 +185,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
   defp lock_transactions_query_string do
     """
     LOCK TABLE transactions IN ACCESS EXCLUSIVE MODE;
+    """
+  end
+
+  defp lock_internal_transactions_query_string do
+    """
+    LOCK TABLE internal_transactions IN ACCESS EXCLUSIVE MODE;
     """
   end
 

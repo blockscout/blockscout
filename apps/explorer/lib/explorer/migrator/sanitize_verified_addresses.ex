@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
   @moduledoc """
   Sets `verified` field to `true` for all addresses that have a corresponding

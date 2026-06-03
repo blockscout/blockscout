@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.ZkSync.Reader do
   @moduledoc "Contains read functions for zksync modules."
 

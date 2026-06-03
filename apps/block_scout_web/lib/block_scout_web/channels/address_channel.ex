@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.AddressChannel do
   @moduledoc """
   Establishes pub/sub channel for address page live updates.

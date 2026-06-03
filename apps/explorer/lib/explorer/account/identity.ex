@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Account.Identity do
   @moduledoc """
     Identity of user fetched via Oauth

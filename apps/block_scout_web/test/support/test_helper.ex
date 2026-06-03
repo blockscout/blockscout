@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.TestHelper do
   @moduledoc false
   use BlockScoutWeb.ConnCase

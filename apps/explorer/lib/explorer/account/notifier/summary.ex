@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Account.Notifier.Summary do
   @moduledoc """
     Compose a summary from transactions

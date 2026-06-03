@@ -1,7 +1,9 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.InternalTransactionView do
   use BlockScoutWeb, :view
 
   alias BlockScoutWeb.API.V2.Helper
+  alias BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper
   alias Explorer.Chain.{Block, InternalTransaction, Wei}
 
   def render("internal_transaction.json", %{internal_transaction: nil}) do
@@ -15,14 +17,18 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionView do
     prepare_internal_transaction(internal_transaction, block)
   end
 
-  def render("internal_transactions.json", %{
-        internal_transactions: internal_transactions,
-        next_page_params: next_page_params
-      }) do
+  def render(
+        "internal_transactions.json",
+        %{
+          internal_transactions: internal_transactions,
+          next_page_params: next_page_params
+        } = assigns
+      ) do
     %{
       "items" => Enum.map(internal_transactions, &prepare_internal_transaction(&1, &1.block)),
       "next_page_params" => next_page_params
     }
+    |> put_pending_status(Map.get(assigns, :pending_status?, false))
   end
 
   @doc """
@@ -53,5 +59,13 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionView do
       "index" => internal_transaction.index,
       "gas_limit" => internal_transaction.gas || Decimal.new(0)
     }
+  end
+
+  defp put_pending_status(response, true) do
+    Map.put(response, "meta", %{"status" => 2, "message" => InternalTransactionsPendingStatusHelper.pending_message()})
+  end
+
+  defp put_pending_status(response, _) do
+    Map.put(response, "meta", %{"status" => 1, "message" => nil})
   end
 end

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.TokenBalance.Current.Supervisor.Case do
   alias Indexer.Fetcher.TokenBalance.Current, as: TokenBalanceCurrent
 

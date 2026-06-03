@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Search do
   @moduledoc """
     Search-related functions
@@ -1027,13 +1028,17 @@ defmodule Explorer.Chain.Search do
                expiry_date: any(),
                name: any(),
                names_count: non_neg_integer(),
-               protocol: any()
+               protocol: any(),
+               protocol_dapp_url: binary() | nil,
+               protocol_dapp_logo: binary() | nil
              }, Hash.Address.t() | nil}
   def search_ens_name_in_bens(search_query) do
     trimmed_query = String.trim(search_query)
 
-    with true <- Regex.match?(~r/\w+\.\w+/, trimmed_query),
-         %{address_hash: address_hash_string_or_nil} = result <- ens_domain_name_lookup(search_query),
+    with true <- trimmed_query != "",
+         true <- String.length(trimmed_query) >= @min_query_length,
+         true <- Regex.match?(~r/[A-Za-z0-9-]+/, trimmed_query),
+         %{address_hash: address_hash_string_or_nil} = result <- ens_domain_name_lookup(trimmed_query),
          address_hash <- address_hash_string_or_nil && Chain.string_to_address_hash_or_nil(address_hash_string_or_nil) do
       {result, address_hash}
     else

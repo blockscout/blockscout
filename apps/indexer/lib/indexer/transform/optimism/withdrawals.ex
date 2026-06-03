@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.Optimism.Withdrawals do
   @moduledoc """
   Helper functions for transforming data for Optimism withdrawals.

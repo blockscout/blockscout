@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.CustomContractsHelper do
   @moduledoc """
   Helper to enable custom contracts themes

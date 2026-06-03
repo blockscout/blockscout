@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.Stylus.PublisherWorker do
   @moduledoc """
     Processes Stylus smart contract verification requests asynchronously in the background.

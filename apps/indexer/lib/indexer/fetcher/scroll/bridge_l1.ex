@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Scroll.BridgeL1 do
   @moduledoc """
   The module for scanning Scroll RPC node on L1 for the message logs (events), parsing them,

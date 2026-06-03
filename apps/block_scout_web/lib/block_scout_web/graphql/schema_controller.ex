@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.GraphQL.SchemaController do
   @moduledoc """
   Controller for serving the GraphQL schema in SDL format.

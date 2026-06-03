@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Plug.CheckAccountWeb do
   @moduledoc """
     Checks if the Account functionality enabled for web interface.

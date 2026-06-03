@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.DA.Eigenda do
   @moduledoc """
     Provides functionality for parsing EigenDA data availability information

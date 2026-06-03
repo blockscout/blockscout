@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Models.TransactionStateHelper do
   @moduledoc """
     Transaction state changes related functions

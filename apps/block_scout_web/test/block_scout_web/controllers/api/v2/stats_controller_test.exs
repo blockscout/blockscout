@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.StatsControllerTest do
   use BlockScoutWeb.ConnCase
 
@@ -69,11 +70,19 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
   describe "/stats/hot-smart-contracts" do
     import Explorer.Factory
     alias Explorer.Repo
-    alias Explorer.Stats.HotSmartContracts
+    alias Explorer.Stats.{HotSmartContracts, HotSmartContractsCache}
 
     setup do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
-      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+      hot_smart_contracts_cache_config = Application.get_env(:explorer, HotSmartContractsCache)
+      clear_hot_smart_contracts_cache()
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :hide_scam_addresses, init_value)
+        Application.put_env(:explorer, HotSmartContractsCache, hot_smart_contracts_cache_config)
+        clear_hot_smart_contracts_cache()
+      end)
+
       :ok
     end
 
@@ -106,7 +115,6 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       some_block_in_beginning = insert(:block, timestamp: DateTime.add(from_ts, -1, :second))
       _from_block = insert(:block, timestamp: DateTime.add(from_ts, 1, :second))
       to_block = insert(:block, timestamp: DateTime.add(now, -1, :second))
-
       addresses = Enum.map(1..count, fn _ -> insert(:contract_address) end)
 
       Enum.each(addresses, fn addr ->
@@ -122,6 +130,11 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       |> Enum.each(fn addr -> insert(:scam_badge_to_address, address_hash: addr.hash) end)
 
       addresses
+    end
+
+    defp clear_hot_smart_contracts_cache do
+      Supervisor.terminate_child(Explorer.Supervisor, {ConCache, HotSmartContractsCache.cache_name()})
+      Supervisor.restart_child(Explorer.Supervisor, {ConCache, HotSmartContractsCache.cache_name()})
     end
 
     test "empty stats works for short scale", %{conn: conn} do
@@ -241,8 +254,7 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
     test "3h pagination", %{conn: conn} do
       addresses = insert_transactions_in_last_seconds(55, 10800)
 
-      addresses =
-        Enum.map(addresses, fn addr -> to_string(addr.hash) end)
+      Enum.map(addresses, fn addr -> to_string(addr.hash) end)
 
       request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "3h"})
       assert %{"items" => items, "next_page_params" => next_page_params} = json_response(request, 200)
@@ -319,6 +331,53 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
       hashes2 = Enum.map(resp2["items"], fn %{"contract_address" => %{"hash" => h}} -> h end)
       assert Address.checksum(normal.hash) in hashes2
       assert Address.checksum(scam.hash) in hashes2
+    end
+
+    test "seconds scales are cached independently by scale", %{conn: conn} do
+      insert_transactions_in_last_seconds(1, 300)
+
+      first_5m_request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "5m"})
+      assert %{"items" => first_5m_items} = json_response(first_5m_request, 200)
+      assert length(first_5m_items) == 1
+
+      insert_transactions_in_last_seconds(1, 300)
+
+      second_5m_request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "5m"})
+      assert %{"items" => second_5m_items} = json_response(second_5m_request, 200)
+      assert length(second_5m_items) == 1
+
+      first_1h_request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "1h"})
+      assert %{"items" => first_1h_items} = json_response(first_1h_request, 200)
+
+      # each insert_transactions_in_last_seconds(1, 300) inserts 1 more transaction which is older than 5 minutes, but not older than 1 hour
+      assert length(first_1h_items) == 4
+    end
+
+    test "seconds scale cache expires according to ttl", %{conn: conn} do
+      Application.put_env(:explorer, HotSmartContractsCache, %{
+        "5m" => 100,
+        "1h" => :timer.minutes(6),
+        "3h" => :timer.minutes(18)
+      })
+
+      insert_transactions_in_last_seconds(1, 300)
+
+      first_request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "5m"})
+      assert %{"items" => first_items} = json_response(first_request, 200)
+      assert length(first_items) == 1
+
+      insert_transactions_in_last_seconds(1, 300)
+
+      cached_request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "5m"})
+      assert %{"items" => cached_items} = json_response(cached_request, 200)
+      assert length(cached_items) == 1
+
+      Process.sleep(2000)
+
+      expired_cache_request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "5m"})
+      assert %{"items" => expired_cache_items} = json_response(expired_cache_request, 200)
+      # hot contracts are extracted by block range, so even block older than 5 minutes is included
+      assert length(expired_cache_items) == 3
     end
   end
 end

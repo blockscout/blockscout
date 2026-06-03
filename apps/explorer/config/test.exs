@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 import Config
 
 # Lower hashing rounds for faster tests
@@ -103,5 +104,6 @@ config :logger, :explorer, path: Path.absname("logs/test/explorer.log")
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: false
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: false
 config :explorer, Explorer.Tags.AddressTag.Cataloger, enabled: false
+config :explorer, Explorer.Utility.VersionUpgrade, enabled: false
 
 config :tesla, adapter: Explorer.Mock.TeslaAdapter

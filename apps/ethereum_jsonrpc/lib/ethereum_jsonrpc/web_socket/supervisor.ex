@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.WebSocket.Supervisor do
   @moduledoc """
   Supervises the processes related to `EthereumJSONRPC.WebSocket`.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Batch do
   @moduledoc """
   This module defines the schema for the Optimism Batch struct.
@@ -8,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Batch do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "Optimism.Batch",
     description: "Optimism Batch struct.",
     type: :object,
     properties: %{

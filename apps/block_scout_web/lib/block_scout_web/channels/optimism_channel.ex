@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.OptimismChannel do
   @moduledoc """
   Establishes pub/sub channel for live updates of OP related events.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.SmartContract.Proxy do
   @moduledoc """
   Module for proxy smart-contract implementation detection
@@ -24,6 +25,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     EIP7702,
     ERC7760,
     MasterCopy,
+    MinimalProxy,
     ResolvedDelegateProxy
   }
 
@@ -48,6 +50,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
     {ERC7760, :erc7760},
     {CloneWithImmutableArguments, :clone_with_immutable_arguments},
     {ResolvedDelegateProxy, :resolved_delegate_proxy},
+    {MinimalProxy, :minimal_proxy},
 
     # generic proxy types
     {EIP1967, :eip1967},

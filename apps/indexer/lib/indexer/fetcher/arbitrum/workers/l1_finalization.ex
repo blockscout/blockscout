@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
   @moduledoc """
     Oversees the finalization of lifecycle transactions on Layer 1 (L1) for Arbitrum rollups.

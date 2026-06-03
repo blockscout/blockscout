@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.RealtimeEventHandlers.Main do
   @moduledoc """
   Subscribing process for broadcast events from realtime.

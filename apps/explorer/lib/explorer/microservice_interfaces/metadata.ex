@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.MicroserviceInterfaces.Metadata do
   @moduledoc """
   Module to interact with Metadata microservice

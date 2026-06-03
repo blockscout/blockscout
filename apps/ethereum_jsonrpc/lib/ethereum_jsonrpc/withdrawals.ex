@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule EthereumJSONRPC.Withdrawals do
   @moduledoc """
   List of withdrawals format included in the return of

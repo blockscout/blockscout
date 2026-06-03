@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case do
   alias Indexer.Fetcher.Filecoin.AddressInfo
 

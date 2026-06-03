@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.Source.DIATest do
   use ExUnit.Case
 
@@ -74,7 +75,8 @@ defmodule Explorer.Market.Source.DIATest do
                 symbol: "ETH",
                 total_supply: nil,
                 tvl: nil,
-                volume_24h: Decimal.new("6577658642.868258")
+                volume_24h: Decimal.new("6577658642.868258"),
+                circulating_supply: nil
               }} ==
                DIA.fetch_native_coin()
     end
@@ -119,7 +121,8 @@ defmodule Explorer.Market.Source.DIATest do
                 symbol: "WBTC",
                 total_supply: nil,
                 tvl: nil,
-                volume_24h: Decimal.new("6577658642.868258")
+                volume_24h: Decimal.new("6577658642.868258"),
+                circulating_supply: nil
               }} ==
                DIA.fetch_secondary_coin()
     end

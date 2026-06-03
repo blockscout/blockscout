@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.ShrinkInternalTransactions do
   @moduledoc """
   Removes the content of output field and leaves first 4 bytes signature in input field in internal transactions.

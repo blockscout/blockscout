@@ -1,5 +1,7 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.AddressCoinBalancesTest do
   use Explorer.DataCase, async: true
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Factory
   alias Indexer.Transform.AddressCoinBalances
@@ -243,6 +245,47 @@ defmodule Indexer.Transform.AddressCoinBalancesTest do
       assert MapSet.size(params_set) == 2
       assert MapSet.member?(params_set, %{address_hash: from_address_hash, block_number: block_number})
       assert MapSet.member?(params_set, %{address_hash: to_address_hash, block_number: block_number})
+    end
+  end
+
+  if @chain_type == :arc do
+    describe "params_set/1 logs_params on Arc chain" do
+      test "with EIP-7708 Transfer queues non-burn from_address and to_address for coin balances" do
+        from_address = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        to_address = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+
+        logs_params = [
+          %{
+            block_number: 100,
+            address_hash: Explorer.Chain.TokenTransfer.eip7708_system_address(),
+            first_topic: Explorer.Chain.TokenTransfer.constant(),
+            second_topic: "0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            third_topic: "0x000000000000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          %{
+            block_number: 101,
+            address_hash: Explorer.Chain.TokenTransfer.eip7708_system_address(),
+            first_topic: Explorer.Chain.TokenTransfer.constant(),
+            second_topic: "0x0000000000000000000000000000000000000000000000000000000000000000",
+            third_topic: "0x000000000000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          %{
+            block_number: 102,
+            address_hash: Explorer.Chain.TokenTransfer.eip7708_system_address(),
+            first_topic: Explorer.Chain.TokenTransfer.constant(),
+            second_topic: "0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            third_topic: "0x0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+
+        params_set = AddressCoinBalances.params_set(%{logs_params: logs_params})
+
+        assert MapSet.member?(params_set, %{address_hash: from_address, block_number: 100})
+        assert MapSet.member?(params_set, %{address_hash: to_address, block_number: 100})
+        assert MapSet.member?(params_set, %{address_hash: to_address, block_number: 101})
+        assert MapSet.member?(params_set, %{address_hash: from_address, block_number: 102})
+        assert MapSet.size(params_set) == 4
+      end
     end
   end
 end

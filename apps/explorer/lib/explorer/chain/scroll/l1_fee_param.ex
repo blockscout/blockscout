@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Scroll.L1FeeParam do
   @moduledoc """
     Models an L1 fee parameter for Scroll.

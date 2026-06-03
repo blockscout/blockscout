@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.RPC.CeloView do
   use BlockScoutWeb, :view
 

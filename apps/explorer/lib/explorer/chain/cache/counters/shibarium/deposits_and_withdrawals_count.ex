@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Cache.Counters.Shibarium.DepositsAndWithdrawalsCount do
   @moduledoc """
   Caches the number of deposits and withdrawals for Shibarium Bridge.
