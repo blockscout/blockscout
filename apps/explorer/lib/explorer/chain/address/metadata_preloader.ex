@@ -26,6 +26,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
           | Block.t()
           | CurrentTokenBalance.t()
           | InternalTransaction.t()
+          | Instance.t()
           | Log.t()
           | TokenTransfer.t()
           | Transaction.t()
@@ -130,6 +131,24 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   def preload_metadata_to_block(block) do
     [block_with_metadata] = preload_metadata_to_list([block])
     block_with_metadata
+  end
+
+  @doc """
+  Preloads ENS name to Instance.t()
+  """
+  @spec preload_ens_to_instance(Instance.t()) :: Instance.t()
+  def preload_ens_to_instance(instance) do
+    [instance_with_ens] = preload_ens_to_list([instance])
+    instance_with_ens
+  end
+
+  @doc """
+  Preloads metadata to Instance.t()
+  """
+  @spec preload_metadata_to_instance(Instance.t()) :: Instance.t()
+  def preload_metadata_to_instance(instance) do
+    [instance_with_metadata] = preload_metadata_to_list([instance])
+    instance_with_metadata
   end
 
   @doc """

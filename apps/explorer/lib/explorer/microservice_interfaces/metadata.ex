@@ -5,7 +5,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   """
 
   alias Explorer.{Chain, HttpClient}
-  alias Explorer.Chain.{Address.MetadataPreloader, Block, Transaction}
+  alias Explorer.Chain.{Address.MetadataPreloader, Block, Token.Instance, Transaction}
   alias Explorer.Utility.Microservice
 
   import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
@@ -189,6 +189,14 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   @spec maybe_preload_metadata_to_block(Block.t()) :: Block.t()
   def maybe_preload_metadata_to_block(block) do
     maybe_preload_meta(block, __MODULE__, &MetadataPreloader.preload_metadata_to_block/1)
+  end
+
+  @doc """
+  Preloads metadata to NFT instance if Metadata microservice is enabled
+  """
+  @spec maybe_preload_metadata_to_instance(Instance.t()) :: Instance.t()
+  def maybe_preload_metadata_to_instance(instance) do
+    maybe_preload_meta(instance, __MODULE__, &MetadataPreloader.preload_metadata_to_instance/1)
   end
 
   defp decode_meta({:ok, %{"addresses" => addresses} = result}) do

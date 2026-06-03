@@ -1305,6 +1305,95 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert instance.error == "blacklist"
       assert instance.skip_metadata_url == false
     end
+
+    test "preloads ENS and metadata for owner address", %{conn: conn} do
+      owner = insert(:address)
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        token_id: 0,
+        token_contract_address_hash: token.contract_address_hash,
+        owner_address_hash: owner.hash,
+        skip_metadata_url: true
+      )
+
+      bypass = Bypass.open()
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+
+      old_env_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      old_env_metadata = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      owner_hash_string = Address.checksum(owner.hash)
+
+      Bypass.expect_once(bypass, "POST", "api/v1/#{chain_id}/addresses:batch_resolve_names", fn conn ->
+        Plug.Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{"names" => %{owner_hash_string => "owner.eth"}})
+        )
+      end)
+
+      Bypass.expect_once(bypass, "GET", "api/v1/metadata", fn conn ->
+        Plug.Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{
+            "addresses" => %{
+              owner_hash_string => %{
+                "tags" => [
+                  %{
+                    "name" => "Known Address",
+                    "ordinal" => 0,
+                    "slug" => "known-address",
+                    "tagType" => "generic",
+                    "meta" => "{}"
+                  }
+                ]
+              }
+            }
+          })
+        )
+      end)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0")
+
+      assert data = json_response(request, 200)
+      assert data["owner"]["ens_domain_name"] == "owner.eth"
+
+      assert data["owner"]["metadata"] == %{
+               "tags" => [
+                 %{
+                   "name" => "Known Address",
+                   "ordinal" => 0,
+                   "slug" => "known-address",
+                   "tagType" => "generic",
+                   "meta" => %{}
+                 }
+               ]
+             }
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_env_bens)
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_env_metadata)
+      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      Bypass.down(bypass)
+    end
   end
 
   describe "/tokens/{address_hash}/instances/{token_id}/transfers" do
