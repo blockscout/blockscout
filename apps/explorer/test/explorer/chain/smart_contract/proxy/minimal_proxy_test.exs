@@ -36,6 +36,23 @@ defmodule Explorer.Chain.SmartContract.Proxy.MinimalProxyTest do
       assert MinimalProxy.quick_resolve_implementations(proxy_address, :minimal_proxy) == nil
     end
 
+    test "returns nil when bytecode exceeds 100 bytes" do
+      impl_address = "AABBCCDDEE112233445566778899001122334455"
+      # over 100 bytes total: 60 bytes prefix + 11 bytes pattern + 20 bytes address + suffix
+      padding = String.duplicate("AA", 60)
+
+      bytecode =
+        "0x" <>
+          padding <>
+          "3D3D3D3D363D3D37363D73" <>
+          impl_address <>
+          "5AF43D3D93803E605757FD5BF3DEADBEEF"
+
+      proxy_address = insert(:address, contract_code: bytecode)
+
+      assert MinimalProxy.quick_resolve_implementations(proxy_address, :minimal_proxy) == nil
+    end
+
     test "returns nil when pattern is found but there are fewer than 20 bytes following it" do
       # pattern (11 bytes) + only 10 bytes after it — not enough for an address
       short_bytecode =
