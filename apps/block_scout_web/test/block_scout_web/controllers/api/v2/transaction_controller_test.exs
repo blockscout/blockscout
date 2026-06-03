@@ -727,6 +727,11 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
 
     test "returns pending status when transaction block is pending", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
       insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
 
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
