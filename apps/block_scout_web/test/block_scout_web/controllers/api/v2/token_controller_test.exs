@@ -1319,20 +1319,28 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       bypass = Bypass.open()
 
+      old_tesla_adapter = Application.get_env(:tesla, :adapter)
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      old_env_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+      old_env_metadata = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+
+      on_exit(fn ->
+        Application.put_env(:tesla, :adapter, old_tesla_adapter)
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_env_bens)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_env_metadata)
+        Bypass.down(bypass)
+      end)
+
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
-      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
       chain_id = 1
       Application.put_env(:block_scout_web, :chain_id, chain_id)
-
-      old_env_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
 
       Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
         service_url: "http://localhost:#{bypass.port}",
         enabled: true
       )
-
-      old_env_metadata = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
 
       Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
         service_url: "http://localhost:#{bypass.port}",
@@ -1387,12 +1395,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
                  }
                ]
              }
-
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_env_bens)
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_env_metadata)
-      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
-      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
-      Bypass.down(bypass)
     end
   end
 
