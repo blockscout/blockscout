@@ -278,6 +278,17 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :token_transfers, :realtime, all_token_transfers}) do
+    all_transfers_by_token =
+      Enum.group_by(all_token_transfers, fn tt -> to_string(tt.token_contract_address_hash) end)
+
+    for {token_contract_address_hash, token_transfers} <- all_transfers_by_token do
+      Subscription.publish(
+        Endpoint,
+        token_transfers,
+        token_transfers: token_contract_address_hash
+      )
+    end
+
     relevant_transfers = Enum.filter(all_token_transfers, &token_transfer_has_subscribers?/1)
 
     if relevant_transfers != [] do
@@ -308,13 +319,7 @@ defmodule BlockScoutWeb.Notifier do
 
       broadcast_token_transfers_websocket_v2(all_token_transfers_full, transfers_by_token)
 
-      for {token_contract_address_hash, token_transfers} <- transfers_by_token do
-        Subscription.publish(
-          Endpoint,
-          token_transfers,
-          token_transfers: token_contract_address_hash
-        )
-
+      for {_token_contract_address_hash, token_transfers} <- transfers_by_token do
         token_transfers
         |> Enum.each(&broadcast_token_transfer/1)
       end
