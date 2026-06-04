@@ -108,8 +108,7 @@ defmodule BlockScoutWeb.NotifierSubscriberFilterTest do
       block = insert(:block)
 
       Notifier.handle_event(
-        {:chain_event, :address_token_balances, :realtime,
-         [%{address_hash: address.hash, block_number: block.number}]}
+        {:chain_event, :address_token_balances, :realtime, [%{address_hash: address.hash, block_number: block.number}]}
       )
     end
   end
@@ -165,9 +164,7 @@ defmodule BlockScoutWeb.NotifierSubscriberFilterTest do
       topic = "addresses_old:#{subscribed_address.hash}"
       @endpoint.subscribe(topic)
 
-      Notifier.handle_event(
-        {:chain_event, :internal_transactions, :realtime, [subscribed_it, unsubscribed_it]}
-      )
+      Notifier.handle_event({:chain_event, :internal_transactions, :realtime, [subscribed_it, unsubscribed_it]})
 
       assert_receive %Phoenix.Socket.Broadcast{
                        topic: ^topic,
@@ -240,9 +237,7 @@ defmodule BlockScoutWeb.NotifierSubscriberFilterTest do
       subscribed_topic = "addresses:#{subscribed_address.hash}"
       @endpoint.subscribe(subscribed_topic)
 
-      Notifier.handle_event(
-        {:chain_event, :token_transfers, :realtime, [subscribed_transfer, unsubscribed_transfer]}
-      )
+      Notifier.handle_event({:chain_event, :token_transfers, :realtime, [subscribed_transfer, unsubscribed_transfer]})
 
       assert_receive %Phoenix.Socket.Broadcast{
                        topic: ^subscribed_topic,
