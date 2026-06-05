@@ -83,22 +83,24 @@ defmodule Indexer.Transform.TokenTransfers do
         erc1155_token_transfers.tokens ++
         erc20_and_erc721_token_transfers.tokens ++ weth_transfers.tokens
 
+    rough_tokens_uniq =
+      rough_tokens
+      |> Enum.uniq()
+
     rough_token_transfers =
       erc7984_token_transfers.token_transfers ++
         erc404_token_transfers.token_transfers ++
         erc1155_token_transfers.token_transfers ++
         erc20_and_erc721_token_transfers.token_transfers ++ weth_transfers.token_transfers
 
-    tokens = sanitize_token_types(rough_tokens, rough_token_transfers)
-    token_transfers = sanitize_weth_transfers(tokens, rough_token_transfers, weth_transfers.token_transfers)
+    tokens_uniq = sanitize_token_types(rough_tokens_uniq, rough_token_transfers)
+    token_transfers = sanitize_weth_transfers(tokens_uniq, rough_token_transfers, weth_transfers.token_transfers)
 
     if !skip_additional_fetchers? do
       token_transfers
       |> filter_tokens_for_supply_update()
       |> TokenTotalSupplyUpdater.add_tokens()
     end
-
-    tokens_uniq = tokens |> Enum.uniq()
 
     token_transfers_from_logs_uniq = %{
       tokens: tokens_uniq,

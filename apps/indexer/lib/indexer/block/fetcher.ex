@@ -271,8 +271,7 @@ defmodule Indexer.Block.Fetcher do
          {:ok, inserted} <-
            __MODULE__.import(
              state,
-             basic_import_options
-             |> Map.merge(additional_options)
+             merge_options(basic_import_options, additional_options)
              |> import_options(chain_type_import_options)
              |> extend_with_asyncable_import_options(tokens, token_transfers, address_token_balances)
            ) do
@@ -445,6 +444,21 @@ defmodule Indexer.Block.Fetcher do
     })
   end
 
+  defp merge_options(left, right) when is_map(left) and is_map(right) do
+    Map.merge(left, right, fn _key, value1, value2 -> merge_option_values(value1, value2) end)
+  end
+
+  defp merge_option_values(%{params: params1} = map1, %{params: params2}) do
+    merged_params = Enum.uniq(List.wrap(params1) ++ List.wrap(params2))
+    Map.put(map1, :params, merged_params)
+  end
+
+  defp merge_option_values(list1, list2) when is_list(list1) and is_list(list2) do
+    Enum.uniq(list1 ++ list2)
+  end
+
+  defp merge_option_values(_value1, value2), do: value2
+
   defp extend_with_asyncable_import_options(import_options, tokens, token_transfers, token_balances) do
     current_token_balances_params =
       token_balances
@@ -459,10 +473,10 @@ defmodule Indexer.Block.Fetcher do
       token_instances = TokenInstances.params_set(%{token_transfers_params: token_transfers})
       addresses_without_nonce = process_addresses_nonce(import_options[:addresses][:params])
 
-      Map.merge(import_options, %{
+      merge_options(import_options, %{
         addresses: %{params: addresses_without_nonce},
         address_current_token_balances: %{params: current_token_balances_params},
-        tokens: Map.get(import_options, :tokens) || %{params: tokens},
+        tokens: %{params: tokens},
         token_instances: %{params: token_instances}
       })
     end
