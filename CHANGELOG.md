@@ -1,5 +1,16 @@
 # Changelog
 
+## 11.1.3
+
+### 🐛 Bug Fixes
+
+- Run background migrations immediately on green install ([#14424](https://github.com/blockscout/blockscout/issues/14424))
+- Adapt maybe_reject_zero_value for pre-changeset values ([#14425](https://github.com/blockscout/blockscout/issues/14425))
+
+### ⚙️ Miscellaneous Tasks
+
+- Distributed MapCache ([#14411](https://github.com/blockscout/blockscout/pull/14411))
+
 ## 11.1.2
 
 ### 🐛 Bug Fixes
