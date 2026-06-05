@@ -23,6 +23,7 @@ if [ "${NODE_ENV:-}" = "development" ]; then
 else
   run_openapi_ts openapi/public.yaml dist/public.schema.ts
   run_openapi_ts openapi/private.yaml dist/private.schema.ts
+  run_openapi_ts openapi/merged.yaml dist/merged.schema.ts
 
   for chain_type in "${CHAIN_TYPES[@]}"; do
     run_openapi_ts "openapi/chains/${chain_type}.yaml" "dist/chains/${chain_type}.schema.ts"

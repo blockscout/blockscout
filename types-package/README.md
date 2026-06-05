@@ -5,6 +5,7 @@ TypeScript types generated from Blockscout OpenAPI specs via [openapi-typescript
 - **publicApi** — default public API (`BlockScoutWeb.Specs.Public`, no `CHAIN_TYPE`)
 - **privateApi** — account API (`BlockScoutWeb.Specs.Private`)
 - **chain namespaces** — chain-specific public API (`CHAIN_TYPE` set; matches [generate-swagger.yml](https://github.com/blockscout/blockscout/blob/master/.github/workflows/generate-swagger.yml), excluding deprecated MUD)
+- **merged** — every schema from all specs above combined into one namespace (for universal frontends that handle any chain type at runtime); see [Merged schemas](#merged-schemas)
 
 Build artifacts (`openapi/`, `dist/`) are gitignored; run `npm run build` after clone.
 
@@ -43,6 +44,28 @@ type ArbitrumPath = arbitrum.paths[keyof arbitrum.paths];
 ```
 
 `publicApi` / `privateApi` avoid TypeScript reserved words (`public`, `private`). `optimism-celo` is exported as `optimismCelo` (hyphen is invalid in identifiers).
+
+## Merged schemas
+
+`scripts/merge-specs.mjs` deep-merges `components.schemas` from all generated specs (public → private → chains alphabetically) into `openapi/merged.yaml`, which compiles to `dist/merged.schema.ts` (exported as `merged`). Specs must already exist; regenerate with `generate:spec` only when the API changes:
+
+```bash
+npm run build:merged
+```
+
+```ts
+import type { merged } from "@blockscout/api-types";
+
+// Includes the public base plus `arbitrum?`, `zksync?`, blob fields, etc. — all optional.
+type Transaction = merged.components["schemas"]["Transaction"];
+```
+
+Merge semantics:
+
+- **Schemas only** — `paths` are not merged.
+- **`properties`** are unioned; **`required`** is the intersection across specs defining a schema, so chain-specific properties are optional. Sub-objects defined in a single spec keep their `required` (e.g. `arbitrum.gas_used_for_l1` stays required when `arbitrum` is present).
+- **`enum`** values are unioned (e.g. `transaction_types` gains chain-specific entries).
+- Irreconcilable shapes (e.g. ethereum redefines `Status` as a beacon-deposit enum) become `anyOf` unions and are reported as warnings on stderr.
 
 Point your app at this package via `file:../types-package` or your monorepo workspace.
 

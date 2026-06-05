@@ -8,6 +8,12 @@ export * as publicApi from "./dist/public.schema";
 /** Private account API (`BlockScoutWeb.Specs.Private`). */
 export * as privateApi from "./dist/private.schema";
 
+/** All specs (public, private, every chain) merged into one. Schemas only; chain-specific properties are optional. Regenerate: `npm run build:merged`. */
+import * as merged from "./dist/merged.schema";
+export { merged };
+/** Shorthand for merged.components["schemas"] */
+export type schemas = merged.components["schemas"];
+
 /** Chain-specific public API (`CHAIN_TYPE` set). */
 export * as arbitrum from "./dist/chains/arbitrum.schema";
 export * as arc from "./dist/chains/arc.schema";

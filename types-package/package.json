@@ -17,12 +17,14 @@
   ],
   "scripts": {
     "generate:spec": "bash scripts/generate-spec.sh",
+    "generate:spec:merged": "node scripts/merge-specs.mjs",
     "generate:types": "bash scripts/generate-types.sh",
     "build": "npm run generate:spec && npm run generate:types",
     "build:dev": "NODE_ENV=development npm run generate:spec && NODE_ENV=development npm run generate:types",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "js-yaml": "^4.1.1",
     "openapi-typescript": "^7.13.0",
     "typescript": "^5.8.3"
   }

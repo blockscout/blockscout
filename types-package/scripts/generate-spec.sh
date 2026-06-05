@@ -35,11 +35,17 @@ generate_private() {
   echo "Wrote $PACKAGE_ROOT/openapi/private.yaml"
 }
 
+generate_merged() {
+  node "$SCRIPT_DIR/merge-specs.mjs"
+  echo "Wrote $PACKAGE_ROOT/openapi/merged.yaml"
+}
+
 if [ "${NODE_ENV:-}" = "development" ]; then
   generate_public "" "$PACKAGE_ROOT/openapi/public.yaml"
 else
   generate_public "" "$PACKAGE_ROOT/openapi/public.yaml"
   generate_private
+  generate_merged
 
   for chain_type in "${CHAIN_TYPES[@]}"; do
     generate_public "$chain_type" "$PACKAGE_ROOT/openapi/chains/${chain_type}.yaml"
