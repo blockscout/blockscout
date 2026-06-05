@@ -85,7 +85,15 @@ defmodule Indexer.Transform.TokenTransfers do
 
     rough_tokens_uniq =
       rough_tokens
-      |> Enum.uniq()
+      |> Enum.reduce({%{}, []}, fn %{contract_address_hash: addr} = token, {seen, acc} ->
+        if Map.has_key?(seen, addr) do
+          {seen, acc}
+        else
+          {Map.put(seen, addr, true), [token | acc]}
+        end
+      end)
+      |> elem(1)
+      |> Enum.reverse()
 
     rough_token_transfers =
       erc7984_token_transfers.token_transfers ++
