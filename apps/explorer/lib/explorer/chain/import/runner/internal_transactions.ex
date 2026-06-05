@@ -1019,8 +1019,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       block_ranges = RangesHelper.get_trace_block_ranges()
 
       Enum.reduce(block_ranges, dynamic([_], false), fn
-        _from.._to//_ = range, acc -> dynamic([block], ^acc or block.number in ^range)
-        num_to_latest, acc -> dynamic([block], ^acc or block.number >= ^num_to_latest)
+        _from.._to//_ = range, acc ->
+          lower = min(range.first, range.last)
+          upper = max(range.first, range.last)
+          dynamic([block], ^acc or (block.number >= ^lower and block.number <= ^upper))
+
+        num_to_latest, acc ->
+          dynamic([block], ^acc or block.number >= ^num_to_latest)
       end)
     else
       dynamic([_], true)
