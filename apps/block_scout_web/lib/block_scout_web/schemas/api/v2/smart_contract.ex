@@ -139,7 +139,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract do
         is_partially_verified: %Schema{type: :boolean, nullable: true},
         constructor_args: %Schema{type: :string, nullable: true}
       },
-      required: [],
+      required: [
+        :proxy_type,
+        :implementations,
+        :conflicting_implementations,
+        :deployed_bytecode,
+        :creation_bytecode,
+        :creation_status
+      ],
       additionalProperties: false
     }
     |> ChainTypeCustomizations.chain_type_fields()
