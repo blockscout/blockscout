@@ -956,7 +956,22 @@ defmodule Explorer.Chain.AdvancedFilter do
         cross_lateral_join:
           token_transfer in subquery(
             query
-            |> where(fragment("substring(? FOR 4)", as(:transaction).input) == parent_as(:method_ids).method_id)
+            |> then(fn q ->
+              if DenormalizationHelper.transaction_has_token_transfers_finished?() do
+                where(
+                  q,
+                  as(:transaction).has_token_transfers == true and
+                    fragment("substring(? FOR 4)", as(:transaction).input) ==
+                      parent_as(:method_ids).method_id
+                )
+              else
+                where(
+                  q,
+                  fragment("substring(? FOR 4)", as(:transaction).input) ==
+                    parent_as(:method_ids).method_id
+                )
+              end
+            end)
             |> exclude(:order_by)
             |> order_by(
               desc: as(:transaction).block_number,
@@ -977,7 +992,18 @@ defmodule Explorer.Chain.AdvancedFilter do
 
     fn query, unnested? ->
       query
-      |> where(fragment("substring(? FOR 4)", as(:transaction).input) in ^prepared_methods)
+      |> then(fn q ->
+        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+        if DenormalizationHelper.transaction_has_token_transfers_finished?() do
+          where(
+            q,
+            as(:transaction).has_token_transfers == true and
+              fragment("substring(? FOR 4)", as(:transaction).input) in ^prepared_methods
+          )
+        else
+          where(q, fragment("substring(? FOR 4)", as(:transaction).input) in ^prepared_methods)
+        end
+      end)
       |> query_function.(unnested?)
     end
   end

@@ -144,7 +144,8 @@ for migrator <- [
       Explorer.Migrator.UnescapeAmpersandsInTokens,
       Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources,
       Explorer.Migrator.EmptyInternalTransactionsData,
-      Explorer.Migrator.FillInternalTransactionsAddressIds
+      Explorer.Migrator.FillInternalTransactionsAddressIds,
+      Explorer.Migrator.TransactionHasTokenTransfers
     ] do
   config :explorer, migrator, enabled: true
 end
@@ -196,7 +197,8 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsBlockNumberCreatedContractAddressHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsCreatedContractAddressHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAddressHashPartialIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsToAddressHashPartialIndex
+      Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsToAddressHashPartialIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsTokenTransferMethodIdOrderedIndex
     ] do
   config :explorer, index_operation, enabled: true
 end
