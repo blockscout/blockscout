@@ -38,9 +38,10 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   import Explorer.MicroserviceInterfaces.BENS,
-    only: [maybe_preload_ens: 1, maybe_preload_ens_for_token_transfers: 1]
+    only: [maybe_preload_ens: 1, maybe_preload_ens_for_token_transfers: 1, maybe_preload_ens_to_instance: 1]
 
-  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
+  import Explorer.MicroserviceInterfaces.Metadata,
+    only: [maybe_preload_metadata: 1, maybe_preload_metadata_to_instance: 1]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -383,7 +384,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> render(:token_instance, %{
-        token_instance: updated_token_instance,
+        token_instance:
+          updated_token_instance |> maybe_preload_ens_to_instance() |> maybe_preload_metadata_to_instance(),
         token: token
       })
     end
