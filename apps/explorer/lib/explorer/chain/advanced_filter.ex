@@ -993,6 +993,7 @@ defmodule Explorer.Chain.AdvancedFilter do
     fn query, unnested? ->
       query
       |> then(fn q ->
+        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
         if DenormalizationHelper.transaction_has_token_transfers_finished?() do
           where(
             q,
