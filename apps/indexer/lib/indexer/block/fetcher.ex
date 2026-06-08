@@ -448,9 +448,10 @@ defmodule Indexer.Block.Fetcher do
     Map.merge(left, right, fn _key, value1, value2 -> merge_option_values(value1, value2) end)
   end
 
-  defp merge_option_values(%{params: params1} = map1, %{params: params2}) do
+  defp merge_option_values(%{params: params1} = map1, %{params: params2} = map2) do
+    merged_map = Map.merge(map1, map2)
     merged_params = Enum.uniq(List.wrap(params1) ++ List.wrap(params2))
-    Map.put(map1, :params, merged_params)
+    Map.put(merged_map, :params, merged_params)
   end
 
   defp merge_option_values(list1, list2) when is_list(list1) and is_list(list2) do
