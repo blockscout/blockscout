@@ -152,3 +152,50 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract do
     |> ChainTypeCustomizations.chain_type_fields()
   )
 end
+
+defmodule BlockScoutWeb.Schemas.API.V2.SmartContract.ListItem do
+  @moduledoc """
+  OpenAPI schema for a smart contract list item.
+
+  Matches the response shape of individual items returned by the
+  `SmartContractController.smart_contracts_list/2` action.
+  """
+  require OpenApiSpex
+
+  alias BlockScoutWeb.Schemas.API.V2.SmartContract.ChainTypeCustomizations
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(
+    %{
+      description: "Smart contract list item",
+      type: :object,
+      properties: %{
+        address: BlockScoutWeb.Schemas.API.V2.Address,
+        compiler_version: %Schema{type: :string, nullable: true},
+        optimization_enabled: %Schema{type: :boolean, nullable: true},
+        transactions_count: %Schema{type: :integer, nullable: true},
+        language: %Schema{type: :string, nullable: true},
+        verified_at: %Schema{type: :string, format: :"date-time", nullable: true},
+        market_cap: %Schema{type: :string, nullable: true},
+        has_constructor_args: %Schema{type: :boolean, nullable: true},
+        coin_balance: %Schema{type: :string, nullable: true},
+        license_type: %Schema{type: :string, nullable: true},
+        certified: %Schema{type: :boolean},
+        reputation: %Schema{type: :string, nullable: true}
+      },
+      required: [
+        :address,
+        :compiler_version,
+        :optimization_enabled,
+        :language,
+        :verified_at,
+        :has_constructor_args,
+        :license_type,
+        :certified,
+        :reputation
+      ],
+      additionalProperties: false
+    }
+    |> ChainTypeCustomizations.chain_type_fields()
+  )
+end
