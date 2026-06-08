@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Merge `components.schemas` from all generated OpenAPI specs (public, private,
- * and every chain-specific spec) into a single `openapi/merged.yaml`.
+ * Merge all generated OpenAPI specs (public, private, and every chain-specific
+ * spec) into a single `openapi/merged.yaml`: a union of `components.schemas` plus
+ * a union of `paths`/operations that reference those merged schemas.
  *
  * Run `npm run generate:spec` first; this script only consumes existing YAML files.
  *
- * Merge semantics:
- * - Schemas only (no `paths`) — all $refs point to `#/components/schemas/*`.
+ * Schema merge semantics:
  * - `properties` are unioned; `required` is the intersection across specs that
  *   define a schema, so chain-specific properties become optional. Sub-schemas
  *   present in a single spec keep their `required` untouched.
@@ -14,6 +14,14 @@
  *   examples, x-*) is first-wins with the public spec as the base.
  * - Irreconcilable shapes are combined via `anyOf` and reported as warnings
  *   instead of failing the build.
+ *
+ * Path merge semantics:
+ * - Paths and per-method operations are unioned across specs. Operation bodies
+ *   are deep-merged; `parameters` merge by (in, name) with their `schema`s going
+ *   through the schema rules above (so e.g. enum query params union their values).
+ *   Conflicting scalar metadata is first-wins (public base).
+ * - All `$ref`s target `#/components/schemas/*`, so merged operations
+ *   automatically reference the merged models.
  */
 import { readFileSync, readdirSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -200,9 +208,93 @@ function mergeObjectSchemas(a, b, path) {
   return result;
 }
 
-function loadSchemas(specPath) {
-  const doc = yaml.load(readFileSync(specPath, "utf8"));
-  return doc?.components?.schemas ?? {};
+const HTTP_METHODS = new Set(["get", "put", "post", "delete", "options", "head", "patch", "trace"]);
+
+/** A `parameters` array (OpenAPI parameter objects identified by `name` + `in`). */
+function isParameterArray(arr) {
+  return arr.length > 0 && arr.every((item) => isPlainObject(item) && "name" in item && "in" in item);
+}
+
+function mergeArray(a, b, ctxKey, path) {
+  // Parameters: merge by (in, name) identity so nested `schema` enums union; keep `a` order, append `b`-only.
+  if (isParameterArray(a) && isParameterArray(b)) {
+    const key = (param) => `${param.in} ${param.name}`;
+    const byKey = new Map(b.map((param) => [key(param), param]));
+    const merged = a.map((param) => {
+      const match = byKey.get(key(param));
+      byKey.delete(key(param));
+      return match ? mergeGeneric(param, match, ctxKey, `${path}[${param.in}:${param.name}]`) : clone(param);
+    });
+    for (const param of b) if (byKey.has(key(param))) merged.push(clone(param));
+    return merged;
+  }
+  // Scalar lists (tags, etc.): union + dedupe.
+  if (a.every((item) => typeof item !== "object") && b.every((item) => typeof item !== "object")) {
+    return dedupeDeep([...a, ...b]);
+  }
+  // Anything else (security, servers, examples): first spec wins.
+  return clone(a);
+}
+
+/**
+ * Generic context-aware deep merge for the non-schema layers (paths, operations, responses).
+ * Schema values (reached via a `schema` key, or `additionalProperties`) are delegated to mergeNode
+ * so schema-specific rules (required intersection, enum/anyOf union) apply throughout the subtree.
+ */
+function mergeGeneric(a, b, ctxKey, path) {
+  if (deepEqual(a, b)) return a;
+  if ((ctxKey === "schema" || ctxKey === "additionalProperties") && isPlainObject(a) && isPlainObject(b)) {
+    return mergeNode(a, b, path);
+  }
+  if (Array.isArray(a) && Array.isArray(b)) return mergeArray(a, b, ctxKey, path);
+  if (isPlainObject(a) && isPlainObject(b)) {
+    const result = {};
+    for (const key of [...new Set([...Object.keys(a), ...Object.keys(b)])]) {
+      result[key] = key in a && key in b ? mergeGeneric(a[key], b[key], key, `${path}.${key}`) : clone(a[key] ?? b[key]);
+    }
+    return result;
+  }
+  // Scalar/shape conflict (description text, etc.): first spec wins (public is the base).
+  return clone(a);
+}
+
+/** Merge two path-item objects (shared `parameters` plus per-method operations). */
+function mergePathItem(a, b, path) {
+  const result = {};
+  for (const key of [...new Set([...Object.keys(a), ...Object.keys(b)])]) {
+    if (key in a && key in b) {
+      result[key] = mergeGeneric(a[key], b[key], HTTP_METHODS.has(key) ? "operation" : key, `${path}.${key}`);
+    } else {
+      result[key] = clone(a[key] ?? b[key]);
+    }
+  }
+  return result;
+}
+
+function loadDoc(specPath) {
+  return yaml.load(readFileSync(specPath, "utf8")) ?? {};
+}
+
+/** Union keyed component buckets (securitySchemes, responses) shallowly; warn on real collisions. */
+function mergeKeyedBucket(target, incoming, bucketName) {
+  for (const [name, value] of Object.entries(incoming ?? {})) {
+    if (name in target && !deepEqual(target[name], value)) {
+      warnings.push(`components.${bucketName}.${name}: differs across specs -> kept first`);
+    } else if (!(name in target)) {
+      target[name] = clone(value);
+    }
+  }
+}
+
+/** Union tag objects by `name`, keeping the first description. */
+function mergeTags(target, incoming) {
+  const seen = new Set(target.map((tag) => tag.name));
+  for (const tag of incoming ?? []) {
+    if (!seen.has(tag.name)) {
+      seen.add(tag.name);
+      target.push(clone(tag));
+    }
+  }
 }
 
 // Deterministic order: public is the base, then private, then chains alphabetically.
@@ -228,25 +320,49 @@ const specPaths = [
 });
 
 const mergedSchemas = {};
+const mergedPaths = {};
+const mergedSecuritySchemes = {};
+const mergedResponses = {};
+const mergedTags = [];
+
 for (const specPath of specPaths) {
-  for (const [name, schema] of Object.entries(loadSchemas(specPath))) {
+  const doc = loadDoc(specPath);
+
+  for (const [name, schema] of Object.entries(doc?.components?.schemas ?? {})) {
     mergedSchemas[name] = name in mergedSchemas ? mergeNode(mergedSchemas[name], schema, name) : clone(schema);
   }
+
+  for (const [path, item] of Object.entries(doc?.paths ?? {})) {
+    mergedPaths[path] = path in mergedPaths ? mergePathItem(mergedPaths[path], item, path) : clone(item);
+  }
+
+  mergeKeyedBucket(mergedSecuritySchemes, doc?.components?.securitySchemes, "securitySchemes");
+  mergeKeyedBucket(mergedResponses, doc?.components?.responses, "responses");
+  mergeTags(mergedTags, doc?.tags);
 }
+
+const components = { schemas: mergedSchemas };
+if (Object.keys(mergedResponses).length > 0) components.responses = mergedResponses;
+if (Object.keys(mergedSecuritySchemes).length > 0) components.securitySchemes = mergedSecuritySchemes;
 
 const mergedDoc = {
   openapi: "3.0.0",
   info: {
     title: "Blockscout Merged API",
-    description: "Schemas merged from the public, private, and all chain-specific specs. Schemas only; no paths.",
+    description:
+      "Public, private, and all chain-specific specs merged into one. Schemas union their properties (required = intersection); paths and operations are unioned and reference the merged schemas.",
     version: "0.0.0",
   },
-  paths: {},
-  components: { schemas: mergedSchemas },
+  servers: [{ url: "/api" }],
+  tags: mergedTags,
+  paths: mergedPaths,
+  components,
 };
 
 writeFileSync(OUTPUT_PATH, yaml.dump(mergedDoc, { sortKeys: true, lineWidth: -1 }));
-console.log(`Merged ${specPaths.length} specs (${Object.keys(mergedSchemas).length} schemas) into ${OUTPUT_PATH}`);
+console.log(
+  `Merged ${specPaths.length} specs into ${OUTPUT_PATH} (${Object.keys(mergedSchemas).length} schemas, ${Object.keys(mergedPaths).length} paths)`,
+);
 
 const uniqueWarnings = [...new Set(warnings)];
 if (uniqueWarnings.length > 0) {

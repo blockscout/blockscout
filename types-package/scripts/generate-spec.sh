@@ -45,10 +45,12 @@ if [ "${NODE_ENV:-}" = "development" ]; then
 else
   generate_public "" "$PACKAGE_ROOT/openapi/public.yaml"
   generate_private
-  generate_merged
 
   for chain_type in "${CHAIN_TYPES[@]}"; do
     generate_public "$chain_type" "$PACKAGE_ROOT/openapi/chains/${chain_type}.yaml"
   done
+
+  # Must run last: the merge globs openapi/chains/*.yaml.
+  generate_merged
 fi
 
