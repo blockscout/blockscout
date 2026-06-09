@@ -21,7 +21,7 @@ defmodule Explorer.Chain.ImportTest do
   }
 
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.{AddressIdToAddressHash, MissingBlockRange}
 
   @moduletag :capturelog
 
@@ -187,6 +187,7 @@ defmodule Explorer.Chain.ImportTest do
       token_transfer_amount = Decimal.new(1_000_000_000_000_000_000)
       gas_limit = Decimal.new(6_946_336)
       gas_used = Decimal.new(50450)
+      %{address_id: address_id} = AddressIdToAddressHash.find_or_create("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
 
       assert {:ok,
               %{
@@ -280,12 +281,7 @@ defmodule Explorer.Chain.ImportTest do
                 ],
                 logs: [
                   %Log{
-                    address_hash: %Hash{
-                      byte_count: 20,
-                      bytes:
-                        <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65,
-                          91>>
-                    },
+                    address_id: ^address_id,
                     data: %Data{
                       bytes:
                         <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 224, 182, 179,

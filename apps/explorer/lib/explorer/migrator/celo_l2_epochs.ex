@@ -51,16 +51,16 @@ defmodule Explorer.Migrator.CeloL2Epochs do
     epochs_end_processing_block_numbers =
       from(epoch in Epoch, join: block in assoc(epoch, :end_processing_block), select: block.number)
 
-    from(
-      log in Log,
-      where:
-        log.address_hash == ^epoch_manager_contract_address_hash() and
-          ((log.first_topic == ^@epoch_processing_started_topic and
-              log.block_number not in subquery(epochs_start_processing_block_numbers)) or
-             (log.first_topic == ^@epoch_processing_ended_topic and
-                log.block_number not in subquery(epochs_end_processing_block_numbers))),
-      order_by: [asc: log.block_number]
+    Log
+    |> Log.address_match_query(epoch_manager_contract_address_hash())
+    |> where(
+      [log],
+      (log.first_topic == ^@epoch_processing_started_topic and
+         log.block_number not in subquery(epochs_start_processing_block_numbers)) or
+        (log.first_topic == ^@epoch_processing_ended_topic and
+           log.block_number not in subquery(epochs_end_processing_block_numbers))
     )
+    |> order_by([log], asc: log.block_number)
   end
 
   @impl FillingMigration

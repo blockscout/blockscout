@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Import, Log}
   alias Explorer.Prometheus.Instrumenter
-  alias Explorer.Utility.LogHelper
+  alias Explorer.Utility.{AddressIdToAddressHash, LogHelper}
 
   import Ecto.Query, only: [from: 2]
 
@@ -53,6 +53,22 @@ defmodule Explorer.Chain.Import.Runner.Logs do
         :logs,
         :logs
       )
+    end)
+  end
+
+  @impl Import.Runner
+  def prepare_data(logs_params) do
+    address_hash_to_address_id_map =
+      logs_params
+      |> Enum.map(& &1.address_hash)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+      |> AddressIdToAddressHash.find_or_create_multiple()
+
+    Enum.map(logs_params, fn entry ->
+      entry
+      |> Map.delete(:address_hash)
+      |> Map.put(:address_id, address_hash_to_address_id_map[String.downcase(to_string(entry[:address_hash]))])
     end)
   end
 
@@ -120,7 +136,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
             log in Log,
             update: [
               set: [
-                address_hash: fragment("EXCLUDED.address_hash"),
+                address_id: fragment("EXCLUDED.address_id"),
                 data: fragment("EXCLUDED.data"),
                 first_topic: fragment("EXCLUDED.first_topic"),
                 second_topic: fragment("EXCLUDED.second_topic"),
@@ -134,8 +150,8 @@ defmodule Explorer.Chain.Import.Runner.Logs do
             ],
             where:
               fragment(
-                "(EXCLUDED.address_hash, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic, EXCLUDED.transaction_index) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
-                log.address_hash,
+                "(EXCLUDED.address_id, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic, EXCLUDED.transaction_index) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
+                log.address_id,
                 log.data,
                 log.first_topic,
                 log.second_topic,
@@ -149,7 +165,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
             log in Log,
             update: [
               set: [
-                address_hash: fragment("EXCLUDED.address_hash"),
+                address_id: fragment("EXCLUDED.address_id"),
                 data: fragment("EXCLUDED.data"),
                 first_topic: fragment("EXCLUDED.first_topic"),
                 second_topic: fragment("EXCLUDED.second_topic"),
@@ -163,8 +179,8 @@ defmodule Explorer.Chain.Import.Runner.Logs do
             ],
             where:
               fragment(
-                "(EXCLUDED.address_hash, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic, EXCLUDED.transaction_hash) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
-                log.address_hash,
+                "(EXCLUDED.address_id, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic, EXCLUDED.transaction_hash) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
+                log.address_id,
                 log.data,
                 log.first_topic,
                 log.second_topic,
@@ -180,7 +196,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
           log in Log,
           update: [
             set: [
-              address_hash: fragment("EXCLUDED.address_hash"),
+              address_id: fragment("EXCLUDED.address_id"),
               data: fragment("EXCLUDED.data"),
               first_topic: fragment("EXCLUDED.first_topic"),
               second_topic: fragment("EXCLUDED.second_topic"),
@@ -194,8 +210,8 @@ defmodule Explorer.Chain.Import.Runner.Logs do
           ],
           where:
             fragment(
-              "(EXCLUDED.address_hash, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
-              log.address_hash,
+              "(EXCLUDED.address_id, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
+              log.address_id,
               log.data,
               log.first_topic,
               log.second_topic,

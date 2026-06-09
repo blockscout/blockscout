@@ -275,8 +275,8 @@ defmodule Explorer.Chain.Beacon.Deposit do
     query =
       Log
       |> Log.join_transaction_query()
+      |> Log.address_match_query(deposit_contract_address_hash)
       |> where(as(:transaction).block_consensus == true)
-      |> where([log], log.address_hash == ^deposit_contract_address_hash)
       |> where([log], log.first_topic == ^@deposit_event_signature)
       |> where([log], {log.block_number, log.index} > {^log_block_number, ^log_index})
       |> limit(^limit)

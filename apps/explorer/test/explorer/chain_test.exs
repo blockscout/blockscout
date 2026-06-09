@@ -1300,12 +1300,7 @@ defmodule Explorer.ChainTest do
                 ],
                 logs: [
                   %Log{
-                    address_hash: %Hash{
-                      byte_count: 20,
-                      bytes:
-                        <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65,
-                          91>>
-                    },
+                    address_id: ^to_address_id,
                     data: %Data{
                       bytes:
                         <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 224, 182, 179,
@@ -1727,29 +1722,6 @@ defmodule Explorer.ChainTest do
                transaction.hash
                |> Chain.transaction_to_logs(paging_options: %PagingOptions{key: {log.index}, page_size: 50})
                |> Enum.map(& &1.index)
-    end
-
-    test "with logs necessity_by_association loads associations" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      insert(:log, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
-
-      assert [%Log{address: %Address{}}] =
-               Chain.transaction_to_logs(
-                 transaction.hash,
-                 necessity_by_association: %{
-                   address: :optional
-                 }
-               )
-
-      assert [
-               %Log{
-                 address: %Ecto.Association.NotLoaded{}
-               }
-             ] = Chain.transaction_to_logs(transaction.hash)
     end
   end
 

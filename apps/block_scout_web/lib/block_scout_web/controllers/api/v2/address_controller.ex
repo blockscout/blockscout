@@ -733,9 +733,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             params
             |> paging_options()
             |> Keyword.merge(
-              necessity_by_association: %{
-                [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional
-              },
+              address_preloads: [:names, :smart_contract, proxy_implementations_smart_contracts_association()],
               transaction_preloads: [to_address: [:smart_contract, proxy_implementations_smart_contracts_association()]]
             )
             |> Keyword.merge(@api_true)

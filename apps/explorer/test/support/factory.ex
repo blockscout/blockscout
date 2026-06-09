@@ -928,12 +928,16 @@ defmodule Explorer.Factory do
     }
   end
 
-  def log_factory do
+  def log_factory(attrs) do
     block = build(:block)
     transaction = build(:transaction)
 
+    all_attrs =
+      attrs
+      |> adjust_log_address_attrs()
+      |> adjust_log_transaction_attrs()
+
     %Log{
-      address: build(:address),
       block: block,
       block_number: block.number,
       data: data(:log_data),
@@ -945,6 +949,54 @@ defmodule Explorer.Factory do
       transaction: transaction,
       transaction_index: transaction_index()
     }
+    |> merge_attributes(all_attrs)
+    |> evaluate_lazy_attributes()
+  end
+
+  defp adjust_log_address_attrs(attrs) do
+    {address_related_attrs, other_attrs} = Map.split(attrs, [:address, :address_hash])
+
+    address =
+      case Map.get(address_related_attrs, :address, false) do
+        nil ->
+          nil
+
+        false ->
+          address_params = if hash = Map.get(address_related_attrs, :address_hash), do: %{hash: hash}, else: %{}
+
+          case Map.get(address_params, :hash) && Repo.get_by(Address, hash: address_params.hash) do
+            nil ->
+              built_address = build(:address, address_params)
+              insert(built_address)
+              built_address
+
+            _ ->
+              build(:address, address_params)
+          end
+
+        address ->
+          address
+      end
+
+    address_attrs = %{
+      address: address,
+      address_hash: address && address.hash,
+      address_mapping: address && AddressIdToAddressHash.find_or_create(address.hash)
+    }
+
+    address_attrs
+    |> Map.merge(address_related_attrs)
+    |> Map.merge(other_attrs)
+  end
+
+  defp adjust_log_transaction_attrs(attrs) do
+    transaction_attrs =
+      case Map.get(attrs, :transaction) do
+        %{index: index} when not is_nil(index) -> %{transaction_index: index}
+        _ -> %{}
+      end
+
+    Map.merge(attrs, transaction_attrs)
   end
 
   def token_factory do
@@ -1766,7 +1818,7 @@ defmodule Explorer.Factory do
        }) do
     data = "0x" <> (Integer.to_string(amount, 16) |> String.downcase() |> String.pad_leading(64, "0"))
 
-    %Log{
+    log_params = %{
       address: token_contract_address,
       address_hash: token_contract_address.hash,
       block: block,
@@ -1780,6 +1832,8 @@ defmodule Explorer.Factory do
       transaction: transaction,
       transaction_index: transaction.index
     }
+
+    build(:log, log_params)
   end
 
   def event_notification_factory do

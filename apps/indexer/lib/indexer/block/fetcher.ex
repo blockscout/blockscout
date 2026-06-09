@@ -294,6 +294,7 @@ defmodule Indexer.Block.Fetcher do
           |> Map.get(:logs, [])
           |> Log.preload_block()
           |> Log.preload_transaction()
+          |> Log.preload_address()
 
         inserted_transactions = Map.get(inserted, :transactions, [])
         Zrc2Tokens.fetch_zrc2_token_transfers_and_adapters(inserted_logs, inserted_transactions, range, callback_module)

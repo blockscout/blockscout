@@ -12,6 +12,8 @@ defmodule Explorer.Chain.Log.Schema do
     Transaction
   }
 
+  alias Explorer.Utility.AddressIdToAddressHash
+
   # In certain situations, like on Polygon, multiple logs may share the same
   # index within a single block due to a RPC node bug. To prevent system crashes
   # due to not unique primary keys, we've included `transaction_hash` in the
@@ -54,7 +56,22 @@ defmodule Explorer.Chain.Log.Schema do
 
         timestamps()
 
-        belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address, null: false)
+        belongs_to(:address_mapping, AddressIdToAddressHash,
+          foreign_key: :address_id,
+          references: :address_id,
+          type: :integer
+        )
+
+        has_one(:address, through: [:address_mapping, :address])
+
+        # TODO: remove after migration to address id is done
+        belongs_to(
+          :address_by_hash,
+          Address,
+          foreign_key: :address_hash,
+          references: :hash,
+          type: Hash.Address
+        )
 
         belongs_to(:block, Block,
           foreign_key: :block_hash,
@@ -87,9 +104,9 @@ defmodule Explorer.Chain.Log do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, ContractMethod, Hash, Log, TokenTransfer, Transaction}
   alias Explorer.SmartContract.SigProviderInterface
-  alias Explorer.Utility.LogHelper
+  alias Explorer.Utility.{AddressIdToAddressHash, LogHelper}
 
-  @required_attrs ~w(address_hash data index)a
+  @required_attrs ~w(address_id data index)a
                   |> (&(case @chain_identity do
                           {:optimism, :celo} ->
                             &1
@@ -111,7 +128,7 @@ defmodule Explorer.Chain.Log do
    * `address` - address of contract that generate the event
    * `block_hash` - hash of the block
    * `block_number` - The block number that the transfer took place.
-   * `address_hash` - foreign key for `address`
+   * `address_id` - foreign key for `address_ids_to_address_hashes`
    * `data` - non-indexed log parameters.
    * `first_topic` - `topics[0]`
    * `second_topic` - `topics[1]`
@@ -125,12 +142,10 @@ defmodule Explorer.Chain.Log do
   Explorer.Chain.Log.Schema.generate()
 
   @doc """
-  `address_hash` is converted to `t:Explorer.Chain.Hash.t/0`.
-
       iex> changeset = Explorer.Chain.Log.changeset(
       ...>   %Explorer.Chain.Log{},
       ...>   %{
-      ...>     address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
+      ...>     address_id: 1,
       ...>     data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
       ...>     first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
       ...>     fourth_topic: nil,
@@ -143,11 +158,6 @@ defmodule Explorer.Chain.Log do
       ...> )
       iex> changeset.valid?
       true
-      iex> changeset.changes.address_hash
-      %Explorer.Chain.Hash{
-        byte_count: 20,
-        bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65, 91>>
-      }
 
   """
   def changeset(%__MODULE__{} = log, attrs \\ %{}) do
@@ -521,7 +531,6 @@ defmodule Explorer.Chain.Log do
   @spec user_op_to_logs(map(), Keyword.t()) :: [t()]
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def user_op_to_logs(user_op, options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     limit = Keyword.get(options, :limit, 50)
 
     __MODULE__
@@ -530,10 +539,10 @@ defmodule Explorer.Chain.Log do
         [%Transaction{hash: transaction_hash, block_number: block_number, index: transaction_index}] ->
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           cond do
-            LogHelper.transaction_hash_migration_finished?() ->
+            LogHelper.fill_transaction_index_address_id_migration_finished?() ->
               where(query, [log], log.block_number == ^block_number and log.transaction_index == ^transaction_index)
 
-            LogHelper.transaction_hash_migration_started?() ->
+            LogHelper.fill_transaction_index_address_id_migration_started?() ->
               where(
                 query,
                 [log],
@@ -556,10 +565,10 @@ defmodule Explorer.Chain.Log do
     |> where([log], log.index >= ^user_op["user_logs_start_index"])
     |> order_by([log], asc: log.index)
     |> limit(^min(user_op["user_logs_count"], limit))
-    |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).all()
     |> preload_block(Chain.select_repo(options))
     |> preload_transaction([], Chain.select_repo(options))
+    |> preload_address(options, Chain.select_repo(options))
   end
 
   @doc """
@@ -574,13 +583,13 @@ defmodule Explorer.Chain.Log do
     base_query = from(log in __MODULE__, as: :log)
 
     base_query
-    |> where([log], log.address_hash in ^env[:whitelisted_weth_contracts])
+    |> address_match_query(env[:whitelisted_weth_contracts])
     |> where(^first_topic_is_deposit_or_withdrawal_signature())
     |> join_transaction_query()
     |> join(:left, [log, t], tt in TokenTransfer,
       on: log.block_number == tt.block_number and t.hash == tt.transaction_hash and log.index == tt.log_index
     )
-    |> where([log, tt], is_nil(tt.transaction_hash))
+    |> where([log, _t, tt], is_nil(tt.transaction_hash))
     |> select([log], log)
     |> Repo.stream_each(each_fun)
   end
@@ -663,10 +672,10 @@ defmodule Explorer.Chain.Log do
 
   defp by_transaction_query(query, transaction_hash, block_number, transaction_index) do
     cond do
-      LogHelper.transaction_hash_migration_finished?() ->
+      LogHelper.fill_transaction_index_address_id_migration_finished?() ->
         where(query, [l], l.block_number == ^block_number and l.transaction_index == ^transaction_index)
 
-      LogHelper.transaction_hash_migration_started?() ->
+      LogHelper.fill_transaction_index_address_id_migration_started?() ->
         where(
           query,
           [l],
@@ -685,13 +694,13 @@ defmodule Explorer.Chain.Log do
   @spec join_transaction_query(Ecto.Queryable.t()) :: Ecto.Query.t()
   def join_transaction_query(query \\ __MODULE__) do
     cond do
-      LogHelper.transaction_hash_migration_finished?() ->
+      LogHelper.fill_transaction_index_address_id_migration_finished?() ->
         join(query, :inner, [l], t in Transaction,
           on: l.block_number == t.block_number and l.transaction_index == t.index,
           as: :transaction
         )
 
-      LogHelper.transaction_hash_migration_started?() ->
+      LogHelper.fill_transaction_index_address_id_migration_started?() ->
         join(query, :inner, [l], t in Transaction,
           on: l.transaction_hash == t.hash or (l.block_number == t.block_number and l.transaction_index == t.index),
           as: :transaction
@@ -709,7 +718,7 @@ defmodule Explorer.Chain.Log do
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def join_to_token_transfer_query(query) do
     cond do
-      LogHelper.transaction_hash_migration_finished?() ->
+      LogHelper.fill_transaction_index_address_id_migration_finished?() ->
         query
         |> join(:left, [tt], t in assoc(tt, :transaction))
         |> join(:left, [tt, t], l in __MODULE__,
@@ -717,7 +726,7 @@ defmodule Explorer.Chain.Log do
           as: :log
         )
 
-      LogHelper.transaction_hash_migration_started?() ->
+      LogHelper.fill_transaction_index_address_id_migration_started?() ->
         query
         |> join(:left, [tt], t in assoc(tt, :transaction))
         |> join(:left, [tt, t], l in __MODULE__,
@@ -744,6 +753,53 @@ defmodule Explorer.Chain.Log do
   It also ensures that `:block_hash` is populated from the loaded block when
   available, while preserving the existing value if no block is found.
   """
+  def join_address_mapping_query(query, join_type \\ :left) do
+    with_named_binding(query, :address_mapping, fn query, binding ->
+      join(query, join_type, [it], m in AddressIdToAddressHash,
+        as: ^binding,
+        on: it.address_id == m.address_id
+      )
+    end)
+  end
+
+  def address_match_query(query, address_hashes) when is_list(address_hashes) do
+    cond do
+      LogHelper.fill_transaction_index_address_id_migration_finished?() ->
+        address_ids = AddressIdToAddressHash.hashes_to_ids(address_hashes)
+        where(query, [l], l.address_id in ^address_ids)
+
+      LogHelper.fill_transaction_index_address_id_migration_started?() ->
+        address_ids = AddressIdToAddressHash.hashes_to_ids(address_hashes)
+        where(query, [l], l.address_id in ^address_ids or l.address_hash in ^address_hashes)
+
+      true ->
+        where(query, [l], l.address_hash in ^address_hashes)
+    end
+  end
+
+  def address_match_query(query, address_hash) do
+    cond do
+      LogHelper.fill_transaction_index_address_id_migration_finished?() ->
+        address_id = AddressIdToAddressHash.hash_to_id(address_hash)
+        where(query, [l], ^address_id_match_dynamic(address_id))
+
+      LogHelper.fill_transaction_index_address_id_migration_started?() ->
+        address_id = AddressIdToAddressHash.hash_to_id(address_hash)
+        where(query, [l], ^address_id_or_hash_match_dynamic(address_id, address_hash))
+
+      true ->
+        where(query, [l], l.address_hash == ^address_hash)
+    end
+  end
+
+  defp address_id_match_dynamic(nil), do: dynamic(false)
+  defp address_id_match_dynamic(address_id), do: dynamic([l], l.address_id == ^address_id)
+
+  defp address_id_or_hash_match_dynamic(nil, address_hash), do: dynamic([l], l.address_hash == ^address_hash)
+
+  defp address_id_or_hash_match_dynamic(address_id, address_hash),
+    do: dynamic([l], l.address_id == ^address_id or l.address_hash == ^address_hash)
+
   @spec preload_block(map() | [map()] | nil, module(), [Block.t()] | nil) :: __MODULE__.t() | [__MODULE__.t()] | nil
   def preload_block(logs, repo \\ Repo, blocks \\ nil)
 
@@ -841,5 +897,74 @@ defmodule Explorer.Chain.Log do
     [log]
     |> preload_transaction(preloads, repo, transactions)
     |> List.first()
+  end
+
+  @spec preload_address(map() | [map()] | nil, Keyword.t(), module()) :: __MODULE__.t() | [__MODULE__.t()] | nil
+  def preload_address(logs, options \\ [], repo \\ Repo)
+
+  def preload_address(nil, _options, _repo), do: nil
+  def preload_address([], _options, _repo), do: []
+
+  def preload_address(logs, options, repo) when is_list(logs) do
+    preloads = [address: Keyword.get(options, :address_preloads, [])]
+    repo = repo || Chain.select_repo(options)
+
+    indexed_logs = Enum.with_index(logs)
+
+    {migrated_indexed, not_migrated_indexed} =
+      Enum.split_with(indexed_logs, fn {l, _idx} -> is_nil(l.address_hash) end)
+
+    migrated = Enum.map(migrated_indexed, &elem(&1, 0))
+    not_migrated = Enum.map(not_migrated_indexed, &elem(&1, 0))
+
+    not_migrated_preloaded = preload_addresses_for_not_migrated_logs(not_migrated, preloads, repo)
+    migrated_preloaded = preload_addresses_for_migrated_logs(migrated, preloads, repo)
+
+    migrated_with_idx = Enum.zip(migrated_preloaded, Enum.map(migrated_indexed, &elem(&1, 1)))
+    not_migrated_with_idx = Enum.zip(not_migrated_preloaded, Enum.map(not_migrated_indexed, &elem(&1, 1)))
+
+    (migrated_with_idx ++ not_migrated_with_idx)
+    |> Enum.sort_by(&elem(&1, 1))
+    |> Enum.map(&elem(&1, 0))
+  end
+
+  def preload_address(log, options, repo) do
+    [log]
+    |> preload_address(options, repo)
+    |> List.first()
+  end
+
+  defp preload_addresses_for_not_migrated_logs([], _preloads, _repo), do: []
+
+  defp preload_addresses_for_not_migrated_logs(logs, preloads, repo) do
+    unified_preloads =
+      preloads
+      |> List.wrap()
+      |> Enum.map(fn
+        :address -> {:address_by_hash, []}
+        {:address, fields} -> {:address_by_hash, fields}
+      end)
+
+    logs
+    |> repo.preload(unified_preloads)
+    |> Enum.map(fn log ->
+      address = Map.get(log, :address_by_hash)
+
+      Map.merge(log, %{
+        address_hash: (address && address.hash) || Map.get(log, :address_hash),
+        address: address
+      })
+    end)
+  end
+
+  defp preload_addresses_for_migrated_logs([], _preloads, _repo), do: []
+
+  defp preload_addresses_for_migrated_logs(logs, preloads, repo) do
+    logs
+    |> repo.preload(preloads)
+    |> Enum.map(fn log ->
+      address = Map.get(log, :address)
+      Map.put(log, :address_hash, address && address.hash)
+    end)
   end
 end
