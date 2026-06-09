@@ -193,6 +193,9 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
         {:ok, traces}, {:ok, acc_traces_list} ->
           {:ok, [traces | acc_traces_list]}
 
+        :ignore, acc ->
+          acc
+
         {:ok, _}, {:error, _} = acc_error ->
           acc_error
 
@@ -218,8 +221,11 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
     end
   end
 
-  defp trace_replay_transaction_response_to_first_trace(%{id: id, result: %{"trace" => traces} = result}, id_to_params)
-       when is_list(traces) and is_map(id_to_params) do
+  defp trace_replay_transaction_response_to_first_trace(
+         %{id: id, result: %{"trace" => [raw_first_trace | _]} = result},
+         id_to_params
+       )
+       when is_map(id_to_params) do
     %{
       block_hash: block_hash,
       block_number: block_number,
@@ -228,9 +234,7 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
     } = Map.fetch!(id_to_params, id)
 
     first_trace =
-      traces
-      |> List.first()
-      |> Map.merge(%{
+      Map.merge(raw_first_trace, %{
         "blockHash" => block_hash,
         "blockNumber" => block_number,
         "index" => 0,
@@ -238,12 +242,20 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
         "transactionHash" => transaction_hash
       })
 
-    {:ok,
-     if Map.has_key?(result, "output") do
-       Map.put(first_trace, "result", %{"output" => result["output"]})
-     else
-       first_trace
-     end}
+    first_trace =
+      if Map.has_key?(result, "output") do
+        Map.update(first_trace, "result", %{"output" => result["output"]}, fn existing ->
+          Map.put_new(existing, "output", result["output"])
+        end)
+      else
+        first_trace
+      end
+
+    {:ok, first_trace}
+  end
+
+  defp trace_replay_transaction_response_to_first_trace(%{id: _id, result: %{"trace" => []}}, _id_to_params) do
+    :ignore
   end
 
   defp trace_replay_transaction_response_to_first_trace(%{id: id, error: error}, id_to_params)
