@@ -1,5 +1,40 @@
 # Changelog
 
+## 11.2.0
+
+### 🚀 Features
+
+- Preload only listened entities before broadcast ([#14430](https://github.com/blockscout/blockscout/issues/14430))
+- Add hot smart contracts caching ([#14320](https://github.com/blockscout/blockscout/issues/14320))
+- Add MinimalProxy detection for mid-bytecode EIP-1167-like pattern ([#14426](https://github.com/blockscout/blockscout/issues/14426))
+
+### 🐛 Bug Fixes
+
+- Fix token import on Celo ([#14435](https://github.com/blockscout/blockscout/issues/14435))
+- Scope missing_current_token_balances_count indexer metric to configured block ranges ([#14423](https://github.com/blockscout/blockscout/issues/14423))
+- Restrict minimal proxy detection to bytecode ≤ 100 bytes ([#14427](https://github.com/blockscout/blockscout/issues/14427))
+- Add required fields to SmartContract schema ([#14437](https://github.com/blockscout/blockscout/issues/14437))
+- Fix traceable_blocks_dynamic_query ([#14436](https://github.com/blockscout/blockscout/issues/14436))
+
+### ⚙️ Miscellaneous Tasks
+
+- Limit max node requests in one batch ([#14319](https://github.com/blockscout/blockscout/issues/14319))
+- Log block fetch errors in catchup fetcher ([#14318](https://github.com/blockscout/blockscout/issues/14318))
+- Reset skip metadata flag for NFTs ([#14337](https://github.com/blockscout/blockscout/issues/14337))
+- Enhance missing current token balances metric ([#14438](https://github.com/blockscout/blockscout/issues/14438))
+- Perceive "out of gas" error as contract failure ([#14417](https://github.com/blockscout/blockscout/issues/14417))
+- Add PG statement_timeout for import transactions ([#14414](https://github.com/blockscout/blockscout/issues/14414))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `ETHEREUM_JSONRPC_HTTP_BATCH_SIZE`        | Max http requests count in one batch. Implemented in [#14319](https://github.com/blockscout/blockscout/pull/14319).                                                                                                                         | Version: v11.2.0\+ <br />Default: `500` <br />Applications: API, Indexer                         |
+| `CACHE_HOT_SMART_CONTRACTS_5M_PERIOD`                          | TTL for ConCache entries serving `GET /api/v2/stats/hot-smart-contracts` with `scale=5m`. Controls how long paginated rankings over the last 5 minutes of contract activity are reused before recomputing from the database. [Time format](/setup/env-variables/backend-env-variables#time-format). Shorter TTL = fresher data, more DB load. Longer TTL = less load, staler rankings. | Version: v11.2.0\+ <br />Default: `30s` <br />Applications: API           |
+| `CACHE_HOT_SMART_CONTRACTS_1H_PERIOD`                          | TTL for ConCache entries serving `GET /api/v2/stats/hot-smart-contracts` with `scale=1h`. Controls how long paginated rankings over the last 1 hour of contract activity are reused before recomputing from the database. [Time format](/setup/env-variables/backend-env-variables#time-format).                                                                                       | Version: v11.2.0\+ <br />Default: `6m` <br />Applications: API            |
+| `CACHE_HOT_SMART_CONTRACTS_3H_PERIOD`                          | TTL for ConCache entries serving `GET /api/v2/stats/hot-smart-contracts` with `scale=3h`. Controls how long paginated rankings over the last 3 hours of contract activity are reused before recomputing from the database. [Time format](/setup/env-variables/backend-env-variables#time-format).                                                                                      | Version: v11.2.0\+ <br />Default: `18m` <br />Applications: API           |
+
+
 ## 11.1.3
 
 ### 🐛 Bug Fixes
