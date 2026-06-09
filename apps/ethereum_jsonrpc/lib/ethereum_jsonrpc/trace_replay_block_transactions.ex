@@ -218,7 +218,7 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
     end
   end
 
-  defp trace_replay_transaction_response_to_first_trace(%{id: id, result: %{"trace" => traces}}, id_to_params)
+  defp trace_replay_transaction_response_to_first_trace(%{id: id, result: %{"trace" => traces} = result}, id_to_params)
        when is_list(traces) and is_map(id_to_params) do
     %{
       block_hash: block_hash,
@@ -229,21 +229,21 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
 
     first_trace =
       traces
-      |> Stream.with_index()
-      |> Enum.map(fn {trace, index} ->
-        Map.merge(trace, %{
-          "blockHash" => block_hash,
-          "blockNumber" => block_number,
-          "index" => index,
-          "transactionIndex" => transaction_index,
-          "transactionHash" => transaction_hash
-        })
-      end)
-      |> Enum.filter(fn trace ->
-        Map.get(trace, "index") == 0
-      end)
+      |> List.first()
+      |> Map.merge(%{
+        "blockHash" => block_hash,
+        "blockNumber" => block_number,
+        "index" => 0,
+        "transactionIndex" => transaction_index,
+        "transactionHash" => transaction_hash
+      })
 
-    {:ok, first_trace}
+    {:ok,
+     if Map.has_key?(result, "output") do
+       Map.put(first_trace, "result", %{"output" => result["output"]})
+     else
+       first_trace
+     end}
   end
 
   defp trace_replay_transaction_response_to_first_trace(%{id: id, error: error}, id_to_params)
