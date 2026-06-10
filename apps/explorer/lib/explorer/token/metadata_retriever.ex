@@ -661,7 +661,11 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   @type nft_url_class ::
-          {:ipfs, binary() | nil} | {:arweave, binary()} | {:regular, binary()} | {:bare_path, binary() | nil}
+          {:ipfs, binary() | nil}
+          | {:arweave, binary()}
+          | {:swarm, binary() | nil}
+          | {:regular, binary()}
+          | {:bare_path, binary() | nil}
 
   @doc """
   Classifies an NFT URL into one of: `{:ipfs, resource_id}`, `{:arweave, resource_id}`, `{:regular, url}`, or `{:bare_path, path}`.
@@ -677,11 +681,24 @@ defmodule Explorer.Token.MetadataRetriever do
         resource_id = if is_binary(path) and path != "", do: host <> path, else: host
         {:arweave, resource_id}
 
+      %URI{scheme: "bzz", host: host, path: path} ->
+        uid =
+          cond do
+            is_binary(host) and is_binary(path) -> host <> path
+            is_binary(host) -> host
+            true -> nil
+          end
+
+        {:swarm, uid}
+
       %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
         {:ipfs, resource_id}
 
       %URI{scheme: _, path: "ipfs/" <> resource_id} ->
         {:ipfs, resource_id}
+
+      %URI{scheme: _, path: "/bzz/" <> resource_id} ->
+        {:swarm, resource_id}
 
       %URI{scheme: scheme} when not is_nil(scheme) ->
         {:regular, url}
@@ -706,6 +723,13 @@ defmodule Explorer.Token.MetadataRetriever do
 
       {:arweave, resource_id} ->
         {arweave_link(resource_id), ar_headers()}
+
+      {:swarm, resource_id} ->
+        if is_binary(resource_id) do
+          {swarm_link(resource_id), []}
+        else
+          {url, []}
+        end
 
       {:regular, url} ->
         {url, []}
@@ -861,19 +885,7 @@ defmodule Explorer.Token.MetadataRetriever do
       {:arweave, resource_id} ->
         fetch_from_arweave(resource_id, hex_token_id)
 
-      %URI{scheme: "bzz", host: host, path: path} ->
-        # bzz://<hash>[/optional/path] — normalise to bare hash
-        uid =
-          cond do
-            is_binary(host) and is_binary(path) -> host <> path
-            is_binary(host) -> host
-            true -> nil
-          end
-
-        fetch_from_swarm_if_valid_hash(uid, hex_token_id)
-
-      %URI{scheme: _, path: "/bzz/" <> resource_id} ->
-        # https://gateway.ethswarm.org/bzz/<hash>[/path] — preserve deep path
+      {:swarm, resource_id} ->
         fetch_from_swarm_if_valid_hash(resource_id, hex_token_id)
 
       {:regular, url} ->
