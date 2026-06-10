@@ -137,13 +137,11 @@ defmodule Explorer.Chain.Filecoin.IDAddress do
     end
   end
 
-  defimpl Jason.Encoder do
-    alias Jason.Encode
-
-    def encode(address, opts) do
+  defimpl JSON.Encoder do
+    def encode(address, encoder) do
       address
       |> to_string()
-      |> Encode.string(opts)
+      |> JSON.Encoder.encode(encoder)
     end
   end
 end

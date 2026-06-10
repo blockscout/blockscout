@@ -164,7 +164,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   end
 
   # Reads and parses JSON data from a file.
-  @spec fetch_from_file(binary()) :: {:ok, list() | map()} | {:error, Jason.DecodeError.t()}
+  @spec fetch_from_file(binary()) :: {:ok, list() | map()} | {:error, JSON.DecodeError.t()}
   # sobelow_skip ["Traversal"]
   defp fetch_from_file(path) do
     with {:ok, data} <- File.read(path) do
@@ -173,7 +173,7 @@ defmodule Explorer.ChainSpec.GenesisData do
   end
 
   # Fetches JSON data from a provided URL.
-  @spec fetch_from_url(binary()) :: {:ok, list() | map()} | {:error, Jason.DecodeError.t() | any()}
+  @spec fetch_from_url(binary()) :: {:ok, list() | map()} | {:error, JSON.DecodeError.t() | any()}
   defp fetch_from_url(url) do
     case HttpClient.get(url, [], timeout: 60_000, recv_timeout: 60_000) do
       {:ok, %{body: body, status_code: 200}} ->

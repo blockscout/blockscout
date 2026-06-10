@@ -1005,7 +1005,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       {response, code} =
         case TransactionInterpretationService.interpret(transaction) do
           {:ok, response} -> {response, 200}
-          {:error, %Jason.DecodeError{}} -> {%{error: "Error while transaction interpreter response decoding"}, 500}
+          {:error, %JSON.DecodeError{}} -> {%{error: "Error while transaction interpreter response decoding"}, 500}
           {{:error, error}, code} -> {%{error: error}, code}
         end
 

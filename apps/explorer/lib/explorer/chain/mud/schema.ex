@@ -57,19 +57,18 @@ defmodule Explorer.Chain.Mud.Schema do
           value_names: [String.t()]
         }
 
-  defimpl Jason.Encoder, for: Explorer.Chain.Mud.Schema do
+  defimpl JSON.Encoder, for: Explorer.Chain.Mud.Schema do
     alias Explorer.Chain.Mud.Schema
-    alias Jason.Encode
 
-    def encode(data, opts) do
-      Encode.map(
+    def encode(data, encoder) do
+      JSON.Encoder.encode(
         %{
           "key_types" => data.key_schema |> Schema.decode_type_names(),
           "value_types" => data.value_schema |> Schema.decode_type_names(),
           "key_names" => data.key_names,
           "value_names" => data.value_names
         },
-        opts
+        encoder
       )
     end
   end

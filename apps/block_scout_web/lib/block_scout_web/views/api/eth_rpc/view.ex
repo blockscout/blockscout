@@ -70,16 +70,16 @@ defmodule BlockScoutWeb.API.EthRPC.View do
   end
 
   @doc """
-  Pass "jsonrpc":"2.0" to use in Jason.Encoder below
+  Pass "jsonrpc":"2.0" to use in JSON.Encoder below
   """
   @spec jsonrpc_2_0() :: String.t()
   def jsonrpc_2_0, do: @jsonrpc_2_0
 
-  defimpl Jason.Encoder, for: BlockScoutWeb.API.EthRPC.View do
+  defimpl JSON.Encoder, for: BlockScoutWeb.API.EthRPC.View do
     # credo:disable-for-next-line
     alias BlockScoutWeb.API.EthRPC.View
 
-    def encode(%View{result: result, id: id, error: error}, _options) when is_nil(error) do
+    def encode(%View{result: result, id: id, error: error}, _encoder) when is_nil(error) do
       result = Utils.JSON.encode!(result)
 
       """
@@ -87,9 +87,9 @@ defmodule BlockScoutWeb.API.EthRPC.View do
       """
     end
 
-    def encode(%View{id: id, error: error}, _options) do
+    def encode(%View{id: id, error: error}, _encoder) do
       """
-      {#{View.jsonrpc_2_0()},"error": #{View.sanitize_error(error, :jason)},"id": #{View.sanitize_id(id)}}
+      {#{View.jsonrpc_2_0()},"error": #{View.sanitize_error(error, :json)},"id": #{View.sanitize_id(id)}}
       """
     end
   end

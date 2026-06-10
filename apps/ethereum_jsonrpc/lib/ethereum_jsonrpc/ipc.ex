@@ -83,7 +83,7 @@ defmodule EthereumJSONRPC.IPC do
           {:ok, Map.get(result, "result")}
       end
     else
-      {:error, %Jason.DecodeError{data: ""}} -> {:error, :empty_response}
+      {:error, %JSON.DecodeError{data: ""}} -> {:error, :empty_response}
       {:error, error} -> {:error, {:invalid_json, error}}
     end
   end

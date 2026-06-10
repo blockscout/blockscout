@@ -409,7 +409,7 @@ defmodule Explorer.Chain.Transaction do
   """
   @type wei_per_gas :: Wei.t()
 
-  @derive {Jason.Encoder,
+  @derive {JSON.Encoder,
            only: [
              :block_number,
              :block_timestamp,

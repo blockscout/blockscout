@@ -119,7 +119,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
              get_contract_info(contracts, name) do
         {:ok, %{"abi" => abi, "bytecode" => bytecode, "name" => name, "deployedBytecode" => deployed_bytecode}}
       else
-        {:error, %Jason.DecodeError{}} ->
+        {:error, %JSON.DecodeError{}} ->
           {:error, :compilation}
 
         {:error, reason} when reason in [:name, :compilation] ->
@@ -158,7 +158,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompiler do
            {:ok, contracts} <- get_contracts_standard_input_verification(decoded) do
         fetch_candidates(contracts, name)
       else
-        {:error, %Jason.DecodeError{}} ->
+        {:error, %JSON.DecodeError{}} ->
           {:error, :compilation}
 
         {:error, reason} when reason in [:name, :compilation, :json] ->

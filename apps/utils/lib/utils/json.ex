@@ -154,26 +154,7 @@ defmodule Utils.JSON do
     Enum.map(term, &normalize_for_encoding/1)
   end
 
-  defp normalize_for_encoding(%_{} = term) do
-    case JSON.Encoder.impl_for(term) do
-      nil ->
-        case Jason.Encoder.impl_for(term) do
-          Jason.Encoder.Any ->
-            term
-
-          nil ->
-            term
-
-          _impl ->
-            term
-            |> Jason.encode!()
-            |> JSON.decode!()
-        end
-
-      _impl ->
-        term
-    end
-  end
+  defp normalize_for_encoding(%_{} = term), do: term
 
   defp normalize_for_encoding(map) when is_map(map) do
     Map.new(map, fn {key, value} ->

@@ -796,7 +796,7 @@ defmodule Indexer.Helper do
 
     ## Parameters
     - `url`: The URL which needs to be requested.
-    - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Jason.decode`.
+    - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Utils.JSON.decode`.
     - `attempts_done`: The number of attempts done. Incremented by the function itself.
     - `avoid_retry_for_statuses`: The list of http error codes we don't need to re-send the request for.
                                   E.g. for 404 error we don't try to re-send the request.
@@ -836,7 +836,7 @@ defmodule Indexer.Helper do
   #
   # ## Parameters
   # - `url`: The URL which needs to be requested.
-  # - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Jason.decode`.
+  # - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Utils.JSON.decode`.
   # - `error`: The error description for logging purposes.
   # - `attempts_done`: The number of attempts done. Incremented by the function itself.
   # - `avoid_retry_for_statuses`: The list of http error codes we don't need to re-send the request for.

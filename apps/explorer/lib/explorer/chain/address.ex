@@ -210,7 +210,7 @@ defmodule Explorer.Chain.Address do
   """
   @type hash :: Hash.t()
 
-  @derive {Jason.Encoder,
+  @derive {JSON.Encoder,
            except: [
              :__meta__,
              :smart_contract,

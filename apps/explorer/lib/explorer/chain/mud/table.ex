@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Mud.Table do
   alias Explorer.Chain.Hash
 
   @enforce_keys [:table_id, :table_full_name, :table_type, :table_namespace, :table_name]
-  @derive Jason.Encoder
+  @derive JSON.Encoder
   defstruct [:table_id, :table_full_name, :table_type, :table_namespace, :table_name]
 
   @typedoc """

@@ -410,13 +410,11 @@ defmodule Explorer.Chain.Data do
     end
   end
 
-  defimpl Jason.Encoder do
-    alias Jason.Encode
-
-    def encode(data, opts) do
+  defimpl JSON.Encoder do
+    def encode(data, encoder) do
       data
       |> to_string()
-      |> Encode.string(opts)
+      |> JSON.Encoder.encode(encoder)
     end
   end
 end
