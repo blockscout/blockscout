@@ -5,6 +5,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   import BlockScoutWeb.Chain, only: [paginate_list: 4, fetch_scam_token_toggle: 2, maybe_override_page_size: 2]
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   alias BlockScoutWeb.AccessHelper
@@ -288,6 +290,11 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
 
     {advanced_filters, next_page_params} =
       paginate_list(advanced_filters_plus_one, %{}, full_options[:paging_options], paging_function: &paging_params/1)
+
+    advanced_filters =
+      advanced_filters
+      |> maybe_preload_ens()
+      |> maybe_preload_metadata()
 
     decoded_transactions =
       advanced_filters
