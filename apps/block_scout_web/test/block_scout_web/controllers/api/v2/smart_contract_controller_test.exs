@@ -947,13 +947,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert %{"is_partially_verified" => true} = response
         assert %{"is_fully_verified" => false} = response
 
-        smart_contract = Jason.decode!(eth_bytecode_response)["ethBytecodeDbSources"] |> List.first()
-        assert response["compiler_settings"] == Jason.decode!(smart_contract["compilerSettings"])
+        smart_contract = Utils.JSON.decode!(eth_bytecode_response)["ethBytecodeDbSources"] |> List.first()
+        assert response["compiler_settings"] == Utils.JSON.decode!(smart_contract["compilerSettings"])
         assert response["name"] == smart_contract["contractName"]
         assert response["compiler_version"] == smart_contract["compilerVersion"]
         assert response["file_path"] == smart_contract["fileName"]
         assert response["constructor_args"] == expected_constructor_args(smart_contract["constructorArguments"])
-        assert response["abi"] == Jason.decode!(smart_contract["abi"])
+        assert response["abi"] == Utils.JSON.decode!(smart_contract["abi"])
 
         assert response["decoded_constructor_args"] == [
                  [
@@ -1125,7 +1125,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(address.hash)}")
         assert response = json_response(request, 200)
 
-        smart_contract = Jason.decode!(eth_bytecode_response)["sourcifySources"] |> List.first()
+        smart_contract = Utils.JSON.decode!(eth_bytecode_response)["sourcifySources"] |> List.first()
         assert %{"is_verified" => true} = response
         assert %{"is_verified_via_eth_bytecode_db" => true} = response
         assert %{"is_verified_via_sourcify" => true} = response
@@ -1305,13 +1305,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert %{"is_verified_via_verifier_alliance" => true} = response
         assert %{"is_fully_verified" => false} = response
 
-        smart_contract = Jason.decode!(eth_bytecode_response)["allianceSources"] |> List.first()
-        assert response["compiler_settings"] == Jason.decode!(smart_contract["compilerSettings"])
+        smart_contract = Utils.JSON.decode!(eth_bytecode_response)["allianceSources"] |> List.first()
+        assert response["compiler_settings"] == Utils.JSON.decode!(smart_contract["compilerSettings"])
         assert response["name"] == smart_contract["contractName"]
         assert response["compiler_version"] == smart_contract["compilerVersion"]
         assert response["file_path"] == smart_contract["fileName"]
         assert response["constructor_args"] == expected_constructor_args(smart_contract["constructorArguments"])
-        assert response["abi"] == Jason.decode!(smart_contract["abi"])
+        assert response["abi"] == Utils.JSON.decode!(smart_contract["abi"])
 
         assert response["source_code"] == smart_contract["sourceFiles"][smart_contract["fileName"]]
 
@@ -1424,13 +1424,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert %{"is_verified_via_verifier_alliance" => false} = response
         assert %{"is_fully_verified" => true} = response
 
-        smart_contract = Jason.decode!(eth_bytecode_response)["sourcifySources"] |> List.first()
-        assert response["compiler_settings"] == Jason.decode!(smart_contract["compilerSettings"])
+        smart_contract = Utils.JSON.decode!(eth_bytecode_response)["sourcifySources"] |> List.first()
+        assert response["compiler_settings"] == Utils.JSON.decode!(smart_contract["compilerSettings"])
         assert response["name"] == smart_contract["contractName"]
         assert response["compiler_version"] == smart_contract["compilerVersion"]
         assert response["file_path"] == smart_contract["fileName"]
         assert response["constructor_args"] == expected_constructor_args(smart_contract["constructorArguments"])
-        assert response["abi"] == Jason.decode!(smart_contract["abi"])
+        assert response["abi"] == Utils.JSON.decode!(smart_contract["abi"])
 
         assert response["source_code"] == smart_contract["sourceFiles"][smart_contract["fileName"]]
 
@@ -1543,13 +1543,13 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         assert %{"is_verified_via_verifier_alliance" => false} = response
         assert %{"is_fully_verified" => true} = response
 
-        smart_contract = Jason.decode!(eth_bytecode_response)["ethBytecodeDbSources"] |> List.first()
-        assert response["compiler_settings"] == Jason.decode!(smart_contract["compilerSettings"])
+        smart_contract = Utils.JSON.decode!(eth_bytecode_response)["ethBytecodeDbSources"] |> List.first()
+        assert response["compiler_settings"] == Utils.JSON.decode!(smart_contract["compilerSettings"])
         assert response["name"] == smart_contract["contractName"]
         assert response["compiler_version"] == smart_contract["compilerVersion"]
         assert response["file_path"] == smart_contract["fileName"]
         assert response["constructor_args"] == expected_constructor_args(smart_contract["constructorArguments"])
-        assert response["abi"] == Jason.decode!(smart_contract["abi"])
+        assert response["abi"] == Utils.JSON.decode!(smart_contract["abi"])
 
         assert response["source_code"] == smart_contract["sourceFiles"][smart_contract["fileName"]]
 

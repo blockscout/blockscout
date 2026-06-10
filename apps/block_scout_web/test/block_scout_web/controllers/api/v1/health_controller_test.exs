@@ -49,7 +49,7 @@ defmodule BlockScoutWeb.API.V1.HealthControllerTest do
           "message" => "There are no blocks in the DB."
         }
 
-      decoded_response = request.resp_body |> Jason.decode!()
+      decoded_response = request.resp_body |> Utils.JSON.decode!()
 
       assert decoded_response["metadata"]["blocks"]["healthy"] == false
       assert decoded_response["metadata"]["blocks"]["error"] == expected_error

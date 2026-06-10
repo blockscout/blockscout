@@ -159,7 +159,7 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
         contract_data =
           "#{File.cwd!()}/test/support/fixture/smart_contract/contract_with_lib.json"
           |> File.read!()
-          |> Jason.decode!()
+          |> Utils.JSON.decode!()
           |> List.first()
 
         compiler_version = contract_data["compiler_version"]

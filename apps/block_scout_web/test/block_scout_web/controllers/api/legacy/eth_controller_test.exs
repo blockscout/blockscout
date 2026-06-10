@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.API.Legacy.EthControllerTest do
   defp post_json(conn, path, body) do
     conn
     |> put_req_header("content-type", "application/json")
-    |> post(path, Jason.encode!(body))
+    |> post(path, Utils.JSON.encode!(body))
   end
 
   describe "POST /api/legacy/eth/eth-get-balance" do

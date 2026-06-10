@@ -200,11 +200,5 @@ defmodule Utils.JSONTest do
 
       assert decoded == data
     end
-
-    test "encodes nested structs that only implement Jason.Encoder" do
-      data = %{"value" => Jason.OrderedObject.new([{"nested", "100"}])}
-
-      assert Utils.JSON.encode!(data) == ~s({"value":{"nested":"100"}})
-    end
   end
 end

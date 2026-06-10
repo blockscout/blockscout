@@ -58,7 +58,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{"status" => "ok"})
+          Utils.JSON.encode!(%{"status" => "ok"})
         )
       end)
 
@@ -106,7 +106,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           500,
-          Jason.encode!(%{"code" => 0, "message" => "Error"})
+          Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
         )
       end)
 
@@ -191,7 +191,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(%{"status" => "ok"})
+             body: Utils.JSON.encode!(%{"status" => "ok"})
            }}
         end
       )
@@ -203,7 +203,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
           {:ok,
            %Tesla.Env{
              status: 500,
-             body: Jason.encode!(%{"code" => 0, "message" => "Error"})
+             body: Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
            }}
         end
       )
@@ -245,7 +245,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           500,
-          Jason.encode!(%{"code" => 0, "message" => "Error"})
+          Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
         )
       end)
 
@@ -290,7 +290,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           500,
-          Jason.encode!(%{"code" => 0, "message" => "Error"})
+          Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
         )
       end)
 
@@ -353,7 +353,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{"status" => "ok"})
+          Utils.JSON.encode!(%{"status" => "ok"})
         )
       end)
 
@@ -395,7 +395,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           500,
-          Jason.encode!(%{"code" => 0, "message" => "Error"})
+          Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
         )
       end)
 
@@ -452,7 +452,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           500,
-          Jason.encode!(%{"code" => 0, "message" => "Error"})
+          Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
         )
       end)
 
@@ -517,7 +517,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(%{"status" => "ok"})
+             body: Utils.JSON.encode!(%{"status" => "ok"})
            }}
         end
       )
@@ -529,7 +529,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
           {:ok,
            %Tesla.Env{
              status: 500,
-             body: Jason.encode!(%{"code" => 0, "message" => "Error"})
+             body: Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
            }}
         end
       )
@@ -561,7 +561,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           500,
-          Jason.encode!(%{"code" => 0, "message" => "Error"})
+          Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
         )
       end)
 
@@ -602,7 +602,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           500,
-          Jason.encode!(%{"code" => 0, "message" => "Error"})
+          Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
         )
       end)
 

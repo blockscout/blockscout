@@ -65,7 +65,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(%{"success" => false})
+             body: Utils.JSON.encode!(%{"success" => false})
            }}
         end
       )
@@ -159,7 +159,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
            %Tesla.Env{
              status: 200,
              body:
-               Jason.encode!(%{
+               Utils.JSON.encode!(%{
                  "success" => true,
                  "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
                })
@@ -247,7 +247,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
            %Tesla.Env{
              status: 200,
              body:
-               Jason.encode!(%{
+               Utils.JSON.encode!(%{
                  "success" => true,
                  "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
                })
@@ -344,7 +344,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
            %Tesla.Env{
              status: 200,
              body:
-               Jason.encode!(%{
+               Utils.JSON.encode!(%{
                  "success" => true,
                  "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
                })
@@ -694,7 +694,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         })
 
       assert conn.status == 202
-      body = Jason.decode!(conn.resp_body)
+      body = Utils.JSON.decode!(conn.resp_body)
       assert Map.has_key?(body, "request_id")
       assert is_binary(body["request_id"])
     end
@@ -1030,7 +1030,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
            %Tesla.Env{
              status: 200,
              body:
-               Jason.encode!(%{
+               Utils.JSON.encode!(%{
                  "success" => true,
                  "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
                })

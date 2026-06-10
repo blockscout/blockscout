@@ -73,7 +73,7 @@ defmodule BlockScoutWeb.AddressControllerTest do
       conn = get(conn, "/address-counters", %{"id" => Address.checksum(address.hash)})
 
       assert conn.status == 200
-      {:ok, response} = Jason.decode(conn.resp_body)
+      {:ok, response} = Utils.JSON.decode(conn.resp_body)
 
       assert %{
                "transaction_count" => 0,

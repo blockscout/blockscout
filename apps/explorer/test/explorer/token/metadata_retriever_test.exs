@@ -731,7 +731,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(result)
+             body: Utils.JSON.encode!(result)
            }}
         end
       )
@@ -776,7 +776,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(result)
+             body: Utils.JSON.encode!(result)
            }}
         end
       )
@@ -825,7 +825,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(result)
+             body: Utils.JSON.encode!(result)
            }}
         end
       )
@@ -896,7 +896,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       {:ok_store_uri, %{metadata: metadata}, ^url} =
         MetadataRetriever.fetch_metadata_from_uri(url, [])
 
-      assert Map.get(metadata, "attributes") == Jason.decode!(attributes)
+      assert Map.get(metadata, "attributes") == Utils.JSON.decode!(attributes)
     end
 
     test "decodes json file in tokenURI" do
@@ -1055,7 +1055,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
 
       assert {:ok_store_uri,
               %{
-                metadata: Jason.decode!(json)
+                metadata: Utils.JSON.decode!(json)
               }, url} == MetadataRetriever.fetch_json(data)
     end
 
@@ -1084,7 +1084,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(result)
+             body: Utils.JSON.encode!(result)
            }}
         end
       )
@@ -1144,7 +1144,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
 
       assert {:ok_store_uri,
               %{
-                metadata: Jason.decode!(json)
+                metadata: Utils.JSON.decode!(json)
               }, url} ==
                MetadataRetriever.fetch_json({:ok, [url]})
     end
@@ -1401,7 +1401,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       Tesla.Test.expect_tesla_call(
         times: 1,
         returns: fn %{url: ^expected_url}, _opts ->
-          {:ok, %Tesla.Env{status: 200, body: Jason.encode!(@swarm_metadata)}}
+          {:ok, %Tesla.Env{status: 200, body: Utils.JSON.encode!(@swarm_metadata)}}
         end
       )
 
@@ -1421,7 +1421,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       Tesla.Test.expect_tesla_call(
         times: 1,
         returns: fn %{url: ^url}, _opts ->
-          {:ok, %Tesla.Env{status: 200, body: Jason.encode!(@swarm_metadata)}}
+          {:ok, %Tesla.Env{status: 200, body: Utils.JSON.encode!(@swarm_metadata)}}
         end
       )
 
@@ -1441,7 +1441,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       Tesla.Test.expect_tesla_call(
         times: 1,
         returns: fn %{url: ^url}, _opts ->
-          {:ok, %Tesla.Env{status: 200, body: Jason.encode!(@swarm_metadata)}}
+          {:ok, %Tesla.Env{status: 200, body: Utils.JSON.encode!(@swarm_metadata)}}
         end
       )
 
