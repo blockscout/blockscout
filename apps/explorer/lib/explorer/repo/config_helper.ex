@@ -64,7 +64,11 @@ defmodule Explorer.Repo.ConfigHelper do
 
     Application.put_env(:explorer, module, merged)
 
-    {:ok, opts |> Keyword.put(:url, remove_search_path(db_url)) |> Keyword.merge(Keyword.take(merged, [:search_path]))}
+    {:ok,
+     opts
+     |> Keyword.put(:url, remove_search_path(db_url))
+     |> Keyword.merge(Keyword.take(merged, [:search_path]))
+     |> Keyword.put_new(:types, Explorer.Repo.PostgrexTypes)}
   end
 
   @doc """

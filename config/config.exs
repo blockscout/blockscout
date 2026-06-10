@@ -25,6 +25,7 @@ for config <- "../apps/*/config/config.exs" |> Path.expand(__DIR__) |> Path.wild
 end
 
 config :phoenix, :json_library, Utils.JSON
+config :postgrex, :json_library, Utils.JSON
 
 config :logger, :default_formatter, format: "$dateT$time $metadata[$level] $message\n"
 

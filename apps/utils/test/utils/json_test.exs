@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Utils.JSONTest do
   use ExUnit.Case
   doctest Utils.JSON

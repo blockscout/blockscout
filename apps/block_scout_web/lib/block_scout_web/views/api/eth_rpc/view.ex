@@ -64,7 +64,7 @@ defmodule BlockScoutWeb.API.EthRPC.View do
   @doc """
   Encodes error into JSON string
   """
-  @spec sanitize_error(any(), :jason | :poison) :: String.t()
+  @spec sanitize_error(any(), atom()) :: String.t()
   def sanitize_error(error, _json_encoder) do
     if is_map(error), do: Utils.JSON.encode!(error), else: "\"#{error}\""
   end

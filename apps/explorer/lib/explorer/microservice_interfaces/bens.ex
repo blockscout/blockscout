@@ -23,7 +23,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     In multiprotocol mode: {{baseUrl}}/api/v1/addresses:batch-resolve with protocols in body.
     In legacy mode: {{baseUrl}}/api/v1/:chainId/addresses:batch-resolve-names
   """
-  @spec ens_names_batch_request([binary()]) :: {:error, :disabled | binary() | JSON.DecodeError.t()} | {:ok, any}
+  @spec ens_names_batch_request([binary()]) :: {:error, :disabled | binary() | Exception.t()} | {:ok, any}
   def ens_names_batch_request(addresses) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       body =
@@ -39,7 +39,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     In multiprotocol mode: {{baseUrl}}/api/v1/addresses:lookup with protocols query parameter.
     In legacy mode: {{baseUrl}}/api/v1/:chainId/addresses:lookup
   """
-  @spec address_lookup(binary()) :: {:error, :disabled | binary() | JSON.DecodeError.t()} | {:ok, any}
+  @spec address_lookup(binary()) :: {:error, :disabled | binary() | Exception.t()} | {:ok, any}
   def address_lookup(address) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       query_params =
@@ -76,7 +76,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     In multiprotocol mode: {{baseUrl}}/api/v1/domains:lookup with protocols query parameter.
     In legacy mode: {{baseUrl}}/api/v1/:chainId/domains:lookup
   """
-  @spec ens_domain_lookup(binary()) :: {:error, :disabled | binary() | JSON.DecodeError.t()} | {:ok, any}
+  @spec ens_domain_lookup(binary()) :: {:error, :disabled | binary() | Exception.t()} | {:ok, any}
   def ens_domain_lookup(domain) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       query_params =

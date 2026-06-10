@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   """
   @spec interpret(Transaction.t() | map(), (Transaction.t() -> any()) | (map() -> any())) ::
           {{:error, :disabled | binary()}, integer()}
-          | {:error, JSON.DecodeError.t()}
+          | {:error, Exception.t()}
           | {:ok, any()}
   def interpret(transaction_or_map, request_builder \\ &prepare_request_body/1) do
     with {:enabled, true} <- {:enabled, enabled?()},
@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   """
   @spec interpret_user_operation(map()) ::
           {{:error, :disabled | binary()}, integer()}
-          | {:error, JSON.DecodeError.t()}
+          | {:error, Exception.t()}
           | {:ok, any()}
   def interpret_user_operation(user_operation) do
     interpret(user_operation, &prepare_request_body_from_user_op/1)

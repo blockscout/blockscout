@@ -36,7 +36,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
 
   """
   @spec get_addresses_tags([String.t()]) ::
-          {:error, :disabled | <<_::416>> | JSON.DecodeError.t()} | {:ok, any()} | :ignore
+          {:error, :disabled | <<_::416>> | Exception.t()} | {:ok, any()} | :ignore
   def get_addresses_tags([]), do: :ignore
 
   def get_addresses_tags(addresses) do

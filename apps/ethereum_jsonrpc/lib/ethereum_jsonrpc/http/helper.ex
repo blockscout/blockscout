@@ -13,9 +13,9 @@ defmodule EthereumJSONRPC.HTTP.Helper do
   - `json_string`: The JSON string to parse
 
   ## Returns
-  - The method name as a binary, or `{:error, JSON.DecodeError.t()}` if extraction fails
+  - The method name as a binary, or `{:error, Exception.t()}` if extraction fails
   """
-  @spec get_method_from_json_string(binary()) :: binary() | {:error, JSON.DecodeError.t()}
+  @spec get_method_from_json_string(binary()) :: binary() | {:error, Exception.t()}
   def get_method_from_json_string(json_string) do
     with {:ok, decoded_json} <- Utils.JSON.decode(json_string) do
       if is_map(decoded_json) do

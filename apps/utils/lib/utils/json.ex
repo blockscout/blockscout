@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Utils.JSON do
   @moduledoc """
   Facade for Elixir's built-in JSON module, providing Jason-compatible API.
@@ -78,9 +79,9 @@ defmodule Utils.JSON do
 
   Returns {:ok, term} or {:error, reason}.
   """
-  @spec decode(binary(), [decode_option()]) :: {:ok, term()} | {:error, term()}
-  def decode(binary, options \\ []) do
-    case JSON.decode(binary) do
+  @spec decode(iodata(), [decode_option()]) :: {:ok, term()} | {:error, term()}
+  def decode(input, options \\ []) do
+    case input |> IO.iodata_to_binary() |> JSON.decode() do
       {:ok, term} ->
         {:ok, maybe_atomize_keys(term, options)}
 
@@ -97,9 +98,9 @@ defmodule Utils.JSON do
 
   Raises on decode errors.
   """
-  @spec decode!(binary(), [decode_option()]) :: term()
-  def decode!(binary, options \\ []) do
-    term = JSON.decode!(binary)
+  @spec decode!(iodata(), [decode_option()]) :: term()
+  def decode!(input, options \\ []) do
+    term = input |> IO.iodata_to_binary() |> JSON.decode!()
     maybe_atomize_keys(term, options)
   end
 
