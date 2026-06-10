@@ -419,7 +419,12 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       "Retrieves internal transactions included in a specific block with optional filtering by type and call type.",
     parameters:
       base_params() ++
-        [block_hash_or_number_param(), internal_transaction_type_param(), internal_transaction_call_type_param()] ++
+        [
+          block_hash_or_number_param(),
+          internal_transaction_type_param(),
+          internal_transaction_call_type_param(),
+          include_zero_value_param()
+        ] ++
         define_paging_params(["transaction_index", "index"]),
     responses: [
       ok:
@@ -455,6 +460,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         |> Keyword.merge(@api_true)
         |> Keyword.merge(internal_transaction_type_options(params))
         |> Keyword.merge(internal_transaction_call_type_options(params))
+        |> Keyword.put(:include_zero_value, Map.get(params, :include_zero_value, true))
 
       internal_transactions_plus_one = block_to_internal_transactions(block, full_options)
 

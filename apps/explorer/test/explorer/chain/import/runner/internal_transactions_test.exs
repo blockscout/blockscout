@@ -293,6 +293,42 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
         on_exit(fn -> Application.put_env(:indexer, :trace_block_ranges, original_config) end)
       end
+
+      test "does not set refetch_needed=true for non-traceable blocks and multiple ranges" do
+        original_config = Application.get_env(:indexer, :trace_block_ranges)
+
+        full_block = insert(:block)
+        transaction_a = insert(:transaction) |> with_block(full_block)
+        transaction_b = insert(:transaction) |> with_block(full_block)
+
+        Application.put_env(
+          :indexer,
+          :trace_block_ranges,
+          "#{full_block.number - 2}..#{full_block.number - 1},#{full_block.number + 1}..latest"
+        )
+
+        insert(:pending_block_operation, block_hash: full_block.hash, block_number: full_block.number)
+
+        transaction_a_changes = make_internal_transaction_changes(transaction_a, 0, nil)
+
+        assert {:ok, _} = run_internal_transactions([transaction_a_changes])
+
+        assert from(i in InternalTransaction,
+                 where: i.block_number == ^transaction_a.block_number and i.transaction_index == ^transaction_a.index
+               )
+               |> Repo.one()
+               |> is_nil()
+
+        assert from(i in InternalTransaction,
+                 where: i.block_number == ^transaction_b.block_number and i.transaction_index == ^transaction_b.index
+               )
+               |> Repo.one()
+               |> is_nil()
+
+        assert %{consensus: true, refetch_needed: false} = Repo.get(Block, full_block.hash)
+
+        on_exit(fn -> Application.put_env(:indexer, :trace_block_ranges, original_config) end)
+      end
     end
 
     if Application.compile_env(:explorer, :chain_type) == :zetachain do

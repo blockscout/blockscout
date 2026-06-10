@@ -154,6 +154,52 @@ defmodule Indexer.Transform.TokenTransfersTest do
       Application.put_env(:explorer, Explorer.Chain.TokenTransfer, env)
     end
 
+    test "deduplicates duplicate contract tokens by contract_address_hash for Celo" do
+      original_chain_type = Application.get_env(:explorer, :chain_type)
+      Application.put_env(:explorer, :chain_type, :celo)
+
+      on_exit(fn -> Application.put_env(:explorer, :chain_type, original_chain_type) end)
+
+      contract_address_hash = "0x1234567890abcdef1234567890abcdef12345678"
+
+      logs = [
+        %{
+          address_hash: contract_address_hash,
+          block_number: 1_000_001,
+          block_hash: "0x1111111111111111111111111111111111111111111111111111111111111111",
+          data: "0x000000000000000000000000000000000000000000000000000000000000000a",
+          first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          fourth_topic: nil,
+          index: 0,
+          second_topic: "0x000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          third_topic: "0x000000000000000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          transaction_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        %{
+          address_hash: contract_address_hash,
+          block_number: 1_000_002,
+          block_hash: "0x2222222222222222222222222222222222222222222222222222222222222222",
+          data:
+            "0x0000000000000000000000000000000000000000000000000000000000000001" <>
+              "000000000000000000000000000000000000000000000000000000000000000a",
+          first_topic: "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62",
+          second_topic: "0x000000000000000000000000cccccccccccccccccccccccccccccccccccccccc",
+          third_topic: "0x000000000000000000000000dddddddddddddddddddddddddddddddddddddddd",
+          fourth_topic: "0x000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          index: 1,
+          transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      ]
+
+      assert %{
+               tokens: [%{contract_address_hash: ^contract_address_hash, type: "ERC-1155"}],
+               token_transfers: [
+                 %{token_contract_address_hash: ^contract_address_hash, token_type: "ERC-1155"},
+                 %{token_contract_address_hash: ^contract_address_hash, token_type: "ERC-20"}
+               ]
+             } = TokenTransfers.parse(logs)
+    end
+
     test "parses ERC-721 transfer with addresses in data field" do
       log = %{
         address_hash: "0x58Ab73CB79c8275628E0213742a85B163fE0A9Fb",

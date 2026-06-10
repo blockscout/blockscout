@@ -971,6 +971,44 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       assert response["meta"]["message"] ==
                "Some internal transactions within this block range have not yet been processed"
     end
+
+    test "include_zero_value=false excludes zero-value call internal transactions", %{conn: conn} do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      request =
+        get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions", %{"include_zero_value" => "false"})
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert List.first(response["items"])["index"] == 2
+
+      request_default = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+      assert response_default = json_response(request_default, 200)
+      assert Enum.count(response_default["items"]) == 2
+    end
   end
 
   if @chain_type == :ethereum do

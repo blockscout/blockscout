@@ -228,7 +228,7 @@ defmodule Explorer.Chain.Transaction.Schema do
         field(:type, :integer)
         field(:has_error_in_internal_transactions, :boolean)
         field(:fhe_operations_count, :integer)
-        field(:has_token_transfers, :boolean, virtual: true)
+        field(:has_token_transfers, :boolean)
         field(:internal_transactions, {:array, :map}, virtual: true)
 
         # stability virtual fields

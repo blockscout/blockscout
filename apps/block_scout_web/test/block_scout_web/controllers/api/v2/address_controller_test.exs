@@ -2433,6 +2433,46 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       check_paginated_response(response, response_2nd_page, internal_transactions_from)
     end
+
+    test "include_zero_value=false excludes zero-value call internal transactions", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        to_address: address,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        to_address: address,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      request =
+        get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", %{"include_zero_value" => "false"})
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert List.first(response["items"])["index"] == 2
+
+      request_default = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+      assert response_default = json_response(request_default, 200)
+      assert Enum.count(response_default["items"]) == 2
+    end
   end
 
   describe "/addresses/{address_hash}/blocks-validated" do

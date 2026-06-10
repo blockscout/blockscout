@@ -78,6 +78,7 @@ for migrator <- [
       Explorer.Migrator.DeleteZeroValueInternalTransactions,
       Explorer.Migrator.EmptyInternalTransactionsData,
       Explorer.Migrator.FillInternalTransactionsAddressIds,
+      Explorer.Migrator.TransactionHasTokenTransfers,
 
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,
@@ -125,7 +126,8 @@ for migrator <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsBlockNumberCreatedContractAddressHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsCreatedContractAddressHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAddressHashPartialIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsToAddressHashPartialIndex
+      Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsToAddressHashPartialIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsTokenTransferMethodIdOrderedIndex
     ] do
   config :explorer, migrator, enabled: false
 end

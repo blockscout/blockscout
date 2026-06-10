@@ -204,6 +204,40 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
       assert Enum.count(response_2nd_page["items"]) == 1
       assert response_2nd_page["next_page_params"] == nil
     end
+
+    test "include_zero_value=false excludes zero-value call internal transactions", %{conn: conn} do
+      tx =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        transaction: tx,
+        transaction_index: tx.index,
+        block_number: tx.block_number,
+        index: 1,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        transaction: tx,
+        transaction_index: tx.index,
+        block_number: tx.block_number,
+        index: 2,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      request = get(conn, "/api/v2/internal-transactions", %{"include_zero_value" => "false"})
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert List.first(response["items"])["index"] == 2
+
+      request_default = get(conn, "/api/v2/internal-transactions")
+      assert response_default = json_response(request_default, 200)
+      assert Enum.count(response_default["items"]) == 2
+    end
   end
 
   defp compare_item(%InternalTransaction{} = internal_transaction, json) do

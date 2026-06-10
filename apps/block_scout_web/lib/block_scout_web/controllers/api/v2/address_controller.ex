@@ -610,7 +610,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       "Retrieves all internal transactions involving a specific address, with optional filtering for internal transactions sent from or to the address.",
     parameters:
       base_params() ++
-        [address_hash_param(), direction_filter_param()] ++
+        [address_hash_param(), direction_filter_param(), include_zero_value_param()] ++
         define_paging_params(["block_number", "index", "transaction_index"]),
     responses: [
       ok:
@@ -658,6 +658,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(paging_options(params))
             |> Keyword.merge(current_filter(params))
             |> Keyword.merge(@api_true)
+            |> Keyword.put(:include_zero_value, Map.get(params, :include_zero_value, true))
 
           results_plus_one = address_to_internal_transactions(address_hash, full_options)
 

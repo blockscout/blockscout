@@ -148,6 +148,8 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
       FROM address_current_token_balances ctb
       WHERE (ctb.value_fetched_at is NULL OR ctb.value is NULL)
       AND ctb.token_type != 'ERC-7984'
+      AND (ctb.refetch_after IS NULL OR ctb.refetch_after < NOW())
+      AND NOT EXISTS (SELECT 1 FROM missing_balance_of_tokens bmt WHERE bmt.token_contract_address_hash = ctb.token_contract_address_hash)
       AND (#{range_filter});
       """
 

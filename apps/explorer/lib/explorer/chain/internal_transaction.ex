@@ -743,12 +743,14 @@ defmodule Explorer.Chain.InternalTransaction do
   def transaction_to_internal_transactions(hash, options \\ []) when is_list(options) do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    include_zero_value? = Keyword.get(options, :include_zero_value, true)
 
     __MODULE__
     |> for_parent_transaction(hash)
     |> Chain.join_associations(necessity_by_association)
     |> where_is_different_from_parent_transaction()
     |> where_nonpending_operation()
+    |> include_zero_value(include_zero_value?)
     |> page_internal_transaction(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([internal_transaction], asc: internal_transaction.index)
@@ -770,12 +772,14 @@ defmodule Explorer.Chain.InternalTransaction do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     type_filter = Keyword.get(options, :type, [])
     call_type_filter = Keyword.get(options, :call_type, [])
+    include_zero_value? = Keyword.get(options, :include_zero_value, true)
 
     __MODULE__
     |> where([internal_transaction], internal_transaction.block_number == ^block_number)
     |> Chain.join_associations(necessity_by_association)
     |> where_is_different_from_parent_transaction()
     |> where_nonpending_operation()
+    |> include_zero_value(include_zero_value?)
     |> page_block_internal_transaction(paging_options)
     |> filter_by_type(type_filter, call_type_filter)
     |> filter_by_call_type(call_type_filter)
@@ -882,6 +886,7 @@ defmodule Explorer.Chain.InternalTransaction do
     necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     direction = Keyword.get(options, :direction)
     timeout = Keyword.get(options, :timeout)
+    include_zero_value? = Keyword.get(options, :include_zero_value, true)
 
     from_block = Chain.from_block(options)
     to_block = Chain.to_block(options)
@@ -895,6 +900,7 @@ defmodule Explorer.Chain.InternalTransaction do
         |> where_address_fields_match(hash, :to)
         |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
         |> where_is_different_from_parent_transaction()
+        |> include_zero_value(include_zero_value?)
         |> common_where_limit_order(paging_options)
         |> Chain.wrapped_union_subquery()
 
@@ -904,6 +910,7 @@ defmodule Explorer.Chain.InternalTransaction do
         |> where_address_fields_match(hash, :from_address_hash)
         |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
         |> where_is_different_from_parent_transaction()
+        |> include_zero_value(include_zero_value?)
         |> common_where_limit_order(paging_options)
         |> Chain.wrapped_union_subquery()
 
@@ -924,6 +931,7 @@ defmodule Explorer.Chain.InternalTransaction do
       |> where_address_fields_match(hash, direction)
       |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
       |> where_is_different_from_parent_transaction()
+      |> include_zero_value(include_zero_value?)
       |> common_where_limit_order(paging_options)
       |> preload(:block)
       |> Chain.join_associations(necessity_by_association)
@@ -1220,6 +1228,7 @@ defmodule Explorer.Chain.InternalTransaction do
   def fetch(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     exclude_zero_index_internal_transaction = Keyword.get(options, :exclude_origin_internal_transaction, false)
+    include_zero_value? = Keyword.get(options, :include_zero_value, true)
 
     case paging_options do
       %PagingOptions{key: {0, 0}} ->
@@ -1238,6 +1247,7 @@ defmodule Explorer.Chain.InternalTransaction do
         __MODULE__
         |> where_nonpending_operation()
         |> maybe_filter_origin_transaction(exclude_zero_index_internal_transaction)
+        |> include_zero_value(include_zero_value?)
         |> page_internal_transaction(paging_options, %{index_internal_transaction_desc_order: true})
         |> where_internal_transactions_by_transaction_hash(Keyword.get(options, :transaction_hash))
         |> order_by([internal_transaction],

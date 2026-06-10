@@ -7,7 +7,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   alias Explorer.{Chain, HttpClient}
   alias Explorer.Chain.Address.MetadataPreloader
 
-  alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.Chain.{Address, Block, Token.Instance, Transaction}
 
   alias Explorer.Utility.Microservice
 
@@ -338,6 +338,14 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   @spec maybe_preload_ens_to_block(Block.t()) :: Block.t()
   def maybe_preload_ens_to_block(block) do
     maybe_preload_meta(block, __MODULE__, &MetadataPreloader.preload_ens_to_block/1)
+  end
+
+  @doc """
+  Preloads ENS data to the NFT instance if BENS is enabled
+  """
+  @spec maybe_preload_ens_to_instance(Instance.t()) :: Instance.t()
+  def maybe_preload_ens_to_instance(instance) do
+    maybe_preload_meta(instance, __MODULE__, &MetadataPreloader.preload_ens_to_instance/1)
   end
 
   @doc """
