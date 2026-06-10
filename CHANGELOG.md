@@ -25,6 +25,7 @@
 - Enhance missing current token balances metric ([#14438](https://github.com/blockscout/blockscout/issues/14438))
 - Perceive "out of gas" error as contract failure ([#14417](https://github.com/blockscout/blockscout/issues/14417))
 - Add PG statement_timeout for import transactions ([#14414](https://github.com/blockscout/blockscout/issues/14414))
+- Comment out direct Sourcify tests ([#8168](https://github.com/blockscout/blockscout/issues/8168))
 
 ### New ENV variables
 
