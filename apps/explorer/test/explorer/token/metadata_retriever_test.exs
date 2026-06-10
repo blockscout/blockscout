@@ -1398,15 +1398,12 @@ defmodule Explorer.Token.MetadataRetrieverTest do
 
       expected_url = "https://gateway.ethswarm.org/bzz/#{@valid_hash}/"
 
-      Explorer.HttpClient.Mox
-      |> expect(:get, fn ^expected_url, _headers, _opts ->
-        {:ok,
-         %{
-           status_code: 200,
-           body: Jason.encode!(@swarm_metadata),
-           headers: [{"content-type", "application/json"}]
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^expected_url}, _opts ->
+          {:ok, %Tesla.Env{status: 200, body: Jason.encode!(@swarm_metadata)}}
+        end
+      )
 
       assert {:ok, %{metadata: metadata}} =
                MetadataRetriever.fetch_json({:ok, ["bzz://#{@valid_hash}"]})
@@ -1421,15 +1418,12 @@ defmodule Explorer.Token.MetadataRetrieverTest do
 
       url = "https://gateway.ethswarm.org/bzz/#{@valid_hash}/"
 
-      Explorer.HttpClient.Mox
-      |> expect(:get, fn ^url, _headers, _opts ->
-        {:ok,
-         %{
-           status_code: 200,
-           body: Jason.encode!(@swarm_metadata),
-           headers: [{"content-type", "application/json"}]
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok, %Tesla.Env{status: 200, body: Jason.encode!(@swarm_metadata)}}
+        end
+      )
 
       assert {:ok, %{metadata: metadata}} =
                MetadataRetriever.fetch_json({:ok, [url]})
@@ -1444,15 +1438,12 @@ defmodule Explorer.Token.MetadataRetrieverTest do
 
       url = "https://gateway.ethswarm.org/bzz/#{@valid_hash}/meta/1.json"
 
-      Explorer.HttpClient.Mox
-      |> expect(:get, fn ^url, _headers, _opts ->
-        {:ok,
-         %{
-           status_code: 200,
-           body: Jason.encode!(@swarm_metadata),
-           headers: [{"content-type", "application/json"}]
-         }}
-      end)
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok, %Tesla.Env{status: 200, body: Jason.encode!(@swarm_metadata)}}
+        end
+      )
 
       assert {:ok, %{metadata: metadata}} =
                MetadataRetriever.fetch_json({:ok, [url]})
