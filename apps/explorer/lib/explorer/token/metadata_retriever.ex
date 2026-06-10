@@ -712,6 +712,7 @@ defmodule Explorer.Token.MetadataRetriever do
   Resolves an NFT media URL to a fetchable gateway URL with appropriate headers (e.g. IPFS gateway, Arweave gateway).
   """
   @spec resolve_nft_media_url(binary()) :: {binary(), list()}
+  # credo:disable-for-next-line /Complexity/
   def resolve_nft_media_url(url) do
     case classify_nft_url(url) do
       {:ipfs, resource_id} ->
@@ -726,7 +727,7 @@ defmodule Explorer.Token.MetadataRetriever do
 
       {:swarm, resource_id} ->
         if is_binary(resource_id) do
-          {swarm_link(resource_id), []}
+          {swarm_link(resource_id), swarm_headers()}
         else
           {url, []}
         end
