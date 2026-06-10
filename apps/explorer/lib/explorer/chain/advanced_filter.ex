@@ -154,9 +154,9 @@ defmodule Explorer.Chain.AdvancedFilter do
     |> Enum.sort(&sort_function/2)
     |> take_page_size(paging_options)
     |> Chain.select_repo(options).preload(
-      from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
-      to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
-      created_contract_address: [:names, :smart_contract, proxy_implementations_association()]
+      from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association(), :metadata],
+      to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association(), :metadata],
+      created_contract_address: [:names, :smart_contract, proxy_implementations_association(), :metadata]
     )
     |> sanitize_fee()
     |> assign_type()
