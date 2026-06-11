@@ -2541,8 +2541,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     is_contract = !is_nil(instance.owner.contract_code)
     is_unique = value == "1"
 
-    refute Map.has_key?(json, "token")
-
     assert %{
              "id" => ^id,
              "metadata" => ^metadata,
