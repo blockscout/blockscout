@@ -4,10 +4,12 @@
 
 ### 🚀 Features
 
+- Mark instance unhealthy when cache block lags DB ([#14449](https://github.com/blockscout/blockscout/pull/14449))
 - Support for EIP-7708 on arc ([#14336](https://github.com/blockscout/blockscout/pull/14336))
 - Preload only listened entities before broadcast ([#14430](https://github.com/blockscout/blockscout/issues/14430))
 - Add hot smart contracts caching ([#14320](https://github.com/blockscout/blockscout/issues/14320))
 - Add MinimalProxy detection for mid-bytecode EIP-1167-like pattern ([#14426](https://github.com/blockscout/blockscout/issues/14426))
+- Mark instance unhealthy when cache block lags DB ([#14449](https://github.com/blockscout/blockscout/pull/14449))
 
 ### 🐛 Bug Fixes
 
