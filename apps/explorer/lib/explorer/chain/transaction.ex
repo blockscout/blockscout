@@ -859,97 +859,37 @@ defmodule Explorer.Chain.Transaction do
     )
   end
 
-  # if to_address's smart_contract is nil reduce to the case when to_address is not loaded
+  # if to_address's smart_contract is nil, decode without contract ABI
   def decoded_input_data(
-        %__MODULE__{
-          to_address: %{smart_contract: nil},
-          input: input,
-          hash: hash
-        },
-        skip_sig_provider?,
-        options,
-        methods_map,
-        smart_contract_full_abi_map
-      ) do
-    decoded_input_data(
-      %__MODULE__{
-        to_address: %NotLoaded{},
-        input: input,
-        hash: hash
-      },
-      skip_sig_provider?,
-      options,
-      methods_map,
-      smart_contract_full_abi_map
-    )
-  end
-
-  # if to_address's smart_contract is not loaded reduce to the case when to_address is not loaded
-  def decoded_input_data(
-        %__MODULE__{
-          to_address: %{smart_contract: %NotLoaded{}},
-          input: input,
-          hash: hash
-        },
-        skip_sig_provider?,
-        options,
-        methods_map,
-        smart_contract_full_abi_map
-      ) do
-    decoded_input_data(
-      %__MODULE__{
-        to_address: %NotLoaded{},
-        input: input,
-        hash: hash
-      },
-      skip_sig_provider?,
-      options,
-      methods_map,
-      smart_contract_full_abi_map
-    )
-  end
-
-  # if to_address is not loaded try decoding by method candidates in the DB
-  def decoded_input_data(
-        %__MODULE__{
-          to_address: %NotLoaded{},
-          input: %{bytes: <<method_id::binary-size(4), _::binary>> = data} = input,
-          hash: hash
-        },
+        %__MODULE__{to_address: %{smart_contract: nil}, input: input, hash: hash},
         skip_sig_provider?,
         options,
         methods_map,
         _smart_contract_full_abi_map
       ) do
-    {:ok, method_id} = MethodIdentifier.cast(method_id)
-    methods = check_methods_cache(method_id, methods_map, options)
-
-    candidates =
-      methods
-      |> Enum.flat_map(fn candidate ->
-        case do_decoded_input_data(
-               data,
-               [candidate.abi],
-               hash
-             ) do
-          {:ok, _, _, _} = decoded -> [decoded]
-          _ -> []
-        end
-      end)
-
-    {:error, :contract_not_verified,
-     if(candidates == [], do: decode_function_call_via_sig_provider(input, hash, skip_sig_provider?), else: candidates)}
+    decode_without_contract_abi(input, hash, skip_sig_provider?, options, methods_map)
   end
 
-  # if to_address is not loaded and input is not a method call return error
+  # if to_address's smart_contract is not loaded, decode without contract ABI
   def decoded_input_data(
-        %__MODULE__{to_address: %NotLoaded{}},
-        _,
-        _,
-        _,
-        _
+        %__MODULE__{to_address: %{smart_contract: %NotLoaded{}}, input: input, hash: hash},
+        skip_sig_provider?,
+        options,
+        methods_map,
+        _smart_contract_full_abi_map
       ) do
-    {:error, :contract_not_verified, []}
+    decode_without_contract_abi(input, hash, skip_sig_provider?, options, methods_map)
+  end
+
+  # if to_address is not loaded, decode without contract ABI
+  def decoded_input_data(
+        %__MODULE__{to_address: %NotLoaded{}, input: input, hash: hash},
+        skip_sig_provider?,
+        options,
+        methods_map,
+        _smart_contract_full_abi_map
+      ) do
+    decode_without_contract_abi(input, hash, skip_sig_provider?, options, methods_map)
   end
 
   def decoded_input_data(
@@ -1034,6 +974,30 @@ defmodule Explorer.Chain.Transaction do
         {:error, :contract_verified, result}
     end
   end
+
+  defp decode_without_contract_abi(
+         %{bytes: <<method_id::binary-size(4), _::binary>> = data} = input,
+         hash,
+         skip_sig_provider?,
+         options,
+         methods_map
+       ) do
+    {:ok, method_id} = MethodIdentifier.cast(method_id)
+    methods = check_methods_cache(method_id, methods_map, options)
+
+    candidates =
+      Enum.flat_map(methods, fn candidate ->
+        case do_decoded_input_data(data, [candidate.abi], hash) do
+          {:ok, _, _, _} = decoded -> [decoded]
+          _ -> []
+        end
+      end)
+
+    {:error, :contract_not_verified,
+     if(candidates == [], do: decode_function_call_via_sig_provider(input, hash, skip_sig_provider?), else: candidates)}
+  end
+
+  defp decode_without_contract_abi(_, _, _, _, _), do: {:error, :contract_not_verified, []}
 
   defp do_decoded_input_data(data, full_abi, hash) do
     with {:ok, {selector, values}} <- find_and_decode(full_abi, data, hash),
