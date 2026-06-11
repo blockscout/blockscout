@@ -193,6 +193,8 @@ defmodule Explorer.Chain.Health.Helper do
         with true <- last_block_db_delay > blocks_indexing_delay_threshold,
              {:empty_health_latest_block_number_from_node, false} <-
                {:empty_health_latest_block_number_from_node, is_nil(health_status.health_latest_block_number_from_node)},
+             {:empty_health_latest_block_number_from_db, false} <-
+               {:empty_health_latest_block_number_from_db, is_nil(health_status.health_latest_block_number_from_db)},
              true <-
                Decimal.compare(
                  Decimal.sub(
@@ -204,6 +206,7 @@ defmodule Explorer.Chain.Health.Helper do
           no_new_block_status(last_block_db_delay)
         else
           {:empty_health_latest_block_number_from_node, true} -> no_new_block_status(last_block_db_delay)
+          {:empty_health_latest_block_number_from_db, true} -> true
           _ -> true
         end
 
