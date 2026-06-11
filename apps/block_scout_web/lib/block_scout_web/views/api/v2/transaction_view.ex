@@ -805,7 +805,31 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
                | :blob_transaction
                | :set_code_transaction
                | :sponsored_transaction
-  def transaction_types(transaction, types \\ [], stage \\ :sponsored_transaction)
+               | :op_stack_l1_attributes_tx
+               | :op_stack_post_exec_tx
+  def transaction_types(transaction, types \\ [], stage \\ :op_stack_l1_attributes_tx)
+
+  def transaction_types(%Transaction{type: type, index: index} = transaction, types, :op_stack_l1_attributes_tx) do
+    types =
+      if type == 0x7E && index == 0 do
+        [:op_stack_l1_attributes_tx | types]
+      else
+        types
+      end
+
+    transaction_types(transaction, types, :op_stack_post_exec_tx)
+  end
+
+  def transaction_types(%Transaction{type: type} = transaction, types, :op_stack_post_exec_tx) do
+    types =
+      if type == 0x7D do
+        [:op_stack_post_exec_tx | types]
+      else
+        types
+      end
+
+    transaction_types(transaction, types, :sponsored_transaction)
+  end
 
   def transaction_types(%Transaction{type: type} = transaction, types, :sponsored_transaction) do
     # Eden sponsored (batched) transaction type
