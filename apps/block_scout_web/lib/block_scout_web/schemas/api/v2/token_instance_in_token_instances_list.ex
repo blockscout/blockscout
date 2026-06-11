@@ -7,12 +7,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstanceInTokenInstancesList do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.TokenInstanceInList
+  alias BlockScoutWeb.Schemas.API.V2.{General, Token.Type, TokenInstance}
   alias BlockScoutWeb.Schemas.Helper
 
   OpenApiSpex.schema(
-    TokenInstanceInList.schema()
-    |> Helper.extend_schema(title: "TokenInstanceInTokenInstancesList")
+    TokenInstance.schema()
+    |> Helper.extend_schema(
+      title: "TokenInstanceInTokenInstancesList",
+      # token_type and value are present on the holder-filtered path but absent on
+      # the unfiltered path, so they are allowed but not required.
+      properties: %{
+        token_type: Type,
+        value: General.IntegerStringNullable
+      }
+    )
     |> Map.update!(:properties, &Map.delete(&1, :token))
     |> Map.update!(:required, &List.delete(&1, :token))
   )
