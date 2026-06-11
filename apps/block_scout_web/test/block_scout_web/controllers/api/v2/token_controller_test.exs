@@ -1183,6 +1183,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert data = json_response(request, 200)
       assert compare_item(instance, data)
       assert Address.checksum(instance.owner_address_hash) == data["owner"]["hash"]
+      assert data["token"]["address_hash"] == Address.checksum(token.contract_address_hash)
+      assert data["token"]["type"] == token.type
     end
 
     test "get 404 on token instance which is not presented in DB", %{conn: conn} do
@@ -2529,23 +2531,21 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   end
 
   def compare_item(%Instance{token: %Token{} = token} = instance, json) do
-    token_type = token.type
     value = to_string(value(token.type, instance))
     id = to_string(instance.token_id)
     metadata = instance.metadata
-    token_address_hash = Address.checksum(token.contract_address_hash)
     app_url = instance.metadata["external_url"]
     animation_url = instance.metadata["animation_url"]
     image_url = instance.metadata["image_url"]
-    token_name = token.name
     owner_address_hash = Address.checksum(instance.owner.hash)
     is_contract = !is_nil(instance.owner.contract_code)
     is_unique = value == "1"
 
+    refute Map.has_key?(json, "token")
+
     assert %{
              "id" => ^id,
              "metadata" => ^metadata,
-             "token" => %{"address_hash" => ^token_address_hash, "name" => ^token_name, "type" => ^token_type},
              "external_app_url" => ^app_url,
              "animation_url" => ^animation_url,
              "image_url" => ^image_url,
@@ -2564,7 +2564,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     assert to_string(instance.token_id) == json["id"]
     assert Utils.JSON.decode!(Utils.JSON.encode!(instance.metadata)) == json["metadata"]
     assert json["is_unique"]
-    compare_item(Repo.preload(instance, [{:token, :contract_address}]).token, json["token"])
   end
 
   defp value("ERC-721", _), do: 1
