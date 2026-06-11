@@ -461,7 +461,7 @@ defmodule Explorer.SmartContract.Reader do
         options
       ) do
     abi = get_abi(contract_address_hash, :proxy, options)
-    outputs = query_function_with_custom_abi(contract_address_hash, params, from, leave_error_as_map, abi)
+    outputs = query_function_with_custom_abi(contract_address_hash, params, from, leave_error_as_map, abi, options)
     names = parse_names_from_abi(abi, method_id)
     %{output: outputs, names: names}
   end
