@@ -1149,7 +1149,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{
+          Utils.JSON.encode!(%{
             "names" => %{
               to_string(to_address) => "test.eth"
             }
@@ -1161,7 +1161,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{
+          Utils.JSON.encode!(%{
             "addresses" => %{
               to_string(to_address) => %{
                 "tags" => [
@@ -2937,7 +2937,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{
+          Utils.JSON.encode!(%{
             "names" => %{
               to_string(address) => "test.eth"
             }
@@ -2949,7 +2949,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{
+          Utils.JSON.encode!(%{
             "addresses" => %{
               to_string(address) => %{
                 "tags" => [
@@ -3048,13 +3048,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       Bypass.expect_once(bypass, "POST", "api/v1/addresses:batch_resolve", fn conn ->
         {:ok, body, conn} = Plug.Conn.read_body(conn)
-        decoded = Jason.decode!(body)
+        decoded = Utils.JSON.decode!(body)
         assert decoded["protocols"] == "ens"
 
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{
+          Utils.JSON.encode!(%{
             "names" => %{
               to_string(address) => "test.eth"
             }
@@ -3066,7 +3066,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{
+          Utils.JSON.encode!(%{
             "addresses" => %{
               to_string(address) => %{
                 "tags" => [
@@ -3325,10 +3325,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       Bypass.expect_once(bypass, "POST", "/api/v1/abi/events%3Abatch-get", fn conn ->
         # cspell:enable
         {:ok, body, conn} = Plug.Conn.read_body(conn)
-        body = Jason.decode!(body)
+        body = Utils.JSON.decode!(body)
         assert Enum.count(body["requests"]) == 1
 
-        Conn.resp(conn, 200, Jason.encode!([]))
+        Conn.resp(conn, 200, Utils.JSON.encode!([]))
       end)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/logs")

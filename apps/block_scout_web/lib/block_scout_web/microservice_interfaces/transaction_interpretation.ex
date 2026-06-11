@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   """
   @spec interpret(Transaction.t() | map(), (Transaction.t() -> any()) | (map() -> any())) ::
           {{:error, :disabled | binary()}, integer()}
-          | {:error, Jason.DecodeError.t()}
+          | {:error, Exception.t()}
           | {:ok, any()}
   def interpret(transaction_or_map, request_builder \\ &prepare_request_body/1) do
     with {:enabled, true} <- {:enabled, enabled?()},
@@ -69,7 +69,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   """
   @spec interpret_user_operation(map()) ::
           {{:error, :disabled | binary()}, integer()}
-          | {:error, Jason.DecodeError.t()}
+          | {:error, Exception.t()}
           | {:ok, any()}
   def interpret_user_operation(user_operation) do
     interpret(user_operation, &prepare_request_body_from_user_op/1)
@@ -94,9 +94,9 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+    case HttpClient.post(url, Utils.JSON.encode!(body), headers, recv_timeout: @post_timeout) do
       {:ok, %{body: body, status_code: 200}} ->
-        body |> Jason.decode() |> preload_template_variables()
+        body |> Utils.JSON.decode() |> preload_template_variables()
 
       error ->
         old_truncate = Application.get_env(:logger, :truncate)
@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
   defp try_get_cached_value(hash) do
     with {:ok, %{body: body, status_code: 200}} <- HttpClient.get(cache_url(hash)),
-         {:ok, json} <- body |> Jason.decode() do
+         {:ok, json} <- body |> Utils.JSON.decode() do
       {:ok, json} |> preload_template_variables()
     else
       _ ->

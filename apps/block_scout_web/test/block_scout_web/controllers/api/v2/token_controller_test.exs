@@ -1353,7 +1353,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         Plug.Conn.resp(
           conn,
           200,
-          Jason.encode!(%{"names" => %{owner_hash_string => "owner.eth"}})
+          Utils.JSON.encode!(%{"names" => %{owner_hash_string => "owner.eth"}})
         )
       end)
 
@@ -1361,7 +1361,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         Plug.Conn.resp(
           conn,
           200,
-          Jason.encode!(%{
+          Utils.JSON.encode!(%{
             "addresses" => %{
               owner_hash_string => %{
                 "tags" => [
@@ -2562,7 +2562,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
   def compare_item(%Instance{} = instance, json) do
     assert to_string(instance.token_id) == json["id"]
-    assert Jason.decode!(Jason.encode!(instance.metadata)) == json["metadata"]
+    assert Utils.JSON.decode!(Utils.JSON.encode!(instance.metadata)) == json["metadata"]
     assert json["is_unique"]
     compare_item(Repo.preload(instance, [{:token, :contract_address}]).token, json["token"])
   end
@@ -2835,7 +2835,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         {:ok,
          %Tesla.Env{
            status: 200,
-           body: Jason.encode!(metadata)
+           body: Utils.JSON.encode!(metadata)
          }}
       end
     )
@@ -2849,7 +2849,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          %Tesla.Env{
            status: 200,
            body:
-             Jason.encode!(%{
+             Utils.JSON.encode!(%{
                "success" => true,
                "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
              })

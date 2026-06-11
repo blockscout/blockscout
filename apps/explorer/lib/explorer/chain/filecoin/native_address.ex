@@ -39,7 +39,6 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   """
 
   alias Explorer.Chain.Hash
-  alias Poison.Encoder.BitString
   alias Varint.LEB128
 
   use Ecto.Type
@@ -458,21 +457,11 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
     end
   end
 
-  defimpl Poison.Encoder do
-    def encode(hash, options) do
+  defimpl JSON.Encoder do
+    def encode(hash, encoder) do
       hash
       |> to_string()
-      |> BitString.encode(options)
-    end
-  end
-
-  defimpl Jason.Encoder do
-    alias Jason.Encode
-
-    def encode(hash, opts) do
-      hash
-      |> to_string()
-      |> Encode.string(opts)
+      |> JSON.Encoder.encode(encoder)
     end
   end
 end

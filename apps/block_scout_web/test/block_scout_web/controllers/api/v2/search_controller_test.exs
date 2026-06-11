@@ -702,8 +702,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
           assert conn.params["name"] == name
 
           case conn.params["page_token"] do
-            nil -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_1))
-            ^page_token_1 -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_2))
+            nil -> Plug.Conn.resp(conn, 200, Utils.JSON.encode!(metadata_response_1))
+            ^page_token_1 -> Plug.Conn.resp(conn, 200, Utils.JSON.encode!(metadata_response_2))
             _ -> raise "Unexpected page_token"
           end
         end
@@ -1060,8 +1060,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
           assert conn.params["name"] == name
 
           case conn.params["page_token"] do
-            nil -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_1))
-            ^page_token_1 -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_2))
+            nil -> Plug.Conn.resp(conn, 200, Utils.JSON.encode!(metadata_response_1))
+            ^page_token_1 -> Plug.Conn.resp(conn, 200, Utils.JSON.encode!(metadata_response_2))
             _ -> raise "Unexpected page_token"
           end
         end
@@ -2263,7 +2263,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         fn conn ->
           assert conn.params["name"] == name
 
-          Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response))
+          Plug.Conn.resp(conn, 200, Utils.JSON.encode!(metadata_response))
         end
       )
 

@@ -302,10 +302,10 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
                      },
                      :timer.seconds(5)
 
-      transaction_1 = transaction_1 |> Jason.encode!() |> Jason.decode!()
+      transaction_1 = transaction_1 |> Utils.JSON.encode!() |> Utils.JSON.decode!()
       compare_item(Repo.get_by(Transaction, %{hash: transaction_1["hash"]}), transaction_1)
 
-      transaction_2 = transaction_2 |> Jason.encode!() |> Jason.decode!()
+      transaction_2 = transaction_2 |> Utils.JSON.encode!() |> Utils.JSON.decode!()
       compare_item(Repo.get_by(Transaction, %{hash: transaction_2["hash"]}), transaction_2)
 
       assert_receive %Phoenix.Socket.Message{
@@ -315,10 +315,10 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
                      },
                      :timer.seconds(5)
 
-      transaction_1 = transaction_1 |> Jason.encode!() |> Jason.decode!()
+      transaction_1 = transaction_1 |> Utils.JSON.encode!() |> Utils.JSON.decode!()
       compare_item(Repo.get_by(Transaction, %{hash: transaction_1["hash"]}), transaction_1)
 
-      transaction_2 = transaction_2 |> Jason.encode!() |> Jason.decode!()
+      transaction_2 = transaction_2 |> Utils.JSON.encode!() |> Utils.JSON.decode!()
       compare_item(Repo.get_by(Transaction, %{hash: transaction_2["hash"]}), transaction_2)
     end
 
@@ -352,7 +352,9 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
 
       token_transfers
       |> Enum.zip(transfers)
-      |> Enum.each(fn {transfer, json} -> compare_item(transfer, json |> Jason.encode!() |> Jason.decode!()) end)
+      |> Enum.each(fn {transfer, json} ->
+        compare_item(transfer, json |> Utils.JSON.encode!() |> Utils.JSON.decode!())
+      end)
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{token_transfers: [_, _, _] = transfers},
@@ -363,7 +365,9 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
 
       token_transfers
       |> Enum.zip(transfers)
-      |> Enum.each(fn {transfer, json} -> compare_item(transfer, json |> Jason.encode!() |> Jason.decode!()) end)
+      |> Enum.each(fn {transfer, json} ->
+        compare_item(transfer, json |> Utils.JSON.encode!() |> Utils.JSON.decode!())
+      end)
     end
   end
 

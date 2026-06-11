@@ -571,10 +571,8 @@ defmodule Explorer.Chain.Mud do
   end
 end
 
-defimpl Jason.Encoder, for: ABI.FunctionSelector do
-  alias Jason.Encode
-
-  def encode(data, opts) do
+defimpl JSON.Encoder, for: ABI.FunctionSelector do
+  def encode(data, encoder) do
     function_inputs = encode_arguments(data.types, data.input_names)
 
     inputs =
@@ -586,7 +584,7 @@ defimpl Jason.Encoder, for: ABI.FunctionSelector do
         function_inputs
       end
 
-    Encode.map(
+    JSON.Encoder.encode(
       %{
         "type" => data.type,
         "name" => data.function,
@@ -594,7 +592,7 @@ defimpl Jason.Encoder, for: ABI.FunctionSelector do
         "outputs" => encode_arguments(data.returns, data.return_names),
         "stateMutability" => encode_state_mutability(data.state_mutability)
       },
-      opts
+      encoder
     )
   end
 

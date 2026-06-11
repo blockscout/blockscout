@@ -87,7 +87,7 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalancesTest d
     Tesla.Test.expect_tesla_call(
       times: 1,
       returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
-        {:ok, payload} = Jason.decode(body)
+        {:ok, payload} = Utils.JSON.decode(body)
 
         assert payload["addresses"] == []
         assert payload["block_ranges"] == []
@@ -110,7 +110,7 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalancesTest d
         {:ok,
          %Tesla.Env{
            status: 200,
-           body: Jason.encode!(%{"status" => "ok"})
+           body: Utils.JSON.encode!(%{"status" => "ok"})
          }}
       end
     )

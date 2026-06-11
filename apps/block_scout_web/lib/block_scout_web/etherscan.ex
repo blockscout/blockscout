@@ -1227,7 +1227,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@account_eth_get_balance_example_value),
+        example_value: Utils.JSON.encode!(@account_eth_get_balance_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -1265,7 +1265,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@account_balance_example_value),
+        example_value: Utils.JSON.encode!(@account_balance_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -1278,7 +1278,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@account_balance_example_value_error)
+        example_value: Utils.JSON.encode!(@account_balance_example_value_error)
       }
     ]
   }
@@ -1308,7 +1308,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@account_balancemulti_example_value),
+        example_value: Utils.JSON.encode!(@account_balancemulti_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -1324,7 +1324,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@account_balance_example_value_error)
+        example_value: Utils.JSON.encode!(@account_balance_example_value_error)
       }
     ]
   }
@@ -1358,7 +1358,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@account_pendingtxlist_example_value),
+        example_value: Utils.JSON.encode!(@account_pendingtxlist_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -1374,7 +1374,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@account_txlist_example_value_error)
+        example_value: Utils.JSON.encode!(@account_txlist_example_value_error)
       }
     ]
   }
@@ -1444,7 +1444,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@account_txlist_example_value),
+        example_value: Utils.JSON.encode!(@account_txlist_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -1460,7 +1460,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@account_txlist_example_value_error)
+        example_value: Utils.JSON.encode!(@account_txlist_example_value_error)
       }
     ]
   }
@@ -1519,7 +1519,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@account_txlistinternal_example_value),
+        example_value: Utils.JSON.encode!(@account_txlistinternal_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -1535,7 +1535,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@account_txlistinternal_example_value_error)
+        example_value: Utils.JSON.encode!(@account_txlistinternal_example_value_error)
       }
     ]
   }
@@ -1592,7 +1592,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@account_tokentx_example_value),
+        example_value: Utils.JSON.encode!(@account_tokentx_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -1608,7 +1608,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@account_tokentx_example_value_error)
+        example_value: Utils.JSON.encode!(@account_tokentx_example_value_error)
       }
     ]
   }
@@ -1635,7 +1635,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@account_tokenbalance_example_value),
+        example_value: Utils.JSON.encode!(@account_tokenbalance_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -1652,7 +1652,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@account_tokenbalance_example_value_error)
+        example_value: Utils.JSON.encode!(@account_tokenbalance_example_value_error)
       }
     ]
   }
@@ -1673,7 +1673,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@account_tokenlist_example_value),
+        example_value: Utils.JSON.encode!(@account_tokenlist_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -1689,7 +1689,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@account_tokenbalance_example_value_error)
+        example_value: Utils.JSON.encode!(@account_tokenbalance_example_value_error)
       }
     ]
   }
@@ -1723,7 +1723,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@account_getminedblocks_example_value),
+        example_value: Utils.JSON.encode!(@account_getminedblocks_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -1739,7 +1739,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@account_getminedblocks_example_value_error)
+        example_value: Utils.JSON.encode!(@account_getminedblocks_example_value_error)
       }
     ]
   }
@@ -1767,7 +1767,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@account_listaccounts_example_value),
+        example_value: Utils.JSON.encode!(@account_listaccounts_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -1877,7 +1877,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@logs_getlogs_example_value),
+        example_value: Utils.JSON.encode!(@logs_getlogs_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -1893,7 +1893,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@logs_getlogs_example_value_error)
+        example_value: Utils.JSON.encode!(@logs_getlogs_example_value_error)
       }
     ]
   }
@@ -1916,7 +1916,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@token_gettoken_example_value),
+        example_value: Utils.JSON.encode!(@token_gettoken_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -1932,7 +1932,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@token_gettoken_example_value_error)
+        example_value: Utils.JSON.encode!(@token_gettoken_example_value_error)
       }
     ]
   }
@@ -1966,7 +1966,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@token_gettokenholders_example_value),
+        example_value: Utils.JSON.encode!(@token_gettokenholders_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -1982,7 +1982,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@token_gettokenholders_example_value_error)
+        example_value: Utils.JSON.encode!(@token_gettokenholders_example_value_error)
       }
     ]
   }
@@ -2081,7 +2081,7 @@ defmodule BlockScoutWeb.Etherscan do
         %{
           code: "200",
           description: "successful operation",
-          example_value: Jason.encode!(@token_bridgedtokenlist_example_value),
+          example_value: Utils.JSON.encode!(@token_bridgedtokenlist_example_value),
           model: %{
             name: "Result",
             fields: %{
@@ -2117,7 +2117,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@stats_tokensupply_example_value),
+        example_value: Utils.JSON.encode!(@stats_tokensupply_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2134,7 +2134,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@token_gettoken_example_value_error)
+        example_value: Utils.JSON.encode!(@token_gettoken_example_value_error)
       }
     ]
   }
@@ -2148,7 +2148,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@stats_ethsupplyexchange_example_value),
+        example_value: Utils.JSON.encode!(@stats_ethsupplyexchange_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2174,7 +2174,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@stats_ethsupply_example_value),
+        example_value: Utils.JSON.encode!(@stats_ethsupply_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2200,7 +2200,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@stats_coinsupply_example_value),
+        example_value: Utils.JSON.encode!(@stats_coinsupply_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2224,7 +2224,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@stats_coinprice_example_value),
+        example_value: Utils.JSON.encode!(@stats_coinprice_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2256,7 +2256,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@stats_totalfees_example_value),
+        example_value: Utils.JSON.encode!(@stats_totalfees_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2272,7 +2272,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@stats_totalfees_example_value_error)
+        example_value: Utils.JSON.encode!(@stats_totalfees_example_value_error)
       }
     ]
   }
@@ -2293,7 +2293,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful request",
-        example_value: Jason.encode!(@block_eth_block_number_example_value),
+        example_value: Utils.JSON.encode!(@block_eth_block_number_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2322,7 +2322,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@block_getblockreward_example_value),
+        example_value: Utils.JSON.encode!(@block_getblockreward_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2338,7 +2338,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@block_getblockreward_example_value_error)
+        example_value: Utils.JSON.encode!(@block_getblockreward_example_value_error)
       }
     ]
   }
@@ -2365,7 +2365,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@block_getblocknobytime_example_value),
+        example_value: Utils.JSON.encode!(@block_getblocknobytime_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2381,7 +2381,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@block_getblocknobytime_example_value_error)
+        example_value: Utils.JSON.encode!(@block_getblocknobytime_example_value_error)
       }
     ]
   }
@@ -2430,7 +2430,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@contract_listcontracts_example_value),
+        example_value: Utils.JSON.encode!(@contract_listcontracts_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2577,14 +2577,14 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@contract_verify_example_value),
+        example_value: Utils.JSON.encode!(@contract_verify_example_value),
         type: "model",
         model: @contract_model
       },
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@contract_verify_example_value_error)
+        example_value: Utils.JSON.encode!(@contract_verify_example_value_error)
       }
     ]
   }
@@ -2645,14 +2645,14 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@contract_verify_example_value),
+        example_value: Utils.JSON.encode!(@contract_verify_example_value),
         type: "model",
         model: @contract_model
       },
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@contract_verify_example_value_error)
+        example_value: Utils.JSON.encode!(@contract_verify_example_value_error)
       }
     ]
   }
@@ -2716,14 +2716,14 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@contract_verify_example_value),
+        example_value: Utils.JSON.encode!(@contract_verify_example_value),
         type: "model",
         model: @contract_model
       },
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@contract_verify_example_value_error)
+        example_value: Utils.JSON.encode!(@contract_verify_example_value_error)
       }
     ]
   }
@@ -2786,7 +2786,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@contract_verifysourcecode_example_value),
+        example_value: Utils.JSON.encode!(@contract_verifysourcecode_example_value),
         type: "model",
         model: @uid_response_model
       }
@@ -2809,7 +2809,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@contract_checkverifystatus_example_value),
+        example_value: Utils.JSON.encode!(@contract_checkverifystatus_example_value),
         type: "model",
         model: @status_response_model
       }
@@ -2832,7 +2832,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@contract_getabi_example_value),
+        example_value: Utils.JSON.encode!(@contract_getabi_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2848,7 +2848,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@contract_getabi_example_value_error)
+        example_value: Utils.JSON.encode!(@contract_getabi_example_value_error)
       }
     ]
   }
@@ -2869,7 +2869,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@contract_getsourcecode_example_value),
+        example_value: Utils.JSON.encode!(@contract_getsourcecode_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2885,7 +2885,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@contract_getsourcecode_example_value_error)
+        example_value: Utils.JSON.encode!(@contract_getsourcecode_example_value_error)
       }
     ]
   }
@@ -2912,7 +2912,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@transaction_gettxinfo_example_value),
+        example_value: Utils.JSON.encode!(@transaction_gettxinfo_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2928,7 +2928,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@transaction_gettxreceiptstatus_example_value_error)
+        example_value: Utils.JSON.encode!(@transaction_gettxreceiptstatus_example_value_error)
       }
     ]
   }
@@ -2949,7 +2949,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@transaction_gettxreceiptstatus_example_value),
+        example_value: Utils.JSON.encode!(@transaction_gettxreceiptstatus_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -2965,7 +2965,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@transaction_gettxreceiptstatus_example_value_error)
+        example_value: Utils.JSON.encode!(@transaction_gettxreceiptstatus_example_value_error)
       }
     ]
   }
@@ -2986,7 +2986,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "successful operation",
-        example_value: Jason.encode!(@transaction_getstatus_example_value),
+        example_value: Utils.JSON.encode!(@transaction_getstatus_example_value),
         model: %{
           name: "Result",
           fields: %{
@@ -3002,7 +3002,7 @@ defmodule BlockScoutWeb.Etherscan do
       %{
         code: "200",
         description: "error",
-        example_value: Jason.encode!(@transaction_getstatus_example_value_error)
+        example_value: Utils.JSON.encode!(@transaction_getstatus_example_value_error)
       }
     ]
   }

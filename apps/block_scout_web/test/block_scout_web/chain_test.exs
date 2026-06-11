@@ -169,11 +169,11 @@ defmodule BlockScoutWeb.ChainTest do
     end
   end
 
-  describe "Jason.encode!" do
+  describe "Utils.JSON.encode!" do
     test "correctly encodes decimal values" do
       val = Decimal.from_float(5.55)
 
-      assert "\"5.55\"" == Jason.encode!(val)
+      assert "\"5.55\"" == Utils.JSON.encode!(val)
     end
   end
 end

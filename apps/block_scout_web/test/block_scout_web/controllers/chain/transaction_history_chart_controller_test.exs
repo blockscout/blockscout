@@ -44,8 +44,8 @@ defmodule BlockScoutWeb.Chain.TransactionHistoryChartControllerTest do
         |> TransactionHistoryChartController.show([])
 
       # turn conn.resp_body into a map using JSON
-      response_data = Jason.decode!(conn.resp_body, keys: :atoms)
-      history_data = Jason.decode!(response_data.history_data, keys: :atoms)
+      response_data = Utils.JSON.decode!(conn.resp_body, keys: :atoms)
+      history_data = Utils.JSON.decode!(response_data.history_data, keys: :atoms)
 
       history_data_with_elixir_dates =
         Enum.map(history_data, fn stat ->

@@ -79,7 +79,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionController do
       {response, code} =
         case TransactionInterpretationService.interpret_user_operation(user_op) do
           {:ok, response} -> {response, 200}
-          {:error, %Jason.DecodeError{}} -> {%{error: "Error while transaction interpreter response decoding"}, 500}
+          {:error, %JSON.DecodeError{}} -> {%{error: "Error while transaction interpreter response decoding"}, 500}
           {{:error, error}, code} -> {%{error: error}, code}
         end
 

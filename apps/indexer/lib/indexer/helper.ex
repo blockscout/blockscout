@@ -796,7 +796,7 @@ defmodule Indexer.Helper do
 
     ## Parameters
     - `url`: The URL which needs to be requested.
-    - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Jason.decode`.
+    - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Utils.JSON.decode`.
     - `attempts_done`: The number of attempts done. Incremented by the function itself.
     - `avoid_retry_for_statuses`: The list of http error codes we don't need to re-send the request for.
                                   E.g. for 404 error we don't try to re-send the request.
@@ -815,7 +815,7 @@ defmodule Indexer.Helper do
     case Tesla.get(client, url, opts: [adapter: [timeout: recv_timeout, transport_opts: [timeout: connect_timeout]]]) do
       {:ok, %{body: body, status: 200}} ->
         if response_format == :json do
-          Jason.decode(body)
+          Utils.JSON.decode(body)
         else
           {:ok, body}
         end
@@ -836,7 +836,7 @@ defmodule Indexer.Helper do
   #
   # ## Parameters
   # - `url`: The URL which needs to be requested.
-  # - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Jason.decode`.
+  # - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Utils.JSON.decode`.
   # - `error`: The error description for logging purposes.
   # - `attempts_done`: The number of attempts done. Incremented by the function itself.
   # - `avoid_retry_for_statuses`: The list of http error codes we don't need to re-send the request for.

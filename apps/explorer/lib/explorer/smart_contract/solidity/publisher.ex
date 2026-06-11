@@ -105,7 +105,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
          "compilerSettings" => _,
          "runtimeMatch" => _
        } = result_params} ->
-        compilation_artifacts = Jason.decode!(compilation_artifacts_string)
+        compilation_artifacts = Utils.JSON.decode!(compilation_artifacts_string)
 
         transformed_result_params =
           result_params
@@ -195,7 +195,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
     %{^file_name => contract_source_code} = sources
 
-    compiler_settings = Jason.decode!(compiler_settings_string)
+    compiler_settings = Utils.JSON.decode!(compiler_settings_string)
 
     optimization = extract_optimization(compiler_settings)
 
@@ -255,7 +255,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
     %{^file_name => contract_source_code} = sources
 
-    compiler_settings = Jason.decode!(compiler_settings_string)
+    compiler_settings = Utils.JSON.decode!(compiler_settings_string)
 
     optimization = extract_optimization(compiler_settings)
 
@@ -284,7 +284,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("is_blueprint", source["isBlueprint"])
       |> Map.put("language", verification_language)
 
-    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"), save_file_path?)
+    publish_smart_contract(address_hash, prepared_params, Utils.JSON.decode!(abi_string || "null"), save_file_path?)
   end
 
   defp parse_optimization_runs(compiler_settings, optimization) do

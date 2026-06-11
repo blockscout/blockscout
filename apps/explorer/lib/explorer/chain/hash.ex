@@ -5,7 +5,6 @@ defmodule Explorer.Chain.Hash do
   """
 
   import Bitwise
-  alias Poison.Encoder.BitString
 
   @bits_per_byte 8
   @hexadecimal_digits_per_byte 2
@@ -227,21 +226,11 @@ defmodule Explorer.Chain.Hash do
     end
   end
 
-  defimpl Poison.Encoder do
-    def encode(hash, options) do
+  defimpl JSON.Encoder do
+    def encode(hash, encoder) do
       hash
       |> to_string()
-      |> BitString.encode(options)
-    end
-  end
-
-  defimpl Jason.Encoder do
-    alias Jason.Encode
-
-    def encode(hash, opts) do
-      hash
-      |> to_string()
-      |> Encode.string(opts)
+      |> JSON.Encoder.encode(encoder)
     end
   end
 end
