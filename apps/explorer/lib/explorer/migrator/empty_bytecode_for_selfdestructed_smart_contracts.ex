@@ -74,7 +74,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
         |> where([it], it.type == :selfdestruct)
         |> select([it], %{
           transaction_index: it.transaction_index,
-          from_address_hash: coalesce(it.from_address_hash, as(:from_address_mapping).address_hash),
+          from_address_hash: as(:from_address_mapping).address_hash,
           block_number: it.block_number
         })
 
@@ -98,8 +98,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
           |> select([it], %{
             block_number: it.block_number,
             transaction_index: it.transaction_index,
-            created_contract_address_hash:
-              coalesce(it.created_contract_address_hash, as(:created_contract_address_mapping).address_hash)
+            created_contract_address_hash: as(:created_contract_address_mapping).address_hash
           })
 
         created_contracts = Repo.all(create_query, timeout: :infinity)

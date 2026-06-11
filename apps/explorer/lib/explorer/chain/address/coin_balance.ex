@@ -350,11 +350,8 @@ defmodule Explorer.Chain.Address.CoinBalance do
         (is_nil(coalesce(type(internal_transaction.call_type_enum, :string), internal_transaction.call_type)) or
            coalesce(type(internal_transaction.call_type_enum, :string), internal_transaction.call_type) == ^"call") and
         internal_transaction.value > ^0 and is_nil(internal_transaction.error_id) and
-        (internal_transaction.to_address_hash == ^balance.address_hash or
-           as(:to_address_mapping).address_hash == ^balance.address_hash or
-           internal_transaction.from_address_hash == ^balance.address_hash or
+        (as(:to_address_mapping).address_hash == ^balance.address_hash or
            as(:from_address_mapping).address_hash == ^balance.address_hash or
-           internal_transaction.created_contract_address_hash == ^balance.address_hash or
            as(:created_contract_address_mapping).address_hash == ^balance.address_hash)
     )
     |> select([_internal_transaction, transaction], transaction.hash)
