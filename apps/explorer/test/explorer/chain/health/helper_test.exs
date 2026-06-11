@@ -25,6 +25,78 @@ defmodule Explorer.Chain.Health.HelperTest do
     end
   end
 
+  describe "blocks_indexing_healthy?/1" do
+    setup do
+      Application.put_env(:explorer, Explorer.Chain.Health.Monitor, healthy_blocks_period: 300_000)
+      :ok
+    end
+
+    defp unix_now, do: DateTime.to_unix(DateTime.utc_now())
+
+    defp base_status(overrides \\ %{}) do
+      now = unix_now()
+
+      Map.merge(
+        %{
+          health_latest_block_timestamp_from_db: Decimal.new(now),
+          health_latest_block_number_from_db: Decimal.new(100),
+          health_latest_block_timestamp_from_cache: Decimal.new(now),
+          health_latest_block_number_from_cache: Decimal.new(100),
+          health_latest_block_number_from_node: Decimal.new(100),
+          health_latest_batch_timestamp_from_db: nil,
+          health_latest_batch_number_from_db: nil,
+          health_latest_batch_average_time_from_db: nil
+        },
+        overrides
+      )
+    end
+
+    test "returns true when nil" do
+      assert true == HealthHelper.blocks_indexing_healthy?(nil)
+    end
+
+    test "returns error when db has no blocks" do
+      status = base_status(%{health_latest_block_timestamp_from_db: nil})
+      assert {false, _, _} = HealthHelper.blocks_indexing_healthy?(status)
+    end
+
+    test "returns true when db and cache are both current" do
+      assert true == HealthHelper.blocks_indexing_healthy?(base_status())
+    end
+
+    test "returns true when cache timestamps are absent" do
+      status = base_status(%{health_latest_block_timestamp_from_cache: nil})
+      assert true == HealthHelper.blocks_indexing_healthy?(status)
+    end
+
+    test "returns error when cache lags behind db beyond threshold" do
+      now = unix_now()
+      stale = now - 600
+
+      status =
+        base_status(%{
+          health_latest_block_timestamp_from_db: Decimal.new(now),
+          health_latest_block_timestamp_from_cache: Decimal.new(stale)
+        })
+
+      assert {false, 5001, message} = HealthHelper.blocks_indexing_healthy?(status)
+      assert message =~ "Cache block is lagging"
+    end
+
+    test "returns true when cache lag is within threshold" do
+      now = unix_now()
+      recent = now - 60
+
+      status =
+        base_status(%{
+          health_latest_block_timestamp_from_db: Decimal.new(now),
+          health_latest_block_timestamp_from_cache: Decimal.new(recent)
+        })
+
+      assert true == HealthHelper.blocks_indexing_healthy?(status)
+    end
+  end
+
   describe "last_db_block_status/0" do
     test "return no_blocks errors if db is empty" do
       assert {:error, :no_blocks} = HealthHelper.last_db_block_status()
