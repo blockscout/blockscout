@@ -30,6 +30,9 @@ defmodule EthereumJSONRPC.Transaction do
   # EIP-2718 type of the Eden sponsored (batched) transaction: `0x76`.
   @eden_sponsored_transaction_type 118
 
+  @post_exec_tx_type 0x7D
+  @zero_address "0x0000000000000000000000000000000000000000"
+
   case @chain_type do
     :ethereum ->
       @chain_type_fields quote(
@@ -356,6 +359,32 @@ defmodule EthereumJSONRPC.Transaction do
   # ## Returns
   # - The resulting map.
   @spec do_elixir_to_params(%{String.t() => any()}) :: %{atom() => any()}
+  defp do_elixir_to_params(%{"type" => @post_exec_tx_type, "hash" => hash, "input" => input} = transaction) do
+    index = Map.get(transaction, "transactionIndex")
+
+    %{
+      block_hash: Map.get(transaction, "blockHash"),
+      block_number: Map.get(transaction, "blockNumber"),
+      from_address_hash: Map.get(transaction, "from") || @zero_address,
+      gas: Map.get(transaction, "gas") || 0,
+      gas_price: Map.get(transaction, "gasPrice") || 0,
+      hash: hash,
+      index: index,
+      input: input,
+      nonce: Map.get(transaction, "nonce") || 0,
+      r: Map.get(transaction, "r") || 0,
+      s: Map.get(transaction, "s") || 0,
+      to_address_hash: Map.get(transaction, "to"),
+      transaction_index: index,
+      type: @post_exec_tx_type,
+      v: Map.get(transaction, "v") || 0,
+      value: Map.get(transaction, "value") || 0
+    }
+    |> put_if_present(transaction, [
+      {"block_timestamp", :block_timestamp}
+    ])
+  end
+
   defp do_elixir_to_params(
          %{
            "blockHash" => block_hash,

@@ -95,6 +95,37 @@ defmodule EthereumJSONRPC.BlockTest do
     end
   end
 
+  describe "to_elixir/1" do
+    test "fills missing block transaction metadata from the parent block" do
+      block_hash = "0xab6dfcf5ad132602e939db5f84f56945b1be4e136daab002f9bf9ff0c7f9f7a5"
+
+      assert %{
+               "transactions" => [
+                 %{
+                   "blockHash" => ^block_hash,
+                   "blockNumber" => 27,
+                   "transactionIndex" => 0,
+                   "type" => 0x7D
+                 }
+               ]
+             } =
+               Block.to_elixir(%{
+                 "hash" => block_hash,
+                 "number" => "0x1b",
+                 "timestamp" => "0x6a19f379",
+                 "transactions" => [
+                   %{
+                     "type" => "0x7d",
+                     "hash" => "0x39ee8fea8d4e719a75a5d64a4d5e34bdbd62f2543c88d00d0f00f91c8f1d8a20",
+                     "gas" => "0x0",
+                     "value" => "0x0",
+                     "input" => "0xc3011b80"
+                   }
+                 ]
+               })
+    end
+  end
+
   describe "elixir_to_transactions/1" do
     test "converts to empty list if there is not transaction key" do
       assert Block.elixir_to_transactions(%{}) == []

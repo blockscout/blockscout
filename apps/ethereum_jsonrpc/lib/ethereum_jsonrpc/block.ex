@@ -940,6 +940,24 @@ defmodule EthereumJSONRPC.Block do
     {key, timestamp_to_datetime(timestamp)}
   end
 
+  defp entry_to_elixir(
+         {"transactions" = key, transactions},
+         %{"hash" => block_hash, "number" => block_number, "timestamp" => block_timestamp}
+       ) do
+    transactions_elixir =
+      transactions
+      |> Transactions.to_elixir(timestamp_to_datetime(block_timestamp))
+      |> Enum.with_index()
+      |> Enum.map(fn {transaction, index} ->
+        transaction
+        |> put_if_missing_or_nil("blockHash", block_hash)
+        |> put_if_missing_or_nil("blockNumber", quantity_to_integer(block_number))
+        |> put_if_missing_or_nil("transactionIndex", index)
+      end)
+
+    {key, transactions_elixir}
+  end
+
   defp entry_to_elixir({"transactions" = key, transactions}, %{"timestamp" => block_timestamp}) do
     {key, Transactions.to_elixir(transactions, timestamp_to_datetime(block_timestamp))}
   end
@@ -981,5 +999,12 @@ defmodule EthereumJSONRPC.Block do
   # ...
   defp entry_to_elixir({_, _}, _block) do
     {:ignore, :ignore}
+  end
+
+  defp put_if_missing_or_nil(map, key, value) do
+    case Map.get(map, key) do
+      nil -> Map.put(map, key, value)
+      _ -> map
+    end
   end
 end
