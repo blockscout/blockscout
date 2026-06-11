@@ -252,7 +252,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       ok:
         {"NFT instances for the specified token contract, with pagination.", "application/json",
          paginated_response(
-           items: Schemas.TokenInstance,
+           items: Schemas.TokenInstanceInTokenInstancesList,
            next_page_params_example: %{
              "unique_token" => 782_098
            }
