@@ -300,8 +300,7 @@ defmodule Explorer.Chain.BridgedToken do
         |> where([it], it.transaction_index == ^transaction_index)
         |> where(
           [it],
-          it.to_address_hash == ^omni_bridge_mediator_hash or
-            as(:to_address_mapping).address_hash == ^omni_bridge_mediator_hash
+          as(:to_address_mapping).address_hash == ^omni_bridge_mediator_hash
         )
 
       created_by_amb_mediator =
