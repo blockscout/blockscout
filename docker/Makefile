@@ -10,7 +10,8 @@ STATS_CONTAINER_NAME := stats
 STATS_DB_CONTAINER_NAME := stats-db
 PROXY_CONTAINER_NAME := proxy
 PG_CONTAINER_NAME := postgres
-RELEASE_VERSION ?= '11.2.7'
+RELEASE_VERSION ?= 11.2.7
+CHAIN_TYPE ?= default
 TAG := $(RELEASE_VERSION)-commit-$(shell git log -1 --pretty=format:"%h")
 STABLE_TAG := $(RELEASE_VERSION)
 
@@ -94,6 +95,21 @@ ifdef PG_STARTED
 else
 	@echo "==> Postgres container already stopped before."
 endif
+
+build: ## Build the container image
+	docker build \
+		--build-arg CHAIN_TYPE=$(CHAIN_TYPE) \
+		--build-arg RELEASE_VERSION=$(RELEASE_VERSION) \
+		--build-arg BLOCKSCOUT_VERSION=$(BLOCKSCOUT_VERSION) \
+		--build-arg DISABLE_API=$(DISABLE_API) \
+		--build-arg API_V1_READ_METHODS_DISABLED=$(API_V1_READ_METHODS_DISABLED) \
+		--build-arg API_V1_WRITE_METHODS_DISABLED=$(API_V1_WRITE_METHODS_DISABLED) \
+		--build-arg BRIDGED_TOKENS_ENABLED=$(BRIDGED_TOKENS_ENABLED) \
+		--build-arg API_GRAPHQL_MAX_COMPLEXITY=$(API_GRAPHQL_MAX_COMPLEXITY) \
+		--build-arg MUD_INDEXER_ENABLED=$(MUD_INDEXER_ENABLED) \
+		-t $(BACKEND_CONTAINER_IMAGE) \
+		-f Dockerfile \
+		..
 
 run: start
 
