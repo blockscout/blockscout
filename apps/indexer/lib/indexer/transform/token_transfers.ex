@@ -83,22 +83,32 @@ defmodule Indexer.Transform.TokenTransfers do
         erc1155_token_transfers.tokens ++
         erc20_and_erc721_token_transfers.tokens ++ weth_transfers.tokens
 
+    rough_tokens_uniq =
+      rough_tokens
+      |> Enum.reduce({%{}, []}, fn %{contract_address_hash: addr} = token, {seen, acc} ->
+        if Map.has_key?(seen, addr) do
+          {seen, acc}
+        else
+          {Map.put(seen, addr, true), [token | acc]}
+        end
+      end)
+      |> elem(1)
+      |> Enum.reverse()
+
     rough_token_transfers =
       erc7984_token_transfers.token_transfers ++
         erc404_token_transfers.token_transfers ++
         erc1155_token_transfers.token_transfers ++
         erc20_and_erc721_token_transfers.token_transfers ++ weth_transfers.token_transfers
 
-    tokens = sanitize_token_types(rough_tokens, rough_token_transfers)
-    token_transfers = sanitize_weth_transfers(tokens, rough_token_transfers, weth_transfers.token_transfers)
+    tokens_uniq = sanitize_token_types(rough_tokens_uniq, rough_token_transfers)
+    token_transfers = sanitize_weth_transfers(tokens_uniq, rough_token_transfers, weth_transfers.token_transfers)
 
     if !skip_additional_fetchers? do
       token_transfers
       |> filter_tokens_for_supply_update()
       |> TokenTotalSupplyUpdater.add_tokens()
     end
-
-    tokens_uniq = tokens |> Enum.uniq()
 
     token_transfers_from_logs_uniq = %{
       tokens: tokens_uniq,
@@ -244,7 +254,7 @@ defmodule Indexer.Transform.TokenTransfers do
        when not is_nil(second_topic) and not is_nil(third_topic) do
     if arc_native_token_transfer_event?(log) do
       # for :arc chain type we need to ignore ERC-20 Transfer events from the native token as there are
-      # NativeCoinTransferred, NativeCoinMinted, NativeCoinBurned events instead
+      # NativeCoinTransferred, NativeCoinMinted, NativeCoinBurned, EIP-7708 events instead
       nil
     else
       # handle the transfer for other cases
@@ -252,8 +262,9 @@ defmodule Indexer.Transform.TokenTransfers do
       decimal_amount = Decimal.new(decoded_amount || 0)
 
       {token_contract_address_hash, amount} =
-        if arc_native_coin_transferred_event?(log) do
-          # if this is NativeCoinTransferred event for Arc chain, there are 18 decimals for the native token, so we need to adjust the amount with the token decimals
+        if arc_native_coin_transferred_event?(log) or arc_eip7708_transfer_log?(log) do
+          # NativeCoinTransferred and EIP-7708 protocol Transfer use 18-decimal amounts on-chain;
+          # normalize to configured native token decimals
           {arc_native_token_address(), amount_18_decimals_to_n_decimals(decimal_amount, arc_native_token_decimals())}
         else
           {log.address_hash, decimal_amount}
@@ -554,6 +565,17 @@ defmodule Indexer.Transform.TokenTransfers do
     amount
     |> Decimal.mult(Integer.pow(10, new_decimals))
     |> Decimal.div_int(Integer.pow(10, 18))
+  end
+
+  # EIP-7708 protocol `Transfer` log (emitter is SYSTEM_ADDRESS, not the synthetic ERC-20).
+  @spec arc_eip7708_transfer_log?(%{
+          :first_topic => String.t(),
+          :address_hash => String.t(),
+          optional(any()) => any()
+        }) :: boolean()
+  defp arc_eip7708_transfer_log?(log) do
+    chain_type() == :arc and log.first_topic == TokenTransfer.constant() and
+      log.address_hash == TokenTransfer.eip7708_system_address()
   end
 
   # Determines if the given log is the NativeCoinTransferred event emitted by the native token system address on Arc chain.

@@ -114,25 +114,57 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   # sobelow_skip ["SQL"]
   @spec missing_current_token_balances_count() :: integer()
   def missing_current_token_balances_count do
-    sql_string =
-      """
+    block_ranges = RangesHelper.get_block_ranges()
+
+    if block_ranges == [] do
+      0
+    else
+      {range_conditions, params} =
+        Enum.reduce(block_ranges, {[], []}, fn
+          first..last//_, {conditions, acc_params} ->
+            from = min(first, last)
+            to = max(first, last)
+            param_index_from = length(acc_params) + 1
+            param_index_to = length(acc_params) + 2
+
+            condition =
+              "(ctb.block_number >= $#{param_index_from}::bigint AND ctb.block_number <= $#{param_index_to}::bigint)"
+
+            {[condition | conditions], [to, from | acc_params]}
+
+          start_from, {conditions, acc_params} ->
+            param_index = length(acc_params) + 1
+            condition = "ctb.block_number >= $#{param_index}::bigint"
+            {[condition | conditions], [start_from | acc_params]}
+        end)
+
+      range_filter =
+        range_conditions
+        |> Enum.reverse()
+        |> Enum.join(" OR ")
+
+      sql_string = """
       SELECT COUNT(1) as missing_current_token_balances_count
       FROM address_current_token_balances ctb
       WHERE (ctb.value_fetched_at is NULL OR ctb.value is NULL)
-      AND ctb.token_type != 'ERC-7984';
+      AND ctb.token_type != 'ERC-7984'
+      AND (ctb.refetch_after IS NULL OR ctb.refetch_after < NOW())
+      AND NOT EXISTS (SELECT 1 FROM missing_balance_of_tokens bmt WHERE bmt.token_contract_address_hash = ctb.token_contract_address_hash)
+      AND (#{range_filter});
       """
 
-    case SQL.query(Repo, sql_string, [], timeout: :infinity) do
-      {:ok,
-       %Postgrex.Result{
-         command: :select,
-         columns: ["missing_current_token_balances_count"],
-         rows: [[missing_current_token_balances_count]]
-       }} ->
-        missing_current_token_balances_count
+      case SQL.query(Repo, sql_string, Enum.reverse(params), timeout: :infinity) do
+        {:ok,
+         %Postgrex.Result{
+           command: :select,
+           columns: ["missing_current_token_balances_count"],
+           rows: [[missing_current_token_balances_count]]
+         }} ->
+          missing_current_token_balances_count
 
-      _ ->
-        0
+        _ ->
+          0
+      end
     end
   end
 

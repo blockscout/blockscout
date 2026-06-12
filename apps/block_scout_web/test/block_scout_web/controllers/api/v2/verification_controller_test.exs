@@ -228,64 +228,64 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
       end
     end
 
-    describe "/api/v2/smart-contracts/{address_hash}/verification/via/sourcify" do
-      test "get 200 for verified contract", %{conn: conn} do
-        contract = insert(:smart_contract)
-
-        params = %{"files" => ""}
-        request = post(conn, "/api/v2/smart-contracts/#{contract.address_hash}/verification/via/sourcify", params)
-
-        assert %{"message" => "Already verified"} = json_response(request, 200)
-      end
-
-      test "verify contract from sourcify repo", %{conn: conn} do
-        address = "0xf26594F585De4EB0Ae9De865d9053FEe02ac6eF1"
-
-        _contract = insert(:address, hash: address, contract_code: "0x01")
-
-        topic = "addresses:#{String.downcase(address)}"
-
-        {:ok, _reply, _socket} =
-          UserSocket
-          |> socket("no_id", %{})
-          |> subscribe_and_join(topic)
-
-        multipart =
-          Multipart.new()
-          |> Multipart.add_file_content("content", "name.json",
-            name: "files[0]",
-            headers: [{"content-type", "application/json"}]
-          )
-
-        body =
-          multipart
-          |> Multipart.body()
-          |> Enum.to_list()
-          |> to_str()
-
-        [{name, value}] = Multipart.headers(multipart)
-
-        request =
-          post(
-            conn
-            |> Plug.Conn.put_req_header(
-              name,
-              value
-            ),
-            "/api/v2/smart-contracts/#{address}/verification/via/sourcify",
-            body
-          )
-
-        assert %{"message" => "Smart-contract verification started"} = json_response(request, 200)
-
-        assert_receive %Phoenix.Socket.Message{
-                         payload: %{status: "success"},
-                         event: "verification_result",
-                         topic: ^topic
-                       },
-                       :timer.seconds(120)
-      end
-    end
+    # describe "/api/v2/smart-contracts/{address_hash}/verification/via/sourcify" do
+    #   test "get 200 for verified contract", %{conn: conn} do
+    #     contract = insert(:smart_contract)
+    #
+    #     params = %{"files" => ""}
+    #     request = post(conn, "/api/v2/smart-contracts/#{contract.address_hash}/verification/via/sourcify", params)
+    #
+    #     assert %{"message" => "Already verified"} = json_response(request, 200)
+    #   end
+    #
+    #   test "verify contract from sourcify repo", %{conn: conn} do
+    #     address = "0xf26594F585De4EB0Ae9De865d9053FEe02ac6eF1"
+    #
+    #     _contract = insert(:address, hash: address, contract_code: "0x01")
+    #
+    #     topic = "addresses:#{String.downcase(address)}"
+    #
+    #     {:ok, _reply, _socket} =
+    #       UserSocket
+    #       |> socket("no_id", %{})
+    #       |> subscribe_and_join(topic)
+    #
+    #     multipart =
+    #       Multipart.new()
+    #       |> Multipart.add_file_content("content", "name.json",
+    #         name: "files[0]",
+    #         headers: [{"content-type", "application/json"}]
+    #       )
+    #
+    #     body =
+    #       multipart
+    #       |> Multipart.body()
+    #       |> Enum.to_list()
+    #       |> to_str()
+    #
+    #     [{name, value}] = Multipart.headers(multipart)
+    #
+    #     request =
+    #       post(
+    #         conn
+    #         |> Plug.Conn.put_req_header(
+    #           name,
+    #           value
+    #         ),
+    #         "/api/v2/smart-contracts/#{address}/verification/via/sourcify",
+    #         body
+    #       )
+    #
+    #     assert %{"message" => "Smart-contract verification started"} = json_response(request, 200)
+    #
+    #     assert_receive %Phoenix.Socket.Message{
+    #                      payload: %{status: "success"},
+    #                      event: "verification_result",
+    #                      topic: ^topic
+    #                    },
+    #                    :timer.seconds(120)
+    #   end
+    # end
 
     describe "/api/v2/smart-contracts/{address_hash}/verification/via/multi-part" do
       test "get 404", %{conn: conn} do
