@@ -13,6 +13,7 @@
 
 ### 🐛 Bug Fixes
 
+- Improve BlockNumber cache ([#14453](https://github.com/blockscout/blockscout/pull/14453))
 - Fix revert reason for nethermind ([#14442](https://github.com/blockscout/blockscout/pull/14442))
 - Fix token import on Celo ([#14435](https://github.com/blockscout/blockscout/issues/14435))
 - Scope missing_current_token_balances_count indexer metric to configured block ranges ([#14423](https://github.com/blockscout/blockscout/issues/14423))
