@@ -77,7 +77,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract do
         coin_balance: %Schema{type: :string, nullable: true},
         compiler_version: %Schema{type: :string, nullable: true},
         has_constructor_args: %Schema{type: :boolean, nullable: true},
-        language: %Schema{type: :string, nullable: true},
+        language: %Schema{
+          type: :string,
+          enum: ["solidity", "vyper", "yul", "scilla", "stylus_rust", "geas"],
+          nullable: true
+        },
         license_type: %Schema{type: :string, nullable: true},
         market_cap: %Schema{type: :string, nullable: true},
         optimization_enabled: %Schema{type: :boolean, nullable: true},
@@ -140,6 +144,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract do
         constructor_args: %Schema{type: :string, nullable: true}
       },
       required: [
+        :address,
         :proxy_type,
         :implementations,
         :conflicting_implementations,
@@ -167,6 +172,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract.ListItem do
 
   OpenApiSpex.schema(
     %{
+      title: "SmartContractListItem",
       description: "Smart contract list item",
       type: :object,
       properties: %{
