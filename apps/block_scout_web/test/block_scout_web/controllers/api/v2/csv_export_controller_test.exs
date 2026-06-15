@@ -53,6 +53,28 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
       assert conn.status == 429
     end
 
+    test "accepts application/csv on token-transfers CSV endpoint", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      insert(:token_transfer, transaction: transaction, from_address: address, block_number: transaction.block_number)
+
+      conn =
+        conn
+        |> put_req_header("accept", "application/csv")
+        |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{})
+
+      assert conn.status == 200
+
+      assert Enum.any?(get_resp_header(conn, "content-type"), fn type ->
+               String.contains?(type, "application/csv")
+             end)
+    end
+
     test "do not export token transfers to csv after rate limit is reached without recaptcha passed", %{
       conn: conn,
       v2_secret_key: recaptcha_secret_key

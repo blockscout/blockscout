@@ -81,6 +81,23 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.Specs.Public)
   end
 
+  pipeline :api_v2_csv do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: JSON
+    )
+
+    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
+    plug(:accepts, ["json", "csv"])
+    plug(CheckApiV2)
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.Specs.Public)
+  end
+
   pipeline :api_v2_no_session do
     plug(
       Plug.Parsers,
@@ -245,13 +262,9 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:address_hash_param/token-balances", V2.AddressController, :token_balances)
       get("/:address_hash_param/tokens", V2.AddressController, :tokens)
       get("/:address_hash_param/transactions", V2.AddressController, :transactions)
-      get("/:address_hash_param/transactions/csv", V2.CsvExportController, :transactions_csv)
       get("/:address_hash_param/token-transfers", V2.AddressController, :token_transfers)
-      get("/:address_hash_param/token-transfers/csv", V2.CsvExportController, :token_transfers_csv)
       get("/:address_hash_param/internal-transactions", V2.AddressController, :internal_transactions)
-      get("/:address_hash_param/internal-transactions/csv", V2.CsvExportController, :internal_transactions_csv)
       get("/:address_hash_param/logs", V2.AddressController, :logs)
-      get("/:address_hash_param/logs/csv", V2.CsvExportController, :logs_csv)
       get("/:address_hash_param/blocks-validated", V2.AddressController, :blocks_validated)
       get("/:address_hash_param/coin-balance-history", V2.AddressController, :coin_balance_history)
       get("/:address_hash_param/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
@@ -261,7 +274,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
       if @chain_identity == {:optimism, :celo} do
         get("/:address_hash_param/celo/election-rewards", V2.AddressController, :celo_election_rewards)
-        get("/:address_hash_param/celo/election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
       end
 
       if @chain_type == :ethereum do
@@ -480,9 +492,27 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     scope "/advanced-filters" do
       get("/", V2.AdvancedFilterController, :list)
-      get("/csv", V2.AdvancedFilterController, :list_csv)
       get("/methods", V2.AdvancedFilterController, :list_methods)
     end
+  end
+
+  scope "/v2", as: :api_v2 do
+    pipe_through(:api_v2_csv)
+
+    get("/addresses/:address_hash_param/transactions/csv", V2.CsvExportController, :transactions_csv)
+    get("/addresses/:address_hash_param/token-transfers/csv", V2.CsvExportController, :token_transfers_csv)
+    get("/addresses/:address_hash_param/internal-transactions/csv", V2.CsvExportController, :internal_transactions_csv)
+    get("/addresses/:address_hash_param/logs/csv", V2.CsvExportController, :logs_csv)
+
+    if @chain_identity == {:optimism, :celo} do
+      get(
+        "/addresses/:address_hash_param/celo/election-rewards/csv",
+        V2.CsvExportController,
+        :celo_election_rewards_csv
+      )
+    end
+
+    get("/advanced-filters/csv", V2.AdvancedFilterController, :list_csv)
   end
 
   scope "/legacy" do

@@ -29,6 +29,23 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
     plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.Specs.Public)
   end
 
+  pipeline :api_v2_csv do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: JSON
+    )
+
+    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
+    plug(:accepts, ["json", "csv"])
+    plug(CheckApiV2)
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.Specs.Public)
+  end
+
   pipeline :api_v2_no_forgery_protect do
     plug(
       Plug.Parsers,
@@ -70,8 +87,6 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
     get("/:address_hash_param/counters", V2.TokenController, :counters)
     get("/:address_hash_param/transfers", V2.TokenController, :transfers)
     get("/:address_hash_param/holders", V2.TokenController, :holders)
-    get("/:address_hash_param/holders/csv", V2.CsvExportController, :export_token_holders)
-    get("/:address_hash_param/transfers/csv", V2.CsvExportController, :export_token_transfers)
     get("/:address_hash_param/instances", V2.TokenController, :instances)
     get("/:address_hash_param/instances/:token_id_param", V2.TokenController, :instance)
     get("/:address_hash_param/instances/:token_id_param/media-type", V2.TokenController, :media_type)
@@ -83,5 +98,12 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
       V2.TokenController,
       :transfers_count_by_instance
     )
+  end
+
+  scope "/", as: :api_v2 do
+    pipe_through(:api_v2_csv)
+
+    get("/:address_hash_param/holders/csv", V2.CsvExportController, :export_token_holders)
+    get("/:address_hash_param/transfers/csv", V2.CsvExportController, :export_token_transfers)
   end
 end
