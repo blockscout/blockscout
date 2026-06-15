@@ -91,7 +91,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
-    plug(:accepts, ["csv"])
+    plug(:accepts, ["json", "csv"])
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)

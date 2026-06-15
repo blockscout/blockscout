@@ -69,7 +69,10 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{})
 
       assert conn.status == 200
-      assert get_resp_header(conn, "content-type") =~ "application/csv"
+
+      assert Enum.any?(get_resp_header(conn, "content-type"), fn type ->
+               String.contains?(type, "application/csv")
+             end)
     end
 
     test "do not export token transfers to csv after rate limit is reached without recaptcha passed", %{

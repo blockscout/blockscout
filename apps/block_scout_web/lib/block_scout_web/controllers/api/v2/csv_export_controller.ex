@@ -132,11 +132,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
 
   defp items_csv(
          conn,
-         %{
-           address_hash_param: address_hash_string,
-           from_period: _from_period,
-           to_period: _to_period
-         } = params,
+         %{address_hash_param: address_hash_string} = params,
          csv_export_module
        )
        when is_binary(address_hash_string) do
@@ -213,8 +209,8 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       base_params() ++
         [
           address_hash_param(),
-          from_period_param(),
-          to_period_param(),
+          optional_from_period_param(),
+          optional_to_period_param(),
           filter_type_param(),
           filter_value_param()
         ],
@@ -251,8 +247,8 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       base_params() ++
         [
           address_hash_param(),
-          from_period_param(),
-          to_period_param(),
+          optional_from_period_param(),
+          optional_to_period_param(),
           filter_type_param(),
           filter_value_param()
         ],
@@ -289,8 +285,8 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       base_params() ++
         [
           address_hash_param(),
-          from_period_param(),
-          to_period_param(),
+          optional_from_period_param(),
+          optional_to_period_param(),
           filter_type_param(),
           filter_value_param()
         ],
@@ -327,8 +323,8 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       base_params() ++
         [
           address_hash_param(),
-          from_period_param(),
-          to_period_param(),
+          optional_from_period_param(),
+          optional_to_period_param(),
           filter_type_param(),
           filter_value_param()
         ],
@@ -366,8 +362,8 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
       base_params() ++
         [
           address_hash_param(),
-          from_period_param(),
-          to_period_param(),
+          optional_from_period_param(),
+          optional_to_period_param(),
           filter_type_param(),
           filter_value_param()
         ],
