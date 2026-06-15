@@ -951,7 +951,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                %{"indexed" => false, "internalType" => "uint256", "name" => "x", "type" => "uint256"}
              ]
 
-      refute Map.has_key?(log_from_api, "called_method")
+      refute Map.has_key?(log_from_api["decoded"], "called_method")
     end
   end
 
