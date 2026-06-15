@@ -310,7 +310,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   defp is_compiler_version_at_least_0_6_0?("latest"), do: true
 
-  defp is_compiler_version_at_least_0_6_0?(compiler_version) do
+  defp is_compiler_version_at_least_0_6_0?(compiler_version) when is_binary(compiler_version) do
     version =
       compiler_version
       |> String.split("+", parts: 2)
@@ -335,6 +335,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
         end
     end
   end
+
+  defp is_compiler_version_at_least_0_6_0?(_), do: false
 
   defp compare_bytecodes({:error, :name}, _, _, _), do: {:error, :name}
   defp compare_bytecodes({:error, _}, _, _, _), do: {:error, :compilation}
