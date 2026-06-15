@@ -255,7 +255,7 @@ defmodule Explorer.GraphQLTest do
     end
   end
 
-  describe "list_token_transfers_query/1" do
+  describe "list_token_transfers_query/1,2" do
     test "with token contract address hash with zero token transfers" do
       result =
         :address
@@ -345,6 +345,65 @@ defmodule Explorer.GraphQLTest do
       block_number_order = Enum.map(found_token_transfers, & &1.block_number)
 
       assert block_number_order == Enum.sort(block_number_order, &(&1 >= &2))
+    end
+
+    test "hides scam token transfers when hide_scam_addresses is enabled and show_scam_tokens? is false" do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token_address = insert(:contract_address)
+      insert(:token, contract_address: token_address)
+      insert(:scam_badge_to_address, address_hash: token_address.hash)
+      transaction = insert(:transaction)
+      insert(:token_transfer, transaction: transaction, token_contract_address: token_address)
+
+      result =
+        token_address.hash
+        |> GraphQL.list_token_transfers_query(show_scam_tokens?: false)
+        |> Repo.replica().all()
+
+      assert result == []
+    end
+
+    test "shows scam token transfers when show_scam_tokens? is true" do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token_address = insert(:contract_address)
+      insert(:token, contract_address: token_address)
+      insert(:scam_badge_to_address, address_hash: token_address.hash)
+      transaction = insert(:transaction)
+      token_transfer = insert(:token_transfer, transaction: transaction, token_contract_address: token_address)
+
+      [found_token_transfer] =
+        token_address.hash
+        |> GraphQL.list_token_transfers_query(show_scam_tokens?: true)
+        |> Repo.replica().all()
+
+      assert found_token_transfer.transaction_hash == token_transfer.transaction_hash
+      assert found_token_transfer.log_index == token_transfer.log_index
+    end
+
+    test "shows scam token transfers when hide_scam_addresses is disabled regardless of show_scam_tokens?" do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, false)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      token_address = insert(:contract_address)
+      insert(:token, contract_address: token_address)
+      insert(:scam_badge_to_address, address_hash: token_address.hash)
+      transaction = insert(:transaction)
+      token_transfer = insert(:token_transfer, transaction: transaction, token_contract_address: token_address)
+
+      [found_token_transfer] =
+        token_address.hash
+        |> GraphQL.list_token_transfers_query(show_scam_tokens?: false)
+        |> Repo.replica().all()
+
+      assert found_token_transfer.transaction_hash == token_transfer.transaction_hash
+      assert found_token_transfer.log_index == token_transfer.log_index
     end
   end
 end
