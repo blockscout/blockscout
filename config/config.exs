@@ -24,6 +24,15 @@ for config <- "../apps/*/config/config.exs" |> Path.expand(__DIR__) |> Path.wild
   import_config config
 end
 
+config :mime, :types, %{
+  "application/csv" => ["csv"],
+  "text/csv" => ["csv"]
+}
+
+config :mime, :extensions, %{
+  "csv" => "application/csv"
+}
+
 config :phoenix, :json_library, Utils.JSON
 config :postgrex, :json_library, Utils.JSON
 

@@ -64,7 +64,7 @@ defmodule BlockScoutWeb.Router do
 
   pipeline :rate_limit do
     plug(:fetch_query_params)
-    plug(:accepts, ["json"])
+    plug(:accepts, ["json", "csv"])
     plug(BlockScoutWeb.Plug.RateLimit)
   end
 
