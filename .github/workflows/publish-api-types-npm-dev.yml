@@ -21,4 +21,5 @@ jobs:
     uses: ./.github/workflows/publish-api-types-npm.yml
     with:
       package_version: ${{ needs.version.outputs.package_version }}
-    secrets: inherit
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

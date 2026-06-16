@@ -216,6 +216,10 @@ function isParameterArray(arr) {
 }
 
 function mergeArray(a, b, ctxKey, path) {
+  // If one side is empty it carries no information; take the other (e.g. one spec
+  // declares `parameters: []` while another lists real parameters).
+  if (a.length === 0) return clone(b);
+  if (b.length === 0) return clone(a);
   // Parameters: merge by (in, name) identity so nested `schema` enums union; keep `a` order, append `b`-only.
   if (isParameterArray(a) && isParameterArray(b)) {
     const key = (param) => `${param.in} ${param.name}`;
