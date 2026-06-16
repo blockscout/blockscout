@@ -23,7 +23,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- Optimize deriving current token balances ([#14450](https://github.com/blockscout/blockscout/pull/14450))
+- Optimize deriving current token balances ([#14450](https://github.com/blockscout/blockscout/pull/14450), [#14479](https://github.com/blockscout/blockscout/pull/14479))
 - Limit max node requests in one batch ([#14319](https://github.com/blockscout/blockscout/issues/14319))
 - Log block fetch errors in catchup fetcher ([#14318](https://github.com/blockscout/blockscout/issues/14318))
 - Reset skip metadata flag for NFTs ([#14337](https://github.com/blockscout/blockscout/issues/14337))
