@@ -5,5 +5,5 @@ defmodule BlockScoutWeb.Schemas.API.V2.Beacon.Deposit.Status do
 
   alias Explorer.Chain.Beacon.Deposit
 
-  OpenApiSpex.schema(%{type: :string, nullable: false, enum: Deposit.statuses()})
+  OpenApiSpex.schema(%{title: "BeaconDepositStatus", type: :string, nullable: false, enum: Deposit.statuses()})
 end
