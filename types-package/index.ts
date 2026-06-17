@@ -14,6 +14,57 @@ export { merged };
 /** Shorthand for merged.components["schemas"] */
 export type schemas = merged.components["schemas"];
 
+/* ── Successful-response shorthands (derived from the merged spec) ────────────
+   Resolve the 200 `application/json` body of an endpoint without the deep
+   `…["responses"][200]["content"]["application/json"]` indexing. */
+
+type HttpMethod = "get" | "put" | "post" | "delete" | "options" | "head" | "patch" | "trace";
+
+/** The 200 `application/json` response body of an operation (or `never` if it has none). */
+type OkJson<Operation> = Operation extends {
+  responses: { 200: { content: { "application/json": infer Body } } };
+}
+  ? Body
+  : never;
+
+/** The request parameters of an operation (`query`, `path`; `header`/`cookie` usually empty). */
+type OperationParams<Operation> = Operation extends { parameters: infer Params } ? Params : never;
+
+/** Drop the controller module prefix (v2, account v2, or legacy) from an operationId. */
+type ShortOperationId<Id extends string> = Id extends `BlockScoutWeb.API.V2.${infer Rest}`
+  ? Rest
+  : Id extends `BlockScoutWeb.Account.API.V2.${infer Rest}`
+    ? Rest
+    : Id extends `BlockScoutWeb.API.Legacy.${infer Rest}`
+      ? Rest
+      : Id;
+
+/**
+ * Per-operation shape keyed by short operationId:
+ *  - `json`: the 200 `application/json` response body
+ *  - `params`: the request parameters (`query`, `path`; `header`/`cookie` usually empty)
+ * e.g. `operations["BlockController.internal_transactions"]["json"]`.
+ */
+export type operations = {
+  [Id in keyof merged.operations as ShortOperationId<Id & string>]: {
+    json: OkJson<merged.operations[Id]>;
+    params: OperationParams<merged.operations[Id]>;
+  };
+};
+
+/**
+ * Successful (200) JSON response bodies keyed by path, then HTTP method, e.g.
+ * `paths["/v2/blocks/{block_hash_or_number_param}/internal-transactions"]["get"]`.
+ * Only the methods an endpoint actually defines are present.
+ */
+export type paths = {
+  [Path in keyof merged.paths]: {
+    [Method in HttpMethod as [merged.paths[Path][Method]] extends [never] ? never : Method]: OkJson<
+      merged.paths[Path][Method]
+    >;
+  };
+};
+
 /** Chain-specific public API (`CHAIN_TYPE` set). */
 export * as arbitrum from "./dist/chains/arbitrum.schema";
 export * as arc from "./dist/chains/arc.schema";
