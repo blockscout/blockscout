@@ -13,6 +13,7 @@
 
 ### 🐛 Bug Fixes
 
+- Don't start health monitor in tests ([#14481](https://github.com/blockscout/blockscout/pull/14481))
 - Improve BlockNumber cache ([#14453](https://github.com/blockscout/blockscout/pull/14453))
 - Fix revert reason for nethermind ([#14442](https://github.com/blockscout/blockscout/pull/14442))
 - Fix token import on Celo ([#14435](https://github.com/blockscout/blockscout/issues/14435))
