@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
         {"List of recent blocks on the home page.", "application/json",
          %Schema{
            type: :array,
-           items: Schemas.Block.Response,
+           items: Schemas.Block,
            nullable: false
          }}
     ]

@@ -1062,22 +1062,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {"List of native coin holders with their balances, with pagination.", "application/json",
          SchemasHelper.extend_schema(
            paginated_response(
-             items:
-               Schemas.Address.schema()
-               |> SchemasHelper.extend_schema(
-                 properties: %{
-                   coin_balance: Schemas.General.IntegerStringNullable,
-                   transactions_count: %Schema{
-                     anyOf: [
-                       Schemas.General.IntegerString,
-                       # TODO: replace empty string with null?
-                       Schemas.General.EmptyString
-                     ],
-                     nullable: true
-                   }
-                 },
-                 required: [:coin_balance, :transactions_count]
-               ),
+             items: Schemas.Address.TopAddress,
              next_page_params_example: %{
                "fetched_coin_balance" => "124355417998347240251800",
                "hash" => "0x59708733fbbf64378d9293ec56b977c011a08fd2",

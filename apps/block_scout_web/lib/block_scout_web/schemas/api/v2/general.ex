@@ -1031,6 +1031,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
         next_page_params: %Schema{
           type: :object,
           nullable: true,
+          additionalProperties: true,
           example: next_page_params_example
         }
       },

@@ -1,0 +1,148 @@
+name: Publish @blockscout/api-types to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_version:
+        description: "Package version (semver or Git tag, e.g. 1.0.0 or v1.0.0-beta.1)"
+        required: true
+        type: string
+  release:
+    types: [published]
+  workflow_call:
+    inputs:
+      package_version:
+        description: "Package version (semver or Git tag, e.g. 1.0.0 or v1.0.0-beta.1)"
+        required: true
+        type: string
+    secrets:
+      NPM_TOKEN:
+        required: true
+
+env:
+  OTP_VERSION: "27.3.4.6"
+  ELIXIR_VERSION: "1.19.4"
+  NODE_VERSION: "22"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    name: Build and publish
+    # Skip GitHub pre-releases; manual dispatch and workflow_call are unaffected.
+    if: github.event_name != 'release' || github.event.release.prerelease == false
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Resolve package version and npm dist-tag
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ inputs.package_version }}
+        run: |
+          case "$EVENT_NAME" in
+            release)
+              raw="$RELEASE_TAG"
+              ;;
+            *)
+              raw="$INPUT_VERSION"
+              ;;
+          esac
+
+          version="${raw#[vV]}"
+
+          if [ "$EVENT_NAME" = "release" ] && [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+- ]]; then
+            echo "Skipping npm publish: release tag '$raw' is not a final version" >&2
+            exit 1
+          fi
+
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid semver (optional leading v/V): $raw" >&2
+            exit 1
+          fi
+
+          if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+- ]]; then
+            dist_tag=beta
+          else
+            dist_tag=latest
+          fi
+
+          echo "NPM_VERSION=$version" >> "$GITHUB_ENV"
+          echo "NPM_DIST_TAG=$dist_tag" >> "$GITHUB_ENV"
+          echo "Publishing @blockscout/api-types@$version with dist-tag '$dist_tag' (input: $raw)"
+
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          hexpm-mirrors: |
+            https://builds.hex.pm
+            https://cdn.jsdelivr.net/hex
+
+      - name: ELIXIR_VERSION.lock
+        run: echo "${ELIXIR_VERSION}" > ELIXIR_VERSION.lock
+
+      - name: OTP_VERSION.lock
+        run: echo "${OTP_VERSION}" > OTP_VERSION.lock
+
+      - name: Restore Mix deps cache
+        uses: actions/cache/restore@v4
+        id: deps-cache
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ env.MIX_ENV }}-deps-mixlockhash-
+
+      - name: Build Mix deps
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get
+          mix deps.compile --skip-umbrella-children
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: types-package/package-lock.json
+          registry-url: https://registry.npmjs.org
+          scope: "@blockscout"
+
+      - name: Install npm dependencies
+        working-directory: types-package
+        run: npm ci
+
+      - name: Build OpenAPI specs and TypeScript types
+        working-directory: types-package
+        run: npm run build
+
+      - name: Typecheck
+        working-directory: types-package
+        run: npm run typecheck
+
+      - name: Set package version
+        working-directory: types-package
+        run: npm version "$NPM_VERSION" --no-git-tag-version
+
+      - name: Prepare package for publish
+        working-directory: types-package
+        run: npm pkg delete private
+
+      - name: Publish to npm
+        working-directory: types-package
+        run: npm publish --access public --tag "$NPM_DIST_TAG"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
