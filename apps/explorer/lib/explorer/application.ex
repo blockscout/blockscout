@@ -76,7 +76,6 @@ defmodule Explorer.Application do
         id: LookUpSmartContractSourcesTaskSupervisor
       ),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.WETHMigratorSupervisor}, id: WETHMigratorSupervisor),
-      Explorer.Chain.Health.Monitor,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       Accounts,
       AddressesCoinBalanceSum,
@@ -125,6 +124,7 @@ defmodule Explorer.Application do
   defp configurable_children do
     configurable_children_set =
       [
+        configure(Explorer.Chain.Health.Monitor),
         only_in_mode(Explorer.SmartContract.SolcDownloader, :api),
         only_in_mode(Explorer.SmartContract.VyperDownloader, :api),
         only_in_mode({Admin.Recovery, [[], [name: Admin.Recovery]]}, :api),
