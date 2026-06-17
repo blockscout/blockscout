@@ -159,23 +159,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :derive_transaction_forks
       )
     end)
-    |> Multi.run(:delete_address_coin_balances, fn repo, %{lose_consensus: non_consensus_blocks} ->
-      Instrumenter.block_import_stage_runner(
-        fn -> delete_address_coin_balances(repo, non_consensus_blocks, insert_options) end,
-        :address_referencing,
-        :blocks,
-        :delete_address_coin_balances
-      )
-    end)
-    |> Multi.run(:derive_address_fetched_coin_balances, fn repo,
-                                                           %{delete_address_coin_balances: delete_address_coin_balances} ->
-      Instrumenter.block_import_stage_runner(
-        fn -> derive_address_fetched_coin_balances(repo, delete_address_coin_balances, insert_options) end,
-        :address_referencing,
-        :blocks,
-        :derive_address_fetched_coin_balances
-      )
-    end)
     |> Multi.run(:delete_address_token_balances, fn repo, %{lose_consensus: non_consensus_blocks} ->
       Instrumenter.block_import_stage_runner(
         fn -> delete_address_token_balances(repo, non_consensus_blocks, insert_options) end,
@@ -226,6 +209,23 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :address_referencing,
         :blocks,
         :insert_derived_address_current_token_balances
+      )
+    end)
+    |> Multi.run(:delete_address_coin_balances, fn repo, %{lose_consensus: non_consensus_blocks} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> delete_address_coin_balances(repo, non_consensus_blocks, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :delete_address_coin_balances
+      )
+    end)
+    |> Multi.run(:derive_address_fetched_coin_balances, fn repo,
+                                                           %{delete_address_coin_balances: delete_address_coin_balances} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> derive_address_fetched_coin_balances(repo, delete_address_coin_balances, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :derive_address_fetched_coin_balances
       )
     end)
     |> Multi.run(:save_internal_transactions_for_delete, fn repo, %{lose_consensus: non_consensus_blocks} ->

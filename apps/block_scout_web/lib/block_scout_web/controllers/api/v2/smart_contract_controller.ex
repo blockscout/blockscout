@@ -188,7 +188,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
                items: Schemas.SmartContract.AuditReport,
                nullable: false
              },
-             next_page_params: %Schema{type: :object, nullable: true}
+             next_page_params: %Schema{type: :object, nullable: true, additionalProperties: true}
            },
            required: [:items, :next_page_params],
            additionalProperties: false

@@ -13,9 +13,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.MetadataTag do
     properties: %{
       slug: %Schema{type: :string, nullable: false},
       name: %Schema{type: :string, nullable: false},
-      tagType: %Schema{type: :string, nullable: false},
+      tagType: %Schema{
+        type: :string,
+        enum: ["name", "generic", "classifier", "information", "note", "protocol"],
+        nullable: false
+      },
       ordinal: %Schema{type: :integer, nullable: false},
-      meta: %Schema{type: :object, nullable: false}
+      meta: %Schema{type: :object, nullable: true, additionalProperties: true}
     },
     required: [:slug, :name, :tagType, :ordinal, :meta],
     additionalProperties: false

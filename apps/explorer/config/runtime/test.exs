@@ -48,6 +48,8 @@ config :explorer, Explorer.Utility.RateLimiter, enabled: false
 config :explorer, Explorer.Utility.Hammer.Redis, enabled: false
 config :explorer, Explorer.Utility.Hammer.ETS, enabled: true
 
+config :explorer, Explorer.Chain.Health.Monitor, enabled: false
+
 for migrator <- [
       # Background migrations
       Explorer.Migrator.TransactionsDenormalization,
