@@ -33,10 +33,7 @@ defmodule Explorer.Utility.VersionUpgrade do
   alias Explorer.Migrator.{
     FillInternalTransactionsAddressIds,
     MigrationStatus,
-    RestoreOmittedWETHTransfers,
-    SanitizeDuplicatedLogIndexLogs,
-    SanitizeIncorrectNFTTokenTransfers,
-    SanitizeIncorrectWETHTokenTransfers
+    SanitizeDuplicatedLogIndexLogs
   }
 
   alias Explorer.Repo
@@ -52,11 +49,7 @@ defmodule Explorer.Utility.VersionUpgrade do
       min_from: "11.0.2",
       required_completed_migrations: [
         FillInternalTransactionsAddressIds.migration_name(),
-        RestoreOmittedWETHTransfers.migration_name(),
-        SanitizeDuplicatedLogIndexLogs.migration_name(),
-        SanitizeIncorrectNFTTokenTransfers.migration_name(),
-        SanitizeIncorrectWETHTokenTransfers.migration_name(),
-        "recovery_weth_token_transfers"
+        SanitizeDuplicatedLogIndexLogs.migration_name()
       ]
     }
   ]

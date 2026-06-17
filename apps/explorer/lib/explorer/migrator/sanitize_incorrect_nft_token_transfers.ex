@@ -109,10 +109,15 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
 
     logs_query =
       base_query
+      |> Log.join_transaction_query()
       |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
       |> join(:left, [log], token in Token, on: log.address_hash == token.contract_address_hash)
-      |> where([log, token], token.type == ^"ERC-721")
-      |> select([log], %{block_hash: log.block_hash, transaction_hash: log.transaction_hash, index: log.index})
+      |> where([log, _t, token], token.type == ^"ERC-721")
+      |> select([log], %{
+        block_hash: as(:transaction).block_hash,
+        transaction_hash: as(:transaction).hash,
+        index: log.index
+      })
 
     TokenTransfer
     |> select([tt], {tt.transaction_hash, tt.block_hash, tt.log_index})

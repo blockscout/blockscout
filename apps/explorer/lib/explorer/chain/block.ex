@@ -347,10 +347,18 @@ defmodule Explorer.Chain.Block do
     )
   end
 
+  @doc """
+  Adds a filter by block numbers to the given query.
+  """
+  @spec by_numbers_query(Ecto.Queryable.t(), [block_number()]) :: Ecto.Query.t()
   def by_numbers_query(query \\ __MODULE__, block_numbers) do
     where(query, [b], b.number in ^block_numbers)
   end
 
+  @doc """
+  Adds a consensus filter to the given block query.
+  """
+  @spec consensus_query(Ecto.Queryable.t(), boolean()) :: Ecto.Query.t()
   def consensus_query(query \\ __MODULE__, consensus) do
     where(query, [b], b.consensus == ^consensus)
   end

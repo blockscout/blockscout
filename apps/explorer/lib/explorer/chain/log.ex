@@ -499,6 +499,10 @@ defmodule Explorer.Chain.Log do
     end)
   end
 
+  @doc """
+  Fetches a log by transaction and first topic.
+  """
+  @spec fetch_log_by_transaction_and_first_topic(Transaction.t(), Hash.Full.t() | binary(), Keyword.t()) :: t() | nil
   def fetch_log_by_transaction_and_first_topic(transaction, first_topic, options \\ []) do
     __MODULE__
     |> by_transaction_query(transaction.hash, transaction.block_number, transaction.index)
@@ -671,6 +675,10 @@ defmodule Explorer.Chain.Log do
     end
   end
 
+  @doc """
+  Joins transactions to the given logs query.
+  """
+  @spec join_transaction_query(Ecto.Queryable.t()) :: Ecto.Query.t()
   def join_transaction_query(query \\ __MODULE__) do
     cond do
       LogHelper.transaction_hash_migration_finished?() ->
@@ -690,6 +698,48 @@ defmodule Explorer.Chain.Log do
     end
   end
 
+  @doc """
+  Joins logs to the given token transfers query.
+  """
+  @spec join_to_token_transfer_query(Ecto.Queryable.t()) :: Ecto.Query.t()
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  def join_to_token_transfer_query(query) do
+    cond do
+      LogHelper.transaction_hash_migration_finished?() ->
+        query
+        |> join(:left, [tt], t in assoc(tt, :transaction))
+        |> join(:left, [tt, t], l in __MODULE__,
+          on: tt.block_number == l.block_number and t.index == l.transaction_index and tt.log_index == l.index,
+          as: :log
+        )
+
+      LogHelper.transaction_hash_migration_started?() ->
+        query
+        |> join(:left, [tt], t in assoc(tt, :transaction))
+        |> join(:left, [tt, t], l in __MODULE__,
+          on:
+            ((tt.block_number == l.block_number and t.index == l.transaction_index) or
+               tt.transaction_hash == l.transaction_hash) and tt.log_index == l.index,
+          as: :log
+        )
+
+      true ->
+        join(query, :left, [tt], l in __MODULE__,
+          on: tt.block_hash == l.block_hash and tt.transaction_hash == l.transaction_hash and tt.log_index == l.index,
+          as: :log
+        )
+    end
+  end
+
+  @doc """
+  Preloads consensus blocks for log records.
+
+  When a list of logs is provided and `blocks` is `nil`, the function fetches
+  consensus blocks by `block_number` and attaches each block to the matching log.
+
+  It also ensures that `:block_hash` is populated from the loaded block when
+  available, while preserving the existing value if no block is found.
+  """
   @spec preload_block(map() | [map()] | nil, module(), [Block.t()] | nil) :: __MODULE__.t() | [__MODULE__.t()] | nil
   def preload_block(logs, repo \\ Repo, blocks \\ nil)
 

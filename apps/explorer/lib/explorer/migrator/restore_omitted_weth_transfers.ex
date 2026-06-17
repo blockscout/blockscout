@@ -171,6 +171,8 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
   defp migrate_batch(batch) do
     {token_transfers, token_balances} =
       batch
+      |> Log.preload_block()
+      |> Log.preload_transaction()
       |> Enum.map(fn log ->
         with %{second_topic: second_topic, third_topic: nil, fourth_topic: nil, data: data}
              when not is_nil(second_topic) <-
