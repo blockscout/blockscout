@@ -1,5 +1,12 @@
 # Changelog
 
+## 11.2.1
+
+### 🐛 Bug Fixes
+
+- Don't call InternalTransaction.async_fetch from ContractCreator ([#14482](https://github.com/blockscout/blockscout/issues/14482))
+
+
 ## 11.2.0
 
 ### 🚀 Features
