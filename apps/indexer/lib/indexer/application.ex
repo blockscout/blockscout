@@ -6,6 +6,7 @@ defmodule Indexer.Application do
 
   use Application
 
+  alias Indexer.Fetcher.InternalTransaction
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.ContractCode, as: ContractCodeOnDemand
   alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
@@ -62,7 +63,9 @@ defmodule Indexer.Application do
       {TokenInstanceMetadataRefetchOnDemand.Supervisor, [json_rpc_named_arguments]},
       {TokenInstanceRefetch.Supervisor, []},
       {TokenTotalSupplyOnDemand.Supervisor, []},
-      {FirstTraceOnDemand.Supervisor, [json_rpc_named_arguments]}
+      {FirstTraceOnDemand.Supervisor, [json_rpc_named_arguments]},
+      {InternalTransaction.Supervisor,
+       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor_name]]}
     ]
 
     children =
