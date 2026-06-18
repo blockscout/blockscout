@@ -503,7 +503,11 @@ defmodule Explorer.Chain.Log do
   Fetches a log by transaction and first topic.
   """
   @spec fetch_log_by_transaction_and_first_topic(Transaction.t(), Hash.Full.t() | binary(), Keyword.t()) :: t() | nil
-  def fetch_log_by_transaction_and_first_topic(transaction, first_topic, options \\ []) do
+  def fetch_log_by_transaction_and_first_topic(transaction, first_topic, options \\ [])
+
+  def fetch_log_by_transaction_and_first_topic(%{block_number: nil}, _first_topic, _options), do: nil
+
+  def fetch_log_by_transaction_and_first_topic(transaction, first_topic, options) do
     __MODULE__
     |> by_transaction_query(transaction.hash, transaction.block_number, transaction.index)
     |> where([l], l.first_topic == ^first_topic)
