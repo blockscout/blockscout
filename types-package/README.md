@@ -4,7 +4,7 @@ TypeScript types generated from Blockscout OpenAPI specs via [openapi-typescript
 
 - **publicApi** — default public API (`BlockScoutWeb.Specs.Public`, no `CHAIN_TYPE`)
 - **privateApi** — account API (`BlockScoutWeb.Specs.Private`)
-- **chain namespaces** — chain-specific public API (`CHAIN_TYPE` set; matches [generate-swagger.yml](https://github.com/blockscout/blockscout/blob/master/.github/workflows/generate-swagger.yml), excluding deprecated MUD)
+- **chain namespaces** — chain-specific public API (`CHAIN_TYPE` set; matches [generate-swagger.yml](https://github.com/blockscout/blockscout/blob/master/.github/workflows/generate-swagger.yml))
 - **merged** — every schema from all specs above combined into one namespace (for universal frontends that handle any chain type at runtime); see [Merged schemas](#merged-schemas)
 
 Build artifacts (`openapi/`, `dist/`) are gitignored; run `npm run build` after clone.

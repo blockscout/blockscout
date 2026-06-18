@@ -43,9 +43,6 @@ defmodule Explorer.Repo.ConfigHelper do
       UtilsConfigHelper.parse_url_env_var("DATABASE_READ_ONLY_API_URL") ||
         UtilsConfigHelper.parse_url_env_var("DATABASE_URL")
 
-  def get_mud_db_url,
-    do: UtilsConfigHelper.parse_url_env_var("MUD_DATABASE_URL") || UtilsConfigHelper.parse_url_env_var("DATABASE_URL")
-
   def get_event_notification_db_url,
     do: UtilsConfigHelper.parse_url_env_var("DATABASE_EVENT_URL") || UtilsConfigHelper.parse_url_env_var("DATABASE_URL")
 

@@ -1028,8 +1028,6 @@ config :explorer, Explorer.ThirdPartyIntegrations.UniversalProxy,
   config_url: universal_proxy_config_url,
   config_json: universal_proxy_config
 
-config :explorer, Explorer.Chain.Mud, enabled: ConfigHelper.parse_bool_env_var("MUD_INDEXER_ENABLED")
-
 config :explorer, Explorer.Chain.Scroll.L1FeeParam,
   curie_upgrade_block: ConfigHelper.parse_integer_env_var("SCROLL_L2_CURIE_UPGRADE_BLOCK", 0),
   scalar_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_SCALAR_INIT", 0),
