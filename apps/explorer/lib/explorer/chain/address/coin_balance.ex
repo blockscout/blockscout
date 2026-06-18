@@ -167,7 +167,14 @@ defmodule Explorer.Chain.Address.CoinBalance do
   def get_coin_balance(address_hash, block_number, options \\ []) do
     query = fetch_coin_balance(address_hash, block_number)
 
-    Chain.select_repo(options).one(query)
+    case Chain.select_repo(options).one(query) do
+      nil ->
+        nil
+
+      balance ->
+        [balance] = preload_transactions([balance], options)
+        balance
+    end
   end
 
   @doc """
