@@ -53,6 +53,8 @@ defmodule Indexer.Application do
     # + 1 (above in pool_size calculation) for the Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch
 
     base_children = [
+      {InternalTransaction.Supervisor,
+       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor_name]]},
       :hackney_pool.child_spec(:token_instance_fetcher, max_connections: pool_size),
       {Memory.Monitor, [%{}, [name: memory_monitor_name]]},
       {CoinBalanceOnDemand.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
@@ -63,9 +65,7 @@ defmodule Indexer.Application do
       {TokenInstanceMetadataRefetchOnDemand.Supervisor, [json_rpc_named_arguments]},
       {TokenInstanceRefetch.Supervisor, []},
       {TokenTotalSupplyOnDemand.Supervisor, []},
-      {FirstTraceOnDemand.Supervisor, [json_rpc_named_arguments]},
-      {InternalTransaction.Supervisor,
-       [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor_name]]}
+      {FirstTraceOnDemand.Supervisor, [json_rpc_named_arguments]}
     ]
 
     children =
