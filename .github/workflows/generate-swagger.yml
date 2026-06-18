@@ -132,29 +132,12 @@ jobs:
           mix openapi.spec.yaml --spec BlockScoutWeb.Specs.Public openapi.${{ matrix.chain-type }}.yaml --start-app=false
         env:
           CHAIN_TYPE: ${{ matrix.chain-type != 'default' && matrix.chain-type || '' }}
-          MUD_INDEXER_ENABLED: false
-
-      - name: Generate MUD-enabled spec for Optimism
-        if: matrix.chain-type == 'optimism'
-        run: |
-          mix openapi.spec.yaml --spec BlockScoutWeb.Specs.Public openapi.mud.yaml --start-app=false
-        env:
-          CHAIN_TYPE: optimism
-          MUD_INDEXER_ENABLED: true
 
       - name: Upload OpenAPI spec
         uses: actions/upload-artifact@v4
         with:
           name: openapi-spec-${{ matrix.chain-type }}
           path: openapi.${{ matrix.chain-type }}.yaml
-          retention-days: 1
-
-      - name: Upload MUD-enabled spec
-        if: matrix.chain-type == 'optimism'
-        uses: actions/upload-artifact@v4
-        with:
-          name: openapi-spec-mud
-          path: openapi.mud.yaml
           retention-days: 1
 
   push-specs:
@@ -258,16 +241,10 @@ jobs:
             if [ -f "$SPEC_FILE" ]; then
               FILENAME=$(basename "$SPEC_FILE")
               
-              # Handle MUD spec specially
-              if [ "$FILENAME" = "openapi.mud.yaml" ]; then
-                mkdir -p "api-specs/blockscout/${VERSION}/mud"
-                cp "$SPEC_FILE" "api-specs/blockscout/${VERSION}/mud/swagger.yaml"
-              else
-                # Extract chain type from filename (openapi.CHAINTYPE.yaml)
-                CHAIN_TYPE=$(echo "$FILENAME" | sed 's/openapi\.\(.*\)\.yaml/\1/')
-                mkdir -p "api-specs/blockscout/${VERSION}/${CHAIN_TYPE}"
-                cp "$SPEC_FILE" "api-specs/blockscout/${VERSION}/${CHAIN_TYPE}/swagger.yaml"
-              fi
+              # Extract chain type from filename (openapi.CHAINTYPE.yaml)
+              CHAIN_TYPE=$(echo "$FILENAME" | sed 's/openapi\.\(.*\)\.yaml/\1/')
+              mkdir -p "api-specs/blockscout/${VERSION}/${CHAIN_TYPE}"
+              cp "$SPEC_FILE" "api-specs/blockscout/${VERSION}/${CHAIN_TYPE}/swagger.yaml"
             fi
           done
 

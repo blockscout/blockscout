@@ -12,9 +12,6 @@ defmodule BlockScoutWeb.Specs.Public do
   use Utils.CompileTimeEnvHelper,
     chain_identity: [:explorer, :chain_identity]
 
-  use Utils.RuntimeEnvHelper,
-    mud_enabled?: [:explorer, [Explorer.Chain.Mud, :enabled]]
-
   @behaviour OpenApi
 
   @default_api_categories [
@@ -47,11 +44,7 @@ defmodule BlockScoutWeb.Specs.Public do
 
     {:optimism, nil} ->
       defp chain_type_category_tags do
-        if mud_enabled?() do
-          [%Tag{name: "optimism"}, %Tag{name: "mud"}]
-        else
-          [%Tag{name: "optimism"}]
-        end
+        [%Tag{name: "optimism"}]
       end
 
     {chain_type, nil} when chain_type in [:arbitrum, :scroll, :shibarium, :stability, :zilliqa, :zksync] ->

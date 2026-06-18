@@ -12,7 +12,6 @@ source "$SCRIPT_DIR/chain-types.sh"
 cd "$REPO_ROOT"
 mkdir -p "$PACKAGE_ROOT/openapi/chains"
 
-export MUD_INDEXER_ENABLED=false
 # Emit config-gated fields (e.g. Token.is_bridged) so the types cover the universal frontend.
 export BRIDGED_TOKENS_ENABLED=true
 
