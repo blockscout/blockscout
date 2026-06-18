@@ -71,6 +71,13 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
     )
   end
 
-  defp compression_middleware(true), do: [{Tesla.Middleware.Compression, format: "gzip", max_body_size: :infinity}]
+  defp compression_middleware(true) do
+    max_body_size =
+      Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP, [])
+      |> Keyword.get(:response_decompression_max_body_size, 100 * 1024 * 1024)
+
+    [{Tesla.Middleware.Compression, format: "gzip", max_body_size: max_body_size}]
+  end
+
   defp compression_middleware(false), do: []
 end
