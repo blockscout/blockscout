@@ -71,6 +71,6 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
     )
   end
 
-  defp compression_middleware(true), do: [{Tesla.Middleware.Compression, format: "gzip"}]
+  defp compression_middleware(true), do: [{Tesla.Middleware.Compression, format: "gzip", max_body_size: :infinity}]
   defp compression_middleware(false), do: []
 end
