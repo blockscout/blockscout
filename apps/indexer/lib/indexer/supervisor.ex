@@ -48,6 +48,7 @@ defmodule Indexer.Supervisor do
     ContractCode,
     CurrentTokenBalanceImporter,
     EmptyBlocksSanitizer,
+    InternalTransaction,
     PendingBlockOperationsSanitizer,
     PendingTransaction,
     ReplacedTransaction,
@@ -142,6 +143,8 @@ defmodule Indexer.Supervisor do
 
         # Async catchup fetchers
         {UncleBlock.Supervisor, [[block_fetcher: block_fetcher, memory_monitor: memory_monitor]]},
+        {InternalTransaction.Supervisor,
+         [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {CoinBalanceCatchup.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {CoinBalanceRealtime.Supervisor,

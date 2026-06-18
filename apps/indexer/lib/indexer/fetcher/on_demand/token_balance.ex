@@ -116,7 +116,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
       updated_tokens =
         Map.put_new(
           acc[:tokens],
-          ctb.token_contract_address_hash.bytes,
+          ctb.token.contract_address_hash.bytes,
           ctb.token
         )
 
