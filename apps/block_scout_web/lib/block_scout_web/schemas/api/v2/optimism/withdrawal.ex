@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Withdrawal do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "OptimismWithdrawal",
     description: "Optimism Withdrawal struct.",
     type: :object,
     properties: %{
