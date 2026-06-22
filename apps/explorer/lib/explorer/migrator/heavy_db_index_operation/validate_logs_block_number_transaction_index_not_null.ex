@@ -6,8 +6,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsBlockNumberTransac
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
-  alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransactionIndexIndexUniqueIndex
+  alias Explorer.Migrator.{FillLogsTransactionIndex, HeavyDbIndexOperation, MigrationStatus}
 
   @table_name :logs
   @index_name "logs_not_null_constraints"
@@ -26,7 +25,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsBlockNumberTransac
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
     do: [
-      CreateLogsBlockNumberTransactionIndexIndexUniqueIndex.migration_name()
+      FillLogsTransactionIndex.migration_name()
     ]
 
   @impl HeavyDbIndexOperation
