@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchByAnytrust do
   OpenApiSpex.schema(
     Batch.schema()
     |> Helper.extend_schema(
-      title: "Arbitrum.BatchByAnytrust",
+      title: "ArbitrumBatchByAnytrust",
       description: "Arbitrum batch with AnyTrust data availability.",
       properties: %{
         data_availability: DataAvailability.Anytrust

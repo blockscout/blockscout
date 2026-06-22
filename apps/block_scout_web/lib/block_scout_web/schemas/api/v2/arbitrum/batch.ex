@@ -11,6 +11,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Batch do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "ArbitrumBatch",
     description: "Detailed Arbitrum batch info.",
     type: :object,
     properties: %{
