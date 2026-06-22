@@ -124,7 +124,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
       l1_transaction_hash: General.FullHashNullable,
       l1_timestamp: General.TimestampNullable
     },
-    required: [:commitment, :l1_transaction_hash, :l1_timestamp]
+    required: [:commitment, :l1_transaction_hash, :l1_timestamp],
+    additionalProperties: false
   }
 
   @doc """
