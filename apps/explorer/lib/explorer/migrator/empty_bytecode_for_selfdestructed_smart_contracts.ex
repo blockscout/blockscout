@@ -64,7 +64,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
   @impl FillingMigration
   def update_batch(block_numbers) do
     if Enum.empty?(block_numbers) do
-      {:ok, []}
+      0
     else
       # Find all selfdestruct internal transactions in these blocks
       selfdestruct_query =
@@ -81,7 +81,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
       selfdestruct_transactions = Repo.all(selfdestruct_query, timeout: :infinity)
 
       if Enum.empty?(selfdestruct_transactions) do
-        {:ok, []}
+        0
       else
         # Get unique transaction block numbers and indexes to check for create/create2
         transaction_identifiers =
@@ -119,7 +119,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
           |> Enum.uniq()
 
         if Enum.empty?(addresses_to_empty) do
-          {:ok, []}
+          0
         else
           # Only update addresses that still have non-empty contract_code
           update_query =
@@ -141,7 +141,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
             )
           end
 
-          {:ok, count}
+          count
         end
       end
     end

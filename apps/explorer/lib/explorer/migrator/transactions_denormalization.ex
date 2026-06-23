@@ -47,7 +47,9 @@ defmodule Explorer.Migrator.TransactionsDenormalization do
         update: [set: [block_consensus: block.consensus, block_timestamp: block.timestamp]]
       )
 
-    Repo.update_all(query, [], timeout: :infinity)
+    {count, _} = Repo.update_all(query, [], timeout: :infinity)
+
+    count
   end
 
   @impl FillingMigration

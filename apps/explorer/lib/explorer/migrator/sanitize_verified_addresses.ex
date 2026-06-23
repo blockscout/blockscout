@@ -40,7 +40,9 @@ defmodule Explorer.Migrator.SanitizeVerifiedAddresses do
         update: [set: [verified: true]]
       )
 
-    Repo.update_all(query, [], timeout: :infinity)
+    {count, _} = Repo.update_all(query, [], timeout: :infinity)
+
+    count
   end
 
   def start_link(_) do

@@ -62,6 +62,8 @@ defmodule Explorer.Migrator.CeloAccounts do
         params: unique_pending_operation_params
       }
     })
+
+    Enum.count(logs)
   end
 
   @impl FillingMigration

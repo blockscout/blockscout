@@ -81,8 +81,8 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalances do
     }
 
     case MultichainSearch.batch_import(to_import) do
-      {:ok, _} = result ->
-        result
+      {:ok, _} ->
+        Enum.count(balances)
 
       {:error, _} ->
         Logger.error(fn ->
