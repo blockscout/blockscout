@@ -6,7 +6,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashBlockNumber
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  alias Explorer.Migrator.{FillLogsTransactionIndexAddressId, HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.{FillLogsOptimizedFields, HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :logs
@@ -23,7 +23,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashBlockNumber
   def index_name, do: @index_name
 
   @impl HeavyDbIndexOperation
-  def dependent_from_migrations, do: [FillLogsTransactionIndexAddressId.migration_name()]
+  def dependent_from_migrations, do: [FillLogsOptimizedFields.migration_name()]
 
   @impl HeavyDbIndexOperation
   def db_index_operation do

@@ -3,7 +3,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
   @moduledoc """
   Fetches voter payments for the epoch block.
   """
-  import Ecto.Query, only: [from: 2, select: 3]
+  import Ecto.Query
 
   import Explorer.Helper,
     only: [

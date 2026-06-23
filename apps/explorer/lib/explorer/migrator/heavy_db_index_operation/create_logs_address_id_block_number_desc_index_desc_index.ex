@@ -9,7 +9,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdBlockNumber
   require Logger
 
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Migrator.{FillLogsTransactionIndexAddressId, HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.{FillLogsOptimizedFields, HeavyDbIndexOperation, MigrationStatus}
 
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
@@ -28,7 +28,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdBlockNumber
   def index_name, do: @index_name
 
   @impl HeavyDbIndexOperation
-  def dependent_from_migrations, do: [FillLogsTransactionIndexAddressId.migration_name()]
+  def dependent_from_migrations, do: [FillLogsOptimizedFields.migration_name()]
 
   @impl HeavyDbIndexOperation
   def db_index_operation do
