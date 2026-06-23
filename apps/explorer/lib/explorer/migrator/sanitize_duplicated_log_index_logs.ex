@@ -54,7 +54,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
 
   ## Returns
 
-    :ok
+    Number of updated logs
   """
   def update_batch(block_numbers) do
     logs_by_block =
@@ -170,7 +170,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
           )).()
     end)
 
-    :ok
+    Enum.count(logs_to_update)
   end
 
   defp process_block({block_hash, logs}) do

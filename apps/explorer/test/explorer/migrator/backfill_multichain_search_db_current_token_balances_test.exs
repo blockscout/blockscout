@@ -115,7 +115,7 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalancesTest d
       end
     )
 
-    assert {:ok, {:chunks_processed, _}} =
+    assert 2 =
              BackfillMultichainSearchDbCurrentTokenBalances.update_batch([balance_1.id, balance_2.id])
   end
 

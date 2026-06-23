@@ -35,18 +35,21 @@ defmodule Explorer.Migrator.TransactionHasTokenTransfers do
 
   @impl FillingMigration
   def update_batch(transaction_hashes) do
-    Transaction
-    |> where([transaction], transaction.hash in ^transaction_hashes)
-    |> update([transaction],
-      set: [
-        has_token_transfers:
-          fragment(
-            "EXISTS (SELECT 1 FROM token_transfers WHERE transaction_hash = ? LIMIT 1)",
-            transaction.hash
-          )
-      ]
-    )
-    |> Repo.update_all([], timeout: :infinity)
+    {count, _} =
+      Transaction
+      |> where([transaction], transaction.hash in ^transaction_hashes)
+      |> update([transaction],
+        set: [
+          has_token_transfers:
+            fragment(
+              "EXISTS (SELECT 1 FROM token_transfers WHERE transaction_hash = ? LIMIT 1)",
+              transaction.hash
+            )
+        ]
+      )
+      |> Repo.update_all([], timeout: :infinity)
+
+    count
   end
 
   @impl FillingMigration

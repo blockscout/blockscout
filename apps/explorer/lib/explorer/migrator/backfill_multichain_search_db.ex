@@ -138,8 +138,8 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDB do
 
             # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             case MultichainSearch.batch_import(to_import) do
-              {:ok, _} = result ->
-                result
+              {:ok, _} ->
+                Enum.count(addresses) + Enum.count(blocks) + Enum.count(transactions)
 
               {:error, _} ->
                 Logger.error(fn ->

@@ -97,6 +97,8 @@ defmodule Explorer.Migrator.CeloL2Epochs do
         timestamps: Import.timestamps()
       }
     )
+
+    Enum.count(changes_list)
   end
 
   @impl FillingMigration
