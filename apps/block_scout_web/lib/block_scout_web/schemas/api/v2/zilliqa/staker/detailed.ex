@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Zilliqa.Staker.Detailed do
   OpenApiSpex.schema(
     Staker.schema()
     |> Helper.extend_schema(
-      title: "StakerDetailed",
+      title: "ZilliqaStakerDetailed",
       properties: %{
         peer_id: General.HexStringNullable,
         control_address: AddressNullable,

@@ -140,7 +140,13 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     responses: [
       ok:
         {"Time series data for transaction count charts.", "application/json",
-         %Schema{type: :object, properties: %{chart_data: %Schema{type: :array, items: %Schema{type: :object}}}}},
+         %Schema{
+           type: :object,
+           properties: %{
+             chart_data: %Schema{type: :array, items: Schemas.Stats.TransactionsChartDataPoint, nullable: false}
+           },
+           required: [:chart_data]
+         }},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
@@ -180,9 +186,10 @@ defmodule BlockScoutWeb.API.V2.StatsController do
          %Schema{
            type: :object,
            properties: %{
-             chart_data: %Schema{type: :array, items: %Schema{type: :object}},
+             chart_data: %Schema{type: :array, items: Schemas.Stats.MarketChartDataPoint, nullable: false},
              available_supply: %Schema{anyOf: [Schemas.General.FloatString, %Schema{type: :integer}]}
-           }
+           },
+           required: [:chart_data, :available_supply]
          }},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -231,7 +238,17 @@ defmodule BlockScoutWeb.API.V2.StatsController do
     responses: [
       ok:
         {"Secondary coin market chart data.", "application/json",
-         %Schema{type: :object, properties: %{chart_data: %Schema{type: :array, items: %Schema{type: :object}}}}},
+         %Schema{
+           type: :object,
+           properties: %{
+             chart_data: %Schema{
+               type: :array,
+               items: Schemas.Stats.SecondaryCoinMarketChartDataPoint,
+               nullable: false
+             }
+           },
+           required: [:chart_data]
+         }},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 
