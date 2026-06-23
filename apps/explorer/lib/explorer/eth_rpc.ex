@@ -717,6 +717,29 @@ defmodule Explorer.EthRPC do
 
   defp proxy_method?(_), do: false
 
+  defp active_proxy_methods do
+    core = if core_proxy_methods_disabled?(), do: %{}, else: @proxy_methods
+
+    if extended_proxy_methods_enabled?() do
+      Map.merge(core, @extended_proxy_methods)
+    else
+      core
+    end
+  end
+
+  defp extended_proxy_methods_enabled? do
+    Application.get_env(:explorer, __MODULE__, [])
+    |> Keyword.get(:extended_proxy_methods_enabled, false)
+  end
+
+  defp core_proxy_methods_disabled? do
+    Application.get_env(:explorer, __MODULE__, [])
+    |> Keyword.get(:disable_core_proxy_methods, false)
+  end
+
+  defp arity_valid?(%Range{} = range, params_length), do: params_length in range
+  defp arity_valid?(arity, params_length) when is_integer(arity), do: arity == params_length
+
   defp validate_params(validators, params) do
     validators
     |> Enum.zip(params)
