@@ -16,7 +16,7 @@ defmodule Explorer.Token.MetadataRetriever do
   @invalid_base64_data "invalid data:application/json;base64"
   @invalid_ipfs_path "invalid ipfs path"
   @invalid_swarm_path "invalid swarm path"
-  @default_headers [{"User-Agent", "blockscout-11.2.0"}]
+  @default_headers [{"User-Agent", "blockscout-11.2.1"}]
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
