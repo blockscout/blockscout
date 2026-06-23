@@ -128,6 +128,18 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
     additionalProperties: false
   }
 
+  @eigenda_schema %Schema{
+    type: :object,
+    nullable: false,
+    properties: %{
+      cert: %Schema{type: :string, nullable: true},
+      l1_transaction_hash: General.FullHashNullable,
+      l1_timestamp: General.TimestampNullable
+    },
+    required: [:cert, :l1_transaction_hash, :l1_timestamp],
+    additionalProperties: false
+  }
+
   @doc """
     Returns the Celestia schema.
   """
@@ -148,7 +160,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
       },
       blobs: %Schema{
         type: :array,
-        items: %Schema{anyOf: [@blob4844_schema, @celestia_schema, @alt_da_schema]},
+        items: %Schema{
+          anyOf: [@blob4844_schema, @celestia_schema, @eigenda_schema, @alt_da_schema]
+        },
         nullable: false
       }
     },
