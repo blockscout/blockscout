@@ -2850,6 +2850,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       log =
         insert(:log,
           transaction: transaction,
+          transaction_index: transaction.index,
           index: 1,
           block: transaction.block,
           block_number: transaction.block_number,
@@ -2878,6 +2879,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
           insert(:log,
             transaction: transaction,
+            transaction_index: transaction.index,
             index: x,
             block: transaction.block,
             block_number: transaction.block_number,
@@ -2905,6 +2907,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       log =
         insert(:log,
           transaction: transaction,
+          transaction_index: transaction.index,
           index: 1,
           block: transaction.block,
           block_number: transaction.block_number,
@@ -3009,6 +3012,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       log =
         insert(:log,
           transaction: transaction,
+          transaction_index: transaction.index,
           index: 1,
           block: transaction.block,
           block_number: transaction.block_number,
@@ -3107,6 +3111,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
         insert(:log,
           transaction: transaction,
+          transaction_index: transaction.index,
           index: x,
           block: transaction.block,
           block_number: transaction.block_number,
@@ -3122,6 +3127,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       log =
         insert(:log,
           transaction: transaction,
+          transaction_index: transaction.index,
           block: transaction.block,
           block_number: transaction.block_number,
           address: address,
@@ -3171,7 +3177,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       log =
         insert(:log,
+          block: transaction.block,
+          block_number: transaction.block_number,
           transaction: transaction,
+          transaction_index: transaction.index,
           first_topic: TestHelper.topic(topic1),
           second_topic: TestHelper.topic(topic2),
           third_topic: nil,
@@ -3254,7 +3263,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       log =
         insert(:log,
+          block: transaction.block,
+          block_number: transaction.block_number,
           transaction: transaction,
+          transaction_index: transaction.index,
           first_topic: TestHelper.topic(topic1),
           second_topic: TestHelper.topic(topic2),
           third_topic: nil,
@@ -3305,7 +3317,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       transaction = :transaction |> insert() |> with_block()
 
       insert(:log,
+        block: transaction.block,
+        block_number: transaction.block_number,
         transaction: transaction,
+        transaction_index: transaction.index,
         first_topic: nil,
         second_topic: nil,
         third_topic: nil,
@@ -3315,7 +3330,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       )
 
       insert(:log,
+        block: transaction.block,
+        block_number: transaction.block_number,
         transaction: transaction,
+        transaction_index: transaction.index,
         first_topic: TestHelper.topic("0x0000000000000000000000000000000000000000000000000000000000005d19"),
         second_topic: nil,
         third_topic: nil,
@@ -3362,6 +3380,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       insert(:log,
         transaction: transaction,
+        transaction_index: transaction.index,
         block: transaction.block,
         block_number: transaction.block_number,
         address: contract_address,

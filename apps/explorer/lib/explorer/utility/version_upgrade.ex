@@ -28,8 +28,14 @@ defmodule Explorer.Utility.VersionUpgrade do
 
   alias Explorer.Application.Constants
   alias Explorer.Chain.Block
-  alias Explorer.Migrator.{FillInternalTransactionsAddressIds, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey
+
+  alias Explorer.Migrator.{
+    FillInternalTransactionsAddressIds,
+    MigrationStatus,
+    SanitizeDuplicatedLogIndexLogs
+  }
+
   alias Explorer.Repo
 
   @upgrade_rules [
@@ -41,7 +47,10 @@ defmodule Explorer.Utility.VersionUpgrade do
     %{
       since: "12.0.0",
       min_from: "11.0.2",
-      required_completed_migrations: [FillInternalTransactionsAddressIds.migration_name()]
+      required_completed_migrations: [
+        FillInternalTransactionsAddressIds.migration_name(),
+        SanitizeDuplicatedLogIndexLogs.migration_name()
+      ]
     }
   ]
 

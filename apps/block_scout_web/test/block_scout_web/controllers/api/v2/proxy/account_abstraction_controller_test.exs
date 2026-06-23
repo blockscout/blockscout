@@ -163,7 +163,9 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionControllerTest do
       logs =
         insert_list(51, :token_transfer_log,
           transaction: transaction,
-          block: transaction.block
+          transaction_index: transaction.index,
+          block: transaction.block,
+          block_number: transaction.block_number
         )
 
       for log <- logs do

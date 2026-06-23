@@ -427,7 +427,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "decoded" => decoded,
       "smart_contract" => smart_contract_info(transaction_or_hash),
       "block_number" => log.block_number,
-      "block_hash" => log.block_hash,
+      "block_hash" => log.block.hash,
       "block_timestamp" =>
         case log.block do
           %Block{timestamp: timestamp} -> timestamp

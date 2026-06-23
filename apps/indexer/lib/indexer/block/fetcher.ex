@@ -16,7 +16,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, Hash, Import, Transaction, Wei, Withdrawal}
+  alias Explorer.Chain.{Block, Hash, Import, Log, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
@@ -289,7 +289,12 @@ defmodule Indexer.Block.Fetcher do
       async_match_arbitrum_messages_to_l2(arbitrum_transactions_for_further_handling)
 
       if chain_type() == :zilliqa do
-        inserted_logs = Map.get(inserted, :logs, [])
+        inserted_logs =
+          inserted
+          |> Map.get(:logs, [])
+          |> Log.preload_block()
+          |> Log.preload_transaction()
+
         inserted_transactions = Map.get(inserted, :transactions, [])
         Zrc2Tokens.fetch_zrc2_token_transfers_and_adapters(inserted_logs, inserted_transactions, range, callback_module)
       end

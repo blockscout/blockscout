@@ -41,6 +41,7 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
         params: [
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            block_number: 37,
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
             first_topic: first_topic,
@@ -48,10 +49,12 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
             third_topic: third_topic,
             fourth_topic: nil,
             index: 0,
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            transaction_index: 0
           },
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            block_number: 37,
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
             first_topic: first_topic,
@@ -59,10 +62,12 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
             third_topic: third_topic,
             fourth_topic: nil,
             index: 1,
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            transaction_index: 0
           },
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            block_number: 37,
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
             first_topic: first_topic,
@@ -70,7 +75,8 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
             third_topic: third_topic,
             fourth_topic: nil,
             index: 2,
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            transaction_index: 0
           }
         ],
         timeout: 5

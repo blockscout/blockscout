@@ -1,16 +1,15 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
-defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateInternalTransactionsBlockNumberTransactionIndexNotNull do
+defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsBlockNumberTransactionIndexNotNull do
   @moduledoc """
-  Validate `NOT NULL` constraints for `internal_transactions` (`block_number`, `transaction_index`).
+  Validate `NOT NULL` constraints for `logs` (`block_number`, `transaction_index`).
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
-  alias Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex
+  alias Explorer.Migrator.{FillLogsTransactionIndex, HeavyDbIndexOperation, MigrationStatus}
 
-  @table_name :internal_transactions
-  @index_name "internal_transactions_not_null_constraints"
+  @table_name :logs
+  @index_name "logs_not_null_constraints"
   @columns ["block_number", "transaction_index"]
   @operation_type :create
 
@@ -26,7 +25,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateInternalTransactionsBl
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
     do: [
-      CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex.migration_name()
+      FillLogsTransactionIndex.migration_name()
     ]
 
   @impl HeavyDbIndexOperation

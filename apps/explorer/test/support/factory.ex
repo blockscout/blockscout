@@ -930,6 +930,7 @@ defmodule Explorer.Factory do
 
   def log_factory do
     block = build(:block)
+    transaction = build(:transaction)
 
     %Log{
       address: build(:address),
@@ -941,7 +942,8 @@ defmodule Explorer.Factory do
       index: sequence("log_index", & &1),
       second_topic: nil,
       third_topic: nil,
-      transaction: build(:transaction)
+      transaction: transaction,
+      transaction_index: transaction_index()
     }
   end
 
@@ -998,7 +1000,8 @@ defmodule Explorer.Factory do
       address_hash: token_address.hash,
       address: token_address,
       data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-      transaction: transaction
+      transaction: transaction,
+      transaction_index: transaction_index()
     }
 
     build(:log, log_params)
@@ -1214,6 +1217,10 @@ defmodule Explorer.Factory do
       |> Hash.Full.cast()
 
     transaction_hash
+  end
+
+  def transaction_index do
+    sequence("transaction_index", & &1)
   end
 
   def transaction_input do
@@ -1770,7 +1777,8 @@ defmodule Explorer.Factory do
       third_topic: nil,
       fourth_topic: nil,
       index: sequence("log_index", & &1),
-      transaction: transaction
+      transaction: transaction,
+      transaction_index: transaction.index
     }
   end
 
