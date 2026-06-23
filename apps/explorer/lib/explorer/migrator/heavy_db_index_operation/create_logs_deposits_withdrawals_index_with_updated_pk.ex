@@ -13,7 +13,11 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsI
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
-  alias Explorer.Migrator.HeavyDbIndexOperation.UpdateLogsPrimaryKey
+
+  alias Explorer.Migrator.HeavyDbIndexOperation.{
+    CreateLogsAddressIdFirstTopicBlockNumberIndexIndex,
+    UpdateLogsPrimaryKey
+  }
 
   @table_name :logs
   @index_name "logs_deposits_withdrawals_index_with_updated_pk"
@@ -29,7 +33,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsI
   def index_name, do: @index_name
 
   @impl HeavyDbIndexOperation
-  def dependent_from_migrations, do: [UpdateLogsPrimaryKey.migration_name()]
+  def dependent_from_migrations,
+    do: [CreateLogsAddressIdFirstTopicBlockNumberIndexIndex.migration_name(), UpdateLogsPrimaryKey.migration_name()]
 
   @query_string """
   CREATE INDEX #{HeavyDbIndexOperationHelper.add_concurrently_flag?()} IF NOT EXISTS "#{@index_name}"

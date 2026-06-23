@@ -379,7 +379,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
         base_condition
       else
         dynamic(
-          [_, msg],
+          [_, _, msg],
           ^base_condition and
             msg.originating_transaction_block_number >= ^start_block and
             msg.originating_transaction_block_number <= ^end_block

@@ -43,53 +43,56 @@ defmodule Explorer.Migrator.FillLogsTransactionIndexAddressId do
 
   @impl FillingMigration
   def update_batch(block_numbers) do
-    Repo.transaction(
-      fn ->
-        lock_query =
-          from(
-            l in Log,
-            select: select_ctid(l),
-            select_merge: %{address_hash: l.address_hash, transaction_hash: l.transaction_hash},
-            where: l.block_number in ^block_numbers,
-            order_by: [asc: l.block_number, asc: l.transaction_index, asc: l.index],
-            lock: "FOR UPDATE"
-          )
+    {:ok, {count, _}} =
+      Repo.transaction(
+        fn ->
+          lock_query =
+            from(
+              l in Log,
+              select: select_ctid(l),
+              select_merge: %{address_hash: l.address_hash, transaction_hash: l.transaction_hash},
+              where: l.block_number in ^block_numbers,
+              order_by: [asc: l.block_number, asc: l.transaction_index, asc: l.index],
+              lock: "FOR UPDATE"
+            )
 
-        address_hashes_query =
-          from(l in Log,
-            inner_join: locked_l in subquery(lock_query),
-            on: join_on_ctid(l, locked_l),
-            where: not is_nil(l.address_hash),
-            distinct: true,
-            select: l.address_hash
-          )
+          address_hashes_query =
+            from(l in Log,
+              inner_join: locked_l in subquery(lock_query),
+              on: join_on_ctid(l, locked_l),
+              where: not is_nil(l.address_hash),
+              distinct: true,
+              select: l.address_hash
+            )
 
-        address_hashes_query
-        |> Repo.all()
-        |> Enum.uniq()
-        |> AddressIdToAddressHash.find_or_create_multiple()
+          address_hashes_query
+          |> Repo.all()
+          |> Enum.uniq()
+          |> AddressIdToAddressHash.find_or_create_multiple()
 
-        update_query =
-          from(l in Log,
-            inner_join: locked_l in subquery(lock_query),
-            on: join_on_ctid(l, locked_l),
-            left_join: it_to_hash_map in AddressIdToAddressHash,
-            on: it_to_hash_map.address_hash == locked_l.address_hash,
-            left_join: t in Transaction,
-            on: locked_l.transaction_hash == t.hash,
-            update: [
-              set: [
-                address_id: it_to_hash_map.address_id,
-                address_hash: nil,
-                transaction_index: t.index
+          update_query =
+            from(l in Log,
+              inner_join: locked_l in subquery(lock_query),
+              on: join_on_ctid(l, locked_l),
+              left_join: it_to_hash_map in AddressIdToAddressHash,
+              on: it_to_hash_map.address_hash == locked_l.address_hash,
+              left_join: t in Transaction,
+              on: locked_l.transaction_hash == t.hash,
+              update: [
+                set: [
+                  address_id: it_to_hash_map.address_id,
+                  address_hash: nil,
+                  transaction_index: t.index
+                ]
               ]
-            ]
-          )
+            )
 
-        Repo.update_all(update_query, [], timeout: :infinity)
-      end,
-      timeout: :infinity
-    )
+          Repo.update_all(update_query, [], timeout: :infinity)
+        end,
+        timeout: :infinity
+      )
+
+    count
   end
 
   @impl FillingMigration
