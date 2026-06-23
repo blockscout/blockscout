@@ -102,8 +102,61 @@ defmodule Explorer.EthRPCTest do
              EthRPC.responses(requests)
   end
 
+  test "core proxy methods are disabled when API_ETH_RPC_DISABLE_CORE_PROXY_METHODS is true" do
+    set_core_proxy_methods_disabled(true)
+
+    request = %{
+      "id" => 1,
+      "jsonrpc" => "2.0",
+      "method" => "eth_getCode",
+      "params" => ["0x0000000000000000000000000000000000000007", "latest"]
+    }
+
+    assert [response] = EthRPC.responses([request])
+    assert response == %{error: %{code: -32601, message: "Method not found."}, id: 1}
+  end
+
+  test "core proxy methods remain available when API_ETH_RPC_DISABLE_CORE_PROXY_METHODS is false" do
+    set_core_proxy_methods_disabled(false)
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn
+      [%{id: 1, jsonrpc: "2.0", method: "eth_getCode", params: [_, "latest"]}], _options ->
+        {:ok, [%{id: 1, jsonrpc: "2.0", result: "0x"}]}
+    end)
+
+    request = %{
+      "id" => 1,
+      "jsonrpc" => "2.0",
+      "method" => "eth_getCode",
+      "params" => ["0x0000000000000000000000000000000000000007", "latest"]
+    }
+
+    assert [response] = EthRPC.responses([request])
+    assert response == %{id: 1, result: "0x"}
+  end
+
+  test "extended proxy methods still work when core proxy methods are disabled" do
+    set_core_proxy_methods_disabled(true)
+    set_extended_proxy_methods_enabled(true)
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: 1, jsonrpc: "2.0", method: "net_version", params: []}], _options ->
+      {:ok, [%{id: 1, jsonrpc: "2.0", result: "1"}]}
+    end)
+
+    request = %{"id" => 1, "jsonrpc" => "2.0", "method" => "net_version", "params" => []}
+
+    assert [response] = EthRPC.responses([request])
+    assert response == %{id: 1, result: "1"}
+  end
+
   defp set_extended_proxy_methods_enabled(value) do
-    Application.put_env(:explorer, Explorer.EthRPC, extended_proxy_methods_enabled: value)
+    initial = Application.get_env(:explorer, Explorer.EthRPC) || []
+    Application.put_env(:explorer, Explorer.EthRPC, Keyword.merge(initial, extended_proxy_methods_enabled: value))
+  end
+
+  defp set_core_proxy_methods_disabled(value) do
+    initial = Application.get_env(:explorer, Explorer.EthRPC) || []
+    Application.put_env(:explorer, Explorer.EthRPC, Keyword.merge(initial, disable_core_proxy_methods: value))
   end
 
   defp restore_env(app, key, nil), do: Application.delete_env(app, key)
