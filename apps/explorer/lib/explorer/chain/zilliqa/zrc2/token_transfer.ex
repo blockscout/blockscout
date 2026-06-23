@@ -118,9 +118,10 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenTransfer do
     Log
     |> join(:inner, [l], b in Block, on: b.number == l.block_number and b.consensus == true)
     |> Log.join_transaction_query()
-    |> join(:left, [l], a in TokenAdapter, on: a.zrc2_address_hash == l.address_hash)
+    |> Log.join_address_mapping_query()
+    |> join(:left, [l], a in TokenAdapter, on: a.zrc2_address_hash == as(:address_mapping).address_hash)
     |> where([l], l.block_number == ^block_number and l.first_topic in ^transfer_events)
-    |> select([l, b, t, a], %{
+    |> select([l, b, t, _am, a], %{
       first_topic: l.first_topic,
       data: l.data,
       address_hash: l.address_hash,

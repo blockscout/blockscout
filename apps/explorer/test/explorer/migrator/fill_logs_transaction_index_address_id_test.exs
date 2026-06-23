@@ -1,10 +1,10 @@
-defmodule Explorer.Migrator.FillLogsTransactionIndexAddressIdTest do
+defmodule Explorer.Migrator.FillLogsOptimizedFieldsTest do
   use Explorer.DataCase, async: false
 
   import Ecto.Query
 
   alias Explorer.Chain.Log
-  alias Explorer.Migrator.{FillLogsTransactionIndexAddressId, MigrationStatus}
+  alias Explorer.Migrator.{FillLogsOptimizedFields, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransactionIndexIndexUniqueIndex
   alias Explorer.Repo
   alias Explorer.Utility.AddressIdToAddressHash
@@ -20,9 +20,9 @@ defmodule Explorer.Migrator.FillLogsTransactionIndexAddressIdTest do
 
     assert MigrationStatus.get_status("fill_logs_transaction_index_address_id") == nil
 
-    Application.put_env(:explorer, FillLogsTransactionIndexAddressId, batch_size: 100, timeout: 0)
+    Application.put_env(:explorer, FillLogsOptimizedFields, batch_size: 100, timeout: 0)
 
-    FillLogsTransactionIndexAddressId.start_link([])
+    FillLogsOptimizedFields.start_link([])
 
     wait_for_results(fn ->
       Repo.one!(

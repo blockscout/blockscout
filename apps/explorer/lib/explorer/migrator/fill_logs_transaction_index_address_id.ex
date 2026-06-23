@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
-defmodule Explorer.Migrator.FillLogsTransactionIndexAddressId do
+defmodule Explorer.Migrator.FillLogsOptimizedFields do
   @moduledoc """
   Fills `transaction_index`, `address_id` fields in `logs` table.
   """
@@ -70,22 +70,25 @@ defmodule Explorer.Migrator.FillLogsTransactionIndexAddressId do
           |> Enum.uniq()
           |> AddressIdToAddressHash.find_or_create_multiple()
 
-          update_query =
-            from(l in Log,
-              inner_join: locked_l in subquery(lock_query),
-              on: join_on_ctid(l, locked_l),
-              left_join: it_to_hash_map in AddressIdToAddressHash,
-              on: it_to_hash_map.address_hash == locked_l.address_hash,
-              left_join: t in Transaction,
-              on: locked_l.transaction_hash == t.hash,
-              update: [
-                set: [
-                  address_id: it_to_hash_map.address_id,
-                  address_hash: nil,
-                  transaction_index: t.index
-                ]
+        update_query =
+          from(l in Log,
+            inner_join: locked_l in subquery(lock_query),
+            on: join_on_ctid(l, locked_l),
+            left_join: it_to_hash_map in AddressIdToAddressHash,
+            on: it_to_hash_map.address_hash == locked_l.address_hash,
+            left_join: t in Transaction,
+            on: locked_l.transaction_hash == t.hash,
+            update: [
+              set: [
+                address_id: it_to_hash_map.address_id,
+                address_hash: nil,
+                transaction_index: t.index,
+                second_topic: fragment("bytea_ltrim_zeroes(?)", l.second_topic),
+                third_topic: fragment("bytea_ltrim_zeroes(?)", l.third_topic),
+                fourth_topic: fragment("bytea_ltrim_zeroes(?)", l.fourth_topic)
               ]
-            )
+            ]
+          )
 
           Repo.update_all(update_query, [], timeout: :infinity)
         end,
@@ -97,6 +100,6 @@ defmodule Explorer.Migrator.FillLogsTransactionIndexAddressId do
 
   @impl FillingMigration
   def update_cache do
-    BackgroundMigrations.set_fill_logs_transaction_index_address_id_finished(true)
+    BackgroundMigrations.set_fill_logs_optimized_fields_finished(true)
   end
 end

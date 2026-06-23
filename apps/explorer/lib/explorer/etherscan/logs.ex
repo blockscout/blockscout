@@ -174,14 +174,14 @@ defmodule Explorer.Etherscan.Logs do
         |> then(fn query ->
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           cond do
-            LogHelper.fill_transaction_index_address_id_migration_finished?() ->
+            LogHelper.fill_optimized_fields_migration_finished?() ->
               join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
                 on:
                   block_transaction_data.transaction_index == log.transaction_index and
                     block_transaction_data.block_number == log.block_number
               )
 
-            LogHelper.fill_transaction_index_address_id_migration_started?() ->
+            LogHelper.fill_optimized_fields_migration_started?() ->
               join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
                 on:
                   (block_transaction_data.transaction_hash == log.transaction_hash and
@@ -233,14 +233,14 @@ defmodule Explorer.Etherscan.Logs do
         |> then(fn query ->
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           cond do
-            LogHelper.fill_transaction_index_address_id_migration_finished?() ->
+            LogHelper.fill_optimized_fields_migration_finished?() ->
               join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
                 on:
                   block_transaction_data.transaction_index == log.transaction_index and
                     block_transaction_data.block_number == log.block_number
               )
 
-            LogHelper.fill_transaction_index_address_id_migration_started?() ->
+            LogHelper.fill_optimized_fields_migration_started?() ->
               join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
                 on:
                   (block_transaction_data.transaction_hash == log.transaction_hash and
@@ -295,7 +295,7 @@ defmodule Explorer.Etherscan.Logs do
         query
 
       [topic] ->
-        where(query, [l], field(l, ^topic) in ^List.wrap(filter[topic]))
+        Log.filter_by_topic_query(query, topic, filter[topic])
 
       _ ->
         where_multiple_topics_match(query, filter)
@@ -350,12 +350,20 @@ defmodule Explorer.Etherscan.Logs do
 
   defp where_multiple_topics_match(query, filter, topic_operation, "and") do
     {topic_a, topic_b} = @topic_operations[topic_operation]
-    where(query, [l], field(l, ^topic_a) == ^filter[topic_a] and field(l, ^topic_b) in ^List.wrap(filter[topic_b]))
+
+    dynamic =
+      dynamic(
+        [l],
+        ^Log.topic_filter_dynamic(topic_a, [filter[topic_a]]) and
+          ^Log.topic_filter_dynamic(topic_b, List.wrap(filter[topic_b]))
+      )
+
+    where(query, [l], ^dynamic)
   end
 
   defp where_multiple_topics_match(query, filter, topic_operation, "or") do
     {topic_a, topic_b} = @topic_operations[topic_operation]
-    where(query, [l], field(l, ^topic_a) == ^filter[topic_a] or field(l, ^topic_b) in ^List.wrap(filter[topic_b]))
+    where(query, [l], ^Log.filter_by_topic_dynamic([topic_a, topic_b], [[filter[topic_a]], List.wrap(filter[topic_b])]))
   end
 
   defp where_multiple_topics_match(query, _, _, _), do: query
