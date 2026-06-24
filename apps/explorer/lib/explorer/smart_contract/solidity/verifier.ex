@@ -450,7 +450,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     |> String.reverse()
   end
 
-  defp replace_last_occurrence(_, _), do: nil
+  defp replace_last_occurrence(where, _), do: where
 
   defp parse_constructor_and_return_check_function(abi) do
     constructor_abi = Enum.find(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
