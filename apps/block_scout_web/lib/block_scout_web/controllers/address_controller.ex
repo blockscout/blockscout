@@ -68,11 +68,10 @@ defmodule BlockScoutWeb.AddressController do
 
     items_count =
       if items_count_str do
-        items_count = case Integer.parse(items_count_str) do
+        case Integer.parse(items_count_str) do
           {int, ""} -> int
           _ -> 0
         end
-        items_count
       else
         0
       end
