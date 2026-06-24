@@ -196,8 +196,10 @@ defmodule EthereumJSONRPC.Contract do
         el
 
       el ->
-        {int, _} = Integer.parse(el)
-        int
+        case Integer.parse(el) do
+          {int, _} -> int
+          :error -> {:error, :invalid_integer}
+        end
     end)
   end
 
