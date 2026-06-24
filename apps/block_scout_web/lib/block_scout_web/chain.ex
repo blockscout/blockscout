@@ -191,7 +191,10 @@ defmodule BlockScoutWeb.Chain do
     current_items_count =
       cond do
         is_binary(current_items_count_object) ->
-          {current_items_count, _} = Integer.parse(current_items_count_object)
+          current_items_count = case Integer.parse(current_items_count_object) do
+      {int, _} -> int
+      :error -> 0
+    end
           current_items_count
 
         is_integer(current_items_count_object) ->
