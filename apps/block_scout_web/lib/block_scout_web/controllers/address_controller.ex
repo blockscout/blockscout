@@ -68,7 +68,10 @@ defmodule BlockScoutWeb.AddressController do
 
     items_count =
       if items_count_str do
-        {items_count, _} = Integer.parse(items_count_str)
+        items_count = case Integer.parse(items_count_str) do
+          {int, _} -> int
+          :error -> 0
+        end
         items_count
       else
         0
