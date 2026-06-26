@@ -14,7 +14,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.Stats.GasPriceInfo do
     type: :object,
     properties: %{
       price: %Schema{type: :number, format: :float, nullable: true, description: "Estimated gas price, in Gwei."},
-      time: %Schema{type: :number, format: :float, nullable: true, description: "Estimated time until inclusion, in ms."},
+      time: %Schema{
+        type: :number,
+        format: :float,
+        nullable: true,
+        description: "Estimated time until inclusion, in ms."
+      },
       base_fee: %Schema{type: :number, format: :float, nullable: true, description: "Base fee, in Gwei."},
       priority_fee: %Schema{
         type: :number,

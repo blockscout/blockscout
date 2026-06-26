@@ -7,13 +7,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.General.FilecoinActorType do
   (which only exists for the `:filecoin` chain type, hence the compile-time guard).
   """
   require OpenApiSpex
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Ecto.Enum, as: EctoEnum
   alias Explorer.Chain.Address
 
   # Resolved at compile time. On filecoin builds this stays in sync with the Ecto
   # enum; on other chain types the field does not exist and this schema is unused.
-  @actor_type_values (case Application.compile_env(:explorer, :chain_type) do
+  @actor_type_values (case @chain_type do
                         :filecoin -> EctoEnum.values(Address, :filecoin_actor_type)
                         _ -> []
                       end)

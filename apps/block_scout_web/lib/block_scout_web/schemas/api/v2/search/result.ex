@@ -40,6 +40,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Search.Result.EnsInfo do
       expiry_date: %Schema{type: :string, nullable: true, description: "Domain expiry date."},
       names_count: %Schema{type: :integer, nullable: false, minimum: 0},
       address_hash: General.AddressHash,
+      # Opaque protocol metadata; present only for ens_domain results (BENS multiprotocol).
+      protocol: %Schema{nullable: true, description: "ENS protocol metadata."},
       protocol_dapp_url: %Schema{type: :string, nullable: true},
       protocol_dapp_logo: %Schema{type: :string, nullable: true}
     },
