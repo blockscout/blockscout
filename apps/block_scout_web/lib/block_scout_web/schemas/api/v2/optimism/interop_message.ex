@@ -23,7 +23,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.InteropMessage do
       chain_id: General.IntegerString,
       chain_name: %Schema{type: :string, nullable: true},
       chain_logo: %Schema{type: :string, nullable: true}
-    }
+    },
+    additionalProperties: false
   }
 
   OpenApiSpex.schema(%{
@@ -53,6 +54,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.InteropMessage do
       "payload" => "0x30787849009c24f10a91a327a9f2ed94ebc49ee9",
       "relay_chain" => nil,
       "relay_transaction_hash" => "0x0000000000000000000000000000000000000000000000000000000000000002"
-    }
+    },
+    additionalProperties: false
   })
 end
