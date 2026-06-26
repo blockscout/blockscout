@@ -187,7 +187,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
     case solc_output do
       {:ok, candidates} ->
-        case Jason.decode(json_input) do
+        case Utils.JSON.decode(json_input) do
           {:ok, map_json_input} ->
             Enum.reduce_while(candidates, %{}, fn candidate, _acc ->
               file_path = candidate["file_path"]
@@ -381,7 +381,10 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     } = extract_bytecode_and_metadata_hash(bc_creation_transaction_input, bc_deployed_bytecode)
 
     bc_replaced_local =
-      String.replace(bc_creation_transaction_input_without_meta, local_bytecode_without_meta, "", global: false)
+      case bc_creation_transaction_input_without_meta do
+        <<^local_bytecode_without_meta::binary, rest::binary>> -> rest
+        _ -> nil
+      end
 
     has_constructor_with_params? = has_constructor_with_params?(abi)
 

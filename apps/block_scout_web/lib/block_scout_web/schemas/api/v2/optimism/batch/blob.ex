@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Batch.Blob.Eip4844 do
     properties: %{
       hash: %Schema{
         type: :string,
-        pattern: General.hex_string_pattern(),
+        pattern: General.hex_data_pattern(),
         nullable: false,
         description: "EIP-4844 blob hash."
       },
@@ -44,13 +44,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Batch.Blob.Celestia do
       height: %Schema{type: :integer, nullable: false, description: "Celestia block height."},
       namespace: %Schema{
         type: :string,
-        pattern: General.hex_string_pattern(),
+        pattern: General.hex_data_pattern(),
         nullable: false,
         description: "Celestia blob namespace."
       },
       commitment: %Schema{
         type: :string,
-        pattern: General.hex_string_pattern(),
+        pattern: General.hex_data_pattern(),
         nullable: false,
         description: "Celestia blob commitment."
       },
@@ -78,7 +78,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Batch.Blob.Eigenda do
     properties: %{
       cert: %Schema{
         type: :string,
-        pattern: General.hex_string_pattern(),
+        pattern: General.hex_data_pattern(),
         nullable: false,
         description: "EigenDA cert raw bytes."
       },
@@ -106,7 +106,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Batch.Blob.AltDa do
     properties: %{
       commitment: %Schema{
         type: :string,
-        pattern: General.hex_string_pattern(),
+        pattern: General.hex_data_pattern(),
         nullable: false,
         description: "Alt-DA blob commitment."
       },

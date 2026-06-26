@@ -7,8 +7,12 @@ defmodule Explorer.Chain.Address.CoinBalance do
 
   use Explorer.Schema
 
+  use Utils.RuntimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    arc_native_token_address: [:indexer, [:arc, :arc_native_token_address]]
+
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Address.CoinBalance
 
   @optional_fields ~w(value value_fetched_at)a
@@ -163,7 +167,14 @@ defmodule Explorer.Chain.Address.CoinBalance do
   def get_coin_balance(address_hash, block_number, options \\ []) do
     query = fetch_coin_balance(address_hash, block_number)
 
-    Chain.select_repo(options).one(query)
+    case Chain.select_repo(options).one(query) do
+      nil ->
+        nil
+
+      balance ->
+        [balance] = preload_transactions([balance], options)
+        balance
+    end
   end
 
   @doc """
@@ -288,12 +299,35 @@ defmodule Explorer.Chain.Address.CoinBalance do
       |> Chain.select_repo(options).one()
 
     if is_nil(transaction_hash) do
-      balance
-      |> preload_internal_transaction_query()
-      |> Chain.select_repo(options).one()
+      if chain_type() == :arc do
+        balance
+        |> preload_arc_native_token_transfer_query()
+        |> Chain.select_repo(options).one()
+      else
+        balance
+        |> preload_internal_transaction_query()
+        |> Chain.select_repo(options).one()
+      end
     else
       transaction_hash
     end
+  end
+
+  # On Arc, native-coin movement is emitted via EIP-7708 / NativeCoin* logs that
+  # don't show up in transaction `value` or internal transactions; the indexer
+  # normalizes them into `TokenTransfer` rows under the synthetic native token.
+  defp preload_arc_native_token_transfer_query(balance) do
+    {:ok, native_token_address_hash} = Chain.string_to_address_hash(arc_native_token_address())
+
+    TokenTransfer
+    |> where(
+      [tt],
+      tt.block_number == ^balance.block_number and
+        tt.token_contract_address_hash == ^native_token_address_hash and
+        (tt.from_address_hash == ^balance.address_hash or tt.to_address_hash == ^balance.address_hash)
+    )
+    |> select([tt], tt.transaction_hash)
+    |> limit(1)
   end
 
   defp preload_transaction_query(balance) do
@@ -323,11 +357,8 @@ defmodule Explorer.Chain.Address.CoinBalance do
         (is_nil(coalesce(type(internal_transaction.call_type_enum, :string), internal_transaction.call_type)) or
            coalesce(type(internal_transaction.call_type_enum, :string), internal_transaction.call_type) == ^"call") and
         internal_transaction.value > ^0 and is_nil(internal_transaction.error_id) and
-        (internal_transaction.to_address_hash == ^balance.address_hash or
-           as(:to_address_mapping).address_hash == ^balance.address_hash or
-           internal_transaction.from_address_hash == ^balance.address_hash or
+        (as(:to_address_mapping).address_hash == ^balance.address_hash or
            as(:from_address_mapping).address_hash == ^balance.address_hash or
-           internal_transaction.created_contract_address_hash == ^balance.address_hash or
            as(:created_contract_address_mapping).address_hash == ^balance.address_hash)
     )
     |> select([_internal_transaction, transaction], transaction.hash)

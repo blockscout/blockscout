@@ -85,8 +85,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter do
         description: "Token contract metadata. Populated only for token-transfer items; `null` otherwise."
       },
       timestamp:
-        Helper.extend_schema(General.Timestamp.schema(),
-          description: "Block timestamp of the parent transaction."
+        Helper.describe_inline(
+          General.Timestamp.schema(),
+          "Block timestamp of the parent transaction."
         ),
       block_number: %Schema{
         type: :integer,
@@ -213,8 +214,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter.Response do
           "transaction_index" => 1,
           "internal_transaction_index" => nil,
           "token_transfer_index" => 0,
-          "token_transfer_batch_index" => nil,
-          "items_count" => 50
+          "token_transfer_batch_index" => nil
         }
       }
     },

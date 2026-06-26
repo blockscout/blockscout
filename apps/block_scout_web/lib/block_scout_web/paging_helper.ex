@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.PagingHelper do
 
   import Explorer.Chain, only: [string_to_full_hash: 1]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
+  import Explorer.PagingOptions, only: [max_page_size: 0]
 
   alias BlockScoutWeb.Schemas.API.V2.General
   alias Explorer.Chain.InternalTransaction.CallType, as: InternalTransactionCallType
@@ -33,7 +34,13 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def allowed_stability_validators_states, do: @allowed_stability_validators_states
 
-  def paging_options(%{"block_number" => block_number_string, "index" => index_string}, [:validated | _]) do
+  def paging_options(params, filter) do
+    params
+    |> do_paging_options(filter)
+    |> maybe_override_page_size(params)
+  end
+
+  defp do_paging_options(%{"block_number" => block_number_string, "index" => index_string}, [:validated | _]) do
     with {:ok, block_number} <- Helper.safe_parse_non_negative_integer(block_number_string),
          {:ok, index} <- Helper.safe_parse_non_negative_integer(index_string) do
       [paging_options: %{@default_paging_options | key: {block_number, index}}]
@@ -43,11 +50,11 @@ defmodule BlockScoutWeb.PagingHelper do
     end
   end
 
-  def paging_options(%{block_number: block_number, index: index}, [:validated | _]) do
+  defp do_paging_options(%{block_number: block_number, index: index}, [:validated | _]) do
     [paging_options: %{@default_paging_options | key: {block_number, index}}]
   end
 
-  def paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string}, [:pending | _]) do
+  defp do_paging_options(%{"inserted_at" => inserted_at_string, "hash" => hash_string}, [:pending | _]) do
     with {:ok, inserted_at, _} <- DateTime.from_iso8601(inserted_at_string),
          {:ok, hash} <- string_to_full_hash(hash_string) do
       [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_transaction: true}]
@@ -57,7 +64,7 @@ defmodule BlockScoutWeb.PagingHelper do
     end
   end
 
-  def paging_options(%{inserted_at: inserted_at, hash: hash_string}, [:pending | _]) do
+  defp do_paging_options(%{inserted_at: inserted_at, hash: hash_string}, [:pending | _]) do
     case string_to_full_hash(hash_string) do
       {:ok, hash} ->
         [paging_options: %{@default_paging_options | key: {inserted_at, hash}, is_pending_transaction: true}]
@@ -67,11 +74,11 @@ defmodule BlockScoutWeb.PagingHelper do
     end
   end
 
-  def paging_options(_params, _filter), do: [paging_options: @default_paging_options]
+  defp do_paging_options(_params, _filter), do: [paging_options: @default_paging_options]
 
   @spec stability_validators_state_options(map()) :: [{:state, list()}, ...]
-  def stability_validators_state_options(%{"state_filter" => state}) do
-    [state: filters_to_list(state, @allowed_stability_validators_states, :downcase)]
+  def stability_validators_state_options(%{state_filter: state}) do
+    [state: parse_filter(state, @allowed_stability_validators_states)]
   end
 
   def stability_validators_state_options(_), do: [state: []]
@@ -106,9 +113,7 @@ defmodule BlockScoutWeb.PagingHelper do
 
   def nft_types_options(_), do: [token_type: []]
 
-  defp filters_to_list(filters, allowed, variant \\ :upcase)
-  defp filters_to_list(filters, allowed, :downcase), do: filters |> String.downcase() |> parse_filter(allowed)
-  defp filters_to_list(filters, allowed, :upcase), do: filters |> String.upcase() |> parse_filter(allowed)
+  defp filters_to_list(filters, allowed), do: filters |> String.upcase() |> parse_filter(allowed)
 
   def filter_options(%{"filter" => filter}, fallback) do
     filter = filter |> parse_filter(@allowed_filter_labels) |> Enum.map(&String.to_existing_atom/1)
@@ -268,12 +273,17 @@ defmodule BlockScoutWeb.PagingHelper do
       :block_hash_or_number_param,
       :direction,
       :transaction_hash_param,
+      :items_count,
       :scale,
       :token_id_param,
       :token_id,
       :type,
       :apikey,
+      :sort,
+      :order,
+      :state_filter,
       "apikey",
+      "items_count",
       "block_hash_or_number",
       "block_hash_or_number_param",
       "token_id_param",
@@ -294,13 +304,6 @@ defmodule BlockScoutWeb.PagingHelper do
   end
 
   def delete_parameters_from_next_page_params(_), do: nil
-
-  def delete_items_count_from_next_page_params(params) when is_map(params) do
-    params
-    |> Map.drop(["items_count"])
-  end
-
-  def delete_items_count_from_next_page_params(other), do: other
 
   # todo: it is used in the old UI only, consider removing it later
   def current_filter(%{"filter" => language_string}) do
@@ -397,10 +400,10 @@ defmodule BlockScoutWeb.PagingHelper do
 
   defp do_address_transaction_sorting(_, _), do: []
 
-  @spec validators_stability_sorting(%{required(String.t()) => String.t()}) :: [
+  @spec validators_stability_sorting(map()) :: [
           {:sorting, SortingHelper.sorting_params()}
         ]
-  def validators_stability_sorting(%{"sort" => sort_field, "order" => order}) do
+  def validators_stability_sorting(%{sort: sort_field, order: order}) do
     [sorting: do_validators_stability_sorting(sort_field, order)]
   end
 
@@ -414,21 +417,6 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_validators_stability_sorting("blocks_validated", "desc"), do: [desc_nulls_last: :blocks_validated]
 
   defp do_validators_stability_sorting(_, _), do: []
-
-  @spec mud_records_sorting(map()) :: [{:sorting, SortingHelper.sorting_params()}]
-  def mud_records_sorting(%{sort: sort_field, order: order}) do
-    [sorting: do_mud_records_sorting(sort_field, order)]
-  end
-
-  def mud_records_sorting(_), do: []
-
-  defp do_mud_records_sorting("key_bytes", "asc"), do: [asc_nulls_first: :key_bytes]
-  defp do_mud_records_sorting("key_bytes", "desc"), do: [desc_nulls_last: :key_bytes]
-  defp do_mud_records_sorting("key0", "asc"), do: [asc_nulls_first: :key0]
-  defp do_mud_records_sorting("key0", "desc"), do: [desc_nulls_last: :key0]
-  defp do_mud_records_sorting("key1", "asc"), do: [asc_nulls_first: :key1]
-  defp do_mud_records_sorting("key1", "desc"), do: [desc_nulls_last: :key1]
-  defp do_mud_records_sorting(_, _), do: []
 
   @spec validators_blackfort_sorting(%{required(String.t()) => String.t()}) :: [
           {:sorting, SortingHelper.sorting_params()}
@@ -532,4 +520,18 @@ defmodule BlockScoutWeb.PagingHelper do
         {:dynamic, :total_gas_used, :desc_nulls_last, HotSmartContracts.total_gas_used_on_transactions_dynamic()}
       ]
     }
+
+  defp maybe_override_page_size(paging_options_keyword, params) do
+    case params[:items_count] || params["items_count"] do
+      count when is_integer(count) and count > 0 ->
+        clamped = min(count, max_page_size())
+
+        Keyword.update(paging_options_keyword, :paging_options, @default_paging_options, fn paging_options ->
+          %{paging_options | page_size: clamped + 1}
+        end)
+
+      _ ->
+        paging_options_keyword
+    end
+  end
 end

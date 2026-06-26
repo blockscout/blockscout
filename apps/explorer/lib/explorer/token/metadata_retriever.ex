@@ -15,7 +15,8 @@ defmodule Explorer.Token.MetadataRetriever do
   @vm_execution_error "VM execution error"
   @invalid_base64_data "invalid data:application/json;base64"
   @invalid_ipfs_path "invalid ipfs path"
-  @default_headers [{"User-Agent", "blockscout-11.2.0"}]
+  @invalid_swarm_path "invalid swarm path"
+  @default_headers [{"User-Agent", "blockscout-11.2.1"}]
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
@@ -554,6 +555,42 @@ defmodule Explorer.Token.MetadataRetriever do
     "https://arweave.net/#{uid}"
   end
 
+  @doc """
+  Generates an ETH Swarm gateway link for the given hash.
+
+  The hash can be a 64-character hex Swarm hash (keccak-256 based) or any
+  Swarm-compatible identifier (e.g. from SOC or feeds). The configured
+  gateway URL defaults to `https://gateway.ethswarm.org`.
+
+  ## Parameters
+  - uid: The Swarm hash or resource identifier.
+
+  ## Returns
+  - A string representing the full URL to the resource on the Swarm gateway.
+
+  ## Examples
+
+      iex> swarm_link("1234abcd" <> String.duplicate("0", 56))
+      "https://gateway.ethswarm.org/bzz/1234abcd" <> String.duplicate("0", 56) <> "/"
+
+  """
+  @spec swarm_link(uid :: any()) :: String.t()
+  def swarm_link(uid) do
+    uid = to_string(uid)
+
+    base_url =
+      :indexer
+      |> Application.get_env(:swarm, [])
+      |> Keyword.get(:gateway_url, "https://gateway.ethswarm.org")
+      |> String.trim_trailing("/")
+
+    if String.contains?(uid, "/") do
+      "#{base_url}/bzz/#{uid}"
+    else
+      "#{base_url}/bzz/#{uid}/"
+    end
+  end
+
   defp maybe_add_ipfs_gateway_params_to_url?(url, true), do: url
 
   defp maybe_add_ipfs_gateway_params_to_url?(url, _) do
@@ -621,6 +658,128 @@ defmodule Explorer.Token.MetadataRetriever do
   @spec ar_headers() :: [{binary(), binary()}]
   def ar_headers do
     @default_headers
+  end
+
+  @type nft_url_class ::
+          {:ipfs, binary() | nil}
+          | {:arweave, binary()}
+          | {:swarm, binary() | nil}
+          | {:regular, binary()}
+          | {:bare_path, binary() | nil}
+
+  @doc """
+  Classifies an NFT URL into one of: `{:ipfs, resource_id}`, `{:arweave, resource_id}`, `{:regular, url}`, or `{:bare_path, path}`.
+  """
+  @spec classify_nft_url(binary()) :: nft_url_class()
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  def classify_nft_url(url) do
+    case URI.parse(url) do
+      %URI{scheme: "ipfs", host: host, path: path} ->
+        {:ipfs, extract_ipfs_resource_id(host, path)}
+
+      %URI{scheme: "ar", host: host, path: path} when is_binary(host) and host != "" ->
+        resource_id = if is_binary(path) and path != "", do: host <> path, else: host
+        {:arweave, resource_id}
+
+      %URI{scheme: "bzz", host: host, path: path} ->
+        uid =
+          cond do
+            is_binary(host) and is_binary(path) -> host <> path
+            is_binary(host) -> host
+            true -> nil
+          end
+
+        {:swarm, uid}
+
+      %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
+        {:ipfs, resource_id}
+
+      %URI{scheme: _, path: "ipfs/" <> resource_id} ->
+        {:ipfs, resource_id}
+
+      %URI{scheme: _, path: "/bzz/" <> resource_id} ->
+        {:swarm, resource_id}
+
+      %URI{scheme: scheme} when not is_nil(scheme) ->
+        {:regular, url}
+
+      %URI{path: path} ->
+        {:bare_path, path}
+    end
+  end
+
+  @doc """
+  Resolves an NFT media URL to a fetchable gateway URL with appropriate headers (e.g. IPFS gateway, Arweave gateway).
+  """
+  @spec resolve_nft_media_url(binary()) :: {binary(), list()}
+  # credo:disable-for-next-line /Complexity/
+  def resolve_nft_media_url(url) do
+    case classify_nft_url(url) do
+      {:ipfs, resource_id} ->
+        if is_binary(resource_id) and valid_ipfs_path?(public_ipfs_link(resource_id)) do
+          {ipfs_link(resource_id), ipfs_headers()}
+        else
+          {url, []}
+        end
+
+      {:arweave, resource_id} ->
+        {arweave_link(resource_id), ar_headers()}
+
+      {:swarm, resource_id} ->
+        if is_binary(resource_id) do
+          {swarm_link(resource_id), swarm_headers()}
+        else
+          {url, []}
+        end
+
+      {:regular, url} ->
+        {url, []}
+
+      {:bare_path, path} ->
+        if is_binary(path) and valid_ipfs_path?(public_ipfs_link(path)) do
+          {ipfs_link(path), ipfs_headers()}
+        else
+          {url, []}
+        end
+    end
+  end
+
+  defp extract_ipfs_resource_id(host, path) do
+    cond do
+      host == "ipfs" and is_binary(path) and String.starts_with?(path, "/") ->
+        String.replace_leading(path, "/", "")
+
+      is_binary(host) and host != "" ->
+        if is_nil(path), do: host, else: host <> path
+
+      true ->
+        path
+    end
+  end
+
+  @doc """
+  Returns the headers for making requests to the ETH Swarm gateway.
+
+  If `INDEXER_SWARM_GATEWAY_BEARER_TOKEN` is configured the token is sent as
+  an `Authorization: Bearer <token>` header, which is the mechanism used by
+  private / gateway-as-a-service Swarm nodes.
+
+  ## Examples
+
+      iex> Explorer.Token.MetadataRetriever.swarm_headers()
+      [{"User-Agent", "blockscout-11.0.1"}]
+
+  """
+  @spec swarm_headers() :: [{binary(), binary()}]
+  def swarm_headers do
+    swarm_params = Application.get_env(:indexer, :swarm, [])
+    bearer_token = Keyword.get(swarm_params, :bearer_token)
+
+    if is_binary(bearer_token) and String.trim(bearer_token) != "" do
+      [{"Authorization", "Bearer #{bearer_token}"} | @default_headers]
+    else
+      @default_headers
+    end
   end
 
   @doc """
@@ -720,38 +879,20 @@ defmodule Explorer.Token.MetadataRetriever do
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp fetch_from_ipfs_or_ar?(token_uri_string, ipfs_params, token_id, hex_token_id, from_base_uri?) do
-    case URI.parse(token_uri_string) do
-      %URI{scheme: "ipfs", host: host, path: path} ->
-        resource_id =
-          cond do
-            host == "ipfs" and is_binary(path) and String.starts_with?(path, "/") ->
-              String.replace_leading(path, "/", "")
-
-            is_binary(host) and is_binary(path) ->
-              host <> path
-
-            is_binary(host) and is_nil(path) ->
-              host
-
-            true ->
-              nil
-          end
-
+    case classify_nft_url(token_uri_string) do
+      {:ipfs, resource_id} ->
         fetch_from_ipfs_if_valid_path(resource_id, hex_token_id)
 
-      %URI{scheme: "ar", host: _host, path: resource_id} ->
+      {:arweave, resource_id} ->
         fetch_from_arweave(resource_id, hex_token_id)
 
-      %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
-        fetch_from_ipfs_if_valid_path(resource_id, hex_token_id)
+      {:swarm, resource_id} ->
+        fetch_from_swarm_if_valid_hash(resource_id, hex_token_id)
 
-      %URI{scheme: _, path: "ipfs/" <> resource_id} ->
-        fetch_from_ipfs_if_valid_path(resource_id, hex_token_id)
+      {:regular, url} ->
+        fetch_metadata_inner(url, ipfs_params, token_id, hex_token_id, from_base_uri?)
 
-      %URI{scheme: scheme} when not is_nil(scheme) ->
-        fetch_metadata_inner(token_uri_string, ipfs_params, token_id, hex_token_id, from_base_uri?)
-
-      %URI{path: path} ->
+      {:bare_path, path} ->
         if is_binary(path) and valid_ipfs_path?(public_ipfs_link(path)) do
           fetch_from_ipfs(path, hex_token_id)
         else
@@ -799,6 +940,19 @@ defmodule Explorer.Token.MetadataRetriever do
     fetch_metadata_inner(arweave_url, ipfs_params, nil, hex_token_id)
   end
 
+  defp fetch_from_swarm(uid, hex_token_id) do
+    url = swarm_link(uid)
+    fetch_metadata_inner(url, [ipfs?: false, swarm?: true], nil, hex_token_id)
+  end
+
+  defp fetch_from_swarm_if_valid_hash(uid, hex_token_id) do
+    if is_binary(uid) and valid_swarm_hash?(uid) do
+      fetch_from_swarm(uid, hex_token_id)
+    else
+      {:error, @invalid_swarm_path}
+    end
+  end
+
   defp fetch_metadata_inner(uri, ipfs_params, token_id, hex_token_id, from_base_uri? \\ false)
 
   defp fetch_metadata_inner(uri, ipfs_params, token_id, hex_token_id, from_base_uri?) do
@@ -840,7 +994,8 @@ defmodule Explorer.Token.MetadataRetriever do
   @spec fetch_metadata_from_uri(String.t(), keyword(), String.t() | nil) :: {:ok, %{metadata: any}} | {:error, binary()}
   def fetch_metadata_from_uri(uri, ipfs_params, hex_token_id \\ nil) do
     case Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper)[:host_filtering_enabled?] &&
-           !ipfs?(ipfs_params) && !arweave?(ipfs_params) && MetadataURIValidator.validate_uri(uri) do
+           !ipfs?(ipfs_params) && !arweave?(ipfs_params) && !swarm?(ipfs_params) &&
+           MetadataURIValidator.validate_uri(uri) do
       {:error, reason} ->
         if reason == :blacklist do
           Logger.warning(
@@ -861,7 +1016,12 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   defp fetch_metadata_from_uri_request(uri, hex_token_id, ipfs_params) do
-    headers = if ipfs?(ipfs_params), do: ipfs_headers(), else: @default_headers
+    headers =
+      cond do
+        ipfs?(ipfs_params) -> ipfs_headers()
+        swarm?(ipfs_params) -> swarm_headers()
+        true -> @default_headers
+      end
 
     case HttpClient.get(uri, headers,
            recv_timeout: 30_000,
@@ -906,7 +1066,7 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   defp process_result(metadata, uri, ipfs_params) do
-    if arweave?(ipfs_params) || ipfs?(ipfs_params) do
+    if arweave?(ipfs_params) || ipfs?(ipfs_params) || swarm?(ipfs_params) do
       {:ok, metadata}
     else
       {:ok_store_uri, metadata, uri}
@@ -919,6 +1079,10 @@ defmodule Explorer.Token.MetadataRetriever do
 
   defp arweave?(ipfs_params) do
     Keyword.get(ipfs_params, :arweave?)
+  end
+
+  defp swarm?(ipfs_params) do
+    Keyword.get(ipfs_params, :swarm?)
   end
 
   defp check_content_type(content_type, uri, hex_token_id, body, ipfs_params) do
@@ -961,9 +1125,9 @@ defmodule Explorer.Token.MetadataRetriever do
   defp check_type(json, hex_token_id) when is_map(json) do
     metadata =
       case json
-           |> Jason.encode!()
+           |> Utils.JSON.encode!()
            |> String.replace(@erc1155_token_id_placeholder, hex_token_id)
-           |> Jason.decode() do
+           |> Utils.JSON.decode() do
         {:ok, map} ->
           map
 
@@ -1007,6 +1171,22 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   def valid_ipfs_path?(_), do: false
+
+  @doc """
+  Returns `true` when `hash` is a valid ETH Swarm keccak-256 content address.
+
+  Swarm hashes (both legacy and new-style) are 64 lower-case hex characters.
+  The function also accepts hashes embedded in a path (e.g.
+  `"<hash>/path/to/file"`) by checking only the first path segment, so that
+  deep-linked Swarm URLs work correctly.
+  """
+  @spec valid_swarm_hash?(binary()) :: boolean()
+  def valid_swarm_hash?(hash) when is_binary(hash) do
+    bare = hash |> String.split("/") |> List.first()
+    String.match?(bare, ~r/^[0-9a-f]{64}$/)
+  end
+
+  def valid_swarm_hash?(_), do: false
 
   defp fetch_from_ipfs_if_valid_path(resource_id, hex_token_id) do
     if is_binary(resource_id) and valid_ipfs_path?(public_ipfs_link(resource_id)) do

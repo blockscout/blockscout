@@ -37,7 +37,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.InteropMessage do
       status: %Schema{type: :string, enum: ["Sent", "Relayed", "Failed"]},
       sender_address_hash: General.AddressHash,
       target_address_hash: General.AddressHash,
-      payload: General.HexString,
+      payload: General.HexData,
       init_chain: @chain_info,
       init_transaction_hash: General.FullHash,
       relay_chain: @chain_info,

@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Zilliqa.Staker do
     type: :object,
     properties: %{
       balance: General.IntegerString,
-      bls_public_key: General.HexString,
+      bls_public_key: General.HexData,
       index: %Schema{type: :integer, nullable: false}
     },
     required: [

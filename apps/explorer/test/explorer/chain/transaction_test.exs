@@ -338,7 +338,7 @@ defmodule Explorer.Chain.TransactionTest do
     end
   end
 
-  describe "Poison.encode!/1" do
+  describe "Utils.JSON.encode!/1" do
     test "encodes transaction input" do
       assert %{
                insert(:transaction)
@@ -348,7 +348,7 @@ defmodule Explorer.Chain.TransactionTest do
                        191, 128, 248>>
                  }
              }
-             |> Poison.encode!()
+             |> Utils.JSON.encode!()
     end
   end
 

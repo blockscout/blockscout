@@ -41,6 +41,7 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
         params: [
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            block_number: 37,
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
             first_topic: first_topic,
@@ -48,10 +49,12 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
             third_topic: third_topic,
             fourth_topic: nil,
             index: 0,
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            transaction_index: 0
           },
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            block_number: 37,
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
             first_topic: first_topic,
@@ -59,10 +62,12 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
             third_topic: third_topic,
             fourth_topic: nil,
             index: 1,
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            transaction_index: 0
           },
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            block_number: 37,
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
             first_topic: first_topic,
@@ -70,7 +75,8 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
             third_topic: third_topic,
             fourth_topic: nil,
             index: 2,
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            transaction_index: 0
           }
         ],
         timeout: 5
@@ -302,10 +308,10 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
                      },
                      :timer.seconds(5)
 
-      transaction_1 = transaction_1 |> Jason.encode!() |> Jason.decode!()
+      transaction_1 = transaction_1 |> Utils.JSON.encode!() |> Utils.JSON.decode!()
       compare_item(Repo.get_by(Transaction, %{hash: transaction_1["hash"]}), transaction_1)
 
-      transaction_2 = transaction_2 |> Jason.encode!() |> Jason.decode!()
+      transaction_2 = transaction_2 |> Utils.JSON.encode!() |> Utils.JSON.decode!()
       compare_item(Repo.get_by(Transaction, %{hash: transaction_2["hash"]}), transaction_2)
 
       assert_receive %Phoenix.Socket.Message{
@@ -315,10 +321,10 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
                      },
                      :timer.seconds(5)
 
-      transaction_1 = transaction_1 |> Jason.encode!() |> Jason.decode!()
+      transaction_1 = transaction_1 |> Utils.JSON.encode!() |> Utils.JSON.decode!()
       compare_item(Repo.get_by(Transaction, %{hash: transaction_1["hash"]}), transaction_1)
 
-      transaction_2 = transaction_2 |> Jason.encode!() |> Jason.decode!()
+      transaction_2 = transaction_2 |> Utils.JSON.encode!() |> Utils.JSON.decode!()
       compare_item(Repo.get_by(Transaction, %{hash: transaction_2["hash"]}), transaction_2)
     end
 
@@ -352,7 +358,9 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
 
       token_transfers
       |> Enum.zip(transfers)
-      |> Enum.each(fn {transfer, json} -> compare_item(transfer, json |> Jason.encode!() |> Jason.decode!()) end)
+      |> Enum.each(fn {transfer, json} ->
+        compare_item(transfer, json |> Utils.JSON.encode!() |> Utils.JSON.decode!())
+      end)
 
       assert_receive %Phoenix.Socket.Message{
                        payload: %{token_transfers: [_, _, _] = transfers},
@@ -363,7 +371,9 @@ defmodule BlockScoutWeb.V2.WebsocketTest do
 
       token_transfers
       |> Enum.zip(transfers)
-      |> Enum.each(fn {transfer, json} -> compare_item(transfer, json |> Jason.encode!() |> Jason.decode!()) end)
+      |> Enum.each(fn {transfer, json} ->
+        compare_item(transfer, json |> Utils.JSON.encode!() |> Utils.JSON.decode!())
+      end)
     end
   end
 

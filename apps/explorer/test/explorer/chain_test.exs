@@ -161,6 +161,7 @@ defmodule Explorer.ChainTest do
       insert(:log,
         block: transaction2.block,
         transaction: transaction2,
+        transaction_index: transaction2.index,
         index: 2,
         address: address,
         first_topic: first_topic,
@@ -187,6 +188,7 @@ defmodule Explorer.ChainTest do
         block: transaction1.block,
         block_number: transaction1.block_number,
         transaction: transaction1,
+        transaction_index: transaction1.index,
         index: 1,
         address: address,
         fourth_topic: fourth_topic
@@ -201,6 +203,7 @@ defmodule Explorer.ChainTest do
         block: transaction2.block,
         block_number: transaction2.block.number,
         transaction: transaction2,
+        transaction_index: transaction2.index,
         index: 2,
         address: address
       )
@@ -1100,6 +1103,7 @@ defmodule Explorer.ChainTest do
         params: [
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            block_number: 37,
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
             first_topic: first_topic,
@@ -1107,7 +1111,8 @@ defmodule Explorer.ChainTest do
             third_topic: third_topic,
             fourth_topic: nil,
             index: 0,
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            transaction_index: 1
           }
         ]
       },
@@ -1317,6 +1322,7 @@ defmodule Explorer.ChainTest do
                         <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
                           101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
                     },
+                    transaction_index: 1,
                     inserted_at: %{},
                     updated_at: %{}
                   }
@@ -1403,6 +1409,42 @@ defmodule Explorer.ChainTest do
 
       # 3 addresses + 1 block + 1 transaction
       assert Repo.aggregate(MainExportQueue, :count, :hash) == 5
+    end
+
+    test "populates main multichain export queue with proxy contract implementations (verified and not verified)" do
+      Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
+      multichain_configuration = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, multichain_configuration)
+      end)
+
+      bypass = Bypass.open()
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch,
+        service_url: "http://localhost:#{bypass.port}",
+        addresses_chunk_size: 7_000
+      )
+
+      proxy_hash = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+      implementation_1 = insert(:address)
+      implementation_2 = insert(:address)
+
+      insert(:proxy_implementation,
+        proxy_address_hash: proxy_hash,
+        proxy_type: "eip1167",
+        address_hashes: [implementation_1.hash, implementation_2.hash],
+        names: ["Test1", "Test2"]
+      )
+
+      insert(:smart_contract, address_hash: implementation_1.hash, name: "TestContract1", contract_code_md5: "123")
+
+      TestHelper.get_chain_id_mock()
+      Chain.import(@import_data)
+
+      # 3 addresses + 2 implementations + 1 block + 1 transaction
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 7
     end
 
     test "doesn't populate main multichain export queue from on_demand fetcher, if the address is inactive on the chain" do
@@ -1695,19 +1737,17 @@ defmodule Explorer.ChainTest do
 
       insert(:log, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
 
-      assert [%Log{address: %Address{}, transaction: %Transaction{}}] =
+      assert [%Log{address: %Address{}}] =
                Chain.transaction_to_logs(
                  transaction.hash,
                  necessity_by_association: %{
-                   address: :optional,
-                   transaction: :optional
+                   address: :optional
                  }
                )
 
       assert [
                %Log{
-                 address: %Ecto.Association.NotLoaded{},
-                 transaction: %Ecto.Association.NotLoaded{}
+                 address: %Ecto.Association.NotLoaded{}
                }
              ] = Chain.transaction_to_logs(transaction.hash)
     end

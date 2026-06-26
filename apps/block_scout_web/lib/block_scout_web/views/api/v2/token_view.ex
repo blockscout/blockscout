@@ -76,7 +76,12 @@ defmodule BlockScoutWeb.API.V2.TokenView do
         token: token
       }) do
     %{
-      "items" => Enum.map(token_instances, &render("token_instance.json", %{token_instance: &1, token: token})),
+      "items" =>
+        Enum.map(token_instances, fn instance ->
+          instance
+          |> prepare_token_instance(token)
+          |> Map.delete("token")
+        end),
       "next_page_params" => next_page_params
     }
   end
@@ -121,7 +126,9 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "is_unique" => instance.is_unique,
       "thumbnails" => instance.thumbnails,
       "media_type" => instance.media_type,
-      "media_url" => Instance.get_media_url_from_metadata_for_nft_media_handler(instance.metadata)
+      "media_url" => Instance.get_media_url_from_metadata_for_nft_media_handler(instance.metadata),
+      "image_media_type" => Instance.mime_to_media_category(instance.image_type),
+      "animation_media_type" => Instance.mime_to_media_category(instance.animation_type)
     }
   end
 

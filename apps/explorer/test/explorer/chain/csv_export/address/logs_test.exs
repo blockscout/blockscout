@@ -29,6 +29,7 @@ defmodule Explorer.Chain.Address.LogsTest do
           address: address,
           index: 1,
           transaction: transaction,
+          transaction_index: transaction.index,
           block: transaction.block,
           block_number: transaction.block_number,
           data: "0x12",
@@ -110,6 +111,7 @@ defmodule Explorer.Chain.Address.LogsTest do
           address: address,
           index: index,
           transaction: transaction,
+          transaction_index: transaction.index,
           block: transaction.block,
           block_number: transaction.block_number
         )

@@ -14,15 +14,15 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.UserOperation.Ra
     properties: %{
       sender: General.AddressHash,
       nonce: General.IntegerString,
-      init_code: General.HexString,
-      call_data: General.HexString,
+      init_code: General.HexData,
+      call_data: General.HexData,
       call_gas_limit: General.IntegerString,
       verification_gas_limit: General.IntegerString,
       pre_verification_gas: General.IntegerString,
       max_fee_per_gas: General.IntegerString,
       max_priority_fee_per_gas: General.IntegerString,
-      paymaster_and_data: General.HexString,
-      signature: General.HexString
+      paymaster_and_data: General.HexData,
+      signature: General.HexData
     },
     required: [
       :sender,
@@ -57,13 +57,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.UserOperation.Ra
     properties: %{
       sender: General.AddressHash,
       nonce: General.IntegerString,
-      init_code: General.HexString,
-      call_data: General.HexString,
+      init_code: General.HexData,
+      call_data: General.HexData,
       account_gas_limits: General.FullHash,
       pre_verification_gas: General.IntegerString,
       gas_fees: General.FullHash,
-      paymaster_and_data: General.HexString,
-      signature: General.HexString
+      paymaster_and_data: General.HexData,
+      signature: General.HexData
     },
     required: [
       :sender,

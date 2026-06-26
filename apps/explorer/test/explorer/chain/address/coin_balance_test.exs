@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Address.CoinBalanceTest do
   use Explorer.DataCase
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Ecto.Changeset
   alias Explorer.Chain.Address.CoinBalance
@@ -21,6 +22,27 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       assert length(errors) == 2
       assert Keyword.get_values(errors, :address_hash) == [{"can't be blank", [validation: :required]}]
       assert Keyword.get_values(errors, :block_number) == [{"can't be blank", [validation: :required]}]
+    end
+  end
+
+  describe "get_coin_balance/3" do
+    test "loads the transaction hash for the matching balance" do
+      address = insert(:address)
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address, to_address: insert(:address), value: 1)
+        |> with_block(block)
+
+      insert(:fetched_balance,
+        address_hash: address.hash,
+        block_number: block.number,
+        value: 1_000
+      )
+
+      assert %{transaction_hash: transaction_hash} = CoinBalance.get_coin_balance(address.hash, block.number)
+      assert transaction_hash == transaction.hash
     end
   end
 
@@ -297,6 +319,151 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       value = result |> List.first() |> Map.get(:value)
 
       assert(value == Wei.from(Decimal.new(2000), :wei))
+    end
+  end
+
+  if @chain_type == :arc do
+    describe "address_to_coin_balances/2 on Arc" do
+      @arc_native_token "0x3600000000000000000000000000000000000000"
+
+      setup do
+        original_arc = Application.get_env(:indexer, :arc) || []
+
+        Application.put_env(
+          :indexer,
+          :arc,
+          Keyword.merge(original_arc, arc_native_token_address: @arc_native_token)
+        )
+
+        on_exit(fn ->
+          Application.put_env(:indexer, :arc, original_arc)
+        end)
+
+        :ok
+      end
+
+      test "falls back to the synthetic native-token transfer when no regular tx involves the address" do
+        {:ok, native_token_address_hash} = Explorer.Chain.string_to_address_hash(@arc_native_token)
+        native_token_address = insert(:address, hash: native_token_address_hash)
+        insert(:token, contract_address: native_token_address)
+
+        address = insert(:address)
+        block = insert(:block)
+
+        transfer_transaction =
+          :transaction
+          |> insert()
+          |> with_block(block)
+
+        token_transfer =
+          insert(:token_transfer,
+            from_address: address,
+            token_contract_address: native_token_address,
+            transaction: transfer_transaction,
+            block: block,
+            block_number: block.number
+          )
+
+        insert(:fetched_balance, address_hash: address.hash, value: 100, block_number: block.number)
+
+        [coin_balance] =
+          CoinBalance.address_to_coin_balances(address, paging_options: %PagingOptions{page_size: 50})
+
+        assert coin_balance.transaction_hash == token_transfer.transaction_hash
+        assert coin_balance.transaction_hash == transfer_transaction.hash
+      end
+
+      test "prefers a regular transaction involving the address over the system token transfer" do
+        {:ok, native_token_address_hash} = Explorer.Chain.string_to_address_hash(@arc_native_token)
+        native_token_address = insert(:address, hash: native_token_address_hash)
+        insert(:token, contract_address: native_token_address)
+
+        address = insert(:address)
+        block = insert(:block)
+
+        regular_transaction =
+          :transaction
+          |> insert(from_address: address)
+          |> with_block(block)
+
+        transfer_transaction =
+          :transaction
+          |> insert()
+          |> with_block(block)
+
+        insert(:token_transfer,
+          from_address: address,
+          token_contract_address: native_token_address,
+          transaction: transfer_transaction,
+          block: block,
+          block_number: block.number
+        )
+
+        insert(:fetched_balance, address_hash: address.hash, value: 100, block_number: block.number)
+
+        [coin_balance] =
+          CoinBalance.address_to_coin_balances(address, paging_options: %PagingOptions{page_size: 50})
+
+        assert coin_balance.transaction_hash == regular_transaction.hash
+      end
+
+      test "returns nil transaction hash when neither a regular tx nor a system token transfer matches the balance" do
+        {:ok, native_token_address_hash} = Explorer.Chain.string_to_address_hash(@arc_native_token)
+        native_token_address = insert(:address, hash: native_token_address_hash)
+        insert(:token, contract_address: native_token_address)
+
+        address = insert(:address)
+        block = insert(:block)
+
+        unrelated_transaction =
+          :transaction
+          |> insert()
+          |> with_block(block)
+
+        insert(:token_transfer,
+          token_contract_address: native_token_address,
+          transaction: unrelated_transaction,
+          block: block,
+          block_number: block.number
+        )
+
+        insert(:fetched_balance, address_hash: address.hash, value: 100, block_number: block.number)
+
+        [coin_balance] =
+          CoinBalance.address_to_coin_balances(address, paging_options: %PagingOptions{page_size: 50})
+
+        assert is_nil(coin_balance.transaction_hash)
+      end
+
+      test "ignores token transfers on a different block" do
+        {:ok, native_token_address_hash} = Explorer.Chain.string_to_address_hash(@arc_native_token)
+        native_token_address = insert(:address, hash: native_token_address_hash)
+        insert(:token, contract_address: native_token_address)
+
+        address = insert(:address)
+        balance_block = insert(:block)
+        other_block = insert(:block)
+
+        other_transaction =
+          :transaction
+          |> insert()
+          |> with_block(other_block)
+
+        insert(:token_transfer,
+          from_address: address,
+          token_contract_address: native_token_address,
+          transaction: other_transaction,
+          block: other_block,
+          block_number: other_block.number
+        )
+
+        insert(:fetched_balance, address_hash: address.hash, value: 100, block_number: balance_block.number)
+
+        [coin_balance] =
+          CoinBalance.address_to_coin_balances(address, paging_options: %PagingOptions{page_size: 50})
+
+        assert is_nil(coin_balance.transaction_hash)
+      end
     end
   end
 

@@ -64,14 +64,13 @@ defmodule Explorer.Migrator.BackfillMetadataURL do
       |> Enum.map(&process_result/1)
       |> Enum.map(&Map.merge(&1, %{updated_at: now, inserted_at: now}))
 
-    {_, result} =
+    {count, _} =
       Repo.insert_all(Instance, prepared_params,
         on_conflict: token_instance_on_conflict(),
-        conflict_target: [:token_id, :token_contract_address_hash],
-        returning: true
+        conflict_target: [:token_id, :token_contract_address_hash]
       )
 
-    result
+    count
   end
 
   @impl FillingMigration

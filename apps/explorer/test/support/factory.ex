@@ -35,6 +35,8 @@ defmodule Explorer.Factory do
   alias Explorer.Chain.Scroll.BatchBundle, as: ScrollBatchBundle
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
+  alias Explorer.Chain.ZkSync.LifecycleTransaction, as: ZkSyncLifecycleTransaction
+  alias Explorer.Chain.ZkSync.TransactionBatch, as: ZkSyncTransactionBatch
 
   alias Explorer.Chain.{
     Address,
@@ -876,7 +878,13 @@ defmodule Explorer.Factory do
 
     all_attrs =
       attrs
-      |> adjust_internal_transaction_addresses_attrs([:from_address, :created_contract_address], contract_code)
+      |> then(fn attrs ->
+        Map.put(attrs, :to_address, Map.get(attrs, :to_address) || Map.get(attrs, :created_contract_address))
+      end)
+      |> adjust_internal_transaction_addresses_attrs(
+        [:from_address, :created_contract_address, :to_address],
+        contract_code
+      )
       |> adjust_internal_transaction_error_attr()
 
     %InternalTransaction{
@@ -922,6 +930,7 @@ defmodule Explorer.Factory do
 
   def log_factory do
     block = build(:block)
+    transaction = build(:transaction)
 
     %Log{
       address: build(:address),
@@ -933,7 +942,8 @@ defmodule Explorer.Factory do
       index: sequence("log_index", & &1),
       second_topic: nil,
       third_topic: nil,
-      transaction: build(:transaction)
+      transaction: transaction,
+      transaction_index: transaction_index()
     }
   end
 
@@ -990,7 +1000,8 @@ defmodule Explorer.Factory do
       address_hash: token_address.hash,
       address: token_address,
       data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-      transaction: transaction
+      transaction: transaction,
+      transaction_index: transaction_index()
     }
 
     build(:log, log_params)
@@ -1206,6 +1217,10 @@ defmodule Explorer.Factory do
       |> Hash.Full.cast()
 
     transaction_hash
+  end
+
+  def transaction_index do
+    sequence("transaction_index", & &1)
   end
 
   def transaction_input do
@@ -1762,7 +1777,8 @@ defmodule Explorer.Factory do
       third_topic: nil,
       fourth_topic: nil,
       index: sequence("log_index", & &1),
-      transaction: transaction
+      transaction: transaction,
+      transaction_index: transaction.index
     }
   end
 
@@ -1967,6 +1983,30 @@ defmodule Explorer.Factory do
       before_acc: block_hash(),
       after_acc: block_hash(),
       commitment_id: lifecycle_tx.id
+    }
+  end
+
+  def zksync_lifecycle_transaction_factory do
+    %ZkSyncLifecycleTransaction{
+      id: sequence("zksync_lifecycle_tx_id", & &1, start_at: 1),
+      hash: transaction_hash(),
+      timestamp: DateTime.utc_now()
+    }
+  end
+
+  def zksync_transaction_batch_factory do
+    start_block = Enum.random(1..100_000)
+
+    %ZkSyncTransactionBatch{
+      number: sequence("zksync_transaction_batch_number", & &1),
+      timestamp: DateTime.utc_now(),
+      l1_transaction_count: Enum.random(0..50),
+      l2_transaction_count: Enum.random(0..100),
+      root_hash: block_hash(),
+      l1_gas_price: %Wei{value: Decimal.new(Enum.random(1..1_000_000_000))},
+      l2_fair_gas_price: %Wei{value: Decimal.new(Enum.random(1..1_000_000_000))},
+      start_block: start_block,
+      end_block: Kernel.+(start_block, 10)
     }
   end
 

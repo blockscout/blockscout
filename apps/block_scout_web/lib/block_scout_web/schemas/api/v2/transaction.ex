@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
       batch_number: %Schema{type: :integer, nullable: true},
       status: %Schema{
         type: :string,
-        enum: ZkSyncView.batch_status_enum(),
+        enum: ZkSyncView.batched_item_lifecycle_status_enum(),
         nullable: true
       },
       commit_transaction_hash: General.FullHashNullable,
@@ -172,7 +172,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
                 status: %Schema{type: :string, nullable: false, enum: ["Sent", "Relayed", "Failed"]},
                 sender_address_hash: General.AddressHashNullable,
                 target_address_hash: General.AddressHashNullable,
-                payload: General.HexString,
+                payload: General.HexData,
                 relay_chain: %Schema{type: :object, nullable: true},
                 relay_transaction_hash: General.FullHashNullable,
                 init_chain: %Schema{type: :object, nullable: true},
@@ -210,7 +210,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
                 hash: General.FullHash,
                 method: General.MethodNameNullable,
                 decoded_input: %Schema{allOf: [General.DecodedInput], nullable: true},
-                raw_input: General.HexString
+                raw_input: General.HexData
               },
               additionalProperties: false
             }
@@ -383,7 +383,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
             General.DecodedInput,
             %Schema{
               type: :object,
-              properties: %{raw: %Schema{anyOf: [General.HexString, %Schema{type: :string}], nullable: true}},
+              properties: %{raw: %Schema{anyOf: [General.HexData, %Schema{type: :string}], nullable: true}},
               required: [:raw],
               nullable: false,
               additionalProperties: false
@@ -391,7 +391,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
           ],
           nullable: true
         },
-        raw_input: General.HexString,
+        raw_input: General.HexData,
         decoded_input: %Schema{allOf: [General.DecodedInput], nullable: true},
         token_transfers: %Schema{type: :array, items: TokenTransfer, nullable: true},
         token_transfers_overflow: %Schema{type: :boolean, nullable: true},

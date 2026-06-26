@@ -678,7 +678,8 @@ defmodule Indexer.Block.FetcherTest do
                             bytes:
                               <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35,
                                 77, 57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                          }
+                          },
+                          transaction_index: 0
                         }
                       ],
                       transactions: [
@@ -1206,7 +1207,8 @@ defmodule Indexer.Block.FetcherTest do
                               bytes:
                                 <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35,
                                   77, 57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                            }
+                            },
+                            transaction_index: 0
                           },
                           %Log{
                             index: 1,
@@ -1215,7 +1217,8 @@ defmodule Indexer.Block.FetcherTest do
                               bytes:
                                 <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35,
                                   77, 57, 101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                            }
+                            },
+                            transaction_index: 0
                           }
                         ],
                         transactions: [

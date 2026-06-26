@@ -8,7 +8,6 @@ defmodule Explorer.Chain.Data do
   """
 
   alias Explorer.Chain.Data
-  alias Poison.Encoder.BitString
 
   use Ecto.Type
 
@@ -411,21 +410,11 @@ defmodule Explorer.Chain.Data do
     end
   end
 
-  defimpl Poison.Encoder do
-    def encode(data, options) do
+  defimpl JSON.Encoder do
+    def encode(data, encoder) do
       data
       |> to_string()
-      |> BitString.encode(options)
-    end
-  end
-
-  defimpl Jason.Encoder do
-    alias Jason.Encode
-
-    def encode(data, opts) do
-      data
-      |> to_string()
-      |> Encode.string(opts)
+      |> JSON.Encoder.encode(encoder)
     end
   end
 end

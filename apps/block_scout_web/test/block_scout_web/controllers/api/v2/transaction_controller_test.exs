@@ -44,6 +44,51 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response["next_page_params"] == nil
     end
 
+    test "items_count=10 returns 10 items with next_page_params", %{conn: conn} do
+      15
+      |> insert_list(:transaction)
+      |> with_block()
+
+      request = get(conn, "/api/v2/transactions", %{"items_count" => "10"})
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 10
+      assert response["next_page_params"] != nil
+
+      request_2nd_page =
+        get(conn, "/api/v2/transactions", Map.merge(response["next_page_params"], %{"items_count" => "10"}))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response_2nd_page["items"]) == 5
+      assert response_2nd_page["next_page_params"] == nil
+    end
+
+    test "items_count=1 returns 1 item with valid cursor", %{conn: conn} do
+      3
+      |> insert_list(:transaction)
+      |> with_block()
+
+      request = get(conn, "/api/v2/transactions", %{"items_count" => "1"})
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] != nil
+      refute Map.has_key?(response["next_page_params"], "items_count")
+    end
+
+    test "absent items_count returns default 50", %{conn: conn} do
+      51
+      |> insert_list(:transaction)
+      |> with_block()
+
+      request = get(conn, "/api/v2/transactions")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+    end
+
     test "transactions with next_page_params", %{conn: conn} do
       transactions =
         51
@@ -680,6 +725,91 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       check_paginated_response(response, response_2nd_page, internal_transactions)
     end
+
+    test "returns pending status when transaction block is pending", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "returns pending status when transaction is in pending_transaction_operations", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "include_zero_value=false excludes zero-value call internal transactions", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 0,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      request =
+        get(
+          conn,
+          "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions",
+          %{"include_zero_value" => "false"}
+        )
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert List.first(response["items"])["index"] == 2
+
+      request_default = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
+      assert response_default = json_response(request_default, 200)
+      assert Enum.count(response_default["items"]) == 2
+    end
   end
 
   describe "/transactions/{transaction_hash}/logs" do
@@ -780,6 +910,48 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, logs)
+    end
+
+    test "includes called method ABI and arguments", %{conn: conn} do
+      event_abi = %{
+        "name" => "Set",
+        "type" => "event",
+        "inputs" => [%{"name" => "x", "type" => "uint256", "indexed" => false, "internalType" => "uint256"}],
+        "anonymous" => false
+      }
+
+      contract_address = insert(:contract_address)
+      insert(:smart_contract, address_hash: contract_address.hash, abi: [event_abi])
+
+      topic1_bytes = ExKeccak.hash_256("Set(uint256)")
+      topic1 = "0x" <> Base.encode16(topic1_bytes, case: :lower)
+
+      log_data = "0x0000000000000000000000000000000000000000000000000000000000000032"
+
+      transaction = :transaction |> insert() |> with_block()
+
+      insert(:log,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        address: contract_address,
+        first_topic: TestHelper.topic(topic1),
+        data: log_data
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/logs")
+
+      assert response = json_response(request, 200)
+      assert [log_from_api] = response["items"]
+
+      assert log_from_api["decoded"]["abi"]["name"] == "Set"
+      assert log_from_api["decoded"]["abi"]["type"] == "event"
+
+      assert log_from_api["decoded"]["abi"]["inputs"] == [
+               %{"indexed" => false, "internalType" => "uint256", "name" => "x", "type" => "uint256"}
+             ]
+
+      refute Map.has_key?(log_from_api["decoded"], "called_method")
     end
   end
 
@@ -1574,7 +1746,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         |> with_block(status: :ok)
 
       request =
-        get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes?items_count=50&state_changes=null")
+        get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes?state_changes_count=50")
 
       assert %{} = json_response(request, 200)
     end
@@ -2991,7 +3163,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       log_from_api = Enum.at(response["logs_data"]["items"], 0)
       assert not is_nil(log_from_api["decoded"])
 
-      assert log_from_api["decoded"] == %{
+      assert Map.drop(log_from_api["decoded"], ["abi"]) == %{
                "method_call" =>
                  "OptionSettled(uint256 indexed accountId, address option, uint256 subId, int256 amount, int256 value)",
                "method_id" => "d20a68b2",
@@ -3028,6 +3200,9 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  }
                ]
              }
+
+      assert log_from_api["decoded"]["abi"]["name"] == "OptionSettled"
+      assert log_from_api["decoded"]["abi"]["type"] == "event"
     end
 
     test "test corner case, when preload functions face absent smart contract", %{conn: conn} do

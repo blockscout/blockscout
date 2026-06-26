@@ -100,6 +100,7 @@ defmodule Explorer.Chain.ImportTest do
         params: [
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            block_number: 37,
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
             first_topic: first_topic,
@@ -107,7 +108,8 @@ defmodule Explorer.Chain.ImportTest do
             third_topic: third_topic,
             fourth_topic: nil,
             index: 0,
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            transaction_index: 0
           }
         ],
         timeout: 5
@@ -300,6 +302,7 @@ defmodule Explorer.Chain.ImportTest do
                         <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
                           101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
                     },
+                    transaction_index: 0,
                     inserted_at: %{},
                     updated_at: %{}
                   }
@@ -1665,6 +1668,7 @@ defmodule Explorer.Chain.ImportTest do
                    params: [
                      params_for(:log,
                        transaction_hash: transaction_hash,
+                       transaction_index: 0,
                        address_hash: miner_hash,
                        block_hash: block_hash
                      )

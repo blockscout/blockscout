@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
     - Tracking of L2-to-L1 message executions on L1
   """
 
-  import Ecto.Query, only: [dynamic: 2, from: 2, limit: 2, order_by: 2, select: 3, where: 3]
+  import Ecto.Query
 
   alias Explorer.Chain.Arbitrum.{
     L1Execution,
@@ -369,7 +369,10 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
     # Otherwise, the join condition must be extended with
     # fragment("encode(l0.fourth_topic, 'hex') = LPAD(TO_HEX(a1.message_id::BIGINT), 64, '0')")
     base_condition =
-      dynamic([log, msg], log.transaction_hash == msg.originating_transaction_hash and msg.direction == :from_l2)
+      dynamic(
+        [_log, transaction, msg],
+        transaction.hash == msg.originating_transaction_hash and msg.direction == :from_l2
+      )
 
     join_condition =
       if is_nil(start_block) or is_nil(end_block) do
@@ -383,12 +386,13 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
         )
       end
 
-    from(log in Log,
-      left_join: msg in Message,
-      on: ^join_condition,
-      where:
-        log.address_hash == ^arbsys_contract and log.first_topic == ^l2_to_l1_event and
-          is_nil(msg.originating_transaction_hash)
+    Log
+    |> Log.join_transaction_query()
+    |> join(:left, [_log], msg in Message, on: ^join_condition)
+    |> where(
+      [log, _t, msg],
+      log.address_hash == ^arbsys_contract and log.first_topic == ^l2_to_l1_event and
+        is_nil(msg.originating_transaction_hash)
     )
   end
 

@@ -105,7 +105,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
          "compilerSettings" => _,
          "runtimeMatch" => _
        } = result_params} ->
-        compilation_artifacts = Jason.decode!(compilation_artifacts_string)
+        compilation_artifacts = Utils.JSON.decode!(compilation_artifacts_string)
 
         transformed_result_params =
           result_params
@@ -195,7 +195,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
     %{^file_name => contract_source_code} = sources
 
-    compiler_settings = Jason.decode!(compiler_settings_string)
+    compiler_settings = Utils.JSON.decode!(compiler_settings_string)
 
     optimization = extract_optimization(compiler_settings)
 
@@ -255,7 +255,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
 
     %{^file_name => contract_source_code} = sources
 
-    compiler_settings = Jason.decode!(compiler_settings_string)
+    compiler_settings = Utils.JSON.decode!(compiler_settings_string)
 
     optimization = extract_optimization(compiler_settings)
 
@@ -284,7 +284,7 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
       |> Map.put("is_blueprint", source["isBlueprint"])
       |> Map.put("language", verification_language)
 
-    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string || "null"), save_file_path?)
+    publish_smart_contract(address_hash, prepared_params, Utils.JSON.decode!(abi_string || "null"), save_file_path?)
   end
 
   defp parse_optimization_runs(compiler_settings, optimization) do
@@ -423,10 +423,21 @@ defmodule Explorer.SmartContract.Solidity.Publisher do
   """
   @spec clear_constructor_arguments(String.t() | nil) :: String.t() | nil
   def clear_constructor_arguments(constructor_arguments) do
-    if constructor_arguments != nil && constructor_arguments != "" do
-      constructor_arguments
-    else
-      nil
+    case constructor_arguments do
+      nil ->
+        nil
+
+      "" ->
+        nil
+
+      "0x" ->
+        nil
+
+      "0x" <> _ = prefixed_arguments ->
+        prefixed_arguments
+
+      constructor_arguments ->
+        "0x" <> constructor_arguments
     end
   end
 

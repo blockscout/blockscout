@@ -60,7 +60,7 @@ defmodule Indexer.Transform.Celo.ValidatorEpochPaymentDistributions do
          {"validatorPayment", "uint256", false, validator_payment},
          {"group", "address", true, group_address_bytes},
          {"groupPayment", "uint256", false, group_payment}
-       ]} = Log.find_and_decode(@event_abi, log, log.block_hash)
+       ]} = Log.find_and_decode(@event_abi, log)
 
       {:ok, validator_address} = Hash.Address.cast(validator_address_bytes)
       {:ok, group_address} = Hash.Address.cast(group_address_bytes)

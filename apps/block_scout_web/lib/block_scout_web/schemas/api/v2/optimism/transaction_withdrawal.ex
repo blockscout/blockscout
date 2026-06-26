@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.TransactionWithdrawal do
       msg_target_address_hash: General.FullHashNullable,
       msg_value: General.IntegerStringNullable,
       msg_gas_limit: General.IntegerStringNullable,
-      msg_data: General.HexStringNullable
+      msg_data: General.HexDataNullable
     },
     required: [
       :nonce,

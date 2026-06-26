@@ -107,7 +107,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         contract_data =
           "#{File.cwd!()}/test/support/fixture/smart_contract/contract_with_lib.json"
           |> File.read!()
-          |> Jason.decode!()
+          |> Utils.JSON.decode!()
           |> List.first()
 
         compiler_version = contract_data["compiler_version"]
@@ -140,7 +140,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         contract_data =
           "#{File.cwd!()}/test/support/fixture/smart_contract/solidity_5.11_new_whisper_metadata.json"
           |> File.read!()
-          |> Jason.decode!()
+          |> Utils.JSON.decode!()
 
         compiler_version = contract_data["compiler_version"]
         name = contract_data["name"]

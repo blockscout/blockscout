@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewViewTest do
         }
       """
 
-      data = Jason.decode!(json)
+      data = Utils.JSON.decode!(json)
 
       assert OverviewView.media_src(%{metadata: data}) ==
                "https://img.paoditu.com/images/cut_trace_images/6b/5f/5b754f6b5f3b5_500_500.jpg"
@@ -72,7 +72,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewViewTest do
         }
       """
 
-      data = Jason.decode!(json)
+      data = Utils.JSON.decode!(json)
 
       assert OverviewView.media_src(%{metadata: data}) ==
                "https://storage.googleapis.com/poapmedia/manreclaimed-at-metazoo-international-2021-logo-1615826139072.png"
@@ -93,7 +93,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewViewTest do
         }
       """
 
-      data = Jason.decode!(json)
+      data = Utils.JSON.decode!(json)
 
       assert OverviewView.media_src(%{metadata: data}, true) ==
                "https://assets.cargo.build/611a883b0d039100261bfe79/b89cf189-13e9-47ed-b801-a1f6aa15a7bf/376db72d-f8dc-44bb-b6ac-0e8a31fc6164-comp-1_8mp4.mp4"
@@ -114,7 +114,7 @@ defmodule BlockScoutWeb.Tokens.Instance.OverviewViewTest do
         }
       """
 
-      data = Jason.decode!(json)
+      data = Utils.JSON.decode!(json)
 
       assert OverviewView.media_src(%{metadata: data}) ==
                "https://assets.cargo.build/611a883b0d039100261bfe79/b89cf189-13e9-47ed-b801-a1f6aa15a7bf/a0784ea0-45be-41cd-9cdd-cc40ad20f20d-zombiepngpng.png"

@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
       batch_number: %Schema{type: :integer, nullable: true},
       status: %Schema{
         type: :string,
-        enum: ZkSyncView.batch_status_enum(),
+        enum: ZkSyncView.batched_item_lifecycle_status_enum(),
         nullable: false
       },
       commit_transaction_hash: General.FullHashNullable,
@@ -124,7 +124,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
       l1_transaction_hash: General.FullHashNullable,
       l1_timestamp: General.TimestampNullable
     },
-    required: [:commitment, :l1_transaction_hash, :l1_timestamp]
+    required: [:commitment, :l1_transaction_hash, :l1_timestamp],
+    additionalProperties: false
+  }
+
+  @eigenda_schema %Schema{
+    type: :object,
+    nullable: false,
+    properties: %{
+      cert: %Schema{type: :string, nullable: true},
+      l1_transaction_hash: General.FullHashNullable,
+      l1_timestamp: General.TimestampNullable
+    },
+    required: [:cert, :l1_transaction_hash, :l1_timestamp],
+    additionalProperties: false
   }
 
   @doc """
@@ -147,7 +160,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
       },
       blobs: %Schema{
         type: :array,
-        items: %Schema{anyOf: [@blob4844_schema, @celestia_schema, @alt_da_schema]},
+        items: %Schema{
+          anyOf: [@blob4844_schema, @celestia_schema, @eigenda_schema, @alt_da_schema]
+        },
         nullable: false
       }
     },
@@ -202,7 +217,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
         nullable: false,
         properties: %{
           view: %Schema{type: :integer, nullable: false},
-          signature: General.HexString,
+          signature: General.HexData,
           signers: %Schema{type: :array, items: %Schema{type: :integer, nullable: false}, nullable: false}
         },
         required: [:view, :signature, :signers],
@@ -213,7 +228,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
         nullable: false,
         properties: %{
           view: %Schema{type: :integer, nullable: false},
-          signature: General.HexString,
+          signature: General.HexData,
           signers: %Schema{type: :array, items: %Schema{type: :integer, nullable: false}, nullable: false},
           nested_quorum_certificates: %Schema{
             type: :array,
@@ -221,7 +236,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
               type: :object,
               properties: %{
                 view: %Schema{type: :integer, nullable: false},
-                signature: General.HexString,
+                signature: General.HexData,
                 proposed_by_validator_index: %Schema{type: :integer, nullable: false},
                 signers: %Schema{type: :array, items: %Schema{type: :integer, nullable: false}, nullable: false}
               },
@@ -261,9 +276,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
         |> Helper.extend_schema(
           properties: %{
             minimum_gas_price: General.IntegerString,
-            bitcoin_merged_mining_header: General.HexString,
-            bitcoin_merged_mining_coinbase_transaction: General.HexString,
-            bitcoin_merged_mining_merkle_proof: General.HexString,
+            bitcoin_merged_mining_header: General.HexData,
+            bitcoin_merged_mining_coinbase_transaction: General.HexData,
+            bitcoin_merged_mining_merkle_proof: General.HexData,
             hash_for_merged_mining: General.FullHash
           }
         )
@@ -316,6 +331,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
   This module defines common schema fields for block.
   """
   alias BlockScoutWeb.Schemas.API.V2.{Address, General}
+  alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
   @required_fields [
@@ -445,34 +461,38 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
         },
         hash: General.FullHash,
         parent_hash: General.FullHash,
-        difficulty: %Schema{
-          allOf: [General.IntegerStringNullable],
-          description: "Proof-of-work difficulty of this block. Zero on proof-of-stake chains."
-        },
-        total_difficulty: %Schema{
-          allOf: [General.IntegerStringNullable],
-          description:
+        difficulty:
+          Helper.describe_inline(
+            General.IntegerStringNullable.schema(),
+            "Proof-of-work difficulty of this block. Zero on proof-of-stake chains."
+          ),
+        total_difficulty:
+          Helper.describe_inline(
+            General.IntegerStringNullable.schema(),
             "Cumulative chain difficulty through this block (sum of `difficulty` of this block and all ancestors)."
-        },
+          ),
         gas_used: General.IntegerString,
         gas_limit: General.IntegerString,
-        nonce: %Schema{
-          allOf: [General.HexString],
-          description: "Proof-of-work nonce used to satisfy the difficulty target. Zero on proof-of-stake chains."
-        },
-        base_fee_per_gas: %Schema{
-          allOf: [General.IntegerStringNullable],
-          description:
+        nonce:
+          Helper.describe_inline(
+            General.HexData.schema(),
+            "Proof-of-work nonce used to satisfy the difficulty target. Zero on proof-of-stake chains."
+          ),
+        base_fee_per_gas:
+          Helper.describe_inline(
+            General.IntegerStringNullable.schema(),
             "EIP-1559 base fee per gas, in wei. Null on blocks produced before EIP-1559 activation or on chains that do not implement EIP-1559."
-        },
-        burnt_fees: %Schema{
-          allOf: [General.IntegerStringNullable],
-          description: "Sum of EIP-1559 base fees burned by transactions in this block, in wei."
-        },
-        priority_fee: %Schema{
-          allOf: [General.IntegerStringNullable],
-          description: "Sum of validator tips (EIP-1559 priority fees) paid by transactions in this block, in wei."
-        },
+          ),
+        burnt_fees:
+          Helper.describe_inline(
+            General.IntegerStringNullable.schema(),
+            "Sum of EIP-1559 base fees burned by transactions in this block, in wei."
+          ),
+        priority_fee:
+          Helper.describe_inline(
+            General.IntegerStringNullable.schema(),
+            "Sum of validator tips (EIP-1559 priority fees) paid by transactions in this block, in wei."
+          ),
         uncles_hashes: %Schema{
           type: :array,
           description: "Hashes of ommer (uncle) blocks referenced by this block.",
@@ -512,10 +532,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Common do
           description:
             "Block classification: `block` = main-chain consensus block; `uncle` = ommer (valid but not in main chain); `reorg` = former main-chain block lost to reorganization."
         },
-        transaction_fees: %Schema{
-          allOf: [General.IntegerString],
-          description: "Sum of transaction fees (gas price × gas used) paid by transactions in this block, in wei."
-        },
+        transaction_fees:
+          Helper.describe_inline(
+            General.IntegerString.schema(),
+            "Sum of transaction fees (gas price × gas used) paid by transactions in this block, in wei."
+          ),
         withdrawals_count: %Schema{
           type: :integer,
           minimum: 0,

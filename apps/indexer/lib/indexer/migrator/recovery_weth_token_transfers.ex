@@ -111,13 +111,14 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
     base_query = from(log in Log, as: :log)
 
     base_query
+    |> Log.join_transaction_query()
     |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
     |> apply_block_number_condition(max_block_number)
     |> apply_transaction_hash_condition(transaction_hash)
-    |> group_by([log], [log.transaction_hash, log.address_hash, log.first_topic, log.second_topic])
+    |> group_by([log], [as(:transaction).hash, log.address_hash, log.first_topic, log.second_topic])
     |> having([log], count(log) > 1)
-    |> order_by([log], asc: log.transaction_hash)
-    |> select([log], log.transaction_hash)
+    |> order_by([log], asc: as(:transaction).hash)
+    |> select([log], as(:transaction).hash)
   end
 
   defp apply_block_number_condition(query, 0), do: query |> where([log], log.block_number == 0)
@@ -134,7 +135,7 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
   defp apply_transaction_hash_condition(query, transaction_hash),
     do:
       query
-      |> where([log], log.transaction_hash > ^transaction_hash)
+      |> where(as(:transaction).hash > ^transaction_hash)
 
   @spec run_task([any()]) :: any()
   defp run_task(batch), do: Task.async(fn -> update_batch(batch) end)
@@ -144,12 +145,14 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
 
     %{token_transfers: token_transfers} =
       base_query
-      |> where([log], log.transaction_hash in ^batch)
+      |> Log.join_transaction_query()
+      |> where(as(:transaction).hash in ^batch)
       |> join(:left, [log], tt in TokenTransfer,
         on:
-          log.transaction_hash == tt.transaction_hash and log.index == tt.log_index and log.block_hash == tt.block_hash
+          as(:transaction).hash == tt.transaction_hash and log.index == tt.log_index and
+            as(:transaction).block_hash == tt.block_hash
       )
-      |> where([log, tt], is_nil(tt))
+      |> where([log, t, tt], is_nil(tt))
       |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
       |> Repo.all(timeout: :infinity)
       |> Enum.map(fn %Log{} = log ->

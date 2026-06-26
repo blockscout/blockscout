@@ -28,7 +28,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
         times: 1,
         returns: %Tesla.Env{
           status: 200,
-          body: Jason.encode!(%{"success" => true})
+          body: Utils.JSON.encode!(%{"success" => true})
         }
       )
 
@@ -55,7 +55,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
         returns: %Tesla.Env{
           status: 200,
           body:
-            Jason.encode!(%{
+            Utils.JSON.encode!(%{
               "platforms" => %{
                 "test_platform" => %{
                   "endpoints" => %{
@@ -91,7 +91,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
         returns: %Tesla.Env{
           status: 200,
           body:
-            Jason.encode!(%{
+            Utils.JSON.encode!(%{
               "platforms" => %{
                 "test_platform" => %{
                   "base_url" => "https://api.test.com",
@@ -143,7 +143,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
         returns: %Tesla.Env{
           status: 200,
           body:
-            Jason.encode!(%{
+            Utils.JSON.encode!(%{
               "platforms" => %{
                 "test_platform" => %{
                   "base_url" => "https://api.test.com",
@@ -183,7 +183,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
         returns: %Tesla.Env{
           status: 200,
           body:
-            Jason.encode!(%{
+            Utils.JSON.encode!(%{
               "platforms" => %{
                 "test_platform" => %{
                   "base_url" => "https://api.test.com",
@@ -228,7 +228,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
         returns: %Tesla.Env{
           status: 200,
           body:
-            Jason.encode!(%{
+            Utils.JSON.encode!(%{
               "platforms" => %{
                 "test_platform" => %{
                   "base_url" => "https://api.test.com",
@@ -268,7 +268,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
         returns: %Tesla.Env{
           status: 200,
           body:
-            Jason.encode!(%{
+            Utils.JSON.encode!(%{
               "platforms" => %{
                 "test_platform" => %{
                   "base_url" => "https://api.test.com",
@@ -317,7 +317,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
         returns: %Tesla.Env{
           status: 200,
           body:
-            Jason.encode!(%{
+            Utils.JSON.encode!(%{
               "platforms" => %{
                 "test_platform" => %{
                   "base_url" => "https://api.test.com",
@@ -357,7 +357,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
         returns: %Tesla.Env{
           status: 200,
           body:
-            Jason.encode!(%{
+            Utils.JSON.encode!(%{
               "platforms" => %{
                 "test_platform" => %{
                   "base_url" => "https://api.test.com",
@@ -402,7 +402,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
         returns: %Tesla.Env{
           status: 200,
           body:
-            Jason.encode!(%{
+            Utils.JSON.encode!(%{
               "platforms" => %{
                 "test_platform" => %{
                   "base_url" => "https://api.test.com",
@@ -442,7 +442,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
         returns: %Tesla.Env{
           status: 200,
           body:
-            Jason.encode!(%{
+            Utils.JSON.encode!(%{
               "platforms" => %{
                 "test_platform" => %{
                   "base_url" => "https://api.test.com",
@@ -483,7 +483,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
         returns: %Tesla.Env{
           status: 200,
           body:
-            Jason.encode!(%{
+            Utils.JSON.encode!(%{
               "platforms" => %{
                 "test_platform" => %{
                   "base_url" => "https://api.test.com",
@@ -517,7 +517,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
         returns: %Tesla.Env{
           status: 200,
           body:
-            Jason.encode!(%{
+            Utils.JSON.encode!(%{
               "platforms" => %{
                 "test_platform" => %{
                   "base_url" => "https://api.test.com",
@@ -552,7 +552,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
       returns: %Tesla.Env{
         status: 200,
         body:
-          Jason.encode!(%{
+          Utils.JSON.encode!(%{
             "platforms" => %{
               "test_platform" => %{
                 "base_url" => "https://api.test.com",
@@ -600,7 +600,7 @@ defmodule Explorer.ThirdPartyIntegrations.UniversalProxyTest do
       Application.put_env(
         :explorer,
         Explorer.ThirdPartyIntegrations.UniversalProxy,
-        config_json: Jason.encode!(inline_config),
+        config_json: Utils.JSON.encode!(inline_config),
         config_url: nil
       )
 
