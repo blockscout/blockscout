@@ -30,6 +30,16 @@ type OkJson<Operation> = Operation extends {
 /** The request parameters of an operation (`query`, `path`; `header`/`cookie` usually empty). */
 type OperationParams<Operation> = Operation extends { parameters: infer Params } ? Params : never;
 
+/**
+ * The `application/json` request body of an operation (or `never` if it has none).
+ * `requestBody` is optional in the generated types, so the pattern matches it optionally.
+ */
+type RequestJson<Operation> = Operation extends { requestBody?: infer RequestBody }
+  ? RequestBody extends { content: { "application/json": infer Body } }
+    ? Body
+    : never
+  : never;
+
 /** Drop the controller module prefix (v2, account v2, or legacy) from an operationId. */
 type ShortOperationId<Id extends string> = Id extends `BlockScoutWeb.API.V2.${infer Rest}`
   ? Rest
@@ -43,12 +53,14 @@ type ShortOperationId<Id extends string> = Id extends `BlockScoutWeb.API.V2.${in
  * Per-operation shape keyed by short operationId:
  *  - `json`: the 200 `application/json` response body
  *  - `params`: the request parameters (`query`, `path`; `header`/`cookie` usually empty)
+ *  - `requestBody`: the `application/json` request body (`never` for endpoints without one)
  * e.g. `operations["BlockController.internal_transactions"]["json"]`.
  */
 export type operations = {
   [Id in keyof merged.operations as ShortOperationId<Id & string>]: {
     json: OkJson<merged.operations[Id]>;
     params: OperationParams<merged.operations[Id]>;
+    requestBody: RequestJson<merged.operations[Id]>;
   };
 };
 
