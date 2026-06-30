@@ -1301,7 +1301,7 @@ defmodule Explorer.ChainTest do
                 logs: [
                   %Log{
                     address_id: ^to_address_id,
-                    data: %Data{
+                    compressed_data: %Data{
                       bytes:
                         <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 224, 182, 179,
                           167, 100, 0, 0>>

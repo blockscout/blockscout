@@ -931,6 +931,7 @@ defmodule Explorer.Factory do
   def log_factory(attrs) do
     block = build(:block)
     transaction = build(:transaction)
+    data = data(:log_data)
 
     all_attrs =
       attrs
@@ -940,7 +941,8 @@ defmodule Explorer.Factory do
     %Log{
       block: block,
       block_number: block.number,
-      data: data(:log_data),
+      data: data,
+      compressed_data: data,
       first_topic: nil,
       fourth_topic: nil,
       index: sequence("log_index", & &1),

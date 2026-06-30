@@ -83,6 +83,7 @@ for migrator <- [
       Explorer.Migrator.TransactionHasTokenTransfers,
       Explorer.Migrator.DeleteNonConsensusLogs,
       Explorer.Migrator.FillLogsOptimizedFields,
+      Explorer.Migrator.FillLogsCompressedData,
 
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,

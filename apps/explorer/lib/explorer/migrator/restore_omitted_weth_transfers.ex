@@ -174,6 +174,7 @@ defmodule Explorer.Migrator.RestoreOmittedWETHTransfers do
       |> Log.preload_block()
       |> Log.preload_transaction()
       |> Log.preload_address()
+      |> Log.prepare_data()
       |> Enum.map(fn log ->
         with %{second_topic: second_topic, third_topic: nil, fourth_topic: nil, data: data}
              when not is_nil(second_topic) <-

@@ -69,6 +69,8 @@ defmodule Explorer.Chain.Import.Runner.Logs do
       entry
       |> Map.delete(:address_hash)
       |> Map.put(:address_id, address_hash_to_address_id_map[String.downcase(to_string(entry[:address_hash]))])
+      |> Map.delete(:data)
+      |> Map.put(:compressed_data, entry[:data])
     end)
   end
 
@@ -137,7 +139,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
             update: [
               set: [
                 address_id: fragment("EXCLUDED.address_id"),
-                data: fragment("EXCLUDED.data"),
+                compressed_data: fragment("EXCLUDED.compressed_data"),
                 first_topic: fragment("EXCLUDED.first_topic"),
                 second_topic: fragment("EXCLUDED.second_topic"),
                 third_topic: fragment("EXCLUDED.third_topic"),
@@ -150,9 +152,9 @@ defmodule Explorer.Chain.Import.Runner.Logs do
             ],
             where:
               fragment(
-                "(EXCLUDED.address_id, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic, EXCLUDED.transaction_index) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
+                "(EXCLUDED.address_id, EXCLUDED.compressed_data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic, EXCLUDED.transaction_index) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
                 log.address_id,
-                log.data,
+                log.compressed_data,
                 log.first_topic,
                 log.second_topic,
                 log.third_topic,
@@ -166,7 +168,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
             update: [
               set: [
                 address_id: fragment("EXCLUDED.address_id"),
-                data: fragment("EXCLUDED.data"),
+                compressed_data: fragment("EXCLUDED.compressed_data"),
                 first_topic: fragment("EXCLUDED.first_topic"),
                 second_topic: fragment("EXCLUDED.second_topic"),
                 third_topic: fragment("EXCLUDED.third_topic"),
@@ -179,9 +181,9 @@ defmodule Explorer.Chain.Import.Runner.Logs do
             ],
             where:
               fragment(
-                "(EXCLUDED.address_id, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic, EXCLUDED.transaction_hash) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
+                "(EXCLUDED.address_id, EXCLUDED.compressed_data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic, EXCLUDED.transaction_hash) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
                 log.address_id,
-                log.data,
+                log.compressed_data,
                 log.first_topic,
                 log.second_topic,
                 log.third_topic,
@@ -197,7 +199,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
           update: [
             set: [
               address_id: fragment("EXCLUDED.address_id"),
-              data: fragment("EXCLUDED.data"),
+              compressed_data: fragment("EXCLUDED.compressed_data"),
               first_topic: fragment("EXCLUDED.first_topic"),
               second_topic: fragment("EXCLUDED.second_topic"),
               third_topic: fragment("EXCLUDED.third_topic"),
@@ -210,9 +212,9 @@ defmodule Explorer.Chain.Import.Runner.Logs do
           ],
           where:
             fragment(
-              "(EXCLUDED.address_id, EXCLUDED.data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
+              "(EXCLUDED.address_id, EXCLUDED.compressed_data, EXCLUDED.first_topic, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
               log.address_id,
-              log.data,
+              log.compressed_data,
               log.first_topic,
               log.second_topic,
               log.third_topic,

@@ -229,6 +229,7 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.EmptyInternalTransactionsData, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.FillInternalTransactionsAddressIds, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.DeleteNonConsensusLogs, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.FillLogsCompressedData, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
           :indexer

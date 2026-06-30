@@ -135,7 +135,8 @@ defmodule Explorer.Mixfile do
       {:hammer, "~> 7.0"},
       {:ton, "~> 0.5.0"},
       {:mint, "~> 1.0"},
-      {:oban, "~> 2.19"}
+      {:oban, "~> 2.19"},
+      {:nimble_lz4, "~> 1.1"}
     ]
   end
 
