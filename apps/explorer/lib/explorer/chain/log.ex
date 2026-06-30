@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Log.Schema do
   alias Explorer.Chain.{
     Address,
     Block,
+    CompressedData,
     Data,
     Hash,
     Transaction
@@ -46,7 +47,8 @@ defmodule Explorer.Chain.Log.Schema do
     quote do
       @primary_key false
       typed_schema "logs" do
-        field(:data, Data, null: false)
+        field(:data, Data)
+        field(:compressed_data, CompressedData)
         field(:first_topic, Hash.Full)
         field(:second_topic, Hash.Trimmed)
         field(:third_topic, Hash.Trimmed)
@@ -106,7 +108,7 @@ defmodule Explorer.Chain.Log do
   alias Explorer.SmartContract.SigProviderInterface
   alias Explorer.Utility.{AddressIdToAddressHash, LogHelper}
 
-  @required_attrs ~w(address_id data index)a
+  @required_attrs ~w(address_id compressed_data index)a
                   |> (&(case @chain_identity do
                           {:optimism, :celo} ->
                             &1
@@ -990,6 +992,19 @@ defmodule Explorer.Chain.Log do
   def preload_address(log, options, repo) do
     [log]
     |> preload_address(options, repo)
+    |> List.first()
+  end
+
+  @spec prepare_data(map() | [map()] | nil) :: __MODULE__.t() | [__MODULE__.t()] | nil
+  def prepare_data(nil), do: nil
+
+  def prepare_data(logs) when is_list(logs) do
+    Enum.map(logs, &%{&1 | data: &1.data || &1.compressed_data})
+  end
+
+  def prepare_data(log) do
+    [log]
+    |> prepare_data()
     |> List.first()
   end
 

@@ -963,6 +963,11 @@ config :explorer, Explorer.Migrator.FillLogsOptimizedFields,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_CONCURRENCY", 10),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_TIMEOUT", "5s")
 
+config :explorer, Explorer.Migrator.FillLogsCompressedData,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_COMPRESSED_DATA_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_COMPRESSED_DATA_CONCURRENCY", 10),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_LOGS_COMPRESSED_DATA_TIMEOUT", "1s")
+
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),
   bsc_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_BSC_OMNI_BRIDGE_MEDIATOR"),

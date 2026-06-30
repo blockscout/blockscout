@@ -1177,6 +1177,7 @@ defmodule Explorer.EthRPC do
           |> Log.preload_block()
           |> Log.preload_transaction()
           |> Log.preload_address()
+          |> Log.prepare_data()
           |> Enum.map(&render_log(&1, transaction)),
         "logsBloom" => "0x" <> (transaction.logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
         "status" => encode_quantity(status),
