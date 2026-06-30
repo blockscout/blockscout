@@ -69,6 +69,8 @@ defmodule Explorer.Chain.Import.Runner.Logs do
       entry
       |> Map.delete(:address_hash)
       |> Map.put(:address_id, address_hash_to_address_id_map[String.downcase(to_string(entry[:address_hash]))])
+      |> Map.delete(:data)
+      |> Map.put(:compressed_data, entry[:data])
     end)
   end
 

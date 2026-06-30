@@ -145,7 +145,8 @@ for migrator <- [
       Explorer.Migrator.FillInternalTransactionsAddressIds,
       Explorer.Migrator.TransactionHasTokenTransfers,
       Explorer.Migrator.DeleteNonConsensusLogs,
-      Explorer.Migrator.FillLogsOptimizedFields
+      Explorer.Migrator.FillLogsOptimizedFields,
+      Explorer.Migrator.FillLogsCompressedData
     ] do
   config :explorer, migrator, enabled: true
 end
