@@ -460,12 +460,19 @@ defmodule Explorer.Chain.Import do
   defp handle_task_results(task_results, acc_changes) do
     Enum.reduce_while(task_results, {:ok, acc_changes}, fn task_result, {:ok, acc_changes_inner} ->
       case task_result do
-        {:ok, {:ok, changes}} -> {:cont, {:ok, Map.merge(acc_changes_inner, changes)}}
+        {:ok, {:ok, changes}} -> {:cont, {:ok, merge_task_result(acc_changes_inner, changes)}}
         {:ok, {:exception, exception, stacktrace}} -> reraise exception, stacktrace
         {:ok, error} -> {:halt, error}
         {:exit, reason} -> {:halt, reason}
         nil -> {:halt, :timeout}
       end
+    end)
+  end
+
+  defp merge_task_result(changes_acc, changes) do
+    Map.merge(changes_acc, changes, fn
+      _k, v1, v2 when is_list(v1) and is_list(v2) -> v1 ++ v2
+      _k, _v1, v2 -> v2
     end)
   end
 

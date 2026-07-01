@@ -482,7 +482,14 @@ defmodule Explorer.Chain.ImportTest do
         }
       }
 
-      Import.all(params)
+      ctb_chunk_size = Application.get_env(:explorer, :token_balances_import_chunk_size)
+      Application.put_env(:explorer, :token_balances_import_chunk_size, 1)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :token_balances_import_chunk_size, ctb_chunk_size)
+      end)
+
+      assert {:ok, %{address_current_token_balances: [_, _]}} = Import.all(params)
 
       count =
         CurrentTokenBalance
