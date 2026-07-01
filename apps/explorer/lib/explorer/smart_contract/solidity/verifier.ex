@@ -310,24 +310,33 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
   defp is_compiler_version_at_least_0_6_0?("latest"), do: true
 
-  defp is_compiler_version_at_least_0_6_0?(compiler_version) do
-    case compiler_version |> String.split("+", parts: 2) do
-      [version, _] ->
-        digits =
-          version
+  defp is_compiler_version_at_least_0_6_0?(compiler_version) when is_binary(compiler_version) do
+    version =
+      compiler_version
+      |> String.split("+", parts: 2)
+      |> List.first()
+
+    case version do
+      nil ->
+        false
+
+      v when is_binary(v) ->
+        parts =
+          v
           |> String.replace("v", "")
           |> String.split(".")
-          |> Enum.map(fn str ->
-            {num, _} = Integer.parse(str)
-            num
-          end)
 
-        Enum.fetch!(digits, 0) > 0 || Enum.fetch!(digits, 1) >= 6
-
-      _ ->
-        false
+        with [major_str, minor_str | _] <- parts,
+             {major, ""} <- Integer.parse(major_str),
+             {minor, ""} <- Integer.parse(minor_str) do
+          major > 0 || minor >= 6
+        else
+          _ -> false
+        end
     end
   end
+
+  defp is_compiler_version_at_least_0_6_0?(_), do: false
 
   defp compare_bytecodes({:error, :name}, _, _, _), do: {:error, :name}
   defp compare_bytecodes({:error, _}, _, _, _), do: {:error, :compilation}
@@ -400,7 +409,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       !String.contains?(bc_creation_transaction_input, bc_meta) || bc_deployed_bytecode in ["", "0x"] ->
         {:error, :deployed_bytecode}
 
-      solc_local != solc_bc ->
+      is_nil(solc_local) or is_nil(solc_bc) or solc_local != solc_bc ->
         {:error, :compiler_version}
 
       !String.contains?(bc_creation_transaction_input_without_meta, local_bytecode_without_meta) ->
@@ -494,7 +503,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       decoded_meta
     else
       _ ->
-        %{}
+        nil
     end
   end
 
