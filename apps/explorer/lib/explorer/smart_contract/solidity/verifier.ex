@@ -481,6 +481,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       {meta, last_2_bytes}
     else
       _ ->
+        Logger.warning("Could not extract CBOR metadata from deployed bytecode")
         {"", ""}
     end
   end
