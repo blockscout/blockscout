@@ -242,9 +242,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   defp fetch_logs(transaction) do
     full_options =
       [
-        necessity_by_association: %{
-          [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional
-        }
+        address_preloads: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]
       ]
       |> Keyword.merge(@api_true)
 
@@ -264,9 +262,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   defp user_op_to_logs_and_token_transfers(user_op, decoded_input) do
     log_options =
       [
-        necessity_by_association: %{
-          [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional
-        },
+        address_preloads: [:names, :smart_contract, proxy_implementations_smart_contracts_association()],
         limit: @items_limit
       ]
       |> Keyword.merge(@api_true)

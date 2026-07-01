@@ -81,7 +81,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         |> then(fn query ->
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           cond do
-            LogHelper.transaction_hash_migration_finished?() ->
+            LogHelper.fill_transaction_index_address_id_migration_finished?() ->
               join(query, :left, [w, l2_transaction], log in Log,
                 on:
                   log.block_number == w.l2_block_number and log.transaction_index == l2_transaction.index and
@@ -89,7 +89,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
                     log.second_topic == fragment("numeric_to_bytea32(msg_nonce)")
               )
 
-            LogHelper.transaction_hash_migration_started?() ->
+            LogHelper.fill_transaction_index_address_id_migration_started?() ->
               join(query, :left, [w, l2_transaction], log in Log,
                 on:
                   (log.transaction_hash == w.l2_transaction_hash or
@@ -186,7 +186,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     )
     |> then(fn query ->
       cond do
-        LogHelper.transaction_hash_migration_finished?() ->
+        LogHelper.fill_transaction_index_address_id_migration_finished?() ->
           join(query, :left, [w, l2_transaction], log in Log,
             on:
               log.block_number == w.l2_block_number and log.transaction_index == l2_transaction.index and
@@ -194,7 +194,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
                 log.second_topic == fragment("numeric_to_bytea32(msg_nonce)")
           )
 
-        LogHelper.transaction_hash_migration_started?() ->
+        LogHelper.fill_transaction_index_address_id_migration_started?() ->
           join(query, :left, [w, l2_transaction], log in Log,
             on:
               (log.transaction_hash == w.l2_transaction_hash or

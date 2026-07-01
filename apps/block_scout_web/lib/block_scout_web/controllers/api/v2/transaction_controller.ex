@@ -788,11 +788,10 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       full_options =
         [
           necessity_by_association: %{
-            [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional,
-            [transaction: [to_address: [:smart_contract, proxy_implementations_smart_contracts_association()]]] =>
-              :optional,
             :block => :optional
-          }
+          },
+          address_preloads: [:names, :smart_contract, proxy_implementations_smart_contracts_association()],
+          transaction_preloads: [to_address: [:smart_contract, proxy_implementations_smart_contracts_association()]]
         ]
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(@api_true)

@@ -82,7 +82,7 @@ for migrator <- [
       Explorer.Migrator.FillInternalTransactionsAddressIds,
       Explorer.Migrator.TransactionHasTokenTransfers,
       Explorer.Migrator.DeleteNonConsensusLogs,
-      Explorer.Migrator.FillLogsTransactionIndex,
+      Explorer.Migrator.FillLogsTransactionIndexAddressId,
 
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,
@@ -136,7 +136,13 @@ for migrator <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsTokenTransferMethodIdOrderedIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransactionIndexIndexUniqueIndex,
       Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsBlockNumberTransactionIndexNotNull,
-      Explorer.Migrator.HeavyDbIndexOperation.UpdateLogsPrimaryKey
+      Explorer.Migrator.HeavyDbIndexOperation.UpdateLogsPrimaryKey,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdBlockNumberDescIndexDescIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicBlockNumberIndexIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsIndexWithUpdatedPk,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashBlockNumberDescIndexDescIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashFirstTopicBlockNumberIndexIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsDepositsWithdrawalsIndex
     ] do
   config :explorer, migrator, enabled: false
 end
