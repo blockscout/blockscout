@@ -44,7 +44,9 @@ defmodule Explorer.Migrator.CeloAccounts do
       log in Log,
       where:
         log.first_topic in ^Events.account_events() and
-          fragment("right(?, 20)", log.second_topic) not in subquery(excluded_hashes_query),
+          fragment("substring(? FROM octet_length(?) - 20 + 1 FOR 20)", log.second_topic, log.second_topic) not in subquery(
+            excluded_hashes_query
+          ),
       order_by: [asc: log.block_number, asc: log.index]
     )
   end

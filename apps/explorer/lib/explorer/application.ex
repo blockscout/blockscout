@@ -229,7 +229,6 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.EmptyInternalTransactionsData, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.FillInternalTransactionsAddressIds, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.DeleteNonConsensusLogs, :indexer),
-        configure_mode_dependent_process(Explorer.Migrator.FillLogsOptimizedFields, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
           :indexer
@@ -449,13 +448,10 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsBlockNumberTransactionIndexNotNull,
-          :indexer
-        ),
-        configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.UpdateLogsPrimaryKey,
           :indexer
         ),
+        configure_mode_dependent_process(Explorer.Migrator.FillLogsOptimizedFields, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdBlockNumberDescIndexDescIndex,
           :indexer
@@ -478,6 +474,10 @@ defmodule Explorer.Application do
         ),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.DropLogsDepositsWithdrawalsIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsBlockNumberTransactionIndexNotNull,
           :indexer
         ),
         Explorer.Migrator.RefetchContractCodes

@@ -16,7 +16,7 @@ defmodule Explorer.Migrator.FillLogsOptimizedFields do
   alias Explorer.Repo
   alias Explorer.Utility.AddressIdToAddressHash
 
-  @migration_name "fill_logs_transaction_index_address_id"
+  @migration_name "fill_logs_optimized_fields"
 
   @impl FillingMigration
   def migration_name, do: @migration_name

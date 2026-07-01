@@ -18,7 +18,7 @@ defmodule Explorer.Migrator.FillLogsOptimizedFieldsTest do
       "completed"
     )
 
-    assert MigrationStatus.get_status("fill_logs_transaction_index_address_id") == nil
+    assert MigrationStatus.get_status("fill_logs_optimized_fields") == nil
 
     Application.put_env(:explorer, FillLogsOptimizedFields, batch_size: 100, timeout: 0)
 
@@ -27,7 +27,7 @@ defmodule Explorer.Migrator.FillLogsOptimizedFieldsTest do
     wait_for_results(fn ->
       Repo.one!(
         from(ms in MigrationStatus,
-          where: ms.migration_name == ^"fill_logs_transaction_index_address_id" and ms.status == "completed"
+          where: ms.migration_name == ^"fill_logs_optimized_fields" and ms.status == "completed"
         )
       )
     end)

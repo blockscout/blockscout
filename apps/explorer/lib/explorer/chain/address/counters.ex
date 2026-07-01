@@ -55,9 +55,7 @@ defmodule Explorer.Chain.Address.Counters do
   @transactions_types [:transactions_from, :transactions_to, :transactions_contract]
 
   defp address_hash_to_logs_query(address_hash) do
-    Log
-    |> Log.join_address_mapping_query()
-    |> where(as(:address_mapping).address_hash == ^address_hash)
+    Log.address_match_query(Log, address_hash)
   end
 
   defp address_hash_to_validated_blocks_query(address_hash) do
