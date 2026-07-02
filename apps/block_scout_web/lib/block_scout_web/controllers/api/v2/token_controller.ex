@@ -826,7 +826,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   defp maybe_run_fill_metadata_url_task(token_instance, token) do
     if not is_nil(token_instance.metadata) && is_nil(token_instance.skip_metadata_url) do
       Task.async(fn ->
-        BackfillMetadataURL.update_batch([
+        BackfillMetadataURL.update_batch_with_results([
           {token_instance.token_contract_address_hash, token_instance.token_id, token.type}
         ])
       end)

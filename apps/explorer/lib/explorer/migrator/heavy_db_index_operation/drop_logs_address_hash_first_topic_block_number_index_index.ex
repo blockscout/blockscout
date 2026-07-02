@@ -1,17 +1,18 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
-defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsBlockNumberTransactionIndexNotNull do
+defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashFirstTopicBlockNumberIndexIndex do
   @moduledoc """
-  Validate `NOT NULL` constraints for `logs` (`block_number`, `transaction_index`).
+  Drops B-tree index `logs_address_hash_first_topic_block_number_index_index` on `logs` table for (`address_hash`, `first_topic`, `block_number`, `index`) columns.
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
   alias Explorer.Migrator.{FillLogsTransactionIndexAddressId, HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashBlockNumberDescIndexDescIndex
+  alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :logs
-  @index_name "logs_not_null_constraints"
-  @columns ["block_number", "transaction_index"]
-  @operation_type :create
+  @index_name "logs_address_hash_first_topic_block_number_index_index"
+  @operation_type :drop
 
   @impl HeavyDbIndexOperation
   def table_name, do: @table_name
@@ -25,27 +26,29 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsBlockNumberTransac
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
     do: [
-      FillLogsTransactionIndexAddressId.migration_name()
+      FillLogsTransactionIndexAddressId.migration_name(),
+      DropLogsAddressHashBlockNumberDescIndexDescIndex.migration_name()
     ]
 
   @impl HeavyDbIndexOperation
   def db_index_operation do
-    HeavyDbIndexOperationHelper.validate_not_null_db_index_operation(@table_name, @columns)
+    HeavyDbIndexOperationHelper.safely_drop_db_index(@index_name)
   end
 
   @impl HeavyDbIndexOperation
   def check_db_index_operation_progress do
-    HeavyDbIndexOperationHelper.validate_not_null_check_db_index_operation_progress(@table_name, @index_name, @columns)
+    operation = HeavyDbIndexOperationHelper.drop_index_query_string(@index_name)
+    HeavyDbIndexOperationHelper.check_db_index_operation_progress(@index_name, operation)
   end
 
   @impl HeavyDbIndexOperation
   def db_index_operation_status do
-    HeavyDbIndexOperationHelper.validate_not_null_db_index_operation_status(@table_name, @columns)
+    HeavyDbIndexOperationHelper.db_index_dropping_status(@index_name)
   end
 
   @impl HeavyDbIndexOperation
   def restart_db_index_operation do
-    HeavyDbIndexOperationHelper.validate_not_null_restart_db_index_operation(@table_name, @columns)
+    HeavyDbIndexOperationHelper.safely_drop_db_index(@index_name)
   end
 
   @impl HeavyDbIndexOperation

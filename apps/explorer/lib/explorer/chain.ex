@@ -140,6 +140,7 @@ defmodule Explorer.Chain do
   @type ip :: {:ip, String.t()}
   @type show_scam_tokens? :: {:show_scam_tokens?, true | false}
   @type timeout_option :: {:timeout, timeout() | nil}
+  @type address_preloads_option :: {:address_preloads, Keyword.t()}
 
   def wrapped_union_subquery(query) do
     from(
@@ -196,11 +197,10 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
-  @spec address_to_logs(Hash.Address.t(), [paging_options | necessity_by_association_option | api? | timeout_option]) ::
+  @spec address_to_logs(Hash.Address.t(), [paging_options | api? | timeout_option | address_preloads_option]) ::
           [Log.t()]
   def address_to_logs(address_hash, csv_export?, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     transaction_preloads_from_options = Keyword.get(options, :transaction_preloads, [])
     timeout = Keyword.get(options, :timeout)
 
@@ -213,15 +213,12 @@ defmodule Explorer.Chain do
         to_block = to_block(options)
 
         base =
-          from(log in Log,
-            order_by: [desc: log.block_number, desc: log.index],
-            where: log.address_hash == ^address_hash,
-            limit: ^paging_options.page_size,
-            select: log,
-            inner_join: block in Block,
-            on: block.number == log.block_number,
-            where: block.consensus == true
-          )
+          Log
+          |> Log.address_match_query(address_hash)
+          |> join(:inner, [log], block in Block, on: block.number == log.block_number)
+          |> where([_l, block], block.consensus == true)
+          |> order_by([log], desc: log.block_number, desc: log.index)
+          |> limit(^paging_options.page_size)
 
         transaction_preloads =
           if csv_export? do
@@ -240,11 +237,11 @@ defmodule Explorer.Chain do
         |> page_logs(paging_options)
         |> filter_topic(Keyword.get(options, :topic))
         |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
-        |> join_associations(necessity_by_association)
         |> select_repo(options).all(ExplorerHelper.maybe_timeout(timeout))
         |> Enum.take(paging_options.page_size)
         |> Log.preload_block(select_repo(options))
         |> Log.preload_transaction(transaction_preloads, select_repo(options))
+        |> Log.preload_address(options, select_repo(options))
     end
   end
 
@@ -1836,20 +1833,20 @@ defmodule Explorer.Chain do
       the `index` that are passed.
 
   """
-  @spec transaction_to_logs(Hash.Full.t(), [paging_options | necessity_by_association_option | api?]) :: [Log.t()]
+  @spec transaction_to_logs(Hash.Full.t(), [paging_options | api? | address_preloads_option]) :: [Log.t()]
   def transaction_to_logs(transaction_hash, options \\ []) when is_list(options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    transaction_preloads = Keyword.get(options, :transaction_preloads, [])
 
     Log.join_transaction_query()
     |> where([_, transaction], transaction.hash == ^transaction_hash)
     |> page_transaction_logs(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([log], asc: log.index)
-    |> join_associations(necessity_by_association)
     |> select_repo(options).all()
     |> Log.preload_block(select_repo(options))
-    |> Log.preload_transaction([], select_repo(options))
+    |> Log.preload_transaction(transaction_preloads, select_repo(options))
+    |> Log.preload_address(options, select_repo(options))
   end
 
   @doc """

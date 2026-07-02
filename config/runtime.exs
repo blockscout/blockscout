@@ -955,15 +955,15 @@ config :explorer, Explorer.Migrator.FillInternalTransactionsAddressIds,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_CONCURRENCY", 10),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_TIMEOUT", "5s")
 
-config :explorer, Explorer.Migrator.FillLogsTransactionIndex,
-  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_TRANSACTION_INDEX_BATCH_SIZE", 30),
-  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_TRANSACTION_INDEX_CONCURRENCY", 10),
-  timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_LOGS_TRANSACTION_INDEX_TIMEOUT", "5s")
-
 config :explorer, Explorer.Migrator.TransactionHasTokenTransfers,
   enabled: ConfigHelper.parse_bool_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_ENABLED", "true"),
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_CONCURRENCY", 10)
+
+config :explorer, Explorer.Migrator.FillLogsTransactionIndexAddressId,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_TRANSACTION_INDEX_ADDRESS_ID_BATCH_SIZE", 30),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_TRANSACTION_INDEX_ADDRESS_ID_CONCURRENCY", 10),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_LOGS_TRANSACTION_INDEX_ADDRESS_ID_TIMEOUT", "5s")
 
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),

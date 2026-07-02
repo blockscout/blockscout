@@ -34,8 +34,7 @@ defmodule Explorer.Etherscan.Logs do
     :second_topic,
     :third_topic,
     :fourth_topic,
-    :index,
-    :address_hash
+    :index
   ]
 
   @default_paging_options %{block_number: nil, log_index: nil}
@@ -78,8 +77,8 @@ defmodule Explorer.Etherscan.Logs do
 
     logs_query =
       Log
+      |> Log.address_match_query(address_hash)
       |> where_topic_match(prepared_filter)
-      |> where([log], log.address_hash == ^address_hash)
       |> where([log], log.block_number >= ^prepared_filter.from_block)
       |> where([log], log.block_number <= ^prepared_filter.to_block)
       |> page_logs(paging_options)
@@ -89,9 +88,10 @@ defmodule Explorer.Etherscan.Logs do
         logs_query
         |> subquery()
         |> Log.join_transaction_query()
+        |> Log.join_address_mapping_query()
         |> where(as(:transaction).block_consensus == true)
         |> select([log], map(log, ^@log_fields))
-        |> select_merge(%{
+        |> select_merge([log], %{
           gas_price: as(:transaction).gas_price,
           gas_used: as(:transaction).gas_used,
           transaction_index: as(:transaction).index,
@@ -99,7 +99,8 @@ defmodule Explorer.Etherscan.Logs do
           block_number: as(:transaction).block_number,
           block_timestamp: as(:transaction).block_timestamp,
           block_consensus: as(:transaction).block_consensus,
-          transaction_hash: as(:transaction).hash
+          transaction_hash: as(:transaction).hash,
+          address_hash: coalesce(log.address_hash, as(:address_mapping).address_hash)
         })
         |> order_by([log], asc: as(:transaction).block_number, asc: log.index)
         |> limit(1000)
@@ -113,10 +114,11 @@ defmodule Explorer.Etherscan.Logs do
         logs_query
         |> subquery()
         |> Log.join_transaction_query()
+        |> Log.join_address_mapping_query()
         |> join(:inner, [l, t], block in assoc(t, :block))
-        |> where([_l, _t, block], block.consensus == true)
+        |> where([_l, _t, _am, block], block.consensus == true)
         |> select([log], map(log, ^@log_fields))
-        |> select_merge([_l, transaction, block], %{
+        |> select_merge([log, transaction, address_mapping, block], %{
           gas_price: transaction.gas_price,
           gas_used: transaction.gas_used,
           transaction_index: transaction.index,
@@ -124,9 +126,10 @@ defmodule Explorer.Etherscan.Logs do
           block_number: transaction.block_number,
           block_timestamp: block.timestamp,
           block_consensus: block.consensus,
-          transaction_hash: transaction.hash
+          transaction_hash: transaction.hash,
+          address_hash: coalesce(log.address_hash, address_mapping.address_hash)
         })
-        |> order_by([log, _t, block], asc: block.number, asc: log.index)
+        |> order_by([log, _t, _am, block], asc: block.number, asc: log.index)
         |> limit(1000)
 
       all_transaction_logs_query
@@ -171,14 +174,14 @@ defmodule Explorer.Etherscan.Logs do
         |> then(fn query ->
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           cond do
-            LogHelper.transaction_hash_migration_finished?() ->
+            LogHelper.fill_transaction_index_address_id_migration_finished?() ->
               join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
                 on:
                   block_transaction_data.transaction_index == log.transaction_index and
                     block_transaction_data.block_number == log.block_number
               )
 
-            LogHelper.transaction_hash_migration_started?() ->
+            LogHelper.fill_transaction_index_address_id_migration_started?() ->
               join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
                 on:
                   (block_transaction_data.transaction_hash == log.transaction_hash and
@@ -195,10 +198,12 @@ defmodule Explorer.Etherscan.Logs do
               )
           end
         end)
+        |> Log.join_address_mapping_query()
         |> order_by([_l, block_transaction_data], block_transaction_data.block_number)
         |> limit(1000)
         |> select([_l, block_transaction_data], block_transaction_data)
         |> select_merge([log], map(log, ^@log_fields))
+        |> select_merge([log], %{address_hash: coalesce(log.address_hash, as(:address_mapping).address_hash)})
 
       query_with_block_transaction_data
       |> order_by([log], asc: log.index)
@@ -228,14 +233,14 @@ defmodule Explorer.Etherscan.Logs do
         |> then(fn query ->
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           cond do
-            LogHelper.transaction_hash_migration_finished?() ->
+            LogHelper.fill_transaction_index_address_id_migration_finished?() ->
               join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
                 on:
                   block_transaction_data.transaction_index == log.transaction_index and
                     block_transaction_data.block_number == log.block_number
               )
 
-            LogHelper.transaction_hash_migration_started?() ->
+            LogHelper.fill_transaction_index_address_id_migration_started?() ->
               join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
                 on:
                   (block_transaction_data.transaction_hash == log.transaction_hash and
@@ -252,10 +257,12 @@ defmodule Explorer.Etherscan.Logs do
               )
           end
         end)
+        |> Log.join_address_mapping_query()
         |> order_by([_l, block_transaction_data], block_transaction_data.block_number)
         |> limit(1000)
         |> select([_l, block_transaction_data], block_transaction_data)
         |> select_merge([log], map(log, ^@log_fields))
+        |> select_merge([log], %{address_hash: coalesce(log.address_hash, as(:address_mapping).address_hash)})
 
       query_with_block_transaction_data
       |> order_by([log], asc: log.index)
