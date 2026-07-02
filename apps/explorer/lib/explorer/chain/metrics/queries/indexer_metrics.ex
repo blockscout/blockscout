@@ -353,8 +353,10 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   end
 
   @doc """
-  Query to get percentile distribution of realtime token balances indexing delay in seconds.
-  Returns a map of percentile label to delay in seconds, e.g. %{"p20" => 1.5, "p99" => 42.3}.
+  Query to get percentile distribution of realtime token balances indexing delay.
+  Returns a map of percentile label to delay in nanoseconds, e.g. %{"p20" => 1500000000}.
+  Nanoseconds are expected by the corresponding gauge: its `_seconds` name suffix makes
+  prometheus infer `duration_unit: :seconds`, converting stored values to seconds at scrape time.
   """
   # sobelow_skip ["SQL"]
   @spec erc20_token_balances_realtime_indexing_delay_percentiles() :: map()
@@ -396,8 +398,10 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   end
 
   @doc """
-  Query to get percentile distribution of realtime blocks indexing delay in seconds.
-  Returns a map of percentile label to delay in seconds, e.g. %{"p20" => 0.5, "p99" => 5.3}.
+  Query to get percentile distribution of realtime blocks indexing delay.
+  Returns a map of percentile label to delay in nanoseconds, e.g. %{"p20" => 500000000}.
+  Nanoseconds are expected by the corresponding gauge: its `_seconds` name suffix makes
+  prometheus infer `duration_unit: :seconds`, converting stored values to seconds at scrape time.
   """
   # sobelow_skip ["SQL"]
   @spec blocks_realtime_indexing_delay_percentiles() :: map()

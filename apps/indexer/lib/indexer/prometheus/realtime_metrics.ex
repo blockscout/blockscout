@@ -6,6 +6,8 @@ defmodule Indexer.Prometheus.RealtimeMetrics do
 
   use GenServer
 
+  require Logger
+
   alias Explorer.Chain.Metrics.Queries.IndexerMetrics, as: IndexerMetricsQueries
   alias Indexer.Prometheus.Instrumenter
 
@@ -45,16 +47,17 @@ defmodule Indexer.Prometheus.RealtimeMetrics do
       end)
     end)
     |> Task.yield_many(:timer.minutes(5))
-    |> Enum.each(fn {_task, res} ->
+    |> Enum.each(fn {task, res} ->
       case res do
         {:ok, _} ->
           :ok
 
         {:exit, reason} ->
-          raise "Query fetching realtime indexer metrics terminated: #{inspect(reason)}"
+          Logger.error("Query fetching realtime indexer metrics terminated: #{inspect(reason)}")
 
         nil ->
-          raise "Query fetching realtime indexer metrics timed out."
+          Task.shutdown(task, :brutal_kill)
+          Logger.error("Query fetching realtime indexer metrics timed out.")
       end
     end)
   end
