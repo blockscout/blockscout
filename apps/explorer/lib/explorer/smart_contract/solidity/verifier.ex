@@ -45,6 +45,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
             Exception.format(:error, exception, __STACKTRACE__)
           ]
         end)
+        {:error, Exception.message(exception)}
     end
   end
 
