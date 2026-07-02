@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.MinimalMessage do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "ArbitrumMinimalMessage",
     description: "Minimal Arbitrum cross-chain message with origination and completion fields.",
     type: :object,
     properties: %{

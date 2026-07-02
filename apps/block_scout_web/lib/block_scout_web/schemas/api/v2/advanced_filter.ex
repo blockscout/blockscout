@@ -73,7 +73,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter do
         anyOf: [
           TokenTransfer.TotalERC721,
           TokenTransfer.TotalERC1155,
-          TokenTransfer.TotalERC7984,
           TokenTransfer.Total
         ],
         description:

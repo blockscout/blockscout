@@ -529,7 +529,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     alias BlockScoutWeb.API.V2.SearchController
 
     # leave the same endpoint in v1 in order to keep backward compatibility
-    get("/search", SearchController, :search)
+    get("/search", SearchController, :search_v1_compatibility)
 
     get("/gas-price-oracle", GasPriceOracleController, :gas_price_oracle)
 

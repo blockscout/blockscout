@@ -230,7 +230,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       ok:
         {"List of transactions with pagination information.", "application/json",
          paginated_response(
-           items: Schemas.Transaction.Response,
+           items: Schemas.Transaction,
            next_page_params_example: %{
              "block_number" => 23_532_302,
              "index" => 375
@@ -306,7 +306,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       ok:
         {"ZkSync batch transactions.", "application/json",
          paginated_response(
-           items: Schemas.Transaction.Response,
+           items: Schemas.Transaction,
            next_page_params_example: %{
              "block_number" => 65_361_291,
              "index" => 1
@@ -334,7 +334,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       ok:
         {"Arbitrum batch transactions.", "application/json",
          paginated_response(
-           items: Schemas.Transaction.Response,
+           items: Schemas.Transaction,
            next_page_params_example: %{
              "block_number" => 391_483_842,
              "index" => 0
@@ -403,7 +403,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       ok:
         {"Optimism batch transactions.", "application/json",
          paginated_response(
-           items: Schemas.Transaction.Response,
+           items: Schemas.Transaction,
            next_page_params_example: %{
              "block_number" => 142_678_440,
              "index" => 5
@@ -434,7 +434,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       ok:
         {"Scroll batch transactions.", "application/json",
          paginated_response(
-           items: Schemas.Transaction.Response,
+           items: Schemas.Transaction,
            next_page_params_example: %{
              "block_number" => 14_127_868,
              "index" => 0
@@ -558,7 +558,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       ok:
         {"List of transactions.", "application/json",
          paginated_response(
-           items: Schemas.Transaction.Response,
+           items: Schemas.Transaction,
            next_page_params_example: %{
              "block_number" => 14_127_868,
              "index" => 0
@@ -909,7 +909,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       ok:
         {"Watchlist transactions.", "application/json",
          paginated_response(
-           items: Schemas.Transaction.Response,
+           items: Schemas.Transaction,
            next_page_params_example: %{
              "block_number" => 23_617_990,
              "index" => 128

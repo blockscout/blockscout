@@ -16,7 +16,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.Message do
   OpenApiSpex.schema(
     MinimalMessage.schema()
     |> Helper.extend_schema(
-      title: "Arbitrum.Message",
+      title: "ArbitrumMessage",
       description: "Full Arbitrum cross-chain message.",
       properties: %{
         id: %Schema{

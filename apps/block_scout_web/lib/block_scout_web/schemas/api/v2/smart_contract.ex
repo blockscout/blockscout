@@ -23,7 +23,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract.ChainTypeCustomizations do
         |> Helper.extend_schema(
           properties: %{
             package_name: %Schema{type: :string, nullable: true},
-            github_repository_metadata: %Schema{type: :object, nullable: true}
+            github_repository_metadata: %Schema{type: :object, nullable: true, additionalProperties: true}
           },
           required: []
         )
@@ -32,7 +32,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract.ChainTypeCustomizations do
         schema
         |> Helper.extend_schema(
           properties: %{
-            zk_compiler_version: %Schema{type: :string, nullable: true}
+            zk_compiler_version: %Schema{type: :string, nullable: true},
+            # zksync stores optimization_runs as a string (not an integer like other chains)
+            optimization_runs: %Schema{type: :string, nullable: true}
           },
           required: []
         )
@@ -62,6 +64,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract do
 
   alias BlockScoutWeb.Schemas.API.V2.General
   alias BlockScoutWeb.Schemas.API.V2.SmartContract.ChainTypeCustomizations
+  alias Explorer.Chain.SmartContract
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -70,7 +73,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract do
       type: :object,
       properties: %{
         file_path: %Schema{type: :string, nullable: true},
-        creation_status: %Schema{type: :string, nullable: true},
+        creation_status: %Schema{type: :string, enum: ["success", "failed", "selfdestructed"], nullable: true},
         source_code: %Schema{type: :string, nullable: true},
         deployed_bytecode: %Schema{type: :string, nullable: true},
         coin_balance: %Schema{type: :string, nullable: true},
@@ -81,7 +84,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract do
           enum: ["solidity", "vyper", "yul", "scilla", "stylus_rust", "geas"],
           nullable: true
         },
-        license_type: %Schema{type: :string, nullable: true},
+        license_type: %Schema{
+          type: :string,
+          enum: SmartContract.license_types_enum() |> Keyword.keys() |> Enum.map(&Atom.to_string/1),
+          nullable: true
+        },
         market_cap: %Schema{type: :string, nullable: true},
         optimization_enabled: %Schema{type: :boolean, nullable: true},
         reputation: %Schema{type: :string, nullable: true},
@@ -89,12 +96,33 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract do
         verified_at: %Schema{type: :string, format: :"date-time", nullable: true},
         verification_metadata: %Schema{type: :object, nullable: true},
         verified_twin_address_hash: %Schema{type: :string, nullable: true},
-        compiler_settings: %Schema{type: :object, nullable: true},
+        compiler_settings: %Schema{type: :object, nullable: true, additionalProperties: true},
         optimization_runs: %Schema{type: :integer, nullable: true},
         sourcify_repo_url: %Schema{type: :string, nullable: true},
+        # Each entry is a `[decoded_value, abi_input]` pair: the decoded value is a string
+        # (scalar) or a (possibly nested) array (array/tuple types), and `abi_input` is the
+        # ABI input descriptor (`type`, `name`, ...). OpenAPI 3.0 can't express the fixed
+        # 2-tuple, so it's modeled as an array whose items are one of those shapes.
         decoded_constructor_args: %Schema{
           type: :array,
-          items: %Schema{type: :array, items: %Schema{anyOf: [%Schema{type: :object}, %Schema{type: :string}]}},
+          items: %Schema{
+            type: :array,
+            items: %Schema{
+              anyOf: [
+                %Schema{type: :string},
+                %Schema{type: :array},
+                %Schema{
+                  type: :object,
+                  description: "ABI input descriptor",
+                  properties: %{
+                    type: %Schema{type: :string},
+                    name: %Schema{type: :string, nullable: true}
+                  },
+                  additionalProperties: true
+                }
+              ]
+            }
+          },
           nullable: true
         },
         is_verified_via_verifier_alliance: %Schema{type: :boolean, nullable: true},
@@ -114,7 +142,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract do
           type: :array,
           items: %Schema{
             type: :object,
-            properties: %{name: %Schema{type: :string, nullable: true}, address_hash: General.AddressHash}
+            properties: %{name: %Schema{type: :string, nullable: true}, address_hash: General.AddressHash},
+            required: [:name, :address_hash],
+            additionalProperties: false
           },
           nullable: true
         },
@@ -136,7 +166,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract do
           nullable: true
         },
         certified: %Schema{type: :boolean},
-        conflicting_implementations: %Schema{type: :array, nullable: true, items: %Schema{type: :object}},
+        conflicting_implementations: %Schema{
+          type: :array,
+          nullable: true,
+          items: %Schema{
+            type: :object,
+            properties: %{
+              proxy_type: General.ProxyType,
+              implementations: %Schema{type: :array, items: General.Implementation, nullable: false}
+            },
+            required: [:proxy_type, :implementations],
+            additionalProperties: false
+          }
+        },
         abi: %Schema{type: :array, nullable: true, items: %Schema{type: :object}},
         is_changed_bytecode: %Schema{type: :boolean, nullable: true},
         is_partially_verified: %Schema{type: :boolean, nullable: true},
@@ -166,6 +208,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract.ListItem do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.SmartContract.ChainTypeCustomizations
+  alias Explorer.Chain.SmartContract
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -183,7 +226,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract.ListItem do
         market_cap: %Schema{type: :string, nullable: true},
         has_constructor_args: %Schema{type: :boolean, nullable: true},
         coin_balance: %Schema{type: :string, nullable: true},
-        license_type: %Schema{type: :string, nullable: true},
+        license_type: %Schema{
+          type: :string,
+          enum: SmartContract.license_types_enum() |> Keyword.keys() |> Enum.map(&Atom.to_string/1),
+          nullable: true
+        },
         certified: %Schema{type: :boolean},
         reputation: %Schema{type: :string, nullable: true}
       },

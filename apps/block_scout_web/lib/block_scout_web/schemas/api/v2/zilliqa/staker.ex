@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Zilliqa.Staker do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "ZilliqaStaker",
     description: "Zilliqa Staker struct.",
     type: :object,
     properties: %{

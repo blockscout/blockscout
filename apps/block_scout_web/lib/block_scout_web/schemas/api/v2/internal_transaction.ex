@@ -22,6 +22,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.InternalTransaction do
       type: %Schema{
         type: :string,
         nullable: false,
+        # Rendered as `call_type || type` (CallType ∪ Type values); `invalid` is Arbitrum-only.
+        enum: [
+          "call",
+          "callcode",
+          "delegatecall",
+          "staticcall",
+          "create",
+          "create2",
+          "reward",
+          "selfdestruct",
+          "stop",
+          "invalid"
+        ],
         description: "Type of the internal transaction (call, create, etc.)"
       },
       transaction_hash: General.FullHash,

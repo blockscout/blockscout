@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.Bundle do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "AccountAbstractionBundle",
     description: "Bundle struct.",
     type: :object,
     properties: %{
