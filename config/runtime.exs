@@ -1786,6 +1786,11 @@ config :indexer, Indexer.Prometheus.Metrics,
       ConfigHelper.parse_bool_env_var("INDEXER_METRICS_ENABLED_MISSING_ARCHIVAL_TOKEN_BALANCES_COUNT", "true")
   }
 
+config :indexer, Indexer.Prometheus.RealtimeMetrics,
+  enabled:
+    app_mode in [:indexer, :all] &&
+      ConfigHelper.parse_bool_env_var("INDEXER_REALTIME_METRICS_ENABLED", "true")
+
 config :ex_aws,
   json_codec: Jason,
   access_key_id: System.get_env("NFT_MEDIA_HANDLER_AWS_ACCESS_KEY_ID"),

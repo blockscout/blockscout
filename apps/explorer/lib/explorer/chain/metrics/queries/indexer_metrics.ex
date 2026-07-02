@@ -351,4 +351,84 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
     |> Application.get_env(Indexer.Fetcher.MultichainSearchDb.CountersExportQueue.Supervisor, [])
     |> Keyword.get(:disabled?) == true
   end
+
+  @doc """
+  Query to get percentile distribution of realtime token balances indexing delay in seconds.
+  Returns a map of percentile label to delay in seconds, e.g. %{"p20" => 1.5, "p99" => 42.3}.
+  """
+  # sobelow_skip ["SQL"]
+  @spec erc20_token_balances_realtime_indexing_delay_percentiles() :: map()
+  def erc20_token_balances_realtime_indexing_delay_percentiles do
+    sql = """
+    WITH base AS (
+        SELECT (EXTRACT(EPOCH FROM actb.value_fetched_at - b.timestamp) * 1e9)::bigint AS delay_nanoseconds
+        FROM token_transfers tt
+        JOIN blocks b
+        ON tt.block_hash = b.hash
+        LEFT JOIN address_current_token_balances actb
+            ON tt.to_address_hash = actb.address_hash
+            AND actb.token_contract_address_hash = tt.token_contract_address_hash
+            AND actb.block_number = tt.block_number
+        WHERE tt.token_type = 'ERC-20'
+          AND tt.block_consensus = true
+          AND actb.value_fetched_at IS NOT NULL
+        ORDER BY tt.block_number DESC
+        LIMIT 1000
+    )
+    SELECT
+        percentile_cont(0.20) WITHIN GROUP (ORDER BY delay_nanoseconds) AS p20,
+        percentile_cont(0.40) WITHIN GROUP (ORDER BY delay_nanoseconds) AS p40,
+        percentile_cont(0.60) WITHIN GROUP (ORDER BY delay_nanoseconds) AS p60,
+        percentile_cont(0.80) WITHIN GROUP (ORDER BY delay_nanoseconds) AS p80,
+        percentile_cont(0.90) WITHIN GROUP (ORDER BY delay_nanoseconds) AS p90,
+        percentile_cont(0.95) WITHIN GROUP (ORDER BY delay_nanoseconds) AS p95,
+        percentile_cont(0.99) WITHIN GROUP (ORDER BY delay_nanoseconds) AS p99
+    FROM base
+    """
+
+    case SQL.query(Repo, sql, [], timeout: :infinity) do
+      {:ok, %Postgrex.Result{columns: columns, rows: [row]}} ->
+        columns |> Enum.zip(row) |> Map.new()
+
+      _ ->
+        %{}
+    end
+  end
+
+  @doc """
+  Query to get percentile distribution of realtime blocks indexing delay in seconds.
+  Returns a map of percentile label to delay in seconds, e.g. %{"p20" => 0.5, "p99" => 5.3}.
+  """
+  # sobelow_skip ["SQL"]
+  @spec blocks_realtime_indexing_delay_percentiles() :: map()
+  def blocks_realtime_indexing_delay_percentiles do
+    sql = """
+    WITH stats AS (
+        SELECT percentile_cont(
+            ARRAY[0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.99]
+        ) WITHIN GROUP (ORDER BY delay_nanoseconds) AS vals
+        FROM (
+            SELECT (EXTRACT(EPOCH FROM inserted_at - timestamp) * 1e9)::bigint AS delay_nanoseconds
+            FROM blocks
+            WHERE timestamp AT TIME ZONE 'UTC' >= NOW() AT TIME ZONE 'UTC' - INTERVAL '5 minutes'
+              AND consensus = true
+            ORDER BY number DESC
+        ) s
+    )
+    SELECT t.percentile, t.delay_nanoseconds
+    FROM stats
+    CROSS JOIN LATERAL unnest(
+        ARRAY[20, 30, 40, 50, 60, 70, 80, 90, 99],
+        stats.vals
+    ) AS t(percentile, delay_nanoseconds)
+    """
+
+    case SQL.query(Repo, sql, [], timeout: :infinity) do
+      {:ok, %Postgrex.Result{rows: rows}} ->
+        Map.new(rows, fn [pct, val] -> {"p#{pct}", val} end)
+
+      _ ->
+        %{}
+    end
+  end
 end
