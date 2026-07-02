@@ -81,27 +81,34 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         |> then(fn query ->
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           cond do
-            LogHelper.fill_transaction_index_address_id_migration_finished?() ->
+            LogHelper.fill_optimized_fields_migration_finished?() ->
               join(query, :left, [w, l2_transaction], log in Log,
                 on:
                   log.block_number == w.l2_block_number and log.transaction_index == l2_transaction.index and
                     log.first_topic == ^@message_passed_event and
-                    log.second_topic == fragment("numeric_to_bytea32(msg_nonce)")
+                    log.second_topic == fragment("bytea_ltrim_zeroes(numeric_to_bytea32(msg_nonce))")
               )
 
-            LogHelper.fill_transaction_index_address_id_migration_started?() ->
+            LogHelper.fill_optimized_fields_migration_started?() ->
+              {:ok, extended_first_topic} = Hash.Full.dump(@message_passed_event)
+
               join(query, :left, [w, l2_transaction], log in Log,
                 on:
                   (log.transaction_hash == w.l2_transaction_hash or
                      (log.block_number == w.l2_block_number and log.transaction_index == l2_transaction.index)) and
-                    log.first_topic == ^@message_passed_event and
-                    log.second_topic == fragment("numeric_to_bytea32(msg_nonce)")
+                    (log.first_topic == ^@message_passed_event or
+                       log.first_topic == type(^extended_first_topic, :binary)) and
+                    (log.second_topic == fragment("numeric_to_bytea32(msg_nonce)") or
+                       log.second_topic == fragment("bytea_ltrim_zeroes(numeric_to_bytea32(msg_nonce))"))
               )
 
             true ->
+              {:ok, extended_first_topic} = Hash.Full.dump(@message_passed_event)
+
               join(query, :left, [w, l2_transaction], log in Log,
                 on:
-                  log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and
+                  log.transaction_hash == w.l2_transaction_hash and
+                    log.first_topic == type(^extended_first_topic, :binary) and
                     log.second_topic == fragment("numeric_to_bytea32(msg_nonce)")
               )
           end
@@ -186,27 +193,34 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     )
     |> then(fn query ->
       cond do
-        LogHelper.fill_transaction_index_address_id_migration_finished?() ->
+        LogHelper.fill_optimized_fields_migration_finished?() ->
           join(query, :left, [w, l2_transaction], log in Log,
             on:
               log.block_number == w.l2_block_number and log.transaction_index == l2_transaction.index and
                 log.first_topic == ^@message_passed_event and
-                log.second_topic == fragment("numeric_to_bytea32(msg_nonce)")
+                log.second_topic == fragment("bytea_ltrim_zeroes(numeric_to_bytea32(msg_nonce))")
           )
 
-        LogHelper.fill_transaction_index_address_id_migration_started?() ->
+        LogHelper.fill_optimized_fields_migration_started?() ->
+          {:ok, cast_first_topic} = Hash.Full.cast(@message_passed_event)
+          {:ok, extended_first_topic} = Hash.Full.dump(cast_first_topic)
+
           join(query, :left, [w, l2_transaction], log in Log,
             on:
               (log.transaction_hash == w.l2_transaction_hash or
                  (log.block_number == w.l2_block_number and log.transaction_index == l2_transaction.index)) and
-                log.first_topic == ^@message_passed_event and
-                log.second_topic == fragment("numeric_to_bytea32(msg_nonce)")
+                (log.first_topic == ^@message_passed_event or log.first_topic == type(^extended_first_topic, :binary)) and
+                (log.second_topic == fragment("numeric_to_bytea32(msg_nonce)") or
+                   log.second_topic == fragment("bytea_ltrim_zeroes(numeric_to_bytea32(msg_nonce))"))
           )
 
         true ->
+          {:ok, cast_first_topic} = Hash.Full.cast(@message_passed_event)
+          {:ok, extended_first_topic} = Hash.Full.dump(cast_first_topic)
+
           join(query, :left, [w, l2_transaction], log in Log,
             on:
-              log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and
+              log.transaction_hash == w.l2_transaction_hash and log.first_topic == type(^extended_first_topic, :binary) and
                 log.second_topic == fragment("numeric_to_bytea32(msg_nonce)")
           )
       end

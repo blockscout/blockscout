@@ -248,11 +248,14 @@ defmodule Explorer.Chain do
   defp filter_topic(base_query, null) when null in [nil, "", "null"], do: base_query
 
   defp filter_topic(base_query, topic) do
-    from(log in base_query,
-      where:
-        log.first_topic == ^topic or log.second_topic == ^topic or log.third_topic == ^topic or
-          log.fourth_topic == ^topic
-    )
+    dynamic =
+      dynamic(
+        [log],
+        log.first_topic == ^topic or
+          ^Log.filter_by_topic_dynamic([:second_topic, :third_topic, :fourth_topic], [[topic], [topic], [topic]])
+      )
+
+    from(log in base_query, where: ^dynamic)
   end
 
   @doc """

@@ -23,10 +23,10 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPri
       |> where([log], log.first_topic == ^epoch_payment_distributions_signature)
       |> then(fn query ->
         cond do
-          LogHelper.fill_transaction_index_address_id_migration_finished?() ->
+          LogHelper.fill_optimized_fields_migration_finished?() ->
             where(query, [log], is_nil(log.transaction_index))
 
-          LogHelper.fill_transaction_index_address_id_migration_started?() ->
+          LogHelper.fill_optimized_fields_migration_started?() ->
             where(query, [log], is_nil(log.transaction_hash) and is_nil(log.transaction_index))
 
           true ->

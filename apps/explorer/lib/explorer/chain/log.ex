@@ -48,9 +48,9 @@ defmodule Explorer.Chain.Log.Schema do
       typed_schema "logs" do
         field(:data, Data, null: false)
         field(:first_topic, Hash.Full)
-        field(:second_topic, Hash.Full)
-        field(:third_topic, Hash.Full)
-        field(:fourth_topic, Hash.Full)
+        field(:second_topic, Hash.Trimmed)
+        field(:third_topic, Hash.Trimmed)
+        field(:fourth_topic, Hash.Trimmed)
         field(:index, :integer, primary_key: true, null: false)
         field(:block_number, :integer, primary_key: true)
 
@@ -539,10 +539,10 @@ defmodule Explorer.Chain.Log do
         [%Transaction{hash: transaction_hash, block_number: block_number, index: transaction_index}] ->
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
           cond do
-            LogHelper.fill_transaction_index_address_id_migration_finished?() ->
+            LogHelper.fill_optimized_fields_migration_finished?() ->
               where(query, [log], log.block_number == ^block_number and log.transaction_index == ^transaction_index)
 
-            LogHelper.fill_transaction_index_address_id_migration_started?() ->
+            LogHelper.fill_optimized_fields_migration_started?() ->
               where(
                 query,
                 [log],
@@ -626,10 +626,26 @@ defmodule Explorer.Chain.Log do
   """
   @spec first_topic_is_not_deposit_or_withdrawal_signature() :: Ecto.Query.dynamic_expr()
   def first_topic_is_not_deposit_or_withdrawal_signature do
-    dynamic(
-      [log: log],
-      log.first_topic not in [^TokenTransfer.weth_deposit_signature(), ^TokenTransfer.weth_withdrawal_signature()]
-    )
+    topic_values = [TokenTransfer.weth_deposit_signature(), TokenTransfer.weth_withdrawal_signature()]
+
+    if LogHelper.fill_optimized_fields_migration_finished?() do
+      dynamic([log: log], log.first_topic not in ^topic_values)
+    else
+      trimmed_values =
+        topic_values
+        |> Enum.flat_map(fn topic ->
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          case Hash.Trimmed.dump(topic) do
+            {:ok, trimmed} -> [trimmed]
+            :error -> []
+          end
+        end)
+
+      dynamic(
+        [log: log],
+        log.first_topic not in ^topic_values and log.first_topic not in type(^trimmed_values, {:array, :binary})
+      )
+    end
   end
 
   @doc """
@@ -670,12 +686,65 @@ defmodule Explorer.Chain.Log do
     )
   end
 
+  @doc """
+  Filters logs by one or multiple topic fields.
+
+  When `topic_name` is an atom, filters the query by the given topic field and
+  values. `topic_values` can be a single value or a list of values.
+
+  When `topic_names` and `topic_values_list` are lists, builds an `OR` condition
+  where each topic field is matched against the corresponding list of values.
+  """
+  @spec filter_by_topic_query(Ecto.Queryable.t(), atom() | [atom()], any() | [[any()]]) :: Ecto.Query.t()
+  def filter_by_topic_query(query, topic_name, topic_values) when is_atom(topic_name) do
+    where(query, [l], ^topic_filter_dynamic(topic_name, List.wrap(topic_values)))
+  end
+
+  def filter_by_topic_query(query, topic_names, topic_values_list)
+      when is_list(topic_names) and is_list(topic_values_list) do
+    where(query, [l], ^filter_by_topic_dynamic(topic_names, topic_values_list))
+  end
+
+  def filter_by_topic_dynamic(topic_names, topic_values_list) do
+    topic_names
+    |> Enum.zip(topic_values_list)
+    |> Enum.reduce(dynamic(false), fn {topic_name, topic_values}, dynamic ->
+      dynamic(
+        [l],
+        ^dynamic or ^topic_filter_dynamic(topic_name, topic_values)
+      )
+    end)
+  end
+
+  def topic_filter_dynamic(:first_topic, topic_values), do: dynamic([l], l.first_topic in ^topic_values)
+
+  def topic_filter_dynamic(topic_name, topic_values) do
+    if LogHelper.fill_optimized_fields_migration_finished?() do
+      dynamic([l], field(l, ^topic_name) in ^topic_values)
+    else
+      extended_values =
+        topic_values
+        |> Enum.flat_map(fn topic ->
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          case Hash.Full.dump(topic) do
+            {:ok, extended} -> [extended]
+            :error -> []
+          end
+        end)
+
+      dynamic(
+        [l],
+        field(l, ^topic_name) in ^topic_values or field(l, ^topic_name) in type(^extended_values, {:array, :binary})
+      )
+    end
+  end
+
   defp by_transaction_query(query, transaction_hash, block_number, transaction_index) do
     cond do
-      LogHelper.fill_transaction_index_address_id_migration_finished?() ->
+      LogHelper.fill_optimized_fields_migration_finished?() ->
         where(query, [l], l.block_number == ^block_number and l.transaction_index == ^transaction_index)
 
-      LogHelper.fill_transaction_index_address_id_migration_started?() ->
+      LogHelper.fill_optimized_fields_migration_started?() ->
         where(
           query,
           [l],
@@ -694,13 +763,13 @@ defmodule Explorer.Chain.Log do
   @spec join_transaction_query(Ecto.Queryable.t()) :: Ecto.Query.t()
   def join_transaction_query(query \\ __MODULE__) do
     cond do
-      LogHelper.fill_transaction_index_address_id_migration_finished?() ->
+      LogHelper.fill_optimized_fields_migration_finished?() ->
         join(query, :inner, [l], t in Transaction,
           on: l.block_number == t.block_number and l.transaction_index == t.index,
           as: :transaction
         )
 
-      LogHelper.fill_transaction_index_address_id_migration_started?() ->
+      LogHelper.fill_optimized_fields_migration_started?() ->
         join(query, :inner, [l], t in Transaction,
           on: l.transaction_hash == t.hash or (l.block_number == t.block_number and l.transaction_index == t.index),
           as: :transaction
@@ -718,7 +787,7 @@ defmodule Explorer.Chain.Log do
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def join_to_token_transfer_query(query) do
     cond do
-      LogHelper.fill_transaction_index_address_id_migration_finished?() ->
+      LogHelper.fill_optimized_fields_migration_finished?() ->
         query
         |> join(:left, [tt], t in assoc(tt, :transaction))
         |> join(:left, [tt, t], l in __MODULE__,
@@ -726,7 +795,7 @@ defmodule Explorer.Chain.Log do
           as: :log
         )
 
-      LogHelper.fill_transaction_index_address_id_migration_started?() ->
+      LogHelper.fill_optimized_fields_migration_started?() ->
         query
         |> join(:left, [tt], t in assoc(tt, :transaction))
         |> join(:left, [tt, t], l in __MODULE__,
@@ -764,11 +833,11 @@ defmodule Explorer.Chain.Log do
 
   def address_match_query(query, address_hashes) when is_list(address_hashes) do
     cond do
-      LogHelper.fill_transaction_index_address_id_migration_finished?() ->
+      LogHelper.fill_optimized_fields_migration_finished?() ->
         address_ids = AddressIdToAddressHash.hashes_to_ids(address_hashes)
         where(query, [l], l.address_id in ^address_ids)
 
-      LogHelper.fill_transaction_index_address_id_migration_started?() ->
+      LogHelper.fill_optimized_fields_migration_started?() ->
         address_ids = AddressIdToAddressHash.hashes_to_ids(address_hashes)
         where(query, [l], l.address_id in ^address_ids or l.address_hash in ^address_hashes)
 
@@ -779,11 +848,11 @@ defmodule Explorer.Chain.Log do
 
   def address_match_query(query, address_hash) do
     cond do
-      LogHelper.fill_transaction_index_address_id_migration_finished?() ->
+      LogHelper.fill_optimized_fields_migration_finished?() ->
         address_id = AddressIdToAddressHash.hash_to_id(address_hash)
         where(query, [l], ^address_id_match_dynamic(address_id))
 
-      LogHelper.fill_transaction_index_address_id_migration_started?() ->
+      LogHelper.fill_optimized_fields_migration_started?() ->
         address_id = AddressIdToAddressHash.hash_to_id(address_hash)
         where(query, [l], ^address_id_or_hash_match_dynamic(address_id, address_hash))
 
