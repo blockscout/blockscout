@@ -60,7 +60,7 @@ defmodule Explorer.Migrator.BackfillMetadataURL do
     |> length()
   end
 
-  `@doc` """
+  @doc """
     Same as `update_batch/1`, but returns the upserted `Explorer.Chain.Token.Instance` records instead of their count.
 
     Used by callers that need to inspect the per-instance result (e.g. to detect
