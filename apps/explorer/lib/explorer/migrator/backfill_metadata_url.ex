@@ -55,6 +55,18 @@ defmodule Explorer.Migrator.BackfillMetadataURL do
 
   @impl FillingMigration
   def update_batch(token_instances) do
+    token_instances
+    |> update_batch_with_results()
+    |> length()
+  end
+
+  @doc """
+    Same as `update_batch/1`, but returns the upserted `Explorer.Chain.Token.Instance` records
+    instead of their count. Used by callers that need to inspect the per-instance result (e.g.
+    to detect a `blacklist` error for a single, on-demand refreshed instance).
+  """
+  @spec update_batch_with_results([any()]) :: [map()]
+  def update_batch_with_results(token_instances) do
     now = DateTime.utc_now()
 
     prepared_params =
@@ -64,13 +76,14 @@ defmodule Explorer.Migrator.BackfillMetadataURL do
       |> Enum.map(&process_result/1)
       |> Enum.map(&Map.merge(&1, %{updated_at: now, inserted_at: now}))
 
-    {count, _} =
+    {_, result} =
       Repo.insert_all(Instance, prepared_params,
         on_conflict: token_instance_on_conflict(),
-        conflict_target: [:token_id, :token_contract_address_hash]
+        conflict_target: [:token_id, :token_contract_address_hash],
+        returning: true
       )
 
-    count
+    result
   end
 
   @impl FillingMigration
