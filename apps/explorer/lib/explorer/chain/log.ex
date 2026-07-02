@@ -686,6 +686,16 @@ defmodule Explorer.Chain.Log do
     )
   end
 
+  @doc """
+  Filters logs by one or multiple topic fields.
+
+  When `topic_name` is an atom, filters the query by the given topic field and
+  values. `topic_values` can be a single value or a list of values.
+
+  When `topic_names` and `topic_values_list` are lists, builds an `OR` condition
+  where each topic field is matched against the corresponding list of values.
+  """
+  @spec filter_by_topic_query(Ecto.Queryable.t(), atom() | [atom()], any() | [[any()]]) :: Ecto.Query.t()
   def filter_by_topic_query(query, topic_name, topic_values) when is_atom(topic_name) do
     where(query, [l], ^topic_filter_dynamic(topic_name, List.wrap(topic_values)))
   end

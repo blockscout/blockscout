@@ -202,7 +202,8 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
           )
 
         LogHelper.fill_optimized_fields_migration_started?() ->
-          {:ok, extended_first_topic} = Hash.Full.dump(@message_passed_event)
+          {:ok, cast_first_topic} = Hash.Full.cast(@message_passed_event)
+          {:ok, extended_first_topic} = Hash.Full.dump(cast_first_topic)
 
           join(query, :left, [w, l2_transaction], log in Log,
             on:
@@ -214,7 +215,8 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
           )
 
         true ->
-          {:ok, extended_first_topic} = Hash.Full.dump(@message_passed_event)
+          {:ok, cast_first_topic} = Hash.Full.cast(@message_passed_event)
+          {:ok, extended_first_topic} = Hash.Full.dump(cast_first_topic)
 
           join(query, :left, [w, l2_transaction], log in Log,
             on:
