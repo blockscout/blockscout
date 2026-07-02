@@ -64,6 +64,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract do
 
   alias BlockScoutWeb.Schemas.API.V2.General
   alias BlockScoutWeb.Schemas.API.V2.SmartContract.ChainTypeCustomizations
+  alias Explorer.Chain.SmartContract
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -85,7 +86,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract do
         },
         license_type: %Schema{
           type: :string,
-          enum: Explorer.Chain.SmartContract.license_types_enum() |> Keyword.keys() |> Enum.map(&Atom.to_string/1),
+          enum: SmartContract.license_types_enum() |> Keyword.keys() |> Enum.map(&Atom.to_string/1),
           nullable: true
         },
         market_cap: %Schema{type: :string, nullable: true},
@@ -207,6 +208,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract.ListItem do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.SmartContract.ChainTypeCustomizations
+  alias Explorer.Chain.SmartContract
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -226,7 +228,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract.ListItem do
         coin_balance: %Schema{type: :string, nullable: true},
         license_type: %Schema{
           type: :string,
-          enum: Explorer.Chain.SmartContract.license_types_enum() |> Keyword.keys() |> Enum.map(&Atom.to_string/1),
+          enum: SmartContract.license_types_enum() |> Keyword.keys() |> Enum.map(&Atom.to_string/1),
           nullable: true
         },
         certified: %Schema{type: :boolean},
