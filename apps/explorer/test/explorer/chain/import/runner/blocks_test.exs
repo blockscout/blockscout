@@ -899,6 +899,26 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       refute_received {:"$gen_cast", {:lost_consensus, _}}
     end
 
+    test "returns empty list and skips cleanup when no blocks lose consensus" do
+      existing_block = insert(:block, consensus: true, number: 5)
+
+      new_block =
+        params_for(:block,
+          miner_hash: insert(:address).hash,
+          parent_hash: existing_block.hash,
+          number: 6
+        )
+
+      %Ecto.Changeset{valid?: true, changes: new_block_changes} = Block.changeset(%Block{}, new_block)
+
+      opts = %{
+        timeout: 60_000,
+        timestamps: %{updated_at: DateTime.utc_now()}
+      }
+
+      assert {:ok, []} = Blocks.process_blocks_consensus([new_block_changes], Repo, opts)
+    end
+
     test "triggers beacon deposit reorg handling on fresh blocks" do
       Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: true)
 
