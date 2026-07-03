@@ -1,5 +1,18 @@
 # Changelog
 
+## 11.2.2
+
+### 🚀 Features
+
+- Add realtime ERC-20 token balance and block indexing delay metrics ([#14531](https://github.com/blockscout/blockscout/issues/14531))
+
+### 🐛 Bug Fixes
+
+- Fix import result merging for chunked data ([#14528](https://github.com/blockscout/blockscout/issues/14528))
+- Log error instead of silent empty map on CBOR decode failure ([#14510](https://github.com/blockscout/blockscout/issues/14510))
+- Log warning when bytecode metadata hex parsing fails ([#14511](https://github.com/blockscout/blockscout/issues/14511))
+
+
 ## 11.2.1
 
 ### 🐛 Bug Fixes
