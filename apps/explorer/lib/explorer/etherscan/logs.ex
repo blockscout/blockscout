@@ -138,6 +138,7 @@ defmodule Explorer.Etherscan.Logs do
       |> Repo.replica().all()
       |> Log.preload_block()
       |> Log.preload_transaction([], Repo.replica())
+      |> Log.prepare_data()
     end
   end
 

@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Log.Schema do
   alias Explorer.Chain.{
     Address,
     Block,
+    CompressedData,
     Data,
     Hash,
     Transaction
@@ -46,7 +47,8 @@ defmodule Explorer.Chain.Log.Schema do
     quote do
       @primary_key false
       typed_schema "logs" do
-        field(:data, Data, null: false)
+        field(:data, Data)
+        field(:compressed_data, CompressedData)
         field(:first_topic, Hash.Full)
         field(:second_topic, Hash.Trimmed)
         field(:third_topic, Hash.Trimmed)
@@ -106,7 +108,7 @@ defmodule Explorer.Chain.Log do
   alias Explorer.SmartContract.SigProviderInterface
   alias Explorer.Utility.{AddressIdToAddressHash, LogHelper}
 
-  @required_attrs ~w(address_id data index)a
+  @required_attrs ~w(address_id compressed_data index)a
                   |> (&(case @chain_identity do
                           {:optimism, :celo} ->
                             &1
@@ -129,7 +131,7 @@ defmodule Explorer.Chain.Log do
    * `block_hash` - hash of the block
    * `block_number` - The block number that the transfer took place.
    * `address_id` - foreign key for `address_ids_to_address_hashes`
-   * `data` - non-indexed log parameters.
+   * `compressed_data` - non-indexed log parameters.
    * `first_topic` - `topics[0]`
    * `second_topic` - `topics[1]`
    * `third_topic` - `topics[2]`
@@ -146,7 +148,7 @@ defmodule Explorer.Chain.Log do
       ...>   %Explorer.Chain.Log{},
       ...>   %{
       ...>     address_id: 1,
-      ...>     data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+      ...>     compressed_data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
       ...>     first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
       ...>     fourth_topic: nil,
       ...>     transaction_index: 0,
@@ -1000,6 +1002,19 @@ defmodule Explorer.Chain.Log do
   def preload_address(log, options, repo) do
     [log]
     |> preload_address(options, repo)
+    |> List.first()
+  end
+
+  @spec prepare_data(map() | [map()] | nil) :: __MODULE__.t() | [__MODULE__.t()] | nil
+  def prepare_data(nil), do: nil
+
+  def prepare_data(logs) when is_list(logs) do
+    Enum.map(logs, &%{&1 | data: &1.data || &1.compressed_data})
+  end
+
+  def prepare_data(log) do
+    [log]
+    |> prepare_data()
     |> List.first()
   end
 
