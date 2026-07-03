@@ -59,19 +59,15 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
 
   def async_fetch(_data, true), do: :ok
 
-  def async_fetch(token_transfers, _disabled?) when is_list(token_transfers) do
+  def async_fetch(token_instances, _disabled?) when is_list(token_instances) do
     data =
-      token_transfers
-      |> Enum.reject(fn token_transfer -> is_nil(token_transfer.token_ids) end)
-      |> Enum.map(fn token_transfer ->
-        Enum.map(token_transfer.token_ids, fn token_id ->
-          %{
-            contract_address_hash: token_transfer.token_contract_address_hash,
-            token_id: token_id
-          }
-        end)
+      token_instances
+      |> Enum.map(fn token_instance ->
+        %{
+          contract_address_hash: token_instance.token_contract_address_hash,
+          token_id: token_instance.token_id
+        }
       end)
-      |> List.flatten()
       |> Enum.uniq()
 
     BufferedTask.buffer(__MODULE__, data, true)
