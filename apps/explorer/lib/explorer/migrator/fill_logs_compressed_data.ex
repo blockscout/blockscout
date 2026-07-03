@@ -88,7 +88,7 @@ defmodule Explorer.Migrator.FillLogsCompressedData do
       end
 
     {count, _} =
-      Repo.insert_all(Log, ordered_params,
+      Repo.safe_insert_all(Log, ordered_params,
         on_conflict: {:replace, [:data, :compressed_data]},
         conflict_target: conflict_target
       )
