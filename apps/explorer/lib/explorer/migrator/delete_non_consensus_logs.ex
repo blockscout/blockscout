@@ -36,11 +36,14 @@ defmodule Explorer.Migrator.DeleteNonConsensusLogs do
 
   @impl FillingMigration
   def update_batch(block_numbers) do
-    Log
-    |> join(:inner, [l], b in Block, on: l.block_hash == b.hash)
-    |> where([l], l.block_number in ^block_numbers)
-    |> where([l, b], b.consensus == false)
-    |> Repo.delete_all(timeout: :infinity)
+    {count, _} =
+      Log
+      |> join(:inner, [l], b in Block, on: l.block_hash == b.hash)
+      |> where([l], l.block_number in ^block_numbers)
+      |> where([l, b], b.consensus == false)
+      |> Repo.delete_all(timeout: :infinity)
+
+    count
   end
 
   @impl FillingMigration

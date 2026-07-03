@@ -79,7 +79,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :fill_internal_transactions_address_ids_finished,
     key: :heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished,
     key: :create_logs_block_number_transaction_index_index_unique_index_finished,
-    key: :fill_logs_transaction_index_address_id_finished
+    key: :fill_logs_optimized_fields_finished
 
   @dialyzer :no_match
 
@@ -91,7 +91,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     BackfillMultichainSearchDbCurrentTokenBalances,
     EmptyInternalTransactionsData,
     FillInternalTransactionsAddressIds,
-    FillLogsTransactionIndexAddressId,
+    FillLogsOptimizedFields,
     SanitizeDuplicatedLogIndexLogs,
     TokenTransferTokenType,
     TransactionHasTokenTransfers,
@@ -491,10 +491,10 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     )
   end
 
-  defp handle_fallback(:fill_logs_transaction_index_address_id_finished) do
+  defp handle_fallback(:fill_logs_optimized_fields_finished) do
     set_and_return_migration_status(
-      FillLogsTransactionIndexAddressId,
-      &set_fill_logs_transaction_index_address_id_finished/1
+      FillLogsOptimizedFields,
+      &set_fill_logs_optimized_fields_finished/1
     )
   end
 

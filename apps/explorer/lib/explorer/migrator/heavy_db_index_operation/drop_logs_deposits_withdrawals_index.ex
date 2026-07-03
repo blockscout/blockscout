@@ -8,7 +8,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsDepositsWithdrawalsInd
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  alias Explorer.Migrator.{FillLogsTransactionIndexAddressId, HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.{FillLogsOptimizedFields, HeavyDbIndexOperation, MigrationStatus}
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
     DropLogsAddressHashBlockNumberDescIndexDescIndex,
@@ -33,7 +33,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsDepositsWithdrawalsInd
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
     do: [
-      FillLogsTransactionIndexAddressId.migration_name(),
+      FillLogsOptimizedFields.migration_name(),
       DropLogsAddressHashBlockNumberDescIndexDescIndex.migration_name(),
       DropLogsAddressHashFirstTopicBlockNumberIndexIndex.migration_name()
     ]

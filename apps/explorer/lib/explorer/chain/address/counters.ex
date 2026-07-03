@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Address.Counters do
   use Utils.RuntimeEnvHelper,
     chain_identity: [:explorer, :chain_identity]
 
-  import Ecto.Query, only: [from: 2, limit: 2, select: 3, union_all: 2, where: 3]
+  import Ecto.Query
 
   import Explorer.Chain,
     only: [select_repo: 1, wrapped_union_subquery: 1]
@@ -55,7 +55,7 @@ defmodule Explorer.Chain.Address.Counters do
   @transactions_types [:transactions_from, :transactions_to, :transactions_contract]
 
   defp address_hash_to_logs_query(address_hash) do
-    from(l in Log, where: l.address_hash == ^address_hash)
+    Log.address_match_query(Log, address_hash)
   end
 
   defp address_hash_to_validated_blocks_query(address_hash) do
