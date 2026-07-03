@@ -9,6 +9,7 @@
 ### 🐛 Bug Fixes
 
 - Fix import result merging for chunked data ([#14528](https://github.com/blockscout/blockscout/issues/14528))
+- Add missing async importers for token balances and instances ([#14534](https://github.com/blockscout/blockscout/pull/14534))
 - Log error instead of silent empty map on CBOR decode failure ([#14510](https://github.com/blockscout/blockscout/issues/14510))
 - Log warning when bytecode metadata hex parsing fails ([#14511](https://github.com/blockscout/blockscout/issues/14511))
 
