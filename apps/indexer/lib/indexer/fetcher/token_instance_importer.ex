@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.TokenInstanceImporter do
   require Logger
 
   alias Explorer.Chain
+  alias Indexer.Block.Fetcher
   alias Indexer.Transform.TokenInstances
 
   @default_update_interval :timer.minutes(1)
@@ -73,6 +74,10 @@ defmodule Indexer.Fetcher.TokenInstanceImporter do
     {:noreply, state}
   end
 
+  def handle_info({:EXIT, _pid, :normal}, state) do
+    {:noreply, state}
+  end
+
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
     {:noreply, state}
   end
@@ -93,7 +98,9 @@ defmodule Indexer.Fetcher.TokenInstanceImporter do
            token_instances: %{params: token_instances_params},
            timeout: :infinity
          }) do
-      {:ok, _imported} ->
+      {:ok, imported} ->
+        Fetcher.async_import_token_instances(imported)
+
         Logger.info(
           "TokenInstanceImporter imported #{Enum.count(tokens_params)} tokens and #{Enum.count(token_instances_params)} token instances"
         )
