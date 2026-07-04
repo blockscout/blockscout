@@ -14,7 +14,4 @@ services:
       -  ../envs/common-blockscout.env
     volumes:
       - ./logs/:/app/logs/
-      - backend-dets:/app/dets/
-
-volumes:
-  backend-dets:
+      - ./dets/:/app/dets/
