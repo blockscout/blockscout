@@ -3,9 +3,9 @@
     // The call stack of the EVM execution.
     callStack: [{}],
 
-    // Descended tracks whether we've just descended from an outer transaction into
+    // _enteredNewDepth tracks whether we've just descended from an outer transaction into
 	// an inner call.
-	descended: false,
+	_enteredNewDepth: false,
 
     // step is invoked for every opcode that the VM executes.
     step(log, db) {
@@ -89,9 +89,9 @@
     success(log, db) {
         const op = log.op.toString();
 
-        if (this.descended) {
+        if (this._enteredNewDepth) {
             this.topCall().gasBigInt = log.getGas();
-            this.descended = false;
+            this._enteredNewDepth = false;
         }
 
         this.beforeOp(log, db);
@@ -172,7 +172,7 @@
             valueBigInt: bigInt(stackValue.toString(10))
         };
         this.callStack.push(call);
-        this.descended = true;
+        this._enteredNewDepth = true;
     },
 
     create2Op(log) {
@@ -188,7 +188,7 @@
             valueBigInt: bigInt(stackValue.toString(10))
         };
         this.callStack.push(call);
-        this.descended = true;
+        this._enteredNewDepth = true;
     },
 
     selfDestructOp(log, db) {
@@ -244,11 +244,11 @@
                 call.valueBigInt = bigInt.zero;
                 break;
             default:
-                throw 'Unknown custom call op ' + op;
+                throw new Error('Unknown custom call op: ' + op);
         }
 
         this.callStack.push(call);
-        this.descended = true;
+        this._enteredNewDepth = true;
     },
 
     revertOp() {
@@ -265,7 +265,7 @@
     },
 
     ctxToResult(ctx, db) {
-        var result;
+        let result;
 
         switch (ctx.type) {
             case 'CALL':
@@ -311,35 +311,28 @@
     },
 
     ctxToCreate(ctx, db) {
-        const result = {
-            type: 'create',
-            from: toHex(ctx.from),
-            init: toHex(ctx.input),
-            valueBigInt: bigInt(ctx.value.toString(10)),
-            gasBigInt: bigInt(ctx.gas),
-            gasUsedBigInt: bigInt(ctx.gasUsed)
-        };
-
+        const result = this.ctxToCreateBase(ctx);
         this.putBottomChildCalls(result);
         this.putErrorOrCreatedContract(result, ctx, db);
-
         return result;
     },
 
     ctxToCreate2(ctx, db) {
-        const result = {
-            type: 'create2',
+        const result = this.ctxToCreateBase(ctx);
+        this.putBottomChildCalls(result);
+        this.putErrorOrCreatedContract(result, ctx, db);
+        return result;
+    },
+
+    ctxToCreateBase(ctx) {
+        return {
+            type: ctx.type.toLowerCase(),
             from: toHex(ctx.from),
             init: toHex(ctx.input),
             valueBigInt: bigInt(ctx.value.toString(10)),
             gasBigInt: bigInt(ctx.gas),
             gasUsedBigInt: bigInt(ctx.gasUsed)
         };
-
-        this.putBottomChildCalls(result);
-        this.putErrorOrCreatedContract(result, ctx, db);
-
-        return result;
     },
 
     putBottomChildCalls(result) {
@@ -355,19 +348,19 @@
         const error = this.error(ctx);
 
         if (error !== undefined) {
-            result.error = error
+            result.error = error;
         } else {
             result.createdContractAddressHash = toHex(ctx.to);
-            if (toHex(ctx.input) != '0x') {
-              result.createdContractCode = toHex(db.getCode(ctx.to));
+            if (toHex(ctx.input) !== '0x') {
+                result.createdContractCode = toHex(db.getCode(ctx.to));
             } else {
-              result.createdContractCode = '0x';
+                result.createdContractCode = '0x';
             }
         }
     },
 
     error(ctx) {
-        var error;
+        let error;
 
         const bottomCall = this.bottomCall();
         const bottomCallError = bottomCall.error;
@@ -386,14 +379,14 @@
     },
 
     filterNotUndefined(call) {
-        for (var key in call) {
+        for (let key in call) {
             if (call[key] === undefined) {
                 delete call[key];
             }
         }
 
         if (call.calls !== undefined) {
-            for (var i = 0; i < call.calls.length; i++) {
+            for (let i = 0; i < call.calls.length; i++) {
                 call.calls[i] = this.filterNotUndefined(call.calls[i]);
             }
         }
@@ -412,10 +405,10 @@
             call.valueBigInt = availableValueBigInt;
         }
 
-        var newCallSequence = callSequence.concat([call]);
+        let newCallSequence = callSequence.concat([call]);
 
         if (subcalls !== undefined) {
-            for (var i = 0; i < subcalls.length; i++) {
+            for (let i = 0; i < subcalls.length; i++) {
                 const nestedSequenced = this.sequence(
                     subcalls[i],
                     newCallSequence,
@@ -432,7 +425,7 @@
     },
 
     encodeCallSequence(calls) {
-        for (var i = 0; i < calls.length; i++) {
+        for (let i = 0; i < calls.length; i++) {
             this.encodeCall(calls[i]);
         }
 
