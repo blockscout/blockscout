@@ -157,6 +157,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
              {:migration_finished?, false} <- {:migration_finished?, migration_finished?()},
              {:dependent_from_migrations_completed?, true} <-
                {:dependent_from_migrations_completed?, dependent_from_migrations_completed?()},
+             {:no_other_heavy_migration_on_same_table?, true} <-
+               {:no_other_heavy_migration_on_same_table?,
+                not running_other_heavy_migration_exists?(migration_name())},
              {:db_index_operation, :ok} <- {:db_index_operation, db_index_operation()} do
           MigrationStatus.set_status(migration_name(), "completed")
           update_cache()
