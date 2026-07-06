@@ -284,6 +284,7 @@ defmodule BlockScoutWeb.PagingHelper do
       :state_filter,
       :key,
       "apikey",
+      "items_count",
       "key",
       "block_hash_or_number",
       "block_hash_or_number_param",
