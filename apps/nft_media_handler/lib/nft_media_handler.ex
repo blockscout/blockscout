@@ -159,50 +159,7 @@ defmodule NFTMediaHandler do
     end
   end
 
-  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp maybe_process_ipfs(uri) do
-    case URI.parse(uri) do
-      %URI{scheme: "ipfs", host: host, path: path} ->
-        resource_id =
-          cond do
-            host == "ipfs" and is_binary(path) and String.starts_with?(path, "/") ->
-              String.replace_leading(path, "/", "")
-
-            is_binary(host) and host != "" ->
-              build_ipfs_resource_id(host, path)
-
-            true ->
-              path
-          end
-
-        maybe_fetch_ipfs_url(resource_id, uri)
-
-      %URI{scheme: "ar", host: _host, path: resource_id} ->
-        {TokenMetadataRetriever.arweave_link(resource_id), TokenMetadataRetriever.ar_headers()}
-
-      %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
-        maybe_fetch_ipfs_url(resource_id, uri)
-
-      %URI{scheme: _, path: "ipfs/" <> resource_id} ->
-        maybe_fetch_ipfs_url(resource_id, uri)
-
-      %URI{scheme: scheme} when not is_nil(scheme) ->
-        {uri, []}
-
-      %URI{path: path} ->
-        maybe_fetch_ipfs_url(path, uri)
-    end
-  end
-
-  defp build_ipfs_resource_id(host, path) do
-    if is_nil(path), do: host, else: host <> path
-  end
-
-  defp maybe_fetch_ipfs_url(resource_id, uri) do
-    if is_binary(resource_id) and TokenMetadataRetriever.valid_ipfs_path?("ipfs://" <> resource_id) do
-      {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
-    else
-      {uri, []}
-    end
+    TokenMetadataRetriever.resolve_nft_media_url(uri)
   end
 end

@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.API.V2.ShibariumView do
             "l1_block_number" => deposit.l1_block_number,
             "l1_transaction_hash" => deposit.l1_transaction_hash,
             "l2_transaction_hash" => deposit.l2_transaction_hash,
-            "user" => Map.get(user_addresses, deposit.user, deposit.user),
+            "user" => resolve_user(user_addresses, deposit.user, conn),
             "timestamp" => deposit.timestamp
           }
         end),
@@ -42,7 +42,7 @@ defmodule BlockScoutWeb.API.V2.ShibariumView do
             "l2_block_number" => withdrawal.l2_block_number,
             "l2_transaction_hash" => withdrawal.l2_transaction_hash,
             "l1_transaction_hash" => withdrawal.l1_transaction_hash,
-            "user" => Map.get(user_addresses, withdrawal.user, withdrawal.user),
+            "user" => resolve_user(user_addresses, withdrawal.user, conn),
             "timestamp" => withdrawal.timestamp
           }
         end),
@@ -52,6 +52,12 @@ defmodule BlockScoutWeb.API.V2.ShibariumView do
 
   def render("shibarium_items_count.json", %{count: count}) do
     count
+  end
+
+  defp resolve_user(user_addresses, user_hash, conn) do
+    Map.get_lazy(user_addresses, user_hash, fn ->
+      Helper.address_with_info(conn, nil, user_hash, true)
+    end)
   end
 
   defp get_user_addresses(items, conn) do

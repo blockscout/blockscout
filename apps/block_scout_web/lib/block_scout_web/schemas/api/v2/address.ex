@@ -3,9 +3,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations do
   @moduledoc false
   require OpenApiSpex
 
+  alias BlockScoutWeb.Schemas.API.V2.General
   alias BlockScoutWeb.Schemas.Helper
-  alias Ecto.Enum, as: EctoEnum
-  alias Explorer.Chain.Address
   alias OpenApiSpex.Schema
 
   @filecoin_robust_address_schema %Schema{
@@ -38,9 +37,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Address.ChainTypeCustomizations do
                 },
                 robust: @filecoin_robust_address_schema,
                 actor_type: %Schema{
-                  type: :string,
+                  allOf: [General.FilecoinActorType],
                   description: "Type of actor associated with the Filecoin address",
-                  enum: EctoEnum.values(Address, :filecoin_actor_type),
                   nullable: true
                 }
               },

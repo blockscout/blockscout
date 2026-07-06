@@ -7,7 +7,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   alias Explorer.{Chain, HttpClient}
   alias Explorer.Chain.Address.MetadataPreloader
 
-  alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.Chain.{Address, Block, Token.Instance, Transaction}
 
   alias Explorer.Utility.Microservice
 
@@ -23,7 +23,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     In multiprotocol mode: {{baseUrl}}/api/v1/addresses:batch-resolve with protocols in body.
     In legacy mode: {{baseUrl}}/api/v1/:chainId/addresses:batch-resolve-names
   """
-  @spec ens_names_batch_request([binary()]) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
+  @spec ens_names_batch_request([binary()]) :: {:error, :disabled | binary() | Exception.t()} | {:ok, any}
   def ens_names_batch_request(addresses) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       body =
@@ -39,7 +39,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     In multiprotocol mode: {{baseUrl}}/api/v1/addresses:lookup with protocols query parameter.
     In legacy mode: {{baseUrl}}/api/v1/:chainId/addresses:lookup
   """
-  @spec address_lookup(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
+  @spec address_lookup(binary()) :: {:error, :disabled | binary() | Exception.t()} | {:ok, any}
   def address_lookup(address) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       query_params =
@@ -76,7 +76,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     In multiprotocol mode: {{baseUrl}}/api/v1/domains:lookup with protocols query parameter.
     In legacy mode: {{baseUrl}}/api/v1/:chainId/domains:lookup
   """
-  @spec ens_domain_lookup(binary()) :: {:error, :disabled | binary() | Jason.DecodeError.t()} | {:ok, any}
+  @spec ens_domain_lookup(binary()) :: {:error, :disabled | binary() | Exception.t()} | {:ok, any}
   def ens_domain_lookup(domain) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       query_params =
@@ -115,9 +115,9 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+    case HttpClient.post(url, Utils.JSON.encode!(body), headers, recv_timeout: @post_timeout) do
       {:ok, %{body: body, status_code: 200}} ->
-        Jason.decode(body)
+        Utils.JSON.decode(body)
 
       {_, error} ->
         old_truncate = Application.get_env(:logger, :truncate)
@@ -138,7 +138,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   defp http_get_request(url, query_params) do
     case HttpClient.get(url, [], params: query_params) do
       {:ok, %{body: body, status_code: 200}} ->
-        Jason.decode(body)
+        Utils.JSON.decode(body)
 
       {_, error} ->
         old_truncate = Application.get_env(:logger, :truncate)
@@ -338,6 +338,14 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   @spec maybe_preload_ens_to_block(Block.t()) :: Block.t()
   def maybe_preload_ens_to_block(block) do
     maybe_preload_meta(block, __MODULE__, &MetadataPreloader.preload_ens_to_block/1)
+  end
+
+  @doc """
+  Preloads ENS data to the NFT instance if BENS is enabled
+  """
+  @spec maybe_preload_ens_to_instance(Instance.t()) :: Instance.t()
+  def maybe_preload_ens_to_instance(instance) do
+    maybe_preload_meta(instance, __MODULE__, &MetadataPreloader.preload_ens_to_instance/1)
   end
 
   @doc """

@@ -5,20 +5,22 @@ defmodule BlockScoutWeb.Schemas.API.V2.Celo.Epoch do
   """
   require OpenApiSpex
 
+  alias BlockScoutWeb.Schemas.API.V2.Celo.Epoch.Distribution
   alias BlockScoutWeb.Schemas.API.V2.General
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "CeloEpoch",
     description: "Celo epoch summary.",
     type: :object,
     properties: %{
       number: %Schema{type: :integer, nullable: false, minimum: 0},
       type: %Schema{type: :string, enum: ["L1", "L2"], nullable: false},
-      start_block_number: %Schema{type: :integer, nullable: false, minimum: 0},
-      end_block_number: %Schema{type: :integer, nullable: false, minimum: 0},
+      start_block_number: %Schema{type: :integer, nullable: true, minimum: 0},
+      end_block_number: %Schema{type: :integer, nullable: true, minimum: 0},
       timestamp: General.TimestampNullable,
       is_finalized: %Schema{type: :boolean, nullable: false},
-      distribution: %Schema{type: :object, nullable: true, additionalProperties: true}
+      distribution: %Schema{allOf: [Distribution], nullable: true}
     },
     required: [
       :number,

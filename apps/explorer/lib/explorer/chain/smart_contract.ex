@@ -10,6 +10,7 @@ defmodule Explorer.Chain.SmartContract.Schema do
   alias Explorer.Chain.{
     Address,
     Address.Reputation,
+    Data,
     Hash,
     SmartContractAdditionalSource
   }
@@ -43,7 +44,7 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:compiler_version, :string, null: false)
         field(:optimization, :boolean, null: false)
         field(:contract_source_code, :string, null: false)
-        field(:constructor_arguments, :string)
+        field(:constructor_arguments, Data)
         field(:evm_version, :string)
         embeds_many(:external_libraries, ExternalLibrary, on_replace: :delete)
         field(:abi, {:array, :map})

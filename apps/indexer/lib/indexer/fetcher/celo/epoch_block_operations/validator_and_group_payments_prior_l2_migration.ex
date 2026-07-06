@@ -3,28 +3,36 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPri
   @moduledoc """
   Fetches validator and group payments for the epoch block.
   """
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query
 
   alias Explorer.Chain.{Block, Celo.Epoch, Log}
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.Repo
+  alias Explorer.Utility.LogHelper
   alias Indexer.Transform.Celo.ValidatorEpochPaymentDistributions
 
   @spec fetch(Epoch.t()) :: {:ok, list()}
-  def fetch(%Epoch{start_processing_block: %Block{number: block_number, hash: block_hash}} = epoch) do
+  def fetch(%Epoch{start_processing_block: %Block{number: block_number}} = epoch) do
     epoch_payment_distributions_signature = ValidatorEpochPaymentDistributions.signature()
     {:ok, validators_contract_address} = CeloCoreContracts.get_address(:validators, block_number)
 
     query =
-      from(
-        log in Log,
-        where:
-          log.block_hash == ^block_hash and
-            log.address_hash == ^validators_contract_address and
-            log.first_topic == ^epoch_payment_distributions_signature and
-            is_nil(log.transaction_hash),
-        select: log
-      )
+      Log
+      |> Log.address_match_query(validators_contract_address)
+      |> where([log], log.block_number == ^block_number)
+      |> where([log], log.first_topic == ^epoch_payment_distributions_signature)
+      |> then(fn query ->
+        cond do
+          LogHelper.fill_optimized_fields_migration_finished?() ->
+            where(query, [log], is_nil(log.transaction_index))
+
+          LogHelper.fill_optimized_fields_migration_started?() ->
+            where(query, [log], is_nil(log.transaction_hash) and is_nil(log.transaction_index))
+
+          true ->
+            where(query, [log], is_nil(log.transaction_hash))
+        end
+      end)
 
     payments =
       query

@@ -62,7 +62,7 @@ defmodule Explorer.Market.Fetcher.TokenList do
 
   defp fetch_and_import(url) do
     with {:ok, %{body: body, status_code: 200}} <- HttpClient.get(url),
-         {:ok, %{"tokens" => tokens}} when is_list(tokens) <- Jason.decode(body) do
+         {:ok, %{"tokens" => tokens}} when is_list(tokens) <- Utils.JSON.decode(body) do
       token_params =
         tokens
         |> filter_by_chain_id()

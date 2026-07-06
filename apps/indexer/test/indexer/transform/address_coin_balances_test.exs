@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Transform.AddressCoinBalancesTest do
   use Explorer.DataCase, async: true
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Factory
   alias Indexer.Transform.AddressCoinBalances
@@ -247,7 +248,7 @@ defmodule Indexer.Transform.AddressCoinBalancesTest do
     end
   end
 
-  if Application.compile_env(:explorer, :chain_type) == :arc do
+  if @chain_type == :arc do
     describe "params_set/1 logs_params on Arc chain" do
       test "with EIP-7708 Transfer queues non-burn from_address and to_address for coin balances" do
         from_address = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"

@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
       length: 100_000,
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
-      json_decoder: Poison
+      json_decoder: JSON
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :block_scout_web)
@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
       length: 100_000,
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
-      json_decoder: Poison
+      json_decoder: JSON
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
@@ -64,7 +64,7 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
       length: 20_000_000,
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
-      json_decoder: Poison
+      json_decoder: JSON
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)

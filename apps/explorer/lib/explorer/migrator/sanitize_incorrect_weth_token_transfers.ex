@@ -18,6 +18,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
 
   @migration_name "sanitize_incorrect_weth_transfers"
 
+  def migration_name, do: @migration_name
+
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
@@ -142,12 +144,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
   end
 
   defp token_transfers_with_logs_query do
-    from(
-      tt in TokenTransfer,
-      left_join: l in Log,
-      as: :log,
-      on: tt.block_hash == l.block_hash and tt.transaction_hash == l.transaction_hash and tt.log_index == l.index
-    )
+    Log.join_to_token_transfer_query(TokenTransfer)
   end
 
   defp run_task(batch), do: Task.async(fn -> handle_batch(batch) end)

@@ -55,85 +55,89 @@ defmodule Explorer.Migrator.EmptyInternalTransactionsData do
 
   @impl FillingMigration
   def update_batch(block_numbers) do
-    Repo.transaction(
-      fn ->
-        lock_query =
-          from(
-            it in InternalTransaction,
-            select: select_ctid(it),
-            select_merge: %{error: it.error},
-            where:
-              it.block_number in ^block_numbers and
-                (not is_nil(it.trace_address) or it.value == ^0 or
-                   (is_nil(it.call_type_enum) and not is_nil(it.call_type)) or
-                   not is_nil(it.error) or (not is_nil(it.created_contract_address_hash) and is_nil(it.to_address_hash))),
-            order_by: [asc: it.block_number, asc: it.transaction_index, asc: it.index],
-            lock: "FOR UPDATE"
-          )
+    {:ok, {count, _}} =
+      Repo.transaction(
+        fn ->
+          lock_query =
+            from(
+              it in InternalTransaction,
+              select: select_ctid(it),
+              select_merge: %{error: it.error},
+              where:
+                it.block_number in ^block_numbers and
+                  (not is_nil(it.trace_address) or it.value == ^0 or
+                     (is_nil(it.call_type_enum) and not is_nil(it.call_type)) or
+                     not is_nil(it.error) or
+                     (not is_nil(it.created_contract_address_hash) and is_nil(it.to_address_hash))),
+              order_by: [asc: it.block_number, asc: it.transaction_index, asc: it.index],
+              lock: "FOR UPDATE"
+            )
 
-        extract_error_query =
-          from(it in InternalTransaction,
-            inner_join: locked_it in subquery(lock_query),
-            on: join_on_ctid(it, locked_it),
-            where: not is_nil(it.error),
-            distinct: true,
-            select: it.error
-          )
+          extract_error_query =
+            from(it in InternalTransaction,
+              inner_join: locked_it in subquery(lock_query),
+              on: join_on_ctid(it, locked_it),
+              where: not is_nil(it.error),
+              distinct: true,
+              select: it.error
+            )
 
-        error_messages = Repo.all(extract_error_query, timeout: :infinity)
+          error_messages = Repo.all(extract_error_query, timeout: :infinity)
 
-        TransactionError.find_or_create_multiple(error_messages)
+          TransactionError.find_or_create_multiple(error_messages)
 
-        update_query =
-          from(it in InternalTransaction,
-            inner_join: locked_it in subquery(lock_query),
-            on: join_on_ctid(it, locked_it),
-            left_join: te in TransactionError,
-            on: te.message == locked_it.error,
-            update: [
-              set: [
-                error: nil,
-                error_id:
-                  fragment(
-                    "CASE WHEN ? IS NOT NULL THEN COALESCE(?, ?) ELSE ? END",
-                    it.error,
-                    te.id,
-                    it.error_id,
-                    it.error_id
-                  ),
-                call_type_enum:
-                  fragment(
-                    "CASE WHEN ? IS NULL AND ? IS NOT NULL THEN (?::internal_transactions_call_type) ELSE ? END",
-                    it.call_type_enum,
-                    it.call_type,
-                    it.call_type,
-                    it.call_type_enum
-                  ),
-                call_type:
-                  fragment(
-                    "CASE WHEN ? IS NULL AND ? IS NOT NULL THEN NULL ELSE ? END",
-                    it.call_type_enum,
-                    it.call_type,
-                    it.call_type
-                  ),
-                trace_address: nil,
-                value: fragment("CASE WHEN ? = 0 THEN NULL ELSE ? END", it.value, it.value),
-                to_address_hash:
-                  fragment(
-                    "CASE WHEN ? IS NOT NULL AND ? IS NULL THEN ? ELSE ? END",
-                    it.created_contract_address_hash,
-                    it.to_address_hash,
-                    it.created_contract_address_hash,
-                    it.to_address_hash
-                  )
+          update_query =
+            from(it in InternalTransaction,
+              inner_join: locked_it in subquery(lock_query),
+              on: join_on_ctid(it, locked_it),
+              left_join: te in TransactionError,
+              on: te.message == locked_it.error,
+              update: [
+                set: [
+                  error: nil,
+                  error_id:
+                    fragment(
+                      "CASE WHEN ? IS NOT NULL THEN COALESCE(?, ?) ELSE ? END",
+                      it.error,
+                      te.id,
+                      it.error_id,
+                      it.error_id
+                    ),
+                  call_type_enum:
+                    fragment(
+                      "CASE WHEN ? IS NULL AND ? IS NOT NULL THEN (?::internal_transactions_call_type) ELSE ? END",
+                      it.call_type_enum,
+                      it.call_type,
+                      it.call_type,
+                      it.call_type_enum
+                    ),
+                  call_type:
+                    fragment(
+                      "CASE WHEN ? IS NULL AND ? IS NOT NULL THEN NULL ELSE ? END",
+                      it.call_type_enum,
+                      it.call_type,
+                      it.call_type
+                    ),
+                  trace_address: nil,
+                  value: fragment("CASE WHEN ? = 0 THEN NULL ELSE ? END", it.value, it.value),
+                  to_address_hash:
+                    fragment(
+                      "CASE WHEN ? IS NOT NULL AND ? IS NULL THEN ? ELSE ? END",
+                      it.created_contract_address_hash,
+                      it.to_address_hash,
+                      it.created_contract_address_hash,
+                      it.to_address_hash
+                    )
+                ]
               ]
-            ]
-          )
+            )
 
-        Repo.update_all(update_query, [], timeout: :infinity)
-      end,
-      timeout: :infinity
-    )
+          Repo.update_all(update_query, [], timeout: :infinity)
+        end,
+        timeout: :infinity
+      )
+
+    count
   end
 
   @impl FillingMigration

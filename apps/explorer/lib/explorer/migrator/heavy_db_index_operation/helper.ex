@@ -196,6 +196,134 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   end
 
   @doc """
+  Validates `NOT NULL` constraints for the given table columns and sets the columns to `NOT NULL`.
+
+  The operation runs inside a transaction. For each column it first validates the corresponding
+  check constraint and then alters the column to `NOT NULL`.
+  """
+  @spec validate_not_null_db_index_operation(atom(), [String.t()]) :: :ok | :error
+  # sobelow_skip ["SQL"]
+  def validate_not_null_db_index_operation(table_name, columns) do
+    result =
+      Repo.transaction(
+        fn ->
+          columns
+          |> Enum.reduce_while(:ok, fn column, _acc ->
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+            with {:ok, _} <-
+                   Repo.query(validate_not_null_constraint_query_string(table_name, column), [], timeout: :infinity),
+                 {:ok, _} <- Repo.query(set_not_null_query_string(table_name, column)) do
+              {:cont, :ok}
+            else
+              {:error, error} -> {:halt, {:error, error}}
+            end
+          end)
+          |> case do
+            :ok ->
+              :ok
+
+            {:error, error} ->
+              Repo.rollback(error)
+          end
+        end,
+        timeout: :infinity
+      )
+
+    case result do
+      {:ok, :ok} ->
+        :ok
+
+      {:error, error} ->
+        Logger.error("Migration validate #{table_name} #{inspect(columns)} not null failed: #{inspect(error)}")
+
+        :error
+    end
+  end
+
+  @doc """
+  Checks the progress of `NOT NULL` constraint validation operation for the given table columns.
+  """
+  @spec validate_not_null_check_db_index_operation_progress(atom(), String.t(), [String.t()]) ::
+          :finished_or_not_started | :unknown | :in_progress
+  def validate_not_null_check_db_index_operation_progress(table_name, index_name, columns) do
+    all_operations =
+      Enum.flat_map(columns, fn column ->
+        [
+          validate_not_null_constraint_query_string(table_name, column),
+          set_not_null_query_string(table_name, column)
+        ]
+      end)
+
+    Enum.reduce_while(all_operations, :finished_or_not_started, fn operation, acc ->
+      case check_db_index_operation_progress(index_name, operation) do
+        :finished_or_not_started -> {:cont, acc}
+        progress -> {:halt, progress}
+      end
+    end)
+  end
+
+  @doc """
+  Returns status of `NOT NULL` constraint validation operation for the given table columns.
+  """
+  @spec validate_not_null_db_index_operation_status(atom(), [String.t()]) ::
+          :not_initialized | :not_completed | :completed | :unknown
+  # sobelow_skip ["SQL"]
+  # credo:disable-for-next-line /Complexity/
+  def validate_not_null_db_index_operation_status(table_name, columns) do
+    column_name_condition = Enum.map_join(columns, " OR ", &"column_name = '#{&1}'")
+
+    completed? =
+      case Repo.query("""
+           SELECT is_nullable
+           FROM information_schema.columns
+           WHERE table_name = '#{table_name}' AND (#{column_name_condition});
+           """) do
+        {:ok, %Postgrex.Result{rows: [["NO"], ["NO"]]}} -> true
+        {:ok, %Postgrex.Result{rows: [_, _]}} -> false
+        _ -> nil
+      end
+
+    started? =
+      case Repo.query("""
+           SELECT convalidated
+           FROM pg_constraint
+           WHERE conname = '#{table_name}_#{List.first(columns)}_not_null';
+           """) do
+        {:ok, %Postgrex.Result{rows: [[true]]}} -> true
+        {:ok, %Postgrex.Result{rows: [[false]]}} -> false
+        _ -> nil
+      end
+
+    cond do
+      completed? == true -> :completed
+      started? == true -> :not_completed
+      is_nil(completed?) or is_nil(started?) -> :unknown
+      true -> :not_initialized
+    end
+  end
+
+  @doc """
+  Cancels currently active `NOT NULL` constraint validation queries for the given table columns.
+  """
+  @spec validate_not_null_restart_db_index_operation(atom(), [String.t()]) :: :ok | :error
+  # sobelow_skip ["SQL"]
+  def validate_not_null_restart_db_index_operation(table_name, columns) do
+    query_condition =
+      Enum.map_join(columns, " OR ", &"query ILIKE '%#{validate_not_null_constraint_query_string(table_name, &1)}%'")
+
+    case Repo.query("""
+         SELECT pg_cancel_backend(pid)
+         FROM pg_stat_activity
+         WHERE pid <> pg_backend_pid()
+           AND (#{query_condition})
+           AND state = 'active';
+         """) do
+      {:ok, _} -> :ok
+      _ -> :error
+    end
+  end
+
+  @doc """
   Returns the prefix used for naming heavy database operation migrations.
 
   ## Examples
@@ -248,6 +376,22 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
       AND query ILIKE '%#{index_name}%'
       AND state = 'active';
     """
+  end
+
+  @doc """
+  Generates a SQL query string to validate a `NOT NULL` check constraint for the given table column.
+  """
+  @spec validate_not_null_constraint_query_string(atom(), String.t()) :: String.t()
+  def validate_not_null_constraint_query_string(table_name, column) do
+    "ALTER TABLE #{table_name} VALIDATE CONSTRAINT #{table_name}_#{column}_not_null;"
+  end
+
+  @doc """
+  Generates a SQL query string to set the given table column to `NOT NULL`.
+  """
+  @spec set_not_null_query_string(atom(), String.t()) :: String.t()
+  def set_not_null_query_string(table_name, column) do
+    "ALTER TABLE #{table_name} ALTER COLUMN #{column} SET NOT NULL;"
   end
 
   @doc """

@@ -7,10 +7,13 @@ defmodule Explorer.Chain.Log.Schema do
   alias Explorer.Chain.{
     Address,
     Block,
+    CompressedData,
     Data,
     Hash,
     Transaction
   }
+
+  alias Explorer.Utility.AddressIdToAddressHash
 
   # In certain situations, like on Polygon, multiple logs may share the same
   # index within a single block due to a RPC node bug. To prevent system crashes
@@ -22,28 +25,20 @@ defmodule Explorer.Chain.Log.Schema do
   # violates the primary key constraint. To resolve this issue, we've excluded
   # `transaction_hash` from the composite primary key when dealing with
   # `:optimism-celo` chain type.
+  #
+  # UPD: `transaction_hash` migrated to `transaction_index` but logic above remains the same
   @transaction_field (case @chain_identity do
                         {:optimism, :celo} ->
                           quote do
                             [
-                              belongs_to(:transaction, Transaction,
-                                foreign_key: :transaction_hash,
-                                references: :hash,
-                                type: Hash.Full
-                              )
+                              field(:transaction_index, :integer)
                             ]
                           end
 
                         _ ->
                           quote do
                             [
-                              belongs_to(:transaction, Transaction,
-                                foreign_key: :transaction_hash,
-                                primary_key: true,
-                                references: :hash,
-                                type: Hash.Full,
-                                null: false
-                              )
+                              field(:transaction_index, :integer, primary_key: true)
                             ]
                           end
                       end)
@@ -52,24 +47,44 @@ defmodule Explorer.Chain.Log.Schema do
     quote do
       @primary_key false
       typed_schema "logs" do
-        field(:data, Data, null: false)
+        field(:data, Data)
+        field(:compressed_data, CompressedData)
         field(:first_topic, Hash.Full)
-        field(:second_topic, Hash.Full)
-        field(:third_topic, Hash.Full)
-        field(:fourth_topic, Hash.Full)
+        field(:second_topic, Hash.Trimmed)
+        field(:third_topic, Hash.Trimmed)
+        field(:fourth_topic, Hash.Trimmed)
         field(:index, :integer, primary_key: true, null: false)
-        field(:block_number, :integer)
+        field(:block_number, :integer, primary_key: true)
 
         timestamps()
 
-        belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address, null: false)
+        belongs_to(:address_mapping, AddressIdToAddressHash,
+          foreign_key: :address_id,
+          references: :address_id,
+          type: :integer
+        )
+
+        has_one(:address, through: [:address_mapping, :address])
+
+        # TODO: remove after migration to address id is done
+        belongs_to(
+          :address_by_hash,
+          Address,
+          foreign_key: :address_hash,
+          references: :hash,
+          type: Hash.Address
+        )
 
         belongs_to(:block, Block,
           foreign_key: :block_hash,
-          primary_key: true,
           references: :hash,
-          type: Hash.Full,
-          null: false
+          type: Hash.Full
+        )
+
+        belongs_to(:transaction, Transaction,
+          foreign_key: :transaction_hash,
+          references: :hash,
+          type: Hash.Full
         )
 
         unquote_splicing(@transaction_field)
@@ -91,20 +106,21 @@ defmodule Explorer.Chain.Log do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, ContractMethod, Hash, Log, TokenTransfer, Transaction}
   alias Explorer.SmartContract.SigProviderInterface
+  alias Explorer.Utility.{AddressIdToAddressHash, LogHelper}
 
-  @required_attrs ~w(address_hash data block_hash index)a
+  @required_attrs ~w(address_id compressed_data index)a
                   |> (&(case @chain_identity do
                           {:optimism, :celo} ->
                             &1
 
                           _ ->
-                            [:transaction_hash | &1]
+                            [:transaction_index, :transaction_hash | &1]
                         end)).()
 
-  @optional_attrs ~w(first_topic second_topic third_topic fourth_topic block_number)a
+  @optional_attrs ~w(block_hash first_topic second_topic third_topic fourth_topic block_number)a
                   |> (&(case @chain_identity do
                           {:optimism, :celo} ->
-                            [:transaction_hash | &1]
+                            [:transaction_index, :transaction_hash | &1]
 
                           _ ->
                             &1
@@ -114,29 +130,28 @@ defmodule Explorer.Chain.Log do
    * `address` - address of contract that generate the event
    * `block_hash` - hash of the block
    * `block_number` - The block number that the transfer took place.
-   * `address_hash` - foreign key for `address`
-   * `data` - non-indexed log parameters.
+   * `address_id` - foreign key for `address_ids_to_address_hashes`
+   * `compressed_data` - non-indexed log parameters.
    * `first_topic` - `topics[0]`
    * `second_topic` - `topics[1]`
    * `third_topic` - `topics[2]`
    * `fourth_topic` - `topics[3]`
    * `transaction` - transaction for which `log` is
    * `transaction_hash` - foreign key for `transaction`.
+   * `transaction_index` - index of the related transaction within the block
    * `index` - index of the log entry within the block
   """
   Explorer.Chain.Log.Schema.generate()
 
   @doc """
-  `address_hash` and `transaction_hash` are converted to `t:Explorer.Chain.Hash.t/0`.
-
       iex> changeset = Explorer.Chain.Log.changeset(
       ...>   %Explorer.Chain.Log{},
       ...>   %{
-      ...>     address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
-      ...>     block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
-      ...>     data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
+      ...>     address_id: 1,
+      ...>     compressed_data: "0x000000000000000000000000862d67cb0773ee3f8ce7ea89b328ffea861ab3ef",
       ...>     first_topic: "0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22",
       ...>     fourth_topic: nil,
+      ...>     transaction_index: 0,
       ...>     index: 0,
       ...>     second_topic: nil,
       ...>     third_topic: nil,
@@ -145,17 +160,6 @@ defmodule Explorer.Chain.Log do
       ...> )
       iex> changeset.valid?
       true
-      iex> changeset.changes.address_hash
-      %Explorer.Chain.Hash{
-        byte_count: 20,
-        bytes: <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65, 91>>
-      }
-      iex> changeset.changes.transaction_hash
-      %Explorer.Chain.Hash{
-        byte_count: 32,
-        bytes: <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57, 101, 36,
-                 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-      }
 
   """
   def changeset(%__MODULE__{} = log, attrs \\ %{}) do
@@ -183,7 +187,7 @@ defmodule Explorer.Chain.Log do
         events_acc \\ %{}
       ) do
     with {:no_abi, false} <- {:no_abi, is_nil(full_abi)},
-         {:ok, selector, mapping} <- find_and_decode(full_abi, log, transaction.hash),
+         {:ok, selector, mapping} <- find_and_decode(full_abi, log),
          identifier <- Base.encode16(selector.method_id, case: :lower),
          text <- function_call(selector.function, mapping) do
       {{:ok, identifier, text, mapping}, events_acc}
@@ -224,7 +228,7 @@ defmodule Explorer.Chain.Log do
     case error do
       {:error, _reason} ->
         with {{:error, :contract_not_verified, candidates}, events_acc} <-
-               find_method_candidates(log, transaction, db_options, events_acc),
+               find_method_candidates(log, db_options, events_acc),
              {true, events_acc} <- {is_list(candidates), events_acc},
              {false, events_acc} <- {Enum.empty?(candidates), events_acc} do
           {{:error, :contract_not_verified, candidates}, events_acc}
@@ -235,16 +239,16 @@ defmodule Explorer.Chain.Log do
     end
   end
 
-  defp find_method_candidates(log, transaction, options, events_acc) do
+  defp find_method_candidates(log, options, events_acc) do
     if is_nil(log.first_topic) do
       {{:error, :could_not_decode}, events_acc}
     else
       <<method_id::binary-size(4), _rest::binary>> = log.first_topic.bytes
 
       if Map.has_key?(events_acc, method_id) do
-        {find_and_decode_in_candidates(events_acc[method_id], log, transaction), events_acc}
+        {find_and_decode_in_candidates(events_acc[method_id], log), events_acc}
       else
-        {result, event_candidates} = find_method_candidates_from_db(method_id, log, transaction, options)
+        {result, event_candidates} = find_method_candidates_from_db(method_id, log, options)
         {result, Map.put(events_acc, method_id, event_candidates)}
       end
     end
@@ -255,26 +259,26 @@ defmodule Explorer.Chain.Log do
       if decoding_from_list? do
         mark_events_to_decode_later_via_sig_provider_in_batch(log, transaction.hash)
       else
-        decode_event_via_sig_provider(log, transaction.hash, skip_sig_provider?)
+        decode_event_via_sig_provider(log, skip_sig_provider?)
       end
 
     {result, events_acc}
   end
 
-  defp find_method_candidates_from_db(method_id, log, transaction, options) do
+  defp find_method_candidates_from_db(method_id, log, options) do
     event_candidates =
       method_id
       |> ContractMethod.find_contract_method_query(3)
       |> Chain.select_repo(options).all()
 
-    {find_and_decode_in_candidates(event_candidates, log, transaction), event_candidates}
+    {find_and_decode_in_candidates(event_candidates, log), event_candidates}
   end
 
-  defp find_and_decode_in_candidates(event_candidates, log, transaction) do
+  defp find_and_decode_in_candidates(event_candidates, log) do
     result =
       event_candidates
       |> Enum.flat_map(fn contract_method ->
-        case find_and_decode([contract_method.abi], log, transaction.hash) do
+        case find_and_decode([contract_method.abi], log) do
           {:ok, selector, mapping} ->
             identifier = Base.encode16(selector.method_id, case: :lower)
             text = function_call(selector.function, mapping)
@@ -290,9 +294,9 @@ defmodule Explorer.Chain.Log do
     {:error, :contract_not_verified, result}
   end
 
-  @spec find_and_decode([map()], __MODULE__.t(), Hash.t()) ::
+  @spec find_and_decode([map()], __MODULE__.t()) ::
           {:error, any} | {:ok, ABI.FunctionSelector.t(), any}
-  def find_and_decode(abi, log, transaction_hash) do
+  def find_and_decode(abi, log) do
     # For events, the method_id (signature) is 32 bytes, whereas for methods and
     # errors it is 4 bytes. To avoid complications with different sizes, we
     # always take only the first 4 bytes of the hash.
@@ -313,8 +317,8 @@ defmodule Explorer.Chain.Log do
     e ->
       Logger.warning(fn ->
         [
-          "Could not decode input data for log from transaction hash: ",
-          Hash.to_iodata(transaction_hash),
+          "Could not decode input data for log: ",
+          inspect(log),
           Exception.format(:error, e, __STACKTRACE__)
         ]
       end)
@@ -370,7 +374,6 @@ defmodule Explorer.Chain.Log do
   ## Parameters
 
     - `log`: The log containing the event data and topics.
-    - `transaction_hash`: The hash of the transaction containing the log.
     - `skip_sig_provider?`: A boolean indicating whether to skip using the signature provider.
 
   ## Returns
@@ -386,13 +389,11 @@ defmodule Explorer.Chain.Log do
   """
   @spec decode_event_via_sig_provider(
           __MODULE__.t(),
-          Hash.t(),
           boolean()
         ) ::
           {:error, :could_not_decode} | {:error, :contract_not_verified, list()}
   def decode_event_via_sig_provider(
         log,
-        transaction_hash,
         skip_sig_provider?
       ) do
     with true <- SigProviderInterface.enabled?(),
@@ -411,7 +412,7 @@ defmodule Explorer.Chain.Log do
          true <- is_list(result),
          false <- Enum.empty?(result),
          abi <- [result |> List.first() |> Map.put("type", "event")],
-         {:ok, selector, mapping} <- find_and_decode(abi, log, transaction_hash),
+         {:ok, selector, mapping} <- find_and_decode(abi, log),
          identifier <- Base.encode16(selector.method_id, case: :lower),
          text <- function_call(selector.function, mapping) do
       {:error, :contract_not_verified, [{:ok, identifier, text, mapping}]}
@@ -460,12 +461,8 @@ defmodule Explorer.Chain.Log do
          false <- Enum.empty?(result) do
       input
       |> Enum.zip(result)
-      |> Enum.map(fn {{index,
-                       %{
-                         :log => log,
-                         :transaction_hash => transaction_hash
-                       }}, %{"abi" => abi}} ->
-        decode_sig_provider_batch_item(index, abi, log, transaction_hash)
+      |> Enum.map(fn {{index, %{log: log}}, %{"abi" => abi}} ->
+        decode_sig_provider_batch_item(index, abi, log)
       end)
     else
       _ ->
@@ -474,13 +471,13 @@ defmodule Explorer.Chain.Log do
     end
   end
 
-  defp decode_sig_provider_batch_item(index, abi, log, transaction_hash) do
+  defp decode_sig_provider_batch_item(index, abi, log) do
     abi_first_item = List.first(abi)
 
     if is_map(abi_first_item) do
       normalized_abi = [Map.put(abi_first_item, "type", "event")]
 
-      case find_and_decode(normalized_abi, log, transaction_hash) do
+      case find_and_decode(normalized_abi, log) do
         {:ok, selector, mapping} ->
           identifier = Base.encode16(selector.method_id, case: :lower)
           text = function_call(selector.function, mapping)
@@ -514,9 +511,18 @@ defmodule Explorer.Chain.Log do
     end)
   end
 
-  def fetch_log_by_transaction_hash_and_first_topic(transaction_hash, first_topic, options \\ []) do
+  @doc """
+  Fetches a log by transaction and first topic.
+  """
+  @spec fetch_log_by_transaction_and_first_topic(Transaction.t(), Hash.Full.t() | binary(), Keyword.t()) :: t() | nil
+  def fetch_log_by_transaction_and_first_topic(transaction, first_topic, options \\ [])
+
+  def fetch_log_by_transaction_and_first_topic(%{block_number: nil}, _first_topic, _options), do: nil
+
+  def fetch_log_by_transaction_and_first_topic(transaction, first_topic, options) do
     __MODULE__
-    |> where([l], l.transaction_hash == ^transaction_hash and l.first_topic == ^first_topic)
+    |> by_transaction_query(transaction.hash, transaction.block_number, transaction.index)
+    |> where([l], l.first_topic == ^first_topic)
     |> limit(1)
     |> Chain.select_repo(options).one()
   end
@@ -525,17 +531,46 @@ defmodule Explorer.Chain.Log do
   Fetches logs by user operation.
   """
   @spec user_op_to_logs(map(), Keyword.t()) :: [t()]
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def user_op_to_logs(user_op, options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     limit = Keyword.get(options, :limit, 50)
 
     __MODULE__
-    |> where([log], log.block_hash == ^user_op["block_hash"] and log.transaction_hash == ^user_op["transaction_hash"])
+    |> then(fn query ->
+      case Transaction.get_transactions_by_hashes([user_op["transaction_hash"]]) do
+        [%Transaction{hash: transaction_hash, block_number: block_number, index: transaction_index}] ->
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          cond do
+            LogHelper.fill_optimized_fields_migration_finished?() ->
+              where(query, [log], log.block_number == ^block_number and log.transaction_index == ^transaction_index)
+
+            LogHelper.fill_optimized_fields_migration_started?() ->
+              where(
+                query,
+                [log],
+                (log.block_hash == ^user_op["block_hash"] and log.transaction_hash == ^transaction_hash) or
+                  (log.block_number == ^block_number and log.transaction_index == ^transaction_index)
+              )
+
+            true ->
+              where(
+                query,
+                [log],
+                log.block_hash == ^user_op["block_hash"] and log.transaction_hash == ^transaction_hash
+              )
+          end
+
+        _ ->
+          where(query, [log], false)
+      end
+    end)
     |> where([log], log.index >= ^user_op["user_logs_start_index"])
     |> order_by([log], asc: log.index)
     |> limit(^min(user_op["user_logs_count"], limit))
-    |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).all()
+    |> preload_block(Chain.select_repo(options))
+    |> preload_transaction([], Chain.select_repo(options))
+    |> preload_address(options, Chain.select_repo(options))
   end
 
   @doc """
@@ -550,12 +585,13 @@ defmodule Explorer.Chain.Log do
     base_query = from(log in __MODULE__, as: :log)
 
     base_query
-    |> where([log], log.address_hash in ^env[:whitelisted_weth_contracts])
+    |> address_match_query(env[:whitelisted_weth_contracts])
     |> where(^first_topic_is_deposit_or_withdrawal_signature())
-    |> join(:left, [log], tt in TokenTransfer,
-      on: log.block_hash == tt.block_hash and log.transaction_hash == tt.transaction_hash and log.index == tt.log_index
+    |> join_transaction_query()
+    |> join(:left, [log, t], tt in TokenTransfer,
+      on: log.block_number == tt.block_number and t.hash == tt.transaction_hash and log.index == tt.log_index
     )
-    |> where([log, tt], is_nil(tt.transaction_hash))
+    |> where([log, _t, tt], is_nil(tt.transaction_hash))
     |> select([log], log)
     |> Repo.stream_each(each_fun)
   end
@@ -592,10 +628,26 @@ defmodule Explorer.Chain.Log do
   """
   @spec first_topic_is_not_deposit_or_withdrawal_signature() :: Ecto.Query.dynamic_expr()
   def first_topic_is_not_deposit_or_withdrawal_signature do
-    dynamic(
-      [log: log],
-      log.first_topic not in [^TokenTransfer.weth_deposit_signature(), ^TokenTransfer.weth_withdrawal_signature()]
-    )
+    topic_values = [TokenTransfer.weth_deposit_signature(), TokenTransfer.weth_withdrawal_signature()]
+
+    if LogHelper.fill_optimized_fields_migration_finished?() do
+      dynamic([log: log], log.first_topic not in ^topic_values)
+    else
+      trimmed_values =
+        topic_values
+        |> Enum.flat_map(fn topic ->
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          case Hash.Trimmed.dump(topic) do
+            {:ok, trimmed} -> [trimmed]
+            :error -> []
+          end
+        end)
+
+      dynamic(
+        [log: log],
+        log.first_topic not in ^topic_values and log.first_topic not in type(^trimmed_values, {:array, :binary})
+      )
+    end
   end
 
   @doc """
@@ -631,8 +683,372 @@ defmodule Explorer.Chain.Log do
     from(
       log in __MODULE__,
       inner_join: block in Block,
-      on: block.hash == log.block_hash and block.consensus == true,
+      on: block.number == log.block_number and block.consensus == true,
       select: log
     )
+  end
+
+  @doc """
+  Filters logs by one or multiple topic fields.
+
+  When `topic_name` is an atom, filters the query by the given topic field and
+  values. `topic_values` can be a single value or a list of values.
+
+  When `topic_names` and `topic_values_list` are lists, builds an `OR` condition
+  where each topic field is matched against the corresponding list of values.
+  """
+  @spec filter_by_topic_query(Ecto.Queryable.t(), atom() | [atom()], any() | [[any()]]) :: Ecto.Query.t()
+  def filter_by_topic_query(query, topic_name, topic_values) when is_atom(topic_name) do
+    where(query, [l], ^topic_filter_dynamic(topic_name, List.wrap(topic_values)))
+  end
+
+  def filter_by_topic_query(query, topic_names, topic_values_list)
+      when is_list(topic_names) and is_list(topic_values_list) do
+    where(query, [l], ^filter_by_topic_dynamic(topic_names, topic_values_list))
+  end
+
+  def filter_by_topic_dynamic(topic_names, topic_values_list) do
+    topic_names
+    |> Enum.zip(topic_values_list)
+    |> Enum.reduce(dynamic(false), fn {topic_name, topic_values}, dynamic ->
+      dynamic(
+        [l],
+        ^dynamic or ^topic_filter_dynamic(topic_name, topic_values)
+      )
+    end)
+  end
+
+  def topic_filter_dynamic(:first_topic, topic_values), do: dynamic([l], l.first_topic in ^topic_values)
+
+  def topic_filter_dynamic(topic_name, topic_values) do
+    if LogHelper.fill_optimized_fields_migration_finished?() do
+      dynamic([l], field(l, ^topic_name) in ^topic_values)
+    else
+      extended_values =
+        topic_values
+        |> Enum.flat_map(fn topic ->
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          case Hash.Full.dump(topic) do
+            {:ok, extended} -> [extended]
+            :error -> []
+          end
+        end)
+
+      dynamic(
+        [l],
+        field(l, ^topic_name) in ^topic_values or field(l, ^topic_name) in type(^extended_values, {:array, :binary})
+      )
+    end
+  end
+
+  defp by_transaction_query(query, transaction_hash, block_number, transaction_index) do
+    cond do
+      LogHelper.fill_optimized_fields_migration_finished?() ->
+        where(query, [l], l.block_number == ^block_number and l.transaction_index == ^transaction_index)
+
+      LogHelper.fill_optimized_fields_migration_started?() ->
+        where(
+          query,
+          [l],
+          l.transaction_hash == ^transaction_hash or
+            (l.block_number == ^block_number and l.transaction_index == ^transaction_index)
+        )
+
+      true ->
+        where(query, [l], l.transaction_hash == ^transaction_hash)
+    end
+  end
+
+  @doc """
+  Joins transactions to the given logs query.
+  """
+  @spec join_transaction_query(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def join_transaction_query(query \\ __MODULE__) do
+    cond do
+      LogHelper.fill_optimized_fields_migration_finished?() ->
+        join(query, :inner, [l], t in Transaction,
+          on: l.block_number == t.block_number and l.transaction_index == t.index,
+          as: :transaction
+        )
+
+      LogHelper.fill_optimized_fields_migration_started?() ->
+        join(query, :inner, [l], t in Transaction,
+          on: l.transaction_hash == t.hash or (l.block_number == t.block_number and l.transaction_index == t.index),
+          as: :transaction
+        )
+
+      true ->
+        join(query, :inner, [l], t in Transaction, on: l.transaction_hash == t.hash, as: :transaction)
+    end
+  end
+
+  @doc """
+  Joins logs to the given token transfers query.
+  """
+  @spec join_to_token_transfer_query(Ecto.Queryable.t()) :: Ecto.Query.t()
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  def join_to_token_transfer_query(query) do
+    cond do
+      LogHelper.fill_optimized_fields_migration_finished?() ->
+        query
+        |> join(:left, [tt], t in assoc(tt, :transaction))
+        |> join(:left, [tt, t], l in __MODULE__,
+          on: tt.block_number == l.block_number and t.index == l.transaction_index and tt.log_index == l.index,
+          as: :log
+        )
+
+      LogHelper.fill_optimized_fields_migration_started?() ->
+        query
+        |> join(:left, [tt], t in assoc(tt, :transaction))
+        |> join(:left, [tt, t], l in __MODULE__,
+          on:
+            ((tt.block_number == l.block_number and t.index == l.transaction_index) or
+               tt.transaction_hash == l.transaction_hash) and tt.log_index == l.index,
+          as: :log
+        )
+
+      true ->
+        join(query, :left, [tt], l in __MODULE__,
+          on: tt.block_hash == l.block_hash and tt.transaction_hash == l.transaction_hash and tt.log_index == l.index,
+          as: :log
+        )
+    end
+  end
+
+  @doc """
+  Preloads consensus blocks for log records.
+
+  When a list of logs is provided and `blocks` is `nil`, the function fetches
+  consensus blocks by `block_number` and attaches each block to the matching log.
+
+  It also ensures that `:block_hash` is populated from the loaded block when
+  available, while preserving the existing value if no block is found.
+  """
+  def join_address_mapping_query(query, join_type \\ :left) do
+    with_named_binding(query, :address_mapping, fn query, binding ->
+      join(query, join_type, [it], m in AddressIdToAddressHash,
+        as: ^binding,
+        on: it.address_id == m.address_id
+      )
+    end)
+  end
+
+  def address_match_query(query, address_hashes) when is_list(address_hashes) do
+    cond do
+      LogHelper.fill_optimized_fields_migration_finished?() ->
+        address_ids = AddressIdToAddressHash.hashes_to_ids(address_hashes)
+        where(query, [l], l.address_id in ^address_ids)
+
+      LogHelper.fill_optimized_fields_migration_started?() ->
+        address_ids = AddressIdToAddressHash.hashes_to_ids(address_hashes)
+        where(query, [l], l.address_id in ^address_ids or l.address_hash in ^address_hashes)
+
+      true ->
+        where(query, [l], l.address_hash in ^address_hashes)
+    end
+  end
+
+  def address_match_query(query, address_hash) do
+    cond do
+      LogHelper.fill_optimized_fields_migration_finished?() ->
+        address_id = AddressIdToAddressHash.hash_to_id(address_hash)
+        where(query, [l], ^address_id_match_dynamic(address_id))
+
+      LogHelper.fill_optimized_fields_migration_started?() ->
+        address_id = AddressIdToAddressHash.hash_to_id(address_hash)
+        where(query, [l], ^address_id_or_hash_match_dynamic(address_id, address_hash))
+
+      true ->
+        where(query, [l], l.address_hash == ^address_hash)
+    end
+  end
+
+  defp address_id_match_dynamic(nil), do: dynamic(false)
+  defp address_id_match_dynamic(address_id), do: dynamic([l], l.address_id == ^address_id)
+
+  defp address_id_or_hash_match_dynamic(nil, address_hash), do: dynamic([l], l.address_hash == ^address_hash)
+
+  defp address_id_or_hash_match_dynamic(address_id, address_hash),
+    do: dynamic([l], l.address_id == ^address_id or l.address_hash == ^address_hash)
+
+  @spec preload_block(map() | [map()] | nil, module(), [Block.t()] | nil) :: __MODULE__.t() | [__MODULE__.t()] | nil
+  def preload_block(logs, repo \\ Repo, blocks \\ nil)
+
+  def preload_block(nil, _repo, _blocks), do: nil
+  def preload_block([], _repo, _blocks), do: []
+
+  def preload_block(logs, repo, nil) when is_list(logs) do
+    blocks_map =
+      logs
+      |> Enum.map(& &1.block_number)
+      |> Block.by_numbers_query()
+      |> Block.consensus_query(true)
+      |> repo.all()
+      |> Map.new(&{&1.number, &1})
+
+    Enum.map(logs, fn log ->
+      block = blocks_map[log.block_number]
+      Map.merge(log, %{block_hash: (block && block.hash) || log.block_hash, block: block})
+    end)
+  end
+
+  def preload_block(logs, _repo, existing_blocks) when is_list(logs) do
+    blocks_map = Map.new(existing_blocks, &{&1.number, &1})
+
+    Enum.map(logs, fn log ->
+      block = blocks_map[log.block_number]
+      Map.merge(log, %{block_hash: (block && block.hash) || log.block_hash, block: block})
+    end)
+  end
+
+  def preload_block(log, repo, existing_blocks) do
+    [log]
+    |> preload_block(repo, existing_blocks)
+    |> List.first()
+  end
+
+  @doc """
+  Preloads transactions for log records.
+
+  When a list of logs is provided and `transactions` is `nil`,
+  the function fetches the corresponding parent transactions by
+  `{block_number, transaction_index}` and attaches each transaction to the
+  `:transaction` field of the matching log.
+
+  It also ensures that `:transaction_hash` is populated from the loaded
+  transaction when available, while preserving the existing value if no
+  transaction is found.
+
+  ## Parameters
+  - `logs`: A single log, a list of logs, or `nil`
+  - `repo`: The repo used to fetch transactions when they are not passed explicitly
+  - `transactions`: Optional preloaded transactions to reuse instead of
+    querying the database
+
+  ## Returns
+  - `nil` when `logs` is `nil`
+  - A list of logs with the `:transaction` field populated
+  - A single log with the `:transaction` field populated
+  """
+  @spec preload_transaction(map() | [map()] | nil, [any()], module(), [Transaction.t()] | nil) ::
+          __MODULE__.t() | [__MODULE__.t()] | nil
+  def preload_transaction(logs, preloads \\ [], repo \\ Repo, transactions \\ nil)
+
+  def preload_transaction(nil, _preloads, _repo, _transactions), do: nil
+  def preload_transaction([], _preloads, _repo, _transactions), do: []
+
+  def preload_transaction(logs, preloads, repo, existing_transactions) when is_list(logs) do
+    transactions =
+      case existing_transactions do
+        nil ->
+          logs
+          |> Enum.map(&{&1.block_number, &1.transaction_index})
+          |> Enum.uniq()
+          |> Transaction.by_block_number_index_query()
+          |> repo.all()
+          |> repo.preload(preloads)
+
+        transactions ->
+          List.wrap(transactions)
+      end
+
+    block_number_index_to_transaction_map = Map.new(transactions, &{{&1.block_number, &1.index}, &1})
+
+    Enum.map(logs, fn it ->
+      transaction = block_number_index_to_transaction_map[{it.block_number, it.transaction_index}]
+
+      Map.merge(it, %{
+        transaction: transaction,
+        transaction_hash: (transaction && transaction.hash) || it.transaction_hash
+      })
+    end)
+  end
+
+  def preload_transaction(log, preloads, repo, transactions) do
+    [log]
+    |> preload_transaction(preloads, repo, transactions)
+    |> List.first()
+  end
+
+  @spec preload_address(map() | [map()] | nil, Keyword.t(), module()) :: __MODULE__.t() | [__MODULE__.t()] | nil
+  def preload_address(logs, options \\ [], repo \\ Repo)
+
+  def preload_address(nil, _options, _repo), do: nil
+  def preload_address([], _options, _repo), do: []
+
+  def preload_address(logs, options, repo) when is_list(logs) do
+    preloads = [address: Keyword.get(options, :address_preloads, [])]
+    repo = repo || Chain.select_repo(options)
+
+    indexed_logs = Enum.with_index(logs)
+
+    {migrated_indexed, not_migrated_indexed} =
+      Enum.split_with(indexed_logs, fn {l, _idx} -> is_nil(l.address_hash) end)
+
+    migrated = Enum.map(migrated_indexed, &elem(&1, 0))
+    not_migrated = Enum.map(not_migrated_indexed, &elem(&1, 0))
+
+    not_migrated_preloaded = preload_addresses_for_not_migrated_logs(not_migrated, preloads, repo)
+    migrated_preloaded = preload_addresses_for_migrated_logs(migrated, preloads, repo)
+
+    migrated_with_idx = Enum.zip(migrated_preloaded, Enum.map(migrated_indexed, &elem(&1, 1)))
+    not_migrated_with_idx = Enum.zip(not_migrated_preloaded, Enum.map(not_migrated_indexed, &elem(&1, 1)))
+
+    (migrated_with_idx ++ not_migrated_with_idx)
+    |> Enum.sort_by(&elem(&1, 1))
+    |> Enum.map(&elem(&1, 0))
+  end
+
+  def preload_address(log, options, repo) do
+    [log]
+    |> preload_address(options, repo)
+    |> List.first()
+  end
+
+  @spec prepare_data(map() | [map()] | nil) :: __MODULE__.t() | [__MODULE__.t()] | nil
+  def prepare_data(nil), do: nil
+
+  def prepare_data(logs) when is_list(logs) do
+    Enum.map(logs, &%{&1 | data: &1.data || &1.compressed_data})
+  end
+
+  def prepare_data(log) do
+    [log]
+    |> prepare_data()
+    |> List.first()
+  end
+
+  defp preload_addresses_for_not_migrated_logs([], _preloads, _repo), do: []
+
+  defp preload_addresses_for_not_migrated_logs(logs, preloads, repo) do
+    unified_preloads =
+      preloads
+      |> List.wrap()
+      |> Enum.map(fn
+        :address -> {:address_by_hash, []}
+        {:address, fields} -> {:address_by_hash, fields}
+      end)
+
+    logs
+    |> repo.preload(unified_preloads)
+    |> Enum.map(fn log ->
+      address = Map.get(log, :address_by_hash)
+
+      Map.merge(log, %{
+        address_hash: (address && address.hash) || Map.get(log, :address_hash),
+        address: address
+      })
+    end)
+  end
+
+  defp preload_addresses_for_migrated_logs([], _preloads, _repo), do: []
+
+  defp preload_addresses_for_migrated_logs(logs, preloads, repo) do
+    logs
+    |> repo.preload(preloads)
+    |> Enum.map(fn log ->
+      address = Map.get(log, :address)
+      Map.put(log, :address_hash, address && address.hash)
+    end)
   end
 end

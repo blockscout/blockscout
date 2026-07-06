@@ -23,11 +23,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     graphql_max_complexity: [:block_scout_web, [Api.GraphQL, :max_complexity]],
     graphql_token_limit: [:block_scout_web, [Api.GraphQL, :token_limit]],
     reading_enabled: [:block_scout_web, [__MODULE__, :reading_enabled]],
-    writing_enabled: [:block_scout_web, [__MODULE__, :writing_enabled]],
-    mud_enabled_compile_time?: [:explorer, [Explorer.Chain.Mud, :enabled]]
-
-  use Utils.RuntimeEnvHelper,
-    mud_enabled?: [:explorer, [Explorer.Chain.Mud, :enabled]]
+    writing_enabled: [:block_scout_web, [__MODULE__, :writing_enabled]]
 
   alias BlockScoutWeb.Routers.{
     AccountRouter,
@@ -38,7 +34,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     UtilsApiV2Router
   }
 
-  alias BlockScoutWeb.Plug.{CheckApiV2, CheckFeature}
+  alias BlockScoutWeb.Plug.CheckApiV2
 
   @max_query_string_length 5_000
 
@@ -56,7 +52,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       length: 20_000_000,
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
-      json_decoder: Poison
+      json_decoder: JSON
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :api)
@@ -70,11 +66,28 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       parsers: [:urlencoded, :multipart, :json],
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
-      json_decoder: Poison
+      json_decoder: JSON
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
+    plug(CheckApiV2)
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.Specs.Public)
+  end
+
+  pipeline :api_v2_csv do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: JSON
+    )
+
+    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
+    plug(:accepts, ["json", "csv"])
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
@@ -87,7 +100,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       parsers: [:urlencoded, :multipart, :json],
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
-      json_decoder: Poison
+      json_decoder: JSON
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
@@ -99,17 +112,13 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(
       Plug.Parsers,
       parsers: [:json, Absinthe.Plug.Parser],
-      json_decoder: Poison,
+      json_decoder: JSON,
       body_reader: {BlockScoutWeb.GraphQL.BodyReader, :read_body, []}
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
     plug(BlockScoutWeb.Plug.GraphQLSchemaIntrospection)
-  end
-
-  pipeline :mud do
-    plug(CheckFeature, feature_check: &mud_enabled?/0)
   end
 
   alias BlockScoutWeb.API.{Legacy, V2}
@@ -245,13 +254,9 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:address_hash_param/token-balances", V2.AddressController, :token_balances)
       get("/:address_hash_param/tokens", V2.AddressController, :tokens)
       get("/:address_hash_param/transactions", V2.AddressController, :transactions)
-      get("/:address_hash_param/transactions/csv", V2.CsvExportController, :transactions_csv)
       get("/:address_hash_param/token-transfers", V2.AddressController, :token_transfers)
-      get("/:address_hash_param/token-transfers/csv", V2.CsvExportController, :token_transfers_csv)
       get("/:address_hash_param/internal-transactions", V2.AddressController, :internal_transactions)
-      get("/:address_hash_param/internal-transactions/csv", V2.CsvExportController, :internal_transactions_csv)
       get("/:address_hash_param/logs", V2.AddressController, :logs)
-      get("/:address_hash_param/logs/csv", V2.CsvExportController, :logs_csv)
       get("/:address_hash_param/blocks-validated", V2.AddressController, :blocks_validated)
       get("/:address_hash_param/coin-balance-history", V2.AddressController, :coin_balance_history)
       get("/:address_hash_param/coin-balance-history-by-day", V2.AddressController, :coin_balance_history_by_day)
@@ -261,7 +266,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
       if @chain_identity == {:optimism, :celo} do
         get("/:address_hash_param/celo/election-rewards", V2.AddressController, :celo_election_rewards)
-        get("/:address_hash_param/celo/election-rewards/csv", V2.CsvExportController, :celo_election_rewards_csv)
       end
 
       if @chain_type == :ethereum do
@@ -439,22 +443,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       if @chain_type == :zksync do
         get("/batches", V2.ZkSyncController, :batches)
         get("/batches/count", V2.ZkSyncController, :batches_count)
-        get("/batches/:batch_number", V2.ZkSyncController, :batch)
-      end
-    end
-
-    if @mud_enabled_compile_time? do
-      scope "/mud" do
-        pipe_through(:mud)
-        get("/worlds", V2.MudController, :worlds)
-        get("/worlds/count", V2.MudController, :worlds_count)
-        get("/worlds/:world/tables", V2.MudController, :world_tables)
-        get("/worlds/:world/systems", V2.MudController, :world_systems)
-        get("/worlds/:world/systems/:system", V2.MudController, :world_system)
-        get("/worlds/:world/tables/count", V2.MudController, :world_tables_count)
-        get("/worlds/:world/tables/:table_id/records", V2.MudController, :world_table_records)
-        get("/worlds/:world/tables/:table_id/records/count", V2.MudController, :world_table_records_count)
-        get("/worlds/:world/tables/:table_id/records/:record_id", V2.MudController, :world_table_record)
+        get("/batches/:batch_number_param", V2.ZkSyncController, :batch)
       end
     end
 
@@ -480,21 +469,43 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     scope "/advanced-filters" do
       get("/", V2.AdvancedFilterController, :list)
-      get("/csv", V2.AdvancedFilterController, :list_csv)
       get("/methods", V2.AdvancedFilterController, :list_methods)
     end
+  end
+
+  scope "/v2", as: :api_v2 do
+    pipe_through(:api_v2_csv)
+
+    get("/addresses/:address_hash_param/transactions/csv", V2.CsvExportController, :transactions_csv)
+    get("/addresses/:address_hash_param/token-transfers/csv", V2.CsvExportController, :token_transfers_csv)
+    get("/addresses/:address_hash_param/internal-transactions/csv", V2.CsvExportController, :internal_transactions_csv)
+    get("/addresses/:address_hash_param/logs/csv", V2.CsvExportController, :logs_csv)
+
+    if @chain_identity == {:optimism, :celo} do
+      get(
+        "/addresses/:address_hash_param/celo/election-rewards/csv",
+        V2.CsvExportController,
+        :celo_election_rewards_csv
+      )
+    end
+
+    get("/advanced-filters/csv", V2.AdvancedFilterController, :list_csv)
   end
 
   scope "/legacy" do
     pipe_through(:api_v2)
 
-    scope "/logs" do
-      get("/get-logs", Legacy.LogsController, :get_logs)
-    end
-
     scope "/block" do
       get("/get-block-number-by-time", Legacy.BlockController, :get_block_number_by_time)
-      get("/eth-block-number", Legacy.BlockController, :eth_block_number)
+    end
+
+    scope "/eth" do
+      post("/eth-call", Legacy.EthController, :eth_call)
+      post("/eth-get-balance", Legacy.EthController, :eth_get_balance)
+      post("/eth-get-storage-at", Legacy.EthController, :eth_get_storage_at)
+      post("/eth-send-raw-transaction", Legacy.EthController, :eth_send_raw_transaction)
+      post("/eth-block-number", Legacy.EthController, :eth_block_number)
+      post("/eth-get-logs", Legacy.EthController, :eth_get_logs)
     end
   end
 
@@ -518,7 +529,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     alias BlockScoutWeb.API.V2.SearchController
 
     # leave the same endpoint in v1 in order to keep backward compatibility
-    get("/search", SearchController, :search)
+    get("/search", SearchController, :search_v1_compatibility)
 
     get("/gas-price-oracle", GasPriceOracleController, :gas_price_oracle)
 

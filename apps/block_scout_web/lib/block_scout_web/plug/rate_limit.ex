@@ -55,10 +55,11 @@ defmodule BlockScoutWeb.Plug.RateLimit do
 
   defp set_rate_limit_headers_for_frontend(conn, config) do
     user_agent = RateLimit.get_user_agent(conn)
+    recaptcha_disabled = Application.get_env(:block_scout_web, :recaptcha)[:is_disabled] || false
 
     option =
       cond do
-        config[:recaptcha_to_bypass_429] && user_agent -> "recaptcha"
+        config[:recaptcha_to_bypass_429] && user_agent && !recaptcha_disabled -> "recaptcha"
         config[:temporary_token] && user_agent -> "temporary_token"
         !is_nil(config) -> "no_bypass"
         true -> "no_bypass"

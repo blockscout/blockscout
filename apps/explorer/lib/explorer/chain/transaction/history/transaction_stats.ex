@@ -10,7 +10,7 @@ defmodule Explorer.Chain.Transaction.History.TransactionStats do
 
   alias Explorer.Chain
 
-  @derive {Jason.Encoder,
+  @derive {JSON.Encoder,
            except: [
              :__meta__
            ]}

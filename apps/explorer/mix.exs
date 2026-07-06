@@ -85,7 +85,6 @@ defmodule Explorer.Mixfile do
       {:ezstd, "~> 1.2"},
       {:exvcr, "~> 0.10", only: :test},
       {:httpoison, "~> 2.0"},
-      {:jason, "~> 1.3"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       {:libcluster, "~> 3.5"},
       # Log errors and application output to separate files
@@ -94,7 +93,6 @@ defmodule Explorer.Mixfile do
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 1.1.0"},
-      {:poison, "~> 5.0.0"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
       {:prometheus, "~> 6.0", override: true},
@@ -137,7 +135,8 @@ defmodule Explorer.Mixfile do
       {:hammer, "~> 7.0"},
       {:ton, "~> 0.5.0"},
       {:mint, "~> 1.0"},
-      {:oban, "~> 2.19"}
+      {:oban, "~> 2.19"},
+      {:nimble_lz4, "~> 1.1"}
     ]
   end
 

@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.Account do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "AccountAbstractionAccount",
     description: "Account struct.",
     type: :object,
     properties: %{

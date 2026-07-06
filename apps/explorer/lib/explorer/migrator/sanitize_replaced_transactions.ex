@@ -39,7 +39,9 @@ defmodule Explorer.Migrator.SanitizeReplacedTransactions do
   def update_batch(transaction_hashes) do
     query = from(t in Transaction, where: t.hash in ^transaction_hashes)
 
-    Repo.delete_all(query, timeout: :infinity)
+    {count, _} = Repo.delete_all(query, timeout: :infinity)
+
+    count
   end
 
   @impl FillingMigration

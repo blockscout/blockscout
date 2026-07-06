@@ -38,7 +38,8 @@ RUN apt-get update \
   && npm install -g cspell@latest \
   #
   # Install dependencies
-  && apt-get install -y build-essential inotify-tools \
+  && apt-get install -y build-essential inotify-tools ffmpeg pkg-config \
+      libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavdevice-dev \
   #
   # Clean up
   && apt-get autoremove -y \

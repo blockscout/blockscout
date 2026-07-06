@@ -70,7 +70,7 @@ defmodule BlockScoutWeb.GraphQL.Celo.Schema.Types do
          %{transaction_hash: transaction_hash, address_hash: address_hash},
          _
        ) do
-    Jason.encode!(%{
+    Utils.JSON.encode!(%{
       transaction_hash: to_string(transaction_hash),
       address_hash: to_string(address_hash)
     })
@@ -80,7 +80,7 @@ defmodule BlockScoutWeb.GraphQL.Celo.Schema.Types do
          %{transaction_hash: transaction_hash, log_index: log_index},
          _
        ) do
-    Jason.encode!(%{
+    Utils.JSON.encode!(%{
       transaction_hash: to_string(transaction_hash),
       log_index: log_index
     })

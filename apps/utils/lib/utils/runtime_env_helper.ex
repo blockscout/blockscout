@@ -17,12 +17,7 @@ defmodule Utils.RuntimeEnvHelper do
   ```elixir
   defmodule MyModule do
     use Utils.RuntimeEnvHelper,
-      mud_enabled?: [:explorer, [Explorer.Chain.Mud, :enabled]],
       api_enabled?: [:block_scout_web, :api_enabled]
-
-    pipeline :mud do
-      plug(CheckFeature, feature_check: &mud_enabled?/0)
-    end
 
     def process do
       if api_enabled?() do

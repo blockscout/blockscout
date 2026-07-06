@@ -94,7 +94,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPos
 
   def fetch(%Epoch{number: epoch_number, start_processing_block: %Block{number: block_number, hash: block_hash}}) do
     with false <-
-           check_if_validator_payment_distributed_events_exist(block_hash),
+           check_if_validator_payment_distributed_events_exist(block_number),
          {:ok, length} <- number_of_elected_in_current_set(block_number),
          {:ok, account_address_hashes} <- get_elected_accounts(block_number, length),
          {:ok, payments_before} <- get_allocated_payments(account_address_hashes, block_number - 1),
@@ -311,12 +311,12 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPos
     )
   end
 
-  defp check_if_validator_payment_distributed_events_exist(block_hash) do
+  defp check_if_validator_payment_distributed_events_exist(block_number) do
     query =
       from(
         log in Log,
         where: [
-          block_hash: ^block_hash,
+          block_number: ^block_number,
           address_hash: ^epoch_manager_contract_address_hash(),
           first_topic: ^@validator_epoch_payment_distributed_event_topic
         ]

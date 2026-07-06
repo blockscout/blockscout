@@ -36,7 +36,7 @@ defmodule Explorer.Market.Fetcher.TokenListTest do
   end
 
   defp token_list_json(tokens) do
-    Jason.encode!(%{
+    Utils.JSON.encode!(%{
       "name" => "Test Token List",
       "tokens" => tokens
     })
@@ -218,7 +218,7 @@ defmodule Explorer.Market.Fetcher.TokenListTest do
 
     test "skips tokens with missing address field", %{bypass: bypass} do
       body =
-        Jason.encode!(%{
+        Utils.JSON.encode!(%{
           "name" => "Test List",
           "tokens" => [
             %{"chainId" => 77, "name" => "No Address", "symbol" => "NA", "decimals" => 18}

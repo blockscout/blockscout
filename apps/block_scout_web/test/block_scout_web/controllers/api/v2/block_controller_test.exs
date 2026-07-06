@@ -922,6 +922,93 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
 
       check_paginated_response(response, response_2nd_page, internal_transactions)
     end
+
+    test "returns pending status when block is in pending_block_operations", %{conn: conn} do
+      block = insert(:block)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
+
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "returns pending status when block has pending transaction operations", %{conn: conn} do
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
+
+      insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "include_zero_value=false excludes zero-value call internal transactions", %{conn: conn} do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      request =
+        get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions", %{"include_zero_value" => "false"})
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert List.first(response["items"])["index"] == 2
+
+      request_default = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+      assert response_default = json_response(request_default, 200)
+      assert Enum.count(response_default["items"]) == 2
+    end
   end
 
   if @chain_type == :ethereum do
