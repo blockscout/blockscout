@@ -273,7 +273,7 @@ defmodule Indexer.Block.Fetcher do
              state,
              merge_options(basic_import_options, additional_options)
              |> import_options(chain_type_import_options)
-             |> extend_with_asyncable_import_options(tokens, token_transfers, address_token_balances)
+             |> extend_with_asyncable_import_options(tokens, token_transfers, address_token_balances, callback_module)
            ) do
       Prometheus.Instrumenter.set_block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
@@ -467,7 +467,7 @@ defmodule Indexer.Block.Fetcher do
 
   defp merge_option_values(_value1, value2), do: value2
 
-  defp extend_with_asyncable_import_options(import_options, tokens, token_transfers, token_balances) do
+  defp extend_with_asyncable_import_options(import_options, tokens, token_transfers, token_balances, callback_module) do
     current_token_balances_params =
       token_balances
       |> MapSet.to_list()
@@ -475,7 +475,7 @@ defmodule Indexer.Block.Fetcher do
 
     if enable_partial_async_import?() do
       TokenInstanceImporter.add(tokens, token_transfers)
-      CurrentTokenBalanceImporter.add(current_token_balances_params)
+      CurrentTokenBalanceImporter.add(current_token_balances_params, callback_module == Indexer.Block.Realtime.Fetcher)
       import_options
     else
       token_instances = TokenInstances.params_set(%{token_transfers_params: token_transfers})
@@ -592,8 +592,8 @@ defmodule Indexer.Block.Fetcher do
     result
   end
 
-  def async_import_token_instances(%{token_transfers: token_transfers}) do
-    TokenInstanceRealtime.async_fetch(token_transfers)
+  def async_import_token_instances(%{token_instances: token_instances}) do
+    TokenInstanceRealtime.async_fetch(token_instances)
   end
 
   def async_import_token_instances(_), do: :ok
