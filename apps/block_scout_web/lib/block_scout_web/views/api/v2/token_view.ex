@@ -70,6 +70,10 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     %{"items" => Enum.map(tokens, &render("token.json", %{token: &1})), "next_page_params" => next_page_params}
   end
 
+  def render("tokens_batch.json", %{tokens: tokens}) do
+    Enum.map(tokens, &render("token.json", %{token: &1}))
+  end
+
   def render("token_instances.json", %{
         token_instances: token_instances,
         next_page_params: next_page_params,
