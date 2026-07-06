@@ -318,8 +318,10 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
           |> String.replace("v", "")
           |> String.split(".")
           |> Enum.map(fn str ->
-            {num, _} = Integer.parse(str)
-            num
+            case Integer.parse(str) do
+              {num, _} -> num
+              :error -> 0
+            end
           end)
 
         Enum.fetch!(digits, 0) > 0 || Enum.fetch!(digits, 1) >= 6
