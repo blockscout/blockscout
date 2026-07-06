@@ -268,6 +268,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
             fragment("COALESCE(EXCLUDED.circulating_market_cap, ?)", token.circulating_market_cap),
           volume_24h: fragment("COALESCE(EXCLUDED.volume_24h, ?)", token.volume_24h),
           circulating_supply: fragment("COALESCE(EXCLUDED.circulating_supply, ?)", token.circulating_supply),
+          total_supply: fragment("COALESCE(EXCLUDED.total_supply, ?)", token.total_supply),
           icon_url: fragment("COALESCE(?, EXCLUDED.icon_url)", token.icon_url),
           decimals: fragment("COALESCE(?, EXCLUDED.decimals)", token.decimals),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token.inserted_at),
@@ -276,7 +277,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       ],
       where:
         fragment(
-          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.type, EXCLUDED.fiat_value, EXCLUDED.circulating_market_cap, EXCLUDED.volume_24h, EXCLUDED.circulating_supply, EXCLUDED.icon_url, EXCLUDED.decimals) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.type, EXCLUDED.fiat_value, EXCLUDED.circulating_market_cap, EXCLUDED.volume_24h, EXCLUDED.circulating_supply, EXCLUDED.total_supply, EXCLUDED.icon_url, EXCLUDED.decimals) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           token.name,
           token.symbol,
           token.type,
@@ -284,6 +285,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
           token.circulating_market_cap,
           token.volume_24h,
           token.circulating_supply,
+          token.total_supply,
           token.icon_url,
           token.decimals
         )
@@ -309,10 +311,11 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
           | :circulating_market_cap
           | :volume_24h
           | :circulating_supply
+          | :total_supply
           | :decimals
         ]
   def market_data_fields_to_update do
-    [:name, :symbol, :type, :fiat_value, :circulating_market_cap, :volume_24h, :circulating_supply, :decimals]
+    [:name, :symbol, :type, :fiat_value, :circulating_market_cap, :volume_24h, :circulating_supply, :total_supply, :decimals]
   end
 
   @doc """
