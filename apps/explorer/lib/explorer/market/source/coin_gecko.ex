@@ -47,11 +47,11 @@ defmodule Explorer.Market.Source.CoinGecko do
 
     case Source.http_request(
            base_url()
-           |> URI.append_path("/simple/price")
-           |> URI.append_query("vs_currencies=#{config(:currency)}")
-           |> URI.append_query("include_market_cap=true")
-           |> URI.append_query("include_24hr_vol=true")
+           |> URI.append_path("/coins/markets")
+           |> URI.append_query("vs_currency=#{config(:currency)}")
            |> URI.append_query("ids=#{joined_token_ids}")
+           |> URI.append_query("per_page=#{batch_size}")
+           |> URI.append_query("page=1")
            |> URI.to_string(),
            headers()
          ) do
@@ -214,19 +214,24 @@ defmodule Explorer.Market.Source.CoinGecko do
   end
 
   defp put_market_data_to_tokens(tokens, market_data) do
-    currency = config(:currency)
-    market_cap = currency <> "_market_cap"
-    volume_24h = currency <> "_24h_vol"
+    # /coins/markets returns an array of coin objects keyed by "id"
+    market_data_map =
+      market_data
+      |> Enum.reduce(%{}, fn coin_data, acc ->
+        Map.put(acc, coin_data["id"], coin_data)
+      end)
 
     tokens
     |> Enum.reduce([], fn token, to_import ->
-      case Map.fetch(market_data, token.id) do
-        {:ok, %{^currency => fiat_value, ^market_cap => market_cap, ^volume_24h => volume_24h}} ->
+      case Map.fetch(market_data_map, token.id) do
+        {:ok, coin_data} ->
           token_with_market_data =
             Map.merge(token, %{
-              fiat_value: Source.to_decimal(fiat_value),
-              circulating_market_cap: Source.to_decimal(market_cap),
-              volume_24h: Source.to_decimal(volume_24h)
+              fiat_value: Source.to_decimal(coin_data["current_price"]),
+              circulating_market_cap: Source.to_decimal(coin_data["market_cap"]),
+              volume_24h: Source.to_decimal(coin_data["total_volume"]),
+              circulating_supply: Source.to_decimal(coin_data["circulating_supply"]),
+              total_supply: Source.to_decimal(coin_data["total_supply"])
             })
 
           [token_with_market_data | to_import]
