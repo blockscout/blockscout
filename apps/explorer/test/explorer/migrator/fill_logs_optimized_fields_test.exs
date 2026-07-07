@@ -3,15 +3,25 @@ defmodule Explorer.Migrator.FillLogsOptimizedFieldsTest do
 
   import Ecto.Query
 
-  alias Explorer.Chain.Log
+  alias Explorer.Chain.{Log, TokenTransfer}
   alias Explorer.Migrator.{FillLogsOptimizedFields, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransactionIndexIndexUniqueIndex
-  alias Explorer.Repo
-  alias Explorer.Utility.AddressIdToAddressHash
+  alias Explorer.{Repo, TestHelper}
+  alias Explorer.Utility.{AddressIdToAddressHash, LogFirstTopic}
 
-  test "fills address_id" do
+  test "fills relates fields" do
     transaction = :transaction |> insert() |> with_block()
-    insert_list(10, :log, transaction: transaction, address_id: nil)
+    topic = TestHelper.topic("0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
+
+    insert_list(10, :log,
+      transaction: transaction,
+      address_id: nil,
+      first_topic: TokenTransfer.constant(),
+      transaction_index: nil,
+      second_topic: topic,
+      third_topic: topic,
+      fourth_topic: topic
+    )
 
     MigrationStatus.set_status(
       CreateLogsBlockNumberTransactionIndexIndexUniqueIndex.migration_name(),
@@ -48,5 +58,19 @@ defmodule Explorer.Migrator.FillLogsOptimizedFieldsTest do
       |> Enum.map(& &1.address_id)
 
     assert Enum.all?(all_address_ids, &Enum.member?(existing_address_ids, &1))
+
+    first_topic_id = LogFirstTopic.value_to_id(TokenTransfer.constant())
+
+    assert Enum.all?(all_logs, &(is_nil(&1.first_topic) and &1.first_topic_id == first_topic_id))
+
+    assert Enum.all?(all_logs, &(&1.transaction_index == transaction.index))
+
+    assert Enum.all?(all_logs, &(&1.second_topic == topic and &1.third_topic == topic and &1.fourth_topic == topic))
+
+    {:ok, %{rows: [[binary_topic, binary_topic, binary_topic]]}} =
+      Repo.query("select second_topic, third_topic, fourth_topic from logs limit 1;")
+
+    assert <<first, _::binary>> = binary_topic
+    assert first != 0
   end
 end

@@ -13,7 +13,7 @@ defmodule Explorer.Chain.Log.Schema do
     Transaction
   }
 
-  alias Explorer.Utility.AddressIdToAddressHash
+  alias Explorer.Utility.{AddressIdToAddressHash, LogFirstTopic}
 
   # In certain situations, like on Polygon, multiple logs may share the same
   # index within a single block due to a RPC node bug. To prevent system crashes
@@ -87,6 +87,8 @@ defmodule Explorer.Chain.Log.Schema do
           type: Hash.Full
         )
 
+        belongs_to(:log_first_topic, LogFirstTopic, foreign_key: :first_topic_id, references: :id)
+
         unquote_splicing(@transaction_field)
       end
     end
@@ -106,7 +108,7 @@ defmodule Explorer.Chain.Log do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, ContractMethod, Hash, Log, TokenTransfer, Transaction}
   alias Explorer.SmartContract.SigProviderInterface
-  alias Explorer.Utility.{AddressIdToAddressHash, LogHelper}
+  alias Explorer.Utility.{AddressIdToAddressHash, LogFirstTopic, LogHelper}
 
   @required_attrs ~w(address_id compressed_data index)a
                   |> (&(case @chain_identity do
@@ -117,7 +119,7 @@ defmodule Explorer.Chain.Log do
                             [:transaction_index, :transaction_hash | &1]
                         end)).()
 
-  @optional_attrs ~w(block_hash first_topic second_topic third_topic fourth_topic block_number)a
+  @optional_attrs ~w(block_hash first_topic first_topic_id second_topic third_topic fourth_topic block_number)a
                   |> (&(case @chain_identity do
                           {:optimism, :celo} ->
                             [:transaction_index, :transaction_hash | &1]
@@ -522,7 +524,7 @@ defmodule Explorer.Chain.Log do
   def fetch_log_by_transaction_and_first_topic(transaction, first_topic, options) do
     __MODULE__
     |> by_transaction_query(transaction.hash, transaction.block_number, transaction.index)
-    |> where([l], l.first_topic == ^first_topic)
+    |> filter_by_topic_query(:first_topic, first_topic)
     |> limit(1)
     |> Chain.select_repo(options).one()
   end
@@ -607,12 +609,36 @@ defmodule Explorer.Chain.Log do
 
   - An `Ecto.Query.dynamic()` expression that can be used in Ecto queries.
   """
-  @spec first_topic_is_deposit_or_withdrawal_signature() :: Ecto.Query.dynamic_expr()
-  def first_topic_is_deposit_or_withdrawal_signature do
-    dynamic(
-      [log: log],
-      log.first_topic in [^TokenTransfer.weth_deposit_signature(), ^TokenTransfer.weth_withdrawal_signature()]
-    )
+  @spec first_topic_is_deposit_or_withdrawal_signature(atom()) :: Ecto.Query.dynamic_expr()
+  def first_topic_is_deposit_or_withdrawal_signature(binding \\ :first)
+
+  def first_topic_is_deposit_or_withdrawal_signature(:first) do
+    topic_filter_dynamic(:first_topic, [
+      TokenTransfer.weth_deposit_signature(),
+      TokenTransfer.weth_withdrawal_signature()
+    ])
+  end
+
+  def first_topic_is_deposit_or_withdrawal_signature(:log) do
+    topic_values = [
+      TokenTransfer.weth_deposit_signature(),
+      TokenTransfer.weth_withdrawal_signature()
+    ]
+
+    cond do
+      LogHelper.fill_optimized_fields_migration_finished?() ->
+        first_topic_ids = LogFirstTopic.values_to_ids(topic_values)
+
+        dynamic([log: l], l.first_topic_id in ^first_topic_ids)
+
+      LogHelper.fill_optimized_fields_migration_started?() ->
+        first_topic_ids = LogFirstTopic.values_to_ids(topic_values)
+
+        dynamic([log: l], l.first_topic_id in ^first_topic_ids or l.first_topic in ^topic_values)
+
+      true ->
+        dynamic([log: l], l.first_topic in ^topic_values)
+    end
   end
 
   @doc """
@@ -630,23 +656,23 @@ defmodule Explorer.Chain.Log do
   def first_topic_is_not_deposit_or_withdrawal_signature do
     topic_values = [TokenTransfer.weth_deposit_signature(), TokenTransfer.weth_withdrawal_signature()]
 
-    if LogHelper.fill_optimized_fields_migration_finished?() do
-      dynamic([log: log], log.first_topic not in ^topic_values)
-    else
-      trimmed_values =
-        topic_values
-        |> Enum.flat_map(fn topic ->
-          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          case Hash.Trimmed.dump(topic) do
-            {:ok, trimmed} -> [trimmed]
-            :error -> []
-          end
-        end)
+    cond do
+      LogHelper.fill_optimized_fields_migration_finished?() ->
+        first_topic_ids = LogFirstTopic.values_to_ids(topic_values)
 
-      dynamic(
-        [log: log],
-        log.first_topic not in ^topic_values and log.first_topic not in type(^trimmed_values, {:array, :binary})
-      )
+        dynamic([log: l], is_nil(l.first_topic_id) or l.first_topic_id not in ^first_topic_ids)
+
+      LogHelper.fill_optimized_fields_migration_started?() ->
+        first_topic_ids = LogFirstTopic.values_to_ids(topic_values)
+
+        dynamic(
+          [log: l],
+          (is_nil(l.first_topic_id) or l.first_topic_id not in ^first_topic_ids) and
+            (is_nil(l.first_topic) or l.first_topic not in ^topic_values)
+        )
+
+      true ->
+        dynamic([log: l], is_nil(l.first_topic) or l.first_topic not in ^topic_values)
     end
   end
 
@@ -707,6 +733,14 @@ defmodule Explorer.Chain.Log do
     where(query, [l], ^filter_by_topic_dynamic(topic_names, topic_values_list))
   end
 
+  @doc """
+  Builds a dynamic `OR` condition for filtering logs by multiple topic fields.
+
+  Each topic name is paired with the corresponding list of topic values from
+  `topic_values_list`. The resulting dynamic expression matches logs where any
+  of the given topic fields matches its values.
+  """
+  @spec filter_by_topic_dynamic([atom()], [[any()]]) :: Ecto.Query.dynamic_expr()
   def filter_by_topic_dynamic(topic_names, topic_values_list) do
     topic_names
     |> Enum.zip(topic_values_list)
@@ -718,7 +752,34 @@ defmodule Explorer.Chain.Log do
     end)
   end
 
-  def topic_filter_dynamic(:first_topic, topic_values), do: dynamic([l], l.first_topic in ^topic_values)
+  @doc """
+  Builds a dynamic condition for filtering logs by a topic field.
+
+  For `:first_topic`, the condition uses `first_topic_id` when the optimized
+  fields migration has finished, and falls back to matching `first_topic` while
+  the migration is still in progress.
+
+  For other topic fields, the condition matches trimmed topic values after the
+  optimized fields migration has finished. Before the migration is finished, it
+  also matches full 32-byte topic values to support both stored formats.
+  """
+  @spec topic_filter_dynamic(atom(), [any()]) :: Ecto.Query.dynamic_expr()
+  def topic_filter_dynamic(:first_topic, topic_values) do
+    cond do
+      LogHelper.fill_optimized_fields_migration_finished?() ->
+        first_topic_ids = LogFirstTopic.values_to_ids(topic_values)
+
+        dynamic([l], l.first_topic_id in ^first_topic_ids)
+
+      LogHelper.fill_optimized_fields_migration_started?() ->
+        first_topic_ids = LogFirstTopic.values_to_ids(topic_values)
+
+        dynamic([l], l.first_topic_id in ^first_topic_ids or l.first_topic in ^topic_values)
+
+      true ->
+        dynamic([l], l.first_topic in ^topic_values)
+    end
+  end
 
   def topic_filter_dynamic(topic_name, topic_values) do
     if LogHelper.fill_optimized_fields_migration_finished?() do
@@ -816,14 +877,12 @@ defmodule Explorer.Chain.Log do
   end
 
   @doc """
-  Preloads consensus blocks for log records.
+  Joins the address mapping table to the given logs query.
 
-  When a list of logs is provided and `blocks` is `nil`, the function fetches
-  consensus blocks by `block_number` and attaches each block to the matching log.
-
-  It also ensures that `:block_hash` is populated from the loaded block when
-  available, while preserving the existing value if no block is found.
+  The join is added with the named binding `:address_mapping` and is skipped when
+  this binding is already present in the query.
   """
+  @spec join_address_mapping_query(Ecto.Queryable.t(), atom()) :: Ecto.Query.t()
   def join_address_mapping_query(query, join_type \\ :left) do
     with_named_binding(query, :address_mapping, fn query, binding ->
       join(query, join_type, [it], m in AddressIdToAddressHash,
@@ -833,6 +892,16 @@ defmodule Explorer.Chain.Log do
     end)
   end
 
+  @doc """
+  Filters logs by one or multiple address hashes.
+
+  After the optimized fields migration has finished, address hashes are converted
+  to address ids and matched through `address_id`. While the migration is in
+  progress, the condition matches both `address_id` and the legacy
+  `address_hash` field.
+  """
+  @spec address_match_query(Ecto.Queryable.t(), Hash.Address.t() | [Hash.Address.t()] | binary() | [binary()]) ::
+          Ecto.Query.t()
   def address_match_query(query, address_hashes) when is_list(address_hashes) do
     cond do
       LogHelper.fill_optimized_fields_migration_finished?() ->
@@ -870,6 +939,22 @@ defmodule Explorer.Chain.Log do
 
   defp address_id_or_hash_match_dynamic(address_id, address_hash),
     do: dynamic([l], l.address_id == ^address_id or l.address_hash == ^address_hash)
+
+  @doc """
+  Joins the log first topic lookup table to the given logs query.
+
+  The join is added with the named binding `:first_topic` and is skipped when
+  this binding is already present in the query.
+  """
+  @spec join_first_topic_query(Ecto.Queryable.t()) :: Ecto.Query.t()
+  def join_first_topic_query(query) do
+    with_named_binding(query, :first_topic, fn query, binding ->
+      join(query, :left, [l], ft in LogFirstTopic,
+        as: ^binding,
+        on: l.first_topic_id == ft.id
+      )
+    end)
+  end
 
   @spec preload_block(map() | [map()] | nil, module(), [Block.t()] | nil) :: __MODULE__.t() | [__MODULE__.t()] | nil
   def preload_block(logs, repo \\ Repo, blocks \\ nil)
@@ -970,6 +1055,13 @@ defmodule Explorer.Chain.Log do
     |> List.first()
   end
 
+  @doc """
+  Preloads addresses for log records.
+
+  Logs that still have the legacy `address_hash` field are preloaded through
+  `:address_by_hash`. Migrated logs are preloaded through the address mapping
+  association. The original log order is preserved.
+  """
   @spec preload_address(map() | [map()] | nil, Keyword.t(), module()) :: __MODULE__.t() | [__MODULE__.t()] | nil
   def preload_address(logs, options \\ [], repo \\ Repo)
 
@@ -1005,6 +1097,9 @@ defmodule Explorer.Chain.Log do
     |> List.first()
   end
 
+  @doc """
+  Ensures that the `data` field is populated from `compressed_data` when needed.
+  """
   @spec prepare_data(map() | [map()] | nil) :: __MODULE__.t() | [__MODULE__.t()] | nil
   def prepare_data(nil), do: nil
 
@@ -1015,6 +1110,32 @@ defmodule Explorer.Chain.Log do
   def prepare_data(log) do
     [log]
     |> prepare_data()
+    |> List.first()
+  end
+
+  @doc """
+  Ensures that `first_topic` is populated from `first_topic_id` when needed.
+
+  Topic values are loaded from `log_first_topics` in batch for list inputs.
+  """
+  @spec prepare_first_topic(map() | [map()] | nil) :: map() | [map()] | nil
+  def prepare_first_topic(nil), do: nil
+
+  def prepare_first_topic(logs) when is_list(logs) do
+    first_topics_map =
+      logs
+      |> Enum.map(& &1.first_topic_id)
+      |> Enum.uniq()
+      |> Enum.reject(&is_nil/1)
+      |> LogFirstTopic.fetch_by_ids()
+      |> Map.new(&{&1.id, &1.value})
+
+    Enum.map(logs, &%{&1 | first_topic: &1.first_topic || first_topics_map[&1.first_topic_id]})
+  end
+
+  def prepare_first_topic(log) do
+    [log]
+    |> prepare_first_topic()
     |> List.first()
   end
 

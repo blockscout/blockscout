@@ -262,6 +262,7 @@ defmodule Explorer.Chain.Beacon.Deposit do
         ) :: [
           %{
             first_topic: Hash.Full.t(),
+            first_topic_id: integer(),
             data: Data.t(),
             index: non_neg_integer(),
             block_number: non_neg_integer(),
@@ -277,11 +278,12 @@ defmodule Explorer.Chain.Beacon.Deposit do
       |> Log.join_transaction_query()
       |> Log.address_match_query(deposit_contract_address_hash)
       |> where(as(:transaction).block_consensus == true)
-      |> where([log], log.first_topic == ^@deposit_event_signature)
+      |> Log.filter_by_topic_query(:first_topic, @deposit_event_signature)
       |> where([log], {log.block_number, log.index} > {^log_block_number, ^log_index})
       |> limit(^limit)
       |> select([log], %{
         first_topic: log.first_topic,
+        first_topic_id: log.first_topic_id,
         data: log.data,
         index: log.index,
         block_number: log.block_number,
@@ -292,7 +294,9 @@ defmodule Explorer.Chain.Beacon.Deposit do
       })
       |> order_by([log], asc: log.block_number, asc: log.index)
 
-    Repo.all(query)
+    query
+    |> Repo.all()
+    |> Log.prepare_first_topic()
   end
 
   defp put_withdrawal_address_hash(deposit) do

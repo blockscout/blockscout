@@ -54,7 +54,7 @@ defmodule Explorer.Migrator.FillLogsCompressedData do
       Enum.map(logs, fn log ->
         log
         |> Map.from_struct()
-        |> Map.drop([:block, :address, :transaction, :__meta__, :address_by_hash, :address_mapping])
+        |> Map.drop([:block, :address, :transaction, :__meta__, :address_by_hash, :address_mapping, :log_first_topic])
         |> Map.merge(%{data: nil, compressed_data: log.data})
       end)
 

@@ -37,7 +37,8 @@ defmodule Explorer.Chain.Arbitrum.Reader.API.General do
   @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary()) :: [Log.t()]
   def transaction_to_logs_by_topic0(transaction_hash, topic0) do
     Log.join_transaction_query()
-    |> where([log, transaction], transaction.hash == ^transaction_hash and log.first_topic == ^topic0)
+    |> where([log, transaction], transaction.hash == ^transaction_hash)
+    |> Log.filter_by_topic_query(:first_topic, topic0)
     |> order_by(asc: :index)
     |> select_repo(@api_true).all()
   end

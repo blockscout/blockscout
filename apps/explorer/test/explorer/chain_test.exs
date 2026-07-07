@@ -40,7 +40,7 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.TestHelper
 
-  alias Explorer.Utility.AddressIdToAddressHash
+  alias Explorer.Utility.{AddressIdToAddressHash, LogFirstTopic}
 
   @first_topic_hex_string "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
   @second_topic_hex_string "0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
@@ -1176,7 +1176,6 @@ defmodule Explorer.ChainTest do
     }
 
     test "with valid data", %{json_rpc_named_arguments: _json_rpc_named_arguments} do
-      {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
       {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
       {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
       difficulty = Decimal.new(340_282_366_920_938_463_463_374_607_431_768_211_454)
@@ -1192,6 +1191,8 @@ defmodule Explorer.ChainTest do
         AddressIdToAddressHash.find_or_create("0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
 
       %{address_id: to_address_id} = AddressIdToAddressHash.find_or_create("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
+
+      %{id: first_topic_id} = LogFirstTopic.find_or_create(@first_topic_hex_string)
 
       assert {:ok,
               %{
@@ -1307,7 +1308,7 @@ defmodule Explorer.ChainTest do
                           167, 100, 0, 0>>
                     },
                     index: 0,
-                    first_topic: ^first_topic,
+                    first_topic_id: ^first_topic_id,
                     second_topic: ^second_topic,
                     third_topic: ^third_topic,
                     fourth_topic: nil,

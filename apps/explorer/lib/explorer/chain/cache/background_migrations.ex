@@ -41,7 +41,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_logs_address_hash_transaction_hash_index_finished,
     key: :heavy_indexes_drop_logs_index_index_finished,
     key: :heavy_indexes_create_logs_address_hash_first_topic_block_number_index_index_finished,
-    key: :heavy_indexes_create_logs_address_id_first_topic_block_number_index_index_finished,
+    key: :heavy_indexes_create_logs_address_id_first_topic_id_block_number_index_index_finished,
     key: :heavy_indexes_drop_token_transfers_block_number_asc_log_index_asc_index_finished,
     key: :heavy_indexes_drop_token_transfers_from_address_hash_transaction_hash_index_finished,
     key: :heavy_indexes_drop_token_transfers_to_address_hash_transaction_hash_index_finished,
@@ -60,7 +60,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_transactions_to_address_hash_with_pending_index_finished,
     key: :heavy_indexes_create_logs_deposits_withdrawals_index_finished,
     key: :heavy_indexes_create_logs_deposits_withdrawals_index_with_updated_pk_finished,
-    key: :heavy_indexes_create_updated_logs_deposits_withdrawals_index_finished,
     key: :heavy_indexes_create_addresses_transactions_count_desc_partial_index_finished,
     key: :heavy_indexes_create_addresses_transactions_count_asc_coin_balance_desc_hash_partial_index_finished,
     key: :heavy_indexes_drop_token_instances_token_id_index_finished,
@@ -123,7 +122,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateTokensOrdMcapFiatHolderNameIndex,
     CreateTransactionsCreatedContractAddressHashWPendingIndex,
     CreateTransactionsTokenTransferMethodIdOrderedIndex,
-    CreateUpdatedLogsDepositsWithdrawalsIndex,
     DropInternalTransactionsCreatedContractAddressHashPartialIndex,
     DropInternalTransactionsFromAddressHashIndex,
     DropLogsAddressHashIndex,
@@ -256,10 +254,10 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     )
   end
 
-  defp handle_fallback(:heavy_indexes_create_logs_address_id_first_topic_block_number_index_index_finished) do
+  defp handle_fallback(:heavy_indexes_create_logs_address_id_first_topic_id_block_number_index_index_finished) do
     set_and_return_migration_status(
       CreateLogsAddressIdFirstTopicBlockNumberIndexIndex,
-      &set_heavy_indexes_create_logs_address_id_first_topic_block_number_index_index_finished/1
+      &set_heavy_indexes_create_logs_address_id_first_topic_id_block_number_index_index_finished/1
     )
   end
 
@@ -374,13 +372,6 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       CreateLogsDepositsWithdrawalsIndexWithUpdatedPk,
       &set_heavy_indexes_create_logs_deposits_withdrawals_index_with_updated_pk_finished/1
-    )
-  end
-
-  defp handle_fallback(:heavy_indexes_create_updated_logs_deposits_withdrawals_index_finished) do
-    set_and_return_migration_status(
-      CreateUpdatedLogsDepositsWithdrawalsIndex,
-      &set_heavy_indexes_create_updated_logs_deposits_withdrawals_index_finished/1
     )
   end
 
