@@ -311,25 +311,26 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   defp is_compiler_version_at_least_0_6_0?("latest"), do: true
 
   defp is_compiler_version_at_least_0_6_0?(compiler_version) do
-    case compiler_version |> String.split("+", parts: 2) do
-      [version, _] ->
-        digits =
-          version
-          |> String.replace("v", "")
-          |> String.split(".")
-          |> Enum.map(fn str ->
-            case Integer.parse(str) do
-              {num, _} -> num
-              :error -> 0
-            end
-          end)
+    parts =
+      compiler_version
+      |> String.split("+", parts: 2)
+      |> hd()
+      |> String.replace("v", "")
+      |> String.split(".")
 
-        Enum.fetch!(digits, 0) > 0 || Enum.fetch!(digits, 1) >= 6
-
-      _ ->
-        false
+    with [major_str, minor_str | _] <- parts,
+         {major, ""} <- Integer.parse(major_str),
+         {minor, ""} <- Integer.parse(minor_str) do
+      major > 0 || minor >= 6
+    else
+      _ -> false
     end
   end
+
+  # Exposed for testing of the version-parsing edge cases; see verifier_test.exs.
+  @doc false
+  def compiler_version_at_least_0_6_0?(compiler_version),
+    do: is_compiler_version_at_least_0_6_0?(compiler_version)
 
   defp compare_bytecodes({:error, :name}, _, _, _), do: {:error, :name}
   defp compare_bytecodes({:error, _}, _, _, _), do: {:error, :compilation}
@@ -402,7 +403,11 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       !String.contains?(bc_creation_transaction_input, bc_meta) || bc_deployed_bytecode in ["", "0x"] ->
         {:error, :deployed_bytecode}
 
-      solc_local != solc_bc ->
+      # Reject a genuine mismatch: exactly one side embeds a compiler version, or both
+      # embed versions that differ. When neither bytecode embeds a version (e.g. pre-0.5.9
+      # contracts whose CBOR metadata carries only a bzzr0/ipfs hash and no `solc` field),
+      # there is nothing to compare, so fall through instead of failing verification.
+      is_nil(solc_local) != is_nil(solc_bc) or (not is_nil(solc_local) and solc_local != solc_bc) ->
         {:error, :compiler_version}
 
       !String.contains?(bc_creation_transaction_input_without_meta, local_bytecode_without_meta) ->
@@ -498,7 +503,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     else
       _ ->
         Logger.warning("Failed to decode CBOR metadata from bytecode, falling back to empty metadata")
-        %{}
+        nil
     end
   end
 

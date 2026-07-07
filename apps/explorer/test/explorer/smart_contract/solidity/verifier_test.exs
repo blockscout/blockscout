@@ -606,6 +606,30 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
       end
     end
 
+    describe "compiler_version_at_least_0_6_0?/1" do
+      test "returns true for supported versions with and without a commit hash" do
+        assert Verifier.compiler_version_at_least_0_6_0?("latest")
+        assert Verifier.compiler_version_at_least_0_6_0?("v0.8.19+commit.7dd6d404")
+        assert Verifier.compiler_version_at_least_0_6_0?("0.6.0")
+        assert Verifier.compiler_version_at_least_0_6_0?("v0.6")
+        assert Verifier.compiler_version_at_least_0_6_0?("1.0.0")
+      end
+
+      test "returns false for versions below 0.6.0" do
+        refute Verifier.compiler_version_at_least_0_6_0?("v0.5.17+commit.d19bba13")
+        refute Verifier.compiler_version_at_least_0_6_0?("0.4.26")
+      end
+
+      test "returns false for malformed versions instead of crashing" do
+        # single component: previously raised Enum.OutOfBoundsError
+        refute Verifier.compiler_version_at_least_0_6_0?("v6")
+        # non-numeric components: previously raised MatchError on Integer.parse/1
+        refute Verifier.compiler_version_at_least_0_6_0?("vx.y+commit.deadbeef")
+        refute Verifier.compiler_version_at_least_0_6_0?("")
+        refute Verifier.compiler_version_at_least_0_6_0?("garbage")
+      end
+    end
+
     describe "compiler version tests" do
       # flaky test
       test "verification is failed if wrong version of compiler" do
