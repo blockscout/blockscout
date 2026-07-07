@@ -61,3 +61,6 @@ services:
       service: proxy
     volumes:
       - "./proxy/explorer.conf.template:/etc/nginx/templates/default.conf.template"
+
+volumes:
+  backend-dets:
