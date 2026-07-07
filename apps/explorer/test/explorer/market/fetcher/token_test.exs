@@ -37,11 +37,15 @@ defmodule Explorer.Market.Fetcher.TokenTest do
 
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
+      previous_fetcher_enabled = :persistent_term.get(:market_token_fetcher_enabled, false)
+      :persistent_term.put(:market_token_fetcher_enabled, true)
+
       on_exit(fn ->
         Application.put_env(:explorer, Explorer.Market.Source, source_configuration)
         Application.put_env(:explorer, Explorer.Market.Fetcher.Token, fetcher_configuration)
         Application.put_env(:explorer, Explorer.Market.Source.CoinGecko, coin_gecko_configuration)
         Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        :persistent_term.put(:market_token_fetcher_enabled, previous_fetcher_enabled)
       end)
 
       [_token_with_no_exchange_rate | tokens] =
