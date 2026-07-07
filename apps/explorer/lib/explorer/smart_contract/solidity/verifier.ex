@@ -311,30 +311,26 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   defp is_compiler_version_at_least_0_6_0?("latest"), do: true
 
   defp is_compiler_version_at_least_0_6_0?(compiler_version) do
-    version =
+    parts =
       compiler_version
       |> String.split("+", parts: 2)
-      |> List.first()
+      |> hd()
+      |> String.replace("v", "")
+      |> String.split(".")
 
-    case version do
-      nil ->
-        false
-
-      v when is_binary(v) ->
-        parts =
-          v
-          |> String.replace("v", "")
-          |> String.split(".")
-
-        with [major_str, minor_str | _] <- parts,
-             {major, ""} <- Integer.parse(major_str),
-             {minor, ""} <- Integer.parse(minor_str) do
-          major > 0 || minor >= 6
-        else
-          _ -> false
-        end
+    with [major_str, minor_str | _] <- parts,
+         {major, ""} <- Integer.parse(major_str),
+         {minor, ""} <- Integer.parse(minor_str) do
+      major > 0 || minor >= 6
+    else
+      _ -> false
     end
   end
+
+  # Exposed for testing of the version-parsing edge cases; see verifier_test.exs.
+  @doc false
+  def compiler_version_at_least_0_6_0?(compiler_version),
+    do: is_compiler_version_at_least_0_6_0?(compiler_version)
 
   defp compare_bytecodes({:error, :name}, _, _, _), do: {:error, :name}
   defp compare_bytecodes({:error, _}, _, _, _), do: {:error, :compilation}
@@ -407,7 +403,11 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       !String.contains?(bc_creation_transaction_input, bc_meta) || bc_deployed_bytecode in ["", "0x"] ->
         {:error, :deployed_bytecode}
 
-      is_nil(solc_local) or is_nil(solc_bc) or solc_local != solc_bc ->
+      # Reject a genuine mismatch: exactly one side embeds a compiler version, or both
+      # embed versions that differ. When neither bytecode embeds a version (e.g. pre-0.5.9
+      # contracts whose CBOR metadata carries only a bzzr0/ipfs hash and no `solc` field),
+      # there is nothing to compare, so fall through instead of failing verification.
+      is_nil(solc_local) != is_nil(solc_bc) or (not is_nil(solc_local) and solc_local != solc_bc) ->
         {:error, :compiler_version}
 
       !String.contains?(bc_creation_transaction_input_without_meta, local_bytecode_without_meta) ->
