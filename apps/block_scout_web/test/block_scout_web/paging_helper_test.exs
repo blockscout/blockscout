@@ -73,15 +73,15 @@ defmodule BlockScoutWeb.PagingHelperTest do
     end
 
     test "removes both :key and :apikey when both present" do
-      params = %{key: "mysecret", apikey: "myapikey", items_count: 50}
+      params = %{key: "mysecret", apikey: "myapikey", block_number: 42}
       result = PagingHelper.delete_parameters_from_next_page_params(params)
       refute Map.has_key?(result, :key)
       refute Map.has_key?(result, :apikey)
-      assert Map.has_key?(result, :items_count)
+      assert Map.has_key?(result, :block_number)
     end
 
     test "preserves unrelated pagination params" do
-      params = %{"block_number" => "100", "index" => "5", "items_count" => "50"}
+      params = %{"block_number" => "100", "index" => "5"}
       result = PagingHelper.delete_parameters_from_next_page_params(params)
       assert result == params
     end
