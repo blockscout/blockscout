@@ -315,7 +315,17 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
           | :decimals
         ]
   def market_data_fields_to_update do
-    [:name, :symbol, :type, :fiat_value, :circulating_market_cap, :volume_24h, :circulating_supply, :total_supply, :decimals]
+    [
+      :name,
+      :symbol,
+      :type,
+      :fiat_value,
+      :circulating_market_cap,
+      :volume_24h,
+      :circulating_supply,
+      :total_supply,
+      :decimals
+    ]
   end
 
   @doc """

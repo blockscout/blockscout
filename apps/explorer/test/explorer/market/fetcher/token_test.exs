@@ -399,7 +399,20 @@ defmodule Explorer.Market.Fetcher.TokenTest do
       end)
 
       Bypass.expect_once(bypass, "GET", "/coins/markets", fn conn ->
-        Conn.resp(conn, 200, Utils.JSON.encode!([%{"id" => "zero_token", "current_price" => 0, "market_cap" => 0, "total_volume" => 0, "circulating_supply" => 0, "total_supply" => 0}]))
+        Conn.resp(
+          conn,
+          200,
+          Utils.JSON.encode!([
+            %{
+              "id" => "zero_token",
+              "current_price" => 0,
+              "market_cap" => 0,
+              "total_volume" => 0,
+              "circulating_supply" => 0,
+              "total_supply" => 0
+            }
+          ])
+        )
       end)
 
       GenServer.start_link(TokenFetcher, [])
