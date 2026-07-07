@@ -118,7 +118,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
   defp unprocessed_identifiers("delete_duplicates") do
     weth_transfers =
       token_transfers_with_logs_query()
-      |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
+      |> where(^Log.first_topic_is_deposit_or_withdrawal_signature(:log))
 
     not_weth_transfers =
       token_transfers_with_logs_query()
@@ -138,7 +138,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
 
   defp unprocessed_identifiers("delete_not_whitelisted_weth_transfers") do
     token_transfers_with_logs_query()
-    |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
+    |> where(^Log.first_topic_is_deposit_or_withdrawal_signature(:log))
     |> where([tt], tt.token_contract_address_hash not in ^whitelisted_weth_contracts())
     |> select([tt], {tt.transaction_hash, tt.block_hash, tt.log_index})
   end

@@ -51,15 +51,18 @@ defmodule Explorer.Migrator.CeloL2Epochs do
     epochs_end_processing_block_numbers =
       from(epoch in Epoch, join: block in assoc(epoch, :end_processing_block), select: block.number)
 
+    dynamic =
+      dynamic(
+        [log],
+        (^Log.topic_filter_dynamic(:first_topic, [@epoch_processing_started_topic]) and
+           log.block_number not in subquery(epochs_start_processing_block_numbers)) or
+          (^Log.topic_filter_dynamic(:first_topic, [@epoch_processing_ended_topic]) and
+             log.block_number not in subquery(epochs_end_processing_block_numbers))
+      )
+
     Log
     |> Log.address_match_query(epoch_manager_contract_address_hash())
-    |> where(
-      [log],
-      (log.first_topic == ^@epoch_processing_started_topic and
-         log.block_number not in subquery(epochs_start_processing_block_numbers)) or
-        (log.first_topic == ^@epoch_processing_ended_topic and
-           log.block_number not in subquery(epochs_end_processing_block_numbers))
-    )
+    |> where([log], ^dynamic)
     |> order_by([log], asc: log.block_number)
   end
 

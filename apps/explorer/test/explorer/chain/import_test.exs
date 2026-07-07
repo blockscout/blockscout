@@ -21,7 +21,7 @@ defmodule Explorer.Chain.ImportTest do
   }
 
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Utility.{AddressIdToAddressHash, MissingBlockRange}
+  alias Explorer.Utility.{AddressIdToAddressHash, LogFirstTopic, MissingBlockRange}
 
   @moduletag :capturelog
 
@@ -179,7 +179,7 @@ defmodule Explorer.Chain.ImportTest do
     }
 
     test "with valid data" do
-      {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
+      %{id: first_topic_id} = LogFirstTopic.find_or_create(@first_topic_hex_string)
       {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
       {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
       difficulty = Decimal.new(340_282_366_920_938_463_463_374_607_431_768_211_454)
@@ -288,7 +288,7 @@ defmodule Explorer.Chain.ImportTest do
                           167, 100, 0, 0>>
                     },
                     index: 0,
-                    first_topic: ^first_topic,
+                    first_topic_id: ^first_topic_id,
                     second_topic: ^second_topic,
                     third_topic: ^third_topic,
                     fourth_topic: nil,

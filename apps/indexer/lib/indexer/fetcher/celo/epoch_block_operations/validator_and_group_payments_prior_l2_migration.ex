@@ -20,7 +20,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPri
       Log
       |> Log.address_match_query(validators_contract_address)
       |> where([log], log.block_number == ^block_number)
-      |> where([log], log.first_topic == ^epoch_payment_distributions_signature)
+      |> Log.filter_by_topic_query(:first_topic, epoch_payment_distributions_signature)
       |> then(fn query ->
         cond do
           LogHelper.fill_optimized_fields_migration_finished?() ->
