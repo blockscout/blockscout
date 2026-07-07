@@ -12,7 +12,7 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
 
   @spec get_operations_by_id_or_sender_or_transaction_hash(String.t(), nil | map()) ::
           {:ok, %{items: [map()], next_page_params: map() | nil}}
-          | {:error, :disabled | :not_found | Jason.DecodeError.t() | String.t()}
+          | {:error, :disabled | :not_found | Exception.t() | String.t()}
   def get_operations_by_id_or_sender_or_transaction_hash(param, page_params) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       query_params =
@@ -36,7 +36,7 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
   defp http_get_request(url, query_params) do
     case HttpClient.get(url, [], params: query_params) do
       {:ok, %{body: body, status_code: 200}} ->
-        case Jason.decode(body) do
+        case Utils.JSON.decode(body) do
           {:ok, decoded_body} ->
             {:ok, decoded_body}
 

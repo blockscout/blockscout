@@ -59,7 +59,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
         {"List of recent blocks on the home page.", "application/json",
          %Schema{
            type: :array,
-           items: Schemas.Block.Response,
+           items: Schemas.Block,
            nullable: false
          }}
     ]
@@ -93,7 +93,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
         {"List of recent transactions on the home page.", "application/json",
          %Schema{
            type: :array,
-           items: Schemas.Transaction.Response,
+           items: Schemas.Transaction,
            nullable: false
          }},
       unprocessable_entity: JsonErrorResponse.response()
@@ -123,7 +123,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
         {"List of watchlist transactions", "application/json",
          %Schema{
            type: :array,
-           items: Schemas.Transaction.Response,
+           items: Schemas.Transaction,
            nullable: false
          }},
       unprocessable_entity: JsonErrorResponse.response()

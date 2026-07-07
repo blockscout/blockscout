@@ -53,6 +53,28 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
       assert conn.status == 429
     end
 
+    test "accepts application/csv on token-transfers CSV endpoint", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      insert(:token_transfer, transaction: transaction, from_address: address, block_number: transaction.block_number)
+
+      conn =
+        conn
+        |> put_req_header("accept", "application/csv")
+        |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{})
+
+      assert conn.status == 200
+
+      assert Enum.any?(get_resp_header(conn, "content-type"), fn type ->
+               String.contains?(type, "application/csv")
+             end)
+    end
+
     test "do not export token transfers to csv after rate limit is reached without recaptcha passed", %{
       conn: conn,
       v2_secret_key: recaptcha_secret_key
@@ -65,7 +87,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(%{"success" => false})
+             body: Utils.JSON.encode!(%{"success" => false})
            }}
         end
       )
@@ -159,7 +181,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
            %Tesla.Env{
              status: 200,
              body:
-               Jason.encode!(%{
+               Utils.JSON.encode!(%{
                  "success" => true,
                  "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
                })
@@ -247,7 +269,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
            %Tesla.Env{
              status: 200,
              body:
-               Jason.encode!(%{
+               Utils.JSON.encode!(%{
                  "success" => true,
                  "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
                })
@@ -344,7 +366,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
            %Tesla.Env{
              status: 200,
              body:
-               Jason.encode!(%{
+               Utils.JSON.encode!(%{
                  "success" => true,
                  "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
                })
@@ -694,9 +716,39 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         })
 
       assert conn.status == 202
-      body = Jason.decode!(conn.resp_body)
+      body = Utils.JSON.decode!(conn.resp_body)
       assert Map.has_key?(body, "request_id")
       assert is_binary(body["request_id"])
+    end
+
+    test "returns 202 with request_id for token transfers from token export when async enabled", %{conn: conn} do
+      token = insert(:token, type: "ERC-20", decimals: 18, symbol: "TKN")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        token_contract_address: token.contract_address,
+        token_type: "ERC-20",
+        block_number: transaction.block_number,
+        amount: Decimal.new(1_000)
+      )
+
+      {:ok, now} = DateTime.now("Etc/UTC")
+      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
+
+      conn =
+        get(conn, "/api/v2/tokens/#{Address.checksum(token.contract_address_hash)}/transfers/csv", %{
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert %{"request_id" => request_id} = json_response(conn, 202)
+      assert is_binary(request_id)
     end
 
     test "returns 202 with request_id for token holders export when async enabled", %{conn: conn} do
@@ -830,6 +882,125 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
     end
   end
 
+  describe "GET /api/v2/tokens/:hash/transfers/csv" do
+    setup do
+      result = csv_setup()
+
+      original_config = Application.get_env(:explorer, Explorer.Chain.CsvExport)
+      config = (original_config || []) |> Keyword.put(:async?, false)
+      Application.put_env(:explorer, Explorer.Chain.CsvExport, config)
+
+      on_exit(fn ->
+        if original_config do
+          Application.put_env(:explorer, Explorer.Chain.CsvExport, original_config)
+        else
+          Application.delete_env(:explorer, Explorer.Chain.CsvExport)
+        end
+      end)
+
+      result
+    end
+
+    test "exports token transfers to csv in sync mode", %{conn: conn} do
+      token = insert(:token, type: "ERC-20", decimals: 18, symbol: "TKN")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        token_contract_address: token.contract_address,
+        token_type: "ERC-20",
+        block_number: transaction.block_number,
+        amount: Decimal.new(1_000)
+      )
+
+      {:ok, now} = DateTime.now("Etc/UTC")
+      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
+
+      conn =
+        get(conn, "/api/v2/tokens/#{Address.checksum(token.contract_address_hash)}/transfers/csv", %{
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert conn.status == 200
+      assert conn.resp_body =~ "TxHash"
+      assert conn.resp_body =~ "TokensTransferred"
+    end
+
+    test "exports multiple token transfers to csv", %{conn: conn} do
+      token = insert(:token, type: "ERC-20", decimals: 18, symbol: "TKN")
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        token_contract_address: token.contract_address,
+        token_type: "ERC-20",
+        block_number: transaction.block_number,
+        amount: Decimal.new(1_000)
+      )
+
+      insert(:token_transfer,
+        transaction: transaction,
+        token_contract_address: token.contract_address,
+        token_type: "ERC-20",
+        block_number: transaction.block_number,
+        amount: Decimal.new(2_000)
+      )
+
+      {:ok, now} = DateTime.now("Etc/UTC")
+      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
+
+      conn =
+        get(conn, "/api/v2/tokens/#{Address.checksum(token.contract_address_hash)}/transfers/csv", %{
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert conn.status == 200
+      assert conn.resp_body |> String.split("\n") |> Enum.count() == 4
+    end
+
+    test "returns 404 for non-existent token", %{conn: conn} do
+      fake_hash = "0x0000000000000000000000000000000000000001"
+
+      {:ok, now} = DateTime.now("Etc/UTC")
+      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
+
+      conn =
+        get(conn, "/api/v2/tokens/#{fake_hash}/transfers/csv", %{
+          "from_period" => from_period,
+          "to_period" => to_period
+        })
+
+      assert %{"message" => "Not found"} = json_response(conn, 404)
+    end
+
+    test "returns 422 for invalid token hash", %{conn: conn} do
+      conn = get(conn, "/api/v2/tokens/not-a-valid-hash/transfers/csv")
+
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(conn, 422)
+    end
+  end
+
   describe "GET logs_csv/2" do
     setup do
       csv_setup()
@@ -850,6 +1021,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 0,
         transaction: transaction,
+        transaction_index: transaction.index,
         block: transaction.block,
         block_number: transaction.block_number
       )
@@ -881,7 +1053,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
            %Tesla.Env{
              status: 200,
              body:
-               Jason.encode!(%{
+               Utils.JSON.encode!(%{
                  "success" => true,
                  "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
                })
@@ -900,6 +1072,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 3,
         transaction: transaction_1,
+        transaction_index: transaction_1.index,
         block: transaction_1.block,
         block_number: transaction_1.block_number
       )
@@ -913,6 +1086,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 1,
         transaction: transaction_2,
+        transaction_index: transaction_2.index,
         block: transaction_2.block,
         block_number: transaction_2.block_number
       )
@@ -926,6 +1100,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 2,
         transaction: transaction_3,
+        transaction_index: transaction_3.index,
         block: transaction_3.block,
         block_number: transaction_3.block_number
       )
@@ -969,6 +1144,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 3,
         transaction: transaction,
+        transaction_index: transaction.index,
         block: transaction.block,
         block_number: transaction.block_number
       )
@@ -1082,6 +1258,12 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
           ip: %{period: 3_600_000, limit: 1},
           recaptcha_to_bypass_429: true,
           bucket_key_prefix: "api/v2/tokens/:param/holders/csv_",
+          isolate_rate_limit?: true
+        },
+        ["api", "v2", "tokens", ":param", "transfers", "csv"] => %{
+          ip: %{period: 3_600_000, limit: 1},
+          recaptcha_to_bypass_429: true,
+          bucket_key_prefix: "api/v2/tokens/:param/transfers/csv_",
           isolate_rate_limit?: true
         }
       }

@@ -86,7 +86,7 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
         }
 
         assert {:ok, result} = Publisher.publish(contract_address.hash, params)
-        assert result.constructor_arguments == expected_constructor_arguments
+        assert Data.to_string(result.constructor_arguments) == "0x" <> expected_constructor_arguments
       end
 
       test "corresponding contract_methods are created for the abi" do
@@ -139,7 +139,7 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
         response = Publisher.publish(contract_address.hash, params)
         assert {:ok, %SmartContract{} = smart_contract} = response
 
-        assert smart_contract.constructor_arguments == contract_code_info.constructor_args
+        assert Data.to_string(smart_contract.constructor_arguments) == "0x" <> contract_code_info.constructor_args
       end
 
       test "with invalid data returns error changeset" do
@@ -159,7 +159,7 @@ defmodule Explorer.SmartContract.Solidity.PublisherTest do
         contract_data =
           "#{File.cwd!()}/test/support/fixture/smart_contract/contract_with_lib.json"
           |> File.read!()
-          |> Jason.decode!()
+          |> Utils.JSON.decode!()
           |> List.first()
 
         compiler_version = contract_data["compiler_version"]

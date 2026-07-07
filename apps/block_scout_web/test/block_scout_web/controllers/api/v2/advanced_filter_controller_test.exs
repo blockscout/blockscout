@@ -425,7 +425,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert response = json_response(request, 200)
 
       assert Enum.all?(response["items"], fn item ->
-               is_nil(item["to"]) and not is_nil(item["created_contract"])
+               not is_nil(item["created_contract"])
              end)
 
       request_2nd_page =
@@ -440,7 +440,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert Enum.count(response_2nd_page["items"]) == 12
 
       assert Enum.all?(response_2nd_page["items"], fn item ->
-               is_nil(item["to"]) and not is_nil(item["created_contract"])
+               not is_nil(item["created_contract"])
              end)
 
       check_paginated_response(

@@ -112,16 +112,7 @@ defmodule Explorer.Chain.Token do
     asc: :contract_address_hash
   ]
 
-  @derive {Poison.Encoder,
-           except: [
-             :__meta__,
-             :contract_address,
-             :inserted_at,
-             :updated_at,
-             :metadata_updated_at
-           ]}
-
-  @derive {Jason.Encoder,
+  @derive {JSON.Encoder,
            except: [
              :__meta__,
              :contract_address,

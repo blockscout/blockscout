@@ -15,6 +15,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
       metadata: %Schema{
         type: :object,
         nullable: true,
+        additionalProperties: true,
         example: %{"name" => "Test", "description" => "Test", "image" => "https://example.com/image.png"}
       },
       owner: %Schema{allOf: [Address], nullable: true},
@@ -42,7 +43,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
         description: "Mime type of the media in media_url",
         nullable: true
       },
-      media_url: General.URLNullable
+      media_url: General.URLNullable,
+      image_media_type: %Schema{
+        type: :string,
+        enum: ["image", "video", "html"],
+        description: "Media type category of the token instance image URL",
+        nullable: true
+      },
+      animation_media_type: %Schema{
+        type: :string,
+        enum: ["image", "video", "html"],
+        description: "Media type category of the token instance animation URL",
+        nullable: true
+      }
     },
     required: [
       :id,

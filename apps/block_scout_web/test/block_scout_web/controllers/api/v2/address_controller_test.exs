@@ -3,7 +3,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   use BlockScoutWeb.ConnCase
   use EthereumJSONRPC.Case, async: false
   use BlockScoutWeb.ChannelCase
-  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
+
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
 
   alias ABI.{TypeDecoder, TypeEncoder}
   alias Explorer.{Chain, Repo, TestHelper}
@@ -232,7 +235,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         insert(:smart_contract,
           name: "Implementation",
           external_libraries: [],
-          constructor_arguments: "",
+          constructor_arguments: nil,
           abi: [
             %{
               "type" => "constructor",
@@ -1146,7 +1149,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{
+          Utils.JSON.encode!(%{
             "names" => %{
               to_string(to_address) => "test.eth"
             }
@@ -1158,7 +1161,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{
+          Utils.JSON.encode!(%{
             "addresses" => %{
               to_string(to_address) => %{
                 "tags" => [
@@ -2272,6 +2275,65 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(internal_transaction_to, Enum.at(response["items"], 0))
     end
 
+    test "returns pending status when scope includes pending operations", %{conn: conn} do
+      address = insert(:address)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
+
+      block = insert(:block)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "returns pending status for pending transaction operation", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        from_address: insert(:address)
+      )
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
+
+      insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
+
     test "returns gas_limit as 0 for selfdestruct without gas", %{conn: conn} do
       address = insert(:address)
 
@@ -2370,6 +2432,46 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, internal_transactions_from)
+    end
+
+    test "include_zero_value=false excludes zero-value call internal transactions", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        to_address: address,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        to_address: address,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      request =
+        get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", %{"include_zero_value" => "false"})
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert List.first(response["items"])["index"] == 2
+
+      request_default = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+      assert response_default = json_response(request_default, 200)
+      assert Enum.count(response_default["items"]) == 2
     end
   end
 
@@ -2605,35 +2707,37 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(acb, acb_json)
     end
 
-    test "get coin balance with internal transaction", %{conn: conn} do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
+    if @chain_type != :arc do
+      test "get coin balance with internal transaction", %{conn: conn} do
+        transaction =
+          :transaction
+          |> insert()
+          |> with_block()
 
-      address = insert(:address)
+        address = insert(:address)
 
-      insert(:internal_transaction,
-        type: "call",
-        call_type: "call",
-        transaction: transaction,
-        transaction_index: transaction.index,
-        block: transaction.block,
-        to_address: address,
-        value: 123,
-        block_number: transaction.block_number,
-        index: 1
-      )
+        insert(:internal_transaction,
+          type: "call",
+          call_type: "call",
+          transaction: transaction,
+          transaction_index: transaction.index,
+          block: transaction.block,
+          to_address: address,
+          value: 123,
+          block_number: transaction.block_number,
+          index: 1
+        )
 
-      insert(:address_coin_balance)
-      acb = insert(:address_coin_balance, address: address, block_number: transaction.block_number)
+        insert(:address_coin_balance)
+        acb = insert(:address_coin_balance, address: address, block_number: transaction.block_number)
 
-      request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history")
+        request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history")
 
-      assert %{"items" => [acb_json], "next_page_params" => nil} = json_response(request, 200)
-      assert acb_json["transaction_hash"] == to_string(transaction.hash)
+        assert %{"items" => [acb_json], "next_page_params" => nil} = json_response(request, 200)
+        assert acb_json["transaction_hash"] == to_string(transaction.hash)
 
-      compare_item(acb, acb_json)
+        compare_item(acb, acb_json)
+      end
     end
 
     test "coin balance history can paginate", %{conn: conn} do
@@ -2746,6 +2850,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       log =
         insert(:log,
           transaction: transaction,
+          transaction_index: transaction.index,
           index: 1,
           block: transaction.block,
           block_number: transaction.block_number,
@@ -2774,6 +2879,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
           insert(:log,
             transaction: transaction,
+            transaction_index: transaction.index,
             index: x,
             block: transaction.block,
             block_number: transaction.block_number,
@@ -2801,6 +2907,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       log =
         insert(:log,
           transaction: transaction,
+          transaction_index: transaction.index,
           index: 1,
           block: transaction.block,
           block_number: transaction.block_number,
@@ -2833,7 +2940,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{
+          Utils.JSON.encode!(%{
             "names" => %{
               to_string(address) => "test.eth"
             }
@@ -2845,7 +2952,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{
+          Utils.JSON.encode!(%{
             "addresses" => %{
               to_string(address) => %{
                 "tags" => [
@@ -2905,6 +3012,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       log =
         insert(:log,
           transaction: transaction,
+          transaction_index: transaction.index,
           index: 1,
           block: transaction.block,
           block_number: transaction.block_number,
@@ -2944,13 +3052,13 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       Bypass.expect_once(bypass, "POST", "api/v1/addresses:batch_resolve", fn conn ->
         {:ok, body, conn} = Plug.Conn.read_body(conn)
-        decoded = Jason.decode!(body)
+        decoded = Utils.JSON.decode!(body)
         assert decoded["protocols"] == "ens"
 
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{
+          Utils.JSON.encode!(%{
             "names" => %{
               to_string(address) => "test.eth"
             }
@@ -2962,7 +3070,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{
+          Utils.JSON.encode!(%{
             "addresses" => %{
               to_string(address) => %{
                 "tags" => [
@@ -3003,6 +3111,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
         insert(:log,
           transaction: transaction,
+          transaction_index: transaction.index,
           index: x,
           block: transaction.block,
           block_number: transaction.block_number,
@@ -3018,6 +3127,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       log =
         insert(:log,
           transaction: transaction,
+          transaction_index: transaction.index,
           block: transaction.block,
           block_number: transaction.block_number,
           address: address,
@@ -3067,7 +3177,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       log =
         insert(:log,
+          block: transaction.block,
+          block_number: transaction.block_number,
           transaction: transaction,
+          transaction_index: transaction.index,
           first_topic: TestHelper.topic(topic1),
           second_topic: TestHelper.topic(topic2),
           third_topic: nil,
@@ -3092,7 +3205,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(log, log_from_api)
       assert not is_nil(log_from_api["decoded"])
 
-      assert log_from_api["decoded"] == %{
+      assert Map.drop(log_from_api["decoded"], ["abi"]) == %{
                "method_call" =>
                  "OptionSettled(uint256 indexed accountId, address option, uint256 subId, int256 amount, int256 value)",
                "method_id" => "d20a68b2",
@@ -3129,6 +3242,9 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                  }
                ]
              }
+
+      assert log_from_api["decoded"]["abi"]["name"] == "OptionSettled"
+      assert log_from_api["decoded"]["abi"]["type"] == "event"
     end
 
     test "test corner case, when preload functions face absent smart contract", %{conn: conn} do
@@ -3147,7 +3263,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       log =
         insert(:log,
+          block: transaction.block,
+          block_number: transaction.block_number,
           transaction: transaction,
+          transaction_index: transaction.index,
           first_topic: TestHelper.topic(topic1),
           second_topic: TestHelper.topic(topic2),
           third_topic: nil,
@@ -3198,7 +3317,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       transaction = :transaction |> insert() |> with_block()
 
       insert(:log,
+        block: transaction.block,
+        block_number: transaction.block_number,
         transaction: transaction,
+        transaction_index: transaction.index,
         first_topic: nil,
         second_topic: nil,
         third_topic: nil,
@@ -3208,7 +3330,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       )
 
       insert(:log,
+        block: transaction.block,
+        block_number: transaction.block_number,
         transaction: transaction,
+        transaction_index: transaction.index,
         first_topic: TestHelper.topic("0x0000000000000000000000000000000000000000000000000000000000005d19"),
         second_topic: nil,
         third_topic: nil,
@@ -3221,10 +3346,10 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       Bypass.expect_once(bypass, "POST", "/api/v1/abi/events%3Abatch-get", fn conn ->
         # cspell:enable
         {:ok, body, conn} = Plug.Conn.read_body(conn)
-        body = Jason.decode!(body)
+        body = Utils.JSON.decode!(body)
         assert Enum.count(body["requests"]) == 1
 
-        Conn.resp(conn, 200, Jason.encode!([]))
+        Conn.resp(conn, 200, Utils.JSON.encode!([]))
       end)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/logs")
@@ -3233,6 +3358,49 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert Enum.count(response["items"]) == 2
 
       Bypass.down(bypass)
+    end
+
+    test "includes called method ABI and arguments", %{conn: conn} do
+      event_abi = %{
+        "name" => "Set",
+        "type" => "event",
+        "inputs" => [%{"name" => "x", "type" => "uint256", "indexed" => false, "internalType" => "uint256"}],
+        "anonymous" => false
+      }
+
+      contract_address = insert(:contract_address)
+      insert(:smart_contract, address_hash: contract_address.hash, abi: [event_abi])
+
+      topic1_bytes = ExKeccak.hash_256("Set(uint256)")
+      topic1 = "0x" <> Base.encode16(topic1_bytes, case: :lower)
+
+      log_data = "0x0000000000000000000000000000000000000000000000000000000000000032"
+
+      transaction = :transaction |> insert() |> with_block()
+
+      insert(:log,
+        transaction: transaction,
+        transaction_index: transaction.index,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        address: contract_address,
+        first_topic: TestHelper.topic(topic1),
+        data: log_data
+      )
+
+      request = get(conn, "/api/v2/addresses/#{contract_address.hash}/logs")
+
+      assert response = json_response(request, 200)
+      assert [log_from_api] = response["items"]
+
+      assert log_from_api["decoded"]["abi"]["name"] == "Set"
+      assert log_from_api["decoded"]["abi"]["type"] == "event"
+
+      assert log_from_api["decoded"]["abi"]["inputs"] == [
+               %{"indexed" => false, "internalType" => "uint256", "name" => "x", "type" => "uint256"}
+             ]
+
+      refute Map.has_key?(log_from_api, "called_method")
     end
   end
 
@@ -3903,22 +4071,191 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   end
 
   describe "/addresses/{address_hash}/tabs-counters" do
+    test "token_balances_count excludes scam tokens when hide_scam_addresses is true", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      address = insert(:address)
+
+      legit_balance =
+        insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+          address: address,
+          token_type: "ERC-20",
+          token_id: Enum.random(1..100_000)
+        )
+
+      scam_balance =
+        insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+          address: address,
+          token_type: "ERC-20",
+          token_id: Enum.random(1..100_000)
+        )
+
+      insert(:scam_badge_to_address, address_hash: scam_balance.token_contract_address_hash)
+
+      response =
+        conn
+        |> get("/api/v2/addresses/#{address.hash}/tabs-counters")
+        |> json_response(200)
+
+      assert response["token_balances_count"] == 1
+
+      tokens_response =
+        conn
+        |> get("/api/v2/addresses/#{address.hash}/tokens?type=ERC-20")
+        |> json_response(200)
+
+      assert Enum.count(tokens_response["items"]) == 1
+
+      assert List.first(tokens_response["items"])["token"]["address_hash"] ==
+               Address.checksum(legit_balance.token_contract_address_hash)
+    end
+
+    test "token_transfers_count excludes scam tokens when hide_scam_addresses is true", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      address = insert(:address)
+
+      transaction = insert(:transaction) |> with_block()
+
+      legit_transfer =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          to_address: address
+        )
+
+      scam_transfer =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          to_address: address
+        )
+
+      insert(:scam_badge_to_address, address_hash: scam_transfer.token_contract_address_hash)
+
+      response =
+        conn
+        |> get("/api/v2/addresses/#{address.hash}/tabs-counters")
+        |> json_response(200)
+
+      assert response["token_transfers_count"] == 1
+
+      token_transfers_response =
+        conn
+        |> get("/api/v2/addresses/#{address.hash}/token-transfers")
+        |> json_response(200)
+
+      assert Enum.count(token_transfers_response["items"]) == 1
+
+      assert List.first(token_transfers_response["items"])["token"]["address_hash"] ==
+               Address.checksum(legit_transfer.token_contract_address_hash)
+    end
+
+    test "token_balances_count includes scam tokens when show_scam_tokens cookie is true even if hide_scam_addresses is true",
+         %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      address = insert(:address)
+
+      insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+        address: address,
+        token_type: "ERC-20",
+        token_id: Enum.random(1..100_000)
+      )
+
+      scam_balance =
+        insert(:address_current_token_balance_with_token_id_and_fixed_token_type,
+          address: address,
+          token_type: "ERC-20",
+          token_id: Enum.random(1..100_000)
+        )
+
+      insert(:scam_badge_to_address, address_hash: scam_balance.token_contract_address_hash)
+
+      response =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/addresses/#{address.hash}/tabs-counters")
+        |> json_response(200)
+
+      assert response["token_balances_count"] == 2
+    end
+
+    test "token_transfers_count includes scam tokens when show_scam_tokens cookie is true even if hide_scam_addresses is true",
+         %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      address = insert(:address)
+
+      transaction = insert(:transaction) |> with_block()
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        to_address: address
+      )
+
+      scam_transfer =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          to_address: address
+        )
+
+      insert(:scam_badge_to_address, address_hash: scam_transfer.token_contract_address_hash)
+
+      response =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> get("/api/v2/addresses/#{address.hash}/tabs-counters")
+        |> json_response(200)
+
+      assert response["token_transfers_count"] == 2
+    end
+
     test "get 200 on non existing address", %{conn: conn} do
       address = build(:address)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/tabs-counters")
       response = json_response(request, 200)
 
-      assert %{
-               "validations_count" => 0,
-               "transactions_count" => 0,
-               "token_transfers_count" => 0,
-               "token_balances_count" => 0,
-               "logs_count" => 0,
-               "withdrawals_count" => 0,
-               "internal_transactions_count" => 0,
-               "celo_election_rewards_count" => 0
-             } = response
+      expected_response =
+        %{
+          "validations_count" => 0,
+          "transactions_count" => 0,
+          "token_transfers_count" => 0,
+          "token_balances_count" => 0,
+          "logs_count" => 0,
+          "withdrawals_count" => 0,
+          "internal_transactions_count" => 0
+        }
+        |> then(fn expected_response ->
+          case @chain_identity do
+            {:optimism, :celo} -> Map.put(expected_response, "celo_election_rewards_count", 0)
+            _ -> expected_response
+          end
+        end)
+        |> then(fn expected_response ->
+          if @chain_type == :ethereum do
+            Map.put(expected_response, "beacon_deposits_count", 0)
+          else
+            expected_response
+          end
+        end)
+
+      assert expected_response == response
     end
 
     test "get 422 on invalid address", %{conn: conn} do

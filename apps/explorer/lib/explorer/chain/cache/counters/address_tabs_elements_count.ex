@@ -23,31 +23,33 @@ defmodule Explorer.Chain.Cache.Counters.AddressTabsElementsCount do
            | :beacon_deposits
   @typep response_status :: :limit_value | :stale | :up_to_date
 
-  @spec get_counter(counter_type, String.t()) :: {DateTime.t(), non_neg_integer(), response_status} | nil
-  def get_counter(counter_type, address_hash) do
-    @cache_name |> fetch_from_ets_cache(address_hash |> cache_key(counter_type), nil) |> check_staleness()
+  @spec get_counter(counter_type, String.t(), boolean()) :: {DateTime.t(), non_neg_integer(), response_status} | nil
+  def get_counter(counter_type, address_hash, show_scam_tokens? \\ false) do
+    @cache_name
+    |> fetch_from_ets_cache(cache_key(address_hash, counter_type, show_scam_tokens?), nil)
+    |> check_staleness()
   end
 
-  @spec set_counter(counter_type, String.t(), non_neg_integer()) :: :ok
-  def set_counter(counter_type, address_hash, counter) do
-    :ets.insert(@cache_name, {cache_key(address_hash, counter_type), {DateTime.utc_now(), counter}})
+  @spec set_counter(counter_type, String.t(), non_neg_integer(), boolean()) :: :ok
+  def set_counter(counter_type, address_hash, counter, show_scam_tokens? \\ false) do
+    :ets.insert(@cache_name, {cache_key(address_hash, counter_type, show_scam_tokens?), {DateTime.utc_now(), counter}})
 
     :ok
   end
 
-  @spec set_task(atom, String.t()) :: true
-  def set_task(counter_type, address_hash) do
-    :ets.insert(@cache_name, {task_cache_key(address_hash, counter_type), true})
+  @spec set_task(atom, String.t(), boolean()) :: true
+  def set_task(counter_type, address_hash, show_scam_tokens? \\ false) do
+    :ets.insert(@cache_name, {task_cache_key(address_hash, counter_type, show_scam_tokens?), true})
   end
 
-  @spec drop_task(atom, String.t()) :: true
-  def drop_task(counter_type, address_hash) do
-    :ets.delete(@cache_name, task_cache_key(address_hash, counter_type))
+  @spec drop_task(atom, String.t(), boolean()) :: true
+  def drop_task(counter_type, address_hash, show_scam_tokens? \\ false) do
+    :ets.delete(@cache_name, task_cache_key(address_hash, counter_type, show_scam_tokens?))
   end
 
-  @spec get_task(atom, String.t()) :: true | nil
-  def get_task(counter_type, address_hash) do
-    @cache_name |> fetch_from_ets_cache(address_hash |> task_cache_key(counter_type), nil)
+  @spec get_task(atom, String.t(), boolean()) :: true | nil
+  def get_task(counter_type, address_hash, show_scam_tokens? \\ false) do
+    @cache_name |> fetch_from_ets_cache(task_cache_key(address_hash, counter_type, show_scam_tokens?), nil)
   end
 
   def save_transactions_counter_progress(address_hash, results) do
@@ -135,6 +137,9 @@ defmodule Explorer.Chain.Cache.Counters.AddressTabsElementsCount do
   defp ttl, do: Application.get_env(:explorer, Explorer.Chain.Cache.Counters.AddressTabsElementsCount)[:ttl]
   defp lowercased_string(str), do: str |> to_string() |> String.downcase()
 
-  defp cache_key(address_hash, counter_type), do: {lowercased_string(address_hash), counter_type}
-  defp task_cache_key(address_hash, counter_type), do: {:task, lowercased_string(address_hash), counter_type}
+  defp cache_key(address_hash, counter_type, show_scam_tokens?),
+    do: {lowercased_string(address_hash), counter_type, show_scam_tokens?}
+
+  defp task_cache_key(address_hash, counter_type, show_scam_tokens?),
+    do: {:task, lowercased_string(address_hash), counter_type, show_scam_tokens?}
 end

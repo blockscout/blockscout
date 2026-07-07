@@ -1,10 +1,30 @@
 # Changelog
 
+## 11.2.2
+
+### 🚀 Features
+
+- Add realtime ERC-20 token balance and block indexing delay metrics ([#14531](https://github.com/blockscout/blockscout/issues/14531))
+
+### 🐛 Bug Fixes
+
+- Fix import result merging for chunked data ([#14528](https://github.com/blockscout/blockscout/issues/14528))
+- Add missing async importers for token balances and instances ([#14534](https://github.com/blockscout/blockscout/pull/14534))
+- Log error instead of silent empty map on CBOR decode failure ([#14510](https://github.com/blockscout/blockscout/issues/14510))
+- Log warning when bytecode metadata hex parsing fails ([#14511](https://github.com/blockscout/blockscout/issues/14511))
+
+
+## 11.2.1
+
+### 🐛 Bug Fixes
+
+- Don't call InternalTransaction.async_fetch from ContractCreator ([#14482](https://github.com/blockscout/blockscout/issues/14482))
+
+
 ## 11.2.0
 
 ### 🚀 Features
 
-- Mark instance unhealthy when cache block lags DB ([#14449](https://github.com/blockscout/blockscout/pull/14449))
 - Support for EIP-7708 on arc ([#14336](https://github.com/blockscout/blockscout/pull/14336))
 - Preload only listened entities before broadcast ([#14430](https://github.com/blockscout/blockscout/issues/14430))
 - Add hot smart contracts caching ([#14320](https://github.com/blockscout/blockscout/issues/14320))
@@ -13,6 +33,7 @@
 
 ### 🐛 Bug Fixes
 
+- Don't start health monitor in tests ([#14481](https://github.com/blockscout/blockscout/pull/14481))
 - Improve BlockNumber cache ([#14453](https://github.com/blockscout/blockscout/pull/14453))
 - Fix revert reason for nethermind ([#14442](https://github.com/blockscout/blockscout/pull/14442))
 - Fix token import on Celo ([#14435](https://github.com/blockscout/blockscout/issues/14435))
@@ -23,7 +44,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
-- Optimize deriving current token balances ([#14450](https://github.com/blockscout/blockscout/pull/14450))
+- Optimize deriving current token balances ([#14450](https://github.com/blockscout/blockscout/pull/14450), [#14479](https://github.com/blockscout/blockscout/pull/14479))
 - Limit max node requests in one batch ([#14319](https://github.com/blockscout/blockscout/issues/14319))
 - Log block fetch errors in catchup fetcher ([#14318](https://github.com/blockscout/blockscout/issues/14318))
 - Reset skip metadata flag for NFTs ([#14337](https://github.com/blockscout/blockscout/issues/14337))

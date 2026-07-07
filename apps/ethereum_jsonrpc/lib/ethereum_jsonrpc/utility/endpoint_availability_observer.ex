@@ -73,6 +73,7 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
   @max_error_count 3
   @window_duration 3
   @cleaning_interval :timer.seconds(1)
+  @empty_unavailable_endpoints %{ws: [], trace: [], http: [], eth_call: []}
 
   @type url_type :: :ws | :trace | :http | :eth_call
 
@@ -83,7 +84,7 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
   def init(_) do
     schedule_next_cleaning()
 
-    {:ok, %{error_counts: %{}, unavailable_endpoints: %{ws: [], trace: [], http: [], eth_call: []}}}
+    {:ok, %{error_counts: %{}, unavailable_endpoints: @empty_unavailable_endpoints}}
   end
 
   @doc """
@@ -132,6 +133,20 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
   @spec filter_unavailable_urls([String.t()], url_type()) :: [String.t()]
   def filter_unavailable_urls(urls, url_type) do
     GenServer.call(__MODULE__, {:filter_unavailable_urls, urls, url_type})
+  end
+
+  @doc """
+    Sets the actual unavailable endpoints to provided params.
+
+    ## Parameters
+    - `urls_with_types`: List of `{url_type, url}` tuples
+
+    ## Returns
+    - `:ok`
+  """
+  @spec sync_unavailable_urls([{url_type(), String.t()}]) :: :ok
+  def sync_unavailable_urls(urls_with_types) do
+    GenServer.cast(__MODULE__, {:sync_unavailable_urls, urls_with_types})
   end
 
   @doc """
@@ -268,6 +283,15 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityObserver do
 
     {:noreply,
      %{state | unavailable_endpoints: %{unavailable_endpoints | url_type => unavailable_endpoints[url_type] -- [url]}}}
+  end
+
+  def handle_cast({:sync_unavailable_urls, urls_with_types}, state) do
+    unavailable_endpoints =
+      urls_with_types
+      |> Enum.group_by(fn {url_type, _} -> url_type end, fn {_, url} -> url end)
+      |> Map.new()
+
+    {:noreply, %{state | unavailable_endpoints: Map.merge(@empty_unavailable_endpoints, unavailable_endpoints)}}
   end
 
   # For each URL and URL type combination, checks if the last error timestamp is

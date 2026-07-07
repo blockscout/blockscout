@@ -14,6 +14,7 @@ defmodule Indexer.Application do
   alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
+  alias Indexer.Fetcher.TokenInstance.MediaType, as: TokenInstanceMediaType
   alias Indexer.Fetcher.TokenInstance.Refetch, as: TokenInstanceRefetch
 
   alias Indexer.Memory
@@ -47,12 +48,17 @@ defmodule Indexer.Application do
           Indexer.Fetcher.TokenInstance.Refetch.Supervisor
         ) +
         token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.SanitizeERC1155, nil) +
-        token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.SanitizeERC721, nil) + 1
+        token_instance_fetcher_pool_size(Indexer.Fetcher.TokenInstance.SanitizeERC721, nil) +
+        token_instance_fetcher_pool_size(
+          Indexer.Fetcher.TokenInstance.MediaType,
+          Indexer.Fetcher.TokenInstance.MediaType.Supervisor
+        ) + 1
 
     # + 1 (above in pool_size calculation) for the Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch
 
     base_children = [
       :hackney_pool.child_spec(:token_instance_fetcher, max_connections: pool_size),
+      {Indexer.Fetcher.Optimism.SuperchainConfigUpdater, []},
       {Memory.Monitor, [%{}, [name: memory_monitor_name]]},
       {CoinBalanceOnDemand.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
       {TokenBalanceOnDemand.Supervisor, []},
@@ -60,6 +66,7 @@ defmodule Indexer.Application do
       {ContractCreatorOnDemand.Supervisor, [json_rpc_named_arguments]},
       {NFTCollectionMetadataRefetchOnDemand.Supervisor, [json_rpc_named_arguments]},
       {TokenInstanceMetadataRefetchOnDemand.Supervisor, [json_rpc_named_arguments]},
+      {TokenInstanceMediaType.Supervisor, []},
       {TokenInstanceRefetch.Supervisor, []},
       {TokenTotalSupplyOnDemand.Supervisor, []},
       {FirstTraceOnDemand.Supervisor, [json_rpc_named_arguments]}

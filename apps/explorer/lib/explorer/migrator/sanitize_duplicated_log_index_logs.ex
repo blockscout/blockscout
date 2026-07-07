@@ -54,7 +54,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
 
   ## Returns
 
-    :ok
+    Number of updated logs
   """
   def update_batch(block_numbers) do
     logs_by_block =
@@ -77,7 +77,9 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
 
         {[id | ids],
          [
-           %Log{log | index: new_index} |> Map.from_struct() |> Map.drop([:block, :address, :transaction, :__meta__])
+           %Log{log | index: new_index}
+           |> Map.from_struct()
+           |> Map.drop([:block, :address, :transaction, :__meta__, :address_by_hash, :address_mapping])
            | logs
          ], Map.put(ids_to_new_index, id, new_index)}
       end)
@@ -170,7 +172,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
           )).()
     end)
 
-    :ok
+    Enum.count(logs_to_update)
   end
 
   defp process_block({block_hash, logs}) do

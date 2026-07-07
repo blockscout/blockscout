@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.DataAvailability.Base do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "ArbitrumDataAvailabilityBase",
     description: "Data availability info for batches posted via EIP-4844 blobs, calldata, or with no DA.",
     type: :object,
     properties: %{

@@ -42,8 +42,8 @@ defmodule Explorer.Chain.Address.Reputation do
   end
 end
 
-defimpl Jason.Encoder, for: Explorer.Chain.Address.Reputation do
-  def encode(reputation, opts) do
-    Jason.Encode.string(reputation.reputation, opts)
+defimpl JSON.Encoder, for: Explorer.Chain.Address.Reputation do
+  def encode(reputation, encoder) do
+    JSON.Encoder.encode(reputation.reputation, encoder)
   end
 end

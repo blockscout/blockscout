@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   require Ecto.Query
 
-  import Ecto.Query, only: [dynamic: 1, dynamic: 2, from: 2, where: 3, subquery: 1]
+  import Ecto.Query
   import Explorer.Chain.Import.Runner.Helper, only: [chain_identity_dependent_import: 3]
   import Explorer.QueryHelper, only: [select_ctid: 1, join_on_ctid: 2]
 
@@ -20,6 +20,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     BlockNumberHelper,
     DenormalizationHelper,
     Import,
+    Log,
     PendingOperationsHelper,
     SmartContract,
     Token,
@@ -43,6 +44,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
   alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
   alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
+  alias Explorer.Utility.LogHelper
 
   @behaviour Runner
 
@@ -159,23 +161,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :derive_transaction_forks
       )
     end)
-    |> Multi.run(:delete_address_coin_balances, fn repo, %{lose_consensus: non_consensus_blocks} ->
-      Instrumenter.block_import_stage_runner(
-        fn -> delete_address_coin_balances(repo, non_consensus_blocks, insert_options) end,
-        :address_referencing,
-        :blocks,
-        :delete_address_coin_balances
-      )
-    end)
-    |> Multi.run(:derive_address_fetched_coin_balances, fn repo,
-                                                           %{delete_address_coin_balances: delete_address_coin_balances} ->
-      Instrumenter.block_import_stage_runner(
-        fn -> derive_address_fetched_coin_balances(repo, delete_address_coin_balances, insert_options) end,
-        :address_referencing,
-        :blocks,
-        :derive_address_fetched_coin_balances
-      )
-    end)
     |> Multi.run(:delete_address_token_balances, fn repo, %{lose_consensus: non_consensus_blocks} ->
       Instrumenter.block_import_stage_runner(
         fn -> delete_address_token_balances(repo, non_consensus_blocks, insert_options) end,
@@ -228,12 +213,37 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :insert_derived_address_current_token_balances
       )
     end)
+    |> Multi.run(:delete_address_coin_balances, fn repo, %{lose_consensus: non_consensus_blocks} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> delete_address_coin_balances(repo, non_consensus_blocks, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :delete_address_coin_balances
+      )
+    end)
+    |> Multi.run(:derive_address_fetched_coin_balances, fn repo,
+                                                           %{delete_address_coin_balances: delete_address_coin_balances} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> derive_address_fetched_coin_balances(repo, delete_address_coin_balances, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :derive_address_fetched_coin_balances
+      )
+    end)
     |> Multi.run(:save_internal_transactions_for_delete, fn repo, %{lose_consensus: non_consensus_blocks} ->
       Instrumenter.block_import_stage_runner(
         fn -> save_internal_transactions_for_delete(repo, non_consensus_blocks, insert_options) end,
         :address_referencing,
         :blocks,
         :save_internal_transactions_for_delete
+      )
+    end)
+    |> Multi.run(:delete_logs, fn repo, %{lose_consensus: non_consensus_blocks} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> delete_logs(repo, non_consensus_blocks, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :delete_logs
       )
     end)
     |> Multi.run(:update_token_instances_owner, fn repo, %{derive_transaction_forks: transactions} ->
@@ -955,6 +965,40 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       )
 
     {:ok, Enum.map(result, & &1.block_number)}
+  end
+
+  defp delete_logs(_, [], _), do: {:ok, []}
+
+  defp delete_logs(repo, non_consensus_blocks, %{timeout: timeout}) do
+    non_consensus_block_numbers = Enum.map(non_consensus_blocks, fn {number, _hash} -> number end)
+
+    ordered_query =
+      Log
+      |> where([l], l.block_number in ^non_consensus_block_numbers)
+      |> select([l], select_ctid(l))
+      |> then(fn query ->
+        if LogHelper.primary_key_updated?() do
+          order_by(query, [l], [l.transaction_index, l.index, l.block_number])
+        else
+          order_by(query, [l], [l.transaction_hash, l.index, l.block_hash])
+        end
+      end)
+      |> lock("FOR UPDATE")
+
+    query =
+      from(l in Log,
+        inner_join: ordered_log in subquery(ordered_query),
+        on: join_on_ctid(l, ordered_log)
+      )
+
+    try do
+      {_count, deleted_logs} = repo.delete_all(query, timeout: timeout)
+
+      {:ok, deleted_logs}
+    rescue
+      postgrex_error in Postgrex.Error ->
+        {:error, %{exception: postgrex_error, block_numbers: non_consensus_block_numbers}}
+    end
   end
 
   defp update_token_instances_owner(_, [], _), do: {:ok, []}

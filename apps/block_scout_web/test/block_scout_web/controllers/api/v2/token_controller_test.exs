@@ -1183,6 +1183,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert data = json_response(request, 200)
       assert compare_item(instance, data)
       assert Address.checksum(instance.owner_address_hash) == data["owner"]["hash"]
+      assert data["token"]["address_hash"] == Address.checksum(token.contract_address_hash)
+      assert data["token"]["type"] == token.type
     end
 
     test "get 404 on token instance which is not presented in DB", %{conn: conn} do
@@ -1304,6 +1306,97 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert instance.metadata == nil
       assert instance.error == "blacklist"
       assert instance.skip_metadata_url == false
+    end
+
+    test "preloads ENS and metadata for owner address", %{conn: conn} do
+      owner = insert(:address)
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        token_id: 0,
+        token_contract_address_hash: token.contract_address_hash,
+        owner_address_hash: owner.hash,
+        skip_metadata_url: true
+      )
+
+      bypass = Bypass.open()
+
+      old_tesla_adapter = Application.get_env(:tesla, :adapter)
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      old_env_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+      old_env_metadata = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+
+      on_exit(fn ->
+        Application.put_env(:tesla, :adapter, old_tesla_adapter)
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_env_bens)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_env_metadata)
+        Bypass.down(bypass)
+      end)
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      owner_hash_string = Address.checksum(owner.hash)
+
+      Bypass.expect_once(bypass, "POST", "api/v1/#{chain_id}/addresses:batch_resolve_names", fn conn ->
+        Plug.Conn.resp(
+          conn,
+          200,
+          Utils.JSON.encode!(%{"names" => %{owner_hash_string => "owner.eth"}})
+        )
+      end)
+
+      Bypass.expect_once(bypass, "GET", "api/v1/metadata", fn conn ->
+        Plug.Conn.resp(
+          conn,
+          200,
+          Utils.JSON.encode!(%{
+            "addresses" => %{
+              owner_hash_string => %{
+                "tags" => [
+                  %{
+                    "name" => "Known Address",
+                    "ordinal" => 0,
+                    "slug" => "known-address",
+                    "tagType" => "generic",
+                    "meta" => "{}"
+                  }
+                ]
+              }
+            }
+          })
+        )
+      end)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0")
+
+      assert data = json_response(request, 200)
+      assert data["owner"]["ens_domain_name"] == "owner.eth"
+
+      assert data["owner"]["metadata"] == %{
+               "tags" => [
+                 %{
+                   "name" => "Known Address",
+                   "ordinal" => 0,
+                   "slug" => "known-address",
+                   "tagType" => "generic",
+                   "meta" => %{}
+                 }
+               ]
+             }
     end
   end
 
@@ -2036,7 +2129,11 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> subscribe_and_join(topic)
 
       request =
-        patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
+        patch(
+          conn,
+          "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata?scoped_recaptcha_bypass_token=#{scoped_bypass_token}",
+          %{}
+        )
 
       assert %{"message" => "OK"} = json_response(request, 200)
 
@@ -2076,8 +2173,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       request =
         Phoenix.ConnTest.build_conn()
         |> put_req_header("user-agent", "test-agent")
-        |> put_req_header("scoped-recaptcha-bypass-token", scoped_bypass_token)
-        |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
+        |> patch(
+          "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata?scoped_recaptcha_bypass_token=#{scoped_bypass_token}",
+          %{}
+        )
 
       assert %{"message" => "OK"} = json_response(request, 200)
 
@@ -2102,6 +2201,40 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert(token_instance_from_db)
       assert token_instance_from_db.metadata == metadata
+
+      # Verify header-based scoped bypass token also works (prevent regression)
+      request =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("user-agent", "test-agent")
+        |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
+
+      assert json_response(request, 429)
+
+      TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
+
+      token_instance_success_metadata_expectation(url, metadata)
+
+      request =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("user-agent", "test-agent")
+        |> put_req_header("scoped-recaptcha-bypass-token", scoped_bypass_token)
+        |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
+
+      assert %{"message" => "OK"} = json_response(request, 200)
+
+      :timer.sleep(100)
+
+      assert_receive(
+        {:chain_event, :fetched_token_instance_metadata, :on_demand,
+         [^token_contract_address_hash_string, ^token_id, ^metadata]}
+      )
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
+                       event: "fetched_token_instance_metadata",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
     end
 
     test "falls back to normal reCAPTCHA when incorrect scoped bypass api key is supplied", %{
@@ -2398,15 +2531,12 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   end
 
   def compare_item(%Instance{token: %Token{} = token} = instance, json) do
-    token_type = token.type
     value = to_string(value(token.type, instance))
     id = to_string(instance.token_id)
     metadata = instance.metadata
-    token_address_hash = Address.checksum(token.contract_address_hash)
     app_url = instance.metadata["external_url"]
     animation_url = instance.metadata["animation_url"]
     image_url = instance.metadata["image_url"]
-    token_name = token.name
     owner_address_hash = Address.checksum(instance.owner.hash)
     is_contract = !is_nil(instance.owner.contract_code)
     is_unique = value == "1"
@@ -2414,7 +2544,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     assert %{
              "id" => ^id,
              "metadata" => ^metadata,
-             "token" => %{"address_hash" => ^token_address_hash, "name" => ^token_name, "type" => ^token_type},
              "external_app_url" => ^app_url,
              "animation_url" => ^animation_url,
              "image_url" => ^image_url,
@@ -2431,9 +2560,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
   def compare_item(%Instance{} = instance, json) do
     assert to_string(instance.token_id) == json["id"]
-    assert Jason.decode!(Jason.encode!(instance.metadata)) == json["metadata"]
+    assert Utils.JSON.decode!(Utils.JSON.encode!(instance.metadata)) == json["metadata"]
     assert json["is_unique"]
-    compare_item(Repo.preload(instance, [{:token, :contract_address}]).token, json["token"])
   end
 
   defp value("ERC-721", _), do: 1
@@ -2704,7 +2832,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         {:ok,
          %Tesla.Env{
            status: 200,
-           body: Jason.encode!(metadata)
+           body: Utils.JSON.encode!(metadata)
          }}
       end
     )
@@ -2718,12 +2846,88 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          %Tesla.Env{
            status: 200,
            body:
-             Jason.encode!(%{
+             Utils.JSON.encode!(%{
                "success" => true,
                "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
              })
          }}
       end
     )
+  end
+
+  describe "/tokens/{address_hash}/instances/{token_id}/media-type" do
+    test "get 404 on non existing address", %{conn: conn} do
+      token = build(:token)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0/media-type")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/tokens/0x/instances/0/media-type")
+
+      assert %{"errors" => _} = json_response(request, 422)
+    end
+
+    test "returns already fetched media types without re-fetching", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 1,
+        metadata: %{"image" => "https://example.com/img.png"},
+        image_type: "image/png",
+        animation_type: ""
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/1/media-type")
+      response = json_response(request, 200)
+
+      assert response["image_media_type"] == "image"
+      assert response["animation_media_type"] == nil
+    end
+
+    test "returns 422 when metadata is nil", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 1,
+        metadata: nil,
+        image_type: nil,
+        animation_type: nil
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/1/media-type")
+
+      assert %{"message" => "Metadata is not fetched yet"} = Phoenix.ConnTest.json_response(request, 422)
+    end
+
+    test "fetches and returns media types for instance with metadata", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 1,
+        metadata: %{"image_url" => "https://example.com/image.png", "animation_url" => "https://example.com/anim.mp4"},
+        image_type: nil,
+        animation_type: nil
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/1/media-type")
+      response = json_response(request, 200)
+
+      assert response["image_media_type"] == "image"
+      assert response["animation_media_type"] == "video"
+    end
+
+    test "get 404 for non-existing instance", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/999/media-type")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
   end
 end

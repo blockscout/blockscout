@@ -78,7 +78,7 @@ defmodule BlockScoutWeb.API.HealthController do
       conn,
       status,
       health_status_with_error
-      |> Jason.encode!()
+      |> Utils.JSON.encode!()
     )
   end
 
@@ -90,7 +90,7 @@ defmodule BlockScoutWeb.API.HealthController do
         "healthy" => true,
         "data" => %{}
       }
-      |> Jason.encode!()
+      |> Utils.JSON.encode!()
     )
   end
 
@@ -170,12 +170,12 @@ defmodule BlockScoutWeb.API.HealthController do
               metadata: meta
             }
           }
-          |> Jason.encode!()
+          |> Utils.JSON.encode!()
 
         send_resp(conn, :ok, response)
 
       _ ->
-        send_resp(conn, :internal_server_error, Jason.encode!(%{error: "Failed to fetch migration status"}))
+        send_resp(conn, :internal_server_error, Utils.JSON.encode!(%{error: "Failed to fetch migration status"}))
     end
   end
 

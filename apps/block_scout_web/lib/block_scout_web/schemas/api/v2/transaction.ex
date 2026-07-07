@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
   @moduledoc false
   alias BlockScoutWeb.API.V2.ZkSyncView
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
+  alias BlockScoutWeb.Schemas.API.V2.Optimism.TransactionWithdrawal
   alias BlockScoutWeb.Schemas.API.V2.Transaction.Fee
   alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
@@ -18,7 +19,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
       batch_number: %Schema{type: :integer, nullable: true},
       status: %Schema{
         type: :string,
-        enum: ZkSyncView.batch_status_enum(),
+        enum: ZkSyncView.batched_item_lifecycle_status_enum(),
         nullable: true
       },
       commit_transaction_hash: General.FullHashNullable,
@@ -96,18 +97,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
     additionalProperties: false
   }
 
-  @optimism_withdrawal_schema %Schema{
-    type: :object,
-    nullable: false,
-    properties: %{
-      nonce: %Schema{type: :integer},
-      status: %Schema{type: :string, nullable: false},
-      l1_transaction_hash: General.FullHashNullable
-    },
-    required: [:nonce, :status, :l1_transaction_hash],
-    additionalProperties: false
-  }
-
   @scroll_schema %Schema{
     type: :object,
     nullable: false,
@@ -172,7 +161,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
             l1_gas_used: General.IntegerString,
             op_withdrawals: %Schema{
               type: :array,
-              items: @optimism_withdrawal_schema,
+              items: TransactionWithdrawal,
               nullable: false
             },
             op_interop_messages: %Schema{
@@ -183,7 +172,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
                 status: %Schema{type: :string, nullable: false, enum: ["Sent", "Relayed", "Failed"]},
                 sender_address_hash: General.AddressHashNullable,
                 target_address_hash: General.AddressHashNullable,
-                payload: General.HexString,
+                payload: General.HexData,
                 relay_chain: %Schema{type: :object, nullable: true},
                 relay_transaction_hash: General.FullHashNullable,
                 init_chain: %Schema{type: :object, nullable: true},
@@ -221,7 +210,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
                 hash: General.FullHash,
                 method: General.MethodNameNullable,
                 decoded_input: %Schema{allOf: [General.DecodedInput], nullable: true},
-                raw_input: General.HexString
+                raw_input: General.HexData
               },
               additionalProperties: false
             }
@@ -347,7 +336,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         },
         timestamp: General.TimestampNullable,
         from: Address,
-        to: Address,
+        to: %Schema{allOf: [Address], nullable: true},
         created_contract: %Schema{allOf: [Address], nullable: true},
         confirmations: %Schema{
           type: :integer,
@@ -394,7 +383,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
             General.DecodedInput,
             %Schema{
               type: :object,
-              properties: %{raw: %Schema{anyOf: [General.HexString, %Schema{type: :string}], nullable: true}},
+              properties: %{raw: %Schema{anyOf: [General.HexData, %Schema{type: :string}], nullable: true}},
               required: [:raw],
               nullable: false,
               additionalProperties: false
@@ -402,7 +391,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
           ],
           nullable: true
         },
-        raw_input: General.HexString,
+        raw_input: General.HexData,
         decoded_input: %Schema{allOf: [General.DecodedInput], nullable: true},
         token_transfers: %Schema{type: :array, items: TokenTransfer, nullable: true},
         token_transfers_overflow: %Schema{type: :boolean, nullable: true},

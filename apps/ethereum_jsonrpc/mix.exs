@@ -20,7 +20,7 @@ defmodule EthereumJSONRPC.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      version: "11.2.0"
+      version: "11.2.2"
     ]
   end
 
@@ -64,8 +64,7 @@ defmodule EthereumJSONRPC.MixProject do
       {:ex_keccak, "~> 0.7.5"},
       # JSONRPC HTTP Post calls
       {:httpoison, "~> 2.0"},
-      # Decode/Encode JSON for JSONRPC
-      {:jason, "~> 1.3"},
+
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
       {:logger_json, "~> 7.0"},
@@ -76,7 +75,7 @@ defmodule EthereumJSONRPC.MixProject do
       {:spandex, "~> 3.0"},
       # `:spandex` integration with Datadog
       {:spandex_datadog, "~> 1.0"},
-      {:tesla, "~> 1.18.2"},
+      {:tesla, "~> 1.20.0"},
       # Convert unix timestamps in JSONRPC to DateTimes
       {:timex, "~> 3.7.1"},
       # Encode/decode function names and arguments

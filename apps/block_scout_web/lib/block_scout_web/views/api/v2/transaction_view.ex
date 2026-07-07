@@ -7,7 +7,16 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     chain_identity: [:explorer, :chain_identity],
     miner_gets_burnt_fees?: [:explorer, [Explorer.Chain.Transaction, :block_miner_gets_burnt_fees?]]
 
-  alias BlockScoutWeb.API.V2.{ApiView, Helper, InternalTransactionView, TokenTransferView, TokenView}
+  alias ABI.FunctionSelector
+
+  alias BlockScoutWeb.API.V2.{
+    ApiView,
+    Helper,
+    InternalTransactionsPendingStatusHelper,
+    InternalTransactionView,
+    TokenTransferView,
+    TokenView
+  }
 
   alias BlockScoutWeb.Models.GetTransactionTags
   alias BlockScoutWeb.{TransactionStateView, TransactionView}
@@ -163,35 +172,51 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     TokenTransferView.prepare_token_transfer(token_transfer, conn, decoded_transaction)
   end
 
-  def render("internal_transactions.json", %{
-        internal_transactions: internal_transactions,
-        next_page_params: next_page_params,
-        block: block
-      }) do
+  def render(
+        "internal_transactions.json",
+        %{
+          internal_transactions: internal_transactions,
+          next_page_params: next_page_params,
+          block: block
+        } = assigns
+      ) do
     %{
       "items" => Enum.map(internal_transactions, &InternalTransactionView.prepare_internal_transaction(&1, block)),
       "next_page_params" => next_page_params
     }
+    |> put_pending_status(Map.get(assigns, :pending_status?, false))
   end
 
-  def render("internal_transactions.json", %{
-        internal_transactions: internal_transactions,
-        next_page_params: next_page_params
-      }) do
+  def render(
+        "internal_transactions.json",
+        %{
+          internal_transactions: internal_transactions,
+          next_page_params: next_page_params
+        } = assigns
+      ) do
     %{
       "items" => Enum.map(internal_transactions, &InternalTransactionView.prepare_internal_transaction(&1)),
       "next_page_params" => next_page_params
     }
+    |> put_pending_status(Map.get(assigns, :pending_status?, false))
   end
 
-  def render("logs.json", %{logs: logs, next_page_params: next_page_params, transaction_hash: transaction_hash}) do
+  def render(
+        "logs.json",
+        %{logs: logs, next_page_params: next_page_params, transaction_hash: transaction_hash} = assigns
+      ) do
     decoded_logs = decode_logs(logs, false)
+
+    transaction = Map.get(assigns, :transaction)
+    transaction_or_hash = transaction || transaction_hash
 
     %{
       "items" =>
         logs
         |> Enum.zip(decoded_logs)
-        |> Enum.map(fn {log, decoded_log} -> prepare_log(log, transaction_hash, decoded_log) end),
+        |> Enum.map(fn {log, decoded_log} ->
+          prepare_log(log, transaction_or_hash, decoded_log)
+        end),
       "next_page_params" => next_page_params
     }
   end
@@ -203,7 +228,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "items" =>
         logs
         |> Enum.zip(decoded_logs)
-        |> Enum.map(fn {log, decoded_log} -> prepare_log(log, log.transaction, decoded_log) end),
+        |> Enum.map(fn {log, decoded_log} ->
+          prepare_log(log, log.transaction, decoded_log)
+        end),
       "next_page_params" => next_page_params
     }
   end
@@ -261,6 +288,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "max_depth_hcu" => max_depth_hcu,
       "operation_count" => operation_count
     }
+  end
+
+  defp put_pending_status(response, true) do
+    Map.put(response, "meta", %{"status" => 2, "message" => InternalTransactionsPendingStatusHelper.pending_message()})
+  end
+
+  defp put_pending_status(response, _) do
+    Map.put(response, "meta", %{"status" => 1, "message" => nil})
   end
 
   @doc """
@@ -376,7 +411,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def prepare_log(log, transaction_or_hash, decoded_log, tags_for_address_needed? \\ false) do
-    decoded = process_decoded_log(decoded_log)
+    decoded = process_decoded_log(decoded_log) |> enrich_decoded_with_event_abi(log)
 
     %{
       "transaction_hash" => get_transaction_hash(transaction_or_hash),
@@ -392,7 +427,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "decoded" => decoded,
       "smart_contract" => smart_contract_info(transaction_or_hash),
       "block_number" => log.block_number,
-      "block_hash" => log.block_hash,
+      "block_hash" => log.block.hash,
       "block_timestamp" =>
         case log.block do
           %Block{timestamp: timestamp} -> timestamp
@@ -440,6 +475,32 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       _ ->
         nil
     end
+  end
+
+  defp enrich_decoded_with_event_abi(nil, _log), do: nil
+
+  defp enrich_decoded_with_event_abi(decoded, log) do
+    proxy_implementations =
+      case log.address do
+        %{proxy_implementations: %NotLoaded{}} -> nil
+        %{proxy_implementations: implementations} -> implementations
+        _ -> nil
+      end
+
+    smart_contract =
+      case log.address do
+        %{smart_contract: %NotLoaded{}} -> nil
+        %{smart_contract: sc} -> sc
+        _ -> nil
+      end
+
+    full_abi =
+      (extract_implementations_abi(proxy_implementations) ++
+         try_to_get_abi(smart_contract))
+      |> Enum.uniq()
+
+    event_abi = extract_event_abi(full_abi, log.first_topic && log.first_topic.bytes)
+    Map.put(decoded, "abi", event_abi)
   end
 
   defp prepare_transaction(
@@ -698,6 +759,30 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       %{"name" => name, "type" => type, "indexed" => indexed?, "value" => DecodingHelper.value_json(type, value)}
     end)
   end
+
+  defp extract_event_abi(full_abi, first_topic_bytes) when is_list(full_abi) and is_binary(first_topic_bytes) do
+    Enum.find(full_abi, fn abi_item ->
+      abi_item["type"] in ["event", "function"] and abi_selector_matches_topic?(abi_item, first_topic_bytes)
+    end)
+  end
+
+  defp extract_event_abi(_full_abi, _first_topic), do: nil
+
+  defp abi_selector_matches_topic?(abi_item, first_topic_bytes) when byte_size(first_topic_bytes) >= 4 do
+    include_events = abi_item["type"] == "event"
+
+    case ABI.parse_specification([abi_item], include_events?: include_events) do
+      [%FunctionSelector{method_id: method_id}] when is_binary(method_id) ->
+        binary_part(first_topic_bytes, 0, byte_size(method_id)) == method_id
+
+      _ ->
+        false
+    end
+  rescue
+    _ -> false
+  end
+
+  defp abi_selector_matches_topic?(_abi_item, _first_topic_bytes), do: false
 
   @spec format_status(
           :pending

@@ -58,8 +58,10 @@ dump.rdb
 *.iml
 
 .vscode
+.cursor/
 .cursorignore
 .cursorrules
+.cursor
 .elixir_ls
 .claude/settings.local.json
 

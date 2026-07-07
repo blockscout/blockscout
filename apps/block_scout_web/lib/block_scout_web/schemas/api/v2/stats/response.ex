@@ -85,6 +85,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Stats.Response do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.General
+  alias BlockScoutWeb.Schemas.API.V2.Stats.GasPrices
   alias BlockScoutWeb.Schemas.API.V2.Stats.Response.ChainTypeCustomizations
   alias OpenApiSpex.Schema
 
@@ -99,7 +100,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Stats.Response do
         coin_price: General.FloatStringNullable,
         coin_price_change_percentage: %Schema{type: :number, format: :float, nullable: true},
         gas_price_updated_at: General.TimestampNullable,
-        gas_prices: %Schema{type: :object, nullable: true},
+        gas_prices: %Schema{anyOf: [GasPrices.Simple, GasPrices.Detailed], nullable: true},
         gas_prices_update_in: %Schema{type: :integer, nullable: true},
         gas_used_today: %Schema{anyOf: [General.IntegerStringNullable, %Schema{type: :integer}]},
         market_cap: General.FloatString,
@@ -113,7 +114,30 @@ defmodule BlockScoutWeb.Schemas.API.V2.Stats.Response do
         total_transactions: General.IntegerString,
         transactions_today: General.IntegerString,
         tvl: General.IntegerStringNullable
-      }
+      },
+      # Every base field is always rendered (static map in StatsController.stats/2);
+      # chain-type/identity fields are added conditionally and stay optional.
+      required: [
+        :average_block_time,
+        :coin_image,
+        :coin_price,
+        :coin_price_change_percentage,
+        :gas_price_updated_at,
+        :gas_prices,
+        :gas_prices_update_in,
+        :gas_used_today,
+        :market_cap,
+        :network_utilization_percentage,
+        :secondary_coin_image,
+        :secondary_coin_price,
+        :static_gas_price,
+        :total_addresses,
+        :total_blocks,
+        :total_gas_used,
+        :total_transactions,
+        :transactions_today,
+        :tvl
+      ]
     }
     |> ChainTypeCustomizations.chain_type_fields()
     |> ChainTypeCustomizations.chain_identity_fields()

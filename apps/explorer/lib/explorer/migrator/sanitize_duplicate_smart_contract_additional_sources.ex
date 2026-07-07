@@ -51,9 +51,12 @@ defmodule Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources do
 
   @impl FillingMigration
   def update_batch(ids) do
-    SmartContractAdditionalSource
-    |> where([sc], sc.id in ^ids)
-    |> Repo.delete_all(timeout: :infinity)
+    {count, _} =
+      SmartContractAdditionalSource
+      |> where([sc], sc.id in ^ids)
+      |> Repo.delete_all(timeout: :infinity)
+
+    count
   end
 
   @impl FillingMigration

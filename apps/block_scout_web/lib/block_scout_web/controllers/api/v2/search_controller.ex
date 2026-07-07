@@ -63,6 +63,40 @@ defmodule BlockScoutWeb.API.V2.SearchController do
     })
   end
 
+  operation :search_v1_compatibility,
+    summary: "Search (legacy v1 alias)",
+    description:
+      "Backward-compatible alias of `GET /api/v2/search` served at `GET /api/v1/search`. " <>
+        "Behaves identically; kept for legacy clients.",
+    parameters:
+      [q_param() | base_params()] ++
+        define_search_paging_params([
+          "next_page_params_type",
+          "label",
+          "token",
+          "contract",
+          "tac_operation",
+          "metadata_tag",
+          "block",
+          "blob",
+          "user_operation",
+          "address",
+          "ens_domain"
+        ]),
+    responses: [
+      ok:
+        {"Successful search response containing matched items and pagination information.
+            Results are ordered by relevance and limited to 50 items per page.", "application/json",
+         Schemas.Search.Results},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+  Backward-compatible v1 alias of `search/2` (served at `/api/v1/search`).
+  """
+  @spec search_v1_compatibility(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def search_v1_compatibility(conn, params), do: search(conn, params)
+
   operation :check_redirect,
     summary: "Check if search query should redirect to a specific entity page",
     description: "Checks if a search query redirects to a specific entity page rather than showing search results.",
@@ -77,7 +111,7 @@ defmodule BlockScoutWeb.API.V2.SearchController do
              redirect: %Schema{type: :boolean, nullable: true},
              type: %Schema{
                type: :string,
-               enum: ["address", "block", "transaction", "user_operation", "blob"],
+               enum: ["address", "ens_domain", "block", "transaction", "user_operation", "blob"],
                nullable: true
              }
            }
@@ -107,7 +141,7 @@ defmodule BlockScoutWeb.API.V2.SearchController do
     responses: [
       ok:
         {"Quick search results.", "application/json",
-         %Schema{type: :array, items: %Schema{type: :object}, nullable: false}},
+         %Schema{type: :array, items: Schemas.Search.Result.Item, nullable: false}},
       unprocessable_entity: JsonErrorResponse.response()
     ]
 

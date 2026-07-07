@@ -140,6 +140,7 @@ defmodule Explorer.Chain do
   @type ip :: {:ip, String.t()}
   @type show_scam_tokens? :: {:show_scam_tokens?, true | false}
   @type timeout_option :: {:timeout, timeout() | nil}
+  @type address_preloads_option :: {:address_preloads, Keyword.t()}
 
   def wrapped_union_subquery(query) do
     from(
@@ -196,11 +197,11 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
-  @spec address_to_logs(Hash.Address.t(), [paging_options | necessity_by_association_option | api? | timeout_option]) ::
+  @spec address_to_logs(Hash.Address.t(), [paging_options | api? | timeout_option | address_preloads_option]) ::
           [Log.t()]
   def address_to_logs(address_hash, csv_export?, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    transaction_preloads_from_options = Keyword.get(options, :transaction_preloads, [])
     timeout = Keyword.get(options, :timeout)
 
     case paging_options do
@@ -212,47 +213,50 @@ defmodule Explorer.Chain do
         to_block = to_block(options)
 
         base =
-          from(log in Log,
-            order_by: [desc: log.block_number, desc: log.index],
-            where: log.address_hash == ^address_hash,
-            limit: ^paging_options.page_size,
-            select: log,
-            inner_join: block in Block,
-            on: block.hash == log.block_hash,
-            where: block.consensus == true
-          )
+          Log
+          |> Log.address_match_query(address_hash)
+          |> join(:inner, [log], block in Block, on: block.number == log.block_number)
+          |> where([_l, block], block.consensus == true)
+          |> order_by([log], desc: log.block_number, desc: log.index)
+          |> limit(^paging_options.page_size)
 
-        preloaded_query =
+        transaction_preloads =
           if csv_export? do
-            base
+            transaction_preloads_from_options
           else
-            base
-            |> preload(
-              transaction: [
-                from_address: ^Implementation.proxy_implementations_association(),
-                to_address: ^Implementation.proxy_implementations_association()
-              ]
+            Keyword.merge(
+              [
+                from_address: Implementation.proxy_implementations_association(),
+                to_address: Implementation.proxy_implementations_association()
+              ],
+              transaction_preloads_from_options
             )
           end
 
-        preloaded_query
+        base
         |> page_logs(paging_options)
         |> filter_topic(Keyword.get(options, :topic))
         |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
-        |> join_associations(necessity_by_association)
         |> select_repo(options).all(ExplorerHelper.maybe_timeout(timeout))
         |> Enum.take(paging_options.page_size)
+        |> Log.preload_block(select_repo(options))
+        |> Log.preload_transaction(transaction_preloads, select_repo(options))
+        |> Log.preload_address(options, select_repo(options))
+        |> Log.prepare_data()
     end
   end
 
   defp filter_topic(base_query, null) when null in [nil, "", "null"], do: base_query
 
   defp filter_topic(base_query, topic) do
-    from(log in base_query,
-      where:
-        log.first_topic == ^topic or log.second_topic == ^topic or log.third_topic == ^topic or
-          log.fourth_topic == ^topic
-    )
+    dynamic =
+      dynamic(
+        [log],
+        log.first_topic == ^topic or
+          ^Log.filter_by_topic_dynamic([:second_topic, :third_topic, :fourth_topic], [[topic], [topic], [topic]])
+      )
+
+    from(log in base_query, where: ^dynamic)
   end
 
   @doc """
@@ -1821,24 +1825,6 @@ defmodule Explorer.Chain do
   def string_to_full_hash(_), do: :error
 
   @doc """
-  Constructs the base query `Ecto.Query.t()/0` to create requests to the transaction logs
-
-  ## Returns
-
-    * The query to the Log table with the joined associated transactions.
-
-  """
-  @spec log_with_transactions_query() :: Ecto.Query.t()
-  def log_with_transactions_query do
-    from(log in Log,
-      inner_join: transaction in Transaction,
-      on:
-        transaction.block_hash == log.block_hash and transaction.block_number == log.block_number and
-          transaction.hash == log.transaction_hash
-    )
-  end
-
-  @doc """
   Finds all `t:Explorer.Chain.Log.t/0`s for `t:Explorer.Chain.Transaction.t/0`.
 
   ## Options
@@ -1851,18 +1837,21 @@ defmodule Explorer.Chain do
       the `index` that are passed.
 
   """
-  @spec transaction_to_logs(Hash.Full.t(), [paging_options | necessity_by_association_option | api?]) :: [Log.t()]
+  @spec transaction_to_logs(Hash.Full.t(), [paging_options | api? | address_preloads_option]) :: [Log.t()]
   def transaction_to_logs(transaction_hash, options \\ []) when is_list(options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    transaction_preloads = Keyword.get(options, :transaction_preloads, [])
 
-    log_with_transactions_query()
+    Log.join_transaction_query()
     |> where([_, transaction], transaction.hash == ^transaction_hash)
     |> page_transaction_logs(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([log], asc: log.index)
-    |> join_associations(necessity_by_association)
     |> select_repo(options).all()
+    |> Log.preload_block(select_repo(options))
+    |> Log.preload_transaction(transaction_preloads, select_repo(options))
+    |> Log.preload_address(options, select_repo(options))
+    |> Log.prepare_data()
   end
 
   @doc """

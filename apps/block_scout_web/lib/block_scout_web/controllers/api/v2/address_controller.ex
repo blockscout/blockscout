@@ -7,11 +7,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   import BlockScoutWeb.Chain,
     only: [
-      next_page_params: 3,
-      next_page_params: 5,
+      paginate_list: 3,
+      paginate_list: 4,
       token_transfers_next_page_params: 3,
       paging_options: 1,
-      split_list_by_page: 1,
+      maybe_override_page_size: 2,
       current_filter: 1,
       paging_params_with_fiat_value: 1,
       fetch_scam_token_toggle: 2,
@@ -45,6 +45,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     BlockView,
     Ethereum.DepositController,
     Ethereum.DepositView,
+    InternalTransactionsPendingStatusHelper,
     TransactionView,
     WithdrawalView
   }
@@ -149,6 +150,50 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       [token: reputation_association()] => :optional
     }
   ]
+
+  @base_counter_name_to_json_field_name %{
+    validations: :validations_count,
+    transactions: :transactions_count,
+    token_transfers: :token_transfers_count,
+    token_balances: :token_balances_count,
+    logs: :logs_count,
+    withdrawals: :withdrawals_count,
+    internal_transactions: :internal_transactions_count
+  }
+
+  case @chain_identity do
+    {:optimism, :celo} ->
+      @chain_identity_counter_name_to_json_field_name %{celo_election_rewards: :celo_election_rewards_count}
+
+    _ ->
+      @chain_identity_counter_name_to_json_field_name %{}
+  end
+
+  case @chain_type do
+    :ethereum ->
+      @chain_type_counter_name_to_json_field_name %{beacon_deposits: :beacon_deposits_count}
+
+    _ ->
+      @chain_type_counter_name_to_json_field_name %{}
+  end
+
+  @counter_name_to_json_field_name @base_counter_name_to_json_field_name
+                                   |> Map.merge(@chain_identity_counter_name_to_json_field_name)
+                                   |> Map.merge(@chain_type_counter_name_to_json_field_name)
+
+  @spec include_internal_transaction_association?() :: boolean()
+  defp include_internal_transaction_association? do
+    !Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false)
+  end
+
+  @spec hash_to_address_options(keyword()) :: keyword()
+  defp hash_to_address_options(options) do
+    Keyword.put(
+      options,
+      :include_internal_transaction_association?,
+      include_internal_transaction_association?()
+    )
+  end
 
   @spec contract_address_preloads() :: [keyword()]
   defp contract_address_preloads do
@@ -360,8 +405,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           "inserted_at",
           "hash",
           "value",
-          "fee",
-          "items_count"
+          "fee"
         ]),
     responses: [
       ok:
@@ -374,7 +418,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "hash" => "0xe38d616dade747097354b0731b5560f581536dacf22121feb4bb4a0b776018aa",
              "index" => 103,
              "inserted_at" => "2025-05-26T10:26:51.474448Z",
-             "items_count" => 50,
              "value" => "24741049597737"
            }
          )},
@@ -409,15 +452,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(address_transactions_sorting(params))
 
           results_plus_one = Transaction.address_to_transactions_without_rewards(address_hash, options, false)
-          {transactions, next_page} = split_list_by_page(results_plus_one)
 
-          next_page_params =
-            next_page
-            |> next_page_params(
-              transactions,
-              params,
-              false,
-              &Transaction.address_transactions_next_page_params/1
+          {transactions, next_page_params} =
+            paginate_list(results_plus_one, params, options[:paging_options],
+              paging_function: &Transaction.address_transactions_next_page_params/1
             )
 
           conn
@@ -478,7 +516,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         define_paging_params([
           "block_number",
           "index",
-          "items_count",
           "batch_log_index",
           "batch_block_hash",
           "batch_transaction_hash",
@@ -491,8 +528,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
            items: Schemas.TokenTransfer,
            next_page_params_example: %{
              "block_number" => 12_345_678,
-             "index" => 0,
-             "items_count" => 50
+             "index" => 0
            }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -541,11 +577,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Chain.flat_1155_batch_token_transfers()
             |> Chain.paginate_1155_batch_token_transfers(paging_options)
 
-          {token_transfers, next_page} = split_list_by_page(results)
-
-          next_page_params =
-            next_page
-            |> token_transfers_next_page_params(token_transfers, params)
+          {token_transfers, next_page_params} =
+            token_transfers_next_page_params(results, params, options[:paging_options])
 
           conn
           |> put_status(200)
@@ -577,17 +610,17 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       "Retrieves all internal transactions involving a specific address, with optional filtering for internal transactions sent from or to the address.",
     parameters:
       base_params() ++
-        [address_hash_param(), direction_filter_param()] ++
-        define_paging_params(["block_number", "index", "items_count", "transaction_index"]),
+        [address_hash_param(), direction_filter_param(), include_zero_value_param()] ++
+        define_paging_params(["block_number", "index", "transaction_index"]),
     responses: [
       ok:
         {"All internal transactions for the specified address.", "application/json",
          paginated_response(
            items: Schemas.InternalTransaction,
+           include_pending_status?: true,
            next_page_params_example: %{
              "block_number" => 22_530_770,
              "index" => 8,
-             "items_count" => 50,
              "transaction_index" => 8
            }
          )},
@@ -625,28 +658,35 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(paging_options(params))
             |> Keyword.merge(current_filter(params))
             |> Keyword.merge(@api_true)
+            |> Keyword.put(:include_zero_value, Map.get(params, :include_zero_value, true))
 
           results_plus_one = address_to_internal_transactions(address_hash, full_options)
-          {internal_transactions, next_page} = split_list_by_page(results_plus_one)
 
-          next_page_params =
-            next_page |> next_page_params(internal_transactions, params)
+          {internal_transactions, next_page_params} =
+            paginate_list(results_plus_one, params, full_options[:paging_options])
+
+          pending_status? =
+            InternalTransactionsPendingStatusHelper.address_internal_transactions_pending?(internal_transactions)
 
           conn
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:internal_transactions, %{
             internal_transactions: internal_transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
-            next_page_params: next_page_params
+            next_page_params: next_page_params,
+            pending_status?: pending_status?
           })
 
         _ ->
+          pending_status? = InternalTransactionsPendingStatusHelper.address_internal_transactions_pending?([])
+
           conn
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:internal_transactions, %{
             internal_transactions: [],
-            next_page_params: nil
+            next_page_params: nil,
+            pending_status?: pending_status?
           })
       end
     end
@@ -657,13 +697,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     description: "Retrieves event logs emitted by or involving a specific address.",
     parameters:
       base_params() ++
-        [address_hash_param(), topic_param()] ++ define_paging_params(["block_number", "index", "items_count"]),
+        [address_hash_param(), topic_param()] ++ define_paging_params(["block_number", "index"]),
     responses: [
       ok:
         {"Event logs for the specified address, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Log,
-           next_page_params_example: %{"block_number" => 22_546_398, "index" => 268, "items_count" => 50}
+           next_page_params_example: %{"block_number" => 22_546_398, "index" => 268}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -693,19 +733,15 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             params
             |> paging_options()
             |> Keyword.merge(
-              necessity_by_association: %{
-                [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional,
-                :block => :optional
-              }
+              address_preloads: [:names, :smart_contract, proxy_implementations_smart_contracts_association()],
+              transaction_preloads: [to_address: [:smart_contract, proxy_implementations_smart_contracts_association()]]
             )
             |> Keyword.merge(@api_true)
             |> Keyword.put(:topic, topic)
 
           results_plus_one = Chain.address_to_logs(address_hash, false, options)
 
-          {logs, next_page} = split_list_by_page(results_plus_one)
-
-          next_page_params = next_page |> next_page_params(logs, params)
+          {logs, next_page_params} = paginate_list(results_plus_one, params, options[:paging_options])
 
           conn
           |> put_status(200)
@@ -731,13 +767,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "List blocks validated (mined) by a specific validator/miner address",
     description:
       "Retrieves blocks that were validated (mined) by a specific address. Useful for tracking validator/miner performance.",
-    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["block_number", "items_count"]),
+    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["block_number"]),
     responses: [
       ok:
         {"Blocks validated by the specified address, with pagination.", "application/json",
          paginated_response(
            items: Schemas.Block,
-           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50}
+           next_page_params_example: %{"block_number" => 22_546_398}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -776,9 +812,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(@api_true)
 
           results_plus_one = Block.get_blocks_validated_by_address(full_options, address_hash)
-          {blocks, next_page} = split_list_by_page(results_plus_one)
 
-          next_page_params = next_page |> next_page_params(blocks, params)
+          {blocks, next_page_params} = paginate_list(results_plus_one, params, full_options[:paging_options])
 
           conn
           |> put_status(200)
@@ -798,13 +833,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "Get native coin balance history for an address showing all balance changes",
     description:
       "Retrieves historical native coin balance changes for a specific address, tracking how an address's balance has changed over time.",
-    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["block_number", "items_count"]),
+    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["block_number"]),
     responses: [
       ok:
         {"Historical coin balance changes for the specified address, with pagination.", "application/json",
          paginated_response(
            items: Schemas.CoinBalance,
-           next_page_params_example: %{"block_number" => 22_546_398, "items_count" => 50}
+           next_page_params_example: %{"block_number" => 22_546_398}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -833,10 +868,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
           results_plus_one = CoinBalance.address_to_coin_balances(address, full_options)
 
-          {coin_balances, next_page} = split_list_by_page(results_plus_one)
-
-          next_page_params =
-            next_page |> next_page_params(coin_balances, params)
+          {coin_balances, next_page_params} = paginate_list(results_plus_one, params, full_options[:paging_options])
 
           conn
           |> put_status(200)
@@ -914,7 +946,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param(), token_type_param()] ++
-        define_paging_params(["fiat_value_nullable", "id", "items_count", "value"]),
+        define_paging_params(["fiat_value_nullable", "id", "value"]),
     responses: [
       ok:
         {"Token balances for the specified address with pagination.", "application/json",
@@ -923,7 +955,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
            next_page_params_example: %{
              "fiat_value" => nil,
              "id" => 12_519_063_346,
-             "items_count" => 50,
              "value" => "3750000000000000000000"
            }
          )},
@@ -965,15 +996,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
           TokenBalanceOnDemand.trigger_fetch(ip, address_hash)
 
-          {tokens, next_page} = split_list_by_page(results_plus_one)
+          paging_opts =
+            params
+            |> paging_options()
 
-          next_page_params =
-            next_page
-            |> next_page_params(
-              tokens,
-              params,
-              false,
-              &paging_params_with_fiat_value/1
+          {tokens, next_page_params} =
+            paginate_list(results_plus_one, params, paging_opts[:paging_options],
+              paging_function: &paging_params_with_fiat_value/1
             )
 
           conn
@@ -992,14 +1021,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "List validator withdrawals involving a specific address",
     description:
       "Retrieves withdrawals involving a specific address, typically for proof-of-stake networks supporting validator withdrawals.",
-    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["index", "items_count"]),
+    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["index"]),
     responses: [
       ok:
         {"Withdrawals for the specified address, with pagination. Note that receiver field is not included in this endpoint.",
          "application/json",
          paginated_response(
            items: Schemas.Withdrawal,
-           next_page_params_example: %{"index" => 88_192_653, "items_count" => 50}
+           next_page_params_example: %{"index" => 88_192_653}
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
@@ -1026,9 +1055,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {:ok, _address} ->
           options = @api_true |> Keyword.merge(paging_options(params))
           withdrawals_plus_one = address_hash |> Chain.address_hash_to_withdrawals(options)
-          {withdrawals, next_page} = split_list_by_page(withdrawals_plus_one)
 
-          next_page_params = next_page |> next_page_params(withdrawals, params)
+          {withdrawals, next_page_params} = paginate_list(withdrawals_plus_one, params, options[:paging_options])
 
           conn
           |> put_status(200)
@@ -1056,32 +1084,16 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [sort_param(["balance", "transactions_count"]), order_param()] ++
-        define_paging_params(["fetched_coin_balance", "address_hash", "items_count", "transactions_count"]),
+        define_paging_params(["fetched_coin_balance", "address_hash", "transactions_count"]),
     responses: [
       ok:
         {"List of native coin holders with their balances, with pagination.", "application/json",
          SchemasHelper.extend_schema(
            paginated_response(
-             items:
-               Schemas.Address.schema()
-               |> SchemasHelper.extend_schema(
-                 properties: %{
-                   coin_balance: Schemas.General.IntegerStringNullable,
-                   transactions_count: %Schema{
-                     anyOf: [
-                       Schemas.General.IntegerString,
-                       # TODO: replace empty string with null?
-                       Schemas.General.EmptyString
-                     ],
-                     nullable: true
-                   }
-                 },
-                 required: [:coin_balance, :transactions_count]
-               ),
+             items: Schemas.Address.TopAddress,
              next_page_params_example: %{
                "fetched_coin_balance" => "124355417998347240251800",
                "hash" => "0x59708733fbbf64378d9293ec56b977c011a08fd2",
-               "items_count" => 50,
                "transactions_count" => nil
              }
            ),
@@ -1108,15 +1120,15 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   """
   @spec addresses_list(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def addresses_list(conn, params) do
-    {addresses, next_page} =
+    options =
       params
       |> paging_options()
       |> Keyword.merge(@api_true)
       |> Keyword.merge(addresses_sorting(params))
-      |> Address.list_top_addresses()
-      |> split_list_by_page()
 
-    next_page_params = next_page_params(next_page, addresses, params)
+    results_plus_one = Address.list_top_addresses(options)
+
+    {addresses, next_page_params} = paginate_list(results_plus_one, params, options[:paging_options])
 
     exchange_rate = Market.get_coin_exchange_rate()
     total_supply = Chain.total_supply()
@@ -1158,25 +1170,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   @spec tabs_counters(Plug.Conn.t(), map()) :: {:format, :error} | {:restricted_access, true} | Plug.Conn.t()
   def tabs_counters(conn, %{address_hash_param: address_hash_string} = params) do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
-      counter_name_to_json_field_name = %{
-        validations: :validations_count,
-        transactions: :transactions_count,
-        token_transfers: :token_transfers_count,
-        token_balances: :token_balances_count,
-        logs: :logs_count,
-        withdrawals: :withdrawals_count,
-        internal_transactions: :internal_transactions_count,
-        celo_election_rewards: :celo_election_rewards_count,
-        beacon_deposits: :beacon_deposits_count
-      }
-
-      case Chain.hash_to_address(address_hash, @address_options) do
+      case Chain.hash_to_address(address_hash, hash_to_address_options(@address_options)) do
         {:ok, _address} ->
           counters_json =
             address_hash
-            |> Counters.address_limited_counters(@api_true)
+            |> Counters.address_limited_counters(@api_true |> fetch_scam_token_toggle(conn))
             |> Enum.reduce(%{}, fn {counter_name, counter_value}, acc ->
-              counter_name_to_json_field_name
+              @counter_name_to_json_field_name
               |> Map.fetch(counter_name)
               # credo:disable-for-next-line
               |> case do
@@ -1194,7 +1194,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
         _ ->
           counters_json =
-            counter_name_to_json_field_name
+            @counter_name_to_json_field_name
             |> Enum.reduce(%{}, fn {_counter_type, json_field}, acc ->
               Map.put(acc, json_field, 0)
             end)
@@ -1213,14 +1213,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param(), nft_token_type_param()] ++
-        define_paging_params(["items_count", "token_contract_address_hash", "token_id", "token_type"]),
+        define_paging_params(["token_contract_address_hash", "token_id", "token_type"]),
     responses: [
       ok:
         {"NFTs owned by the specified address, with pagination.", "application/json",
          paginated_response(
            items: Schemas.TokenInstanceInList,
            next_page_params_example: %{
-             "items_count" => 50,
              "token_contract_address_hash" => "0x1ffe11b9fb7f6ff1b153ab8608cf403ecaf9d44a",
              "token_id" => "24950",
              "token_type" => "ERC-721"
@@ -1260,15 +1259,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
               |> fetch_scam_token_toggle(conn)
             )
 
-          {nfts, next_page} = split_list_by_page(results_plus_one)
+          nft_paging_opts = paging_options(params)
 
-          next_page_params =
-            next_page
-            |> next_page_params(
-              nfts,
-              params,
-              false,
-              &Instance.nft_list_next_page_params/1
+          {nfts, next_page_params} =
+            paginate_list(results_plus_one, params, nft_paging_opts[:paging_options],
+              paging_function: &Instance.nft_list_next_page_params/1
             )
 
           conn
@@ -1290,14 +1285,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param(), nft_token_type_param()] ++
-        define_paging_params(["items_count", "token_contract_address_hash", "token_type"]),
+        define_paging_params(["token_contract_address_hash", "token_type"]),
     responses: [
       ok:
         {"NFTs owned by the specified address, grouped by collection, with pagination.", "application/json",
          paginated_response(
            items: Schemas.NFTCollection,
            next_page_params_example: %{
-             "items_count" => 50,
              "token_contract_address_hash" => "0x1ffe11b9fb7f6ff1b153ab8608cf403ecaf9d44a",
              "token_type" => "ERC-721"
            }
@@ -1336,15 +1330,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
               |> fetch_scam_token_toggle(conn)
             )
 
-          {collections, next_page} = split_list_by_page(results_plus_one)
+          collections_paging_opts = paging_options(params)
 
-          next_page_params =
-            next_page
-            |> next_page_params(
-              collections,
-              params,
-              false,
-              &Instance.nft_collections_next_page_params/1
+          {collections, next_page_params} =
+            paginate_list(results_plus_one, params, collections_paging_opts[:paging_options],
+              paging_function: &Instance.nft_collections_next_page_params/1
             )
 
           conn
@@ -1365,7 +1355,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param()] ++
-        define_paging_params(["items_count", "epoch_number", "amount", "associated_account_address_hash", "type"]),
+        define_paging_params(["epoch_number", "amount", "associated_account_address_hash", "type"]),
     responses: [
       ok:
         {"Celo election rewards for the specified address.", "application/json",
@@ -1375,8 +1365,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
              "epoch_number" => 100,
              "amount" => "1000000000000000000",
              "associated_account_address_hash" => "0x1234567890123456789012345678901234567890",
-             "type" => "validator",
-             "items_count" => 50
+             "type" => "validator"
            }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -1396,10 +1385,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           :paging_options,
           celo_election_rewards_paging_options(params)
         )
+        |> maybe_override_page_size(params)
 
       results_plus_one = CeloElectionReward.address_hash_to_rewards(address_hash, full_options)
-
-      {rewards, next_page} = split_list_by_page(results_plus_one)
 
       filtered_params =
         params
@@ -1410,18 +1398,15 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           "type"
         ])
 
-      next_page_params =
-        next_page_params(
-          next_page,
-          rewards,
-          filtered_params,
-          false,
-          &%{
-            epoch_number: &1.epoch_number,
-            amount: &1.amount,
-            associated_account_address_hash: &1.associated_account_address_hash,
-            type: &1.type
-          }
+      {rewards, next_page_params} =
+        paginate_list(results_plus_one, filtered_params, full_options[:paging_options],
+          paging_function:
+            &%{
+              epoch_number: &1.epoch_number,
+              amount: &1.amount,
+              associated_account_address_hash: &1.associated_account_address_hash,
+              type: &1.type
+            }
         )
 
       conn
@@ -1496,15 +1481,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     parameters:
       base_params() ++
         [address_hash_param()] ++
-        define_paging_params(["deposit_index", "items_count"]),
+        define_paging_params(["deposit_index"]),
     responses: [
       ok:
         {"Beacon deposits for the specified address.", "application/json",
          paginated_response(
            items: Schemas.Beacon.Deposit,
            next_page_params_example: %{
-             "index" => 123,
-             "items_count" => 50
+             "index" => 123
            }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
@@ -1550,15 +1534,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         |> Keyword.merge(DepositController.paging_options(params))
 
       deposit_plus_one = Deposit.from_address_hash(address_hash, full_options)
-      {deposits, next_page} = split_list_by_page(deposit_plus_one)
 
-      next_page_params =
-        next_page
-        |> next_page_params(
-          deposits,
-          params,
-          false,
-          DepositController.paging_function()
+      {deposits, next_page_params} =
+        paginate_list(deposit_plus_one, params, full_options[:paging_options],
+          paging_function: DepositController.paging_function()
         )
 
       conn

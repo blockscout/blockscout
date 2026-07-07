@@ -674,4 +674,136 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
        ]}
     end)
   end
+
+  describe "determine_media_type/1" do
+    test "returns empty string for nil" do
+      assert Helper.determine_media_type(nil) == ""
+    end
+
+    test "returns MIME type for data:image URI" do
+      assert Helper.determine_media_type("data:image/png;base64,abc") == "image"
+    end
+
+    test "returns MIME type for data:video URI" do
+      assert Helper.determine_media_type("data:video/mp4;base64,abc") == "video"
+    end
+
+    test "returns empty string for unsupported data URI" do
+      assert Helper.determine_media_type("data:application/json;base64,abc") == ""
+    end
+
+    test "determines MIME type from file extension", %{bypass: bypass} do
+      assert Helper.determine_media_type("https://example.com/image.png") == "image/png"
+    end
+
+    test "determines MIME type from file extension for svg" do
+      assert Helper.determine_media_type("https://example.com/image.svg") == "image/svg+xml"
+    end
+
+    test "determines MIME type from file extension for mp4" do
+      assert Helper.determine_media_type("https://example.com/video.mp4") == "video/mp4"
+    end
+
+    test "determines MIME type from file extension for html" do
+      assert Helper.determine_media_type("https://example.com/page.html") == "text/html"
+    end
+
+    test "makes HEAD request when URL has no extension", %{bypass: bypass} do
+      Bypass.expect_once(bypass, "HEAD", "/media", fn conn ->
+        conn
+        |> Conn.put_resp_header("content-type", "image/jpeg")
+        |> Conn.resp(200, "")
+      end)
+
+      assert Helper.determine_media_type("http://localhost:#{bypass.port}/media") == "image/jpeg"
+    end
+
+    test "returns empty string when HEAD request fails", %{bypass: bypass} do
+      Bypass.expect_once(bypass, "HEAD", "/media", fn conn ->
+        Conn.resp(conn, 404, "")
+      end)
+
+      assert Helper.determine_media_type("http://localhost:#{bypass.port}/media") == ""
+    end
+
+    test "resolves ipfs:// URL via gateway and determines type" do
+      assert Helper.determine_media_type("ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG/image.png") ==
+               "image/png"
+    end
+  end
+
+  describe "fetch_media_types/1" do
+    test "returns error for nil metadata" do
+      instance = %Instance{metadata: nil, image_type: nil, animation_type: nil}
+      assert {:error, :metadata_not_found} = Helper.fetch_media_types(instance)
+    end
+
+    test "returns error when both types already fetched" do
+      instance = %Instance{
+        metadata: %{"image" => "https://example.com/img.png"},
+        image_type: "image/png",
+        animation_type: ""
+      }
+
+      assert {:error, :already_fetched} = Helper.fetch_media_types(instance)
+    end
+
+    test "fetches media types and saves to DB", %{bypass: bypass} do
+      token = insert(:token, type: "ERC-721")
+
+      instance =
+        insert(:token_instance,
+          token_contract_address_hash: token.contract_address_hash,
+          metadata: %{
+            "image_url" => "https://example.com/image.png",
+            "animation_url" => "http://localhost:#{bypass.port}/animation"
+          },
+          image_type: nil,
+          animation_type: nil
+        )
+
+      Bypass.expect_once(bypass, "HEAD", "/animation", fn conn ->
+        conn
+        |> Conn.put_resp_header("content-type", "video/mp4")
+        |> Conn.resp(200, "")
+      end)
+
+      instance =
+        Repo.get_by!(Instance,
+          token_id: instance.token_id,
+          token_contract_address_hash: instance.token_contract_address_hash
+        )
+
+      assert {:ok, %{image_type: "image/png", animation_type: "video/mp4"}} = Helper.fetch_media_types(instance)
+
+      updated =
+        Repo.get_by!(Instance,
+          token_id: instance.token_id,
+          token_contract_address_hash: instance.token_contract_address_hash
+        )
+
+      assert updated.image_type == "image/png"
+      assert updated.animation_type == "video/mp4"
+    end
+
+    test "sets empty string for missing image/animation URLs", %{bypass: _bypass} do
+      token = insert(:token, type: "ERC-721")
+
+      instance =
+        insert(:token_instance,
+          token_contract_address_hash: token.contract_address_hash,
+          metadata: %{"name" => "Test NFT"},
+          image_type: nil,
+          animation_type: nil
+        )
+
+      instance =
+        Repo.get_by!(Instance,
+          token_id: instance.token_id,
+          token_contract_address_hash: instance.token_contract_address_hash
+        )
+
+      assert {:ok, %{image_type: "", animation_type: ""}} = Helper.fetch_media_types(instance)
+    end
+  end
 end

@@ -5,7 +5,7 @@ defmodule Explorer.ChainSpec.GenesisDataTest do
 
   @besu_genesis "#{File.cwd!()}/test/support/fixture/chain_spec/qdai_genesis.json"
                 |> File.read!()
-                |> Jason.decode!()
+                |> Utils.JSON.decode!()
   setup do
     # Patch application env
     old_genesis_data = Application.get_env(:explorer, Explorer.ChainSpec.GenesisData)

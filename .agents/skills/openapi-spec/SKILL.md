@@ -25,7 +25,7 @@ All paths are relative to `apps/block_scout_web/lib/block_scout_web/`. Most endp
 | Account controllers (Private spec) | `controllers/account/api/v2/<domain>_controller.ex` |
 | Legacy controllers | `controllers/api/legacy/<domain>_controller.ex` (routed under `/legacy`) |
 | V2 schema modules | `schemas/api/v2/<domain>.ex` and `schemas/api/v2/<domain>/*.ex` |
-| V2 chain-type schema subdirs | `schemas/api/v2/<chain>/*.ex` (e.g. `schemas/api/v2/{arbitrum,beacon,celo,optimism,scroll,zilliqa,mud}/*.ex`) |
+| V2 chain-type schema subdirs | `schemas/api/v2/<chain>/*.ex` (e.g. `schemas/api/v2/{arbitrum,beacon,celo,optimism,scroll,zilliqa}/*.ex`) |
 | V2 proxy schemas | `schemas/api/v2/proxy/*.ex` |
 | Account schemas (Private spec) | `schemas/api/v2/account/*.ex` |
 | Legacy schemas | `schemas/api/legacy/*.ex` |
@@ -45,6 +45,12 @@ All paths are relative to `apps/block_scout_web/lib/block_scout_web/`. Most endp
 | Legacy tests | `../../test/block_scout_web/controllers/api/legacy/<domain>_controller_test.exs` |
 
 **On router coverage of the public spec:** `specs/public.ex` builds `paths` via `Paths.from_router(ApiRouter)`, which picks up everything reachable from `api_router.ex` — including endpoints declared in the sub-routers that `api_router.ex` `forward`s to (api-key, utils, address-badges). Only `TokensApiV2Router` and `SmartContractsApiV2Router` need the extra `Paths.from_routes(...)` merges in `public.ex` because their prefixes are stripped by Phoenix `forward` and must be re-added. A new annotated endpoint placed in any of the other sub-routers needs no extra wiring beyond the `forward` that already exists in `api_router.ex`.
+
+## Leaf-schemas catalog (bootstrap step)
+
+Before any workflow below, invoke the `leaf-schemas-cataloger` agent (prompt: `Refresh the leaf-schemas catalog if stale.`). It maintains a compact catalog of every leaf type schema under `schemas/api/v2/general/` at `references/cache/leaf-schemas/catalog.md` (auto-generated, gitignored). Read that file when picking a primitive leaf type for a response property or parameter `schema:`.
+
+**Fallback:** if the agent fails or the catalog is unavailable, glob `apps/block_scout_web/lib/block_scout_web/schemas/api/v2/general/*.ex` and read individual leaf files as needed.
 
 ## Core patterns
 
@@ -144,7 +150,7 @@ The order of tag groups in the generated public spec is not derived from the con
 If a new annotated controller introduces a brand-new tag, the agent must register it in the right group, or the tag will still appear in the spec (via controller-side `tags(...)`) but with no ordering guarantee and no entry in the top-level `tags:` list:
 
 - Base endpoint → append the kebab-case tag to `@default_api_categories`.
-- Chain-type endpoint → add it inside the relevant `case @chain_identity` branch, matching the existing patterns (module-attribute + `defp` for static lists, full `defp` body when the tag set depends on a runtime flag such as `mud_enabled?()`).
+- Chain-type endpoint → add it inside the relevant `case @chain_identity` branch, matching the existing patterns (module-attribute + `defp` for static lists, full `defp` body when the tag set depends on a runtime flag).
 - Legacy endpoint → no action; `"legacy"` is already the trailer.
 
 Tags that are already covered by an existing group (e.g. another `addresses` endpoint) need no change.
@@ -229,7 +235,7 @@ For each parameter the controller reads:
    - **Domain-specific but used by multiple operations in the same controller?** Add a private helper function in the controller itself. This avoids polluting `general.ex` with chain-specific concerns while preventing duplication across operations.
    - **Truly one-off (single operation)?** Define an inline `%OpenApiSpex.Parameter{}` struct directly in the `operation` macro arguments.
 
-3. **For pagination parameters**, use `define_paging_params(field_names)` — pass the cursor field names as strings, and always include `"items_count"` (the `next_page_params` helper adds it to every cursor automatically). See `references/parameter-discovery.md` section "The `define_paging_params` factory" for details.
+3. **For pagination parameters**, use `define_paging_params(field_names)` — pass the cursor field names as strings. See `references/parameter-discovery.md` section "The `define_paging_params` factory" for details.
 
 ### Step 3: Create or locate response schema
 
@@ -365,6 +371,7 @@ Use this to audit an existing declaration for correctness, completeness, and adh
 | `references/inspection-checklist.md` | You're running an audit of an existing declaration (Workflow C) |
 | `references/spec-generation-and-verification.md` | You need to generate the spec YAML, validate it, or inspect specific operations/schemas with oastools |
 | `references/oastools-audit-recipes.md` | You want to audit the generated spec for spec-wide convention drift or reuse candidates, without reading every source file |
+| `references/cache/leaf-schemas/catalog.md` | You need to pick a primitive leaf type (`General.AddressHash`, `General.IntegerString`, `General.Tag`, …) for a property or parameter — auto-generated by the `leaf-schemas-cataloger` agent; invoke it first if missing |
 
 ## Using subagents
 

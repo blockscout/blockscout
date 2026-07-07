@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   alias Explorer.Chain.{
     Address,
     Address.CurrentTokenBalance,
+    AdvancedFilter,
     Beacon.Deposit,
     Block,
     InternalTransaction,
@@ -23,9 +24,11 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
 
   @type supported_types ::
           Address.t()
+          | AdvancedFilter.t()
           | Block.t()
           | CurrentTokenBalance.t()
           | InternalTransaction.t()
+          | Instance.t()
           | Log.t()
           | TokenTransfer.t()
           | Transaction.t()
@@ -133,6 +136,24 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   end
 
   @doc """
+  Preloads ENS name to Instance.t()
+  """
+  @spec preload_ens_to_instance(Instance.t()) :: Instance.t()
+  def preload_ens_to_instance(instance) do
+    [instance_with_ens] = preload_ens_to_list([instance])
+    instance_with_ens
+  end
+
+  @doc """
+  Preloads metadata to Instance.t()
+  """
+  @spec preload_metadata_to_instance(Instance.t()) :: Instance.t()
+  def preload_metadata_to_instance(instance) do
+    [instance_with_metadata] = preload_metadata_to_list([instance])
+    instance_with_metadata
+  end
+
+  @doc """
     Preload ENS info to search result, using get_address/1
   """
   @spec preload_ens_info_to_search_results(list) :: list
@@ -184,6 +205,16 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
          from_address_hash: from_address_hash
        }) do
     [to_string(to_address_hash), to_string(from_address_hash)]
+  end
+
+  defp item_to_address_hash_strings(%AdvancedFilter{
+         from_address_hash: from_address_hash,
+         to_address_hash: to_address_hash,
+         created_contract_address_hash: created_contract_address_hash
+       }) do
+    [from_address_hash, to_address_hash, created_contract_address_hash]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(&to_string/1)
   end
 
   defp item_to_address_hash_strings(%Log{address_hash: address_hash}) do
@@ -291,6 +322,29 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
         created_contract_address:
           alter_address(transaction.created_contract_address, created_contract_address_hash, names, field_to_put_info),
         from_address: alter_address(transaction.from_address, from_address_hash, names, field_to_put_info)
+    }
+  end
+
+  defp put_meta_to_item(
+         %AdvancedFilter{
+           from_address_hash: from_address_hash,
+           to_address_hash: to_address_hash,
+           created_contract_address_hash: created_contract_address_hash
+         } = advanced_filter,
+         names,
+         field_to_put_info
+       ) do
+    %AdvancedFilter{
+      advanced_filter
+      | from_address: alter_address(advanced_filter.from_address, from_address_hash, names, field_to_put_info),
+        to_address: alter_address(advanced_filter.to_address, to_address_hash, names, field_to_put_info),
+        created_contract_address:
+          alter_address(
+            advanced_filter.created_contract_address,
+            created_contract_address_hash,
+            names,
+            field_to_put_info
+          )
     }
   end
 

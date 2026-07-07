@@ -37,11 +37,15 @@ defmodule Explorer.Market.Fetcher.TokenTest do
 
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
+      previous_fetcher_enabled = :persistent_term.get(:market_token_fetcher_enabled, false)
+      :persistent_term.put(:market_token_fetcher_enabled, true)
+
       on_exit(fn ->
         Application.put_env(:explorer, Explorer.Market.Source, source_configuration)
         Application.put_env(:explorer, Explorer.Market.Fetcher.Token, fetcher_configuration)
         Application.put_env(:explorer, Explorer.Market.Source.CoinGecko, coin_gecko_configuration)
         Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        :persistent_term.put(:market_token_fetcher_enabled, previous_fetcher_enabled)
       end)
 
       [_token_with_no_exchange_rate | tokens] =
@@ -69,15 +73,20 @@ defmodule Explorer.Market.Fetcher.TokenTest do
 
       Bypass.expect_once(bypass, "GET", "/coins/list", fn conn ->
         assert conn.query_string == "include_platform=true"
-        Conn.resp(conn, 200, Jason.encode!(coins_list))
+        Conn.resp(conn, 200, Utils.JSON.encode!(coins_list))
       end)
 
       token_exchange_rates =
         tokens
-        |> Enum.reduce(%{}, fn %{contract_address_hash: contract_address_hash}, acc ->
-          Map.put(acc, "#{contract_address_hash}_id", %{
-            "usd" => 1..100 |> Enum.random() |> Decimal.new() |> Decimal.mult(Decimal.from_float(0.7))
-          })
+        |> Enum.map(fn %{contract_address_hash: contract_address_hash} ->
+          %{
+            "id" => "#{contract_address_hash}_id",
+            "current_price" => 1..100 |> Enum.random() |> Decimal.new() |> Decimal.mult(Decimal.from_float(0.7)),
+            "market_cap" => 1..100 |> Enum.random() |> Decimal.new() |> Decimal.mult(Decimal.from_float(0.7)),
+            "total_volume" => 1..100 |> Enum.random() |> Decimal.new() |> Decimal.mult(Decimal.from_float(0.7)),
+            "circulating_supply" => 1_000_000,
+            "total_supply" => 2_000_000
+          }
         end)
 
       joined_ids =
@@ -88,12 +97,12 @@ defmodule Explorer.Market.Fetcher.TokenTest do
       Bypass.expect_once(
         bypass,
         "GET",
-        "/simple/price",
+        "/coins/markets",
         fn conn ->
           assert conn.query_string ==
-                   "vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&ids=#{joined_ids}"
+                   "vs_currency=usd&ids=#{joined_ids}&per_page=10&page=1"
 
-          Conn.resp(conn, 200, Jason.encode!(token_exchange_rates))
+          Conn.resp(conn, 200, Utils.JSON.encode!(token_exchange_rates))
         end
       )
 
@@ -103,7 +112,8 @@ defmodule Explorer.Market.Fetcher.TokenTest do
 
       Repo.all(Token)
       |> Enum.each(fn %{contract_address_hash: contract_address_hash, fiat_value: fiat_value} ->
-        assert token_exchange_rates[contract_address_hash]["usd"] == fiat_value
+        matching = Enum.find(token_exchange_rates, &(&1["id"] == "#{contract_address_hash}_id"))
+        assert matching["current_price"] == fiat_value
       end)
     end
 
@@ -138,7 +148,7 @@ defmodule Explorer.Market.Fetcher.TokenTest do
 
       Bypass.expect_once(bypass, "GET", "/coins/list", fn conn ->
         assert conn.query_string == "include_platform=true"
-        Conn.resp(conn, 200, Jason.encode!(coins_list))
+        Conn.resp(conn, 200, Utils.JSON.encode!(coins_list))
       end)
 
       joined_ids =
@@ -149,12 +159,12 @@ defmodule Explorer.Market.Fetcher.TokenTest do
       Bypass.expect_once(
         bypass,
         "GET",
-        "/simple/price",
+        "/coins/markets",
         fn conn ->
           assert conn.query_string ==
-                   "vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&ids=#{joined_ids}"
+                   "vs_currency=usd&ids=#{joined_ids}&per_page=10&page=1"
 
-          Conn.resp(conn, 200, "{}")
+          Conn.resp(conn, 200, "[]")
         end
       )
 
@@ -197,7 +207,7 @@ defmodule Explorer.Market.Fetcher.TokenTest do
 
       Bypass.expect(bypass, "GET", "/coins/list", fn conn ->
         assert conn.query_string == "include_platform=true"
-        Conn.resp(conn, 200, Jason.encode!(coins_list))
+        Conn.resp(conn, 200, Utils.JSON.encode!(coins_list))
       end)
 
       joined_ids =
@@ -208,10 +218,10 @@ defmodule Explorer.Market.Fetcher.TokenTest do
       Bypass.expect(
         bypass,
         "GET",
-        "/simple/price",
+        "/coins/markets",
         fn conn ->
           assert conn.query_string ==
-                   "vs_currencies=usd&include_market_cap=true&include_24hr_vol=true&ids=#{joined_ids}"
+                   "vs_currency=usd&ids=#{joined_ids}&per_page=10&page=1"
 
           Conn.resp(conn, 429, "Too many requests")
         end
@@ -317,19 +327,22 @@ defmodule Explorer.Market.Fetcher.TokenTest do
       ]
 
       Bypass.expect_once(bypass, "GET", "/coins/list", fn conn ->
-        Conn.resp(conn, 200, Jason.encode!(coins_list))
+        Conn.resp(conn, 200, Utils.JSON.encode!(coins_list))
       end)
 
-      token_exchange_rates = %{
-        "returned_token" => %{
-          "usd" => 5.0,
-          "usd_market_cap" => 1000.0,
-          "usd_24h_vol" => 500.0
+      token_exchange_rates = [
+        %{
+          "id" => "returned_token",
+          "current_price" => 5.0,
+          "market_cap" => 1000.0,
+          "total_volume" => 500.0,
+          "circulating_supply" => 1_000_000,
+          "total_supply" => 2_000_000
         }
-      }
+      ]
 
-      Bypass.expect_once(bypass, "GET", "/simple/price", fn conn ->
-        Conn.resp(conn, 200, Jason.encode!(token_exchange_rates))
+      Bypass.expect_once(bypass, "GET", "/coins/markets", fn conn ->
+        Conn.resp(conn, 200, Utils.JSON.encode!(token_exchange_rates))
       end)
 
       GenServer.start_link(TokenFetcher, [])
@@ -386,11 +399,24 @@ defmodule Explorer.Market.Fetcher.TokenTest do
       ]
 
       Bypass.expect_once(bypass, "GET", "/coins/list", fn conn ->
-        Conn.resp(conn, 200, Jason.encode!(coins_list))
+        Conn.resp(conn, 200, Utils.JSON.encode!(coins_list))
       end)
 
-      Bypass.expect_once(bypass, "GET", "/simple/price", fn conn ->
-        Conn.resp(conn, 200, Jason.encode!(%{"zero_token" => %{"usd" => 0, "usd_market_cap" => 0, "usd_24h_vol" => 0}}))
+      Bypass.expect_once(bypass, "GET", "/coins/markets", fn conn ->
+        Conn.resp(
+          conn,
+          200,
+          Utils.JSON.encode!([
+            %{
+              "id" => "zero_token",
+              "current_price" => 0,
+              "market_cap" => 0,
+              "total_volume" => 0,
+              "circulating_supply" => 0,
+              "total_supply" => 0
+            }
+          ])
+        )
       end)
 
       GenServer.start_link(TokenFetcher, [])
@@ -432,24 +458,30 @@ defmodule Explorer.Market.Fetcher.TokenTest do
       ]
 
       Bypass.expect_once(bypass, "GET", "/coins/list", fn conn ->
-        Conn.resp(conn, 200, Jason.encode!(coins_list))
+        Conn.resp(conn, 200, Utils.JSON.encode!(coins_list))
       end)
 
-      token_exchange_rates = %{
-        "zero_price_token" => %{
-          "usd" => 0,
-          "usd_market_cap" => 0,
-          "usd_24h_vol" => 0
+      token_exchange_rates = [
+        %{
+          "id" => "zero_price_token",
+          "current_price" => 0,
+          "market_cap" => 0,
+          "total_volume" => 0,
+          "circulating_supply" => 0,
+          "total_supply" => 0
         },
-        "real_price_token" => %{
-          "usd" => 10.0,
-          "usd_market_cap" => 5000.0,
-          "usd_24h_vol" => 100.0
+        %{
+          "id" => "real_price_token",
+          "current_price" => 10.0,
+          "market_cap" => 5000.0,
+          "total_volume" => 100.0,
+          "circulating_supply" => 1_000_000,
+          "total_supply" => 2_000_000
         }
-      }
+      ]
 
-      Bypass.expect_once(bypass, "GET", "/simple/price", fn conn ->
-        Conn.resp(conn, 200, Jason.encode!(token_exchange_rates))
+      Bypass.expect_once(bypass, "GET", "/coins/markets", fn conn ->
+        Conn.resp(conn, 200, Utils.JSON.encode!(token_exchange_rates))
       end)
 
       GenServer.start_link(TokenFetcher, [])
