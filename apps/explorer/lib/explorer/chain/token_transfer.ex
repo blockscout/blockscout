@@ -138,7 +138,12 @@ defmodule Explorer.Chain.TokenTransfer do
   use Explorer.Schema
 
   use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
-  use Utils.RuntimeEnvHelper, chain_identity: [:explorer, :chain_identity]
+
+  use Utils.RuntimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity],
+    chain_type: [:explorer, :chain_type],
+    arc_native_token_address: [:indexer, [:arc, :arc_native_token_address]],
+    arc_native_token_system_address: [:indexer, [:arc, :arc_native_token_system_address]]
 
   require Explorer.Chain.TokenTransfer.Schema
 
@@ -691,16 +696,40 @@ defmodule Explorer.Chain.TokenTransfer do
     query =
       from(l in Log,
         as: :log,
-        where:
-          l.first_topic == ^@constant or
-            l.first_topic == ^@erc1155_single_transfer_signature or
-            l.first_topic == ^@erc1155_batch_transfer_signature,
+        where: ^token_transfer_log_filter_dynamic(),
         where: not exists(token_transfer_exists_query()),
         select: l.block_number,
         distinct: l.block_number
       )
 
     Repo.stream_reduce(query, [], &[&1 | &2])
+  end
+
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  defp token_transfer_log_filter_dynamic do
+    base_filter =
+      dynamic(
+        [log: l],
+        l.first_topic == ^@constant or
+          l.first_topic == ^@erc1155_single_transfer_signature or
+          l.first_topic == ^@erc1155_batch_transfer_signature
+      )
+
+    case chain_type() do
+      :arc ->
+        dynamic(
+          [log: l],
+          (^base_filter and
+             not (l.first_topic == ^@constant and l.address_hash == ^arc_native_token_address())) or
+            ((l.first_topic == ^@arc_native_coin_transferred_event or
+                l.first_topic == ^@arc_native_coin_minted_event or
+                l.first_topic == ^@arc_native_coin_burned_event) and
+               l.address_hash == ^arc_native_token_system_address())
+        )
+
+      _ ->
+        base_filter
+    end
   end
 
   # Builds a query to check if a token transfer exists for a given log. Handles
