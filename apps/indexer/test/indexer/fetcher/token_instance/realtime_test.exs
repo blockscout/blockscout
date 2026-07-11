@@ -112,7 +112,7 @@ defmodule Indexer.Fetcher.TokenInstance.RealtimeTest do
         )
 
       TokenInstanceRealtime.async_fetch([
-        %{token_contract_address_hash: token.contract_address_hash, token_ids: [Decimal.new(777)]}
+        %{token_contract_address_hash: token.contract_address_hash, token_id: Decimal.new(777)}
       ])
 
       instance =

@@ -14,8 +14,9 @@ jobs:
     name: Push Docker image to GitHub Container Registry
     runs-on: build
     env:
-      RELEASE_VERSION: 11.0.3
-      DOCKER_CHAIN_NAME: optimism-celo
+      RELEASE_VERSION: 11.2.2
+      DOCKER_CHAIN_NAME: celo
+      CHAIN_TYPE: optimism-celo
       API_GRAPHQL_MAX_COMPLEXITY: 10400
     steps:
       - uses: actions/checkout@v5
@@ -43,7 +44,7 @@ jobs:
             API_GRAPHQL_MAX_COMPLEXITY=${{ env.API_GRAPHQL_MAX_COMPLEXITY }}
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=${{ env.DOCKER_CHAIN_NAME }}
+            CHAIN_TYPE=${{ env.CHAIN_TYPE }}
 
       - name: Build and push Docker image for CELO (indexer)
         uses: docker/build-push-action@v6
@@ -61,4 +62,4 @@ jobs:
             DISABLE_API=true
             BLOCKSCOUT_VERSION=v${{ env.RELEASE_VERSION }}.+commit.${{ env.SHORT_SHA }}
             RELEASE_VERSION=${{ env.RELEASE_VERSION }}
-            CHAIN_TYPE=${{ env.DOCKER_CHAIN_NAME }}
+            CHAIN_TYPE=${{ env.CHAIN_TYPE }}

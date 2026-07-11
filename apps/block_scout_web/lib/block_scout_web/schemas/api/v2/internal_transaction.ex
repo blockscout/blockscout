@@ -31,7 +31,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.InternalTransaction do
         description: "The index of the parent transaction inside the block."
       },
       from: Address,
-      to: Address,
+      to: %Schema{allOf: [Address], nullable: true},
       created_contract: %Schema{allOf: [Address], nullable: true},
       value: General.IntegerString,
       block_number: %Schema{

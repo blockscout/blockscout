@@ -114,6 +114,8 @@ config :explorer, Explorer.Chain.Mud, enabled: ConfigHelper.parse_bool_env_var("
 
 config :explorer, Explorer.Utility.VersionConstantsUpdater, enabled: true
 
+config :explorer, Explorer.Utility.VersionUpgrade, enabled: true
+
 for migrator <- [
       # Background migrations
       Explorer.Migrator.TransactionsDenormalization,
@@ -212,6 +214,8 @@ config :explorer, Explorer.Utility.RateLimiter, enabled: true
 
 config :explorer, Explorer.Utility.Hammer.Redis, enabled: true
 config :explorer, Explorer.Utility.Hammer.ETS, enabled: true
+
+config :explorer, Explorer.Chain.Health.Monitor, enabled: true
 
 config :explorer, Explorer.Repo,
   migration_timestamps: [type: :utc_datetime_usec],

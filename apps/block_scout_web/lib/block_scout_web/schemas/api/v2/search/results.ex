@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Search.Results do
     type: :object,
     properties: %{
       items: %Schema{type: :array, items: %Schema{type: :object}},
-      next_page_params: %Schema{type: :object, nullable: true}
+      next_page_params: %Schema{type: :object, nullable: true, additionalProperties: true}
     },
     required: []
   })

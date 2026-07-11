@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Import do
   Bulk importing of data into `Explorer.Repo`
   """
 
-  alias Ecto.Changeset
+  alias Ecto.{Changeset, Multi}
   alias Explorer.Account.Notify
   alias Explorer.Chain.{Block, Import}
   alias Explorer.Chain.Events.Publisher
@@ -436,20 +436,43 @@ defmodule Explorer.Chain.Import do
   end
 
   defp import_transaction(multi, options) when is_map(options) do
-    Repo.logged_transaction(multi, timeout: Map.get(options, :timeout, @transaction_timeout))
+    timeout = Map.get(options, :timeout, @transaction_timeout)
+
+    multi
+    |> add_statement_timeout(timeout)
+    |> Repo.logged_transaction(timeout: timeout)
   rescue
     exception -> {:exception, exception, __STACKTRACE__}
   end
 
+  defp add_statement_timeout(multi, timeout) when is_integer(timeout) do
+    prefix_multi =
+      Multi.run(Multi.new(), :set_statement_timeout, fn repo, _ ->
+        repo.query!("SET LOCAL statement_timeout = #{timeout}")
+        {:ok, :done}
+      end)
+
+    Multi.prepend(multi, prefix_multi)
+  end
+
+  defp add_statement_timeout(multi, _timeout), do: multi
+
   defp handle_task_results(task_results, acc_changes) do
     Enum.reduce_while(task_results, {:ok, acc_changes}, fn task_result, {:ok, acc_changes_inner} ->
       case task_result do
-        {:ok, {:ok, changes}} -> {:cont, {:ok, Map.merge(acc_changes_inner, changes)}}
+        {:ok, {:ok, changes}} -> {:cont, {:ok, merge_task_result(acc_changes_inner, changes)}}
         {:ok, {:exception, exception, stacktrace}} -> reraise exception, stacktrace
         {:ok, error} -> {:halt, error}
         {:exit, reason} -> {:halt, reason}
         nil -> {:halt, :timeout}
       end
+    end)
+  end
+
+  defp merge_task_result(changes_acc, changes) do
+    Map.merge(changes_acc, changes, fn
+      _k, v1, v2 when is_list(v1) and is_list(v2) -> v1 ++ v2
+      _k, _v1, v2 -> v2
     end)
   end
 

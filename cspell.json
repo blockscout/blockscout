@@ -30,6 +30,7 @@
     // words - list of words to be always considered correct
     "words": [
         "AABB",
+        "AABBCCDD",
         "aave",
         "absname",
         "acbs",
@@ -57,6 +58,7 @@
         "Asearch",
         "Asfpp",
         "Astar",
+        "asyncable",
         "atoken",
         "audix",
         "autodetectfalse",
@@ -449,6 +451,7 @@
         "mtransfer",
         "mult",
         "multicall",
+        "multicasts",
         "multichain",
         "multiprotocol",
         "multis",

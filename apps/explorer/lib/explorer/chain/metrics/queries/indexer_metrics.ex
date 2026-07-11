@@ -114,25 +114,57 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   # sobelow_skip ["SQL"]
   @spec missing_current_token_balances_count() :: integer()
   def missing_current_token_balances_count do
-    sql_string =
-      """
+    block_ranges = RangesHelper.get_block_ranges()
+
+    if block_ranges == [] do
+      0
+    else
+      {range_conditions, params} =
+        Enum.reduce(block_ranges, {[], []}, fn
+          first..last//_, {conditions, acc_params} ->
+            from = min(first, last)
+            to = max(first, last)
+            param_index_from = length(acc_params) + 1
+            param_index_to = length(acc_params) + 2
+
+            condition =
+              "(ctb.block_number >= $#{param_index_from}::bigint AND ctb.block_number <= $#{param_index_to}::bigint)"
+
+            {[condition | conditions], [to, from | acc_params]}
+
+          start_from, {conditions, acc_params} ->
+            param_index = length(acc_params) + 1
+            condition = "ctb.block_number >= $#{param_index}::bigint"
+            {[condition | conditions], [start_from | acc_params]}
+        end)
+
+      range_filter =
+        range_conditions
+        |> Enum.reverse()
+        |> Enum.join(" OR ")
+
+      sql_string = """
       SELECT COUNT(1) as missing_current_token_balances_count
       FROM address_current_token_balances ctb
       WHERE (ctb.value_fetched_at is NULL OR ctb.value is NULL)
-      AND ctb.token_type != 'ERC-7984';
+      AND ctb.token_type != 'ERC-7984'
+      AND (ctb.refetch_after IS NULL OR ctb.refetch_after < NOW())
+      AND NOT EXISTS (SELECT 1 FROM missing_balance_of_tokens bmt WHERE bmt.token_contract_address_hash = ctb.token_contract_address_hash)
+      AND (#{range_filter});
       """
 
-    case SQL.query(Repo, sql_string, [], timeout: :infinity) do
-      {:ok,
-       %Postgrex.Result{
-         command: :select,
-         columns: ["missing_current_token_balances_count"],
-         rows: [[missing_current_token_balances_count]]
-       }} ->
-        missing_current_token_balances_count
+      case SQL.query(Repo, sql_string, Enum.reverse(params), timeout: :infinity) do
+        {:ok,
+         %Postgrex.Result{
+           command: :select,
+           columns: ["missing_current_token_balances_count"],
+           rows: [[missing_current_token_balances_count]]
+         }} ->
+          missing_current_token_balances_count
 
-      _ ->
-        0
+        _ ->
+          0
+      end
     end
   end
 
@@ -318,5 +350,89 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
     :indexer
     |> Application.get_env(Indexer.Fetcher.MultichainSearchDb.CountersExportQueue.Supervisor, [])
     |> Keyword.get(:disabled?) == true
+  end
+
+  @doc """
+  Query to get percentile distribution of realtime token balances indexing delay.
+  Returns a map of percentile label to delay in nanoseconds, e.g. %{"p20" => 1500000000}.
+  Nanoseconds are expected by the corresponding gauge: its `_seconds` name suffix makes
+  prometheus infer `duration_unit: :seconds`, converting stored values to seconds at scrape time.
+  """
+  # sobelow_skip ["SQL"]
+  @spec erc20_token_balances_realtime_indexing_delay_percentiles() :: map()
+  def erc20_token_balances_realtime_indexing_delay_percentiles do
+    sql = """
+    WITH base AS (
+        SELECT (EXTRACT(EPOCH FROM actb.value_fetched_at - b.timestamp) * 1e9)::bigint AS delay_nanoseconds
+        FROM token_transfers tt
+        JOIN blocks b
+        ON tt.block_hash = b.hash
+        LEFT JOIN address_current_token_balances actb
+            ON tt.to_address_hash = actb.address_hash
+            AND actb.token_contract_address_hash = tt.token_contract_address_hash
+            AND actb.block_number = tt.block_number
+        WHERE tt.token_type = 'ERC-20'
+          AND tt.block_consensus = true
+          AND actb.value_fetched_at IS NOT NULL
+        ORDER BY tt.block_number DESC
+        LIMIT 1000
+    )
+    SELECT
+        percentile_cont(0.20) WITHIN GROUP (ORDER BY delay_nanoseconds) AS p20,
+        percentile_cont(0.40) WITHIN GROUP (ORDER BY delay_nanoseconds) AS p40,
+        percentile_cont(0.60) WITHIN GROUP (ORDER BY delay_nanoseconds) AS p60,
+        percentile_cont(0.80) WITHIN GROUP (ORDER BY delay_nanoseconds) AS p80,
+        percentile_cont(0.90) WITHIN GROUP (ORDER BY delay_nanoseconds) AS p90,
+        percentile_cont(0.95) WITHIN GROUP (ORDER BY delay_nanoseconds) AS p95,
+        percentile_cont(0.99) WITHIN GROUP (ORDER BY delay_nanoseconds) AS p99
+    FROM base
+    """
+
+    case SQL.query(Repo, sql, [], timeout: :infinity) do
+      {:ok, %Postgrex.Result{columns: columns, rows: [row]}} ->
+        columns |> Enum.zip(row) |> Map.new()
+
+      _ ->
+        %{}
+    end
+  end
+
+  @doc """
+  Query to get percentile distribution of realtime blocks indexing delay.
+  Returns a map of percentile label to delay in nanoseconds, e.g. %{"p20" => 500000000}.
+  Nanoseconds are expected by the corresponding gauge: its `_seconds` name suffix makes
+  prometheus infer `duration_unit: :seconds`, converting stored values to seconds at scrape time.
+  """
+  # sobelow_skip ["SQL"]
+  @spec blocks_realtime_indexing_delay_percentiles() :: map()
+  def blocks_realtime_indexing_delay_percentiles do
+    sql = """
+    WITH stats AS (
+        SELECT percentile_cont(
+            ARRAY[0.20, 0.30, 0.40, 0.50, 0.60, 0.70, 0.80, 0.90, 0.99]
+        ) WITHIN GROUP (ORDER BY delay_nanoseconds) AS vals
+        FROM (
+            SELECT (EXTRACT(EPOCH FROM inserted_at - timestamp) * 1e9)::bigint AS delay_nanoseconds
+            FROM blocks
+            WHERE timestamp AT TIME ZONE 'UTC' >= NOW() AT TIME ZONE 'UTC' - INTERVAL '5 minutes'
+              AND consensus = true
+            ORDER BY number DESC
+        ) s
+    )
+    SELECT t.percentile, t.delay_nanoseconds
+    FROM stats
+    CROSS JOIN LATERAL unnest(
+        ARRAY[20, 30, 40, 50, 60, 70, 80, 90, 99],
+        stats.vals
+    ) AS t(percentile, delay_nanoseconds)
+    """
+
+    case SQL.query(Repo, sql, [], timeout: :infinity) do
+      {:ok, %Postgrex.Result{rows: rows}} ->
+        Map.new(rows, fn [pct, val] -> {"p#{pct}", val} end)
+
+      _ ->
+        %{}
+    end
   end
 end

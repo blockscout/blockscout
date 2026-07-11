@@ -18,6 +18,22 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.ChainTypeCustomizations do
           required: [:filecoin_robust_address]
         )
 
+      :zilliqa ->
+        # Added by `ZilliqaView.extend_token_json_response/2` for ZRC-2 tokens only,
+        # hence optional (not added to `required`).
+        schema
+        |> Helper.extend_schema(
+          properties: %{
+            zilliqa: %Schema{
+              type: :object,
+              nullable: false,
+              properties: %{zrc2_address_hash: General.AddressHashNullable},
+              required: [:zrc2_address_hash],
+              additionalProperties: false
+            }
+          }
+        )
+
       _ ->
         schema
     end
@@ -116,6 +132,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Type do
   end
 
   OpenApiSpex.schema(%{
+    title: "TokenType",
     type: :string,
     enum: @token_types ++ @chain_type_token_types
   })

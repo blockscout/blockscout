@@ -24,6 +24,8 @@ defmodule Explorer.Utility.VersionUpgrade do
   If no rule matches the target version, the upgrade is allowed by default.
   """
 
+  use GenServer
+
   alias Explorer.Application.Constants
   alias Explorer.Chain.Block
   alias Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey
@@ -38,11 +40,21 @@ defmodule Explorer.Utility.VersionUpgrade do
     }
   ]
 
-  def validate_current_upgrade do
-    previous_version = Constants.get_previous_backend_version()
-    current_version = Constants.get_current_backend_version()
+  @spec start_link(term()) :: GenServer.on_start()
+  def start_link(_) do
+    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+  end
 
-    validate_upgrade(previous_version, current_version)
+  def init(_) do
+    validate_current_upgrade()
+    :ignore
+  end
+
+  def validate_current_upgrade do
+    stored_current_version = Constants.get_current_backend_version()
+    current_version = to_string(Application.spec(:explorer, :vsn))
+
+    validate_upgrade(stored_current_version, current_version)
   end
 
   def validate_upgrade(nil, to_version) do

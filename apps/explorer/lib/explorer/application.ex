@@ -39,6 +39,7 @@ defmodule Explorer.Application do
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo.PrometheusLogger
+  alias Explorer.Stats.HotSmartContractsCache
   alias Explorer.Utility.Hammer
   alias Oban.Telemetry, as: ObanTelemetry
   alias Utils.ConfigHelper
@@ -62,6 +63,7 @@ defmodule Explorer.Application do
     # Children to start in all environments
     base_children = [
       Explorer.Repo,
+      Explorer.Repo.Replica1,
       Explorer.Vault,
       Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor},
@@ -74,7 +76,6 @@ defmodule Explorer.Application do
         id: LookUpSmartContractSourcesTaskSupervisor
       ),
       Supervisor.child_spec({Task.Supervisor, name: Explorer.WETHMigratorSupervisor}, id: WETHMigratorSupervisor),
-      Explorer.Chain.Health.Monitor,
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       Accounts,
       AddressesCoinBalanceSum,
@@ -94,6 +95,10 @@ defmodule Explorer.Application do
       Uncles,
       AddressTabsElementsCount,
       con_cache_child_spec(MarketHistoryCache.cache_name()),
+      con_cache_child_spec(HotSmartContractsCache.cache_name(),
+        ttl_check_interval: :timer.seconds(1),
+        global_ttl: :infinity
+      ),
       con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
       {Redix, redix_opts()},
       {Explorer.Utility.ReplicaAccessibilityManager, []},
@@ -119,12 +124,12 @@ defmodule Explorer.Application do
   defp configurable_children do
     configurable_children_set =
       [
-        only_in_mode(Explorer.Repo.Replica1, :api),
+        configure(Explorer.Chain.Health.Monitor),
         only_in_mode(Explorer.SmartContract.SolcDownloader, :api),
         only_in_mode(Explorer.SmartContract.VyperDownloader, :api),
         only_in_mode({Admin.Recovery, [[], [name: Admin.Recovery]]}, :api),
-        configure_mode_dependent_process(Explorer.Utility.VersionConstantsUpdater, :indexer),
         configure(Explorer.Utility.VersionUpgrade),
+        configure_mode_dependent_process(Explorer.Utility.VersionConstantsUpdater, :indexer),
         configure_mode_dependent_process(Explorer.Market.Fetcher.Coin, :api),
         configure_mode_dependent_process(Explorer.Market.Fetcher.Token, :indexer),
         configure_mode_dependent_process(Explorer.Market.Fetcher.TokenList, :indexer),
@@ -223,11 +228,11 @@ defmodule Explorer.Application do
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
           :indexer
         ),
-        configure_mode_dependent_process(Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.DropLogsBlockNumberAscIndexAscIndex,
           :indexer
         ),
+        configure_mode_dependent_process(Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashBlockNumberDescIndexDescIndex,
           :indexer
@@ -382,10 +387,6 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError,
-          :indexer
-        ),
-        configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsFromAddressIdPartialIndex,
           :indexer
         ),
@@ -399,6 +400,10 @@ defmodule Explorer.Application do
         ),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberCreatedContractAddressIdPartialIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError,
           :indexer
         ),
         configure_mode_dependent_process(

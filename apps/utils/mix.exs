@@ -5,7 +5,7 @@ defmodule Utils.MixProject do
   def project do
     [
       app: :utils,
-      version: "11.0.3",
+      version: "11.2.2",
       build_path: "../../_build",
       # config_path: "../../config/config.exs",
       deps_path: "../../deps",
@@ -34,7 +34,7 @@ defmodule Utils.MixProject do
       {:credo, "~> 1.5", only: [:test, :dev], runtime: false},
       {:httpoison, "~> 2.0"},
       {:mime, "~> 2.0"},
-      {:tesla, "~> 1.17.0"}
+      {:tesla, "~> 1.20.0"}
     ]
   end
 

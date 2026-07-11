@@ -1,0 +1,31 @@
+{
+  "name": "@blockscout/api-types",
+  "version": "0.1.0",
+  "description": "TypeScript types generated from Blockscout OpenAPI specs (public, private, and chain-specific)",
+  "license": "LicenseRef-Blockscout",
+  "type": "module",
+  "types": "./index.ts",
+  "exports": {
+    ".": {
+      "types": "./index.ts"
+    }
+  },
+  "files": [
+    "index.ts",
+    "dist"
+  ],
+  "scripts": {
+    "generate:spec": "bash scripts/generate-spec.sh",
+    "generate:spec:merged": "node scripts/merge-specs.mjs",
+    "generate:types": "bash scripts/generate-types.sh",
+    "build": "npm run generate:spec && npm run generate:types",
+    "build:dev": "NODE_ENV=development npm run generate:spec && NODE_ENV=development npm run generate:types",
+    "typecheck": "tsc --noEmit",
+    "publish:dev": "npm version 0.0.1-beta.$(git rev-parse --short HEAD) && npm publish --access public --tag beta"
+  },
+  "devDependencies": {
+    "js-yaml": "^4.1.1",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.8.3"
+  }
+}

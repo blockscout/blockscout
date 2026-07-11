@@ -557,12 +557,21 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   defp maybe_reject_zero_value(internal_transactions) do
     with true <- Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled],
          border_number when is_integer(border_number) <- DeleteZeroValueInternalTransactions.border_number() do
-      Enum.reject(
-        internal_transactions,
-        &(Map.has_key?(&1, :type) and
-            (&1.block_number <= border_number and &1.type == :call and
-               (is_nil(Map.get(&1, :value)) || Decimal.eq?(&1.value.value, 0))))
-      )
+      Enum.reject(internal_transactions, fn
+        %{type: type, block_number: block_number} = internal_transaction ->
+          # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+          value =
+            case Map.get(internal_transaction, :value) do
+              %{value: decimal_value} -> decimal_value
+              integer_value when is_integer(integer_value) -> integer_value
+              nil -> 0
+            end
+
+          block_number <= border_number and type in [:call, "call"] and Decimal.eq?(value, 0)
+
+        _ ->
+          false
+      end)
     else
       _ -> internal_transactions
     end
@@ -1010,8 +1019,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       block_ranges = RangesHelper.get_trace_block_ranges()
 
       Enum.reduce(block_ranges, dynamic([_], false), fn
-        _from.._to//_ = range, acc -> dynamic([block], ^acc or block.number in ^range)
-        num_to_latest, acc -> dynamic([block], ^acc or block.number >= ^num_to_latest)
+        _from.._to//_ = range, acc ->
+          lower = min(range.first, range.last)
+          upper = max(range.first, range.last)
+          dynamic([block], ^acc or (block.number >= ^lower and block.number <= ^upper))
+
+        num_to_latest, acc ->
+          dynamic([block], ^acc or block.number >= ^num_to_latest)
       end)
     else
       dynamic([_], true)

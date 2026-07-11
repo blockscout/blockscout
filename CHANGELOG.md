@@ -1,5 +1,146 @@
 # Changelog
 
+## 11.2.2
+
+### 🚀 Features
+
+- Add realtime ERC-20 token balance and block indexing delay metrics ([#14531](https://github.com/blockscout/blockscout/issues/14531))
+
+### 🐛 Bug Fixes
+
+- Fix import result merging for chunked data ([#14528](https://github.com/blockscout/blockscout/issues/14528))
+- Add missing async importers for token balances and instances ([#14534](https://github.com/blockscout/blockscout/pull/14534))
+- Log error instead of silent empty map on CBOR decode failure ([#14510](https://github.com/blockscout/blockscout/issues/14510))
+- Log warning when bytecode metadata hex parsing fails ([#14511](https://github.com/blockscout/blockscout/issues/14511))
+
+
+## 11.2.1
+
+### 🐛 Bug Fixes
+
+- Don't call InternalTransaction.async_fetch from ContractCreator ([#14482](https://github.com/blockscout/blockscout/issues/14482))
+
+
+## 11.2.0
+
+### 🚀 Features
+
+- Support for EIP-7708 on arc ([#14336](https://github.com/blockscout/blockscout/pull/14336))
+- Preload only listened entities before broadcast ([#14430](https://github.com/blockscout/blockscout/issues/14430))
+- Add hot smart contracts caching ([#14320](https://github.com/blockscout/blockscout/issues/14320))
+- Add MinimalProxy detection for mid-bytecode EIP-1167-like pattern ([#14426](https://github.com/blockscout/blockscout/issues/14426))
+- Mark instance unhealthy when cache block lags DB ([#14449](https://github.com/blockscout/blockscout/pull/14449))
+
+### 🐛 Bug Fixes
+
+- Don't start health monitor in tests ([#14481](https://github.com/blockscout/blockscout/pull/14481))
+- Improve BlockNumber cache ([#14453](https://github.com/blockscout/blockscout/pull/14453))
+- Fix revert reason for nethermind ([#14442](https://github.com/blockscout/blockscout/pull/14442))
+- Fix token import on Celo ([#14435](https://github.com/blockscout/blockscout/issues/14435))
+- Scope missing_current_token_balances_count indexer metric to configured block ranges ([#14423](https://github.com/blockscout/blockscout/issues/14423))
+- Restrict minimal proxy detection to bytecode ≤ 100 bytes ([#14427](https://github.com/blockscout/blockscout/issues/14427))
+- Add required fields to SmartContract schema ([#14437](https://github.com/blockscout/blockscout/issues/14437))
+- Fix traceable_blocks_dynamic_query ([#14436](https://github.com/blockscout/blockscout/issues/14436))
+
+### ⚙️ Miscellaneous Tasks
+
+- Optimize deriving current token balances ([#14450](https://github.com/blockscout/blockscout/pull/14450), [#14479](https://github.com/blockscout/blockscout/pull/14479))
+- Limit max node requests in one batch ([#14319](https://github.com/blockscout/blockscout/issues/14319))
+- Log block fetch errors in catchup fetcher ([#14318](https://github.com/blockscout/blockscout/issues/14318))
+- Reset skip metadata flag for NFTs ([#14337](https://github.com/blockscout/blockscout/issues/14337))
+- Enhance missing current token balances metric ([#14438](https://github.com/blockscout/blockscout/issues/14438))
+- Perceive "out of gas" error as contract failure ([#14417](https://github.com/blockscout/blockscout/issues/14417))
+- Add PG statement_timeout for import transactions ([#14414](https://github.com/blockscout/blockscout/issues/14414))
+- Comment out direct Sourcify tests ([#8168](https://github.com/blockscout/blockscout/issues/8168))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `ETHEREUM_JSONRPC_HTTP_BATCH_SIZE`        | Max http requests count in one batch. Implemented in [#14319](https://github.com/blockscout/blockscout/pull/14319).                                                                                                                         | Version: v11.2.0\+ <br />Default: `500` <br />Applications: API, Indexer                         |
+| `CACHE_HOT_SMART_CONTRACTS_5M_PERIOD`                          | TTL for ConCache entries serving `GET /api/v2/stats/hot-smart-contracts` with `scale=5m`. Controls how long paginated rankings over the last 5 minutes of contract activity are reused before recomputing from the database. [Time format](/setup/env-variables/backend-env-variables#time-format). Shorter TTL = fresher data, more DB load. Longer TTL = less load, staler rankings. | Version: v11.2.0\+ <br />Default: `30s` <br />Applications: API           |
+| `CACHE_HOT_SMART_CONTRACTS_1H_PERIOD`                          | TTL for ConCache entries serving `GET /api/v2/stats/hot-smart-contracts` with `scale=1h`. Controls how long paginated rankings over the last 1 hour of contract activity are reused before recomputing from the database. [Time format](/setup/env-variables/backend-env-variables#time-format).                                                                                       | Version: v11.2.0\+ <br />Default: `6m` <br />Applications: API            |
+| `CACHE_HOT_SMART_CONTRACTS_3H_PERIOD`                          | TTL for ConCache entries serving `GET /api/v2/stats/hot-smart-contracts` with `scale=3h`. Controls how long paginated rankings over the last 3 hours of contract activity are reused before recomputing from the database. [Time format](/setup/env-variables/backend-env-variables#time-format).                                                                                      | Version: v11.2.0\+ <br />Default: `18m` <br />Applications: API           |
+
+
+## 11.1.3
+
+### 🐛 Bug Fixes
+
+- Run background migrations immediately on green install ([#14424](https://github.com/blockscout/blockscout/issues/14424))
+- Adapt maybe_reject_zero_value for pre-changeset values ([#14425](https://github.com/blockscout/blockscout/issues/14425))
+
+### ⚙️ Miscellaneous Tasks
+
+- Distributed MapCache ([#14411](https://github.com/blockscout/blockscout/pull/14411))
+
+## 11.1.2
+
+### 🐛 Bug Fixes
+
+- Fix VersionUpgrade check for empty previous version ([#14410](https://github.com/blockscout/blockscout/issues/14410))
+
+## 11.1.1
+
+### 🐛 Bug Fixes
+
+- Declare missing OpenAPI params for advanced-filters endpoint ([#14401](https://github.com/blockscout/blockscout/pull/14401), [#14399](https://github.com/blockscout/blockscout/issues/14399))
+
+## 11.1.0
+
+### 🚀 Features
+
+- Forward new BENS fields to search ([#14389](https://github.com/blockscout/blockscout/pull/14389))
+- Fetch token circulating supply along with circulating market cap ([#11969](https://github.com/blockscout/blockscout/issues/11969))
+- Support token lists import ([#11801](https://github.com/blockscout/blockscout/issues/11801))
+- transform ECTO_USE_SSL to sslmode param ([#8818](https://github.com/blockscout/blockscout/issues/8818))
+
+### 🐛 Bug Fixes
+
+- Properly start VersionUpgrade on application launch ([#14396](https://github.com/blockscout/blockscout/pull/14396))
+- MissingBalanceOfToken fixes ([#14267](https://github.com/blockscout/blockscout/pull/14267))
+- Improvements of OpenAPI specification for `/v2/blocks` ([#14251](https://github.com/blockscout/blockscout/issues/14251))
+- Normalize Tesla timeout middleware exceptions ([#14059](https://github.com/blockscout/blockscout/issues/14059))
+
+### 🚜 Refactor
+
+- Change multichain_search_db_export_token_info_queue.address_hash field type from :binary to Hash.Address ([#12894](https://github.com/blockscout/blockscout/issues/12894))
+- Refactor json rpc response parsers to ignore unknown fields ([#10334](https://github.com/blockscout/blockscout/issues/10334))
+
+### 📚 Documentation
+
+- Add verification websocket subscription guide ([#14259](https://github.com/blockscout/blockscout/issues/14259))
+
+### ⚙️ Miscellaneous Tasks
+
+- Add SPDX license identifier to Elixir source and test files ([#14393](https://github.com/blockscout/blockscout/pull/14393))
+- Publish OpenAPI specs on dev branch pushes ([#14391](https://github.com/blockscout/blockscout/pull/14391))
+- Add MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_CONCURRENCY ([#14390](https://github.com/blockscout/blockscout/pull/14390))
+- Close linked issues when PRs merge into dev ([#14384](https://github.com/blockscout/blockscout/pull/14384), [#14385](https://github.com/blockscout/blockscout/pull/14385))
+- Add SPDX attribution ([#14360](https://github.com/blockscout/blockscout/issues/14360))
+- Eliminate horizontal scroll in the main LICENSE file ([#14359](https://github.com/blockscout/blockscout/issues/14359))
+- Partial async import ([#14277](https://github.com/blockscout/blockscout/issues/14277))
+- OpenAPI specifications for all `/api/v2/advanced-filters` endpoints ([#14227](https://github.com/blockscout/blockscout/issues/14227))
+- OpenAPI spec for Arbitrum-related endpoints ([#14169](https://github.com/blockscout/blockscout/issues/14169))
+- Audit mode dependent processes ([#13925](https://github.com/blockscout/blockscout/issues/13925), [#14383](https://github.com/blockscout/blockscout/pull/14383))
+- Delete fiat_value for token if it disappears in coingecko ([#8932](https://github.com/blockscout/blockscout/issues/8932))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `TOKEN_LIST_URL`                             | URL for token list standard https://tokenlists.org/. Implemented in [#14206](https://github.com/blockscout/blockscout/pull/14206).                                                                                                                                                                                   | Version: v11.1.0\+ <br />Default: (empty) <br />Applications: Indexer                                       |
+| `TOKEN_LIST_REFETCH_INTERVAL`                | Interval to update data from token list. Implemented in [#14206](https://github.com/blockscout/blockscout/pull/14206).                                                                                                                                                                                               | Version: v11.1.0\+ <br />Default: (empty) <br />Applications: Indexer                                       |
+| `ECTO_SSL_MODE`                     | SSL mode for Ecto DB connections. Supported values: `disable`, `allow`, `prefer`, `require`, `verify-ca`, `verify-full`. Resolution order: `ECTO_SSL_MODE` has highest priority, then `sslmode` in `DATABASE_URL`, otherwise defaults to `require`. | Version: v11.1.0\++ <br />Default: `require` <br />Applications: API, Indexer               |
+| `INDEXER_ENABLE_PARTIAL_ASYNC_IMPORT`                         | If `true`, addresses, current token balances, tokens and token instances are imported asynchronously. Implemented in [#14277](https://github.com/blockscout/blockscout/pull/14277).                                                                                                                                                                                                                                                                                                                                              | Version: v11.1.0\+ <br />Default: `false` <br />Applications: Indexer                                         |
+| `MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_CONCURRENCY`     | Number of parallel processes filling internal transactions address ids. Implemented in [#14390](https://github.com/blockscout/blockscout/pull/14390).                                                                                                                                                                                                                 | Version: v11.1.0\+ <br />Default: `10` <br />Applications: Indexer          |
+
+### Deprecated ENV variables
+
+| Variable | Description | Default | Version | Need recompile | Deprecated in Version |
+| -------- | ----------- | ------- | ------- | -------------- | --------------------- |
+| <span style={{color: "red"}}>Deprecated</span> `ECTO_USE_SSL` | Boolean SSL toggle for Ecto DB connections. Replaced with `ECTO_SSL_MODE`. | `TRUE` | All | | v11.1.0+ |
+
 ## 11.0.3
 
 ### 🐛 Bug Fixes

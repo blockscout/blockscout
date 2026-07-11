@@ -559,6 +559,79 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert Enum.count(response["items"]) == 21
     end
 
+    test "filter by methods_names alone", %{conn: conn} do
+      contract_address = insert(:contract_address)
+      transfer_selector = "0xa9059cbb"
+      mint_selector = "0xa0712d68"
+      {:ok, transfer_input} = Data.cast(transfer_selector <> "ab0ba0")
+      {:ok, mint_input} = Data.cast(mint_selector <> "ab0ba0")
+
+      3
+      |> insert_list(:transaction,
+        to_address: contract_address,
+        to_address_hash: contract_address.hash,
+        input: transfer_input
+      )
+      |> with_block()
+
+      5
+      |> insert_list(:transaction,
+        to_address: contract_address,
+        to_address_hash: contract_address.hash,
+        input: mint_input
+      )
+      |> with_block()
+
+      request = get(conn, "/api/v2/advanced-filters", %{"methods_names" => "transfer"})
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 3
+
+      assert Enum.all?(response["items"], fn item ->
+               String.slice(item["method"], 0..9) == transfer_selector
+             end)
+    end
+
+    test "filter by methods_names merges with methods param", %{conn: conn} do
+      contract_address = insert(:contract_address)
+      transfer_selector = "0xa9059cbb"
+      mint_selector = "0xa0712d68"
+      {:ok, transfer_input} = Data.cast(transfer_selector <> "ab0ba0")
+      {:ok, mint_input} = Data.cast(mint_selector <> "ab0ba0")
+
+      3
+      |> insert_list(:transaction,
+        to_address: contract_address,
+        to_address_hash: contract_address.hash,
+        input: transfer_input
+      )
+      |> with_block()
+
+      5
+      |> insert_list(:transaction,
+        to_address: contract_address,
+        to_address_hash: contract_address.hash,
+        input: mint_input
+      )
+      |> with_block()
+
+      2 |> insert_list(:transaction) |> with_block()
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "methods_names" => "transfer",
+          "methods" => mint_selector
+        })
+
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 8
+
+      assert Enum.all?(response["items"], fn item ->
+               String.slice(item["method"], 0..9) in [transfer_selector, mint_selector]
+             end)
+    end
+
     test "filter by age", %{conn: conn} do
       [_, transaction_a, _, transaction_b, _] =
         for i <- 0..4 do

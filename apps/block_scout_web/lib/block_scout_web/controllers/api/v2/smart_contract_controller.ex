@@ -102,7 +102,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
       ok:
         {"List of verified smart contracts matching the filter criteria, with pagination.", "application/json",
          paginated_response(
-           items: Schemas.SmartContract,
+           items: Schemas.SmartContract.ListItem,
            next_page_params_example: %{
              "smart_contract_id" => 1_947_801,
              "items_count" => 50
@@ -196,7 +196,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractController do
                items: Schemas.SmartContract.AuditReport,
                nullable: false
              },
-             next_page_params: %Schema{type: :object, nullable: true}
+             next_page_params: %Schema{type: :object, nullable: true, additionalProperties: true}
            },
            required: [:items, :next_page_params],
            additionalProperties: false

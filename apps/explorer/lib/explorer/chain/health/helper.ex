@@ -189,24 +189,53 @@ defmodule Explorer.Chain.Health.Helper do
       blocks_indexing_delay_threshold =
         Application.get_env(:explorer, Explorer.Chain.Health.Monitor)[:healthy_blocks_period]
 
-      with true <- last_block_db_delay > blocks_indexing_delay_threshold,
-           {:empty_health_latest_block_number_from_node, false} <-
-             {:empty_health_latest_block_number_from_node, is_nil(health_status.health_latest_block_number_from_node)},
-           true <-
-             Decimal.compare(
-               Decimal.sub(
-                 health_status.health_latest_block_number_from_node,
-                 health_status.health_latest_block_number_from_db
-               ),
-               Decimal.new(@max_blocks_gap_between_node_and_db)
-             ) == :gt do
-        no_new_block_status(last_block_db_delay)
-      else
-        {:empty_health_latest_block_number_from_node, true} -> no_new_block_status(last_block_db_delay)
-        _ -> true
+      db_freshness_result =
+        with true <- last_block_db_delay > blocks_indexing_delay_threshold,
+             {:empty_health_latest_block_number_from_node, false} <-
+               {:empty_health_latest_block_number_from_node, is_nil(health_status.health_latest_block_number_from_node)},
+             {:empty_health_latest_block_number_from_db, false} <-
+               {:empty_health_latest_block_number_from_db, is_nil(health_status.health_latest_block_number_from_db)},
+             true <-
+               Decimal.compare(
+                 Decimal.sub(
+                   health_status.health_latest_block_number_from_node,
+                   health_status.health_latest_block_number_from_db
+                 ),
+                 Decimal.new(@max_blocks_gap_between_node_and_db)
+               ) == :gt do
+          no_new_block_status(last_block_db_delay)
+        else
+          {:empty_health_latest_block_number_from_node, true} -> no_new_block_status(last_block_db_delay)
+          {:empty_health_latest_block_number_from_db, true} -> true
+          _ -> true
+        end
+
+      case db_freshness_result do
+        true -> check_cache_lag(health_status, blocks_indexing_delay_threshold)
+        error -> error
       end
     else
       {false, @no_items_error_code, "There are no blocks in the DB."}
+    end
+  end
+
+  defp check_cache_lag(health_status, threshold) do
+    cache_ts_raw = health_status[:health_latest_block_timestamp_from_cache]
+    db_ts_raw = health_status[:health_latest_block_timestamp_from_db]
+
+    if is_nil(cache_ts_raw) or is_nil(db_ts_raw) do
+      true
+    else
+      {:ok, cache_ts} = DateTime.from_unix(Decimal.to_integer(cache_ts_raw))
+      {:ok, db_ts} = DateTime.from_unix(Decimal.to_integer(db_ts_raw))
+      cache_lag_ms = DateTime.diff(db_ts, cache_ts, :millisecond)
+
+      if cache_lag_ms > threshold do
+        {false, @no_new_items_error_code,
+         "Cache block is lagging behind DB block by #{round(cache_lag_ms / 1_000 / 60)} mins. Check the cache update mechanism."}
+      else
+        true
+      end
     end
   end
 

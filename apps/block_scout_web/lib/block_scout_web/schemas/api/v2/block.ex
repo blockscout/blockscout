@@ -143,7 +143,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.ChainTypeCustomizations do
       batch_data_container: %Schema{
         type: :string,
         nullable: false,
-        enum: ["in_blob4844", "in_celestia", "in_alt_da", "in_calldata"]
+        enum: ["in_blob4844", "in_celestia", "in_eigenda", "in_alt_da", "in_calldata"]
       },
       blobs: %Schema{
         type: :array,

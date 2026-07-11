@@ -99,7 +99,15 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   """
   @spec ens_domain_name_lookup(binary()) ::
           nil
-          | %{address_hash: binary() | nil, expiry_date: any(), name: any(), names_count: integer(), protocol: any()}
+          | %{
+              address_hash: binary() | nil,
+              expiry_date: any(),
+              name: any(),
+              names_count: integer(),
+              protocol: any(),
+              protocol_dapp_url: binary() | nil,
+              protocol_dapp_logo: binary() | nil
+            }
   def ens_domain_name_lookup(domain) do
     domain |> ens_domain_lookup() |> parse_lookup_response()
   end
@@ -245,7 +253,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
                   "expiry_date" => expiry_date,
                   "resolved_address" => resolved_address,
                   "protocol" => protocol
-                }
+                } = first_item
                 | _other
               ] = items
           }}
@@ -258,7 +266,9 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
       expiry_date: expiry_date,
       names_count: Enum.count(items),
       address_hash: address_hash,
-      protocol: protocol
+      protocol: protocol,
+      protocol_dapp_url: first_item["protocol_dapp_url"],
+      protocol_dapp_logo: first_item["protocol_dapp_logo"]
     }
   end
 
@@ -267,11 +277,12 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   defp parse_get_address_response(
          {:ok,
           %{
-            "domain" => %{
-              "name" => name,
-              "expiry_date" => expiry_date,
-              "resolved_address" => %{"hash" => address_hash_string}
-            },
+            "domain" =>
+              %{
+                "name" => name,
+                "expiry_date" => expiry_date,
+                "resolved_address" => %{"hash" => address_hash_string}
+              } = domain,
             "resolved_domains_count" => resolved_domains_count
           }}
        ) do
@@ -281,7 +292,9 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
       name: name,
       expiry_date: expiry_date,
       names_count: resolved_domains_count,
-      address_hash: Address.checksum(hash)
+      address_hash: Address.checksum(hash),
+      protocol_dapp_url: domain["protocol_dapp_url"],
+      protocol_dapp_logo: domain["protocol_dapp_logo"]
     }
   end
 
