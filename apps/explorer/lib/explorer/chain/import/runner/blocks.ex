@@ -616,78 +616,86 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       GenServer.cast(Indexer.Fetcher.Beacon.Deposit, {:lost_consensus, minimum_recent_block_number})
     end
 
-    repo.update_all(
-      from(
-        transaction in Transaction,
-        join: s in subquery(acquire_query),
-        on: transaction.block_hash == s.hash,
-        # we don't want to remove consensus from blocks that will be upserted
-        where: transaction.block_hash not in ^consensus_hashes
-      ),
-      [set: [block_consensus: false, updated_at: updated_at]],
-      timeout: timeout
-    )
+    if Enum.empty?(removed_consensus_blocks) do
+      removed_consensus_block_numbers
+      |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
+      |> MissingBlockRange.add_ranges_by_block_numbers()
 
-    repo.update_all(
-      from(
-        token_transfer in TokenTransfer,
-        join: s in subquery(acquire_query),
-        on: token_transfer.block_number == s.number and token_transfer.block_hash == s.hash,
-        # we don't want to remove consensus from blocks that will be upserted
-        where: token_transfer.block_hash not in ^consensus_hashes
-      ),
-      [set: [block_consensus: false, updated_at: updated_at]],
-      timeout: timeout
-    )
-
-    # Query to find addresses created in lost consensus blocks
-    created_contract_addresses_query =
-      from(
-        t in Transaction,
-        join: s in subquery(acquire_query),
-        on: t.block_hash == s.hash,
-        # we don't want to remove contract code from blocks that will be upserted
-        where: t.block_hash not in ^consensus_hashes,
-        where: not is_nil(t.created_contract_address_hash),
-        select: t.created_contract_address_hash
+      {:ok, removed_consensus_blocks}
+    else
+      repo.update_all(
+        from(
+          transaction in Transaction,
+          join: s in subquery(acquire_query),
+          on: transaction.block_hash == s.hash,
+          # we don't want to remove consensus from blocks that will be upserted
+          where: transaction.block_hash not in ^consensus_hashes
+        ),
+        [set: [block_consensus: false, updated_at: updated_at]],
+        timeout: timeout
       )
 
-    # Delete smart contracts for addresses created in lost consensus blocks
-    repo.delete_all(
-      from(
-        sc in SmartContract,
-        where: sc.address_hash in subquery(created_contract_addresses_query)
-      ),
-      timeout: timeout
-    )
+      repo.update_all(
+        from(
+          token_transfer in TokenTransfer,
+          join: s in subquery(acquire_query),
+          on: token_transfer.block_number == s.number and token_transfer.block_hash == s.hash,
+          # we don't want to remove consensus from blocks that will be upserted
+          where: token_transfer.block_hash not in ^consensus_hashes
+        ),
+        [set: [block_consensus: false, updated_at: updated_at]],
+        timeout: timeout
+      )
 
-    # Clear contract code from addresses created in lost consensus blocks
-    repo.update_all(
-      from(
-        address in Address,
-        where: address.hash in subquery(created_contract_addresses_query)
-      ),
-      [set: [contract_code: nil, updated_at: updated_at]],
-      timeout: timeout
-    )
+      # Query to find addresses created in lost consensus blocks
+      created_contract_addresses_query =
+        from(
+          t in Transaction,
+          join: s in subquery(acquire_query),
+          on: t.block_hash == s.hash,
+          # we don't want to remove contract code from blocks that will be upserted
+          where: t.block_hash not in ^consensus_hashes,
+          where: not is_nil(t.created_contract_address_hash),
+          select: t.created_contract_address_hash
+        )
 
-    if Application.get_env(:explorer, :chain_type) == :zilliqa do
+      # Delete smart contracts for addresses created in lost consensus blocks
       repo.delete_all(
         from(
-          zrc2_token_transfer in Zrc2TokenTransfer,
-          join: s in subquery(acquire_query),
-          on: zrc2_token_transfer.block_number == s.number and zrc2_token_transfer.block_hash == s.hash,
-          where: zrc2_token_transfer.block_hash not in ^consensus_hashes
+          sc in SmartContract,
+          where: sc.address_hash in subquery(created_contract_addresses_query)
         ),
         timeout: timeout
       )
+
+      # Clear contract code from addresses created in lost consensus blocks
+      repo.update_all(
+        from(
+          address in Address,
+          where: address.hash in subquery(created_contract_addresses_query)
+        ),
+        [set: [contract_code: nil, updated_at: updated_at]],
+        timeout: timeout
+      )
+
+      if Application.get_env(:explorer, :chain_type) == :zilliqa do
+        repo.delete_all(
+          from(
+            zrc2_token_transfer in Zrc2TokenTransfer,
+            join: s in subquery(acquire_query),
+            on: zrc2_token_transfer.block_number == s.number and zrc2_token_transfer.block_hash == s.hash,
+            where: zrc2_token_transfer.block_hash not in ^consensus_hashes
+          ),
+          timeout: timeout
+        )
+      end
+
+      removed_consensus_block_numbers
+      |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
+      |> MissingBlockRange.add_ranges_by_block_numbers()
+
+      {:ok, removed_consensus_blocks}
     end
-
-    removed_consensus_block_numbers
-    |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
-    |> MissingBlockRange.add_ranges_by_block_numbers()
-
-    {:ok, removed_consensus_blocks}
   rescue
     postgrex_error in Postgrex.Error ->
       {:error, %{exception: postgrex_error}}
