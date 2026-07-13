@@ -39,7 +39,13 @@ defmodule Indexer.Prometheus.Instrumenter do
 
   @counter [name: :import_errors_count, help: "Number of database import errors"]
 
-  @gauge [name: :memory_consumed, labels: [:fetcher], help: "Amount of memory consumed by fetchers (MB)"]
+  @gauge [name: :memory_consumed, labels: [:fetcher], help: "Amount of memory consumed by all processes (MB)"]
+
+  @gauge [
+    name: :memory_consumed_indexer_fetchers,
+    labels: [:fetcher],
+    help: "Amount of memory consumed by indexer fetchers and on-demand fetchers (MB)"
+  ]
 
   @gauge [name: :latest_block_number, help: "Latest block number"]
 
@@ -146,6 +152,16 @@ defmodule Indexer.Prometheus.Instrumenter do
 
   def set_memory_consumed(fetcher, memory) do
     Gauge.set([name: :memory_consumed, labels: [fetcher]], memory)
+  end
+
+  @doc """
+  Defines the metric for memory consumed by a specific indexer or on-demand fetcher (in MB).
+  """
+  @spec set_memory_consumed_indexer_fetchers(fetcher :: nil | atom() | String.t(), memory :: float()) :: :ok
+  def set_memory_consumed_indexer_fetchers(nil, _memory), do: :ok
+
+  def set_memory_consumed_indexer_fetchers(fetcher, memory) do
+    Gauge.set([name: :memory_consumed_indexer_fetchers, labels: [fetcher]], memory)
   end
 
   @spec set_latest_block_number(number :: integer()) :: :ok
