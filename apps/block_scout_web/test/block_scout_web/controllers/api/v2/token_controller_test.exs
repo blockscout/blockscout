@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenMetadataRefetch, as: TokenMetadataRefetchOnDemand
 
   describe "/tokens/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -1790,6 +1791,96 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
   end
 
+  describe "/tokens/{address_hash}/refetch-metadata" do
+    setup :set_mox_from_context
+
+    setup :verify_on_exit!
+
+    setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      mocked_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
+
+      start_supervised!(
+        {TokenMetadataRefetchOnDemand,
+         [mocked_json_rpc_named_arguments, [name: TokenMetadataRefetchOnDemand]]}
+      )
+
+      :ok
+    end
+
+    test "re-fetches fungible token metadata", %{conn: conn} do
+      token =
+        insert(:token,
+          name: "Old name",
+          symbol: "OLD",
+          type: "ERC-20",
+          icon_url: "https://example.com/token-icon.png"
+        )
+
+      expect_token_metadata_rpc_response("New name", "NEW")
+
+      request = patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/refetch-metadata")
+
+      assert %{"message" => "OK"} = json_response(request, 200)
+
+      Explorer.DataCase.wait_for_results(fn ->
+        updated_token =
+          Repo.one!(
+            from(t in Token,
+              where:
+                t.contract_address_hash == ^token.contract_address_hash and t.name == "New name" and
+                  t.symbol == "NEW"
+            )
+          )
+
+        assert updated_token.name == "New name"
+        assert updated_token.symbol == "NEW"
+        assert updated_token.metadata_updated_at
+        assert updated_token.icon_url == token.icon_url
+      end)
+    end
+
+    test "preserves admin-curated name and symbol", %{conn: conn} do
+      token =
+        insert(:token,
+          name: "Admin name",
+          symbol: "ADMIN",
+          type: "ERC-20",
+          icon_url: "https://example.com/admin-token-icon.png",
+          is_verified_via_admin_panel: true,
+          metadata_updated_at: nil
+        )
+
+      expect_token_metadata_rpc_response("On-chain name", "CHAIN")
+
+      request = patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/refetch-metadata")
+
+      assert %{"message" => "OK"} = json_response(request, 200)
+
+      Explorer.DataCase.wait_for_results(fn ->
+        updated_token =
+          Repo.one!(
+            from(t in Token,
+              where:
+                t.contract_address_hash == ^token.contract_address_hash and
+                  not is_nil(t.metadata_updated_at)
+            )
+          )
+
+        assert updated_token.name == "Admin name"
+        assert updated_token.symbol == "ADMIN"
+        assert updated_token.icon_url == token.icon_url
+      end)
+    end
+
+    test "doesn't re-fetch metadata for an NFT collection", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      request = patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/refetch-metadata")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+  end
+
   describe "/tokens/{address_hash}/instances/{token_id}/refetch-metadata" do
     setup :set_mox_from_context
 
@@ -2488,6 +2579,29 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert %{"message" => "Wrong API key"} = json_response(request, 401)
     end
+  end
+
+  defp expect_token_metadata_rpc_response(name, symbol) do
+    string_selector = %ABI.FunctionSelector{function: nil, types: [:string]}
+    encoded_name = ABI.TypeEncoder.encode([name], string_selector) |> Base.encode16(case: :lower)
+    encoded_symbol = ABI.TypeEncoder.encode([symbol], string_selector) |> Base.encode16(case: :lower)
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+      {:ok,
+       Enum.map(requests, fn
+         %{id: id, method: "eth_call", params: [%{data: "0x313ce567", to: _}, "latest"]} ->
+           %{id: id, result: "0x0000000000000000000000000000000000000000000000000000000000000012"}
+
+         %{id: id, method: "eth_call", params: [%{data: "0x06fdde03", to: _}, "latest"]} ->
+           %{id: id, result: "0x" <> encoded_name}
+
+         %{id: id, method: "eth_call", params: [%{data: "0x95d89b41", to: _}, "latest"]} ->
+           %{id: id, result: "0x" <> encoded_symbol}
+
+         %{id: id, method: "eth_call", params: [%{data: "0x18160ddd", to: _}, "latest"]} ->
+           %{id: id, result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"}
+       end)}
+    end)
   end
 
   defp compare_holders_item(%CurrentTokenBalance{} = ctb, json) do
