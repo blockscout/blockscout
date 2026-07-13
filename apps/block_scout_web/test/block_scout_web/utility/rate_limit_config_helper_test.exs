@@ -68,6 +68,16 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
                "api/account/v2/authenticate_via_wallet_"
 
       assert config[:static_match]["api/account/v2/authenticate_via_wallet"][:isolate_rate_limit?] == true
+
+      token_metadata_refetch_config =
+        config[:parametrized_match][["api", "v2", "tokens", ":param", "refetch-metadata"]]
+
+      assert token_metadata_refetch_config[:ip] == %{period: 3_600_000, limit: 10}
+      assert token_metadata_refetch_config[:recaptcha_to_bypass_429] == true
+      assert token_metadata_refetch_config[:isolate_rate_limit?] == true
+
+      assert token_metadata_refetch_config[:bucket_key_prefix] ==
+               "api/v2/tokens/:param/refetch-metadata_"
     end
 
     test "correctly categorizes different path types when fetching config" do
