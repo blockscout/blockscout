@@ -230,17 +230,36 @@ defmodule Indexer.Memory.Monitor do
 
   @megabytes_divisor 2 ** 20
   defp set_metrics(%__MODULE__{shrinkable_set: shrinkable_set}) do
+    set_all_processes_metrics()
+    set_indexer_fetchers_metrics(shrinkable_set)
+  end
+
+  defp set_all_processes_metrics do
+    total_memory =
+      Enum.reduce(Process.list(), 0, fn pid, acc ->
+        memory = memory(pid)
+        name = name(pid)
+
+        Instrumenter.set_memory_consumed(name, memory / @megabytes_divisor)
+
+        acc + memory
+      end) / @megabytes_divisor
+
+    Instrumenter.set_memory_consumed(:total, total_memory)
+  end
+
+  defp set_indexer_fetchers_metrics(shrinkable_set) do
     total_memory =
       Enum.reduce(Enum.to_list(shrinkable_set) ++ on_demand_fetchers(), 0, fn pid, acc ->
         memory = memory(pid) / @megabytes_divisor
         name = name(pid)
 
-        Instrumenter.set_memory_consumed(name, memory)
+        Instrumenter.set_memory_consumed_indexer_fetchers(name, memory)
 
         acc + memory
       end)
 
-    Instrumenter.set_memory_consumed(:total, total_memory)
+    Instrumenter.set_memory_consumed_indexer_fetchers(:total, total_memory)
   end
 
   defp on_demand_fetchers do
