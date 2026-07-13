@@ -198,13 +198,10 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :blocks, :realtime, blocks}) do
-    last_broadcasted_block_number = Helper.fetch_from_ets_cache(:last_broadcasted_block, :number)
-
-    blocks
-    |> Enum.sort_by(& &1.number, :asc)
-    |> Enum.each(fn block ->
-      broadcast_latest_block?(block, last_broadcasted_block_number)
-    end)
+    case Application.get_env(:block_scout_web, __MODULE__)[:block_broadcast_type] do
+      :count -> do_handle_blocks_count(Enum.count(blocks))
+      _ -> do_handle_blocks(blocks)
+    end
   end
 
   def handle_event({:chain_event, :exchange_rate}) do
@@ -466,6 +463,20 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event(event) do
     Logger.warning("Unknown broadcasted event #{inspect(event)}.")
     nil
+  end
+
+  defp do_handle_blocks_count(count) do
+    Endpoint.broadcast("blocks:new_block", "new_blocks_count", %{count: count})
+  end
+
+  defp do_handle_blocks(blocks) do
+    last_broadcasted_block_number = Helper.fetch_from_ets_cache(:last_broadcasted_block, :number)
+
+    blocks
+    |> Enum.sort_by(& &1.number, :asc)
+    |> Enum.each(fn block ->
+      broadcast_latest_block?(block, last_broadcasted_block_number)
+    end)
   end
 
   def fetch_compiler_version(compiler) do
