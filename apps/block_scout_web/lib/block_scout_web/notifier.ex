@@ -199,7 +199,7 @@ defmodule BlockScoutWeb.Notifier do
 
   def handle_event({:chain_event, :blocks, :realtime, blocks}) do
     case Application.get_env(:block_scout_web, __MODULE__)[:block_broadcast_type] do
-      :count -> do_handle_blocks_count(Enum.count(blocks))
+      :count -> do_handle_blocks_count(blocks)
       _ -> do_handle_blocks(blocks)
     end
   end
@@ -465,8 +465,12 @@ defmodule BlockScoutWeb.Notifier do
     nil
   end
 
-  defp do_handle_blocks_count(count) do
-    Endpoint.broadcast("blocks:new_block", "new_blocks_count", %{count: count})
+  defp do_handle_blocks_count(blocks) do
+    blocks
+    |> Enum.group_by(&(&1 |> BlockScoutWeb.BlockView.block_type() |> String.downcase()))
+    |> Enum.each(fn {type, blocks_list} ->
+      Endpoint.broadcast("blocks:new_block", "new_blocks_count", %{count: Enum.count(blocks_list), type: type})
+    end)
   end
 
   defp do_handle_blocks(blocks) do
