@@ -1811,6 +1811,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       mocked_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
 
+      start_supervised!({Task.Supervisor, name: TokenMetadataRefetchOnDemand.TaskSupervisor})
+
       start_supervised!(
         {TokenMetadataRefetchOnDemand,
          [mocked_json_rpc_named_arguments, [name: TokenMetadataRefetchOnDemand]]}

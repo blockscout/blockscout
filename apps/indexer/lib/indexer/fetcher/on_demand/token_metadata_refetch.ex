@@ -30,7 +30,9 @@ defmodule Indexer.Fetcher.OnDemand.TokenMetadataRefetch do
 
   @impl true
   def handle_cast({:refetch, token}, json_rpc_named_arguments) do
-    TokenUpdater.run([token], json_rpc_named_arguments)
+    Task.Supervisor.start_child(__MODULE__.TaskSupervisor, fn ->
+      TokenUpdater.run([token], json_rpc_named_arguments)
+    end)
 
     {:noreply, json_rpc_named_arguments}
   end
