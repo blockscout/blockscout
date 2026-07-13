@@ -128,7 +128,7 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :address_token_balances, type, address_token_balances})
       when type in [:realtime, :on_demand] do
     address_token_balances
-    |> Enum.filter(fn balance -> address_has_subscribers?(balance[:address_hash]) end)
+    |> Enum.filter(fn balance -> address_has_subscribers?(balance.address_hash) end)
     |> Enum.each(&broadcast_address_token_balance/1)
   end
 
