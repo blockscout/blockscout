@@ -417,7 +417,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         }
 
         assert {:error, message} = Verifier.evaluate_authenticity(contract_address.hash, params)
-        assert is_binary(message)
+        assert message =~ "contract_source_code"
       end
     end
 
