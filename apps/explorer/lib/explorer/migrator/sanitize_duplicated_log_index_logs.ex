@@ -79,7 +79,15 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
          [
            %Log{log | index: new_index}
            |> Map.from_struct()
-           |> Map.drop([:block, :address, :transaction, :__meta__, :address_by_hash, :address_mapping])
+           |> Map.drop([
+             :block,
+             :address,
+             :transaction,
+             :__meta__,
+             :address_by_hash,
+             :address_mapping,
+             :log_first_topic
+           ])
            | logs
          ], Map.put(ids_to_new_index, id, new_index)}
       end)

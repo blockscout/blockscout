@@ -1,22 +1,20 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
-defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicBlockNumberIndexIndex do
+defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex do
   @moduledoc """
-  Create B-tree index `logs_address_id_first_topic_id_block_number_index_index` on `logs` table for (`address_id`, `first_topic_id`, `block_number`, `index`) columns.
+  Create B-tree index on `logs` table for `first_topic_id` column.
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
   require Logger
 
-  alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
-  alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdBlockNumberDescIndexDescIndex
+  alias Explorer.Migrator.{FillLogsOptimizedFields, HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :logs
-  @index_name "logs_address_id_first_topic_id_block_number_index_index"
+  @index_name "logs_first_topic_id_index"
   @operation_type :create
-  @table_columns ["address_id", "first_topic_id", "block_number", "index"]
+  @table_columns ["first_topic_id"]
 
   @impl HeavyDbIndexOperation
   def table_name, do: @table_name
@@ -30,7 +28,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicB
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
     do: [
-      CreateLogsAddressIdBlockNumberDescIndexDescIndex.migration_name()
+      FillLogsOptimizedFields.migration_name()
     ]
 
   @impl HeavyDbIndexOperation
@@ -60,7 +58,5 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicB
   end
 
   @impl HeavyDbIndexOperation
-  def update_cache do
-    BackgroundMigrations.set_heavy_indexes_create_logs_address_id_first_topic_id_block_number_index_index_finished(true)
-  end
+  def update_cache, do: :ok
 end

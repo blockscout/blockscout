@@ -113,13 +113,14 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
     base_query
     |> Log.join_transaction_query()
     |> Log.join_address_mapping_query()
+    |> Log.join_first_topic_query()
     |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
     |> apply_block_number_condition(max_block_number)
     |> apply_transaction_hash_condition(transaction_hash)
     |> group_by([log], [
       as(:transaction).hash,
       coalesce(log.address_hash, as(:address_mapping).address_hash),
-      log.first_topic,
+      coalesce(log.first_topic, as(:first_topic).value),
       log.second_topic
     ])
     |> having([log], count(log) > 1)
@@ -161,6 +162,7 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfers do
       |> where([log, t, tt], is_nil(tt))
       |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
       |> Repo.all(timeout: :infinity)
+      |> Log.prepare_first_topic()
       |> Enum.map(fn %Log{} = log ->
         %Log{
           log

@@ -22,7 +22,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPos
       read_contracts_with_retries: 4
     ]
 
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query
   import Explorer.Helper, only: [abi_to_method_id: 1]
 
   alias Explorer.Chain.{Block, Log}
@@ -312,17 +312,10 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPos
   end
 
   defp check_if_validator_payment_distributed_events_exist(block_number) do
-    query =
-      from(
-        log in Log,
-        where: [
-          block_number: ^block_number,
-          address_hash: ^epoch_manager_contract_address_hash(),
-          first_topic: ^@validator_epoch_payment_distributed_event_topic
-        ]
-      )
-
-    query
+    Log
+    |> where([l], l.block_number == ^block_number)
+    |> where([l], l.address_hash == ^epoch_manager_contract_address_hash())
+    |> Log.filter_by_topic_query(:first_topic, @validator_epoch_payment_distributed_event_topic)
     |> Repo.exists?()
   end
 end

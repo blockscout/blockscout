@@ -31,6 +31,7 @@ defmodule Explorer.Etherscan.Logs do
   @log_fields [
     :data,
     :first_topic,
+    :first_topic_id,
     :second_topic,
     :third_topic,
     :fourth_topic,
@@ -109,6 +110,10 @@ defmodule Explorer.Etherscan.Logs do
       |> Chain.wrapped_union_subquery()
       |> order_by([log], asc: log.block_number, asc: log.index)
       |> Repo.replica().all()
+      |> Log.preload_block()
+      |> Log.preload_transaction([], Repo.replica())
+      |> Log.prepare_data()
+      |> Log.prepare_first_topic()
     else
       all_transaction_logs_query =
         logs_query
@@ -139,6 +144,7 @@ defmodule Explorer.Etherscan.Logs do
       |> Log.preload_block()
       |> Log.preload_transaction([], Repo.replica())
       |> Log.prepare_data()
+      |> Log.prepare_first_topic()
     end
   end
 
@@ -210,6 +216,7 @@ defmodule Explorer.Etherscan.Logs do
       |> order_by([log], asc: log.index)
       |> page_logs(paging_options)
       |> Repo.replica().all()
+      |> Log.prepare_first_topic()
     else
       block_transaction_query =
         from(transaction in Transaction,
@@ -269,6 +276,7 @@ defmodule Explorer.Etherscan.Logs do
       |> order_by([log], asc: log.index)
       |> page_logs(paging_options)
       |> Repo.replica().all()
+      |> Log.prepare_first_topic()
     end
   end
 

@@ -243,6 +243,7 @@ defmodule Explorer.Chain do
         |> Log.preload_transaction(transaction_preloads, select_repo(options))
         |> Log.preload_address(options, select_repo(options))
         |> Log.prepare_data()
+        |> Log.prepare_first_topic()
     end
   end
 
@@ -252,8 +253,12 @@ defmodule Explorer.Chain do
     dynamic =
       dynamic(
         [log],
-        log.first_topic == ^topic or
-          ^Log.filter_by_topic_dynamic([:second_topic, :third_topic, :fourth_topic], [[topic], [topic], [topic]])
+        ^Log.filter_by_topic_dynamic([:first_topic, :second_topic, :third_topic, :fourth_topic], [
+          [topic],
+          [topic],
+          [topic],
+          [topic]
+        ])
       )
 
     from(log in base_query, where: ^dynamic)
@@ -1852,6 +1857,7 @@ defmodule Explorer.Chain do
     |> Log.preload_transaction(transaction_preloads, select_repo(options))
     |> Log.preload_address(options, select_repo(options))
     |> Log.prepare_data()
+    |> Log.prepare_first_topic()
   end
 
   @doc """

@@ -164,14 +164,11 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
   defp epoch_rewards_distributed_to_voters_query(start_block_number, end_block_number) do
     {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, start_block_number)
 
-    from(
-      l in Log,
-      where:
-        l.block_number >= ^start_block_number and
-          l.block_number <= ^end_block_number and
-          l.address_hash == ^election_contract_address and
-          l.first_topic == ^@epoch_rewards_distributed_to_voters_topic
-    )
+    Log
+    |> where([l], l.block_number >= ^start_block_number)
+    |> where([l], l.block_number <= ^end_block_number)
+    |> where([l], l.address_hash == ^election_contract_address)
+    |> Log.filter_by_topic_query(:first_topic, @epoch_rewards_distributed_to_voters_topic)
   end
 
   # Validates voter rewards by comparing the sum of what we got from the

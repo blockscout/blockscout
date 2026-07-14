@@ -688,19 +688,17 @@ defmodule Explorer.Chain.TokenTransfer do
   """
   @spec uncataloged_token_transfer_block_numbers :: {:ok, [non_neg_integer()]}
   def uncataloged_token_transfer_block_numbers do
-    query =
-      from(l in Log,
-        as: :log,
-        where:
-          l.first_topic == ^@constant or
-            l.first_topic == ^@erc1155_single_transfer_signature or
-            l.first_topic == ^@erc1155_batch_transfer_signature,
-        where: not exists(token_transfer_exists_query()),
-        select: l.block_number,
-        distinct: l.block_number
-      )
-
-    Repo.stream_reduce(query, [], &[&1 | &2])
+    Log
+    |> from(as: :log)
+    |> Log.filter_by_topic_query(:first_topic, [
+      @constant,
+      @erc1155_single_transfer_signature,
+      @erc1155_batch_transfer_signature
+    ])
+    |> where(not exists(token_transfer_exists_query()))
+    |> select([l], l.block_number)
+    |> distinct([l], l.block_number)
+    |> Repo.stream_reduce([], &[&1 | &2])
   end
 
   # Builds a query to check if a token transfer exists for a given log. Handles

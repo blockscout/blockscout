@@ -14,7 +14,7 @@ defmodule Explorer.Migrator.FillLogsOptimizedFields do
   alias Explorer.Migrator.FillingMigration
   alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransactionIndexIndexUniqueIndex
   alias Explorer.Repo
-  alias Explorer.Utility.AddressIdToAddressHash
+  alias Explorer.Utility.{AddressIdToAddressHash, LogFirstTopic}
 
   @migration_name "fill_logs_optimized_fields"
 
@@ -50,7 +50,11 @@ defmodule Explorer.Migrator.FillLogsOptimizedFields do
             from(
               l in Log,
               select: select_ctid(l),
-              select_merge: %{address_hash: l.address_hash, transaction_hash: l.transaction_hash},
+              select_merge: %{
+                address_hash: l.address_hash,
+                transaction_hash: l.transaction_hash,
+                first_topic: l.first_topic
+              },
               where: l.block_number in ^block_numbers,
               order_by: [asc: l.block_number, asc: l.transaction_index, asc: l.index],
               lock: "FOR UPDATE"
@@ -65,10 +69,23 @@ defmodule Explorer.Migrator.FillLogsOptimizedFields do
               select: l.address_hash
             )
 
+          first_topics_query =
+            from(l in Log,
+              inner_join: locked_l in subquery(lock_query),
+              on: join_on_ctid(l, locked_l),
+              where: not is_nil(l.first_topic),
+              distinct: true,
+              select: l.first_topic
+            )
+
           address_hashes_query
           |> Repo.all()
           |> Enum.uniq()
           |> AddressIdToAddressHash.find_or_create_multiple()
+
+          first_topics_query
+          |> Repo.all()
+          |> LogFirstTopic.find_or_create_multiple()
 
           update_query =
             from(l in Log,
@@ -78,10 +95,14 @@ defmodule Explorer.Migrator.FillLogsOptimizedFields do
               on: it_to_hash_map.address_hash == locked_l.address_hash,
               left_join: t in Transaction,
               on: locked_l.transaction_hash == t.hash,
+              left_join: lft in LogFirstTopic,
+              on: lft.value == locked_l.first_topic,
               update: [
                 set: [
                   address_id: it_to_hash_map.address_id,
                   address_hash: nil,
+                  first_topic_id: lft.id,
+                  first_topic: nil,
                   transaction_index: t.index,
                   second_topic: fragment("bytea_ltrim_zeroes(?)", l.second_topic),
                   third_topic: fragment("bytea_ltrim_zeroes(?)", l.third_topic),
