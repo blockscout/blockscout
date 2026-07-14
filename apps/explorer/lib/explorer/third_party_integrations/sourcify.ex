@@ -261,8 +261,15 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     {:error, verification_error_message(error)}
   end
 
-  defp handle_verification_job(%{"isJobCompleted" => true} = body, _id, _attempts) do
+  defp handle_verification_job(%{"isJobCompleted" => true, "contract" => %{"match" => match}} = body, _id, _attempts)
+       when match in ["exact_match", "match"] do
     {:ok, body}
+  end
+
+  # Completed without an error but with no contract match means the contract was
+  # not verified, so surface it as a failure rather than a success.
+  defp handle_verification_job(%{"isJobCompleted" => true}, _id, _attempts) do
+    {:error, @failed_verification_message}
   end
 
   # Not completed yet (or an unexpected shape): wait and poll again.
