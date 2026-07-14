@@ -8,13 +8,15 @@ defmodule Explorer.GraphQL do
     only: [
       from: 2,
       order_by: 3,
-      or_where: 3,
+      subquery: 1,
+      union_all: 2,
       where: 3
     ]
 
   alias Explorer.{Chain, Helper, Repo}
 
   alias Explorer.Chain.{
+    Address,
     Hash,
     InternalTransaction,
     Token,
@@ -28,16 +30,60 @@ defmodule Explorer.GraphQL do
   Returns a query to fetch transactions with a matching `to_address_hash`,
   `from_address_hash`, or `created_contract_address_hash` field for a given address hash.
 
-  Orders transactions by `block_number` and `index` according to `order`
+  Orders transactions by `block_number` and `index` according to `order`.
+
+  Uses UNION ALL + deferred join instead of OR conditions to allow PostgreSQL
+  to use per-column indexes on each address role separately, avoiding full table scans.
   """
   @spec address_to_transactions_query(Hash.Address.t(), :desc | :asc) :: Ecto.Query.t()
   def address_to_transactions_query(address_hash, order) do
-    dynamic = Transaction.where_transactions_to_from(address_hash)
+    is_smart_contract =
+      with {:ok, address} <- Chain.hash_to_address(address_hash),
+           true <- Address.smart_contract?(address),
+           false <- Address.eoa_with_code?(address) do
+        true
+      else
+        _ -> false
+      end
 
-    Transaction
-    |> where([transaction], ^dynamic)
-    |> or_where([transaction], transaction.created_contract_address_hash == ^address_hash)
-    |> order_by([transaction], [{^order, transaction.block_number}, {^order, transaction.index}])
+    branches =
+      if is_smart_contract do
+        # smart contracts: only to + created_contract
+        from(t in Transaction,
+          where: t.to_address_hash == ^address_hash,
+          select: %{hash: t.hash, block_number: t.block_number, index: t.index}
+        )
+        |> union_all(
+          ^from(t in Transaction,
+            where: t.created_contract_address_hash == ^address_hash,
+            select: %{hash: t.hash, block_number: t.block_number, index: t.index}
+          )
+        )
+      else
+        # EOA: from + to + created_contract
+        from(t in Transaction,
+          where: t.from_address_hash == ^address_hash,
+          select: %{hash: t.hash, block_number: t.block_number, index: t.index}
+        )
+        |> union_all(
+          ^from(t in Transaction,
+            where: t.to_address_hash == ^address_hash,
+            select: %{hash: t.hash, block_number: t.block_number, index: t.index}
+          )
+        )
+        |> union_all(
+          ^from(t in Transaction,
+            where: t.created_contract_address_hash == ^address_hash,
+            select: %{hash: t.hash, block_number: t.block_number, index: t.index}
+          )
+        )
+      end
+
+    from(t in Transaction,
+      join: sub in subquery(from(b in subquery(branches), distinct: b.hash, select: b)),
+      on: t.hash == sub.hash,
+      order_by: [{^order, t.block_number}, {^order, t.index}]
+    )
   end
 
   @doc """
