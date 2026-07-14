@@ -2,31 +2,78 @@
 defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   @moduledoc """
   Adapter for contracts verification with https://sourcify.dev/
+
+  Uses the Sourcify API v2 (https://docs.sourcify.dev/docs/api/). The legacy v1
+  endpoints (`/check-by-addresses`, `/files`, `/verify`) have been deprecated and
+  shut down (https://docs.sourcify.dev/blog/api-v1-brownouts/).
+
+  The public functions keep their historic return contracts so that the callers in
+  `Explorer.SmartContract.Solidity.PublishHelper` and the RPC contract controller do
+  not need to change: the v2 responses are adapted back into the legacy
+  metadata-file-list shape and the `exact_match`/`match` statuses are mapped onto the
+  legacy `perfect`/`partial`/`full` tokens.
   """
 
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.HttpClient
   alias Explorer.SmartContract.{Helper, RustVerifierInterface}
-  alias Tesla.Multipart
 
   @post_timeout :timer.seconds(30)
   @no_metadata_message "Sourcify did not return metadata"
   @failed_verification_message "Unsuccessful Sourcify verification"
+  @not_verified_message "Contract is not verified"
+  @timeout_message "Sourcify verification timed out"
+
+  @default_poll_interval_ms :timer.seconds(3)
+  @default_poll_max_attempts 20
 
   def check_by_address(address_hash_string) do
-    chain_id = config(__MODULE__, :chain_id)
-    params = [addresses: address_hash_string, chainIds: chain_id]
-    http_get_request(check_by_address_url(), params)
+    case do_lookup(address_hash_string, nil) do
+      {:ok, "exact_match", _body} ->
+        {:ok, [%{"status" => "perfect"}]}
+
+      {:ok, "match", _body} ->
+        {:error, "partial"}
+
+      :not_verified ->
+        {:error, @not_verified_message}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   def check_by_address_any(address_hash_string) do
-    get_metadata_full_url = get_metadata_any_url() <> "/" <> address_hash_string
-    http_get_request(get_metadata_full_url, [])
+    case do_lookup(address_hash_string, :with_sources) do
+      {:ok, "exact_match", body} ->
+        {:ok, "full", reconstruct_file_list(body)}
+
+      {:ok, "match", body} ->
+        {:ok, "partial", reconstruct_file_list(body)}
+
+      :not_verified ->
+        {:error, @not_verified_message}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
   def get_metadata(address_hash_string) do
-    get_metadata_full_url = get_metadata_url() <> "/" <> address_hash_string
-    http_get_request(get_metadata_full_url, [])
+    case do_lookup(address_hash_string, :with_sources) do
+      # v1 `/files/{chainId}/{address}` returned full matches only
+      {:ok, "exact_match", body} ->
+        {:ok, reconstruct_file_list(body)}
+
+      {:ok, "match", _body} ->
+        {:error, %{"error" => @not_verified_message}}
+
+      :not_verified ->
+        {:error, %{"error" => @not_verified_message}}
+
+      {:error, reason} ->
+        {:error, %{"error" => reason}}
+    end
   end
 
   def verify(address_hash_string, files, chosen_contract) do
@@ -38,43 +85,11 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   def verify_via_sourcify_server(address_hash_string, files) do
-    chain_id = config(__MODULE__, :chain_id)
-
-    multipart_text_params =
-      Multipart.new()
-      |> Multipart.add_field("chain", chain_id)
-      |> Multipart.add_field("address", address_hash_string)
-
-    multipart_body = prepare_body_for_sourcify(files, multipart_text_params)
-
-    http_post_request(verify_url(), multipart_body)
-  end
-
-  defp prepare_body_for_sourcify(files, multipart_text_params) when is_map(files) do
-    files
-    |> Enum.reduce(multipart_text_params, fn {name, content}, acc ->
-      if content do
-        acc
-        |> Multipart.add_file_content(content, name, name: "files")
-      else
-        acc
-      end
-    end)
-  end
-
-  defp prepare_body_for_sourcify(files, multipart_text_params) do
-    files
-    |> Enum.reduce(multipart_text_params, fn file, acc ->
-      if file do
-        acc
-        |> Multipart.add_file(file.path,
-          name: "files",
-          file_name: Path.basename(file.path)
-        )
-      else
-        acc
-      end
-    end)
+    with normalized_files <- normalize_files(files),
+         {:ok, metadata, sources} <- extract_metadata_and_sources(normalized_files) do
+      body = %{"sources" => sources, "metadata" => metadata}
+      submit_and_poll_verification(verify_metadata_url(address_hash_string), body)
+    end
   end
 
   def verify_via_rust_microservice(address_hash_string, files, chosen_contract) do
@@ -152,12 +167,125 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     end
   end
 
-  defp http_get_request(url, params) do
-    request = HttpClient.get(url, [], params: params)
+  # Normalizes the incoming files into a flat `%{relative_name => content}` map.
+  # Files arrive either as a `name => content` map or as a list of upload structs
+  # (`%Plug.Upload{}` / `%{path:, filename:}`) - see the controllers building them.
+  defp normalize_files(files) when is_map(files) do
+    Enum.reduce(files, %{}, fn {name, content}, acc ->
+      if content, do: Map.put(acc, name, content), else: acc
+    end)
+  end
+
+  # sobelow_skip ["Traversal.FileModule"]
+  defp normalize_files(files) when is_list(files) do
+    Enum.reduce(files, %{}, fn
+      %{path: path} = file, acc when not is_nil(path) ->
+        case File.read(path) do
+          {:ok, content} ->
+            name = Map.get(file, :filename) || Path.basename(path)
+            Map.put(acc, name, content)
+
+          _ ->
+            acc
+        end
+
+      _file, acc ->
+        acc
+    end)
+  end
+
+  defp normalize_files(_files), do: %{}
+
+  # Splits the normalized files into the `metadata` object and the `sources` map
+  # expected by the v2 `POST /v2/verify/metadata/{chainId}/{address}` endpoint.
+  defp extract_metadata_and_sources(files_map) do
+    {metadata_files, source_files} =
+      Enum.split_with(files_map, fn {name, _content} ->
+        Path.basename(name) == "metadata.json"
+      end)
+
+    case metadata_files do
+      [{_name, metadata_content} | _] ->
+        {:ok, ExplorerHelper.decode_json(metadata_content), Map.new(source_files)}
+
+      [] ->
+        {:error, @no_metadata_message}
+    end
+  end
+
+  defp submit_and_poll_verification(url, body) do
+    request =
+      HttpClient.post(url, Utils.JSON.encode!(body), [{"Content-Type", "application/json"}],
+        recv_timeout: @post_timeout
+      )
+
+    case request do
+      {:ok, %{body: response_body, status_code: status_code}} when status_code in [200, 202] ->
+        case ExplorerHelper.decode_json(response_body) do
+          %{"verificationId" => verification_id} ->
+            poll_verification(verification_id, poll_max_attempts())
+
+          _ ->
+            {:error, @failed_verification_message}
+        end
+
+      {:ok, %{body: response_body, status_code: status_code}} when status_code in 400..526 ->
+        parse_http_error_response(response_body)
+
+      _ ->
+        {:error, "Unexpected response from Sourcify verify method"}
+    end
+  end
+
+  defp poll_verification(_verification_id, attempts_left) when attempts_left <= 0 do
+    {:error, @timeout_message}
+  end
+
+  defp poll_verification(verification_id, attempts_left) do
+    request = HttpClient.get(verify_job_url(verification_id), [], recv_timeout: @post_timeout)
 
     case request do
       {:ok, %{body: body, status_code: 200}} ->
-        process_sourcify_response(url, body)
+        handle_verification_job(ExplorerHelper.decode_json(body), verification_id, attempts_left)
+
+      {:ok, %{body: body, status_code: status_code}} when status_code in 400..526 ->
+        parse_http_error_response(body)
+
+      _ ->
+        {:error, "Unexpected response from Sourcify verify method"}
+    end
+  end
+
+  defp handle_verification_job(%{"isJobCompleted" => true, "error" => error}, _id, _attempts)
+       when not is_nil(error) do
+    {:error, verification_error_message(error)}
+  end
+
+  defp handle_verification_job(%{"isJobCompleted" => true} = body, _id, _attempts) do
+    {:ok, body}
+  end
+
+  # Not completed yet (or an unexpected shape): wait and poll again.
+  defp handle_verification_job(_body, verification_id, attempts_left) do
+    Process.sleep(poll_interval_ms())
+    poll_verification(verification_id, attempts_left - 1)
+  end
+
+  defp verification_error_message(%{"message" => message}) when is_binary(message), do: message
+  defp verification_error_message(error) when is_binary(error), do: error
+  defp verification_error_message(_error), do: @failed_verification_message
+
+  # Fetches a contract from the v2 `GET /v2/contract/{chainId}/{address}` endpoint.
+  # `fields == :with_sources` additionally requests the `sources` and `metadata` fields.
+  defp do_lookup(address_hash_string, fields) do
+    params = if fields == :with_sources, do: [fields: "sources,metadata"], else: []
+
+    case HttpClient.get(contract_lookup_url(address_hash_string), [], params: params) do
+      {:ok, %{body: body, status_code: 200}} ->
+        parse_lookup_response(ExplorerHelper.decode_json(body))
+
+      {:ok, %{status_code: 404}} ->
+        :not_verified
 
       {:ok, %{body: body, status_code: status_code}} when status_code in 400..526 ->
         parse_http_error_response(body)
@@ -176,17 +304,43 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     end
   end
 
-  defp http_post_request(url, body) do
-    request = Tesla.post(url, body)
+  defp parse_lookup_response(%{"match" => match} = body) when match in ["exact_match", "match"] do
+    {:ok, match, body}
+  end
 
-    case request do
-      {:ok, %Tesla.Env{body: body}} ->
-        process_sourcify_response(url, body)
+  defp parse_lookup_response(%{"match" => nil}), do: :not_verified
 
-      _ ->
-        {:error, "Unexpected response from Sourcify verify method"}
+  defp parse_lookup_response(_body), do: {:error, "Unexpected response from Sourcify"}
+
+  # Rebuilds the legacy v1 metadata-file-list `[%{"name","path","content"}]` from the
+  # v2 `sources` map and `metadata` object so that `parse_params_from_sourcify/2` keeps
+  # working unchanged. The metadata content must be a JSON string because the parser
+  # decodes it downstream.
+  defp reconstruct_file_list(body_json) do
+    sources = Map.get(body_json, "sources") || %{}
+    metadata = Map.get(body_json, "metadata")
+
+    source_files =
+      Enum.map(sources, fn {path, content} ->
+        %{"name" => Path.basename(path), "path" => path, "content" => source_content(content)}
+      end)
+
+    if is_map(metadata) do
+      metadata_file = %{
+        "name" => "metadata.json",
+        "path" => "metadata.json",
+        "content" => Utils.JSON.encode!(metadata)
+      }
+
+      [metadata_file | source_files]
+    else
+      source_files
     end
   end
+
+  defp source_content(%{"content" => content}), do: content
+  defp source_content(content) when is_binary(content), do: content
+  defp source_content(content), do: content
 
   def http_post_request_rust_microservice(url, body) do
     request =
@@ -196,32 +350,10 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
 
     case request do
       {:ok, %{body: body, status_code: 200}} ->
-        process_sourcify_response(url, body)
+        parse_verify_http_response(body)
 
       _ ->
         {:error, "Unexpected response from Sourcify verify method"}
-    end
-  end
-
-  defp process_sourcify_response(url, body) do
-    cond do
-      url =~ "check-by-addresses" ->
-        parse_check_by_address_http_response(body)
-
-      url =~ "/verify" ->
-        parse_verify_http_response(body)
-
-      url =~ "/sourcify/sources:verify" ->
-        parse_verify_http_response(body)
-
-      url =~ "/files/any" ->
-        parse_get_metadata_any_http_response(body)
-
-      url =~ "/files/" ->
-        parse_get_metadata_http_response(body)
-
-      true ->
-        {:error, body}
     end
   end
 
@@ -229,10 +361,6 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     body_json = ExplorerHelper.decode_json(body)
 
     case body_json do
-      # Success status from native Sourcify server
-      %{"result" => [%{"status" => "perfect"}]} ->
-        {:ok, body_json}
-
       # Success status code from Rust microservice
       %{"status" => "SUCCESS"} ->
         {:ok, body_json}
@@ -240,56 +368,8 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
       %{"status" => "FAILURE", "message" => message} ->
         {:error, message}
 
-      %{"result" => [%{"status" => unknown_status}]} ->
-        {:error, unknown_status}
-
       body ->
         {:error, body}
-    end
-  end
-
-  defp parse_check_by_address_http_response(body) do
-    body_json = ExplorerHelper.decode_json(body)
-
-    case body_json do
-      [%{"status" => "perfect"}] ->
-        {:ok, body_json}
-
-      [%{"status" => "false"}] ->
-        {:error, "Contract is not verified"}
-
-      [%{"status" => unknown_status}] ->
-        {:error, unknown_status}
-
-      body ->
-        {:error, body}
-    end
-  end
-
-  defp parse_get_metadata_http_response(body) do
-    body_json = ExplorerHelper.decode_json(body)
-
-    case body_json do
-      %{"message" => message, "errors" => errors} ->
-        {:error, "#{message}: #{ExplorerHelper.decode_json(errors)}"}
-
-      metadata ->
-        {:ok, metadata}
-    end
-  end
-
-  defp parse_get_metadata_any_http_response(body) do
-    body_json = ExplorerHelper.decode_json(body)
-
-    case body_json do
-      %{"message" => message, "errors" => errors} ->
-        {:error, "#{message}: #{ExplorerHelper.decode_json(errors)}"}
-
-      %{"status" => status, "files" => metadata} ->
-        {:ok, status, metadata}
-
-      _ ->
-        {:error, "Unknown Error"}
     end
   end
 
@@ -298,7 +378,7 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     body_json = ExplorerHelper.decode_json(body)
 
     if is_map(body_json) do
-      error = body_json["error"]
+      error = body_json["error"] || body_json["message"]
 
       parse_http_error_response_internal(error)
     else
@@ -398,18 +478,15 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
   end
 
   defp prepare_additional_source(address_hash_string, %{"name" => _name, "content" => content, "path" => path}) do
-    trimmed_path =
-      path
-      |> String.split("/")
-      |> Enum.slice(9..-1//-1)
-      |> Enum.join("/")
-
     %{
       "address_hash" => address_hash_string,
-      "file_name" => "/" <> trimmed_path,
+      "file_name" => normalize_source_path(path),
       "contract_source_code" => content
     }
   end
+
+  defp normalize_source_path("/" <> _rest = path), do: path
+  defp normalize_source_path(path), do: "/" <> path
 
   defp extract_primary_source_code(content, params) do
     params
@@ -426,26 +503,30 @@ defmodule Explorer.ThirdPartyIntegrations.Sourcify do
     config(__MODULE__, :server_url)
   end
 
-  defp verify_url do
-    "#{base_server_url()}" <> "/verify"
+  defp contract_lookup_url(address_hash_string) do
+    chain_id = config(__MODULE__, :chain_id)
+    "#{base_server_url()}/v2/contract/#{chain_id}/#{address_hash_string}"
+  end
+
+  defp verify_metadata_url(address_hash_string) do
+    chain_id = config(__MODULE__, :chain_id)
+    "#{base_server_url()}/v2/verify/metadata/#{chain_id}/#{address_hash_string}"
+  end
+
+  defp verify_job_url(verification_id) do
+    "#{base_server_url()}/v2/verify/#{verification_id}"
   end
 
   defp verify_url_rust_microservice do
     "#{RustVerifierInterface.base_api_url()}" <> "/verifier/sourcify/sources:verify"
   end
 
-  defp check_by_address_url do
-    "#{base_server_url()}" <> "/check-by-addresses"
+  defp poll_interval_ms do
+    config(__MODULE__, :verification_poll_interval_ms) || @default_poll_interval_ms
   end
 
-  defp get_metadata_url do
-    chain_id = config(__MODULE__, :chain_id)
-    "#{base_server_url()}" <> "/files/" <> chain_id
-  end
-
-  defp get_metadata_any_url do
-    chain_id = config(__MODULE__, :chain_id)
-    "#{base_server_url()}" <> "/files/any/" <> chain_id
+  defp poll_max_attempts do
+    config(__MODULE__, :verification_max_attempts) || @default_poll_max_attempts
   end
 
   def no_metadata_message, do: @no_metadata_message

@@ -685,7 +685,9 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   server_url: ConfigHelper.parse_url_env_var("SOURCIFY_SERVER_URL", "https://sourcify.dev/server"),
   enabled: ConfigHelper.parse_bool_env_var("SOURCIFY_INTEGRATION_ENABLED"),
   chain_id: System.get_env("CHAIN_ID"),
-  repo_url: ConfigHelper.parse_url_env_var("SOURCIFY_REPO_URL", "https://repo.sourcify.dev/contracts")
+  repo_url: ConfigHelper.parse_url_env_var("SOURCIFY_REPO_URL", "https://repo.sourcify.dev"),
+  verification_poll_interval_ms: ConfigHelper.parse_time_env_var("SOURCIFY_POLL_INTERVAL", "3s"),
+  verification_max_attempts: ConfigHelper.parse_integer_env_var("SOURCIFY_POLL_MAX_ATTEMPTS", 20)
 
 config :explorer, Explorer.ThirdPartyIntegrations.SolidityScan,
   platform_id: System.get_env("SOLIDITYSCAN_PLATFORM_ID", "16"),
