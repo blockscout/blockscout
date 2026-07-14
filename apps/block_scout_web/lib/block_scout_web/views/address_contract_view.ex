@@ -155,14 +155,16 @@ defmodule BlockScoutWeb.AddressContractView do
     nil
   end
 
-  def sourcify_repo_url(address_hash, partial_match) do
+  # The Sourcify v2 repository UI serves verified contracts at
+  # `{repo_url}/{chainId}/{address}` regardless of full/partial match, so the
+  # `partial_match` flag is no longer part of the URL (kept for API compatibility).
+  def sourcify_repo_url(address_hash, _partial_match) do
     checksummed_hash = Address.checksum(address_hash)
     chain_id = Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:chain_id]
     repo_url = Application.get_env(:explorer, Explorer.ThirdPartyIntegrations.Sourcify)[:repo_url]
-    match = if partial_match, do: "/partial_match/", else: "/full_match/"
 
     if chain_id do
-      repo_url <> match <> chain_id <> "/" <> checksummed_hash <> "/"
+      repo_url <> "/" <> chain_id <> "/" <> checksummed_hash
     else
       Logger.warning("chain_id is nil. Please set CHAIN_ID env variable.")
       nil
