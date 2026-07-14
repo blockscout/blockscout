@@ -66,6 +66,8 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
   scope "/", as: :api_v2 do
     pipe_through(:api_v2_no_forgery_protect)
 
+    patch("/:address_hash_param/refetch-metadata", V2.TokenController, :trigger_token_metadata_refetch)
+
     patch("/:address_hash_param/instances/:token_id_param/refetch-metadata", V2.TokenController, :refetch_metadata)
 
     patch(
