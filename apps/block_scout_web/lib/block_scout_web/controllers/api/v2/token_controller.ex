@@ -813,6 +813,66 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
+  @max_batch_size 50
+
+  operation :tokens_batch,
+    summary: "Get token info for a batch of token addresses",
+    description: "Retrieves token information for a list of token contract addresses.",
+    parameters: base_params(),
+    request_body:
+      {"List of token contract address hashes", "application/json",
+       %Schema{
+         type: :object,
+         properties: %{
+           address_hashes: %Schema{
+             type: :array,
+             items: Schemas.General.AddressHash,
+             maxItems: @max_batch_size
+           }
+         },
+         required: [:address_hashes]
+       }},
+    responses: [
+      ok:
+        {"List of tokens for given addresses.", "application/json",
+         %Schema{type: :array, items: Schemas.Token.Response}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+  Handles POST requests to `/api/v2/tokens/batch` endpoint.
+  """
+  @spec tokens_batch(Plug.Conn.t(), map()) :: Plug.Conn.t() | {:format, nil}
+  def tokens_batch(conn, params) do
+    case conn.body_params do
+      %{address_hashes: address_hashes} when is_list(address_hashes) ->
+        do_tokens_batch(conn, params, address_hashes)
+
+      _ ->
+        {:format, nil}
+    end
+  end
+
+  defp do_tokens_batch(conn, params, address_hashes) do
+    valid_hashes =
+      address_hashes
+      |> Enum.flat_map(fn hash_string ->
+        with {:ok, hash} <- Chain.string_to_address_hash(hash_string),
+             {:ok, false} <- AccessHelper.restricted_access?(hash_string, params) do
+          [hash]
+        else
+          _ -> []
+        end
+      end)
+      |> Enum.uniq()
+
+    tokens = Token.get_by_contract_address_hashes(valid_hashes, @token_options)
+
+    conn
+    |> put_status(200)
+    |> render(:tokens_batch, %{tokens: tokens})
+  end
+
   defp get_api_key(conn) do
     case Conn.get_req_header(conn, "x-api-key") do
       [api_key] ->

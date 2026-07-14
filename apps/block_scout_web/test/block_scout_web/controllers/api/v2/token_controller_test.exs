@@ -2855,6 +2855,107 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     )
   end
 
+  describe "POST /tokens/batch" do
+    test "get token info for a batch of addresses", %{conn: conn} do
+      token1 = insert(:token)
+      token2 = insert(:token)
+
+      request =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/v2/tokens/batch", %{
+          "address_hashes" => [
+            to_string(token1.contract_address.hash),
+            to_string(token2.contract_address.hash)
+          ]
+        })
+
+      assert response = json_response(request, 200)
+      assert is_list(response)
+      assert length(response) == 2
+
+      hashes = Enum.map(response, & &1["address_hash"])
+      assert Address.checksum(token1.contract_address.hash) in hashes
+      assert Address.checksum(token2.contract_address.hash) in hashes
+
+      Enum.each(response, fn item ->
+        token =
+          if item["address_hash"] == Address.checksum(token1.contract_address.hash),
+            do: token1,
+            else: token2
+
+        compare_item(token, item)
+      end)
+    end
+
+    test "returns empty list for non-existing tokens", %{conn: conn} do
+      address = build(:address)
+
+      request =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/v2/tokens/batch", %{
+          "address_hashes" => [to_string(address.hash)]
+        })
+
+      assert json_response(request, 200) == []
+    end
+
+    test "rejects invalid address hashes", %{conn: conn} do
+      token = insert(:token)
+
+      request =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/v2/tokens/batch", %{
+          "address_hashes" => [
+            to_string(token.contract_address.hash),
+            "0xinvalid",
+            "not_a_hash"
+          ]
+        })
+
+      assert %{"errors" => [_ | _]} = Phoenix.ConnTest.json_response(request, 422)
+    end
+
+    test "returns empty list for empty input", %{conn: conn} do
+      request =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/v2/tokens/batch", %{"address_hashes" => []})
+
+      assert json_response(request, 200) == []
+    end
+
+    test "deduplicates address hashes", %{conn: conn} do
+      token = insert(:token)
+      hash = to_string(token.contract_address.hash)
+
+      request =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/v2/tokens/batch", %{
+          "address_hashes" => [hash, hash, hash]
+        })
+
+      assert response = json_response(request, 200)
+      assert length(response) == 1
+      compare_item(token, List.first(response))
+    end
+
+    test "rejects batch exceeding max size", %{conn: conn} do
+      hashes = for i <- 1..51, do: "0x" <> String.pad_leading(Integer.to_string(i), 40, "0")
+
+      request =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/v2/tokens/batch", %{"address_hashes" => hashes})
+
+      assert %{"errors" => [%{"detail" => detail}]} = Phoenix.ConnTest.json_response(request, 422)
+      assert detail =~ "maxItems"
+    end
+  end
+
   describe "/tokens/{address_hash}/instances/{token_id}/media-type" do
     test "get 404 on non existing address", %{conn: conn} do
       token = build(:token)

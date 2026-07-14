@@ -73,6 +73,8 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
       V2.TokenController,
       :trigger_nft_collection_metadata_refetch
     )
+
+    post("/batch", V2.TokenController, :tokens_batch)
   end
 
   scope "/", as: :api_v2 do
