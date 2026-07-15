@@ -1507,13 +1507,15 @@ defmodule Explorer.Chain.InternalTransaction do
   - A list of internal transactions with the `:transaction` field populated
   - A single internal transaction with the `:transaction` field populated
   """
-  @spec preload_transaction(__MODULE__.t() | [__MODULE__.t()] | nil, module(), [Transaction.t()] | nil) ::
+  @spec preload_transaction(__MODULE__.t() | [__MODULE__.t()] | nil, module() | nil, [Transaction.t()] | nil) ::
           __MODULE__.t() | [__MODULE__.t()] | nil
-  def preload_transaction(internal_transactions, repo \\ Repo, transactions \\ nil)
+  def preload_transaction(internal_transactions, repo \\ nil, transactions \\ nil)
 
   def preload_transaction(nil, _repo, _transactions), do: nil
 
   def preload_transaction(internal_transactions, repo, existing_transactions) when is_list(internal_transactions) do
+    repo = repo || Repo.replica()
+
     transactions =
       case existing_transactions do
         nil ->
