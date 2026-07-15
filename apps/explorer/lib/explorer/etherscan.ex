@@ -133,7 +133,7 @@ defmodule Explorer.Etherscan do
         |> InternalTransaction.join_address_mapping_query(:created_contract_address)
         |> where(not is_nil(as(:transaction).block_hash))
         |> where(as(:transaction).hash == ^transaction_hash)
-        |> limit(10_000)
+        |> limit(1_000)
         |> select(
           [it],
           merge(map(it, ^@internal_transaction_fields), %{
@@ -153,7 +153,7 @@ defmodule Explorer.Etherscan do
         |> InternalTransaction.join_address_mapping_query(:created_contract_address)
         |> join(:inner, [it, t], b in assoc(t, :block), as: :block)
         |> where(as(:transaction).hash == ^transaction_hash)
-        |> limit(10_000)
+        |> limit(1_000)
         |> select(
           [it],
           merge(map(it, ^@internal_transaction_fields), %{
