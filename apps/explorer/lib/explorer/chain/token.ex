@@ -606,12 +606,12 @@ defmodule Explorer.Chain.Token do
   def fetch_token_counters(address_hash, timeout) do
     total_token_transfers_task =
       Task.async(fn ->
-        TokenTransfersCount.fetch(address_hash)
+        TokenTransfersCount.fetch_count_from_cache(address_hash)
       end)
 
     total_token_holders_task =
       Task.async(fn ->
-        TokenHoldersCount.fetch(address_hash)
+        TokenHoldersCount.fetch_count_from_cache(address_hash)
       end)
 
     [total_token_transfers_task, total_token_holders_task]
