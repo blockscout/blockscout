@@ -260,13 +260,13 @@ defmodule Explorer.Chain.Address.Counters do
         address_to_validation_count(address.hash, options)
       end)
 
-    Task.start_link(fn ->
-      transactions_count(address)
-    end)
+    # Task.start_link(fn ->
+    #   transactions_count(address)
+    # end)
 
-    Task.start_link(fn ->
-      token_transfers_count(address)
-    end)
+    # Task.start_link(fn ->
+    #   token_transfers_count(address)
+    # end)
 
     # Task.start_link(fn ->
     #   gas_usage_count(address)
