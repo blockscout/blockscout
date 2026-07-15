@@ -35,6 +35,8 @@ defmodule Explorer.Chain.Address.Counters do
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
 
+  alias Indexer.Fetcher.OnDemand.AddressCounters, as: AddressCountersOnDemand
+
   require Logger
 
   @typep counter :: non_neg_integer() | nil
@@ -260,17 +262,7 @@ defmodule Explorer.Chain.Address.Counters do
         address_to_validation_count(address.hash, options)
       end)
 
-    Task.start_link(fn ->
-      transactions_count(address)
-    end)
-
-    Task.start_link(fn ->
-      token_transfers_count(address)
-    end)
-
-    Task.start_link(fn ->
-      gas_usage_count(address)
-    end)
+    AddressCountersOnDemand.trigger_fetch(options[:ip], address)
 
     [
       validation_count_task

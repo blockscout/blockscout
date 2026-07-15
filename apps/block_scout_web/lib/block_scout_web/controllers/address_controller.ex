@@ -176,7 +176,7 @@ defmodule BlockScoutWeb.AddressController do
   def address_counters(conn, %{"id" => address_hash_string}) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <- Chain.hash_to_address(address_hash) do
-      {validation_count} = Counters.address_counters(address)
+      {validation_count} = Counters.address_counters(address, ip: AccessHelper.conn_to_ip_string(conn))
 
       transactions_from_db = address.transactions_count || 0
       token_transfers_from_db = address.token_transfers_count || 0

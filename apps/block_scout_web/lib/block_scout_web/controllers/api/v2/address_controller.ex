@@ -257,7 +257,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       # TODO: check if @address_options is needed here
       case Chain.hash_to_address(address_hash, @address_options) do
         {:ok, address} ->
-          {validation_count} = Counters.address_counters(address, @api_true)
+          {validation_count} =
+            Counters.address_counters(address, Keyword.put(@api_true, :ip, AccessHelper.conn_to_ip_string(conn)))
 
           transactions_from_db = address.transactions_count || 0
           token_transfers_from_db = address.token_transfers_count || 0

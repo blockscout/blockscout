@@ -22,7 +22,14 @@ defmodule Explorer.Mixfile do
       package: package(),
       start_permanent: Mix.env() == :prod,
       version: "11.2.2",
-      xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper, Indexer.Fetcher.InternalTransaction]]
+      xref: [
+        exclude: [
+          BlockScoutWeb.Routers.WebRouter.Helpers,
+          Indexer.Helper,
+          Indexer.Fetcher.InternalTransaction,
+          Indexer.Fetcher.OnDemand.AddressCounters
+        ]
+      ]
     ]
   end
 
