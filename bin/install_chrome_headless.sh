@@ -1,8 +1,8 @@
 export DISPLAY=:99.0
 sh -e /etc/init.d/xvfb start
 
-export CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json" | jq -r '.channels' | jq -r '.Stable' | jq -r '.version')
-#export CHROMEDRIVER_VERSION=148.0.7778.179
+#export CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json" | jq -r '.channels' | jq -r '.Stable' | jq -r '.version')
+export CHROMEDRIVER_VERSION=150.0.7871.125
 curl -L -O "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/${CHROMEDRIVER_VERSION}/linux64/chromedriver-linux64.zip"
 unzip -j chromedriver-linux64.zip
 sudo chmod +x chromedriver
