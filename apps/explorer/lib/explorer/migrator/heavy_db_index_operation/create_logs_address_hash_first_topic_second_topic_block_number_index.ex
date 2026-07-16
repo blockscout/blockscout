@@ -11,8 +11,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopi
 
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
-
-  alias Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesAddressHashBlockNumberIndex
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :logs
@@ -30,10 +28,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopi
   def index_name, do: @index_name
 
   @impl HeavyDbIndexOperation
-  def dependent_from_migrations,
-    do: [
-      CreateAddressCurrentTokenBalancesAddressHashBlockNumberIndex.migration_name()
-    ]
+  def dependent_from_migrations, do: []
 
   @impl HeavyDbIndexOperation
   def db_index_operation do
