@@ -450,6 +450,56 @@ defmodule Explorer.Etherscan.LogsTest do
       assert found_log.first_topic == log2.first_topic
     end
 
+    test "with address and multiple values for a topic{x}" do
+      contract_address = insert(:contract_address)
+
+      transaction =
+        %Transaction{block: block} =
+        :transaction
+        |> insert(to_address: contract_address)
+        |> with_block()
+
+      log1_details = [
+        address: contract_address,
+        transaction: transaction,
+        block: block,
+        first_topic: topic(@first_topic_hex_string_1),
+        block_number: block.number
+      ]
+
+      log2_details = [
+        address: contract_address,
+        transaction: transaction,
+        block: block,
+        first_topic: topic(@first_topic_hex_string_2),
+        block_number: block.number
+      ]
+
+      log3_details = [
+        address: contract_address,
+        transaction: transaction,
+        block: block,
+        first_topic: topic(@first_topic_hex_string_3),
+        block_number: block.number
+      ]
+
+      log1 = insert(:log, log1_details)
+      log2 = insert(:log, log2_details)
+      _log3 = insert(:log, log3_details)
+
+      filter = %{
+        from_block: block.number,
+        to_block: block.number,
+        address_hash: contract_address.hash,
+        first_topic: [log1.first_topic, log2.first_topic]
+      }
+
+      found_logs = Logs.list_logs(filter)
+
+      assert Enum.map(found_logs, & &1.index) == [log1.index, log2.index]
+      assert Enum.map(found_logs, & &1.first_topic) == [log1.first_topic, log2.first_topic]
+    end
+
     test "with address and two topic{x}s" do
       contract_address = insert(:contract_address)
 
