@@ -2445,10 +2445,11 @@ defmodule Explorer.Chain do
     Repo.exists?(query)
   end
 
-  @spec fetch_last_token_balances_include_unfetched([Hash.Address.t()], [api?]) :: []
-  def fetch_last_token_balances_include_unfetched(address_hashes, options \\ []) when is_list(address_hashes) do
+  @spec fetch_last_token_balances_include_unfetched([Hash.Address.t()], Block.block_number(), [api?]) :: []
+  def fetch_last_token_balances_include_unfetched(address_hashes, stale_balance_window, options \\ [])
+      when is_list(address_hashes) do
     address_hashes
-    |> CurrentTokenBalance.last_token_balances_include_unfetched()
+    |> CurrentTokenBalance.last_token_balances_include_unfetched(stale_balance_window)
     |> select_repo(options).all()
   end
 
