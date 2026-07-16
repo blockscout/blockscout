@@ -143,7 +143,12 @@ defmodule Explorer.Etherscan.Logs do
   def list_logs(filter, paging_options) do
     paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
-    logs_query = where_topic_match(Log, prepared_filter)
+
+    logs_query =
+      Log
+      |> where_topic_match(prepared_filter)
+      |> where([log], log.block_number >= ^prepared_filter.from_block)
+      |> where([log], log.block_number <= ^prepared_filter.to_block)
 
     if DenormalizationHelper.transactions_denormalization_finished?() do
       block_transaction_query =
@@ -169,7 +174,7 @@ defmodule Explorer.Etherscan.Logs do
           on:
             block_transaction_data.transaction_hash == log.transaction_hash and
               block_transaction_data.block_hash == log.block_hash,
-          order_by: block_transaction_data.block_number,
+          order_by: log.block_number,
           limit: 1000,
           select: block_transaction_data,
           select_merge: map(log, ^@log_fields)
@@ -202,7 +207,7 @@ defmodule Explorer.Etherscan.Logs do
         from(log in logs_query,
           join: block_transaction_data in subquery(block_transaction_query),
           on: block_transaction_data.transaction_hash == log.transaction_hash,
-          order_by: block_transaction_data.block_number,
+          order_by: log.block_number,
           limit: 1000,
           select: block_transaction_data,
           select_merge: map(log, ^@log_fields)
