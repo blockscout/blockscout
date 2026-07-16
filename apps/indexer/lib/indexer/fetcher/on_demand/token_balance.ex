@@ -156,9 +156,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
       stale_balance_window ->
         address_hashes
         |> Enum.uniq()
-        |> Chain.fetch_last_token_balances_include_unfetched()
+        |> Chain.fetch_last_token_balances_include_unfetched(stale_balance_window)
         |> delete_invalid_balances()
-        |> Enum.filter(fn ctb -> ctb.block_number < stale_balance_window end)
         |> prepare_ctb_params_for_buffer()
     end
   end

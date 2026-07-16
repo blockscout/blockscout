@@ -178,15 +178,17 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   end
 
   @doc """
-  Builds an `t:Ecto.Query.t/0` to fetch the current token balances of the given addresses (include unfetched).
+  Builds an `t:Ecto.Query.t/0` to fetch the current token balances of the given addresses (include unfetched)
+  with `block_number` older than the given stale balance window.
   """
-  def last_token_balances_include_unfetched(address_hashes) when is_list(address_hashes) do
+  def last_token_balances_include_unfetched(address_hashes, stale_balance_window) when is_list(address_hashes) do
     fiat_balance = fiat_value_query()
 
     from(
       ctb in __MODULE__,
       where: ctb.address_hash in ^address_hashes,
       where: ctb.token_type != "ERC-7984",
+      where: ctb.block_number < ^stale_balance_window,
       left_join: t in assoc(ctb, :token),
       on: ctb.token_contract_address_hash == t.contract_address_hash,
       preload: [token: t],
