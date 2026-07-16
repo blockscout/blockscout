@@ -6,7 +6,7 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
-  import Ecto.Query, only: [from: 2, where: 3, subquery: 1, order_by: 3]
+  import Ecto.Query, only: [dynamic: 2, from: 2, where: 2, where: 3, subquery: 1, order_by: 3, union_all: 2]
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{DenormalizationHelper, Log, Transaction}
@@ -76,13 +76,16 @@ defmodule Explorer.Etherscan.Logs do
     paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
 
+    # With `union_multiple_values: true` `where_topic_match/3` may turn the
+    # query into a UNION ALL, so it must be applied last: `where/3` on a
+    # combination query would only affect its first branch.
     logs_query =
       Log
-      |> where_topic_match(prepared_filter)
       |> where([log], log.address_hash == ^address_hash)
       |> where([log], log.block_number >= ^prepared_filter.from_block)
       |> where([log], log.block_number <= ^prepared_filter.to_block)
       |> page_logs(paging_options)
+      |> where_topic_match(prepared_filter, union_multiple_values: true)
 
     if DenormalizationHelper.transactions_denormalization_finished?() do
       all_transaction_logs_query =
@@ -236,7 +239,11 @@ defmodule Explorer.Etherscan.Logs do
     topic2_3_opr: {:third_topic, :fourth_topic}
   }
 
-  defp where_topic_match(query, filter) do
+  # Above this number of values for a single topic, fall back to
+  # `= ANY(...)` to keep query size and planning time bounded.
+  @max_topic_union_branches 16
+
+  defp where_topic_match(query, filter, opts \\ []) do
     filter = sanitize_filter_topics(filter)
 
     case Enum.filter(@topics, &filter[&1]) do
@@ -244,11 +251,45 @@ defmodule Explorer.Etherscan.Logs do
         query
 
       [topic] ->
-        where(query, [l], field(l, ^topic) in ^List.wrap(filter[topic]))
+        where_single_topic_match(query, topic, filter[topic], opts)
 
       _ ->
         where_multiple_topics_match(query, filter)
     end
+  end
+
+  # With `union_multiple_values: true`, a single topic with multiple values
+  # is combined with UNION ALL (one equality branch per value) instead of
+  # `topic = ANY(...)`: a scalar-array condition on a topic column prevents
+  # PostgreSQL from returning rows in `(block_number, index)` order from the
+  # (address_hash, first_topic, block_number, index) index, forcing it to
+  # materialize and sort every match in the block range before applying the
+  # LIMIT. With UNION ALL each branch is an ordered index scan, so the
+  # planner can merge branches and stop at the LIMIT. The resulting
+  # combination query must be wrapped in `subquery/1` by the caller before
+  # any further composition.
+  defp where_single_topic_match(query, topic, values, opts) when is_list(values) do
+    if Keyword.get(opts, :union_multiple_values, false) and length(values) <= @max_topic_union_branches do
+      values
+      |> Enum.map(fn value -> where(query, [l], field(l, ^topic) == ^value) end)
+      |> Enum.reduce(fn branch, acc -> union_all(acc, ^branch) end)
+    else
+      where(query, ^topic_condition(topic, values))
+    end
+  end
+
+  defp where_single_topic_match(query, topic, value, _opts) do
+    where(query, [l], field(l, ^topic) == ^value)
+  end
+
+  # Equality instead of `= ANY(...)` for scalar values matters for
+  # performance: see `where_single_topic_match/3`.
+  defp topic_condition(topic, values) when is_list(values) do
+    dynamic([l], field(l, ^topic) in ^values)
+  end
+
+  defp topic_condition(topic, value) do
+    dynamic([l], field(l, ^topic) == ^value)
   end
 
   defp sanitize_filter_topics(filter) do
@@ -299,12 +340,20 @@ defmodule Explorer.Etherscan.Logs do
 
   defp where_multiple_topics_match(query, filter, topic_operation, "and") do
     {topic_a, topic_b} = @topic_operations[topic_operation]
-    where(query, [l], field(l, ^topic_a) == ^filter[topic_a] and field(l, ^topic_b) in ^List.wrap(filter[topic_b]))
+
+    where(
+      query,
+      ^dynamic([l], ^topic_condition(topic_a, filter[topic_a]) and ^topic_condition(topic_b, filter[topic_b]))
+    )
   end
 
   defp where_multiple_topics_match(query, filter, topic_operation, "or") do
     {topic_a, topic_b} = @topic_operations[topic_operation]
-    where(query, [l], field(l, ^topic_a) == ^filter[topic_a] or field(l, ^topic_b) in ^List.wrap(filter[topic_b]))
+
+    where(
+      query,
+      ^dynamic([l], ^topic_condition(topic_a, filter[topic_a]) or ^topic_condition(topic_b, filter[topic_b]))
+    )
   end
 
   defp where_multiple_topics_match(query, _, _, _), do: query
