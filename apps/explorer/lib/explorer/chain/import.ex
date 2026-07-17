@@ -476,12 +476,20 @@ defmodule Explorer.Chain.Import do
     end)
   end
 
-  defp handle_partially_imported_blocks(%{blocks: %{params: blocks_params}}) do
+  defp handle_partially_imported_blocks(%{blocks: %{params: blocks_params}} = options) do
     block_numbers = blocks_params |> Enum.map(& &1.number) |> Enum.uniq()
     Block.set_refetch_needed(block_numbers)
     Import.Runner.Blocks.process_blocks_consensus(blocks_params)
 
     Logger.warning("Set refetch_needed for partially imported block because of error: #{inspect(block_numbers)}")
+  rescue
+    exception ->
+      Logger.warning(
+        "Unable to set refetch_needed for partially imported block because of error: #{inspect(exception)}"
+      )
+
+      Process.sleep(Application.get_env(:indexer, :handle_partially_imported_block_interval) || 1000)
+      handle_partially_imported_blocks(options)
   end
 
   defp handle_partially_imported_blocks(_options), do: :ok
