@@ -1,5 +1,37 @@
 # Changelog
 
+## 11.2.3
+
+### 🚀 Features
+
+- Make ReplacedTransaction fetcher batch/concurrency configurable and auto-disable it when pending transactions fetcher is off ([#14576](https://github.com/blockscout/blockscout/issues/14576))
+- Report per-process memory in memory_consumed metric ([#14572](https://github.com/blockscout/blockscout/issues/14572))
+
+### 🐛 Bug Fixes
+
+- Re-run handle_partially_imported_blocks on error ([#14597](https://github.com/blockscout/blockscout/issues/14597))
+- Apply ZRC-2 token_type condition only for zilliqa ([#14585](https://github.com/blockscout/blockscout/issues/14585))
+- Use struct field access for token balance broadcast filter ([#14568](https://github.com/blockscout/blockscout/issues/14568))
+- Adapt uncataloged_token_transfer_block_numbers for arc ([#14564](https://github.com/blockscout/blockscout/issues/14564))
+
+### 📚 Documentation
+
+- Update CONTRIBUTING.md: target PRs at dev branch ([#14549](https://github.com/blockscout/blockscout/issues/14549))
+
+### ⚡ Performance
+
+- Optimize transaction to internal transaction preload ([#14596](https://github.com/blockscout/blockscout/issues/14596))
+- Use equality and UNION ALL instead of = ANY for topic filters in Etherscan getLogs ([#14595](https://github.com/blockscout/blockscout/issues/14595))
+- Push token balance staleness filter into SQL and add supporting index ([#14592](https://github.com/blockscout/blockscout/issues/14592))
+- Optimize topic-only getLogs ordering and add supporting logs index ([#14593](https://github.com/blockscout/blockscout/issues/14593))
+- Order getLogs by log.block_number to enable early LIMIT ([#14588](https://github.com/blockscout/blockscout/issues/14588))
+
+### ⚙️ Miscellaneous Tasks
+
+- Use Repo.replica as a default repo for transaction preload ([#14591](https://github.com/blockscout/blockscout/issues/14591))
+- Differentiate blocks count event by type ([#14573](https://github.com/blockscout/blockscout/issues/14573))
+- Add availability to bradcast blocks count instead of full block ([#14571](https://github.com/blockscout/blockscout/issues/14571))
+
 ## 11.2.2
 
 ### 🚀 Features
