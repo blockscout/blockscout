@@ -9,7 +9,7 @@ defmodule Explorer.SmartContract.SigProviderInterface do
   require Logger
 
   @request_error_msg "Error while sending request to sig-provider"
-  @post_timeout :timer.seconds(60)
+  @post_timeout :timer.seconds(30)
 
   @spec decode_function_call(map()) :: {:ok, list()} | {:error, any}
   def decode_function_call(input) do
@@ -87,17 +87,13 @@ defmodule Explorer.SmartContract.SigProviderInterface do
         {:error, body}
 
       {:error, error} ->
-        old_truncate = Application.get_env(:logger, :truncate)
-        Logger.configure(truncate: :infinity)
-
         Logger.error(fn ->
           [
             "Error while sending request to sig-provider url: #{url}: ",
-            inspect(error, limit: :infinity, printable_limit: :infinity)
+            inspect(error)
           ]
         end)
 
-        Logger.configure(truncate: old_truncate)
         {:error, @request_error_msg}
     end
   end
@@ -110,17 +106,20 @@ defmodule Explorer.SmartContract.SigProviderInterface do
         body |> Jason.decode()
 
       error ->
-        old_truncate = Application.get_env(:logger, :truncate)
-        Logger.configure(truncate: :infinity)
-
         Logger.error(fn ->
           [
-            "Error while sending request to sig-provider url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
-            inspect(error, limit: :infinity, printable_limit: :infinity)
+            "Error while sending request to sig-provider url: #{url}",
+            inspect(error)
           ]
         end)
 
-        Logger.configure(truncate: old_truncate)
+        Logger.debug(fn ->
+          [
+            "Error while sending request to sig-provider url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
+            inspect(error)
+          ]
+        end)
+
         {:error, @request_error_msg}
     end
   end
