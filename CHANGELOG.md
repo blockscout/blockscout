@@ -9,6 +9,8 @@
 
 ### 🐛 Bug Fixes
 
+- Eliminate mostly Logger.configue; Make debug logging on failed tx decoding ([#14601](https://github.com/blockscout/blockscout/pull/14601))
+- Handle incorrect number of top-level calls ([#14600](https://github.com/blockscout/blockscout/pull/14600))
 - Re-run handle_partially_imported_blocks on error ([#14597](https://github.com/blockscout/blockscout/issues/14597))
 - Apply ZRC-2 token_type condition only for zilliqa ([#14585](https://github.com/blockscout/blockscout/issues/14585))
 - Use struct field access for token balance broadcast filter ([#14568](https://github.com/blockscout/blockscout/issues/14568))
