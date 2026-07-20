@@ -30,7 +30,7 @@
 
 - Use Repo.replica as a default repo for transaction preload ([#14591](https://github.com/blockscout/blockscout/issues/14591))
 - Differentiate blocks count event by type ([#14573](https://github.com/blockscout/blockscout/issues/14573))
-- Add availability to bradcast blocks count instead of full block ([#14571](https://github.com/blockscout/blockscout/issues/14571))
+- Add availability to broadcast blocks count instead of full block ([#14571](https://github.com/blockscout/blockscout/issues/14571))
 
 ## 11.2.2
 

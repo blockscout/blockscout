@@ -108,7 +108,7 @@ defmodule Explorer.SmartContract.SigProviderInterface do
       error ->
         Logger.error(fn ->
           [
-            "Error while sending request to sig-provider url: #{url}",
+            "Error while sending request to sig-provider url: #{url} ",
             inspect(error)
           ]
         end)

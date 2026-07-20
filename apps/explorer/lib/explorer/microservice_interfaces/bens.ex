@@ -122,7 +122,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
       {_, error} ->
         Logger.error(fn ->
           [
-            "Error while sending request to BENS microservice url: #{url}",
+            "Error while sending request to BENS microservice url: #{url} ",
             inspect(error)
           ]
         end)

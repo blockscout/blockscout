@@ -86,7 +86,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
           {:error, error} ->
             Logger.error(fn ->
               [
-                "Error while sending request to verification microservice url: #{url}",
+                "Error while sending request to verification microservice url: #{url} ",
                 inspect(error)
               ]
             end)
@@ -94,7 +94,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
             Logger.debug(fn ->
               [
                 "Error while sending request to verification microservice url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
-                inspect(error, limit: :infinity, printable_limit: :infinity)
+                inspect(error)
               ]
             end)
 
@@ -124,7 +124,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
             Logger.error(fn ->
               [
                 "Error while sending request to verification microservice url: #{url}: ",
-                inspect(error, limit: :infinity, printable_limit: :infinity)
+                inspect(error)
               ]
             end)
 

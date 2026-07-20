@@ -28,7 +28,7 @@ defmodule Explorer.Visualize.Sol2uml do
       {:error, error} ->
         Logger.error(fn ->
           [
-            "Error while sending request to visualizer microservice. url: #{url}",
+            "Error while sending request to visualizer microservice. url: #{url} ",
             inspect(error)
           ]
         end)
