@@ -962,7 +962,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   defp update_token_instances_owner(repo, forked_transaction_hashes, options) do
     forked_transaction_hashes
     |> forked_token_transfers_query()
-    |> repo.all()
+    |> repo.all(timeout: options[:timeout])
     |> process_forked_token_transfers(repo, options)
   end
 
@@ -1011,7 +1011,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     changes =
       derived_token_transfers_query
-      |> repo.all()
+      |> repo.all(timeout: options[:timeout])
       |> Enum.reduce(changes_initial, fn tt, acc ->
         token_id = List.first(tt.token_ids)
         current_key = {tt.token_contract_address_hash, token_id}
