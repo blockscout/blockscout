@@ -197,9 +197,20 @@ defmodule Indexer.Fetcher.InternalTransaction do
       :block_number ->
         Logger.debug("fetching internal transactions by blocks")
 
-        block_numbers_or_transactions
-        |> check_and_filter_block_numbers()
-        |> EthereumJSONRPC.fetch_block_internal_transactions(json_rpc_named_arguments)
+        block_numbers = check_and_filter_block_numbers(block_numbers_or_transactions)
+
+        case EthereumJSONRPC.fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) do
+          {:error, errors} = error ->
+            # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+            if incorrect_top_level_calls_error?(errors) do
+              handle_incorrect_top_level_calls(block_numbers, json_rpc_named_arguments)
+            else
+              error
+            end
+
+          result ->
+            result
+        end
 
       :transaction_params ->
         Logger.debug("fetching internal transactions by transactions")
@@ -232,6 +243,29 @@ defmodule Indexer.Fetcher.InternalTransaction do
     else
       @default_block_traceable_variants
     end
+  end
+
+  defp handle_incorrect_top_level_calls(block_numbers, json_rpc_named_arguments) do
+    Logger.warning(
+      "failed to fetch internal transactions by blocks due to incorrect number of top-level calls, " <>
+        "retrying by transactions for blocks #{inspect(block_numbers)}"
+    )
+
+    block_numbers
+    |> Transaction.get_transactions_of_block_numbers()
+    |> Enum.reduce_while({:ok, []}, fn transaction, {:ok, acc} ->
+      case fetch_internal_transactions_by_transactions([transaction], json_rpc_named_arguments) do
+        {:ok, internal_transactions} ->
+          {:cont, {:ok, acc ++ internal_transactions}}
+
+        {:error, _reason, _stacktrace} = error ->
+          {:halt, {:error, error}}
+
+        {:error, errors} ->
+          # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+          if incorrect_top_level_calls_error?(errors), do: {:cont, {:ok, acc}}, else: {:halt, {:error, errors}}
+      end
+    end)
   end
 
   defp drop_genesis(block_numbers, json_rpc_named_arguments) do
@@ -281,6 +315,13 @@ defmodule Indexer.Fetcher.InternalTransaction do
       end
     end)
   end
+
+  defp incorrect_top_level_calls_error?(errors) when is_list(errors) do
+    Enum.any?(errors, &incorrect_top_level_calls_error?/1)
+  end
+
+  defp incorrect_top_level_calls_error?(%{message: "incorrect number of top-level calls"}), do: true
+  defp incorrect_top_level_calls_error?(_), do: false
 
   defp fetch_internal_transactions_by_transactions(transactions, json_rpc_named_arguments) do
     transactions
