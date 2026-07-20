@@ -1159,7 +1159,7 @@ defmodule Explorer.Chain.Transaction do
     end
   rescue
     e ->
-      Logger.warning(fn ->
+      Logger.debug(fn ->
         [
           "Could not decode input data for transaction: ",
           Hash.to_iodata(hash),
@@ -1189,7 +1189,7 @@ defmodule Explorer.Chain.Transaction do
     {:ok, mapping}
   rescue
     e ->
-      Logger.warning(fn ->
+      Logger.debug(fn ->
         [
           "Could not decode input data for transaction: ",
           Hash.to_iodata(hash),

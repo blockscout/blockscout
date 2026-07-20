@@ -848,17 +848,12 @@ defmodule Indexer.Helper do
   @spec http_get_request_error(String.t(), :json | :raw, any(), non_neg_integer(), [non_neg_integer()]) ::
           {:ok, map()} | {:error, any()}
   defp http_get_request_error(url, response_format, error, attempts_done, avoid_retry_for_statuses) do
-    old_truncate = Application.get_env(:logger, :truncate)
-    Logger.configure(truncate: :infinity)
-
     Logger.error(fn ->
       [
         "Error while sending request to #{url}: ",
-        inspect(error, limit: :infinity, printable_limit: :infinity)
+        inspect(error)
       ]
     end)
-
-    Logger.configure(truncate: old_truncate)
 
     # retry to send the request
     attempts_done = attempts_done + 1
