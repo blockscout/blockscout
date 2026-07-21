@@ -126,7 +126,7 @@ defmodule BlockScoutWeb.AddressController do
       render(
         conn,
         "_show_address_transactions.html",
-        address: address,
+        address: fully_preloaded_address,
         coin_balance_status: CoinBalanceOnDemand.trigger_fetch(ip, address),
         exchange_rate: Market.get_coin_exchange_rate(),
         filter: params["filter"],
