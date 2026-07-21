@@ -17,7 +17,14 @@ config :logger, :default_handler,
          format: "$dateT$time $metadata[$level] $message\n",
          metadata: ConfigHelper.logger_backend_metadata()
        )
-     end)
+     end),
+  config: %{
+    sync_mode_qlen: 1_000,
+    drop_mode_qlen: 5_000,
+    flush_qlen: 10_000,
+    burst_limit_max_count: 5_000,
+    burst_limit_window_time: 1_000
+  }
 
 config :logger, :api,
   format: "$dateT$time $metadata[$level] $message\n",
