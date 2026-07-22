@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
   use BlockScoutWeb.ConnCase, async: false
   use BlockScoutWeb.ChannelCase, async: false
 
+  import ExUnit.CaptureLog
   import Mox
 
   alias BlockScoutWeb.AddressContractView
@@ -345,6 +346,46 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
       for prop <- result_props do
         assert correct_response[prop] == response[prop]
       end
+    end
+
+    test "get smart-contract with decoded tuple constructor", %{conn: conn} do
+      tuple_input = %{
+        "components" => [
+          %{"name" => "twitter", "type" => "string"},
+          %{"name" => "telegram", "type" => "string"},
+          %{"name" => "discord", "type" => "string"},
+          %{"name" => "website", "type" => "string"},
+          %{"name" => "farcaster", "type" => "string"}
+        ],
+        "name" => "socials_",
+        "type" => "tuple"
+      }
+
+      tuple_type = ABI.FunctionSelector.parse_specification_type(tuple_input)
+
+      constructor_arguments =
+        [{"", "", "", "", ""}]
+        |> ABI.TypeEncoder.encode([tuple_type])
+        |> Base.encode16(case: :lower)
+
+      target_contract =
+        insert(:smart_contract,
+          abi: [%{"inputs" => [tuple_input], "type" => "constructor"}],
+          constructor_arguments: "0x" <> constructor_arguments
+        )
+
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
+
+      log =
+        capture_log(fn ->
+          request = get(conn, "/api/v2/smart-contracts/#{Address.checksum(target_contract.address_hash)}")
+          response = json_response(request, 200)
+
+          assert response["decoded_constructor_args"] == [[["", "", "", "", ""], tuple_input]]
+        end)
+
+      refute log =~ ~s(Error determining value json for "tuple")
     end
 
     test "get smart-contract data from bytecode twin without constructor args", %{conn: conn} do

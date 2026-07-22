@@ -2,6 +2,7 @@
 defmodule Explorer.Chain.SmartContractTest do
   use Explorer.DataCase, async: false
 
+  import ExUnit.CaptureLog
   import Mox
   alias Explorer.Chain.{Address, SmartContract}
 
@@ -427,5 +428,36 @@ defmodule Explorer.Chain.SmartContractTest do
     implementation_abi = SmartContract.get_abi("0x" <> implementation_contract_address_hash_string)
 
     assert implementation_abi == @abi
+  end
+
+  test "format_constructor_arguments/2 decodes tuple components without logging a warning" do
+    tuple_input = %{
+      "components" => [
+        %{"name" => "twitter", "type" => "string"},
+        %{"name" => "telegram", "type" => "string"},
+        %{"name" => "discord", "type" => "string"},
+        %{"name" => "website", "type" => "string"},
+        %{"name" => "farcaster", "type" => "string"}
+      ],
+      "name" => "socials_",
+      "type" => "tuple"
+    }
+
+    tuple_type = ABI.FunctionSelector.parse_specification_type(tuple_input)
+
+    constructor_arguments =
+      [{"", "", "", "", ""}]
+      |> ABI.TypeEncoder.encode([tuple_type])
+      |> Base.encode16(case: :lower)
+
+    log =
+      capture_log(fn ->
+        assert SmartContract.format_constructor_arguments(
+                 [%{"inputs" => [tuple_input], "type" => "constructor"}],
+                 constructor_arguments
+               ) == [[["", "", "", "", ""], tuple_input]]
+      end)
+
+    refute log =~ ~s(Error determining value json for "tuple")
   end
 end

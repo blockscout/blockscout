@@ -2,9 +2,132 @@
 defmodule BlockScoutWeb.API.V2.TransactionViewTest do
   use BlockScoutWeb.ConnCase, async: true
 
+  import ExUnit.CaptureLog
+
   alias BlockScoutWeb.API.V2.TransactionView
-  alias Explorer.Repo
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.Chain.Transaction
+  alias Explorer.Repo
+
+  @tuple_input %{
+    "components" => [
+      %{"name" => "twitter", "type" => "string"},
+      %{"name" => "telegram", "type" => "string"},
+      %{"name" => "discord", "type" => "string"},
+      %{"name" => "website", "type" => "string"},
+      %{"name" => "farcaster", "type" => "string"}
+    ],
+    "name" => "socials_",
+    "type" => "tuple"
+  }
+  @tuple_type "(string,string,string,string,string)"
+  @tuple_value {"", "", "", "", ""}
+  @tuple_json ["", "", "", "", ""]
+
+  test "decodes a tuple value from transaction input and renders it without logging a warning" do
+    function_abi = %{
+      "inputs" => [@tuple_input],
+      "name" => "launch",
+      "outputs" => [],
+      "type" => "function"
+    }
+
+    selector = ABI.FunctionSelector.parse_specification_item(function_abi)
+
+    input =
+      [@tuple_value]
+      |> ABI.TypeEncoder.encode(selector)
+      |> Base.encode16(case: :lower)
+
+    smart_contract =
+      :smart_contract
+      |> insert(abi: [function_abi])
+      |> Repo.preload(:address)
+
+    transaction =
+      :transaction
+      |> insert(to_address: smart_contract.address, input: "0x" <> input)
+      |> Repo.preload(to_address: :smart_contract)
+
+    log =
+      capture_log(fn ->
+        assert [decoded_input] = Transaction.decode_transactions([transaction], true, api?: true)
+
+        assert TransactionView.decoded_input(decoded_input) == %{
+                 "method_id" => Base.encode16(selector.method_id, case: :lower),
+                 "method_call" => "launch((string,string,string,string,string) socials_)",
+                 "parameters" => [
+                   %{"name" => "socials_", "type" => @tuple_type, "value" => @tuple_json}
+                 ]
+               }
+      end)
+
+    refute log =~ "Error determining value json"
+  end
+
+  test "decodes a tuple value from an event log and renders it without logging a warning" do
+    event_input = Map.put(@tuple_input, "indexed", false)
+    event_abi = %{"anonymous" => false, "inputs" => [event_input], "name" => "Launched", "type" => "event"}
+    selector = ABI.FunctionSelector.parse_specification_item(event_abi)
+    <<method_id::binary-size(4), _::binary>> = selector.method_id
+    method_id_string = Base.encode16(method_id, case: :lower)
+
+    data =
+      [@tuple_value]
+      |> ABI.TypeEncoder.encode(selector.types)
+      |> Base.encode16(case: :lower)
+
+    smart_contract =
+      :smart_contract
+      |> insert(abi: [event_abi])
+      |> Repo.preload(:address)
+
+    address =
+      Repo.preload(smart_contract.address, [
+        :names,
+        :smart_contract,
+        Implementation.proxy_implementations_smart_contracts_association()
+      ])
+
+    {:ok, log_data} = Explorer.Chain.Data.cast("0x" <> data)
+
+    decoded_log =
+      :log
+      |> build(
+        address: address,
+        address_hash: address.hash,
+        data: log_data,
+        first_topic: topic("0x" <> Base.encode16(selector.method_id, case: :lower)),
+        transaction_hash: build(:transaction).hash
+      )
+      |> List.wrap()
+      |> TransactionView.decode_logs(false)
+      |> List.first()
+
+    captured_log =
+      capture_log(fn ->
+        assert {:ok, decoded_method_id, method_call, mapping} = decoded_log
+
+        assert TransactionView.render("decoded_log_input.json", %{
+                 method_id: decoded_method_id,
+                 text: method_call,
+                 mapping: mapping
+               }) == %{
+                 "method_id" => method_id_string,
+                 "method_call" => "Launched((string,string,string,string,string) socials_)",
+                 "parameters" => [
+                   %{
+                     "indexed" => false,
+                     "name" => "socials_",
+                     "type" => @tuple_type,
+                     "value" => @tuple_json
+                   }
+                 ]
+               }
+      end)
+
+    refute captured_log =~ "Error determining value json"
+  end
 
   describe "decode_logs/2" do
     test "doesn't use decoding candidate event with different 2nd, 3d or 4th topic" do
