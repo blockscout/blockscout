@@ -31,8 +31,11 @@ defmodule BlockScoutWeb.Plug.Logger do
       method = conn.method
       endpoint = endpoint(conn)
       conn_type = connection_type(conn)
+      metadata = Logger.metadata()
 
       Task.start(fn ->
+        Logger.metadata(metadata)
+
         Logger.log(
           level,
           fn ->
