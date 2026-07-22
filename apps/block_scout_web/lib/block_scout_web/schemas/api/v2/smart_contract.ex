@@ -94,7 +94,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract do
         sourcify_repo_url: %Schema{type: :string, nullable: true},
         decoded_constructor_args: %Schema{
           type: :array,
-          items: %Schema{type: :array, items: %Schema{anyOf: [%Schema{type: :object}, %Schema{type: :string}]}},
+          items: %Schema{
+            type: :array,
+            items: %Schema{
+              anyOf: [%Schema{type: :array}, %Schema{type: :object}, %Schema{type: :string}]
+            }
+          },
           nullable: true
         },
         is_verified_via_verifier_alliance: %Schema{type: :boolean, nullable: true},
