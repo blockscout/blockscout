@@ -160,6 +160,7 @@ defmodule Explorer.Chain.OrderedCache do
     quote do
       require Logger
       alias Explorer.Chain.OrderedCache
+      alias Explorer.Helper
 
       @behaviour OrderedCache
 
@@ -297,11 +298,10 @@ defmodule Explorer.Chain.OrderedCache do
       def update(element), do: update([element])
 
       @doc """
-      Merges prepared elements into the local ordered cache, then propagates from indexer nodes.
+      Merges prepared elements into the local ordered cache, then propagates to other nodes.
 
-      Always updates the local ids list and element entries first. When `Explorer.mode/0` is
-      `:indexer` and `propagate` is `true`, multicasts the same prepared elements to `Node.list/0`
-      with `propagate: false` so API nodes apply the write without re-propagating.
+      Always updates the local ids list and element entries first. Then multicasts the same prepared elements to `Node.list/0`
+      with `propagate: false` so other nodes apply the write without re-propagating.
       """
       def do_raw_update(prepared_elements, propagate) do
         ConCache.update(cache_name(), ids_list_key(), fn ids ->
@@ -313,17 +313,10 @@ defmodule Explorer.Chain.OrderedCache do
           {:ok, %ConCache.Item{value: updated_list, ttl: :infinity}}
         end)
 
-        case Explorer.mode() do
-          :indexer ->
-            if propagate do
-              Node.list() |> :erpc.multicast(__MODULE__, :do_raw_update, [prepared_elements, false])
-            else
-              Logger.error("Indexer got unexpected propagation call to do_raw_update/2")
-              :ok
-            end
-
-          _ ->
-            :ok
+        if propagate do
+          Node.list() |> :erpc.multicast(__MODULE__, :do_raw_update, [prepared_elements, false])
+        else
+          :ok
         end
       end
 
