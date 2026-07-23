@@ -209,9 +209,14 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   @impl Runner
   def prepare_data(changes_list) do
-    changes_list
-    |> maybe_reject_zero_value()
-    |> adjust_insert_params()
+    # Note: zero-value internal transactions are NOT rejected here. `prepare_data/1`
+    # is applied to the params before the block-completeness validation
+    # (`invalid_block_numbers/2`) runs. Dropping the only internal transaction of a
+    # transaction at this point would make that transaction look permanently
+    # un-traced, marking the whole block invalid and leaving it stuck in
+    # `pending_block_operations` forever. The zero-value rejection is instead applied
+    # right before insert (see `insert/3`), so it never affects validation.
+    adjust_insert_params(changes_list)
   end
 
   def run_insert_only(changes_list, %{timestamps: timestamps} = options) when is_map(options) do
@@ -255,6 +260,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
     ordered_changes_list =
       valid_internal_transactions
+      # Reject zero-value internal transactions only here, right before the DB write,
+      # so it never affects block-completeness validation (see `prepare_data/1`).
+      |> maybe_reject_zero_value()
       |> Enum.map(fn internal_transaction ->
         Map.put(internal_transaction, :trace_address, nil)
       end)
