@@ -28,17 +28,25 @@ defmodule BlockScoutWeb.Plug.Logger do
       stop = System.monotonic_time()
       diff = System.convert_time_unit(stop - start, :native, :microsecond)
       status = Integer.to_string(conn.status)
+      method = conn.method
+      endpoint = endpoint(conn)
+      conn_type = connection_type(conn)
+      metadata = Logger.metadata()
 
-      Logger.log(
-        level,
-        fn ->
-          [connection_type(conn), ?\s, status, " in ", formatted_diff(diff), " on ", conn.method, ?\s, endpoint(conn)]
-        end,
-        Keyword.merge(
-          [duration: diff, status: status, unit: "microsecond", endpoint: endpoint(conn), method: conn.method],
-          opts
+      Task.start(fn ->
+        Logger.metadata(metadata)
+
+        Logger.log(
+          level,
+          fn ->
+            [conn_type, ?\s, status, " in ", formatted_diff(diff), " on ", method, ?\s, endpoint]
+          end,
+          Keyword.merge(
+            [duration: diff, status: status, unit: "microsecond", endpoint: endpoint, method: method],
+            opts
+          )
         )
-      )
+      end)
 
       conn
     end)
