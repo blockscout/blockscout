@@ -5,6 +5,7 @@ defmodule Explorer.Chain.SmartContractTest do
   import ExUnit.CaptureLog
   import Mox
   alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.SmartContract.VerificationStatus
 
   doctest Explorer.Chain.SmartContract
 
@@ -108,6 +109,93 @@ defmodule Explorer.Chain.SmartContractTest do
       assert {:ok, %SmartContract{} = smart_contract} = SmartContract.create_smart_contract(valid_attrs)
 
       assert Repo.get_by(Address, hash: smart_contract.address_hash).verified == true
+    end
+
+    test "returns an error tuple (does not raise) when a non-primary Multi step fails", %{valid_attrs: valid_attrs} do
+      # An additional source is inserted under a string-keyed Multi step
+      # ("smart_contract_additional_source_0"), which the result `case` used to leave
+      # unmatched -> CaseClauseError. An invalid additional source must now surface as a
+      # clean error tuple instead of crashing the verification worker.
+      invalid_secondary_sources = [
+        %{
+          file_name: "storage.sol",
+          # contract_source_code intentionally omitted -> invalid changeset
+          address_hash: valid_attrs.address_hash
+        }
+      ]
+
+      log =
+        capture_log(fn ->
+          assert {:error, %Ecto.Changeset{valid?: false}} =
+                   SmartContract.create_smart_contract(valid_attrs, [], invalid_secondary_sources)
+        end)
+
+      assert log =~ "Failed to create smart contract"
+      # transaction rolled back -> no contract persisted
+      refute Repo.get_by(SmartContract, address_hash: valid_attrs.address_hash)
+    end
+  end
+
+  describe "create_or_update_smart_contract/3" do
+    setup do
+      smart_contract_bytecode =
+        "0x608060405234801561001057600080fd5b5060df8061001f6000396000f3006080604052600436106049576000357c0100000000000000000000000000000000000000000000000000000000900463ffffffff16806360fe47b114604e5780636d4ce63c146078575b600080fd5b348015605957600080fd5b5060766004803603810190808035906020019092919050505060a0565b005b348015608357600080fd5b50608a60aa565b6040518082815260200191505060405180910390f35b8060008190555050565b600080549050905600a165627a7a7230582040d82a7379b1ee1632ad4d8a239954fd940277b25628ead95259a85c5eddb2120029"
+
+      address =
+        insert(
+          :address,
+          hash: "0x0f95fa9bc0383e699325f2658d04e8d96d87b90c",
+          contract_code: smart_contract_bytecode
+        )
+
+      valid_attrs = %{
+        address_hash: "0x0f95fa9bc0383e699325f2658d04e8d96d87b90c",
+        name: "SimpleStorage",
+        compiler_version: "0.4.23",
+        optimization: false,
+        contract_source_code:
+          "pragma solidity ^0.4.23; contract SimpleStorage {uint storedData; function set(uint x) public {storedData = x; } function get() public constant returns (uint) {return storedData; } }",
+        abi: [%{"type" => "function", "name" => "get", "inputs" => [], "outputs" => []}],
+        partially_verified: false,
+        external_libraries: [],
+        secondary_sources: []
+      }
+
+      {:ok, valid_attrs: valid_attrs, address: address}
+    end
+
+    test "reconciles pending verification statuses to passed on successful verification", %{
+      valid_attrs: valid_attrs,
+      address: address
+    } do
+      {:ok, _} = VerificationStatus.insert_status("pending-uid", :pending, to_string(address.hash))
+
+      assert {:ok, %SmartContract{}} = SmartContract.create_or_update_smart_contract(address.hash, valid_attrs, false)
+
+      assert Repo.get_by(VerificationStatus, uid: "pending-uid").status == 1
+    end
+
+    test "does not reconcile pending statuses when verification does not succeed", %{address: address} do
+      initial = Application.get_env(:block_scout_web, :contract) || []
+
+      Application.put_env(
+        :block_scout_web,
+        :contract,
+        Keyword.merge(initial, partial_reverification_disabled: true)
+      )
+
+      on_exit(fn -> Application.put_env(:block_scout_web, :contract, initial) end)
+
+      # existing partially verified contract -> re-verifying with a partial one is rejected
+      insert(:smart_contract, address_hash: address.hash, partially_verified: true, contract_code_md5: "123")
+
+      {:ok, _} = VerificationStatus.insert_status("pending-uid", :pending, to_string(address.hash))
+
+      attrs = %{partially_verified: true, external_libraries: [], secondary_sources: []}
+
+      assert {:error, _} = SmartContract.create_or_update_smart_contract(address.hash, attrs, false)
+
+      assert Repo.get_by(VerificationStatus, uid: "pending-uid").status == 0
     end
   end
 
