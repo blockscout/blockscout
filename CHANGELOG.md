@@ -9,8 +9,16 @@
 
 ### 🐛 Bug Fixes
 
-- Eliminate mostly Logger.configure; Make debug logging on failed tx decoding ([#14601](https://github.com/blockscout/blockscout/pull/14601))
-- Handle incorrect number of top-level calls ([#14600](https://github.com/blockscout/blockscout/pull/14600))
+- Eliminate n+1 on historic exchange rate fetching ([#14615](https://github.com/blockscout/blockscout/issues/14615))
+- Prevent stuck pending_block_operations from zero-value internal transactions ([#14613](https://github.com/blockscout/blockscout/issues/14613))
+- Fix 422 in /api/v2/blocks/:block_number/countdown ([#14612](https://github.com/blockscout/blockscout/issues/14612))
+- Extend exception timeout definition ([#14610](https://github.com/blockscout/blockscout/issues/14610))
+- Prevent decoded_input_data crash on partial to_address map ([#14608](https://github.com/blockscout/blockscout/issues/14608))
+- Fix tuple json encoding error ([#14606](https://github.com/blockscout/blockscout/issues/14606))
+- Inherit timeout for update_token_instances_owner ([#14599](https://github.com/blockscout/blockscout/issues/14599))
+- Add missing preload_contract_creation_internal_transaction condition ([#14604](https://github.com/blockscout/blockscout/issues/14604))
+- Eliminate mostly Logger.configure; Make debug logging on failed tx decoding ([#14601](https://github.com/blockscout/blockscout/issues/14601))
+- Handle incorrect number of top-level calls ([#14600](https://github.com/blockscout/blockscout/issues/14600))
 - Re-run handle_partially_imported_blocks on error ([#14597](https://github.com/blockscout/blockscout/issues/14597))
 - Apply ZRC-2 token_type condition only for zilliqa ([#14585](https://github.com/blockscout/blockscout/issues/14585))
 - Use struct field access for token balance broadcast filter ([#14568](https://github.com/blockscout/blockscout/issues/14568))
@@ -30,6 +38,10 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Demote some logs to debug ([#14611](https://github.com/blockscout/blockscout/issues/14611))
+- Make async logger call on API response ([#14609](https://github.com/blockscout/blockscout/issues/14609))
+- Hibernate BufferedTask on empty queue ([#14607](https://github.com/blockscout/blockscout/issues/14607))
+- Increase logger params ([#14603](https://github.com/blockscout/blockscout/issues/14603))
 - Use Repo.replica as a default repo for transaction preload ([#14591](https://github.com/blockscout/blockscout/issues/14591))
 - Differentiate blocks count event by type ([#14573](https://github.com/blockscout/blockscout/issues/14573))
 - Add availability to broadcast blocks count instead of full block ([#14571](https://github.com/blockscout/blockscout/issues/14571))
