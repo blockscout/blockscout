@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
 
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Withdrawal}
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
+  alias Explorer.Chain.Cache.{BlockNumber, Counters.AverageBlockTime}
 
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
@@ -222,6 +223,46 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
                  | _
                ]
              } = json_response(request, 422)
+    end
+  end
+
+  describe "/blocks/{block_number}/countdown" do
+    setup do
+      start_supervised!(AverageBlockTime)
+      Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
+
+      Supervisor.terminate_child(Explorer.Supervisor, BlockNumber.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, BlockNumber.child_id())
+
+      on_exit(fn ->
+        Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
+      end)
+    end
+
+    test "returns countdown information for a future block", %{conn: conn} do
+      current_block_number = 110
+      target_block_number = 120
+      average_block_time = 15
+      first_timestamp = Timex.now()
+
+      for number <- 1..current_block_number do
+        insert(:block,
+          number: number,
+          timestamp: Timex.shift(first_timestamp, seconds: number * average_block_time),
+          consensus: true
+        )
+      end
+
+      AverageBlockTime.refresh()
+
+      request = get(conn, "/api/v2/blocks/#{target_block_number}/countdown")
+
+      assert %{
+               "current_block_number" => ^current_block_number,
+               "countdown_block_number" => ^target_block_number,
+               "remaining_blocks_count" => 10,
+               "estimated_time_in_seconds" => "150.0"
+             } = json_response(request, 200)
     end
   end
 
