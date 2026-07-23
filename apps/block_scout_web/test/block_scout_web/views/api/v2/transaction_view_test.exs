@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.TransactionViewTest do
-  use BlockScoutWeb.ConnCase, async: true
+  use BlockScoutWeb.ConnCase, async: false
 
   import ExUnit.CaptureLog
 
   alias BlockScoutWeb.API.V2.TransactionView
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Chain.Transaction
+  alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
   @tuple_input %{
@@ -23,6 +24,51 @@ defmodule BlockScoutWeb.API.V2.TransactionViewTest do
   @tuple_type "(string,string,string,string,string)"
   @tuple_value {"", "", "", "", ""}
   @tuple_json ["", "", "", "", ""]
+
+  test "loads historic exchange rates once for a transaction list", %{conn: conn} do
+    first_date = ~D[2026-07-20]
+    second_date = ~D[2026-07-21]
+
+    first_rate = insert(:market_history, date: first_date, closing_price: Decimal.new("1.25"))
+    second_rate = insert(:market_history, date: second_date, closing_price: Decimal.new("2.50"))
+
+    transactions =
+      [
+        insert(:transaction, block_timestamp: DateTime.new!(first_date, ~T[12:00:00])),
+        insert(:transaction, block_timestamp: DateTime.new!(first_date, ~T[13:00:00])),
+        insert(:transaction, block_timestamp: DateTime.new!(second_date, ~T[12:00:00]))
+      ]
+      |> Enum.map(&Map.put(&1, :block, nil))
+
+    handler_id = {__MODULE__, make_ref()}
+
+    :ok =
+      :telemetry.attach(
+        handler_id,
+        [:explorer, :repo, :query],
+        &__MODULE__.handle_market_history_query/4,
+        self()
+      )
+
+    on_exit(fn -> :telemetry.detach(handler_id) end)
+
+    items = TransactionView.render("transactions.json", %{transactions: transactions, conn: conn})
+
+    assert Enum.map(items, & &1["historic_exchange_rate"]) == [
+             first_rate.closing_price,
+             first_rate.closing_price,
+             second_rate.closing_price
+           ]
+
+    assert_receive :market_history_query
+    refute_receive :market_history_query
+  end
+
+  def handle_market_history_query(_event, _measurements, metadata, test_pid) do
+    if metadata.source == MarketHistory.__schema__(:source) do
+      send(test_pid, :market_history_query)
+    end
+  end
 
   test "decodes a tuple value from transaction input and renders it without logging a warning" do
     function_abi = %{

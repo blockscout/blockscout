@@ -228,6 +228,8 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
 
   describe "/blocks/{block_number}/countdown" do
     setup do
+      average_block_time_config = Application.get_env(:explorer, AverageBlockTime)
+
       start_supervised!(AverageBlockTime)
       Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 
@@ -235,7 +237,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       Supervisor.restart_child(Explorer.Supervisor, BlockNumber.child_id())
 
       on_exit(fn ->
-        Application.put_env(:explorer, AverageBlockTime, enabled: false, cache_period: 1_800_000)
+        Application.put_env(:explorer, AverageBlockTime, average_block_time_config)
       end)
     end
 
@@ -258,11 +260,11 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       request = get(conn, "/api/v2/blocks/#{target_block_number}/countdown")
 
       assert %{
-               "current_block_number" => ^current_block_number,
-               "countdown_block_number" => ^target_block_number,
+               "current_block_number" => current_block_number,
+               "countdown_block_number" => target_block_number,
                "remaining_blocks_count" => 10,
                "estimated_time_in_seconds" => "150.0"
-             } = json_response(request, 200)
+             } == json_response(request, 200)
     end
   end
 
