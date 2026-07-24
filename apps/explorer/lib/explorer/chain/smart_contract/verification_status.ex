@@ -87,8 +87,7 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   end
 
   @doc """
-  Marks every pending (`status = 0`) verification attempt for the given address as
-  passed (`status = 1`).
+  Marks every pending (`status = 0`) verification attempt for the given address as passed (`status = 1`).
 
   This reconciles status rows that were left pending because the verification worker
   never reached `update_status/2` — e.g. it raised after inserting the pending row, or
@@ -96,7 +95,12 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   v2, UI, Sourcify, eth_bytecode_db, Verifier Alliance). It is meant to be called
   whenever a smart contract becomes verified through any path.
 
-  Returns `{number_of_updated_rows, nil}`.
+  ## Parameters
+  - `address_hash`: The address of the verified contract, as an `Explorer.Chain.Hash.Address`
+    struct or a `0x`-prefixed string. `nil` or an unparsable value is treated as a no-op.
+
+  ## Returns
+  - `{number_of_updated_rows, nil}`: the number of pending rows that were marked as passed.
   """
   @spec set_pending_statuses_to_passed(Hash.Address.t() | binary() | nil) :: {non_neg_integer(), nil}
   def set_pending_statuses_to_passed(address_hash) do

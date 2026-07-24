@@ -993,7 +993,9 @@ defmodule Explorer.Chain.SmartContract do
     # Prepares the queries to update Explorer.Chain.Address to mark the contract as
     # verified, clear the primary flag for the contract address in
     # Explorer.Chain.Address.Name if any (enforce ShareLocks tables order (see
-    # docs: sharelocks.md)) and insert the contract details.
+    # docs: sharelocks.md)), insert the contract details and set the primary mark for
+    # the contract name. The primary name is set inside the transaction so it is rolled
+    # back together with the contract if any step fails.
     insert_contract_query =
       Multi.new()
       |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
@@ -1001,6 +1003,10 @@ defmodule Explorer.Chain.SmartContract do
         AddressName.clear_primary_address_names(repo, address_hash)
       end)
       |> Multi.insert(:smart_contract, smart_contract_changeset)
+      |> Multi.run(:set_primary_address_name, fn repo, %{smart_contract: %SmartContract{name: name}} ->
+        result = AddressName.create_primary_address_name(repo, name, address_hash)
+        {:ok, result}
+      end)
 
     # Updates the queries from the previous step with inserting additional sources
     # of the contract
@@ -1015,9 +1021,6 @@ defmodule Explorer.Chain.SmartContract do
     insert_result =
       insert_contract_query_with_additional_sources
       |> Repo.transaction()
-
-    # Set the primary mark for the contract name
-    AddressName.create_primary_address_name(Repo, Changeset.get_field(smart_contract_changeset, :name), address_hash)
 
     case insert_result do
       {:ok, %{smart_contract: smart_contract}} ->

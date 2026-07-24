@@ -131,8 +131,9 @@ defmodule Explorer.Chain.SmartContractTest do
         end)
 
       assert log =~ "Failed to create smart contract"
-      # transaction rolled back -> no contract persisted
+      # transaction rolled back -> no contract and no primary name persisted
       refute Repo.get_by(SmartContract, address_hash: valid_attrs.address_hash)
+      refute Repo.get_by(Address.Name, address_hash: valid_attrs.address_hash, primary: true)
     end
   end
 
