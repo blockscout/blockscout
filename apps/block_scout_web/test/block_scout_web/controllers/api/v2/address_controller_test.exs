@@ -328,6 +328,32 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
              } = json_response
     end
 
+    test "get minimal_proxy contract shows is_verified true", %{conn: conn} do
+      implementation_contract = insert(:smart_contract, contract_code_md5: "abc")
+
+      proxy_address = insert(:contract_address)
+
+      insert(:transaction,
+        created_contract_address_hash: proxy_address.hash,
+        input: "0x00"
+      )
+      |> with_block(status: :ok)
+
+      insert(:proxy_implementation,
+        proxy_address_hash: proxy_address.hash,
+        proxy_type: "minimal_proxy",
+        address_hashes: [implementation_contract.address_hash],
+        names: [implementation_contract.name]
+      )
+
+      request = get(conn, "/api/v2/addresses/#{Address.checksum(proxy_address.hash)}")
+
+      json_response = json_response(request, 200)
+
+      assert json_response["is_verified"] == true
+      assert json_response["proxy_type"] == "minimal_proxy"
+    end
+
     test "get EIP-1967 proxy contract info", %{conn: conn} do
       smart_contract = insert(:smart_contract)
 
