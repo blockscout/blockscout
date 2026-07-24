@@ -259,8 +259,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
   ## Returns
   - `{:ok, [{any(), ResolverBehaviour.fetched_values()}]}` if all of the values are fetched successfully,
-    map can contain nil values for failed/reverted eth_call requests.
-  - `:error` if the prefetching failed.
+    map can contain nil values for reverted eth_call requests.
+  - `:error` if the prefetching failed or an eth_call failed with a non-revert RPC error.
   """
   @spec prefetch_values([{any(), ResolverBehaviour.fetch_requirements()}], Hash.Address.t()) ::
           {:ok, [{any(), ResolverBehaviour.fetched_values()}]} | :error
@@ -296,8 +296,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
   ## Returns
   - `{:ok, prefetched_values()}` if all of the values are fetched successfully,
-    map can contain nil values for failed/reverted eth_call requests.
-  - `:error` if the prefetching failed.
+    map can contain nil values for reverted eth_call requests.
+  - `:error` if the prefetching failed or an eth_call failed with a non-revert RPC error.
   """
   @spec fetch_values([ResolverBehaviour.fetch_requirement()], Hash.Address.t()) ::
           {:ok, %{ResolverBehaviour.fetch_requirement() => String.t() | nil}} | :error
@@ -334,15 +334,15 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @doc """
   Fetches value for the given eth_getStorageAt or eth_call request for a given address hash.
 
-  The eth_call request is allowed to fail/revert, nil will be returned in such case.
+  Reverted eth_call requests return nil; other RPC failures return `:error`.
 
   ## Parameters
   - `req`: The eth_getStorageAt or eth_call request to fetch the value for.
   - `address_hash`: The address hash to fetch the value for.
 
   ## Returns
-  - `{:ok, String.t() | nil}` if the value is fetched successfully.
-  - `:error` if the fetch request failed.
+  - `{:ok, String.t() | nil}` if the value is fetched successfully or the eth_call reverted.
+  - `:error` if the fetch request failed with a non-revert RPC error.
   """
   @spec fetch_value(ResolverBehaviour.fetch_requirement(), Hash.Address.t()) :: {:ok, String.t() | nil} | :error
   def fetch_value(req, address_hash) do
