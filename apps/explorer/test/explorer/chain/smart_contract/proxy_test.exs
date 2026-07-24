@@ -305,6 +305,46 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
     assert implementation_abi == @implementation_abi
   end
 
+  describe "fetch_value/2 and fetch_values/2" do
+    setup do
+      address = insert(:address)
+      %{address: address}
+    end
+
+    test "returns nil when eth_call reverts", %{address: address} do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:error, "execution reverted"}
+      end)
+
+      assert Proxy.fetch_value({:call, "0x5c60da1b"}, address.hash) == {:ok, nil}
+    end
+
+    test "returns error when eth_call fails with a non-revert error", %{address: address} do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:error, :timeout}
+      end)
+
+      assert Proxy.fetch_value({:call, "0x5c60da1b"}, address.hash) == :error
+    end
+
+    test "returns error when batched eth_call fails with a non-revert error", %{address: address} do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:ok, [%{id: 0, error: "timeout"}]}
+      end)
+
+      assert Proxy.fetch_values([{:call, "0x5c60da1b"}], address.hash) == :error
+    end
+
+    test "returns nil for reverted batched eth_call", %{address: address} do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:ok, [%{id: 0, error: %{code: 3, message: "execution reverted"}}]}
+      end)
+
+      assert Proxy.fetch_values([{:call, "0x5c60da1b"}], address.hash) ==
+               {:ok, %{{:call, "0x5c60da1b"} => nil}}
+    end
+  end
+
   test "extract_address_hash/1" do
     assert Proxy.extract_address_hash(nil) == nil
     assert Proxy.extract_address_hash("0x") == nil

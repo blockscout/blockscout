@@ -65,6 +65,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
   @zero_address_hash_string "0x0000000000000000000000000000000000000000"
   @zero_bytes32_string "0x0000000000000000000000000000000000000000000000000000000000000000"
+  @vm_execution_error "VM execution error"
 
   @type options :: [{:api?, true | false}]
 
@@ -361,9 +362,27 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
   defp handle_response({:storage, _}, %{result: result}) when is_binary(result), do: {:ok, result}
   defp handle_response({:call, _}, %{result: result}) when is_binary(result), do: {:ok, result}
-  # TODO: it'll be better to return nil only for the revert-related errors
-  defp handle_response({:call, _}, %{error: _}), do: {:ok, nil}
+  defp handle_response({:call, _}, %{error: error}) do
+    if revert_error?(error), do: {:ok, nil}, else: :error
+  end
+
   defp handle_response(_, _), do: :error
+
+  defp revert_error?(error) do
+    error
+    |> error_message()
+    |> case do
+      message when is_binary(message) ->
+        String.contains?(message, "execution reverted") or String.contains?(message, @vm_execution_error)
+
+      _ ->
+        false
+    end
+  end
+
+  defp error_message(%{message: message}), do: to_string(message)
+  defp error_message(error) when is_binary(error) or is_atom(error), do: to_string(error)
+  defp error_message(error), do: inspect(error)
 
   @doc """
   Returns combined ABI from proxy and implementation smart-contracts
