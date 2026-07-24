@@ -121,7 +121,7 @@ defmodule Explorer.Chain.SmartContract do
   }
 
   alias Explorer.Chain.Address.Name, as: AddressName
-  alias Explorer.Chain.SmartContract.{Proxy, VerifiedContractAddressesQuery}
+  alias Explorer.Chain.SmartContract.{Proxy, VerificationStatus, VerifiedContractAddressesQuery}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Helper
@@ -910,26 +910,37 @@ defmodule Explorer.Chain.SmartContract do
       address_hash
       |> address_hash_to_smart_contract(api?: true)
 
-    cond do
-      is_nil(smart_contract) ->
-        create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    result =
+      cond do
+        is_nil(smart_contract) ->
+          create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
 
-      smart_contract.partially_verified && attrs.partially_verified &&
-          Application.get_env(:block_scout_web, :contract)[:partial_reverification_disabled] ->
-        changeset =
-          invalid_contract_changeset(
-            %SmartContract{address_hash: address_hash},
-            Helper.add_contract_code_md5(attrs),
-            "Cannot update partially verified smart contract with another partially verified contract",
-            nil,
-            verification_with_files?
-          )
+        smart_contract.partially_verified && attrs.partially_verified &&
+            Application.get_env(:block_scout_web, :contract)[:partial_reverification_disabled] ->
+          changeset =
+            invalid_contract_changeset(
+              %SmartContract{address_hash: address_hash},
+              Helper.add_contract_code_md5(attrs),
+              "Cannot update partially verified smart contract with another partially verified contract",
+              nil,
+              verification_with_files?
+            )
 
-        {:error, %{changeset | action: :insert}}
+          {:error, %{changeset | action: :insert}}
 
-      true ->
-        update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+        true ->
+          update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+      end
+
+    with {:ok, _} <- result do
+      # The contract is now verified through some path. Reconcile any verification-status
+      # rows for this address that were left pending (e.g. an RPC worker that raised before
+      # updating the status, or verification that completed via a path which does not write
+      # the status table). See Explorer.Chain.SmartContract.VerificationStatus.
+      VerificationStatus.set_pending_statuses_to_passed(address_hash)
     end
+
+    result
   end
 
   @doc """
@@ -982,7 +993,9 @@ defmodule Explorer.Chain.SmartContract do
     # Prepares the queries to update Explorer.Chain.Address to mark the contract as
     # verified, clear the primary flag for the contract address in
     # Explorer.Chain.Address.Name if any (enforce ShareLocks tables order (see
-    # docs: sharelocks.md)) and insert the contract details.
+    # docs: sharelocks.md)), insert the contract details and set the primary mark for
+    # the contract name. The primary name is set inside the transaction so it is rolled
+    # back together with the contract if any step fails.
     insert_contract_query =
       Multi.new()
       |> Multi.run(:set_address_verified, fn repo, _ -> set_address_verified(repo, address_hash) end)
@@ -990,6 +1003,10 @@ defmodule Explorer.Chain.SmartContract do
         AddressName.clear_primary_address_names(repo, address_hash)
       end)
       |> Multi.insert(:smart_contract, smart_contract_changeset)
+      |> Multi.run(:set_primary_address_name, fn repo, %{smart_contract: %SmartContract{name: name}} ->
+        result = AddressName.create_primary_address_name(repo, name, address_hash)
+        {:ok, result}
+      end)
 
     # Updates the queries from the previous step with inserting additional sources
     # of the contract
@@ -1005,18 +1022,23 @@ defmodule Explorer.Chain.SmartContract do
       insert_contract_query_with_additional_sources
       |> Repo.transaction()
 
-    # Set the primary mark for the contract name
-    AddressName.create_primary_address_name(Repo, Changeset.get_field(smart_contract_changeset, :name), address_hash)
-
     case insert_result do
       {:ok, %{smart_contract: smart_contract}} ->
         {:ok, smart_contract}
 
-      {:error, :smart_contract, changeset, _} ->
-        {:error, changeset}
+      {:error, failed_operation, failed_value, _changes_so_far} ->
+        Logger.error(fn ->
+          [
+            "Failed to create smart contract for ",
+            to_string(address_hash),
+            " at step ",
+            inspect(failed_operation),
+            ": ",
+            inspect(failed_value)
+          ]
+        end)
 
-      {:error, :set_address_verified, message, _} ->
-        {:error, message}
+        {:error, failed_value}
     end
   end
 
@@ -1117,8 +1139,19 @@ defmodule Explorer.Chain.SmartContract do
       {:ok, %{smart_contract: smart_contract}} ->
         {:ok, smart_contract}
 
-      {:error, :smart_contract, changeset, _} ->
-        {:error, changeset}
+      {:error, failed_operation, failed_value, _changes_so_far} ->
+        Logger.error(fn ->
+          [
+            "Failed to update smart contract for ",
+            to_string(address_hash),
+            " at step ",
+            inspect(failed_operation),
+            ": ",
+            inspect(failed_value)
+          ]
+        end)
+
+        {:error, failed_value}
     end
   end
 
