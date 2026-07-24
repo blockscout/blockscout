@@ -9,6 +9,8 @@
 
 ### 🐛 Bug Fixes
 
+- Disable ETH bytecode DB sources fetching for minimal proxies ([#14622](https://github.com/blockscout/blockscout/issues/14622))
+- Reconcile stuck pending smart_contract_verification_statuses ([#14616](https://github.com/blockscout/blockscout/issues/14616))
 - Eliminate n+1 on historic exchange rate fetching ([#14615](https://github.com/blockscout/blockscout/issues/14615))
 - Prevent stuck pending_block_operations from zero-value internal transactions ([#14613](https://github.com/blockscout/blockscout/issues/14613))
 - Fix 422 in /api/v2/blocks/:block_number/countdown ([#14612](https://github.com/blockscout/blockscout/issues/14612))
@@ -38,6 +40,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add api-v2-temp-token-ttl ([#14620](https://github.com/blockscout/blockscout/issues/14620))
 - Demote some logs to debug ([#14611](https://github.com/blockscout/blockscout/issues/14611))
 - Make async logger call on API response ([#14609](https://github.com/blockscout/blockscout/issues/14609))
 - Hibernate BufferedTask on empty queue ([#14607](https://github.com/blockscout/blockscout/issues/14607))
