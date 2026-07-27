@@ -34,6 +34,41 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetricsTest do
     end
   end
 
+  describe "refetch_needed_blocks_count/0" do
+    test "counts only consensus blocks marked for refetch within configured ranges and latest tail" do
+      previous_block_ranges = Application.get_env(:indexer, :block_ranges)
+      on_exit(fn -> Application.put_env(:indexer, :block_ranges, previous_block_ranges) end)
+
+      Application.put_env(:indexer, :block_ranges, "1..3,5..latest")
+
+      # within ranges, consensus and refetch_needed -> counted
+      insert(:block, number: 1, consensus: true, refetch_needed: true)
+      insert(:block, number: 7, consensus: true, refetch_needed: true)
+      # within ranges but not marked -> not counted
+      insert(:block, number: 2, consensus: true, refetch_needed: false)
+      # marked but not consensus -> not counted
+      insert(:block, number: 3, consensus: false, refetch_needed: true)
+      # marked and consensus but outside the ranges -> not counted
+      insert(:block, number: 4, consensus: true, refetch_needed: true)
+
+      assert IndexerMetrics.refetch_needed_blocks_count() == 2
+    end
+
+    test "counts only within finite ranges" do
+      previous_block_ranges = Application.get_env(:indexer, :block_ranges)
+      on_exit(fn -> Application.put_env(:indexer, :block_ranges, previous_block_ranges) end)
+
+      Application.put_env(:indexer, :block_ranges, "10..12,20..22")
+
+      insert(:block, number: 11, consensus: true, refetch_needed: true)
+      insert(:block, number: 21, consensus: true, refetch_needed: true)
+      # outside the finite ranges -> not counted
+      insert(:block, number: 30, consensus: true, refetch_needed: true)
+
+      assert IndexerMetrics.refetch_needed_blocks_count() == 2
+    end
+  end
+
   describe "missing_internal_transactions_count/0" do
     test "counts pending block operations when pending_operations_type is blocks" do
       previous_explorer_config = Application.get_env(:explorer, :json_rpc_named_arguments)
