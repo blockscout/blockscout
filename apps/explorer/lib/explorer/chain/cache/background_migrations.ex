@@ -77,6 +77,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_create_addresses_hash_contract_code_not_null_index_finished,
     key: :heavy_indexes_create_address_ids_internal_transactions_indexes_finished,
     key: :fill_internal_transactions_address_ids_finished,
+    key: :heavy_indexes_create_logs_address_hash_first_topic_second_topic_block_number_index_finished,
+    key: :heavy_indexes_create_address_current_token_balances_address_hash_block_number_index_finished,
     key: :heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished,
     key: :create_logs_block_number_transaction_index_index_unique_index_finished,
     key: :fill_logs_optimized_fields_finished
@@ -99,6 +101,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
   }
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
+    CreateAddressCurrentTokenBalancesAddressHashBlockNumberIndex,
     CreateAddressesHashContractCodeNotNullIndex,
     CreateAddressesTransactionsCountAscCoinBalanceDescHashPartialIndex,
     CreateAddressesTransactionsCountDescPartialIndex,
@@ -110,6 +113,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
     CreateLogsAddressHashBlockNumberDescIndexDescIndex,
     CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
+    CreateLogsAddressHashFirstTopicSecondTopicBlockNumberIndex,
     CreateLogsAddressIdBlockNumberDescIndexDescIndex,
     CreateLogsAddressIdFirstTopicBlockNumberIndexIndex,
     CreateLogsBlockHashIndex,
@@ -342,6 +346,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     )
   end
 
+  defp handle_fallback(:heavy_indexes_create_address_current_token_balances_address_hash_block_number_index_finished) do
+    set_and_return_migration_status(
+      CreateAddressCurrentTokenBalancesAddressHashBlockNumberIndex,
+      &set_heavy_indexes_create_address_current_token_balances_address_hash_block_number_index_finished/1
+    )
+  end
+
   defp handle_fallback(:heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index) do
     set_and_return_migration_status(
       DropTransactionsCreatedContractAddressHashWithPendingIndex,
@@ -481,6 +492,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       FillInternalTransactionsAddressIds,
       &set_fill_internal_transactions_address_ids_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_logs_address_hash_first_topic_second_topic_block_number_index_finished) do
+    set_and_return_migration_status(
+      CreateLogsAddressHashFirstTopicSecondTopicBlockNumberIndex,
+      &set_heavy_indexes_create_logs_address_hash_first_topic_second_topic_block_number_index_finished/1
     )
   end
 

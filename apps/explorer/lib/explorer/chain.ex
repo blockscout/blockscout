@@ -884,7 +884,13 @@ defmodule Explorer.Chain do
     query
     |> join_associations(necessity_by_association)
     |> select_repo(options).one()
-    |> Address.maybe_preload_contract_creation_internal_transaction(select_repo(options))
+    |> then(fn address ->
+      if Keyword.get(options, :preload_contract_creation_internal_transaction, false) do
+        Address.maybe_preload_contract_creation_internal_transaction(address, select_repo(options))
+      else
+        address
+      end
+    end)
     |> SmartContract.compose_address_for_unverified_smart_contract(hash, options)
     |> case do
       nil -> {:error, :not_found}
@@ -2434,10 +2440,11 @@ defmodule Explorer.Chain do
     Repo.exists?(query)
   end
 
-  @spec fetch_last_token_balances_include_unfetched([Hash.Address.t()], [api?]) :: []
-  def fetch_last_token_balances_include_unfetched(address_hashes, options \\ []) when is_list(address_hashes) do
+  @spec fetch_last_token_balances_include_unfetched([Hash.Address.t()], Block.block_number(), [api?]) :: []
+  def fetch_last_token_balances_include_unfetched(address_hashes, stale_balance_window, options \\ [])
+      when is_list(address_hashes) do
     address_hashes
-    |> CurrentTokenBalance.last_token_balances_include_unfetched()
+    |> CurrentTokenBalance.last_token_balances_include_unfetched(stale_balance_window)
     |> select_repo(options).all()
   end
 

@@ -201,6 +201,8 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsCreatedContractAddressHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAddressHashPartialIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsToAddressHashPartialIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopicSecondTopicBlockNumberIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesAddressHashBlockNumberIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsTokenTransferMethodIdOrderedIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransactionIndexIndexUniqueIndex,
       Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsBlockNumberTransactionIndexNotNull,

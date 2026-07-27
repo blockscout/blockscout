@@ -125,17 +125,12 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
         {200, body |> Utils.JSON.decode() |> parsing_function.()}
 
       {_, %{body: body, status_code: status_code} = error} ->
-        old_truncate = Application.get_env(:logger, :truncate)
-        Logger.configure(truncate: :infinity)
-
         Logger.error(fn ->
           [
             "Error while sending request to Metadata microservice url: #{url}: ",
-            inspect(error, limit: :infinity, printable_limit: :infinity)
+            inspect(error)
           ]
         end)
-
-        Logger.configure(truncate: old_truncate)
 
         case Utils.JSON.decode(body) do
           {:ok, response_json} -> {status_code, response_json}

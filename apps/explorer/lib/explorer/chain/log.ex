@@ -315,7 +315,7 @@ defmodule Explorer.Chain.Log do
     end
   rescue
     e ->
-      Logger.warning(fn ->
+      Logger.debug(fn ->
         [
           "Could not decode input data for log: ",
           inspect(log),

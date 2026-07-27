@@ -2,8 +2,23 @@
 defmodule Explorer.Market.MarketHistoryTest do
   use Explorer.DataCase
 
-  alias Explorer.Repo
   alias Explorer.Market.MarketHistory
+  alias Explorer.Repo
+
+  describe "prices_at_dates/3" do
+    test "returns primary coin history for the requested dates" do
+      first = insert(:market_history, date: ~D[2026-07-20], secondary_coin: false)
+      second = insert(:market_history, date: ~D[2026-07-21], secondary_coin: false)
+      insert(:market_history, date: ~D[2026-07-20], secondary_coin: true)
+
+      assert MarketHistory.prices_at_dates([first.date, second.date, ~D[2026-07-22]])
+             |> MapSet.new() == MapSet.new([first, second])
+    end
+
+    test "returns no records for an empty date list" do
+      assert MarketHistory.prices_at_dates([]) == []
+    end
+  end
 
   describe "bulk_insert/1" do
     test "replaces existing records" do

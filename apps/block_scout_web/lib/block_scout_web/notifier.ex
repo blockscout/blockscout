@@ -128,7 +128,7 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :address_token_balances, type, address_token_balances})
       when type in [:realtime, :on_demand] do
     address_token_balances
-    |> Enum.filter(fn balance -> address_has_subscribers?(balance[:address_hash]) end)
+    |> Enum.filter(fn balance -> address_has_subscribers?(balance.address_hash) end)
     |> Enum.each(&broadcast_address_token_balance/1)
   end
 
@@ -198,13 +198,10 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   def handle_event({:chain_event, :blocks, :realtime, blocks}) do
-    last_broadcasted_block_number = Helper.fetch_from_ets_cache(:last_broadcasted_block, :number)
-
-    blocks
-    |> Enum.sort_by(& &1.number, :asc)
-    |> Enum.each(fn block ->
-      broadcast_latest_block?(block, last_broadcasted_block_number)
-    end)
+    case Application.get_env(:block_scout_web, __MODULE__)[:block_broadcast_type] do
+      :count -> do_handle_blocks_count(blocks)
+      _ -> do_handle_blocks(blocks)
+    end
   end
 
   def handle_event({:chain_event, :exchange_rate}) do
@@ -466,6 +463,24 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event(event) do
     Logger.warning("Unknown broadcasted event #{inspect(event)}.")
     nil
+  end
+
+  defp do_handle_blocks_count(blocks) do
+    blocks
+    |> Enum.group_by(&(&1 |> BlockScoutWeb.BlockView.block_type() |> String.downcase()))
+    |> Enum.each(fn {type, blocks_list} ->
+      Endpoint.broadcast("blocks:new_block", "new_blocks_count", %{count: Enum.count(blocks_list), type: type})
+    end)
+  end
+
+  defp do_handle_blocks(blocks) do
+    last_broadcasted_block_number = Helper.fetch_from_ets_cache(:last_broadcasted_block, :number)
+
+    blocks
+    |> Enum.sort_by(& &1.number, :asc)
+    |> Enum.each(fn block ->
+      broadcast_latest_block?(block, last_broadcasted_block_number)
+    end)
   end
 
   def fetch_compiler_version(compiler) do

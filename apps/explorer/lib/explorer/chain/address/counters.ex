@@ -349,7 +349,7 @@ defmodule Explorer.Chain.Address.Counters do
         stop = System.monotonic_time()
         diff = System.convert_time_unit(stop - start, :native, :millisecond)
 
-        Logger.info("Time consumed for transactions_from_count_task for #{address_hash} is #{diff}ms")
+        Logger.debug("Time consumed for transactions_from_count_task for #{address_hash} is #{diff}ms")
 
         AddressTabsElementsCount.save_transactions_counter_progress(address_hash, %{
           transactions_types: [:transactions_from],
@@ -374,7 +374,7 @@ defmodule Explorer.Chain.Address.Counters do
         stop = System.monotonic_time()
         diff = System.convert_time_unit(stop - start, :native, :millisecond)
 
-        Logger.info("Time consumed for transactions_to_count_task for #{address_hash} is #{diff}ms")
+        Logger.debug("Time consumed for transactions_to_count_task for #{address_hash} is #{diff}ms")
 
         AddressTabsElementsCount.save_transactions_counter_progress(address_hash, %{
           transactions_types: [:transactions_to],
@@ -399,7 +399,7 @@ defmodule Explorer.Chain.Address.Counters do
         stop = System.monotonic_time()
         diff = System.convert_time_unit(stop - start, :native, :millisecond)
 
-        Logger.info("Time consumed for transactions_created_contract_count_task for #{address_hash} is #{diff}ms")
+        Logger.debug("Time consumed for transactions_created_contract_count_task for #{address_hash} is #{diff}ms")
 
         AddressTabsElementsCount.save_transactions_counter_progress(address_hash, %{
           transactions_types: [:transactions_contract],
@@ -570,7 +570,7 @@ defmodule Explorer.Chain.Address.Counters do
       stop = System.monotonic_time()
       diff = System.convert_time_unit(stop - start, :native, :millisecond)
 
-      Logger.info("Time consumed for #{counter_type} counter task for #{address_hash} is #{diff}ms")
+      Logger.debug("Time consumed for #{counter_type} counter task for #{address_hash} is #{diff}ms")
 
       AddressTabsElementsCount.set_counter(counter_type, address_hash, result, show_scam_tokens?)
       AddressTabsElementsCount.drop_task(counter_type, address_hash, show_scam_tokens?)

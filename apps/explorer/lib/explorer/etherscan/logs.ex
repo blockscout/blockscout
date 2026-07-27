@@ -6,7 +6,11 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
+<<<<<<< HEAD
   import Ecto.Query
+=======
+  import Ecto.Query, only: [dynamic: 2, from: 2, where: 2, where: 3, subquery: 1, order_by: 3, union_all: 2]
+>>>>>>> origin/master
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{DenormalizationHelper, Log, Transaction}
@@ -75,16 +79,25 @@ defmodule Explorer.Etherscan.Logs do
     paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
 
+    # With `union_multiple_values: true` `where_topic_match/3` may turn the
+    # query into a UNION ALL, so it must be applied last: `where/3` on a
+    # combination query would only affect its first branch.
     logs_query =
       Log
+<<<<<<< HEAD
       |> Log.address_match_query(address_hash)
       |> where_topic_match(prepared_filter)
+=======
+      |> where([log], log.address_hash == ^address_hash)
+>>>>>>> origin/master
       |> where([log], log.block_number >= ^prepared_filter.from_block)
       |> where([log], log.block_number <= ^prepared_filter.to_block)
       |> page_logs(paging_options)
+      |> where_topic_match(prepared_filter, union_multiple_values: true)
 
     if DenormalizationHelper.transactions_denormalization_finished?() do
       all_transaction_logs_query =
+<<<<<<< HEAD
         logs_query
         |> subquery()
         |> Log.join_transaction_query()
@@ -104,6 +117,25 @@ defmodule Explorer.Etherscan.Logs do
         })
         |> order_by([log], asc: as(:transaction).block_number, asc: log.index)
         |> limit(1000)
+=======
+        from(log in subquery(logs_query),
+          join: transaction in Transaction,
+          on: log.transaction_hash == transaction.hash and log.block_hash == transaction.block_hash,
+          where: transaction.block_consensus == true,
+          select: map(log, ^@log_fields),
+          select_merge: %{
+            gas_price: transaction.gas_price,
+            gas_used: transaction.gas_used,
+            transaction_index: transaction.index,
+            block_hash: transaction.block_hash,
+            block_number: transaction.block_number,
+            block_timestamp: transaction.block_timestamp,
+            block_consensus: transaction.block_consensus
+          },
+          order_by: [asc: log.block_number, asc: log.index],
+          limit: 1000
+        )
+>>>>>>> origin/master
 
       all_transaction_logs_query
       |> Chain.wrapped_union_subquery()
@@ -111,6 +143,7 @@ defmodule Explorer.Etherscan.Logs do
       |> Repo.replica().all()
     else
       all_transaction_logs_query =
+<<<<<<< HEAD
         logs_query
         |> subquery()
         |> Log.join_transaction_query()
@@ -131,6 +164,26 @@ defmodule Explorer.Etherscan.Logs do
         })
         |> order_by([log, _t, _am, block], asc: block.number, asc: log.index)
         |> limit(1000)
+=======
+        from(log in subquery(logs_query),
+          join: transaction in Transaction,
+          on: log.transaction_hash == transaction.hash and log.block_hash == transaction.block_hash,
+          inner_join: block in assoc(transaction, :block),
+          where: block.consensus == true,
+          select: map(log, ^@log_fields),
+          select_merge: %{
+            gas_price: transaction.gas_price,
+            gas_used: transaction.gas_used,
+            transaction_index: transaction.index,
+            block_hash: transaction.block_hash,
+            block_number: transaction.block_number,
+            block_timestamp: block.timestamp,
+            block_consensus: block.consensus
+          },
+          order_by: [asc: log.block_number, asc: log.index],
+          limit: 1000
+        )
+>>>>>>> origin/master
 
       all_transaction_logs_query
       |> Chain.wrapped_union_subquery()
@@ -150,7 +203,12 @@ defmodule Explorer.Etherscan.Logs do
   def list_logs(filter, paging_options) do
     paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
-    logs_query = where_topic_match(Log, prepared_filter)
+
+    logs_query =
+      Log
+      |> where_topic_match(prepared_filter)
+      |> where([log], log.block_number >= ^prepared_filter.from_block)
+      |> where([log], log.block_number <= ^prepared_filter.to_block)
 
     if DenormalizationHelper.transactions_denormalization_finished?() do
       block_transaction_query =
@@ -171,6 +229,7 @@ defmodule Explorer.Etherscan.Logs do
         )
 
       query_with_block_transaction_data =
+<<<<<<< HEAD
         logs_query
         |> then(fn query ->
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
@@ -205,6 +264,18 @@ defmodule Explorer.Etherscan.Logs do
         |> select([_l, block_transaction_data], block_transaction_data)
         |> select_merge([log], map(log, ^@log_fields))
         |> select_merge([log], %{address_hash: coalesce(log.address_hash, as(:address_mapping).address_hash)})
+=======
+        from(log in logs_query,
+          join: block_transaction_data in subquery(block_transaction_query),
+          on:
+            block_transaction_data.transaction_hash == log.transaction_hash and
+              block_transaction_data.block_hash == log.block_hash,
+          order_by: log.block_number,
+          limit: 1000,
+          select: block_transaction_data,
+          select_merge: map(log, ^@log_fields)
+        )
+>>>>>>> origin/master
 
       query_with_block_transaction_data
       |> order_by([log], asc: log.index)
@@ -230,6 +301,7 @@ defmodule Explorer.Etherscan.Logs do
         )
 
       query_with_block_transaction_data =
+<<<<<<< HEAD
         logs_query
         |> then(fn query ->
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
@@ -264,6 +336,16 @@ defmodule Explorer.Etherscan.Logs do
         |> select([_l, block_transaction_data], block_transaction_data)
         |> select_merge([log], map(log, ^@log_fields))
         |> select_merge([log], %{address_hash: coalesce(log.address_hash, as(:address_mapping).address_hash)})
+=======
+        from(log in logs_query,
+          join: block_transaction_data in subquery(block_transaction_query),
+          on: block_transaction_data.transaction_hash == log.transaction_hash,
+          order_by: log.block_number,
+          limit: 1000,
+          select: block_transaction_data,
+          select_merge: map(log, ^@log_fields)
+        )
+>>>>>>> origin/master
 
       query_with_block_transaction_data
       |> order_by([log], asc: log.index)
@@ -288,7 +370,11 @@ defmodule Explorer.Etherscan.Logs do
     topic2_3_opr: {:third_topic, :fourth_topic}
   }
 
-  defp where_topic_match(query, filter) do
+  # Above this number of values for a single topic, fall back to
+  # `= ANY(...)` to keep query size and planning time bounded.
+  @max_topic_union_branches 16
+
+  defp where_topic_match(query, filter, opts \\ []) do
     filter = sanitize_filter_topics(filter)
 
     case Enum.filter(@topics, &filter[&1]) do
@@ -296,11 +382,49 @@ defmodule Explorer.Etherscan.Logs do
         query
 
       [topic] ->
+<<<<<<< HEAD
         Log.filter_by_topic_query(query, topic, filter[topic])
+=======
+        where_single_topic_match(query, topic, filter[topic], opts)
+>>>>>>> origin/master
 
       _ ->
         where_multiple_topics_match(query, filter)
     end
+  end
+
+  # With `union_multiple_values: true`, a single topic with multiple values
+  # is combined with UNION ALL (one equality branch per value) instead of
+  # `topic = ANY(...)`: a scalar-array condition on a topic column prevents
+  # PostgreSQL from returning rows in `(block_number, index)` order from the
+  # (address_hash, first_topic, block_number, index) index, forcing it to
+  # materialize and sort every match in the block range before applying the
+  # LIMIT. With UNION ALL each branch is an ordered index scan, so the
+  # planner can merge branches and stop at the LIMIT. The resulting
+  # combination query must be wrapped in `subquery/1` by the caller before
+  # any further composition.
+  defp where_single_topic_match(query, topic, values, opts) when is_list(values) do
+    if Keyword.get(opts, :union_multiple_values, false) and length(values) <= @max_topic_union_branches do
+      values
+      |> Enum.map(fn value -> where(query, [l], field(l, ^topic) == ^value) end)
+      |> Enum.reduce(fn branch, acc -> union_all(acc, ^branch) end)
+    else
+      where(query, ^topic_condition(topic, values))
+    end
+  end
+
+  defp where_single_topic_match(query, topic, value, _opts) do
+    where(query, [l], field(l, ^topic) == ^value)
+  end
+
+  # Equality instead of `= ANY(...)` for scalar values matters for
+  # performance: see `where_single_topic_match/3`.
+  defp topic_condition(topic, values) when is_list(values) do
+    dynamic([l], field(l, ^topic) in ^values)
+  end
+
+  defp topic_condition(topic, value) do
+    dynamic([l], field(l, ^topic) == ^value)
   end
 
   defp sanitize_filter_topics(filter) do
@@ -352,6 +476,7 @@ defmodule Explorer.Etherscan.Logs do
   defp where_multiple_topics_match(query, filter, topic_operation, "and") do
     {topic_a, topic_b} = @topic_operations[topic_operation]
 
+<<<<<<< HEAD
     dynamic =
       dynamic(
         [l],
@@ -360,11 +485,25 @@ defmodule Explorer.Etherscan.Logs do
       )
 
     where(query, [l], ^dynamic)
+=======
+    where(
+      query,
+      ^dynamic([l], ^topic_condition(topic_a, filter[topic_a]) and ^topic_condition(topic_b, filter[topic_b]))
+    )
+>>>>>>> origin/master
   end
 
   defp where_multiple_topics_match(query, filter, topic_operation, "or") do
     {topic_a, topic_b} = @topic_operations[topic_operation]
+<<<<<<< HEAD
     where(query, [l], ^Log.filter_by_topic_dynamic([topic_a, topic_b], [[filter[topic_a]], List.wrap(filter[topic_b])]))
+=======
+
+    where(
+      query,
+      ^dynamic([l], ^topic_condition(topic_a, filter[topic_a]) or ^topic_condition(topic_b, filter[topic_b]))
+    )
+>>>>>>> origin/master
   end
 
   defp where_multiple_topics_match(query, _, _, _), do: query

@@ -15,15 +15,8 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
 
   @behaviour BufferedTask
 
-  @max_batch_size 10
-  @max_concurrency 4
-  @defaults [
-    flush_interval: :timer.seconds(3),
-    max_concurrency: @max_concurrency,
-    max_batch_size: @max_batch_size,
-    task_supervisor: Indexer.Fetcher.ReplacedTransaction.TaskSupervisor,
-    metadata: [fetcher: :replaced_transaction]
-  ]
+  @default_max_batch_size 10
+  @default_max_concurrency 4
 
   @spec async_fetch(
           [
@@ -47,11 +40,21 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
   @doc false
   def child_spec([init_options, gen_server_options]) do
     merged_init_opts =
-      @defaults
+      defaults()
       |> Keyword.merge(init_options)
       |> Keyword.put(:state, {})
 
     Supervisor.child_spec({BufferedTask, [{__MODULE__, merged_init_opts}, gen_server_options]}, id: __MODULE__)
+  end
+
+  defp defaults do
+    [
+      flush_interval: :timer.seconds(3),
+      max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency] || @default_max_concurrency,
+      max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size] || @default_max_batch_size,
+      task_supervisor: Indexer.Fetcher.ReplacedTransaction.TaskSupervisor,
+      metadata: [fetcher: :replaced_transaction]
+    ]
   end
 
   @impl BufferedTask

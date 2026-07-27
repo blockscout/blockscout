@@ -320,6 +320,104 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       assert Repo.exists?(from(i in Chain.InternalTransaction, where: i.block_number == ^block_number))
     end
 
+    test "retries fetching by transactions when fetching by block returns incorrect number of top-level calls", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      block = insert(:block, number: 1)
+      transaction1 = insert(:transaction) |> with_block(block)
+      insert(:transaction) |> with_block(block)
+      block_hash = block.hash
+      block_number = block.number
+
+      insert(:pending_block_operation,
+        block_hash: block_hash,
+        block_number: block_number
+      )
+
+      json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :variant, EthereumJSONRPC.Geth)
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn
+          [%{id: id, method: "debug_traceBlockByNumber"}], _options ->
+            {:ok,
+             [
+               %{
+                 id: id,
+                 error: %{
+                   code: -32000,
+                   message: "incorrect number of top-level calls"
+                 }
+               }
+             ]}
+        end)
+        |> expect(:json_rpc, fn
+          [%{id: id, method: "debug_traceTransaction"}], _options ->
+            {:ok,
+             [
+               %{
+                 id: id,
+                 result: %{
+                   "blockNumber" => block_number,
+                   "transactionIndex" => transaction1.index,
+                   "transactionHash" => transaction1.hash,
+                   "index" => 0,
+                   "traceAddress" => [],
+                   "type" => "call",
+                   "callType" => "call",
+                   "from" => "0xa931c862e662134b85e4dc4baf5c70cc9ba74db4",
+                   "to" => "0x1469b17ebf82fedf56f04109e5207bdc4554288c",
+                   "gas" => "0x8600",
+                   "gasUsed" => "0x7d37",
+                   "input" => "0xb118e2db0000000000000000000000000000000000000000000000000000000000000008",
+                   "output" => "0x",
+                   "value" => "0x174876e800"
+                 }
+               }
+             ]}
+        end)
+        |> expect(:json_rpc, fn
+          [%{id: id, method: "debug_traceTransaction"}], _options ->
+            {:ok,
+             [
+               %{
+                 id: id,
+                 error: %{
+                   code: -32000,
+                   message: "incorrect number of top-level calls"
+                 }
+               }
+             ]}
+        end)
+      end
+
+      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :allow_empty_traces?, true))
+
+      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      start_token_balance_fetcher(json_rpc_named_arguments)
+
+      assert %{block_hash: ^block_hash} = Repo.get(PendingBlockOperation, block_hash)
+
+      assert :ok ==
+               InternalTransaction.run(
+                 [block_number],
+                 json_rpc_named_arguments
+               )
+
+      assert nil == Repo.get(PendingBlockOperation, block_hash)
+
+      assert Repo.exists?(
+               from(
+                 internal_transaction in Chain.InternalTransaction,
+                 where: internal_transaction.block_number == ^block_number
+               )
+             )
+    end
+
     test "handles failure by retrying only unique numbers", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do

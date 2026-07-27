@@ -1,5 +1,64 @@
 # Changelog
 
+## 11.2.3
+
+### 🚀 Features
+
+- Make ReplacedTransaction fetcher batch/concurrency configurable and auto-disable it when pending transactions fetcher is off ([#14576](https://github.com/blockscout/blockscout/issues/14576))
+- Report per-process memory in memory_consumed metric ([#14572](https://github.com/blockscout/blockscout/issues/14572))
+
+### 🐛 Bug Fixes
+
+- Disable ETH bytecode DB sources fetching for minimal proxies ([#14622](https://github.com/blockscout/blockscout/issues/14622))
+- Reconcile stuck pending smart_contract_verification_statuses ([#14616](https://github.com/blockscout/blockscout/issues/14616))
+- Eliminate n+1 on historic exchange rate fetching ([#14615](https://github.com/blockscout/blockscout/issues/14615))
+- Prevent stuck pending_block_operations from zero-value internal transactions ([#14613](https://github.com/blockscout/blockscout/issues/14613))
+- Fix 422 in /api/v2/blocks/:block_number/countdown ([#14612](https://github.com/blockscout/blockscout/issues/14612))
+- Extend exception timeout definition ([#14610](https://github.com/blockscout/blockscout/issues/14610))
+- Prevent decoded_input_data crash on partial to_address map ([#14608](https://github.com/blockscout/blockscout/issues/14608))
+- Fix tuple json encoding error ([#14606](https://github.com/blockscout/blockscout/issues/14606))
+- Inherit timeout for update_token_instances_owner ([#14599](https://github.com/blockscout/blockscout/issues/14599))
+- Add missing preload_contract_creation_internal_transaction condition ([#14604](https://github.com/blockscout/blockscout/issues/14604))
+- Eliminate mostly Logger.configure; Make debug logging on failed tx decoding ([#14601](https://github.com/blockscout/blockscout/issues/14601))
+- Handle incorrect number of top-level calls ([#14600](https://github.com/blockscout/blockscout/issues/14600))
+- Re-run handle_partially_imported_blocks on error ([#14597](https://github.com/blockscout/blockscout/issues/14597))
+- Apply ZRC-2 token_type condition only for zilliqa ([#14585](https://github.com/blockscout/blockscout/issues/14585))
+- Use struct field access for token balance broadcast filter ([#14568](https://github.com/blockscout/blockscout/issues/14568))
+- Adapt uncataloged_token_transfer_block_numbers for arc ([#14564](https://github.com/blockscout/blockscout/issues/14564))
+
+### 📚 Documentation
+
+- Update CONTRIBUTING.md: target PRs at dev branch ([#14549](https://github.com/blockscout/blockscout/issues/14549))
+
+### ⚡ Performance
+
+- Optimize transaction to internal transaction preload ([#14596](https://github.com/blockscout/blockscout/issues/14596))
+- Use equality and UNION ALL instead of = ANY for topic filters in Etherscan getLogs ([#14595](https://github.com/blockscout/blockscout/issues/14595))
+- Push token balance staleness filter into SQL and add supporting index ([#14592](https://github.com/blockscout/blockscout/issues/14592))
+- Optimize topic-only getLogs ordering and add supporting logs index ([#14593](https://github.com/blockscout/blockscout/issues/14593))
+- Order getLogs by log.block_number to enable early LIMIT ([#14588](https://github.com/blockscout/blockscout/issues/14588))
+
+### ⚙️ Miscellaneous Tasks
+
+- Add api-v2-temp-token-ttl ([#14620](https://github.com/blockscout/blockscout/issues/14620))
+- Demote some logs to debug ([#14611](https://github.com/blockscout/blockscout/issues/14611))
+- Make async logger call on API response ([#14609](https://github.com/blockscout/blockscout/issues/14609))
+- Hibernate BufferedTask on empty queue ([#14607](https://github.com/blockscout/blockscout/issues/14607))
+- Increase logger params ([#14603](https://github.com/blockscout/blockscout/issues/14603))
+- Use Repo.replica as a default repo for transaction preload ([#14591](https://github.com/blockscout/blockscout/issues/14591))
+- Differentiate blocks count event by type ([#14573](https://github.com/blockscout/blockscout/issues/14573))
+- Add availability to broadcast blocks count instead of full block ([#14571](https://github.com/blockscout/blockscout/issues/14571))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `INDEXER_REPLACED_TRANSACTIONS_BATCH_SIZE`                    | Batch size for replaced transactions fetcher. Implemented in [#14576](https://github.com/blockscout/blockscout/pull/14576).                                                                                                                                                                                                                                                                                                                                                                                                      | Version: v11.2.3\+ <br />Default: `10` <br />Applications: Indexer                                         |
+| `INDEXER_REPLACED_TRANSACTIONS_CONCURRENCY`                   | Concurrency for replaced transactions fetcher. Implemented in [#14576](https://github.com/blockscout/blockscout/pull/14576).                                                                                                                                                                                                                                                                                                                                                                                                     | Version: v11.2.3\+ <br />Default: `4` <br />Applications: Indexer                                          |
+| `BLOCK_BROADCAST_TYPE`                                  | Type of data sent in new block socket events. May be `block` for full block data or `count` for new blocks count. Implemented in [#14571](https://github.com/blockscout/blockscout/pull/14571).                                                                                                                                                                                                                                                    | Version: v11.2.3\+ <br />Default: `block` <br />Applications: API                                                                                                                                                                                                                                                                                                       |
+| `INDEXER_HANDLE_PARTIALLY_IMPORTED_BLOCK_INTERVAL`            | Interval between retrying to set `refetch_needed=true` for blocks whose import failed on some stage in cases when setting `refetch_needed` fails itself. Implemented in [#14597](https://github.com/blockscout/blockscout/pull/14597).                                                                                                                                                                                                                                                                                           | Version: v11.2.3\+ <br />Default: `1s` <br />Applications: Indexer                                         |
+
+
 ## 11.2.2
 
 ### 🚀 Features

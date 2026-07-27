@@ -8,18 +8,28 @@ defmodule Explorer.Chain.DecodingHelper do
 
   require Logger
 
-  def value_json(type, value) do
-    decoded_type = FunctionSelector.decode_type(type)
+  def value_json(type_specification, value) do
+    decoded_type =
+      case type_specification do
+        %{"type" => _type} -> FunctionSelector.parse_specification_type(type_specification)
+        type -> FunctionSelector.decode_type(type)
+      end
 
     do_value_json(decoded_type, value)
   rescue
     exception ->
       Logger.warning(fn ->
-        ["Error determining value json for #{inspect(type)}: ", Exception.format(:error, exception, __STACKTRACE__)]
+        [
+          "Error determining value json for #{inspect(type_name(type_specification))}: ",
+          Exception.format(:error, exception, __STACKTRACE__)
+        ]
       end)
 
       nil
   end
+
+  defp type_name(%{"type" => type}), do: type
+  defp type_name(type), do: type
 
   defp do_value_json({:bytes, _}, value) do
     do_value_json(:bytes, value)

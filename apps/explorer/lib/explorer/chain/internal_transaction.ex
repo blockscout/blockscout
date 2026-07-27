@@ -1425,20 +1425,39 @@ defmodule Explorer.Chain.InternalTransaction do
   - A list of internal transactions with the `:transaction` field populated
   - A single internal transaction with the `:transaction` field populated
   """
-  @spec preload_transaction(__MODULE__.t() | [__MODULE__.t()] | nil, module(), [Transaction.t()] | nil) ::
+  @spec preload_transaction(__MODULE__.t() | [__MODULE__.t()] | nil, module() | nil, [Transaction.t()] | nil) ::
           __MODULE__.t() | [__MODULE__.t()] | nil
-  def preload_transaction(internal_transactions, repo \\ Repo, transactions \\ nil)
+  def preload_transaction(internal_transactions, repo \\ nil, transactions \\ nil)
 
   def preload_transaction(nil, _repo, _transactions), do: nil
 
   def preload_transaction(internal_transactions, repo, existing_transactions) when is_list(internal_transactions) do
+    repo = repo || Repo.replica()
+
     transactions =
       case existing_transactions do
         nil ->
-          internal_transactions
-          |> Enum.map(&{&1.block_number, &1.transaction_index})
-          |> Enum.uniq()
-          |> Transaction.by_block_number_index_query()
+          {block_numbers, transaction_indexes} =
+            internal_transactions
+            |> Enum.map(&{&1.block_number, &1.transaction_index})
+            |> Enum.uniq()
+            |> Enum.unzip()
+
+          from(
+            pair in fragment(
+              """
+              SELECT *
+              FROM unnest(?::integer[], ?::integer[]) AS pair(block_number, transaction_index)
+              """,
+              type(^block_numbers, {:array, :integer}),
+              type(^transaction_indexes, {:array, :integer})
+            ),
+            join: transaction in Transaction,
+            on:
+              transaction.block_number == pair.block_number and
+                transaction.index == pair.transaction_index,
+            select: transaction
+          )
           |> repo.all()
 
         transactions ->

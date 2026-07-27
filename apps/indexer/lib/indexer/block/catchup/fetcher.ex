@@ -275,7 +275,8 @@ defmodule Indexer.Block.Catchup.Fetcher do
   defp timeout_exception?(_exception), do: false
 
   defp match_timeout_exception?(error_message) do
-    String.match?(error_message, ~r/due to a timeout/) or String.match?(error_message, ~r/due to user request/)
+    String.match?(error_message, ~r/due to a timeout/) or String.match?(error_message, ~r/due to user request/) or
+      String.match?(error_message, ~r/ssl recv: closed/)
   end
 
   @doc """

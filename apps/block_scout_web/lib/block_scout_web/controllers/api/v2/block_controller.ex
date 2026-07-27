@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       paginate_list: 3,
       paginate_list: 4,
       paging_options: 1,
-      param_to_block_number: 1,
+      param_to_block_number: 2,
       put_key_value_to_paging_options: 3,
       parse_block_hash_or_number_param: 1,
       block_to_internal_transactions: 2
@@ -571,7 +571,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
           | {:average_block_time, {:error, :disabled}}
           | {:remaining_blocks, 0}
   def block_countdown(conn, %{block_number_param: block_number}) do
-    with {:format, {:ok, target_block_number}} <- {:format, param_to_block_number(block_number)},
+    with {:format, {:ok, target_block_number}} <- {:format, param_to_block_number(block_number, false)},
          {:max_block, current_block_number} when not is_nil(current_block_number) <-
            {:max_block, BlockNumber.get_max()},
          {:average_block_time, average_block_time} when is_struct(average_block_time) <-

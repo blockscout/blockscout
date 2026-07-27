@@ -146,7 +146,7 @@ defmodule BlockScoutWeb.API.V2.Helper do
 
   # We treat contracts with minimal proxy or similar standards as verified if all their implementations are verified
   defp verified_as_proxy?(%{proxy_type: proxy_type, names: names})
-       when proxy_type in [:eip1167, :eip7702, :clone_with_immutable_arguments, :erc7760] do
+       when proxy_type in [:eip1167, :eip7702, :clone_with_immutable_arguments, :erc7760, :minimal_proxy] do
     !Enum.empty?(names) && Enum.all?(names)
   end
 

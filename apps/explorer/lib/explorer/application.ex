@@ -441,6 +441,14 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopicSecondTopicBlockNumberIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesAddressHashBlockNumberIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsTokenTransferMethodIdOrderedIndex,
           :indexer
         ),
