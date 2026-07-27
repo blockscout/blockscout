@@ -359,7 +359,9 @@ config :explorer, :proxy,
   fallback_cached_implementation_data_ttl: :timer.seconds(4),
   implementation_data_fetching_timeout: :timer.seconds(2)
 
-config :explorer, Explorer.Chain.Events.Listener, enabled: app_mode == :api
+config :explorer, Explorer.Chain.Events.Listener,
+  enabled: app_mode == :api,
+  max_batch_size: ConfigHelper.parse_integer_env_var("DB_EVENTS_LISTENER_BATCH_SIZE", 100, min: 1)
 
 precompiled_config_base_dir =
   case config_env() do
