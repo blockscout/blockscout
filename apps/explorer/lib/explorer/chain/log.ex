@@ -688,6 +688,20 @@ defmodule Explorer.Chain.Log do
     )
   end
 
+  # Above this number of values for a single topic, fall back to
+  # `= ANY(...)` to keep query size and planning time bounded.
+  @max_topic_union_branches 16
+
+  # With `union_multiple_values: true`, a single topic with multiple values
+  # is combined with UNION ALL (one equality branch per value) instead of
+  # `topic = ANY(...)`: a scalar-array condition on a topic column prevents
+  # PostgreSQL from returning rows in `(block_number, index)` order from the
+  # (address_hash, first_topic, block_number, index) index, forcing it to
+  # materialize and sort every match in the block range before applying the
+  # LIMIT. With UNION ALL each branch is an ordered index scan, so the
+  # planner can merge branches and stop at the LIMIT. The resulting
+  # combination query must be wrapped in `subquery/1` by the caller before
+  # any further composition.
   @doc """
   Filters logs by one or multiple topic fields.
 
@@ -698,11 +712,20 @@ defmodule Explorer.Chain.Log do
   where each topic field is matched against the corresponding list of values.
   """
   @spec filter_by_topic_query(Ecto.Queryable.t(), atom() | [atom()], any() | [[any()]]) :: Ecto.Query.t()
-  def filter_by_topic_query(query, topic_name, topic_values) when is_atom(topic_name) do
-    where(query, [l], ^topic_filter_dynamic(topic_name, List.wrap(topic_values)))
+  def filter_by_topic_query(query, topic_name, topic_values, opts \\ [])
+
+  def filter_by_topic_query(query, topic_name, topic_values, opts) when is_atom(topic_name) do
+    if Keyword.get(opts, :union_multiple_values, false) and is_list(topic_values) and
+         length(topic_values) <= @max_topic_union_branches do
+      topic_values
+      |> Enum.map(fn value -> where(query, [l], ^topic_filter_dynamic(topic_name, [value])) end)
+      |> Enum.reduce(fn branch, acc -> union_all(acc, ^branch) end)
+    else
+      where(query, ^topic_filter_dynamic(topic_name, List.wrap(topic_values)))
+    end
   end
 
-  def filter_by_topic_query(query, topic_names, topic_values_list)
+  def filter_by_topic_query(query, topic_names, topic_values_list, _opts)
       when is_list(topic_names) and is_list(topic_values_list) do
     where(query, [l], ^filter_by_topic_dynamic(topic_names, topic_values_list))
   end
@@ -718,7 +741,25 @@ defmodule Explorer.Chain.Log do
     end)
   end
 
+  def topic_filter_dynamic(:first_topic, [topic_value]), do: dynamic([l], l.first_topic == ^topic_value)
   def topic_filter_dynamic(:first_topic, topic_values), do: dynamic([l], l.first_topic in ^topic_values)
+
+  def topic_filter_dynamic(topic_name, [topic_value]) do
+    if LogHelper.fill_optimized_fields_migration_finished?() do
+      dynamic([l], field(l, ^topic_name) == ^topic_value)
+    else
+      case Hash.Full.dump(topic_value) do
+        {:ok, extended} ->
+          dynamic(
+            [l],
+            field(l, ^topic_name) == ^topic_value or field(l, ^topic_name) == type(^extended, :binary)
+          )
+
+        :error ->
+          dynamic([l], field(l, ^topic_name) == ^topic_value)
+      end
+    end
+  end
 
   def topic_filter_dynamic(topic_name, topic_values) do
     if LogHelper.fill_optimized_fields_migration_finished?() do
