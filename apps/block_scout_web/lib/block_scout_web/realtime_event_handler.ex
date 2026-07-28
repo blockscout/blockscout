@@ -34,6 +34,8 @@ defmodule BlockScoutWeb.RealtimeEventHandler do
     addresses: :on_demand,
     address_coin_balances: :realtime,
     address_coin_balances: :on_demand,
+    address_current_token_balances: :realtime,
+    address_current_token_balances: :on_demand,
     address_token_balances: :on_demand,
     blocks: :realtime,
     block_rewards: :realtime,

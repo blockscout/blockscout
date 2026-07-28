@@ -107,22 +107,32 @@ defmodule BlockScoutWeb.Notifier do
                               @chain_type_transaction_associations
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
+    addresses_count = AddressesCount.fetch()
+
     # TODO: delete duplicated event when old UI becomes deprecated
-    Endpoint.broadcast("addresses_old:new_address", "count", %{count: AddressesCount.fetch()})
-    Endpoint.broadcast("addresses:new_address", "count", %{count: AddressesCount.fetch()})
+    Endpoint.broadcast("addresses_old:new_address", "count", %{count: addresses_count})
+    Endpoint.broadcast("addresses:new_address", "count", %{count: addresses_count})
+
+    exchange_rate = Market.get_coin_exchange_rate()
 
     addresses
     |> Stream.reject(fn %Address{fetched_coin_balance: fetched_coin_balance} -> is_nil(fetched_coin_balance) end)
     |> Stream.filter(fn %Address{hash: hash} -> address_has_subscribers?(hash) end)
-    |> Enum.each(&broadcast_balance/1)
+    |> Enum.each(&broadcast_balance(&1, exchange_rate))
   end
 
   def handle_event({:chain_event, :address_coin_balances, type, address_coin_balances})
       when type in [:realtime, :on_demand] do
+    exchange_rate = Market.get_coin_exchange_rate()
+
     address_coin_balances
     |> Enum.reject(fn balance -> is_nil(balance[:value]) end)
     |> Enum.filter(fn balance -> address_has_subscribers?(balance[:address_hash]) end)
-    |> Enum.each(&broadcast_address_coin_balance/1)
+    # Only the most recent balance of an address is worth a query and a message,
+    # the earlier ones are superseded by it right away.
+    |> Enum.sort_by(& &1[:block_number], :desc)
+    |> Enum.uniq_by(& &1[:address_hash])
+    |> Enum.each(&broadcast_address_coin_balance(&1, exchange_rate))
   end
 
   def handle_event({:chain_event, :address_token_balances, type, address_token_balances})
@@ -425,24 +435,19 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   @current_token_balances_limit 50
-  def handle_event(
-        {:chain_event, :address_current_token_balances, type,
-         %{address_current_token_balances: address_current_token_balances, address_hash: address_hash}}
-      )
+  def handle_event({:chain_event, :address_current_token_balances, type, address_current_token_balances})
       when type in [:realtime, :on_demand] do
-    if address_has_subscribers?(address_hash) do
-      address_current_token_balances
-      |> Repo.preload(token: Reputation.reputation_association())
+    address_current_token_balances
+    |> Enum.filter(&address_has_subscribers?(&1.address_hash))
+    |> Repo.preload(token: Reputation.reputation_association())
+    |> Enum.group_by(& &1.address_hash)
+    |> Enum.each(fn {address_hash, balances} ->
+      balances
       |> Enum.group_by(& &1.token_type)
-      |> Enum.each(fn {token_type, balances} ->
-        broadcast_token_balances(address_hash, token_type, balances)
+      |> Enum.each(fn {token_type, token_type_balances} ->
+        broadcast_token_balances(address_hash, token_type, token_type_balances)
       end)
-    end
-  end
-
-  def handle_event({:chain_event, :address_current_token_balances, :realtime, _empty_balances_params}) do
-    # Don't broadcast empty balances params from realtime block fetcher
-    :ok
+    end)
   end
 
   case @chain_type do
@@ -613,7 +618,7 @@ defmodule BlockScoutWeb.Notifier do
     end
   end
 
-  defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}) do
+  defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}, exchange_rate) do
     coin_balance = CoinBalance.get_coin_balance(address_hash, block_number, @api_true)
 
     if coin_balance && coin_balance.delta && !Decimal.eq?(coin_balance.delta, Decimal.new(0)) do
@@ -633,7 +638,7 @@ defmodule BlockScoutWeb.Notifier do
 
       Endpoint.broadcast("addresses:#{address_hash}", "current_coin_balance", %{
         coin_balance: coin_balance.value,
-        exchange_rate: Market.get_coin_exchange_rate().fiat_value,
+        exchange_rate: exchange_rate.fiat_value,
         block_number: block_number
       })
     end
@@ -650,9 +655,7 @@ defmodule BlockScoutWeb.Notifier do
     })
   end
 
-  defp broadcast_balance(%Address{hash: address_hash} = address) do
-    exchange_rate = Market.get_coin_exchange_rate()
-
+  defp broadcast_balance(%Address{hash: address_hash} = address, exchange_rate) do
     v2_params = %{
       balance: address.fetched_coin_balance.value,
       block_number: address.fetched_coin_balance_block_number,
