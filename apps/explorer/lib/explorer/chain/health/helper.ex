@@ -131,6 +131,12 @@ defmodule Explorer.Chain.Health.Helper do
     - "health_latest_batch_number_from_db",
     - "health_latest_batch_timestamp_from_db"
     - "health_latest_batch_average_time_from_db"
+    - "health_latest_deposit_l1_block_number_from_db"
+    - "health_latest_deposit_timestamp_from_db"
+    - "health_latest_deposit_average_time_from_db"
+    - "health_latest_withdrawal_l2_block_number_from_db"
+    - "health_latest_withdrawal_timestamp_from_db"
+    - "health_latest_withdrawal_average_time_from_db"
 
   The retrieved values are then reduced into a map with the following keys:
     - `:health_latest_block_number_from_db`
@@ -141,6 +147,12 @@ defmodule Explorer.Chain.Health.Helper do
     - `:health_latest_batch_number_from_db`
     - `:health_latest_batch_timestamp_from_db`
     - `:health_latest_batch_average_time_from_db`
+    - `:health_latest_deposit_l1_block_number_from_db`
+    - `:health_latest_deposit_timestamp_from_db`
+    - `:health_latest_deposit_average_time_from_db`
+    - `:health_latest_withdrawal_l2_block_number_from_db`
+    - `:health_latest_withdrawal_timestamp_from_db`
+    - `:health_latest_withdrawal_average_time_from_db`
 
   Each key in the map is assigned the corresponding value fetched from the `LastFetchedCounter`.
 
@@ -158,7 +170,13 @@ defmodule Explorer.Chain.Health.Helper do
         "health_latest_block_number_from_node",
         "health_latest_batch_number_from_db",
         "health_latest_batch_timestamp_from_db",
-        "health_latest_batch_average_time_from_db"
+        "health_latest_batch_average_time_from_db",
+        "health_latest_deposit_l1_block_number_from_db",
+        "health_latest_deposit_timestamp_from_db",
+        "health_latest_deposit_average_time_from_db",
+        "health_latest_withdrawal_l2_block_number_from_db",
+        "health_latest_withdrawal_timestamp_from_db",
+        "health_latest_withdrawal_average_time_from_db"
       ])
 
     values
@@ -171,7 +189,13 @@ defmodule Explorer.Chain.Health.Helper do
         health_latest_block_number_from_node: nil,
         health_latest_batch_number_from_db: nil,
         health_latest_batch_timestamp_from_db: nil,
-        health_latest_batch_average_time_from_db: nil
+        health_latest_batch_average_time_from_db: nil,
+        health_latest_deposit_l1_block_number_from_db: nil,
+        health_latest_deposit_timestamp_from_db: nil,
+        health_latest_deposit_average_time_from_db: nil,
+        health_latest_withdrawal_l2_block_number_from_db: nil,
+        health_latest_withdrawal_timestamp_from_db: nil,
+        health_latest_withdrawal_average_time_from_db: nil
       },
       fn {key, value}, acc ->
         Map.put(acc, String.to_existing_atom(key), value)
@@ -262,6 +286,48 @@ defmodule Explorer.Chain.Health.Helper do
       end
     else
       {false, @no_items_error_code, "There are no batches in the DB."}
+    end
+  end
+
+  @spec deposits_indexing_healthy?(map() | nil) :: boolean() | {boolean(), non_neg_integer(), binary()}
+  def deposits_indexing_healthy?(nil), do: true
+
+  def deposits_indexing_healthy?(health_status) do
+    if health_status[:health_latest_deposit_timestamp_from_db] do
+      last_deposit_db_delay = get_last_item_delay(health_status, :health_latest_deposit_timestamp_from_db)
+
+      deposits_indexing_delay_threshold =
+        Application.get_env(:explorer, Explorer.Chain.Health.Monitor)[:healthy_deposits_period]
+
+      if last_deposit_db_delay > deposits_indexing_delay_threshold do
+        {false, @no_new_items_error_code,
+         "There are no new deposits in the DB for the last #{round(last_deposit_db_delay / 1_000 / 60)} mins."}
+      else
+        true
+      end
+    else
+      {false, @no_items_error_code, "There are no deposits in the DB."}
+    end
+  end
+
+  @spec withdrawals_indexing_healthy?(map() | nil) :: boolean() | {boolean(), non_neg_integer(), binary()}
+  def withdrawals_indexing_healthy?(nil), do: true
+
+  def withdrawals_indexing_healthy?(health_status) do
+    if health_status[:health_latest_withdrawal_timestamp_from_db] do
+      last_withdrawal_db_delay = get_last_item_delay(health_status, :health_latest_withdrawal_timestamp_from_db)
+
+      withdrawals_indexing_delay_threshold =
+        Application.get_env(:explorer, Explorer.Chain.Health.Monitor)[:healthy_withdrawals_period]
+
+      if last_withdrawal_db_delay > withdrawals_indexing_delay_threshold do
+        {false, @no_new_items_error_code,
+         "There are no new withdrawals in the DB for the last #{round(last_withdrawal_db_delay / 1_000 / 60)} mins."}
+      else
+        true
+      end
+    else
+      {false, @no_items_error_code, "There are no withdrawals in the DB."}
     end
   end
 

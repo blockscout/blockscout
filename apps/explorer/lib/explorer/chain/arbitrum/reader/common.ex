@@ -33,7 +33,8 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
   alias Explorer.Chain.Arbitrum.{
     BatchBlock,
     DaMultiPurposeRecord,
-    L1Batch
+    L1Batch,
+    Message
   }
 
   alias Explorer.Chain.Block, as: FullBlock
@@ -134,5 +135,81 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
     items = select_repo(options).all(latest_batches_query)
 
     Instrumenter.prepare_batch_metric(items)
+  end
+
+  @doc """
+    Gets information about the latest deposit (L1->L2 message) and calculates the average
+    time between deposits, in seconds.
+
+    ## Parameters
+    - `options`: A keyword list of options:
+      - `:api?` - Whether the function is being called from an API context.
+
+    ## Returns
+    - `{:ok, %{latest_deposit_l1_number: number, latest_deposit_timestamp: timestamp, average_deposit_time: seconds}}`
+      if deposits are found
+    - `{:error, :not_found}` if no deposits are found
+  """
+  @spec get_latest_deposit_info(api?: boolean()) ::
+          {:ok,
+           %{
+             latest_deposit_l1_number: non_neg_integer(),
+             latest_deposit_timestamp: DateTime.t(),
+             average_deposit_time: non_neg_integer()
+           }}
+          | {:error, :not_found}
+  def get_latest_deposit_info(options) do
+    query =
+      from(m in Message,
+        where: m.direction == :to_l2 and not is_nil(m.origination_timestamp),
+        order_by: [desc: m.message_id],
+        limit: 100,
+        select: %{
+          number: m.originating_transaction_block_number,
+          timestamp: m.origination_timestamp
+        }
+      )
+
+    items = select_repo(options).all(query)
+
+    Instrumenter.prepare_deposit_metric(items)
+  end
+
+  @doc """
+    Gets information about the latest withdrawal (L2->L1 message) and calculates the average
+    time between withdrawals, in seconds.
+
+    ## Parameters
+    - `options`: A keyword list of options:
+      - `:api?` - Whether the function is being called from an API context.
+
+    ## Returns
+    - `{:ok, %{latest_withdrawal_l2_number: number, latest_withdrawal_timestamp: timestamp, average_withdrawal_time: seconds}}`
+      if withdrawals are found
+    - `{:error, :not_found}` if no withdrawals are found
+  """
+  @spec get_latest_withdrawal_info(api?: boolean()) ::
+          {:ok,
+           %{
+             latest_withdrawal_l2_number: non_neg_integer(),
+             latest_withdrawal_timestamp: DateTime.t(),
+             average_withdrawal_time: non_neg_integer()
+           }}
+          | {:error, :not_found}
+  def get_latest_withdrawal_info(options) do
+    query =
+      from(m in Message,
+        where: m.direction == :from_l2 and not is_nil(m.origination_timestamp),
+        order_by: [desc: m.message_id],
+        limit: 100,
+        select: %{
+          number: m.originating_transaction_block_number,
+          timestamp: m.origination_timestamp
+        }
+      )
+
+    items = select_repo(options).all(query)
+
+    Instrumenter.prepare_withdrawal_metric(items)
   end
 end

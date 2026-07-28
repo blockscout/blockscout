@@ -10,6 +10,9 @@ defmodule BlockScoutWeb.API.HealthController do
   @ok_message "OK"
   @backfill_multichain_search_db_migration_name "backfill_multichain_search_db"
   @rollups [:arbitrum, :zksync, :optimism, :scroll]
+  # Chain types that have deposits/withdrawals data. zkSync is excluded (no such data model),
+  # while ethereum is included (beacon deposits/withdrawals) even though it has no batches.
+  @chain_types_with_messages [:arbitrum, :optimism, :scroll, :ethereum]
 
   @doc """
   Handles health checks for the application.
@@ -44,19 +47,13 @@ defmodule BlockScoutWeb.API.HealthController do
 
     metadata = Map.get(base_health_status, :metadata)
 
-    health_status =
-      if Application.get_env(:explorer, :chain_type) in @rollups do
-        batches_indexing_status = indexing_status.batches
+    chain_type = Application.get_env(:explorer, :chain_type)
 
-        base_health_status
-        |> put_in([:metadata, :batches], batches_indexing_status)
-        # todo: return this when "latest block" metric starts remain non-empty all time
-        # |> Map.put(:healthy, indexing_status.blocks.healthy and batches_indexing_status.healthy)
-        |> Map.put(:healthy, indexing_status.blocks.healthy)
-      else
-        base_health_status
-        |> Map.put(:healthy, indexing_status.blocks.healthy)
-      end
+    health_status =
+      base_health_status
+      |> maybe_put_batches(indexing_status, chain_type)
+      |> maybe_put_deposits_and_withdrawals(indexing_status, chain_type)
+      |> Map.put(:healthy, indexing_status.blocks.healthy)
 
     blocks_property = Map.get(Map.get(health_status, :metadata), :blocks)
 
@@ -190,18 +187,44 @@ defmodule BlockScoutWeb.API.HealthController do
         blocks: blocks
       }
 
-    status =
-      if Application.get_env(:explorer, :chain_type) in @rollups do
-        batches = batches_indexing_status(health_status)
+    chain_type = Application.get_env(:explorer, :chain_type)
 
-        common_status
-        |> Map.put(:batches, batches)
-      else
-        common_status
-      end
-
-    status
+    common_status
+    |> maybe_add_batches(health_status, chain_type)
+    |> maybe_add_deposits_and_withdrawals(health_status, chain_type)
   end
+
+  defp maybe_add_batches(status, health_status, chain_type) when chain_type in @rollups do
+    Map.put(status, :batches, batches_indexing_status(health_status))
+  end
+
+  defp maybe_add_batches(status, _health_status, _chain_type), do: status
+
+  defp maybe_add_deposits_and_withdrawals(status, health_status, chain_type)
+       when chain_type in @chain_types_with_messages do
+    status
+    |> Map.put(:deposits, deposits_indexing_status(health_status))
+    |> Map.put(:withdrawals, withdrawals_indexing_status(health_status))
+  end
+
+  defp maybe_add_deposits_and_withdrawals(status, _health_status, _chain_type), do: status
+
+  defp maybe_put_batches(health_status, indexing_status, chain_type) when chain_type in @rollups do
+    # todo: also factor batches.healthy into the top-level `healthy` when the "latest block"
+    # metric starts to remain non-empty all the time
+    put_in(health_status, [:metadata, :batches], indexing_status.batches)
+  end
+
+  defp maybe_put_batches(health_status, _indexing_status, _chain_type), do: health_status
+
+  defp maybe_put_deposits_and_withdrawals(health_status, indexing_status, chain_type)
+       when chain_type in @chain_types_with_messages do
+    health_status
+    |> put_in([:metadata, :deposits], indexing_status.deposits)
+    |> put_in([:metadata, :withdrawals], indexing_status.withdrawals)
+  end
+
+  defp maybe_put_deposits_and_withdrawals(health_status, _indexing_status, _chain_type), do: health_status
 
   defp blocks_indexing_status(health_status) do
     latest_block_timestamp_from_db =
@@ -295,6 +318,78 @@ defmodule BlockScoutWeb.API.HealthController do
       end
 
     response
+  end
+
+  defp deposits_indexing_status(health_status) do
+    latest_deposit_timestamp_from_db =
+      if is_nil(health_status[:health_latest_deposit_timestamp_from_db]) do
+        nil
+      else
+        {:ok, latest_deposit_timestamp_from_db} =
+          DateTime.from_unix(Decimal.to_integer(health_status[:health_latest_deposit_timestamp_from_db]))
+
+        latest_deposit_timestamp_from_db
+      end
+
+    {healthy?, code, message} =
+      case HealthHelper.deposits_indexing_healthy?(health_status) do
+        true -> {true, 0, nil}
+        other -> other
+      end
+
+    base_response =
+      %{
+        healthy: healthy?,
+        latest_deposit: %{
+          db: %{
+            l1_block_number: to_string(health_status[:health_latest_deposit_l1_block_number_from_db]),
+            timestamp: to_string(latest_deposit_timestamp_from_db),
+            average_deposit_time: to_string(health_status[:health_latest_deposit_average_time_from_db])
+          }
+        }
+      }
+
+    if healthy? do
+      base_response
+    else
+      Map.put(base_response, :error, error(code, message))
+    end
+  end
+
+  defp withdrawals_indexing_status(health_status) do
+    latest_withdrawal_timestamp_from_db =
+      if is_nil(health_status[:health_latest_withdrawal_timestamp_from_db]) do
+        nil
+      else
+        {:ok, latest_withdrawal_timestamp_from_db} =
+          DateTime.from_unix(Decimal.to_integer(health_status[:health_latest_withdrawal_timestamp_from_db]))
+
+        latest_withdrawal_timestamp_from_db
+      end
+
+    {healthy?, code, message} =
+      case HealthHelper.withdrawals_indexing_healthy?(health_status) do
+        true -> {true, 0, nil}
+        other -> other
+      end
+
+    base_response =
+      %{
+        healthy: healthy?,
+        latest_withdrawal: %{
+          db: %{
+            l2_block_number: to_string(health_status[:health_latest_withdrawal_l2_block_number_from_db]),
+            timestamp: to_string(latest_withdrawal_timestamp_from_db),
+            average_withdrawal_time: to_string(health_status[:health_latest_withdrawal_average_time_from_db])
+          }
+        }
+      }
+
+    if healthy? do
+      base_response
+    else
+      Map.put(base_response, :error, error(code, message))
+    end
   end
 
   defp error(code, message) do
