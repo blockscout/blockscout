@@ -146,7 +146,8 @@ for migrator <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashFirstTopicBlockNumberIndexIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsDepositsWithdrawalsIndex,
       Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsFirstTopicIdFkey,
-      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex
     ] do
   config :explorer, migrator, enabled: false
 end

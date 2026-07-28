@@ -790,14 +790,15 @@ defmodule Explorer.Chain.Log do
   def topic_filter_dynamic(:first_topic, [topic_value]) do
     cond do
       LogHelper.fill_optimized_fields_migration_finished?() ->
-        [first_topic_id] = LogFirstTopic.values_to_ids([topic_value])
+        first_topic_id = LogFirstTopic.value_to_id(topic_value)
 
-        dynamic([l], l.first_topic_id == ^first_topic_id)
+        (first_topic_id && dynamic([l], l.first_topic_id == ^first_topic_id)) || dynamic(false)
 
       LogHelper.fill_optimized_fields_migration_started?() ->
-        [first_topic_id] = LogFirstTopic.values_to_ids([topic_value])
+        first_topic_id = LogFirstTopic.value_to_id(topic_value)
 
-        dynamic([l], l.first_topic_id == ^first_topic_id or l.first_topic == ^topic_value)
+        (first_topic_id && dynamic([l], l.first_topic_id == ^first_topic_id or l.first_topic == ^topic_value)) ||
+          dynamic([l], l.first_topic_id == ^first_topic_id)
 
       true ->
         dynamic([l], l.first_topic == ^topic_value)
