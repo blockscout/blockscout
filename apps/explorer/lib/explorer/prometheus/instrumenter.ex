@@ -90,8 +90,18 @@ defmodule Explorer.Prometheus.Instrumenter do
 
   @gauge [name: :batch_average_time, help: "L2 average batch time"]
 
+  @gauge [name: :latest_deposit_l1_number, help: "L2 latest deposit L1 block number"]
+  @gauge [name: :latest_deposit_timestamp, help: "L2 latest deposit timestamp"]
+  @gauge [name: :average_deposit_time, help: "L2 average deposit time"]
+
+  @gauge [name: :latest_withdrawal_l2_number, help: "L2 latest withdrawal L2 block number"]
+  @gauge [name: :latest_withdrawal_timestamp, help: "L2 latest withdrawal timestamp"]
+  @gauge [name: :average_withdrawal_time, help: "L2 average withdrawal time"]
+
   def setup do
     prepare_batch_metric([])
+    prepare_deposit_metric([])
+    prepare_withdrawal_metric([])
   end
 
   @doc """
@@ -293,6 +303,180 @@ defmodule Explorer.Prometheus.Instrumenter do
             latest_batch_number: latest_batch.number,
             latest_batch_timestamp: latest_batch.timestamp,
             average_batch_time: average_time
+          }
+        }
+    end
+  end
+
+  @spec set_latest_deposit_l1_number(integer()) :: :ok
+  defp set_latest_deposit_l1_number(number) do
+    Gauge.set([name: :latest_deposit_l1_number], number)
+  end
+
+  @spec set_latest_deposit_timestamp(integer()) :: :ok
+  defp set_latest_deposit_timestamp(timestamp) do
+    Gauge.set([name: :latest_deposit_timestamp], timestamp)
+  end
+
+  @spec average_deposit_time(integer()) :: :ok
+  defp average_deposit_time(average_time) do
+    Gauge.set([name: :average_deposit_time], average_time)
+  end
+
+  @doc """
+  Prepares deposit Prometheus metrics from a list of deposit data and calculates
+  the average time between deposits, in seconds.
+
+  ## Parameters
+
+    - `deposits`: A list of maps sorted in descending order by the deposit L1 block number,
+      where each map represents a deposit with the following keys:
+      - `:number` (integer): The deposit L1 block number.
+      - `:timestamp` (DateTime.t): The timestamp of the deposit.
+
+  ## Returns
+
+    - `{:ok, %{latest_deposit_l1_number: integer, latest_deposit_timestamp: DateTime.t(), average_deposit_time: integer}}`:
+      - `:latest_deposit_l1_number`: The L1 block number of the latest deposit.
+      - `:latest_deposit_timestamp`: The timestamp of the latest deposit.
+      - `:average_deposit_time`: The average time in seconds between deposits, or `0` if there is only one deposit.
+    - `{:error, :not_found}`: If the input list of deposits is empty.
+  """
+  @spec prepare_deposit_metric([%{number: integer, timestamp: DateTime.t()}]) ::
+          {:ok,
+           %{
+             latest_deposit_l1_number: integer,
+             latest_deposit_timestamp: DateTime.t(),
+             average_deposit_time: integer
+           }}
+          | {:error, :not_found}
+  def prepare_deposit_metric(deposits) do
+    case deposits do
+      [] ->
+        set_latest_deposit_l1_number(0)
+        set_latest_deposit_timestamp(0)
+        average_deposit_time(0)
+
+        {:error, :not_found}
+
+      [deposit] ->
+        set_latest_deposit_l1_number(deposit.number)
+        set_latest_deposit_timestamp(DateTime.to_unix(deposit.timestamp))
+        average_deposit_time(0)
+
+        {
+          :ok,
+          %{
+            latest_deposit_l1_number: deposit.number,
+            latest_deposit_timestamp: deposit.timestamp,
+            average_deposit_time: 0
+          }
+        }
+
+      deposits ->
+        latest_deposit = List.first(deposits)
+        older_deposit = List.last(deposits)
+
+        average_time =
+          div(DateTime.diff(latest_deposit.timestamp, older_deposit.timestamp, :second), length(deposits) - 1)
+
+        set_latest_deposit_l1_number(latest_deposit.number)
+        set_latest_deposit_timestamp(DateTime.to_unix(latest_deposit.timestamp))
+        average_deposit_time(average_time)
+
+        {
+          :ok,
+          %{
+            latest_deposit_l1_number: latest_deposit.number,
+            latest_deposit_timestamp: latest_deposit.timestamp,
+            average_deposit_time: average_time
+          }
+        }
+    end
+  end
+
+  @spec set_latest_withdrawal_l2_number(integer()) :: :ok
+  defp set_latest_withdrawal_l2_number(number) do
+    Gauge.set([name: :latest_withdrawal_l2_number], number)
+  end
+
+  @spec set_latest_withdrawal_timestamp(integer()) :: :ok
+  defp set_latest_withdrawal_timestamp(timestamp) do
+    Gauge.set([name: :latest_withdrawal_timestamp], timestamp)
+  end
+
+  @spec average_withdrawal_time(integer()) :: :ok
+  defp average_withdrawal_time(average_time) do
+    Gauge.set([name: :average_withdrawal_time], average_time)
+  end
+
+  @doc """
+  Prepares withdrawal Prometheus metrics from a list of withdrawal data and calculates
+  the average time between withdrawals, in seconds.
+
+  ## Parameters
+
+    - `withdrawals`: A list of maps sorted in descending order by the withdrawal L2 block number,
+      where each map represents a withdrawal with the following keys:
+      - `:number` (integer): The withdrawal L2 block number.
+      - `:timestamp` (DateTime.t): The timestamp of the withdrawal.
+
+  ## Returns
+
+    - `{:ok, %{latest_withdrawal_l2_number: integer, latest_withdrawal_timestamp: DateTime.t(), average_withdrawal_time: integer}}`:
+      - `:latest_withdrawal_l2_number`: The L2 block number of the latest withdrawal.
+      - `:latest_withdrawal_timestamp`: The timestamp of the latest withdrawal.
+      - `:average_withdrawal_time`: The average time in seconds between withdrawals, or `0` if there is only one withdrawal.
+    - `{:error, :not_found}`: If the input list of withdrawals is empty.
+  """
+  @spec prepare_withdrawal_metric([%{number: integer, timestamp: DateTime.t()}]) ::
+          {:ok,
+           %{
+             latest_withdrawal_l2_number: integer,
+             latest_withdrawal_timestamp: DateTime.t(),
+             average_withdrawal_time: integer
+           }}
+          | {:error, :not_found}
+  def prepare_withdrawal_metric(withdrawals) do
+    case withdrawals do
+      [] ->
+        set_latest_withdrawal_l2_number(0)
+        set_latest_withdrawal_timestamp(0)
+        average_withdrawal_time(0)
+
+        {:error, :not_found}
+
+      [withdrawal] ->
+        set_latest_withdrawal_l2_number(withdrawal.number)
+        set_latest_withdrawal_timestamp(DateTime.to_unix(withdrawal.timestamp))
+        average_withdrawal_time(0)
+
+        {
+          :ok,
+          %{
+            latest_withdrawal_l2_number: withdrawal.number,
+            latest_withdrawal_timestamp: withdrawal.timestamp,
+            average_withdrawal_time: 0
+          }
+        }
+
+      withdrawals ->
+        latest_withdrawal = List.first(withdrawals)
+        older_withdrawal = List.last(withdrawals)
+
+        average_time =
+          div(DateTime.diff(latest_withdrawal.timestamp, older_withdrawal.timestamp, :second), length(withdrawals) - 1)
+
+        set_latest_withdrawal_l2_number(latest_withdrawal.number)
+        set_latest_withdrawal_timestamp(DateTime.to_unix(latest_withdrawal.timestamp))
+        average_withdrawal_time(average_time)
+
+        {
+          :ok,
+          %{
+            latest_withdrawal_l2_number: latest_withdrawal.number,
+            latest_withdrawal_timestamp: latest_withdrawal.timestamp,
+            average_withdrawal_time: average_time
           }
         }
     end
