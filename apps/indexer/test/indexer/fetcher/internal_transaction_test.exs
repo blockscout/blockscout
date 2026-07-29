@@ -391,10 +391,16 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
         end)
       end
 
-      config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
-      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :allow_empty_traces?, true))
+      geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(geth_config, :allow_empty_traces?, true))
 
-      on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+      json_rpc_named_arguments_config = Application.get_env(:explorer, :json_rpc_named_arguments)
+      Application.put_env(:explorer, :json_rpc_named_arguments, json_rpc_named_arguments)
+
+      on_exit(fn ->
+        Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, geth_config)
+        Application.put_env(:explorer, :json_rpc_named_arguments, json_rpc_named_arguments_config)
+      end)
 
       CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
 
