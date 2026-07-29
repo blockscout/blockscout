@@ -2,6 +2,10 @@
 
 ## 11.2.4
 
+### 🐛 Bug Fixes
+
+- Handle not-loaded gas_token associations in Celo transaction view ([#14633](https://github.com/blockscout/blockscout/issues/14633))
+
 ### ⚙️ Miscellaneous Tasks
 
 - Add deposits and withdrawals health metrics for rollups and ETH ([#14632](https://github.com/blockscout/blockscout/issues/14632))
