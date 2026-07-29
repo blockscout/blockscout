@@ -798,7 +798,7 @@ defmodule Explorer.Chain.Log do
         first_topic_id = LogFirstTopic.value_to_id(topic_value)
 
         (first_topic_id && dynamic([l], l.first_topic_id == ^first_topic_id or l.first_topic == ^topic_value)) ||
-          dynamic([l], l.first_topic_id == ^first_topic_id)
+          dynamic([l], l.first_topic == ^topic_value)
 
       true ->
         dynamic([l], l.first_topic == ^topic_value)

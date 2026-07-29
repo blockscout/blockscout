@@ -33,7 +33,7 @@ defmodule Explorer.Chain.LogTest do
     end
 
     test "rejects missing attributes" do
-      params = params_for(:log, data: nil)
+      params = params_for(:log, compressed_data: nil)
       changeset = Log.changeset(%Log{}, params)
       refute changeset.valid?
     end

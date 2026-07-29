@@ -30,6 +30,7 @@ defmodule Explorer.Etherscan.Logs do
 
   @log_fields [
     :data,
+    :compressed_data,
     :first_topic,
     :first_topic_id,
     :second_topic,
