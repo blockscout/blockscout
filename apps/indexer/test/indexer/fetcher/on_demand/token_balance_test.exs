@@ -83,16 +83,17 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalanceTest do
       assert updated_value == Decimal.new(1_000_000_000_000_000_000_000_000)
       refute is_nil(updated_ctb.value_fetched_at)
 
-      address_hash = to_string(address.hash)
+      address_hash = address.hash
 
       assert_receive(
         {:chain_event, :address_current_token_balances, :on_demand,
-         %{
-           address_hash: ^address_hash,
-           address_current_token_balances: [
-             %{value: ^updated_value, token_contract_address_hash: ^token_contract_address_hash}
-           ]
-         }}
+         [
+           %{
+             address_hash: ^address_hash,
+             value: ^updated_value,
+             token_contract_address_hash: ^token_contract_address_hash
+           }
+         ]}
       )
     end
 

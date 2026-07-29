@@ -256,10 +256,7 @@ defmodule BlockScoutWeb.NotifierSubscriberFilterTest do
       address = insert(:address)
       token_balance = insert(:address_current_token_balance, address: address)
 
-      Notifier.handle_event(
-        {:chain_event, :address_current_token_balances, :realtime,
-         %{address_current_token_balances: [token_balance], address_hash: address.hash}}
-      )
+      Notifier.handle_event({:chain_event, :address_current_token_balances, :realtime, [token_balance]})
     end
 
     test "processes balances when address has subscribers" do
@@ -275,10 +272,7 @@ defmodule BlockScoutWeb.NotifierSubscriberFilterTest do
       topic = "addresses:#{address.hash}"
       @endpoint.subscribe(topic)
 
-      Notifier.handle_event(
-        {:chain_event, :address_current_token_balances, :realtime,
-         %{address_current_token_balances: [token_balance], address_hash: address.hash}}
-      )
+      Notifier.handle_event({:chain_event, :address_current_token_balances, :realtime, [token_balance]})
 
       assert_receive %Phoenix.Socket.Broadcast{
                        topic: ^topic,
