@@ -36,7 +36,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias EthereumJSONRPC.{Blocks, Subscription}
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
-  alias Explorer.Chain.Events.Publisher
   alias Explorer.Utility.MissingBlockRange
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
@@ -116,10 +115,6 @@ defmodule Indexer.Block.Realtime.Fetcher do
       )
       when is_binary(quantity) do
     number = quantity_to_integer(quantity)
-
-    if number > 0 do
-      Publisher.broadcast([{:last_block_number, number}], :realtime)
-    end
 
     if hash != Map.get(last_realtime_blocks, number) do
       Process.cancel_timer(timer)
