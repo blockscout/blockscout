@@ -1,5 +1,23 @@
 # Changelog
 
+## 11.2.4
+
+### ⚙️ Miscellaneous Tasks
+
+- Add deposits and withdrawals health metrics for rollups and ETH ([#14632](https://github.com/blockscout/blockscout/issues/14632))
+- Optimize realtime events processing ([#14625](https://github.com/blockscout/blockscout/issues/14625))
+- Add refetch_needed_blocks_count indexer metric ([#14630](https://github.com/blockscout/blockscout/issues/14630))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `HEALTH_MONITOR_DEPOSITS_PERIOD`                        | New deposits indexed max delay in /health API endpoint. [Time format](/setup/env-variables/backend-env-variables#time-format). Implemented in [#14632](https://github.com/blockscout/blockscout/pull/14632).                                                                                                                                                                                                                                       | Version: v11.2.4\+ <br />Default: `4h` <br />Applications: API, Indexer                                                                                                                                                                                                                                                                                                           |
+| `HEALTH_MONITOR_WITHDRAWALS_PERIOD`                     | New withdrawals indexed max delay in /health API endpoint. [Time format](/setup/env-variables/backend-env-variables#time-format). Implemented in [#14632](https://github.com/blockscout/blockscout/pull/14632).                                                                                                                                                                                                                                    | Version: v11.2.4\+ <br />Default: `4h` <br />Applications: API, Indexer                                                                                                                                                                                                                                                                                                           |
+| `DB_EVENTS_LISTENER_BATCH_SIZE`                         | Max events in one batch to be processed by DB events listener. Implemented in [#14625](https://github.com/blockscout/blockscout/pull/14625).                                                                                                                                                                                                                                                                                                       | Version: v11.2.4\+ <br />Default: `100` <br />Applications: API                                                                                                                                                                                                                                                                                                       |
+| `REALTIME_EVENT_HANDLERS_BATCH_SIZE`                    | Max events in one batch to be processed by each realtime event handler. Implemented in [#14625](https://github.com/blockscout/blockscout/pull/14625).                                                                                                                                                                                                                                                                                              | Version: v11.2.4\+ <br />Default: `100` <br />Applications: API                                                                                                                                                                                                                                                                                                       |
+
+
 ## 11.2.3
 
 ### 🚀 Features
