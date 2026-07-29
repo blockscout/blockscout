@@ -4,6 +4,7 @@
 
 ### 🐛 Bug Fixes
 
+- Fix InternalTransaction fetcher test ([#14634](https://github.com/blockscout/blockscout/issues/14634))
 - Handle not-loaded gas_token associations in Celo transaction view ([#14633](https://github.com/blockscout/blockscout/issues/14633))
 
 ### ⚙️ Miscellaneous Tasks
