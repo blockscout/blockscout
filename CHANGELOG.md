@@ -4,11 +4,13 @@
 
 ### 🐛 Bug Fixes
 
+- Add missing action_fallback to SolidityScanController ([#14635](https://github.com/blockscout/blockscout/issues/14635))
 - Fix InternalTransaction fetcher test ([#14634](https://github.com/blockscout/blockscout/issues/14634))
 - Handle not-loaded gas_token associations in Celo transaction view ([#14633](https://github.com/blockscout/blockscout/issues/14633))
 
 ### ⚙️ Miscellaneous Tasks
 
+- Optimize transactions event notifying ([#14637](https://github.com/blockscout/blockscout/issues/14637))
 - Add deposits and withdrawals health metrics for rollups and ETH ([#14632](https://github.com/blockscout/blockscout/issues/14632))
 - Optimize realtime events processing ([#14625](https://github.com/blockscout/blockscout/issues/14625))
 - Add refetch_needed_blocks_count indexer metric ([#14630](https://github.com/blockscout/blockscout/issues/14630))
