@@ -133,6 +133,9 @@ config :block_scout_web, BlockScoutWeb.Notifier,
   block_broadcast_type:
     ConfigHelper.parse_catalog_value("BLOCK_BROADCAST_TYPE", ["block", "count"], true, "block") || :block
 
+config :block_scout_web, BlockScoutWeb.RealtimeEventHandler,
+  max_batch_size: ConfigHelper.parse_integer_env_var("REALTIME_EVENT_HANDLERS_BATCH_SIZE", 100, min: 1)
+
 config :block_scout_web, :footer,
   logo: System.get_env("FOOTER_LOGO"),
   chat_link: System.get_env("FOOTER_CHAT_LINK", "https://discord.gg/blockscout"),
@@ -365,7 +368,9 @@ config :explorer, Explorer.EthRPC,
 config :explorer, Explorer.Chain.Health.Monitor,
   check_interval: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_CHECK_INTERVAL", "1m"),
   healthy_blocks_period: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_BLOCKS_PERIOD", "5m"),
-  healthy_batches_period: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_BATCHES_PERIOD", "4h")
+  healthy_batches_period: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_BATCHES_PERIOD", "4h"),
+  healthy_deposits_period: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_DEPOSITS_PERIOD", "4h"),
+  healthy_withdrawals_period: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_WITHDRAWALS_PERIOD", "4h")
 
 config :explorer, :proxy,
   caching_implementation_data_enabled: true,
@@ -374,7 +379,9 @@ config :explorer, :proxy,
   fallback_cached_implementation_data_ttl: :timer.seconds(4),
   implementation_data_fetching_timeout: :timer.seconds(2)
 
-config :explorer, Explorer.Chain.Events.Listener, enabled: app_mode == :api
+config :explorer, Explorer.Chain.Events.Listener,
+  enabled: app_mode == :api,
+  max_batch_size: ConfigHelper.parse_integer_env_var("DB_EVENTS_LISTENER_BATCH_SIZE", 100, min: 1)
 
 precompiled_config_base_dir =
   case config_env() do

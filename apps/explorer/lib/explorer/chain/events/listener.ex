@@ -6,6 +6,8 @@ defmodule Explorer.Chain.Events.Listener do
 
   use GenServer
 
+  import Ecto.Query
+
   alias Explorer.Repo.ConfigHelper
   alias Explorer.Repo.EventNotifications, as: EventNotificationsRepo
   alias Explorer.Utility.EventNotification
@@ -28,21 +30,49 @@ defmodule Explorer.Chain.Events.Listener do
   end
 
   def handle_info({:notification, _pid, _ref, _topic, payload}, state) do
-    expanded_payload = expand_payload(payload)
-
-    if expanded_payload != nil do
+    [payload]
+    |> drain_notifications(Application.get_env(:explorer, __MODULE__)[:max_batch_size] - 1)
+    |> expand_payloads()
+    |> Enum.each(fn expanded_payload ->
       expanded_payload
       |> decode_payload!()
       |> broadcast()
-    end
+    end)
 
     {:noreply, state}
   end
 
-  defp expand_payload(payload) do
+  defp drain_notifications(payloads, 0), do: Enum.reverse(payloads)
+
+  defp drain_notifications(payloads, count) do
+    receive do
+      {:notification, _pid, _ref, _topic, payload} -> drain_notifications([payload | payloads], count - 1)
+    after
+      0 -> Enum.reverse(payloads)
+    end
+  end
+
+  defp expand_payloads(payloads) do
+    parsed_payloads = Enum.map(payloads, &parse_payload/1)
+
+    id_to_data =
+      parsed_payloads
+      |> Enum.flat_map(fn
+        {:id, id} -> [id]
+        {:data, _data} -> []
+      end)
+      |> fetch_event_notifications()
+
+    Enum.flat_map(parsed_payloads, fn
+      {:id, id} -> id_to_data |> Map.get(id) |> List.wrap()
+      {:data, data} -> [data]
+    end)
+  end
+
+  defp parse_payload(payload) do
     case Integer.parse(payload) do
-      {event_notification_id, ""} -> fetch_event_notification(event_notification_id)
-      _ -> payload
+      {event_notification_id, ""} -> {:id, event_notification_id}
+      _ -> {:data, payload}
     end
   end
 
@@ -69,14 +99,14 @@ defmodule Explorer.Chain.Events.Listener do
     end)
   end
 
-  defp fetch_event_notification(id) do
-    case EventNotificationsRepo.get(EventNotification, id) do
-      nil ->
-        nil
+  defp fetch_event_notifications([]), do: %{}
 
-      %{data: data} ->
-        data
-    end
+  defp fetch_event_notifications(ids) do
+    EventNotification
+    |> where([en], en.id in ^ids)
+    |> select([en], {en.id, en.data})
+    |> EventNotificationsRepo.all()
+    |> Map.new()
   end
 
   defp listener_db_parameters do

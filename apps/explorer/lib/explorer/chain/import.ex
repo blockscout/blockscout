@@ -38,6 +38,13 @@ defmodule Explorer.Chain.Import do
                  Enum.flat_map(stage_batch, fn stage -> stage.all_runners() end)
                end)
 
+  # Current and historical token balances are broadcasted by `Indexer.Fetcher.TokenBalance.Current`
+  # and `Indexer.Fetcher.TokenBalance.Historical` once they are fetched from the node.
+  # The ones the runner returns are the
+  # placeholders inserted by the block fetcher, they carry no value yet and have
+  # no consumer, so they are not worth a notification.
+  @not_broadcasted_runners ~w(address_current_token_balances address_token_balances)a
+
   quoted_runner_option_value =
     quote do
       Import.Runner.options()
@@ -148,7 +155,7 @@ defmodule Explorer.Chain.Import do
          {:ok, runner_to_changes_list} <- runner_to_changes_list(valid_runner_option_pairs),
          {:ok, data} <- insert_runner_to_changes_list(runner_to_changes_list, options) do
       Notify.async(data[:transactions])
-      Publisher.broadcast(data, Map.get(options, :broadcast, false))
+      Publisher.broadcast(Map.drop(data, @not_broadcasted_runners), Map.get(options, :broadcast, false))
       {:ok, data}
     end
   end

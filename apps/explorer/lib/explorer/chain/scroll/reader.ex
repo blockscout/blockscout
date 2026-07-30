@@ -458,4 +458,72 @@ defmodule Explorer.Chain.Scroll.Reader do
 
     Instrumenter.prepare_batch_metric(items)
   end
+
+  @doc """
+    Gets information about the latest deposit and calculates average time between deposits, in seconds.
+
+    ## Parameters
+      - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - If at least two deposits exist:
+      `{:ok, %{latest_deposit_l1_number: integer, latest_deposit_timestamp: DateTime.t(), average_deposit_time: integer}}`
+      where:
+        * latest_deposit_l1_number - L1 block number of the latest deposit in the database.
+        * latest_deposit_timestamp - timestamp of the latest deposit L1 block.
+        * average_deposit_time - average number of seconds between deposits for the last 100 deposits.
+
+    - If less than two deposits exist: `{:error, :not_found}`.
+  """
+  @spec get_latest_deposit_info(keyword()) :: {:ok, map()} | {:error, :not_found}
+  def get_latest_deposit_info(options \\ []) do
+    query =
+      from(b in Bridge,
+        where: b.type == :deposit and not is_nil(b.block_timestamp),
+        order_by: [desc: b.index],
+        limit: 100,
+        select: %{
+          number: b.block_number,
+          timestamp: b.block_timestamp
+        }
+      )
+
+    items = select_repo(options).all(query)
+
+    Instrumenter.prepare_deposit_metric(items)
+  end
+
+  @doc """
+    Gets information about the latest withdrawal and calculates average time between withdrawals, in seconds.
+
+    ## Parameters
+      - `options`: A keyword list of options that may include whether to use a replica database.
+
+    ## Returns
+    - If at least two withdrawals exist:
+      `{:ok, %{latest_withdrawal_l2_number: integer, latest_withdrawal_timestamp: DateTime.t(), average_withdrawal_time: integer}}`
+      where:
+        * latest_withdrawal_l2_number - L2 block number of the latest withdrawal in the database.
+        * latest_withdrawal_timestamp - timestamp of the latest withdrawal L2 block.
+        * average_withdrawal_time - average number of seconds between withdrawals for the last 100 withdrawals.
+
+    - If less than two withdrawals exist: `{:error, :not_found}`.
+  """
+  @spec get_latest_withdrawal_info(keyword()) :: {:ok, map()} | {:error, :not_found}
+  def get_latest_withdrawal_info(options \\ []) do
+    query =
+      from(b in Bridge,
+        where: b.type == :withdrawal and not is_nil(b.block_timestamp),
+        order_by: [desc: b.index],
+        limit: 100,
+        select: %{
+          number: b.block_number,
+          timestamp: b.block_timestamp
+        }
+      )
+
+    items = select_repo(options).all(query)
+
+    Instrumenter.prepare_withdrawal_metric(items)
+  end
 end

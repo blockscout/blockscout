@@ -53,6 +53,7 @@ defmodule Indexer.Prometheus.Instrumenter do
 
   # metrics of indexing monitor
   @gauge [name: :missing_blocks_count, help: "Number of blocks missing in the chain"]
+  @gauge [name: :refetch_needed_blocks_count, help: "Number of consensus blocks that require refetch"]
   @gauge [
     name: :missing_internal_transactions_count,
     help: "Number of blocks with not yet fetched internal transactions"
@@ -223,6 +224,12 @@ defmodule Indexer.Prometheus.Instrumenter do
   """
   @spec missing_blocks_count(integer()) :: :ok
   def missing_blocks_count(value), do: Gauge.set([name: :missing_blocks_count], value)
+
+  @doc """
+  Defines the metric for the number of consensus blocks that require refetch.
+  """
+  @spec refetch_needed_blocks_count(integer()) :: :ok
+  def refetch_needed_blocks_count(value), do: Gauge.set([name: :refetch_needed_blocks_count], value)
 
   @doc """
   Defines the metric for the number of blocks with not yet fetched internal transactions.
