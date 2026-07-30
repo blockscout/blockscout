@@ -1064,6 +1064,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
             schema: %Schema{type: :boolean},
             required: false,
             description: "Fetch transaction interpretation summary (default: false)"
+          },
+          %OpenApiSpex.Parameter{
+            name: :decode_input,
+            in: :query,
+            schema: %Schema{type: :boolean},
+            required: false,
+            description: "Decode transaction input to resolve method name (default: false)"
           }
         ],
     responses: [
@@ -1091,7 +1098,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
       conn
       |> put_status(200)
-      |> render(:preview, %{transaction: preloaded, summary: summary})
+      |> render(:preview, %{transaction: preloaded, summary: summary, decode_input: params[:decode_input] == true})
     end
   end
 
