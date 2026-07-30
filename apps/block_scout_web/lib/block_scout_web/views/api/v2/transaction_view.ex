@@ -86,8 +86,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> prepare_transaction(conn, true, block_height, nil, decoded_input, nil)
   end
 
-  def render("preview.json", %{transaction: transaction, summary: summary}) do
-    [decoded_input] = Transaction.decode_transactions([transaction], true, @api_true)
+  def render("preview.json", %{transaction: transaction, summary: summary, decode_input: decode_input}) do
+    decoded_input =
+      if decode_input do
+        [decoded] = Transaction.decode_transactions([transaction], true, @api_true)
+        decoded
+      end
 
     %{
       "status" => transaction.status,
