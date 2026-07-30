@@ -1045,6 +1045,87 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     end
   end
 
+  @preview_necessity_by_association %{
+    :block => :optional,
+    [from_address: [:names, :smart_contract]] => :optional,
+    [to_address: [:names, :smart_contract]] => :optional
+  }
+
+  operation :preview,
+    summary: "Get lightweight transaction preview for social media embeds",
+    description:
+      "Returns minimal transaction data (status, timestamp, method, from/to, summary) for rendering OG previews.",
+    parameters:
+      [transaction_hash_param() | base_params()] ++
+        [
+          %OpenApiSpex.Parameter{
+            name: :preload_ens,
+            in: :query,
+            schema: %Schema{type: :boolean},
+            required: false,
+            description: "Preload ENS domain names for addresses (default: false)"
+          },
+          %OpenApiSpex.Parameter{
+            name: :preload_metadata,
+            in: :query,
+            schema: %Schema{type: :boolean},
+            required: false,
+            description: "Preload address metadata/name tags (default: false)"
+          },
+          %OpenApiSpex.Parameter{
+            name: :preload_summary,
+            in: :query,
+            schema: %Schema{type: :boolean},
+            required: false,
+            description: "Fetch transaction interpretation summary (default: false)"
+          }
+        ],
+    responses: [
+      ok: {"Lightweight transaction preview.", "application/json", %Schema{type: :object}},
+      not_found: NotFoundResponse.response(),
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+    Function to handle GET requests to `/api/v2/transactions/:transaction_hash_param/preview` endpoint.
+  """
+  @spec preview(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
+  def preview(conn, %{transaction_hash_param: transaction_hash_string} = params) do
+    options =
+      [necessity_by_association: @preview_necessity_by_association]
+      |> Keyword.merge(@api_true)
+
+    with {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params, options) do
+      preloaded =
+        transaction
+        |> maybe_preload_preview_ens(params)
+        |> maybe_preload_preview_metadata(params)
+
+      summary = maybe_fetch_preview_summary(preloaded, params)
+
+      conn
+      |> put_status(200)
+      |> render(:preview, %{transaction: preloaded, summary: summary})
+    end
+  end
+
+  defp maybe_preload_preview_ens(transaction, %{preload_ens: true}), do: maybe_preload_ens_to_transaction(transaction)
+  defp maybe_preload_preview_ens(transaction, _params), do: transaction
+
+  defp maybe_preload_preview_metadata(transaction, %{preload_metadata: true}),
+    do: maybe_preload_metadata_to_transaction(transaction)
+
+  defp maybe_preload_preview_metadata(transaction, _params), do: transaction
+
+  defp maybe_fetch_preview_summary(transaction, %{preload_summary: true}) do
+    case TransactionInterpretationService.interpret(transaction) do
+      {:ok, %{"data" => %{"summaries" => [first | _]}}} -> first
+      _ -> nil
+    end
+  end
+
+  defp maybe_fetch_preview_summary(_transaction, _params), do: nil
+
   operation :blobs,
     summary: "List blobs for a transaction",
     description: "Retrieves blobs for a specific transaction (Ethereum only).",
