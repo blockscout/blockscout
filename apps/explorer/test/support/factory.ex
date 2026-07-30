@@ -90,6 +90,7 @@ defmodule Explorer.Factory do
     AddressIdToAddressHash,
     EventNotification,
     InternalTransactionsAddressPlaceholder,
+    LogFirstTopic,
     MassiveBlock,
     MissingBalanceOfToken,
     MissingBlockRange
@@ -937,6 +938,7 @@ defmodule Explorer.Factory do
       attrs
       |> adjust_log_address_attrs()
       |> adjust_log_transaction_attrs()
+      |> adjust_log_first_topic_attrs()
 
     %Log{
       block: block,
@@ -999,6 +1001,16 @@ defmodule Explorer.Factory do
       end
 
     Map.merge(attrs, transaction_attrs)
+  end
+
+  defp adjust_log_first_topic_attrs(attrs) do
+    first_topic_attrs =
+      case Map.get(attrs, :first_topic) do
+        nil -> %{}
+        first_topic -> %{first_topic_id: LogFirstTopic.find_or_create(first_topic).id}
+      end
+
+    Map.merge(attrs, first_topic_attrs)
   end
 
   def token_factory do

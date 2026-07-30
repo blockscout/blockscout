@@ -390,7 +390,8 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
     |> Log.join_transaction_query()
     |> Log.address_match_query(arbsys_contract)
     |> join(:left, [_log], msg in Message, on: ^join_condition)
-    |> where([log, _t, msg], log.first_topic == ^l2_to_l1_event and is_nil(msg.originating_transaction_hash))
+    |> Log.filter_by_topic_query(:first_topic, l2_to_l1_event)
+    |> where([_log, _t, msg], is_nil(msg.originating_transaction_hash))
   end
 
   @doc """

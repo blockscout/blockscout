@@ -705,26 +705,30 @@ defmodule Explorer.Chain.TokenTransfer do
     Repo.stream_reduce(query, [], &[&1 | &2])
   end
 
-  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp token_transfer_log_filter_dynamic do
     base_filter =
-      dynamic(
-        [log: l],
-        l.first_topic == ^@constant or
-          l.first_topic == ^@erc1155_single_transfer_signature or
-          l.first_topic == ^@erc1155_batch_transfer_signature
-      )
+      Log.topic_filter_dynamic(:first_topic, [
+        @constant,
+        @erc1155_single_transfer_signature,
+        @erc1155_batch_transfer_signature
+      ])
 
     case chain_type() do
       :arc ->
+        erc20_transfer_filter = Log.topic_filter_dynamic(:first_topic, [@constant])
+
+        arc_native_coin_filter =
+          Log.topic_filter_dynamic(:first_topic, [
+            @arc_native_coin_transferred_event,
+            @arc_native_coin_minted_event,
+            @arc_native_coin_burned_event
+          ])
+
         dynamic(
           [log: l],
           (^base_filter and
-             not (l.first_topic == ^@constant and l.address_hash == ^arc_native_token_address())) or
-            ((l.first_topic == ^@arc_native_coin_transferred_event or
-                l.first_topic == ^@arc_native_coin_minted_event or
-                l.first_topic == ^@arc_native_coin_burned_event) and
-               l.address_hash == ^arc_native_token_system_address())
+             not (^erc20_transfer_filter and l.address_hash == ^arc_native_token_address())) or
+            (^arc_native_coin_filter and l.address_hash == ^arc_native_token_system_address())
         )
 
       _ ->

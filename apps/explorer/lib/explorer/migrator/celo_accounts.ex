@@ -42,15 +42,15 @@ defmodule Explorer.Migrator.CeloAccounts do
     existing_account_hashes_query = from(a in Account, select: fragment("bytea_ltrim_zeroes(?)", a.address_hash))
     excluded_hashes_query = pending_op_hashes_query |> union(^existing_account_hashes_query)
 
-    from(
-      log in Log,
-      where:
-        log.first_topic in ^Events.account_events() and
-          fragment("substring(? FROM greatest(octet_length(?) - 20 + 1, 1) FOR 20)", log.second_topic, log.second_topic) not in subquery(
-            excluded_hashes_query
-          ),
-      order_by: [asc: log.block_number, asc: log.index]
+    Log
+    |> Log.filter_by_topic_query(:first_topic, Events.account_events())
+    |> where(
+      [log],
+      fragment("substring(? FROM greatest(octet_length(?) - 20 + 1, 1) FOR 20)", log.second_topic, log.second_topic) not in subquery(
+        excluded_hashes_query
+      )
     )
+    |> order_by([log], asc: log.block_number, asc: log.index)
   end
 
   @impl FillingMigration
