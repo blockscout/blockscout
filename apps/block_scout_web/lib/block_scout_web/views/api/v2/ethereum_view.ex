@@ -47,3 +47,20 @@ defmodule BlockScoutWeb.API.V2.EthereumView do
     end
   end
 end
+{
+  "status": "1",
+  "message": "OK",
+  "result": "https://metadata-export.etherscan.io/1/labelmasterlist_latest.json?X-Amz-Expires=300&response-content-disposition=attachment%3B%20filename%3Dexport-labelmasterlist_latest.json&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=0056c267039aefa0000000005/20260305/us-east-005/s3/aws4_request&X-Amz-Date=20260305T082933Z&X-Amz-SignedHeaders=host&X-Amz-Signature=a795d41a87821a3224b3d9e56819f0fdc5b869c43278c6c96773966798a80f71"
+}HttpResponse<String> response = Unirest.get("https://api-metadata.etherscan.io/v2/api?module=nametag&action=getlabelmasterlist&apikey=")
+  .asString();const options = {method: 'GET'};
+
+fetch('https://api-metadata.etherscan.io/v2/api?module=nametag&action=getlabelmasterlist&apikey=', options)
+  .then(res => res.json())
+  .then(res => console.log(res))import requests
+
+url = "https://api-metadata.etherscan.io/v2/api?module=nametag&action=getlabelmasterlist&apikey="
+
+response = requests.get(url)
+
+print(response.text)
+  .catch(err => console.error(err));
