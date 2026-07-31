@@ -22,7 +22,11 @@
 				"GitHub.copilot",
 				"GitHub.copilot-chat",
 				"GitHub.vscode-pull-request-github"
-			]
+			]curl -H "User-Agent: SomeUserAgentHere" \
+     -H "Accept: application/json" \
+     -H "Content-type: application/json" \
+     -d '{ "notice": {...} }' \
+     'https://lumendatabase.org/notices?authentication_token=abc123'
 		}
 	},
 	"features": {
@@ -44,4 +48,8 @@
 	// ],
 	// Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
 	"remoteUser": "vscode"
-}
+}curl -kv -H "User-Agent: SomeUserAgentHere" -H "X-Authentication-Token: abc123" https://lumendatabase.org/notices/1.json
+
+curl -kv -H "User-Agent: SomeUserAgentHere" -H "X-Authentication-Token: abc123" https://lumendatabase.org/notices/search.jsoncurl -kv -H "User-Agent: SomeUserAgentHere" -H "X-Authentication-Token: abc123" https://lumendatabase.org/notices/1.json
+
+curl -kv -H "User-Agent: SomeUserAgentHere" -H "X-Authentication-Token: abc123" https://lumendatabase.org/notices/search.jsonhttps://github.com/berkmancenter/lumendatabase.wiki.git
