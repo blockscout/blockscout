@@ -142,6 +142,7 @@ defmodule Explorer.Repo do
         Explorer.Repo.Beacon,
         Explorer.Repo.Blackfort,
         Explorer.Repo.Celo,
+        Explorer.Repo.Eden,
         Explorer.Repo.Filecoin,
         Explorer.Repo.Mud,
         Explorer.Repo.Optimism,

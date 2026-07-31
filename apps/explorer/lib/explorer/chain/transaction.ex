@@ -66,6 +66,22 @@ defmodule Explorer.Chain.Transaction.Schema do
                             2
                           )
 
+                        :eden ->
+                          elem(
+                            quote do
+                              belongs_to(
+                                :fee_payer_address,
+                                Address,
+                                foreign_key: :fee_payer_address_hash,
+                                references: :hash,
+                                type: Hash.Address
+                              )
+
+                              field(:calls, {:array, :map})
+                            end,
+                            2
+                          )
+
                         :suave ->
                           elem(
                             quote do
@@ -350,6 +366,9 @@ defmodule Explorer.Chain.Transaction do
                                 :scroll ->
                                   ~w(l1_fee queue_index)a
 
+                                :eden ->
+                                  ~w(fee_payer_address_hash calls)a
+
                                 :suave ->
                                   ~w(execution_node_hash wrapped_type wrapped_nonce wrapped_to_address_hash wrapped_gas wrapped_gas_price wrapped_max_priority_fee_per_gas wrapped_max_fee_per_gas wrapped_value wrapped_input wrapped_v wrapped_r wrapped_s wrapped_hash)a
 
@@ -531,6 +550,9 @@ defmodule Explorer.Chain.Transaction do
    * `wrapped_r` - R field of the signature from the `wrapped` field (used by Suave)
    * `wrapped_s` - S field of the signature from the `wrapped` field (used by Suave)
    * `wrapped_hash` - hash from the `wrapped` field (used by Suave)
+   * `fee_payer_address` - sponsor address which pays for the transaction (used by Eden)
+   * `fee_payer_address_hash` - `fee_payer_address` foreign key (used by Eden)
+   * `calls` - ordered list of the calls batched in a sponsored transaction (used by Eden)
    * `operator_fee_scalar` - operatorFeeScalar is a uint32 scalar set by a chain operator (used by some OP chains)
    * `operator_fee_constant` - operatorFeeConstant is a uint64 constant set by a chain operator (used by some OP chains)
    * `da_footprint_gas_scalar` - daFootprintGasScalar is a uint16 scalar used to calculate daFootprint introduced in Jovian OP upgrade

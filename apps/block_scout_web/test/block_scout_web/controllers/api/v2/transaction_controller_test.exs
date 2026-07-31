@@ -3385,6 +3385,71 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
+  if @chain_type == :eden do
+    describe "eden sponsored transactions" do
+      @eden_calls [
+        %{"to" => "0x11f60a633dd30a8d1a26dd6e20167a9293fb4647", "value" => 1, "input" => "0xdeadbeef"},
+        %{"to" => nil, "value" => 2, "input" => "0xc0ffee"}
+      ]
+
+      test "returns fee payer, calls and the sponsored transaction tag", %{conn: conn} do
+        fee_payer = insert(:address)
+
+        transaction =
+          :transaction
+          |> insert(type: 118, fee_payer_address_hash: fee_payer.hash, calls: @eden_calls)
+          |> with_block()
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+
+        assert response = json_response(request, 200)
+
+        assert response["fee_payer"]["hash"] == Address.checksum(fee_payer.hash)
+
+        assert response["calls"] == [
+                 %{
+                   "to" => Address.checksum("0x11f60a633dd30a8d1a26dd6e20167a9293fb4647"),
+                   "value" => "1",
+                   "input" => "0xdeadbeef"
+                 },
+                 %{"to" => nil, "value" => "2", "input" => "0xc0ffee"}
+               ]
+
+        assert "sponsored_transaction" in response["transaction_types"]
+      end
+
+      test "returns nil eden fields and no tag for regular transactions", %{conn: conn} do
+        transaction = :transaction |> insert(type: 2) |> with_block()
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+
+        assert response = json_response(request, 200)
+
+        assert response["fee_payer"] == nil
+        assert response["calls"] == nil
+        refute "sponsored_transaction" in response["transaction_types"]
+      end
+
+      test "omits calls in the transactions list", %{conn: conn} do
+        fee_payer = insert(:address)
+
+        transaction =
+          :transaction
+          |> insert(type: 118, fee_payer_address_hash: fee_payer.hash, calls: @eden_calls)
+          |> with_block()
+
+        request = get(conn, "/api/v2/transactions")
+
+        assert %{"items" => [item]} = json_response(request, 200)
+
+        assert item["hash"] == to_string(transaction.hash)
+        assert item["fee_payer"]["hash"] == Address.checksum(fee_payer.hash)
+        assert item["calls"] == nil
+        assert "sponsored_transaction" in item["transaction_types"]
+      end
+    end
+  end
+
   if @chain_type == :arbitrum do
     describe "/transactions/arbitrum-batch/:batch_number_param" do
       test "returns empty list when batch has no transactions", %{conn: conn} do

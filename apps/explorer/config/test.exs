@@ -72,6 +72,7 @@ for repo <- [
       Explorer.Repo.Blackfort,
       Explorer.Repo.BridgedTokens,
       Explorer.Repo.Celo,
+      Explorer.Repo.Eden,
       Explorer.Repo.Filecoin,
       Explorer.Repo.Mud,
       Explorer.Repo.Optimism,

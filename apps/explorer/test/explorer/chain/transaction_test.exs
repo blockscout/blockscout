@@ -44,6 +44,60 @@ defmodule Explorer.Chain.TransactionTest do
 
       assert %Changeset{valid?: true} = Transaction.changeset(%Transaction{}, changeset_params)
     end
+
+    if Application.compile_env(:explorer, :chain_type) == :eden do
+      test "casts the Eden sponsored transaction params merged with the receipt params" do
+        transaction_params =
+          %{
+            "type" => "0x76",
+            "nonce" => "0x1",
+            "maxPriorityFeePerGas" => "0x0",
+            "maxFeePerGas" => "0x7",
+            "gasLimit" => "0xa410",
+            "calls" => [%{"to" => "0x11f60a633dd30a8d1a26dd6e20167a9293fb4647", "value" => "0x0", "input" => "0x"}],
+            "hash" => "0x2b6e28053be6423e05a957b954990cc35971b48eb20d280fea148357fb2d09c0",
+            "blockHash" => "0x33f9bbda3453e26c88733d33db3239bfd03e30b6d6ea338d10b39e246ad0c765",
+            "blockNumber" => "0xafcd9e4",
+            "transactionIndex" => "0x0",
+            "from" => "0x7d32cfa8ba0daa0d44cf3b0ac372205456fcd0d1",
+            "gasPrice" => "0x7",
+            "feePayer" => "0xcfc096e58b1f858e5a3ee88ecaeccb2b464625b5"
+          }
+          |> EthereumJSONRPC.Transaction.to_elixir()
+          |> EthereumJSONRPC.Transaction.elixir_to_params()
+
+        receipt_params =
+          %{
+            "status" => "0x1",
+            "cumulativeGasUsed" => "0x5208",
+            "gasUsed" => "0x5208",
+            "type" => "0x76",
+            "transactionHash" => "0x2b6e28053be6423e05a957b954990cc35971b48eb20d280fea148357fb2d09c0",
+            "transactionIndex" => "0x0",
+            "blockHash" => "0x33f9bbda3453e26c88733d33db3239bfd03e30b6d6ea338d10b39e246ad0c765",
+            "blockNumber" => "0xafcd9e4",
+            "contractAddress" => nil,
+            "effectiveGasPrice" => "0x7",
+            "feePayer" => "0xcfc096e58b1f858e5a3ee88ecaeccb2b464625b5"
+          }
+          |> EthereumJSONRPC.Receipt.to_elixir()
+          |> EthereumJSONRPC.Receipt.elixir_to_params()
+
+        params = Map.merge(transaction_params, receipt_params)
+
+        assert %Changeset{valid?: true, changes: changes} =
+                 Transaction.changeset(%Transaction{}, params)
+
+        assert changes.type == 118
+        assert changes.status == :ok
+        assert to_string(changes.gas) == "42000"
+        assert to_string(changes.gas_used) == "21000"
+        assert changes.calls == [%{"to" => "0x11f60a633dd30a8d1a26dd6e20167a9293fb4647", "value" => 0, "input" => "0x"}]
+        assert to_string(changes.fee_payer_address_hash) == "0xcfc096e58b1f858e5a3ee88ecaeccb2b464625b5"
+        assert to_string(changes.to_address_hash) == "0x11f60a633dd30a8d1a26dd6e20167a9293fb4647"
+        assert to_string(changes.hash) == "0x2b6e28053be6423e05a957b954990cc35971b48eb20d280fea148357fb2d09c0"
+      end
+    end
   end
 
   describe "transactions_with_token_transfers/2" do
