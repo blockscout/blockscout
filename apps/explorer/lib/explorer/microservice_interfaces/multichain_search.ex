@@ -892,7 +892,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         }
       end)
 
-    main_queue = hashes_to_queue ++ addresses_to_queue
+    main_queue = Enum.sort_by(hashes_to_queue ++ addresses_to_queue, &{&1.hash, &1.hash_type})
 
     balances_queue = compose_balances_queue(address_coin_balances, address_token_balances)
 
@@ -937,7 +937,10 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         }
       end)
 
-    coin_balances_queue ++ token_balances_queue
+    Enum.sort_by(
+      coin_balances_queue ++ token_balances_queue,
+      &{&1.address_hash, &1.token_contract_address_hash_or_native, &1[:token_id]}
+    )
   end
 
   @spec http_post_request(String.t(), map()) :: {:ok, any()} | {:error, String.t()}
