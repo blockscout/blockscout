@@ -14,22 +14,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Countdown do
     additionalProperties: false,
     properties: %{
       current_block_number: %Schema{
-        type: :integer,
+        type: :string,
         description: "The current highest block number in the blockchain",
-        minimum: 0,
-        example: 22_566_361
+        example: "22566361"
       },
       countdown_block_number: %Schema{
-        type: :integer,
+        type: :string,
         description: "The target block number for the countdown",
-        minimum: 0,
-        example: 22_600_000
+        example: "22600000"
       },
       remaining_blocks_count: %Schema{
-        type: :integer,
+        type: :string,
         description: "Number of blocks remaining until the target block is reached",
-        minimum: 0,
-        example: 33_639
+        example: "33639"
       },
       estimated_time_in_seconds: %Schema{
         type: :string,
@@ -44,9 +41,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Block.Countdown do
       :estimated_time_in_seconds
     ],
     example: %{
-      current_block_number: 22_566_361,
-      countdown_block_number: 22_600_000,
-      remaining_blocks_count: 33_639,
+      current_block_number: "22566361",
+      countdown_block_number: "22600000",
+      remaining_blocks_count: "33639",
       estimated_time_in_seconds: "404868.0"
     }
   })
