@@ -1579,6 +1579,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   # - `nil` in case of error.
   @spec read_system_config(String.t(), EthereumJSONRPC.json_rpc_named_arguments()) ::
           {non_neg_integer(), String.t(), String.t()} | nil
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp read_system_config(contract_address, json_rpc_named_arguments) do
     requests = [
       # startBlock() public getter
