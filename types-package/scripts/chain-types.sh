@@ -4,6 +4,7 @@ CHAIN_TYPES=(
   arbitrum
   arc
   blackfort
+  eden
   ethereum
   filecoin
   neon

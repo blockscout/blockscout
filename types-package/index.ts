@@ -18,6 +18,7 @@ export type schemas = merged.components["schemas"];
 export * as arbitrum from "./dist/chains/arbitrum.schema";
 export * as arc from "./dist/chains/arc.schema";
 export * as blackfort from "./dist/chains/blackfort.schema";
+export * as eden from "./dist/chains/eden.schema";
 export * as ethereum from "./dist/chains/ethereum.schema";
 export * as filecoin from "./dist/chains/filecoin.schema";
 export * as neon from "./dist/chains/neon.schema";

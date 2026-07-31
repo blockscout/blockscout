@@ -186,6 +186,20 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           |> Map.put([execution_node: :names], :optional)
           |> Map.put([wrapped_to_address: :names], :optional)
 
+        :eden ->
+          Map.put(
+            necessity_by_association_with_actions,
+            [
+              fee_payer_address: [
+                :scam_badge,
+                :names,
+                :smart_contract,
+                proxy_implementations_association()
+              ]
+            ],
+            :optional
+          )
+
         _ ->
           necessity_by_association_with_actions
       end

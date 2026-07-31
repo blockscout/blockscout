@@ -13,6 +13,7 @@ defmodule ConfigHelper do
       %{
         {:arbitrum, nil} => [Explorer.Repo.Arbitrum],
         {:blackfort, nil} => [Explorer.Repo.Blackfort],
+        {:eden, nil} => [Explorer.Repo.Eden],
         {:ethereum, nil} => [Explorer.Repo.Beacon],
         {:filecoin, nil} => [Explorer.Repo.Filecoin],
         {:optimism, nil} => [Explorer.Repo.Optimism],
@@ -422,6 +423,7 @@ defmodule ConfigHelper do
     "arbitrum" => :arbitrum,
     "arc" => :arc,
     "blackfort" => :blackfort,
+    "eden" => :eden,
     "ethereum" => :ethereum,
     "filecoin" => :filecoin,
     "optimism" => :optimism,

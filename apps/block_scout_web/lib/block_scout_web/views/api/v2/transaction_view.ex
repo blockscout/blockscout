@@ -769,7 +769,20 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
                | :token_transfer
                | :blob_transaction
                | :set_code_transaction
-  def transaction_types(transaction, types \\ [], stage \\ :set_code_transaction)
+               | :sponsored_transaction
+  def transaction_types(transaction, types \\ [], stage \\ :sponsored_transaction)
+
+  def transaction_types(%Transaction{type: type} = transaction, types, :sponsored_transaction) do
+    # Eden sponsored (batched) transaction type
+    types =
+      if chain_type() == :eden and type == 118 do
+        [:sponsored_transaction | types]
+      else
+        types
+      end
+
+    transaction_types(transaction, types, :set_code_transaction)
+  end
 
   def transaction_types(%Transaction{type: type} = transaction, types, :set_code_transaction) do
     # EIP-7702 set code transaction type
@@ -1036,6 +1049,17 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     BlockScoutWeb.API.V2.SuaveView.extend_transaction_json_response(
       transaction,
       result,
+      single_transaction?,
+      conn,
+      watchlist_names
+    )
+  end
+
+  defp do_with_chain_type_fields(result, :eden, transaction, single_transaction?, conn, watchlist_names) do
+    # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+    BlockScoutWeb.API.V2.EdenView.extend_transaction_json_response(
+      result,
+      transaction,
       single_transaction?,
       conn,
       watchlist_names
