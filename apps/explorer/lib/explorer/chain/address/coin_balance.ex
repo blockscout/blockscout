@@ -386,15 +386,20 @@ defmodule Explorer.Chain.Address.CoinBalance do
   end
 
   defp fetch_coin_balance(address_hash, block_number) do
-    coin_balance_subquery =
+    latest_balances_query =
       from(
         cb in CoinBalance,
         where: cb.address_hash == ^address_hash,
         where: cb.block_number <= ^block_number,
+        order_by: [desc: :block_number],
+        limit: ^2
+      )
+
+    coin_balance_subquery =
+      from(
+        cb in subquery(latest_balances_query),
         inner_join: b in Block,
         on: cb.block_number == b.number,
-        limit: ^2,
-        order_by: [desc: :block_number],
         select_merge: %{block_timestamp: b.timestamp}
       )
 
