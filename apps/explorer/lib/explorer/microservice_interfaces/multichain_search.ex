@@ -349,14 +349,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     {prepared_main_data, prepared_balances_data} = prepare_export_data_for_queue(data_to_retry)
 
-    Repo.insert_all(
+    insert_all_in_chunks(
       MainExportQueue,
       Helper.add_timestamps(prepared_main_data),
       on_conflict: MainExportQueue.default_on_conflict(),
       conflict_target: [:hash, :hash_type]
     )
 
-    Repo.insert_all(
+    insert_all_in_chunks(
       BalancesExportQueue,
       Helper.add_timestamps(prepared_balances_data),
       on_conflict: BalancesExportQueue.default_on_conflict(),
@@ -580,21 +580,13 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       |> Enum.each(fn data_chunk ->
         {prepared_main_data, prepared_balances_data} = prepare_export_data_for_queue(data_chunk)
 
-        prepared_main_data
-        |> Helper.add_timestamps()
-        |> Enum.chunk_every(@export_queue_insert_chunk_size)
-        |> Enum.each(&Repo.insert_all(MainExportQueue, &1, on_conflict: :nothing))
+        insert_all_in_chunks(MainExportQueue, Helper.add_timestamps(prepared_main_data), on_conflict: :nothing)
 
-        prepared_balances_data
-        |> Helper.add_timestamps()
-        |> Enum.chunk_every(@export_queue_insert_chunk_size)
-        |> Enum.each(
-          &Repo.insert_all(BalancesExportQueue, &1,
-            on_conflict: {:replace, [:value, :updated_at]},
-            conflict_target:
-              {:unsafe_fragment,
-               ~s<(address_hash, token_contract_address_hash_or_native, COALESCE(token_id, -1::integer::numeric))>}
-          )
+        insert_all_in_chunks(BalancesExportQueue, Helper.add_timestamps(prepared_balances_data),
+          on_conflict: {:replace, [:value, :updated_at]},
+          conflict_target:
+            {:unsafe_fragment,
+             ~s<(address_hash, token_contract_address_hash_or_native, COALESCE(token_id, -1::integer::numeric))>}
         )
       end)
 
@@ -602,6 +594,17 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     else
       :ignore
     end
+  end
+
+  # Inserts already-timestamped export-queue rows in sub-batches bounded by
+  # `@export_queue_insert_chunk_size`, so a large list never exceeds the Postgres
+  # bind-parameter limit in a single `insert_all`. `opts` (e.g. `:on_conflict`,
+  # `:conflict_target`) are passed through unchanged to each `Repo.insert_all/3` call.
+  @spec insert_all_in_chunks(module(), [map()], keyword()) :: :ok
+  defp insert_all_in_chunks(queue_schema, entries, opts) do
+    entries
+    |> Enum.chunk_every(@export_queue_insert_chunk_size)
+    |> Enum.each(&Repo.insert_all(queue_schema, &1, opts))
   end
 
   @doc """
