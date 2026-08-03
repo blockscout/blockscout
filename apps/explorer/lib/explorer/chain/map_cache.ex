@@ -120,7 +120,6 @@ defmodule Explorer.Chain.MapCache do
 
     # credo:disable-for-next-line Credo.Check.Refactor.LongQuoteBlocks
     quote do
-      require Logger
       alias Explorer.Chain.MapCache
 
       @behaviour MapCache

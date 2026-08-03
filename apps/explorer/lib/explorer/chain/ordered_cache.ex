@@ -160,7 +160,6 @@ defmodule Explorer.Chain.OrderedCache do
     quote do
       require Logger
       alias Explorer.Chain.OrderedCache
-      alias Explorer.Helper
 
       @behaviour OrderedCache
 
