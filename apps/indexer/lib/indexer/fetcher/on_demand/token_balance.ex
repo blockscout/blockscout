@@ -253,13 +253,15 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
           acc
       end)
 
-    {:ok,
-     %{
-       address_token_balances: imported_tbs
-     }} = Chain.import(%{address_token_balances: %{params: import_params}, broadcast: :on_demand})
+    unless Enum.empty?(import_params) do
+      {:ok,
+       %{
+         address_token_balances: imported_tbs
+       }} = Chain.import(%{address_token_balances: %{params: import_params}, broadcast: :on_demand})
 
-    unless imported_tbs == [] do
-      Publisher.broadcast(%{address_token_balances: imported_tbs}, :on_demand)
+      unless imported_tbs == [] do
+        Publisher.broadcast(%{address_token_balances: imported_tbs}, :on_demand)
+      end
     end
   end
 
