@@ -42,6 +42,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   }
 
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
+  alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotImplementedResponse
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: ArbitrumSettlementReader
   alias Explorer.Chain.Beacon.Deposit
@@ -559,7 +560,8 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     responses: [
       ok: {"Block countdown information.", "application/json", Schemas.Block.Countdown},
       unprocessable_entity: JsonErrorResponse.response(),
-      not_found: NotFoundResponse.response()
+      not_found: NotFoundResponse.response(),
+      not_implemented: NotImplementedResponse.response()
     ]
 
   @doc """
