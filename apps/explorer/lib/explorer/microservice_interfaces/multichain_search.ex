@@ -25,6 +25,12 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   @max_concurrency 5
   @post_timeout :timer.minutes(5)
 
+  # Max rows per `insert_all` into the export queues. A single chunk from
+  # `extract_batch_import_params_into_chunks/1` places all block and transaction hashes in
+  # its main data, which for a large refetch batch can exceed the Postgres bind-parameter
+  # limit (65535) in one statement, so the inserts are split into sub-batches.
+  @export_queue_insert_chunk_size 5_000
+
   @doc """
   Processes a batch import of data by splitting the input parameters into chunks and sending each chunk as an HTTP POST request to a configured microservice endpoint.
 
@@ -574,13 +580,21 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       |> Enum.each(fn data_chunk ->
         {prepared_main_data, prepared_balances_data} = prepare_export_data_for_queue(data_chunk)
 
-        Repo.insert_all(MainExportQueue, Helper.add_timestamps(prepared_main_data), on_conflict: :nothing)
+        prepared_main_data
+        |> Helper.add_timestamps()
+        |> Enum.chunk_every(@export_queue_insert_chunk_size)
+        |> Enum.each(&Repo.insert_all(MainExportQueue, &1, on_conflict: :nothing))
 
-        Repo.insert_all(BalancesExportQueue, Helper.add_timestamps(prepared_balances_data),
-          on_conflict: {:replace, [:value, :updated_at]},
-          conflict_target:
-            {:unsafe_fragment,
-             ~s<(address_hash, token_contract_address_hash_or_native, COALESCE(token_id, -1::integer::numeric))>}
+        prepared_balances_data
+        |> Helper.add_timestamps()
+        |> Enum.chunk_every(@export_queue_insert_chunk_size)
+        |> Enum.each(
+          &Repo.insert_all(BalancesExportQueue, &1,
+            on_conflict: {:replace, [:value, :updated_at]},
+            conflict_target:
+              {:unsafe_fragment,
+               ~s<(address_hash, token_contract_address_hash_or_native, COALESCE(token_id, -1::integer::numeric))>}
+          )
         )
       end)
 

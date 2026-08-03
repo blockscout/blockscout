@@ -228,9 +228,11 @@ defmodule Explorer.Chain.Block do
     Block,
     DenormalizationHelper,
     Hash,
+    InternalTransaction,
     PendingBlockOperation,
     PendingOperationsHelper,
     PendingTransactionOperation,
+    TokenTransfer,
     Transaction,
     Wei
   }
@@ -633,6 +635,10 @@ defmodule Explorer.Chain.Block do
   # application env (e.g. in tests).
   @default_full_refetch_batch_size 100
 
+  # Max number of hashes per `IN (...)` query when resolving touched addresses, kept well
+  # under the Postgres bind-parameter limit (65535).
+  @address_query_chunk_size 10_000
+
   @doc """
   Queues blocks for a full refetch and marks them as needing refetch.
 
@@ -764,8 +770,14 @@ defmodule Explorer.Chain.Block do
     end
   end
 
-  # Collects the addresses touched by the given blocks: those with a coin balance recorded at
-  # those blocks, plus the from/to/created-contract addresses of the blocks' transactions.
+  # Collects the addresses touched by the given blocks, matching the set the import pipeline
+  # exports: block miners, coin-balance owners recorded at those blocks, and the participant
+  # addresses of the blocks' transactions, token transfers and internal transactions
+  # (from/to/created-contract/token-contract). `nil` hashes are dropped and the result is
+  # deduplicated.
+  #
+  # The `Address` lookup is chunked because the collected hash set can exceed the Postgres
+  # bind-parameter limit (65535) for a single `IN (...)` query on a large refetch batch.
   @spec touched_addresses_in_refetch([integer()], [Transaction.t()]) :: [Address.t()]
   defp touched_addresses_in_refetch(block_numbers, transactions) do
     coin_balance_address_hashes =
@@ -775,14 +787,51 @@ defmodule Explorer.Chain.Block do
       )
       |> Repo.all()
 
+    miner_hashes =
+      from(block in Block, where: block.number in ^block_numbers, select: block.miner_hash) |> Repo.all()
+
+    token_transfer_address_hashes =
+      from(token_transfer in TokenTransfer,
+        where: token_transfer.block_number in ^block_numbers,
+        select: [
+          token_transfer.from_address_hash,
+          token_transfer.to_address_hash,
+          token_transfer.token_contract_address_hash
+        ]
+      )
+      |> Repo.all()
+      |> List.flatten()
+
+    internal_transaction_address_hashes =
+      from(internal_transaction in InternalTransaction,
+        where: internal_transaction.block_number in ^block_numbers,
+        select: [
+          internal_transaction.from_address_hash,
+          internal_transaction.to_address_hash,
+          internal_transaction.created_contract_address_hash
+        ]
+      )
+      |> Repo.all()
+      |> List.flatten()
+
     transaction_address_hashes =
-      transactions
-      |> Enum.flat_map(&[&1.from_address_hash, &1.to_address_hash, &1.created_contract_address_hash])
+      Enum.flat_map(transactions, &[&1.from_address_hash, &1.to_address_hash, &1.created_contract_address_hash])
+
+    address_hashes =
+      [
+        coin_balance_address_hashes,
+        miner_hashes,
+        token_transfer_address_hashes,
+        internal_transaction_address_hashes,
+        transaction_address_hashes
+      ]
+      |> Enum.concat()
       |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
 
-    address_hashes = Enum.uniq(coin_balance_address_hashes ++ transaction_address_hashes)
-
-    from(address in Address, where: address.hash in ^address_hashes) |> Repo.all()
+    address_hashes
+    |> Enum.chunk_every(@address_query_chunk_size)
+    |> Enum.flat_map(&Repo.all(from(address in Address, where: address.hash in ^&1)))
   end
 
   @doc """
