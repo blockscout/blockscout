@@ -260,9 +260,9 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       request = get(conn, "/api/v2/blocks/#{target_block_number}/countdown")
 
       assert %{
-               "current_block_number" => current_block_number,
-               "countdown_block_number" => target_block_number,
-               "remaining_blocks_count" => 10,
+               "current_block_number" => to_string(current_block_number),
+               "countdown_block_number" => to_string(target_block_number),
+               "remaining_blocks_count" => "10",
                "estimated_time_in_seconds" => "150.0"
              } == json_response(request, 200)
     end

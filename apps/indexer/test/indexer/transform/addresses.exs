@@ -245,6 +245,33 @@ defmodule Indexer.Transform.AddressesTest do
 
       assert Enum.empty?(addresses)
     end
+
+    test "transactions with a `fee_payer_address_hash` are extracted with the coin balance block number" do
+      fee_payer_hash = "0xcfc096e58b1f858e5a3ee88ecaeccb2b464625b5"
+
+      assert [_from_address, fee_payer_address] =
+               Addresses.extract_addresses(%{
+                 transactions: [
+                   %{
+                     block_number: 34,
+                     from_address_hash: "0x0000000000000000000000000000000000000001",
+                     nonce: 12,
+                     fee_payer_address_hash: fee_payer_hash
+                   }
+                 ]
+               })
+               |> Enum.sort_by(& &1.hash)
+
+      assert fee_payer_address == %{hash: fee_payer_hash, fetched_coin_balance_block_number: 34}
+    end
+
+    test "transactions with a `fee_payer_address_hash` without a `block_number` aren't extracted" do
+      assert Addresses.extract_addresses(%{
+               transactions: [
+                 %{fee_payer_address_hash: "0xcfc096e58b1f858e5a3ee88ecaeccb2b464625b5"}
+               ]
+             }) == []
+    end
   end
 
   describe "extract_addresses_from_collection/2" do

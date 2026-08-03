@@ -323,21 +323,21 @@ defmodule BlockScoutWeb.API.V2.FallbackController do
     conn
     |> put_status(501)
     |> put_view(ApiView)
-    |> render(:message, %{message: "Average block time calculating is disabled, so getblockcountdown is not available"})
+    |> render(:message, %{message: "Average block time calculation is disabled, so block countdown is not available"})
   end
 
   def call(conn, {stage, _}) when stage in ~w(max_block average_block_time)a do
     conn
-    |> put_status(200)
+    |> put_status(:unprocessable_entity)
     |> put_view(ApiView)
     |> render(:message, %{message: "Chain is indexing now, try again later"})
   end
 
   def call(conn, {:remaining_blocks, _}) do
     conn
-    |> put_status(200)
+    |> put_status(:not_found)
     |> put_view(ApiView)
-    |> render(:message, %{message: "Error! Block number already pass"})
+    |> render(:message, %{message: "Block number already mined"})
   end
 
   def call(conn, {code, response}) when is_integer(code) do

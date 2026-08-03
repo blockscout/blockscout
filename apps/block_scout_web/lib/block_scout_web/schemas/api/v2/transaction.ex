@@ -131,6 +131,18 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
     additionalProperties: false
   }
 
+  @eden_call_schema %Schema{
+    type: :object,
+    nullable: false,
+    properties: %{
+      to: General.AddressHashNullable,
+      value: General.IntegerString,
+      input: General.HexString
+    },
+    required: [:to, :value, :input],
+    additionalProperties: false
+  }
+
   @doc """
    Applies chain-specific field customizations to the given schema based on the configured chain type.
 
@@ -187,6 +199,16 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
 
       :scroll ->
         schema |> Helper.extend_schema(properties: %{scroll: @scroll_schema})
+
+      :eden ->
+        schema
+        |> Helper.extend_schema(
+          properties: %{
+            fee_payer: %Schema{allOf: [Address], nullable: true},
+            calls: %Schema{type: :array, items: @eden_call_schema, nullable: true}
+          },
+          required: [:fee_payer, :calls]
+        )
 
       :suave ->
         schema
@@ -411,7 +433,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
               "token_creation",
               "token_transfer",
               "blob_transaction",
-              "set_code_transaction"
+              "set_code_transaction",
+              "sponsored_transaction"
             ]
           }
         },
