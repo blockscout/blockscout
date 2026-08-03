@@ -120,7 +120,6 @@ defmodule Explorer.Chain.MapCache do
 
     # credo:disable-for-next-line Credo.Check.Refactor.LongQuoteBlocks
     quote do
-      require Logger
       alias Explorer.Chain.MapCache
 
       @behaviour MapCache
@@ -180,26 +179,19 @@ defmodule Explorer.Chain.MapCache do
       end
 
       @doc """
-      Applies a ConCache write locally, then propagates it from indexer nodes.
+      Applies a ConCache write locally, then propagates it to other nodes.
 
       With the default `propagate: true`, the given zero-arity function runs on this node first.
-      When `Explorer.mode/0` is `:indexer`, the same function is multicast to `Node.list/0` with
-      `propagate: false` so API nodes apply the write without re-propagating.
+      Then, the same function is multicast to `Node.list/0` with
+      `propagate: false` so other nodes apply the write without re-propagating.
       """
       def do_raw(function, propagate \\ true) do
         function.()
 
-        case Explorer.mode() do
-          :indexer ->
-            if propagate do
-              Node.list() |> :erpc.multicast(__MODULE__, :do_raw, [function, false])
-            else
-              Logger.error("[#{__MODULE__}] Indexer got unexpected propagation call to do_raw/2")
-              :ok
-            end
-
-          _ ->
-            :ok
+        if propagate do
+          Node.list() |> :erpc.multicast(__MODULE__, :do_raw, [function, false])
+        else
+          :ok
         end
       end
 
