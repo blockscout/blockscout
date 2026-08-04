@@ -137,7 +137,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
     properties: %{
       to: General.AddressHashNullable,
       value: General.IntegerString,
-      input: General.HexString
+      input: General.HexData
     },
     required: [:to, :value, :input],
     additionalProperties: false
