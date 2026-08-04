@@ -25,7 +25,7 @@
 - Restore per-instance results for on-demand NFT metadata refetch ([#14530](https://github.com/blockscout/blockscout/pull/14530))
 - Fix Solidity verifier false positives caused by substring collisions in constructor argument matching ([#14477](https://github.com/blockscout/blockscout/issues/14477))
 - Fix Solidity verifier version-check bypass and malformed version parsing ([#14475](https://github.com/blockscout/blockscout/issues/14475))
-- Fix ungarded Integer.parse issues in Solidity version parsing ([#14505](https://github.com/blockscout/blockscout/issues/14505))
+- Fix unguarded Integer.parse issues in Solidity version parsing ([#14505](https://github.com/blockscout/blockscout/issues/14505))
 - Fix silent fallback and empty-map masking in bytecode metadata extraction and CBOR decoding ([#14504](https://github.com/blockscout/blockscout/issues/14504), [#14503](https://github.com/blockscout/blockscout/issues/14503), [#14502](https://github.com/blockscout/blockscout/issues/14502), [#14499](https://github.com/blockscout/blockscout/issues/14499), [#14497](https://github.com/blockscout/blockscout/issues/14497))
 - Fix an OpenAPI issue where CSV-returning endpoints could return 406 errors ([#14416](https://github.com/blockscout/blockscout/issues/14416))
 - Fix OpenAPI coverage for Stability validators and Shibarium endpoints ([#14323](https://github.com/blockscout/blockscout/issues/14323), [#14322](https://github.com/blockscout/blockscout/issues/14322))
