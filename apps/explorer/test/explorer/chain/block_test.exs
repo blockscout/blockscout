@@ -2,10 +2,16 @@
 defmodule Explorer.Chain.BlockTest do
   use Explorer.DataCase
 
+  import Mox
+
   alias Ecto.Changeset
   alias Explorer.Chain.{Address, Block, PendingBlockOperation, Wei}
+  alias Explorer.Chain.Cache.ChainId
   alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
+  alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue}
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.PagingOptions
+  alias Explorer.TestHelper
 
   describe "changeset/2" do
     test "with valid attributes" do
@@ -403,6 +409,9 @@ defmodule Explorer.Chain.BlockTest do
   end
 
   describe "full_refetch/1" do
+    setup :set_mox_global
+    setup :verify_on_exit!
+
     test "with block numbers" do
       Enum.each(1..5, fn _i ->
         insert(:block)
@@ -459,6 +468,71 @@ defmodule Explorer.Chain.BlockTest do
       assert Repo.one(Block).refetch_needed == true
 
       assert [%{block_number: ^block_number}] = Repo.all(InternalTransactionDeleteQueue)
+    end
+
+    test "processes multiple batches and populates the multichain main export queue (blocks, transactions, addresses), leaving the balances queue empty" do
+      Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
+
+      multichain_configuration = Application.get_env(:explorer, MultichainSearch)
+      full_refetch_batch_size_config = Application.get_env(:explorer, :full_refetch_batch_size)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, MultichainSearch, multichain_configuration)
+
+        if full_refetch_batch_size_config do
+          Application.put_env(:explorer, :full_refetch_batch_size, full_refetch_batch_size_config)
+        else
+          Application.delete_env(:explorer, :full_refetch_batch_size)
+        end
+      end)
+
+      bypass = Bypass.open()
+
+      Application.put_env(
+        :explorer,
+        MultichainSearch,
+        Keyword.merge(multichain_configuration || [],
+          service_url: "http://localhost:#{bypass.port}",
+          addresses_chunk_size: 7_000
+        )
+      )
+
+      # Batch size smaller than the number of blocks forces more than one batch.
+      Application.put_env(:explorer, :full_refetch_batch_size, 2)
+
+      blocks = for number <- 1..3, do: insert(:block, number: number)
+      transactions = for block <- blocks, do: :transaction |> insert() |> with_block(block)
+
+      TestHelper.get_chain_id_mock()
+
+      assert :ok = Block.full_refetch(Enum.map(blocks, & &1.number))
+
+      # All batches were processed.
+      assert Enum.all?(Repo.all(Block), &(&1.refetch_needed == true))
+      assert Repo.aggregate(InternalTransactionDeleteQueue, :count, :block_number) == 3
+
+      main_queue = Repo.all(MainExportQueue)
+
+      queued_hashes = fn hash_type ->
+        main_queue |> Enum.filter(&(&1.hash_type == hash_type)) |> Enum.map(& &1.hash) |> MapSet.new()
+      end
+
+      queued_block_hashes = queued_hashes.(:block)
+      queued_transaction_hashes = queued_hashes.(:transaction)
+      queued_address_hashes = queued_hashes.(:address)
+
+      for block <- blocks do
+        assert MapSet.member?(queued_block_hashes, block.hash.bytes)
+      end
+
+      for transaction <- transactions do
+        assert MapSet.member?(queued_transaction_hashes, transaction.hash.bytes)
+        assert MapSet.member?(queued_address_hashes, transaction.from_address_hash.bytes)
+      end
+
+      # Balances are intentionally excluded from `full_refetch/1`.
+      assert Repo.aggregate(BalancesExportQueue, :count, :id) == 0
     end
   end
 end

@@ -224,19 +224,24 @@ defmodule Explorer.Chain.Block do
   alias EthereumJSONRPC.Utility.RangesHelper
 
   alias Explorer.Chain.{
+    Address,
     Block,
     DenormalizationHelper,
     Hash,
+    InternalTransaction,
     PendingBlockOperation,
     PendingOperationsHelper,
     PendingTransactionOperation,
+    TokenTransfer,
     Transaction,
     Wei
   }
 
   alias Explorer.{Chain, Helper, PagingOptions, Repo}
+  alias Explorer.Chain.Address.CoinBalance
   alias Explorer.Chain.Block.{EmissionReward, Reward, SecondDegreeRelation}
   alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Utility.MissingBlockRange
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
@@ -623,14 +628,28 @@ defmodule Explorer.Chain.Block do
     |> Decimal.div_int(base_fee_max_change_denominator)
   end
 
+  # A single `full_refetch/1` call may cover millions of blocks, so the block numbers are
+  # processed in fixed-size batches. Each batch runs in its own database transaction with
+  # bounded queries, keeping transaction size, lock duration and memory usage predictable
+  # regardless of the total range size. Overridable via the `:full_refetch_batch_size`
+  # application env (e.g. in tests).
+  @default_full_refetch_batch_size 100
+
+  # Max number of hashes per `IN (...)` query when resolving touched addresses, kept well
+  # under the Postgres bind-parameter limit (65535).
+  @address_query_chunk_size 10_000
+
   @doc """
   Queues blocks for a full refetch and marks them as needing refetch.
 
   This function accepts either a block ranges string, a list of block numbers,
   or a single block number. When given a ranges string, it parses the string into
   individual block numbers. It then enqueues the blocks for internal transaction
-  cleanup and marks the corresponding blocks with `refetch_needed: true` inside a
-  single database transaction.
+  cleanup and marks the corresponding blocks with `refetch_needed: true`.
+
+  Because a single call may cover millions of blocks, the work is split into
+  fixed-size batches. Each batch runs in its own database transaction, so atomicity
+  is per-batch rather than across the whole range.
 
   ## Parameters
 
@@ -638,22 +657,22 @@ defmodule Explorer.Chain.Block do
 
   ## Returns
 
-    - The result of `Repo.transaction/2` for range strings and lists.
-    - The delegated result for a single block number.
+    - `:ok` if all batches were processed successfully.
+    - `{:error, reason}` if a batch's transaction failed, in which case the remaining batches are not processed.
 
   ## Examples
 
       iex> full_refetch("1..3,5..6")
-      {:ok, _}
+      :ok
 
       iex> full_refetch([10, 11, 12])
-      {:ok, _}
+      :ok
 
       iex> full_refetch(15)
-      {:ok, _}
+      :ok
 
   """
-  @spec full_refetch(binary() | [integer()] | integer()) :: {:ok, any()} | {:error, any()}
+  @spec full_refetch(binary() | [integer()] | integer()) :: :ok | {:error, any()}
   def full_refetch(block_ranges_string) when is_binary(block_ranges_string) do
     block_ranges_string
     |> RangesHelper.parse_block_ranges_to_numbers()
@@ -661,17 +680,37 @@ defmodule Explorer.Chain.Block do
   end
 
   def full_refetch(block_numbers) when is_list(block_numbers) do
+    block_numbers
+    |> Enum.chunk_every(full_refetch_batch_size())
+    |> Enum.reduce_while(:ok, fn batch, _acc ->
+      case full_refetch_batch(batch) do
+        {:ok, _result} -> {:cont, :ok}
+        {:error, _reason} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  def full_refetch(block_number), do: full_refetch([block_number])
+
+  defp full_refetch_batch_size do
+    Application.get_env(:explorer, :full_refetch_batch_size, @default_full_refetch_batch_size)
+  end
+
+  # Processes a single batch of block numbers in one database transaction: enqueues them for
+  # internal transaction cleanup, marks them as needing refetch, and enqueues the blocks,
+  # their transactions and touched addresses for export to the Multichain Service.
+  @spec full_refetch_batch([integer()]) :: {:ok, any()} | {:error, any()}
+  defp full_refetch_batch(block_numbers) do
     Repo.transaction(
       fn ->
         # TODO: delete other crucial entities as well
         InternalTransactionDeleteQueue.batch_insert(block_numbers)
         set_refetch_needed(block_numbers)
+        send_refetched_data_to_multichain_queue(block_numbers)
       end,
       timeout: :infinity
     )
   end
-
-  def full_refetch(block_number), do: full_refetch([block_number])
 
   @spec set_refetch_needed(integer | [integer]) :: :ok
   def set_refetch_needed(block_numbers) when is_list(block_numbers) do
@@ -695,6 +734,105 @@ defmodule Explorer.Chain.Block do
   end
 
   def set_refetch_needed(block_number), do: set_refetch_needed([block_number])
+
+  # Re-enqueues the blocks, their transactions, and the addresses they touched for export to
+  # the Multichain Service database.
+  #
+  # On re-import, a block is re-queued for export because `full_refetch/1` flips its
+  # `refetch_needed` flag, so the imported block row differs from the stored one and is
+  # returned by the import runner (which is what feeds the export queue). Transactions and
+  # addresses, however, are re-imported with identical data, so the corresponding runners'
+  # `... IS DISTINCT FROM ...` on-conflict guards skip them: they are neither updated nor
+  # returned, and thus never reach the export queue. To keep the Multichain Service in sync
+  # we collect them here and hand them to `MultichainSearch.send_data_to_queue/1`, reusing
+  # the same formatting and queueing logic as the import pipeline.
+  #
+  # Balances are intentionally excluded: `address_coin_balances` is passed as an empty list
+  # so that `send_data_to_queue/1` does not derive coin balances from the addresses, and no
+  # token balances are passed either. Only the main export queue is populated.
+  #
+  # This operates on a single `full_refetch/1` batch, so its queries are already bounded by
+  # the batch size.
+  @spec send_refetched_data_to_multichain_queue([integer()]) :: :ignore | :ok
+  defp send_refetched_data_to_multichain_queue(block_numbers) do
+    if MultichainSearch.enabled?() do
+      transactions = from(transaction in Transaction, where: transaction.block_number in ^block_numbers) |> Repo.all()
+
+      MultichainSearch.send_data_to_queue(%{
+        addresses: touched_addresses_in_refetch(block_numbers, transactions),
+        blocks: from(block in Block, where: block.number in ^block_numbers) |> Repo.all(),
+        transactions: transactions,
+        address_coin_balances: [],
+        address_current_token_balances: []
+      })
+    else
+      :ignore
+    end
+  end
+
+  # Collects the addresses touched by the given blocks, matching the set the import pipeline
+  # exports: block miners, coin-balance owners recorded at those blocks, and the participant
+  # addresses of the blocks' transactions, token transfers and internal transactions
+  # (from/to/created-contract/token-contract). `nil` hashes are dropped and the result is
+  # deduplicated.
+  #
+  # The `Address` lookup is chunked because the collected hash set can exceed the Postgres
+  # bind-parameter limit (65535) for a single `IN (...)` query on a large refetch batch.
+  @spec touched_addresses_in_refetch([integer()], [Transaction.t()]) :: [Address.t()]
+  defp touched_addresses_in_refetch(block_numbers, transactions) do
+    coin_balance_address_hashes =
+      from(coin_balance in CoinBalance,
+        where: coin_balance.block_number in ^block_numbers,
+        select: coin_balance.address_hash
+      )
+      |> Repo.all()
+
+    miner_hashes =
+      from(block in Block, where: block.number in ^block_numbers, select: block.miner_hash) |> Repo.all()
+
+    token_transfer_address_hashes =
+      from(token_transfer in TokenTransfer,
+        where: token_transfer.block_number in ^block_numbers,
+        select: [
+          token_transfer.from_address_hash,
+          token_transfer.to_address_hash,
+          token_transfer.token_contract_address_hash
+        ]
+      )
+      |> Repo.all()
+      |> List.flatten()
+
+    internal_transaction_address_hashes =
+      from(internal_transaction in InternalTransaction,
+        where: internal_transaction.block_number in ^block_numbers,
+        select: [
+          internal_transaction.from_address_hash,
+          internal_transaction.to_address_hash,
+          internal_transaction.created_contract_address_hash
+        ]
+      )
+      |> Repo.all()
+      |> List.flatten()
+
+    transaction_address_hashes =
+      Enum.flat_map(transactions, &[&1.from_address_hash, &1.to_address_hash, &1.created_contract_address_hash])
+
+    address_hashes =
+      [
+        coin_balance_address_hashes,
+        miner_hashes,
+        token_transfer_address_hashes,
+        internal_transaction_address_hashes,
+        transaction_address_hashes
+      ]
+      |> Enum.concat()
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    address_hashes
+    |> Enum.chunk_every(@address_query_chunk_size)
+    |> Enum.flat_map(&Repo.all(from(address in Address, where: address.hash in ^&1)))
+  end
 
   @doc """
   Generates a query to fetch blocks by their hashes.
