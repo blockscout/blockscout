@@ -2,7 +2,84 @@
 
 ## 12.0.0
 
+### 🚀 Features
 
+- Migrate Sourcify integration from API v1 to v2 ([#14584](https://github.com/blockscout/blockscout/pull/14584))
+- Add realtime ERC-20 token balance and block indexing delay metrics ([#14531](https://github.com/blockscout/blockscout/pull/14531))
+- Add universal merged API types, operation shorthands, and API v2 schema correctness improvements ([#14515](https://github.com/blockscout/blockscout/pull/14515))
+- Add an option to disable core proxy methods in the Ethereum JSON-RPC API ([#14495](https://github.com/blockscout/blockscout/pull/14495))
+- Add ETH Swarm (bzz://) support for token metadata ([#14446](https://github.com/blockscout/blockscout/pull/14446))
+- Add ENS and metadata preloads to advanced filters and NFT owner output ([#14443](https://github.com/blockscout/blockscout/issues/14443), [#14428](https://github.com/blockscout/blockscout/pull/14428))
+- Add an include_zero_value flag for filtering zero-value internal transactions in REST endpoints ([#14400](https://github.com/blockscout/blockscout/issues/14400))
+- Add transaction log input decoding in ABI-like format ([#13783](https://github.com/blockscout/blockscout/issues/13783))
+- Add OpenAPI specs for ZKSync-specific REST API methods ([#13753](https://github.com/blockscout/blockscout/issues/13753))
+- Add support for exporting token transfers from a token through CSV export ([#7909](https://github.com/blockscout/blockscout/issues/7909))
+- Add support for runtime Redis SSL/TLS and Sentinel-based configuration for rate limiting and account services ([#12827](https://github.com/blockscout/blockscout/issues/12827), [#12889](https://github.com/blockscout/blockscout/issues/12889))
+- Add support for Search + BENS integration ([#13180](https://github.com/blockscout/blockscout/issues/13180))
+- Add support for token instance media type collection and metadata backfill ([#11208](https://github.com/blockscout/blockscout/issues/11208))
+
+### 🐛 Bug Fixes
+
+- Fix DeleteZeroValueInternalTransactions status inconsistency ([#14658](https://github.com/blockscout/blockscout/pull/14658))
+- Fix bytes32 ERC-20 name and symbol decoding ([#14578](https://github.com/blockscout/blockscout/pull/14578))
+- Restore per-instance results for on-demand NFT metadata refetch ([#14530](https://github.com/blockscout/blockscout/pull/14530))
+- Fix Solidity verifier false positives caused by substring collisions in constructor argument matching ([#14477](https://github.com/blockscout/blockscout/issues/14477))
+- Fix Solidity verifier version-check bypass and malformed version parsing ([#14475](https://github.com/blockscout/blockscout/issues/14475))
+- Fix ungarded Integer.parse issues in Solidity version parsing ([#14505](https://github.com/blockscout/blockscout/issues/14505))
+- Fix silent fallback and empty-map masking in bytecode metadata extraction and CBOR decoding ([#14504](https://github.com/blockscout/blockscout/issues/14504), [#14503](https://github.com/blockscout/blockscout/issues/14503), [#14502](https://github.com/blockscout/blockscout/issues/14502), [#14499](https://github.com/blockscout/blockscout/issues/14499), [#14497](https://github.com/blockscout/blockscout/issues/14497))
+- Fix an OpenAPI issue where CSV-returning endpoints could return 406 errors ([#14416](https://github.com/blockscout/blockscout/issues/14416))
+- Fix OpenAPI coverage for Stability validators and Shibarium endpoints ([#14323](https://github.com/blockscout/blockscout/issues/14323), [#14322](https://github.com/blockscout/blockscout/issues/14322))
+- Fix missing transaction links in Arc coin balance history ([#14382](https://github.com/blockscout/blockscout/pull/14382))
+- Fix recaptcha bypass handling when reCAPTCHA is disabled ([#14379](https://github.com/blockscout/blockscout/pull/14379))
+- Fix recaptcha_to_bypass_429 handling when reCAPTCHA is disabled and restore scoped bypass token query support ([#13703](https://github.com/blockscout/blockscout/issues/13703), [#13513](https://github.com/blockscout/blockscout/issues/13513))
+- Fix address tab counters by chain identity and type ([#14271](https://github.com/blockscout/blockscout/pull/14271))
+- Fix JSON-RPC error formatting and hex block parameter parsing ([#14216](https://github.com/blockscout/blockscout/issues/14216))
+- Fix scam-token counters when token filtering is disabled on an instance ([#13944](https://github.com/blockscout/blockscout/issues/13944))
+- Fix coin balance history websocket payloads to include transaction hashes ([#8849](https://github.com/blockscout/blockscout/issues/8849))
+
+### 🚜 Refactor
+
+- Refactor smart contract decoding and reader flow for ABI-like input parsing ([#7744](https://github.com/blockscout/blockscout/issues/7744))
+- Refactor JSON-RPC HTTP compression handling ([#12997](https://github.com/blockscout/blockscout/issues/12997))
+- Remove MUD customizations from the codebase ([#14485](https://github.com/blockscout/blockscout/pull/14485))
+- Remove the key from next_page_params to prevent secret leaks ([#14361](https://github.com/blockscout/blockscout/issues/14361))
+- Remove items_count from API v2 next_page_params responses to simplify payloads ([#12901](https://github.com/blockscout/blockscout/issues/12901))
+- Remove the token object from token instance API responses to keep payloads smaller ([#8805](https://github.com/blockscout/blockscout/issues/8805))
+- Drop address_hash columns from the internal_transactions storage layout ([#14230](https://github.com/blockscout/blockscout/issues/14230))
+- Refactor event-log storage layout around first-topic handling and new primary keys ([#14012](https://github.com/blockscout/blockscout/issues/14012), [#14014](https://github.com/blockscout/blockscout/issues/14014), [#14016](https://github.com/blockscout/blockscout/issues/14016), [#14017](https://github.com/blockscout/blockscout/issues/14017), [#14021](https://github.com/blockscout/blockscout/issues/14021))
+
+### 📚 Documentation
+
+- Add OpenAPI coverage for Stability validators endpoints ([#14323](https://github.com/blockscout/blockscout/issues/14323))
+- Add OpenAPI coverage for Shibarium endpoints ([#14322](https://github.com/blockscout/blockscout/issues/14322))
+- Add OpenAPI coverage for ZKSync-specific REST API methods ([#13753](https://github.com/blockscout/blockscout/issues/13753))
+- Add /api prefixes to endpoints in Swagger/OpenAPI docs ([#14263](https://github.com/blockscout/blockscout/pull/14263))
+- Add property-level description overlays without global component pollution ([#14367](https://github.com/blockscout/blockscout/issues/14367))
+- Improve API schema correctness and shared operation shorthands in the OpenAPI surface ([#14515](https://github.com/blockscout/blockscout/pull/14515))
+
+### ⚡ Performance
+
+- Skip expensive cleanup queries in lose_consensus when there are no block changes ([#14489](https://github.com/blockscout/blockscout/pull/14489))
+- Improve filling migration scheduling for background backfills ([#14493](https://github.com/blockscout/blockscout/pull/14493))
+- Optimize event-log storage and compression migrations for larger datasets ([#14012](https://github.com/blockscout/blockscout/issues/14012), [#14014](https://github.com/blockscout/blockscout/issues/14014), [#14016](https://github.com/blockscout/blockscout/issues/14016), [#14021](https://github.com/blockscout/blockscout/issues/14021))
+- Improve advanced filters performance and backfill throughput ([#13428](https://github.com/blockscout/blockscout/pull/13428), [#14493](https://github.com/blockscout/blockscout/pull/14493))
+- Backfill current token balances for the multichain DB exporter ([#12794](https://github.com/blockscout/blockscout/issues/12794))
+- Improve multichain search integration by importing addresses of smart-contract implementations ([#11491](https://github.com/blockscout/blockscout/issues/11491))
+- Add media type collection for token instances to improve NFT metadata workflows ([#11208](https://github.com/blockscout/blockscout/issues/11208))
+
+### ⚙️ Miscellaneous Tasks
+
+- Improve endpoint availability fault tolerance ([#14514](https://github.com/blockscout/blockscout/pull/14514))
+- Improve migration scheduling for log-filling tasks ([#14493](https://github.com/blockscout/blockscout/pull/14493))
+- Update smart_contracts.constructor_arguments from text to bytea ([#13371](https://github.com/blockscout/blockscout/issues/13371))
+- Encrypt management JWTs for Auth0 before storing them in Redis ([#12832](https://github.com/blockscout/blockscout/issues/12832))
+- Add automatic Optimism Holocene timestamp loading from Superchain registry TOML config ([#11641](https://github.com/blockscout/blockscout/issues/11641))
+- Spread scam-token filtering to GraphQL functionality ([#12140](https://github.com/blockscout/blockscout/issues/12140))
+- Support runtime Redis SSL/TLS and Sentinel-based configuration for rate limiting and account services ([#12827](https://github.com/blockscout/blockscout/issues/12827), [#12889](https://github.com/blockscout/blockscout/issues/12889))
+- Improve multichain search integration by importing smart-contract implementation addresses ([#11491](https://github.com/blockscout/blockscout/issues/11491))
+- Add support for circulating supply reporting ([#14532](https://github.com/blockscout/blockscout/issues/14532))
+- Add support for the EigenDA blob schema in Optimism block OpenAPI ([#14496](https://github.com/blockscout/blockscout/pull/14496))
+- Add support for disallowing extra properties in Optimism Alt-DA block schema ([#14488](https://github.com/blockscout/blockscout/pull/14488))
 
 ### New ENV variables
 
