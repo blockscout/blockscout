@@ -1639,6 +1639,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
           {fallback_start_block, fallback_inbox, fallback_submitter}
       end
 
+    env = Application.get_all_env(:indexer)[__MODULE__]
     # An explicitly configured inbox/submitter overrides the value read from the SystemConfig contract.
     # Only kicks in when the corresponding env variable holds a correct address, so the on-chain value
     # is still used by default.
