@@ -89,6 +89,10 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
             MigrationStatus.update_meta(@migration_name, state)
             state
 
+          %{status: "started", meta: %{"completed" => true} = meta} ->
+            MigrationStatus.set_status(@migration_name, "completed")
+            meta
+
           %{meta: meta} ->
             meta
         end
