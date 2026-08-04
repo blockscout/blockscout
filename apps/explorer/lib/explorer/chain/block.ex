@@ -243,6 +243,7 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Chain.Block.{EmissionReward, Reward, SecondDegreeRelation}
   alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
   alias Explorer.MicroserviceInterfaces.MultichainSearch
+  alias Explorer.Utility.AddressIdToAddressHash
   alias Explorer.Utility.MissingBlockRange
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
@@ -832,17 +833,23 @@ defmodule Explorer.Chain.Block do
       |> Repo.all()
       |> List.flatten()
 
-    internal_transaction_address_hashes =
+    # `InternalTransaction` stores participant addresses as `address_id` foreign keys into
+    # `address_ids_to_address_hashes`, and exposes the hashes only as virtual fields, so the ids
+    # are collected here and resolved to hashes in bulk.
+    internal_transaction_address_ids =
       from(internal_transaction in InternalTransaction,
         where: internal_transaction.block_number in ^block_numbers,
         select: [
-          internal_transaction.from_address_hash,
-          internal_transaction.to_address_hash,
-          internal_transaction.created_contract_address_hash
+          internal_transaction.from_address_id,
+          internal_transaction.to_address_id,
+          internal_transaction.created_contract_address_id
         ]
       )
       |> Repo.all()
       |> List.flatten()
+      |> Enum.reject(&is_nil/1)
+
+    internal_transaction_address_hashes = AddressIdToAddressHash.ids_to_hashes(internal_transaction_address_ids)
 
     transaction_address_hashes =
       Enum.flat_map(transactions, &[&1.from_address_hash, &1.to_address_hash, &1.created_contract_address_hash])
