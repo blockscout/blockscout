@@ -2,15 +2,23 @@
 defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsBlockNumberTransactionIndexNotNull do
   @moduledoc """
   Validate `NOT NULL` constraints for `logs` (`block_number`, `transaction_index`).
+
+  On Celo, logs may be emitted by the block itself, not by a transaction, so `transaction_index`
+  stays nullable there and only `block_number` is validated.
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
+
+  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
 
   alias Explorer.Migrator.{FillLogsOptimizedFields, HeavyDbIndexOperation, MigrationStatus}
 
   @table_name :logs
   @index_name "logs_not_null_constraints"
-  @columns ["block_number", "transaction_index"]
+  @columns (case @chain_identity do
+              {:optimism, :celo} -> ["block_number"]
+              _ -> ["block_number", "transaction_index"]
+            end)
   @operation_type :create
 
   @impl HeavyDbIndexOperation

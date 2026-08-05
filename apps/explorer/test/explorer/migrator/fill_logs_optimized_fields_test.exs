@@ -73,4 +73,27 @@ defmodule Explorer.Migrator.FillLogsOptimizedFieldsTest do
     assert <<first, _::binary>> = binary_topic
     assert first != 0
   end
+
+  test "keeps transaction_index of logs which are not linked to a transaction" do
+    log = insert(:log, transaction: nil, transaction_index: 5)
+
+    MigrationStatus.set_status(
+      CreateLogsBlockNumberTransactionIndexIndexUniqueIndex.migration_name(),
+      "completed"
+    )
+
+    Application.put_env(:explorer, FillLogsOptimizedFields, batch_size: 100, timeout: 0)
+
+    FillLogsOptimizedFields.start_link([])
+
+    wait_for_results(fn ->
+      Repo.one!(
+        from(ms in MigrationStatus,
+          where: ms.migration_name == ^"fill_logs_optimized_fields" and ms.status == "completed"
+        )
+      )
+    end)
+
+    assert %Log{transaction_index: 5} = Repo.get_by!(Log, block_number: log.block_number, index: log.index)
+  end
 end

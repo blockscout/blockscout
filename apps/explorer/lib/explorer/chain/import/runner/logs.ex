@@ -204,33 +204,67 @@ defmodule Explorer.Chain.Import.Runner.Logs do
         end
 
       _ ->
-        from(
-          log in Log,
-          update: [
-            set: [
-              address_id: fragment("EXCLUDED.address_id"),
-              compressed_data: fragment("EXCLUDED.compressed_data"),
-              first_topic_id: fragment("EXCLUDED.first_topic_id"),
-              second_topic: fragment("EXCLUDED.second_topic"),
-              third_topic: fragment("EXCLUDED.third_topic"),
-              fourth_topic: fragment("EXCLUDED.fourth_topic"),
-              # Don't update `index` as it is part of the composite primary key and used for the conflict target
-              # Don't update `transaction_index` as it is part of the composite primary key and used for the conflict target
-              inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", log.inserted_at),
-              updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", log.updated_at)
-            ]
-          ],
-          where:
-            fragment(
-              "(EXCLUDED.address_id, EXCLUDED.compressed_data, EXCLUDED.first_topic_id, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
-              log.address_id,
-              log.compressed_data,
-              log.first_topic_id,
-              log.second_topic,
-              log.third_topic,
-              log.fourth_topic
-            )
-        )
+        if LogHelper.primary_key_updated?() do
+          from(
+            log in Log,
+            update: [
+              set: [
+                address_id: fragment("EXCLUDED.address_id"),
+                compressed_data: fragment("EXCLUDED.compressed_data"),
+                first_topic_id: fragment("EXCLUDED.first_topic_id"),
+                second_topic: fragment("EXCLUDED.second_topic"),
+                third_topic: fragment("EXCLUDED.third_topic"),
+                fourth_topic: fragment("EXCLUDED.fourth_topic"),
+                # Don't update `index` as it is part of the composite primary key and used for the conflict target
+                # Don't update `transaction_index` as it is part of the composite primary key and used for the conflict target
+                inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", log.inserted_at),
+                updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", log.updated_at)
+              ]
+            ],
+            where:
+              fragment(
+                "(EXCLUDED.address_id, EXCLUDED.compressed_data, EXCLUDED.first_topic_id, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic) IS DISTINCT FROM (?, ?, ?, ?, ?, ?)",
+                log.address_id,
+                log.compressed_data,
+                log.first_topic_id,
+                log.second_topic,
+                log.third_topic,
+                log.fourth_topic
+              )
+          )
+        else
+          from(
+            log in Log,
+            update: [
+              set: [
+                address_id: fragment("EXCLUDED.address_id"),
+                compressed_data: fragment("EXCLUDED.compressed_data"),
+                first_topic_id: fragment("EXCLUDED.first_topic_id"),
+                second_topic: fragment("EXCLUDED.second_topic"),
+                third_topic: fragment("EXCLUDED.third_topic"),
+                fourth_topic: fragment("EXCLUDED.fourth_topic"),
+                # Don't update `index` as it is part of the composite primary key and used for the conflict target
+                # `transaction_index` is not a part of the conflict target yet, so it has to be updated in order to
+                # backfill the rows inserted before the `transaction_index` column was introduced. Otherwise such rows
+                # violate the `logs_transaction_index_not_null` constraint on update.
+                transaction_index: fragment("EXCLUDED.transaction_index"),
+                inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", log.inserted_at),
+                updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", log.updated_at)
+              ]
+            ],
+            where:
+              fragment(
+                "(EXCLUDED.address_id, EXCLUDED.compressed_data, EXCLUDED.first_topic_id, EXCLUDED.second_topic, EXCLUDED.third_topic, EXCLUDED.fourth_topic, EXCLUDED.transaction_index) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
+                log.address_id,
+                log.compressed_data,
+                log.first_topic_id,
+                log.second_topic,
+                log.third_topic,
+                log.fourth_topic,
+                log.transaction_index
+              )
+          )
+        end
     end
   end
 end
