@@ -2,9 +2,16 @@
 defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransactionIndexIndexUniqueIndex do
   @moduledoc """
   Create unique B-tree index `logs_block_number_transaction_index_index_index` on `logs` table for (`block_number`, `transaction_index`, `index`) columns.
+
+  The index becomes the primary key of `logs` in
+  `Explorer.Migrator.HeavyDbIndexOperation.UpdateLogsPrimaryKey`. On Celo, logs may be emitted by
+  the block itself, so `transaction_index` is nullable there and is excluded from the index. The
+  index name is kept the same for all chain types since it is used to track the migration status.
   """
 
   use Explorer.Migrator.HeavyDbIndexOperation
+
+  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
 
   require Logger
 
@@ -21,7 +28,10 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransacti
   @table_name :logs
   @index_name "logs_block_number_transaction_index_index_index"
   @operation_type :create
-  @table_columns ["block_number", "transaction_index", "index"]
+  @table_columns (case @chain_identity do
+                    {:optimism, :celo} -> ["block_number", "index"]
+                    _ -> ["block_number", "transaction_index", "index"]
+                  end)
 
   @impl HeavyDbIndexOperation
   def table_name, do: @table_name

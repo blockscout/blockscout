@@ -103,7 +103,20 @@ defmodule Explorer.Migrator.FillLogsOptimizedFields do
                   address_hash: nil,
                   first_topic_id: lft.id,
                   first_topic: nil,
-                  transaction_index: t.index,
+                  # Logs which are not linked to a transaction (Celo epoch logs) keep `NULL`:
+                  # `transaction_index` is nullable and excluded from the primary key for such
+                  # chains. For the rest the already filled value is kept, and the number of
+                  # transactions in the block is used as a last resort, since `transaction_index`
+                  # is `NOT NULL` there: it can't collide with the index of any real transaction
+                  # of the block.
+                  transaction_index:
+                    fragment(
+                      "COALESCE(?, ?, CASE WHEN ? IS NOT NULL THEN (SELECT count(*) FROM transactions WHERE block_number = ?) END)",
+                      t.index,
+                      l.transaction_index,
+                      l.transaction_hash,
+                      l.block_number
+                    ),
                   second_topic: fragment("bytea_ltrim_zeroes(?)", l.second_topic),
                   third_topic: fragment("bytea_ltrim_zeroes(?)", l.third_topic),
                   fourth_topic: fragment("bytea_ltrim_zeroes(?)", l.fourth_topic)

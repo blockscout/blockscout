@@ -72,7 +72,7 @@ defmodule Indexer.Block.Fetcher.Receipts do
         {:halt, {:error, reason}}
     end)
     |> case do
-      {:ok, receipt_params} -> {:ok, set_block_number_to_logs(receipt_params, transaction_params)}
+      {:ok, receipt_params} -> {:ok, set_block_number_and_transaction_index_to_logs(receipt_params, transaction_params)}
       other -> other
     end
   end
@@ -114,46 +114,43 @@ defmodule Indexer.Block.Fetcher.Receipts do
     end)
   end
 
-  # Updates block numbers in transaction logs by matching them with their parent transactions.
+  # Updates block numbers and transaction indexes in transaction logs by matching them with
+  # their parent transactions.
   #
-  # For logs with missing block numbers, finds the corresponding transaction and copies its
-  # block number to the log. Leaves logs with existing block numbers unchanged.
+  # Some clients omit `blockNumber` and/or `transactionIndex` in the logs returned within
+  # transaction receipts. Both fields are `NOT NULL` in the `logs` table, so they are restored
+  # from the corresponding transaction params. Logs with both fields set are left unchanged.
   #
   # ## Parameters
   # - `params`: Map containing logs and other optional data
-  # - `transaction_params`: List of transaction parameter maps with block numbers
+  # - `transaction_params`: List of transaction parameter maps with block numbers and indexes
   #
   # ## Returns
-  # - Updated params map with block numbers added to logs where missing
-  @spec set_block_number_to_logs(
+  # - Updated params map with block numbers and transaction indexes added to logs where missing
+  @spec set_block_number_and_transaction_index_to_logs(
           %{:logs => list(), optional(atom()) => any()},
           [%{:hash => EthereumJSONRPC.hash(), optional(atom()) => any()}]
         ) :: %{:logs => list(), optional(atom()) => any()}
-  defp set_block_number_to_logs(%{logs: logs} = params, transaction_params) do
-    logs_with_block_numbers =
-      Enum.map(logs, fn %{transaction_hash: transaction_hash, block_number: block_number} = log_params ->
-        if is_nil(block_number) do
-          transaction = find_transaction_by_hash(transaction_params, transaction_hash)
+  defp set_block_number_and_transaction_index_to_logs(%{logs: logs} = params, transaction_params) do
+    transaction_hash_to_transaction = Map.new(transaction_params, &{&1[:hash], &1})
 
-          %{log_params | block_number: transaction[:block_number]}
-        else
+    updated_logs =
+      Enum.map(logs, fn
+        %{block_number: block_number, transaction_index: transaction_index} = log_params
+        when is_nil(block_number) or is_nil(transaction_index) ->
+          transaction = transaction_hash_to_transaction[log_params.transaction_hash]
+
+          %{
+            log_params
+            | block_number: block_number || transaction[:block_number],
+              transaction_index: transaction_index || transaction[:index]
+          }
+
+        log_params ->
           log_params
-        end
       end)
 
-    %{params | logs: logs_with_block_numbers}
-  end
-
-  # Finds a transaction in the list of transaction parameters by its hash.
-  @spec find_transaction_by_hash(
-          [%{:hash => EthereumJSONRPC.hash(), optional(atom()) => any()}],
-          EthereumJSONRPC.hash()
-        ) ::
-          %{:hash => EthereumJSONRPC.hash(), optional(atom()) => any()} | nil
-  defp find_transaction_by_hash(transaction_params, transaction_hash) do
-    Enum.find(transaction_params, fn transaction ->
-      transaction[:hash] == transaction_hash
-    end)
+    %{params | logs: updated_logs}
   end
 
   defp split_transaction_params(transaction_params) do
