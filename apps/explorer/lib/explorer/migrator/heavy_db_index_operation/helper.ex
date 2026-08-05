@@ -272,15 +272,19 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   def validate_not_null_db_index_operation_status(table_name, columns) do
     column_name_condition = Enum.map_join(columns, " OR ", &"column_name = '#{&1}'")
 
+    columns_count = Enum.count(columns)
+
     completed? =
       case Repo.query("""
            SELECT is_nullable
            FROM information_schema.columns
            WHERE table_name = '#{table_name}' AND (#{column_name_condition});
            """) do
-        {:ok, %Postgrex.Result{rows: [["NO"], ["NO"]]}} -> true
-        {:ok, %Postgrex.Result{rows: [_, _]}} -> false
-        _ -> nil
+        {:ok, %Postgrex.Result{rows: rows}} when length(rows) == columns_count ->
+          Enum.all?(rows, &match?(["NO"], &1))
+
+        _ ->
+          nil
       end
 
     started? =

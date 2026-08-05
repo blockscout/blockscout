@@ -975,12 +975,12 @@ config :explorer, Explorer.Migrator.FillInternalTransactionsAddressIds,
 
 config :explorer, Explorer.Migrator.TransactionHasTokenTransfers,
   enabled: ConfigHelper.parse_bool_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_ENABLED", "true"),
-  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_BATCH_SIZE", 100),
-  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_CONCURRENCY", 10)
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_BATCH_SIZE", 30),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_CONCURRENCY", 5)
 
 config :explorer, Explorer.Migrator.FillLogsOptimizedFields,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_BATCH_SIZE", 30),
-  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_CONCURRENCY", 10),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_CONCURRENCY", 5),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_TIMEOUT", "5s")
 
 config :explorer, Explorer.Migrator.FillLogsCompressedData,

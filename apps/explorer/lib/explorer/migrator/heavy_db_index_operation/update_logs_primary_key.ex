@@ -88,12 +88,17 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateLogsPrimaryKey do
   def db_index_operation_status do
     completed? =
       case Repo.query("""
-           SELECT is_nullable
-           FROM information_schema.columns
-           WHERE table_name = '#{@table_name}' AND column_name = 'transaction_hash';
+           SELECT EXISTS (
+             SELECT 1
+             FROM pg_constraint c
+             JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY (c.conkey)
+             WHERE c.conrelid = '#{@table_name}'::regclass
+               AND c.contype = 'p'
+               AND a.attname = 'block_number'
+           );
            """) do
-        {:ok, %Postgrex.Result{rows: [["YES"]]}} -> true
-        {:ok, %Postgrex.Result{rows: [["NO"]]}} -> false
+        {:ok, %Postgrex.Result{rows: [[true]]}} -> true
+        {:ok, %Postgrex.Result{rows: [[false]]}} -> false
         _ -> nil
       end
 
