@@ -19,6 +19,7 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
     l1? = Keyword.get(options, :layer) == :l1
 
     Instrumenter.json_rpc_requests(method, l1?)
+    Helper.track_eth_call_methods(json, method, l1?)
 
     case do_post(url, json, headers, options) do
       {:ok, %Tesla.Env{body: body, status: status_code, headers: headers}} ->
