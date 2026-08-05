@@ -20,6 +20,7 @@
 
 ### 🐛 Bug Fixes
 
+- Update logs PK fixes ([#14660](https://github.com/blockscout/blockscout/pull/14660))
 - Fix DeleteZeroValueInternalTransactions status inconsistency ([#14658](https://github.com/blockscout/blockscout/pull/14658))
 - Fix bytes32 ERC-20 name and symbol decoding ([#14578](https://github.com/blockscout/blockscout/pull/14578))
 - Restore per-instance results for on-demand NFT metadata refetch ([#14530](https://github.com/blockscout/blockscout/pull/14530))
