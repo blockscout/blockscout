@@ -116,7 +116,7 @@ defmodule Indexer.Fetcher.Optimism do
     with {:system_config_valid, true} <- {:system_config_valid, Helper.address_correct?(system_config)},
          _ <- RollupL1ReorgMonitor.wait_for_start(caller),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-         json_rpc_named_arguments = Helper.json_rpc_named_arguments(optimism_l1_rpc),
+         json_rpc_named_arguments = Helper.l1_json_rpc_named_arguments(optimism_l1_rpc),
          {optimism_portal, start_block_l1} <- read_system_config(system_config, json_rpc_named_arguments),
          {:contract_is_valid, true} <-
            {:contract_is_valid, caller != Indexer.Fetcher.Optimism.OutputRoot or Helper.address_correct?(output_oracle)},

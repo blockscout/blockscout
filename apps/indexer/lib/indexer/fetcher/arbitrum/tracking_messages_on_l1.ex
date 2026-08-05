@@ -126,7 +126,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
 
     # Set up initial configuration structure
     initial_config = %{
-      json_l1_rpc_named_arguments: IndexerHelper.json_rpc_named_arguments(l1_rpc),
+      json_l1_rpc_named_arguments: IndexerHelper.l1_json_rpc_named_arguments(l1_rpc),
       json_l2_rpc_named_arguments: json_rpc_named_arguments,
       l1_rpc_block_range: l1_rpc_block_range,
       l1_rpc_chunk_size: l1_rpc_chunk_size,

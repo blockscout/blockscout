@@ -911,7 +911,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
       end
     end
 
-    # Sets up `:meck` to make `Indexer.Helper.json_rpc_named_arguments/1` return
+    # Sets up `:meck` to make `Indexer.Helper.l1_json_rpc_named_arguments/1` return
     # the Mox transport (via `EthereumJSONRPC.Mox`) regardless of the configured URL,
     # and seeds the Arbitrum fetcher config so `get_json_rpc(:l1)` and
     # `get_l1_rollup_address/0` return usable values. Also installs `Mox.set_mox_global`
@@ -936,7 +936,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
 
       :meck.new(Indexer.Helper, [:passthrough])
 
-      :meck.expect(Indexer.Helper, :json_rpc_named_arguments, fn _rpc_url ->
+      :meck.expect(Indexer.Helper, :l1_json_rpc_named_arguments, fn _rpc_url ->
         [
           transport: EthereumJSONRPC.Mox,
           transport_options: [],

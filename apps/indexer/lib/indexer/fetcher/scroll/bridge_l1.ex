@@ -78,7 +78,7 @@ defmodule Indexer.Fetcher.Scroll.BridgeL1 do
          start_block = env[:start_block],
          true <- start_block > 0,
          {last_l1_block_number, last_l1_transaction_hash} = Reader.last_l1_bridge_item(),
-         json_rpc_named_arguments = Helper.json_rpc_named_arguments(rpc),
+         json_rpc_named_arguments = Helper.l1_json_rpc_named_arguments(rpc),
          {:ok, block_check_interval, safe_block} <- Helper.get_block_check_interval(json_rpc_named_arguments),
          {:start_block_valid, true, _, _} <-
            {:start_block_valid,
