@@ -17,6 +17,7 @@ defmodule EthereumJSONRPC.HTTP.HTTPoison do
     l1? = Keyword.get(options, :layer) == :l1
 
     Instrumenter.json_rpc_requests(method, l1?)
+    Helper.track_eth_call_methods(json, method, l1?)
 
     case HTTPoison.post(url, json, headers, HTTPoisonHelper.request_opts(options)) do
       {:ok, %HTTPoison.Response{body: body, status_code: status_code, headers: headers}} ->
