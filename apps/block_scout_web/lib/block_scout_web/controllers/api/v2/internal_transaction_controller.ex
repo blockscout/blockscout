@@ -29,7 +29,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
       "Retrieves a paginated list of internal transactions. Internal transactions are generated during contract execution and not directly recorded on the blockchain.",
     parameters:
       base_params() ++
-        [query_transaction_hash_param(), limit_param(), include_zero_value_param()] ++
+        [query_transaction_hash_param(), include_zero_value_param()] ++
         define_paging_params(["index", "block_number", "transaction_index"]),
     responses: [
       ok:
@@ -61,7 +61,6 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
       options =
         options(paging_options, %{
           transaction_hash: transaction_hash,
-          limit: params[:limit],
           include_zero_value: Map.get(params, :include_zero_value, true)
         })
 
@@ -102,7 +101,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
     paging_options
     |> Keyword.put(:transaction_hash, params.transaction_hash)
     |> Keyword.put(:exclude_origin_internal_transaction, true)
-    |> Keyword.put(:include_zero_value, Map.get(params, :include_zero_value, true))
+    |> Keyword.put(:include_zero_value, params.include_zero_value)
     |> Keyword.merge(@api_true)
   end
 
