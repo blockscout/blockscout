@@ -38,6 +38,7 @@ defmodule EthereumJSONRPC.HTTP.Helper do
     |> Enum.frequencies()
     |> Enum.each(fn {method_id, count} ->
       Logger.debug(fn ->
+        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
         "eth_call request to method id #{method_id} on #{if l1?, do: "L1", else: "L2"} (count: #{count})"
       end)
 
