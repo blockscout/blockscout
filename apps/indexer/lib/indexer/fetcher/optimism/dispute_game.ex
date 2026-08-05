@@ -64,7 +64,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
 
     with {:system_config_valid, true} <- {:system_config_valid, IndexerHelper.address_correct?(system_config)},
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(rpc)},
-         json_rpc_named_arguments = IndexerHelper.json_rpc_named_arguments(rpc),
+         json_rpc_named_arguments = IndexerHelper.l1_json_rpc_named_arguments(rpc),
          {optimism_portal, _} <- Optimism.read_system_config(system_config, json_rpc_named_arguments),
          dispute_game_factory = get_dispute_game_factory_address(optimism_portal, json_rpc_named_arguments),
          {:dispute_game_factory_available, true} <- {:dispute_game_factory_available, !is_nil(dispute_game_factory)},
