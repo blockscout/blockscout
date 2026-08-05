@@ -38,6 +38,15 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
   @spec trigger_fetch(Address.t()) :: :ok | :ignore
   def trigger_fetch(address) do
+    if __MODULE__.Supervisor.disabled?() do
+      :ignore
+    else
+      maybe_trigger_fetch(address)
+    end
+  end
+
+  @spec maybe_trigger_fetch(Address.t()) :: :ok | :ignore
+  defp maybe_trigger_fetch(address) do
     if :ets.whereis(@table_name) == :undefined do
       Logger.warning(
         "ContractCreator ETS table is not available, skipping on-demand fetch for address #{to_string(address.hash)}"
