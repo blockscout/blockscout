@@ -86,6 +86,23 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     |> prepare_transaction(conn, true, block_height, nil, decoded_input, nil)
   end
 
+  def render("preview.json", %{transaction: transaction, summary: summary, decode_input: decode_input}) do
+    decoded_input =
+      if decode_input do
+        [decoded] = Transaction.decode_transactions([transaction], true, @api_true)
+        decoded
+      end
+
+    %{
+      "status" => transaction.status,
+      "timestamp" => block_timestamp(transaction),
+      "method" => Transaction.method_name(transaction, decoded_input),
+      "from" => preview_address(transaction.from_address, transaction.from_address_hash),
+      "to" => preview_address(transaction.to_address, transaction.to_address_hash),
+      "summary" => summary
+    }
+  end
+
   def render("raw_trace.json", %{raw_traces: raw_traces}) do
     raw_traces
   end
@@ -899,6 +916,24 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   def block_timestamp(%Transaction{block: %Block{} = block}), do: block.timestamp
   def block_timestamp(%Block{} = block), do: block.timestamp
   def block_timestamp(_), do: nil
+
+  defp preview_address(%Address{} = address, _hash) do
+    %{
+      "hash" => Address.checksum(address),
+      "name" => Helper.address_name(address),
+      "ens_domain_name" => address.ens_domain_name
+    }
+  end
+
+  defp preview_address(_, nil), do: nil
+
+  defp preview_address(_, hash) do
+    %{
+      "hash" => Address.checksum(hash),
+      "name" => nil,
+      "ens_domain_name" => nil
+    }
+  end
 
   defp prepare_state_change(%StateChange{} = state_change) do
     coin_or_transfer =
