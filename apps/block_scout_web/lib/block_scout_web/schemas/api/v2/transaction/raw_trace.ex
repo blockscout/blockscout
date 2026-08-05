@@ -13,11 +13,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.RawTrace do
     properties: %{
       callType: %Schema{type: :string, enum: ["call", "callcode", "delegatecall", "staticcall"]},
       from: General.AddressHash,
-      gas: General.HexData,
+      gas: General.HexQuantity,
       input: General.HexData,
       init: General.HexData,
       to: General.AddressHash,
-      value: General.HexData
+      value: General.HexQuantity
     },
     required: [:from, :gas, :input, :value],
     additionalProperties: false
@@ -26,7 +26,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.RawTrace do
   result_schema = %Schema{
     type: :object,
     properties: %{
-      gasUsed: General.HexData,
+      gasUsed: General.HexQuantity,
       output: General.HexData
     },
     required: [:gasUsed, :output],

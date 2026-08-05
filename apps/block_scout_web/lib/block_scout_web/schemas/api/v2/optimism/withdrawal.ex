@@ -23,8 +23,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Withdrawal do
       msg_nonce: %Schema{type: :integer},
       msg_nonce_raw: General.IntegerString,
       msg_nonce_version: %Schema{type: :integer},
-      msg_sender_address_hash: General.FullHashNullable,
-      msg_target_address_hash: General.FullHashNullable,
+      msg_sender_address_hash: General.AddressHashNullable,
+      msg_target_address_hash: General.AddressHashNullable,
       msg_value: General.IntegerStringNullable,
       portal_contract_address_hash: General.AddressHashNullable,
       status: %Schema{

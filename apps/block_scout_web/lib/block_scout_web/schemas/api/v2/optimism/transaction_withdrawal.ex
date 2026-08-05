@@ -22,8 +22,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.TransactionWithdrawal do
       l1_transaction_hash: General.FullHashNullable,
       portal_contract_address_hash: General.AddressHashNullable,
       msg_nonce_raw: General.IntegerString,
-      msg_sender_address_hash: General.FullHashNullable,
-      msg_target_address_hash: General.FullHashNullable,
+      msg_sender_address_hash: General.AddressHashNullable,
+      msg_target_address_hash: General.AddressHashNullable,
       msg_value: General.IntegerStringNullable,
       msg_gas_limit: General.IntegerStringNullable,
       msg_data: General.HexDataNullable
