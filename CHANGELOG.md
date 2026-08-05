@@ -20,6 +20,7 @@
 
 ### 🐛 Bug Fixes
 
+- Correct API v2 schemas and drop dead internal-tx limit param ([#14662](https://github.com/blockscout/blockscout/pull/14662))
 - Delete massive blocks as well on ranges_init in MissingRangesCollector ([#14661](https://github.com/blockscout/blockscout/pull/14661))
 - Update logs PK fixes ([#14660](https://github.com/blockscout/blockscout/pull/14660))
 - Fix DeleteZeroValueInternalTransactions status inconsistency ([#14658](https://github.com/blockscout/blockscout/pull/14658))
