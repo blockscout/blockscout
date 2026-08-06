@@ -13,11 +13,13 @@ defmodule EthereumJSONRPC.HTTP.HTTPoison do
 
   @impl HTTP
   def json_rpc(url, json, headers, options) when is_binary(url) and is_list(options) do
-    method = Helper.get_method_from_json_string(json)
+    requests = Helper.decode_requests(json)
+    method = requests |> List.first(%{}) |> Map.get("method")
     l1? = Keyword.get(options, :layer) == :l1
 
     Instrumenter.json_rpc_requests(method, l1?)
-    Helper.track_eth_call_methods(json, method, l1?)
+    Helper.track_json_rpc_calls(requests, l1?)
+    Helper.track_eth_call_methods(requests, l1?)
 
     case HTTPoison.post(url, json, headers, HTTPoisonHelper.request_opts(options)) do
       {:ok, %HTTPoison.Response{body: body, status_code: status_code, headers: headers}} ->
