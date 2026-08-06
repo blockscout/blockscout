@@ -270,14 +270,19 @@ defmodule Indexer.Memory.Monitor do
       |> Supervisor.which_children()
       |> Enum.filter(fn {name, _, _, _} -> is_atom(name) and String.contains?(to_string(name), "OnDemand") end)
       |> Enum.flat_map(fn
-        {_, pid, :supervisor, _} ->
+        {_, pid, :supervisor, _} when is_pid(pid) ->
           pid
           |> Supervisor.which_children()
           |> Enum.filter(&(elem(&1, 2) == :worker))
           |> Enum.map(&elem(&1, 1))
+          |> Enum.filter(&is_pid/1)
 
-        {_, pid, _, _} ->
+        {_, pid, _, _} when is_pid(pid) ->
           [pid]
+
+        # child is :undefined or :restarting (not currently running)
+        _ ->
+          []
       end)
     end)
   end
