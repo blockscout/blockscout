@@ -43,8 +43,7 @@ defmodule EthereumJSONRPC.Prometheus.Instrumenter do
   @counter [
     name: :eth_call_requests_count,
     labels: [:method_id],
-    help:
-      "Number of `eth_call` JSON RPC requests grouped by the called method id (first 4 bytes of the `data`)"
+    help: "Number of `eth_call` JSON RPC requests grouped by the called method id (first 4 bytes of the `data`)"
   ]
   @counter [
     name: :l1_eth_call_requests_count,
