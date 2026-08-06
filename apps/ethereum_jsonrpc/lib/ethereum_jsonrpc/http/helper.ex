@@ -24,7 +24,7 @@ defmodule EthereumJSONRPC.HTTP.Helper do
   @spec decode_requests(binary()) :: [map()]
   def decode_requests(json_string) do
     case Jason.decode(json_string) do
-      {:ok, decoded} -> List.wrap(decoded)
+      {:ok, decoded} -> decoded |> List.wrap() |> Enum.filter(&is_map/1)
       _ -> []
     end
   end
@@ -95,6 +95,7 @@ defmodule EthereumJSONRPC.HTTP.Helper do
 
   defp eth_call_method_id(_request), do: nil
 
+  @spec method_id_from_data(binary() | nil) :: binary() | nil
   defp method_id_from_data("0x" <> _rest = data) when byte_size(data) >= 10,
     do: binary_part(data, 0, 10)
 
