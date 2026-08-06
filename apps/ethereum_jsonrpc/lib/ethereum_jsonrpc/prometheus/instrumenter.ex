@@ -6,8 +6,16 @@ defmodule EthereumJSONRPC.Prometheus.Instrumenter do
 
   use Prometheus.Metric
 
-  @counter [name: :json_rpc_requests_count, labels: [:method], help: "Number of JSON RPC requests"]
-  @counter [name: :json_rpc_requests_errors_count, labels: [:method], help: "Number of JSON RPC requests errors"]
+  @counter [
+    name: :json_rpc_requests_count,
+    labels: [:method],
+    help: "Number of JSON RPC requests"
+  ]
+  @counter [
+    name: :json_rpc_requests_errors_count,
+    labels: [:method],
+    help: "Number of JSON RPC requests errors"
+  ]
 
   @counter [
     name: :l1_json_rpc_requests_count,
@@ -21,9 +29,22 @@ defmodule EthereumJSONRPC.Prometheus.Instrumenter do
   ]
 
   @counter [
+    name: :json_rpc_calls_count,
+    labels: [:method],
+    help: "Number of JSON RPC calls (each request within a batch is counted separately)"
+  ]
+  @counter [
+    name: :l1_json_rpc_calls_count,
+    labels: [:method],
+    help:
+      "Number of JSON RPC calls to the L1 node made by rollup modules (each request within a batch is counted separately)"
+  ]
+
+  @counter [
     name: :eth_call_requests_count,
     labels: [:method_id],
-    help: "Number of `eth_call` JSON RPC requests grouped by the called method id (first 4 bytes of the `data`)"
+    help:
+      "Number of `eth_call` JSON RPC requests grouped by the called method id (first 4 bytes of the `data`)"
   ]
   @counter [
     name: :l1_eth_call_requests_count,
@@ -64,8 +85,33 @@ defmodule EthereumJSONRPC.Prometheus.Instrumenter do
   """
   @spec json_rpc_errors(String.t(), boolean(), non_neg_integer()) :: :ok
   def json_rpc_errors(method, l1? \\ false, error_count \\ 1) do
-    counter_name = if l1?, do: :l1_json_rpc_requests_errors_count, else: :json_rpc_requests_errors_count
+    counter_name =
+      if l1?, do: :l1_json_rpc_requests_errors_count, else: :json_rpc_requests_errors_count
+
     Counter.inc([name: counter_name, labels: [method]], error_count)
+  end
+
+  @doc """
+  Increments the JSON-RPC calls counter for a given method by `call_count`.
+
+  Unlike `json_rpc_requests/3`, which counts one increment per HTTP request
+  (labeled by the first method of a batch), this counts each individual request
+  within a batch, grouped by its method. This gives the exact number of requests
+  per method.
+
+  Calls to the L1 node made by rollup modules are counted separately via the
+  `l1_json_rpc_calls_count` metric when `l1?` is `true`.
+
+  ## Parameters
+
+    - `method` (String): The name of the JSON-RPC method.
+    - `l1?` (boolean, optional): Whether the request targets the L1 node. Defaults to `false`.
+    - `call_count` (integer, optional): The number of calls to increment by. Defaults to 1.
+  """
+  @spec json_rpc_calls(String.t(), boolean(), non_neg_integer()) :: :ok
+  def json_rpc_calls(method, l1? \\ false, call_count \\ 1) do
+    counter_name = if l1?, do: :l1_json_rpc_calls_count, else: :json_rpc_calls_count
+    Counter.inc([name: counter_name, labels: [method]], call_count)
   end
 
   @doc """

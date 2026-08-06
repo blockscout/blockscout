@@ -15,11 +15,13 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
 
   @impl HTTP
   def json_rpc(url, json, headers, options) when is_binary(url) and is_list(options) do
-    method = Helper.get_method_from_json_string(json)
+    requests = Helper.decode_requests(json)
+    method = requests |> List.first(%{}) |> Map.get("method")
     l1? = Keyword.get(options, :layer) == :l1
 
     Instrumenter.json_rpc_requests(method, l1?)
-    Helper.track_eth_call_methods(json, method, l1?)
+    Helper.track_json_rpc_calls(requests, l1?)
+    Helper.track_eth_call_methods(requests, l1?)
 
     case do_post(url, json, headers, options) do
       {:ok, %Tesla.Env{body: body, status: status_code, headers: headers}} ->
@@ -40,7 +42,10 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
   def json_rpc(url, _json, _headers, _options) when is_nil(url), do: {:error, "URL is nil"}
 
   defp do_post(url, json, headers, options) do
-    Tesla.post(TeslaHelper.client(options), url, json, headers: headers, opts: TeslaHelper.request_opts(options))
+    Tesla.post(TeslaHelper.client(options), url, json,
+      headers: headers,
+      opts: TeslaHelper.request_opts(options)
+    )
   rescue
     error ->
       if timeout_middleware_exception?(__STACKTRACE__) do

@@ -9,6 +9,54 @@ defmodule EthereumJSONRPC.HTTP.Helper do
   alias EthereumJSONRPC.Prometheus.Instrumenter
 
   @doc """
+  Decodes a raw JSON-RPC payload into a list of request maps.
+
+  Both single requests (a JSON object) and batch requests (a JSON array) are
+  normalized to a list, so callers can treat every payload uniformly. Returns an
+  empty list when the payload cannot be decoded.
+
+  ## Parameters
+  - `json_string`: The raw JSON string payload sent to the node
+
+  ## Returns
+  - A list of decoded request maps, or `[]` when decoding fails.
+  """
+  @spec decode_requests(binary()) :: [map()]
+  def decode_requests(json_string) do
+    case Jason.decode(json_string) do
+      {:ok, decoded} -> List.wrap(decoded)
+      _ -> []
+    end
+  end
+
+  @doc """
+  Reports the number of individual JSON-RPC calls, grouped by method, to the
+  `json_rpc_calls_count` Prometheus metric.
+
+  Unlike `json_rpc_requests_count`, which counts one increment per HTTP request
+  (labeled by the first method of a batch), this counts each request within a
+  batch, giving the exact number of requests per method. Calls to the L1 node
+  made by rollup modules (`l1?` is `true`) are reported to the separate
+  `l1_json_rpc_calls_count` metric instead.
+
+  ## Parameters
+  - `requests`: The decoded JSON-RPC requests (as returned by `decode_requests/1`)
+  - `l1?`: Whether the request targets the L1 node. Defaults to `false`.
+
+  ## Returns
+  - `:ok`
+  """
+  @spec track_json_rpc_calls([map()], boolean()) :: :ok
+  def track_json_rpc_calls(requests, l1? \\ false) do
+    requests
+    |> Enum.frequencies_by(&Map.get(&1, "method"))
+    |> Enum.each(fn
+      {nil, _count} -> :ok
+      {method, count} -> Instrumenter.json_rpc_calls(method, l1?, count)
+    end)
+  end
+
+  @doc """
   Tracks which contract methods are called via `eth_call` JSON-RPC requests.
 
   For every `eth_call` in the payload (both single requests and batches) the
@@ -18,23 +66,18 @@ defmodule EthereumJSONRPC.HTTP.Helper do
   rollup modules (`l1?` is `true`) are reported to the separate
   `l1_eth_call_requests_count` metric instead.
 
-  Only runs its work when `method` is `"eth_call"`, so the extra JSON decoding
-  cost is avoided for all other requests.
-
   ## Parameters
-  - `json_string`: The raw JSON string payload sent to the node
-  - `method`: The JSON-RPC method already extracted from the payload
+  - `requests`: The decoded JSON-RPC requests (as returned by `decode_requests/1`)
   - `l1?`: Whether the request targets the L1 node. Defaults to `false`.
 
   ## Returns
   - `:ok`
   """
-  @spec track_eth_call_methods(binary(), binary() | {:error, Jason.DecodeError.t()} | nil, boolean()) :: :ok
-  def track_eth_call_methods(json_string, method, l1? \\ false)
-
-  def track_eth_call_methods(json_string, "eth_call", l1?) do
-    json_string
-    |> get_eth_call_method_ids_from_json_string()
+  @spec track_eth_call_methods([map()], boolean()) :: :ok
+  def track_eth_call_methods(requests, l1? \\ false) do
+    requests
+    |> Enum.map(&eth_call_method_id/1)
+    |> Enum.reject(&is_nil/1)
     |> Enum.frequencies()
     |> Enum.each(fn {method_id, count} ->
       Logger.debug(fn ->
@@ -46,66 +89,16 @@ defmodule EthereumJSONRPC.HTTP.Helper do
     end)
   end
 
-  def track_eth_call_methods(_json_string, _method, _l1?), do: :ok
-
-  @doc """
-  Extracts the method ids (first 4 bytes of the `data` field) of all `eth_call`
-  requests contained in a JSON string payload.
-
-  Supports both single objects and batch requests (arrays). Non-`eth_call`
-  requests and requests without a decodable `data` field are ignored.
-
-  ## Parameters
-  - `json_string`: The JSON string to parse
-
-  ## Returns
-  - A list of method id binaries (hex strings with `0x` prefix). Empty when the
-    payload contains no `eth_call` request or cannot be decoded.
-  """
-  @spec get_eth_call_method_ids_from_json_string(binary()) :: [binary()]
-  def get_eth_call_method_ids_from_json_string(json_string) do
-    case Jason.decode(json_string) do
-      {:ok, decoded_json} ->
-        decoded_json
-        |> List.wrap()
-        |> Enum.map(&eth_call_method_id/1)
-        |> Enum.reject(&is_nil/1)
-
-      _ ->
-        []
-    end
-  end
-
   defp eth_call_method_id(%{"method" => "eth_call", "params" => [%{} = call_params | _]}) do
     (call_params["data"] || call_params["input"]) |> method_id_from_data()
   end
 
   defp eth_call_method_id(_request), do: nil
 
-  defp method_id_from_data("0x" <> _rest = data) when byte_size(data) >= 10, do: binary_part(data, 0, 10)
+  defp method_id_from_data("0x" <> _rest = data) when byte_size(data) >= 10,
+    do: binary_part(data, 0, 10)
+
   defp method_id_from_data(_data), do: nil
-
-  @doc """
-  Extracts the JSON-RPC method from a JSON string payload.
-
-  Supports both single objects and batch requests (arrays).
-
-  ## Parameters
-  - `json_string`: The JSON string to parse
-
-  ## Returns
-  - The method name as a binary, or `{:error, Jason.DecodeError.t()}` if extraction fails
-  """
-  @spec get_method_from_json_string(binary()) :: binary() | {:error, Jason.DecodeError.t()}
-  def get_method_from_json_string(json_string) do
-    with {:ok, decoded_json} <- Jason.decode(json_string) do
-      if is_map(decoded_json) do
-        Map.get(decoded_json, "method")
-      else
-        decoded_json |> Enum.at(0) |> Map.get("method")
-      end
-    end
-  end
 
   @spec response_body_has_error?(map() | [map()]) :: boolean()
   def response_body_has_error?(decoded_body) when is_map(decoded_body) do
