@@ -453,8 +453,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     else
       blocks_map = Map.new(transactions, &{&1.block_number, &1.block_hash})
 
+      existing_transactions_indexes = MapSet.new(transactions, &{&1.block_number, &1.index})
+
       valid_internal_transactions =
         internal_transactions_params
+        |> Enum.filter(&MapSet.member?(existing_transactions_indexes, {&1.block_number, &1.transaction_index}))
         |> Enum.group_by(& &1.block_number)
         |> Map.drop(invalid_block_numbers)
         |> Enum.flat_map(fn item ->
