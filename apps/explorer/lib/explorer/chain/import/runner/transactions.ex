@@ -118,8 +118,8 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
     ordered_changes_list =
       changes_list
+      |> Enum.sort_by(&{&1.hash, Map.get(&1, :index)})
       |> Enum.uniq_by(& &1.hash)
-      |> Enum.sort_by(& &1.hash)
 
     Import.insert_changes_list(
       repo,
