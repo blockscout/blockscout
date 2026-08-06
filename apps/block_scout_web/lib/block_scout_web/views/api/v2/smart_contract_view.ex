@@ -385,6 +385,12 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
     SmartContractView.cast_address(value)
   end
 
+  # A Solidity `function` type is a 24-byte value (address + selector). Since
+  # ex_abi 0.8.4 it is decoded into a raw binary, so render it as hex.
+  def render_json(value, type) when type in [:function, "function"] and is_binary(value) do
+    "0x" <> Base.encode16(value, case: :lower)
+  end
+
   def render_json(value, type) when type in [:string, "string"] do
     to_string(value)
   end

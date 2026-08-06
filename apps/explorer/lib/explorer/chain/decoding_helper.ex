@@ -79,5 +79,23 @@ defmodule Explorer.Chain.DecodingHelper do
     "0x" <> Base.encode16(value, case: :lower)
   end
 
+  # A Solidity `function` type is a 24-byte value (20-byte address + 4-byte
+  # selector). Since ex_abi 0.8.4 it is decoded into a raw binary, so encode it
+  # as hex like `bytes`, rather than trying to render it as a string.
+  defp base_value_json(:function, value) do
+    "0x" <> Base.encode16(value, case: :lower)
+  end
+
+  defp base_value_json(_, value) when is_binary(value) do
+    # A `string` parameter may contain bytes that are not valid UTF-8 (e.g. a
+    # contract emitted arbitrary data under a `string` type). Such a binary
+    # cannot be JSON-encoded as a string, so fall back to a hex representation.
+    if String.valid?(value) do
+      value
+    else
+      "0x" <> Base.encode16(value, case: :lower)
+    end
+  end
+
   defp base_value_json(_, value), do: to_string(value)
 end
