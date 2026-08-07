@@ -1,5 +1,26 @@
 # Changelog
 
+## 11.2.5
+
+### 🚀 Features
+
+- Add average_block_time Prometheus metric ([#14673](https://github.com/blockscout/blockscout/issues/14673))
+- Add json_rpc_calls_count metric for per-method request counts ([#14668](https://github.com/blockscout/blockscout/issues/14668))
+- Add env to disable OnDemand.TokenBalance fetcher ([#14666](https://github.com/blockscout/blockscout/issues/14666))
+- Track eth_call requests by method id in L1/L2 metrics ([#14665](https://github.com/blockscout/blockscout/issues/14665))
+- Track L1 JSON RPC requests from rollups in separate metrics ([#14663](https://github.com/blockscout/blockscout/issues/14663))
+
+### 🐛 Bug Fixes
+
+- Handle Solidity function type in decoded ABI values ([#14672](https://github.com/blockscout/blockscout/issues/14672))
+- Prevent Memory.Monitor crash on restarting OnDemand fetchers ([#14670](https://github.com/blockscout/blockscout/issues/14670))
+- Ignore traces of duplicated transactions ([#14669](https://github.com/blockscout/blockscout/issues/14669))
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump ex_abi lib version ([#14671](https://github.com/blockscout/blockscout/issues/14671))
+
+
 ## 11.2.4
 
 ### 🚀 Features
