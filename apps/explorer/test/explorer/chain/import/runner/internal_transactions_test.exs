@@ -191,6 +191,34 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert is_nil(Repo.get(Transaction, pending.hash).block_hash)
     end
 
+    test "internal transactions of a transaction index that has no transaction are ignored" do
+      transaction = insert(:transaction) |> with_block(status: :ok)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      duplicated_transaction_index = transaction.index + 1
+
+      changes = Enum.map([0, 1], &make_internal_transaction_changes(transaction, &1, nil))
+      duplicated_changes = Enum.map(changes, &%{&1 | transaction_index: duplicated_transaction_index})
+
+      assert {:ok, _} = run_internal_transactions(changes ++ duplicated_changes)
+
+      assert PendingBlockOperation |> Repo.get(transaction.block_hash) |> is_nil()
+
+      assert Repo.exists?(
+               from(it in InternalTransaction,
+                 where: it.block_number == ^transaction.block_number and it.transaction_index == ^transaction.index
+               )
+             )
+
+      refute Repo.exists?(
+               from(it in InternalTransaction,
+                 where:
+                   it.block_number == ^transaction.block_number and
+                     it.transaction_index == ^duplicated_transaction_index
+               )
+             )
+    end
+
     test "removes consensus to blocks where transactions are missing" do
       empty_block = insert(:block)
       pending = insert(:transaction)

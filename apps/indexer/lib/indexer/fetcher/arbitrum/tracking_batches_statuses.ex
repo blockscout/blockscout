@@ -189,7 +189,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     # Set up initial configuration structure
     initial_config = %{
       l1_rpc: %{
-        json_rpc_named_arguments: IndexerHelper.json_rpc_named_arguments(l1_rpc),
+        json_rpc_named_arguments: IndexerHelper.l1_json_rpc_named_arguments(l1_rpc),
         logs_block_range: l1_rpc_block_range,
         chunk_size: l1_rpc_chunk_size,
         track_finalization: track_l1_transaction_finalization,

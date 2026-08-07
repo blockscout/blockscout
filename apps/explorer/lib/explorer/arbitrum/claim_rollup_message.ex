@@ -719,7 +719,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   @spec get_json_rpc(:l1 | :l2) :: EthereumJSONRPC.json_rpc_named_arguments()
   defp get_json_rpc(:l1) do
     config_common = Application.get_all_env(:indexer)[Indexer.Fetcher.Arbitrum]
-    IndexerHelper.json_rpc_named_arguments(config_common[:l1_rpc])
+    IndexerHelper.l1_json_rpc_named_arguments(config_common[:l1_rpc])
   end
 
   defp get_json_rpc(:l2) do
