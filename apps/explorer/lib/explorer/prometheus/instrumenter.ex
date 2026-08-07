@@ -88,6 +88,8 @@ defmodule Explorer.Prometheus.Instrumenter do
     registry: :public
   ]
 
+  @gauge [name: :average_block_time, help: "Average block time in milliseconds"]
+
   @gauge [name: :batch_average_time, help: "L2 average batch time"]
 
   @gauge [name: :latest_deposit_l1_number, help: "L2 latest deposit L1 block number"]
@@ -216,6 +218,14 @@ defmodule Explorer.Prometheus.Instrumenter do
   @spec increment_failed_uploading_media_number() :: :ok
   def increment_failed_uploading_media_number do
     Counter.inc(name: :failed_uploading_media_number, registry: :public)
+  end
+
+  @doc """
+  Defines the metric for the average block time in milliseconds.
+  """
+  @spec average_block_time(number()) :: :ok
+  def average_block_time(milliseconds) do
+    Gauge.set([name: :average_block_time], milliseconds)
   end
 
   @spec batch_average_time(integer()) :: :ok
