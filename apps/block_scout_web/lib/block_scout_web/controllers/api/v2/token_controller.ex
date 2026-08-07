@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias Explorer.Migrator.BackfillMetadataURL
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenMetadataRefetch, as: TokenMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
   alias Indexer.Fetcher.TokenInstance.Helper, as: TokenInstanceHelper
   alias Plug.Conn
@@ -770,6 +771,40 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> AccessHelper.conn_to_ip_string()
       |> TokenInstanceMetadataRefetchOnDemand.trigger_refetch(token_instance_with_token)
+
+      conn
+      |> put_status(200)
+      |> json(%{message: "OK"})
+    end
+  end
+
+  operation :trigger_token_metadata_refetch,
+    summary: "Trigger metadata refetch for a fungible token",
+    description:
+      "Triggers an on-chain metadata refetch for an indexed fungible token identified by its contract address.",
+    parameters: base_params() ++ [address_hash_param(), recaptcha_response_param()],
+    responses: [
+      ok:
+        {"Token metadata refetch triggered.", "application/json",
+         %Schema{type: :object, properties: %{message: %Schema{type: :string}}}},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
+  @doc """
+  Handles PATCH requests to `/api/v2/tokens/:address_hash_param/refetch-metadata` endpoint.
+  """
+  @spec trigger_token_metadata_refetch(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def trigger_token_metadata_refetch(conn, params) do
+    address_hash_string = params[:address_hash_param]
+    ip = AccessHelper.conn_to_ip_string(conn)
+
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         {:not_found, {:ok, %Token{cataloged: true} = token}} <-
+           {:not_found, Chain.token_from_address_hash(address_hash, @api_true)},
+         {:not_found, true} <- {:not_found, Chain.erc_20_token?(token) or Token.zrc_2_token?(token)} do
+      TokenMetadataRefetchOnDemand.trigger_refetch(ip, token)
 
       conn
       |> put_status(200)
