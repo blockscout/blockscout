@@ -8,7 +8,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex do
 
   require Logger
 
-  alias Explorer.Migrator.{FillLogsOptimizedFields, HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
   @table_name :logs
@@ -28,7 +29,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex do
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
     do: [
-      FillLogsOptimizedFields.migration_name()
+      CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex.migration_name()
     ]
 
   @impl HeavyDbIndexOperation

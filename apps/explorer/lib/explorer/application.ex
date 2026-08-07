@@ -229,7 +229,6 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.EmptyInternalTransactionsData, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.FillInternalTransactionsAddressIds, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.DeleteNonConsensusLogs, :indexer),
-        configure_mode_dependent_process(Explorer.Migrator.FillLogsCompressedData, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
           :indexer
@@ -453,11 +452,6 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.UpdateLogsPrimaryKey,
-          :indexer
-        ),
-        configure_mode_dependent_process(Explorer.Migrator.FillLogsOptimizedFields, :indexer),
-        configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdBlockNumberDescIndexDescIndex,
           :indexer
         ),
@@ -466,9 +460,19 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsIndexWithUpdatedPk,
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex,
           :indexer
         ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(Explorer.Migrator.FillLogsOptimizedFields, :indexer),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsBlockNumberTransactionIndexNotNull,
+          :indexer
+        ),
+        configure_mode_dependent_process(Explorer.Migrator.FillLogsCompressedData, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashBlockNumberDescIndexDescIndex,
           :indexer
@@ -482,19 +486,15 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsBlockNumberTransactionIndexNotNull,
-          :indexer
-        ),
-        configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsFirstTopicIdFkey,
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex,
+          Explorer.Migrator.HeavyDbIndexOperation.UpdateLogsPrimaryKey,
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex,
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsIndexWithUpdatedPk,
           :indexer
         ),
         Explorer.Migrator.RefetchContractCodes
