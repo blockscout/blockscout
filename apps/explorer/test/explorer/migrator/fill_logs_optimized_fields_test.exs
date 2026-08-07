@@ -5,7 +5,7 @@ defmodule Explorer.Migrator.FillLogsOptimizedFieldsTest do
 
   alias Explorer.Chain.{Log, TokenTransfer}
   alias Explorer.Migrator.{FillLogsOptimizedFields, MigrationStatus}
-  alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransactionIndexIndexUniqueIndex
+  alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex
   alias Explorer.{Repo, TestHelper}
   alias Explorer.Utility.{AddressIdToAddressHash, LogFirstTopic}
 
@@ -24,7 +24,7 @@ defmodule Explorer.Migrator.FillLogsOptimizedFieldsTest do
     )
 
     MigrationStatus.set_status(
-      CreateLogsBlockNumberTransactionIndexIndexUniqueIndex.migration_name(),
+      CreateLogsFirstTopicIdIndex.migration_name(),
       "completed"
     )
 
@@ -78,7 +78,7 @@ defmodule Explorer.Migrator.FillLogsOptimizedFieldsTest do
     log = insert(:log, transaction: nil, transaction_index: 5)
 
     MigrationStatus.set_status(
-      CreateLogsBlockNumberTransactionIndexIndexUniqueIndex.migration_name(),
+      CreateLogsFirstTopicIdIndex.migration_name(),
       "completed"
     )
 

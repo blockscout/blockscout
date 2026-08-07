@@ -12,7 +12,7 @@ defmodule Explorer.Migrator.FillLogsOptimizedFields do
   alias Explorer.Chain.Cache.{BackgroundMigrations, BlockNumber}
   alias Explorer.Chain.{Log, Transaction}
   alias Explorer.Migrator.FillingMigration
-  alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransactionIndexIndexUniqueIndex
+  alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex
   alias Explorer.Repo
   alias Explorer.Utility.{AddressIdToAddressHash, LogFirstTopic}
 
@@ -23,7 +23,7 @@ defmodule Explorer.Migrator.FillLogsOptimizedFields do
 
   @impl FillingMigration
   def dependent_from_migrations,
-    do: [CreateLogsBlockNumberTransactionIndexIndexUniqueIndex.migration_name()]
+    do: [CreateLogsFirstTopicIdIndex.migration_name()]
 
   @impl FillingMigration
   def last_unprocessed_identifiers(%{"max_block_number" => -1} = state), do: {[], state}
