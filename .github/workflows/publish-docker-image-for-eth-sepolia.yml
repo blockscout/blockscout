@@ -14,11 +14,7 @@ jobs:
     name: Push Docker image to GitHub Container Registry
     runs-on: build
     env:
-<<<<<<< HEAD
       RELEASE_VERSION: 12.0.0
-=======
-      RELEASE_VERSION: 11.2.5
->>>>>>> origin/master
       DOCKER_CHAIN_NAME: eth-sepolia
     steps:
       - uses: actions/checkout@v5
