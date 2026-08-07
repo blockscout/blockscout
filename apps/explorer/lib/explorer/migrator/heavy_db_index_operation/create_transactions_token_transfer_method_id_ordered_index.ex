@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsTokenTransferMethodIdOrderedIndex do
   @moduledoc """
   Create B-tree index `transactions_token_transfer_method_id_ordered_index` on `transactions`

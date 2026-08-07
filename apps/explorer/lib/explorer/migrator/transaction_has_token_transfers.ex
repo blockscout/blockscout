@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.TransactionHasTokenTransfers do
   @moduledoc """
   Backfills the transactions table with the `has_token_transfers` field.

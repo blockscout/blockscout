@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsAddressHashes do
   @moduledoc """
   Removes `from_address_hash`, `to_address_hash`, `created_contract_address_hash` columns from `internal_transactions`
