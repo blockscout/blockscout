@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blockscout Studio • AI Copilot & Contract Verifier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo-area">
+      <div class="logo-badge">
+        <span class="logo-glow"></span>
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </div>
+      <div>
+        <h1 class="brand-title">BLOCKSCOUT <span class="badge-copilot">AI COPILOT</span></h1>
+        <p class="brand-subtitle">Open-Source EVM Block Explorer Infrastructure & Contract Verifier</p>
+      </div>
+    </div>
+
+    <!-- Explorer Pill -->
+    <div class="explorer-pill">
+      <span class="pulse-dot"></span>
+      <span>Multi-Chain Live</span>
+      <span class="chain-tag">Base • Optimism • Ethereum</span>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+    <button class="nav-tab active" data-tab="copilot">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      AI Explorer Copilot
+    </button>
+    <button class="nav-tab" data-tab="verifier">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+      Smart Contract Verifier
+    </button>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Tab 1: AI Copilot -->
+    <section id="tab-copilot" class="tab-pane active">
+      <div class="hero-card">
+        <div class="hero-content">
+          <div class="pill-highlight">🔍 Natural Language EVM Chain Intelligence</div>
+          <h2>Ask Anything About On-Chain Transactions & Bytecode</h2>
+          <p>
+            Blockscout AI Copilot translates natural language questions into instant transaction trace analysis, DEX swap decoding, and security vulnerability alerts.
+          </p>
+        </div>
+      </div>
+
+      <div class="layout-grid mt-4">
+        <!-- Prompt Form -->
+        <div class="card">
+          <div class="card-header">
+            <h3>🤖 Query Blockscout AI Copilot</h3>
+          </div>
+
+          <form id="copilot-form" class="token-form">
+            <div class="form-group">
+              <label>Choose Preset Prompt</label>
+              <select id="select-preset-prompt" class="form-input">
+                <option value="Analyze DEX swaps and gas utilization on Base">Analyze DEX swaps and gas utilization on Base</option>
+                <option value="Scan contract bytecode for reentrancy security risks">Scan contract bytecode for reentrancy security risks</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Custom Query</label>
+              <input type="text" id="input-prompt" class="form-input" placeholder="e.g. Find transactions with high gas..." required />
+            </div>
+
+            <button type="submit" class="btn btn-gradient btn-lg mt-2" id="btn-run-copilot">
+              🔍 Ask Blockscout Copilot
+            </button>
+          </form>
+
+          <div id="copilot-result-box" class="mt-3"></div>
+        </div>
+
+        <!-- Copilot Insights Output -->
+        <div class="card">
+          <div class="card-header">
+            <h3>📜 AI Chain Insights & Trace Output</h3>
+          </div>
+          <div class="insights-box" id="insights-container">
+            <div class="empty-state">Submit a query to generate AI transaction insights.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tab 2: Verifier -->
+    <section id="tab-verifier" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <h3>🔐 Auto Smart Contract Verification & Sourcify Matcher</h3>
+        </div>
+
+        <form id="verify-form" class="token-form">
+          <div class="form-group">
+            <label>Smart Contract Address</label>
+            <input type="text" id="verify-address" class="form-input mono" value="0x4200000000000000000000000000000000000006" required />
+          </div>
+
+          <button type="submit" class="btn btn-gradient btn-lg mt-3" id="btn-run-verify">
+            🔐 Verify Contract & Sourcify Match
+          </button>
+        </form>
+
+        <div class="json-inspector mt-3">
+          <div class="inspector-header"><span>Verification Metadata & ABI</span></div>
+          <pre id="verify-json-box">Click "Verify Contract" to trigger automated verification.</pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>Blockscout Studio • Open-Source EVM Block Explorer Infrastructure • GPL-3.0</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
