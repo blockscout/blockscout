@@ -956,7 +956,8 @@ defmodule Explorer.Chain.Log do
   After the optimized fields migration has finished, address hashes are converted
   to address ids and matched through `address_id`. While the migration is in
   progress, the condition matches both `address_id` and the legacy
-  `address_hash` field.
+  `address_hash` field with `OR`. Queries that fetch a page of logs of a single
+  address should use `address_match_union_query/3` instead.
   """
   @spec address_match_query(Ecto.Queryable.t(), Hash.Address.t() | [Hash.Address.t()] | binary() | [binary()]) ::
           Ecto.Query.t()
@@ -976,27 +977,106 @@ defmodule Explorer.Chain.Log do
   end
 
   def address_match_query(query, address_hash) do
+    where(query, ^address_match_dynamic(address_hash))
+  end
+
+  @doc """
+  Returns the list of independent conditions matching logs of the given address.
+
+  While the optimized fields migration is in progress, logs of the same address
+  are stored either with the new `address_id` or with the legacy `address_hash`,
+  so two conditions are returned. In all other cases the list holds a single
+  condition.
+
+  The conditions are meant to be combined with `UNION ALL`, one query branch per
+  condition (see `address_match_union_query/3`), rather than with `OR`: a single
+  `OR` condition doesn't let
+  PostgreSQL use the `address_id` and `address_hash` indexes to return already
+  ordered rows, forcing it to collect and sort every log of the address before
+  applying the `LIMIT`. With `UNION ALL` each branch is an ordered index scan,
+  so the planner can merge the branches and stop at the `LIMIT`.
+
+  The conditions never match the same log twice, so that `UNION ALL` doesn't
+  produce duplicates: the legacy condition is limited to the logs which have no
+  `address_id` yet. Both fields can be filled at once, since a log re-imported
+  before it is migrated keeps its `address_hash` while the upsert fills
+  `address_id`.
+  """
+  @spec address_match_dynamics(Hash.Address.t() | binary()) :: [Ecto.Query.dynamic_expr()]
+  def address_match_dynamics(address_hash) do
     cond do
       LogHelper.fill_optimized_fields_migration_finished?() ->
         address_id = AddressIdToAddressHash.hash_to_id(address_hash)
-        where(query, [l], ^address_id_match_dynamic(address_id))
+
+        [address_id_match_dynamic(address_id)]
 
       LogHelper.fill_optimized_fields_migration_started?() ->
         address_id = AddressIdToAddressHash.hash_to_id(address_hash)
-        where(query, [l], ^address_id_or_hash_match_dynamic(address_id, address_hash))
+
+        if address_id do
+          [
+            dynamic([l], l.address_id == ^address_id),
+            dynamic([l], is_nil(l.address_id) and l.address_hash == ^address_hash)
+          ]
+        else
+          [dynamic([l], l.address_hash == ^address_hash)]
+        end
 
       true ->
-        where(query, [l], l.address_hash == ^address_hash)
+        [dynamic([l], l.address_hash == ^address_hash)]
+    end
+  end
+
+  defp address_match_dynamic(address_hash) do
+    address_hash
+    |> address_match_dynamics()
+    |> Enum.reduce(fn match_dynamic, acc -> dynamic([l], ^acc or ^match_dynamic) end)
+  end
+
+  @doc """
+  Builds a logs query for the given address hash, combining one query branch per
+  `address_match_dynamics/1` condition with `UNION ALL`.
+
+  `branch_fun` receives an address match condition and must return the complete
+  branch: every filter, join and select has to be applied inside it, since
+  `where/3`, `join/5` and `select/3` applied to a combination query would only
+  affect its first branch.
+
+  `paging_fun` applies the ordering and the limit. It is applied to every branch
+  and then to the whole combination, so that each branch stays an ordered index
+  scan bounded by the limit instead of being fully materialized and sorted.
+  Queries without ordering can omit it: an outer `LIMIT` alone already stops
+  `UNION ALL` branches early.
+
+  A single condition, which is the case for every address once the optimized
+  fields migration has finished, produces no combination at all.
+  """
+  @spec address_match_union_query(
+          Hash.Address.t() | binary(),
+          (Ecto.Query.dynamic_expr() -> Ecto.Queryable.t()),
+          (Ecto.Queryable.t() -> Ecto.Queryable.t())
+        ) :: Ecto.Query.t()
+  def address_match_union_query(address_hash, branch_fun, paging_fun \\ fn query -> query end) do
+    branches =
+      address_hash
+      |> address_match_dynamics()
+      |> Enum.map(fn address_match_dynamic -> address_match_dynamic |> branch_fun.() |> paging_fun.() end)
+
+    case branches do
+      [branch] ->
+        branch
+
+      branches ->
+        branches
+        |> Enum.map(&Chain.wrapped_union_subquery/1)
+        |> Enum.reduce(fn branch, acc -> union_all(acc, ^branch) end)
+        |> Chain.wrapped_union_subquery()
+        |> paging_fun.()
     end
   end
 
   defp address_id_match_dynamic(nil), do: dynamic(false)
   defp address_id_match_dynamic(address_id), do: dynamic([l], l.address_id == ^address_id)
-
-  defp address_id_or_hash_match_dynamic(nil, address_hash), do: dynamic([l], l.address_hash == ^address_hash)
-
-  defp address_id_or_hash_match_dynamic(address_id, address_hash),
-    do: dynamic([l], l.address_id == ^address_id or l.address_hash == ^address_hash)
 
   @doc """
   Joins the log first topic lookup table to the given logs query.
