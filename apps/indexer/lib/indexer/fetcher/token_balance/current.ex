@@ -97,7 +97,14 @@ defmodule Indexer.Fetcher.TokenBalance.Current do
         :ok
 
       {:error, reason} ->
-        Logger.debug(fn -> ["failed to import current token balances: ", inspect(reason)] end,
+        Logger.error(fn -> ["failed to import current token balances: ", inspect(reason)] end,
+          error_count: Enum.count(ctb_params)
+        )
+
+        :error
+
+      error ->
+        Logger.error(fn -> ["failed to import current token balances: ", inspect(error)] end,
           error_count: Enum.count(ctb_params)
         )
 
