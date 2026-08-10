@@ -1,5 +1,12 @@
 # Changelog
 
+## 11.2.6
+
+### 🐛 Bug Fixes
+
+- Fix current token balances fetcher result ([#14677](https://github.com/blockscout/blockscout/issues/14677))
+
+
 ## 11.2.5
 
 ### 🚀 Features
