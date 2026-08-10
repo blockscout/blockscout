@@ -91,6 +91,7 @@ defmodule Indexer.Fetcher.TokenBalance.Current do
     case Chain.import(import_params) do
       {:ok, %{address_current_token_balances: imported_ctbs}} when imported_ctbs != [] ->
         Publisher.broadcast(%{address_current_token_balances: imported_ctbs}, :realtime)
+        :ok
 
       {:ok, _} ->
         :ok
