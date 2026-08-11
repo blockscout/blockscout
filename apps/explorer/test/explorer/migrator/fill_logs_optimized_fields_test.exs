@@ -3,11 +3,18 @@ defmodule Explorer.Migrator.FillLogsOptimizedFieldsTest do
 
   import Ecto.Query
 
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.{Log, TokenTransfer}
   alias Explorer.Migrator.{FillLogsOptimizedFields, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex
   alias Explorer.{Repo, TestHelper}
   alias Explorer.Utility.{AddressIdToAddressHash, LogFirstTopic}
+
+  setup do
+    initial_status = BackgroundMigrations.get_fill_logs_optimized_fields_finished()
+
+    on_exit(fn -> BackgroundMigrations.set_fill_logs_optimized_fields_finished(initial_status) end)
+  end
 
   test "fills relates fields" do
     transaction = :transaction |> insert() |> with_block()

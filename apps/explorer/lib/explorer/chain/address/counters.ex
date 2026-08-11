@@ -55,7 +55,7 @@ defmodule Explorer.Chain.Address.Counters do
   @transactions_types [:transactions_from, :transactions_to, :transactions_contract]
 
   defp address_hash_to_logs_query(address_hash) do
-    Log.address_match_query(Log, address_hash)
+    Log.address_match_union_query(address_hash, fn address_match_dynamic -> where(Log, ^address_match_dynamic) end)
   end
 
   defp address_hash_to_validated_blocks_query(address_hash) do
@@ -67,7 +67,11 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   def check_if_logs_at_address(address_hash, options \\ []) do
-    select_repo(options).exists?(address_hash_to_logs_query(address_hash))
+    address_hash
+    |> Log.address_match_dynamics()
+    |> Enum.any?(fn address_match_dynamic ->
+      select_repo(options).exists?(where(Log, ^address_match_dynamic))
+    end)
   end
 
   def check_if_token_transfers_at_address(address_hash, options \\ []) do

@@ -16,6 +16,7 @@ defmodule Explorer.DataCase do
   use ExUnit.CaseTemplate
 
   alias Ecto.Changeset
+  alias Explorer.Chain.Cache.BackgroundMigrations
 
   using do
     quote do
@@ -71,6 +72,29 @@ defmodule Explorer.DataCase do
     _error in [DBConnection.ConnectionError, Ecto.NoResultsError] ->
       Process.sleep(300)
       wait_for_results(producer, retries - 1)
+  end
+
+  @doc """
+  Emulates the state when the `fill_logs_optimized_fields` migration is started
+  but not finished yet, so logs are stored either with the new `address_id` or
+  with the legacy `address_hash`.
+
+  Both cached statuses are set explicitly and restored afterwards:
+  `Explorer.Chain.Cache.BackgroundMigrations` is a process-wide cache which is
+  not rolled back by the sandbox, so another test completing the migration
+  leaks a finished status into the whole test run.
+  """
+  def set_fill_logs_optimized_fields_migration_started do
+    initial_started? = BackgroundMigrations.get_create_logs_block_number_transaction_index_index_unique_index_finished()
+    initial_finished? = BackgroundMigrations.get_fill_logs_optimized_fields_finished()
+
+    BackgroundMigrations.set_create_logs_block_number_transaction_index_index_unique_index_finished(true)
+    BackgroundMigrations.set_fill_logs_optimized_fields_finished(false)
+
+    ExUnit.Callbacks.on_exit(fn ->
+      BackgroundMigrations.set_create_logs_block_number_transaction_index_index_unique_index_finished(initial_started?)
+      BackgroundMigrations.set_fill_logs_optimized_fields_finished(initial_finished?)
+    end)
   end
 
   @doc """
