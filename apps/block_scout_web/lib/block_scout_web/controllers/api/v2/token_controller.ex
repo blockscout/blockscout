@@ -728,15 +728,14 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   operation :refetch_metadata,
     summary: "Trigger a refresh of metadata for a specific NFT",
     description:
-      "Triggers a refresh of metadata for a specific NFT instance. Useful when the NFT's metadata has been updated but is not yet reflected in the BlockScout database.",
+      "Triggers a refresh of metadata for a specific NFT instance. Useful when the NFT's metadata has been updated but is not yet reflected in the BlockScout database. The endpoint is rate limited per IP; once the limit is reached, a valid reCAPTCHA header is required to proceed.",
     parameters:
       base_params() ++
         [
           address_hash_param(),
           token_id_param(),
-          recaptcha_response_param(),
           scoped_recaptcha_bypass_token_param()
-        ],
+        ] ++ recaptcha_params(),
     responses: [
       ok:
         {"Metadata refresh has been successfully initiated.", "application/json",

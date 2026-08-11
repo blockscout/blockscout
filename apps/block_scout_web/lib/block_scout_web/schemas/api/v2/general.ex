@@ -737,17 +737,46 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
-  Returns a parameter definition for reCAPTCHA response token.
+  Returns parameter definitions for the reCAPTCHA headers.
+
+  These headers are consumed by the rate limiter, not by the controller: they are
+  checked only once the endpoint's rate limit has been reached, and a successful
+  verification allows the request instead of returning 429. Only one of them is
+  used per request, in the order listed below.
   """
-  @spec recaptcha_response_param() :: Parameter.t()
-  def recaptcha_response_param do
-    %Parameter{
-      name: :recaptcha_response,
-      in: :query,
-      schema: %Schema{type: :string},
-      required: false,
-      description: "reCAPTCHA response token"
-    }
+  @spec recaptcha_params() :: [Parameter.t()]
+  def recaptcha_params do
+    [
+      %Parameter{
+        name: :"recaptcha-v2-response",
+        in: :header,
+        schema: %Schema{type: :string},
+        required: false,
+        description: "reCAPTCHA v2 response token"
+      },
+      %Parameter{
+        name: :"recaptcha-v3-response",
+        in: :header,
+        schema: %Schema{type: :string},
+        required: false,
+        description: "reCAPTCHA v3 response token"
+      },
+      %Parameter{
+        name: :"scoped-recaptcha-bypass-token",
+        in: :header,
+        schema: %Schema{type: :string},
+        required: false,
+        description:
+          "Bypass token issued to trusted clients for this specific endpoint. May also be passed as the `scoped_recaptcha_bypass_token` query parameter; the header takes precedence"
+      },
+      %Parameter{
+        name: :"recaptcha-bypass-token",
+        in: :header,
+        schema: %Schema{type: :string},
+        required: false,
+        description: "Bypass token issued to trusted clients for all reCAPTCHA-protected endpoints"
+      }
+    ]
   end
 
   @doc """
