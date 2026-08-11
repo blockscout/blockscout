@@ -31,16 +31,12 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       type_filter_options: 1
     ]
 
-  import Explorer.MicroserviceInterfaces.BENS,
+  import Explorer.Chain.Address.MetadataPreloader,
     only: [
-      maybe_preload_ens: 1,
-      maybe_preload_ens_for_token_transfers: 1,
-      maybe_preload_ens_for_transactions: 1,
-      maybe_preload_ens_to_transaction: 1
+      maybe_preload_ens_and_metadata: 1,
+      maybe_preload_ens_and_metadata: 2,
+      maybe_preload_selected_meta: 2
     ]
-
-  import Explorer.MicroserviceInterfaces.Metadata,
-    only: [maybe_preload_metadata: 1, maybe_preload_metadata_to_transaction: 1]
 
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
@@ -221,8 +217,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         transaction:
           preloaded
           |> Instance.preload_nft(@api_true)
-          |> maybe_preload_ens_to_transaction()
-          |> maybe_preload_metadata_to_transaction()
+          |> maybe_preload_ens_and_metadata()
       })
     end
   end
@@ -273,7 +268,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     conn
     |> put_status(200)
     |> render(:transactions, %{
-      transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
+      transactions: transactions |> maybe_preload_ens_and_metadata(:transactions),
       next_page_params: next_page_params
     })
   end
@@ -517,7 +512,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     conn
     |> put_status(200)
     |> render(:transactions, %{
-      transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
+      transactions: transactions |> maybe_preload_ens_and_metadata(:transactions),
       next_page_params: next_page_params
     })
   end
@@ -561,7 +556,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     conn
     |> put_status(200)
     |> render(:transactions, %{
-      transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
+      transactions: transactions |> maybe_preload_ens_and_metadata(:transactions),
       next_page_params: next_page_params
     })
   end
@@ -608,7 +603,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:transactions, %{
-        transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
+        transactions: transactions |> maybe_preload_ens_and_metadata(:transactions),
         next_page_params: next_page_params
       })
     end
@@ -718,8 +713,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         token_transfers:
           token_transfers
           |> Instance.preload_nft(@api_true)
-          |> maybe_preload_ens_for_token_transfers()
-          |> maybe_preload_metadata(),
+          |> maybe_preload_ens_and_metadata(:token_transfers),
         next_page_params: next_page_params
       })
     end
@@ -770,7 +764,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:internal_transactions, %{
-        internal_transactions: internal_transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+        internal_transactions: internal_transactions |> maybe_preload_ens_and_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -826,7 +820,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       |> put_status(200)
       |> render(:logs, %{
         transaction_hash: transaction_hash,
-        logs: logs |> maybe_preload_ens() |> maybe_preload_metadata(),
+        logs: logs |> maybe_preload_ens_and_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -968,7 +962,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       conn
       |> put_status(200)
       |> render(:transactions_watchlist, %{
-        transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
+        transactions: transactions |> maybe_preload_ens_and_metadata(:transactions),
         next_page_params: next_page_params,
         watchlist_names: watchlist_names
       })
@@ -1095,10 +1089,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       |> Keyword.merge(@api_true)
 
     with {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params, options) do
-      preloaded =
-        transaction
-        |> maybe_preload_preview_ens(params)
-        |> maybe_preload_preview_metadata(params)
+      preloaded = maybe_preload_selected_meta(transaction, requested_preview_meta_fields(params))
 
       conn
       |> put_status(200)
@@ -1106,13 +1097,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     end
   end
 
-  defp maybe_preload_preview_ens(transaction, %{preload_ens: true}), do: maybe_preload_ens_to_transaction(transaction)
-  defp maybe_preload_preview_ens(transaction, _params), do: transaction
-
-  defp maybe_preload_preview_metadata(transaction, %{preload_metadata: true}),
-    do: maybe_preload_metadata_to_transaction(transaction)
-
-  defp maybe_preload_preview_metadata(transaction, _params), do: transaction
+  # Both preloads are opt-in per request, so only what the caller asked for is
+  # fetched. When both are requested they are fetched concurrently.
+  defp requested_preview_meta_fields(params) do
+    for {param, field} <- [preload_ens: :ens_domain_name, preload_metadata: :metadata],
+        params[param] == true,
+        do: field
+  end
 
   operation :blobs,
     summary: "List blobs for a transaction",
@@ -1273,7 +1264,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       |> put_status(200)
       |> put_view(DepositView)
       |> render(:deposits, %{
-        deposits: deposits |> maybe_preload_ens() |> maybe_preload_metadata(),
+        deposits: deposits |> maybe_preload_ens_and_metadata(),
         next_page_params: next_page_params
       })
     end

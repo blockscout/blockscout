@@ -137,6 +137,8 @@ defmodule Explorer.Mixfile do
       {:hammer, "~> 7.0"},
       {:ton, "~> 0.5.0"},
       {:mint, "~> 1.0"},
+      # pooled HTTP client on top of mint, used for microservice requests
+      {:finch, "~> 0.18"},
       {:oban, "~> 2.19"}
     ]
   end

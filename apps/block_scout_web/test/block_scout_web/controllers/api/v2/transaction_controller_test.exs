@@ -3498,4 +3498,50 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       end
     end
   end
+
+  describe "/transactions/{transaction_hash}/preview" do
+    setup do
+      bypass = Bypass.open()
+      old_bens_env = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS, [])
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+
+      Application.put_env(:block_scout_web, :chain_id, 1)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_bens_env)
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+      end)
+
+      {:ok, bypass: bypass}
+    end
+
+    test "preloads ENS names when preload_ens is requested", %{conn: conn, bypass: bypass} do
+      transaction = :transaction |> insert() |> with_block(status: :ok)
+      from_hash = Address.checksum(transaction.from_address_hash)
+
+      Bypass.expect_once(bypass, "POST", "/api/v1/1/addresses:batch_resolve_names", fn conn ->
+        Plug.Conn.resp(conn, 200, Jason.encode!(%{"names" => %{from_hash => "preview.eth"}}))
+      end)
+
+      request =
+        get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/preview", %{"preload_ens" => "true"})
+
+      assert %{"from" => %{"ens_domain_name" => "preview.eth"}} = json_response(request, 200)
+    end
+
+    test "queries no microservice when neither preload is requested", %{conn: conn} do
+      transaction = :transaction |> insert() |> with_block(status: :ok)
+
+      # any request to the bypass would fail the test, since nothing is expected
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/preview")
+
+      assert %{"from" => %{"ens_domain_name" => nil}} = json_response(request, 200)
+    end
+  end
 end
