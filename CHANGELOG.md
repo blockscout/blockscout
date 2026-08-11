@@ -54,6 +54,7 @@
 
 ### 📚 Documentation
 
+- document reCAPTCHA as headers in refetch-metadata OpenAPI spec ([#14690](https://github.com/blockscout/blockscout/pull/14690))
 - Add OpenAPI coverage for Stability validators endpoints ([#14323](https://github.com/blockscout/blockscout/issues/14323))
 - Add OpenAPI coverage for Shibarium endpoints ([#14322](https://github.com/blockscout/blockscout/issues/14322))
 - Add OpenAPI coverage for ZKSync-specific REST API methods ([#13753](https://github.com/blockscout/blockscout/issues/13753))
@@ -73,6 +74,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Optimize logs by address queries ([#14680](https://github.com/blockscout/blockscout/pull/14680))
 - Improve endpoint availability fault tolerance ([#14514](https://github.com/blockscout/blockscout/pull/14514))
 - Improve migration scheduling for log-filling tasks ([#14493](https://github.com/blockscout/blockscout/pull/14493))
 - Update smart_contracts.constructor_arguments from text to bytea ([#13371](https://github.com/blockscout/blockscout/issues/13371))
