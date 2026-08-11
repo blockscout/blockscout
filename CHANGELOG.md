@@ -5,7 +5,6 @@
 ### 🚀 Features
 
 - Migrate Sourcify integration from API v1 to v2 ([#14584](https://github.com/blockscout/blockscout/pull/14584))
-- Add realtime ERC-20 token balance and block indexing delay metrics ([#14531](https://github.com/blockscout/blockscout/pull/14531))
 - Add universal merged API types, operation shorthands, and API v2 schema correctness improvements ([#14515](https://github.com/blockscout/blockscout/pull/14515))
 - Add an option to disable core proxy methods in the Ethereum JSON-RPC API ([#14495](https://github.com/blockscout/blockscout/pull/14495))
 - Add ETH Swarm (bzz://) support for token metadata ([#14446](https://github.com/blockscout/blockscout/pull/14446))
