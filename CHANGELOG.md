@@ -11,7 +11,6 @@
 - Add ENS and metadata preloads to advanced filters and NFT owner output ([#14443](https://github.com/blockscout/blockscout/issues/14443), [#14428](https://github.com/blockscout/blockscout/pull/14428))
 - Add an include_zero_value flag for filtering zero-value internal transactions in REST endpoints ([#14400](https://github.com/blockscout/blockscout/issues/14400))
 - Add transaction log input decoding in ABI-like format ([#13783](https://github.com/blockscout/blockscout/issues/13783))
-- Add OpenAPI specs for ZKSync-specific REST API methods ([#13753](https://github.com/blockscout/blockscout/issues/13753))
 - Add support for exporting token transfers from a token through CSV export ([#7909](https://github.com/blockscout/blockscout/issues/7909))
 - Add support for runtime Redis SSL/TLS and Sentinel-based configuration for rate limiting and account services ([#12827](https://github.com/blockscout/blockscout/issues/12827), [#12889](https://github.com/blockscout/blockscout/issues/12889))
 - Add support for Search + BENS integration ([#13180](https://github.com/blockscout/blockscout/issues/13180))
