@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  nft_media_handler:
+    build:
+      context: .
+      dockerfile: apps/nft_media_handler/Dockerfile
+    image: blockscout-nft-handler:local
+    env_file:
+      - apps/nft_media_handler/.env.example
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./apps/nft_media_handler/temp:/app/apps/nft_media_handler/temp
+    restart: unless-stopped
+
+# Use: docker compose -f docker-compose.nft_media.yml up --build
