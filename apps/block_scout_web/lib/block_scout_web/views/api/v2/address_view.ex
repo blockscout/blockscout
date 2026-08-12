@@ -109,6 +109,8 @@ defmodule BlockScoutWeb.API.V2.AddressView do
     creation_transaction_hash = creator_hash && AddressView.transaction_hash(address)
     token = address.token && TokenView.render("token.json", %{token: address.token})
 
+    existence_checks = Counters.address_existence_checks(address.hash, @api_true)
+
     extended_info =
       Map.merge(base_info, %{
         "creator_address_hash" => creator_hash && Address.checksum(creator_hash),
@@ -118,12 +120,12 @@ defmodule BlockScoutWeb.API.V2.AddressView do
         "coin_balance" => balance,
         "exchange_rate" => exchange_rate,
         "block_number_balance_updated_at" => address.fetched_coin_balance_block_number,
-        "has_validated_blocks" => Counters.check_if_validated_blocks_at_address(address.hash, @api_true),
-        "has_logs" => Counters.check_if_logs_at_address(address.hash, @api_true),
-        "has_tokens" => Counters.check_if_tokens_at_address(address.hash, @api_true),
-        "has_token_transfers" => Counters.check_if_token_transfers_at_address(address.hash, @api_true),
+        "has_validated_blocks" => existence_checks.has_validated_blocks,
+        "has_logs" => existence_checks.has_logs,
+        "has_tokens" => existence_checks.has_tokens,
+        "has_token_transfers" => existence_checks.has_token_transfers,
         "watchlist_address_id" => WatchlistAddress.select_watchlist_address_id(get_watchlist_id(conn), address.hash),
-        "has_beacon_chain_withdrawals" => Counters.check_if_withdrawals_at_address(address.hash, @api_true)
+        "has_beacon_chain_withdrawals" => existence_checks.has_beacon_chain_withdrawals
       })
 
     extended_info
