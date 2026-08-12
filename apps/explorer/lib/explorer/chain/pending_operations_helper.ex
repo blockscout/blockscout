@@ -6,6 +6,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
 
   alias Explorer.Chain.{Block, Hash, PendingBlockOperation, PendingTransactionOperation, Transaction}
   alias Explorer.{Helper, Repo}
+  alias Indexer.Fetcher.InternalTransaction, as: InternalTransactionFetcher
 
   defp transactions_batch_size,
     do:
@@ -70,8 +71,21 @@ defmodule Explorer.Chain.PendingOperationsHelper do
 
   defp do_transfuse(transfuse_function) do
     case Repo.transaction(transfuse_function) do
-      {:ok, :finish} -> :ok
-      {:ok, :continue} -> do_transfuse(transfuse_function)
+      {:ok, :finish} ->
+        :ok
+
+      {:ok, {:continue, {block_numbers, transactions}}} ->
+        async_fetch_internal_transactions(block_numbers, transactions)
+        do_transfuse(transfuse_function)
+    end
+  end
+
+  @spec async_fetch_internal_transactions([Block.block_number()], [map()]) :: :ok
+  defp async_fetch_internal_transactions(block_numbers, transactions) do
+    if is_nil(Process.whereis(InternalTransactionFetcher)) do
+      :ok
+    else
+      InternalTransactionFetcher.async_fetch(block_numbers, transactions, false)
     end
   end
 
@@ -105,7 +119,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
 
         Repo.delete_all(delete_query)
 
-        :continue
+        {:continue, {filtered_pbo_params |> Enum.map(& &1.block_number) |> Enum.uniq(), []}}
     end
   end
 
@@ -124,12 +138,15 @@ defmodule Explorer.Chain.PendingOperationsHelper do
         :finish
 
       pbo_block_numbers ->
-        pto_params =
+        transactions =
           Transaction
           |> where([t], t.block_number in ^pbo_block_numbers)
-          |> select([t], %{hash: t.hash, type: t.type})
+          |> select([t], %{block_number: t.block_number, hash: t.hash, index: t.index, type: t.type})
           |> Repo.all()
           |> Transaction.filter_non_traceable_transactions()
+
+        pto_params =
+          transactions
           |> Enum.map(&%{transaction_hash: &1.hash})
           |> Helper.add_timestamps()
 
@@ -137,7 +154,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
           :ok ->
             delete_pending_block_operations(pbo_block_numbers)
 
-            :continue
+            {:continue, {[], transactions}}
 
           {:error, :too_many_parameters} when blocks_batch_size > 1 ->
             from_blocks_to_transactions_function(max(div(blocks_batch_size, 2), 1))
@@ -146,7 +163,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
             Repo.safe_insert_all(PendingTransactionOperation, pto_params, on_conflict: :nothing)
             delete_pending_block_operations(pbo_block_numbers)
 
-            :continue
+            {:continue, {[], transactions}}
         end
     end
   end
