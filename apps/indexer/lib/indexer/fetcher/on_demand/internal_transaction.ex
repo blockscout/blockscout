@@ -545,8 +545,12 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
   defp filter_by_address(internal_transactions, address_hash, direction) do
     Enum.filter(internal_transactions, fn internal_transaction ->
       case direction do
-        d when d in [:to, :to_address_hash] ->
+        :to ->
           internal_transaction.to_address_hash == address_hash
+
+        :to_address_hash ->
+          internal_transaction.to_address_hash == address_hash and
+            is_nil(internal_transaction.created_contract_address_hash)
 
         d when d in [:from, :from_address_hash] ->
           internal_transaction.from_address_hash == address_hash
@@ -755,16 +759,16 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
   end
 
   defp serialize(internal_transaction_params) do
+    to_address_hash = convert_to_address_hash(internal_transaction_params[:to_address_hash])
+    created_contract_address_hash = convert_to_address_hash(internal_transaction_params[:created_contract_address_hash])
+
     %InternalTransaction{}
     |> InternalTransaction.changeset(internal_transaction_params)
     |> Ecto.Changeset.apply_changes()
     |> Map.put(:transaction_hash, internal_transaction_params[:transaction_hash])
     |> Map.put(:from_address_hash, convert_to_address_hash(internal_transaction_params[:from_address_hash]))
-    |> Map.put(:to_address_hash, convert_to_address_hash(internal_transaction_params[:to_address_hash]))
-    |> Map.put(
-      :created_contract_address_hash,
-      convert_to_address_hash(internal_transaction_params[:created_contract_address_hash])
-    )
+    |> Map.put(:to_address_hash, to_address_hash || created_contract_address_hash)
+    |> Map.put(:created_contract_address_hash, created_contract_address_hash)
   end
 
   defp convert_to_address_hash(nil), do: nil

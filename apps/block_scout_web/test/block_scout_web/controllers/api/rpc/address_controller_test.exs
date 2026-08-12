@@ -2529,7 +2529,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "input" => "",
           "isError" => "0",
           "timeStamp" => "#{DateTime.to_unix(transaction.block.timestamp)}",
-          "to" => "",
+          "to" => "0x205a6b72ce16736c9d87172568a9c0cb9304de0d",
           "transactionHash" => "#{transaction.hash}",
           "type" => "create",
           "value" => "0"
@@ -5110,6 +5110,12 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                  }
                }
              ]}
+        end)
+
+        original_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+
+        on_exit(fn ->
+          Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, original_config)
         end)
 
         Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, tracer: "call_tracer", debug_trace_timeout: "5s")
