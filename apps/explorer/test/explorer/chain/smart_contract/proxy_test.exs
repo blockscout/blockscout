@@ -374,6 +374,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
       :explorer
       |> Application.get_env(:proxy)
       |> Keyword.replace(:fallback_cached_implementation_data_ttl, 0)
+      |> Keyword.put(:empty_cached_implementation_data_ttl, 0)
 
     Application.put_env(:explorer, :proxy, proxy)
 

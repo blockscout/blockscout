@@ -363,6 +363,8 @@ config :explorer, :proxy,
   implementation_data_ttl_via_avg_block_time:
     ConfigHelper.parse_bool_env_var("CONTRACT_PROXY_IMPLEMENTATION_TTL_VIA_AVG_BLOCK_TIME", "true"),
   fallback_cached_implementation_data_ttl: :timer.seconds(4),
+  empty_cached_implementation_data_ttl:
+    ConfigHelper.parse_time_env_var("CONTRACT_PROXY_EMPTY_IMPLEMENTATION_DATA_CACHE_TTL", "1d"),
   implementation_data_fetching_timeout: :timer.seconds(2)
 
 config :explorer, Explorer.Chain.Events.Listener,
