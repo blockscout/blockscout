@@ -3447,6 +3447,103 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert item["calls"] == nil
         assert "sponsored_transaction" in item["transaction_types"]
       end
+
+      test "attributes the fee state change to the fee payer instead of the sender", %{conn: conn} do
+        block_before = insert(:block)
+        fee_payer = insert(:address)
+
+        transaction =
+          :transaction
+          |> insert(
+            type: 118,
+            fee_payer_address_hash: fee_payer.hash,
+            calls: @eden_calls,
+            gas_price: 1_000,
+            value: 0
+          )
+          |> with_block(status: :ok, gas_used: 147)
+
+        insert_coin_balances_before(transaction, fee_payer, block_before)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/state-changes")
+
+        assert response = json_response(request, 200)
+
+        changes =
+          Map.new(response["items"], fn item -> {item["address"]["hash"], item["change"]} end)
+
+        assert changes[Address.checksum(fee_payer.hash)] == "-147000"
+
+        refute Map.has_key?(changes, Address.checksum(transaction.from_address_hash))
+
+        assert changes[Address.checksum(transaction.block.miner_hash)] == "147000"
+      end
+
+      test "charges the sender for the value and the fee payer for the fee", %{conn: conn} do
+        block_before = insert(:block)
+        fee_payer = insert(:address)
+
+        transaction =
+          :transaction
+          |> insert(
+            type: 118,
+            fee_payer_address_hash: fee_payer.hash,
+            calls: @eden_calls,
+            gas_price: 1_000,
+            value: 3
+          )
+          |> with_block(status: :ok, gas_used: 147)
+
+        insert_coin_balances_before(transaction, fee_payer, block_before)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/state-changes")
+
+        assert response = json_response(request, 200)
+
+        changes =
+          Map.new(response["items"], fn item -> {item["address"]["hash"], item["change"]} end)
+
+        assert changes[Address.checksum(fee_payer.hash)] == "-147000"
+        assert changes[Address.checksum(transaction.from_address_hash)] == "-3"
+        assert changes[Address.checksum(transaction.to_address_hash)] == "3"
+      end
+
+      test "charges the sender for both the value and the fee for regular transactions", %{conn: conn} do
+        block_before = insert(:block)
+
+        transaction =
+          :transaction
+          |> insert(type: 2, gas_price: 1_000, value: 3)
+          |> with_block(status: :ok, gas_used: 147)
+
+        insert_coin_balances_before(transaction, nil, block_before)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/state-changes")
+
+        assert response = json_response(request, 200)
+
+        changes =
+          Map.new(response["items"], fn item -> {item["address"]["hash"], item["change"]} end)
+
+        assert changes[Address.checksum(transaction.from_address_hash)] == "-147003"
+        assert changes[Address.checksum(transaction.to_address_hash)] == "3"
+      end
+    end
+
+    defp insert_coin_balances_before(transaction, fee_payer, block_before) do
+      [
+        {transaction.from_address, transaction.from_address_hash},
+        {transaction.to_address, transaction.to_address_hash},
+        {transaction.block.miner, transaction.block.miner_hash}
+      ]
+      |> Enum.concat(if fee_payer, do: [{fee_payer, fee_payer.hash}], else: [])
+      |> Enum.each(fn {address, address_hash} ->
+        insert(:address_coin_balance,
+          address: address,
+          address_hash: address_hash,
+          block_number: block_before.number
+        )
+      end)
     end
   end
 

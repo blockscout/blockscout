@@ -4,6 +4,8 @@ defmodule Explorer.Chain.Transaction.StateChange do
     Helper functions and struct for storing state changes
   """
 
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   use Utils.RuntimeEnvHelper,
     miner_gets_burnt_fees?: [:explorer, [Explorer.Chain.Transaction, :block_miner_gets_burnt_fees?]]
 
@@ -59,6 +61,7 @@ defmodule Explorer.Chain.Transaction.StateChange do
     coin_balances =
       coin_balances
       |> update_balance(transaction.from_address_hash, &Wei.sub(&1, from_loss(transaction)))
+      |> update_balance(fee_payer_address_hash(transaction), &Wei.sub(&1, fee_payer_loss(transaction)))
       |> update_balance(transaction.to_address_hash, &Wei.sum(&1, to_profit(transaction)))
       |> update_balance(block.miner_hash, &Wei.sum(&1, miner_profit(transaction, block)))
 
@@ -199,17 +202,53 @@ defmodule Explorer.Chain.Transaction.StateChange do
   """
   @spec from_loss(Transaction.t() | InternalTransaction.t()) :: Wei.t()
   def from_loss(%Transaction{} = transaction) do
-    {_, fee} = Transaction.fee(transaction, :wei)
+    fee = sender_fee(transaction)
 
     if error?(transaction) do
-      %Wei{value: fee}
+      fee
     else
-      Wei.sum(transaction.value, %Wei{value: fee})
+      Wei.sum(transaction.value, fee)
     end
   end
 
   def from_loss(%InternalTransaction{} = transaction) do
     transaction.value || Wei.zero()
+  end
+
+  @doc """
+  Returns the balance change of the fee payer (sponsor) of a transaction.
+
+  Equals to the transaction fee for the transactions which fee is paid by an address other than
+  the transaction sender (the Eden sponsored transactions), zero otherwise.
+  """
+  @spec fee_payer_loss(Transaction.t()) :: Wei.t()
+  if @chain_type == :eden do
+    def fee_payer_loss(%Transaction{fee_payer_address_hash: nil}), do: Wei.zero()
+
+    def fee_payer_loss(%Transaction{} = transaction), do: transaction_fee(transaction)
+  else
+    def fee_payer_loss(%Transaction{}), do: Wei.zero()
+  end
+
+  if @chain_type == :eden do
+    defp sender_fee(%Transaction{fee_payer_address_hash: nil} = transaction), do: transaction_fee(transaction)
+
+    defp sender_fee(%Transaction{}), do: Wei.zero()
+  else
+    defp sender_fee(%Transaction{} = transaction), do: transaction_fee(transaction)
+  end
+
+  if @chain_type == :eden do
+    defp fee_payer_address_hash(%Transaction{fee_payer_address_hash: fee_payer_address_hash}),
+      do: fee_payer_address_hash
+  else
+    defp fee_payer_address_hash(%Transaction{}), do: nil
+  end
+
+  defp transaction_fee(transaction) do
+    {_, fee} = Transaction.fee(transaction, :wei)
+
+    %Wei{value: fee}
   end
 
   @doc """

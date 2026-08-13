@@ -247,6 +247,48 @@ defmodule Indexer.Transform.AddressCoinBalancesTest do
     end
   end
 
+  if Application.compile_env(:explorer, :chain_type) == :eden do
+    describe "params_set/1 transactions_params on Eden chain" do
+      test "with sponsored transaction extracts fee_payer_address_hash" do
+        block_number = 1
+
+        from_address_hash = to_string(Factory.address_hash())
+        fee_payer_address_hash = to_string(Factory.address_hash())
+
+        transaction_params =
+          :transaction
+          |> Factory.params_for()
+          |> Map.put(:block_number, block_number)
+          |> Map.put(:from_address_hash, from_address_hash)
+          |> Map.put(:fee_payer_address_hash, fee_payer_address_hash)
+
+        params_set = AddressCoinBalances.params_set(%{transactions_params: [transaction_params]})
+
+        assert MapSet.size(params_set) == 2
+        assert MapSet.member?(params_set, %{address_hash: from_address_hash, block_number: block_number})
+        assert MapSet.member?(params_set, %{address_hash: fee_payer_address_hash, block_number: block_number})
+      end
+
+      test "with regular transaction extracts nothing extra" do
+        block_number = 1
+
+        from_address_hash = to_string(Factory.address_hash())
+
+        transaction_params =
+          :transaction
+          |> Factory.params_for()
+          |> Map.put(:block_number, block_number)
+          |> Map.put(:from_address_hash, from_address_hash)
+          |> Map.put(:fee_payer_address_hash, nil)
+
+        params_set = AddressCoinBalances.params_set(%{transactions_params: [transaction_params]})
+
+        assert MapSet.size(params_set) == 1
+        assert MapSet.member?(params_set, %{address_hash: from_address_hash, block_number: block_number})
+      end
+    end
+  end
+
   if Application.compile_env(:explorer, :chain_type) == :arc do
     describe "params_set/1 logs_params on Arc chain" do
       test "with EIP-7708 Transfer queues non-burn from_address and to_address for coin balances" do

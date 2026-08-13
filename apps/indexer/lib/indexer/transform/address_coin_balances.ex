@@ -4,7 +4,9 @@ defmodule Indexer.Transform.AddressCoinBalances do
   Extracts `Explorer.Chain.Address.CoinBalance` params from other schema's params.
   """
 
-  use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
+  use Utils.CompileTimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity],
+    chain_type: [:explorer, :chain_type]
 
   use Utils.RuntimeEnvHelper,
     chain_type: [:explorer, :chain_type],
@@ -238,6 +240,16 @@ defmodule Indexer.Transform.AddressCoinBalances do
                 is_binary(recipient_address_hash) and
                 recipient_address_hash != @burn_address_hash_string do
       MapSet.put(initial, %{address_hash: recipient_address_hash, block_number: block_number})
+    end
+  end
+
+  if @chain_type == :eden do
+    defp transactions_params_chain_type_fields_reducer(
+           %{block_number: block_number, fee_payer_address_hash: fee_payer_address_hash},
+           initial
+         )
+         when is_integer(block_number) and is_binary(fee_payer_address_hash) do
+      MapSet.put(initial, %{address_hash: fee_payer_address_hash, block_number: block_number})
     end
   end
 
