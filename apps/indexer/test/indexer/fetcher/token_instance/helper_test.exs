@@ -174,7 +174,16 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
           type: "ERC-721"
         )
 
-      Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, base_uri_retry?: true)
+      # Merge into (rather than replace) the existing config, otherwise sibling settings such
+      # as `host_filtering_enabled?: false` are wiped for every later test in this VM.
+      initial_env = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, [])
+      on_exit(fn -> Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, initial_env) end)
+
+      Application.put_env(
+        :indexer,
+        Indexer.Fetcher.TokenInstance.Helper,
+        Keyword.put(initial_env, :base_uri_retry?, true)
+      )
 
       assert [
                %Instance{
@@ -184,8 +193,6 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
                }
              ] =
                Helper.batch_fetch_instances([{token.contract_address_hash, 5_710_384_980_761_197_878}])
-
-      Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, base_uri_retry?: false)
     end
 
     # https://github.com/blockscout/blockscout/issues/9696

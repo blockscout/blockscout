@@ -8,8 +8,14 @@ defmodule Explorer.Token.MetadataRetriever do
 
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.Helper, as: ExplorerHelper
-  alias Explorer.{HttpClient, MetadataURIValidator}
+  alias Explorer.HttpClient
   alias Explorer.SmartContract.Reader
+  alias Utils.HttpClient.SafeFetch
+
+  # Reasons `Utils.UrlValidator` can reject a URL. These are reported as bare strings (rather
+  # than `inspect/1`-ed like transport errors) since `Explorer.Chain.Token.Instance` matches
+  # them to decide retry/ban intervals.
+  @url_validation_errors [:not_printable, :empty_host, :disallowed_protocol, :nxdomain, :blacklist]
 
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
@@ -993,28 +999,10 @@ defmodule Explorer.Token.MetadataRetriever do
   """
   @spec fetch_metadata_from_uri(String.t(), keyword(), String.t() | nil) :: {:ok, %{metadata: any}} | {:error, binary()}
   def fetch_metadata_from_uri(uri, ipfs_params, hex_token_id \\ nil) do
-    case Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper)[:host_filtering_enabled?] &&
-           !ipfs?(ipfs_params) && !arweave?(ipfs_params) && !swarm?(ipfs_params) &&
-           MetadataURIValidator.validate_uri(uri) do
-      {:error, reason} ->
-        if reason == :blacklist do
-          Logger.warning(
-            [
-              "Request to token uri failed: #{inspect(uri)}.",
-              "Host is blacklisted.",
-              "To disable IPs blacklisting set INDEXER_TOKEN_INSTANCE_HOST_FILTERING_ENABLED=false"
-            ],
-            fetcher: :token_instances
-          )
-        end
-
-        {:error, reason |> to_string() |> truncate_error()}
-
-      _ ->
-        fetch_metadata_from_uri_request(uri, hex_token_id, ipfs_params)
-    end
+    fetch_metadata_from_uri_request(uri, hex_token_id, ipfs_params)
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp fetch_metadata_from_uri_request(uri, hex_token_id, ipfs_params) do
     headers =
       cond do
@@ -1023,10 +1011,16 @@ defmodule Explorer.Token.MetadataRetriever do
         true -> @default_headers
       end
 
-    case HttpClient.get(uri, headers,
-           recv_timeout: 30_000,
-           follow_redirect: true,
-           pool: :token_instance_fetcher
+    case SafeFetch.request(
+           uri,
+           headers,
+           [
+             validate_host?: regular_url?(ipfs_params),
+             transport_opts: [recv_timeout: 30_000, pool: :token_instance_fetcher]
+           ],
+           fn request_uri, request_headers, request_opts ->
+             HttpClient.get(request_uri, request_headers, request_opts)
+           end
          ) do
       {:ok, %{body: body, status_code: 200, headers: response_headers}} ->
         content_type = get_content_type_from_headers(response_headers)
@@ -1046,6 +1040,20 @@ defmodule Explorer.Token.MetadataRetriever do
         )
 
         {:error_code, code}
+
+      {:error, reason} when reason in @url_validation_errors ->
+        if reason == :blacklist do
+          Logger.warning(
+            [
+              "Request to token uri failed: #{inspect(uri)}.",
+              "Host is blacklisted.",
+              "To disable IPs blacklisting set INDEXER_TOKEN_INSTANCE_HOST_FILTERING_ENABLED=false"
+            ],
+            fetcher: :token_instances
+          )
+        end
+
+        {:error, reason |> to_string() |> truncate_error()}
 
       {:error, reason} ->
         Logger.warning(
@@ -1083,6 +1091,13 @@ defmodule Explorer.Token.MetadataRetriever do
 
   defp swarm?(ipfs_params) do
     Keyword.get(ipfs_params, :swarm?)
+  end
+
+  # A regular (attacker-controlled) URL, as opposed to one resolved to an operator-trusted
+  # IPFS/Arweave/Swarm gateway. Only regular URLs have their host validated against the
+  # SSRF blacklist.
+  defp regular_url?(ipfs_params) do
+    !(ipfs?(ipfs_params) || arweave?(ipfs_params) || swarm?(ipfs_params))
   end
 
   defp check_content_type(content_type, uri, hex_token_id, body, ipfs_params) do

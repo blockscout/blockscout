@@ -7,7 +7,6 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   alias EthereumJSONRPC.NFT
   alias Explorer.Chain.Token
   alias Explorer.Chain.Token.Instance
-  alias Explorer.MetadataURIValidator
   alias Explorer.Token.MetadataRetriever
   alias Indexer.NFTMediaHandler.Queue
   alias Utils.TokenInstanceHelper
@@ -280,26 +279,15 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
   def determine_media_type(url) do
     {resolved_url, headers} = MetadataRetriever.resolve_nft_media_url(url)
 
-    with {:host, :ok} <- {:host, host_allowed?(resolved_url)},
-         {:media_type, {:ok, {type, subtype}}} <-
-           {:media_type, TokenInstanceHelper.media_type_detailed(resolved_url, headers)} do
-      mime_tuple_to_string({type, subtype})
-    else
-      {:host, {:error, reason}} ->
-        Logger.warning("Host is not allowed for media type detection: #{url}, reason: #{inspect(reason)}")
-        ""
+    # `media_type_detailed/3` validates the host and every redirect target itself, so no
+    # separate pre-flight check is needed here (each one costs blocking DNS lookups).
+    case TokenInstanceHelper.media_type_detailed(resolved_url, headers) do
+      {:ok, {type, subtype}} ->
+        mime_tuple_to_string({type, subtype})
 
-      {:media_type, {:error, reason}} ->
+      {:error, reason} ->
         Logger.warning("Failed to determine media type for URL: #{url}, reason: #{inspect(reason)}")
         ""
-    end
-  end
-
-  defp host_allowed?(url) do
-    if Application.get_env(:indexer, __MODULE__)[:host_filtering_enabled?] do
-      MetadataURIValidator.validate_uri(url)
-    else
-      :ok
     end
   end
 
