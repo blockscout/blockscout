@@ -4,18 +4,23 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
     Interface to interact with Blockscout ENS microservice
   """
 
-  alias Explorer.{Chain, HttpClient}
+  alias Explorer.Chain
   alias Explorer.Chain.Address.MetadataPreloader
 
   alias Explorer.Chain.{Address, Block, Transaction}
 
+  alias Explorer.MicroserviceInterfaces.HttpClient
   alias Explorer.Utility.Microservice
 
   require Logger
 
   import Explorer.Chain.Address.MetadataPreloader, only: [maybe_preload_meta: 3]
 
-  @post_timeout :timer.seconds(5)
+  # The batch resolve is only used to decorate API responses with ENS names, so
+  # it is kept short on purpose: a slow BENS should cost the response its names,
+  # not its latency. A longer timeout also keeps a pooled connection held for
+  # longer, which multiplies into pool pressure under load.
+  @preload_timeout :timer.seconds(1)
   @request_error_msg "Error while sending request to BENS microservice"
 
   @doc """
@@ -115,7 +120,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @preload_timeout) do
       {:ok, %{body: body, status_code: 200}} ->
         Jason.decode(body)
 
@@ -361,7 +366,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   @spec maybe_preload_ens_for_blocks(MetadataPreloader.supported_input()) ::
           MetadataPreloader.supported_input()
   def maybe_preload_ens_for_blocks(blocks) do
-    if Application.get_env(:explorer, __MODULE__, [])[:disable_blocks_bens_preload] do
+    if ens_preload_disabled?(:blocks) do
       blocks
     else
       maybe_preload_ens(blocks)
@@ -369,12 +374,25 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   end
 
   @doc """
+  Returns `true` if the ENS preload is disabled for the given entity kind via the
+  corresponding `DISABLE_*_BENS_PRELOAD` environment variable.
+  """
+  @spec ens_preload_disabled?(MetadataPreloader.entity_kind()) :: boolean()
+  def ens_preload_disabled?(:blocks), do: !!config()[:disable_blocks_bens_preload]
+
+  def ens_preload_disabled?(:token_transfers), do: !!config()[:disable_token_transfers_bens_preload]
+
+  def ens_preload_disabled?(:transactions), do: !!config()[:disable_transactions_bens_preload]
+
+  def ens_preload_disabled?(:any), do: false
+
+  @doc """
   Preloads ENS data to the list of token transfers unless disabled via DISABLE_TOKEN_TRANSFERS_BENS_PRELOAD
   """
   @spec maybe_preload_ens_for_token_transfers(MetadataPreloader.supported_input()) ::
           MetadataPreloader.supported_input()
   def maybe_preload_ens_for_token_transfers(token_transfers) do
-    if Application.get_env(:explorer, __MODULE__, [])[:disable_token_transfers_bens_preload] do
+    if ens_preload_disabled?(:token_transfers) do
       token_transfers
     else
       maybe_preload_ens(token_transfers)
@@ -387,10 +405,12 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   @spec maybe_preload_ens_for_transactions(MetadataPreloader.supported_input()) ::
           MetadataPreloader.supported_input()
   def maybe_preload_ens_for_transactions(transactions) do
-    if Application.get_env(:explorer, __MODULE__, [])[:disable_transactions_bens_preload] do
+    if ens_preload_disabled?(:transactions) do
       transactions
     else
       maybe_preload_ens(transactions)
     end
   end
+
+  defp config, do: Application.get_env(:explorer, __MODULE__, [])
 end
