@@ -8,9 +8,9 @@ addEventListener('fetch', event => {
 
 async function handleRequest(request) {
   const url = new URL(request.url)
-  // expect path like /nft/<key>
-  const key = url.pathname.replace(/^\/(nft|media)\/?/, '')
-  if (!key) return new Response('Not Found', { status: 404 })
+  const match = url.pathname.match(/^\/(?:nft|media)\/(.+)$/)
+  if (!match) return new Response('Not Found', { status: 404 })
+  const key = match[1]
 
   const r2PublicUrl = R2_PUBLIC_URL || 'https://your_account_id.r2.cloudflarestorage.com/your_bucket'
   const fetchUrl = `${r2PublicUrl}/${key}`
