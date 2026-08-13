@@ -86,6 +86,16 @@ defmodule Explorer.Chain.Withdrawal do
     )
   end
 
+  @spec address_hash_to_withdrawals_existence_query(Hash.Address.t()) :: Ecto.Query.t()
+  def address_hash_to_withdrawals_existence_query(address_hash) do
+    from(withdrawal in __MODULE__,
+      left_join: block in assoc(withdrawal, :block),
+      where: withdrawal.address_hash == ^address_hash,
+      where: block.consensus == true,
+      select: 1
+    )
+  end
+
   @spec blocks_without_withdrawals_query(non_neg_integer()) :: Ecto.Query.t()
   def blocks_without_withdrawals_query(from_block) do
     from(withdrawal in __MODULE__,

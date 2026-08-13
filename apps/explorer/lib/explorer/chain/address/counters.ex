@@ -80,8 +80,41 @@ defmodule Explorer.Chain.Address.Counters do
   @spec check_if_withdrawals_at_address(Hash.Address.t()) :: boolean()
   def check_if_withdrawals_at_address(address_hash, options \\ []) do
     address_hash
-    |> Withdrawal.address_hash_to_withdrawals_unordered_query()
+    |> Withdrawal.address_hash_to_withdrawals_existence_query()
     |> select_repo(options).exists?()
+  end
+
+  @doc """
+    Performs all existence checks needed by the address view in a single
+    database round trip: `SELECT exists(...), exists(...), ...`.
+  """
+  @spec address_existence_checks(Hash.Address.t(), Keyword.t()) :: %{
+          has_validated_blocks: boolean(),
+          has_logs: boolean(),
+          has_tokens: boolean(),
+          has_token_transfers: boolean(),
+          has_beacon_chain_withdrawals: boolean()
+        }
+  def address_existence_checks(address_hash, options \\ []) do
+    validated_blocks_query = address_hash |> address_hash_to_validated_blocks_query() |> select([_], 1)
+    logs_query = address_hash |> address_hash_to_logs_query() |> select([_], 1)
+    token_balances_query = address_hash |> address_hash_to_token_balances_query() |> select([_], 1)
+    token_transfers_from_query = from(tt in TokenTransfer, where: tt.from_address_hash == ^address_hash, select: 1)
+    token_transfers_to_query = from(tt in TokenTransfer, where: tt.to_address_hash == ^address_hash, select: 1)
+    withdrawals_query = Withdrawal.address_hash_to_withdrawals_existence_query(address_hash)
+
+    query =
+      from(f in fragment("SELECT 1"),
+        select: %{
+          has_validated_blocks: exists(validated_blocks_query),
+          has_logs: exists(logs_query),
+          has_tokens: exists(token_balances_query),
+          has_token_transfers: exists(token_transfers_from_query) or exists(token_transfers_to_query),
+          has_beacon_chain_withdrawals: exists(withdrawals_query)
+        }
+      )
+
+    select_repo(options).one(query)
   end
 
   def address_hash_to_transaction_count_query(address_hash) do
