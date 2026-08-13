@@ -14,6 +14,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
 
   describe "fetching implementation" do
     test "get_implementation/1 does not re-probe verified non-proxy within empty cache TTL" do
+      initial_proxy_config = Application.get_env(:explorer, :proxy)
+      on_exit(fn -> Application.put_env(:explorer, :proxy, initial_proxy_config) end)
+
       smart_contract = insert(:smart_contract)
 
       proxy =
@@ -48,6 +51,9 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
     end
 
     test "get_implementation/1" do
+      initial_proxy_config = Application.get_env(:explorer, :proxy)
+      on_exit(fn -> Application.put_env(:explorer, :proxy, initial_proxy_config) end)
+
       smart_contract = insert(:smart_contract)
       implementation_smart_contract = insert(:smart_contract, name: "implementation")
 
