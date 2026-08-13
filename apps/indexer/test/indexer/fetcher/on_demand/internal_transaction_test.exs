@@ -400,6 +400,59 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
     assert result |> Enum.filter(&(&1.block_number == 2)) |> Enum.count() == 1
   end
 
+  test "fetch_by_address/2 (contract creation)" do
+    address = insert(:address)
+    address_hash_str = to_string(address.hash)
+    id_to_hash = insert(:address_id_to_address_hash, address: address)
+
+    insert(:deleted_internal_transactions_address_placeholder,
+      address_id: id_to_hash.address_id,
+      block_number: 1,
+      count_tos: 1,
+      count_froms: 0
+    )
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn [%{id: id, params: ["0x1", _]}], _ ->
+      {:ok,
+       [
+         %{
+           id: id,
+           result: [
+             %{
+               "result" => %{
+                 "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
+                 "gas" => "0x106f5",
+                 "gasUsed" => "0x106f5",
+                 "input" => "0x6080",
+                 "output" => "0x6080",
+                 "to" => address_hash_str,
+                 "type" => "CREATE",
+                 "value" => "0x0"
+               },
+               "txHash" => "0x32b17f27ddb546eab3c4c33f31eb22c1cb992d4ccc50dae26922805b717efe5c"
+             }
+           ]
+         }
+       ]}
+    end)
+
+    Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth,
+      tracer: "call_tracer",
+      debug_trace_timeout: "5s",
+      block_traceable?: true
+    )
+
+    opts = [paging_options: %PagingOptions{page_size: 1}]
+
+    assert [%InternalTransaction{type: :create, to_address_hash: to_address_hash}] =
+             InternalTransactionOnDemand.fetch_by_address(address.hash, Keyword.put(opts, :direction, :to))
+
+    assert to_address_hash == address.hash
+
+    assert [] =
+             InternalTransactionOnDemand.fetch_by_address(address.hash, Keyword.put(opts, :direction, :to_address_hash))
+  end
+
   test "fetch_by_address/2 (no suitable placeholders)" do
     address = insert(:address)
     address_hash_str = to_string(address.hash)
@@ -473,7 +526,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
              %{
                created_contract_address_hash: created_contract_address_hash,
                from_address_hash: from_address_hash,
-               to_address_hash: nil,
+               to_address_hash: to_address_hash,
                block_timestamp: ^block_timestamp,
                transaction_hash: ^transaction_hash,
                error: nil
@@ -481,6 +534,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
            ] = InternalTransactionOnDemand.etherscan_fetch_by_transaction(transaction, %{})
 
     assert to_string(created_contract_address_hash) == "0x205a6b72ce16736c9d87172568a9c0cb9304de0d"
+    assert to_string(to_address_hash) == "0x205a6b72ce16736c9d87172568a9c0cb9304de0d"
     assert to_string(from_address_hash) == "0x117b358218da5a4f647072ddb50ded038ed63d17"
   end
 end
