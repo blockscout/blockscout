@@ -5,7 +5,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.SummaryJustRequestBody do
   """
   require OpenApiSpex
 
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias BlockScoutWeb.Schemas.API.V2.{Address, InternalTransaction, Log, TokenTransfer}
+  alias BlockScoutWeb.Schemas.API.V2.Eden.Call, as: EdenCall
+  alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
   logs_data_schema = %Schema{
@@ -49,6 +53,20 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.SummaryJustRequestBody do
     },
     additionalProperties: false
   }
+
+  data_schema =
+    case @chain_type do
+      :eden ->
+        Helper.extend_schema(data_schema,
+          properties: %{
+            fee_payer: %Schema{allOf: [Address], nullable: true},
+            calls: %Schema{type: :array, items: EdenCall, nullable: true}
+          }
+        )
+
+      _ ->
+        data_schema
+    end
 
   OpenApiSpex.schema(%{
     type: :object,

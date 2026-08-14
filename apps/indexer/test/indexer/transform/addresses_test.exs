@@ -272,6 +272,59 @@ defmodule Indexer.Transform.AddressesTest do
                ]
              }) == []
     end
+
+    if Application.compile_env(:explorer, :chain_type) == :eden do
+      test "recipients of the batched calls are extracted with the coin balance block number" do
+        first_call_hash = "0x11f60a633dd30a8d1a26dd6e20167a9293fb4647"
+        second_call_hash = "0xcfc096e58b1f858e5a3ee88ecaeccb2b464625b5"
+
+        addresses =
+          Addresses.extract_addresses(%{
+            transactions: [
+              %{
+                block_number: 34,
+                from_address_hash: "0x0000000000000000000000000000000000000001",
+                nonce: 12,
+                calls: [
+                  %{"to" => first_call_hash, "value" => 1, "input" => "0x"},
+                  %{"to" => second_call_hash, "value" => 2, "input" => "0x"},
+                  %{"to" => nil, "value" => 3, "input" => "0xc0ffee"}
+                ]
+              }
+            ]
+          })
+
+        assert Enum.find(addresses, &(&1.hash == first_call_hash)) ==
+                 %{hash: first_call_hash, fetched_coin_balance_block_number: 34}
+
+        assert Enum.find(addresses, &(&1.hash == second_call_hash)) ==
+                 %{hash: second_call_hash, fetched_coin_balance_block_number: 34}
+
+        refute Enum.any?(addresses, &is_nil(&1.hash))
+      end
+
+      test "recipients of the batched calls without a `block_number` aren't extracted" do
+        assert Addresses.extract_addresses(%{
+                 transactions: [
+                   %{calls: [%{"to" => "0x11f60a633dd30a8d1a26dd6e20167a9293fb4647", "value" => 1, "input" => "0x"}]}
+                 ]
+               }) == []
+      end
+
+      test "recipients of the batched calls which aren't valid address hashes aren't extracted" do
+        assert Addresses.extract_addresses(%{
+                 transactions: [
+                   %{
+                     block_number: 34,
+                     calls: [
+                       %{"to" => "0xdeadbeef", "value" => 1, "input" => "0x"},
+                       %{"to" => 12_345, "value" => 2, "input" => "0x"}
+                     ]
+                   }
+                 ]
+               }) == []
+      end
+    end
   end
 
   describe "extract_addresses_from_collection/2" do

@@ -49,11 +49,39 @@ defmodule BlockScoutWeb.API.V2.EdenView do
       |> Map.put("calls", prepare_calls(transaction.calls, single_transaction?))
     end
 
+    @doc """
+    Extends the body of the transaction interpretation request with the Eden-specific fields.
+
+    Without the calls the service has no way to tell that the transaction is a batch: its `to` and
+    `value` are the compatibility fields derived from the first call and from the sum of all the
+    calls, and the batched calls produce no internal transactions.
+
+    ## Parameters
+    - `data`: A map defining the `data` part of the request body which will be extended.
+    - `transaction`: The transaction structure.
+
+    ## Returns
+    - A map extended with the data related to Eden.
+    """
+    @spec extend_transaction_interpretation_request(map(), Transaction.t()) :: map()
+    def extend_transaction_interpretation_request(data, %Transaction{} = transaction) do
+      data
+      |> Map.put(
+        :fee_payer,
+        APIHelper.address_with_info(nil, transaction.fee_payer_address, transaction.fee_payer_address_hash, false)
+      )
+      |> Map.put(:calls, prepare_calls(transaction.calls))
+    end
+
     @spec prepare_calls(term(), boolean()) :: [map()] | nil
-    defp prepare_calls(calls, true = _single_transaction?) when is_list(calls),
-      do: Enum.map(calls, &prepare_call/1)
+    defp prepare_calls(calls, true = _single_transaction?), do: prepare_calls(calls)
 
     defp prepare_calls(_calls, _single_transaction?), do: nil
+
+    @spec prepare_calls(term()) :: [map()] | nil
+    defp prepare_calls(calls) when is_list(calls), do: Enum.map(calls, &prepare_call/1)
+
+    defp prepare_calls(_calls), do: nil
 
     # A call is stored as it comes from the JSON RPC response: `to` is a plain address string which
     # is `nil` for a contract creation call, `value` is an integer and `input` is a hex string.
@@ -74,5 +102,8 @@ defmodule BlockScoutWeb.API.V2.EdenView do
   else
     def extend_transaction_json_response(out_json, _, _, _, _),
       do: out_json
+
+    def extend_transaction_interpretation_request(data, _),
+      do: data
   end
 end

@@ -62,7 +62,7 @@ defmodule Explorer.Chain.Transaction.StateChange do
       coin_balances
       |> update_balance(transaction.from_address_hash, &Wei.sub(&1, from_loss(transaction)))
       |> update_balance(fee_payer_address_hash(transaction), &Wei.sub(&1, fee_payer_loss(transaction)))
-      |> update_balance(transaction.to_address_hash, &Wei.sum(&1, to_profit(transaction)))
+      |> credit_recipients(transaction)
       |> update_balance(block.miner_hash, &Wei.sum(&1, miner_profit(transaction, block)))
 
     if error?(transaction) do
@@ -71,6 +71,30 @@ defmodule Explorer.Chain.Transaction.StateChange do
       transaction.internal_transactions
       |> Enum.reduce(coin_balances, &update_coin_balances_from_internal_transaction(&1, &2))
     end
+  end
+
+  # Credits the addresses which receive the value of the transaction.
+  #
+  # An Eden sponsored transaction carries an ordered list of the batched calls, each one with its
+  # own recipient and value, so every one of them is credited separately. The `to_address_hash` and
+  # the `value` of such a transaction are just the compatibility fields derived from the first call
+  # and from the sum of all the calls, hence they are not used here.
+  if @chain_type == :eden do
+    defp credit_recipients(coin_balances, %Transaction{calls: [_ | _]} = transaction) do
+      if error?(transaction) do
+        coin_balances
+      else
+        transaction
+        |> Transaction.calls_value_by_recipient()
+        |> Enum.reduce(coin_balances, fn {address_hash, value}, acc ->
+          update_balance(acc, address_hash, &Wei.sum(&1, value))
+        end)
+      end
+    end
+  end
+
+  defp credit_recipients(coin_balances, transaction) do
+    update_balance(coin_balances, transaction.to_address_hash, &Wei.sum(&1, to_profit(transaction)))
   end
 
   defp update_coin_balances_from_internal_transaction(

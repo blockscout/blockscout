@@ -2248,6 +2248,40 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
+    Aggregates the values of the calls batched in an Eden sponsored transaction by their recipients.
+
+    The `to_address_hash` and the `value` of such a transaction are the compatibility fields derived
+    from the first call and from the sum of all the calls respectively, so the calls are the only
+    source of the actual recipients and of the amounts they receive.
+
+    The calls without a recipient (the contract creations) and the malformed ones are skipped.
+
+    ## Parameters
+    - `transaction`: The transaction entity.
+
+    ## Returns
+    - A map of the recipient address hashes to the total value each of them receives within the
+      transaction. Empty for the transactions which are not the sponsored ones.
+  """
+  @spec calls_value_by_recipient(__MODULE__.t()) :: %{Hash.Address.t() => Wei.t()}
+  if @chain_type == :eden do
+    def calls_value_by_recipient(%__MODULE__{calls: calls}) when is_list(calls) do
+      Enum.reduce(calls, %{}, fn call, acc ->
+        with {:ok, address_hash} <- call |> Map.get("to") |> Hash.Address.cast(),
+             {:ok, value} <- call |> Map.get("value") |> Wei.cast() do
+          Map.update(acc, address_hash, value, &Wei.sum(&1, value))
+        else
+          _ -> acc
+        end
+      end)
+    end
+
+    def calls_value_by_recipient(%__MODULE__{}), do: %{}
+  else
+    def calls_value_by_recipient(%__MODULE__{}), do: %{}
+  end
+
+  @doc """
   Calculates burnt fees for a transaction as `base_fee_per_gas * gas_used`.
 
   ## Parameters

@@ -245,13 +245,39 @@ defmodule Indexer.Transform.AddressCoinBalances do
 
   if @chain_type == :eden do
     defp transactions_params_chain_type_fields_reducer(
-           %{block_number: block_number, fee_payer_address_hash: fee_payer_address_hash},
+           %{block_number: block_number} = transaction_params,
            initial
          )
-         when is_integer(block_number) and is_binary(fee_payer_address_hash) do
-      MapSet.put(initial, %{address_hash: fee_payer_address_hash, block_number: block_number})
+         when is_integer(block_number) do
+      initial
+      |> put_fee_payer(transaction_params, block_number)
+      |> put_calls_recipients(transaction_params, block_number)
     end
   end
 
   defp transactions_params_chain_type_fields_reducer(_, acc), do: acc
+
+  if @chain_type == :eden do
+    alias Explorer.Chain
+
+    defp put_fee_payer(acc, %{fee_payer_address_hash: fee_payer_address_hash}, block_number)
+         when is_binary(fee_payer_address_hash) do
+      MapSet.put(acc, %{address_hash: fee_payer_address_hash, block_number: block_number})
+    end
+
+    defp put_fee_payer(acc, _transaction_params, _block_number), do: acc
+
+    defp put_calls_recipients(acc, %{calls: calls}, block_number) when is_list(calls) do
+      Enum.reduce(calls, acc, fn call, inner_acc ->
+        address_hash = Map.get(call, "to")
+
+        case Chain.string_to_address_hash(address_hash) do
+          {:ok, _} -> MapSet.put(inner_acc, %{address_hash: address_hash, block_number: block_number})
+          :error -> inner_acc
+        end
+      end)
+    end
+
+    defp put_calls_recipients(acc, _transaction_params, _block_number), do: acc
+  end
 end
