@@ -33,6 +33,20 @@ defmodule BlockScoutWeb.API.V2.Helper do
     })
   end
 
+  def address_with_info(_conn, address, address_hash, true, {:address_tags, address_tags}) do
+    %{
+      common_tags: public_tags,
+      personal_tags: private_tags,
+      watchlist_names: watchlist_names
+    } = Map.get(address_tags, address_hash, %{common_tags: [], personal_tags: [], watchlist_names: []})
+
+    Map.merge(address_with_info(address, address_hash), %{
+      "private_tags" => private_tags,
+      "watchlist_names" => watchlist_names,
+      "public_tags" => public_tags
+    })
+  end
+
   def address_with_info(_conn, address, address_hash, false, nil) do
     Map.merge(address_with_info(address, address_hash), %{
       "private_tags" => [],

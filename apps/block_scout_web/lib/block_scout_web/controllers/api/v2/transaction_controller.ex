@@ -58,7 +58,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Beacon.Reader, as: BeaconReader
   alias Explorer.Chain.Cache.Counters.{NewPendingTransactionsCount, Transactions24hCount}
-  alias Explorer.Chain.{FheOperation, Hash, Transaction}
+  alias Explorer.Chain.{FheOperation, Hash, SmartContract, Transaction}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Explorer.Chain.Token.Instance
@@ -88,6 +88,8 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   # TODO might be redundant to preload blob fields in some of the endpoints
+  # `to_address` keeps the full `:smart_contract` preload (with `abi`) since it
+  # feeds transaction input decoding; the other addresses only need address info.
   @transaction_necessity_by_association %{
                                           :block => :optional,
                                           [
@@ -95,7 +97,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
                                               :scam_badge,
                                               :names,
                                               :token,
-                                              :smart_contract,
+                                              SmartContract.association_without_abi(),
                                               proxy_implementations_association()
                                             ]
                                           ] => :optional,
@@ -103,7 +105,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
                                             from_address: [
                                               :scam_badge,
                                               :names,
-                                              :smart_contract,
+                                              SmartContract.association_without_abi(),
                                               proxy_implementations_association()
                                             ]
                                           ] => :optional,
@@ -119,14 +121,18 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
                                         |> Map.merge(@chain_type_transaction_necessity_by_association)
 
   @token_transfers_necessity_by_association %{
-    [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-    [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+    [from_address: [:scam_badge, :names, SmartContract.association_without_abi(), proxy_implementations_association()]] =>
+      :optional,
+    [to_address: [:scam_badge, :names, SmartContract.association_without_abi(), proxy_implementations_association()]] =>
+      :optional,
     [token: reputation_association()] => :optional
   }
 
   @token_transfers_in_transaction_necessity_by_association %{
-    [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-    [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
+    [from_address: [:scam_badge, :names, SmartContract.association_without_abi(), proxy_implementations_association()]] =>
+      :optional,
+    [to_address: [:scam_badge, :names, SmartContract.association_without_abi(), proxy_implementations_association()]] =>
+      :optional,
     [token: reputation_association()] => :optional
   }
 
