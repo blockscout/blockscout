@@ -920,7 +920,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{
       "hash" => Address.checksum(address),
       "name" => Helper.address_name(address),
-      "ens_domain_name" => address.ens_domain_name
+      "ens_domain_name" => address.ens_domain_name,
+      "metadata" => address.metadata
     }
   end
 
@@ -930,7 +931,8 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{
       "hash" => Address.checksum(hash),
       "name" => nil,
-      "ens_domain_name" => nil
+      "ens_domain_name" => nil,
+      "metadata" => nil
     }
   end
 
