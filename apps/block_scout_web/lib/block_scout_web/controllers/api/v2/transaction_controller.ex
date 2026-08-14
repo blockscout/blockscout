@@ -1074,7 +1074,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           }
         ],
     responses: [
-      ok: {"Lightweight transaction preview.", "application/json", %Schema{type: :object}},
+      ok: {"Lightweight transaction preview.", "application/json", Schemas.Transaction.Preview},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
     ]

@@ -3555,7 +3555,13 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       from_hash = Address.checksum(transaction.from_address_hash)
       to_hash = Address.checksum(transaction.to_address_hash)
 
-      metadata_tag = %{"name" => "Test 1", "tagType" => "name", "meta" => Jason.encode!(%{})}
+      metadata_tag = %{
+        "slug" => "test-1",
+        "name" => "Test 1",
+        "tagType" => "name",
+        "ordinal" => 0,
+        "meta" => Jason.encode!(%{})
+      }
 
       Bypass.expect_once(bypass, "GET", "/api/v1/metadata", fn conn ->
         Plug.Conn.resp(
