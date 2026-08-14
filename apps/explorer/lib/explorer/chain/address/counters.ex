@@ -102,8 +102,13 @@ defmodule Explorer.Chain.Address.Counters do
           has_beacon_chain_withdrawals: boolean()
         }
   def address_existence_checks(address_hash, options \\ []) do
+    # the select has to be applied inside every union branch, see `Log.address_match_union_query/3`
+    logs_query =
+      Log.address_match_union_query(address_hash, fn address_match_dynamic ->
+        Log |> where(^address_match_dynamic) |> select([_], %{one: 1})
+      end)
+
     validated_blocks_query = address_hash |> address_hash_to_validated_blocks_query() |> select([_], 1)
-    logs_query = address_hash |> address_hash_to_logs_query() |> select([_], 1)
     token_balances_query = address_hash |> address_hash_to_token_balances_query() |> select([_], 1)
     token_transfers_from_query = from(tt in TokenTransfer, where: tt.from_address_hash == ^address_hash, select: 1)
     token_transfers_to_query = from(tt in TokenTransfer, where: tt.to_address_hash == ^address_hash, select: 1)
