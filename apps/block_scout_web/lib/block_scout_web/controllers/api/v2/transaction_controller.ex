@@ -88,37 +88,21 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   end
 
   # TODO might be redundant to preload blob fields in some of the endpoints
-  # `to_address` keeps the full `:smart_contract` preload (with `abi`) since it
-  # feeds transaction input decoding; the other addresses only need address info.
-  @transaction_necessity_by_association %{
-                                          :block => :optional,
-                                          [
-                                            created_contract_address: [
-                                              :scam_badge,
-                                              :names,
-                                              :token,
-                                              SmartContract.association_without_abi(),
-                                              proxy_implementations_association()
-                                            ]
-                                          ] => :optional,
-                                          [
-                                            from_address: [
-                                              :scam_badge,
-                                              :names,
-                                              SmartContract.association_without_abi(),
-                                              proxy_implementations_association()
-                                            ]
-                                          ] => :optional,
-                                          [
-                                            to_address: [
-                                              :scam_badge,
-                                              :names,
-                                              :smart_contract,
-                                              proxy_implementations_association()
-                                            ]
-                                          ] => :optional
-                                        }
+  # Address-info preloads for the transaction participants (from/to/created and
+  # token transfer addresses) are intentionally absent here: the `transaction`
+  # action loads them all in a single deduplicated pass via
+  # `Chain.preload_transaction_participants/3` using
+  # `@transaction_participants_necessity_by_association`.
+  @transaction_necessity_by_association %{:block => :optional}
                                         |> Map.merge(@chain_type_transaction_necessity_by_association)
+
+  @transaction_participants_necessity_by_association %{
+    :scam_badge => :optional,
+    :names => :optional,
+    :token => :optional,
+    SmartContract.association_without_abi() => :optional,
+    proxy_implementations_association() => :optional
+  }
 
   @token_transfers_necessity_by_association %{
     [from_address: [:scam_badge, :names, SmartContract.association_without_abi(), proxy_implementations_association()]] =>
@@ -128,11 +112,10 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     [token: reputation_association()] => :optional
   }
 
+  # Transfer from/to address preloads are handled by
+  # `Chain.preload_transaction_participants/3`, see
+  # `@transaction_necessity_by_association`.
   @token_transfers_in_transaction_necessity_by_association %{
-    [from_address: [:scam_badge, :names, SmartContract.association_without_abi(), proxy_implementations_association()]] =>
-      :optional,
-    [to_address: [:scam_badge, :names, SmartContract.association_without_abi(), proxy_implementations_association()]] =>
-      :optional,
     [token: reputation_association()] => :optional
   }
 
@@ -216,6 +199,12 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
              transaction,
              @token_transfers_in_transaction_necessity_by_association,
              @api_true |> fetch_scam_token_toggle(conn)
+           ),
+         preloaded <-
+           Chain.preload_transaction_participants(
+             preloaded,
+             @transaction_participants_necessity_by_association,
+             @api_true
            ) do
       conn
       |> put_status(200)

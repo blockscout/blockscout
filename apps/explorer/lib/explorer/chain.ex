@@ -1148,6 +1148,68 @@ defmodule Explorer.Chain do
   def get_token_transfers_per_transaction_preview_count, do: @token_transfers_per_transaction_preview
 
   @doc """
+  Loads address-info associations for every address participating in the
+  transaction — `from`/`to`/`created_contract` plus each preloaded token
+  transfer's `from`/`to` — in a single query pass, deduplicating addresses
+  shared between the transaction and its token transfers.
+
+  All participants share `address_necessity_by_association` (typically with the
+  ABI-less smart-contract preload, see
+  `Explorer.Chain.SmartContract.association_without_abi/0`). The `to_address`
+  additionally gets the full `:smart_contract` association when it is a
+  contract, since transaction input and revert-reason decoding need its `abi`.
+  """
+  @spec preload_transaction_participants(Transaction.t(), %{any() => :optional | :required}, [api?]) ::
+          Transaction.t()
+  def preload_transaction_participants(%Transaction{} = transaction, address_necessity_by_association, options) do
+    token_transfers = if is_list(transaction.token_transfers), do: transaction.token_transfers, else: []
+
+    participant_hashes =
+      [
+        transaction.from_address_hash,
+        transaction.to_address_hash,
+        transaction.created_contract_address_hash
+        | Enum.flat_map(token_transfers, &[&1.from_address_hash, &1.to_address_hash])
+      ]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    addresses =
+      Address
+      |> where([address], address.hash in ^participant_hashes)
+      |> join_associations(address_necessity_by_association)
+      |> select_repo(options).all()
+      |> Map.new(&{&1.hash, &1})
+
+    to_address =
+      addresses
+      |> Map.get(transaction.to_address_hash)
+      |> preload_full_smart_contract(options)
+
+    %Transaction{
+      transaction
+      | from_address: Map.get(addresses, transaction.from_address_hash),
+        to_address: to_address,
+        created_contract_address: Map.get(addresses, transaction.created_contract_address_hash),
+        token_transfers:
+          Enum.map(token_transfers, fn %TokenTransfer{} = token_transfer ->
+            %TokenTransfer{
+              token_transfer
+              | from_address: Map.get(addresses, token_transfer.from_address_hash),
+                to_address: Map.get(addresses, token_transfer.to_address_hash)
+            }
+          end)
+    }
+  end
+
+  defp preload_full_smart_contract(%Address{contract_code: contract_code} = address, options)
+       when not is_nil(contract_code) do
+    select_repo(options).preload(address, :smart_contract, force: true)
+  end
+
+  defp preload_full_smart_contract(address, _options), do: address
+
+  @doc """
   Converts list of `t:Explorer.Chain.Transaction.t/0` `hashes` to the list of `t:Explorer.Chain.Transaction.t/0`s for
   those `hashes`.
 
