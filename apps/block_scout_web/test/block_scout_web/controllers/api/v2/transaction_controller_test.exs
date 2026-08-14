@@ -3503,18 +3503,33 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     setup do
       bypass = Bypass.open()
       old_bens_env = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS, [])
+      old_metadata_env = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, [])
       old_chain_id = Application.get_env(:block_scout_web, :chain_id)
 
       Application.put_env(:block_scout_web, :chain_id, 1)
 
-      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
-        service_url: "http://localhost:#{bypass.port}",
-        enabled: true
+      Application.put_env(
+        :explorer,
+        Explorer.MicroserviceInterfaces.BENS,
+        Keyword.merge(old_bens_env || [],
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+      )
+
+      Application.put_env(
+        :explorer,
+        Explorer.MicroserviceInterfaces.Metadata,
+        Keyword.merge(old_metadata_env || [],
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
       )
 
       on_exit(fn ->
         Bypass.down(bypass)
         Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_bens_env)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_metadata_env)
         Application.put_env(:block_scout_web, :chain_id, old_chain_id)
       end)
 
@@ -3533,6 +3548,45 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/preview", %{"preload_ens" => "true"})
 
       assert %{"from" => %{"ens_domain_name" => "preview.eth"}} = json_response(request, 200)
+    end
+
+    test "preloads metadata when preload_metadata is requested", %{conn: conn, bypass: bypass} do
+      transaction = :transaction |> insert() |> with_block(status: :ok)
+      from_hash = Address.checksum(transaction.from_address_hash)
+      to_hash = Address.checksum(transaction.to_address_hash)
+
+      metadata_tag = %{"name" => "Test 1", "tagType" => "name", "meta" => Jason.encode!(%{})}
+
+      Bypass.expect_once(bypass, "GET", "/api/v1/metadata", fn conn ->
+        Plug.Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{
+            "addresses" => %{
+              from_hash => %{"tags" => [metadata_tag]},
+              to_hash => %{"tags" => [metadata_tag]}
+            }
+          })
+        )
+      end)
+
+      request =
+        get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/preview", %{"preload_metadata" => "true"})
+
+      response = json_response(request, 200)
+
+      assert %{"from" => %{"metadata" => %{"tags" => [%{"name" => "Test 1"}]}}} = response
+      assert %{"to" => %{"metadata" => %{"tags" => [%{"name" => "Test 1"}]}}} = response
+    end
+
+    test "returns nil metadata when preload_metadata is not requested", %{conn: conn} do
+      transaction = :transaction |> insert() |> with_block(status: :ok)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/preview")
+
+      response = json_response(request, 200)
+      assert %{"from" => %{"metadata" => nil}} = response
+      assert %{"to" => %{"metadata" => nil}} = response
     end
 
     test "queries no microservice when neither preload is requested", %{conn: conn} do
