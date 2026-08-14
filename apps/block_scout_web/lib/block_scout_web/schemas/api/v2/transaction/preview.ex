@@ -15,7 +15,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.PreviewAddress do
     nullable: true,
     properties: %{
       hash: General.AddressHash,
-      name: %Schema{type: :string, description: "Display name of the address (contract name or address name)", nullable: true},
+      name: %Schema{
+        type: :string,
+        description: "Display name of the address (contract name or address name)",
+        nullable: true
+      },
       ens_domain_name: %Schema{
         type: :string,
         description: "ENS domain name associated with the address. Populated only when preload_ens=true is passed.",
@@ -23,7 +27,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.PreviewAddress do
       },
       metadata: %Schema{
         allOf: [Proxy.Metadata],
-        description: "Address metadata tags from the Metadata microservice. Populated only when preload_metadata=true is passed.",
+        description:
+          "Address metadata tags from the Metadata microservice. Populated only when preload_metadata=true is passed.",
         nullable: true
       }
     },
