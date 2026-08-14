@@ -17,7 +17,11 @@ on:
 env:
   OTP_VERSION: '27.3.4.6'
   ELIXIR_VERSION: '1.19.4'
+<<<<<<< HEAD
   RELEASE_VERSION: 12.0.0
+=======
+  RELEASE_VERSION: 11.2.6
+>>>>>>> origin/master
 
 jobs:
   matrix-builder:

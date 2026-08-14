@@ -36,7 +36,7 @@ defmodule Explorer.Application do
   alias Explorer.Chain.Supply.RSK
 
   alias Explorer.Market.MarketHistoryCache
-  alias Explorer.MicroserviceInterfaces.MultichainSearch
+  alias Explorer.MicroserviceInterfaces.{HttpClient, MultichainSearch}
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo.PrometheusLogger
   alias Explorer.Stats.HotSmartContractsCache
@@ -61,54 +61,59 @@ defmodule Explorer.Application do
     )
 
     # Children to start in all environments
-    base_children = [
-      Explorer.Repo,
-      Explorer.Repo.Replica1,
-      Explorer.Vault,
-      Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),
-      Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor},
-        id: Explorer.HistoryTaskSupervisor
-      ),
-      Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor}, id: Explorer.MarketTaskSupervisor),
-      Supervisor.child_spec({Task.Supervisor, name: Explorer.GenesisDataTaskSupervisor}, id: GenesisDataTaskSupervisor),
-      Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
-      Supervisor.child_spec({Task.Supervisor, name: Explorer.LookUpSmartContractSourcesTaskSupervisor},
-        id: LookUpSmartContractSourcesTaskSupervisor
-      ),
-      Supervisor.child_spec({Task.Supervisor, name: Explorer.WETHMigratorSupervisor}, id: WETHMigratorSupervisor),
-      {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
-      Accounts,
-      AddressesCoinBalanceSum,
-      AddressesCoinBalanceSumMinusBurnt,
-      BackgroundMigrations,
-      BlocksCount,
-      BlockNumber,
-      Blocks,
-      ChainId,
-      GasPriceOracle,
-      GasUsageSum,
-      PendingBlockOperationCount,
-      PendingTransactionOperationCount,
-      TransactionsCount,
-      StateChanges,
-      Transactions,
-      Uncles,
-      AddressTabsElementsCount,
-      con_cache_child_spec(MarketHistoryCache.cache_name()),
-      con_cache_child_spec(HotSmartContractsCache.cache_name(),
-        ttl_check_interval: :timer.seconds(1),
-        global_ttl: :infinity
-      ),
-      con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
-      {Redix, redix_opts()},
-      {Explorer.Utility.ReplicaAccessibilityManager, []},
-      :hackney_pool.child_spec(:default,
-        recv_timeout: 60_000,
-        timeout: 60_000,
-        max_connections: Application.get_env(:explorer, :hackney_default_pool_size)
-      ),
-      Explorer.Promo.Autoscout
-    ]
+    base_children =
+      [
+        Explorer.Repo,
+        Explorer.Repo.Replica1,
+        Explorer.Vault,
+        Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),
+        Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor},
+          id: Explorer.HistoryTaskSupervisor
+        ),
+        Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor},
+          id: Explorer.MarketTaskSupervisor
+        ),
+        Supervisor.child_spec({Task.Supervisor, name: Explorer.GenesisDataTaskSupervisor},
+          id: GenesisDataTaskSupervisor
+        ),
+        Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
+        Supervisor.child_spec({Task.Supervisor, name: Explorer.LookUpSmartContractSourcesTaskSupervisor},
+          id: LookUpSmartContractSourcesTaskSupervisor
+        ),
+        Supervisor.child_spec({Task.Supervisor, name: Explorer.WETHMigratorSupervisor}, id: WETHMigratorSupervisor),
+        {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
+        Accounts,
+        AddressesCoinBalanceSum,
+        AddressesCoinBalanceSumMinusBurnt,
+        BackgroundMigrations,
+        BlocksCount,
+        BlockNumber,
+        Blocks,
+        ChainId,
+        GasPriceOracle,
+        GasUsageSum,
+        PendingBlockOperationCount,
+        PendingTransactionOperationCount,
+        TransactionsCount,
+        StateChanges,
+        Transactions,
+        Uncles,
+        AddressTabsElementsCount,
+        con_cache_child_spec(MarketHistoryCache.cache_name()),
+        con_cache_child_spec(HotSmartContractsCache.cache_name(),
+          ttl_check_interval: :timer.seconds(1),
+          global_ttl: :infinity
+        ),
+        con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
+        {Redix, redix_opts()},
+        {Explorer.Utility.ReplicaAccessibilityManager, []},
+        :hackney_pool.child_spec(:default,
+          recv_timeout: 60_000,
+          timeout: 60_000,
+          max_connections: Application.get_env(:explorer, :hackney_default_pool_size)
+        ),
+        Explorer.Promo.Autoscout
+      ] ++ HttpClient.pool_child_specs()
 
     children = base_children ++ configurable_children()
 

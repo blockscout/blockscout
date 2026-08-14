@@ -28,15 +28,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   import Explorer.Helper, only: [safe_parse_non_negative_integer: 1]
 
-  import Explorer.MicroserviceInterfaces.BENS,
-    only: [
-      maybe_preload_ens: 1,
-      maybe_preload_ens_for_token_transfers: 1,
-      maybe_preload_ens_for_transactions: 1,
-      maybe_preload_ens_to_address: 1
-    ]
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens_to_address: 1]
 
-  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
+  import Explorer.Chain.Address.MetadataPreloader,
+    only: [maybe_preload_ens_and_metadata: 1, maybe_preload_ens_and_metadata: 2]
+
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
   alias BlockScoutWeb.AccessHelper
@@ -462,7 +458,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:transactions, %{
-            transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
+            transactions: transactions |> maybe_preload_ens_and_metadata(:transactions),
             next_page_params: next_page_params
           })
 
@@ -587,8 +583,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             token_transfers:
               token_transfers
               |> Instance.preload_nft(@api_true)
-              |> maybe_preload_ens_for_token_transfers()
-              |> maybe_preload_metadata(),
+              |> maybe_preload_ens_and_metadata(:token_transfers),
             next_page_params: next_page_params
           })
 
@@ -672,7 +667,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:internal_transactions, %{
-            internal_transactions: internal_transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
+            internal_transactions: internal_transactions |> maybe_preload_ens_and_metadata(),
             next_page_params: next_page_params,
             pending_status?: pending_status?
           })
@@ -747,7 +742,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:logs, %{
-            logs: logs |> maybe_preload_ens() |> maybe_preload_metadata(),
+            logs: logs |> maybe_preload_ens_and_metadata(),
             next_page_params: next_page_params
           })
 
@@ -1062,7 +1057,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_status(200)
           |> put_view(WithdrawalView)
           |> render(:withdrawals, %{
-            withdrawals: withdrawals |> maybe_preload_ens() |> maybe_preload_metadata(),
+            withdrawals: withdrawals |> maybe_preload_ens_and_metadata(),
             next_page_params: next_page_params
           })
 
@@ -1136,7 +1131,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     conn
     |> put_status(200)
     |> render(:addresses, %{
-      addresses: addresses |> maybe_preload_ens() |> maybe_preload_metadata(),
+      addresses: addresses |> maybe_preload_ens_and_metadata(),
       next_page_params: next_page_params,
       exchange_rate: exchange_rate,
       total_supply: total_supply
@@ -1544,7 +1539,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       |> put_status(200)
       |> put_view(DepositView)
       |> render(:deposits, %{
-        deposits: deposits |> maybe_preload_ens() |> maybe_preload_metadata(),
+        deposits: deposits |> maybe_preload_ens_and_metadata(),
         next_page_params: next_page_params
       })
     end

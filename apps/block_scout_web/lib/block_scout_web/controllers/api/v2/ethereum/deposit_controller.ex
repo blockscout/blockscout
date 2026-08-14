@@ -4,8 +4,7 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
   use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain, only: [paginate_list: 4, maybe_override_page_size: 2]
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
-  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
+  import Explorer.Chain.Address.MetadataPreloader, only: [maybe_preload_ens_and_metadata: 1]
 
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Beacon.Deposit
@@ -72,7 +71,7 @@ defmodule BlockScoutWeb.API.V2.Ethereum.DepositController do
     conn
     |> put_status(200)
     |> render(:deposits, %{
-      deposits: deposits |> maybe_preload_ens() |> maybe_preload_metadata(),
+      deposits: deposits |> maybe_preload_ens_and_metadata(),
       next_page_params: next_page_params
     })
   end

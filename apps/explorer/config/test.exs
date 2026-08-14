@@ -49,6 +49,7 @@ config :explorer, :proxy,
   caching_implementation_data_enabled: true,
   implementation_data_ttl_via_avg_block_time: false,
   fallback_cached_implementation_data_ttl: :timer.seconds(20),
+  empty_cached_implementation_data_ttl: :timer.seconds(20),
   implementation_data_fetching_timeout: :timer.seconds(20)
 
 account_database_url = System.get_env("TEST_DATABASE_READ_ONLY_API_URL") || database_url

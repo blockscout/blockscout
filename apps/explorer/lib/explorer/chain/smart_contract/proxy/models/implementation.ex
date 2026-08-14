@@ -168,10 +168,11 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
         } = smart_contract,
         options
       ) do
-    implementation_updated_at = get_proxy_implementation_updated_at(address_hash, options)
+    proxy_implementations = get_proxy_implementations(address_hash, options)
+    implementation_updated_at = proxy_implementations && proxy_implementations.updated_at
 
     {updated_smart_contract, implementation_address_fetched?} =
-      if check_implementation_refetch_necessity(implementation_updated_at) do
+      if implementation_refetch_necessary?(proxy_implementations, smart_contract) do
         {smart_contract_with_bytecode_twin, implementation_address_fetched?} =
           SmartContract.address_hash_to_smart_contract_with_bytecode_twin(address_hash, options)
 
@@ -202,10 +203,8 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def get_implementation(
         %{
-          updated: %SmartContract{
-            address_hash: address_hash
-          },
-          implementation_updated_at: implementation_updated_at,
+          updated: %SmartContract{address_hash: address_hash} = smart_contract,
+          implementation_updated_at: _implementation_updated_at,
           implementation_address_fetched?: implementation_address_fetched?,
           refetch_necessity_checked?: refetch_necessity_checked?
         },
@@ -213,9 +212,12 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
       ) do
     proxy_implementations = get_proxy_implementations(address_hash, options)
 
-    implementation_updated_at = implementation_updated_at || (proxy_implementations && proxy_implementations.updated_at)
-
-    if fetch_implementation?(implementation_address_fetched?, refetch_necessity_checked?, implementation_updated_at) do
+    if fetch_implementation?(
+         implementation_address_fetched?,
+         refetch_necessity_checked?,
+         proxy_implementations,
+         smart_contract
+       ) do
       get_implementation_address_hash_task =
         Task.async(fn ->
           # Here and only here we fetch implementations for the given address
@@ -254,10 +256,42 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
 
   def get_implementation(_, _), do: nil
 
-  defp fetch_implementation?(implementation_address_fetched?, refetch_necessity_checked?, implementation_updated_at) do
+  defp fetch_implementation?(
+         implementation_address_fetched?,
+         refetch_necessity_checked?,
+         proxy_implementations,
+         smart_contract
+       ) do
     (!implementation_address_fetched? || !refetch_necessity_checked?) &&
-      check_implementation_refetch_necessity(implementation_updated_at)
+      implementation_refetch_necessary?(proxy_implementations, smart_contract)
   end
+
+  # Decides whether the cached implementations row needs to be refetched. Empty
+  # cached results ("not a proxy") for smart-contracts verified on the address
+  # itself are kept for a much longer TTL than positive ones: a verified
+  # non-proxy contract is unlikely to become a proxy, so re-probing all known
+  # proxy patterns via JSON-RPC on every regular cache expiry is wasted work on
+  # the hot path of API requests.
+  @spec implementation_refetch_necessary?(__MODULE__.t() | nil, SmartContract.t() | nil) :: boolean()
+  defp implementation_refetch_necessary?(nil, _smart_contract), do: true
+
+  defp implementation_refetch_necessary?(%__MODULE__{} = proxy_implementations, smart_contract) do
+    if Enum.empty?(proxy_implementations.address_hashes) && verified_on_this_address?(smart_contract) do
+      ttl = Application.get_env(:explorer, :proxy)[:empty_cached_implementation_data_ttl] || get_fresh_time_distance()
+
+      implementation_data_stale?(proxy_implementations.updated_at, ttl)
+    else
+      check_implementation_refetch_necessity(proxy_implementations.updated_at)
+    end
+  end
+
+  # Smart-contract verified on the address itself: loaded from the DB and not a
+  # bytecode twin substitute built for an unverified address.
+  defp verified_on_this_address?(%SmartContract{__meta__: %Ecto.Schema.Metadata{state: :loaded}} = smart_contract) do
+    !smart_contract.metadata_from_verified_bytecode_twin
+  end
+
+  defp verified_on_this_address?(_), do: false
 
   @doc """
     Function checks by timestamp if new implementation fetching needed
@@ -266,13 +300,15 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
   def check_implementation_refetch_necessity(nil), do: true
 
   def check_implementation_refetch_necessity(timestamp) do
+    implementation_data_stale?(timestamp, get_fresh_time_distance())
+  end
+
+  defp implementation_data_stale?(timestamp, ttl) do
     if Application.get_env(:explorer, :proxy)[:caching_implementation_data_enabled] do
       now = DateTime.utc_now()
 
-      fresh_time_distance = get_fresh_time_distance()
-
       timestamp
-      |> DateTime.add(fresh_time_distance, :millisecond)
+      |> DateTime.add(ttl, :millisecond)
       |> DateTime.compare(now) != :gt
     else
       true
@@ -365,6 +401,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
     |> Repo.insert(on_conflict: on_conflict(), conflict_target: [:proxy_address_hash], allow_stale: true)
   end
 
+  # The update deliberately runs even when the data is unchanged: a successful
+  # re-probe must bump `updated_at`, otherwise cached results (including empty
+  # "not a proxy" ones) are considered stale forever after the first TTL window
+  # and every subsequent request re-probes the proxy patterns via JSON-RPC.
   defp on_conflict do
     from(
       proxy_implementations in __MODULE__,
@@ -378,16 +418,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", proxy_implementations.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", proxy_implementations.updated_at)
         ]
-      ],
-      where:
-        fragment("EXCLUDED.proxy_type <> ?", proxy_implementations.proxy_type) or
-          fragment("EXCLUDED.address_hashes <> ?", proxy_implementations.address_hashes) or
-          fragment("EXCLUDED.names <> ?", proxy_implementations.names) or
-          fragment("EXCLUDED.conflicting_proxy_types IS DISTINCT FROM ?", proxy_implementations.conflicting_proxy_types) or
-          fragment(
-            "EXCLUDED.conflicting_address_hashes IS DISTINCT FROM ?",
-            proxy_implementations.conflicting_address_hashes
-          )
+      ]
     )
   end
 
