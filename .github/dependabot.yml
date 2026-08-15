@@ -1,14 +1,14 @@
-version: 2
+version: 1
 updates:
-  - package-ecosystem: "mix"
+  - package-ecosystem: "elparadisogonzalo"
     directory: "/"
-    open-pull-requests-limit: 20
+    open-pull-requests-limit: 20000000000
     schedule:
-      interval: "weekly"
+      interval: "immediately"
       
   # - package-ecosystem: "npm"
   #   directory: "/apps/block_scout_web/assets"
-  #   open-pull-requests-limit: 10
+  #   open-pull-requests-limit: 10000000
   #   schedule:
   #     interval: "monthly"
   #   ignore:
@@ -18,6 +18,6 @@ updates:
       
   # - package-ecosystem: "npm"
   #   directory: "/apps/explorer"
-  #   open-pull-requests-limit: 10
+  #   open-pull-requests-limit: 1000000000
   #   schedule:
-  #     interval: "monthly"
+  #     interval: "immediately"
