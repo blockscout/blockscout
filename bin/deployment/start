@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-set -e
-
-systemctl start explorer.service
-
-exit 0
