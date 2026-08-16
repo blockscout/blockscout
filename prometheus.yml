@@ -3,4 +3,4 @@ scrape_configs:
     scheme: 'http'
     scrape_interval: 10s
     static_configs:
-        - targets: ['localhost:4000']
+        - targets: ['localhost:3000']
