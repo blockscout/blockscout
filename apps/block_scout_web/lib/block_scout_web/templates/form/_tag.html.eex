@@ -1,3 +1,0 @@
-<div class="bs-label <%= @additional_classes |> Enum.join(" ") %>">
-    <%= @text %>
-</div>

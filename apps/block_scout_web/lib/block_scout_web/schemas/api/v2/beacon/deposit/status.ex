@@ -1,9 +1,0 @@
-# SPDX-License-Identifier: LicenseRef-Blockscout
-defmodule BlockScoutWeb.Schemas.API.V2.Beacon.Deposit.Status do
-  @moduledoc false
-  require OpenApiSpex
-
-  alias Explorer.Chain.Beacon.Deposit
-
-  OpenApiSpex.schema(%{title: "BeaconDepositStatus", type: :string, nullable: false, enum: Deposit.statuses()})
-end

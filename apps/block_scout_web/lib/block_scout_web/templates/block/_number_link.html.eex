@@ -1,4 +1,0 @@
-<%= link(
-  to_string(@block.number),
-  to: block_path(BlockScoutWeb.Endpoint, :show, @block)
-) %>
