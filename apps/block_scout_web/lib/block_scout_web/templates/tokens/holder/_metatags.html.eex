@@ -1,1 +1,0 @@
-<%= BlockScoutWeb.Tokens.OverviewView.render "_metatags.html", conn: @conn, token: @token %>
