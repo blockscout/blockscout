@@ -5,6 +5,14 @@ defmodule Explorer.EthRPCTest do
   import Mox
 
   alias Explorer.EthRPC
+  alias Explorer.Utility.LogFirstTopic
+
+  @log_address_hash_string "0xe93c8cd0d409341205a592f8c4ac1a5fe5585cfa"
+  @first_topic_hex_string "0xb3813568d9991fc951961fcb4c784893574240a28925604d09fc577c55bb7c32"
+  @second_topic_hex_string "0x000000000000000000000000e38ecdf3cfbaf5cf347e6a3d6490eb34e3a0119d"
+  @third_topic_hex_string "0x000000000000000000000000e38ecdf3cfbaf5cf347e6a3d6490eb34e3a0119d"
+  @fourth_topic_hex_string "0x0000000000000000000000000000000000000000000000000000000000000000"
+  @logs_bloom "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000040000000000000000000000000002000000000000000000000000000000000000000000000000030000000000000000000800000000000000000000000000000000000000000000000002000000008000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000002000000000000000080000000000000000000000"
 
   setup :verify_on_exit!
   setup :set_mox_global
@@ -147,6 +155,44 @@ defmodule Explorer.EthRPCTest do
 
     assert [response] = EthRPC.responses([request])
     assert response == %{id: 1, result: "1"}
+  end
+
+  describe "eth_getTransactionReceipt" do
+    test "renders logs and logsBloom of a transaction with already migrated logs" do
+      address = insert(:address, hash: @log_address_hash_string)
+
+      transaction = :transaction |> insert() |> with_block()
+
+      log =
+        insert(:log,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          address: address,
+          address_hash: nil,
+          data: nil,
+          first_topic: nil,
+          first_topic_id: LogFirstTopic.find_or_create(@first_topic_hex_string).id,
+          second_topic: @second_topic_hex_string,
+          third_topic: @third_topic_hex_string,
+          fourth_topic: @fourth_topic_hex_string
+        )
+
+      assert {:ok, receipt} = EthRPC.eth_get_transaction_receipt(to_string(transaction.hash))
+
+      assert receipt["logsBloom"] == @logs_bloom
+
+      assert [rendered_log] = receipt["logs"]
+      assert to_string(rendered_log["address"]) == @log_address_hash_string
+      assert rendered_log["data"] == log.compressed_data
+
+      assert Enum.map(rendered_log["topics"], &to_string/1) == [
+               @first_topic_hex_string,
+               @second_topic_hex_string,
+               @third_topic_hex_string,
+               @fourth_topic_hex_string
+             ]
+    end
   end
 
   defp set_extended_proxy_methods_enabled(value) do
