@@ -1167,6 +1167,14 @@ defmodule Explorer.EthRPC do
   defp render_transaction_receipt(transaction) do
     {:ok, status} = Status.dump(transaction.status)
 
+    logs =
+      transaction.logs
+      |> Log.preload_block()
+      |> Log.preload_transaction()
+      |> Log.preload_address()
+      |> Log.prepare_data()
+      |> Log.prepare_first_topic()
+
     props =
       %{
         "blockHash" => transaction.block_hash,
@@ -1179,15 +1187,8 @@ defmodule Explorer.EthRPC do
           |> encode_quantity(),
         "from" => transaction.from_address_hash,
         "gasUsed" => encode_quantity(transaction.gas_used),
-        "logs" =>
-          transaction.logs
-          |> Log.preload_block()
-          |> Log.preload_transaction()
-          |> Log.preload_address()
-          |> Log.prepare_data()
-          |> Log.prepare_first_topic()
-          |> Enum.map(&render_log(&1, transaction)),
-        "logsBloom" => "0x" <> (transaction.logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
+        "logs" => Enum.map(logs, &render_log(&1, transaction)),
+        "logsBloom" => "0x" <> (logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
         "status" => encode_quantity(status),
         "to" => transaction.to_address_hash,
         "transactionHash" => transaction.hash,
