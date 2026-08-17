@@ -10,6 +10,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.PreviewAddress do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "TransactionPreviewAddress",
     description: "Lightweight address in transaction preview",
     type: :object,
     nullable: true,
@@ -51,6 +52,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.Preview do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "TransactionPreview",
     description: "Lightweight transaction preview for social media embeds",
     type: :object,
     properties: %{
