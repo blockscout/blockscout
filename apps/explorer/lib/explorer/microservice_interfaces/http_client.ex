@@ -75,9 +75,17 @@ defmodule Explorer.MicroserviceInterfaces.HttpClient do
 
     pools = %{
       default: [
-        # every checkout and checkin of a pool is a message through its single
-        # process, so one huge pool serializes there under load; several
-        # smaller pools splitting the same connection total spread that work
+        # NimblePool is built for small pools, and per-pool size is the knob
+        # that keeps its process responsive. Two costs scale with it: every
+        # checkout/checkin is a message through the single pool process, and -
+        # much worse - every message an idle socket sends it (e.g. the remote
+        # closing an idle keep-alive connection) makes NimblePool run
+        # handle_info over EVERY idle worker, O(size) per message. A batch of
+        # idle-connection closes against a big pool can occupy its process for
+        # long enough that checkout replies miss the pool timeout even though
+        # almost all connections are free. Keep per-pool size around Finch's
+        # default of 50 by raising MICROSERVICE_HTTP_POOL_COUNT rather than
+        # letting pools grow.
         size: max(div(total_size, pool_count), 1),
         count: pool_count,
         # metrics make the pools observable in a remote console via
