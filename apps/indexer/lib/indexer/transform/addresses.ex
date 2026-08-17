@@ -569,6 +569,7 @@ defmodule Indexer.Transform.Addresses do
 
     addresses
     |> List.flatten()
+    |> Enum.concat(chain_type_addresses(fetched_data, state))
     |> merge_addresses()
   end
 
@@ -576,6 +577,46 @@ defmodule Indexer.Transform.Addresses do
     do: Enum.flat_map(items, &extract_addresses_from_item(&1, fields, state))
 
   def extract_addresses_from_item(item, fields, state), do: Enum.flat_map(fields, &extract_fields(&1, item, state))
+
+  if @chain_type == :eden do
+    alias Explorer.Chain
+
+    @eden_call_fields [
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :to_address_hash, to: :hash}
+      ]
+    ]
+
+    # The recipients of the calls batched in an Eden sponsored transaction are stored in the `calls`
+    # JSON field, so they can't be declared in `@entity_to_address_map`, which supports the plain
+    # fields only. The calls are flattened into the items of the shape the declarations expect
+    # instead, so that the pending transactions keep being handled the same way.
+    defp chain_type_addresses(fetched_data, state) do
+      fetched_data
+      |> Map.get(:transactions)
+      |> Kernel.||([])
+      |> Enum.flat_map(&transaction_to_call_items/1)
+      |> extract_addresses_from_collection(@eden_call_fields, state)
+    end
+
+    defp transaction_to_call_items(%{calls: calls} = transaction) when is_list(calls) do
+      block_number = Map.take(transaction, [:block_number])
+
+      Enum.flat_map(calls, fn call ->
+        to_address_hash = Map.get(call, "to")
+
+        case Chain.string_to_address_hash(to_address_hash) do
+          {:ok, _} -> [Map.put(block_number, :to_address_hash, to_address_hash)]
+          :error -> []
+        end
+      end)
+    end
+
+    defp transaction_to_call_items(_transaction), do: []
+  else
+    defp chain_type_addresses(_fetched_data, _state), do: []
+  end
 
   def merge_addresses(addresses) when is_list(addresses) do
     addresses

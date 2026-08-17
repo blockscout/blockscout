@@ -3,6 +3,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
   @moduledoc false
   alias BlockScoutWeb.API.V2.ZkSyncView
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
+  alias BlockScoutWeb.Schemas.API.V2.Eden.Call, as: EdenCall
   alias BlockScoutWeb.Schemas.API.V2.Transaction.Fee
   alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
@@ -142,18 +143,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
     additionalProperties: false
   }
 
-  @eden_call_schema %Schema{
-    type: :object,
-    nullable: false,
-    properties: %{
-      to: General.AddressHashNullable,
-      value: General.IntegerString,
-      input: General.HexString
-    },
-    required: [:to, :value, :input],
-    additionalProperties: false
-  }
-
   @doc """
    Applies chain-specific field customizations to the given schema based on the configured chain type.
 
@@ -216,7 +205,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
         |> Helper.extend_schema(
           properties: %{
             fee_payer: %Schema{allOf: [Address], nullable: true},
-            calls: %Schema{type: :array, items: @eden_call_schema, nullable: true}
+            calls: %Schema{type: :array, items: EdenCall, nullable: true}
           },
           required: [:fee_payer, :calls]
         )
