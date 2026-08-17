@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   alias BlockScoutWeb.API.V2.{ApiView, Helper, InternalTransactionView, TokenTransferView, TokenView}
 
-  alias BlockScoutWeb.Models.GetTransactionTags
+  alias BlockScoutWeb.Models.{GetAddressTags, GetTransactionTags}
   alias BlockScoutWeb.{TransactionStateView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.{Chain, Market}
@@ -27,6 +27,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   }
 
   alias Explorer.Chain.Block.Reward
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation, as: ProxyImplementation
   alias Explorer.Chain.Transaction.StateChange
@@ -78,7 +79,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def render("transaction.json", %{transaction: transaction, conn: conn}) do
-    block_height = Chain.block_height(@api_true)
+    block_height = BlockNumber.get_max()
     [decoded_input] = Transaction.decode_transactions([transaction], false, @api_true)
 
     transaction
@@ -425,7 +426,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   defp prepare_transactions(transactions, conn, watchlist_names) do
-    block_height = Chain.block_height(@api_true)
+    block_height = BlockNumber.get_max()
     decoded_transactions = Transaction.decode_transactions(transactions, true, @api_true)
     historic_exchange_rates = historic_exchange_rates(transactions)
 
@@ -508,6 +509,13 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
     block_timestamp = block_timestamp(transaction)
 
+    tags_data =
+      if single_transaction? do
+        batched_address_tags(transaction, conn)
+      else
+        watchlist_names
+      end
+
     result = %{
       "hash" => transaction.hash,
       "result" => status,
@@ -520,7 +528,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           transaction.from_address,
           transaction.from_address_hash,
           single_transaction?,
-          watchlist_names
+          tags_data
         ),
       "to" =>
         Helper.address_with_info(
@@ -528,7 +536,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           transaction.to_address,
           transaction.to_address_hash,
           single_transaction?,
-          watchlist_names
+          tags_data
         ),
       "created_contract" =>
         Helper.address_with_info(
@@ -536,7 +544,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
           transaction.created_contract_address,
           transaction.created_contract_address_hash,
           single_transaction?,
-          watchlist_names
+          tags_data
         ),
       "confirmations" => transaction.block |> Chain.confirmations(block_height: block_height) |> format_confirmations(),
       "confirmation_duration" => processing_time_duration(transaction),
@@ -576,6 +584,17 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
 
   defp base_fee_per_gas(transaction) do
     transaction.block && transaction.block.base_fee_per_gas
+  end
+
+  # Fetches tags for from/to/created addresses with one query per tag type
+  # instead of up to three queries per address.
+  defp batched_address_tags(transaction, conn) do
+    address_hashes =
+      [transaction.from_address_hash, transaction.to_address_hash, transaction.created_contract_address_hash]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    {:address_tags, GetAddressTags.get_address_tags_batch(address_hashes, current_user(conn), @api_true)}
   end
 
   defp gas_price_for_display(transaction) do

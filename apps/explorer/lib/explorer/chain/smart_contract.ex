@@ -260,6 +260,21 @@ defmodule Explorer.Chain.SmartContract do
     @dead_address_hash_string
   end
 
+  @doc """
+  Returns a preload spec for the `:smart_contract` association that selects all
+  fields except `abi`.
+
+  ABIs of popular contracts reach hundreds of kilobytes, so preloads that only
+  need address info (name, verification flags) should use this spec. Note that
+  `abi` is `nil` (not `%NotLoaded{}`) on structs loaded this way, so it must not
+  be used on preload paths feeding transaction input decoding.
+  """
+  @spec association_without_abi() :: {:smart_contract, Ecto.Query.t()}
+  def association_without_abi do
+    {:smart_contract,
+     from(smart_contract in __MODULE__, select: struct(smart_contract, ^(__schema__(:fields) -- [:abi])))}
+  end
+
   @typedoc """
   The name of a parameter to a function or event.
   """

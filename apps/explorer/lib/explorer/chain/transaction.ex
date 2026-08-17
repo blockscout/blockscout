@@ -345,6 +345,7 @@ defmodule Explorer.Chain.Transaction do
 
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
 
+  alias Explorer.Chain.Cache.ContractMethods, as: ContractMethodsCache
   alias Explorer.Chain.Cache.Transactions
 
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
@@ -1092,18 +1093,33 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  defp decode_function_call_via_sig_provider(%{bytes: data} = input, hash, skip_sig_provider?) do
+  defp decode_function_call_via_sig_provider(
+         %{bytes: <<method_id::binary-size(4), _::binary>> = data} = input,
+         hash,
+         skip_sig_provider?
+       ) do
     with true <- SigProviderInterface.enabled?(),
          false <- skip_sig_provider?,
-         {:ok, result} <- SigProviderInterface.decode_function_call(input),
-         true <- is_list(result),
-         false <- Enum.empty?(result),
-         abi <- [result |> List.first() |> Map.put("outputs", []) |> Map.put("type", "function")],
+         [_ | _] = abi <-
+           ContractMethodsCache.fetch_sig_provider_abi(method_id, fn -> request_abi_from_sig_provider(input) end),
          {:ok, _, _, _} = candidate <- do_decoded_input_data(data, abi, hash) do
       [candidate]
     else
       _ ->
         []
+    end
+  end
+
+  # inputs shorter than a 4-byte method id cannot be a function call
+  defp decode_function_call_via_sig_provider(_input, _hash, _skip_sig_provider?), do: []
+
+  defp request_abi_from_sig_provider(input) do
+    with {:ok, result} <- SigProviderInterface.decode_function_call(input),
+         true <- is_list(result),
+         false <- Enum.empty?(result) do
+      [result |> List.first() |> Map.put("outputs", []) |> Map.put("type", "function")]
+    else
+      _ -> []
     end
   end
 
@@ -2387,7 +2403,7 @@ defmodule Explorer.Chain.Transaction do
         _ -> []
       end)
       |> Enum.uniq()
-      |> ContractMethod.find_contract_methods(opts)
+      |> ContractMethodsCache.find_contract_methods(opts)
       |> Enum.into(empty_methods_map, &{&1.identifier, [&1]})
 
     # decode remaining transaction using methods map
