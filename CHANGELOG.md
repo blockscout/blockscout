@@ -19,7 +19,7 @@
 ### 🐛 Bug Fixes
 
 - Async fetch internal transactions after pending operations type switch ([#14330](https://github.com/blockscout/blockscout/issues/14330))
-- Adapt OnDemant IT fetcher test for rsk and filecoin ([#14315](https://github.com/blockscout/blockscout/issues/14315))
+- Adapt OnDemand IT fetcher test for rsk and filecoin ([#14315](https://github.com/blockscout/blockscout/issues/14315))
 - Reorganize logs indexes creation order ([#14676](https://github.com/blockscout/blockscout/pull/14676))
 - Correct API v2 schemas and drop dead internal-tx limit param ([#14662](https://github.com/blockscout/blockscout/pull/14662))
 - Delete massive blocks as well on ranges_init in MissingRangesCollector ([#14661](https://github.com/blockscout/blockscout/pull/14661))
