@@ -2014,7 +2014,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       %{"redirect" => false, "type" => nil, "parameter" => nil} = json_response(request, 200)
     end
 
-    test "finds ens domain with partial query (without dot)", %{conn: conn} do
+    test "finds resolved address of ens domain with partial query (without dot)", %{conn: conn} do
       bypass = Bypass.open()
       bens_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
       old_chain_id = Application.get_env(:block_scout_web, :chain_id)
@@ -2037,6 +2037,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       partial_name = "vitalik"
       full_name = "vitalik.eth"
       ens_address = insert(:address)
+      ens_address_hash_string = to_string(ens_address)
 
       ens_response = """
       {
@@ -2045,7 +2046,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
               "id": "0xee6c4522aab0003e8d14cd40a6af439055fd2577951148c14b6cea9a53475835",
               "name": "#{full_name}",
               "resolved_address": {
-                  "hash": "#{to_string(ens_address)}"
+                  "hash": "#{ens_address_hash_string}"
               },
               "owner": {
                   "hash": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
@@ -2076,7 +2077,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
       request = get(conn, "/api/v2/search/check-redirect?q=#{partial_name}")
 
-      assert %{"redirect" => true, "type" => "ens_domain", "parameter" => ^full_name} =
+      assert %{"redirect" => true, "type" => "address", "parameter" => ^ens_address_hash_string} =
                json_response(request, 200)
     end
   end
