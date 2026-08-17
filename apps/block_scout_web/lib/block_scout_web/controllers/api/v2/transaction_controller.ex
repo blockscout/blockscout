@@ -114,7 +114,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
   # Transfer from/to address preloads are handled by
   # `Chain.preload_transaction_participants/3`, see
-  # `@transaction_necessity_by_association`.
+  # `@transaction_participants_necessity_by_association`.
   @token_transfers_in_transaction_necessity_by_association %{
     [token: reputation_association()] => :optional
   }
