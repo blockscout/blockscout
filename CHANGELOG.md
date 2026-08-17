@@ -1,5 +1,23 @@
 # Changelog
 
+## 11.2.7
+
+### 🚀 Features
+
+- Add /api/v2/transactions/{hash}/preview endpoint ([#14638](https://github.com/blockscout/blockscout/issues/14638), [#14703](https://github.com/blockscout/blockscout/issues/14703), [#14704](https://github.com/blockscout/blockscout/issues/14704))
+
+### 🐛 Bug Fixes
+
+- Fix state changes for sponsored transactions ([#14702](https://github.com/blockscout/blockscout/issues/14702))
+
+### ⚡ Performance
+
+- Reduce query count and payload in transaction API endpoint ([#14705](https://github.com/blockscout/blockscout/issues/14705))
+- Cache empty implementations of verified contracts longer ([#14696](https://github.com/blockscout/blockscout/issues/14696))
+- Fetch address existence checks in a single query ([#14694](https://github.com/blockscout/blockscout/issues/14694))
+- Reuse HTTP connections and parallelize microservice preloads ([#14689](https://github.com/blockscout/blockscout/issues/14689), [#14707](https://github.com/blockscout/blockscout/issues/14707))
+
+
 ## 11.2.6
 
 ### 🐛 Bug Fixes
