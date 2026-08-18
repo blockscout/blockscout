@@ -4,6 +4,10 @@ defmodule Indexer.Transform.AddressesTest do
 
   alias Indexer.Transform.Addresses
 
+  @chain_type Application.compile_env(:explorer, :chain_type)
+
+  @created_contract_code_extracted? @chain_type != :zksync
+
   doctest Addresses
 
   describe "extract_addresses/1" do
@@ -60,6 +64,22 @@ defmodule Indexer.Transform.AddressesTest do
     end
 
     test "differing contract code is ignored" do
+      expected_address =
+        if @created_contract_code_extracted? do
+          %{
+            fetched_coin_balance_block_number: 2,
+            contract_code: "0x1",
+            hash: "0x0000000000000000000000000000000000000001",
+            nonce: nil
+          }
+        else
+          %{
+            fetched_coin_balance_block_number: 2,
+            hash: "0x0000000000000000000000000000000000000001",
+            nonce: nil
+          }
+        end
+
       assert Addresses.extract_addresses(%{
                internal_transactions: [
                  %{
@@ -73,14 +93,7 @@ defmodule Indexer.Transform.AddressesTest do
                    created_contract_address_hash: "0x0000000000000000000000000000000000000001"
                  }
                ]
-             }) == [
-               %{
-                 fetched_coin_balance_block_number: 2,
-                 contract_code: "0x1",
-                 hash: "0x0000000000000000000000000000000000000001",
-                 nonce: nil
-               }
-             ]
+             }) == [expected_address]
     end
 
     test "extracts address params from code params" do
@@ -154,6 +167,16 @@ defmodule Indexer.Transform.AddressesTest do
         block_reward_contract_beneficiaries: [beneficiary]
       }
 
+      created_contract_address = %{
+        hash: internal_transaction.created_contract_address_hash,
+        fetched_coin_balance_block_number: internal_transaction.block_number
+      }
+
+      created_contract_address =
+        if @created_contract_code_extracted?,
+          do: Map.put(created_contract_address, :contract_code, internal_transaction.created_contract_code),
+          else: created_contract_address
+
       assert Addresses.extract_addresses(blockchain_data) == [
                %{hash: block.miner_hash, fetched_coin_balance_block_number: block.number},
                %{
@@ -164,11 +187,7 @@ defmodule Indexer.Transform.AddressesTest do
                  hash: internal_transaction.to_address_hash,
                  fetched_coin_balance_block_number: internal_transaction.block_number
                },
-               %{
-                 hash: internal_transaction.created_contract_address_hash,
-                 contract_code: internal_transaction.created_contract_code,
-                 fetched_coin_balance_block_number: internal_transaction.block_number
-               },
+               created_contract_address,
                %{
                  hash: transaction.from_address_hash,
                  fetched_coin_balance_block_number: transaction.block_number,
@@ -223,10 +242,14 @@ defmodule Indexer.Transform.AddressesTest do
         ]
       }
 
-      assert Addresses.extract_addresses(blockchain_data) ==
-               [
-                 %{hash: hash, fetched_coin_balance_block_number: 34, contract_code: "code", nonce: 12}
-               ]
+      expected_address =
+        if @created_contract_code_extracted? do
+          %{hash: hash, fetched_coin_balance_block_number: 34, contract_code: "code", nonce: 12}
+        else
+          %{hash: hash, fetched_coin_balance_block_number: 34, nonce: 12}
+        end
+
+      assert Addresses.extract_addresses(blockchain_data) == [expected_address]
     end
 
     test "only entities data defined in @entity_to_address_map are collected" do
@@ -273,7 +296,7 @@ defmodule Indexer.Transform.AddressesTest do
              }) == []
     end
 
-    if Application.compile_env(:explorer, :chain_type) == :eden do
+    if @chain_type == :eden do
       test "recipients of the batched calls are extracted with the coin balance block number" do
         first_call_hash = "0x11f60a633dd30a8d1a26dd6e20167a9293fb4647"
         second_call_hash = "0xcfc096e58b1f858e5a3ee88ecaeccb2b464625b5"
