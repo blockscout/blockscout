@@ -16,6 +16,7 @@
 - Cache empty implementations of verified contracts longer ([#14696](https://github.com/blockscout/blockscout/issues/14696))
 - Fetch address existence checks in a single query ([#14694](https://github.com/blockscout/blockscout/issues/14694))
 - Reuse HTTP connections and parallelize microservice preloads ([#14689](https://github.com/blockscout/blockscout/issues/14689), [#14707](https://github.com/blockscout/blockscout/issues/14707))
+- Fix transform addresses tests for zksync ([#14717](https://github.com/blockscout/blockscout/pull/14717))
 
 ### New ENV variables
 
