@@ -24,8 +24,8 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
       operations_quick_search_url()
       |> http_get_request(query_params)
       |> case do
-        {:ok, %{"items" => operations, "next_page_params" => next_page_params}} ->
-          {:ok, %{items: operations, next_page_params: next_page_params}}
+        {:ok, %{"items" => operations} = response} ->
+          {:ok, %{items: operations, next_page_params: Map.get(response, "next_page_params")}}
 
         error ->
           error
@@ -46,6 +46,14 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
         end
 
       {:ok, %{body: _body, status_code: 404}} ->
+        Logger.warning(fn ->
+          [
+            "#{@request_error_msg}: ",
+            url,
+            " returned 404, TAC operations will be omitted from search results"
+          ]
+        end)
+
         {:error, :not_found}
 
       {_, error} ->

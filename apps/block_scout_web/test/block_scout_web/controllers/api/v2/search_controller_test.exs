@@ -1301,10 +1301,10 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
         operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
 
+        # `next_page_params` is omitted rather than null: the v2 schema does not guarantee the key
         tac_response = """
         {
-          "items": [],
-          "next_page_params": null
+          "items": []
         }
         """
 
