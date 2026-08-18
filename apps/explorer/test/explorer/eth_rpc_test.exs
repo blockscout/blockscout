@@ -66,6 +66,48 @@ defmodule Explorer.EthRPCTest do
     assert response == %{error: %{code: -32_602, message: "Invalid address"}, id: 1}
   end
 
+  test "JSONRPC error returned by the node for a proxied request is passed through" do
+    set_extended_proxy_methods_enabled(true)
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: 3, jsonrpc: "2.0", method: "eth_getProof", params: _}], _options ->
+      {:ok,
+       [
+         %{
+           id: 3,
+           jsonrpc: "2.0",
+           error: %{code: -32_602, message: "distance to target block exceeds maximum proof window"}
+         }
+       ]}
+    end)
+
+    request = %{
+      "id" => 3,
+      "jsonrpc" => "2.0",
+      "method" => "eth_getProof",
+      "params" => ["0x96f56752bde1b9f6f86393658a79dec9f7095de3", [], "0x2d69fc1"]
+    }
+
+    assert [response] = EthRPC.responses([request])
+
+    assert response == %{
+             error: %{code: -32_602, message: "distance to target block exceeds maximum proof window"},
+             id: 3
+           }
+  end
+
+  test "transport error for a proxied request is returned as an internal error" do
+    set_extended_proxy_methods_enabled(true)
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: 1, jsonrpc: "2.0", method: "net_version", params: []}], _options ->
+      {:error, :timeout}
+    end)
+
+    request = %{"id" => 1, "jsonrpc" => "2.0", "method" => "net_version", "params" => []}
+
+    assert [response] = EthRPC.responses([request])
+    assert response == %{error: %{code: -32_603, message: ":timeout"}, id: 1}
+  end
+
   test "default proxy methods remain available when feature flag is disabled" do
     set_extended_proxy_methods_enabled(false)
 

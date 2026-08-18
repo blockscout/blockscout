@@ -907,10 +907,18 @@ defmodule Explorer.EthRPC do
         {:proxy, %{result: result}} ->
           format_success(result, Map.get(request, "id"))
 
+        # a batched request succeeded on the transport level, but the node returned
+        # a JSONRPC error object for this particular request
+        {:proxy, %{error: %{code: _code, message: _message} = error}} ->
+          format_error(error, Map.get(request, "id"))
+
         {:proxy, {:error, {:bad_response = error, _}}} ->
           format_error(error, @internal_error_code, Map.get(request, "id"))
 
         {:proxy, {:error, %Mint.TransportError{reason: reason}}} ->
+          format_error(inspect(reason), @internal_error_code, Map.get(request, "id"))
+
+        {:proxy, {:error, reason}} ->
           format_error(inspect(reason), @internal_error_code, Map.get(request, "id"))
       end
     end)
@@ -1543,6 +1551,11 @@ defmodule Explorer.EthRPC do
 
   defp format_error(message, code, id) do
     %{error: %{code: code, message: message}, id: id}
+  end
+
+  # passes an already built JSONRPC error object through, keeping the optional `data` field
+  defp format_error(%{code: _code, message: _message} = error, id) do
+    %{error: error, id: id}
   end
 
   defp do_eth_request(%{"jsonrpc" => rpc_version}) when rpc_version != "2.0" do
