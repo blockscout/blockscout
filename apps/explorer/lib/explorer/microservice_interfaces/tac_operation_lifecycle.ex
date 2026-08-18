@@ -68,6 +68,6 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
   end
 
   defp base_url do
-    "#{Microservice.base_url(__MODULE__)}/api/v1"
+    "#{Microservice.base_url(__MODULE__)}/api/v2"
   end
 end

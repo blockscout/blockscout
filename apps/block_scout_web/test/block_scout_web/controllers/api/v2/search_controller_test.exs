@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
   alias Explorer.Tags.AddressTag
   alias Plug.Conn.Query
 
+  @tac_operations_path "/api/v2/tac/operations"
+
   describe "/search" do
     setup do
       initial_value = :persistent_term.get(:market_token_fetcher_enabled, false)
@@ -1236,9 +1238,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         "items": [
           {
               "operation_id": "#{operation_id}",
-              "sender": null,
+              "type": "TON_TAC_TON",
+              "status": "success",
+              "rollback": false,
               "timestamp": "2025-05-14T19:16:38.000Z",
-              "type": "TON_TAC_TON"
+              "sender": null,
+              "error_reason": null
           }
         ],
         "next_page_params": null
@@ -1248,7 +1253,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         Bypass.expect_once(
           bypass,
           "GET",
-          "/api/v1/tac/operations",
+          @tac_operations_path,
           fn conn ->
             assert conn.params["q"] == operation_id
             Plug.Conn.resp(conn, 200, tac_response)
@@ -1263,9 +1268,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                      "priority" => 0,
                      "tac_operation" => %{
                        "operation_id" => operation_id,
-                       "sender" => nil,
+                       "type" => "TON_TAC_TON",
+                       "status" => "success",
+                       "rollback" => false,
                        "timestamp" => "2025-05-14T19:16:38.000Z",
-                       "type" => "TON_TAC_TON"
+                       "sender" => nil,
+                       "error_reason" => nil
                      },
                      "type" => "tac_operation"
                    }
@@ -1303,7 +1311,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         Bypass.expect(
           bypass,
           "GET",
-          "/api/v1/tac/operations",
+          @tac_operations_path,
           fn conn ->
             assert conn.params["q"] == operation_id
             Plug.Conn.resp(conn, 200, tac_response)
@@ -1344,9 +1352,10 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         "items": [
           {
               "operation_id": "#{operation_id}",
-              "sender": null,
-              "timestamp": "2025-05-14T19:16:38.000Z",
-              "type": "TON_TAC_TON"
+              "type": "TAC_TON",
+              "status": "pending",
+              "rollback": false,
+              "timestamp": "2025-05-14T19:16:38.000Z"
           }
         ],
         "next_page_params": null
@@ -1356,7 +1365,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         Bypass.expect(
           bypass,
           "GET",
-          "/api/v1/tac/operations",
+          @tac_operations_path,
           fn conn ->
             assert conn.params["q"] == operation_id
             Plug.Conn.resp(conn, 200, tac_response)
@@ -1371,9 +1380,10 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                  "priority" => 0,
                  "tac_operation" => %{
                    "operation_id" => operation_id,
-                   "sender" => nil,
-                   "timestamp" => "2025-05-14T19:16:38.000Z",
-                   "type" => "TON_TAC_TON"
+                   "type" => "TAC_TON",
+                   "status" => "pending",
+                   "rollback" => false,
+                   "timestamp" => "2025-05-14T19:16:38.000Z"
                  },
                  "type" => "tac_operation"
                } in tl(response["items"])
@@ -1413,9 +1423,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         "items": [
           {
               "operation_id": "#{operation_id}",
-              "sender": null,
+              "type": "TON_TAC",
+              "status": "failed",
+              "rollback": false,
               "timestamp": "2025-05-14T19:16:38.000Z",
-              "type": "TON_TAC_TON"
+              "sender": null,
+              "error_reason": "Insufficient Fee"
           }
         ],
         "next_page_params": null
@@ -1425,7 +1438,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         Bypass.expect(
           bypass,
           "GET",
-          "/api/v1/tac/operations",
+          @tac_operations_path,
           fn conn ->
             assert conn.params["q"] == operation_id
             Plug.Conn.resp(conn, 200, tac_response)
@@ -1440,9 +1453,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                  "priority" => 0,
                  "tac_operation" => %{
                    "operation_id" => operation_id,
-                   "sender" => nil,
+                   "type" => "TON_TAC",
+                   "status" => "failed",
+                   "rollback" => false,
                    "timestamp" => "2025-05-14T19:16:38.000Z",
-                   "type" => "TON_TAC_TON"
+                   "sender" => nil,
+                   "error_reason" => "Insufficient Fee"
                  },
                  "type" => "tac_operation"
                } in tl(response["items"])
@@ -1484,15 +1500,21 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
           #{for i <- 10..59, do: """
           {
             "operation_id": "#{operation_id}",
-            "sender": "#{address_hash}",
-            "timestamp": "2025-05-14T19:16:#{i}.000Z",
-            "type": "TON_TAC_TON"
+            "type": "TAC_TON",
+            "status": "success",
+            "rollback": false,
+            "timestamp": "2025-05-14T19:16:#{String.pad_leading(Integer.to_string(i), 2, "0")}.000Z",
+            "sender": {
+              "address": "#{address_hash}",
+              "blockchain": "TAC"
+            },
+            "error_reason": null
           }#{if i == 59, do: "", else: ","}
         """}
           ],
           "next_page_params": {
             "page_token": 1747250219,
-            "page_size": 50
+            "page_items": 50
           }
         }
         """
@@ -1503,15 +1525,21 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
           #{for i <- 10..59, do: """
           {
             "operation_id": "#{operation_id}",
-            "sender": "#{address_hash}",
+            "type": "TAC_TON",
+            "status": "success",
+            "rollback": false,
             "timestamp": "#{if i == 0, do: "2025-05-14T19:16:59.000Z", else: "2025-05-14T19:17:#{i}.000Z"}",
-            "type": "TON_TAC_TON"
+            "sender": {
+              "address": "#{address_hash}",
+              "blockchain": "TAC"
+            },
+            "error_reason": null
           }#{if i == 59, do: "", else: ","}
         """}
           ],
           "next_page_params": {
             "page_token": 1747250279,
-            "page_size": 50
+            "page_items": 50
           }
         }
         """
@@ -1521,9 +1549,15 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
           "items": [
           {
             "operation_id": "#{operation_id}",
-            "sender": "#{address_hash}",
+            "type": "TAC_TON",
+            "status": "success",
+            "rollback": false,
             "timestamp": "2025-05-14T19:18:01.000Z",
-            "type": "TON_TAC_TON"
+            "sender": {
+              "address": "#{address_hash}",
+              "blockchain": "TAC"
+            },
+            "error_reason": null
           }
           ],
           "next_page_params": null
@@ -1533,7 +1567,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         Bypass.expect(
           bypass,
           "GET",
-          "/api/v1/tac/operations",
+          @tac_operations_path,
           fn conn ->
             case conn.params["page_token"] do
               nil -> Plug.Conn.resp(conn, 200, tac_first_response)
@@ -1561,9 +1595,15 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                      "priority" => 0,
                      "tac_operation" => %{
                        "operation_id" => operation_id,
-                       "sender" => address_hash,
+                       "type" => "TAC_TON",
+                       "status" => "success",
+                       "rollback" => false,
                        "timestamp" => "2025-05-14T19:18:01.000Z",
-                       "type" => "TON_TAC_TON"
+                       "sender" => %{
+                         "address" => address_hash,
+                         "blockchain" => "TAC"
+                       },
+                       "error_reason" => nil
                      },
                      "type" => "tac_operation"
                    }
@@ -1594,12 +1634,15 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         "items": [
           {
               "operation_id": "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-              "type": "ROLLBACK",
+              "type": "TON_TAC_TON",
+              "status": "failed",
+              "rollback": true,
               "timestamp": "2025-06-05T12:21:11.000Z",
               "sender": {
                   "address": "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
                   "blockchain": "TON"
-              }
+              },
+              "error_reason": null
           }
         ],
         "next_page_params": null
@@ -1609,7 +1652,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         Bypass.expect(
           bypass,
           "GET",
-          "/api/v1/tac/operations",
+          @tac_operations_path,
           fn conn ->
             case conn.params["q"] do
               expected_q
@@ -1629,110 +1672,59 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
           end
         )
 
+        expected_items = [
+          %{
+            "priority" => 0,
+            "tac_operation" => %{
+              "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+              "type" => "TON_TAC_TON",
+              "status" => "failed",
+              "rollback" => true,
+              "timestamp" => "2025-06-05T12:21:11.000Z",
+              "sender" => %{
+                "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                "blockchain" => "TON"
+              },
+              "error_reason" => nil
+            },
+            "type" => "tac_operation"
+          }
+        ]
+
         request =
           get(conn, "/api/v2/search?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt")}")
 
         assert response = json_response(request, 200)
 
-        assert [
-                 %{
-                   "priority" => 0,
-                   "tac_operation" => %{
-                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                     "sender" => %{
-                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                       "blockchain" => "TON"
-                     },
-                     "timestamp" => "2025-06-05T12:21:11.000Z",
-                     "type" => "ROLLBACK"
-                   },
-                   "type" => "tac_operation"
-                 }
-               ] == response["items"]
+        assert expected_items == response["items"]
 
         request =
           get(conn, "/api/v2/search?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt")}")
 
         assert response = json_response(request, 200)
 
-        assert [
-                 %{
-                   "priority" => 0,
-                   "tac_operation" => %{
-                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                     "sender" => %{
-                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                       "blockchain" => "TON"
-                     },
-                     "timestamp" => "2025-06-05T12:21:11.000Z",
-                     "type" => "ROLLBACK"
-                   },
-                   "type" => "tac_operation"
-                 }
-               ] == response["items"]
+        assert expected_items == response["items"]
 
         request =
           get(conn, "/api/v2/search?q=#{URI.encode_www_form("UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko")}")
 
         assert response = json_response(request, 200)
 
-        assert [
-                 %{
-                   "priority" => 0,
-                   "tac_operation" => %{
-                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                     "sender" => %{
-                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                       "blockchain" => "TON"
-                     },
-                     "timestamp" => "2025-06-05T12:21:11.000Z",
-                     "type" => "ROLLBACK"
-                   },
-                   "type" => "tac_operation"
-                 }
-               ] == response["items"]
+        assert expected_items == response["items"]
 
         request =
           get(conn, "/api/v2/search?q=#{URI.encode_www_form("kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n")}")
 
         assert response = json_response(request, 200)
 
-        assert [
-                 %{
-                   "priority" => 0,
-                   "tac_operation" => %{
-                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                     "sender" => %{
-                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                       "blockchain" => "TON"
-                     },
-                     "timestamp" => "2025-06-05T12:21:11.000Z",
-                     "type" => "ROLLBACK"
-                   },
-                   "type" => "tac_operation"
-                 }
-               ] == response["items"]
+        assert expected_items == response["items"]
 
         request =
           get(conn, "/api/v2/search?q=#{URI.encode_www_form("0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi")}")
 
         assert response = json_response(request, 200)
 
-        assert [
-                 %{
-                   "priority" => 0,
-                   "tac_operation" => %{
-                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                     "sender" => %{
-                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                       "blockchain" => "TON"
-                     },
-                     "timestamp" => "2025-06-05T12:21:11.000Z",
-                     "type" => "ROLLBACK"
-                   },
-                   "type" => "tac_operation"
-                 }
-               ] == response["items"]
+        assert expected_items == response["items"]
 
         request =
           get(
@@ -1742,21 +1734,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
         assert response = json_response(request, 200)
 
-        assert [
-                 %{
-                   "priority" => 0,
-                   "tac_operation" => %{
-                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                     "sender" => %{
-                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                       "blockchain" => "TON"
-                     },
-                     "timestamp" => "2025-06-05T12:21:11.000Z",
-                     "type" => "ROLLBACK"
-                   },
-                   "type" => "tac_operation"
-                 }
-               ] == response["items"]
+        assert expected_items == response["items"]
       end
 
       test "finds TAC operations with transaction and paginates", %{conn: conn} do
@@ -1786,15 +1764,18 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
           #{for i <- 0..49, do: """
           {
             "operation_id": "#{operation_id}",
+            "type": "TON_TAC_TON",
+            "status": "success",
+            "rollback": false,
+            "timestamp": "2025-05-14T19:16:#{String.pad_leading(Integer.to_string(i), 2, "0")}.000Z",
             "sender": null,
-            "timestamp": "2025-05-14T19:16:#{i}.000Z",
-            "type": "TON_TAC_TON"
+            "error_reason": null
           }#{if i == 49, do: "", else: ","}
         """}
           ],
           "next_page_params": {
             "page_token": 1747250209,
-            "page_size": 50
+            "page_items": 50
           }
         }
         """
@@ -1804,9 +1785,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         "items": [
           {
               "operation_id": "#{operation_id}",
-              "sender": null,
+              "type": "TON_TAC_TON",
+              "status": "success",
+              "rollback": false,
               "timestamp": "2025-05-14T19:16:50.000Z",
-              "type": "TON_TAC_TON"
+              "sender": null,
+              "error_reason": null
           }
         ],
         "next_page_params": null
@@ -1816,7 +1800,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         Bypass.expect(
           bypass,
           "GET",
-          "/api/v1/tac/operations",
+          @tac_operations_path,
           fn conn ->
             case conn.params["page_token"] do
               nil -> Plug.Conn.resp(conn, 200, tac_first_response)
@@ -1838,9 +1822,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                      "priority" => 0,
                      "tac_operation" => %{
                        "operation_id" => operation_id,
-                       "sender" => nil,
+                       "type" => "TON_TAC_TON",
+                       "status" => "success",
+                       "rollback" => false,
                        "timestamp" => "2025-05-14T19:16:50.000Z",
-                       "type" => "TON_TAC_TON"
+                       "sender" => nil,
+                       "error_reason" => nil
                      },
                      "type" => "tac_operation"
                    }
@@ -2242,9 +2229,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         "items": [
           {
             "operation_id": "#{operation_id}",
-            "sender": null,
+            "type": "TON_TAC_TON",
+            "status": "success",
+            "rollback": false,
             "timestamp": "2025-05-14T19:16:38.000Z",
-            "type": "TON_TAC_TON"
+            "sender": null,
+            "error_reason": null
           }
         ],
         "next_page_params": null
@@ -2254,7 +2244,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         Bypass.expect(
           bypass,
           "GET",
-          "/api/v1/tac/operations",
+          @tac_operations_path,
           fn conn ->
             assert conn.params["q"] == operation_id
             Plug.Conn.resp(conn, 200, tac_response)
@@ -2268,9 +2258,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                    "priority" => 0,
                    "tac_operation" => %{
                      "operation_id" => operation_id,
-                     "sender" => nil,
+                     "type" => "TON_TAC_TON",
+                     "status" => "success",
+                     "rollback" => false,
                      "timestamp" => "2025-05-14T19:16:38.000Z",
-                     "type" => "TON_TAC_TON"
+                     "sender" => nil,
+                     "error_reason" => nil
                    },
                    "type" => "tac_operation"
                  }
@@ -2303,9 +2296,10 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         "items": [
           {
               "operation_id": "#{operation_id}",
-              "sender": null,
-              "timestamp": "2025-05-14T19:16:38.000Z",
-              "type": "TON_TAC_TON"
+              "type": "TAC_TON",
+              "status": "pending",
+              "rollback": false,
+              "timestamp": "2025-05-14T19:16:38.000Z"
           }
         ],
         "next_page_params": null
@@ -2315,7 +2309,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         Bypass.expect(
           bypass,
           "GET",
-          "/api/v1/tac/operations",
+          @tac_operations_path,
           fn conn ->
             assert conn.params["q"] == operation_id
             Plug.Conn.resp(conn, 200, tac_response)
@@ -2330,9 +2324,10 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                  "priority" => 0,
                  "tac_operation" => %{
                    "operation_id" => operation_id,
-                   "sender" => nil,
-                   "timestamp" => "2025-05-14T19:16:38.000Z",
-                   "type" => "TON_TAC_TON"
+                   "type" => "TAC_TON",
+                   "status" => "pending",
+                   "rollback" => false,
+                   "timestamp" => "2025-05-14T19:16:38.000Z"
                  },
                  "type" => "tac_operation"
                } in tl(response)
@@ -2372,9 +2367,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         "items": [
           {
               "operation_id": "#{operation_id}",
-              "sender": null,
+              "type": "TON_TAC",
+              "status": "failed",
+              "rollback": false,
               "timestamp": "2025-05-14T19:16:38.000Z",
-              "type": "TON_TAC_TON"
+              "sender": null,
+              "error_reason": "Insufficient Fee"
           }
         ],
         "next_page_params": null
@@ -2384,7 +2382,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         Bypass.expect(
           bypass,
           "GET",
-          "/api/v1/tac/operations",
+          @tac_operations_path,
           fn conn ->
             assert conn.params["q"] == operation_id
             Plug.Conn.resp(conn, 200, tac_response)
@@ -2399,9 +2397,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                  "priority" => 0,
                  "tac_operation" => %{
                    "operation_id" => operation_id,
-                   "sender" => nil,
+                   "type" => "TON_TAC",
+                   "status" => "failed",
+                   "rollback" => false,
                    "timestamp" => "2025-05-14T19:16:38.000Z",
-                   "type" => "TON_TAC_TON"
+                   "sender" => nil,
+                   "error_reason" => "Insufficient Fee"
                  },
                  "type" => "tac_operation"
                } in tl(response)
@@ -2444,15 +2445,21 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
             #{for i <- 0..49, do: """
             {
               "operation_id": "#{operation_id}",
-              "sender": "#{address_hash}",
-              "timestamp": "2025-05-14T19:16:#{i}.000Z",
-              "type": "TON_TAC_TON"
+              "type": "TAC_TON",
+              "status": "success",
+              "rollback": false,
+              "timestamp": "2025-05-14T19:16:#{String.pad_leading(Integer.to_string(i), 2, "0")}.000Z",
+              "sender": {
+                "address": "#{address_hash}",
+                "blockchain": "TAC"
+              },
+              "error_reason": null
             }#{if i == 49, do: "", else: ","}
           """}
             ],
             "next_page_params": {
               "page_token": "2025-05-14T19:16:49.000Z",
-              "page_size": 50
+              "page_items": 50
             }
           }
           """
@@ -2460,7 +2467,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         Bypass.expect(
           bypass,
           "GET",
-          "/api/v1/tac/operations",
+          @tac_operations_path,
           fn conn ->
             assert conn.params["q"] == address_hash
 
@@ -2490,9 +2497,15 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                 "priority" => 0,
                 "tac_operation" => %{
                   "operation_id" => operation_id,
-                  "sender" => address_hash,
-                  "timestamp" => "2025-05-14T19:16:#{i}.000Z",
-                  "type" => "TON_TAC_TON"
+                  "type" => "TAC_TON",
+                  "status" => "success",
+                  "rollback" => false,
+                  "timestamp" => "2025-05-14T19:16:#{String.pad_leading(Integer.to_string(i), 2, "0")}.000Z",
+                  "sender" => %{
+                    "address" => address_hash,
+                    "blockchain" => "TAC"
+                  },
+                  "error_reason" => nil
                 },
                 "type" => "tac_operation"
               }
@@ -2524,12 +2537,15 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         "items": [
           {
               "operation_id": "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-              "type": "ROLLBACK",
+              "type": "TON_TAC_TON",
+              "status": "failed",
+              "rollback": true,
               "timestamp": "2025-06-05T12:21:11.000Z",
               "sender": {
                   "address": "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
                   "blockchain": "TON"
-              }
+              },
+              "error_reason": null
           }
         ],
         "next_page_params": null
@@ -2539,7 +2555,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         Bypass.expect(
           bypass,
           "GET",
-          "/api/v1/tac/operations",
+          @tac_operations_path,
           fn conn ->
             case conn.params["q"] do
               expected_q
@@ -2559,110 +2575,59 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
           end
         )
 
+        expected_items = [
+          %{
+            "priority" => 0,
+            "tac_operation" => %{
+              "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
+              "type" => "TON_TAC_TON",
+              "status" => "failed",
+              "rollback" => true,
+              "timestamp" => "2025-06-05T12:21:11.000Z",
+              "sender" => %{
+                "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
+                "blockchain" => "TON"
+              },
+              "error_reason" => nil
+            },
+            "type" => "tac_operation"
+          }
+        ]
+
         request =
           get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt")}")
 
         assert response = json_response(request, 200)
 
-        assert [
-                 %{
-                   "priority" => 0,
-                   "tac_operation" => %{
-                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                     "sender" => %{
-                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                       "blockchain" => "TON"
-                     },
-                     "timestamp" => "2025-06-05T12:21:11.000Z",
-                     "type" => "ROLLBACK"
-                   },
-                   "type" => "tac_operation"
-                 }
-               ] == response
+        assert expected_items == response
 
         request =
           get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnXTt")}")
 
         assert response = json_response(request, 200)
 
-        assert [
-                 %{
-                   "priority" => 0,
-                   "tac_operation" => %{
-                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                     "sender" => %{
-                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                       "blockchain" => "TON"
-                     },
-                     "timestamp" => "2025-06-05T12:21:11.000Z",
-                     "type" => "ROLLBACK"
-                   },
-                   "type" => "tac_operation"
-                 }
-               ] == response
+        assert expected_items == response
 
         request =
           get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("UQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnSko")}")
 
         assert response = json_response(request, 200)
 
-        assert [
-                 %{
-                   "priority" => 0,
-                   "tac_operation" => %{
-                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                     "sender" => %{
-                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                       "blockchain" => "TON"
-                     },
-                     "timestamp" => "2025-06-05T12:21:11.000Z",
-                     "type" => "ROLLBACK"
-                   },
-                   "type" => "tac_operation"
-                 }
-               ] == response
+        assert expected_items == response
 
         request =
           get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("kQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnc9n")}")
 
         assert response = json_response(request, 200)
 
-        assert [
-                 %{
-                   "priority" => 0,
-                   "tac_operation" => %{
-                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                     "sender" => %{
-                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                       "blockchain" => "TON"
-                     },
-                     "timestamp" => "2025-06-05T12:21:11.000Z",
-                     "type" => "ROLLBACK"
-                   },
-                   "type" => "tac_operation"
-                 }
-               ] == response
+        assert expected_items == response
 
         request =
           get(conn, "/api/v2/search/quick?q=#{URI.encode_www_form("0QBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2-Zw8yaoxnZKi")}")
 
         assert response = json_response(request, 200)
 
-        assert [
-                 %{
-                   "priority" => 0,
-                   "tac_operation" => %{
-                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                     "sender" => %{
-                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                       "blockchain" => "TON"
-                     },
-                     "timestamp" => "2025-06-05T12:21:11.000Z",
-                     "type" => "ROLLBACK"
-                   },
-                   "type" => "tac_operation"
-                 }
-               ] == response
+        assert expected_items == response
 
         request =
           get(
@@ -2672,21 +2637,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
         assert response = json_response(request, 200)
 
-        assert [
-                 %{
-                   "priority" => 0,
-                   "tac_operation" => %{
-                     "operation_id" => "0xcdbc69a2d42c796bb8d6c2db76f366baa93f0ce5badcf8ed766f686b0f734612",
-                     "sender" => %{
-                       "address" => "EQBnVg4x6uTCa8jlrh8YXyWpnJJ3oxxrdBQ2+Zw8yaoxnXTt",
-                       "blockchain" => "TON"
-                     },
-                     "timestamp" => "2025-06-05T12:21:11.000Z",
-                     "type" => "ROLLBACK"
-                   },
-                   "type" => "tac_operation"
-                 }
-               ] == response
+        assert expected_items == response
       end
 
       test "finds a lot if TAC operations with transaction", %{conn: conn} do
@@ -2718,15 +2669,18 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
           #{for i <- 0..49, do: """
           {
             "operation_id": "#{operation_id}",
+            "type": "TON_TAC_TON",
+            "status": "success",
+            "rollback": false,
+            "timestamp": "2025-05-14T19:16:#{String.pad_leading(Integer.to_string(i), 2, "0")}.000Z",
             "sender": null,
-            "timestamp": "2025-05-14T19:16:#{i}.000Z",
-            "type": "TON_TAC_TON"
+            "error_reason": null
           }#{if i == 49, do: "", else: ","}
         """}
           ],
           "next_page_params": {
             "page_token": "2025-05-14T19:16:49.000Z",
-            "page_size": 50
+            "page_items": 50
           }
         }
         """
@@ -2734,7 +2688,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         Bypass.expect(
           bypass,
           "GET",
-          "/api/v1/tac/operations",
+          @tac_operations_path,
           fn conn ->
             assert conn.params["q"] == operation_id
 
@@ -2759,9 +2713,12 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                 "priority" => 0,
                 "tac_operation" => %{
                   "operation_id" => operation_id,
+                  "type" => "TON_TAC_TON",
+                  "status" => "success",
+                  "rollback" => false,
+                  "timestamp" => "2025-05-14T19:16:#{String.pad_leading(Integer.to_string(i), 2, "0")}.000Z",
                   "sender" => nil,
-                  "timestamp" => "2025-05-14T19:16:#{i}.000Z",
-                  "type" => "TON_TAC_TON"
+                  "error_reason" => nil
                 },
                 "type" => "tac_operation"
               }
