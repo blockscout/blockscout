@@ -912,8 +912,9 @@ defmodule Explorer.EthRPC do
         {:proxy, %{error: %{code: _code, message: _message} = error}} ->
           format_error(error, Map.get(request, "id"))
 
-        {:proxy, {:error, {:bad_response = error, _}}} ->
-          format_error(error, @internal_error_code, Map.get(request, "id"))
+        # the request URL is intentionally dropped from the reason to avoid exposing it
+        {:proxy, {:error, {:bad_response = error, _request_url}}} ->
+          format_error(inspect(error), @internal_error_code, Map.get(request, "id"))
 
         {:proxy, {:error, %Mint.TransportError{reason: reason}}} ->
           format_error(inspect(reason), @internal_error_code, Map.get(request, "id"))

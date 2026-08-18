@@ -108,6 +108,19 @@ defmodule Explorer.EthRPCTest do
     assert response == %{error: %{code: -32_603, message: ":timeout"}, id: 1}
   end
 
+  test "undecodable node response for a proxied request is returned as an internal error without the node URL" do
+    set_extended_proxy_methods_enabled(true)
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: 1, jsonrpc: "2.0", method: "net_version", params: []}], _options ->
+      {:error, {:bad_response, "http://node.example.com:8545"}}
+    end)
+
+    request = %{"id" => 1, "jsonrpc" => "2.0", "method" => "net_version", "params" => []}
+
+    assert [response] = EthRPC.responses([request])
+    assert response == %{error: %{code: -32_603, message: ":bad_response"}, id: 1}
+  end
+
   test "default proxy methods remain available when feature flag is disabled" do
     set_extended_proxy_methods_enabled(false)
 
