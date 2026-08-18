@@ -255,7 +255,12 @@ defmodule Indexer.Transform.Addresses do
       ]
 
   Internal transactions can have their `from_address_hash`, `to_address_hash` and/or `created_contract_address_hash`
-  extracted.
+  extracted.  As all the attributes declared for a single address have to be present, `created_contract_address_hash` is
+  extracted together with `created_contract_code`, which becomes the address's `contract_code`.  The `zksync` chain type
+  is the exception: the code derived from internal transactions isn't correct there, so `created_contract_address_hash` is
+  extracted on its own and the code is fetched from the JSON RPC node instead, by `Indexer.Fetcher.ContractCode` for the
+  contracts created by transactions and by `Indexer.Fetcher.OnDemand.ContractCode` for the addresses that are still
+  missing it (`Explorer.Migrator.RefetchContractCodes` backfilled the ones indexed before that).
 
       iex> Indexer.Transform.Addresses.extract_addresses(
       ...>   %{
@@ -267,11 +272,6 @@ defmodule Indexer.Transform.Addresses do
       ...>       %{
       ...>         block_number: 2,
       ...>         to_address_hash: "0x0000000000000000000000000000000000000002"
-      ...>       },
-      ...>       %{
-      ...>         block_number: 3,
-      ...>         created_contract_address_hash: "0x0000000000000000000000000000000000000003",
-      ...>         created_contract_code: "0x"
       ...>       }
       ...>     ]
       ...>   }
@@ -284,11 +284,6 @@ defmodule Indexer.Transform.Addresses do
         %{
           fetched_coin_balance_block_number: 2,
           hash: "0x0000000000000000000000000000000000000002"
-        },
-        %{
-          contract_code: "0x",
-          fetched_coin_balance_block_number: 3,
-          hash: "0x0000000000000000000000000000000000000003"
         }
       ]
 
@@ -399,16 +394,15 @@ defmodule Indexer.Transform.Addresses do
         }
       ]
 
-  When a contract is created and then used in internal transactions and transaction in the same fetched data, the
-  `created_contract_code` is merged with the greatest `block_number`
+  When a contract's code is fetched and the contract is used in transactions in the same fetched data, the
+  `contract_code` is merged with the greatest `block_number`
 
       iex> Indexer.Transform.Addresses.extract_addresses(
       ...>   %{
-      ...>     internal_transactions: [
+      ...>     codes: [
       ...>       %{
-      ...>         block_number: 1,
-      ...>         created_contract_code: "0x",
-      ...>         created_contract_address_hash: "0x0000000000000000000000000000000000000001"
+      ...>         address: "0x0000000000000000000000000000000000000001",
+      ...>         code: "0x"
       ...>       }
       ...>     ],
       ...>     transactions: [

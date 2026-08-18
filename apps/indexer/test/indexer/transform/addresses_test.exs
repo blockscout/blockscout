@@ -4,6 +4,11 @@ defmodule Indexer.Transform.AddressesTest do
 
   alias Indexer.Transform.Addresses
 
+  # On `zksync` the contract code derived from internal transactions isn't correct, so `created_contract_code` is not
+  # extracted into the address params and the code is fetched from the JSON RPC node instead (see
+  # `Indexer.Fetcher.ContractCode` and `Indexer.Fetcher.OnDemand.ContractCode`).
+  @created_contract_code_extracted? Application.compile_env(:explorer, :chain_type) != :zksync
+
   doctest Addresses
 
   describe "extract_addresses/1" do
@@ -59,28 +64,78 @@ defmodule Indexer.Transform.AddressesTest do
              }) == []
     end
 
-    test "differing contract code is ignored" do
-      assert Addresses.extract_addresses(%{
-               internal_transactions: [
+    if @created_contract_code_extracted? do
+      test "differing contract code is ignored" do
+        assert Addresses.extract_addresses(%{
+                 internal_transactions: [
+                   %{
+                     block_number: 1,
+                     created_contract_code: "0x1",
+                     created_contract_address_hash: "0x0000000000000000000000000000000000000001"
+                   },
+                   %{
+                     block_number: 2,
+                     created_contract_code: "0x2",
+                     created_contract_address_hash: "0x0000000000000000000000000000000000000001"
+                   }
+                 ]
+               }) == [
                  %{
-                   block_number: 1,
-                   created_contract_code: "0x1",
-                   created_contract_address_hash: "0x0000000000000000000000000000000000000001"
-                 },
-                 %{
-                   block_number: 2,
-                   created_contract_code: "0x2",
-                   created_contract_address_hash: "0x0000000000000000000000000000000000000001"
+                   fetched_coin_balance_block_number: 2,
+                   contract_code: "0x1",
+                   hash: "0x0000000000000000000000000000000000000001",
+                   nonce: nil
                  }
                ]
-             }) == [
-               %{
-                 fetched_coin_balance_block_number: 2,
-                 contract_code: "0x1",
-                 hash: "0x0000000000000000000000000000000000000001",
-                 nonce: nil
-               }
-             ]
+      end
+
+      test "internal transactions' `created_contract_code` is merged with the greatest `block_number`" do
+        assert Addresses.extract_addresses(%{
+                 internal_transactions: [
+                   %{
+                     block_number: 1,
+                     created_contract_code: "0x",
+                     created_contract_address_hash: "0x0000000000000000000000000000000000000001"
+                   }
+                 ],
+                 transactions: [
+                   %{
+                     block_number: 2,
+                     from_address_hash: "0x0000000000000000000000000000000000000001",
+                     nonce: 4
+                   },
+                   %{
+                     block_number: 3,
+                     to_address_hash: "0x0000000000000000000000000000000000000001",
+                     nonce: 5
+                   }
+                 ]
+               }) == [
+                 %{
+                   contract_code: "0x",
+                   fetched_coin_balance_block_number: 3,
+                   hash: "0x0000000000000000000000000000000000000001",
+                   nonce: 4
+                 }
+               ]
+      end
+    else
+      test "internal transactions' `created_contract_code` isn't extracted" do
+        assert Addresses.extract_addresses(%{
+                 internal_transactions: [
+                   %{
+                     block_number: 1,
+                     created_contract_code: "0x1",
+                     created_contract_address_hash: "0x0000000000000000000000000000000000000001"
+                   }
+                 ]
+               }) == [
+                 %{
+                   fetched_coin_balance_block_number: 1,
+                   hash: "0x0000000000000000000000000000000000000001"
+                 }
+               ]
+      end
     end
 
     test "extracts address params from code params" do
@@ -154,6 +209,16 @@ defmodule Indexer.Transform.AddressesTest do
         block_reward_contract_beneficiaries: [beneficiary]
       }
 
+      created_contract_address = %{
+        hash: internal_transaction.created_contract_address_hash,
+        fetched_coin_balance_block_number: internal_transaction.block_number
+      }
+
+      created_contract_address =
+        if @created_contract_code_extracted?,
+          do: Map.put(created_contract_address, :contract_code, internal_transaction.created_contract_code),
+          else: created_contract_address
+
       assert Addresses.extract_addresses(blockchain_data) == [
                %{hash: block.miner_hash, fetched_coin_balance_block_number: block.number},
                %{
@@ -164,11 +229,7 @@ defmodule Indexer.Transform.AddressesTest do
                  hash: internal_transaction.to_address_hash,
                  fetched_coin_balance_block_number: internal_transaction.block_number
                },
-               %{
-                 hash: internal_transaction.created_contract_address_hash,
-                 contract_code: internal_transaction.created_contract_code,
-                 fetched_coin_balance_block_number: internal_transaction.block_number
-               },
+               created_contract_address,
                %{
                  hash: transaction.from_address_hash,
                  fetched_coin_balance_block_number: transaction.block_number,
@@ -223,10 +284,14 @@ defmodule Indexer.Transform.AddressesTest do
         ]
       }
 
-      assert Addresses.extract_addresses(blockchain_data) ==
-               [
-                 %{hash: hash, fetched_coin_balance_block_number: 34, contract_code: "code", nonce: 12}
-               ]
+      merged_address = %{hash: hash, fetched_coin_balance_block_number: 34, nonce: 12}
+
+      merged_address =
+        if @created_contract_code_extracted?,
+          do: Map.put(merged_address, :contract_code, "code"),
+          else: merged_address
+
+      assert Addresses.extract_addresses(blockchain_data) == [merged_address]
     end
 
     test "only entities data defined in @entity_to_address_map are collected" do
