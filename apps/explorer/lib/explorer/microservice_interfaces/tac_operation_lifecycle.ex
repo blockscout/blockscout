@@ -27,6 +27,10 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
         {:ok, %{"items" => operations} = response} ->
           {:ok, %{items: operations, next_page_params: Map.get(response, "next_page_params")}}
 
+        {:ok, unexpected} ->
+          log_error({:unexpected_body, unexpected})
+          {:error, @request_error_msg}
+
         error ->
           error
       end

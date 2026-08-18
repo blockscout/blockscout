@@ -1326,6 +1326,50 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                } == json_response(request, 200)
       end
 
+      test "degrades gracefully on an unexpected body from TAC microservice", %{conn: conn} do
+        bypass = Bypass.open()
+        tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
+
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true
+        )
+
+        Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+        on_exit(fn ->
+          Bypass.down(bypass)
+          Application.put_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle, tac_envs)
+          Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+        end)
+
+        operation_id = "0xd06b6d3dbefcd1e4a5bb5806d0fdad87ae963bcc7d48d9a39ed361167958c09b"
+
+        # 200 with a body that has no `items` key, e.g. a mispointed route or an error envelope
+        tac_response = """
+        {
+          "message": "not found"
+        }
+        """
+
+        Bypass.expect(
+          bypass,
+          "GET",
+          @tac_operations_path,
+          fn conn ->
+            assert conn.params["q"] == operation_id
+            Plug.Conn.resp(conn, 200, tac_response)
+          end
+        )
+
+        request = get(conn, "/api/v2/search?q=#{operation_id}")
+
+        assert %{
+                 "items" => [],
+                 "next_page_params" => nil
+               } == json_response(request, 200)
+      end
+
       test "finds a TAC operation with transaction", %{conn: conn} do
         bypass = Bypass.open()
         tac_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle)
