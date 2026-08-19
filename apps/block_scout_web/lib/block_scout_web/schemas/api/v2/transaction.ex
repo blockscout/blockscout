@@ -3,8 +3,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
   @moduledoc false
   alias BlockScoutWeb.API.V2.ZkSyncView
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
-  alias BlockScoutWeb.Schemas.API.V2.Optimism.TransactionWithdrawal
   alias BlockScoutWeb.Schemas.API.V2.Eden.Call, as: EdenCall
+  alias BlockScoutWeb.Schemas.API.V2.Optimism.TransactionWithdrawal
   alias BlockScoutWeb.Schemas.API.V2.Transaction.Fee
   alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
