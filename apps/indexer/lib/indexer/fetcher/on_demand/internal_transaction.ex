@@ -18,6 +18,13 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
 
   @default_paging_options %PagingOptions{page_size: 50}
 
+  # Limits how many trace requests are sent to the node in one JSON-RPC batch.
+  # Without it, all block/transaction trace calls of an on-demand fetch end up
+  # in a single batch (the transport-level ETHEREUM_JSONRPC_HTTP_BATCH_SIZE
+  # default of 500 is tuned for cheap calls, not traces), sharing one timeout
+  # window on the archive node.
+  @default_batch_size 10
+
   @doc """
     Determines whether internal transactions should be fetched on-demand based on DB records and limit.
 
@@ -569,17 +576,19 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
       variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
       if variant in InternalTransactionFetcher.block_traceable_variants() do
-        case EthereumJSONRPC.fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) do
-          {:ok, result} ->
-            result
+        block_numbers
+        |> Enum.chunk_every(batch_size())
+        |> Enum.reduce_while([], fn chunk, acc ->
+          case EthereumJSONRPC.fetch_block_internal_transactions(chunk, json_rpc_named_arguments) do
+            {:ok, result} ->
+              {:cont, acc ++ result}
 
-          error ->
-            Logger.error(
-              "Failed to fetch internal transactions for blocks #{inspect(block_numbers)}: #{inspect(error)}"
-            )
+            error ->
+              Logger.error("Failed to fetch internal transactions for blocks #{inspect(chunk)}: #{inspect(error)}")
 
-            []
-        end
+              {:halt, []}
+          end
+        end)
       else
         Enum.reduce(block_numbers, [], fn block_number, acc_list ->
           block_number
@@ -592,18 +601,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
               transaction_index: &1.index
             }
           )
-          |> case do
-            [] ->
-              {:ok, []}
-
-            transactions ->
-              try do
-                EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
-              catch
-                :exit, error ->
-                  {:error, error, __STACKTRACE__}
-              end
-          end
+          |> fetch_transactions_internal_transactions(json_rpc_named_arguments)
           |> case do
             {:ok, internal_transactions} ->
               internal_transactions ++ acc_list
@@ -618,6 +616,31 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         end)
       end
     end
+  end
+
+  # Chunks per-transaction trace requests so a block with many transactions is
+  # not sent to the node as one huge JSON-RPC batch. Any failed chunk fails the
+  # whole set to keep the block's results atomic.
+  defp fetch_transactions_internal_transactions([], _json_rpc_named_arguments), do: {:ok, []}
+
+  defp fetch_transactions_internal_transactions(transactions, json_rpc_named_arguments) do
+    transactions
+    |> Enum.chunk_every(batch_size())
+    |> Enum.reduce_while({:ok, []}, fn chunk, {:ok, acc} ->
+      try do
+        case EthereumJSONRPC.fetch_internal_transactions(chunk, json_rpc_named_arguments) do
+          {:ok, internal_transactions} -> {:cont, {:ok, acc ++ internal_transactions}}
+          error_or_ignore -> {:halt, error_or_ignore}
+        end
+      catch
+        :exit, error ->
+          {:halt, {:error, error, __STACKTRACE__}}
+      end
+    end)
+  end
+
+  defp batch_size do
+    Application.get_env(:indexer, __MODULE__, [])[:batch_size] || @default_batch_size
   end
 
   defp internal_transactions_fetching_disabled? do
