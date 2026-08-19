@@ -400,8 +400,8 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
     assert result |> Enum.filter(&(&1.block_number == 2)) |> Enum.count() == 1
   end
 
-  test "fetch_by_address/2 chunks block trace requests by batch_size" do
-    Application.put_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction, batch_size: 1)
+  test "fetch_by_address/2 chunks block trace requests by blocks_batch_size" do
+    Application.put_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction, blocks_batch_size: 1)
 
     address = insert(:address)
     address_hash_str = to_string(address.hash)
@@ -457,6 +457,74 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
       tracer: "call_tracer",
       debug_trace_timeout: "5s",
       block_traceable?: true
+    )
+
+    opts = [
+      direction: :to_address_hash,
+      paging_options: %PagingOptions{page_size: 2}
+    ]
+
+    assert [%InternalTransaction{block_number: 2}, %InternalTransaction{block_number: 1}] =
+             InternalTransactionOnDemand.fetch_by_address(address.hash, opts)
+  end
+
+  test "fetch_by_address/2 batches transaction trace requests across blocks" do
+    address = insert(:address)
+    address_hash_str = to_string(address.hash)
+    id_to_hash = insert(:address_id_to_address_hash, address: address)
+
+    transactions =
+      for block_number <- [1, 2] do
+        insert(:deleted_internal_transactions_address_placeholder,
+          address_id: id_to_hash.address_id,
+          block_number: block_number,
+          count_tos: 1,
+          count_froms: 1
+        )
+
+        block = insert(:block, number: block_number)
+        :transaction |> insert() |> with_block(block)
+      end
+
+    transaction_hashes = MapSet.new(transactions, &to_string(&1.hash))
+
+    # transactions of both blocks must arrive in one cross-block batch
+    expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _ ->
+      assert length(requests) == 2
+      assert MapSet.new(requests, fn %{params: [hash, _]} -> hash end) == transaction_hashes
+
+      {:ok,
+       Enum.map(requests, fn %{id: id} ->
+         %{
+           id: id,
+           result: %{
+             "calls" => [
+               %{
+                 "from" => "0x4200000000000000000000000000000000000015",
+                 "gas" => "0xe9a3c",
+                 "gasUsed" => "0x4a28",
+                 "input" => "0x",
+                 "to" => address_hash_str,
+                 "type" => "CALL",
+                 "value" => "0x0"
+               }
+             ],
+             "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
+             "gas" => "0xf4240",
+             "gasUsed" => "0xb6f9",
+             "input" => "0x",
+             "to" => address_hash_str,
+             "type" => "CALL",
+             "value" => "0x0"
+           }
+         }
+       end)}
+    end)
+
+    Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth,
+      tracer: "call_tracer",
+      debug_trace_timeout: "5s",
+      block_traceable?: false
     )
 
     opts = [
