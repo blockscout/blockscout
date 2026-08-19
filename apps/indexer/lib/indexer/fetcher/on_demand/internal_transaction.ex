@@ -23,7 +23,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
   # in a single batch (the transport-level ETHEREUM_JSONRPC_HTTP_BATCH_SIZE
   # default of 500 is tuned for cheap calls, not traces), sharing one timeout
   # window on the archive node. Batches are sent in parallel.
-  @default_blocks_batch_size 10
+  @default_blocks_batch_size 2
   @default_transactions_batch_size 20
 
   @doc """

@@ -1203,7 +1203,7 @@ config :indexer, Indexer.Fetcher.InternalTransaction,
 config :indexer, Indexer.Fetcher.OnDemand.InternalTransaction,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_FETCHER"),
   blocks_batch_size:
-    ConfigHelper.parse_integer_env_var("INDEXER_ON_DEMAND_INTERNAL_TRANSACTIONS_BLOCKS_BATCH_SIZE", 10, min: 1),
+    ConfigHelper.parse_integer_env_var("INDEXER_ON_DEMAND_INTERNAL_TRANSACTIONS_BLOCKS_BATCH_SIZE", 2, min: 1),
   transactions_batch_size:
     ConfigHelper.parse_integer_env_var("INDEXER_ON_DEMAND_INTERNAL_TRANSACTIONS_TRANSACTIONS_BATCH_SIZE", 20, min: 1)
 
