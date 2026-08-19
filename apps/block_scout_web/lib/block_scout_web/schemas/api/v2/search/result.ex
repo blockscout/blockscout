@@ -374,9 +374,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.Search.Result.Blob do
   })
 end
 
-defmodule BlockScoutWeb.Schemas.API.V2.Search.Result.TacOperation do
+defmodule BlockScoutWeb.Schemas.API.V2.Search.Result.TacOperation.Operation do
   @moduledoc """
-  This module defines the schema for a TAC operation in the search results.
+  This module defines the schema for the operation object nested in a TAC operation search
+  result.
 
   The object is returned by the `tac-operation-lifecycle` microservice (Read API v2) and is
   proxied verbatim, so this schema mirrors the microservice contract rather than describing a
@@ -423,7 +424,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Search.Result.TacOperation do
   }
 
   OpenApiSpex.schema(%{
-    title: "SearchResultTacOperation",
+    title: "TacOperation",
     description: "TAC operation as returned by the tac-operation-lifecycle service Read API v2.",
     type: :object,
     properties: %{
@@ -463,6 +464,29 @@ defmodule BlockScoutWeb.Schemas.API.V2.Search.Result.TacOperation do
       }
     },
     required: [:operation_id, :type, :status, :rollback, :timestamp],
+    additionalProperties: false
+  })
+end
+
+defmodule BlockScoutWeb.Schemas.API.V2.Search.Result.TacOperation do
+  @moduledoc """
+  Search result for a TAC operation. `tac_operation` is the operation object
+  returned by the external TAC microservice (Read API v2).
+  """
+  require OpenApiSpex
+
+  alias BlockScoutWeb.Schemas.API.V2.Search.Result
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "SearchResultTacOperation",
+    type: :object,
+    properties: %{
+      type: %Schema{type: :string, enum: ["tac_operation"], nullable: false},
+      tac_operation: Result.TacOperation.Operation,
+      priority: %Schema{type: :integer, nullable: false}
+    },
+    required: [:type, :tac_operation, :priority],
     additionalProperties: false
   })
 end
