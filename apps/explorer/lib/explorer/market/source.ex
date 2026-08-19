@@ -48,6 +48,7 @@ defmodule Explorer.Market.Source do
   }
 
   alias Explorer.Market.Token
+  alias Explorer.Prometheus.Instrumenter
 
   # Native coin processing
   @callback native_coin_fetching_enabled?() :: boolean() | :ignore
@@ -113,10 +114,18 @@ defmodule Explorer.Market.Source do
   handling for NFT-related responses. Error responses are formatted into descriptive
   error messages.
 
+  Every request is counted in the `market_source_requests_count` metric, labeled with
+  the source, the endpoint type and the request outcome.
+
   ## Parameters
   - `source_url`: The URL to send the GET request to
   - `additional_headers`: Extra HTTP headers to be added to the default JSON
     content-type header
+  - `source_module`: The module of the market data source performing the request, used
+    as the `source` label of the metric
+  - `endpoint`: The endpoint type of the request, used as the `endpoint` label of the
+    metric. Requests to the same endpoint with different variable parts (token address
+    hash, coin id, pagination offset, etc.) must share the same endpoint type
 
   ## Returns
   - `{:ok, decoded_data}` if the request succeeds with status 200 and valid JSON
@@ -128,9 +137,18 @@ defmodule Explorer.Market.Source do
     - HTTP client errors: reason will be the underlying error
     - JSON decoding errors: reason will be the raw response body
   """
-  @spec http_request(String.t(), [{atom() | binary(), binary()}]) :: {:ok, any()} | {:error, any()}
-  def http_request(source_url, additional_headers) do
-    case HttpClient.get(source_url, headers() ++ additional_headers) do
+  @spec http_request(String.t(), [{atom() | binary(), binary()}], module(), atom()) ::
+          {:ok, any()} | {:error, any()}
+  def http_request(source_url, additional_headers, source_module, endpoint) do
+    response = HttpClient.get(source_url, headers() ++ additional_headers)
+
+    Instrumenter.market_source_request(source_label(source_module), endpoint, request_status(response))
+
+    handle_http_response(response)
+  end
+
+  defp handle_http_response(response) do
+    case response do
       {:ok, %{body: body, status_code: 200}} ->
         parse_http_success_response(body)
 
@@ -147,6 +165,23 @@ defmodule Explorer.Market.Source do
         {:error, reason}
     end
   end
+
+  # Converts a source module into the `source` label of the
+  # `market_source_requests_count` metric, e.g. `Explorer.Market.Source.CoinGecko`
+  # becomes `"coin_gecko"`.
+  @spec source_label(module()) :: String.t()
+  defp source_label(source_module) do
+    source_module |> Module.split() |> List.last() |> Macro.underscore()
+  end
+
+  # Converts an HTTP response into the `status` label of the
+  # `market_source_requests_count` metric. Error reasons of failed requests are not
+  # used as label values since they are unbounded.
+  @spec request_status({:ok, map()} | {:error, any()}) :: String.t()
+  defp request_status({:ok, %{status_code: 200}}), do: "ok"
+  defp request_status({:ok, %{status_code: status_code}}) when status_code in 300..526, do: to_string(status_code)
+  defp request_status({:ok, %{status_code: _status_code}}), do: "unexpected_status"
+  defp request_status({:error, _reason}), do: "transport_error"
 
   defp parse_http_success_response(body) do
     case Helper.decode_json(body, true) do
