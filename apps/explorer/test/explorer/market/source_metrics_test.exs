@@ -11,10 +11,15 @@ defmodule Explorer.Market.SourceMetricsTest do
   setup do
     bypass = Bypass.open()
 
+    initial_tesla_adapter = Application.fetch_env(:tesla, :adapter)
+
     Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
     on_exit(fn ->
-      Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      case initial_tesla_adapter do
+        {:ok, adapter} -> Application.put_env(:tesla, :adapter, adapter)
+        :error -> Application.delete_env(:tesla, :adapter)
+      end
     end)
 
     {:ok, bypass: bypass}
