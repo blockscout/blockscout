@@ -140,6 +140,7 @@ defmodule Explorer.Chain do
   @type ip :: {:ip, String.t()}
   @type show_scam_tokens? :: {:show_scam_tokens?, true | false}
   @type timeout_option :: {:timeout, timeout() | nil}
+  @type address_preloads_option :: {:address_preloads, Keyword.t()}
 
   def wrapped_union_subquery(query) do
     from(
@@ -196,11 +197,11 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
-  @spec address_to_logs(Hash.Address.t(), [paging_options | necessity_by_association_option | api? | timeout_option]) ::
+  @spec address_to_logs(Hash.Address.t(), [paging_options | api? | timeout_option | address_preloads_option]) ::
           [Log.t()]
   def address_to_logs(address_hash, csv_export?, options \\ []) when is_list(options) do
     paging_options = Keyword.get(options, :paging_options) || %PagingOptions{page_size: 50}
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
+    transaction_preloads_from_options = Keyword.get(options, :transaction_preloads, [])
     timeout = Keyword.get(options, :timeout)
 
     case paging_options do
@@ -211,48 +212,64 @@ defmodule Explorer.Chain do
         from_block = from_block(options)
         to_block = to_block(options)
 
-        base =
-          from(log in Log,
-            order_by: [desc: log.block_number, desc: log.index],
-            where: log.address_hash == ^address_hash,
-            limit: ^paging_options.page_size,
-            select: log,
-            inner_join: block in Block,
-            on: block.hash == log.block_hash,
-            where: block.consensus == true
+        query =
+          Log.address_match_union_query(
+            address_hash,
+            fn address_match_dynamic ->
+              Log
+              |> where(^address_match_dynamic)
+              |> join(:inner, [log], block in Block, on: block.number == log.block_number)
+              |> where([_l, block], block.consensus == true)
+              |> page_logs(paging_options)
+              |> filter_topic(Keyword.get(options, :topic))
+              |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+            end,
+            fn query ->
+              query
+              |> order_by([log], desc: log.block_number, desc: log.index)
+              |> limit(^paging_options.page_size)
+            end
           )
 
-        preloaded_query =
+        transaction_preloads =
           if csv_export? do
-            base
+            transaction_preloads_from_options
           else
-            base
-            |> preload(
-              transaction: [
-                from_address: ^Implementation.proxy_implementations_association(),
-                to_address: ^Implementation.proxy_implementations_association()
-              ]
+            Keyword.merge(
+              [
+                from_address: Implementation.proxy_implementations_association(),
+                to_address: Implementation.proxy_implementations_association()
+              ],
+              transaction_preloads_from_options
             )
           end
 
-        preloaded_query
-        |> page_logs(paging_options)
-        |> filter_topic(Keyword.get(options, :topic))
-        |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
-        |> join_associations(necessity_by_association)
+        query
         |> select_repo(options).all(ExplorerHelper.maybe_timeout(timeout))
         |> Enum.take(paging_options.page_size)
+        |> Log.preload_block(select_repo(options))
+        |> Log.preload_transaction(transaction_preloads, select_repo(options))
+        |> Log.preload_address(options, select_repo(options))
+        |> Log.prepare_data()
+        |> Log.prepare_first_topic()
     end
   end
 
   defp filter_topic(base_query, null) when null in [nil, "", "null"], do: base_query
 
   defp filter_topic(base_query, topic) do
-    from(log in base_query,
-      where:
-        log.first_topic == ^topic or log.second_topic == ^topic or log.third_topic == ^topic or
-          log.fourth_topic == ^topic
-    )
+    dynamic =
+      dynamic(
+        [log],
+        ^Log.filter_by_topic_dynamic([:first_topic, :second_topic, :third_topic, :fourth_topic], [
+          [topic],
+          [topic],
+          [topic],
+          [topic]
+        ])
+      )
+
+    from(log in base_query, where: ^dynamic)
   end
 
   @doc """
@@ -880,7 +897,13 @@ defmodule Explorer.Chain do
     query
     |> join_associations(necessity_by_association)
     |> select_repo(options).one()
-    |> Address.maybe_preload_contract_creation_internal_transaction(select_repo(options))
+    |> then(fn address ->
+      if Keyword.get(options, :preload_contract_creation_internal_transaction, false) do
+        Address.maybe_preload_contract_creation_internal_transaction(address, select_repo(options))
+      else
+        address
+      end
+    end)
     |> SmartContract.compose_address_for_unverified_smart_contract(hash, options)
     |> case do
       nil -> {:error, :not_found}
@@ -1140,6 +1163,68 @@ defmodule Explorer.Chain do
   end
 
   def get_token_transfers_per_transaction_preview_count, do: @token_transfers_per_transaction_preview
+
+  @doc """
+  Loads address-info associations for every address participating in the
+  transaction — `from`/`to`/`created_contract` plus each preloaded token
+  transfer's `from`/`to` — in a single query pass, deduplicating addresses
+  shared between the transaction and its token transfers.
+
+  All participants share `address_necessity_by_association` (typically with the
+  ABI-less smart-contract preload, see
+  `Explorer.Chain.SmartContract.association_without_abi/0`). The `to_address`
+  additionally gets the full `:smart_contract` association when it is a
+  contract, since transaction input and revert-reason decoding need its `abi`.
+  """
+  @spec preload_transaction_participants(Transaction.t(), %{any() => :optional | :required}, [api?]) ::
+          Transaction.t()
+  def preload_transaction_participants(%Transaction{} = transaction, address_necessity_by_association, options) do
+    token_transfers = if is_list(transaction.token_transfers), do: transaction.token_transfers, else: []
+
+    participant_hashes =
+      [
+        transaction.from_address_hash,
+        transaction.to_address_hash,
+        transaction.created_contract_address_hash
+        | Enum.flat_map(token_transfers, &[&1.from_address_hash, &1.to_address_hash])
+      ]
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    addresses =
+      Address
+      |> where([address], address.hash in ^participant_hashes)
+      |> join_associations(address_necessity_by_association)
+      |> select_repo(options).all()
+      |> Map.new(&{&1.hash, &1})
+
+    to_address =
+      addresses
+      |> Map.get(transaction.to_address_hash)
+      |> preload_full_smart_contract(options)
+
+    %Transaction{
+      transaction
+      | from_address: Map.get(addresses, transaction.from_address_hash),
+        to_address: to_address,
+        created_contract_address: Map.get(addresses, transaction.created_contract_address_hash),
+        token_transfers:
+          Enum.map(token_transfers, fn %TokenTransfer{} = token_transfer ->
+            %TokenTransfer{
+              token_transfer
+              | from_address: Map.get(addresses, token_transfer.from_address_hash),
+                to_address: Map.get(addresses, token_transfer.to_address_hash)
+            }
+          end)
+    }
+  end
+
+  defp preload_full_smart_contract(%Address{contract_code: contract_code} = address, options)
+       when not is_nil(contract_code) do
+    select_repo(options).preload(address, :smart_contract, force: true)
+  end
+
+  defp preload_full_smart_contract(address, _options), do: address
 
   @doc """
   Converts list of `t:Explorer.Chain.Transaction.t/0` `hashes` to the list of `t:Explorer.Chain.Transaction.t/0`s for
@@ -1821,24 +1906,6 @@ defmodule Explorer.Chain do
   def string_to_full_hash(_), do: :error
 
   @doc """
-  Constructs the base query `Ecto.Query.t()/0` to create requests to the transaction logs
-
-  ## Returns
-
-    * The query to the Log table with the joined associated transactions.
-
-  """
-  @spec log_with_transactions_query() :: Ecto.Query.t()
-  def log_with_transactions_query do
-    from(log in Log,
-      inner_join: transaction in Transaction,
-      on:
-        transaction.block_hash == log.block_hash and transaction.block_number == log.block_number and
-          transaction.hash == log.transaction_hash
-    )
-  end
-
-  @doc """
   Finds all `t:Explorer.Chain.Log.t/0`s for `t:Explorer.Chain.Transaction.t/0`.
 
   ## Options
@@ -1851,18 +1918,22 @@ defmodule Explorer.Chain do
       the `index` that are passed.
 
   """
-  @spec transaction_to_logs(Hash.Full.t(), [paging_options | necessity_by_association_option | api?]) :: [Log.t()]
+  @spec transaction_to_logs(Hash.Full.t(), [paging_options | api? | address_preloads_option]) :: [Log.t()]
   def transaction_to_logs(transaction_hash, options \\ []) when is_list(options) do
-    necessity_by_association = Keyword.get(options, :necessity_by_association, %{})
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
+    transaction_preloads = Keyword.get(options, :transaction_preloads, [])
 
-    log_with_transactions_query()
+    Log.join_transaction_query()
     |> where([_, transaction], transaction.hash == ^transaction_hash)
     |> page_transaction_logs(paging_options)
     |> limit(^paging_options.page_size)
     |> order_by([log], asc: log.index)
-    |> join_associations(necessity_by_association)
     |> select_repo(options).all()
+    |> Log.preload_block(select_repo(options))
+    |> Log.preload_transaction(transaction_preloads, select_repo(options))
+    |> Log.preload_address(options, select_repo(options))
+    |> Log.prepare_data()
+    |> Log.prepare_first_topic()
   end
 
   @doc """
@@ -2445,10 +2516,11 @@ defmodule Explorer.Chain do
     Repo.exists?(query)
   end
 
-  @spec fetch_last_token_balances_include_unfetched([Hash.Address.t()], [api?]) :: []
-  def fetch_last_token_balances_include_unfetched(address_hashes, options \\ []) when is_list(address_hashes) do
+  @spec fetch_last_token_balances_include_unfetched([Hash.Address.t()], Block.block_number(), [api?]) :: []
+  def fetch_last_token_balances_include_unfetched(address_hashes, stale_balance_window, options \\ [])
+      when is_list(address_hashes) do
     address_hashes
-    |> CurrentTokenBalance.last_token_balances_include_unfetched()
+    |> CurrentTokenBalance.last_token_balances_include_unfetched(stale_balance_window)
     |> select_repo(options).all()
   end
 

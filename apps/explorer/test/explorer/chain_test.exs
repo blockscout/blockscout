@@ -40,7 +40,7 @@ defmodule Explorer.ChainTest do
 
   alias Explorer.TestHelper
 
-  alias Explorer.Utility.AddressIdToAddressHash
+  alias Explorer.Utility.{AddressIdToAddressHash, LogFirstTopic}
 
   @first_topic_hex_string "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
   @second_topic_hex_string "0x000000000000000000000000e8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
@@ -106,6 +106,104 @@ defmodule Explorer.ChainTest do
       assert Enum.count(Chain.address_to_logs(address_hash, false)) == 2
     end
 
+    test "fetches logs matched by `address_id` and by the legacy `address_hash` while the optimized fields migration is in progress" do
+      set_fill_logs_optimized_fields_migration_started()
+
+      %Address{hash: address_hash} = address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      # already migrated log, matched by `address_id`
+      insert(:log,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        transaction: transaction,
+        index: 1,
+        address: address,
+        address_hash: nil
+      )
+
+      # not yet migrated log, matched by the legacy `address_hash`
+      insert(:log,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        transaction: transaction,
+        index: 2,
+        address: address,
+        address_mapping: nil
+      )
+
+      # log re-imported before it is migrated: the upsert fills `address_id` while
+      # `address_hash` is kept, so both fields match the address and the log has to
+      # be returned once
+      insert(:log,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        transaction: transaction,
+        index: 3,
+        address: address
+      )
+
+      insert(:log,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        transaction: transaction,
+        index: 4,
+        address: insert(:address),
+        address_mapping: nil
+      )
+
+      assert [3, 2, 1] == address_hash |> Chain.address_to_logs(false) |> Enum.map(& &1.index)
+
+      paging_options = %PagingOptions{page_size: 1}
+
+      assert [3] == address_hash |> Chain.address_to_logs(false, paging_options: paging_options) |> Enum.map(& &1.index)
+
+      paging_options = %PagingOptions{page_size: 50, key: {transaction.block_number, 2}}
+
+      assert [1] == address_hash |> Chain.address_to_logs(false, paging_options: paging_options) |> Enum.map(& &1.index)
+    end
+
+    test "filters logs by topic while the optimized fields migration is in progress" do
+      set_fill_logs_optimized_fields_migration_started()
+
+      %Address{hash: address_hash} = address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(to_address: address)
+        |> with_block()
+
+      {:ok, first_topic} = Hash.Full.cast(@first_topic_hex_string)
+
+      insert(:log,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        transaction: transaction,
+        index: 1,
+        address: address,
+        address_hash: nil
+      )
+
+      insert(:log,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        transaction: transaction,
+        index: 2,
+        address: address,
+        address_mapping: nil,
+        first_topic: first_topic
+      )
+
+      assert [2] ==
+               address_hash
+               |> Chain.address_to_logs(false, topic: @first_topic_hex_string)
+               |> Enum.map(& &1.index)
+    end
+
     test "paginates logs" do
       %Address{hash: address_hash} = address = insert(:address)
 
@@ -161,6 +259,7 @@ defmodule Explorer.ChainTest do
       insert(:log,
         block: transaction2.block,
         transaction: transaction2,
+        transaction_index: transaction2.index,
         index: 2,
         address: address,
         first_topic: first_topic,
@@ -187,6 +286,7 @@ defmodule Explorer.ChainTest do
         block: transaction1.block,
         block_number: transaction1.block_number,
         transaction: transaction1,
+        transaction_index: transaction1.index,
         index: 1,
         address: address,
         fourth_topic: fourth_topic
@@ -201,6 +301,7 @@ defmodule Explorer.ChainTest do
         block: transaction2.block,
         block_number: transaction2.block.number,
         transaction: transaction2,
+        transaction_index: transaction2.index,
         index: 2,
         address: address
       )
@@ -1100,6 +1201,7 @@ defmodule Explorer.ChainTest do
         params: [
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            block_number: 37,
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
             first_topic: first_topic,
@@ -1107,7 +1209,8 @@ defmodule Explorer.ChainTest do
             third_topic: third_topic,
             fourth_topic: nil,
             index: 0,
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            transaction_index: 1
           }
         ]
       },
@@ -1171,7 +1274,6 @@ defmodule Explorer.ChainTest do
     }
 
     test "with valid data", %{json_rpc_named_arguments: _json_rpc_named_arguments} do
-      {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
       {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
       {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
       difficulty = Decimal.new(340_282_366_920_938_463_463_374_607_431_768_211_454)
@@ -1187,6 +1289,8 @@ defmodule Explorer.ChainTest do
         AddressIdToAddressHash.find_or_create("0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca")
 
       %{address_id: to_address_id} = AddressIdToAddressHash.find_or_create("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
+
+      %{id: first_topic_id} = LogFirstTopic.find_or_create(@first_topic_hex_string)
 
       assert {:ok,
               %{
@@ -1295,19 +1399,14 @@ defmodule Explorer.ChainTest do
                 ],
                 logs: [
                   %Log{
-                    address_hash: %Hash{
-                      byte_count: 20,
-                      bytes:
-                        <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65,
-                          91>>
-                    },
-                    data: %Data{
+                    address_id: ^to_address_id,
+                    compressed_data: %Data{
                       bytes:
                         <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 224, 182, 179,
                           167, 100, 0, 0>>
                     },
                     index: 0,
-                    first_topic: ^first_topic,
+                    first_topic_id: ^first_topic_id,
                     second_topic: ^second_topic,
                     third_topic: ^third_topic,
                     fourth_topic: nil,
@@ -1317,6 +1416,7 @@ defmodule Explorer.ChainTest do
                         <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
                           101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
                     },
+                    transaction_index: 1,
                     inserted_at: %{},
                     updated_at: %{}
                   }
@@ -1721,31 +1821,6 @@ defmodule Explorer.ChainTest do
                transaction.hash
                |> Chain.transaction_to_logs(paging_options: %PagingOptions{key: {log.index}, page_size: 50})
                |> Enum.map(& &1.index)
-    end
-
-    test "with logs necessity_by_association loads associations" do
-      transaction =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      insert(:log, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
-
-      assert [%Log{address: %Address{}, transaction: %Transaction{}}] =
-               Chain.transaction_to_logs(
-                 transaction.hash,
-                 necessity_by_association: %{
-                   address: :optional,
-                   transaction: :optional
-                 }
-               )
-
-      assert [
-               %Log{
-                 address: %Ecto.Association.NotLoaded{},
-                 transaction: %Ecto.Association.NotLoaded{}
-               }
-             ] = Chain.transaction_to_logs(transaction.hash)
     end
   end
 

@@ -97,7 +97,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
            {:genesis_block_l2_invalid, is_nil(genesis_block_l2) or genesis_block_l2 < 0},
          _ <- RollupL1ReorgMonitor.wait_for_start(__MODULE__),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
-         json_rpc_named_arguments = Helper.json_rpc_named_arguments(optimism_l1_rpc),
+         json_rpc_named_arguments = Helper.l1_json_rpc_named_arguments(optimism_l1_rpc),
          {:system_config_read, {start_block_l1, batch_inbox, batch_submitter}} <-
            {:system_config_read, read_system_config(system_config, json_rpc_named_arguments)},
          {:batch_inbox_valid, true} <- {:batch_inbox_valid, Helper.address_correct?(batch_inbox)},
@@ -1568,6 +1568,11 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   # If SystemConfig has obsolete implementation, the values are fallen back from the corresponding
   # SuperchainConfig-backed values.
   #
+  # Moreover, if INDEXER_OPTIMISM_L1_BATCH_INBOX and/or INDEXER_OPTIMISM_L1_BATCH_SUBMITTER are explicitly set,
+  # they take precedence over the corresponding values read from the SystemConfig contract. This is needed when
+  # the on-chain SystemConfig `batchInbox` (or `batcherHash`) diverges from the address the batcher actually uses,
+  # e.g. during an inbox migration where the SystemConfig value is updated ahead of the batcher.
+  #
   # ## Parameters
   # - `contract_address`: An address of SystemConfig contract.
   # - `json_rpc_named_arguments`: Configuration parameters for the JSON RPC connection.
@@ -1577,6 +1582,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   # - `nil` in case of error.
   @spec read_system_config(String.t(), EthereumJSONRPC.json_rpc_named_arguments()) ::
           {non_neg_integer(), String.t(), String.t()} | nil
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp read_system_config(contract_address, json_rpc_named_arguments) do
     requests = [
       # startBlock() public getter
@@ -1632,6 +1638,13 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         _ ->
           {fallback_start_block, fallback_inbox, fallback_submitter}
       end
+
+    env = Application.get_all_env(:indexer)[__MODULE__]
+    # An explicitly configured inbox/submitter overrides the value read from the SystemConfig contract.
+    # Only kicks in when the corresponding env variable holds a correct address, so the on-chain value
+    # is still used by default.
+    batch_inbox = if Helper.address_correct?(env[:inbox]), do: env[:inbox], else: batch_inbox
+    batch_submitter = if Helper.address_correct?(env[:submitter]), do: env[:submitter], else: batch_submitter
 
     if !is_nil(start_block) and Helper.address_correct?(batch_inbox) and Helper.address_correct?(batch_submitter) do
       {start_block, String.downcase(batch_inbox), String.downcase(batch_submitter)}

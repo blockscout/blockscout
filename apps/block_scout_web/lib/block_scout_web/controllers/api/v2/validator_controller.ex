@@ -279,7 +279,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       %OpenApiSpex.Parameter{
         name: :bls_public_key,
         in: :path,
-        schema: Schemas.General.HexString,
+        schema: Schemas.General.HexData,
         required: true
       }
       | base_params()

@@ -282,8 +282,10 @@ defmodule BlockScoutWeb.PagingHelper do
       :sort,
       :order,
       :state_filter,
+      :key,
       "apikey",
       "items_count",
+      "key",
       "block_hash_or_number",
       "block_hash_or_number_param",
       "token_id_param",
@@ -417,21 +419,6 @@ defmodule BlockScoutWeb.PagingHelper do
   defp do_validators_stability_sorting("blocks_validated", "desc"), do: [desc_nulls_last: :blocks_validated]
 
   defp do_validators_stability_sorting(_, _), do: []
-
-  @spec mud_records_sorting(map()) :: [{:sorting, SortingHelper.sorting_params()}]
-  def mud_records_sorting(%{sort: sort_field, order: order}) do
-    [sorting: do_mud_records_sorting(sort_field, order)]
-  end
-
-  def mud_records_sorting(_), do: []
-
-  defp do_mud_records_sorting("key_bytes", "asc"), do: [asc_nulls_first: :key_bytes]
-  defp do_mud_records_sorting("key_bytes", "desc"), do: [desc_nulls_last: :key_bytes]
-  defp do_mud_records_sorting("key0", "asc"), do: [asc_nulls_first: :key0]
-  defp do_mud_records_sorting("key0", "desc"), do: [desc_nulls_last: :key0]
-  defp do_mud_records_sorting("key1", "asc"), do: [asc_nulls_first: :key1]
-  defp do_mud_records_sorting("key1", "desc"), do: [desc_nulls_last: :key1]
-  defp do_mud_records_sorting(_, _), do: []
 
   @spec validators_blackfort_sorting(%{required(String.t()) => String.t()}) :: [
           {:sorting, SortingHelper.sorting_params()}

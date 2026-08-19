@@ -4,7 +4,7 @@ defmodule Explorer.Chain.Import do
   Bulk importing of data into `Explorer.Repo`
   """
 
-  alias Ecto.Changeset
+  alias Ecto.{Changeset, Multi}
   alias Explorer.Account.Notify
   alias Explorer.Chain.{Block, Import}
   alias Explorer.Chain.Events.Publisher
@@ -37,6 +37,13 @@ defmodule Explorer.Chain.Import do
   @all_runners Enum.flat_map(@stages, fn stage_batch ->
                  Enum.flat_map(stage_batch, fn stage -> stage.all_runners() end)
                end)
+
+  # Current and historical token balances are broadcasted by `Indexer.Fetcher.TokenBalance.Current`
+  # and `Indexer.Fetcher.TokenBalance.Historical` once they are fetched from the node.
+  # The ones the runner returns are the
+  # placeholders inserted by the block fetcher, they carry no value yet and have
+  # no consumer, so they are not worth a notification.
+  @not_broadcasted_runners ~w(address_current_token_balances address_token_balances)a
 
   quoted_runner_option_value =
     quote do
@@ -148,7 +155,7 @@ defmodule Explorer.Chain.Import do
          {:ok, runner_to_changes_list} <- runner_to_changes_list(valid_runner_option_pairs),
          {:ok, data} <- insert_runner_to_changes_list(runner_to_changes_list, options) do
       Notify.async(data[:transactions])
-      Publisher.broadcast(data, Map.get(options, :broadcast, false))
+      Publisher.broadcast(Map.drop(data, @not_broadcasted_runners), Map.get(options, :broadcast, false))
       {:ok, data}
     end
   end
@@ -436,15 +443,31 @@ defmodule Explorer.Chain.Import do
   end
 
   defp import_transaction(multi, options) when is_map(options) do
-    Repo.logged_transaction(multi, timeout: Map.get(options, :timeout, @transaction_timeout))
+    timeout = Map.get(options, :timeout, @transaction_timeout)
+
+    multi
+    |> add_statement_timeout(timeout)
+    |> Repo.logged_transaction(timeout: timeout)
   rescue
     exception -> {:exception, exception, __STACKTRACE__}
   end
 
+  defp add_statement_timeout(multi, timeout) when is_integer(timeout) do
+    prefix_multi =
+      Multi.run(Multi.new(), :set_statement_timeout, fn repo, _ ->
+        repo.query!("SET LOCAL statement_timeout = #{timeout}")
+        {:ok, :done}
+      end)
+
+    Multi.prepend(multi, prefix_multi)
+  end
+
+  defp add_statement_timeout(multi, _timeout), do: multi
+
   defp handle_task_results(task_results, acc_changes) do
     Enum.reduce_while(task_results, {:ok, acc_changes}, fn task_result, {:ok, acc_changes_inner} ->
       case task_result do
-        {:ok, {:ok, changes}} -> {:cont, {:ok, Map.merge(acc_changes_inner, changes)}}
+        {:ok, {:ok, changes}} -> {:cont, {:ok, merge_task_result(acc_changes_inner, changes)}}
         {:ok, {:exception, exception, stacktrace}} -> reraise exception, stacktrace
         {:ok, error} -> {:halt, error}
         {:exit, reason} -> {:halt, reason}
@@ -453,12 +476,27 @@ defmodule Explorer.Chain.Import do
     end)
   end
 
-  defp handle_partially_imported_blocks(%{blocks: %{params: blocks_params}}) do
+  defp merge_task_result(changes_acc, changes) do
+    Map.merge(changes_acc, changes, fn
+      _k, v1, v2 when is_list(v1) and is_list(v2) -> v1 ++ v2
+      _k, _v1, v2 -> v2
+    end)
+  end
+
+  defp handle_partially_imported_blocks(%{blocks: %{params: blocks_params}} = options) do
     block_numbers = blocks_params |> Enum.map(& &1.number) |> Enum.uniq()
     Block.set_refetch_needed(block_numbers)
     Import.Runner.Blocks.process_blocks_consensus(blocks_params)
 
     Logger.warning("Set refetch_needed for partially imported block because of error: #{inspect(block_numbers)}")
+  rescue
+    exception ->
+      Logger.warning(
+        "Unable to set refetch_needed for partially imported block because of error: #{inspect(exception)}"
+      )
+
+      Process.sleep(Application.get_env(:indexer, :handle_partially_imported_block_interval) || 1000)
+      handle_partially_imported_blocks(options)
   end
 
   defp handle_partially_imported_blocks(_options), do: :ok

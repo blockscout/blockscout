@@ -90,7 +90,7 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.AddressTest do
                      "compiler_version" => smart_contract.compiler_version,
                      "optimization" => smart_contract.optimization,
                      "contract_source_code" => smart_contract.contract_source_code,
-                     "abi" => Jason.encode!(smart_contract.abi),
+                     "abi" => Utils.JSON.encode!(smart_contract.abi),
                      "address_hash" => to_string(address.hash)
                    }
                  }

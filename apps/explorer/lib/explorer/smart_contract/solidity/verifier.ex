@@ -45,6 +45,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
             Exception.format(:error, exception, __STACKTRACE__)
           ]
         end)
+
+        {:error, Exception.message(exception)}
     end
   end
 
@@ -187,7 +189,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
 
     case solc_output do
       {:ok, candidates} ->
-        case Jason.decode(json_input) do
+        case Utils.JSON.decode(json_input) do
           {:ok, map_json_input} ->
             Enum.reduce_while(candidates, %{}, fn candidate, _acc ->
               file_path = candidate["file_path"]
@@ -311,23 +313,26 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   defp is_compiler_version_at_least_0_6_0?("latest"), do: true
 
   defp is_compiler_version_at_least_0_6_0?(compiler_version) do
-    case compiler_version |> String.split("+", parts: 2) do
-      [version, _] ->
-        digits =
-          version
-          |> String.replace("v", "")
-          |> String.split(".")
-          |> Enum.map(fn str ->
-            {num, _} = Integer.parse(str)
-            num
-          end)
+    parts =
+      compiler_version
+      |> String.split("+", parts: 2)
+      |> hd()
+      |> String.replace("v", "")
+      |> String.split(".")
 
-        Enum.fetch!(digits, 0) > 0 || Enum.fetch!(digits, 1) >= 6
-
-      _ ->
-        false
+    with [major_str, minor_str | _] <- parts,
+         {major, ""} <- Integer.parse(major_str),
+         {minor, ""} <- Integer.parse(minor_str) do
+      major > 0 || minor >= 6
+    else
+      _ -> false
     end
   end
+
+  # Exposed for testing of the version-parsing edge cases; see verifier_test.exs.
+  @doc false
+  def compiler_version_at_least_0_6_0?(compiler_version),
+    do: is_compiler_version_at_least_0_6_0?(compiler_version)
 
   defp compare_bytecodes({:error, :name}, _, _, _), do: {:error, :name}
   defp compare_bytecodes({:error, _}, _, _, _), do: {:error, :compilation}
@@ -381,7 +386,10 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     } = extract_bytecode_and_metadata_hash(bc_creation_transaction_input, bc_deployed_bytecode)
 
     bc_replaced_local =
-      String.replace(bc_creation_transaction_input_without_meta, local_bytecode_without_meta, "", global: false)
+      case bc_creation_transaction_input_without_meta do
+        <<^local_bytecode_without_meta::binary, rest::binary>> -> rest
+        _ -> nil
+      end
 
     has_constructor_with_params? = has_constructor_with_params?(abi)
 
@@ -397,7 +405,11 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       !String.contains?(bc_creation_transaction_input, bc_meta) || bc_deployed_bytecode in ["", "0x"] ->
         {:error, :deployed_bytecode}
 
-      solc_local != solc_bc ->
+      # Reject a genuine mismatch: exactly one side embeds a compiler version, or both
+      # embed versions that differ. When neither bytecode embeds a version (e.g. pre-0.5.9
+      # contracts whose CBOR metadata carries only a bzzr0/ipfs hash and no `solc` field),
+      # there is nothing to compare, so fall through instead of failing verification.
+      is_nil(solc_local) != is_nil(solc_bc) or (not is_nil(solc_local) and solc_local != solc_bc) ->
         {:error, :compiler_version}
 
       !String.contains?(bc_creation_transaction_input_without_meta, local_bytecode_without_meta) ->
@@ -450,7 +462,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
     |> String.reverse()
   end
 
-  defp replace_last_occurrence(_, _), do: nil
+  defp replace_last_occurrence(where, _), do: where
 
   defp parse_constructor_and_return_check_function(abi) do
     constructor_abi = Enum.find(abi, fn el -> el["type"] == "constructor" && el["inputs"] != [] end)
@@ -481,6 +493,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       {meta, last_2_bytes}
     else
       _ ->
+        Logger.warning("Could not extract CBOR metadata from deployed bytecode")
         {"", ""}
     end
   end
@@ -491,7 +504,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
       decoded_meta
     else
       _ ->
-        %{}
+        Logger.warning("Failed to decode CBOR metadata from bytecode, falling back to empty metadata")
+        nil
     end
   end
 

@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchByCelestia do
   OpenApiSpex.schema(
     Batch.schema()
     |> Helper.extend_schema(
-      title: "Arbitrum.BatchByCelestia",
+      title: "ArbitrumBatchByCelestia",
       description: "Arbitrum batch with Celestia data availability.",
       properties: %{
         data_availability: DataAvailability.Celestia

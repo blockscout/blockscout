@@ -26,6 +26,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Data, SmartContract}
   alias Explorer.Chain.Events.Publisher
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.SmartContract.EthBytecodeDBInterface
   alias Explorer.SmartContract.Geas.Publisher, as: GeasPublisher
   alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
@@ -37,6 +38,8 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
   @cache_name :smart_contracts_sources_fetching
 
   @cooldown_timeout 500
+
+  @bytecode_proxy_types [:eip1167, :eip7702, :minimal_proxy, :clone_with_immutable_arguments, :erc7760]
 
   @doc """
     Triggers the fetch of smart contract sources.
@@ -266,6 +269,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
     with true <- fetch_cooldown_elapsed?(address_or_address_hash_string),
          {:ok, address} <- maybe_fetch_address(address_or_address_hash_string),
          true <- Address.smart_contract_with_nonempty_code?(address),
+         false <- bytecode_proxy?(address),
          partially_verified? = address.smart_contract && address.smart_contract.partially_verified,
          true <- is_nil(partially_verified?) or partially_verified? do
       GenServer.cast(
@@ -281,6 +285,13 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemand do
       {:noreply, state}
     else
       _ -> {:noreply, state}
+    end
+  end
+
+  defp bytecode_proxy?(%Address{hash: hash}) do
+    case Implementation.get_proxy_implementations(hash) do
+      %Implementation{proxy_type: proxy_type} when proxy_type in @bytecode_proxy_types -> true
+      _ -> false
     end
   end
 end

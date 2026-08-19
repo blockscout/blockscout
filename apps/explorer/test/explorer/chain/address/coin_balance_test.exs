@@ -25,6 +25,27 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
     end
   end
 
+  describe "get_coin_balance/3" do
+    test "loads the transaction hash for the matching balance" do
+      address = insert(:address)
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address, to_address: insert(:address), value: 1)
+        |> with_block(block)
+
+      insert(:fetched_balance,
+        address_hash: address.hash,
+        block_number: block.number,
+        value: 1_000
+      )
+
+      assert %{transaction_hash: transaction_hash} = CoinBalance.get_coin_balance(address.hash, block.number)
+      assert transaction_hash == transaction.hash
+    end
+  end
+
   describe "fetch_coin_balances/2" do
     test "returns the coin balances for the given address" do
       address_a = insert(:address)

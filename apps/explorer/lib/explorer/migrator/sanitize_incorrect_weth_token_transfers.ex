@@ -18,6 +18,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
 
   @migration_name "sanitize_incorrect_weth_transfers"
 
+  def migration_name, do: @migration_name
+
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
@@ -116,7 +118,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
   defp unprocessed_identifiers("delete_duplicates") do
     weth_transfers =
       token_transfers_with_logs_query()
-      |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
+      |> where(^Log.first_topic_is_deposit_or_withdrawal_signature(:log))
 
     not_weth_transfers =
       token_transfers_with_logs_query()
@@ -136,18 +138,13 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers do
 
   defp unprocessed_identifiers("delete_not_whitelisted_weth_transfers") do
     token_transfers_with_logs_query()
-    |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
+    |> where(^Log.first_topic_is_deposit_or_withdrawal_signature(:log))
     |> where([tt], tt.token_contract_address_hash not in ^whitelisted_weth_contracts())
     |> select([tt], {tt.transaction_hash, tt.block_hash, tt.log_index})
   end
 
   defp token_transfers_with_logs_query do
-    from(
-      tt in TokenTransfer,
-      left_join: l in Log,
-      as: :log,
-      on: tt.block_hash == l.block_hash and tt.transaction_hash == l.transaction_hash and tt.log_index == l.index
-    )
+    Log.join_to_token_transfer_query(TokenTransfer)
   end
 
   defp run_task(batch), do: Task.async(fn -> handle_batch(batch) end)

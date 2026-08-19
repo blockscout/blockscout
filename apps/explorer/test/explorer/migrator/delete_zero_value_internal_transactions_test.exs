@@ -28,7 +28,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
 
     block = insert(:block, timestamp: Timex.shift(Timex.now(), days: -40))
 
-    Enum.map(1..3, fn i ->
+    Enum.map(1..3, fn _i ->
       transaction =
         :transaction
         |> insert()
@@ -46,7 +46,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
       )
     end)
 
-    Enum.map(1..4, fn i ->
+    Enum.map(1..4, fn _i ->
       transaction =
         :transaction
         |> insert()
@@ -64,7 +64,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
       )
     end)
 
-    Enum.map(1..5, fn i ->
+    Enum.map(1..5, fn _i ->
       transaction =
         :transaction
         |> insert()
@@ -82,7 +82,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
       )
     end)
 
-    Enum.map(1..4, fn i ->
+    Enum.map(1..4, fn _i ->
       transaction =
         :transaction
         |> insert()
@@ -98,7 +98,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
       )
     end)
 
-    Enum.map(1..5, fn i ->
+    Enum.map(1..5, fn _i ->
       transaction =
         :transaction
         |> insert()
@@ -113,7 +113,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactionsTest do
       )
     end)
 
-    Enum.map(1..6, fn i ->
+    Enum.map(1..6, fn _i ->
       transaction =
         :transaction
         |> insert()

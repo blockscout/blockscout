@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
 
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Withdrawal}
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
+  alias Explorer.Chain.Cache.{BlockNumber, Counters.AverageBlockTime}
 
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
@@ -222,6 +223,48 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
                  | _
                ]
              } = json_response(request, 422)
+    end
+  end
+
+  describe "/blocks/{block_number}/countdown" do
+    setup do
+      average_block_time_config = Application.get_env(:explorer, AverageBlockTime)
+
+      start_supervised!(AverageBlockTime)
+      Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
+
+      Supervisor.terminate_child(Explorer.Supervisor, BlockNumber.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, BlockNumber.child_id())
+
+      on_exit(fn ->
+        Application.put_env(:explorer, AverageBlockTime, average_block_time_config)
+      end)
+    end
+
+    test "returns countdown information for a future block", %{conn: conn} do
+      current_block_number = 110
+      target_block_number = 120
+      average_block_time = 15
+      first_timestamp = Timex.now()
+
+      for number <- 1..current_block_number do
+        insert(:block,
+          number: number,
+          timestamp: Timex.shift(first_timestamp, seconds: number * average_block_time),
+          consensus: true
+        )
+      end
+
+      AverageBlockTime.refresh()
+
+      request = get(conn, "/api/v2/blocks/#{target_block_number}/countdown")
+
+      assert %{
+               "current_block_number" => to_string(current_block_number),
+               "countdown_block_number" => to_string(target_block_number),
+               "remaining_blocks_count" => "10",
+               "estimated_time_in_seconds" => "150.0"
+             } == json_response(request, 200)
     end
   end
 
@@ -921,6 +964,93 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_paginated_response(response, response_2nd_page, internal_transactions)
+    end
+
+    test "returns pending status when block is in pending_block_operations", %{conn: conn} do
+      block = insert(:block)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
+
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "returns pending status when block has pending transaction operations", %{conn: conn} do
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
+
+      insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "include_zero_value=false excludes zero-value call internal transactions", %{conn: conn} do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      request =
+        get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions", %{"include_zero_value" => "false"})
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert List.first(response["items"])["index"] == 2
+
+      request_default = get(conn, "/api/v2/blocks/#{block.hash}/internal-transactions")
+      assert response_default = json_response(request_default, 200)
+      assert Enum.count(response_default["items"]) == 2
     end
   end
 

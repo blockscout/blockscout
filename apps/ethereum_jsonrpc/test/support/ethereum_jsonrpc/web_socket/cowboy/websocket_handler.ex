@@ -18,13 +18,13 @@ defmodule EthereumJSONRPC.WebSocket.Cowboy.WebSocketHandler do
         %__MODULE__{subscription_id_set: subscription_id_set, new_heads_timer_reference: new_heads_timer_reference} =
           state
       ) do
-    json = Jason.decode!(text)
+    json = Utils.JSON.decode!(text)
 
     case json do
       %{"id" => id, "method" => "eth_subscribe", "params" => ["newHeads"]} ->
         subscription_id = :erlang.unique_integer()
         response = %{id: id, result: subscription_id}
-        frame = {:text, Jason.encode!(response)}
+        frame = {:text, Utils.JSON.encode!(response)}
 
         new_heads_timer_reference =
           case new_heads_timer_reference do
@@ -45,7 +45,7 @@ defmodule EthereumJSONRPC.WebSocket.Cowboy.WebSocketHandler do
 
       %{"id" => id, "method" => "echo", "params" => params} ->
         response = %{id: id, result: params}
-        frame = {:text, Jason.encode!(response)}
+        frame = {:text, Utils.JSON.encode!(response)}
         {:reply, frame, state}
     end
   end
@@ -55,7 +55,7 @@ defmodule EthereumJSONRPC.WebSocket.Cowboy.WebSocketHandler do
     frames =
       Enum.map(subscription_id_set, fn subscription_id ->
         response = %{method: "eth_subscription", params: %{result: %{}, subscription: subscription_id}}
-        {:text, Jason.encode!(response)}
+        {:text, Utils.JSON.encode!(response)}
       end)
 
     {:reply, frames, state}

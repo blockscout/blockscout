@@ -18,6 +18,15 @@ defmodule Explorer.Utility.VersionUpgrade do
     * `:required_completed_migrations` — a list of migration names that must
       have status `"completed"` before the upgrade is allowed
 
+  Each entry of `:required_completed_migrations` is either:
+
+    * a migration name — the migration is required on every chain type, or
+    * a `{migration_name, chain_types}` tuple — the migration is required only
+      when the current chain type is one of `chain_types`. This is meant for
+      migrations that are started only on some chain types (see
+      `Explorer.Application`), since on the other chain types they never reach
+      the `"completed"` status.
+
   Rules are evaluated based on the target version. If multiple rules match,
   the most specific one (with the highest `:since` version) is applied.
 
@@ -26,10 +35,18 @@ defmodule Explorer.Utility.VersionUpgrade do
 
   use GenServer
 
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias Explorer.Application.Constants
   alias Explorer.Chain.Block
   alias Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey
-  alias Explorer.Migrator.MigrationStatus
+
+  alias Explorer.Migrator.{
+    FillInternalTransactionsAddressIds,
+    MigrationStatus,
+    SanitizeDuplicatedLogIndexLogs
+  }
+
   alias Explorer.Repo
 
   @upgrade_rules [
@@ -37,6 +54,14 @@ defmodule Explorer.Utility.VersionUpgrade do
       since: "11.0.0",
       min_from: "10.2.3",
       required_completed_migrations: [UpdateInternalTransactionsPrimaryKey.migration_name()]
+    },
+    %{
+      since: "12.0.0",
+      min_from: "11.0.2",
+      required_completed_migrations: [
+        FillInternalTransactionsAddressIds.migration_name(),
+        {SanitizeDuplicatedLogIndexLogs.migration_name(), [:rsk, :filecoin]}
+      ]
     }
   ]
 
@@ -51,10 +76,10 @@ defmodule Explorer.Utility.VersionUpgrade do
   end
 
   def validate_current_upgrade do
-    previous_version = Constants.get_previous_backend_version()
-    current_version = Constants.get_current_backend_version()
+    stored_current_version = Constants.get_current_backend_version()
+    current_version = to_string(Application.spec(:explorer, :vsn))
 
-    validate_upgrade(previous_version, current_version)
+    validate_upgrade(stored_current_version, current_version)
   end
 
   def validate_upgrade(nil, to_version) do
@@ -102,7 +127,10 @@ defmodule Explorer.Utility.VersionUpgrade do
 
   defp validate_required_migrations!(to_version, %{required_completed_migrations: migration_names}) do
     not_completed =
-      Enum.flat_map(migration_names, fn migration_name ->
+      migration_names
+      |> Enum.filter(&required_on_current_chain_type?/1)
+      |> Enum.map(&migration_name/1)
+      |> Enum.flat_map(fn migration_name ->
         status = MigrationStatus.get_status(migration_name)
 
         if status == "completed" do
@@ -120,6 +148,12 @@ defmodule Explorer.Utility.VersionUpgrade do
   end
 
   defp validate_required_migrations!(_to_version, _rule), do: :ok
+
+  defp required_on_current_chain_type?({_migration_name, chain_types}), do: chain_type() in chain_types
+  defp required_on_current_chain_type?(_migration_name), do: true
+
+  defp migration_name({migration_name, _chain_types}), do: migration_name
+  defp migration_name(migration_name), do: migration_name
 
   defp raise_wrong_version(from_version, to_version, min_from) do
     raise "Upgrade to #{to_version} is allowed only from version #{min_from} and higher. Current previous version: #{from_version || "(empty)"}"

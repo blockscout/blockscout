@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.DataAvailability.Eigenda do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "ArbitrumDataAvailabilityEigenda",
     description: "EigenDA data availability blob reference.",
     type: :object,
     properties: %{

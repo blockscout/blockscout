@@ -57,85 +57,88 @@ defmodule Explorer.Migrator.FillInternalTransactionsAddressIds do
 
   @impl FillingMigration
   def update_batch(block_numbers) do
-    Repo.transaction(
-      fn ->
-        lock_query =
-          from(
-            it in InternalTransaction,
-            select: select_ctid(it),
-            select_merge: %{
-              from_address_hash: it.from_address_hash,
-              to_address_hash: it.to_address_hash,
-              created_contract_address_hash: it.created_contract_address_hash
-            },
-            where:
-              it.block_number in ^block_numbers and
-                (not is_nil(it.from_address_hash) or not is_nil(it.to_address_hash) or
-                   not is_nil(it.created_contract_address_hash)),
-            order_by: [asc: it.block_number, asc: it.transaction_index, asc: it.index],
-            lock: "FOR UPDATE"
-          )
+    {:ok, {count, _}} =
+      Repo.transaction(
+        fn ->
+          lock_query =
+            from(
+              it in InternalTransaction,
+              select: select_ctid(it),
+              select_merge: %{
+                from_address_hash: it.from_address_hash,
+                to_address_hash: it.to_address_hash,
+                created_contract_address_hash: it.created_contract_address_hash
+              },
+              where:
+                it.block_number in ^block_numbers and
+                  (not is_nil(it.from_address_hash) or not is_nil(it.to_address_hash) or
+                     not is_nil(it.created_contract_address_hash)),
+              order_by: [asc: it.block_number, asc: it.transaction_index, asc: it.index],
+              lock: "FOR UPDATE"
+            )
 
-        from_address_hashes_query =
-          from(it in InternalTransaction,
-            inner_join: locked_it in subquery(lock_query),
-            on: join_on_ctid(it, locked_it),
-            where: not is_nil(it.from_address_hash),
-            distinct: true,
-            select: it.from_address_hash
-          )
+          from_address_hashes_query =
+            from(it in InternalTransaction,
+              inner_join: locked_it in subquery(lock_query),
+              on: join_on_ctid(it, locked_it),
+              where: not is_nil(it.from_address_hash),
+              distinct: true,
+              select: it.from_address_hash
+            )
 
-        to_address_hashes_query =
-          from(it in InternalTransaction,
-            inner_join: locked_it in subquery(lock_query),
-            on: join_on_ctid(it, locked_it),
-            where: not is_nil(it.to_address_hash),
-            distinct: true,
-            select: it.to_address_hash
-          )
+          to_address_hashes_query =
+            from(it in InternalTransaction,
+              inner_join: locked_it in subquery(lock_query),
+              on: join_on_ctid(it, locked_it),
+              where: not is_nil(it.to_address_hash),
+              distinct: true,
+              select: it.to_address_hash
+            )
 
-        created_contract_address_hashes_query =
-          from(it in InternalTransaction,
-            inner_join: locked_it in subquery(lock_query),
-            on: join_on_ctid(it, locked_it),
-            where: not is_nil(it.created_contract_address_hash),
-            distinct: true,
-            select: it.created_contract_address_hash
-          )
+          created_contract_address_hashes_query =
+            from(it in InternalTransaction,
+              inner_join: locked_it in subquery(lock_query),
+              on: join_on_ctid(it, locked_it),
+              where: not is_nil(it.created_contract_address_hash),
+              distinct: true,
+              select: it.created_contract_address_hash
+            )
 
-        from_address_hashes_query
-        |> union_all(^to_address_hashes_query)
-        |> union_all(^created_contract_address_hashes_query)
-        |> Repo.all()
-        |> Enum.uniq()
-        |> AddressIdToAddressHash.find_or_create_multiple()
+          from_address_hashes_query
+          |> union_all(^to_address_hashes_query)
+          |> union_all(^created_contract_address_hashes_query)
+          |> Repo.all()
+          |> Enum.uniq()
+          |> AddressIdToAddressHash.find_or_create_multiple()
 
-        update_query =
-          from(it in InternalTransaction,
-            inner_join: locked_it in subquery(lock_query),
-            on: join_on_ctid(it, locked_it),
-            left_join: from_map in AddressIdToAddressHash,
-            on: from_map.address_hash == locked_it.from_address_hash,
-            left_join: to_map in AddressIdToAddressHash,
-            on: to_map.address_hash == locked_it.to_address_hash,
-            left_join: created_map in AddressIdToAddressHash,
-            on: created_map.address_hash == locked_it.created_contract_address_hash,
-            update: [
-              set: [
-                from_address_id: from_map.address_id,
-                to_address_id: coalesce(to_map.address_id, created_map.address_id),
-                created_contract_address_id: created_map.address_id,
-                from_address_hash: nil,
-                to_address_hash: nil,
-                created_contract_address_hash: nil
+          update_query =
+            from(it in InternalTransaction,
+              inner_join: locked_it in subquery(lock_query),
+              on: join_on_ctid(it, locked_it),
+              left_join: from_map in AddressIdToAddressHash,
+              on: from_map.address_hash == locked_it.from_address_hash,
+              left_join: to_map in AddressIdToAddressHash,
+              on: to_map.address_hash == locked_it.to_address_hash,
+              left_join: created_map in AddressIdToAddressHash,
+              on: created_map.address_hash == locked_it.created_contract_address_hash,
+              update: [
+                set: [
+                  from_address_id: from_map.address_id,
+                  to_address_id: coalesce(to_map.address_id, created_map.address_id),
+                  created_contract_address_id: created_map.address_id,
+                  from_address_hash: nil,
+                  to_address_hash: nil,
+                  created_contract_address_hash: nil
+                ]
               ]
-            ]
-          )
+            )
 
-        Repo.update_all(update_query, [], timeout: :infinity)
-      end,
-      timeout: :infinity
-    )
+          Repo.update_all(update_query, [], timeout: :infinity)
+        end,
+        timeout: :infinity
+      )
+
+    count
   end
 
   @impl FillingMigration

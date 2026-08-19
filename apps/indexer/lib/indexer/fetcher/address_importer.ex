@@ -70,6 +70,10 @@ defmodule Indexer.Fetcher.AddressImporter do
     {:noreply, state}
   end
 
+  def handle_info({:EXIT, _pid, :normal}, state) do
+    {:noreply, state}
+  end
+
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
     {:noreply, state}
   end

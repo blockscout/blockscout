@@ -73,7 +73,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter do
         anyOf: [
           TokenTransfer.TotalERC721,
           TokenTransfer.TotalERC1155,
-          TokenTransfer.TotalERC7984,
           TokenTransfer.Total
         ],
         description:
@@ -209,6 +208,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter.Response do
       next_page_params: %Schema{
         type: :object,
         nullable: true,
+        additionalProperties: true,
         example: %{
           "block_number" => 23_532_302,
           "transaction_index" => 1,

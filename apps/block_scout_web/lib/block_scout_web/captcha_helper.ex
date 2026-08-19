@@ -21,6 +21,12 @@ defmodule BlockScoutWeb.CaptchaHelper do
       * `"recaptcha_v3_response"` - A reCAPTCHA v3 response token
       * `"recaptcha_response"` - A reCAPTCHA v2 response token
 
+      These keys are the internal contract of this function, not a wire format.
+      `/api/v2/key` passes request params through as-is, so there they match the
+      body params; for rate limited endpoints
+      `BlockScoutWeb.RateLimit.collect_recaptcha_headers/1` builds this map from
+      the `recaptcha-*` request headers instead.
+
     ## Returns
     - `true` if the CAPTCHA challenge is passed or if a valid bypass token is provided.
     - `false` if the CAPTCHA challenge fails, input is missing, CAPTCHA is disabled,
@@ -72,7 +78,7 @@ defmodule BlockScoutWeb.CaptchaHelper do
 
     ## Returns
     - `true` if either:
-      * A valid API key is provided for an allowed endpoint
+      * A valid scoped bypass token is provided for `scope`
       * The CAPTCHA verification succeeds
     - `false` otherwise
   """
@@ -111,7 +117,7 @@ defmodule BlockScoutWeb.CaptchaHelper do
              headers
            ) do
       {:ok, %{status_code: 200, body: body}} ->
-        body |> Jason.decode!() |> success?()
+        body |> Utils.JSON.decode!() |> success?()
 
       false ->
         false

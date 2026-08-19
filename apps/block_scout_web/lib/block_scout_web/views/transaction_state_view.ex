@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.TransactionStateView do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Wei}
 
-  import Explorer.Chain.Transaction.StateChange, only: [from_loss: 1, has_diff?: 1, to_profit: 1]
+  import Explorer.Chain.Transaction.StateChange, only: [fee_payer_loss: 1, from_loss: 1, has_diff?: 1, to_profit: 1]
 
   def not_negative?(%Wei{value: val}) do
     not Decimal.negative?(val)
@@ -24,7 +24,7 @@ defmodule BlockScoutWeb.TransactionStateView do
   end
 
   def has_state_changes?(transaction) do
-    has_diff?(from_loss(transaction)) or has_diff?(to_profit(transaction))
+    has_diff?(from_loss(transaction)) or has_diff?(to_profit(transaction)) or has_diff?(fee_payer_loss(transaction))
   end
 
   def display_value(balance, :coin, _token_id) do

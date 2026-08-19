@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Beacon.Deposit do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "BeaconDeposit",
     type: :object,
     properties: %{
       index: %Schema{type: :integer, nullable: false},

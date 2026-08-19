@@ -25,7 +25,7 @@ defmodule BlockScoutWeb.API.V1.VerifiedControllerTest do
   #   response = post(conn, api_v1_verified_smart_contract_path(conn, :create), params)
 
   #   assert response.status == 201
-  #   assert Jason.decode!(response.resp_body) == %{"status" => "success"}
+  #   assert Utils.JSON.decode!(response.resp_body) == %{"status" => "success"}
   # end
 
   # flaky test
@@ -33,7 +33,7 @@ defmodule BlockScoutWeb.API.V1.VerifiedControllerTest do
   #   contract_data =
   #     "#{File.cwd!()}/test/support/fixture/smart_contract/contract_with_lib.json"
   #     |> File.read!()
-  #     |> Jason.decode!()
+  #     |> Utils.JSON.decode!()
   #     |> List.first()
 
   #   %{
@@ -72,7 +72,7 @@ defmodule BlockScoutWeb.API.V1.VerifiedControllerTest do
   #   response = post(conn, api_v1_verified_smart_contract_path(conn, :create), params_with_external_libraries)
 
   #   assert response.status == 201
-  #   assert Jason.decode!(response.resp_body) == %{"status" => "success"}
+  #   assert Utils.JSON.decode!(response.resp_body) == %{"status" => "success"}
   # end
 
   # defp api_v1_verified_smart_contract_path(conn, action) do

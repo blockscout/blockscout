@@ -7,7 +7,8 @@ defmodule EthereumJSONRPC.Geth.TracerTest do
 
   describe "replay/3" do
     test "same as callTracer" do
-      struct_logs = File.read!(File.cwd!() <> "/test/support/fixture/geth/trace/struct_logger.json") |> Jason.decode!()
+      struct_logs =
+        File.read!(File.cwd!() <> "/test/support/fixture/geth/trace/struct_logger.json") |> Utils.JSON.decode!()
 
       transaction = "0xa0a5c30c5c5ec22b3346e0ae5ce09f8f41faf54f68a2a113eb15e363af90e9ab"
 
@@ -29,7 +30,7 @@ defmodule EthereumJSONRPC.Geth.TracerTest do
 
       calls =
         File.read!(File.cwd!() <> "/test/support/fixture/geth/trace/calltracer.json")
-        |> Jason.decode!()
+        |> Utils.JSON.decode!()
         |> Map.get("result")
 
       ct_calls =

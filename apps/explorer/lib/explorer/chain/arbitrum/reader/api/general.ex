@@ -17,7 +17,6 @@ defmodule Explorer.Chain.Arbitrum.Reader.API.General do
   import Ecto.Query, only: [order_by: 2, where: 3]
   import Explorer.Chain, only: [select_repo: 1]
 
-  alias Explorer.Chain
   alias Explorer.Chain.{Hash, Log}
 
   @api_true [api?: true]
@@ -37,8 +36,9 @@ defmodule Explorer.Chain.Arbitrum.Reader.API.General do
   """
   @spec transaction_to_logs_by_topic0(Hash.Full.t(), binary()) :: [Log.t()]
   def transaction_to_logs_by_topic0(transaction_hash, topic0) do
-    Chain.log_with_transactions_query()
-    |> where([log, transaction], transaction.hash == ^transaction_hash and log.first_topic == ^topic0)
+    Log.join_transaction_query()
+    |> where([log, transaction], transaction.hash == ^transaction_hash)
+    |> Log.filter_by_topic_query(:first_topic, topic0)
     |> order_by(asc: :index)
     |> select_repo(@api_true).all()
   end

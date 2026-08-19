@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     EmptyString,
     FloatString,
     FullHash,
-    HexString,
+    HexData,
     IntegerString,
     IntegerStringNullable,
     NullString
@@ -28,7 +28,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @float_pattern ~r"^([1-9][0-9]*|0)(\.[0-9]+)?$"
   @address_hash_pattern ~r"^0x([A-Fa-f0-9]{40})$"
   @full_hash_pattern ~r"^0x([A-Fa-f0-9]{64})$"
-  @hex_string_pattern ~r"^0x([A-Fa-f0-9]*)$"
+  @hex_quantity_pattern ~r"^0x([A-Fa-f0-9]+)$"
+  @hex_data_pattern ~r"^0x([A-Fa-f0-9]*)$"
 
   if @chain_type == :zilliqa do
     @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2|ERC-7984)(,(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2|ERC-7984))*\]?$/i
@@ -332,6 +333,17 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     }
   end
 
+  @spec include_zero_value_param() :: Parameter.t()
+  def include_zero_value_param do
+    %Parameter{
+      name: :include_zero_value,
+      in: :query,
+      schema: %Schema{type: :boolean, default: true},
+      required: false,
+      description: "If `false`, zero-value call-type internal transactions are excluded from results."
+    }
+  end
+
   @doc """
   Returns a reusable OpenApiSpex.RequestBody for audit report submission.
   """
@@ -522,9 +534,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     "fiat_value" => "Sort by fiat value",
     "holders_count" => "Sort by number of token holders",
     "index" => "Sort by validator index",
-    "key0" => "Sort by MUD record key0",
-    "key1" => "Sort by MUD record key1",
-    "key_bytes" => "Sort by MUD record key_bytes",
     "state" => "Sort by validator operational state",
     "total_gas_used" => "Sort by total gas used",
     "transactions_count" => "Sort by number of transactions",
@@ -643,7 +652,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
     %Parameter{
       name: :topic,
       in: :query,
-      schema: HexString,
+      schema: HexData,
       required: false,
       description: "Log topic param in the query"
     }
@@ -728,17 +737,46 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   end
 
   @doc """
-  Returns a parameter definition for reCAPTCHA response token.
+  Returns parameter definitions for the reCAPTCHA headers.
+
+  These headers are consumed by the rate limiter, not by the controller: they are
+  checked only once the endpoint's rate limit has been reached, and a successful
+  verification allows the request instead of returning 429. Only one of them is
+  used per request, in the order listed below.
   """
-  @spec recaptcha_response_param() :: Parameter.t()
-  def recaptcha_response_param do
-    %Parameter{
-      name: :recaptcha_response,
-      in: :query,
-      schema: %Schema{type: :string},
-      required: false,
-      description: "reCAPTCHA response token"
-    }
+  @spec recaptcha_params() :: [Parameter.t()]
+  def recaptcha_params do
+    [
+      %Parameter{
+        name: :"recaptcha-v2-response",
+        in: :header,
+        schema: %Schema{type: :string},
+        required: false,
+        description: "reCAPTCHA v2 response token"
+      },
+      %Parameter{
+        name: :"recaptcha-v3-response",
+        in: :header,
+        schema: %Schema{type: :string},
+        required: false,
+        description: "reCAPTCHA v3 response token"
+      },
+      %Parameter{
+        name: :"scoped-recaptcha-bypass-token",
+        in: :header,
+        schema: %Schema{type: :string},
+        required: false,
+        description:
+          "Bypass token issued to trusted clients for this specific endpoint. May also be passed as the `scoped_recaptcha_bypass_token` query parameter; the header takes precedence"
+      },
+      %Parameter{
+        name: :"recaptcha-bypass-token",
+        in: :header,
+        schema: %Schema{type: :string},
+        required: false,
+        description: "Bypass token issued to trusted clients for all reCAPTCHA-protected endpoints"
+      }
+    ]
   end
 
   @doc """
@@ -795,104 +833,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       description:
         "Time scale for hot contracts aggregation (5m=5 minutes, 1h=1 hour, 3h=3 hours, 1d=1 day, 7d=7 days, 30d=30 days)",
       name: :scale
-    }
-  end
-
-  @doc """
-  Returns a parameter definition for MUD world address hash.
-  """
-  @spec world_param() :: Parameter.t()
-  def world_param do
-    %Parameter{
-      name: :world,
-      in: :path,
-      schema: AddressHash,
-      required: true,
-      description: "MUD world address hash in the path"
-    }
-  end
-
-  @doc """
-  Returns a parameter definition for MUD system address hash.
-  """
-  @spec system_param() :: Parameter.t()
-  def system_param do
-    %Parameter{
-      name: :system,
-      in: :path,
-      schema: AddressHash,
-      required: true,
-      description: "MUD system address hash in the path"
-    }
-  end
-
-  @doc """
-  Returns a parameter definition for MUD table ID.
-  """
-  @spec table_id_param() :: Parameter.t()
-  def table_id_param do
-    %Parameter{
-      name: :table_id,
-      in: :path,
-      schema: FullHash,
-      required: true,
-      description: "MUD table ID in the path"
-    }
-  end
-
-  @doc """
-  Returns a parameter definition for MUD record ID.
-  """
-  @spec record_id_param() :: Parameter.t()
-  def record_id_param do
-    %Parameter{
-      name: :record_id,
-      in: :path,
-      schema: HexString,
-      required: true,
-      description: "MUD record ID in the path"
-    }
-  end
-
-  @doc """
-  Returns a parameter definition for MUD tables namespace filter.
-  """
-  @spec filter_namespace_param() :: Parameter.t()
-  def filter_namespace_param do
-    %Parameter{
-      name: :filter_namespace,
-      in: :query,
-      schema: %Schema{type: :string},
-      required: false,
-      description: "Filter by namespace"
-    }
-  end
-
-  @doc """
-  Returns a parameter definition for MUD table records key0 filter.
-  """
-  @spec filter_key0_param() :: Parameter.t()
-  def filter_key0_param do
-    %Parameter{
-      name: :filter_key0,
-      in: :query,
-      schema: %Schema{type: :string},
-      required: false,
-      description: "Filter by key0"
-    }
-  end
-
-  @doc """
-  Returns a parameter definition for MUD table records key1 filter.
-  """
-  @spec filter_key1_param() :: Parameter.t()
-  def filter_key1_param do
-    %Parameter{
-      name: :filter_key1,
-      in: :query,
-      schema: %Schema{type: :string},
-      required: false,
-      description: "Filter by key1"
     }
   end
 
@@ -1041,18 +981,39 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   def paginated_response(options) do
     items_schema = Keyword.fetch!(options, :items)
     next_page_params_example = Keyword.fetch!(options, :next_page_params_example)
+    include_pending_status? = Keyword.get(options, :include_pending_status?, false)
+
+    properties = %{
+      items: %Schema{type: :array, items: items_schema, nullable: false},
+      next_page_params: %Schema{
+        type: :object,
+        nullable: true,
+        additionalProperties: true,
+        example: next_page_params_example
+      }
+    }
+
+    {properties, required} =
+      if include_pending_status? do
+        meta_schema = %Schema{
+          type: :object,
+          nullable: false,
+          properties: %{
+            status: %Schema{type: :integer, enum: [1, 2]},
+            message: %Schema{type: :string, nullable: true}
+          },
+          required: [:status, :message]
+        }
+
+        {Map.put(properties, :meta, meta_schema), [:items, :next_page_params, :meta]}
+      else
+        {properties, [:items, :next_page_params]}
+      end
 
     %Schema{
       type: :object,
-      properties: %{
-        items: %Schema{type: :array, items: items_schema, nullable: false},
-        next_page_params: %Schema{
-          type: :object,
-          nullable: true,
-          example: next_page_params_example
-        }
-      },
-      required: [:items, :next_page_params],
+      properties: properties,
+      required: required,
       nullable: false,
       additionalProperties: false
     }
@@ -1415,41 +1376,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
       required: false,
       description: "State changes for paging"
     },
-    "world" => %Parameter{
-      name: :world,
-      in: :query,
-      schema: AddressHash,
-      required: false,
-      description: "MUD world address hash for paging"
-    },
-    "table_id" => %Parameter{
-      name: :table_id,
-      in: :query,
-      schema: FullHash,
-      required: false,
-      description: "MUD table ID for paging"
-    },
-    "key_bytes" => %Parameter{
-      name: :key_bytes,
-      in: :query,
-      schema: HexString,
-      required: false,
-      description: "MUD record key_bytes for paging"
-    },
-    "key0" => %Parameter{
-      name: :key0,
-      in: :query,
-      schema: FullHash,
-      required: false,
-      description: "MUD record key0 for paging"
-    },
-    "key1" => %Parameter{
-      name: :key1,
-      in: :query,
-      schema: FullHash,
-      required: false,
-      description: "MUD record key1 for paging"
-    },
     "page_size" => %Parameter{
       name: :page_size,
       in: :query,
@@ -1628,8 +1554,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   def full_hash_pattern, do: @full_hash_pattern
 
   @doc """
-  Returns the regex pattern for validating hex strings.
+  Returns the regex pattern for validating hex-encoded quantities (JSON-RPC QUANTITY).
   """
-  @spec hex_string_pattern() :: Regex.t()
-  def hex_string_pattern, do: @hex_string_pattern
+  @spec hex_quantity_pattern() :: Regex.t()
+  def hex_quantity_pattern, do: @hex_quantity_pattern
+
+  @doc """
+  Returns the regex pattern for validating hex-encoded data (JSON-RPC DATA).
+  """
+  @spec hex_data_pattern() :: Regex.t()
+  def hex_data_pattern, do: @hex_data_pattern
 end

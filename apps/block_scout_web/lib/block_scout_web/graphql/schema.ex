@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.GraphQL.Schema do
   alias Absinthe.Middleware.Dataloader, as: AbsintheDataloaderMiddleware
   alias Absinthe.Plugin, as: AbsinthePlugin
 
+  alias BlockScoutWeb.Chain, as: BlockScoutWebChain
   alias BlockScoutWeb.GraphQL.Middleware.ApiEnabled, as: ApiEnabledMiddleware
 
   alias BlockScoutWeb.GraphQL.Resolvers.{
@@ -50,12 +51,12 @@ defmodule BlockScoutWeb.GraphQL.Schema do
     node field do
       resolve(fn
         %{type: :internal_transaction, id: id}, resolution ->
-          %{"transaction_hash" => transaction_hash_string, "index" => index} = Jason.decode!(id)
+          %{"transaction_hash" => transaction_hash_string, "index" => index} = Utils.JSON.decode!(id)
           {:ok, transaction_hash} = Chain.string_to_full_hash(transaction_hash_string)
           InternalTransaction.get_by(%{transaction_hash: transaction_hash, index: index}, resolution)
 
         %{type: :token_transfer, id: id}, resolution ->
-          %{"transaction_hash" => transaction_hash_string, "log_index" => log_index} = Jason.decode!(id)
+          %{"transaction_hash" => transaction_hash_string, "log_index" => log_index} = Utils.JSON.decode!(id)
           {:ok, transaction_hash} = Chain.string_to_full_hash(transaction_hash_string)
           TokenTransfer.get_by(%{transaction_hash: transaction_hash, log_index: log_index}, resolution)
 
@@ -131,9 +132,21 @@ defmodule BlockScoutWeb.GraphQL.Schema do
     if Application.get_env(:block_scout_web, Api.GraphQL)[:enabled] do
       loader = Dataloader.add_source(Dataloader.new(), :db, Chain.data())
 
+      show_scam_tokens? =
+        case Map.fetch(context, :conn) do
+          {:ok, conn} ->
+            []
+            |> BlockScoutWebChain.fetch_scam_token_toggle(conn)
+            |> Keyword.get(:show_scam_tokens?, false)
+
+          :error ->
+            false
+        end
+
       context
       |> Map.put(:loader, loader)
       |> Map.put(:api_enabled, true)
+      |> Map.put(:show_scam_tokens?, show_scam_tokens?)
     else
       context
       |> Map.put(:api_enabled, false)

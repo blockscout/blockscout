@@ -45,8 +45,8 @@ defmodule BlockScoutWeb.API.V2.APIKeyController do
       params["in_header"]
       |> case do
         "true" ->
-          put_resp_header(
-            conn,
+          conn
+          |> put_resp_header(
             @api_v2_temp_token_header_key,
             Crypto.sign(
               conn.secret_key_base,
@@ -55,6 +55,10 @@ defmodule BlockScoutWeb.API.V2.APIKeyController do
               keys: Plug.Keys,
               max_age: ttl
             )
+          )
+          |> put_resp_header(
+            @api_v2_temp_token_header_key <> "-ttl",
+            ttl |> Integer.to_string()
           )
 
         _ ->

@@ -211,7 +211,7 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
                            "created_contract_address_hash" =>
                              to_string(internal_transaction.created_contract_address_hash),
                            "from_address_hash" => to_string(internal_transaction.from_address_hash),
-                           "to_address_hash" => nil,
+                           "to_address_hash" => to_string(internal_transaction.created_contract_address_hash),
                            "transaction_hash" => to_string(internal_transaction.transaction.hash)
                          }
                        }

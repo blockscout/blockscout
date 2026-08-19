@@ -65,6 +65,8 @@ defmodule Explorer.Migrator.MergeAdjacentMissingBlockRanges do
       |> RangesHelper.sanitize_ranges()
       |> MissingBlockRange.save_batch(nil)
     end)
+
+    Enum.count(ranges_batch)
   end
 
   @impl FillingMigration

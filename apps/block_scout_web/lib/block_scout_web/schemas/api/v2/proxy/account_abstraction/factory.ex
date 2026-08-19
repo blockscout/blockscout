@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.Factory do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "AccountAbstractionFactory",
     description: "Factory struct.",
     type: :object,
     properties: %{

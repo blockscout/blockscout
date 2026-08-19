@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Deposit.MainPage do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "OptimismDepositMainPage",
     description: "Optimism Deposit struct for the main page.",
     type: :object,
     properties: %{

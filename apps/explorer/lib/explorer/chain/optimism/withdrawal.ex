@@ -12,6 +12,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   alias Explorer.Chain.Cache.OptimismFinalizationPeriod
   alias Explorer.Chain.Optimism.{DisputeGame, OutputRoot, SuperchainConfig, WithdrawalEvent}
   alias Explorer.{Helper, PagingOptions, Repo}
+  alias Explorer.Utility.{LogFirstTopic, LogHelper}
 
   @game_status_defender_wins 2
 
@@ -61,6 +62,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
 
   """
   @spec list :: [__MODULE__.t()]
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def list(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, default_paging_options())
 
@@ -69,34 +71,58 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         []
 
       _ ->
-        base_query =
-          from(w in __MODULE__,
-            order_by: [desc: w.msg_nonce],
-            left_join: l2_transaction in Transaction,
-            on: w.l2_transaction_hash == l2_transaction.hash,
-            left_join: l2_block in Block,
-            on: w.l2_block_number == l2_block.number,
-            left_join: we in WithdrawalEvent,
-            on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
-            left_join: log in Log,
-            on:
-              log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and
-                log.second_topic == fragment("numeric_to_bytea32(msg_nonce)"),
-            select: %{
-              msg_nonce: w.msg_nonce,
-              hash: w.hash,
-              l2_block_number: w.l2_block_number,
-              l2_timestamp: l2_block.timestamp,
-              l2_transaction_hash: w.l2_transaction_hash,
-              l1_transaction_hash: we.l1_transaction_hash,
-              from: l2_transaction.from_address_hash,
-              msg_log_sender_address_hash: log.third_topic,
-              msg_log_target_address_hash: log.fourth_topic,
-              msg_log_data: log.data
-            }
-          )
+        __MODULE__
+        |> order_by([w], desc: w.msg_nonce)
+        |> join(:left, [w], l2_transaction in Transaction, on: w.l2_transaction_hash == l2_transaction.hash)
+        |> join(:left, [w], l2_block in Block, on: w.l2_block_number == l2_block.number and l2_block.consensus == true)
+        |> join(:left, [w], we in WithdrawalEvent,
+          on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized
+        )
+        |> then(fn query ->
+          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+          cond do
+            LogHelper.fill_optimized_fields_migration_finished?() ->
+              first_topic_id = LogFirstTopic.value_to_id(@message_passed_event)
 
-        base_query
+              join(query, :left, [w, l2_transaction], log in Log,
+                on:
+                  log.block_number == w.l2_block_number and log.transaction_index == l2_transaction.index and
+                    log.first_topic_id == ^first_topic_id and
+                    log.second_topic == fragment("bytea_ltrim_zeroes(numeric_to_bytea32(msg_nonce))")
+              )
+
+            LogHelper.fill_optimized_fields_migration_started?() ->
+              first_topic_id = LogFirstTopic.value_to_id(@message_passed_event)
+
+              join(query, :left, [w, l2_transaction], log in Log,
+                on:
+                  (log.transaction_hash == w.l2_transaction_hash or
+                     (log.block_number == w.l2_block_number and log.transaction_index == l2_transaction.index)) and
+                    (log.first_topic_id == ^first_topic_id or log.first_topic == ^@message_passed_event) and
+                    (log.second_topic == fragment("numeric_to_bytea32(msg_nonce)") or
+                       log.second_topic == fragment("bytea_ltrim_zeroes(numeric_to_bytea32(msg_nonce))"))
+              )
+
+            true ->
+              join(query, :left, [w, l2_transaction], log in Log,
+                on:
+                  log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and
+                    log.second_topic == fragment("numeric_to_bytea32(msg_nonce)")
+              )
+          end
+        end)
+        |> select([w, l2_transaction, l2_block, we, log], %{
+          msg_nonce: w.msg_nonce,
+          hash: w.hash,
+          l2_block_number: w.l2_block_number,
+          l2_timestamp: l2_block.timestamp,
+          l2_transaction_hash: w.l2_transaction_hash,
+          l1_transaction_hash: we.l1_transaction_hash,
+          from: l2_transaction.from_address_hash,
+          msg_log_sender_address_hash: log.third_topic,
+          msg_log_target_address_hash: log.fourth_topic,
+          msg_log_data: log.data
+        })
         |> page_optimism_withdrawals(paging_options)
         |> limit(^paging_options.page_size)
         |> select_repo(options).all(timeout: :infinity)
@@ -155,29 +181,23 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   """
   @spec transaction_statuses(Hash.t()) :: [{non_neg_integer(), String.t(), map()}]
   def transaction_statuses(l2_transaction_hash) do
-    query =
-      from(w in __MODULE__,
-        where: w.l2_transaction_hash == ^l2_transaction_hash,
-        left_join: l2_block in Block,
-        on: w.l2_block_number == l2_block.number and l2_block.consensus == true,
-        left_join: we in WithdrawalEvent,
-        on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized,
-        left_join: log in Log,
-        on:
-          log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and
-            log.second_topic == fragment("numeric_to_bytea32(msg_nonce)"),
-        select: %{
-          hash: w.hash,
-          l2_block_number: w.l2_block_number,
-          l1_transaction_hash: we.l1_transaction_hash,
-          msg_nonce: w.msg_nonce,
-          msg_log_sender_address_hash: log.third_topic,
-          msg_log_target_address_hash: log.fourth_topic,
-          msg_log_data: log.data
-        }
-      )
-
-    query
+    __MODULE__
+    |> where([w], w.l2_transaction_hash == ^l2_transaction_hash)
+    |> join(:left, [w], l2_transaction in Transaction, on: w.l2_transaction_hash == l2_transaction.hash)
+    |> join(:left, [w], l2_block in Block, on: w.l2_block_number == l2_block.number and l2_block.consensus == true)
+    |> join(:left, [w], we in WithdrawalEvent,
+      on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized
+    )
+    |> join_message_passed_log()
+    |> select([w, _l2_transaction, _l2_block, we, log], %{
+      hash: w.hash,
+      l2_block_number: w.l2_block_number,
+      l1_transaction_hash: we.l1_transaction_hash,
+      msg_nonce: w.msg_nonce,
+      msg_log_sender_address_hash: log.third_topic,
+      msg_log_target_address_hash: log.fourth_topic,
+      msg_log_data: log.data
+    })
     |> Repo.replica().all(timeout: :infinity)
     |> Enum.map(fn w ->
       msg_nonce =
@@ -189,6 +209,53 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
       {status, _} = status(w, nil, @api_true)
       {msg_nonce, status, w}
     end)
+  end
+
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  defp join_message_passed_log(query) do
+    first_topic_id = LogFirstTopic.value_to_id(@message_passed_event)
+    migration_finished? = LogHelper.fill_optimized_fields_migration_finished?()
+    migration_started? = LogHelper.fill_optimized_fields_migration_started?()
+
+    cond do
+      migration_finished? and is_nil(first_topic_id) ->
+        join(query, :left, [w, l2_transaction], log in Log, on: false)
+
+      migration_finished? ->
+        join(query, :left, [w, l2_transaction], log in Log,
+          on:
+            log.block_number == w.l2_block_number and log.transaction_index == l2_transaction.index and
+              log.first_topic_id == ^first_topic_id and
+              log.second_topic == fragment("bytea_ltrim_zeroes(numeric_to_bytea32(msg_nonce))")
+        )
+
+      migration_started? and is_nil(first_topic_id) ->
+        join(query, :left, [w, l2_transaction], log in Log,
+          on:
+            (log.transaction_hash == w.l2_transaction_hash or
+               (log.block_number == w.l2_block_number and log.transaction_index == l2_transaction.index)) and
+              log.first_topic == ^@message_passed_event and
+              (log.second_topic == fragment("numeric_to_bytea32(msg_nonce)") or
+                 log.second_topic == fragment("bytea_ltrim_zeroes(numeric_to_bytea32(msg_nonce))"))
+        )
+
+      migration_started? ->
+        join(query, :left, [w, l2_transaction], log in Log,
+          on:
+            (log.transaction_hash == w.l2_transaction_hash or
+               (log.block_number == w.l2_block_number and log.transaction_index == l2_transaction.index)) and
+              (log.first_topic_id == ^first_topic_id or log.first_topic == ^@message_passed_event) and
+              (log.second_topic == fragment("numeric_to_bytea32(msg_nonce)") or
+                 log.second_topic == fragment("bytea_ltrim_zeroes(numeric_to_bytea32(msg_nonce))"))
+        )
+
+      true ->
+        join(query, :left, [w, l2_transaction], log in Log,
+          on:
+            log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and
+              log.second_topic == fragment("numeric_to_bytea32(msg_nonce)")
+        )
+    end
   end
 
   @doc """

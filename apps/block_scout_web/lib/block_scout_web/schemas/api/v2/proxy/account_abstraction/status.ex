@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.Status do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "AccountAbstractionStatus",
     description: "Status struct.",
     type: :object,
     properties: %{

@@ -13,7 +13,7 @@ We welcome contributions that enhance the project and improve the overall qualit
 3. Write tests that cover your work
 4. Commit your changes (`git commit -am 'Add some feature'`)
 5. Push to the branch (`git push origin my-new-feature`)
-6. Create a new Pull Request. The title of Pull Request should follow [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and should start with `feat:`, `fix:`, `chore:`, `doc:`, `perf:`, `refactor:` prefix.
+6. Create a new Pull Request targeting the `dev` branch. The title of Pull Request should follow [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and should start with `feat:`, `fix:`, `chore:`, `doc:`, `perf:`, `refactor:` prefix.
 
 ## General
 

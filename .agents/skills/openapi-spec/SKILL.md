@@ -25,7 +25,7 @@ All paths are relative to `apps/block_scout_web/lib/block_scout_web/`. Most endp
 | Account controllers (Private spec) | `controllers/account/api/v2/<domain>_controller.ex` |
 | Legacy controllers | `controllers/api/legacy/<domain>_controller.ex` (routed under `/legacy`) |
 | V2 schema modules | `schemas/api/v2/<domain>.ex` and `schemas/api/v2/<domain>/*.ex` |
-| V2 chain-type schema subdirs | `schemas/api/v2/<chain>/*.ex` (e.g. `schemas/api/v2/{arbitrum,beacon,celo,optimism,scroll,zilliqa,mud}/*.ex`) |
+| V2 chain-type schema subdirs | `schemas/api/v2/<chain>/*.ex` (e.g. `schemas/api/v2/{arbitrum,beacon,celo,optimism,scroll,zilliqa}/*.ex`) |
 | V2 proxy schemas | `schemas/api/v2/proxy/*.ex` |
 | Account schemas (Private spec) | `schemas/api/v2/account/*.ex` |
 | Legacy schemas | `schemas/api/legacy/*.ex` |
@@ -150,7 +150,7 @@ The order of tag groups in the generated public spec is not derived from the con
 If a new annotated controller introduces a brand-new tag, the agent must register it in the right group, or the tag will still appear in the spec (via controller-side `tags(...)`) but with no ordering guarantee and no entry in the top-level `tags:` list:
 
 - Base endpoint → append the kebab-case tag to `@default_api_categories`.
-- Chain-type endpoint → add it inside the relevant `case @chain_identity` branch, matching the existing patterns (module-attribute + `defp` for static lists, full `defp` body when the tag set depends on a runtime flag such as `mud_enabled?()`).
+- Chain-type endpoint → add it inside the relevant `case @chain_identity` branch, matching the existing patterns (module-attribute + `defp` for static lists, full `defp` body when the tag set depends on a runtime flag).
 - Legacy endpoint → no action; `"legacy"` is already the trailer.
 
 Tags that are already covered by an existing group (e.g. another `addresses` endpoint) need no change.

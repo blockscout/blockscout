@@ -53,6 +53,28 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
       assert conn.status == 429
     end
 
+    test "accepts application/csv on token-transfers CSV endpoint", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+      insert(:token_transfer, transaction: transaction, from_address: address, block_number: transaction.block_number)
+
+      conn =
+        conn
+        |> put_req_header("accept", "application/csv")
+        |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{})
+
+      assert conn.status == 200
+
+      assert Enum.any?(get_resp_header(conn, "content-type"), fn type ->
+               String.contains?(type, "application/csv")
+             end)
+    end
+
     test "do not export token transfers to csv after rate limit is reached without recaptcha passed", %{
       conn: conn,
       v2_secret_key: recaptcha_secret_key
@@ -65,7 +87,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(%{"success" => false})
+             body: Utils.JSON.encode!(%{"success" => false})
            }}
         end
       )
@@ -159,7 +181,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
            %Tesla.Env{
              status: 200,
              body:
-               Jason.encode!(%{
+               Utils.JSON.encode!(%{
                  "success" => true,
                  "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
                })
@@ -247,7 +269,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
            %Tesla.Env{
              status: 200,
              body:
-               Jason.encode!(%{
+               Utils.JSON.encode!(%{
                  "success" => true,
                  "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
                })
@@ -344,7 +366,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
            %Tesla.Env{
              status: 200,
              body:
-               Jason.encode!(%{
+               Utils.JSON.encode!(%{
                  "success" => true,
                  "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
                })
@@ -694,7 +716,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         })
 
       assert conn.status == 202
-      body = Jason.decode!(conn.resp_body)
+      body = Utils.JSON.decode!(conn.resp_body)
       assert Map.has_key?(body, "request_id")
       assert is_binary(body["request_id"])
     end
@@ -999,6 +1021,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 0,
         transaction: transaction,
+        transaction_index: transaction.index,
         block: transaction.block,
         block_number: transaction.block_number
       )
@@ -1030,7 +1053,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
            %Tesla.Env{
              status: 200,
              body:
-               Jason.encode!(%{
+               Utils.JSON.encode!(%{
                  "success" => true,
                  "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
                })
@@ -1049,6 +1072,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 3,
         transaction: transaction_1,
+        transaction_index: transaction_1.index,
         block: transaction_1.block,
         block_number: transaction_1.block_number
       )
@@ -1062,6 +1086,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 1,
         transaction: transaction_2,
+        transaction_index: transaction_2.index,
         block: transaction_2.block,
         block_number: transaction_2.block_number
       )
@@ -1075,6 +1100,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 2,
         transaction: transaction_3,
+        transaction_index: transaction_3.index,
         block: transaction_3.block,
         block_number: transaction_3.block_number
       )
@@ -1118,6 +1144,7 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
         address: address,
         index: 3,
         transaction: transaction,
+        transaction_index: transaction.index,
         block: transaction.block,
         block_number: transaction.block_number
       )

@@ -209,9 +209,14 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   @impl Runner
   def prepare_data(changes_list) do
-    changes_list
-    |> maybe_reject_zero_value()
-    |> adjust_insert_params()
+    # Note: zero-value internal transactions are NOT rejected here. `prepare_data/1`
+    # is applied to the params before the block-completeness validation
+    # (`invalid_block_numbers/2`) runs. Dropping the only internal transaction of a
+    # transaction at this point would make that transaction look permanently
+    # un-traced, marking the whole block invalid and leaving it stuck in
+    # `pending_block_operations` forever. The zero-value rejection is instead applied
+    # right before insert (see `insert/3`), so it never affects validation.
+    adjust_insert_params(changes_list)
   end
 
   def run_insert_only(changes_list, %{timestamps: timestamps} = options) when is_map(options) do
@@ -255,6 +260,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
     ordered_changes_list =
       valid_internal_transactions
+      # Reject zero-value internal transactions only here, right before the DB write,
+      # so it never affects block-completeness validation (see `prepare_data/1`).
+      |> maybe_reject_zero_value()
       |> Enum.map(fn internal_transaction ->
         Map.put(internal_transaction, :trace_address, nil)
       end)
@@ -445,8 +453,11 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     else
       blocks_map = Map.new(transactions, &{&1.block_number, &1.block_hash})
 
+      existing_transactions_indexes = MapSet.new(transactions, &{&1.block_number, &1.index})
+
       valid_internal_transactions =
         internal_transactions_params
+        |> Enum.filter(&MapSet.member?(existing_transactions_indexes, {&1.block_number, &1.transaction_index}))
         |> Enum.group_by(& &1.block_number)
         |> Map.drop(invalid_block_numbers)
         |> Enum.flat_map(fn item ->
@@ -557,12 +568,21 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   defp maybe_reject_zero_value(internal_transactions) do
     with true <- Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled],
          border_number when is_integer(border_number) <- DeleteZeroValueInternalTransactions.border_number() do
-      Enum.reject(
-        internal_transactions,
-        &(Map.has_key?(&1, :type) and
-            (&1.block_number <= border_number and &1.type == :call and
-               (is_nil(Map.get(&1, :value)) || Decimal.eq?(&1.value.value, 0))))
-      )
+      Enum.reject(internal_transactions, fn
+        %{type: type, block_number: block_number} = internal_transaction ->
+          # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
+          value =
+            case Map.get(internal_transaction, :value) do
+              %{value: decimal_value} -> decimal_value
+              integer_value when is_integer(integer_value) -> integer_value
+              nil -> 0
+            end
+
+          block_number <= border_number and type in [:call, "call"] and Decimal.eq?(value, 0)
+
+        _ ->
+          false
+      end)
     else
       _ -> internal_transactions
     end
@@ -1010,8 +1030,13 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       block_ranges = RangesHelper.get_trace_block_ranges()
 
       Enum.reduce(block_ranges, dynamic([_], false), fn
-        _from.._to//_ = range, acc -> dynamic([block], ^acc or block.number in ^range)
-        num_to_latest, acc -> dynamic([block], ^acc or block.number >= ^num_to_latest)
+        _from.._to//_ = range, acc ->
+          lower = min(range.first, range.last)
+          upper = max(range.first, range.last)
+          dynamic([block], ^acc or (block.number >= ^lower and block.number <= ^upper))
+
+        num_to_latest, acc ->
+          dynamic([block], ^acc or block.number >= ^num_to_latest)
       end)
     else
       dynamic([_], true)

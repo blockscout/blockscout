@@ -28,10 +28,7 @@ defmodule BlockScoutWeb.AddressLogsController do
         params
         |> paging_options()
         |> Keyword.merge(
-          necessity_by_association: %{
-            [address: [:smart_contract, Implementation.proxy_implementations_smart_contracts_association()]] =>
-              :optional
-          }
+          address_preloads: [:smart_contract, Implementation.proxy_implementations_smart_contracts_association()]
         )
 
       logs_plus_one = Chain.address_to_logs(address_hash, false, options)
@@ -103,10 +100,7 @@ defmodule BlockScoutWeb.AddressLogsController do
         params
         |> paging_options()
         |> Keyword.merge(
-          necessity_by_association: %{
-            [address: [:smart_contract, Implementation.proxy_implementations_smart_contracts_association()]] =>
-              :optional
-          }
+          address_preloads: [:smart_contract, Implementation.proxy_implementations_smart_contracts_association()]
         )
         |> Keyword.merge(topic: formatted_topic)
 

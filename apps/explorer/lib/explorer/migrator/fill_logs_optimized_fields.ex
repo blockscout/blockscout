@@ -1,0 +1,139 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
+defmodule Explorer.Migrator.FillLogsOptimizedFields do
+  @moduledoc """
+  Fills `transaction_index`, `address_id` fields in `logs` table.
+  """
+
+  use Explorer.Migrator.FillingMigration
+
+  import Ecto.Query
+  import Explorer.QueryHelper, only: [select_ctid: 1, join_on_ctid: 2]
+
+  alias Explorer.Chain.Cache.{BackgroundMigrations, BlockNumber}
+  alias Explorer.Chain.{Log, Transaction}
+  alias Explorer.Migrator.FillingMigration
+  alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex
+  alias Explorer.Repo
+  alias Explorer.Utility.{AddressIdToAddressHash, LogFirstTopic}
+
+  @migration_name "fill_logs_optimized_fields"
+
+  @impl FillingMigration
+  def migration_name, do: @migration_name
+
+  @impl FillingMigration
+  def dependent_from_migrations,
+    do: [CreateLogsFirstTopicIdIndex.migration_name()]
+
+  @impl FillingMigration
+  def last_unprocessed_identifiers(%{"max_block_number" => -1} = state), do: {[], state}
+
+  def last_unprocessed_identifiers(state) do
+    block_number = state["max_block_number"] || BlockNumber.get_max()
+
+    limit = batch_size() * concurrency()
+
+    from_block_number = max(block_number - limit, 0)
+
+    {Enum.to_list(from_block_number..block_number), Map.put(state, "max_block_number", from_block_number - 1)}
+  end
+
+  @impl FillingMigration
+  def unprocessed_data_query, do: nil
+
+  @impl FillingMigration
+  def update_batch(block_numbers) do
+    {:ok, {count, _}} =
+      Repo.transaction(
+        fn ->
+          lock_query =
+            from(
+              l in Log,
+              select: select_ctid(l),
+              select_merge: %{
+                address_hash: l.address_hash,
+                transaction_hash: l.transaction_hash,
+                first_topic: l.first_topic
+              },
+              where: l.block_number in ^block_numbers,
+              order_by: [asc: l.block_number, asc: l.transaction_index, asc: l.index],
+              lock: "FOR UPDATE"
+            )
+
+          address_hashes_query =
+            from(l in Log,
+              inner_join: locked_l in subquery(lock_query),
+              on: join_on_ctid(l, locked_l),
+              where: not is_nil(l.address_hash),
+              distinct: true,
+              select: l.address_hash
+            )
+
+          first_topics_query =
+            from(l in Log,
+              inner_join: locked_l in subquery(lock_query),
+              on: join_on_ctid(l, locked_l),
+              where: not is_nil(l.first_topic),
+              distinct: true,
+              select: l.first_topic
+            )
+
+          address_hashes_query
+          |> Repo.all()
+          |> Enum.uniq()
+          |> AddressIdToAddressHash.find_or_create_multiple()
+
+          first_topics_query
+          |> Repo.all()
+          |> LogFirstTopic.find_or_create_multiple()
+
+          update_query =
+            from(l in Log,
+              inner_join: locked_l in subquery(lock_query),
+              on: join_on_ctid(l, locked_l),
+              left_join: it_to_hash_map in AddressIdToAddressHash,
+              on: it_to_hash_map.address_hash == locked_l.address_hash,
+              left_join: t in Transaction,
+              on: locked_l.transaction_hash == t.hash,
+              left_join: lft in LogFirstTopic,
+              on: lft.value == locked_l.first_topic,
+              update: [
+                set: [
+                  address_id: it_to_hash_map.address_id,
+                  address_hash: nil,
+                  first_topic_id: lft.id,
+                  first_topic: nil,
+                  # Logs which are not linked to a transaction (Celo epoch logs) keep `NULL`:
+                  # `transaction_index` is nullable and excluded from the primary key for such
+                  # chains. For the rest the already filled value is kept, and the number of
+                  # transactions in the block is used as a last resort, since `transaction_index`
+                  # is `NOT NULL` there: it can't collide with the index of any real transaction
+                  # of the block.
+                  transaction_index:
+                    fragment(
+                      "COALESCE(?, ?, CASE WHEN ? IS NOT NULL THEN (SELECT count(*) FROM transactions WHERE block_number = ?) END)",
+                      t.index,
+                      l.transaction_index,
+                      l.transaction_hash,
+                      l.block_number
+                    ),
+                  second_topic: fragment("bytea_ltrim_zeroes(?)", l.second_topic),
+                  third_topic: fragment("bytea_ltrim_zeroes(?)", l.third_topic),
+                  fourth_topic: fragment("bytea_ltrim_zeroes(?)", l.fourth_topic)
+                ]
+              ]
+            )
+
+          Repo.update_all(update_query, [], timeout: :infinity)
+        end,
+        timeout: :infinity
+      )
+
+    count
+  end
+
+  @impl FillingMigration
+  def update_cache do
+    BackgroundMigrations.set_fill_logs_optimized_fields_finished(true)
+  end
+end

@@ -13,6 +13,7 @@ defmodule ConfigHelper do
       %{
         {:arbitrum, nil} => [Explorer.Repo.Arbitrum],
         {:blackfort, nil} => [Explorer.Repo.Blackfort],
+        {:eden, nil} => [Explorer.Repo.Eden],
         {:ethereum, nil} => [Explorer.Repo.Beacon],
         {:filecoin, nil} => [Explorer.Repo.Filecoin],
         {:optimism, nil} => [Explorer.Repo.Optimism],
@@ -34,7 +35,6 @@ defmodule ConfigHelper do
     ext_repos =
       [
         {parse_bool_env_var("BRIDGED_TOKENS_ENABLED"), Explorer.Repo.BridgedTokens},
-        {parse_bool_env_var("MUD_INDEXER_ENABLED"), Explorer.Repo.Mud},
         {parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"), Explorer.Repo.ShrunkInternalTransactions},
         {mode() in [:indexer, :api], Explorer.Repo.EventNotifications}
       ]
@@ -350,7 +350,7 @@ defmodule ConfigHelper do
   def parse_json_env_var(env_var, default_value \\ "{}") do
     env_var
     |> safe_get_env(default_value)
-    |> Jason.decode!()
+    |> JSON.decode!()
   rescue
     err -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(err)}"
   end
@@ -359,7 +359,7 @@ defmodule ConfigHelper do
     with {:ok, map} <-
            env_var
            |> safe_get_env(default_value)
-           |> Jason.decode() do
+           |> JSON.decode() do
       for {key, value} <- map, into: %{}, do: {String.to_atom(key), value}
     else
       {:error, error} -> raise "Invalid JSON in environment variable #{env_var}: #{inspect(error)}"
@@ -422,6 +422,7 @@ defmodule ConfigHelper do
     "arbitrum" => :arbitrum,
     "arc" => :arc,
     "blackfort" => :blackfort,
+    "eden" => :eden,
     "ethereum" => :ethereum,
     "filecoin" => :filecoin,
     "optimism" => :optimism,

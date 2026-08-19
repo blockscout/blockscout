@@ -28,15 +28,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   import Explorer.Helper, only: [safe_parse_non_negative_integer: 1]
 
-  import Explorer.MicroserviceInterfaces.BENS,
-    only: [
-      maybe_preload_ens: 1,
-      maybe_preload_ens_for_token_transfers: 1,
-      maybe_preload_ens_for_transactions: 1,
-      maybe_preload_ens_to_address: 1
-    ]
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens_to_address: 1]
 
-  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
+  import Explorer.Chain.Address.MetadataPreloader,
+    only: [maybe_preload_ens_and_metadata: 1, maybe_preload_ens_and_metadata: 2]
+
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
   alias BlockScoutWeb.AccessHelper
@@ -45,6 +41,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     BlockView,
     Ethereum.DepositController,
     Ethereum.DepositView,
+    InternalTransactionsPendingStatusHelper,
     TransactionView,
     WithdrawalView
   }
@@ -461,7 +458,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:transactions, %{
-            transactions: transactions |> maybe_preload_ens_for_transactions() |> maybe_preload_metadata(),
+            transactions: transactions |> maybe_preload_ens_and_metadata(:transactions),
             next_page_params: next_page_params
           })
 
@@ -586,8 +583,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             token_transfers:
               token_transfers
               |> Instance.preload_nft(@api_true)
-              |> maybe_preload_ens_for_token_transfers()
-              |> maybe_preload_metadata(),
+              |> maybe_preload_ens_and_metadata(:token_transfers),
             next_page_params: next_page_params
           })
 
@@ -609,13 +605,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       "Retrieves all internal transactions involving a specific address, with optional filtering for internal transactions sent from or to the address.",
     parameters:
       base_params() ++
-        [address_hash_param(), direction_filter_param()] ++
+        [address_hash_param(), direction_filter_param(), include_zero_value_param()] ++
         define_paging_params(["block_number", "index", "transaction_index"]),
     responses: [
       ok:
         {"All internal transactions for the specified address.", "application/json",
          paginated_response(
            items: Schemas.InternalTransaction,
+           include_pending_status?: true,
            next_page_params_example: %{
              "block_number" => 22_530_770,
              "index" => 8,
@@ -656,27 +653,35 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(paging_options(params))
             |> Keyword.merge(current_filter(params))
             |> Keyword.merge(@api_true)
+            |> Keyword.put(:include_zero_value, Map.get(params, :include_zero_value, true))
 
           results_plus_one = address_to_internal_transactions(address_hash, full_options)
 
           {internal_transactions, next_page_params} =
             paginate_list(results_plus_one, params, full_options[:paging_options])
 
+          pending_status? =
+            InternalTransactionsPendingStatusHelper.address_internal_transactions_pending?(internal_transactions)
+
           conn
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:internal_transactions, %{
-            internal_transactions: internal_transactions |> maybe_preload_ens() |> maybe_preload_metadata(),
-            next_page_params: next_page_params
+            internal_transactions: internal_transactions |> maybe_preload_ens_and_metadata(),
+            next_page_params: next_page_params,
+            pending_status?: pending_status?
           })
 
         _ ->
+          pending_status? = InternalTransactionsPendingStatusHelper.address_internal_transactions_pending?([])
+
           conn
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:internal_transactions, %{
             internal_transactions: [],
-            next_page_params: nil
+            next_page_params: nil,
+            pending_status?: pending_status?
           })
       end
     end
@@ -723,10 +728,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             params
             |> paging_options()
             |> Keyword.merge(
-              necessity_by_association: %{
-                [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional,
-                :block => :optional
-              }
+              address_preloads: [:names, :smart_contract, proxy_implementations_smart_contracts_association()],
+              transaction_preloads: [to_address: [:smart_contract, proxy_implementations_smart_contracts_association()]]
             )
             |> Keyword.merge(@api_true)
             |> Keyword.put(:topic, topic)
@@ -739,7 +742,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:logs, %{
-            logs: logs |> maybe_preload_ens() |> maybe_preload_metadata(),
+            logs: logs |> maybe_preload_ens_and_metadata(),
             next_page_params: next_page_params
           })
 
@@ -1054,7 +1057,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_status(200)
           |> put_view(WithdrawalView)
           |> render(:withdrawals, %{
-            withdrawals: withdrawals |> maybe_preload_ens() |> maybe_preload_metadata(),
+            withdrawals: withdrawals |> maybe_preload_ens_and_metadata(),
             next_page_params: next_page_params
           })
 
@@ -1082,22 +1085,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {"List of native coin holders with their balances, with pagination.", "application/json",
          SchemasHelper.extend_schema(
            paginated_response(
-             items:
-               Schemas.Address.schema()
-               |> SchemasHelper.extend_schema(
-                 properties: %{
-                   coin_balance: Schemas.General.IntegerStringNullable,
-                   transactions_count: %Schema{
-                     anyOf: [
-                       Schemas.General.IntegerString,
-                       # TODO: replace empty string with null?
-                       Schemas.General.EmptyString
-                     ],
-                     nullable: true
-                   }
-                 },
-                 required: [:coin_balance, :transactions_count]
-               ),
+             items: Schemas.Address.TopAddress,
              next_page_params_example: %{
                "fetched_coin_balance" => "124355417998347240251800",
                "hash" => "0x59708733fbbf64378d9293ec56b977c011a08fd2",
@@ -1143,7 +1131,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     conn
     |> put_status(200)
     |> render(:addresses, %{
-      addresses: addresses |> maybe_preload_ens() |> maybe_preload_metadata(),
+      addresses: addresses |> maybe_preload_ens_and_metadata(),
       next_page_params: next_page_params,
       exchange_rate: exchange_rate,
       total_supply: total_supply
@@ -1181,7 +1169,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
         {:ok, _address} ->
           counters_json =
             address_hash
-            |> Counters.address_limited_counters(@api_true)
+            |> Counters.address_limited_counters(@api_true |> fetch_scam_token_toggle(conn))
             |> Enum.reduce(%{}, fn {counter_name, counter_value}, acc ->
               @counter_name_to_json_field_name
               |> Map.fetch(counter_name)
@@ -1551,7 +1539,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       |> put_status(200)
       |> put_view(DepositView)
       |> render(:deposits, %{
-        deposits: deposits |> maybe_preload_ens() |> maybe_preload_metadata(),
+        deposits: deposits |> maybe_preload_ens_and_metadata(),
         next_page_params: next_page_params
       })
     end

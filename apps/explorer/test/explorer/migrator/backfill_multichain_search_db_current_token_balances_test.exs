@@ -87,7 +87,7 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalancesTest d
     Tesla.Test.expect_tesla_call(
       times: 1,
       returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
-        {:ok, payload} = Jason.decode(body)
+        {:ok, payload} = Utils.JSON.decode(body)
 
         assert payload["addresses"] == []
         assert payload["block_ranges"] == []
@@ -110,12 +110,12 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalancesTest d
         {:ok,
          %Tesla.Env{
            status: 200,
-           body: Jason.encode!(%{"status" => "ok"})
+           body: Utils.JSON.encode!(%{"status" => "ok"})
          }}
       end
     )
 
-    assert {:ok, {:chunks_processed, _}} =
+    assert 2 =
              BackfillMultichainSearchDbCurrentTokenBalances.update_batch([balance_1.id, balance_2.id])
   end
 
@@ -131,6 +131,8 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalancesTest d
       api_key: nil,
       addresses_chunk_size: 7000
     )
+
+    insert(:block)
 
     balance = insert(:address_current_token_balance, block_number: 100, token_type: "ERC-20")
 

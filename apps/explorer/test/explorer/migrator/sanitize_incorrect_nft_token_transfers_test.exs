@@ -20,7 +20,17 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfersTest do
         token_type: "ERC-721"
       )
 
-      deposit_log = insert(:log, first_topic: TokenTransfer.weth_deposit_signature(), address: token_address)
+      transaction_1 = :transaction |> insert() |> with_block()
+
+      deposit_log =
+        insert(:log,
+          first_topic: TokenTransfer.weth_deposit_signature(),
+          address: token_address,
+          transaction: transaction_1,
+          transaction_index: transaction_1.index,
+          block_number: transaction_1.block_number,
+          block: transaction_1.block
+        )
 
       tt =
         insert(:token_transfer,
@@ -36,7 +46,17 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfersTest do
 
       assert tt.token_contract_address_hash == deposit_log.address_hash
 
-      withdrawal_log = insert(:log, first_topic: TokenTransfer.weth_withdrawal_signature(), address: token_address)
+      transaction_2 = :transaction |> insert() |> with_block()
+
+      withdrawal_log =
+        insert(:log,
+          first_topic: TokenTransfer.weth_withdrawal_signature(),
+          address: token_address,
+          transaction: transaction_2,
+          transaction_index: transaction_2.index,
+          block_number: transaction_2.block_number,
+          block: transaction_2.block
+        )
 
       insert(:token_transfer,
         from_address: insert(:address),

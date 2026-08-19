@@ -28,6 +28,12 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
   @max_concurrency 5
   @post_timeout :timer.minutes(5)
 
+  # Max rows per `insert_all` into the export queues. A single chunk from
+  # `extract_batch_import_params_into_chunks/1` places all block and transaction hashes in
+  # its main data, which for a large refetch batch can exceed the Postgres bind-parameter
+  # limit (65535) in one statement, so the inserts are split into sub-batches.
+  @export_queue_insert_chunk_size 5_000
+
   @doc """
   Processes a batch import of data by splitting the input parameters into chunks and sending each chunk as an HTTP POST request to a configured microservice endpoint.
 
@@ -346,14 +352,14 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     {prepared_main_data, prepared_balances_data} = prepare_export_data_for_queue(data_to_retry)
 
-    Repo.insert_all(
+    insert_all_in_chunks(
       MainExportQueue,
       Helper.add_timestamps(prepared_main_data),
       on_conflict: MainExportQueue.default_on_conflict(),
       conflict_target: [:hash, :hash_type]
     )
 
-    Repo.insert_all(
+    insert_all_in_chunks(
       BalancesExportQueue,
       Helper.add_timestamps(prepared_balances_data),
       on_conflict: BalancesExportQueue.default_on_conflict(),
@@ -577,9 +583,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       |> Enum.each(fn data_chunk ->
         {prepared_main_data, prepared_balances_data} = prepare_export_data_for_queue(data_chunk)
 
-        Repo.insert_all(MainExportQueue, Helper.add_timestamps(prepared_main_data), on_conflict: :nothing)
+        insert_all_in_chunks(MainExportQueue, Helper.add_timestamps(prepared_main_data), on_conflict: :nothing)
 
-        Repo.insert_all(BalancesExportQueue, Helper.add_timestamps(prepared_balances_data),
+        insert_all_in_chunks(BalancesExportQueue, Helper.add_timestamps(prepared_balances_data),
           on_conflict: {:replace, [:value, :updated_at]},
           conflict_target:
             {:unsafe_fragment,
@@ -591,6 +597,17 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
     else
       :ignore
     end
+  end
+
+  # Inserts already-timestamped export-queue rows in sub-batches bounded by
+  # `@export_queue_insert_chunk_size`, so a large list never exceeds the Postgres
+  # bind-parameter limit in a single `insert_all`. `opts` (e.g. `:on_conflict`,
+  # `:conflict_target`) are passed through unchanged to each `Repo.insert_all/3` call.
+  @spec insert_all_in_chunks(module(), [map()], keyword()) :: :ok
+  defp insert_all_in_chunks(queue_schema, entries, opts) do
+    entries
+    |> Enum.chunk_every(@export_queue_insert_chunk_size)
+    |> Enum.each(&Repo.insert_all(queue_schema, &1, opts))
   end
 
   @doc """
@@ -895,7 +912,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         }
       end)
 
-    main_queue = hashes_to_queue ++ addresses_to_queue
+    main_queue = Enum.sort_by(hashes_to_queue ++ addresses_to_queue, &{&1.hash, &1.hash_type})
 
     balances_queue = compose_balances_queue(address_coin_balances, address_token_balances)
 
@@ -940,19 +957,22 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         }
       end)
 
-    coin_balances_queue ++ token_balances_queue
+    Enum.sort_by(
+      coin_balances_queue ++ token_balances_queue,
+      &{&1.address_hash, &1.token_contract_address_hash_or_native, &1[:token_id]}
+    )
   end
 
   @spec http_post_request(String.t(), map()) :: {:ok, any()} | {:error, String.t()}
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HttpClient.post(url, Jason.encode!(body), headers,
+    case HttpClient.post(url, Utils.JSON.encode!(body), headers,
            recv_timeout: @post_timeout,
            pool: false
          ) do
       {:ok, %{body: response_body, status_code: 200}} ->
-        response_body |> Jason.decode()
+        response_body |> Utils.JSON.decode()
 
       {:ok, %{body: response_body, status_code: status_code}} ->
         {:error,

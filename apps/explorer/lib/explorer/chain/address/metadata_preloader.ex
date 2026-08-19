@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   alias Explorer.Chain.{
     Address,
     Address.CurrentTokenBalance,
+    AdvancedFilter,
     Beacon.Deposit,
     Block,
     InternalTransaction,
@@ -23,15 +24,85 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
 
   @type supported_types ::
           Address.t()
+          | AdvancedFilter.t()
           | Block.t()
           | CurrentTokenBalance.t()
           | InternalTransaction.t()
+          | Instance.t()
           | Log.t()
           | TokenTransfer.t()
           | Transaction.t()
           | Withdrawal.t()
 
   @type supported_input :: [supported_types] | supported_types
+
+  @typedoc """
+  Kind of entity being preloaded, used to pick the `DISABLE_*_BENS_PRELOAD` flag
+  that applies to it. `:any` means that no flag applies.
+  """
+  @type entity_kind :: :any | :blocks | :token_transfers | :transactions
+
+  @typedoc """
+  Field a microservice preload writes to: `:ens_domain_name` is served by BENS,
+  `:metadata` by the Metadata microservice.
+  """
+  @type meta_field :: :ens_domain_name | :metadata
+
+  @all_meta_fields [:ens_domain_name, :metadata]
+
+  # Backstop for the concurrent microservice requests. Both BENS and Metadata
+  # enforce their own receive timeout, so this only fires if a request hangs
+  # outside of it.
+  @concurrent_preload_timeout :timer.seconds(10)
+
+  @doc """
+  Preloads ENS names and metadata to supported entities, querying the BENS and
+  Metadata microservices concurrently.
+
+  Both microservices are asked about the same set of address hashes, so their
+  requests are independent and there is nothing to gain from issuing them one
+  after another: sequentially the entity waits for the sum of both round trips,
+  concurrently only for the slower one.
+
+  `entity_kind` selects the `DISABLE_*_BENS_PRELOAD` flag that applies to the
+  input. The metadata preload is not flag-gated.
+  """
+  @spec maybe_preload_ens_and_metadata(supported_input(), entity_kind()) :: supported_input()
+  def maybe_preload_ens_and_metadata(input, entity_kind \\ :any) do
+    fields =
+      if BENS.ens_preload_disabled?(entity_kind),
+        do: @all_meta_fields -- [:ens_domain_name],
+        else: @all_meta_fields
+
+    maybe_preload_selected_meta(input, fields)
+  end
+
+  @doc """
+  Preloads only the requested `fields` to supported entities, querying the
+  microservices that serve them concurrently.
+
+  Use this where the caller decides per request which preloads to pay for, such
+  as the `preload_ens` and `preload_metadata` parameters of the transaction
+  preview endpoint. Unlike `maybe_preload_ens_and_metadata/2`, no
+  `DISABLE_*_BENS_PRELOAD` flag is consulted: those flags exist to keep the
+  latency out of list endpoints that always preload, whereas here nothing is
+  requested unless the caller asks for it.
+  """
+  @spec maybe_preload_selected_meta(supported_input(), [meta_field()]) :: supported_input()
+  def maybe_preload_selected_meta(input, fields)
+
+  def maybe_preload_selected_meta(input, []), do: input
+
+  def maybe_preload_selected_meta(nil, _fields), do: nil
+
+  def maybe_preload_selected_meta(items, fields) when is_list(items) do
+    preload_selected_meta(items, fields)
+  end
+
+  def maybe_preload_selected_meta(item, fields) do
+    [item_with_meta] = preload_selected_meta([item], fields)
+    item_with_meta
+  end
 
   @doc """
   Preloads ENS/metadata to supported entities
@@ -77,13 +148,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   """
   @spec preload_ens_to_list([supported_types]) :: [supported_types]
   def preload_ens_to_list(items) do
-    address_hash_strings =
-      items
-      |> Enum.reduce([], fn item, acc ->
-        item_to_address_hash_strings(item) ++ acc
-      end)
-      |> Enum.filter(&(&1 != ""))
-      |> Enum.uniq()
+    address_hash_strings = address_hash_strings(items)
 
     case BENS.ens_names_batch_request(address_hash_strings) do
       {:ok, result} ->
@@ -99,11 +164,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   """
   @spec preload_metadata_to_list([supported_types]) :: [supported_types]
   def preload_metadata_to_list(items) do
-    address_hash_strings =
-      items
-      |> Enum.flat_map(&item_to_address_hash_strings/1)
-      |> Enum.filter(&(&1 != ""))
-      |> Enum.uniq()
+    address_hash_strings = address_hash_strings(items)
 
     case Metadata.get_addresses_tags(address_hash_strings) do
       {:ok, result} ->
@@ -133,6 +194,24 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   end
 
   @doc """
+  Preloads ENS name to Instance.t()
+  """
+  @spec preload_ens_to_instance(Instance.t()) :: Instance.t()
+  def preload_ens_to_instance(instance) do
+    [instance_with_ens] = preload_ens_to_list([instance])
+    instance_with_ens
+  end
+
+  @doc """
+  Preloads metadata to Instance.t()
+  """
+  @spec preload_metadata_to_instance(Instance.t()) :: Instance.t()
+  def preload_metadata_to_instance(instance) do
+    [instance_with_metadata] = preload_metadata_to_list([instance])
+    instance_with_metadata
+  end
+
+  @doc """
     Preload ENS info to search result, using get_address/1
   """
   @spec preload_ens_info_to_search_results(list) :: list
@@ -148,6 +227,76 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
       search_result ->
         search_result
     end)
+  end
+
+  defp preload_selected_meta(items, fields) do
+    case address_hash_strings(items) do
+      [] ->
+        items
+
+      address_hash_strings ->
+        address_hash_strings
+        |> meta_fetchers(fields)
+        |> fetch_meta()
+        |> Enum.reduce(items, fn {field, meta}, acc -> put_meta_to_items(acc, meta, field) end)
+    end
+  end
+
+  defp address_hash_strings(items) do
+    items
+    |> Enum.flat_map(&item_to_address_hash_strings/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.uniq()
+  end
+
+  defp meta_fetchers(address_hash_strings, fields) do
+    [
+      {:ens_domain_name, BENS.enabled?(), fn -> ens_names(address_hash_strings) end},
+      {:metadata, Metadata.enabled?(), fn -> metadata_tags(address_hash_strings) end}
+    ]
+    |> Enum.filter(fn {field, enabled?, _fetcher} -> enabled? and field in fields end)
+  end
+
+  defp fetch_meta([]), do: []
+
+  # A single request needs no task: running it in the caller keeps the logger
+  # metadata and the stacktrace of the calling process.
+  defp fetch_meta([{field, _enabled?, fetcher}]), do: fetched_meta(field, fetcher.())
+
+  defp fetch_meta(fetchers) do
+    Explorer.TaskSupervisor
+    |> Task.Supervisor.async_stream_nolink(
+      fetchers,
+      fn {field, _enabled?, fetcher} -> {field, fetcher.()} end,
+      timeout: @concurrent_preload_timeout,
+      on_timeout: :kill_task,
+      ordered: false
+    )
+    |> Enum.flat_map(fn
+      {:ok, {field, result}} -> fetched_meta(field, result)
+      _other -> []
+    end)
+  end
+
+  defp fetched_meta(field, {:ok, meta}), do: [{field, meta || %{}}]
+  defp fetched_meta(_field, _error), do: []
+
+  defp ens_names(address_hash_strings) do
+    case BENS.ens_names_batch_request(address_hash_strings) do
+      {:ok, result} -> {:ok, result["names"]}
+      _error -> :error
+    end
+  end
+
+  defp metadata_tags(address_hash_strings) do
+    case Metadata.get_addresses_tags(address_hash_strings) do
+      {:ok, result} -> {:ok, result["addresses"]}
+      _error -> :error
+    end
+  end
+
+  defp put_meta_to_items(items, meta, field) do
+    Enum.map(items, &put_meta_to_item(&1, meta, field))
   end
 
   defp item_to_address_hash_strings(nil), do: []
@@ -184,6 +333,16 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
          from_address_hash: from_address_hash
        }) do
     [to_string(to_address_hash), to_string(from_address_hash)]
+  end
+
+  defp item_to_address_hash_strings(%AdvancedFilter{
+         from_address_hash: from_address_hash,
+         to_address_hash: to_address_hash,
+         created_contract_address_hash: created_contract_address_hash
+       }) do
+    [from_address_hash, to_address_hash, created_contract_address_hash]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(&to_string/1)
   end
 
   defp item_to_address_hash_strings(%Log{address_hash: address_hash}) do
@@ -291,6 +450,29 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
         created_contract_address:
           alter_address(transaction.created_contract_address, created_contract_address_hash, names, field_to_put_info),
         from_address: alter_address(transaction.from_address, from_address_hash, names, field_to_put_info)
+    }
+  end
+
+  defp put_meta_to_item(
+         %AdvancedFilter{
+           from_address_hash: from_address_hash,
+           to_address_hash: to_address_hash,
+           created_contract_address_hash: created_contract_address_hash
+         } = advanced_filter,
+         names,
+         field_to_put_info
+       ) do
+    %AdvancedFilter{
+      advanced_filter
+      | from_address: alter_address(advanced_filter.from_address, from_address_hash, names, field_to_put_info),
+        to_address: alter_address(advanced_filter.to_address, to_address_hash, names, field_to_put_info),
+        created_contract_address:
+          alter_address(
+            advanced_filter.created_contract_address,
+            created_contract_address_hash,
+            names,
+            field_to_put_info
+          )
     }
   end
 

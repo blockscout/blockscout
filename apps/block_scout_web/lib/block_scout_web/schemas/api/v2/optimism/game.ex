@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Game do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "OptimismGame",
     description: "Optimism Dispute Game struct.",
     type: :object,
     properties: %{

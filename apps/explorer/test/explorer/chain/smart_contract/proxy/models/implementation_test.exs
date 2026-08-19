@@ -13,7 +13,47 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
   setup :set_mox_global
 
   describe "fetching implementation" do
+    test "get_implementation/1 does not re-probe verified non-proxy within empty cache TTL" do
+      initial_proxy_config = Application.get_env(:explorer, :proxy)
+      on_exit(fn -> Application.put_env(:explorer, :proxy, initial_proxy_config) end)
+
+      smart_contract = insert(:smart_contract)
+
+      proxy =
+        :explorer
+        |> Application.get_env(:proxy)
+        |> Keyword.replace(:fallback_cached_implementation_data_ttl, :timer.seconds(20))
+        |> Keyword.replace(:implementation_data_fetching_timeout, :timer.seconds(20))
+        |> Keyword.put(:empty_cached_implementation_data_ttl, :timer.hours(24))
+
+      Application.put_env(:explorer, :proxy, proxy)
+
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
+
+      assert %Implementation{address_hashes: [], names: [], proxy_type: nil} =
+               Implementation.get_implementation(smart_contract)
+
+      verify!(EthereumJSONRPC.Mox)
+
+      # expire the regular TTL: the cached empty result of a verified non-proxy
+      # must still be served without re-probing via JSON RPC (no Mox
+      # expectations are set, so any request would raise)
+      proxy =
+        :explorer
+        |> Application.get_env(:proxy)
+        |> Keyword.replace(:fallback_cached_implementation_data_ttl, 0)
+
+      Application.put_env(:explorer, :proxy, proxy)
+
+      assert %Implementation{address_hashes: [], names: [], proxy_type: nil} =
+               Implementation.get_implementation(smart_contract)
+    end
+
     test "get_implementation/1" do
+      initial_proxy_config = Application.get_env(:explorer, :proxy)
+      on_exit(fn -> Application.put_env(:explorer, :proxy, initial_proxy_config) end)
+
       smart_contract = insert(:smart_contract)
       implementation_smart_contract = insert(:smart_contract, name: "implementation")
 
@@ -42,6 +82,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
         :explorer
         |> Application.get_env(:proxy)
         |> Keyword.replace(:fallback_cached_implementation_data_ttl, 0)
+        |> Keyword.put(:empty_cached_implementation_data_ttl, 0)
 
       Application.put_env(:explorer, :proxy, proxy)
 

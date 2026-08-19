@@ -87,7 +87,7 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
 
     pending_operations_type = PendingOperationsHelper.pending_operations_type()
 
-    {_total, inserted} =
+    {count, inserted} =
       case pending_operations_type do
         "blocks" ->
           params =
@@ -127,6 +127,8 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus do
 
       InternalTransactionFetcher.async_fetch(block_numbers, transactions, false)
     end
+
+    count
   end
 
   @impl FillingMigration

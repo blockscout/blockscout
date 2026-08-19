@@ -39,7 +39,13 @@ defmodule Indexer.Prometheus.Instrumenter do
 
   @counter [name: :import_errors_count, help: "Number of database import errors"]
 
-  @gauge [name: :memory_consumed, labels: [:fetcher], help: "Amount of memory consumed by fetchers (MB)"]
+  @gauge [name: :memory_consumed, labels: [:fetcher], help: "Amount of memory consumed by all processes (MB)"]
+
+  @gauge [
+    name: :memory_consumed_indexer_fetchers,
+    labels: [:fetcher],
+    help: "Amount of memory consumed by indexer fetchers and on-demand fetchers (MB)"
+  ]
 
   @gauge [name: :latest_block_number, help: "Latest block number"]
 
@@ -47,6 +53,7 @@ defmodule Indexer.Prometheus.Instrumenter do
 
   # metrics of indexing monitor
   @gauge [name: :missing_blocks_count, help: "Number of blocks missing in the chain"]
+  @gauge [name: :refetch_needed_blocks_count, help: "Number of consensus blocks that require refetch"]
   @gauge [
     name: :missing_internal_transactions_count,
     help: "Number of blocks with not yet fetched internal transactions"
@@ -60,6 +67,19 @@ defmodule Indexer.Prometheus.Instrumenter do
   @gauge [name: :multichain_search_db_export_balances_queue_count, help: "Size of the balances export queue"]
   @gauge [name: :multichain_search_db_export_counters_queue_count, help: "Size of the counters export queue"]
   @gauge [name: :multichain_search_db_export_token_info_queue_count, help: "Size of the token info export queue"]
+  @gauge [
+    name: :erc20_token_balances_realtime_indexing_delay_seconds,
+    labels: [:percentile],
+    help: "Realtime token balances indexing delay in seconds by percentile"
+  ]
+  @gauge [
+    name: :blocks_realtime_indexing_delay_seconds,
+    labels: [:percentile],
+    help: "Realtime blocks indexing delay in seconds by percentile"
+  ]
+
+  @erc20_token_balance_delay_percentiles ["p20", "p40", "p60", "p80", "p90", "p95", "p99"]
+  @block_delay_percentiles ["p20", "p30", "p40", "p50", "p60", "p70", "p80", "p90", "p99"]
 
   @spec setup() :: :ok
   def setup do
@@ -73,6 +93,14 @@ defmodule Indexer.Prometheus.Instrumenter do
       set_latest_batch_number(0)
       set_latest_batch_timestamp(0)
     end
+
+    Enum.each(@erc20_token_balance_delay_percentiles, fn p ->
+      Gauge.set([name: :erc20_token_balances_realtime_indexing_delay_seconds, labels: [p]], 0)
+    end)
+
+    Enum.each(@block_delay_percentiles, fn p ->
+      Gauge.set([name: :blocks_realtime_indexing_delay_seconds, labels: [p]], 0)
+    end)
 
     :ok
   end
@@ -125,6 +153,16 @@ defmodule Indexer.Prometheus.Instrumenter do
 
   def set_memory_consumed(fetcher, memory) do
     Gauge.set([name: :memory_consumed, labels: [fetcher]], memory)
+  end
+
+  @doc """
+  Defines the metric for memory consumed by a specific indexer or on-demand fetcher (in MB).
+  """
+  @spec set_memory_consumed_indexer_fetchers(fetcher :: nil | atom() | String.t(), memory :: float()) :: :ok
+  def set_memory_consumed_indexer_fetchers(nil, _memory), do: :ok
+
+  def set_memory_consumed_indexer_fetchers(fetcher, memory) do
+    Gauge.set([name: :memory_consumed_indexer_fetchers, labels: [fetcher]], memory)
   end
 
   @spec set_latest_block_number(number :: integer()) :: :ok
@@ -186,6 +224,12 @@ defmodule Indexer.Prometheus.Instrumenter do
   """
   @spec missing_blocks_count(integer()) :: :ok
   def missing_blocks_count(value), do: Gauge.set([name: :missing_blocks_count], value)
+
+  @doc """
+  Defines the metric for the number of consensus blocks that require refetch.
+  """
+  @spec refetch_needed_blocks_count(integer()) :: :ok
+  def refetch_needed_blocks_count(value), do: Gauge.set([name: :refetch_needed_blocks_count], value)
 
   @doc """
   Defines the metric for the number of blocks with not yet fetched internal transactions.
@@ -254,4 +298,22 @@ defmodule Indexer.Prometheus.Instrumenter do
   @spec multichain_search_db_export_token_info_queue_count(integer()) :: :ok
   def multichain_search_db_export_token_info_queue_count(value),
     do: Gauge.set([name: :multichain_search_db_export_token_info_queue_count], value)
+
+  @spec erc20_token_balances_realtime_indexing_delay_seconds(map()) :: :ok
+  def erc20_token_balances_realtime_indexing_delay_seconds(percentiles) do
+    Enum.each(percentiles, fn {percentile, value} ->
+      unless is_nil(value) do
+        Gauge.set([name: :erc20_token_balances_realtime_indexing_delay_seconds, labels: [percentile]], value)
+      end
+    end)
+  end
+
+  @spec blocks_realtime_indexing_delay_seconds(map()) :: :ok
+  def blocks_realtime_indexing_delay_seconds(percentiles) do
+    Enum.each(percentiles, fn {percentile, value} ->
+      unless is_nil(value) do
+        Gauge.set([name: :blocks_realtime_indexing_delay_seconds, labels: [percentile]], value)
+      end
+    end)
+  end
 end

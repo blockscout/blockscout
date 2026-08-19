@@ -56,6 +56,7 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
   alias EthereumJSONRPC.Utility.EndpointAvailabilityObserver
 
   @check_interval :timer.seconds(1)
+  @sync_interval :timer.minutes(1)
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -64,6 +65,7 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
   def init(_) do
     if Application.get_env(:ethereum_jsonrpc, __MODULE__)[:enabled] do
       schedule_next_check()
+      schedule_sync()
 
       {:ok, %{unavailable_endpoints_arguments: []}}
     else
@@ -133,6 +135,19 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
     {:noreply, %{state | unavailable_endpoints_arguments: new_unavailable_endpoints}}
   end
 
+  def handle_info(:sync, %{unavailable_endpoints_arguments: unavailable_endpoints_arguments} = state) do
+    unavailable_endpoints_arguments
+    |> Enum.map(fn {json_rpc_named_arguments, url_type} ->
+      [url] = json_rpc_named_arguments[:transport_options][:urls]
+      {url_type, url}
+    end)
+    |> EndpointAvailabilityObserver.sync_unavailable_urls()
+
+    schedule_sync()
+
+    {:noreply, state}
+  end
+
   @doc """
   Retrieves the latest block number from an Ethereum node to check endpoint availability.
 
@@ -158,5 +173,9 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
   @spec schedule_next_check() :: reference()
   defp schedule_next_check do
     Process.send_after(self(), :check, @check_interval)
+  end
+
+  defp schedule_sync do
+    Process.send_after(self(), :sync, @sync_interval)
   end
 end

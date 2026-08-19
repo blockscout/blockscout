@@ -4,15 +4,22 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   Module to interact with Metadata microservice
   """
 
-  alias Explorer.{Chain, HttpClient}
-  alias Explorer.Chain.{Address.MetadataPreloader, Block, Transaction}
+  alias Explorer.Chain
+  alias Explorer.Chain.{Address.MetadataPreloader, Block, Token.Instance, Transaction}
+  alias Explorer.MicroserviceInterfaces.HttpClient
   alias Explorer.Utility.Microservice
 
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
-  import Explorer.Chain.Address.MetadataPreloader, only: [maybe_preload_meta: 3]
+  import Explorer.Chain.Address.MetadataPreloader,
+    only: [maybe_preload_ens_and_metadata: 1, maybe_preload_meta: 3]
+
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   require Logger
+
+  # Preloads only decorate API responses, so a slow Metadata service should cost
+  # the response its tags, not its latency. A longer timeout also keeps a pooled
+  # connection held for longer, which multiplies into pool pressure under load.
+  @preload_timeout :timer.seconds(1)
   @request_timeout :timer.seconds(5)
 
   @tags_per_address_limit 5
@@ -36,7 +43,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
 
   """
   @spec get_addresses_tags([String.t()]) ::
-          {:error, :disabled | <<_::416>> | Jason.DecodeError.t()} | {:ok, any()} | :ignore
+          {:error, :disabled | <<_::416>> | Exception.t()} | {:ok, any()} | :ignore
   def get_addresses_tags([]), do: :ignore
 
   def get_addresses_tags(addresses) do
@@ -47,7 +54,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
         chain_id: Application.get_env(:block_scout_web, :chain_id)
       }
 
-      http_get_request(addresses_metadata_url(), params)
+      http_get_request(addresses_metadata_url(), params, @preload_timeout)
     end
   end
 
@@ -93,19 +100,19 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
             tag_types: "protocol,name"
           })
 
-        http_get_request(tags_search_url(), params, &prepare_search_results/1)
+        http_get_request(tags_search_url(), params, @request_timeout, &prepare_search_results/1)
 
       _ ->
         :disabled
     end
   end
 
-  defp http_get_request(url, params, parsing_function \\ &decode_meta/1) do
+  defp http_get_request(url, params, recv_timeout, parsing_function \\ &decode_meta/1) do
     headers = []
 
-    case HttpClient.get(url, headers, params: params, recv_timeout: @request_timeout) do
+    case HttpClient.get(url, headers, params: params, recv_timeout: recv_timeout) do
       {:ok, %{body: body, status_code: 200}} ->
-        body |> Jason.decode() |> parsing_function.()
+        body |> Utils.JSON.decode() |> parsing_function.()
 
       {_, error} ->
         Logger.error(fn ->
@@ -120,24 +127,22 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   end
 
   defp http_get_request_for_proxy_method(url, params, parsing_function) do
-    case HttpClient.get(url, [], params: params, recv_timeout: config()[:proxy_requests_timeout]) do
+    case HttpClient.proxy_get(url, [], params: params, recv_timeout: config()[:proxy_requests_timeout]) do
       {:ok, %{body: body, status_code: 200}} ->
-        {200, body |> Jason.decode() |> parsing_function.()}
+        {200, body |> Utils.JSON.decode() |> parsing_function.()}
 
       {_, %{body: body, status_code: status_code} = error} ->
-        old_truncate = Application.get_env(:logger, :truncate)
-        Logger.configure(truncate: :infinity)
-
         Logger.error(fn ->
           [
             "Error while sending request to Metadata microservice url: #{url}: ",
-            inspect(error, limit: :infinity, printable_limit: :infinity)
+            inspect(error)
           ]
         end)
 
-        Logger.configure(truncate: old_truncate)
-        {:ok, response_json} = Jason.decode(body)
-        {status_code, response_json}
+        case Utils.JSON.decode(body) do
+          {:ok, response_json} -> {status_code, response_json}
+          {:error, _} -> {status_code, %{error: body}}
+        end
 
       {:error, reason} ->
         {500, %{error: reason}}
@@ -191,6 +196,14 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
     maybe_preload_meta(block, __MODULE__, &MetadataPreloader.preload_metadata_to_block/1)
   end
 
+  @doc """
+  Preloads metadata to NFT instance if Metadata microservice is enabled
+  """
+  @spec maybe_preload_metadata_to_instance(Instance.t()) :: Instance.t()
+  def maybe_preload_metadata_to_instance(instance) do
+    maybe_preload_meta(instance, __MODULE__, &MetadataPreloader.preload_metadata_to_instance/1)
+  end
+
   defp decode_meta({:ok, %{"addresses" => addresses} = result}) do
     prepared_address =
       Enum.reduce(addresses, %{}, fn {address, meta}, acc ->
@@ -204,7 +217,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   defp decode_meta(other), do: other
 
   defp decode_meta_in_tag(%{"meta" => meta} = tag) do
-    Map.put(tag, "meta", Jason.decode!(meta))
+    Map.put(tag, "meta", Utils.JSON.decode!(meta))
   end
 
   defp prepare_addresses_response({:ok, %{"items" => addresses} = response}) do
@@ -220,8 +233,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
            proxy_implementations_association() => :optional
          }
        )
-       |> maybe_preload_ens()
-       |> maybe_preload_metadata()
+       |> maybe_preload_ens_and_metadata()
      )}
   end
 

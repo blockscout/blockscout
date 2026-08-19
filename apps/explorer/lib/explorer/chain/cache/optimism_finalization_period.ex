@@ -23,7 +23,7 @@ defmodule Explorer.Chain.Cache.OptimismFinalizationPeriod do
     # call FINALIZATION_PERIOD_SECONDS() public getter of L2OutputOracle contract on L1
     request = Contract.eth_call_request("0xf4daa291", output_oracle, 0, nil, nil)
 
-    case json_rpc(request, Indexer.Helper.json_rpc_named_arguments(optimism_l1_rpc)) do
+    case json_rpc(request, Indexer.Helper.l1_json_rpc_named_arguments(optimism_l1_rpc)) do
       {:ok, value} ->
         {:update, quantity_to_integer(value)}
 

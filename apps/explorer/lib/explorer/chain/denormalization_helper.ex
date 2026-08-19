@@ -50,4 +50,20 @@ defmodule Explorer.Chain.DenormalizationHelper do
   def transactions_denormalization_finished?, do: BackgroundMigrations.get_transactions_denormalization_finished()
 
   def tt_denormalization_finished?, do: BackgroundMigrations.get_tt_denormalization_finished()
+
+  @doc """
+    Checks if the `CreateTransactionsTokenTransferMethodIdOrderedIndex` heavy DB
+    index operation has been completed.
+
+    This index is created on the transactions table after the `has_token_transfers`
+    column is fully backfilled, making it a reliable signal that the column can be
+    safely used as an early filter in queries.
+
+    ## Returns
+    - `true` if the index has been created.
+    - `false` if the operation is still ongoing or the status is unknown.
+  """
+  @spec transaction_has_token_transfers_finished?() :: boolean()
+  def transaction_has_token_transfers_finished?,
+    do: BackgroundMigrations.get_heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished()
 end

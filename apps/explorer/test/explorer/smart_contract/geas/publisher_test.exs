@@ -36,7 +36,7 @@ defmodule Explorer.SmartContract.Geas.PublisherTest do
           "src/consolidations/main.eas" => "// Test GEAS contract source code"
         },
         "abi" =>
-          Jason.encode!([
+          Utils.JSON.encode!([
             %{
               "type" => "function",
               "name" => "test_function",

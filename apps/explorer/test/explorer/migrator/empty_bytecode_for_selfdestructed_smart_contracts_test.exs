@@ -15,7 +15,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContractsTest do
 
   describe "update_batch/1" do
     test "returns {:ok, []} when block_numbers is empty" do
-      assert {:ok, []} = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([])
+      assert 0 = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([])
     end
 
     test "returns {:ok, []} when no selfdestruct transactions exist in blocks" do
@@ -30,7 +30,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContractsTest do
         type: :call
       )
 
-      assert {:ok, []} = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
+      assert 0 = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
     end
 
     test "empties contract_code for address with selfdestruct transaction" do
@@ -55,7 +55,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContractsTest do
         gas: nil
       )
 
-      assert {:ok, 1} = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
+      assert 1 = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
 
       # Verify contract_code is now empty
       updated_address = Repo.get(Address, contract_address.hash)
@@ -93,7 +93,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContractsTest do
         gas: nil
       )
 
-      assert {:ok, []} = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
+      assert 0 = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
 
       # Verify contract_code is still present
       updated_address = Repo.get(Address, contract_address.hash)
@@ -132,7 +132,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContractsTest do
         gas: nil
       )
 
-      assert {:ok, []} = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
+      assert 0 = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
 
       # Verify contract_code is still present
       updated_address = Repo.get(Address, contract_address.hash)
@@ -176,7 +176,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContractsTest do
         gas: nil
       )
 
-      assert {:ok, 2} = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
+      assert 2 = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
 
       # Verify both contracts have empty contract_code
       updated_address_1 = Repo.get(Address, contract_address_1.hash)
@@ -207,7 +207,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContractsTest do
         gas: nil
       )
 
-      assert {:ok, 0} = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
+      assert 0 = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
 
       # Verify contract_code remains empty (no update occurred)
       updated_address = Repo.get(Address, contract_address.hash)
@@ -235,7 +235,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContractsTest do
         gas: nil
       )
 
-      assert {:ok, 0} = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
+      assert 0 = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
 
       # Verify contract_code remains nil
       updated_address = Repo.get(Address, address.hash)
@@ -282,7 +282,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContractsTest do
         gas: nil
       )
 
-      assert {:ok, 2} =
+      assert 2 =
                EmptyBytecodeForSelfdestructedSmartContracts.update_batch([
                  block_1.number,
                  block_2.number
@@ -343,7 +343,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContractsTest do
         gas: nil
       )
 
-      assert {:ok, 1} = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
+      assert 1 = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
 
       # Verify first contract is empty, second is not
       updated_address_1 = Repo.get(Address, contract_address_1.hash)
@@ -387,7 +387,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContractsTest do
       )
 
       # Should still only update once since it's the same address
-      assert {:ok, 1} = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
+      assert 1 = EmptyBytecodeForSelfdestructedSmartContracts.update_batch([block.number])
 
       # Verify contract_code is empty
       updated_address = Repo.get(Address, contract_address.hash)

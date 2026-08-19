@@ -22,6 +22,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
 
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.Chain.{Hash, InternalTransaction}
+  alias Explorer.Repo
   alias Indexer.Fetcher.TokenTotalSupplyUpdater
   @token_type "ERC-20"
   @transaction_buffer_size 20_000
@@ -98,7 +99,7 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
           not Map.has_key?(internal_transaction, :error) &&
           (not Map.has_key?(internal_transaction, :call_type) || internal_transaction.call_type != "delegatecall")
       end)
-      |> InternalTransaction.preload_transaction()
+      |> InternalTransaction.preload_transaction(Repo)
       |> Enum.map(fn internal_transaction ->
         to_address_hash =
           Map.get(internal_transaction, :to_address_hash) ||

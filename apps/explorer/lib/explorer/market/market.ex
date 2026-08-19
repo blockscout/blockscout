@@ -124,6 +124,21 @@ defmodule Explorer.Market do
   end
 
   @doc """
+  Retrieves native coin exchange rates for the specified dates.
+
+  The returned map is keyed by date and does not contain entries for dates
+  without market history.
+  """
+  @spec get_coin_exchange_rates_at_dates([Date.t()], Keyword.t()) :: %{Date.t() => Token.t()}
+  def get_coin_exchange_rates_at_dates(dates, options) do
+    dates
+    |> MarketHistory.prices_at_dates(false, options)
+    |> Map.new(fn market_history ->
+      {market_history.date, MarketHistory.to_token(market_history)}
+    end)
+  end
+
+  @doc """
   Checks if the market token fetcher is enabled in the application.
 
   This function retrieves the enablement status from persistent term storage

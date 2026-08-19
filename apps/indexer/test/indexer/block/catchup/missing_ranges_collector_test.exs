@@ -4,7 +4,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
 
   import Mox
 
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.{MassiveBlock, MissingBlockRange}
   alias Indexer.Block.Catchup.MissingRangesCollector
 
   setup :set_mox_global
@@ -102,6 +102,37 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
       MissingBlockRange.clear_batch(batch)
       assert [] = MissingBlockRange.get_latest_batch()
     end
+
+    test "deletes massive blocks out of the finite ranges" do
+      Application.put_env(:indexer, :block_ranges, "10..20,30..50")
+
+      insert(:block, number: 200_000)
+
+      Enum.each([9, 10, 15, 20, 21, 29, 40, 51], &insert(:massive_block, number: &1))
+
+      MissingRangesCollector.start_link([])
+      Process.sleep(500)
+
+      assert [10, 15, 20, 40] == massive_block_numbers()
+    end
+
+    test "deletes massive blocks out of the ranges with the trailing latest range" do
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}],
+                                              _options ->
+        block_response(id, 300)
+      end)
+
+      Application.put_env(:indexer, :block_ranges, "10..20,100..latest")
+
+      insert(:block, number: 300)
+
+      Enum.each([9, 10, 20, 21, 99, 100, 150, 1000], &insert(:massive_block, number: &1))
+
+      MissingRangesCollector.start_link([])
+      Process.sleep(500)
+
+      assert [10, 20, 100, 150, 1000] == massive_block_numbers()
+    end
   end
 
   test "parse_block_ranges/1" do
@@ -115,6 +146,13 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
 
     assert MissingRangesCollector.parse_block_ranges("10..20,5..15,18..25,35..40,30..50,150..200") ==
              {:finite_ranges, [5..25, 30..50, 150..200]}
+  end
+
+  defp massive_block_numbers do
+    MassiveBlock
+    |> Repo.all()
+    |> Enum.map(& &1.number)
+    |> Enum.sort()
   end
 
   defp block_response(id, block_number) do

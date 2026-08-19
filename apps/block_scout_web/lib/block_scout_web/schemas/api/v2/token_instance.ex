@@ -15,6 +15,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenInstance do
       metadata: %Schema{
         type: :object,
         nullable: true,
+        additionalProperties: true,
         example: %{"name" => "Test", "description" => "Test", "image" => "https://example.com/image.png"}
       },
       owner: %Schema{allOf: [Address], nullable: true},

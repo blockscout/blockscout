@@ -10,6 +10,8 @@ defmodule Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSourcesTest 
 
   describe "sanitize duplicates in smart_contracts_additional_sources" do
     test "removes duplicate rows keeping a single record per (address_hash, file_name)" do
+      insert(:block)
+
       sc1 = insert(:smart_contract)
       sc2 = insert(:smart_contract)
 
@@ -53,6 +55,7 @@ defmodule Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSourcesTest 
     end
 
     test "completes gracefully when there are no duplicates" do
+      insert(:block)
       sc = insert(:smart_contract)
 
       %SmartContractAdditionalSource{}

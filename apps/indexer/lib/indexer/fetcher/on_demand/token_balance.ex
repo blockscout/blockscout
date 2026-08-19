@@ -116,7 +116,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
       updated_tokens =
         Map.put_new(
           acc[:tokens],
-          ctb.token.contract_address_hash.bytes,
+          ctb.token_contract_address_hash.bytes,
           ctb.token
         )
 
@@ -156,9 +156,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
       stale_balance_window ->
         address_hashes
         |> Enum.uniq()
-        |> Chain.fetch_last_token_balances_include_unfetched()
+        |> Chain.fetch_last_token_balances_include_unfetched(stale_balance_window)
         |> delete_invalid_balances()
-        |> Enum.filter(fn ctb -> ctb.block_number < stale_balance_window end)
         |> prepare_ctb_params_for_buffer()
     end
   end
@@ -218,23 +217,16 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
           broadcast: false
         })
 
-      imported_ctbs
-      |> filter_imported_ctbs(balances_map)
-      |> Enum.group_by(& &1.address_hash)
-      |> Enum.each(fn {address_hash, ctbs} ->
-        Publisher.broadcast(
-          %{
-            address_current_token_balances: %{
-              address_hash: to_string(address_hash),
-              address_current_token_balances:
-                Enum.map(ctbs, fn %CurrentTokenBalance{} = ctb ->
-                  %CurrentTokenBalance{ctb | token: tokens[ctb.token_contract_address_hash.bytes]}
-                end)
-            }
-          },
-          :on_demand
-        )
-      end)
+      ctbs_with_tokens =
+        imported_ctbs
+        |> filter_imported_ctbs(balances_map)
+        |> Enum.map(fn %CurrentTokenBalance{} = ctb ->
+          %CurrentTokenBalance{ctb | token: tokens[ctb.token_contract_address_hash.bytes]}
+        end)
+
+      unless ctbs_with_tokens == [] do
+        Publisher.broadcast(%{address_current_token_balances: ctbs_with_tokens}, :on_demand)
+      end
     end
   end
 
@@ -261,7 +253,16 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
           acc
       end)
 
-    Chain.import(%{address_token_balances: %{params: import_params}, broadcast: :on_demand})
+    unless Enum.empty?(import_params) do
+      {:ok,
+       %{
+         address_token_balances: imported_tbs
+       }} = Chain.import(%{address_token_balances: %{params: import_params}, broadcast: :on_demand})
+
+      unless imported_tbs == [] do
+        Publisher.broadcast(%{address_token_balances: imported_tbs}, :on_demand)
+      end
+    end
   end
 
   defp delete_invalid_balances(current_token_balances) do

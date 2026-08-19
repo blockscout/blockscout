@@ -43,9 +43,6 @@ defmodule Explorer.Repo.ConfigHelper do
       UtilsConfigHelper.parse_url_env_var("DATABASE_READ_ONLY_API_URL") ||
         UtilsConfigHelper.parse_url_env_var("DATABASE_URL")
 
-  def get_mud_db_url,
-    do: UtilsConfigHelper.parse_url_env_var("MUD_DATABASE_URL") || UtilsConfigHelper.parse_url_env_var("DATABASE_URL")
-
   def get_event_notification_db_url,
     do: UtilsConfigHelper.parse_url_env_var("DATABASE_EVENT_URL") || UtilsConfigHelper.parse_url_env_var("DATABASE_URL")
 
@@ -64,7 +61,11 @@ defmodule Explorer.Repo.ConfigHelper do
 
     Application.put_env(:explorer, module, merged)
 
-    {:ok, opts |> Keyword.put(:url, remove_search_path(db_url)) |> Keyword.merge(Keyword.take(merged, [:search_path]))}
+    {:ok,
+     opts
+     |> Keyword.put(:url, remove_search_path(db_url))
+     |> Keyword.merge(Keyword.take(merged, [:search_path]))
+     |> Keyword.put_new(:types, Explorer.Repo.PostgrexTypes)}
   end
 
   @doc """

@@ -15,7 +15,7 @@ defmodule Explorer.SmartContract.Solidity.CodeCompilerTest do
 
     @compiler_tests "#{File.cwd!()}/test/support/fixture/smart_contract/compiler_tests.json"
                     |> File.read!()
-                    |> Jason.decode!()
+                    |> Utils.JSON.decode!()
 
     describe "run/2" do
       setup do

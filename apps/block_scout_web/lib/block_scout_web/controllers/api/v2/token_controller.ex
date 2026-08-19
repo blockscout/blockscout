@@ -38,9 +38,13 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     ]
 
   import Explorer.MicroserviceInterfaces.BENS,
-    only: [maybe_preload_ens: 1, maybe_preload_ens_for_token_transfers: 1]
+    only: [maybe_preload_ens_to_instance: 1]
 
-  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
+  import Explorer.MicroserviceInterfaces.Metadata,
+    only: [maybe_preload_metadata_to_instance: 1]
+
+  import Explorer.Chain.Address.MetadataPreloader,
+    only: [maybe_preload_ens_and_metadata: 1, maybe_preload_ens_and_metadata: 2]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -184,8 +188,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         token_transfers:
           token_transfers
           |> Instance.preload_nft(@api_true)
-          |> maybe_preload_ens_for_token_transfers()
-          |> maybe_preload_metadata(),
+          |> maybe_preload_ens_and_metadata(:token_transfers),
         next_page_params: next_page_params
       })
     end
@@ -231,7 +234,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> render(:token_holders, %{
-        token_balances: token_balances |> maybe_preload_ens() |> maybe_preload_metadata(),
+        token_balances: token_balances |> maybe_preload_ens_and_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -249,7 +252,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       ok:
         {"NFT instances for the specified token contract, with pagination.", "application/json",
          paginated_response(
-           items: Schemas.TokenInstance,
+           items: Schemas.TokenInstanceInTokenInstancesList,
            next_page_params_example: %{
              "unique_token" => 782_098
            }
@@ -301,8 +304,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         token_instances:
           token_instances
           |> put_owner(holder_address_with_proxy_implementations, holder_address_hash)
-          |> maybe_preload_ens()
-          |> maybe_preload_metadata(),
+          |> maybe_preload_ens_and_metadata(),
         next_page_params: next_page_params,
         token: token
       })
@@ -328,7 +330,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> render(:token_instances, %{
-        token_instances: token_instances |> maybe_preload_ens() |> maybe_preload_metadata(),
+        token_instances: token_instances |> maybe_preload_ens_and_metadata(),
         next_page_params: next_page_params,
         token: token
       })
@@ -383,7 +385,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> render(:token_instance, %{
-        token_instance: updated_token_instance,
+        token_instance:
+          updated_token_instance |> maybe_preload_ens_to_instance() |> maybe_preload_metadata_to_instance(),
         token: token
       })
     end
@@ -508,7 +511,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:token_transfers, %{
-        token_transfers: token_transfers |> maybe_preload_ens_for_token_transfers() |> maybe_preload_metadata(),
+        token_transfers: token_transfers |> maybe_preload_ens_and_metadata(:token_transfers),
         next_page_params: next_page_params
       })
     end
@@ -561,7 +564,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       conn
       |> put_status(200)
       |> render(:token_holders, %{
-        token_balances: token_holders |> maybe_preload_ens() |> maybe_preload_metadata(),
+        token_balances: token_holders |> maybe_preload_ens_and_metadata(),
         next_page_params: next_page_params
       })
     end
@@ -726,15 +729,14 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   operation :refetch_metadata,
     summary: "Trigger a refresh of metadata for a specific NFT",
     description:
-      "Triggers a refresh of metadata for a specific NFT instance. Useful when the NFT's metadata has been updated but is not yet reflected in the BlockScout database.",
+      "Triggers a refresh of metadata for a specific NFT instance. Useful when the NFT's metadata has been updated but is not yet reflected in the BlockScout database. The endpoint is rate limited per IP; once the limit is reached, a valid reCAPTCHA header is required to proceed.",
     parameters:
       base_params() ++
         [
           address_hash_param(),
           token_id_param(),
-          recaptcha_response_param(),
           scoped_recaptcha_bypass_token_param()
-        ],
+        ] ++ recaptcha_params(),
     responses: [
       ok:
         {"Metadata refresh has been successfully initiated.", "application/json",
@@ -811,6 +813,66 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
+  @max_batch_size 50
+
+  operation :tokens_batch,
+    summary: "Get token info for a batch of token addresses",
+    description: "Retrieves token information for a list of token contract addresses.",
+    parameters: base_params(),
+    request_body:
+      {"List of token contract address hashes", "application/json",
+       %Schema{
+         type: :object,
+         properties: %{
+           address_hashes: %Schema{
+             type: :array,
+             items: Schemas.General.AddressHash,
+             maxItems: @max_batch_size
+           }
+         },
+         required: [:address_hashes]
+       }},
+    responses: [
+      ok:
+        {"List of tokens for given addresses.", "application/json",
+         %Schema{type: :array, items: Schemas.Token.Response}},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
+
+  @doc """
+  Handles POST requests to `/api/v2/tokens/batch` endpoint.
+  """
+  @spec tokens_batch(Plug.Conn.t(), map()) :: Plug.Conn.t() | {:format, nil}
+  def tokens_batch(conn, params) do
+    case conn.body_params do
+      %{address_hashes: address_hashes} when is_list(address_hashes) ->
+        do_tokens_batch(conn, params, address_hashes)
+
+      _ ->
+        {:format, nil}
+    end
+  end
+
+  defp do_tokens_batch(conn, params, address_hashes) do
+    valid_hashes =
+      address_hashes
+      |> Enum.flat_map(fn hash_string ->
+        with {:ok, hash} <- Chain.string_to_address_hash(hash_string),
+             {:ok, false} <- AccessHelper.restricted_access?(hash_string, params) do
+          [hash]
+        else
+          _ -> []
+        end
+      end)
+      |> Enum.uniq()
+
+    tokens = Token.get_by_contract_address_hashes(valid_hashes, @token_options)
+
+    conn
+    |> put_status(200)
+    |> render(:tokens_batch, %{tokens: tokens})
+  end
+
   defp get_api_key(conn) do
     case Conn.get_req_header(conn, "x-api-key") do
       [api_key] ->
@@ -824,7 +886,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   defp maybe_run_fill_metadata_url_task(token_instance, token) do
     if not is_nil(token_instance.metadata) && is_nil(token_instance.skip_metadata_url) do
       Task.async(fn ->
-        BackfillMetadataURL.update_batch([
+        BackfillMetadataURL.update_batch_with_results([
           {token_instance.token_contract_address_hash, token_instance.token_id, token.type}
         ])
       end)

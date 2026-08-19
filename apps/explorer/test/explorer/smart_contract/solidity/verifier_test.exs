@@ -107,7 +107,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         contract_data =
           "#{File.cwd!()}/test/support/fixture/smart_contract/contract_with_lib.json"
           |> File.read!()
-          |> Jason.decode!()
+          |> Utils.JSON.decode!()
           |> List.first()
 
         compiler_version = contract_data["compiler_version"]
@@ -140,7 +140,7 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         contract_data =
           "#{File.cwd!()}/test/support/fixture/smart_contract/solidity_5.11_new_whisper_metadata.json"
           |> File.read!()
-          |> Jason.decode!()
+          |> Utils.JSON.decode!()
 
         compiler_version = contract_data["compiler_version"]
         name = contract_data["name"]
@@ -400,6 +400,25 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
         assert {:error, :compilation, "Function, variable, struct or modifier declaration expected."} =
                  Verifier.evaluate_authenticity(contract_address.hash, params)
       end
+
+      test "returns {:error, message} instead of :ok when verification raises an exception", %{
+        contract_code_info: contract_code_info
+      } do
+        contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
+
+        # Omitting "contract_source_code" makes the internal `Map.fetch!/2` raise a
+        # KeyError, which is caught by the try/rescue in evaluate_authenticity/2.
+        # Before the fix the rescue silently returned :ok (the result of Logger.error/1);
+        # now it must return an {:error, message} tuple.
+        params = %{
+          "compiler_version" => contract_code_info.version,
+          "name" => contract_code_info.name,
+          "optimization" => contract_code_info.optimized
+        }
+
+        assert {:error, message} = Verifier.evaluate_authenticity(contract_address.hash, params)
+        assert message =~ "contract_source_code"
+      end
     end
 
     describe "extract_bytecode_and_metadata_hash/1" do
@@ -603,6 +622,30 @@ defmodule Explorer.SmartContract.Solidity.VerifierTest do
 
         assert {:ok, %{abi: abi}} = Verifier.evaluate_authenticity(contract_address.hash, params)
         assert abi != nil
+      end
+    end
+
+    describe "compiler_version_at_least_0_6_0?/1" do
+      test "returns true for supported versions with and without a commit hash" do
+        assert Verifier.compiler_version_at_least_0_6_0?("latest")
+        assert Verifier.compiler_version_at_least_0_6_0?("v0.8.19+commit.7dd6d404")
+        assert Verifier.compiler_version_at_least_0_6_0?("0.6.0")
+        assert Verifier.compiler_version_at_least_0_6_0?("v0.6")
+        assert Verifier.compiler_version_at_least_0_6_0?("1.0.0")
+      end
+
+      test "returns false for versions below 0.6.0" do
+        refute Verifier.compiler_version_at_least_0_6_0?("v0.5.17+commit.d19bba13")
+        refute Verifier.compiler_version_at_least_0_6_0?("0.4.26")
+      end
+
+      test "returns false for malformed versions instead of crashing" do
+        # single component: previously raised Enum.OutOfBoundsError
+        refute Verifier.compiler_version_at_least_0_6_0?("v6")
+        # non-numeric components: previously raised MatchError on Integer.parse/1
+        refute Verifier.compiler_version_at_least_0_6_0?("vx.y+commit.deadbeef")
+        refute Verifier.compiler_version_at_least_0_6_0?("")
+        refute Verifier.compiler_version_at_least_0_6_0?("garbage")
       end
     end
 

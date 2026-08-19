@@ -21,7 +21,7 @@ defmodule Explorer.Chain.ImportTest do
   }
 
   alias Explorer.Chain.Events.Subscriber
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.{AddressIdToAddressHash, LogFirstTopic, MissingBlockRange}
 
   @moduletag :capturelog
 
@@ -100,6 +100,7 @@ defmodule Explorer.Chain.ImportTest do
         params: [
           %{
             block_hash: "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
+            block_number: 37,
             address_hash: "0x8bf38d4764929064f2d4d3a56520a76ab3df415b",
             data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
             first_topic: first_topic,
@@ -107,7 +108,8 @@ defmodule Explorer.Chain.ImportTest do
             third_topic: third_topic,
             fourth_topic: nil,
             index: 0,
-            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5"
+            transaction_hash: "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
+            transaction_index: 0
           }
         ],
         timeout: 5
@@ -177,7 +179,7 @@ defmodule Explorer.Chain.ImportTest do
     }
 
     test "with valid data" do
-      {:ok, first_topic} = Explorer.Chain.Hash.Full.cast(@first_topic_hex_string)
+      %{id: first_topic_id} = LogFirstTopic.find_or_create(@first_topic_hex_string)
       {:ok, second_topic} = Explorer.Chain.Hash.Full.cast(@second_topic_hex_string)
       {:ok, third_topic} = Explorer.Chain.Hash.Full.cast(@third_topic_hex_string)
       difficulty = Decimal.new(340_282_366_920_938_463_463_374_607_431_768_211_454)
@@ -185,6 +187,7 @@ defmodule Explorer.Chain.ImportTest do
       token_transfer_amount = Decimal.new(1_000_000_000_000_000_000)
       gas_limit = Decimal.new(6_946_336)
       gas_used = Decimal.new(50450)
+      %{address_id: address_id} = AddressIdToAddressHash.find_or_create("0x8bf38d4764929064f2d4d3a56520a76ab3df415b")
 
       assert {:ok,
               %{
@@ -278,19 +281,14 @@ defmodule Explorer.Chain.ImportTest do
                 ],
                 logs: [
                   %Log{
-                    address_hash: %Hash{
-                      byte_count: 20,
-                      bytes:
-                        <<139, 243, 141, 71, 100, 146, 144, 100, 242, 212, 211, 165, 101, 32, 167, 106, 179, 223, 65,
-                          91>>
-                    },
-                    data: %Data{
+                    address_id: ^address_id,
+                    compressed_data: %Data{
                       bytes:
                         <<0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13, 224, 182, 179,
                           167, 100, 0, 0>>
                     },
                     index: 0,
-                    first_topic: ^first_topic,
+                    first_topic_id: ^first_topic_id,
                     second_topic: ^second_topic,
                     third_topic: ^third_topic,
                     fourth_topic: nil,
@@ -300,6 +298,7 @@ defmodule Explorer.Chain.ImportTest do
                         <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
                           101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
                     },
+                    transaction_index: 0,
                     inserted_at: %{},
                     updated_at: %{}
                   }
@@ -482,7 +481,14 @@ defmodule Explorer.Chain.ImportTest do
         }
       }
 
-      Import.all(params)
+      ctb_chunk_size = Application.get_env(:explorer, :token_balances_import_chunk_size)
+      Application.put_env(:explorer, :token_balances_import_chunk_size, 1)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :token_balances_import_chunk_size, ctb_chunk_size)
+      end)
+
+      assert {:ok, %{address_current_token_balances: [_, _]}} = Import.all(params)
 
       count =
         CurrentTokenBalance
@@ -493,7 +499,7 @@ defmodule Explorer.Chain.ImportTest do
     end
 
     test "with empty map" do
-      assert {:ok, %{}} == Import.all(%{})
+      assert {:ok, %{set_statement_timeout: :done}} == Import.all(%{})
     end
 
     test "with invalid data" do
@@ -1665,6 +1671,7 @@ defmodule Explorer.Chain.ImportTest do
                    params: [
                      params_for(:log,
                        transaction_hash: transaction_hash,
+                       transaction_index: 0,
                        address_hash: miner_hash,
                        block_hash: block_hash
                      )
@@ -1848,7 +1855,7 @@ defmodule Explorer.Chain.ImportTest do
                blocks: %{
                  params: []
                }
-             }) == {:ok, %{}}
+             }) == {:ok, %{set_statement_timeout: :done}}
     end
 
     # https://github.com/poanetwork/blockscout/issues/868 regression test

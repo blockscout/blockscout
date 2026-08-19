@@ -230,17 +230,36 @@ defmodule Indexer.Memory.Monitor do
 
   @megabytes_divisor 2 ** 20
   defp set_metrics(%__MODULE__{shrinkable_set: shrinkable_set}) do
+    set_all_processes_metrics()
+    set_indexer_fetchers_metrics(shrinkable_set)
+  end
+
+  defp set_all_processes_metrics do
+    total_memory =
+      Enum.reduce(Process.list(), 0, fn pid, acc ->
+        memory = memory(pid)
+        name = name(pid)
+
+        Instrumenter.set_memory_consumed(name, memory / @megabytes_divisor)
+
+        acc + memory
+      end) / @megabytes_divisor
+
+    Instrumenter.set_memory_consumed(:total, total_memory)
+  end
+
+  defp set_indexer_fetchers_metrics(shrinkable_set) do
     total_memory =
       Enum.reduce(Enum.to_list(shrinkable_set) ++ on_demand_fetchers(), 0, fn pid, acc ->
         memory = memory(pid) / @megabytes_divisor
         name = name(pid)
 
-        Instrumenter.set_memory_consumed(name, memory)
+        Instrumenter.set_memory_consumed_indexer_fetchers(name, memory)
 
         acc + memory
       end)
 
-    Instrumenter.set_memory_consumed(:total, total_memory)
+    Instrumenter.set_memory_consumed_indexer_fetchers(:total, total_memory)
   end
 
   defp on_demand_fetchers do
@@ -248,19 +267,33 @@ defmodule Indexer.Memory.Monitor do
     |> Enum.reject(&is_nil(Process.whereis(&1)))
     |> Enum.flat_map(fn supervisor ->
       supervisor
-      |> Supervisor.which_children()
+      |> safe_which_children()
       |> Enum.filter(fn {name, _, _, _} -> is_atom(name) and String.contains?(to_string(name), "OnDemand") end)
       |> Enum.flat_map(fn
-        {_, pid, :supervisor, _} ->
+        {_, pid, :supervisor, _} when is_pid(pid) ->
           pid
-          |> Supervisor.which_children()
+          |> safe_which_children()
           |> Enum.filter(&(elem(&1, 2) == :worker))
           |> Enum.map(&elem(&1, 1))
+          |> Enum.filter(&is_pid/1)
 
-        {_, pid, _, _} ->
+        {_, pid, _, _} when is_pid(pid) ->
           [pid]
+
+        # child is :undefined or :restarting (not currently running)
+        _ ->
+          []
       end)
     end)
+  end
+
+  # `Supervisor.which_children/1` performs a `GenServer.call`, which exits with
+  # `:noproc` if the supervisor terminates between the pid check and the call.
+  # Treat that expected race as an empty child list instead of crashing.
+  defp safe_which_children(supervisor) do
+    Supervisor.which_children(supervisor)
+  catch
+    :exit, _ -> []
   end
 
   defp name(pid) do

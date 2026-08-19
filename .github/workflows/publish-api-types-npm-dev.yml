@@ -1,0 +1,25 @@
+name: Publish @blockscout/api-types to npm (dev)
+# This workflow is used to publish the dev version (before release) of the @blockscout/api-types package to npm.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  version:
+    name: Resolve dev package version
+    runs-on: ubuntu-latest
+    outputs:
+      package_version: ${{ steps.set.outputs.package_version }}
+    steps:
+      - name: Set version from commit SHA
+        id: set
+        run: echo "package_version=v0.0.1-beta.${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+  publish:
+    name: Build and publish
+    needs: version
+    uses: ./.github/workflows/publish-api-types-npm.yml
+    with:
+      package_version: ${{ needs.version.outputs.package_version }}
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -131,7 +131,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionControllerTest do
         "GET",
         "/api/v1/userOps/#{operation_hash}",
         fn conn ->
-          Plug.Conn.resp(conn, 404, Jason.encode!(%{"error" => "Not found"}))
+          Plug.Conn.resp(conn, 404, Utils.JSON.encode!(%{"error" => "Not found"}))
         end
       )
 
@@ -163,7 +163,9 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionControllerTest do
       logs =
         insert_list(51, :token_transfer_log,
           transaction: transaction,
-          block: transaction.block
+          transaction_index: transaction.index,
+          block: transaction.block,
+          block_number: transaction.block_number
         )
 
       for log <- logs do
@@ -180,7 +182,7 @@ defmodule BlockScoutWeb.API.V2.Proxy.AccountAbstractionControllerTest do
         "GET",
         "/api/v1/userOps/#{operation_hash}",
         fn conn ->
-          Plug.Conn.resp(conn, 200, Jason.encode!(user_op))
+          Plug.Conn.resp(conn, 200, Utils.JSON.encode!(user_op))
         end
       )
 

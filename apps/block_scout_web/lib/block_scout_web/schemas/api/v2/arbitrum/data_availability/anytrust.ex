@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.DataAvailability.Anytrust do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "ArbitrumDataAvailabilityAnytrust",
     description: "AnyTrust data availability certificate.",
     type: :object,
     properties: %{

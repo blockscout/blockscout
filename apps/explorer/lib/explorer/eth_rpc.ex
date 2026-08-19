@@ -18,6 +18,7 @@ defmodule Explorer.EthRPC do
     DenormalizationHelper,
     Hash,
     Hash.Address,
+    Log,
     Transaction,
     Transaction.Status,
     Wei
@@ -906,10 +907,19 @@ defmodule Explorer.EthRPC do
         {:proxy, %{result: result}} ->
           format_success(result, Map.get(request, "id"))
 
-        {:proxy, {:error, {:bad_response = error, _}}} ->
-          format_error(error, @internal_error_code, Map.get(request, "id"))
+        # a batched request succeeded on the transport level, but the node returned
+        # a JSONRPC error object for this particular request
+        {:proxy, %{error: %{code: _code, message: _message} = error}} ->
+          format_error(error, Map.get(request, "id"))
+
+        # the request URL is intentionally dropped from the reason to avoid exposing it
+        {:proxy, {:error, {:bad_response = error, _request_url}}} ->
+          format_error(inspect(error), @internal_error_code, Map.get(request, "id"))
 
         {:proxy, {:error, %Mint.TransportError{reason: reason}}} ->
+          format_error(inspect(reason), @internal_error_code, Map.get(request, "id"))
+
+        {:proxy, {:error, reason}} ->
           format_error(inspect(reason), @internal_error_code, Map.get(request, "id"))
       end
     end)
@@ -936,16 +946,23 @@ defmodule Explorer.EthRPC do
   defp proxy_method?(_), do: false
 
   defp active_proxy_methods do
+    core = if core_proxy_methods_disabled?(), do: %{}, else: @proxy_methods
+
     if extended_proxy_methods_enabled?() do
-      Map.merge(@proxy_methods, @extended_proxy_methods)
+      Map.merge(core, @extended_proxy_methods)
     else
-      @proxy_methods
+      core
     end
   end
 
   defp extended_proxy_methods_enabled? do
     Application.get_env(:explorer, __MODULE__, [])
     |> Keyword.get(:extended_proxy_methods_enabled, false)
+  end
+
+  defp core_proxy_methods_disabled? do
+    Application.get_env(:explorer, __MODULE__, [])
+    |> Keyword.get(:disable_core_proxy_methods, false)
   end
 
   defp arity_valid?(%Range{} = range, params_length), do: params_length in range
@@ -1159,6 +1176,14 @@ defmodule Explorer.EthRPC do
   defp render_transaction_receipt(transaction) do
     {:ok, status} = Status.dump(transaction.status)
 
+    logs =
+      transaction.logs
+      |> Log.preload_block()
+      |> Log.preload_transaction()
+      |> Log.preload_address()
+      |> Log.prepare_data()
+      |> Log.prepare_first_topic()
+
     props =
       %{
         "blockHash" => transaction.block_hash,
@@ -1171,8 +1196,8 @@ defmodule Explorer.EthRPC do
           |> encode_quantity(),
         "from" => transaction.from_address_hash,
         "gasUsed" => encode_quantity(transaction.gas_used),
-        "logs" => Enum.map(transaction.logs, &render_log(&1, transaction)),
-        "logsBloom" => "0x" <> (transaction.logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
+        "logs" => Enum.map(logs, &render_log(&1, transaction)),
+        "logsBloom" => "0x" <> (logs |> BloomFilter.logs_bloom() |> Base.encode16(case: :lower)),
         "status" => encode_quantity(status),
         "to" => transaction.to_address_hash,
         "transactionHash" => transaction.hash,
@@ -1527,6 +1552,11 @@ defmodule Explorer.EthRPC do
 
   defp format_error(message, code, id) do
     %{error: %{code: code, message: message}, id: id}
+  end
+
+  # passes an already built JSONRPC error object through, keeping the optional `data` field
+  defp format_error(%{code: _code, message: _message} = error, id) do
+    %{error: error, id: id}
   end
 
   defp do_eth_request(%{"jsonrpc" => rpc_version}) when rpc_version != "2.0" do

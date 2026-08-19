@@ -66,7 +66,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
             |> Enum.map(fn id ->
               %{jsonrpc: "2.0", id: id, result: %{number: EthereumJSONRPC.integer_to_quantity(id)}}
             end)
-            |> Jason.encode!()
+            |> Utils.JSON.encode!()
 
           {:ok, %{body: body, status_code: 200}}
         end)
@@ -82,7 +82,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
             |> Enum.map(fn id ->
               %{jsonrpc: "2.0", id: id, result: %{number: EthereumJSONRPC.integer_to_quantity(id)}}
             end)
-            |> Jason.encode!()
+            |> Utils.JSON.encode!()
 
           {:ok, %{body: body, status_code: 200}}
         end)
@@ -149,7 +149,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
                 ]
               }
             end)
-            |> Jason.encode!()
+            |> Utils.JSON.encode!()
 
           {:ok, %{body: body, status_code: 200}}
         end)
@@ -181,7 +181,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
                 ]
               }
             end)
-            |> Jason.encode!()
+            |> Utils.JSON.encode!()
 
           {:ok, %{body: body, status_code: 200}}
         end)
@@ -241,7 +241,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
                 ]
               }
             end)
-            |> Jason.encode!()
+            |> Utils.JSON.encode!()
 
           {:ok, %{body: body, status_code: 200}}
         end)
@@ -273,7 +273,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
                 ]
               }
             end)
-            |> Jason.encode!()
+            |> Utils.JSON.encode!()
 
           {:ok, %{body: body, status_code: 200}}
         end)
@@ -307,14 +307,14 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
       if json_rpc_named_arguments[:transport_options][:http] == EthereumJSONRPC.HTTP.Mox do
         EthereumJSONRPC.HTTP.Mox
         |> expect(:json_rpc, 5, fn _url, json, _headers, _options ->
-          assert [%{}, %{}] = decoded = Jason.decode!(json)
+          assert [%{}, %{}] = decoded = Utils.JSON.decode!(json)
 
           body =
             decoded
             |> Enum.map(fn %{"id" => id} ->
               %{jsonrpc: "2.0", id: id, result: %{number: EthereumJSONRPC.integer_to_quantity(id)}}
             end)
-            |> Jason.encode!()
+            |> Utils.JSON.encode!()
 
           {:ok, %{body: body, status_code: 200}}
         end)
@@ -353,7 +353,7 @@ defmodule EthereumJSONRPC.HTTP.MoxTest do
 
     http = Keyword.fetch!(transport_options, :http)
     url = transport_options |> Keyword.fetch!(:urls) |> List.first()
-    json = Jason.encode_to_iodata!(payload)
+    json = Utils.JSON.encode_to_iodata!(payload)
     http_options = Keyword.fetch!(transport_options, :http_options)
 
     assert {:ok, %{body: body, status_code: 413}} = http.json_rpc(url, json, [], http_options)

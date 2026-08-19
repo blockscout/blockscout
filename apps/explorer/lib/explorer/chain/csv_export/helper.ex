@@ -54,7 +54,7 @@ defmodule Explorer.Chain.CsvExport.Helper do
     {1000, 2000}
 
   """
-  @spec block_from_period(String.t(), String.t()) :: {Block.block_number(), Block.block_number()}
+  @spec block_from_period(String.t() | nil, String.t() | nil) :: {Block.block_number(), Block.block_number()}
   def block_from_period(from_period, to_period) do
     from_block = convert_date_string_to_block(from_period, :after, :from)
     to_block = convert_date_string_to_block(to_period, :before, :to)
@@ -62,7 +62,10 @@ defmodule Explorer.Chain.CsvExport.Helper do
     {from_block, to_block}
   end
 
-  @spec convert_date_string_to_block(String.t(), :before | :after, :from | :to) :: integer()
+  @spec convert_date_string_to_block(String.t() | nil, :before | :after, :from | :to) :: integer()
+  defp convert_date_string_to_block(nil, _direction, _range_type), do: 0
+  defp convert_date_string_to_block("", _direction, _range_type), do: 0
+
   defp convert_date_string_to_block(date_string, direction, range_type) do
     with {:ok, timestamp, _utc_offset} <- date_string_to_timestamp(date_string, range_type),
          {:ok, block} <- BlockGeneralReader.timestamp_to_block_number(timestamp, direction, true) do
@@ -72,8 +75,10 @@ defmodule Explorer.Chain.CsvExport.Helper do
     end
   end
 
-  @spec date_string_to_timestamp(String.t(), :from | :to) ::
+  @spec date_string_to_timestamp(String.t() | nil, :from | :to) ::
           {:ok, DateTime.t(), Calendar.utc_offset()} | {:error, atom()}
+  defp date_string_to_timestamp(nil, _range_type), do: {:error, :invalid_date}
+
   defp date_string_to_timestamp(date_string, range_type) do
     date_string
     |> Date.from_iso8601()

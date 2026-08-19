@@ -77,13 +77,19 @@ defmodule Explorer.Chain.Address.TokenBalance do
   """
   # credo:disable-for-next-line /Complexity/
   def unfetched_token_balances do
+    token_types =
+      if Application.get_env(:explorer, :chain_type) == :zilliqa do
+        ["ERC-20", "ZRC-2", "ERC-1155", "ERC-404"]
+      else
+        ["ERC-20", "ERC-1155", "ERC-404"]
+      end
+
     if BackgroundMigrations.get_tb_token_type_finished() do
       from(
         tb in __MODULE__,
         where:
-          ((tb.address_hash != ^@burn_address_hash and tb.token_type == "ERC-721") or tb.token_type == "ERC-20" or
-             tb.token_type == "ZRC-2" or
-             tb.token_type == "ERC-1155" or tb.token_type == "ERC-404") and
+          ((tb.address_hash != ^@burn_address_hash and tb.token_type == "ERC-721") or
+             tb.token_type in ^token_types) and
             (is_nil(tb.value_fetched_at) or is_nil(tb.value)) and
             (is_nil(tb.refetch_after) or tb.refetch_after < ^Timex.now())
       )
@@ -93,8 +99,8 @@ defmodule Explorer.Chain.Address.TokenBalance do
         join: t in Token,
         on: tb.token_contract_address_hash == t.contract_address_hash,
         where:
-          ((tb.address_hash != ^@burn_address_hash and t.type == "ERC-721") or t.type == "ERC-20" or t.type == "ZRC-2" or
-             t.type == "ERC-1155" or t.type == "ERC-404") and
+          ((tb.address_hash != ^@burn_address_hash and t.type == "ERC-721") or
+             t.type in ^token_types) and
             (is_nil(tb.value_fetched_at) or is_nil(tb.value)) and
             (is_nil(tb.refetch_after) or tb.refetch_after < ^Timex.now())
       )

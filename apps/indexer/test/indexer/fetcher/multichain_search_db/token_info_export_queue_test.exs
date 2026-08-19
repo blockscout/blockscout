@@ -46,9 +46,9 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueueTest do
       token_info_item_2 = insert(:multichain_search_db_export_token_info_queue)
       token_info_item_3 = insert(:multichain_search_db_export_token_info_queue)
 
-      {:ok, token_info_item_1_data} = Jason.decode(Jason.encode!(token_info_item_1.data))
-      {:ok, token_info_item_2_data} = Jason.decode(Jason.encode!(token_info_item_2.data))
-      {:ok, token_info_item_3_data} = Jason.decode(Jason.encode!(token_info_item_3.data))
+      {:ok, token_info_item_1_data} = Utils.JSON.decode(Utils.JSON.encode!(token_info_item_1.data))
+      {:ok, token_info_item_2_data} = Utils.JSON.decode(Utils.JSON.encode!(token_info_item_2.data))
+      {:ok, token_info_item_3_data} = Utils.JSON.decode(Utils.JSON.encode!(token_info_item_3.data))
 
       reducer = fn data, acc -> [data | acc] end
 
@@ -118,7 +118,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueueTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{"status" => "ok"})
+          Utils.JSON.encode!(%{"status" => "ok"})
         )
       end)
 
@@ -193,9 +193,9 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueueTest do
       Tesla.Test.expect_tesla_call(
         times: 4,
         returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
-          case Jason.decode(body) do
+          case Utils.JSON.decode(body) do
             _ ->
-              {:ok, %Tesla.Env{status: 200, body: Jason.encode!(%{"status" => "ok"})}}
+              {:ok, %Tesla.Env{status: 200, body: Utils.JSON.encode!(%{"status" => "ok"})}}
           end
         end
       )
@@ -212,12 +212,12 @@ defmodule Indexer.Fetcher.MultichainSearchDb.TokenInfoExportQueueTest do
     Tesla.Test.expect_tesla_call(
       times: 5,
       returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
-        case Jason.decode(body) do
+        case Utils.JSON.decode(body) do
           {:ok, %{"tokens" => [%{"address_hash" => ^address_4_hash_string}]}} ->
-            {:ok, %Tesla.Env{status: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
+            {:ok, %Tesla.Env{status: 500, body: Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})}}
 
           _ ->
-            {:ok, %Tesla.Env{status: 200, body: Jason.encode!(%{"status" => "ok"})}}
+            {:ok, %Tesla.Env{status: 200, body: Utils.JSON.encode!(%{"status" => "ok"})}}
         end
       end
     )

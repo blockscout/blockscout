@@ -9,7 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.ClaimMessage do
   require OpenApiSpex
 
   OpenApiSpex.schema(%{
-    title: "Arbitrum.ClaimMessage",
+    title: "ArbitrumClaimMessage",
     description: "Calldata and outbox contract address needed to execute a withdrawal on the Parent chain.",
     type: :object,
     required: [:calldata, :outbox_address_hash],

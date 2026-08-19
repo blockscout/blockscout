@@ -22,8 +22,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.ZkSync.MinimalBatch do
     properties: %{
       number: %Schema{type: :integer, minimum: 0, description: "Batch number on the rollup."},
       timestamp:
-        Helper.extend_schema(General.Timestamp.schema(),
-          description: "Timestamp when the batch was sealed on the rollup."
+        Helper.describe_inline(
+          General.Timestamp.schema(),
+          "Timestamp when the batch was sealed on the rollup."
         ),
       status: %Schema{
         type: :string,
@@ -37,40 +38,40 @@ defmodule BlockScoutWeb.Schemas.API.V2.ZkSync.MinimalBatch do
         """
       },
       commit_transaction_hash:
-        Helper.extend_schema(General.FullHashNullable.schema(),
-          description:
-            "Hash of the parent-chain transaction that committed this batch. " <>
-              "`null` until the commit transaction is observed."
+        Helper.describe_inline(
+          General.FullHashNullable.schema(),
+          "Hash of the parent-chain transaction that committed this batch. " <>
+            "`null` until the commit transaction is observed."
         ),
       commit_transaction_timestamp:
-        Helper.extend_schema(General.TimestampNullable.schema(),
-          description:
-            "Timestamp of the parent-chain transaction that committed this batch. " <>
-              "`null` until the commit transaction is observed."
+        Helper.describe_inline(
+          General.TimestampNullable.schema(),
+          "Timestamp of the parent-chain transaction that committed this batch. " <>
+            "`null` until the commit transaction is observed."
         ),
       prove_transaction_hash:
-        Helper.extend_schema(General.FullHashNullable.schema(),
-          description:
-            "Hash of the parent-chain transaction that proved this batch. " <>
-              "`null` until the prove transaction is observed."
+        Helper.describe_inline(
+          General.FullHashNullable.schema(),
+          "Hash of the parent-chain transaction that proved this batch. " <>
+            "`null` until the prove transaction is observed."
         ),
       prove_transaction_timestamp:
-        Helper.extend_schema(General.TimestampNullable.schema(),
-          description:
-            "Timestamp of the parent-chain transaction that proved this batch. " <>
-              "`null` until the prove transaction is observed."
+        Helper.describe_inline(
+          General.TimestampNullable.schema(),
+          "Timestamp of the parent-chain transaction that proved this batch. " <>
+            "`null` until the prove transaction is observed."
         ),
       execute_transaction_hash:
-        Helper.extend_schema(General.FullHashNullable.schema(),
-          description:
-            "Hash of the parent-chain transaction that executed this batch. " <>
-              "`null` until the execute transaction is observed."
+        Helper.describe_inline(
+          General.FullHashNullable.schema(),
+          "Hash of the parent-chain transaction that executed this batch. " <>
+            "`null` until the execute transaction is observed."
         ),
       execute_transaction_timestamp:
-        Helper.extend_schema(General.TimestampNullable.schema(),
-          description:
-            "Timestamp of the parent-chain transaction that executed this batch. " <>
-              "`null` until the execute transaction is observed."
+        Helper.describe_inline(
+          General.TimestampNullable.schema(),
+          "Timestamp of the parent-chain transaction that executed this batch. " <>
+            "`null` until the execute transaction is observed."
         )
     },
     required: [

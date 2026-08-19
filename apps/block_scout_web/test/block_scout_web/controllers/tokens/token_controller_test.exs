@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.Tokens.TokenControllerTest do
   #     conn = get(conn, "/token-counters", %{"id" => Address.checksum(contract_address.hash)})
 
   #     assert conn.status == 200
-  #     {:ok, response} = Jason.decode(conn.resp_body)
+  #     {:ok, response} = Utils.JSON.decode(conn.resp_body)
 
   #     assert %{"token_holder_count" => 0, "transfer_count" => 1} == response
   #   end

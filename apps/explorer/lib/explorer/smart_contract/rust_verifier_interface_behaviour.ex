@@ -79,22 +79,25 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       def http_post_request(url, body, options \\ []) do
         headers = [{"Content-Type", "application/json"}]
 
-        case HttpClient.post(url, Jason.encode!(body), put_api_key_header(headers), recv_timeout: @post_timeout) do
+        case HttpClient.post(url, Utils.JSON.encode!(body), put_api_key_header(headers), recv_timeout: @post_timeout) do
           {:ok, %{body: body, status_code: _}} ->
             process_verifier_response(body, options)
 
           {:error, error} ->
-            old_truncate = Application.get_env(:logger, :truncate)
-            Logger.configure(truncate: :infinity)
-
             Logger.error(fn ->
               [
-                "Error while sending request to verification microservice url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
-                inspect(error, limit: :infinity, printable_limit: :infinity)
+                "Error while sending request to verification microservice url: #{url} ",
+                inspect(error)
               ]
             end)
 
-            Logger.configure(truncate: old_truncate)
+            Logger.debug(fn ->
+              [
+                "Error while sending request to verification microservice url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
+                inspect(error)
+              ]
+            end)
+
             {:error, @request_error_msg}
         end
       end
@@ -118,17 +121,13 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
             {:error, body}
 
           {:error, error} ->
-            old_truncate = Application.get_env(:logger, :truncate)
-            Logger.configure(truncate: :infinity)
-
             Logger.error(fn ->
               [
                 "Error while sending request to verification microservice url: #{url}: ",
-                inspect(error, limit: :infinity, printable_limit: :infinity)
+                inspect(error)
               ]
             end)
 
-            Logger.configure(truncate: old_truncate)
             {:error, @request_error_msg}
         end
       end
@@ -142,7 +141,7 @@ defmodule Explorer.SmartContract.RustVerifierInterfaceBehaviour do
       end
 
       def process_verifier_response(body, options) when is_binary(body) do
-        case Jason.decode(body) do
+        case Utils.JSON.decode(body) do
           {:ok, decoded} ->
             process_verifier_response(decoded, options)
 

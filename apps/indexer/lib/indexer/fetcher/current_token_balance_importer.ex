@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.CurrentTokenBalanceImporter do
   require Logger
 
   alias Explorer.Chain
+  alias Indexer.Block.Fetcher
 
   @default_update_interval :timer.minutes(1)
 
@@ -33,20 +34,25 @@ defmodule Indexer.Fetcher.CurrentTokenBalanceImporter do
     {:ok, %{}}
   end
 
-  def add(ctb_params) do
-    GenServer.cast(__MODULE__, {:add, ctb_params})
+  def add(ctb_params, realtime? \\ false) do
+    GenServer.cast(__MODULE__, {:add, ctb_params, realtime?})
   end
 
-  def handle_cast({:add, ctb_params}, state) do
+  def handle_cast({:add, ctb_params, realtime?}, state) do
     result_state =
       Enum.reduce(ctb_params, state, fn params, acc ->
         key = {params.address_hash, params.token_contract_address_hash, params.token_id}
         existing_record = acc[key]
 
-        if is_nil(existing_record) or existing_record.block_number <= params.block_number do
-          Map.put(acc, key, params)
-        else
-          acc
+        cond do
+          is_nil(existing_record) ->
+            Map.put(acc, key, {params, realtime?})
+
+          elem(existing_record, 0).block_number <= params.block_number ->
+            Map.put(acc, key, {params, elem(existing_record, 1) or realtime?})
+
+          true ->
+            acc
         end
       end)
 
@@ -71,6 +77,10 @@ defmodule Indexer.Fetcher.CurrentTokenBalanceImporter do
     {:noreply, state}
   end
 
+  def handle_info({:EXIT, _pid, :normal}, state) do
+    {:noreply, state}
+  end
+
   def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
     {:noreply, state}
   end
@@ -83,10 +93,22 @@ defmodule Indexer.Fetcher.CurrentTokenBalanceImporter do
   defp do_update(ctb_map) when ctb_map == %{}, do: ctb_map
 
   defp do_update(ctb_map) do
-    ctb_params = Map.values(ctb_map)
+    ctb_params =
+      ctb_map
+      |> Map.values()
+      |> Enum.map(&elem(&1, 0))
 
     case Chain.import(%{address_current_token_balances: %{params: ctb_params}, timeout: :infinity}) do
-      {:ok, _imported} ->
+      {:ok, %{address_current_token_balances: imported}} ->
+        {realtime_imported, catchup_imported} =
+          Enum.split_with(
+            imported,
+            &elem(ctb_map[{&1.address_hash, &1.token_contract_address_hash, &1.token_id}] || {nil, false}, 1)
+          )
+
+        Fetcher.async_import_current_token_balances(%{address_current_token_balances: realtime_imported}, true)
+        Fetcher.async_import_current_token_balances(%{address_current_token_balances: catchup_imported}, false)
+
         Logger.info("[CurrentTokenBalanceImporter] imported #{Enum.count(ctb_params)} balances")
 
         %{}

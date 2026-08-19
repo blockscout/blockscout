@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchByEigenda do
   OpenApiSpex.schema(
     Batch.schema()
     |> Helper.extend_schema(
-      title: "Arbitrum.BatchByEigenda",
+      title: "ArbitrumBatchByEigenda",
       description: "Arbitrum batch with EigenDA data availability.",
       properties: %{
         data_availability: DataAvailability.Eigenda

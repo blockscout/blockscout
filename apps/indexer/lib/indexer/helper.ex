@@ -224,10 +224,15 @@ defmodule Indexer.Helper do
   end
 
   @doc """
-  Forms JSON RPC named arguments for the given RPC URL.
+  Forms JSON RPC named arguments for the given L1 (parent chain) RPC URL.
+
+  Rollup modules use this helper to build named arguments for their L1 node, so
+  the resulting `http_options` are tagged with `layer: :l1` so that requests to
+  the L1 node are tracked by the dedicated
+  `l1_json_rpc_requests_count`/`l1_json_rpc_requests_errors_count` metrics.
   """
-  @spec json_rpc_named_arguments(binary()) :: list()
-  def json_rpc_named_arguments(rpc_url) when is_binary(rpc_url) do
+  @spec l1_json_rpc_named_arguments(binary()) :: list()
+  def l1_json_rpc_named_arguments(rpc_url) when is_binary(rpc_url) do
     normalized_rpc_url =
       rpc_url
       |> trim_url()
@@ -241,13 +246,14 @@ defmodule Indexer.Helper do
         http_options: [
           recv_timeout: :timer.minutes(10),
           timeout: :timer.minutes(10),
-          pool: :ethereum_jsonrpc
+          pool: :ethereum_jsonrpc,
+          layer: :l1
         ]
       ]
     ]
   end
 
-  def json_rpc_named_arguments(_rpc_url), do: raise(ArgumentError, "RPC URL must be a non-empty string")
+  def l1_json_rpc_named_arguments(_rpc_url), do: raise(ArgumentError, "RPC URL must be a non-empty string")
 
   defp validate_rpc_url!(""), do: raise(ArgumentError, "RPC URL must be a non-empty string")
   defp validate_rpc_url!(rpc_url), do: rpc_url
@@ -796,7 +802,7 @@ defmodule Indexer.Helper do
 
     ## Parameters
     - `url`: The URL which needs to be requested.
-    - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Jason.decode`.
+    - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Utils.JSON.decode`.
     - `attempts_done`: The number of attempts done. Incremented by the function itself.
     - `avoid_retry_for_statuses`: The list of http error codes we don't need to re-send the request for.
                                   E.g. for 404 error we don't try to re-send the request.
@@ -815,7 +821,7 @@ defmodule Indexer.Helper do
     case Tesla.get(client, url, opts: [adapter: [timeout: recv_timeout, transport_opts: [timeout: connect_timeout]]]) do
       {:ok, %{body: body, status: 200}} ->
         if response_format == :json do
-          Jason.decode(body)
+          Utils.JSON.decode(body)
         else
           {:ok, body}
         end
@@ -836,7 +842,7 @@ defmodule Indexer.Helper do
   #
   # ## Parameters
   # - `url`: The URL which needs to be requested.
-  # - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Jason.decode`.
+  # - `response_format`: Can be `:json` (by default) or `:raw`. In case of `:json`, the response is decoded with `Utils.JSON.decode`.
   # - `error`: The error description for logging purposes.
   # - `attempts_done`: The number of attempts done. Incremented by the function itself.
   # - `avoid_retry_for_statuses`: The list of http error codes we don't need to re-send the request for.
@@ -848,17 +854,12 @@ defmodule Indexer.Helper do
   @spec http_get_request_error(String.t(), :json | :raw, any(), non_neg_integer(), [non_neg_integer()]) ::
           {:ok, map()} | {:error, any()}
   defp http_get_request_error(url, response_format, error, attempts_done, avoid_retry_for_statuses) do
-    old_truncate = Application.get_env(:logger, :truncate)
-    Logger.configure(truncate: :infinity)
-
     Logger.error(fn ->
       [
         "Error while sending request to #{url}: ",
-        inspect(error, limit: :infinity, printable_limit: :infinity)
+        inspect(error)
       ]
     end)
-
-    Logger.configure(truncate: old_truncate)
 
     # retry to send the request
     attempts_done = attempts_done + 1

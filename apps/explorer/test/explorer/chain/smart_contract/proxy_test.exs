@@ -350,6 +350,9 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
   end
 
   test "check proxy_contract?/1 function" do
+    initial_proxy_config = Application.get_env(:explorer, :proxy)
+    on_exit(fn -> Application.put_env(:explorer, :proxy, initial_proxy_config) end)
+
     smart_contract = insert(:smart_contract)
 
     proxy =
@@ -374,6 +377,7 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
       :explorer
       |> Application.get_env(:proxy)
       |> Keyword.replace(:fallback_cached_implementation_data_ttl, 0)
+      |> Keyword.put(:empty_cached_implementation_data_ttl, 0)
 
     Application.put_env(:explorer, :proxy, proxy)
 

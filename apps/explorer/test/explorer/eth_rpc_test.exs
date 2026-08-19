@@ -5,6 +5,14 @@ defmodule Explorer.EthRPCTest do
   import Mox
 
   alias Explorer.EthRPC
+  alias Explorer.Utility.LogFirstTopic
+
+  @log_address_hash_string "0xe93c8cd0d409341205a592f8c4ac1a5fe5585cfa"
+  @first_topic_hex_string "0xb3813568d9991fc951961fcb4c784893574240a28925604d09fc577c55bb7c32"
+  @second_topic_hex_string "0x000000000000000000000000e38ecdf3cfbaf5cf347e6a3d6490eb34e3a0119d"
+  @third_topic_hex_string "0x000000000000000000000000e38ecdf3cfbaf5cf347e6a3d6490eb34e3a0119d"
+  @fourth_topic_hex_string "0x0000000000000000000000000000000000000000000000000000000000000000"
+  @logs_bloom "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000040000000000000000000000000002000000000000000000000000000000000000000000000000030000000000000000000800000000000000000000000000000000000000000000000002000000008000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000002000000000000000080000000000000000000000"
 
   setup :verify_on_exit!
   setup :set_mox_global
@@ -58,6 +66,61 @@ defmodule Explorer.EthRPCTest do
     assert response == %{error: %{code: -32_602, message: "Invalid address"}, id: 1}
   end
 
+  test "JSONRPC error returned by the node for a proxied request is passed through" do
+    set_extended_proxy_methods_enabled(true)
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: 3, jsonrpc: "2.0", method: "eth_getProof", params: _}], _options ->
+      {:ok,
+       [
+         %{
+           id: 3,
+           jsonrpc: "2.0",
+           error: %{code: -32_602, message: "distance to target block exceeds maximum proof window"}
+         }
+       ]}
+    end)
+
+    request = %{
+      "id" => 3,
+      "jsonrpc" => "2.0",
+      "method" => "eth_getProof",
+      "params" => ["0x96f56752bde1b9f6f86393658a79dec9f7095de3", [], "0x2d69fc1"]
+    }
+
+    assert [response] = EthRPC.responses([request])
+
+    assert response == %{
+             error: %{code: -32_602, message: "distance to target block exceeds maximum proof window"},
+             id: 3
+           }
+  end
+
+  test "transport error for a proxied request is returned as an internal error" do
+    set_extended_proxy_methods_enabled(true)
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: 1, jsonrpc: "2.0", method: "net_version", params: []}], _options ->
+      {:error, :timeout}
+    end)
+
+    request = %{"id" => 1, "jsonrpc" => "2.0", "method" => "net_version", "params" => []}
+
+    assert [response] = EthRPC.responses([request])
+    assert response == %{error: %{code: -32_603, message: ":timeout"}, id: 1}
+  end
+
+  test "undecodable node response for a proxied request is returned as an internal error without the node URL" do
+    set_extended_proxy_methods_enabled(true)
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: 1, jsonrpc: "2.0", method: "net_version", params: []}], _options ->
+      {:error, {:bad_response, "http://node.example.com:8545"}}
+    end)
+
+    request = %{"id" => 1, "jsonrpc" => "2.0", "method" => "net_version", "params" => []}
+
+    assert [response] = EthRPC.responses([request])
+    assert response == %{error: %{code: -32_603, message: ":bad_response"}, id: 1}
+  end
+
   test "default proxy methods remain available when feature flag is disabled" do
     set_extended_proxy_methods_enabled(false)
 
@@ -102,8 +165,99 @@ defmodule Explorer.EthRPCTest do
              EthRPC.responses(requests)
   end
 
+  test "core proxy methods are disabled when API_ETH_RPC_DISABLE_CORE_PROXY_METHODS is true" do
+    set_core_proxy_methods_disabled(true)
+
+    request = %{
+      "id" => 1,
+      "jsonrpc" => "2.0",
+      "method" => "eth_getCode",
+      "params" => ["0x0000000000000000000000000000000000000007", "latest"]
+    }
+
+    assert [response] = EthRPC.responses([request])
+    assert response == %{error: %{code: -32601, message: "Method not found."}, id: 1}
+  end
+
+  test "core proxy methods remain available when API_ETH_RPC_DISABLE_CORE_PROXY_METHODS is false" do
+    set_core_proxy_methods_disabled(false)
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn
+      [%{id: 1, jsonrpc: "2.0", method: "eth_getCode", params: [_, "latest"]}], _options ->
+        {:ok, [%{id: 1, jsonrpc: "2.0", result: "0x"}]}
+    end)
+
+    request = %{
+      "id" => 1,
+      "jsonrpc" => "2.0",
+      "method" => "eth_getCode",
+      "params" => ["0x0000000000000000000000000000000000000007", "latest"]
+    }
+
+    assert [response] = EthRPC.responses([request])
+    assert response == %{id: 1, result: "0x"}
+  end
+
+  test "extended proxy methods still work when core proxy methods are disabled" do
+    set_core_proxy_methods_disabled(true)
+    set_extended_proxy_methods_enabled(true)
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: 1, jsonrpc: "2.0", method: "net_version", params: []}], _options ->
+      {:ok, [%{id: 1, jsonrpc: "2.0", result: "1"}]}
+    end)
+
+    request = %{"id" => 1, "jsonrpc" => "2.0", "method" => "net_version", "params" => []}
+
+    assert [response] = EthRPC.responses([request])
+    assert response == %{id: 1, result: "1"}
+  end
+
+  describe "eth_getTransactionReceipt" do
+    test "renders logs and logsBloom of a transaction with already migrated logs" do
+      address = insert(:address, hash: @log_address_hash_string)
+
+      transaction = :transaction |> insert() |> with_block()
+
+      log =
+        insert(:log,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          address: address,
+          address_hash: nil,
+          data: nil,
+          first_topic: nil,
+          first_topic_id: LogFirstTopic.find_or_create(@first_topic_hex_string).id,
+          second_topic: @second_topic_hex_string,
+          third_topic: @third_topic_hex_string,
+          fourth_topic: @fourth_topic_hex_string
+        )
+
+      assert {:ok, receipt} = EthRPC.eth_get_transaction_receipt(to_string(transaction.hash))
+
+      assert receipt["logsBloom"] == @logs_bloom
+
+      assert [rendered_log] = receipt["logs"]
+      assert to_string(rendered_log["address"]) == @log_address_hash_string
+      assert rendered_log["data"] == log.compressed_data
+
+      assert Enum.map(rendered_log["topics"], &to_string/1) == [
+               @first_topic_hex_string,
+               @second_topic_hex_string,
+               @third_topic_hex_string,
+               @fourth_topic_hex_string
+             ]
+    end
+  end
+
   defp set_extended_proxy_methods_enabled(value) do
-    Application.put_env(:explorer, Explorer.EthRPC, extended_proxy_methods_enabled: value)
+    initial = Application.get_env(:explorer, Explorer.EthRPC) || []
+    Application.put_env(:explorer, Explorer.EthRPC, Keyword.merge(initial, extended_proxy_methods_enabled: value))
+  end
+
+  defp set_core_proxy_methods_disabled(value) do
+    initial = Application.get_env(:explorer, Explorer.EthRPC) || []
+    Application.put_env(:explorer, Explorer.EthRPC, Keyword.merge(initial, disable_core_proxy_methods: value))
   end
 
   defp restore_env(app, key, nil), do: Application.delete_env(app, key)

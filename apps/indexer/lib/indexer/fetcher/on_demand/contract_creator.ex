@@ -211,10 +211,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
       if Block.indexed?(contract_creation_block_number) do
         # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
         if RangesHelper.traceable_block_number?(contract_creation_block_number) do
-          {block_numbers, transactions} =
-            PendingOperationsHelper.insert_pending_operations([contract_creation_block_number], priority)
-
-          InternalTransaction.async_fetch(block_numbers, transactions, false, true, 10_000)
+          PendingOperationsHelper.insert_pending_operations([contract_creation_block_number], priority)
         end
       else
         MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], priority)

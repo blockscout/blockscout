@@ -71,7 +71,7 @@ defmodule Explorer.Chain.CsvExport.WorkerTest do
             Conn.resp(
               conn,
               200,
-              Jason.encode!(%{
+              Utils.JSON.encode!(%{
                 "FileInfo" => %{"Id" => "test-file-id", "ExpireAt" => date_time_to_expect |> DateTime.to_unix()}
               })
             )

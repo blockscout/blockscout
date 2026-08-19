@@ -58,11 +58,12 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
                  updated_logs
                )
 
-        assert %Log{log4 | address: nil, block: nil, transaction: nil} == %Log{
+        assert %Log{log4 | address: nil, block: nil, transaction: nil, address_mapping: nil} == %Log{
                  Repo.one(Log |> where([log], log.block_number != ^block.number))
                  | address: nil,
                    block: nil,
-                   transaction: nil
+                   transaction: nil,
+                   address_mapping: nil
                }
       end
 
@@ -145,11 +146,12 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
         assert [%{log_index: 1, block_number: ^block_number}] =
                  Repo.all(TokenTransfer |> where([tt], tt.token_type == "ERC-721"))
 
-        assert %Log{log4 | address: nil, block: nil, transaction: nil} == %Log{
+        assert %Log{log4 | address: nil, block: nil, transaction: nil, address_mapping: nil} == %Log{
                  Repo.one(Log |> where([log], log.block_number != ^block.number))
                  | address: nil,
                    block: nil,
-                   transaction: nil
+                   transaction: nil,
+                   address_mapping: nil
                }
       end
 

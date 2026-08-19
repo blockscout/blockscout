@@ -52,7 +52,10 @@ defmodule Explorer.Migrator.UnescapeAmpersandsInTokens do
         }
       end)
 
-    Repo.insert_all(Token, params, on_conflict: {:replace, [:name, :symbol]}, conflict_target: :contract_address_hash)
+    {count, _} =
+      Repo.insert_all(Token, params, on_conflict: {:replace, [:name, :symbol]}, conflict_target: :contract_address_hash)
+
+    count
   end
 
   @impl FillingMigration

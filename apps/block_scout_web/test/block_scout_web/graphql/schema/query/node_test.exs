@@ -83,7 +83,7 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.NodeTest do
 
       id =
         %{transaction_hash: to_string(transaction.hash), index: internal_transaction.index}
-        |> Jason.encode!()
+        |> Utils.JSON.encode!()
         |> (fn unique_id -> "InternalTransaction:#{unique_id}" end).()
         |> Base.encode64()
 
@@ -127,7 +127,7 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.NodeTest do
 
       id =
         %{transaction_hash: to_string(transaction.hash), index: internal_transaction.index}
-        |> Jason.encode!()
+        |> Utils.JSON.encode!()
         |> (fn unique_id -> "InternalTransaction:#{unique_id}" end).()
         |> Base.encode64()
 
@@ -158,7 +158,7 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.NodeTest do
 
       id =
         %{transaction_hash: to_string(token_transfer.transaction_hash), log_index: token_transfer.log_index}
-        |> Jason.encode!()
+        |> Utils.JSON.encode!()
         |> (fn unique_id -> "TokenTransfer:#{unique_id}" end).()
         |> Base.encode64()
 
@@ -194,7 +194,7 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.NodeTest do
 
       id =
         %{transaction_hash: to_string(transaction.hash), log_index: 0}
-        |> Jason.encode!()
+        |> Utils.JSON.encode!()
         |> (fn unique_id -> "TokenTransfer:#{unique_id}" end).()
         |> Base.encode64()
 

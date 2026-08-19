@@ -33,9 +33,9 @@ defmodule BlockScoutWeb.API.V2.BlockViewTest do
           estimated_time_in_sec: 1200
         })
 
-      assert result.current_block_number == 100
-      assert result.countdown_block_number == 200
-      assert result.remaining_blocks_count == 100
+      assert result.current_block_number == "100"
+      assert result.countdown_block_number == "200"
+      assert result.remaining_blocks_count == "100"
       assert result.estimated_time_in_seconds == "1200"
     end
   end

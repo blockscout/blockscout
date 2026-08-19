@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Withdrawal do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "OptimismWithdrawal",
     description: "Optimism Withdrawal struct.",
     type: :object,
     properties: %{
@@ -17,13 +18,13 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Withdrawal do
       l1_transaction_hash: General.FullHashNullable,
       l2_timestamp: General.TimestampNullable,
       l2_transaction_hash: General.FullHash,
-      msg_data: General.HexStringNullable,
+      msg_data: General.HexDataNullable,
       msg_gas_limit: General.IntegerStringNullable,
       msg_nonce: %Schema{type: :integer},
       msg_nonce_raw: General.IntegerString,
       msg_nonce_version: %Schema{type: :integer},
-      msg_sender_address_hash: General.FullHashNullable,
-      msg_target_address_hash: General.FullHashNullable,
+      msg_sender_address_hash: General.AddressHashNullable,
+      msg_target_address_hash: General.AddressHashNullable,
       msg_value: General.IntegerStringNullable,
       portal_contract_address_hash: General.AddressHashNullable,
       status: %Schema{

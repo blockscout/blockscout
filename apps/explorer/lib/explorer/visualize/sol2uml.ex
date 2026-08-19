@@ -17,7 +17,7 @@ defmodule Explorer.Visualize.Sol2uml do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+    case HttpClient.post(url, Utils.JSON.encode!(body), headers, recv_timeout: @post_timeout) do
       {:ok, %{body: body, status_code: 200}} ->
         process_visualizer_response(body)
 
@@ -26,23 +26,26 @@ defmodule Explorer.Visualize.Sol2uml do
         {:error, "failed to visualize contract"}
 
       {:error, error} ->
-        old_truncate = Application.get_env(:logger, :truncate)
-        Logger.configure(truncate: :infinity)
-
         Logger.error(fn ->
           [
-            "Error while sending request to visualizer microservice. url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
-            inspect(error, limit: :infinity, printable_limit: :infinity)
+            "Error while sending request to visualizer microservice. url: #{url} ",
+            inspect(error)
           ]
         end)
 
-        Logger.configure(truncate: old_truncate)
+        Logger.debug(fn ->
+          [
+            "Error while sending request to visualizer microservice. url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
+            inspect(error)
+          ]
+        end)
+
         {:error, @request_error_msg}
     end
   end
 
   def process_visualizer_response(body) when is_binary(body) do
-    case Jason.decode(body) do
+    case Utils.JSON.decode(body) do
       {:ok, decoded} ->
         process_visualizer_response(decoded)
 

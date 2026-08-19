@@ -21,7 +21,9 @@ defmodule Explorer.TestHelper do
   def run_necessary_background_migrations do
     for background_migration <- [
           Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex,
-          Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey
+          Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey,
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransactionIndexIndexUniqueIndex,
+          Explorer.Migrator.HeavyDbIndexOperation.UpdateLogsPrimaryKey
         ] do
       case background_migration.db_index_operation_status() do
         :completed ->

@@ -62,7 +62,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
 
   def result(contract) do
     %{
-      "ABI" => Jason.encode!(contract.abi),
+      "ABI" => Utils.JSON.encode!(contract.abi),
       "Address" => to_string(contract.address_hash),
       "CompilerVersion" => contract.compiler_version,
       "ContractName" => contract.name,
@@ -370,7 +370,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
                |> get("/api", params)
                |> json_response(200)
 
-      assert response["result"] == Jason.encode!(contract.abi)
+      assert response["result"] == Utils.JSON.encode!(contract.abi)
       assert response["status"] == "1"
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(getabi_schema(), response)
@@ -458,7 +458,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         %{
           "Address" => to_string(contract.address_hash),
           "SourceCode" => contract.contract_source_code,
-          "ABI" => Jason.encode!(contract.abi),
+          "ABI" => Utils.JSON.encode!(contract.abi),
           "ContractName" => contract.name,
           "CompilerVersion" => contract.compiler_version,
           # The contract's optimization value is true, so the expected value
@@ -681,7 +681,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         %{
           "Address" => to_string(proxy_contract.address_hash),
           "SourceCode" => proxy_contract.contract_source_code,
-          "ABI" => Jason.encode!(proxy_contract.abi),
+          "ABI" => Utils.JSON.encode!(proxy_contract.abi),
           "ContractName" => proxy_contract.name,
           "CompilerVersion" => proxy_contract.compiler_version,
           "FileName" => "",
@@ -725,7 +725,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         %{
           "Address" => to_string(contract.address_hash),
           "SourceCode" => contract.contract_source_code,
-          "ABI" => Jason.encode!(contract.abi),
+          "ABI" => Utils.JSON.encode!(contract.abi),
           "ContractName" => contract.name,
           "CompilerVersion" => contract.compiler_version,
           "OptimizationUsed" => "true",
@@ -831,7 +831,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
         %{
           "Address" => to_string(contract.address_hash),
           "SourceCode" => contract.contract_source_code,
-          "ABI" => Jason.encode!(contract.abi),
+          "ABI" => Utils.JSON.encode!(contract.abi),
           "ContractName" => contract.name,
           "CompilerVersion" => contract.compiler_version,
           "OptimizationUsed" => "true",
@@ -955,7 +955,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
   #     "SourceCode" =>
   #       "/**\n* Submitted for verification at blockscout.com on #{verified_contract.inserted_at}\n*/\n" <>
   #         contract_code_info.source_code,
-  #     "ABI" => Jason.encode!(contract_code_info.abi),
+  #     "ABI" => Utils.JSON.encode!(contract_code_info.abi),
   #     "ContractName" => contract_code_info.name,
   #     "CompilerVersion" => contract_code_info.version,
   #     "OptimizationUsed" => "false",
@@ -973,7 +973,7 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
   #   contract_data =
   #     "#{File.cwd!()}/test/support/fixture/smart_contract/contract_with_lib.json"
   #     |> File.read!()
-  #     |> Jason.decode!()
+  #     |> Utils.JSON.decode!()
   #     |> List.first()
   #
   #   %{

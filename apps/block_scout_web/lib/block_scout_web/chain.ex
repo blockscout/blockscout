@@ -1278,6 +1278,7 @@ defmodule BlockScoutWeb.Chain do
   def fetch_internal_transactions(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
     transaction_hash = Keyword.get(options, :transaction_hash)
+    include_zero_value? = Keyword.get(options, :include_zero_value, true)
 
     necessity_by_association = %{block: :optional}
 
@@ -1306,6 +1307,7 @@ defmodule BlockScoutWeb.Chain do
         end
 
       match?(%PagingOptions{key: {_, _, _}}, paging_options) and
+        include_zero_value? and
           not InternalTransaction.present_in_db?(elem(paging_options.key, 0)) ->
         InternalTransactionOnDemand.fetch_latest(options_with_necessity)
 
@@ -1313,7 +1315,7 @@ defmodule BlockScoutWeb.Chain do
         from_db = InternalTransaction.fetch(options_with_necessity)
 
         from_node =
-          if InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size) do
+          if include_zero_value? and InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size) do
             InternalTransactionOnDemand.fetch_latest(options_with_necessity)
           else
             []
@@ -1345,7 +1347,9 @@ defmodule BlockScoutWeb.Chain do
   """
   @spec transaction_to_internal_transactions(Transaction.t(), Keyword.t()) :: [InternalTransaction.t()]
   def transaction_to_internal_transactions(transaction, options \\ []) do
-    if InternalTransaction.present_in_db?(transaction.block_number) do
+    include_zero_value? = Keyword.get(options, :include_zero_value, true)
+
+    if InternalTransaction.present_in_db?(transaction.block_number) or not include_zero_value? do
       InternalTransaction.transaction_to_internal_transactions(transaction.hash, options)
     else
       InternalTransactionOnDemand.fetch_by_transaction(transaction, options)
@@ -1374,7 +1378,9 @@ defmodule BlockScoutWeb.Chain do
   """
   @spec block_to_internal_transactions(Block.t(), Keyword.t()) :: [InternalTransaction.t()]
   def block_to_internal_transactions(block, options \\ []) do
-    if InternalTransaction.present_in_db?(block.number) do
+    include_zero_value? = Keyword.get(options, :include_zero_value, true)
+
+    if InternalTransaction.present_in_db?(block.number) or not include_zero_value? do
       InternalTransaction.block_to_internal_transactions(block.number, options)
     else
       InternalTransactionOnDemand.fetch_by_block(block, options)
@@ -1407,10 +1413,12 @@ defmodule BlockScoutWeb.Chain do
         []
 
       _ ->
+        include_zero_value? = Keyword.get(options, :include_zero_value, true)
+
         from_db = InternalTransaction.fetch_from_db_by_address(address_hash, options)
 
         from_node =
-          if InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size) do
+          if include_zero_value? and InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size) do
             InternalTransactionOnDemand.fetch_by_address(address_hash, options)
           else
             []

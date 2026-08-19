@@ -76,18 +76,6 @@ config :explorer,
        ]
        |> Keyword.merge(ExplorerConfigHelper.ssl_options(account_db_url))
 
-mud_db_url = ExplorerConfigHelper.get_mud_db_url()
-
-# Configures Mud database
-config :explorer,
-       Explorer.Repo.Mud,
-       [
-         url: mud_db_url,
-         pool_size: ConfigHelper.parse_integer_env_var("MUD_POOL_SIZE", 50),
-         queue_target: queue_target
-       ]
-       |> Keyword.merge(ExplorerConfigHelper.ssl_options(mud_db_url))
-
 suave_db_url = ExplorerConfigHelper.get_suave_db_url()
 
 # Configures Suave database
@@ -124,6 +112,7 @@ for repo <- [
       Explorer.Repo.Beacon,
       Explorer.Repo.Blackfort,
       Explorer.Repo.Celo,
+      Explorer.Repo.Eden,
       Explorer.Repo.Filecoin,
       Explorer.Repo.Optimism,
       Explorer.Repo.PolygonEdge,

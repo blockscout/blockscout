@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.GraphQL.BodyReader do
     {:ok, body, conn} = Conn.read_body(conn, opts)
     updated_conn = update_in(conn.assigns[:raw_body], &[body | &1 || []])
 
-    json_body = Jason.decode!(body)
+    json_body = Utils.JSON.decode!(body)
 
     json_body_length =
       if is_list(json_body) do
@@ -27,7 +27,7 @@ defmodule BlockScoutWeb.GraphQL.BodyReader do
       {:ok, "",
        updated_conn
        |> Conn.put_resp_content_type("application/json")
-       |> Conn.resp(400, Jason.encode!(error))
+       |> Conn.resp(400, Utils.JSON.encode!(error))
        |> Conn.halt()}
     else
       {:ok, body, updated_conn}

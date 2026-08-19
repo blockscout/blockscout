@@ -16,7 +16,7 @@ defmodule Indexer.Block.Fetcher do
 
   alias EthereumJSONRPC.{Blocks, FetchedBeneficiaries}
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Block, Hash, Import, Transaction, Wei, Withdrawal}
+  alias Explorer.Chain.{Block, Hash, Import, Log, Transaction, Wei, Withdrawal}
   alias Explorer.Chain.Block.Reward
   alias Explorer.Chain.Cache.{Accounts, BlockNumber, Transactions, Uncles}
   alias Explorer.Chain.Cache.Blocks, as: BlocksCache
@@ -271,10 +271,9 @@ defmodule Indexer.Block.Fetcher do
          {:ok, inserted} <-
            __MODULE__.import(
              state,
-             basic_import_options
-             |> Map.merge(additional_options)
+             merge_options(basic_import_options, additional_options)
              |> import_options(chain_type_import_options)
-             |> extend_with_asyncable_import_options(tokens, token_transfers, address_token_balances)
+             |> extend_with_asyncable_import_options(tokens, token_transfers, address_token_balances, callback_module)
            ) do
       Prometheus.Instrumenter.set_block_batch_fetch(fetch_time, callback_module)
       result = {:ok, %{inserted: inserted, errors: blocks_errors}}
@@ -290,7 +289,15 @@ defmodule Indexer.Block.Fetcher do
       async_match_arbitrum_messages_to_l2(arbitrum_transactions_for_further_handling)
 
       if chain_type() == :zilliqa do
-        inserted_logs = Map.get(inserted, :logs, [])
+        inserted_logs =
+          inserted
+          |> Map.get(:logs, [])
+          |> Log.preload_block()
+          |> Log.preload_transaction()
+          |> Log.preload_address()
+          |> Log.prepare_data()
+          |> Log.prepare_first_topic()
+
         inserted_transactions = Map.get(inserted, :transactions, [])
         Zrc2Tokens.fetch_zrc2_token_transfers_and_adapters(inserted_logs, inserted_transactions, range, callback_module)
       end
@@ -445,7 +452,23 @@ defmodule Indexer.Block.Fetcher do
     })
   end
 
-  defp extend_with_asyncable_import_options(import_options, tokens, token_transfers, token_balances) do
+  defp merge_options(left, right) when is_map(left) and is_map(right) do
+    Map.merge(left, right, fn _key, value1, value2 -> merge_option_values(value1, value2) end)
+  end
+
+  defp merge_option_values(%{params: params1} = map1, %{params: params2} = map2) do
+    merged_map = Map.merge(map1, map2)
+    merged_params = Enum.uniq(List.wrap(params1) ++ List.wrap(params2))
+    Map.put(merged_map, :params, merged_params)
+  end
+
+  defp merge_option_values(list1, list2) when is_list(list1) and is_list(list2) do
+    Enum.uniq(list1 ++ list2)
+  end
+
+  defp merge_option_values(_value1, value2), do: value2
+
+  defp extend_with_asyncable_import_options(import_options, tokens, token_transfers, token_balances, callback_module) do
     current_token_balances_params =
       token_balances
       |> MapSet.to_list()
@@ -453,16 +476,16 @@ defmodule Indexer.Block.Fetcher do
 
     if enable_partial_async_import?() do
       TokenInstanceImporter.add(tokens, token_transfers)
-      CurrentTokenBalanceImporter.add(current_token_balances_params)
+      CurrentTokenBalanceImporter.add(current_token_balances_params, callback_module == Indexer.Block.Realtime.Fetcher)
       import_options
     else
       token_instances = TokenInstances.params_set(%{token_transfers_params: token_transfers})
       addresses_without_nonce = process_addresses_nonce(import_options[:addresses][:params])
 
-      Map.merge(import_options, %{
+      merge_options(import_options, %{
         addresses: %{params: addresses_without_nonce},
         address_current_token_balances: %{params: current_token_balances_params},
-        tokens: Map.get(import_options, :tokens) || %{params: tokens},
+        tokens: %{params: tokens},
         token_instances: %{params: token_instances}
       })
     end
@@ -570,8 +593,8 @@ defmodule Indexer.Block.Fetcher do
     result
   end
 
-  def async_import_token_instances(%{token_transfers: token_transfers}) do
-    TokenInstanceRealtime.async_fetch(token_transfers)
+  def async_import_token_instances(%{token_instances: token_instances}) do
+    TokenInstanceRealtime.async_fetch(token_instances)
   end
 
   def async_import_token_instances(_), do: :ok
@@ -620,7 +643,7 @@ defmodule Indexer.Block.Fetcher do
   def async_import_internal_transactions(%{blocks: blocks} = imported, realtime?) do
     blocks
     |> Enum.map(fn %Block{number: block_number} -> block_number end)
-    |> InternalTransaction.async_fetch(Map.get(imported, :transactions, []), realtime?, false, 10_000)
+    |> InternalTransaction.async_fetch(Map.get(imported, :transactions, []), realtime?, 10_000)
   end
 
   def async_import_internal_transactions(_, _), do: :ok

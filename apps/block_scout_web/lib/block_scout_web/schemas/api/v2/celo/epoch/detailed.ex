@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Celo.Epoch.Detailed do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.{Celo.Epoch, General}
+  alias BlockScoutWeb.Schemas.API.V2.Celo.Epoch.{AggregatedElectionRewards, DetailedDistribution}
   alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
@@ -19,22 +20,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Celo.Epoch.Detailed do
         start_processing_block_number: %Schema{type: :integer, nullable: true, minimum: 0},
         end_processing_block_hash: General.FullHashNullable,
         end_processing_block_number: %Schema{type: :integer, nullable: true, minimum: 0},
-        aggregated_election_rewards: %Schema{
-          type: :object,
-          nullable: true,
-          additionalProperties: %Schema{
-            type: :object,
-            nullable: true,
-            properties: %{
-              total: General.IntegerString,
-              count: %Schema{type: :integer, nullable: false, minimum: 0},
-              token: %Schema{type: :object, nullable: true, additionalProperties: true}
-            },
-            required: [:total, :count, :token],
-            additionalProperties: false
-          }
-        },
-        distribution: %Schema{type: :object, nullable: true, additionalProperties: true}
+        aggregated_election_rewards: %Schema{allOf: [AggregatedElectionRewards], nullable: true},
+        distribution: %Schema{allOf: [DetailedDistribution], nullable: true}
       },
       required: [
         :start_processing_block_hash,

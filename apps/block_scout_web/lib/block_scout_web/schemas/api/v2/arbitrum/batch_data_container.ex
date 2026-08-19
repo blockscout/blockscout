@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.BatchDataContainer do
 
   # Enum values must be kept in sync with Explorer.Chain.Arbitrum.L1Batch :batch_container field.
   OpenApiSpex.schema(%{
+    title: "ArbitrumBatchDataContainer",
     type: :string,
     enum: ["in_blob4844", "in_calldata", "in_celestia", "in_anytrust", "in_eigenda"],
     nullable: true,

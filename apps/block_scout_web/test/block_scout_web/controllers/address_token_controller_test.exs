@@ -66,7 +66,7 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
 
       {:ok, %{"items" => items}} =
         conn.resp_body
-        |> Poison.decode()
+        |> Utils.JSON.decode()
 
       assert json_response(conn, 200)
       assert Enum.any?(items, fn item -> String.contains?(item, to_string(token1.contract_address_hash)) end)
@@ -113,7 +113,7 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
 
       {:ok, %{"items" => items}} =
         conn.resp_body
-        |> Poison.decode()
+        |> Utils.JSON.decode()
 
       assert Enum.any?(items, fn item ->
                Enum.any?(second_page_tokens, fn token_name -> String.contains?(item, token_name) end)
@@ -202,7 +202,7 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
 
       {:ok, %{"next_page_path" => next_page_path}} =
         conn.resp_body
-        |> Poison.decode()
+        |> Utils.JSON.decode()
 
       assert next_page_path
     end
@@ -216,7 +216,7 @@ defmodule BlockScoutWeb.AddressTokenControllerTest do
 
       {:ok, %{"next_page_path" => next_page_path}} =
         conn.resp_body
-        |> Poison.decode()
+        |> Utils.JSON.decode()
 
       refute next_page_path
     end

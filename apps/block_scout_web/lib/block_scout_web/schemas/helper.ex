@@ -14,7 +14,7 @@ defmodule BlockScoutWeb.Schemas.Helper do
 
   Do **not** use this helper at a property position to overlay attributes
   (`description:`, `nullable:`, `pattern:`, …) on a leaf primitive such as
-  `General.Timestamp`, `General.IntegerString`, or `General.HexString`. The
+  `General.Timestamp`, `General.IntegerString`, or `General.HexData`. The
   returned struct retains the leaf's `:title` and `x-struct`, so
   `OpenApiSpex.resolve_schema_modules/1` registers it as
   `components.schemas.<Title>` on a last-encounter-wins basis. The overlay

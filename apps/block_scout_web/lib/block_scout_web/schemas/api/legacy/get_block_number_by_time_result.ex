@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.Schemas.API.Legacy.GetBlockNumberByTimeResult do
   alias BlockScoutWeb.Schemas.Helper
 
   OpenApiSpex.schema(%{
+    description: "Block number closest to the requested timestamp; `null` if the lookup fails.",
     type: :object,
     properties: %{
       blockNumber: Helper.describe_inline(General.IntegerString.schema(), "Decimal-string block number.")

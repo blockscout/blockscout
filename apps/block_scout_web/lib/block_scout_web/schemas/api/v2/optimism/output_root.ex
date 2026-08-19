@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.OutputRoot do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "OptimismOutputRoot",
     description: "Optimism Output Root struct.",
     type: :object,
     properties: %{

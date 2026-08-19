@@ -6,8 +6,7 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
   import BlockScoutWeb.Chain,
     only: [paging_options: 1, paginate_list: 3]
 
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
-  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
+  import Explorer.Chain.Address.MetadataPreloader, only: [maybe_preload_ens_and_metadata: 1]
 
   alias Explorer.Chain
   alias Explorer.Chain.Withdrawal
@@ -51,7 +50,7 @@ defmodule BlockScoutWeb.API.V2.WithdrawalController do
     conn
     |> put_status(200)
     |> render(:withdrawals, %{
-      withdrawals: withdrawals |> maybe_preload_ens() |> maybe_preload_metadata(),
+      withdrawals: withdrawals |> maybe_preload_ens_and_metadata(),
       next_page_params: next_page_params
     })
   end

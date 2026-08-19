@@ -4,6 +4,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     Module to interact with Transaction Interpretation Service
   """
 
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   import BlockScoutWeb.Chain, only: [transaction_to_internal_transactions: 2]
 
   alias BlockScoutWeb.API.V2.{Helper, InternalTransactionView, TokenTransferView, TokenView, TransactionView}
@@ -44,7 +46,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   """
   @spec interpret(Transaction.t() | map(), (Transaction.t() -> any()) | (map() -> any())) ::
           {{:error, :disabled | binary()}, integer()}
-          | {:error, Jason.DecodeError.t()}
+          | {:error, Exception.t()}
           | {:ok, any()}
   def interpret(transaction_or_map, request_builder \\ &prepare_request_body/1) do
     with {:enabled, true} <- {:enabled, enabled?()},
@@ -69,7 +71,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   """
   @spec interpret_user_operation(map()) ::
           {{:error, :disabled | binary()}, integer()}
-          | {:error, Jason.DecodeError.t()}
+          | {:error, Exception.t()}
           | {:ok, any()}
   def interpret_user_operation(user_operation) do
     interpret(user_operation, &prepare_request_body_from_user_op/1)
@@ -94,29 +96,32 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   defp http_post_request(url, body) do
     headers = [{"Content-Type", "application/json"}]
 
-    case HttpClient.post(url, Jason.encode!(body), headers, recv_timeout: @post_timeout) do
+    case HttpClient.post(url, Utils.JSON.encode!(body), headers, recv_timeout: @post_timeout) do
       {:ok, %{body: body, status_code: 200}} ->
-        body |> Jason.decode() |> preload_template_variables()
+        body |> Utils.JSON.decode() |> preload_template_variables()
 
       error ->
-        old_truncate = Application.get_env(:logger, :truncate)
-        Logger.configure(truncate: :infinity)
-
         Logger.error(fn ->
           [
-            "Error while sending request to microservice url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
-            inspect(error, limit: :infinity, printable_limit: :infinity)
+            "Error while sending request to microservice url: #{url}",
+            inspect(error)
           ]
         end)
 
-        Logger.configure(truncate: old_truncate)
+        Logger.debug(fn ->
+          [
+            "Error while sending request to microservice url: #{url}, body: #{inspect(body, limit: :infinity, printable_limit: :infinity)}: ",
+            inspect(error)
+          ]
+        end)
+
         {{:error, @request_error_msg}, http_response_code(error)}
     end
   end
 
   defp try_get_cached_value(hash) do
     with {:ok, %{body: body, status_code: 200}} <- HttpClient.get(cache_url(hash)),
-         {:ok, json} <- body |> Jason.decode() do
+         {:ok, json} <- body |> Utils.JSON.decode() do
       {:ok, json} |> preload_template_variables()
     else
       _ ->
@@ -139,12 +144,15 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
   defp prepare_request_body(transaction) do
     transaction =
-      Chain.select_repo(@api_true).preload(transaction, [
-        :block,
-        to_address: [:scam_badge, :names, :smart_contract],
-        from_address: [:scam_badge, :names, :smart_contract],
-        created_contract_address: [:scam_badge, :names, :token, :smart_contract]
-      ])
+      Chain.select_repo(@api_true).preload(
+        transaction,
+        [
+          :block,
+          to_address: [:scam_badge, :names, :smart_contract],
+          from_address: [:scam_badge, :names, :smart_contract],
+          created_contract_address: [:scam_badge, :names, :token, :smart_contract]
+        ] ++ chain_type_address_preloads()
+      )
 
     token_transfers = transaction |> fetch_token_transfers() |> Enum.reverse()
     internal_transactions = transaction |> fetch_internal_transactions() |> Enum.reverse()
@@ -178,30 +186,49 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     decoded_input_data = decoded_input |> Transaction.format_decoded_input() |> TransactionView.decoded_input()
 
     %{
-      data: %{
-        to:
-          Helper.address_with_info(nil, transaction_with_meta.to_address, transaction_with_meta.to_address_hash, true),
-        from:
-          Helper.address_with_info(
-            nil,
-            transaction_with_meta.from_address,
-            transaction_with_meta.from_address_hash,
-            true
-          ),
-        hash: transaction_with_meta.hash,
-        type: transaction_with_meta.type,
-        value: transaction_with_meta.value,
-        method: Transaction.method_name(transaction_with_meta, Transaction.format_decoded_input(decoded_input)),
-        status: transaction_with_meta.status,
-        transaction_types: TransactionView.transaction_types(transaction_with_meta),
-        raw_input: transaction_with_meta.input,
-        decoded_input: decoded_input_data,
-        token_transfers: prepare_token_transfers(token_transfers_with_meta, decoded_input),
-        internal_transactions: prepare_internal_transactions(internal_transactions_with_meta, transaction_with_meta)
-      },
+      data:
+        %{
+          to:
+            Helper.address_with_info(nil, transaction_with_meta.to_address, transaction_with_meta.to_address_hash, true),
+          from:
+            Helper.address_with_info(
+              nil,
+              transaction_with_meta.from_address,
+              transaction_with_meta.from_address_hash,
+              true
+            ),
+          hash: transaction_with_meta.hash,
+          type: transaction_with_meta.type,
+          value: transaction_with_meta.value,
+          method: Transaction.method_name(transaction_with_meta, Transaction.format_decoded_input(decoded_input)),
+          status: transaction_with_meta.status,
+          transaction_types: TransactionView.transaction_types(transaction_with_meta),
+          raw_input: transaction_with_meta.input,
+          decoded_input: decoded_input_data,
+          token_transfers: prepare_token_transfers(token_transfers_with_meta, decoded_input),
+          internal_transactions: prepare_internal_transactions(internal_transactions_with_meta, transaction_with_meta)
+        }
+        |> extend_data_with_chain_type_fields(transaction_with_meta),
       logs_data: %{items: prepare_logs(logs_with_meta, transaction_with_meta)},
       chain_id: :block_scout_web |> Application.get_env(:chain_id) |> ExplorerHelper.parse_integer()
     }
+  end
+
+  @spec extend_data_with_chain_type_fields(map(), Transaction.t()) :: map()
+  case @chain_type do
+    :eden ->
+      defp chain_type_address_preloads,
+        do: [fee_payer_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]]
+
+      defp extend_data_with_chain_type_fields(data, transaction) do
+        # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+        BlockScoutWeb.API.V2.EdenView.extend_transaction_interpretation_request(data, transaction)
+      end
+
+    _ ->
+      defp chain_type_address_preloads, do: []
+
+      defp extend_data_with_chain_type_fields(data, _transaction), do: data
   end
 
   defp fetch_token_transfers(transaction) do
@@ -242,9 +269,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   defp fetch_logs(transaction) do
     full_options =
       [
-        necessity_by_association: %{
-          [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional
-        }
+        address_preloads: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]
       ]
       |> Keyword.merge(@api_true)
 
@@ -264,9 +289,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   defp user_op_to_logs_and_token_transfers(user_op, decoded_input) do
     log_options =
       [
-        necessity_by_association: %{
-          [address: [:names, :smart_contract, proxy_implementations_smart_contracts_association()]] => :optional
-        },
+        address_preloads: [:names, :smart_contract, proxy_implementations_smart_contracts_association()],
         limit: @items_limit
       ]
       |> Keyword.merge(@api_true)

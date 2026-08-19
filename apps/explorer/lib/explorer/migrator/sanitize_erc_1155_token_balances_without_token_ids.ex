@@ -43,7 +43,9 @@ defmodule Explorer.Migrator.SanitizeErc1155TokenBalancesWithoutTokenIds do
   def update_batch(token_balance_ids) do
     query = from(tb in TokenBalance, where: tb.id in ^token_balance_ids)
 
-    Repo.delete_all(query, timeout: :infinity)
+    {count, _} = Repo.delete_all(query, timeout: :infinity)
+
+    count
   end
 
   @impl FillingMigration

@@ -41,7 +41,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
 
       conn = get(conn, transaction_log_path(conn, :index, transaction), %{type: "JSON"})
 
-      {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
+      {:ok, %{"items" => items}} = conn.resp_body |> Utils.JSON.decode()
       first_log = List.first(items)
 
       assert String.contains?(first_log, Address.checksum(address.hash))
@@ -64,7 +64,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
 
       conn = get(conn, transaction_log_path(conn, :index, transaction), %{type: "JSON"})
 
-      {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
+      {:ok, %{"items" => items}} = conn.resp_body |> Utils.JSON.decode()
       first_log = List.first(items)
 
       assert String.contains?(first_log, Address.checksum(address.hash))
@@ -76,7 +76,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
 
       conn = get(conn, path, %{type: "JSON"})
 
-      {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
+      {:ok, %{"items" => items}} = conn.resp_body |> Utils.JSON.decode()
 
       assert Enum.empty?(items)
     end
@@ -113,7 +113,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
           "type" => "JSON"
         })
 
-      {:ok, %{"items" => items}} = conn.resp_body |> Poison.decode()
+      {:ok, %{"items" => items}} = conn.resp_body |> Utils.JSON.decode()
 
       assert Enum.count(items) == Enum.count(second_page_indexes)
     end
@@ -136,7 +136,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
 
       conn = get(conn, transaction_log_path(conn, :index, transaction), %{type: "JSON"})
 
-      {:ok, %{"next_page_path" => path}} = conn.resp_body |> Poison.decode()
+      {:ok, %{"next_page_path" => path}} = conn.resp_body |> Utils.JSON.decode()
 
       assert path
     end
@@ -149,7 +149,7 @@ defmodule BlockScoutWeb.TransactionLogControllerTest do
 
       conn = get(conn, transaction_log_path(conn, :index, transaction), %{type: "JSON"})
 
-      {:ok, %{"next_page_path" => path}} = conn.resp_body |> Poison.decode()
+      {:ok, %{"next_page_path" => path}} = conn.resp_body |> Utils.JSON.decode()
 
       refute path
     end

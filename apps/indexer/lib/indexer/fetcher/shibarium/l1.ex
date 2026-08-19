@@ -136,7 +136,7 @@ defmodule Indexer.Fetcher.Shibarium.L1 do
          {last_l1_block_number, last_l1_transaction_hash} <- get_last_l1_item(),
          {:start_block_valid, true} <-
            {:start_block_valid, start_block <= last_l1_block_number || last_l1_block_number == 0},
-         json_rpc_named_arguments = Helper.json_rpc_named_arguments(rpc),
+         json_rpc_named_arguments = Helper.l1_json_rpc_named_arguments(rpc),
          {:ok, last_l1_transaction} <-
            Helper.get_transaction_by_hash(last_l1_transaction_hash, json_rpc_named_arguments),
          {:l1_transaction_not_found, false} <-

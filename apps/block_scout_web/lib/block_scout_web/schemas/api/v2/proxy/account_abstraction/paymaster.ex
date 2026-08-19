@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Proxy.AccountAbstraction.Paymaster do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "AccountAbstractionPaymaster",
     description: "Paymaster struct.",
     type: :object,
     properties: %{

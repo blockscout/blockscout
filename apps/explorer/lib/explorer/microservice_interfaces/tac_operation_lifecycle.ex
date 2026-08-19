@@ -12,7 +12,7 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
 
   @spec get_operations_by_id_or_sender_or_transaction_hash(String.t(), nil | map()) ::
           {:ok, %{items: [map()], next_page_params: map() | nil}}
-          | {:error, :disabled | :not_found | Jason.DecodeError.t() | String.t()}
+          | {:error, :disabled | :not_found | Exception.t() | String.t()}
   def get_operations_by_id_or_sender_or_transaction_hash(param, page_params) do
     with :ok <- Microservice.check_enabled(__MODULE__) do
       query_params =
@@ -24,8 +24,12 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
       operations_quick_search_url()
       |> http_get_request(query_params)
       |> case do
-        {:ok, %{"items" => operations, "next_page_params" => next_page_params}} ->
-          {:ok, %{items: operations, next_page_params: next_page_params}}
+        {:ok, %{"items" => operations} = response} ->
+          {:ok, %{items: operations, next_page_params: Map.get(response, "next_page_params")}}
+
+        {:ok, unexpected} ->
+          log_error({:unexpected_body, unexpected})
+          {:error, @request_error_msg}
 
         error ->
           error
@@ -36,7 +40,7 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
   defp http_get_request(url, query_params) do
     case HttpClient.get(url, [], params: query_params) do
       {:ok, %{body: body, status_code: 200}} ->
-        case Jason.decode(body) do
+        case Utils.JSON.decode(body) do
           {:ok, decoded_body} ->
             {:ok, decoded_body}
 
@@ -46,6 +50,14 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
         end
 
       {:ok, %{body: _body, status_code: 404}} ->
+        Logger.warning(fn ->
+          [
+            "#{@request_error_msg}: ",
+            url,
+            " returned 404, TAC operations will be omitted from search results"
+          ]
+        end)
+
         {:error, :not_found}
 
       {_, error} ->
@@ -55,17 +67,12 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
   end
 
   defp log_error(error) do
-    old_truncate = Application.get_env(:logger, :truncate)
-    Logger.configure(truncate: :infinity)
-
     Logger.error(fn ->
       [
         "#{@request_error_msg}: ",
-        inspect(error, limit: :infinity, printable_limit: :infinity)
+        inspect(error)
       ]
     end)
-
-    Logger.configure(truncate: old_truncate)
   end
 
   defp operations_quick_search_url do
@@ -73,6 +80,6 @@ defmodule Explorer.MicroserviceInterfaces.TACOperationLifecycle do
   end
 
   defp base_url do
-    "#{Microservice.base_url(__MODULE__)}/api/v1"
+    "#{Microservice.base_url(__MODULE__)}/api/v2"
   end
 end

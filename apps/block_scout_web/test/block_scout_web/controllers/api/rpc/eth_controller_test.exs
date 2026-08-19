@@ -754,7 +754,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       assert response =
                conn
                |> put_req_header("content-type", "application/json")
-               |> post("/api/eth-rpc", Jason.encode!(params))
+               |> post("/api/eth-rpc", Utils.JSON.encode!(params))
                |> json_response(200)
 
       assert [

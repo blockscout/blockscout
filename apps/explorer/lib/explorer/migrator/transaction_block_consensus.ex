@@ -48,7 +48,9 @@ defmodule Explorer.Migrator.TransactionBlockConsensus do
         update: [set: [block_consensus: block.consensus]]
       )
 
-    Repo.update_all(query, [], timeout: :infinity)
+    {count, _} = Repo.update_all(query, [], timeout: :infinity)
+
+    count
   end
 
   @impl FillingMigration

@@ -167,7 +167,14 @@ defmodule Explorer.Chain.Address.CoinBalance do
   def get_coin_balance(address_hash, block_number, options \\ []) do
     query = fetch_coin_balance(address_hash, block_number)
 
-    Chain.select_repo(options).one(query)
+    case Chain.select_repo(options).one(query) do
+      nil ->
+        nil
+
+      balance ->
+        [balance] = preload_transactions([balance], options)
+        balance
+    end
   end
 
   @doc """
@@ -350,11 +357,8 @@ defmodule Explorer.Chain.Address.CoinBalance do
         (is_nil(coalesce(type(internal_transaction.call_type_enum, :string), internal_transaction.call_type)) or
            coalesce(type(internal_transaction.call_type_enum, :string), internal_transaction.call_type) == ^"call") and
         internal_transaction.value > ^0 and is_nil(internal_transaction.error_id) and
-        (internal_transaction.to_address_hash == ^balance.address_hash or
-           as(:to_address_mapping).address_hash == ^balance.address_hash or
-           internal_transaction.from_address_hash == ^balance.address_hash or
+        (as(:to_address_mapping).address_hash == ^balance.address_hash or
            as(:from_address_mapping).address_hash == ^balance.address_hash or
-           internal_transaction.created_contract_address_hash == ^balance.address_hash or
            as(:created_contract_address_mapping).address_hash == ^balance.address_hash)
     )
     |> select([_internal_transaction, transaction], transaction.hash)
@@ -413,15 +417,20 @@ defmodule Explorer.Chain.Address.CoinBalance do
   end
 
   defp fetch_coin_balance(address_hash, block_number) do
-    coin_balance_subquery =
+    latest_balances_query =
       from(
         cb in CoinBalance,
         where: cb.address_hash == ^address_hash,
         where: cb.block_number <= ^block_number,
+        order_by: [desc: :block_number],
+        limit: ^2
+      )
+
+    coin_balance_subquery =
+      from(
+        cb in subquery(latest_balances_query),
         inner_join: b in Block,
         on: cb.block_number == b.number,
-        limit: ^2,
-        order_by: [desc: :block_number],
         select_merge: %{block_timestamp: b.timestamp}
       )
 

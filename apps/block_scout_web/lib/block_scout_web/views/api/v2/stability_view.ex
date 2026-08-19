@@ -91,13 +91,13 @@ defmodule BlockScoutWeb.API.V2.StabilityView do
   defp do_extend_with_stability_fees_info(transactions) when is_list(transactions) do
     {transactions, _tokens_acc} =
       Enum.map_reduce(transactions, %{}, fn transaction = %Transaction{}, tokens_acc ->
-        case Log.fetch_log_by_transaction_hash_and_first_topic(
-               transaction.hash,
+        case Log.fetch_log_by_transaction_and_first_topic(
+               transaction,
                @transaction_fee_event_signature,
                @api_true
              ) do
           fee_log when not is_nil(fee_log) ->
-            {:ok, _selector, mapping} = Log.find_and_decode(@transaction_fee_event_abi, fee_log, transaction.hash)
+            {:ok, _selector, mapping} = Log.find_and_decode(@transaction_fee_event_abi, fee_log)
 
             [{"token", "address", false, token_address_hash}, _, _, _, _, _] = mapping
 
