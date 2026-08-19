@@ -581,7 +581,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         |> Enum.reduce_while([], fn chunk, acc ->
           case EthereumJSONRPC.fetch_block_internal_transactions(chunk, json_rpc_named_arguments) do
             {:ok, result} ->
-              {:cont, acc ++ result}
+              {:cont, [result | acc]}
 
             error ->
               Logger.error("Failed to fetch internal transactions for blocks #{inspect(chunk)}: #{inspect(error)}")
@@ -589,6 +589,8 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
               {:halt, []}
           end
         end)
+        |> Enum.reverse()
+        |> Enum.concat()
       else
         Enum.reduce(block_numbers, [], fn block_number, acc_list ->
           block_number
@@ -629,7 +631,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
     |> Enum.reduce_while({:ok, []}, fn chunk, {:ok, acc} ->
       try do
         case EthereumJSONRPC.fetch_internal_transactions(chunk, json_rpc_named_arguments) do
-          {:ok, internal_transactions} -> {:cont, {:ok, acc ++ internal_transactions}}
+          {:ok, internal_transactions} -> {:cont, {:ok, [internal_transactions | acc]}}
           error_or_ignore -> {:halt, error_or_ignore}
         end
       catch
@@ -637,6 +639,10 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
           {:halt, {:error, error, __STACKTRACE__}}
       end
     end)
+    |> case do
+      {:ok, chunk_results} -> {:ok, chunk_results |> Enum.reverse() |> Enum.concat()}
+      error_or_ignore -> error_or_ignore
+    end
   end
 
   defp batch_size do
