@@ -3622,6 +3622,174 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert item["calls"] == nil
         assert "sponsored_transaction" in item["transaction_types"]
       end
+
+      test "attributes the fee state change to the fee payer instead of the sender", %{conn: conn} do
+        block_before = insert(:block)
+        fee_payer = insert(:address)
+        recipient = insert(:address)
+
+        transaction =
+          :transaction
+          |> insert(
+            type: 118,
+            fee_payer_address_hash: fee_payer.hash,
+            calls: [%{"to" => to_string(recipient.hash), "value" => 0, "input" => "0xdeadbeef"}],
+            to_address: recipient,
+            gas_price: 1_000,
+            value: 0
+          )
+          |> with_block(status: :ok, gas_used: 147)
+
+        insert_coin_balances_before(transaction, [fee_payer, recipient], block_before)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/state-changes")
+
+        assert response = json_response(request, 200)
+
+        changes =
+          Map.new(response["items"], fn item -> {item["address"]["hash"], item["change"]} end)
+
+        assert changes[Address.checksum(fee_payer.hash)] == "-147000"
+
+        refute Map.has_key?(changes, Address.checksum(transaction.from_address_hash))
+
+        assert changes[Address.checksum(transaction.block.miner_hash)] == "147000"
+      end
+
+      test "credits every recipient of the batched calls with its own value", %{conn: conn} do
+        block_before = insert(:block)
+        fee_payer = insert(:address)
+        recipient_a = insert(:address)
+        recipient_b = insert(:address)
+
+        transaction =
+          :transaction
+          |> insert(
+            type: 118,
+            fee_payer_address_hash: fee_payer.hash,
+            calls: [
+              %{"to" => to_string(recipient_a.hash), "value" => 1, "input" => "0x"},
+              %{"to" => to_string(recipient_b.hash), "value" => 2, "input" => "0x"}
+            ],
+            to_address: recipient_a,
+            value: 3,
+            gas_price: 1_000
+          )
+          |> with_block(status: :ok, gas_used: 147)
+
+        insert_coin_balances_before(transaction, [fee_payer, recipient_a, recipient_b], block_before)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/state-changes")
+
+        assert response = json_response(request, 200)
+
+        changes =
+          Map.new(response["items"], fn item -> {item["address"]["hash"], item["change"]} end)
+
+        assert changes[Address.checksum(fee_payer.hash)] == "-147000"
+        assert changes[Address.checksum(transaction.from_address_hash)] == "-3"
+        assert changes[Address.checksum(recipient_a.hash)] == "1"
+        assert changes[Address.checksum(recipient_b.hash)] == "2"
+      end
+
+      test "sums up the batched calls sharing the same recipient", %{conn: conn} do
+        block_before = insert(:block)
+        fee_payer = insert(:address)
+        recipient = insert(:address)
+
+        transaction =
+          :transaction
+          |> insert(
+            type: 118,
+            fee_payer_address_hash: fee_payer.hash,
+            calls: [
+              %{"to" => to_string(recipient.hash), "value" => 1, "input" => "0x"},
+              %{"to" => to_string(recipient.hash), "value" => 2, "input" => "0x"}
+            ],
+            to_address: recipient,
+            value: 3,
+            gas_price: 1_000
+          )
+          |> with_block(status: :ok, gas_used: 147)
+
+        insert_coin_balances_before(transaction, [fee_payer, recipient], block_before)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/state-changes")
+
+        assert response = json_response(request, 200)
+
+        changes =
+          Map.new(response["items"], fn item -> {item["address"]["hash"], item["change"]} end)
+
+        assert changes[Address.checksum(transaction.from_address_hash)] == "-3"
+        assert changes[Address.checksum(recipient.hash)] == "3"
+      end
+
+      test "credits the recipients of the calls which have no address indexed yet", %{conn: conn} do
+        block_before = insert(:block)
+        fee_payer = insert(:address)
+        recipient_hash = "0x11f60a633dd30a8d1a26dd6e20167a9293fb4647"
+
+        transaction =
+          :transaction
+          |> insert(
+            type: 118,
+            fee_payer_address_hash: fee_payer.hash,
+            calls: [%{"to" => recipient_hash, "value" => 3, "input" => "0x"}],
+            value: 3,
+            gas_price: 1_000
+          )
+          |> with_block(status: :ok, gas_used: 147)
+
+        insert_coin_balances_before(transaction, [fee_payer], block_before)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/state-changes")
+
+        assert response = json_response(request, 200)
+
+        changes =
+          Map.new(response["items"], fn item -> {item["address"]["hash"], item["change"]} end)
+
+        assert changes[Address.checksum(recipient_hash)] == "3"
+      end
+
+      test "charges the sender for both the value and the fee for regular transactions", %{conn: conn} do
+        block_before = insert(:block)
+
+        transaction =
+          :transaction
+          |> insert(type: 2, gas_price: 1_000, value: 3)
+          |> with_block(status: :ok, gas_used: 147)
+
+        insert_coin_balances_before(transaction, [], block_before)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}/state-changes")
+
+        assert response = json_response(request, 200)
+
+        changes =
+          Map.new(response["items"], fn item -> {item["address"]["hash"], item["change"]} end)
+
+        assert changes[Address.checksum(transaction.from_address_hash)] == "-147003"
+        assert changes[Address.checksum(transaction.to_address_hash)] == "3"
+      end
+    end
+
+    defp insert_coin_balances_before(transaction, extra_addresses, block_before) do
+      [
+        {transaction.from_address, transaction.from_address_hash},
+        {transaction.to_address, transaction.to_address_hash},
+        {transaction.block.miner, transaction.block.miner_hash}
+      ]
+      |> Enum.concat(Enum.map(extra_addresses, &{&1, &1.hash}))
+      |> Enum.uniq_by(fn {_address, address_hash} -> address_hash end)
+      |> Enum.each(fn {address, address_hash} ->
+        insert(:address_coin_balance,
+          address: address,
+          address_hash: address_hash,
+          block_number: block_before.number
+        )
+      end)
     end
   end
 

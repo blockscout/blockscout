@@ -232,6 +232,128 @@ defmodule Indexer.Transform.Addresses do
 
   defstruct pending: false
 
+  if @chain_type == :zksync do
+    @created_contract_doc """
+    A contract created in an internal transaction has its `created_contract_address_hash` extracted.
+    The `created_contract_code` is ignored as it isn't the deployed bytecode on zksync.
+
+        iex> Indexer.Transform.Addresses.extract_addresses(
+        ...>   %{
+        ...>     internal_transactions: [
+        ...>       %{
+        ...>         block_number: 3,
+        ...>         created_contract_address_hash: "0x0000000000000000000000000000000000000003",
+        ...>         created_contract_code: "0x"
+        ...>       }
+        ...>     ]
+        ...>   }
+        ...> )
+        [
+          %{
+            fetched_coin_balance_block_number: 3,
+            hash: "0x0000000000000000000000000000000000000003"
+          }
+        ]
+    """
+
+    @merged_contract_code_doc """
+    When a contract's code is fetched and the contract is used in transactions in the same fetched data, the
+    `contract_code` is merged with the greatest `block_number`
+
+        iex> Indexer.Transform.Addresses.extract_addresses(
+        ...>   %{
+        ...>     codes: [
+        ...>       %{
+        ...>         address: "0x0000000000000000000000000000000000000001",
+        ...>         code: "0x"
+        ...>       }
+        ...>     ],
+        ...>     transactions: [
+        ...>       %{
+        ...>         block_number: 2,
+        ...>         from_address_hash: "0x0000000000000000000000000000000000000001",
+        ...>         nonce: 4
+        ...>       },
+        ...>       %{
+        ...>         block_number: 3,
+        ...>         to_address_hash: "0x0000000000000000000000000000000000000001",
+        ...>         nonce: 5
+        ...>       }
+        ...>     ]
+        ...>   }
+        ...> )
+        [
+          %{
+            contract_code: "0x",
+            fetched_coin_balance_block_number: 3,
+            hash: "0x0000000000000000000000000000000000000001",
+            nonce: 4
+          }
+        ]
+    """
+  else
+    @created_contract_doc """
+    A contract created in an internal transaction has its `created_contract_address_hash` and
+    `created_contract_code` extracted.
+
+        iex> Indexer.Transform.Addresses.extract_addresses(
+        ...>   %{
+        ...>     internal_transactions: [
+        ...>       %{
+        ...>         block_number: 3,
+        ...>         created_contract_address_hash: "0x0000000000000000000000000000000000000003",
+        ...>         created_contract_code: "0x"
+        ...>       }
+        ...>     ]
+        ...>   }
+        ...> )
+        [
+          %{
+            contract_code: "0x",
+            fetched_coin_balance_block_number: 3,
+            hash: "0x0000000000000000000000000000000000000003"
+          }
+        ]
+    """
+
+    @merged_contract_code_doc """
+    When a contract is created and then used in internal transactions and transaction in the same fetched data, the
+    `created_contract_code` is merged with the greatest `block_number`
+
+        iex> Indexer.Transform.Addresses.extract_addresses(
+        ...>   %{
+        ...>     internal_transactions: [
+        ...>       %{
+        ...>         block_number: 1,
+        ...>         created_contract_code: "0x",
+        ...>         created_contract_address_hash: "0x0000000000000000000000000000000000000001"
+        ...>       }
+        ...>     ],
+        ...>     transactions: [
+        ...>       %{
+        ...>         block_number: 2,
+        ...>         from_address_hash: "0x0000000000000000000000000000000000000001",
+        ...>         nonce: 4
+        ...>       },
+        ...>       %{
+        ...>         block_number: 3,
+        ...>         to_address_hash: "0x0000000000000000000000000000000000000001",
+        ...>         nonce: 5
+        ...>       }
+        ...>     ]
+        ...>   }
+        ...> )
+        [
+          %{
+            contract_code: "0x",
+            fetched_coin_balance_block_number: 3,
+            hash: "0x0000000000000000000000000000000000000001",
+            nonce: 4
+          }
+        ]
+    """
+  end
+
   @doc """
   Extract addresses from block, internal transaction, transaction, and log parameters.
 
@@ -254,8 +376,7 @@ defmodule Indexer.Transform.Addresses do
         }
       ]
 
-  Internal transactions can have their `from_address_hash`, `to_address_hash` and/or `created_contract_address_hash`
-  extracted.
+  Internal transactions can have their `from_address_hash` and/or `to_address_hash` extracted.
 
       iex> Indexer.Transform.Addresses.extract_addresses(
       ...>   %{
@@ -267,11 +388,6 @@ defmodule Indexer.Transform.Addresses do
       ...>       %{
       ...>         block_number: 2,
       ...>         to_address_hash: "0x0000000000000000000000000000000000000002"
-      ...>       },
-      ...>       %{
-      ...>         block_number: 3,
-      ...>         created_contract_address_hash: "0x0000000000000000000000000000000000000003",
-      ...>         created_contract_code: "0x"
       ...>       }
       ...>     ]
       ...>   }
@@ -284,14 +400,10 @@ defmodule Indexer.Transform.Addresses do
         %{
           fetched_coin_balance_block_number: 2,
           hash: "0x0000000000000000000000000000000000000002"
-        },
-        %{
-          contract_code: "0x",
-          fetched_coin_balance_block_number: 3,
-          hash: "0x0000000000000000000000000000000000000003"
         }
       ]
 
+  #{@created_contract_doc}
   Transactions can have their `from_address_hash` and/or `to_address_hash` extracted.
 
       iex> Indexer.Transform.Addresses.extract_addresses(
@@ -399,41 +511,7 @@ defmodule Indexer.Transform.Addresses do
         }
       ]
 
-  When a contract is created and then used in internal transactions and transaction in the same fetched data, the
-  `created_contract_code` is merged with the greatest `block_number`
-
-      iex> Indexer.Transform.Addresses.extract_addresses(
-      ...>   %{
-      ...>     internal_transactions: [
-      ...>       %{
-      ...>         block_number: 1,
-      ...>         created_contract_code: "0x",
-      ...>         created_contract_address_hash: "0x0000000000000000000000000000000000000001"
-      ...>       }
-      ...>     ],
-      ...>     transactions: [
-      ...>       %{
-      ...>         block_number: 2,
-      ...>         from_address_hash: "0x0000000000000000000000000000000000000001",
-      ...>         nonce: 4
-      ...>       },
-      ...>       %{
-      ...>         block_number: 3,
-      ...>         to_address_hash: "0x0000000000000000000000000000000000000001",
-      ...>         nonce: 5
-      ...>       }
-      ...>     ]
-      ...>   }
-      ...> )
-      [
-        %{
-          contract_code: "0x",
-          fetched_coin_balance_block_number: 3,
-          hash: "0x0000000000000000000000000000000000000001",
-          nonce: 4
-        }
-      ]
-
+  #{@merged_contract_code_doc}
   All data must have some way of extracting the `fetched_coin_balance_block_number` or an `ArgumentError` will be raised when
   none of the supported extract formats matches the params.
 
@@ -569,6 +647,7 @@ defmodule Indexer.Transform.Addresses do
 
     addresses
     |> List.flatten()
+    |> Enum.concat(chain_type_addresses(fetched_data, state))
     |> merge_addresses()
   end
 
@@ -576,6 +655,46 @@ defmodule Indexer.Transform.Addresses do
     do: Enum.flat_map(items, &extract_addresses_from_item(&1, fields, state))
 
   def extract_addresses_from_item(item, fields, state), do: Enum.flat_map(fields, &extract_fields(&1, item, state))
+
+  if @chain_type == :eden do
+    alias Explorer.Chain
+
+    @eden_call_fields [
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :to_address_hash, to: :hash}
+      ]
+    ]
+
+    # The recipients of the calls batched in an Eden sponsored transaction are stored in the `calls`
+    # JSON field, so they can't be declared in `@entity_to_address_map`, which supports the plain
+    # fields only. The calls are flattened into the items of the shape the declarations expect
+    # instead, so that the pending transactions keep being handled the same way.
+    defp chain_type_addresses(fetched_data, state) do
+      fetched_data
+      |> Map.get(:transactions)
+      |> Kernel.||([])
+      |> Enum.flat_map(&transaction_to_call_items/1)
+      |> extract_addresses_from_collection(@eden_call_fields, state)
+    end
+
+    defp transaction_to_call_items(%{calls: calls} = transaction) when is_list(calls) do
+      block_number = Map.take(transaction, [:block_number])
+
+      Enum.flat_map(calls, fn call ->
+        to_address_hash = Map.get(call, "to")
+
+        case Chain.string_to_address_hash(to_address_hash) do
+          {:ok, _} -> [Map.put(block_number, :to_address_hash, to_address_hash)]
+          :error -> []
+        end
+      end)
+    end
+
+    defp transaction_to_call_items(_transaction), do: []
+  else
+    defp chain_type_addresses(_fetched_data, _state), do: []
+  end
 
   def merge_addresses(addresses) when is_list(addresses) do
     addresses

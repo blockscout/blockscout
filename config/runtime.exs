@@ -357,7 +357,8 @@ config :explorer,
   shrink_internal_transactions_enabled: ConfigHelper.parse_bool_env_var("SHRINK_INTERNAL_TRANSACTIONS_ENABLED"),
   replica_max_lag: ConfigHelper.parse_time_env_var("REPLICA_MAX_LAG", "5m"),
   hackney_default_pool_size: ConfigHelper.parse_integer_env_var("HACKNEY_DEFAULT_POOL_SIZE", 1_000),
-  microservice_http_pool_size: ConfigHelper.parse_integer_env_var("MICROSERVICE_HTTP_POOL_SIZE", 1_000)
+  microservice_http_pool_size: ConfigHelper.parse_integer_env_var("MICROSERVICE_HTTP_POOL_SIZE", 1_000),
+  microservice_http_pool_count: ConfigHelper.parse_integer_env_var("MICROSERVICE_HTTP_POOL_COUNT", 20, min: 1)
 
 config :explorer, Explorer.PagingOptions, max_page_size: ConfigHelper.parse_integer_env_var("MAX_ITEMS_PER_PAGE", 100)
 

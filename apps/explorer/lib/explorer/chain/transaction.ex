@@ -345,6 +345,7 @@ defmodule Explorer.Chain.Transaction do
 
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
 
+  alias Explorer.Chain.Cache.ContractMethods, as: ContractMethodsCache
   alias Explorer.Chain.Cache.Transactions
 
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
@@ -1035,18 +1036,33 @@ defmodule Explorer.Chain.Transaction do
     end
   end
 
-  defp decode_function_call_via_sig_provider(%{bytes: data} = input, hash, skip_sig_provider?) do
+  defp decode_function_call_via_sig_provider(
+         %{bytes: <<method_id::binary-size(4), _::binary>> = data} = input,
+         hash,
+         skip_sig_provider?
+       ) do
     with true <- SigProviderInterface.enabled?(),
          false <- skip_sig_provider?,
-         {:ok, result} <- SigProviderInterface.decode_function_call(input),
-         true <- is_list(result),
-         false <- Enum.empty?(result),
-         abi <- [result |> List.first() |> Map.put("outputs", []) |> Map.put("type", "function")],
+         [_ | _] = abi <-
+           ContractMethodsCache.fetch_sig_provider_abi(method_id, fn -> request_abi_from_sig_provider(input) end),
          {:ok, _, _, _} = candidate <- do_decoded_input_data(data, abi, hash) do
       [candidate]
     else
       _ ->
         []
+    end
+  end
+
+  # inputs shorter than a 4-byte method id cannot be a function call
+  defp decode_function_call_via_sig_provider(_input, _hash, _skip_sig_provider?), do: []
+
+  defp request_abi_from_sig_provider(input) do
+    with {:ok, result} <- SigProviderInterface.decode_function_call(input),
+         true <- is_list(result),
+         false <- Enum.empty?(result) do
+      [result |> List.first() |> Map.put("outputs", []) |> Map.put("type", "function")]
+    else
+      _ -> []
     end
   end
 
@@ -2191,6 +2207,40 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
+    Aggregates the values of the calls batched in an Eden sponsored transaction by their recipients.
+
+    The `to_address_hash` and the `value` of such a transaction are the compatibility fields derived
+    from the first call and from the sum of all the calls respectively, so the calls are the only
+    source of the actual recipients and of the amounts they receive.
+
+    The calls without a recipient (the contract creations) and the malformed ones are skipped.
+
+    ## Parameters
+    - `transaction`: The transaction entity.
+
+    ## Returns
+    - A map of the recipient address hashes to the total value each of them receives within the
+      transaction. Empty for the transactions which are not the sponsored ones.
+  """
+  @spec calls_value_by_recipient(__MODULE__.t()) :: %{Hash.Address.t() => Wei.t()}
+  if @chain_type == :eden do
+    def calls_value_by_recipient(%__MODULE__{calls: calls}) when is_list(calls) do
+      Enum.reduce(calls, %{}, fn call, acc ->
+        with {:ok, address_hash} <- call |> Map.get("to") |> Hash.Address.cast(),
+             {:ok, value} <- call |> Map.get("value") |> Wei.cast() do
+          Map.update(acc, address_hash, value, &Wei.sum(&1, value))
+        else
+          _ -> acc
+        end
+      end)
+    end
+
+    def calls_value_by_recipient(%__MODULE__{}), do: %{}
+  else
+    def calls_value_by_recipient(%__MODULE__{}), do: %{}
+  end
+
+  @doc """
   Calculates burnt fees for a transaction as `base_fee_per_gas * gas_used`.
 
   ## Parameters
@@ -2330,7 +2380,7 @@ defmodule Explorer.Chain.Transaction do
         _ -> []
       end)
       |> Enum.uniq()
-      |> ContractMethod.find_contract_methods(opts)
+      |> ContractMethodsCache.find_contract_methods(opts)
       |> Enum.into(empty_methods_map, &{&1.identifier, [&1]})
 
     # decode remaining transaction using methods map

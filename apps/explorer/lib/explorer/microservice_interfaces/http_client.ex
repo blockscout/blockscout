@@ -70,9 +70,24 @@ defmodule Explorer.MicroserviceInterfaces.HttpClient do
   """
   @spec pool_child_specs() :: [Supervisor.child_spec()]
   def pool_child_specs do
+    total_size = Application.get_env(:explorer, :microservice_http_pool_size)
+    pool_count = Application.get_env(:explorer, :microservice_http_pool_count)
+
     pools = %{
       default: [
-        size: Application.get_env(:explorer, :microservice_http_pool_size),
+        # NimblePool is built for small pools, and per-pool size is the knob
+        # that keeps its process responsive. Two costs scale with it: every
+        # checkout/checkin is a message through the single pool process, and -
+        # much worse - every message an idle socket sends it (e.g. the remote
+        # closing an idle keep-alive connection) makes NimblePool run
+        # handle_info over EVERY idle worker, O(size) per message. A batch of
+        # idle-connection closes against a big pool can occupy its process for
+        # long enough that checkout replies miss the pool timeout even though
+        # almost all connections are free. Keep per-pool size around Finch's
+        # default of 50 by raising MICROSERVICE_HTTP_POOL_COUNT rather than
+        # letting pools grow.
+        size: max(div(total_size, pool_count), 1),
+        count: pool_count,
         # metrics make the pools observable in a remote console via
         # Finch.get_pool_status/2, e.g. when debugging checkout timeouts
         start_pool_metrics?: true
@@ -83,13 +98,28 @@ defmodule Explorer.MicroserviceInterfaces.HttpClient do
   end
 
   defp request(method, url, body, headers, options, finch_name, default_checkout_timeout) do
+    # :finch_instance is a test seam: it lets tests exercise this function
+    # against a small pool they control instead of the app-wide instances
     adapter_options =
-      [name: finch_name, pool_timeout: options[:checkout_timeout] || default_checkout_timeout]
+      [
+        name: options[:finch_instance] || finch_name,
+        pool_timeout: options[:checkout_timeout] || default_checkout_timeout
+      ]
       |> put_receive_timeout(options[:recv_timeout])
 
     [method: method, url: url, body: body, headers: headers, query: options[:params] || []]
     |> then(&Tesla.request(client(adapter_options), &1))
     |> parse_response()
+  rescue
+    # Finch raises when no connection frees up within the pool timeout (and for
+    # little else). Callers expect the hackney-era contract where a saturated
+    # pool is an {:error, _} to log and degrade on - a response without ENS
+    # names or tags - not an exception that kills the API request.
+    exception in RuntimeError -> {:error, exception}
+  catch
+    # other pool checkout failures (e.g. the pool process going down) exit
+    # instead of raising; degrade the same way
+    :exit, reason -> {:error, {:exit, reason}}
   end
 
   defp client(adapter_options) do

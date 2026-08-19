@@ -134,6 +134,33 @@
 | <span style={{color: "red"}}>Deprecated</span> `MUD_POOL_SIZE`      | MUD indexer DB `pool_size`. | `50` | v6.6.0+ |  | v12.0.0+ |
 
 
+## 11.2.7
+
+### 🚀 Features
+
+- Add /api/v2/transactions/{hash}/preview endpoint ([#14638](https://github.com/blockscout/blockscout/issues/14638), [#14703](https://github.com/blockscout/blockscout/issues/14703), [#14704](https://github.com/blockscout/blockscout/issues/14704))
+
+### 🐛 Bug Fixes
+
+- Fix state changes for sponsored transactions ([#14702](https://github.com/blockscout/blockscout/issues/14702))
+
+### ⚡ Performance
+
+- Reduce query count and payload in transaction API endpoint ([#14705](https://github.com/blockscout/blockscout/issues/14705))
+- Cache empty implementations of verified contracts longer ([#14696](https://github.com/blockscout/blockscout/issues/14696))
+- Fetch address existence checks in a single query ([#14694](https://github.com/blockscout/blockscout/issues/14694))
+- Reuse HTTP connections and parallelize microservice preloads ([#14689](https://github.com/blockscout/blockscout/issues/14689), [#14707](https://github.com/blockscout/blockscout/issues/14707))
+- Fix transform addresses tests for zksync ([#14717](https://github.com/blockscout/blockscout/pull/14717))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `CONTRACT_PROXY_EMPTY_IMPLEMENTATION_DATA_CACHE_TTL`   | Empty probe results ("not a proxy") of smart-contracts verified on the address itself are refreshed with a dedicated, much longer TTL. Unverified contracts, bytecode twins, and real proxies keep the existing TTL behavior. [Time format](/setup/env-variables/backend-env-variables#time-format). Implemented in [#14689](https://github.com/blockscout/blockscout/pull/14689). | Version: v11.2.7+ <br />Default: `1d` <br />Applications: API                                                                                                                                            |
+| `MICROSERVICE_HTTP_POOL_SIZE` | Total size of the keep-alive connection pools used by `Explorer.MicroserviceInterfaces.HttpClient` for BENS and Metadata requests. This total is split across multiple pools controlled by `MICROSERVICE_HTTP_POOL_COUNT`. Each individual pool size is calculated as `MICROSERVICE_HTTP_POOL_SIZE / MICROSERVICE_HTTP_POOL_COUNT`. Two logical pools are used: `:microservices` for short requests on the critical path and `:microservices_proxy` for requests proxied to a microservice on behalf of an API caller, so a handful of long-running proxied requests can no longer starve the preloads. Both pools are supervised from `Explorer.Application`. Implemented in [#14689](https://github.com/blockscout/blockscout/pull/14689) | Version: v11.2.7+ <br />Default: `1000` <br />Applications: API |
+| `MICROSERVICE_HTTP_POOL_COUNT` | Number of individual connection pools to split `MICROSERVICE_HTTP_POOL_SIZE` across. Pool splitting allows traffic to spread across multiple processes, reducing contention. Each pool size is calculated as `MICROSERVICE_HTTP_POOL_SIZE / MICROSERVICE_HTTP_POOL_COUNT`. Implemented in [#14707](https://github.com/blockscout/blockscout/pull/14707) | Version: v11.2.7+ <br />Default: `4` <br />Applications: API, Indexer |
+
+
 ## 11.2.6
 
 ### 🐛 Bug Fixes
@@ -160,6 +187,13 @@
 ### ⚙️ Miscellaneous Tasks
 
 - Bump ex_abi lib version ([#14671](https://github.com/blockscout/blockscout/issues/14671))
+
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `INDEXER_DISABLE_TOKEN_BALANCE_ON_DEMAND_FETCHER`             | If `true`, `Indexer.Fetcher.OnDemand.TokenBalance` fetcher is disabled at runtime.                                                                                                                                                                                                                                                                                                                                                                                                                                                | Version: v11.2.5\+ <br />Default: `false` <br />Applications: Indexer                                      |
 
 
 ## 11.2.4

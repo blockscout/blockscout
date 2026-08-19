@@ -923,6 +923,38 @@ defmodule Explorer.Chain.TransactionTest do
     end
   end
 
+  if Application.compile_env(:explorer, :chain_type) == :eden do
+    describe "calls_value_by_recipient/1" do
+      test "sums up the values of the batched calls per recipient" do
+        first_recipient = "0x11f60a633dd30a8d1a26dd6e20167a9293fb4647"
+        second_recipient = "0xcfc096e58b1f858e5a3ee88ecaeccb2b464625b5"
+
+        transaction = %Transaction{
+          calls: [
+            %{"to" => first_recipient, "value" => 1, "input" => "0x"},
+            %{"to" => second_recipient, "value" => 2, "input" => "0x"},
+            %{"to" => first_recipient, "value" => 3, "input" => "0x"}
+          ]
+        }
+
+        assert %{} = values = Transaction.calls_value_by_recipient(transaction)
+
+        assert Map.new(values, fn {address_hash, value} -> {to_string(address_hash), to_string(value.value)} end) ==
+                 %{first_recipient => "4", second_recipient => "2"}
+      end
+
+      test "skips the calls without a recipient" do
+        transaction = %Transaction{calls: [%{"to" => nil, "value" => 1, "input" => "0x"}]}
+
+        assert Transaction.calls_value_by_recipient(transaction) == %{}
+      end
+
+      test "returns an empty map for the transactions which are not sponsored ones" do
+        assert Transaction.calls_value_by_recipient(%Transaction{calls: nil}) == %{}
+      end
+    end
+  end
+
   describe "get_method_name/1" do
     test "returns method name for transaction with input data starting with 0x" do
       transaction =

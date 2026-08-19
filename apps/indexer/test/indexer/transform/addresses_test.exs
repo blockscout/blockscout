@@ -4,6 +4,10 @@ defmodule Indexer.Transform.AddressesTest do
 
   alias Indexer.Transform.Addresses
 
+  @chain_type Application.compile_env(:explorer, :chain_type)
+
+  @created_contract_code_extracted? @chain_type != :zksync
+
   doctest Addresses
 
   describe "extract_addresses/1" do
@@ -60,6 +64,22 @@ defmodule Indexer.Transform.AddressesTest do
     end
 
     test "differing contract code is ignored" do
+      expected_address =
+        if @created_contract_code_extracted? do
+          %{
+            fetched_coin_balance_block_number: 2,
+            contract_code: "0x1",
+            hash: "0x0000000000000000000000000000000000000001",
+            nonce: nil
+          }
+        else
+          %{
+            fetched_coin_balance_block_number: 2,
+            hash: "0x0000000000000000000000000000000000000001",
+            nonce: nil
+          }
+        end
+
       assert Addresses.extract_addresses(%{
                internal_transactions: [
                  %{
@@ -73,14 +93,7 @@ defmodule Indexer.Transform.AddressesTest do
                    created_contract_address_hash: "0x0000000000000000000000000000000000000001"
                  }
                ]
-             }) == [
-               %{
-                 fetched_coin_balance_block_number: 2,
-                 contract_code: "0x1",
-                 hash: "0x0000000000000000000000000000000000000001",
-                 nonce: nil
-               }
-             ]
+             }) == [expected_address]
     end
 
     test "extracts address params from code params" do
@@ -154,6 +167,16 @@ defmodule Indexer.Transform.AddressesTest do
         block_reward_contract_beneficiaries: [beneficiary]
       }
 
+      created_contract_address = %{
+        hash: internal_transaction.created_contract_address_hash,
+        fetched_coin_balance_block_number: internal_transaction.block_number
+      }
+
+      created_contract_address =
+        if @created_contract_code_extracted?,
+          do: Map.put(created_contract_address, :contract_code, internal_transaction.created_contract_code),
+          else: created_contract_address
+
       assert Addresses.extract_addresses(blockchain_data) == [
                %{hash: block.miner_hash, fetched_coin_balance_block_number: block.number},
                %{
@@ -164,11 +187,7 @@ defmodule Indexer.Transform.AddressesTest do
                  hash: internal_transaction.to_address_hash,
                  fetched_coin_balance_block_number: internal_transaction.block_number
                },
-               %{
-                 hash: internal_transaction.created_contract_address_hash,
-                 contract_code: internal_transaction.created_contract_code,
-                 fetched_coin_balance_block_number: internal_transaction.block_number
-               },
+               created_contract_address,
                %{
                  hash: transaction.from_address_hash,
                  fetched_coin_balance_block_number: transaction.block_number,
@@ -223,10 +242,14 @@ defmodule Indexer.Transform.AddressesTest do
         ]
       }
 
-      assert Addresses.extract_addresses(blockchain_data) ==
-               [
-                 %{hash: hash, fetched_coin_balance_block_number: 34, contract_code: "code", nonce: 12}
-               ]
+      expected_address =
+        if @created_contract_code_extracted? do
+          %{hash: hash, fetched_coin_balance_block_number: 34, contract_code: "code", nonce: 12}
+        else
+          %{hash: hash, fetched_coin_balance_block_number: 34, nonce: 12}
+        end
+
+      assert Addresses.extract_addresses(blockchain_data) == [expected_address]
     end
 
     test "only entities data defined in @entity_to_address_map are collected" do
@@ -271,6 +294,59 @@ defmodule Indexer.Transform.AddressesTest do
                  %{fee_payer_address_hash: "0xcfc096e58b1f858e5a3ee88ecaeccb2b464625b5"}
                ]
              }) == []
+    end
+
+    if @chain_type == :eden do
+      test "recipients of the batched calls are extracted with the coin balance block number" do
+        first_call_hash = "0x11f60a633dd30a8d1a26dd6e20167a9293fb4647"
+        second_call_hash = "0xcfc096e58b1f858e5a3ee88ecaeccb2b464625b5"
+
+        addresses =
+          Addresses.extract_addresses(%{
+            transactions: [
+              %{
+                block_number: 34,
+                from_address_hash: "0x0000000000000000000000000000000000000001",
+                nonce: 12,
+                calls: [
+                  %{"to" => first_call_hash, "value" => 1, "input" => "0x"},
+                  %{"to" => second_call_hash, "value" => 2, "input" => "0x"},
+                  %{"to" => nil, "value" => 3, "input" => "0xc0ffee"}
+                ]
+              }
+            ]
+          })
+
+        assert Enum.find(addresses, &(&1.hash == first_call_hash)) ==
+                 %{hash: first_call_hash, fetched_coin_balance_block_number: 34}
+
+        assert Enum.find(addresses, &(&1.hash == second_call_hash)) ==
+                 %{hash: second_call_hash, fetched_coin_balance_block_number: 34}
+
+        refute Enum.any?(addresses, &is_nil(&1.hash))
+      end
+
+      test "recipients of the batched calls without a `block_number` aren't extracted" do
+        assert Addresses.extract_addresses(%{
+                 transactions: [
+                   %{calls: [%{"to" => "0x11f60a633dd30a8d1a26dd6e20167a9293fb4647", "value" => 1, "input" => "0x"}]}
+                 ]
+               }) == []
+      end
+
+      test "recipients of the batched calls which aren't valid address hashes aren't extracted" do
+        assert Addresses.extract_addresses(%{
+                 transactions: [
+                   %{
+                     block_number: 34,
+                     calls: [
+                       %{"to" => "0xdeadbeef", "value" => 1, "input" => "0x"},
+                       %{"to" => 12_345, "value" => 2, "input" => "0x"}
+                     ]
+                   }
+                 ]
+               }) == []
+      end
     end
   end
 
