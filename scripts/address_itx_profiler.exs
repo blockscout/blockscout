@@ -13,6 +13,11 @@
 #
 # (Pasting the whole module into IEx works too.)
 #
+# When the on-demand fetch is triggered, the profile additionally lists every
+# trace RPC batch request (EthereumJSONRPC.fetch_internal_transactions /
+# fetch_block_internal_transactions call) with its duration, chunk contents,
+# and result status, captured via :erlang.trace scoped to the profiler process.
+#
 # All work is read-only, but note that when the DB has too few rows the
 # profiler — like the endpoint itself — performs the on-demand internal
 # transactions fetch against the archive node.
@@ -21,7 +26,8 @@ defmodule AddressItxProfiler do
   Stage-by-stage profiler for the `/api/v2/addresses/:hash/internal-transactions`
   pipeline.
 
-  - `profile/2` — one address, timings per pipeline stage
+  - `profile/2` — one address, timings per pipeline stage; when the on-demand
+    fetch is triggered, also per-batch timings of the trace RPC requests
   - `queries/3` — one address, per-SQL-query time breakdown
     (`queue` vs `query` vs `decode`) collected via Ecto telemetry
   """
@@ -44,6 +50,13 @@ defmodule AddressItxProfiler do
   ]
 
   @sub_stage_prefix "  "
+
+  # Both on-demand variants funnel their trace requests through these two
+  # functions; one call = one batched JSON-RPC request (one chunk).
+  @traced_rpc_functions [
+    {EthereumJSONRPC, :fetch_internal_transactions, 2},
+    {EthereumJSONRPC, :fetch_block_internal_transactions, 2}
+  ]
 
   @doc """
   Profiles a single address through every stage of the endpoint.
@@ -75,11 +88,13 @@ defmodule AddressItxProfiler do
 
         should_fetch_on_demand? = InternalTransactionOnDemand.should_fetch?(from_db, paging.page_size)
 
-        {_on_demand, t_on_demand} =
+        {{_on_demand, t_on_demand}, trace_batches} =
           if should_fetch_on_demand? do
-            timed(fn -> InternalTransactionOnDemand.fetch_by_address(address_hash, fetch_options) end)
+            capture_trace_batches(fn ->
+              timed(fn -> InternalTransactionOnDemand.fetch_by_address(address_hash, fetch_options) end)
+            end)
           else
-            {[], nil}
+            {{[], nil}, []}
           end
 
         {with_meta, t_ens} =
@@ -115,9 +130,11 @@ defmodule AddressItxProfiler do
             "items: #{length(internal_transactions)}, on-demand RPC: " <>
               ((should_fetch_on_demand? && "TRIGGERED") || "skipped (DB sufficient)")
           )
+
+          print_trace_batches(trace_batches, t_on_demand)
         end
 
-        {:ok, Map.new(stages)}
+        {:ok, stages |> Map.new() |> Map.put(:trace_batches, trace_batches)}
 
       :error ->
         if print?, do: IO.puts("invalid address hash: #{address_string}")
@@ -193,6 +210,142 @@ defmodule AddressItxProfiler do
         to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]
       ]
     ] ++ @api_true
+  end
+
+  # --- trace RPC batch capture -----------------------------------------------
+
+  # Runs `fun` with :erlang call tracing enabled on @traced_rpc_functions for
+  # the current process (and processes it spawns), returning {result, batches}
+  # where each batch is %{function, summary, ms, status}. Public for smoke
+  # testing; not part of the profiling API.
+  @doc false
+  def capture_trace_batches(fun) do
+    parent = self()
+    collector = spawn(fn -> collect_trace_events([], parent) end)
+
+    tracing? =
+      try do
+        Enum.each(@traced_rpc_functions, fn {m, f, a} ->
+          Code.ensure_loaded(m)
+          :erlang.trace_pattern({m, f, a}, [{:_, [], [{:return_trace}, {:exception_trace}]}], [:global])
+        end)
+
+        :erlang.trace(self(), true, [:call, :timestamp, :set_on_spawn, {:tracer, collector}])
+        true
+      rescue
+        _ -> false
+      end
+
+    result =
+      try do
+        fun.()
+      after
+        if tracing? do
+          :erlang.trace(self(), false, [:call, :timestamp, :set_on_spawn])
+          Enum.each(@traced_rpc_functions, fn mfa -> :erlang.trace_pattern(mfa, false, [:global]) end)
+        end
+      end
+
+    send(collector, :stop)
+
+    batches =
+      receive do
+        {:trace_events, events} -> pair_trace_events(events)
+      after
+        1_000 -> []
+      end
+
+    {result, batches}
+  end
+
+  defp collect_trace_events(events, parent) do
+    receive do
+      :stop ->
+        send(parent, {:trace_events, Enum.reverse(events)})
+
+      event when elem(event, 0) == :trace_ts ->
+        collect_trace_events([event | events], parent)
+
+      _other ->
+        collect_trace_events(events, parent)
+    after
+      # self-destruct if the profiling process died without sending :stop
+      600_000 -> :ok
+    end
+  end
+
+  defp pair_trace_events(events) do
+    {batches, _pending} =
+      Enum.reduce(events, {[], %{}}, fn
+        {:trace_ts, pid, :call, {_m, f, args}, ts}, {done, pending} ->
+          {done, Map.put(pending, pid, {f, summarize_rpc_args(f, args), ts})}
+
+        {:trace_ts, pid, :return_from, {_m, f, _a}, return, ts}, {done, pending} ->
+          finish_trace_event(pid, f, rpc_status(return), ts, done, pending)
+
+        {:trace_ts, pid, :exception_from, {_m, f, _a}, {class, _reason}, ts}, {done, pending} ->
+          finish_trace_event(pid, f, to_string(class), ts, done, pending)
+
+        _event, acc ->
+          acc
+      end)
+
+    Enum.reverse(batches)
+  end
+
+  defp finish_trace_event(pid, function, status, ts, done, pending) do
+    case Map.pop(pending, pid) do
+      {{^function, summary, start_ts}, rest} ->
+        batch = %{function: function, summary: summary, ms: :timer.now_diff(ts, start_ts) / 1000, status: status}
+        {[batch | done], rest}
+
+      {_other, rest} ->
+        {done, rest}
+    end
+  end
+
+  defp summarize_rpc_args(:fetch_internal_transactions, [transactions, _named_args]) when is_list(transactions) do
+    blocks = transactions |> Enum.map(& &1[:block_number]) |> Enum.reject(&is_nil/1) |> Enum.uniq()
+    "#{length(transactions)} txs in #{block_range(blocks)}"
+  end
+
+  defp summarize_rpc_args(:fetch_block_internal_transactions, [block_numbers, _named_args])
+       when is_list(block_numbers) do
+    block_range(block_numbers)
+  end
+
+  defp summarize_rpc_args(_function, _args), do: "?"
+
+  defp block_range([]), do: "no blocks"
+  defp block_range([block]), do: "block #{block}"
+  defp block_range(blocks), do: "#{length(blocks)} blocks #{Enum.min(blocks)}..#{Enum.max(blocks)}"
+
+  defp rpc_status({:ok, _}), do: "ok"
+  defp rpc_status({:error, _}), do: "error"
+  defp rpc_status(:ignore), do: "ignore"
+  defp rpc_status(_), do: "other"
+
+  defp print_trace_batches([], _stage_ms), do: :ok
+
+  defp print_trace_batches(batches, stage_ms) do
+    rpc_total = batches |> Enum.map(& &1.ms) |> Enum.sum()
+
+    IO.puts(
+      "\non-demand trace batches: #{length(batches)}, RPC total #{format_ms(rpc_total)} ms" <>
+        if(stage_ms, do: " of #{format_ms(stage_ms)} ms stage (rest = DB work in the fetcher)", else: "")
+    )
+
+    batches
+    |> Enum.with_index(1)
+    |> Enum.each(fn {batch, index} ->
+      IO.puts(
+        "  ##{String.pad_trailing(to_string(index), 4)}" <>
+          "#{String.pad_leading(format_ms(batch.ms), 10)} ms  " <>
+          "#{String.pad_trailing(batch.status, 7)}#{batch.summary}  (#{batch.function})"
+      )
+    end)
+
+    :ok
   end
 
   # --- timing / reporting ----------------------------------------------------
