@@ -290,18 +290,43 @@ defmodule AddressItxProfiler do
           acc
       end)
 
-    Enum.reverse(batches)
+    normalize_batch_starts(batches)
   end
 
   defp finish_trace_event(pid, function, status, ts, done, pending) do
     case Map.pop(pending, pid) do
       {{^function, summary, start_ts}, rest} ->
-        batch = %{function: function, summary: summary, ms: :timer.now_diff(ts, start_ts) / 1000, status: status}
+        batch = %{
+          function: function,
+          summary: summary,
+          ms: :timer.now_diff(ts, start_ts) / 1000,
+          status: status,
+          started_at: start_ts
+        }
+
         {[batch | done], rest}
 
       {_other, rest} ->
         {done, rest}
     end
+  end
+
+  # Batches run in parallel (Task.async_stream in the fetcher), so pairing on
+  # return yields completion order. Convert absolute start timestamps into
+  # offsets from the earliest call and sort by them to restore call order and
+  # make overlap visible.
+  defp normalize_batch_starts([]), do: []
+
+  defp normalize_batch_starts(batches) do
+    first_start = batches |> Enum.map(& &1.started_at) |> Enum.min()
+
+    batches
+    |> Enum.map(fn batch ->
+      batch
+      |> Map.put(:start_offset_ms, :timer.now_diff(batch.started_at, first_start) / 1000)
+      |> Map.delete(:started_at)
+    end)
+    |> Enum.sort_by(& &1.start_offset_ms)
   end
 
   defp summarize_rpc_args(:fetch_internal_transactions, [transactions, _named_args]) when is_list(transactions) do
@@ -328,18 +353,23 @@ defmodule AddressItxProfiler do
   defp print_trace_batches([], _stage_ms), do: :ok
 
   defp print_trace_batches(batches, stage_ms) do
-    rpc_total = batches |> Enum.map(& &1.ms) |> Enum.sum()
+    rpc_sum = batches |> Enum.map(& &1.ms) |> Enum.sum()
+    rpc_wall = batches |> Enum.map(&(&1.start_offset_ms + &1.ms)) |> Enum.max()
 
     IO.puts(
-      "\non-demand trace batches: #{length(batches)}, RPC total #{format_ms(rpc_total)} ms" <>
-        if(stage_ms, do: " of #{format_ms(stage_ms)} ms stage (rest = DB work in the fetcher)", else: "")
+      "\non-demand trace batches: #{length(batches)} in parallel | " <>
+        "sum #{format_ms(rpc_sum)} ms | wall #{format_ms(rpc_wall)} ms" <>
+        if(stage_ms, do: " | stage #{format_ms(stage_ms)} ms", else: "")
     )
+
+    IO.puts("(sum > wall means the batches overlapped; stage - wall = DB work in the fetcher)")
 
     batches
     |> Enum.with_index(1)
     |> Enum.each(fn {batch, index} ->
       IO.puts(
         "  ##{String.pad_trailing(to_string(index), 4)}" <>
+          "@ +#{String.pad_trailing(format_ms(batch.start_offset_ms), 9)}" <>
           "#{String.pad_leading(format_ms(batch.ms), 10)} ms  " <>
           "#{String.pad_trailing(batch.status, 7)}#{batch.summary}  (#{batch.function})"
       )
