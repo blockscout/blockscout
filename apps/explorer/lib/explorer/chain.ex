@@ -2846,7 +2846,7 @@ defmodule Explorer.Chain do
 
     if token_transfer do
       case token_transfer.token do
-        %Token{type: "ERC-20"} -> :erc20
+        %Token{type: type} when type in ["ERC-20", "ERC-8056"] -> :erc20
         %Token{type: "ERC-721"} -> :erc721
         %Token{type: "ERC-1155"} -> :erc1155
         %Token{type: "ERC-404"} -> :erc404
@@ -2871,7 +2871,7 @@ defmodule Explorer.Chain do
 
   defp erc_20_token_type?(type) do
     case type do
-      "ERC-20" -> true
+      type when type in ["ERC-20", "ERC-8056"] -> true
       _ -> false
     end
   end
