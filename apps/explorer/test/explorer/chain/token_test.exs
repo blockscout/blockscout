@@ -233,4 +233,47 @@ defmodule Explorer.Chain.TokenTest do
       assert [%{name: "0xINVALID_HEX Token"}] = results
     end
   end
+
+  describe "effective_ui_multiplier/2" do
+    @one Decimal.new("1000000000000000000")
+    @two Decimal.new("2000000000000000000")
+    @effective_at ~U[2026-09-01 00:00:00.000000Z]
+
+    test "is nil for a token that does not implement ERC-8056" do
+      refute Token.effective_ui_multiplier(build(:token))
+    end
+
+    test "returns the current multiplier when no change is scheduled" do
+      token = build(:token, ui_multiplier: @one, new_ui_multiplier: nil, ui_multiplier_effective_at: nil)
+
+      assert Token.effective_ui_multiplier(token) == @one
+    end
+
+    test "returns the current multiplier while the scheduled change is in the future" do
+      token = build(:token, ui_multiplier: @one, new_ui_multiplier: @two, ui_multiplier_effective_at: @effective_at)
+
+      assert Token.effective_ui_multiplier(token, ~U[2026-08-31 23:59:59.999999Z]) == @one
+    end
+
+    test "returns the pending multiplier from the moment it becomes effective" do
+      token = build(:token, ui_multiplier: @one, new_ui_multiplier: @two, ui_multiplier_effective_at: @effective_at)
+
+      # the on-chain getter compares with `>=`, so the switch happens exactly at
+      # `effectiveAt` and nothing has to be written to the database for it
+      assert Token.effective_ui_multiplier(token, @effective_at) == @two
+      assert Token.effective_ui_multiplier(token, ~U[2026-09-01 00:00:00.000001Z]) == @two
+    end
+
+    test "returns the pending multiplier when effectiveAt is the Unix epoch" do
+      # `effectiveAt() == 0` means the pending multiplier is already in effect
+      token =
+        build(:token,
+          ui_multiplier: @one,
+          new_ui_multiplier: @two,
+          ui_multiplier_effective_at: ~U[1970-01-01 00:00:00Z]
+        )
+
+      assert Token.effective_ui_multiplier(token) == @two
+    end
+  end
 end
