@@ -18,6 +18,14 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
 
   @default_paging_options %PagingOptions{page_size: 50}
 
+  # Limit how many trace requests are sent to the node in one JSON-RPC batch.
+  # Without them, all block/transaction trace calls of an on-demand fetch end up
+  # in a single batch (the transport-level ETHEREUM_JSONRPC_HTTP_BATCH_SIZE
+  # default of 500 is tuned for cheap calls, not traces), sharing one timeout
+  # window on the archive node. Batches are sent in parallel.
+  @default_blocks_batch_size 2
+  @default_transactions_batch_size 20
+
   @doc """
     Determines whether internal transactions should be fetched on-demand based on DB records and limit.
 
@@ -569,55 +577,103 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
       variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
       if variant in InternalTransactionFetcher.block_traceable_variants() do
-        case EthereumJSONRPC.fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) do
-          {:ok, result} ->
-            result
-
-          error ->
-            Logger.error(
-              "Failed to fetch internal transactions for blocks #{inspect(block_numbers)}: #{inspect(error)}"
-            )
-
-            []
-        end
+        fetch_blocks_internal_transactions(block_numbers, json_rpc_named_arguments)
       else
-        Enum.reduce(block_numbers, [], fn block_number, acc_list ->
-          block_number
-          |> Transaction.get_transactions_of_block_number()
-          |> Transaction.filter_non_traceable_transactions()
-          |> Enum.map(
-            &%{
-              block_number: &1.block_number,
-              hash_data: to_string(&1.hash),
-              transaction_index: &1.index
-            }
-          )
-          |> case do
-            [] ->
-              {:ok, []}
-
-            transactions ->
-              try do
-                EthereumJSONRPC.fetch_internal_transactions(transactions, json_rpc_named_arguments)
-              catch
-                :exit, error ->
-                  {:error, error, __STACKTRACE__}
-              end
-          end
-          |> case do
-            {:ok, internal_transactions} ->
-              internal_transactions ++ acc_list
-
-            error_or_ignore ->
-              Logger.error(
-                "Failed to fetch internal transactions for block #{block_number}: #{inspect(error_or_ignore)}"
-              )
-
-              acc_list
-          end
-        end)
+        block_numbers
+        |> transactions_to_trace()
+        |> fetch_transactions_internal_transactions(json_rpc_named_arguments)
       end
     end
+  end
+
+  # Traces blocks in batches of `blocks_batch_size()` sent in parallel. Any
+  # failed batch fails the whole fetch (as a failed batch did before batching
+  # was introduced) to avoid silent gaps in paginated results.
+  defp fetch_blocks_internal_transactions(block_numbers, json_rpc_named_arguments) do
+    chunk_results =
+      block_numbers
+      |> Enum.chunk_every(blocks_batch_size())
+      |> Task.async_stream(
+        fn chunk -> {chunk, EthereumJSONRPC.fetch_block_internal_transactions(chunk, json_rpc_named_arguments)} end,
+        timeout: :infinity
+      )
+      |> Enum.map(fn {:ok, chunk_result} -> chunk_result end)
+
+    if Enum.all?(chunk_results, &match?({_chunk, {:ok, _}}, &1)) do
+      Enum.flat_map(chunk_results, fn {_chunk, {:ok, result}} -> result end)
+    else
+      Enum.each(chunk_results, fn
+        {_chunk, {:ok, _}} ->
+          :ok
+
+        {chunk, error} ->
+          Logger.error("Failed to fetch internal transactions for blocks #{inspect(chunk)}: #{inspect(error)}")
+      end)
+
+      []
+    end
+  end
+
+  # Collects traceable transactions of all the blocks with a single DB query,
+  # preserving the order of `block_numbers` (and transaction index order within
+  # a block).
+  defp transactions_to_trace(block_numbers) do
+    transactions_by_block_number =
+      block_numbers
+      |> Transaction.get_transactions_of_block_numbers()
+      |> Transaction.filter_non_traceable_transactions()
+      |> Enum.group_by(& &1.block_number)
+
+    Enum.flat_map(block_numbers, fn block_number ->
+      transactions_by_block_number
+      |> Map.get(block_number, [])
+      |> Enum.sort_by(& &1.index)
+      |> Enum.map(
+        &%{
+          block_number: &1.block_number,
+          hash_data: to_string(&1.hash),
+          transaction_index: &1.index
+        }
+      )
+    end)
+  end
+
+  # Traces transactions in cross-block batches of `transactions_batch_size()`
+  # sent in parallel, instead of one batch per block. A failed batch is skipped
+  # with a log, the same way a failed per-block batch was skipped before.
+  defp fetch_transactions_internal_transactions(transactions, json_rpc_named_arguments) do
+    transactions
+    |> Enum.chunk_every(transactions_batch_size())
+    |> Task.async_stream(
+      fn chunk -> {chunk, do_fetch_transactions_internal_transactions(chunk, json_rpc_named_arguments)} end,
+      timeout: :infinity
+    )
+    |> Enum.flat_map(fn
+      {:ok, {_chunk, {:ok, internal_transactions}}} ->
+        internal_transactions
+
+      {:ok, {chunk, error_or_ignore}} ->
+        Logger.error(
+          "Failed to fetch internal transactions for transactions #{inspect(Enum.map(chunk, & &1.hash_data))}: #{inspect(error_or_ignore)}"
+        )
+
+        []
+    end)
+  end
+
+  defp do_fetch_transactions_internal_transactions(chunk, json_rpc_named_arguments) do
+    EthereumJSONRPC.fetch_internal_transactions(chunk, json_rpc_named_arguments)
+  catch
+    :exit, error ->
+      {:error, error, __STACKTRACE__}
+  end
+
+  defp blocks_batch_size do
+    Application.get_env(:indexer, __MODULE__, [])[:blocks_batch_size] || @default_blocks_batch_size
+  end
+
+  defp transactions_batch_size do
+    Application.get_env(:indexer, __MODULE__, [])[:transactions_batch_size] || @default_transactions_batch_size
   end
 
   defp internal_transactions_fetching_disabled? do
