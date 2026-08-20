@@ -7,6 +7,7 @@ defmodule Explorer.Token.MetadataRetriever do
   require Logger
 
   alias Explorer.Chain.{Hash, Token}
+  alias Explorer.Chain.Token.ScaledUIAmount
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.HttpClient
   alias Explorer.SmartContract.Reader
@@ -136,6 +137,20 @@ defmodule Explorer.Token.MetadataRetriever do
     @total_supply_signature => []
   }
 
+  # The order the base functions are requested in and their results are read
+  # back in. `Reader.query_contracts/2` answers with a flat list, so the zip that
+  # restores the mapping has to know the exact order rather than depend on the
+  # iteration order of `@contract_functions`.
+  @base_signatures [@name_signature, @total_supply_signature, @decimals_signature, @symbol_signature]
+
+  @supports_interface_signature ScaledUIAmount.supports_interface_signature()
+  @ui_multiplier_signature ScaledUIAmount.ui_multiplier_signature()
+  @new_ui_multiplier_signature ScaledUIAmount.new_ui_multiplier_signature()
+  @effective_at_signature ScaledUIAmount.effective_at_signature()
+  @ui_multiplier_functions Map.new(ScaledUIAmount.signatures(), &{&1, []})
+
+  @full_contract_abi @contract_abi ++ ScaledUIAmount.contract_abi()
+
   # e8a3d485 = keccak256(contractURI())
   @erc1155_contract_uri_signature "e8a3d485"
   @erc1155_contract_uri_function %{
@@ -183,34 +198,18 @@ defmodule Explorer.Token.MetadataRetriever do
   def get_functions_of(tokens, opts \\ [])
 
   def get_functions_of(tokens, _opts) when is_list(tokens) do
-    requests =
-      tokens
-      |> Enum.flat_map(fn token ->
-        @contract_functions
-        |> Enum.map(fn {method_id, args} ->
-          %{contract_address: token.contract_address_hash, method_id: method_id, args: args}
-        end)
-      end)
-
-    hashes = Enum.map(tokens, fn token -> token.contract_address_hash end)
-
     updated_at = DateTime.utc_now()
 
     fetched_result =
-      requests
-      |> Reader.query_contracts(@contract_abi)
-      |> Enum.chunk_every(4)
-      |> Enum.zip(hashes)
-      |> Enum.map(fn {result, hash} ->
-        formatted_result =
-          [@name_signature, @total_supply_signature, @decimals_signature, @symbol_signature]
-          |> Enum.zip(result)
-          |> format_contract_functions_result(hash)
-
-        formatted_result
+      tokens
+      |> Enum.map(&{&1.contract_address_hash, signatures_of(&1)})
+      |> query_per_token()
+      |> Enum.map(fn {hash, metadata} ->
+        metadata
         |> Map.put(:contract_address_hash, hash)
         |> Map.put(:updated_at, updated_at)
       end)
+      |> read_scaled_ui_amount()
 
     erc_1155_tokens = tokens |> Enum.filter(fn token -> token.type == "ERC-1155" end)
 
@@ -258,6 +257,84 @@ defmodule Explorer.Token.MetadataRetriever do
     else
       metadata
     end
+  end
+
+  # ERC-8056 extends ERC-20 only, so the ERC-165 probe rides along in the batch
+  # that is sent anyway for ERC-20 tokens, costing one more `eth_call` inside an
+  # existing batch request and no extra round trip.
+  #
+  # It is deliberately not asked on the single token code path: that one retries
+  # every reverting call `:token_functions_reader_max_retries` times, and for a
+  # contract without ERC-165 the probe does revert. Such a token gets its
+  # multiplier on the next metadata refresh, or at once if it emits
+  # `UIMultiplierUpdated`.
+  defp signatures_of(%{type: type}) when type in ["ERC-20", "ERC-8056"],
+    do: @base_signatures ++ [@supports_interface_signature]
+
+  defp signatures_of(_token), do: @base_signatures
+
+  defp query_per_token([]), do: []
+
+  defp query_per_token(tokens_with_signatures) do
+    requests =
+      Enum.flat_map(tokens_with_signatures, fn {contract_address_hash, signatures} ->
+        Enum.map(signatures, &request(contract_address_hash, &1))
+      end)
+
+    requests
+    |> Reader.query_contracts(@full_contract_abi)
+    |> split_results_per_token(tokens_with_signatures)
+    |> Enum.map(fn {hash, signatures, results} ->
+      {hash, signatures |> Enum.zip(results) |> format_contract_functions_result(hash)}
+    end)
+  end
+
+  defp request(contract_address_hash, @supports_interface_signature) do
+    %{
+      contract_address: contract_address_hash,
+      method_id: @supports_interface_signature,
+      args: [ScaledUIAmount.interface_id()]
+    }
+  end
+
+  defp request(contract_address_hash, method_id),
+    do: %{contract_address: contract_address_hash, method_id: method_id, args: []}
+
+  # ERC-8056 makes ERC-165 detection mandatory, so the getters are only worth
+  # reading — and the type only worth assigning — once the contract has claimed
+  # the interface. That keeps an ordinary ERC-20 to a single extra call instead
+  # of three reverting ones, and stops a contract that happens to expose a
+  # `uiMultiplier()` of its own from being relabelled ERC-8056.
+  defp read_scaled_ui_amount(results) do
+    supporting_hashes =
+      results
+      |> Enum.filter(& &1[:supports_scaled_ui_amount])
+      |> Enum.map(& &1.contract_address_hash)
+
+    multipliers =
+      supporting_hashes
+      |> Enum.map(&{&1, ScaledUIAmount.signatures()})
+      |> query_per_token()
+      |> Map.new()
+
+    Enum.map(results, fn metadata ->
+      metadata
+      |> Map.merge(Map.get(multipliers, metadata.contract_address_hash, %{}))
+      |> put_scaled_ui_amount_type(metadata[:supports_scaled_ui_amount])
+      |> Map.delete(:supports_scaled_ui_amount)
+    end)
+  end
+
+  defp put_scaled_ui_amount_type(metadata, true), do: Map.put(metadata, :type, "ERC-8056")
+  defp put_scaled_ui_amount_type(metadata, _supports?), do: metadata
+
+  defp split_results_per_token(results, tokens_with_signatures) do
+    tokens_with_signatures
+    |> Enum.map_reduce(results, fn {hash, signatures}, rest ->
+      {token_results, remaining} = Enum.split(rest, length(signatures))
+      {{hash, signatures, token_results}, remaining}
+    end)
+    |> elem(0)
   end
 
   defp contract_failure?({:error, %{message: message}}) when is_binary(message),
@@ -340,6 +417,77 @@ defmodule Explorer.Token.MetadataRetriever do
     |> format_contract_functions_result(contract_address_hash)
   end
 
+  @doc """
+  Whether the contract claims the
+  [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056) `IScaledUIAmount`
+  interface through ERC-165.
+
+  This is the single authority on whether a contract is an ERC-8056 token.
+  Nothing else qualifies: a `uiMultiplier()` that answers may well mean
+  something entirely different, and a log carrying the `UIMultiplierUpdated`
+  topic proves nothing at all, since any contract can emit any topic it likes.
+
+  Anything that is not a definitive answer counts as "no", which suits a caller
+  that will look again later. A caller that will not — a migration about to
+  checkpoint past the contract, say — must use `scaled_ui_amount_support/1` and
+  treat a failed lookup differently from a denied claim.
+  """
+  @spec supports_scaled_ui_amount?(String.t()) :: boolean()
+  def supports_scaled_ui_amount?(contract_address_hash) when is_binary(contract_address_hash) do
+    scaled_ui_amount_support(contract_address_hash) == {:ok, true}
+  end
+
+  @doc """
+  Same as `supports_scaled_ui_amount?/1` but keeps a failed lookup apart from a
+  denied claim.
+
+  Returns `{:ok, true}` or `{:ok, false}` when the contract answered — a revert
+  counts as an answer, since a contract without ERC-165 is definitively not an
+  ERC-8056 token — and `:error` when the node did not, so the caller can try
+  again rather than record a "no" that is really "unknown".
+  """
+  @spec scaled_ui_amount_support(String.t()) :: {:ok, boolean()} | :error
+  def scaled_ui_amount_support(contract_address_hash) when is_binary(contract_address_hash) do
+    contract_address_hash
+    |> Reader.query_contract(
+      @full_contract_abi,
+      %{@supports_interface_signature => [ScaledUIAmount.interface_id()]},
+      false
+    )
+    |> Map.get(@supports_interface_signature)
+    |> case do
+      {:ok, [supports?]} when is_boolean(supports?) ->
+        {:ok, supports?}
+
+      {:error, :invalid_data} ->
+        {:ok, false}
+
+      {:error, _reason} = error ->
+        if contract_failure?(error), do: {:ok, false}, else: :error
+
+      _other ->
+        :error
+    end
+  end
+
+  @doc """
+  Reads the [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056) multiplier of a
+  token: `uiMultiplier()`, `newUIMultiplier()` and `effectiveAt()`.
+
+  Returns a map with `:ui_multiplier`, `:new_ui_multiplier` and
+  `:ui_multiplier_effective_at`, each present only if its call succeeded — an
+  empty map means the token does not implement ERC-8056. `newUIMultiplier()` and
+  `effectiveAt()` belong to a required extension of the standard, but are
+  tolerated to be missing so that a token exposing the bare `uiMultiplier()` is
+  still displayed correctly, just without the scheduled change.
+  """
+  @spec get_ui_multiplier_of(String.t()) :: map()
+  def get_ui_multiplier_of(contract_address_hash) when is_binary(contract_address_hash) do
+    contract_address_hash
+    |> fetch_functions_from_contract(@ui_multiplier_functions)
+    |> format_contract_functions_result(contract_address_hash)
+  end
+
   defp fetch_functions_from_contract(contract_address_hash, contract_functions) do
     max_retries = Application.get_env(:explorer, :token_functions_reader_max_retries)
 
@@ -350,7 +498,8 @@ defmodule Explorer.Token.MetadataRetriever do
 
   defp fetch_functions_with_retries(contract_address_hash, contract_functions, accumulator, retries_left)
        when retries_left > 0 do
-    contract_functions_result = Reader.query_contract(contract_address_hash, @contract_abi, contract_functions, false)
+    contract_functions_result =
+      Reader.query_contract(contract_address_hash, @full_contract_abi, contract_functions, false)
 
     functions_with_errors =
       Enum.filter(contract_functions_result, fn function ->
@@ -411,6 +560,7 @@ defmodule Explorer.Token.MetadataRetriever do
     |> handle_invalid_strings(contract_address_hash)
     |> handle_large_strings()
     |> limit_decimals()
+    |> convert_ui_multiplier_effective_at()
   end
 
   defp atomized_key(@name_signature), do: :name
@@ -418,6 +568,23 @@ defmodule Explorer.Token.MetadataRetriever do
   defp atomized_key(@decimals_signature), do: :decimals
   defp atomized_key(@total_supply_signature), do: :total_supply
   defp atomized_key(@erc1155_contract_uri_signature), do: :name
+  defp atomized_key(@supports_interface_signature), do: :supports_scaled_ui_amount
+  defp atomized_key(@ui_multiplier_signature), do: :ui_multiplier
+  defp atomized_key(@new_ui_multiplier_signature), do: :new_ui_multiplier
+  defp atomized_key(@effective_at_signature), do: :ui_multiplier_effective_at
+
+  defp convert_ui_multiplier_effective_at(%{ui_multiplier_effective_at: timestamp} = contract_functions)
+       when is_integer(timestamp) do
+    case ScaledUIAmount.effective_at_from_unix(timestamp) do
+      {:ok, effective_at} ->
+        %{contract_functions | ui_multiplier_effective_at: effective_at}
+
+      {:error, _reason} ->
+        Map.delete(contract_functions, :ui_multiplier_effective_at)
+    end
+  end
+
+  defp convert_ui_multiplier_effective_at(contract_functions), do: contract_functions
 
   # It's a temp fix to store tokens that have names and/or symbols with characters that the database
   # doesn't accept. See https://github.com/blockscout/blockscout/issues/669 for more info.

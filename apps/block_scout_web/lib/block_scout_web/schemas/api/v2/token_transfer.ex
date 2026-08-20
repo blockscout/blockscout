@@ -118,18 +118,23 @@ end
 
 defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.Total do
   @moduledoc """
-  `total` shape for fungible-amount token transfers (ERC-20, ZRC-2, ERC-7984).
+  `total` shape for fungible-amount token transfers (ERC-20, ERC-8056, ZRC-2, ERC-7984).
   """
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.General
+  alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
     title: "TokenTransferTotalFungible",
     type: :object,
     properties: %{
       value: General.IntegerStringNullable,
-      decimals: General.IntegerStringNullable
+      decimals: General.IntegerStringNullable,
+      ui_multiplier: %Schema{
+        allOf: [General.IntegerStringNullable],
+        description: "ERC-8056 multiplier that was in force when this transfer happened, with 18 decimals of precision."
+      }
     },
     required: [:value, :decimals],
     additionalProperties: false
