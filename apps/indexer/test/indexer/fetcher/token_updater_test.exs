@@ -52,6 +52,15 @@ defmodule Indexer.Fetcher.TokenUpdaterTest do
                id: id,
                result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
              }
+
+           # the ERC-165 probe, read along with the base metadata of an ERC-20
+           # token and reverting on one that does not implement ERC-8056
+           %{id: id, method: "eth_call", params: [%{data: _, to: _}, "latest"]} ->
+             %{
+               id: id,
+               error: %{code: -32015, data: "something", message: "some error"},
+               jsonrpc: "2.0"
+             }
          end)}
       end
     )
