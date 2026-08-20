@@ -187,6 +187,8 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.SanitizeMissingBlockRanges, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.TokenTransferTokenType, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.BackfillScaledUIAmountTokens, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.SanitizeScaledUIAmountTokenTransferTypes, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.TransactionBlockConsensus, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.TokenTransferBlockConsensus, :indexer),
@@ -339,6 +341,14 @@ defmodule Explorer.Application do
         ),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCountDescPartialIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateUnfetchedAddressTokenBalancesV3Index,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.DropUnfetchedAddressTokenBalancesV2Index,
           :indexer
         ),
         configure_mode_dependent_process(

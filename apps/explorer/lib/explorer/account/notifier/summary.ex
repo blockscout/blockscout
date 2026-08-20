@@ -9,7 +9,8 @@ defmodule Explorer.Account.Notifier.Summary do
   alias Explorer
   alias Explorer.Account.Notifier.Summary
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Transaction, Wei}
+  alias Explorer.Chain.{Token, Transaction, Wei}
+  alias Explorer.Chain.Token.ScaledUIAmount
 
   @unknown "Unknown"
 
@@ -101,7 +102,7 @@ defmodule Explorer.Account.Notifier.Summary do
          %Chain.TokenTransfer{} = transfer
        ) do
     case transfer.token.type do
-      type when type in ["ERC-20", "ZRC-2"] ->
+      type when type in ["ERC-20", "ERC-8056", "ZRC-2"] ->
         %Summary{
           transaction_hash: transaction.hash,
           method: method(transfer),
@@ -206,10 +207,9 @@ defmodule Explorer.Account.Notifier.Summary do
         )
       )
 
-    Decimal.div(
-      amount,
-      decimals
-    )
+    amount
+    |> ScaledUIAmount.scale(Token.effective_ui_multiplier(transfer.token))
+    |> Decimal.div(decimals)
   end
 
   defp token_ids(%Chain.TokenTransfer{token_ids: nil}), do: ""

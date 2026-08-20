@@ -615,7 +615,9 @@ defmodule Explorer.Etherscan do
   end
 
   defp list_erc20_token_transfers(address_hash, contract_address_hash, options) do
-    "ERC-20" |> base_token_transfers_query(address_hash, contract_address_hash, options) |> Repo.replica().all()
+    ["ERC-20", "ERC-8056"]
+    |> base_token_transfers_query(address_hash, contract_address_hash, options)
+    |> Repo.replica().all()
   end
 
   # Retrieves token transfers filtered by ZRC-2 type with optional address and contract filtering.
