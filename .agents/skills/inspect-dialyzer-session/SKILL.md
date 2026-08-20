@@ -1,6 +1,6 @@
 ---
 name: inspect-dialyzer-session
-description: "Inspect and analyze a dialyzer-reviewer subagent session file (JSONL). Produces a step-by-step walkthrough of what the agent did, what each result was, why it chose its next action, and whether it followed the dialyzer-reviewer spec. Only invoke manually via /inspect-dialyzer-session <path-to-session.jsonl>."
+description: "Analyze a saved session from the dialyzer-reviewer subagent, to check whether it followed its instructions correctly. Use this skill to debug or audit the AI agent, not to work on product code."
 disable-model-invocation: true
 allowed-tools: Bash(python3 .agents/skills/inspect-dialyzer-session/scripts/parse-session.py *)
 ---

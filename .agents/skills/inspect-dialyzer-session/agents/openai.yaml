@@ -1,0 +1,6 @@
+interface:
+  display_name: "Inspect Dialyzer Session"
+  short_description: "Audit a dialyzer-reviewer subagent session"
+  default_prompt: "Use $inspect-dialyzer-session to analyze a saved dialyzer-reviewer subagent session file and check whether it followed its instructions; for debugging the AI agent, not product code."
+policy:
+  allow_implicit_invocation: false

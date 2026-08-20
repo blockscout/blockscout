@@ -1,0 +1,6 @@
+interface:
+  display_name: "Describe Changes"
+  short_description: "Summarize planned changes before coding"
+  default_prompt: "Use $describe-changes to write a short summary of the planned changes for a feature or issue, before writing any code."
+policy:
+  allow_implicit_invocation: false

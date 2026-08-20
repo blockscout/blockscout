@@ -1,0 +1,6 @@
+interface:
+  display_name: "Plan Export"
+  short_description: "Export a phased implementation plan"
+  default_prompt: "Use $plan-export to write a detailed, phased implementation plan for a GitHub issue and save it to a file."
+policy:
+  allow_implicit_invocation: false

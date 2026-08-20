@@ -1,0 +1,6 @@
+interface:
+  display_name: "Inspect Code Quality Session"
+  short_description: "Audit a code-quality subagent session"
+  default_prompt: "Use $inspect-code-quality-session to analyze a saved code-quality subagent session file and check whether it followed its instructions; for debugging the AI agent, not product code."
+policy:
+  allow_implicit_invocation: false
