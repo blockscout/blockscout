@@ -855,6 +855,16 @@ config :explorer, Explorer.Migrator.TokenTransferTokenType,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_TRANSFER_TOKEN_TYPE_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_TRANSFER_TOKEN_TYPE_CONCURRENCY", 1)
 
+config :explorer, Explorer.Migrator.BackfillScaledUIAmountTokens,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_SCALED_UI_AMOUNT_TOKENS_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_SCALED_UI_AMOUNT_TOKENS_CONCURRENCY", 1)
+
+config :explorer, Explorer.Migrator.SanitizeScaledUIAmountTokenTransferTypes,
+  batch_size:
+    ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_SCALED_UI_AMOUNT_TOKEN_TRANSFER_TYPES_BATCH_SIZE", 100),
+  concurrency:
+    ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_SCALED_UI_AMOUNT_TOKEN_TRANSFER_TYPES_CONCURRENCY", 1)
+
 config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_NFT_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_NFT_CONCURRENCY", 1),

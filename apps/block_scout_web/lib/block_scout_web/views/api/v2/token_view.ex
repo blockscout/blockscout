@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.NFTHelper
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.{Address, BridgedToken}
+  alias Explorer.Chain.{Address, BridgedToken, Token}
   alias Explorer.Chain.Token.Instance
 
   def render("token.json", %{token: nil = token, contract_address_hash: contract_address_hash}) do
@@ -23,7 +23,10 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "icon_url" => nil,
       "circulating_market_cap" => nil,
       "circulating_supply" => nil,
-      "reputation" => nil
+      "reputation" => nil,
+      "ui_multiplier" => nil,
+      "new_ui_multiplier" => nil,
+      "ui_multiplier_effective_at" => nil
     }
     |> maybe_append_bridged_info(token)
   end
@@ -46,7 +49,10 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "icon_url" => token.icon_url,
       "circulating_market_cap" => token.circulating_market_cap,
       "circulating_supply" => token.circulating_supply,
-      "reputation" => token.reputation
+      "reputation" => token.reputation,
+      "ui_multiplier" => Token.effective_ui_multiplier(token),
+      "new_ui_multiplier" => token.new_ui_multiplier,
+      "ui_multiplier_effective_at" => token.ui_multiplier_effective_at
     }
     |> maybe_append_bridged_info(token)
     |> chain_type_fields(%{address: token.contract_address, field_prefix: nil})
