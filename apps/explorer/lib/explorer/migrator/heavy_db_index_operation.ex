@@ -35,6 +35,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
               | :smart_contracts_additional_sources
               | :tokens
               | :address_current_token_balances
+              | :address_token_balances
   @doc """
   Specifies the type of operation to be performed on the database index.
 

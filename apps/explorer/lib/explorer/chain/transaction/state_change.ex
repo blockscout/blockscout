@@ -424,7 +424,7 @@ defmodule Explorer.Chain.Transaction.StateChange do
       token_type =
         if DenormalizationHelper.tt_denormalization_finished?(), do: transfer.token_type, else: transfer.token.type
 
-      if token_type not in ["ERC-20", "ZRC-2"] or has_diff?(balance_diff) do
+      if token_type not in ["ERC-20", "ERC-8056", "ZRC-2"] or has_diff?(balance_diff) do
         %StateChange{
           coin_or_token_transfers: transfers,
           address: address,

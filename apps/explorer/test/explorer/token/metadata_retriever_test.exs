@@ -96,6 +96,15 @@ defmodule Explorer.Token.MetadataRetrieverTest do
                  id: id,
                  result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
                }
+
+             # the ERC-165 probe, which an ERC-20 token not implementing the
+             # extension reverts on
+             %{id: id, method: "eth_call", params: [%{data: _, to: _}, "latest"]} ->
+               %{
+                 id: id,
+                 error: %{code: -32015, data: "something", message: "some error"},
+                 jsonrpc: "2.0"
+               }
            end)}
         end
       )
@@ -115,6 +124,147 @@ defmodule Explorer.Token.MetadataRetrieverTest do
                   decimals: 18
                 }
               ]} = MetadataRetriever.get_functions_of([token, token])
+    end
+
+    # The ERC-165 probe carries its argument, so its request data is the selector
+    # followed by the interface id; matching has to be on the prefix.
+    defp erc8056_mock_response(id, data) do
+      cond do
+        String.starts_with?(data, "0x01ffc9a7") ->
+          # supportsInterface(0xa60bf13d) == true
+          %{id: id, result: "0x0000000000000000000000000000000000000000000000000000000000000001"}
+
+        data == "0xa60bf13d" ->
+          # uiMultiplier() == 2e18
+          %{id: id, result: "0x0000000000000000000000000000000000000000000000001bc16d674ec80000"}
+
+        data == "0xdc767007" ->
+          # newUIMultiplier() == 4e18
+          %{id: id, result: "0x0000000000000000000000000000000000000000000000003782dace9d900000"}
+
+        data == "0x97a4064f" ->
+          # effectiveAt() == 2026-01-01T00:00:00Z
+          %{id: id, result: "0x000000000000000000000000000000000000000000000000000000006955b900"}
+
+        true ->
+          %{id: id, error: %{code: -32015, data: "something", message: "some error"}, jsonrpc: "2.0"}
+      end
+    end
+
+    defp selectors_of(requests) do
+      requests
+      |> Enum.map(&(&1.params |> hd() |> Map.fetch!(:data) |> String.slice(0, 10)))
+      |> Enum.sort()
+    end
+
+    test "reads the ERC-8056 multiplier of a token that claims the interface" do
+      token = insert(:token, contract_address: build(:contract_address))
+
+      # the base metadata batch carries the ERC-165 probe, one extra call rather
+      # than the three getters
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        assert selectors_of(requests) == ["0x01ffc9a7", "0x06fdde03", "0x18160ddd", "0x313ce567", "0x95d89b41"]
+
+        {:ok, Enum.map(requests, &erc8056_mock_response(&1.id, &1.params |> hd() |> Map.fetch!(:data)))}
+      end)
+
+      # only a token that claimed the interface is asked for the getters
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        assert selectors_of(requests) == ["0x97a4064f", "0xa60bf13d", "0xdc767007"]
+
+        {:ok, Enum.map(requests, &erc8056_mock_response(&1.id, &1.params |> hd() |> Map.fetch!(:data)))}
+      end)
+
+      assert {:ok,
+              [
+                %{
+                  ui_multiplier: 2_000_000_000_000_000_000,
+                  new_ui_multiplier: 4_000_000_000_000_000_000,
+                  ui_multiplier_effective_at: ~U[2026-01-01 00:00:00.000000Z],
+                  type: "ERC-8056"
+                }
+              ]} = MetadataRetriever.get_functions_of([token])
+    end
+
+    test "does not read the getters of a contract that answers ERC-165 with false" do
+      # a contract may well expose a function named `uiMultiplier()` meaning
+      # something else entirely; only the ERC-165 claim makes it an ERC-8056
+      # token, and a denied claim has to stop the getters from being asked at all
+      token = insert(:token, contract_address: build(:contract_address))
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        selectors = selectors_of(requests)
+
+        assert "0x01ffc9a7" in selectors
+        assert Enum.all?(["0xa60bf13d", "0xdc767007", "0x97a4064f"], &(&1 not in selectors))
+
+        {:ok,
+         Enum.map(requests, fn %{id: id, params: [%{data: data}, _]} ->
+           if String.starts_with?(data, "0x01ffc9a7") do
+             # supportsInterface(0xa60bf13d) == false
+             %{id: id, result: "0x0000000000000000000000000000000000000000000000000000000000000000"}
+           else
+             %{id: id, error: %{code: -32015, data: "something", message: "some error"}, jsonrpc: "2.0"}
+           end
+         end)}
+      end)
+
+      assert {:ok, [metadata]} = MetadataRetriever.get_functions_of([token])
+
+      refute Map.has_key?(metadata, :type)
+      refute Map.has_key?(metadata, :ui_multiplier)
+      refute Map.has_key?(metadata, :supports_scaled_ui_amount)
+    end
+
+    test "keeps probing a token already typed as ERC-8056" do
+      # dropping it from the batch here would freeze its multiplier at whatever
+      # was read the first time
+      token = insert(:token, contract_address: build(:contract_address), type: "ERC-8056")
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        assert selectors_of(requests) == ["0x01ffc9a7", "0x06fdde03", "0x18160ddd", "0x313ce567", "0x95d89b41"]
+
+        {:ok, Enum.map(requests, &erc8056_mock_response(&1.id, &1.params |> hd() |> Map.fetch!(:data)))}
+      end)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        {:ok, Enum.map(requests, &erc8056_mock_response(&1.id, &1.params |> hd() |> Map.fetch!(:data)))}
+      end)
+
+      assert {:ok, [%{ui_multiplier: 2_000_000_000_000_000_000, type: "ERC-8056"}]} =
+               MetadataRetriever.get_functions_of([token])
+    end
+
+    test "does not assign a type to an ERC-20 token that has no multiplier" do
+      token = insert(:token, contract_address: build(:contract_address))
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        {:ok,
+         Enum.map(requests, fn %{id: id} ->
+           %{id: id, error: %{code: -32015, data: "something", message: "some error"}, jsonrpc: "2.0"}
+         end)}
+      end)
+
+      assert {:ok, [metadata]} = MetadataRetriever.get_functions_of([token])
+
+      refute Map.has_key?(metadata, :type)
+      refute Map.has_key?(metadata, :ui_multiplier)
+      refute Map.has_key?(metadata, :supports_scaled_ui_amount)
+    end
+
+    test "does not probe tokens that are not ERC-20" do
+      token = insert(:token, contract_address: build(:contract_address), type: "ERC-721")
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        assert selectors_of(requests) == ["0x06fdde03", "0x18160ddd", "0x313ce567", "0x95d89b41"]
+
+        {:ok,
+         Enum.map(requests, fn %{id: id} ->
+           %{id: id, error: %{code: -32015, data: "something", message: "some error"}, jsonrpc: "2.0"}
+         end)}
+      end)
+
+      assert {:ok, [_metadata]} = MetadataRetriever.get_functions_of([token])
     end
 
     test "returns only the functions that were read without error" do
@@ -1274,6 +1424,37 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       # We assert that it returns the error immediately without any HTTP mock being called.
       # If it tried to make a request, it would fail because no expectation is set for this URL.
       assert MetadataRetriever.fetch_json({:ok, [invalid_path]}) == {:error, "invalid ipfs path"}
+    end
+  end
+
+  describe "scaled_ui_amount_support/1" do
+    defp probe(response) do
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        {:ok, Enum.map(requests, fn %{id: id} -> Map.put(response, :id, id) end)}
+      end)
+
+      MetadataRetriever.scaled_ui_amount_support(to_string(insert(:contract_address).hash))
+    end
+
+    test "an explicit true is a claim" do
+      assert probe(%{result: "0x0000000000000000000000000000000000000000000000000000000000000001"}) == {:ok, true}
+    end
+
+    test "an explicit false is a denial" do
+      assert probe(%{result: "0x0000000000000000000000000000000000000000000000000000000000000000"}) == {:ok, false}
+    end
+
+    test "a revert is a denial, since a contract without ERC-165 is not ERC-8056" do
+      assert probe(%{error: %{code: -32015, data: "something", message: "execution reverted"}, jsonrpc: "2.0"}) ==
+               {:ok, false}
+    end
+
+    test "an empty answer is a denial, not a failure" do
+      assert probe(%{result: "0x"}) == {:ok, false}
+    end
+
+    test "an unanswered call is neither" do
+      assert probe(%{error: %{code: -32603, message: "timeout"}, jsonrpc: "2.0"}) == :error
     end
   end
 end
