@@ -88,6 +88,14 @@ defmodule Explorer.Prometheus.Instrumenter do
     registry: :public
   ]
 
+  # metrics of market data sources
+
+  @counter [
+    name: :market_source_requests_count,
+    labels: [:source, :endpoint, :status],
+    help: "Number of HTTP requests sent to market data sources by source, endpoint type and outcome"
+  ]
+
   @gauge [name: :average_block_time, help: "Average block time in milliseconds"]
 
   @gauge [name: :batch_average_time, help: "L2 average batch time"]
@@ -218,6 +226,21 @@ defmodule Explorer.Prometheus.Instrumenter do
   @spec increment_failed_uploading_media_number() :: :ok
   def increment_failed_uploading_media_number do
     Counter.inc(name: :failed_uploading_media_number, registry: :public)
+  end
+
+  @doc """
+  Increments the counter of HTTP requests sent to a market data source.
+
+  ## Parameters
+  - `source`: The market data source name, e.g. `"coin_gecko"`
+  - `endpoint`: The endpoint type of the request. Requests to the same endpoint with
+    different variable parts (token address hash, coin id, pagination offset, etc.)
+    share the same endpoint type
+  - `status`: The outcome of the request, e.g. `"ok"` or `"429"`
+  """
+  @spec market_source_request(String.t(), atom(), String.t()) :: :ok
+  def market_source_request(source, endpoint, status) do
+    Counter.inc(name: :market_source_requests_count, labels: [source, endpoint, status])
   end
 
   @doc """
