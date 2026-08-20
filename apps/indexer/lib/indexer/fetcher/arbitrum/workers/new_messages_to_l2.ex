@@ -245,9 +245,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   newly discovered messages as range delimiters.
 
   Note: When consecutive messages are missing (no fully indexed message between
-  them), processing one may also import others in the same L1 block range. This
-  results in some messages being imported multiple times, which is harmless due
-  to Chain.import's upsert behavior.
+  them), processing one may also import others in the same L1 block range as a
+  side effect. Before processing each message, its origination status is
+  re-checked against the database so that messages already back-filled by an
+  earlier iteration of this same loop are skipped instead of triggering a
+  redundant L1 scan.
 
   The cursor advances by the configured range size with each iteration. The
   task completes and stops when the next iteration's range would extend below
@@ -342,19 +344,24 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
 
       # Process each missing message (already in descending order from highest to lowest ID).
       #
-      # Note on duplicate imports: When consecutive messages are missing (no fully indexed
-      # message between them), processing the higher-ID message may also discover and import
-      # lower-ID messages within the same L1 block range. For example:
+      # Note on co-import side effect: When consecutive messages are missing (no fully
+      # indexed message between them), processing the higher-ID message may also discover
+      # and import lower-ID messages within the same L1 block range. For example:
       #   - Messages A(indexed), B(missing), C(missing), D(indexed)
       #   - Processing C: L1 range spans A..D, both B and C are discovered and imported
-      #   - Processing B: B is imported again (already has origination from previous step)
+      #   - Processing B: origination is already present from the previous step, so the
+      #     skip check below avoids re-scanning L1 for it
       #
-      # This is expected and harmless - Chain.import performs upserts, so reimporting
-      # the same message data is idempotent. Duplicate imports only occur with consecutive
-      # missing messages; alternating indexed/missing patterns naturally prevent this.
+      # This side effect is intentionally not short-circuited by an early exit from this
+      # loop - scanning every remaining chunk for the highest-ID message is what lets
+      # neighbouring missing messages in the same gap get co-discovered in the first
+      # place. Instead, each message is re-checked against the database immediately
+      # before it would be processed: if an earlier iteration of this same loop already
+      # filled in its origination data, the message is skipped and no RPC call is made
+      # for it at all.
       missing_origination_message_ids
       |> Enum.each(fn message_id ->
-        discover_and_import_single_missing_message(
+        discover_and_import_missing_message_unless_already_filled(
           message_id,
           l1_rollup_init_block,
           safe_l1_block,
@@ -384,6 +391,53 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
       |> set_missing_origination_completion(should_complete)
 
     {:ok, updated_state}
+  end
+
+  # Re-checks a single missing message against the database immediately before
+  # processing it, and skips the L1 scan entirely when an earlier iteration of
+  # the same `check_missing_origination/1` loop already filled in its
+  # origination info as a side effect of processing a higher message ID.
+  #
+  # ## Parameters
+  # - `message_id`: The ID of the message to discover origination for
+  # - `l1_rollup_init_block`: Fallback minimum L1 block if no preceding message
+  # - `safe_l1_block`: Fallback maximum L1 block if no following message
+  # - `bridge_address`: L1 bridge contract address for log filtering
+  # - `json_rpc_named_arguments`: RPC configuration
+  # - `chunk_size`: Batch size for RPC requests
+  # - `rpc_block_range`: Maximum width of a single `eth_getLogs` request
+  #
+  # ## Returns
+  # - `:ok` after attempting to discover and import the message, or after
+  #   skipping it because its origination info is already present
+  defp discover_and_import_missing_message_unless_already_filled(
+         message_id,
+         l1_rollup_init_block,
+         safe_l1_block,
+         bridge_address,
+         json_rpc_named_arguments,
+         chunk_size,
+         rpc_block_range
+       ) do
+    # A single-ID range (message_id, message_id) is a valid query - the guard only
+    # requires start <= end - and tells us whether this specific message still lacks
+    # origination info at this point in the loop.
+    case DbMessages.messages_to_l2_completed_but_originating_info_missed(message_id, message_id) do
+      [] ->
+        log_debug("Message ID #{message_id} already has origination info, skipping")
+        :ok
+
+      _ ->
+        discover_and_import_single_missing_message(
+          message_id,
+          l1_rollup_init_block,
+          safe_l1_block,
+          bridge_address,
+          json_rpc_named_arguments,
+          chunk_size,
+          rpc_block_range
+        )
+    end
   end
 
   # Discovers and imports origination information for a single L1-to-L2 message

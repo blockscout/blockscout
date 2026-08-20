@@ -338,6 +338,76 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert Repo.get_by(ArbitrumMessage, direction: :to_l2, message_id: 81).originating_transaction_block_number ==
                  nil
       end
+
+      test "skips a message already back-filled by the same loop's processing of a higher ID (regression)", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        insert(:arbitrum_message, message_id: 90, originating_transaction_block_number: 700)
+        insert(:arbitrum_message, message_id: 93, originating_transaction_block_number: 735)
+
+        insert(:arbitrum_message,
+          message_id: 91,
+          originator_address: nil,
+          originating_transaction_hash: nil,
+          origination_timestamp: nil,
+          originating_transaction_block_number: nil,
+          status: :relayed
+        )
+
+        insert(:arbitrum_message,
+          message_id: 92,
+          originator_address: nil,
+          originating_transaction_hash: nil,
+          origination_timestamp: nil,
+          originating_transaction_block_number: nil,
+          status: :relayed
+        )
+
+        transaction_hash_91_string = to_string(transaction_hash())
+        originator_address_91_string = to_string(address_hash())
+        transaction_hash_92_string = to_string(transaction_hash())
+        originator_address_92_string = to_string(address_hash())
+        timestamp = 1_700_000_000
+
+        # Both logs fall within the L1 block range scanned while processing the
+        # higher missing message ID (92); the message-ID filter for that scan
+        # allows both 91 and 92 through since it is bounded by the indexed
+        # neighbours 90 and 93.
+        log_91 = build_message_delivered_log(91, 725, transaction_hash_91_string, timestamp)
+        log_92 = build_message_delivered_log(92, 715, transaction_hash_92_string, timestamp)
+
+        expect_rpc(
+          %{
+            {700, 709} => [],
+            {710, 719} => [log_92],
+            {720, 729} => [log_91],
+            {730, 735} => []
+          },
+          %{
+            transaction_hash_91_string => originator_address_91_string,
+            transaction_hash_92_string => originator_address_92_string
+          }
+        )
+
+        state = build_state(json_rpc_named_arguments, end_message_id: 92, rpc_block_range: 10)
+
+        assert {:ok, _updated_state} = NewMessagesToL2.check_missing_origination(state)
+
+        # Only the chunks scanned while processing message ID 92 are observed;
+        # processing message ID 91 afterwards issues no `eth_getLogs` request at
+        # all because the skip check finds its origination already filled in.
+        assert Enum.sort(drain_get_logs_ranges()) == [{700, 709}, {710, 719}, {720, 729}, {730, 735}]
+
+        message_91 = Repo.get_by(ArbitrumMessage, direction: :to_l2, message_id: 91)
+        assert to_string(message_91.originator_address) == String.downcase(originator_address_91_string)
+        assert to_string(message_91.originating_transaction_hash) == String.downcase(transaction_hash_91_string)
+        assert message_91.originating_transaction_block_number == 725
+
+        message_92 = Repo.get_by(ArbitrumMessage, direction: :to_l2, message_id: 92)
+        assert to_string(message_92.originator_address) == String.downcase(originator_address_92_string)
+        assert to_string(message_92.originating_transaction_hash) == String.downcase(transaction_hash_92_string)
+        assert message_92.originating_transaction_block_number == 715
+      end
     end
   end
 end
