@@ -31,10 +31,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @hex_string_pattern ~r"^0x([A-Fa-f0-9]*)$"
 
   if @chain_type == :zilliqa do
-    @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2|ERC-7984)(,(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2|ERC-7984))*\]?$/i
+    @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2|ERC-7984|ERC-8056)(,(ERC-20|ERC-721|ERC-1155|ERC-404|ZRC-2|ERC-7984|ERC-8056))*\]?$/i
   else
-    @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404|ERC-7984)(,(ERC-20|ERC-721|ERC-1155|ERC-404|ERC-7984))*\]?$/i
+    @token_type_pattern ~r/^\[?(ERC-20|ERC-721|ERC-1155|ERC-404|ERC-7984|ERC-8056)(,(ERC-20|ERC-721|ERC-1155|ERC-404|ERC-7984|ERC-8056))*\]?$/i
   end
+
+  @nft_token_type_pattern ~r/^\[?(ERC-721|ERC-1155|ERC-404)(,(ERC-721|ERC-1155|ERC-404))*\]?$/i
 
   # Matches ISO-like datetime strings where separators between time fields can be ':' or percent-encoded '%3A'.
   # Accepts examples like:
@@ -565,10 +567,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
 
   @token_type_param_description """
   Filter by token type. Comma-separated list of:
-  * ERC-20 - Fungible tokens
+  * ERC-20 - Fungible tokens. Does not include ERC-8056, which is a type of its own
   * ERC-721 - Non-fungible tokens
   * ERC-1155 - Multi-token standard
   * ERC-404 - Hybrid fungible/non-fungible tokens
+  * ERC-8056 - Fungible tokens with a scaled UI amount. Such a token is labelled ERC-8056 instead of ERC-20, so list both to get every fungible token
   #{if @chain_type == :zilliqa do
     """
     * ZRC-2 - Fungible tokens on Zilliqa
@@ -615,7 +618,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
           EmptyString,
           %Schema{
             type: :string,
-            pattern: @token_type_pattern
+            pattern: @nft_token_type_pattern
           }
         ]
       },

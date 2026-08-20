@@ -91,7 +91,21 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
           nullable: true
         },
         foreign_address: %Schema{type: :string, pattern: General.address_hash_pattern(), nullable: true},
-        origin_chain_id: General.IntegerStringNullable
+        origin_chain_id: General.IntegerStringNullable,
+        ui_multiplier: %Schema{
+          allOf: [General.IntegerStringNullable],
+          description: "ERC-8056 multiplier in effect at the time of the request, with 18 decimals of precision."
+        },
+        new_ui_multiplier: %Schema{
+          allOf: [General.IntegerStringNullable],
+          description: "ERC-8056 multiplier scheduled to replace `ui_multiplier` at `ui_multiplier_effective_at`."
+        },
+        ui_multiplier_effective_at: %Schema{
+          type: :string,
+          format: :"date-time",
+          nullable: true,
+          description: "Moment `new_ui_multiplier` takes effect."
+        }
       },
       required: [
         :address_hash,
@@ -106,7 +120,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         :icon_url,
         :circulating_market_cap,
         :circulating_supply,
-        :reputation
+        :reputation,
+        :ui_multiplier,
+        :new_ui_multiplier,
+        :ui_multiplier_effective_at
       ],
       additionalProperties: false
     }
@@ -123,7 +140,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Type do
 
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  @token_types ["ERC-20", "ERC-721", "ERC-1155", "ERC-404", "ERC-7984"]
+  @token_types ["ERC-20", "ERC-721", "ERC-1155", "ERC-404", "ERC-7984", "ERC-8056"]
 
   if @chain_type == :zilliqa do
     @chain_type_token_types ["ZRC-2"]

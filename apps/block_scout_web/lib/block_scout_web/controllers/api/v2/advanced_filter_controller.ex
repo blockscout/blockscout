@@ -75,7 +75,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       required: false,
       description:
         "Comma-separated list of transaction types to include. Allowed values: `COIN_TRANSFER`, " <>
-          "`CONTRACT_INTERACTION`, `CONTRACT_CREATION`, `ERC-20`, `ERC-404`, `ERC-721`, `ERC-1155`, `ERC-7984` " <>
+          "`CONTRACT_INTERACTION`, `CONTRACT_CREATION`, `ERC-20`, `ERC-404`, `ERC-721`, `ERC-1155`, `ERC-7984`, `ERC-8056` " <>
           "(plus `ZRC-2` on Zilliqa). Values are matched case-insensitively; unknown entries are silently dropped.",
       example: "COIN_TRANSFER,ERC-20"
     },
@@ -536,7 +536,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     ]
   end
 
-  @default_allowed_transaction_types ~w(COIN_TRANSFER CONTRACT_INTERACTION CONTRACT_CREATION ERC-20 ERC-404 ERC-721 ERC-1155 ERC-7984)
+  @default_allowed_transaction_types ~w(COIN_TRANSFER CONTRACT_INTERACTION CONTRACT_CREATION ERC-20 ERC-404 ERC-721 ERC-1155 ERC-7984 ERC-8056)
 
   if @chain_type == :zilliqa do
     @chain_type_allowed_transaction_types ~w(ZRC-2)

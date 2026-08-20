@@ -38,6 +38,9 @@ defmodule Explorer.Chain.Token.Schema do
         field(:circulating_supply, :decimal)
         field(:transfer_count, :integer)
         field(:counters_updated_at, :integer)
+        field(:ui_multiplier, :decimal)
+        field(:new_ui_multiplier, :decimal)
+        field(:ui_multiplier_effective_at, :utc_datetime_usec)
 
         belongs_to(
           :contract_address,
@@ -73,6 +76,7 @@ defmodule Explorer.Chain.Token do
   * ERC-404
   * ZRC-2 (for Zilliqa chain type)
   * ERC-7984
+  * ERC-8056
 
   ## Token Specifications
 
@@ -83,6 +87,7 @@ defmodule Explorer.Chain.Token do
   * [ERC-404](https://github.com/Pandora-Labs-Org/erc404)
   * [ZRC-2](https://github.com/Zilliqa/ZRC/blob/main/zrcs/zrc-2.md)
   * [ERC-7984](https://github.com/ethereum/ERCs/blob/39197cde3e32d8fc7fde74c7d0ce5e67ad4de409/ERCS/erc-7984.md)
+  * [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056)
   """
   require Logger
 
@@ -144,11 +149,18 @@ defmodule Explorer.Chain.Token do
   * `circulating_market_cap` - The circulating market cap of a token in a configured currency (USD by default).
   * `icon_url` - URL of the token's icon.
   * `is_verified_via_admin_panel` - is token verified via admin panel.
+  * `ui_multiplier` - ERC-8056 multiplier currently in effect, with 18 decimals
+    of precision. `nil` for tokens that do not implement ERC-8056.
+  * `new_ui_multiplier` - ERC-8056 multiplier scheduled to replace
+    `ui_multiplier` at `ui_multiplier_effective_at`.
+  * `ui_multiplier_effective_at` - moment `new_ui_multiplier` takes effect. Use
+    `effective_ui_multiplier/2` instead of reading `ui_multiplier` directly, as
+    the switch happens with no on-chain event to index.
   """
   Explorer.Chain.Token.Schema.generate()
 
   @required_attrs ~w(contract_address_hash type)a
-  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block metadata_updated_at updated_at fiat_value circulating_market_cap circulating_supply icon_url is_verified_via_admin_panel volume_24h)a
+  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block metadata_updated_at updated_at fiat_value circulating_market_cap circulating_supply icon_url is_verified_via_admin_panel volume_24h ui_multiplier new_ui_multiplier ui_multiplier_effective_at)a
 
   @doc """
     Returns the **ordered** list of allowed NFT type labels.
@@ -160,6 +172,28 @@ defmodule Explorer.Chain.Token do
       "ERC-1155",
       "ERC-404"
     ]
+
+  @doc """
+  Returns the [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056) multiplier the
+  amounts of the token have to be displayed with at `at` (now by default), or
+  `nil` for tokens that do not implement ERC-8056.
+  """
+  @spec effective_ui_multiplier(t(), DateTime.t()) :: Decimal.t() | nil
+  def effective_ui_multiplier(token, at \\ DateTime.utc_now())
+
+  def effective_ui_multiplier(%__MODULE__{ui_multiplier: nil}, _at), do: nil
+
+  def effective_ui_multiplier(%__MODULE__{new_ui_multiplier: nil} = token, _at), do: token.ui_multiplier
+
+  def effective_ui_multiplier(%__MODULE__{ui_multiplier_effective_at: nil} = token, _at), do: token.ui_multiplier
+
+  def effective_ui_multiplier(%__MODULE__{} = token, at) do
+    if Timex.before?(at, token.ui_multiplier_effective_at) do
+      token.ui_multiplier
+    else
+      token.new_ui_multiplier
+    end
+  end
 
   @doc false
   def changeset(%Token{} = token, params \\ %{}) do
@@ -344,17 +378,24 @@ defmodule Explorer.Chain.Token do
           symbol: fragment("COALESCE(EXCLUDED.symbol, ?)", token.symbol),
           total_supply: fragment("COALESCE(EXCLUDED.total_supply, ?)", token.total_supply),
           decimals: fragment("COALESCE(EXCLUDED.decimals, ?)", token.decimals),
+          ui_multiplier: fragment("COALESCE(EXCLUDED.ui_multiplier, ?)", token.ui_multiplier),
+          new_ui_multiplier: fragment("COALESCE(EXCLUDED.new_ui_multiplier, ?)", token.new_ui_multiplier),
+          ui_multiplier_effective_at:
+            fragment("COALESCE(EXCLUDED.ui_multiplier_effective_at, ?)", token.ui_multiplier_effective_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.updated_at),
           metadata_updated_at: fragment("GREATEST(?, EXCLUDED.metadata_updated_at)", token.metadata_updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.total_supply, EXCLUDED.decimals) IS DISTINCT FROM (?, ?, ?, ?)",
+          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.total_supply, EXCLUDED.decimals, EXCLUDED.ui_multiplier, EXCLUDED.new_ui_multiplier, EXCLUDED.ui_multiplier_effective_at) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
           token.name,
           token.symbol,
           token.total_supply,
-          token.decimals
+          token.decimals,
+          token.ui_multiplier,
+          token.new_ui_multiplier,
+          token.ui_multiplier_effective_at
         )
     )
   end
