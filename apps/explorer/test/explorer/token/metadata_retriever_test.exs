@@ -11,6 +11,45 @@ defmodule Explorer.Token.MetadataRetrieverTest do
   setup :verify_on_exit!
   setup :set_mox_global
 
+  describe "fetch_metadata_from_uri/2 SSRF protection" do
+    setup do
+      initial = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper) || []
+
+      Application.put_env(
+        :indexer,
+        Indexer.Fetcher.TokenInstance.Helper,
+        Keyword.merge(initial, host_filtering_enabled?: true)
+      )
+
+      :persistent_term.erase(:parsed_cidr_list)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, initial)
+        :persistent_term.erase(:parsed_cidr_list)
+      end)
+
+      :ok
+    end
+
+    test "rejects a redirect from a public host to an internal address and stores nothing" do
+      # The initial (public) host passes validation, but the 302 target is internal.
+      # SafeFetch re-validates each hop, so the internal address is never fetched.
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: "http://8.8.8.8/token.json"}, _opts ->
+          {:ok, %Tesla.Env{status: 302, headers: [{"location", "http://127.0.0.1/"}], body: ""}}
+        end
+      )
+
+      assert {:error, error} = MetadataRetriever.fetch_metadata_from_uri("http://8.8.8.8/token.json", [])
+      assert error =~ "blacklist"
+    end
+
+    test "rejects a token uri whose host is an internal address" do
+      assert {:error, "blacklist"} = MetadataRetriever.fetch_metadata_from_uri("http://169.254.169.254/latest/meta", [])
+    end
+  end
+
   describe "get_functions_of/1" do
     test "returns all functions read in the smart contract" do
       token = insert(:token, contract_address: build(:contract_address))
