@@ -105,14 +105,16 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalance
   def update_cache, do: :ok
 
   # Finds indexes on the table matching the old token holders index content:
-  # the exact column list, the burn address filter, and no `token_type` in the
-  # predicate (which distinguishes the superseding index).
+  # the exact column list, the burn address filter, the `value > 0` condition
+  # (both renderings pg_get_indexdef is known to produce), and no `token_type`
+  # in the predicate (which distinguishes the superseding index).
   @redundant_index_names_query """
   SELECT indexname FROM pg_indexes
   WHERE tablename = $1
     AND indexdef LIKE '%(token_contract_address_hash, value DESC, address_hash DESC)%'
     AND indexdef LIKE '%WHERE%'
     AND indexdef LIKE '%0000000000000000000000000000000000000000%'
+    AND (indexdef LIKE '%value > (0)::numeric%' OR indexdef LIKE '%value > 0::numeric%')
     AND indexdef NOT LIKE '%token_type%';
   """
 
