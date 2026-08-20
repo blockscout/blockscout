@@ -107,10 +107,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalance
   # Finds indexes on the table matching the old token holders index content:
   # the exact column list, the burn address filter, the `value > 0` condition
   # (both renderings pg_get_indexdef is known to produce), and no `token_type`
-  # in the predicate (which distinguishes the superseding index).
+  # in the predicate (which distinguishes the superseding index). The lookup is
+  # constrained to the current schema, where the unqualified DROP INDEX issued
+  # by `safely_drop_db_index/1` resolves.
   @redundant_index_names_query """
   SELECT indexname FROM pg_indexes
-  WHERE tablename = $1
+  WHERE schemaname = current_schema()
+    AND tablename = $1
     AND indexdef LIKE '%(token_contract_address_hash, value DESC, address_hash DESC)%'
     AND indexdef LIKE '%WHERE%'
     AND indexdef LIKE '%0000000000000000000000000000000000000000%'
