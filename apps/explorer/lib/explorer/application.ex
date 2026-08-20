@@ -507,6 +507,14 @@ defmodule Explorer.Application do
           Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsIndexWithUpdatedPk,
           :indexer
         ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesTokenHoldersIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalancesTokenContractAddressHashValueIndex,
+          :indexer
+        ),
         Explorer.Migrator.RefetchContractCodes
         |> configure_mode_dependent_process(:indexer)
         |> configure_chain_type_dependent_process(:zksync),
