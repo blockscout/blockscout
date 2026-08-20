@@ -216,7 +216,9 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsDepositsWithdrawalsIndex,
       Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsFirstTopicIdFkey,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesTokenHoldersIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalancesTokenContractAddressHashValueIndex
     ] do
   config :explorer, index_operation, enabled: true
 end
