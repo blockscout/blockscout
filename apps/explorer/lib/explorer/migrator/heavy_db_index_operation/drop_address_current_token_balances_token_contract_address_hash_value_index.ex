@@ -114,7 +114,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalance
   SELECT indexname FROM pg_indexes
   WHERE schemaname = current_schema()
     AND tablename = $1
-    AND indexdef LIKE '%(token_contract_address_hash, value DESC, address_hash DESC)%'
+    AND indexdef LIKE '%(token#_contract#_address#_hash, value DESC, address#_hash DESC)%' ESCAPE '#'
     AND indexdef LIKE '%WHERE%'
     AND indexdef LIKE '%0000000000000000000000000000000000000000%'
     AND (indexdef LIKE '%value > (0)::numeric%' OR indexdef LIKE '%value > 0::numeric%')
