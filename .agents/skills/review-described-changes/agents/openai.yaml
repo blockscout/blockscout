@@ -1,0 +1,6 @@
+interface:
+  display_name: "Review Described Changes"
+  short_description: "Critique a described-changes overview"
+  default_prompt: "Use $review-described-changes to compare a developer's described-changes overview against the actual code and report gaps, inconsistencies, and mistakes; it does not change any files."
+policy:
+  allow_implicit_invocation: false
