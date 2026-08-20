@@ -92,9 +92,36 @@ defmodule Utils.HttpClient.SafeFetchTest do
     assert {:ok, %{status_code: 302}} = SafeFetch.request(@public, [], [], t)
   end
 
-  test "skips validation when validate_host? is false" do
+  test "skips validation of the initial url when validate_host? is false" do
     t = transport(fn @internal -> {:ok, resp(200, [], "ok")} end)
     assert {:ok, %{status_code: 200}} = SafeFetch.request(@internal, [], [validate_host?: false], t)
+  end
+
+  test "still validates redirect targets when validate_host? is false" do
+    # The initial host is exempt (operator-configured gateway), but a host it redirects to
+    # is not, so the internal target must be rejected without being requested.
+    t =
+      transport(fn
+        "http://10.0.0.1/gateway" -> {:ok, resp(302, [{"location", @internal}])}
+      end)
+
+    assert SafeFetch.request("http://10.0.0.1/gateway", [], [validate_host?: false], t) ==
+             {:error, :blacklist}
+
+    assert_received {:requested, "http://10.0.0.1/gateway"}
+    refute_received {:requested, @internal}
+  end
+
+  test "rejects a redirect to a disallowed scheme when validate_host? is false" do
+    t =
+      transport(fn
+        "http://10.0.0.1/gateway" -> {:ok, resp(302, [{"location", "ftp://8.8.8.8/x"}])}
+      end)
+
+    assert SafeFetch.request("http://10.0.0.1/gateway", [], [validate_host?: false], t) ==
+             {:error, :disallowed_protocol}
+
+    refute_received {:requested, "ftp://8.8.8.8/x"}
   end
 
   test "skips validation when host filtering is globally disabled" do

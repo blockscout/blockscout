@@ -48,10 +48,10 @@ defmodule Utils.UrlValidator do
     # Reserved for the "limited [broadcast](https://en.wikipedia.org/wiki/Broadcast_address)" destination address
     "255.255.255.255/32",
     # --- IPv6 ---
-    # Unspecified address
-    "::/128",
-    # Loopback
-    "::1/128",
+    # Deprecated IPv4-compatible addresses (`::a.b.c.d`), which reach the IPv4 stack without
+    # the `::ffff:` prefix that `normalize_mapped_ipv4/1` handles. Also covers the
+    # unspecified address (`::`) and loopback (`::1`).
+    "::/96",
     # Discard-only address block
     "100::/64",
     # NAT64 well-known prefix

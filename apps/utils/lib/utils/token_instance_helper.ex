@@ -62,7 +62,21 @@ defmodule Utils.TokenInstanceHelper do
   def media_type(nil, _headers, _, _validate_host?), do: nil
 
   @doc """
-  Same as `media_type/4` but returns `{:ok, {type, subtype}}` or `{:error, reason}`.
+  Same as `media_type/4` but reports why detection failed instead of returning `nil`.
+
+  ## Parameters
+
+    - url: The URL to check the media type for.
+    - headers: Optional list of headers to include in the request. Defaults to an empty list.
+    - validate_host?: Optional boolean flag to validate the host against the SSRF blacklist. Defaults to true. Pass `false` for URLs already resolved to an operator-configured gateway (IPFS/Arweave/Swarm), which may live on a private address.
+
+  ## Returns
+
+    - `{:ok, {type, subtype}}` with the media type split on `/`, e.g. `{"image", "png"}`. For
+      `data:image/` and `data:video/` URLs the subtype is an empty string.
+    - `{:error, reason}` with a human-readable binary reason when the URL is nil, uses an
+      unsupported `data:` scheme, is rejected by host validation, or when the HEAD request
+      fails or returns no `content-type` header.
   """
   @spec media_type_detailed(binary(), list(), boolean()) :: {:ok, {binary(), binary()}} | {:error, binary()}
   def media_type_detailed(url, headers \\ [], validate_host? \\ true)
