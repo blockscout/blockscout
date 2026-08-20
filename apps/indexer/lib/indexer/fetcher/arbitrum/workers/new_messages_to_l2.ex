@@ -264,6 +264,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
       - JSON RPC arguments for L1
       - L1 bridge address
       - L1 rollup initialization block
+      - L1 RPC block range for chunking `eth_getLogs` requests
       - L1 RPC chunk size for batch requests
       - Message ID range window size
     - `task_data`: Contains:
@@ -288,6 +289,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
             :json_l1_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             :l1_bridge_address => binary(),
             :l1_rollup_init_block => non_neg_integer(),
+            :l1_rpc_block_range => non_neg_integer(),
             :l1_rpc_chunk_size => non_neg_integer(),
             :missed_message_ids_range => non_neg_integer(),
             optional(any()) => any()
@@ -308,6 +310,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
           config: %{
             json_l1_rpc_named_arguments: json_rpc_named_arguments,
             l1_rpc_chunk_size: chunk_size,
+            l1_rpc_block_range: rpc_block_range,
             l1_bridge_address: bridge_address,
             l1_rollup_init_block: l1_rollup_init_block,
             missed_message_ids_range: missed_message_ids_range
@@ -357,7 +360,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
           safe_l1_block,
           bridge_address,
           json_rpc_named_arguments,
-          chunk_size
+          chunk_size,
+          rpc_block_range
         )
       end)
     end
@@ -408,6 +412,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   # - `bridge_address`: L1 bridge contract address for log filtering
   # - `json_rpc_named_arguments`: RPC configuration
   # - `chunk_size`: Batch size for RPC requests
+  # - `rpc_block_range`: Maximum width of a single `eth_getLogs` request; the
+  #   discovered L1 block range is split into chunks of at most this width so
+  #   that the node's per-request block-range limit is never exceeded
   #
   # ## Returns
   # - `:ok` after attempting to discover and import the message
@@ -417,7 +424,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
          safe_l1_block,
          bridge_address,
          json_rpc_named_arguments,
-         chunk_size
+         chunk_size,
+         rpc_block_range
        ) do
     log_debug("Discovering origination for message ID #{message_id}")
 
@@ -442,15 +450,26 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
       lower_than: higher_bound.message_id
     }
 
-    # Discover messages in the L1 block range, filtering to only messages
-    # within the discovered bounds (exclusive)
-    discover(
-      bridge_address,
+    # Since the L1 block range to search could be wider than `rpc_block_range`
+    # it is required to divide it into smaller chunks so that a single
+    # `eth_getLogs` request never exceeds the node's per-request block-range
+    # limit. `filter_range` is computed once above and reused for every chunk,
+    # so chunking does not change which messages end up imported.
+    # credo:disable-for-lines:9 Credo.Check.Refactor.PipeChainStart
+    ArbitrumHelper.execute_for_block_range_in_chunks(
       l1_start_block,
       l1_end_block,
-      json_rpc_named_arguments,
-      chunk_size,
-      filter_range
+      rpc_block_range,
+      fn chunk_start, chunk_end ->
+        discover(
+          bridge_address,
+          chunk_start,
+          chunk_end,
+          json_rpc_named_arguments,
+          chunk_size,
+          filter_range
+        )
+      end
     )
 
     :ok
