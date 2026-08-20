@@ -59,6 +59,9 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
         field(:index_in_batch, :integer, virtual: true)
         field(:reverse_index_in_batch, :integer, virtual: true)
         field(:token_decimals, :decimal, virtual: true)
+        # ERC-8056 multiplier in force when this transfer happened, resolved by
+        # `Explorer.Chain.Token.UIMultiplierChange.put_ui_multipliers/2`
+        field(:ui_multiplier, :decimal, virtual: true)
         field(:token_type, :string)
         field(:block_consensus, :boolean)
         field(:token_instance, :any, virtual: true) :: Instance.t() | nil
@@ -870,32 +873,36 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   # TODO: remove this clause along with token transfer denormalization
-  defp do_token_transfer_amount_for_api(%Token{type: "ERC-20"}, nil, nil, nil, _token_ids) do
+  defp do_token_transfer_amount_for_api(%Token{type: type}, nil, nil, nil, _token_ids)
+       when type in ["ERC-20", "ERC-8056"] do
     {:ok, nil}
   end
 
-  defp do_token_transfer_amount_for_api(_token, "ERC-20", nil, nil, _token_ids) do
+  defp do_token_transfer_amount_for_api(_token, token_type, nil, nil, _token_ids)
+       when token_type in ["ERC-20", "ERC-8056"] do
     {:ok, nil}
   end
 
   # TODO: remove this clause along with token transfer denormalization
   defp do_token_transfer_amount_for_api(
-         %Token{type: "ERC-20", decimals: decimals},
+         %Token{type: type, decimals: decimals},
          nil,
          amount,
          _amounts,
          _token_ids
-       ) do
+       )
+       when type in ["ERC-20", "ERC-8056"] do
     {:ok, amount, decimals}
   end
 
   defp do_token_transfer_amount_for_api(
          %Token{decimals: decimals},
-         "ERC-20",
+         token_type,
          amount,
          _amounts,
          _token_ids
-       ) do
+       )
+       when token_type in ["ERC-20", "ERC-8056"] do
     {:ok, amount, decimals}
   end
 

@@ -318,9 +318,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   end
 
   if @chain_type == :zilliqa do
-    @token_balances_operation_description "Retrieves all token balances held by a specific address, including ERC-20, ERC-721, ERC-1155, ERC-404, and ZRC-2 tokens."
+    @token_balances_operation_description "Retrieves all token balances held by a specific address, including ERC-20, ERC-721, ERC-1155, ERC-404, ERC-8056, and ZRC-2 tokens."
   else
-    @token_balances_operation_description "Retrieves all token balances held by a specific address, including ERC-20, ERC-721, ERC-1155, and ERC-404 tokens."
+    @token_balances_operation_description "Retrieves all token balances held by a specific address, including ERC-20, ERC-721, ERC-1155, ERC-404, and ERC-8056 tokens."
   end
 
   operation :token_balances,
