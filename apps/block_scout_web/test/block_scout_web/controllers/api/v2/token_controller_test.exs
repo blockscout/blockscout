@@ -49,6 +49,46 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       compare_item(token, response)
     end
+
+    test "get token without ERC-8056 support", %{conn: conn} do
+      token = insert(:token)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{"ui_multiplier" => nil, "new_ui_multiplier" => nil, "ui_multiplier_effective_at" => nil} =
+               json_response(request, 200)
+    end
+
+    test "get ERC-8056 token with a pending multiplier change", %{conn: conn} do
+      token =
+        insert(:token,
+          ui_multiplier: Decimal.new("1000000000000000000"),
+          new_ui_multiplier: Decimal.new("2000000000000000000"),
+          ui_multiplier_effective_at: DateTime.add(DateTime.utc_now(), 1, :hour)
+        )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{
+               "ui_multiplier" => "1000000000000000000",
+               "new_ui_multiplier" => "2000000000000000000"
+             } = json_response(request, 200)
+    end
+
+    test "get ERC-8056 token whose scheduled multiplier change has matured", %{conn: conn} do
+      # the change takes effect with no transaction on chain and no write to the
+      # database: the response has to follow the clock, not the stored column
+      token =
+        insert(:token,
+          ui_multiplier: Decimal.new("1000000000000000000"),
+          new_ui_multiplier: Decimal.new("2000000000000000000"),
+          ui_multiplier_effective_at: DateTime.add(DateTime.utc_now(), -1, :hour)
+        )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{"ui_multiplier" => "2000000000000000000"} = json_response(request, 200)
+    end
   end
 
   describe "/tokens/{address_hash}/counters" do
@@ -152,6 +192,41 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/transfers")
 
       assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
+    test "total carries the ERC-8056 multiplier as of the transfer, not the current one", %{conn: conn} do
+      # the token doubled on 2026-06-01; a transfer from before that has to keep
+      # showing the multiplier its holders saw at the time
+      token =
+        insert(:token,
+          ui_multiplier: Decimal.new("2000000000000000000"),
+          new_ui_multiplier: Decimal.new("2000000000000000000"),
+          ui_multiplier_effective_at: ~U[2026-06-01 00:00:00.000000Z]
+        )
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block_number: 100,
+        log_index: 0,
+        old_multiplier: Decimal.new("1000000000000000000"),
+        new_multiplier: Decimal.new("2000000000000000000"),
+        effective_at: ~U[2026-06-01 00:00:00.000000Z]
+      )
+
+      block = insert(:block, number: 150, timestamp: ~U[2026-05-01 00:00:00.000000Z])
+      transaction = :transaction |> insert() |> with_block(block)
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: block,
+        block_number: block.number,
+        token_contract_address: token.contract_address
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/transfers")
+
+      assert %{"items" => [%{"total" => total}]} = json_response(request, 200)
+      assert total["ui_multiplier"] == "1000000000000000000"
     end
 
     test "check pagination", %{conn: conn} do
@@ -755,6 +830,30 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       check_tokens_pagination(erc_1155_tokens |> Enum.reverse(), conn, %{"type" => "ERC-1155"})
       check_tokens_pagination(erc_404_tokens |> Enum.reverse(), conn, %{"type" => "ERC-404"})
       check_tokens_pagination(erc_7984_tokens |> Enum.reverse(), conn, %{"type" => "ERC-7984"})
+    end
+
+    test "ERC-8056 is a type of its own, kept apart from ERC-20", %{conn: conn} do
+      erc_20_token = insert(:token)
+
+      erc_8056_token =
+        insert(:token, type: "ERC-8056", ui_multiplier: Decimal.new("2000000000000000000"))
+
+      erc_20_hash = Address.checksum(erc_20_token.contract_address_hash)
+      erc_8056_hash = Address.checksum(erc_8056_token.contract_address_hash)
+
+      # asking for ERC-20 must not widen to ERC-8056
+      assert %{"items" => [%{"address_hash" => ^erc_20_hash, "type" => "ERC-20"}]} =
+               conn |> get("/api/v2/tokens", %{"type" => "ERC-20"}) |> json_response(200)
+
+      assert %{"items" => [%{"address_hash" => ^erc_8056_hash, "type" => "ERC-8056"}]} =
+               conn |> get("/api/v2/tokens", %{"type" => "ERC-8056"}) |> json_response(200)
+
+      # a caller after every fungible token has to ask for both
+      assert %{"items" => both} =
+               conn |> get("/api/v2/tokens", %{"type" => "ERC-20,ERC-8056"}) |> json_response(200)
+
+      assert both |> Enum.map(& &1["address_hash"]) |> Enum.sort() ==
+               Enum.sort([erc_20_hash, erc_8056_hash])
     end
 
     test "tokens are filtered by multiple type", %{conn: conn} do
