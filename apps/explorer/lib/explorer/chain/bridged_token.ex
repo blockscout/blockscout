@@ -440,8 +440,10 @@ defmodule Explorer.Chain.BridgedToken do
   def decode_contract_integer_response(resp) do
     case resp do
       "0x" <> integer_encoded ->
-        {integer_value, _} = Integer.parse(integer_encoded, 16)
-        integer_value
+        case Integer.parse(integer_encoded, 16) do
+          {integer_value, ""} -> integer_value
+          _ -> nil
+        end
 
       _ ->
         nil
