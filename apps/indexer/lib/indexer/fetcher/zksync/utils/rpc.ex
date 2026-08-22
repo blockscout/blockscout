@@ -415,6 +415,13 @@ defmodule Indexer.Fetcher.ZkSync.Utils.Rpc do
 
           Enum.to_list(process_from..process_to)
 
+        # v27+ proveBatchesSharedBridge (uint256 _chainId replaced by address _chainAddress)
+        "0x9271e450" <> encoded_params ->
+          [_chain_address, process_from, process_to, _proof_data] =
+            decode_params(encoded_params, ZkSyncContracts.prove_batches_shared_bridge_9271e450_selector_with_abi())
+
+          Enum.to_list(process_from..process_to)
+
         _ ->
           log_error("Unknown calldata format: #{calldata}")
 
