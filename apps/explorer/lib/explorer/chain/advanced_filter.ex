@@ -524,53 +524,25 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp token_transfers_query_function(paging_options, options) do
     token_transfer_query =
-      if DenormalizationHelper.transactions_denormalization_finished?() do
-        from(token_transfer in TokenTransfer,
-          as: :token_transfer,
-          join: transaction in assoc(token_transfer, :transaction),
-          as: :transaction,
-          join: token in assoc(token_transfer, :token),
-          as: :token,
-          select: %TokenTransfer{
-            token_transfer
-            | token_id: fragment("UNNEST(?)", token_transfer.token_ids),
-              amount:
-                fragment("UNNEST(COALESCE(?, ARRAY[COALESCE(?, 1)]))", token_transfer.amounts, token_transfer.amount),
-              reverse_index_in_batch:
-                fragment("GENERATE_SERIES(COALESCE(ARRAY_LENGTH(?, 1), 1), 1, -1)", token_transfer.amounts),
-              token_decimals: token.decimals
-          },
-          where: transaction.block_consensus == true,
-          order_by: [
-            desc: token_transfer.block_number,
-            desc: token_transfer.log_index
-          ]
-        )
-      else
-        from(token_transfer in TokenTransfer,
-          as: :token_transfer,
-          join: transaction in assoc(token_transfer, :transaction),
-          as: :transaction,
-          join: token in assoc(token_transfer, :token),
-          as: :token,
-          join: block in assoc(token_transfer, :block),
-          as: :block,
-          select: %TokenTransfer{
-            token_transfer
-            | token_id: fragment("UNNEST(?)", token_transfer.token_ids),
-              amount:
-                fragment("UNNEST(COALESCE(?, ARRAY[COALESCE(?, 1)]))", token_transfer.amounts, token_transfer.amount),
-              reverse_index_in_batch:
-                fragment("GENERATE_SERIES(COALESCE(ARRAY_LENGTH(?, 1), 1), 1, -1)", token_transfer.amounts),
-              token_decimals: token.decimals
-          },
-          where: block.consensus == true,
-          order_by: [
-            desc: token_transfer.block_number,
-            desc: token_transfer.log_index
-          ]
-        )
-      end
+      TokenTransfer.only_consensus_transfers_query()
+      |> from(as: :token_transfer)
+      |> join(:inner, [token_transfer: token_transfer], transaction in assoc(token_transfer, :transaction),
+        as: :transaction
+      )
+      |> join(:inner, [token_transfer: token_transfer], token in assoc(token_transfer, :token), as: :token)
+      |> maybe_join_token_transfer_block()
+      |> select([token_transfer: token_transfer, token: token], %TokenTransfer{
+        token_transfer
+        | token_id: fragment("UNNEST(?)", token_transfer.token_ids),
+          amount: fragment("UNNEST(COALESCE(?, ARRAY[COALESCE(?, 1)]))", token_transfer.amounts, token_transfer.amount),
+          reverse_index_in_batch:
+            fragment("GENERATE_SERIES(COALESCE(ARRAY_LENGTH(?, 1), 1), 1, -1)", token_transfer.amounts),
+          token_decimals: token.decimals
+      })
+      |> order_by([token_transfer: token_transfer],
+        desc: token_transfer.block_number,
+        desc: token_transfer.log_index
+      )
 
     query_function =
       (&make_token_transfer_query_unnested/2)
@@ -592,6 +564,16 @@ defmodule Explorer.Chain.AdvancedFilter do
       filtered_and_paginated_query
       |> repo.all(repo_options)
       |> repo.preload([:transaction, [token: Reputation.reputation_association()]])
+    end
+  end
+
+  defp maybe_join_token_transfer_block(query) do
+    if DenormalizationHelper.transactions_denormalization_finished?() do
+      query
+    else
+      with_named_binding(query, :block, fn query, binding ->
+        join(query, :inner, [token_transfer: token_transfer], block in assoc(token_transfer, :block), as: ^binding)
+      end)
     end
   end
 
