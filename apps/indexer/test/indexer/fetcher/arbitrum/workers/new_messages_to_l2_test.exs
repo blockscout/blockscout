@@ -13,7 +13,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     alias Explorer.Repo
     alias Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2
 
-    @bridge_address "0xa723c008e76e379c55599d2e4d93879beafda79"
+    @bridge_address "0xa723c008e76e379c55599d2e4d93879beafda790"
 
     setup :verify_on_exit!
 
@@ -52,6 +52,27 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       }
     end
 
+    # Inserts a `:to_l2` message that has completion information but lacks all
+    # four origination fields - the shape selected by
+    # `messages_to_l2_completed_but_originating_info_missed/2`. The factory
+    # already defaults `status` to `:relayed`; `opts` extends or overrides the
+    # attributes (e.g. `completion_transaction_hash`).
+    defp insert_message_missing_origination(message_id, opts \\ []) do
+      insert(
+        :arbitrum_message,
+        Keyword.merge(
+          [
+            message_id: message_id,
+            originator_address: nil,
+            originating_transaction_hash: nil,
+            origination_timestamp: nil,
+            originating_transaction_block_number: nil
+          ],
+          opts
+        )
+      )
+    end
+
     # Mocks both the `eth_getLogs` and `eth_getTransactionByHash` requests the
     # discovery loop can issue, in a single `expect/4` with as many clauses as
     # request shapes: since a single chunk's `eth_getTransactionByHash` lookups
@@ -64,9 +85,21 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # sent to the calling test process; the whole call path runs synchronously
     # in that same process, so the messages land in its mailbox in call order
     # and can be drained with `drain_get_logs_ranges/0` right after.
-    defp expect_rpc(get_logs_responses, transaction_responses \\ %{}) do
+    #
+    # An `eth_getLogs` range absent from `get_logs_responses` raises `KeyError`,
+    # so an unexpected chunk boundary fails the test loudly instead of being
+    # silently answered with no logs. A transaction hash mapped to `nil` in
+    # `transaction_responses` simulates a successful-but-null
+    # `eth_getTransactionByHash` response (the transaction is unknown to the
+    # node).
+    #
+    # By default every map entry is expected to be requested exactly once;
+    # scenarios that legitimately repeat requests (e.g. re-scanning overlapping
+    # ranges for a retried message) pass the exact call count as
+    # `expected_calls`.
+    defp expect_rpc(get_logs_responses, transaction_responses \\ %{}, expected_calls \\ nil) do
       test_pid = self()
-      total_calls = map_size(get_logs_responses) + map_size(transaction_responses)
+      total_calls = expected_calls || map_size(get_logs_responses) + map_size(transaction_responses)
 
       expect(EthereumJSONRPC.Mox, :json_rpc, total_calls, fn
         %{method: "eth_getLogs", params: [%{fromBlock: from_block_quantity, toBlock: to_block_quantity}]}, _options ->
@@ -74,12 +107,16 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
           to_block = quantity_to_integer(to_block_quantity)
           send(test_pid, {:eth_get_logs_range, from_block, to_block})
 
-          {:ok, Map.get(get_logs_responses, {from_block, to_block}, [])}
+          {:ok, Map.fetch!(get_logs_responses, {from_block, to_block})}
 
         [%{id: 0, jsonrpc: "2.0", method: "eth_getTransactionByHash", params: [transaction_hash]}], _options ->
-          from_address = Map.fetch!(transaction_responses, transaction_hash)
+          case Map.fetch!(transaction_responses, transaction_hash) do
+            nil ->
+              {:ok, [%{id: 0, jsonrpc: "2.0", result: nil}]}
 
-          {:ok, [%{id: 0, jsonrpc: "2.0", result: %{"hash" => transaction_hash, "from" => from_address}}]}
+            from_address ->
+              {:ok, [%{id: 0, jsonrpc: "2.0", result: %{"hash" => transaction_hash, "from" => from_address}}]}
+          end
       end)
     end
 
@@ -130,14 +167,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         insert(:arbitrum_message, message_id: 10, originating_transaction_block_number: 100)
         insert(:arbitrum_message, message_id: 30, originating_transaction_block_number: 135)
 
-        insert(:arbitrum_message,
-          message_id: 20,
-          originator_address: nil,
-          originating_transaction_hash: nil,
-          origination_timestamp: nil,
-          originating_transaction_block_number: nil,
-          status: :relayed
-        )
+        insert_message_missing_origination(20)
 
         expect_rpc(%{
           {100, 109} => [],
@@ -150,7 +180,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         assert {:ok, _updated_state} = NewMessagesToL2.check_missing_origination(state)
 
-        assert Enum.sort(drain_get_logs_ranges()) == [{100, 109}, {110, 119}, {120, 129}, {130, 135}]
+        assert drain_get_logs_ranges() == [{100, 109}, {110, 119}, {120, 129}, {130, 135}]
       end
 
       test "issues exactly one request when the gap does not exceed l1_rpc_block_range", %{
@@ -159,14 +189,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         insert(:arbitrum_message, message_id: 40, originating_transaction_block_number: 200)
         insert(:arbitrum_message, message_id: 42, originating_transaction_block_number: 205)
 
-        insert(:arbitrum_message,
-          message_id: 41,
-          originator_address: nil,
-          originating_transaction_hash: nil,
-          origination_timestamp: nil,
-          originating_transaction_block_number: nil,
-          status: :relayed
-        )
+        insert_message_missing_origination(41)
 
         expect_rpc(%{{200, 205} => []})
 
@@ -183,14 +206,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         insert(:arbitrum_message, message_id: 50, originating_transaction_block_number: 300)
         insert(:arbitrum_message, message_id: 52, originating_transaction_block_number: 300)
 
-        insert(:arbitrum_message,
-          message_id: 51,
-          originator_address: nil,
-          originating_transaction_hash: nil,
-          origination_timestamp: nil,
-          originating_transaction_block_number: nil,
-          status: :relayed
-        )
+        insert_message_missing_origination(51)
 
         expect_rpc(%{{300, 300} => []})
 
@@ -209,15 +225,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         completion_transaction_hash = transaction_hash()
 
-        insert(:arbitrum_message,
-          message_id: 61,
-          originator_address: nil,
-          originating_transaction_hash: nil,
-          origination_timestamp: nil,
-          originating_transaction_block_number: nil,
-          completion_transaction_hash: completion_transaction_hash,
-          status: :relayed
-        )
+        insert_message_missing_origination(61, completion_transaction_hash: completion_transaction_hash)
 
         transaction_hash_string = to_string(transaction_hash())
         originator_address_string = to_string(address_hash())
@@ -239,7 +247,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         assert {:ok, _updated_state} = NewMessagesToL2.check_missing_origination(state)
 
-        assert Enum.sort(drain_get_logs_ranges()) == [{400, 409}, {410, 419}, {420, 429}, {430, 435}]
+        assert drain_get_logs_ranges() == [{400, 409}, {410, 419}, {420, 429}, {430, 435}]
 
         message = Repo.get_by(ArbitrumMessage, direction: :to_l2, message_id: 61)
 
@@ -257,14 +265,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         insert(:arbitrum_message, message_id: 70, originating_transaction_block_number: 500)
         insert(:arbitrum_message, message_id: 72, originating_transaction_block_number: 535)
 
-        insert(:arbitrum_message,
-          message_id: 71,
-          originator_address: nil,
-          originating_transaction_hash: nil,
-          origination_timestamp: nil,
-          originating_transaction_block_number: nil,
-          status: :relayed
-        )
+        insert_message_missing_origination(71)
 
         neighbour_transaction_hash_string = to_string(transaction_hash())
         neighbour_originator_address_string = to_string(address_hash())
@@ -312,14 +313,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         insert(:arbitrum_message, message_id: 80, originating_transaction_block_number: 600)
         insert(:arbitrum_message, message_id: 82, originating_transaction_block_number: 635)
 
-        insert(:arbitrum_message,
-          message_id: 81,
-          originator_address: nil,
-          originating_transaction_hash: nil,
-          origination_timestamp: nil,
-          originating_transaction_block_number: nil,
-          status: :relayed
-        )
+        insert_message_missing_origination(81)
 
         expect_rpc(%{
           {600, 609} => [],
@@ -345,23 +339,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         insert(:arbitrum_message, message_id: 90, originating_transaction_block_number: 700)
         insert(:arbitrum_message, message_id: 93, originating_transaction_block_number: 735)
 
-        insert(:arbitrum_message,
-          message_id: 91,
-          originator_address: nil,
-          originating_transaction_hash: nil,
-          origination_timestamp: nil,
-          originating_transaction_block_number: nil,
-          status: :relayed
-        )
-
-        insert(:arbitrum_message,
-          message_id: 92,
-          originator_address: nil,
-          originating_transaction_hash: nil,
-          origination_timestamp: nil,
-          originating_transaction_block_number: nil,
-          status: :relayed
-        )
+        insert_message_missing_origination(91)
+        insert_message_missing_origination(92)
 
         transaction_hash_91_string = to_string(transaction_hash())
         originator_address_91_string = to_string(address_hash())
@@ -396,7 +375,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         # Only the chunks scanned while processing message ID 92 are observed;
         # processing message ID 91 afterwards issues no `eth_getLogs` request at
         # all because the skip check finds its origination already filled in.
-        assert Enum.sort(drain_get_logs_ranges()) == [{700, 709}, {710, 719}, {720, 729}, {730, 735}]
+        assert drain_get_logs_ranges() == [{700, 709}, {710, 719}, {720, 729}, {730, 735}]
 
         message_91 = Repo.get_by(ArbitrumMessage, direction: :to_l2, message_id: 91)
         assert to_string(message_91.originator_address) == String.downcase(originator_address_91_string)
@@ -407,6 +386,79 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert to_string(message_92.originator_address) == String.downcase(originator_address_92_string)
         assert to_string(message_92.originating_transaction_hash) == String.downcase(transaction_hash_92_string)
         assert message_92.originating_transaction_block_number == 715
+      end
+
+      test "does not import a message whose originating transaction lookup returns null and retries it in a later iteration (regression)",
+           %{json_rpc_named_arguments: json_rpc_named_arguments} do
+        insert(:arbitrum_message, message_id: 100, originating_transaction_block_number: 800)
+        insert(:arbitrum_message, message_id: 103, originating_transaction_block_number: 835)
+
+        insert_message_missing_origination(101)
+        insert_message_missing_origination(102)
+
+        transaction_hash_101_string = to_string(transaction_hash())
+        transaction_hash_102_string = to_string(transaction_hash())
+        originator_address_102_string = to_string(address_hash())
+        timestamp = 1_700_000_000
+
+        log_101 = build_message_delivered_log(101, 815, transaction_hash_101_string, timestamp)
+        log_102 = build_message_delivered_log(102, 829, transaction_hash_102_string, timestamp)
+
+        # Message 101's `eth_getTransactionByHash` responds successfully but with
+        # a null result (mapped to `nil` below), so its originator address stays
+        # unknown. The message must not be imported half-filled while processing
+        # message ID 102 - otherwise the skip check (keyed on the originating
+        # block number) would consider it done and it would never be re-processed.
+        #
+        # Processing 102 scans 800..835 (4 chunks, bounded by messages 100 and
+        # 103) and imports only 102. Processing 101 afterwards is NOT skipped:
+        # it re-scans 800..829 (3 chunks, the higher bound now comes from the
+        # just-imported 102) and repeats both transaction lookups (101's log in
+        # chunk {810, 819}, 102's log in chunk {820, 829} - the latter is then
+        # dropped by the message-ID filter). Hence 7 `eth_getLogs` calls over 4
+        # distinct ranges and 4 `eth_getTransactionByHash` calls over 2 hashes,
+        # so the expected call count (11) is passed explicitly.
+        expect_rpc(
+          %{
+            {800, 809} => [],
+            {810, 819} => [log_101],
+            {820, 829} => [log_102],
+            {830, 835} => []
+          },
+          %{
+            transaction_hash_101_string => nil,
+            transaction_hash_102_string => originator_address_102_string
+          },
+          11
+        )
+
+        state = build_state(json_rpc_named_arguments, end_message_id: 102, rpc_block_range: 10)
+
+        assert {:ok, _updated_state} = NewMessagesToL2.check_missing_origination(state)
+
+        assert drain_get_logs_ranges() == [
+                 {800, 809},
+                 {810, 819},
+                 {820, 829},
+                 {830, 835},
+                 {800, 809},
+                 {810, 819},
+                 {820, 829}
+               ]
+
+        # Message 101 stays entirely unimported - no half-filled record with the
+        # block number set but the originator address empty - so it remains
+        # selectable for a retry on a later pass.
+        message_101 = Repo.get_by(ArbitrumMessage, direction: :to_l2, message_id: 101)
+        assert message_101.originator_address == nil
+        assert message_101.originating_transaction_hash == nil
+        assert message_101.origination_timestamp == nil
+        assert message_101.originating_transaction_block_number == nil
+        assert message_101.status == :relayed
+
+        message_102 = Repo.get_by(ArbitrumMessage, direction: :to_l2, message_id: 102)
+        assert to_string(message_102.originator_address) == String.downcase(originator_address_102_string)
+        assert message_102.originating_transaction_block_number == 829
       end
     end
   end
