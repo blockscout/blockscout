@@ -65,6 +65,7 @@
 
 ### ⚡ Performance
 
+- Cache Optimism deposits count ([#14733](https://github.com/blockscout/blockscout/pull/14733))
 - Skip expensive cleanup queries in lose_consensus when there are no block changes ([#14489](https://github.com/blockscout/blockscout/pull/14489))
 - Improve filling migration scheduling for background backfills ([#14493](https://github.com/blockscout/blockscout/pull/14493))
 - Optimize event-log storage and compression migrations for larger datasets ([#14012](https://github.com/blockscout/blockscout/issues/14012), [#14014](https://github.com/blockscout/blockscout/issues/14014), [#14016](https://github.com/blockscout/blockscout/issues/14016), [#14021](https://github.com/blockscout/blockscout/issues/14021))
