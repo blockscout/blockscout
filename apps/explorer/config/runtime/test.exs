@@ -18,6 +18,7 @@ config :explorer, Explorer.Chain.Transaction.History.Historian, enabled: false
 for counter <- [
       Explorer.Chain.Cache.Counters.AddressesCount,
       Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount,
+      Explorer.Chain.Cache.Counters.Optimism.DepositsCount,
       Explorer.Chain.Cache.Counters.Transactions24hCount,
       Explorer.Chain.Cache.Counters.NewPendingTransactionsCount,
       Explorer.Chain.Cache.Counters.ContractsCount,

@@ -487,6 +487,11 @@ config :explorer, Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount
   enable_consolidation: ConfigHelper.chain_type() == :optimism,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_OPTIMISM_LAST_OUTPUT_ROOT_SIZE_COUNTER_PERIOD", "5m")
 
+config :explorer, Explorer.Chain.Cache.Counters.Optimism.DepositsCount,
+  enabled: ConfigHelper.chain_type() == :optimism,
+  enable_consolidation: ConfigHelper.chain_type() == :optimism,
+  cache_period: ConfigHelper.parse_time_env_var("CACHE_OPTIMISM_DEPOSITS_COUNT_PERIOD", "1h")
+
 config :explorer, Explorer.Chain.Cache.Counters.Transactions24hCount,
   enabled: true,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_TRANSACTIONS_24H_STATS_PERIOD", "1h"),
