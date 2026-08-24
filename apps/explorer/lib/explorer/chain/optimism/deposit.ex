@@ -111,6 +111,7 @@ defmodule Explorer.Chain.Optimism.Deposit do
     ## Parameters
     - `options`: A keyword list of options:
       - `:api?` - Whether the function is being called from an API context.
+      - `:timeout` - Timeout for the database query (defaults to the repo's default timeout).
 
     ## Returns
     - A total number of deposits.
@@ -124,7 +125,7 @@ defmodule Explorer.Chain.Optimism.Deposit do
         on: t.hash == d.l2_transaction_hash and t.status == :ok
       )
 
-    select_repo(options).aggregate(query, :count)
+    select_repo(options).aggregate(query, :count, Keyword.take(options, [:timeout]))
   end
 
   defp page_deposits(query, %PagingOptions{key: nil}), do: query

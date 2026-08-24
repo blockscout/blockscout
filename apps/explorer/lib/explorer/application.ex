@@ -166,6 +166,9 @@ defmodule Explorer.Application do
         Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount
         |> configure_mode_dependent_process(:indexer)
         |> configure_chain_type_dependent_process(:optimism),
+        Explorer.Chain.Cache.Counters.Optimism.DepositsCount
+        |> configure_mode_dependent_process(:indexer)
+        |> configure_chain_type_dependent_process(:optimism),
         configure_mode_dependent_process(Explorer.Chain.Cache.Counters.NewPendingTransactionsCount, :indexer),
         configure_mode_dependent_process(Explorer.Chain.Cache.Counters.Transactions24hCount, :indexer),
         configure_mode_dependent_process(Explorer.Validator.MetadataProcessor, :indexer),
