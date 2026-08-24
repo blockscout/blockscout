@@ -477,14 +477,12 @@ defmodule BlockScoutWeb.TransactionView do
 
   def to_address_hash(%Transaction{to_address_hash: address_hash}), do: address_hash
 
+  def transaction_display_type(%Transaction{type: 0x7E, index: 0}), do: gettext("L1 attr info tx")
+
+  def transaction_display_type(%Transaction{type: 0x7D}), do: gettext("Post exec tx")
+
   def transaction_display_type(%Transaction{} = transaction) do
     cond do
-      transaction.type == 0x7E && transaction.index == 0 ->
-        gettext("L1 attr info tx")
-
-      transaction.type == 0x7D ->
-        gettext("Post exec tx")
-
       involves_token_transfers?(transaction) ->
         token_transfer_type = get_transaction_type_from_token_transfers(transaction.token_transfers)
 
