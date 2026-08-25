@@ -473,11 +473,9 @@ defmodule Explorer.Chain.Address do
     do: address
 
   def maybe_preload_smart_contract_associations(%__MODULE__{contract_code: _} = address, associations, options) do
-    repo = Chain.select_repo(options)
-
     address
-    |> repo.preload(associations)
-    |> maybe_preload_contract_creation_internal_transaction(repo)
+    |> Chain.select_repo(options).preload(associations)
+    |> maybe_preload_contract_creation_internal_transaction(options)
   end
 
   @doc """
@@ -849,7 +847,7 @@ defmodule Explorer.Chain.Address do
   ## Parameters
 
     - `addresses`: An `Explorer.Chain.Address.t/0`, a list of addresses, `[]`, or `nil`
-    - `repo`: The repo module used to execute the query. Defaults to `Explorer.Repo`
+    - `options`: A keyword list of options used to select the repo (for example, `api?: true`)
 
   ## Returns
 
@@ -858,14 +856,14 @@ defmodule Explorer.Chain.Address do
     - A single address with `:contract_creation_internal_transaction`
       populated when the input is a single struct
   """
-  @spec maybe_preload_contract_creation_internal_transaction([__MODULE__.t()] | __MODULE__.t() | nil, module()) ::
+  @spec maybe_preload_contract_creation_internal_transaction([__MODULE__.t()] | __MODULE__.t() | nil, [Chain.api?()]) ::
           [__MODULE__.t()] | __MODULE__.t() | nil
-  def maybe_preload_contract_creation_internal_transaction(addresses, repo \\ Repo)
+  def maybe_preload_contract_creation_internal_transaction(addresses, options)
 
-  def maybe_preload_contract_creation_internal_transaction([], _repo), do: []
-  def maybe_preload_contract_creation_internal_transaction(nil, _repo), do: nil
+  def maybe_preload_contract_creation_internal_transaction([], _options), do: []
+  def maybe_preload_contract_creation_internal_transaction(nil, _options), do: nil
 
-  def maybe_preload_contract_creation_internal_transaction(addresses, repo) when is_list(addresses) do
+  def maybe_preload_contract_creation_internal_transaction(addresses, options) when is_list(addresses) do
     if Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false) do
       addresses
     else
@@ -873,21 +871,21 @@ defmodule Explorer.Chain.Address do
 
       internal_transactions_map =
         contract_creation_internal_transaction_preload_query()
-        |> InternalTransaction.where_address_match(:created_contract_address, address_hashes)
-        |> repo.all()
-        |> InternalTransaction.preload_addresses([], repo)
+        |> InternalTransaction.where_address_match_by_hash(:created_contract_address, address_hashes, options)
+        |> Chain.select_repo(options).all()
+        |> InternalTransaction.preload_addresses([], Chain.select_repo(options))
         |> Map.new(&{&1.created_contract_address_hash, &1})
 
       Enum.map(addresses, &%{&1 | contract_creation_internal_transaction: internal_transactions_map[&1.hash]})
     end
   end
 
-  def maybe_preload_contract_creation_internal_transaction(address, repo) do
+  def maybe_preload_contract_creation_internal_transaction(address, options) do
     if Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false) do
       address
     else
       [address]
-      |> maybe_preload_contract_creation_internal_transaction(repo)
+      |> maybe_preload_contract_creation_internal_transaction(options)
       |> List.first()
     end
   end
@@ -1022,7 +1020,7 @@ defmodule Explorer.Chain.Address do
   def creation_internal_transaction_query(address_hash) do
     InternalTransaction
     |> InternalTransaction.join_transaction_query()
-    |> InternalTransaction.where_address_match(:created_contract_address, address_hash)
+    |> InternalTransaction.where_address_match_by_hash(:created_contract_address, address_hash, [])
     |> where(as(:transaction).status == ^:ok)
     |> order_by([it], desc: it.block_number, desc: it.transaction_index, desc: it.index)
     |> limit(1)
@@ -1058,7 +1056,7 @@ defmodule Explorer.Chain.Address do
     |> Chain.select_repo(options).one()
     |> then(fn address ->
       if Keyword.get(options, :preload_contract_creation_internal_transaction, false) do
-        Address.maybe_preload_contract_creation_internal_transaction(address)
+        Address.maybe_preload_contract_creation_internal_transaction(address, options)
       else
         address
       end

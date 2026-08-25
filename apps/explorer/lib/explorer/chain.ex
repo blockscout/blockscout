@@ -882,7 +882,7 @@ defmodule Explorer.Chain do
     |> select_repo(options).one()
     |> then(fn address ->
       if Keyword.get(options, :preload_contract_creation_internal_transaction, false) do
-        Address.maybe_preload_contract_creation_internal_transaction(address, select_repo(options))
+        Address.maybe_preload_contract_creation_internal_transaction(address, options)
       else
         address
       end
