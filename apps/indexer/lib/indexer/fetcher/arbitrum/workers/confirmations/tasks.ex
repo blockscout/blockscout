@@ -452,7 +452,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
       when not is_nil(end_block) do
     {lowest_l1_block, _} = get_lowest_l1_block_for_confirmations(state)
 
-    end_block < lowest_l1_block
+    if end_block < lowest_l1_block do
+      log_info(
+        "Historical confirmations discovery completed: reached the lowest L1 block for confirmations (#{lowest_l1_block})"
+      )
+
+      true
+    else
+      false
+    end
   end
 
   def historical_confirmations_discovery_completed?(_), do: false
