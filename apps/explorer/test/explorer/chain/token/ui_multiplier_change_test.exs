@@ -117,6 +117,99 @@ defmodule Explorer.Chain.Token.UIMultiplierChangeTest do
     test "passes nil entries through" do
       assert UIMultiplierChange.put_ui_multipliers([nil]) == [nil]
     end
+
+    test "ignores a change whose block lost consensus" do
+      token = insert(:token, ui_multiplier: @four)
+      reorged = insert(:block, number: 100, consensus: false)
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block: reorged,
+        block_number: reorged.number,
+        log_index: 0,
+        old_multiplier: @two,
+        new_multiplier: @four,
+        effective_at: ~U[2026-06-01 00:00:00.000000Z]
+      )
+
+      transfer = transfer_at(token, ~U[2026-07-01 00:00:00.000000Z], 150)
+
+      assert [resolved] = UIMultiplierChange.put_ui_multipliers([transfer])
+
+      refute resolved.ui_multiplier
+    end
+
+    test "refuses to resolve a token whose history outgrew the cap" do
+      token = insert(:token, ui_multiplier: @four)
+      block = insert(:block, number: 100)
+      now = DateTime.utc_now()
+
+      rows =
+        Enum.map(1..1001, fn log_index ->
+          %{
+            token_contract_address_hash: token.contract_address_hash,
+            block_number: block.number,
+            block_hash: block.hash,
+            log_index: log_index,
+            old_multiplier: @two,
+            new_multiplier: @four,
+            effective_at: ~U[2026-06-01 00:00:00.000000Z],
+            inserted_at: now,
+            updated_at: now
+          }
+        end)
+
+      Repo.insert_all(UIMultiplierChange, rows)
+
+      transfer = transfer_at(token, ~U[2026-07-01 00:00:00.000000Z], 150)
+
+      assert [resolved] = UIMultiplierChange.put_ui_multipliers([transfer])
+
+      refute resolved.ui_multiplier
+    end
+  end
+
+  describe "insert_changes/1" do
+    test "stops recording once a token reached the cap" do
+      token = insert(:token)
+      block = insert(:block, number: 100)
+      now = DateTime.utc_now()
+
+      rows =
+        Enum.map(1..1000, fn log_index ->
+          %{
+            token_contract_address_hash: token.contract_address_hash,
+            block_number: block.number,
+            block_hash: block.hash,
+            log_index: log_index,
+            old_multiplier: @two,
+            new_multiplier: @four,
+            effective_at: ~U[2026-06-01 00:00:00.000000Z],
+            inserted_at: now,
+            updated_at: now
+          }
+        end)
+
+      Repo.insert_all(UIMultiplierChange, rows)
+
+      UIMultiplierChange.insert_changes([
+        %{
+          token_contract_address_hash: token.contract_address_hash,
+          block_number: block.number,
+          block_hash: block.hash,
+          log_index: 2000,
+          old_multiplier: @two,
+          new_multiplier: @one,
+          effective_at: ~U[2026-09-01 00:00:00.000000Z]
+        }
+      ])
+
+      refute Repo.get_by(UIMultiplierChange,
+               token_contract_address_hash: token.contract_address_hash,
+               block_number: block.number,
+               log_index: 2000
+             )
+    end
   end
 
   defp transfer_at(token, timestamp, block_number) do

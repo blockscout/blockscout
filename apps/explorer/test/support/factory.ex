@@ -1030,9 +1030,12 @@ defmodule Explorer.Factory do
   end
 
   def token_ui_multiplier_change_factory do
+    block = build(:block)
+
     %UIMultiplierChange{
       token: build(:token),
-      block_number: block_number(),
+      block: block,
+      block_number: block.number,
       log_index: sequence("token_ui_multiplier_change_log_index", & &1),
       old_multiplier: Decimal.new("1000000000000000000"),
       new_multiplier: Decimal.new("2000000000000000000"),

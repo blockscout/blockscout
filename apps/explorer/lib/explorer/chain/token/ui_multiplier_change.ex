@@ -23,17 +23,29 @@ defmodule Explorer.Chain.Token.UIMultiplierChange do
   Keeping both values also makes a change that gets superseded before maturing
   resolve correctly: it is simply never the last one announced.
 
-  The table stays small, since the multiplier exists for rare events such as
-  stock splits, so `for_tokens/2` loads whole histories at once and `at/4`
-  resolves in memory rather than querying per token transfer.
+  For an honest token the history is a handful of rows — the multiplier exists
+  for rare events such as stock splits — so `for_tokens/2` loads whole histories
+  at once and `at/4` resolves in memory rather than querying per token transfer.
+  Nothing on chain enforces that restraint, though, so a token is refused past
+  `@max_changes_per_token` rows and no longer resolved at all: without the cap a
+  contract could emit the event in a loop and make every API page holding one of
+  its transfers load an arbitrarily large history.
+
+  Rows carry the hash of the block their log came from and are only resolved
+  while that block is consensus, so a reorg that takes the event away takes its
+  effect on displayed amounts with it.
   """
 
   use Explorer.Schema
 
+  require Logger
+
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Hash, Token, TokenTransfer, Transaction}
 
-  @required_attrs ~w(token_contract_address_hash block_number log_index old_multiplier new_multiplier effective_at)a
+  @max_changes_per_token 1_000
+
+  @required_attrs ~w(token_contract_address_hash block_number block_hash log_index old_multiplier new_multiplier effective_at)a
 
   @primary_key false
   typed_schema "token_ui_multiplier_changes" do
@@ -42,6 +54,15 @@ defmodule Explorer.Chain.Token.UIMultiplierChange do
     field(:old_multiplier, :decimal, null: false)
     field(:new_multiplier, :decimal, null: false)
     field(:effective_at, :utc_datetime_usec, null: false)
+
+    belongs_to(
+      :block,
+      Block,
+      foreign_key: :block_hash,
+      references: :hash,
+      type: Hash.Full,
+      null: false
+    )
 
     belongs_to(
       :token,
@@ -78,12 +99,46 @@ defmodule Explorer.Chain.Token.UIMultiplierChange do
 
   def insert_changes(changes) do
     now = DateTime.utc_now()
-    entries = Enum.map(changes, &Map.merge(&1, %{inserted_at: now, updated_at: now}))
 
-    Repo.insert_all(__MODULE__, entries,
-      on_conflict: {:replace, [:old_multiplier, :new_multiplier, :effective_at, :updated_at]},
+    entries =
+      changes
+      |> reject_over_cap()
+      |> Enum.map(&Map.merge(&1, %{inserted_at: now, updated_at: now}))
+
+    Repo.safe_insert_all(__MODULE__, entries,
+      on_conflict: {:replace, [:block_hash, :old_multiplier, :new_multiplier, :effective_at, :updated_at]},
       conflict_target: [:token_contract_address_hash, :block_number, :log_index]
     )
+  end
+
+  defp reject_over_cap(changes) do
+    counts = recorded_counts(changes)
+
+    Enum.reject(changes, &over_cap?(&1, counts))
+  end
+
+  defp over_cap?(change, counts) do
+    if Map.get(counts, change.token_contract_address_hash, 0) >= @max_changes_per_token do
+      Logger.warning(fn ->
+        "Refusing an ERC-8056 multiplier change of #{change.token_contract_address_hash}: " <>
+          "already at the #{@max_changes_per_token} row cap"
+      end)
+
+      true
+    else
+      false
+    end
+  end
+
+  defp recorded_counts(changes) do
+    hashes = changes |> Enum.map(& &1.token_contract_address_hash) |> Enum.uniq()
+
+    __MODULE__
+    |> where([change], change.token_contract_address_hash in ^hashes)
+    |> group_by([change], change.token_contract_address_hash)
+    |> select([change], {change.token_contract_address_hash, count(change.log_index)})
+    |> Repo.all()
+    |> Map.new()
   end
 
   @doc """
@@ -99,11 +154,29 @@ defmodule Explorer.Chain.Token.UIMultiplierChange do
   def for_tokens([], _options), do: %{}
 
   def for_tokens(token_contract_address_hashes, options) do
+    repo = Chain.select_repo(options)
+
+    case resolvable_tokens(token_contract_address_hashes, repo) do
+      [] ->
+        %{}
+
+      hashes ->
+        __MODULE__
+        |> join(:inner, [change], block in assoc(change, :block))
+        |> where([change, block], change.token_contract_address_hash in ^hashes and block.consensus == true)
+        |> order_by([change], asc: change.block_number, asc: change.log_index)
+        |> repo.all()
+        |> Enum.group_by(& &1.token_contract_address_hash)
+    end
+  end
+
+  defp resolvable_tokens(token_contract_address_hashes, repo) do
     __MODULE__
     |> where([change], change.token_contract_address_hash in ^token_contract_address_hashes)
-    |> order_by([change], asc: change.block_number, asc: change.log_index)
-    |> Chain.select_repo(options).all()
-    |> Enum.group_by(& &1.token_contract_address_hash)
+    |> group_by([change], change.token_contract_address_hash)
+    |> having([change], count(change.log_index) <= @max_changes_per_token)
+    |> select([change], change.token_contract_address_hash)
+    |> repo.all()
   end
 
   @doc """

@@ -43,9 +43,12 @@ defmodule Indexer.Fetcher.TokenUIMultiplierUpdaterTest do
   # The shape `Indexer.Transform.TokenTransfers.parse_ui_multiplier_changes/1`
   # produces: the contract hash is still the string taken off the log.
   defp change_params(token, block_number, log_index, old, new, effective_at) do
+    block = insert(:block, number: block_number)
+
     %{
       token_contract_address_hash: to_string(token.contract_address.hash),
       block_number: block_number,
+      block_hash: block.hash,
       log_index: log_index,
       old_multiplier: old,
       new_multiplier: new,
@@ -162,6 +165,7 @@ defmodule Indexer.Fetcher.TokenUIMultiplierUpdaterTest do
         %{
           token_contract_address_hash: "not a hash",
           block_number: 200,
+          block_hash: insert(:block, number: 200).hash,
           log_index: 0,
           old_multiplier: @two,
           new_multiplier: @four,
