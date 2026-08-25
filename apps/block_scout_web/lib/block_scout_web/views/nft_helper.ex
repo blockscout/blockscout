@@ -62,20 +62,30 @@ defmodule BlockScoutWeb.NFTHelper do
   end
 
   @doc """
-  Composes a full IPFS URL from the given image URL.
+  Composes a full gateway URL from the given resource URL.
+
+  Supports IPFS (`ipfs://`), Arweave (`ar://`), and Swarm (`bzz://`) resource
+  URLs, resolving them against the corresponding configured gateway. Any other
+  URL is returned unchanged.
 
   ## Parameters
 
-    - image_url: The URL of the image to be composed into an IPFS URL. It can be nil.
+    - image_url: The URL of the resource to be resolved to a gateway URL. It can be nil.
 
   ## Returns
 
-    - A string representing the full IPFS URL or nil.
+    - A string representing the full gateway URL, the original URL, or nil.
 
   ## Examples
 
       iex> compose_resource_url("ipfs://QmTzQ1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1")
       "https://ipfs.io/ipfs/QmTzQ1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1"
+
+      iex> compose_resource_url("ar://Ah3vCrgV-9hEkA2Zl4Yq0iL5wGuMD5-Zr9EAF9zjHDU")
+      "https://arweave.net/Ah3vCrgV-9hEkA2Zl4Yq0iL5wGuMD5-Zr9EAF9zjHDU"
+
+      iex> compose_resource_url("bzz://swarm-devrel.eth/assets/swarm-logo.svg")
+      "https://gateway.ethswarm.org/bzz/swarm-devrel.eth/assets/swarm-logo.svg"
 
   """
   @spec compose_resource_url(String.t() | nil) :: String.t() | nil
