@@ -65,6 +65,8 @@ dump.rdb
 .elixir_ls
 .claude/settings.local.json
 .claude/commands/review-pr.md
+.ai/
+.claude/spawn-review-sessions/
 
 **.dec**
 
@@ -72,6 +74,7 @@ dump.rdb
 *.env.local
 *.env.staging
 .devcontainer/.blockscout_config*
+.devcontainer/devcontainer-lock.json
 
 # dets tables
 queue_storage
