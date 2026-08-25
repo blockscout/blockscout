@@ -228,6 +228,7 @@ defmodule Explorer.Chain.Token.ScaledUIAmount do
         %{
           token_contract_address_hash: log.address_hash,
           block_number: log.block_number,
+          block_hash: log.block_hash,
           log_index: log.index,
           old_multiplier: Decimal.new(old_multiplier),
           new_multiplier: Decimal.new(new_multiplier),

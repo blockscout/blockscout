@@ -11,6 +11,7 @@ defmodule Explorer.Repo.Migrations.CreateTokenUiMultiplierChanges do
       )
 
       add(:block_number, :bigint, null: false, primary_key: true)
+      add(:block_hash, references(:blocks, column: :hash, type: :bytea, on_delete: :delete_all), null: false)
       add(:log_index, :integer, null: false, primary_key: true)
 
       add(:old_multiplier, :decimal, null: false)
