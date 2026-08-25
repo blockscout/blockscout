@@ -106,5 +106,26 @@ defmodule BlockScoutWeb.NFTHelperTest do
       assert "https://ipfs.io/ipfs/baFybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json" ==
                NFTHelper.compose_resource_url(url)
     end
+
+    test "transforms bzz link with host and path" do
+      url = "bzz://swarm-devrel.eth/assets/swarm-logo.svg"
+
+      assert "https://gateway.ethswarm.org/bzz/swarm-devrel.eth/assets/swarm-logo.svg" ==
+               NFTHelper.compose_resource_url(url)
+    end
+
+    test "transforms bzz link with bare hash" do
+      hash = "1234abcd" <> String.duplicate("0", 56)
+      url = "bzz://" <> hash
+
+      assert "https://gateway.ethswarm.org/bzz/#{hash}/" == NFTHelper.compose_resource_url(url)
+    end
+
+    test "transforms bzz link in different case" do
+      url = "BzZ://swarm-devrel.eth/assets/swarm-logo.svg"
+
+      assert "https://gateway.ethswarm.org/bzz/swarm-devrel.eth/assets/swarm-logo.svg" ==
+               NFTHelper.compose_resource_url(url)
+    end
   end
 end

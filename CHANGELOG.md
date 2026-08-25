@@ -7,7 +7,7 @@
 - Migrate Sourcify integration from API v1 to v2 ([#14584](https://github.com/blockscout/blockscout/pull/14584))
 - Add universal merged API types, operation shorthands, and API v2 schema correctness improvements ([#14515](https://github.com/blockscout/blockscout/pull/14515))
 - Add an option to disable core proxy methods in the Ethereum JSON-RPC API ([#14495](https://github.com/blockscout/blockscout/pull/14495))
-- Add ETH Swarm (bzz://) support for token metadata ([#14446](https://github.com/blockscout/blockscout/pull/14446))
+- Add ETH Swarm (bzz://) support for token metadata ([#14446](https://github.com/blockscout/blockscout/pull/14446), [#14744](https://github.com/blockscout/blockscout/pull/14744))
 - Add ENS and metadata preloads to advanced filters and NFT owner output ([#14443](https://github.com/blockscout/blockscout/issues/14443), [#14428](https://github.com/blockscout/blockscout/pull/14428))
 - Add an include_zero_value flag for filtering zero-value internal transactions in REST endpoints ([#14400](https://github.com/blockscout/blockscout/issues/14400))
 - Add transaction log input decoding in ABI-like format ([#13783](https://github.com/blockscout/blockscout/issues/13783))

@@ -102,6 +102,11 @@ defmodule BlockScoutWeb.NFTHelper do
         resource_id = image_url |> String.slice(5..-1//1)
         MetadataRetriever.arweave_link(resource_id)
 
+      image_url_downcase =~ ~r/^bzz:\/\// ->
+        # take resource id after "bzz://" prefix
+        resource_id = image_url |> String.slice(6..-1//1)
+        MetadataRetriever.swarm_link(resource_id)
+
       true ->
         image_url
     end
