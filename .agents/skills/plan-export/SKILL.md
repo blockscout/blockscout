@@ -43,7 +43,7 @@ Determine which guideline files apply to the discussed changes. Sources of autho
   - `testing-conventions.md` — how to wrap chain-type-conditional tests
   - `elixir-runtime-over-typespec.md` — trust the runtime over `@spec`/`@type` when they disagree
   - `mix-test-awareness.md` — never invoke `mix test` directly
-- **`.github/CONTRIBUTING.md`** — repo-wide contribution conventions (commit granularity, regression-test-first ordering for bug fixes, incompatible-change callouts).
+- **`.claude/rules/contributing-essentials.md`** — curated subset of `.github/CONTRIBUTING.md`: naming conventions, runtime-vs-compile-time configuration. Not the whole `CONTRIBUTING.md` — the rest of that file governs the external contribution process, not plan content.
 
 Unlike some sibling Blockscout repos, there is no per-app tier of guideline files here (no `apps/explorer/AGENTS.md`, no memory-bank directory) — the sources above are the complete set. If a source doesn't exist, skip it silently; do not invent one.
 
@@ -101,7 +101,7 @@ The structure, with markers in place:
 - `CLAUDE.md` — repo-wide pointer, no additional conventions beyond `AGENTS.md`
 - `.claude/rules/testing-conventions.md` (if chain-specific) — outside-in `describe`-block wrapping
 - `.claude/rules/elixir-runtime-over-typespec.md` (if typespecs are touched) — trust runtime shape over `@spec`
-- `.github/CONTRIBUTING.md` — commit/PR conventions applied
+- `.claude/rules/contributing-essentials.md` — naming/config conventions applied
 <!-- impl-plan:end slug="preamble" -->
 
 ---
