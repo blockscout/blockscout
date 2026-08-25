@@ -206,7 +206,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
          # If it returns `{:ok, []}` it will be passed as the return value of
          # discover_rollup_blocks_belonging_to_one_confirmation function.
          {:ok, {first_unconfirmed_block, new_cache}} <-
-           check_confirmed_blocks_of_batch(rollup_block_num, batch, confirmation_desc, outbox_config, cache),
+           check_confirmed_blocks_of_batch(
+             rollup_block_num,
+             batch,
+             confirmation_desc,
+             outbox_config,
+             raw_unconfirmed_rollup_blocks,
+             cache
+           ),
          {:ok, unconfirmed_rollup_blocks} <-
            check_consecutive_rollup_blocks(
              raw_unconfirmed_rollup_blocks,
@@ -349,10 +356,22 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
   #
   # This function attempts to find a `SendRootUpdated` event between the already
   # discovered confirmation and the L1 block where the batch was committed, that
-  # mentions any block of the batch as the top of the confirmed blocks. Depending
-  # on the lookup result, it either considers the found block or the very
-  # first block of the batch as the start of the range of unconfirmed blocks ending
-  # with `rollup_block_num`.
+  # mentions any block of the batch as the top of the confirmed blocks. When such
+  # an event is found, the block right after it starts the range of unconfirmed
+  # blocks ending with `rollup_block_num`.
+  #
+  # When no such event is found in the scanned logs, the lower boundary already
+  # known to the database is used instead of unconditionally falling back to the
+  # start of the batch: `raw_unconfirmed_rollup_blocks` (fetched by the caller from
+  # `DbSettlement.unconfirmed_rollup_blocks/2`) reflects a boundary recorded by an
+  # earlier discovery pass at a higher parent-chain block than the current log
+  # scan window can see. Its minimum block number is accepted as the boundary only
+  # when it is proven safe: either it equals `batch.start_block` (the ordinary
+  # case, behavior unchanged), or the immediately preceding rollup block is
+  # already confirmed in the database. Otherwise the minimum is ambiguous - it may
+  # mean "confirmed" or "batch not fully synced below this point" - so the
+  # confirmation is postponed as before.
+  #
   # To optimize `eth_getLogs` calls required for the `SendRootUpdated` event lookup,
   # it uses a cache.
   # Since this function only discovers the number of the unconfirmed block, it does
@@ -363,6 +382,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
   # - `batch`: The batch containing the rollup blocks.
   # - `confirmation_desc`: Details of the latest confirmation.
   # - `outbox_config`: Configuration for the Arbitrum outbox contract.
+  # - `raw_unconfirmed_rollup_blocks`: The list of unconfirmed (and potentially
+  #   re-confirmation) rollup blocks of the batch already read from the database,
+  #   used to derive a database-backed lower boundary when no boundary event is
+  #   found in the scanned logs.
   # - `cache`: A cache to minimize `eth_getLogs` calls.
   #
   # ## Returns
@@ -381,6 +404,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             optional(any()) => any()
           },
+          [Arbitrum.BatchBlock.to_import()],
           EventsUtils.cached_logs()
         ) :: {:ok, {non_neg_integer(), EventsUtils.cached_logs()}} | {:ok, []} | {:error, []}
   defp check_confirmed_blocks_of_batch(
@@ -388,6 +412,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
          batch,
          confirmation_desc,
          outbox_config,
+         raw_unconfirmed_rollup_blocks,
          cache
        ) do
     # This function might look like over-engineered, but confirmations are not always
@@ -407,17 +432,70 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
         {:ok, []}
 
       {_, false} ->
-        first_unconfirmed_block_in_batch =
-          case block? do
-            nil ->
-              batch.start_block
+        case block? do
+          nil ->
+            database_derived_boundary(batch, raw_unconfirmed_rollup_blocks, new_cache)
 
-            value ->
-              log_info("Blocks up to ##{value} of the batch have been already confirmed by another transaction")
-              value + 1
-          end
+          value ->
+            log_info("Blocks up to ##{value} of the batch have been already confirmed by another transaction")
+            {:ok, {value + 1, new_cache}}
+        end
+    end
+  end
 
-        {:ok, {first_unconfirmed_block_in_batch, new_cache}}
+  # Derives the lower boundary of the unconfirmed range from the database when no
+  # boundary event was found in the scanned `SendRootUpdated` logs.
+  #
+  # The minimum block number of `raw_unconfirmed_rollup_blocks` (as returned by
+  # `DbSettlement.unconfirmed_rollup_blocks/2`, which can append already-confirmed
+  # "re-confirmation" blocks at the top of the range, but never lowers the true
+  # minimum) is accepted as the boundary only when it is provably safe:
+  # - it equals `batch.start_block`, the ordinary case where nothing in the batch
+  #   is confirmed yet, or
+  # - the immediately preceding rollup block is confirmed in the database, proving
+  #   the row exists and carries a valid confirmation.
+  # Otherwise the minimum is ambiguous between "confirmed" and "batch not fully
+  # synced below this point", so the confirmation is postponed, preserving the
+  # module's existing defense against partially-synced batches.
+  #
+  # ## Parameters
+  # - `batch`: The batch containing the rollup blocks.
+  # - `raw_unconfirmed_rollup_blocks`: The list of unconfirmed rollup blocks of the
+  #   batch already read from the database.
+  # - `cache`: The current logs cache to thread through unchanged.
+  #
+  # ## Returns
+  # - `{:ok, {first_unconfirmed_block_in_batch, cache}}` when the boundary is
+  #   proven safe.
+  # - `{:error, []}` when the boundary is ambiguous.
+  @spec database_derived_boundary(
+          Arbitrum.L1Batch.t(),
+          [Arbitrum.BatchBlock.to_import()],
+          EventsUtils.cached_logs()
+        ) :: {:ok, {non_neg_integer(), EventsUtils.cached_logs()}} | {:error, []}
+  defp database_derived_boundary(batch, raw_unconfirmed_rollup_blocks, cache) do
+    minimum_unconfirmed_block =
+      raw_unconfirmed_rollup_blocks
+      |> List.first()
+      |> Map.fetch!(:block_number)
+
+    cond do
+      minimum_unconfirmed_block == batch.start_block ->
+        {:ok, {minimum_unconfirmed_block, cache}}
+
+      not is_nil(DbSettlement.l1_block_of_confirmation_for_rollup_block(minimum_unconfirmed_block - 1)) ->
+        log_info(
+          "Block ##{minimum_unconfirmed_block - 1} of the batch ##{batch.number} is confirmed according to the database, using ##{minimum_unconfirmed_block} as the lower boundary"
+        )
+
+        {:ok, {minimum_unconfirmed_block, cache}}
+
+      true ->
+        log_warning(
+          "Could not confirm that block ##{minimum_unconfirmed_block - 1} of the batch ##{batch.number} is confirmed, postponing the confirmation"
+        )
+
+        {:error, []}
     end
   end
 
