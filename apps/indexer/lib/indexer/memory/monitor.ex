@@ -140,12 +140,20 @@ defmodule Indexer.Memory.Monitor do
   end
 
   defp read_cgroup_memory_limit(path) do
-    with {:ok, content} <- File.read(path),
-         {limit, _} <- Integer.parse(String.trim(content)),
-         true <- limit < @cgroup_no_limit_threshold do
+    case File.read(path) do
+      {:ok, content} -> parse_cgroup_memory_limit(content)
+      _ -> nil
+    end
+  end
+
+  @doc false
+  def parse_cgroup_memory_limit(content) do
+    with {limit, ""} <- Integer.parse(String.trim(content)),
+         true <- limit > 0 and limit < @cgroup_no_limit_threshold do
       limit
     else
-      # file is absent, contains "max" (cgroup v2 for "no limit"), or the limit is not set
+      # content is "max" (cgroup v2 for "no limit"), not a plain positive integer,
+      # or the limit is not set
       _ -> nil
     end
   end
