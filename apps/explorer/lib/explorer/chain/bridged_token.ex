@@ -230,7 +230,7 @@ defmodule Explorer.Chain.BridgedToken do
 
       created_from_internal_transaction_query =
         InternalTransaction
-        |> InternalTransaction.where_address_match(:created_contract_address, token_address_hash)
+        |> InternalTransaction.where_address_match_by_hash(:created_contract_address, token_address_hash, [])
 
       created_from_internal_transaction =
         created_from_internal_transaction_query
