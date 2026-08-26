@@ -1,5 +1,25 @@
 # Changelog
 
+## 11.2.8
+
+### 🚀 Features
+
+- Add missing address native coin balances count indexer metric ([#14729](https://github.com/blockscout/blockscout/issues/14729))
+- Add market source requests metric with endpoint type labels ([#14725](https://github.com/blockscout/blockscout/issues/14725))
+
+### 🐛 Bug Fixes
+
+- Use cgroup memory limit for memory monitor in containers ([#14739](https://github.com/blockscout/blockscout/issues/14739))
+
+### 🚜 Refactor
+
+- Switch TAC operations in search to Read API v2 ([#14719](https://github.com/blockscout/blockscout/issues/14719))
+
+### ⚡ Performance
+
+- Batch on-demand internal transaction trace requests ([#14724](https://github.com/blockscout/blockscout/issues/14724))
+
+
 ## 11.2.7
 
 ### 🚀 Features
