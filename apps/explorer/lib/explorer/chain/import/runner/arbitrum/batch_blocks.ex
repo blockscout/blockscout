@@ -65,7 +65,10 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.BatchBlocks do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Arbitrum.BatchBlock ShareLocks order (see docs: sharelock.md)
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.block_number)
+    ordered_changes_list =
+      changes_list
+      |> Enum.sort_by(& &1.block_number)
+      |> Enum.dedup_by(& &1.block_number)
 
     {:ok, inserted} =
       Import.insert_changes_list(
