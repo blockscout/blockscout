@@ -31,7 +31,7 @@ defmodule EthereumJSONRPC.Transaction do
   @eden_sponsored_transaction_type 118
 
   @post_exec_tx_type 0x7D
-  @zero_address "0x0000000000000000000000000000000000000000"
+  @zero_address_hash_string "0x0000000000000000000000000000000000000000"
 
   case @chain_type do
     :ethereum ->
@@ -342,8 +342,12 @@ defmodule EthereumJSONRPC.Transaction do
       }
   """
   @spec elixir_to_params(elixir) :: params
-  def elixir_to_params(elixir) do
-    normalized_elixir = chain_type_normalization(elixir)
+  def elixir_to_params(elixir), do: elixir_to_params(elixir, chain_type())
+
+  @doc false
+  @spec elixir_to_params(elixir, atom()) :: params
+  def elixir_to_params(elixir, chain_type) do
+    normalized_elixir = chain_type_normalization(elixir, chain_type)
 
     normalized_elixir
     |> do_elixir_to_params()
@@ -359,32 +363,6 @@ defmodule EthereumJSONRPC.Transaction do
   # ## Returns
   # - The resulting map.
   @spec do_elixir_to_params(%{String.t() => any()}) :: %{atom() => any()}
-  defp do_elixir_to_params(%{"type" => @post_exec_tx_type, "hash" => hash, "input" => input} = transaction) do
-    index = Map.get(transaction, "transactionIndex")
-
-    %{
-      block_hash: Map.get(transaction, "blockHash"),
-      block_number: Map.get(transaction, "blockNumber"),
-      from_address_hash: Map.get(transaction, "from") || @zero_address,
-      gas: Map.get(transaction, "gas") || 0,
-      gas_price: Map.get(transaction, "gasPrice") || 0,
-      hash: hash,
-      index: index,
-      input: input,
-      nonce: Map.get(transaction, "nonce") || 0,
-      r: Map.get(transaction, "r") || 0,
-      s: Map.get(transaction, "s") || 0,
-      to_address_hash: Map.get(transaction, "to"),
-      transaction_index: index,
-      type: @post_exec_tx_type,
-      v: Map.get(transaction, "v") || 0,
-      value: Map.get(transaction, "value") || 0
-    }
-    |> put_if_present(transaction, [
-      {"block_timestamp", :block_timestamp}
-    ])
-  end
-
   defp do_elixir_to_params(
          %{
            "blockHash" => block_hash,
@@ -596,13 +574,39 @@ defmodule EthereumJSONRPC.Transaction do
     ])
   end
 
-  @spec chain_type_normalization(%{String.t() => any()}) :: %{String.t() => any()}
-  defp chain_type_normalization(elixir) do
-    case chain_type() do
+  @spec chain_type_normalization(%{String.t() => any()}, atom()) :: %{String.t() => any()}
+  defp chain_type_normalization(elixir, chain_type) do
+    case chain_type do
       :eden -> eden_compatibility_fields(elixir)
+      :optimism -> optimism_compatibility_fields(elixir)
       _ -> elixir
     end
   end
+
+  # OP Stack post-exec transactions only carry post-execution metadata. Add compatibility values
+  # for fields required by the standard transaction parser while retaining the block context
+  # supplied by the execution client.
+  @spec optimism_compatibility_fields(%{String.t() => any()}) :: %{String.t() => any()}
+  defp optimism_compatibility_fields(%{"type" => @post_exec_tx_type} = elixir) do
+    Enum.reduce(
+      %{
+        "from" => @zero_address_hash_string,
+        "gas" => 0,
+        "gasPrice" => 0,
+        "nonce" => 0,
+        "r" => 0,
+        "s" => 0,
+        "v" => 0,
+        "value" => 0
+      },
+      elixir,
+      fn {key, default}, transaction ->
+        if Map.get(transaction, key), do: transaction, else: Map.put(transaction, key, default)
+      end
+    )
+  end
+
+  defp optimism_compatibility_fields(elixir), do: elixir
 
   # Eden sponsored transactions (EIP-2718 type `0x76`) carry `gasLimit` and an ordered `calls`
   # array instead of the standard `gas`, `to`, `input` and `value` fields. The first call provides

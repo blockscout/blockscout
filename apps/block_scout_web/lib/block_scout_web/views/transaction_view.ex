@@ -2,6 +2,8 @@
 defmodule BlockScoutWeb.TransactionView do
   use BlockScoutWeb, :view
 
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias BlockScoutWeb.{AccessHelper, AddressView, BlockView, TabHelper}
   alias BlockScoutWeb.Account.AuthController
   alias BlockScoutWeb.Cldr.Number
@@ -477,11 +479,15 @@ defmodule BlockScoutWeb.TransactionView do
 
   def to_address_hash(%Transaction{to_address_hash: address_hash}), do: address_hash
 
-  def transaction_display_type(%Transaction{type: 0x7E, index: 0}), do: gettext("L1 attr info tx")
+  def transaction_display_type(%Transaction{} = transaction),
+    do: transaction_display_type(transaction, chain_type())
 
-  def transaction_display_type(%Transaction{type: 0x7D}), do: gettext("Post exec tx")
+  @doc false
+  def transaction_display_type(%Transaction{type: 0x7E, index: 0}, :optimism), do: gettext("L1 attr info tx")
 
-  def transaction_display_type(%Transaction{} = transaction) do
+  def transaction_display_type(%Transaction{type: 0x7D}, :optimism), do: gettext("Post exec tx")
+
+  def transaction_display_type(%Transaction{} = transaction, _chain_type) do
     cond do
       involves_token_transfers?(transaction) ->
         token_transfer_type = get_transaction_type_from_token_transfers(transaction.token_transfers)

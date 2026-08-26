@@ -8,6 +8,19 @@ defmodule BlockScoutWeb.TransactionViewTest do
   alias Explorer.Repo
   alias BlockScoutWeb.{BlockView, TransactionView}
 
+  describe "transaction_display_type/1" do
+    test "labels L1 attributes and PostExec transactions only on OP Stack chains" do
+      l1_attributes = build(:transaction, type: 0x7E, index: 0)
+      post_exec = build(:transaction, type: 0x7D, index: 1)
+
+      assert TransactionView.transaction_display_type(l1_attributes, :optimism) == "L1 attr info tx"
+      assert TransactionView.transaction_display_type(post_exec, :optimism) == "Post exec tx"
+
+      refute TransactionView.transaction_display_type(l1_attributes, :ethereum) == "L1 attr info tx"
+      refute TransactionView.transaction_display_type(post_exec, :ethereum) == "Post exec tx"
+    end
+  end
+
   describe "block_number/1" do
     test "returns pending text for pending transaction" do
       pending = insert(:transaction)
