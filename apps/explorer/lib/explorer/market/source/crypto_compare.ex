@@ -89,10 +89,9 @@ defmodule Explorer.Market.Source.CryptoCompare do
   end
 
   defp headers do
-    if config(:api_key) do
-      [{"Authorization", "Apikey #{config(:api_key)}"}]
-    else
-      []
+    case config(:api_key) do
+      empty when empty in [nil, ""] -> []
+      api_key -> [{"Authorization", "Apikey #{api_key}"}]
     end
   end
 
