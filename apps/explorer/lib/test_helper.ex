@@ -248,7 +248,7 @@ defmodule Explorer.TestHelper do
          mocks |> Keyword.get(:eip1967, @zero_address_hash) |> encode_in_batch_response(id1),
          mocks |> Keyword.get(:eip1822, @zero_address_hash) |> encode_in_batch_response(id2),
          mocks |> Keyword.get(:eip1967_beacon, @zero_address_hash) |> encode_in_batch_response(id3),
-         %{id: id4, error: "error"},
+         %{id: id4, error: %{code: 3, message: "execution reverted"}},
          mocks |> Keyword.get(:eip1967_oz, @zero_address_hash) |> encode_in_batch_response(id5)
        ] ++
          Enum.map(rest, fn
