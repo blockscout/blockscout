@@ -343,6 +343,30 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
       assert Proxy.fetch_values([{:call, "0x5c60da1b"}], address.hash) ==
                {:ok, %{{:call, "0x5c60da1b"} => nil}}
     end
+
+    test "returns nil when eth_call reverts with a capitalized message (Besu)", %{address: address} do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:error, %{code: -32000, message: "Execution reverted"}}
+      end)
+
+      assert Proxy.fetch_value({:call, "0x5c60da1b"}, address.hash) == {:ok, nil}
+    end
+
+    test "returns nil when eth_call reverts with the standard revert error code", %{address: address} do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:error, %{code: 3, message: "Reverted", data: "0x08c379a0"}}
+      end)
+
+      assert Proxy.fetch_value({:call, "0x5c60da1b"}, address.hash) == {:ok, nil}
+    end
+
+    test "returns error when eth_call fails with a non-binary error message", %{address: address} do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:error, %{message: {:closed, :timeout}}}
+      end)
+
+      assert Proxy.fetch_value({:call, "0x5c60da1b"}, address.hash) == :error
+    end
   end
 
   test "extract_address_hash/1" do

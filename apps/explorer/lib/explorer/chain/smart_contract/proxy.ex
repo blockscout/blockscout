@@ -65,7 +65,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
   @zero_address_hash_string "0x0000000000000000000000000000000000000000"
   @zero_bytes32_string "0x0000000000000000000000000000000000000000000000000000000000000000"
-  @vm_execution_error "VM execution error"
+  @revert_error_message_markers ["execution reverted", "vm execution error"]
 
   @type options :: [{:api?, true | false}]
 
@@ -362,25 +362,25 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
   defp handle_response({:storage, _}, %{result: result}) when is_binary(result), do: {:ok, result}
   defp handle_response({:call, _}, %{result: result}) when is_binary(result), do: {:ok, result}
+
   defp handle_response({:call, _}, %{error: error}) do
     if revert_error?(error), do: {:ok, nil}, else: :error
   end
 
   defp handle_response(_, _), do: :error
 
-  defp revert_error?(error) do
-    error
-    |> error_message()
-    |> case do
-      message when is_binary(message) ->
-        String.contains?(message, "execution reverted") or String.contains?(message, @vm_execution_error)
+  # error code 3 is the standard EIP-1474 code for reverted execution
+  defp revert_error?(%{code: 3}), do: true
 
-      _ ->
-        false
-    end
+  defp revert_error?(error) do
+    # revert message casing differs between node clients (e.g. Geth "execution
+    # reverted" vs Besu "Execution reverted"), so match case-insensitively
+    message = error |> error_message() |> String.downcase()
+
+    Enum.any?(@revert_error_message_markers, &String.contains?(message, &1))
   end
 
-  defp error_message(%{message: message}), do: to_string(message)
+  defp error_message(%{message: message}) when is_binary(message), do: message
   defp error_message(error) when is_binary(error) or is_atom(error), do: to_string(error)
   defp error_message(error), do: inspect(error)
 
