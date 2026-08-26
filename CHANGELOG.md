@@ -19,6 +19,14 @@
 
 - Batch on-demand internal transaction trace requests ([#14724](https://github.com/blockscout/blockscout/issues/14724))
 
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `INDEXER_ON_DEMAND_INTERNAL_TRANSACTIONS_BLOCKS_BATCH_SIZE`    | Batch size for block trace requests in the on-demand internal transactions fetcher. The minimum value is `1`. Implemented in [#14724](https://github.com/blockscout/blockscout/pull/14724).                                                                                                                                                                                                                                                                                                                                  | Version: v11.2.8\+ <br />Default: `2` <br />Applications: Indexer                                           |
+| `INDEXER_ON_DEMAND_INTERNAL_TRANSACTIONS_TRANSACTIONS_BATCH_SIZE` | Batch size for transaction trace requests in the on-demand internal transactions fetcher. The minimum value is `1`. Implemented in [#14724](https://github.com/blockscout/blockscout/pull/14724).                                                                                                                                                                                                                                                                                                                              | Version: v11.2.8\+ <br />Default: `20` <br />Applications: Indexer                                          |
+| `INDEXER_METRICS_ENABLED_MISSING_ADDRESS_NATIVE_COIN_BALANCES_COUNT` | Flag to enable indexer metric: the count of address native coin balances with missing values. Implemented in [#14729](https://github.com/blockscout/blockscout/pull/14729). | Version: v11.2.8\+ <br />Default: true <br />Applications: Indexer   |
+
 
 ## 11.2.7
 
