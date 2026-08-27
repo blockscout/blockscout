@@ -894,6 +894,27 @@ defmodule Explorer.Chain do
     end
   end
 
+  @doc """
+  Checks if an address with the given `hash` exists in the database.
+
+  ## Parameters
+    - `hash` - the address hash to check.
+    - `options` - keyword list with optional `api?: true` for replica selection.
+
+  ## Returns
+    - `{:ok, address_hash}` if the address exists.
+    - `{:error, :not_found}` if the address does not exist.
+  """
+  @spec check_address_exists(Hash.Address.t(), keyword()) :: {:ok, Hash.Address.t()} | {:error, :not_found}
+  def check_address_exists(hash, options \\ []) do
+    query = from(address in Address, where: address.hash == ^hash, select: address.hash)
+
+    case select_repo(options).one(query) do
+      nil -> {:error, :not_found}
+      address_hash -> {:ok, address_hash}
+    end
+  end
+
   defp default_hash_to_address_necessity_by_association do
     %{
       :names => :optional,
