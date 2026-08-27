@@ -145,6 +145,41 @@ defmodule Explorer.Account.Notifier.SummaryTest do
              ]
     end
 
+    test "Token transfer with missing token record" do
+      transaction =
+        %Transaction{
+          from_address: transaction_from_address,
+          to_address: transaction_to_address,
+          block_number: block_number,
+          hash: transaction_hash
+        } = with_block(insert(:transaction))
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: insert(:contract_address)
+      )
+
+      {_, fee} = Transaction.fee(transaction, :gwei)
+      transaction_amount = Wei.to(transaction.value, :ether)
+
+      assert Summary.process(transaction) == [
+               %Summary{
+                 amount: transaction_amount,
+                 block_number: block_number,
+                 from_address_hash: transaction_from_address.hash,
+                 method: "transfer",
+                 name: "ETH",
+                 subject: "Coin transaction",
+                 to_address_hash: transaction_to_address.hash,
+                 transaction_hash: transaction_hash,
+                 transaction_fee: fee,
+                 type: "COIN"
+               }
+             ]
+    end
+
     test "ERC-721 Token transfer" do
       token = insert(:token, type: "ERC-721")
 

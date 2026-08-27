@@ -98,7 +98,7 @@ defmodule Explorer.Account.Notifier.Summary do
 
   defp fetch_summary(
          %Chain.Transaction{} = transaction,
-         %Chain.TokenTransfer{} = transfer
+         %Chain.TokenTransfer{token: %Chain.Token{}} = transfer
        ) do
     case transfer.token.type do
       type when type in ["ERC-20", "ZRC-2"] ->
@@ -172,6 +172,9 @@ defmodule Explorer.Account.Notifier.Summary do
           name: token_name(transfer),
           type: transfer.token.type
         }
+
+      _ ->
+        :nothing
     end
   end
 
