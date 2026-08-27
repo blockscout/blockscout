@@ -62,6 +62,7 @@ defmodule Explorer.Factory do
     Token,
     TokenTransfer,
     Token.Instance,
+    Token.UIMultiplierChange,
     Transaction,
     TransactionError,
     Wei,
@@ -1025,6 +1026,20 @@ defmodule Explorer.Factory do
       icon_url: sequence("https://example.com/icon"),
       fiat_value: 10.1,
       is_verified_via_admin_panel: false
+    }
+  end
+
+  def token_ui_multiplier_change_factory do
+    block = build(:block)
+
+    %UIMultiplierChange{
+      token: build(:token),
+      block: block,
+      block_number: block.number,
+      log_index: sequence("token_ui_multiplier_change_log_index", & &1),
+      old_multiplier: Decimal.new("1000000000000000000"),
+      new_multiplier: Decimal.new("2000000000000000000"),
+      effective_at: DateTime.utc_now()
     }
   end
 
