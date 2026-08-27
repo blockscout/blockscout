@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenMetadataRefetch, as: TokenMetadataRefetchOnDemand
 
   describe "/tokens/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -1790,6 +1791,167 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
   end
 
+  describe "/tokens/{address_hash}/refetch-metadata" do
+    setup :set_mox_from_context
+
+    setup :verify_on_exit!
+
+    setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      original_config = :persistent_term.get(:rate_limit_config)
+      old_recaptcha_env = Application.get_env(:block_scout_web, :recaptcha)
+      original_api_rate_limit = Application.get_env(:block_scout_web, :api_rate_limit)
+
+      v2_secret_key = "v2_secret_key"
+
+      Application.put_env(:block_scout_web, :recaptcha,
+        v2_secret_key: v2_secret_key,
+        v3_secret_key: "v3_secret_key",
+        is_disabled: false
+      )
+
+      mocked_json_rpc_named_arguments = Keyword.put(json_rpc_named_arguments, :transport, EthereumJSONRPC.Mox)
+
+      start_supervised!({Task.Supervisor, name: TokenMetadataRefetchOnDemand.TaskSupervisor})
+
+      start_supervised!(
+        {TokenMetadataRefetchOnDemand,
+         [mocked_json_rpc_named_arguments, [name: TokenMetadataRefetchOnDemand]]}
+      )
+
+      Application.put_env(:block_scout_web, :api_rate_limit, Keyword.put(original_api_rate_limit, :disabled, false))
+
+      :persistent_term.put(:rate_limit_config, %{
+        static_match: %{},
+        wildcard_match: %{},
+        parametrized_match: %{
+          ["api", "v2", "tokens", ":param", "refetch-metadata"] => %{
+            ip: %{period: 3_600_000, limit: 10},
+            recaptcha_to_bypass_429: true,
+            bucket_key_prefix: "api/v2/tokens/:param/refetch-metadata_",
+            isolate_rate_limit?: true
+          }
+        }
+      })
+
+      on_exit(fn ->
+        :persistent_term.put(:rate_limit_config, original_config)
+        Application.put_env(:block_scout_web, :recaptcha, old_recaptcha_env)
+        Application.put_env(:block_scout_web, :api_rate_limit, original_api_rate_limit)
+        :ets.delete_all_objects(BlockScoutWeb.RateLimit.Hammer.ETS)
+      end)
+
+      {:ok, %{v2_secret_key: v2_secret_key}}
+    end
+
+    test "re-fetches fungible token metadata", %{conn: conn} do
+      token =
+        insert(:token,
+          name: "Old name",
+          symbol: "OLD",
+          type: "ERC-20",
+          icon_url: "https://example.com/token-icon.png"
+        )
+
+      expect_token_metadata_rpc_response("New name", "NEW")
+
+      request = patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/refetch-metadata")
+
+      assert %{"message" => "OK"} = json_response(request, 200)
+
+      Explorer.DataCase.wait_for_results(fn ->
+        updated_token =
+          Repo.one!(
+            from(t in Token,
+              where:
+                t.contract_address_hash == ^token.contract_address_hash and t.name == "New name" and
+                  t.symbol == "NEW"
+            )
+          )
+
+        assert updated_token.name == "New name"
+        assert updated_token.symbol == "NEW"
+        assert updated_token.metadata_updated_at
+        assert updated_token.icon_url == token.icon_url
+      end)
+    end
+
+    test "preserves admin-curated name and symbol", %{conn: conn} do
+      token =
+        insert(:token,
+          name: "Admin name",
+          symbol: "ADMIN",
+          type: "ERC-20",
+          icon_url: "https://example.com/admin-token-icon.png",
+          is_verified_via_admin_panel: true,
+          metadata_updated_at: nil
+        )
+
+      expect_token_metadata_rpc_response("On-chain name", "CHAIN")
+
+      request = patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/refetch-metadata")
+
+      assert %{"message" => "OK"} = json_response(request, 200)
+
+      Explorer.DataCase.wait_for_results(fn ->
+        updated_token =
+          Repo.one!(
+            from(t in Token,
+              where:
+                t.contract_address_hash == ^token.contract_address_hash and
+                  not is_nil(t.metadata_updated_at)
+            )
+          )
+
+        assert updated_token.name == "Admin name"
+        assert updated_token.symbol == "ADMIN"
+        assert updated_token.icon_url == token.icon_url
+      end)
+    end
+
+    test "doesn't re-fetch metadata for an NFT collection", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      request = patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/refetch-metadata")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "requires recaptcha after the isolated rate limit is exceeded", %{
+      v2_secret_key: v2_secret_key
+    } do
+      token = build(:token, type: "ERC-20")
+      endpoint = "/api/v2/tokens/#{token.contract_address.hash}/refetch-metadata"
+
+      Enum.each(9..0, fn expected_remaining ->
+        request =
+          Phoenix.ConnTest.build_conn()
+          |> put_req_header("user-agent", "test-agent")
+          |> patch(endpoint)
+
+        assert %{"message" => "Not found"} = json_response(request, 404)
+        assert get_resp_header(request, "x-ratelimit-remaining") == [to_string(expected_remaining)]
+      end)
+
+      request =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("user-agent", "test-agent")
+        |> patch(endpoint)
+
+      assert json_response(request, 429)
+
+      expected_body = "secret=#{v2_secret_key}&response=123"
+      recaptcha_success_expectation_with_req_body(expected_body)
+
+      request =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("user-agent", "test-agent")
+        |> put_req_header("recaptcha-v2-response", "123")
+        |> patch(endpoint)
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+  end
+
   describe "/tokens/{address_hash}/instances/{token_id}/refetch-metadata" do
     setup :set_mox_from_context
 
@@ -1906,7 +2068,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       expected_body = "secret=#{v2_secret_key}&response=123"
 
-      token_instance_success_metadata_expectation_with_req_body(expected_body)
+      recaptcha_success_expectation_with_req_body(expected_body)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
@@ -2295,7 +2457,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       # Set up normal reCAPTCHA validation for the second request
       expected_body = "secret=#{v2_secret_key}&response=correct_recaptcha_token"
 
-      token_instance_success_metadata_expectation_with_req_body(expected_body)
+      recaptcha_success_expectation_with_req_body(expected_body)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
 
@@ -2399,7 +2561,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       # Set up normal reCAPTCHA validation for the second request
       expected_body = "secret=#{v2_secret_key}&response=correct_recaptcha_token"
 
-      token_instance_success_metadata_expectation_with_req_body(expected_body)
+      recaptcha_success_expectation_with_req_body(expected_body)
 
       TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
       metadata = %{"name" => "Super Token"}
@@ -2488,6 +2650,29 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert %{"message" => "Wrong API key"} = json_response(request, 401)
     end
+  end
+
+  defp expect_token_metadata_rpc_response(name, symbol) do
+    string_selector = %ABI.FunctionSelector{function: nil, types: [:string]}
+    encoded_name = ABI.TypeEncoder.encode([name], string_selector) |> Base.encode16(case: :lower)
+    encoded_symbol = ABI.TypeEncoder.encode([symbol], string_selector) |> Base.encode16(case: :lower)
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+      {:ok,
+       Enum.map(requests, fn
+         %{id: id, method: "eth_call", params: [%{data: "0x313ce567", to: _}, "latest"]} ->
+           %{id: id, result: "0x0000000000000000000000000000000000000000000000000000000000000012"}
+
+         %{id: id, method: "eth_call", params: [%{data: "0x06fdde03", to: _}, "latest"]} ->
+           %{id: id, result: "0x" <> encoded_name}
+
+         %{id: id, method: "eth_call", params: [%{data: "0x95d89b41", to: _}, "latest"]} ->
+           %{id: id, result: "0x" <> encoded_symbol}
+
+         %{id: id, method: "eth_call", params: [%{data: "0x18160ddd", to: _}, "latest"]} ->
+           %{id: id, result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"}
+       end)}
+    end)
   end
 
   defp compare_holders_item(%CurrentTokenBalance{} = ctb, json) do
@@ -2838,7 +3023,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     )
   end
 
-  defp token_instance_success_metadata_expectation_with_req_body(expected_body) do
+  defp recaptcha_success_expectation_with_req_body(expected_body) do
     Tesla.Test.expect_tesla_call(
       times: 1,
       returns: fn %{body: ^expected_body}, _opts ->
