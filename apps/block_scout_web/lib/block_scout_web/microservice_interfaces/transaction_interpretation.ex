@@ -27,16 +27,6 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   @request_error_msg "Error while sending request to Transaction Interpretation Service"
   @api_true api?: true
   @items_limit 50
-  @token_options [
-    api?: true,
-    necessity_by_association:
-      Map.merge(
-        %{
-          reputation_association() => :optional
-        },
-        @chain_type_token_necessity_by_association
-      )
-  ]
 
   case @chain_type do
     :filecoin ->
@@ -48,6 +38,17 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     _ ->
       @chain_type_token_necessity_by_association %{}
   end
+
+  @token_options [
+    api?: true,
+    necessity_by_association:
+      Map.merge(
+        %{
+          reputation_association() => :optional
+        },
+        @chain_type_token_necessity_by_association
+      )
+  ]
 
   @internal_transaction_address_preloads [
     address_preloads: [
