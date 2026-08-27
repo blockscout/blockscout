@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.TokenController do
   use BlockScoutWeb, :controller
-  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
+
+  use Utils.CompileTimeEnvHelper,
+    bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]],
+    chain_type: [:explorer, :chain_type]
+
   use OpenApiSpex.ControllerSpecs
 
   alias BlockScoutWeb.{AccessHelper, AuthenticationHelper}
@@ -48,7 +52,22 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   @api_true [api?: true]
 
-  @token_options [api?: true, necessity_by_association: %{reputation_association() => :optional}]
+  @token_options [
+    api?: true,
+    necessity_by_association:
+      Map.merge(%{reputation_association() => :optional}, @chain_type_token_necessity_by_association)
+  ]
+
+  case @chain_type do
+    :filecoin ->
+      @chain_type_token_necessity_by_association %{contract_address: :optional}
+
+    :zilliqa ->
+      @chain_type_token_necessity_by_association %{contract_address: :optional}
+
+    _ ->
+      @chain_type_token_necessity_by_association %{}
+  end
 
   operation :token,
     summary: "Retrieve detailed information about a specific token",
