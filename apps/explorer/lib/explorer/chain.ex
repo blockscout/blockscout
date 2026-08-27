@@ -907,11 +907,11 @@ defmodule Explorer.Chain do
   """
   @spec check_address_exists(Hash.Address.t(), keyword()) :: {:ok, Hash.Address.t()} | {:error, :not_found}
   def check_address_exists(hash, options \\ []) do
-    query = from(address in Address, where: address.hash == ^hash, select: address.hash)
+    query = from(address in Address, where: address.hash == ^hash)
 
-    case select_repo(options).one(query) do
-      nil -> {:error, :not_found}
-      address_hash -> {:ok, address_hash}
+    case select_repo(options).exists?(query) do
+      false -> {:error, :not_found}
+      true -> {:ok, hash}
     end
   end
 
