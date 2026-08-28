@@ -73,13 +73,38 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   @token_transfer_necessity_by_association [
     necessity_by_association: %{
-      [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-      [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
       :block => :optional,
       :transaction => :optional,
       [token: reputation_association()] => :optional
     },
     api?: true
+  ]
+
+  # Address-info associations shared by every participant role of a list item.
+  # Loaded once for the whole page by `Chain.preload_address_participants/4`
+  # rather than per role through `necessity_by_association`.
+  @transaction_participant_necessity_by_association %{
+    :scam_badge => :optional,
+    :names => :optional,
+    proxy_implementations_association() => :optional
+  }
+
+  @token_transfer_participant_necessity_by_association %{
+    :scam_badge => :optional,
+    :names => :optional,
+    :smart_contract => :optional,
+    proxy_implementations_association() => :optional
+  }
+
+  @transaction_address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address},
+    {:created_contract_address_hash, :created_contract_address}
+  ]
+
+  @token_transfer_address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address}
   ]
 
   case @chain_identity do
@@ -419,7 +444,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:transactions, %{
-            transactions: transactions |> maybe_preload_ens_and_metadata(:transactions),
+            transactions:
+              transactions
+              |> Chain.preload_address_participants(
+                @transaction_address_fields,
+                @transaction_participant_necessity_by_association,
+                @api_true
+              )
+              |> maybe_preload_ens_and_metadata(:transactions),
             next_page_params: next_page_params
           })
 
@@ -435,31 +467,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     end
   end
 
+  # Address participants are loaded separately by
+  # `Chain.preload_address_participants/4`, which shares one query pass between
+  # `from`/`to`/`created_contract` instead of repeating it per role.
   defp address_transactions_necessity_by_association do
-    %{
-      [
-        created_contract_address: [
-          :scam_badge,
-          :names,
-          proxy_implementations_association()
-        ]
-      ] => :optional,
-      [
-        from_address: [
-          :scam_badge,
-          :names,
-          proxy_implementations_association()
-        ]
-      ] => :optional,
-      [
-        to_address: [
-          :scam_badge,
-          :names,
-          proxy_implementations_association()
-        ]
-      ] => :optional,
-      :block => :optional
-    }
+    %{:block => :optional}
     |> Map.merge(@chain_type_transaction_necessity_by_association)
   end
 
@@ -548,6 +560,11 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> render(:token_transfers, %{
             token_transfers:
               token_transfers
+              |> Chain.preload_address_participants(
+                @token_transfer_address_fields,
+                @token_transfer_participant_necessity_by_association,
+                @api_true
+              )
               |> Instance.preload_nft(@api_true)
               |> maybe_preload_ens_and_metadata(:token_transfers),
             next_page_params: next_page_params
