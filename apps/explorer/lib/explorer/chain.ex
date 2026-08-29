@@ -1174,12 +1174,7 @@ defmodule Explorer.Chain do
       |> Enum.reject(&is_nil/1)
       |> Enum.uniq()
 
-    addresses =
-      Address
-      |> where([address], address.hash in ^participant_hashes)
-      |> join_associations(address_necessity_by_association)
-      |> select_repo(options).all()
-      |> Map.new(&{&1.hash, &1})
+    addresses = addresses_by_hash(participant_hashes, address_necessity_by_association, options)
 
     to_address =
       addresses
@@ -1200,6 +1195,68 @@ defmodule Explorer.Chain do
             }
           end)
     }
+  end
+
+  @doc """
+    Loads address-info associations for every address referenced by a list of items in a single query pass.
+
+    Addresses shared between items, and between roles of the same item, are
+    deduplicated. Preloading the same associations per role instead — as
+    `necessity_by_association` does — repeats both the `addresses` query and
+    every nested association query once per role. This issues one `addresses`
+    query and one query per entry in `address_necessity_by_association`,
+    regardless of how many roles are populated.
+
+    Must run before `Explorer.Chain.Address.MetadataPreloader`, which writes ENS
+    and metadata into the very address structs assigned here.
+
+    ## Parameters
+    - `items`: The list of structs whose address associations are populated.
+    - `address_fields`: The `{hash_field, association_field}` pairs to populate, for
+      example `[{:from_address_hash, :from_address}, {:to_address_hash, :to_address}]`.
+    - `address_necessity_by_association`: A map of address associations to load,
+      shared by every role.
+    - `options`: An optional keyword list of options, such as selecting a specific repository.
+
+    ## Returns
+    - The list of items with every association named in `address_fields` set to the
+      matching `t:Explorer.Chain.Address.t/0`, or to `nil` when the hash field is
+      `nil` or no address row exists.
+  """
+  @spec preload_address_participants([struct()], [{atom(), atom()}], %{any() => :optional | :required}, [api?]) ::
+          [struct()]
+  def preload_address_participants(items, address_fields, address_necessity_by_association, options)
+
+  def preload_address_participants([], _address_fields, _address_necessity_by_association, _options), do: []
+
+  def preload_address_participants(items, address_fields, address_necessity_by_association, options) do
+    addresses =
+      items
+      |> Enum.flat_map(fn item ->
+        Enum.map(address_fields, fn {hash_field, _association_field} -> Map.fetch!(item, hash_field) end)
+      end)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+      |> addresses_by_hash(address_necessity_by_association, options)
+
+    Enum.map(items, fn item ->
+      Enum.reduce(address_fields, item, fn {hash_field, association_field}, item_acc ->
+        Map.replace!(item_acc, association_field, Map.get(addresses, Map.fetch!(item_acc, hash_field)))
+      end)
+    end)
+  end
+
+  @spec addresses_by_hash([Hash.Address.t()], %{any() => :optional | :required}, [api?]) :: %{
+          Hash.Address.t() => Address.t()
+        }
+  defp addresses_by_hash([], _address_necessity_by_association, _options), do: %{}
+
+  defp addresses_by_hash(hashes, address_necessity_by_association, options) do
+    Address
+    |> where([address], address.hash in ^hashes)
+    |> join_associations(address_necessity_by_association)
+    |> select_repo(options).all()
+    |> Map.new(&{&1.hash, &1})
   end
 
   defp preload_full_smart_contract(%Address{contract_code: contract_code} = address, options)
