@@ -297,13 +297,15 @@ defmodule Explorer.Chain.Address.Counters do
       transactions_count(address)
     end)
 
-    Task.start_link(fn ->
-      token_transfers_count(address)
-    end)
+    # Token transfers count calculation is temporarily disabled due to its DB cost.
+    # Task.start_link(fn ->
+    #   token_transfers_count(address)
+    # end)
 
-    Task.start_link(fn ->
-      gas_usage_count(address)
-    end)
+    # Gas usage calculation is temporarily disabled due to its DB cost.
+    # Task.start_link(fn ->
+    #   gas_usage_count(address)
+    # end)
 
     [
       validation_count_task
