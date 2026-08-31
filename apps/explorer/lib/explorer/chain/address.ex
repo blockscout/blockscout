@@ -136,6 +136,7 @@ defmodule Explorer.Chain.Address.Schema do
         field(:transactions_count, :integer)
         field(:token_transfers_count, :integer)
         field(:gas_used, :integer)
+        field(:counters_updated_at, :integer) :: Block.block_number() | nil
         field(:ens_domain_name, :string, virtual: true)
         field(:metadata, :any, virtual: true)
         field(:contract_creation_internal_transaction, :map, virtual: true)
@@ -191,7 +192,7 @@ defmodule Explorer.Chain.Address do
 
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
-  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce verified gas_used transactions_count token_transfers_count)a
+  @optional_attrs ~w(contract_code fetched_coin_balance fetched_coin_balance_block_number nonce verified gas_used transactions_count token_transfers_count counters_updated_at)a
   @chain_type_optional_attrs (case @chain_type do
                                 :filecoin ->
                                   ~w(filecoin_id filecoin_robust filecoin_actor_type)a
