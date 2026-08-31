@@ -65,7 +65,7 @@ dump.rdb
 .elixir_ls
 .claude/settings.local.json
 .claude/commands/review-pr.md
-.ai/
+.ai
 .claude/spawn-review-sessions/
 
 **.dec**
