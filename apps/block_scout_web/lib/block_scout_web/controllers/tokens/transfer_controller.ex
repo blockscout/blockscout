@@ -14,9 +14,22 @@ defmodule BlockScoutWeb.Tokens.TransferController do
 
   import BlockScoutWeb.Chain, only: [split_list_by_page: 1, paging_options: 1, next_page_params: 3]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
+  import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
+
+  @token_transfer_participant_necessity_by_association %{
+    :scam_badge => :optional,
+    :names => :optional,
+    :smart_contract => :optional,
+    proxy_implementations_association() => :optional
+  }
+
+  @token_transfer_address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address}
+  ]
 
   def index(conn, %{"token_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
@@ -24,6 +37,14 @@ defmodule BlockScoutWeb.Tokens.TransferController do
          token_transfers <- Chain.fetch_token_transfers_from_token_hash(address_hash, paging_options(params)),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       {token_transfers_paginated, next_page} = split_list_by_page(token_transfers)
+
+      token_transfers_paginated =
+        Chain.preload_address_participants(
+          token_transfers_paginated,
+          @token_transfer_address_fields,
+          @token_transfer_participant_necessity_by_association,
+          []
+        )
 
       next_page_path =
         case next_page_params(next_page, token_transfers_paginated, params) do

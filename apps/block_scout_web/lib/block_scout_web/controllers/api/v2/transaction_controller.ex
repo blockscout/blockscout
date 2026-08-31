@@ -105,12 +105,20 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   }
 
   @token_transfers_necessity_by_association %{
-    [from_address: [:scam_badge, :names, SmartContract.association_without_abi(), proxy_implementations_association()]] =>
-      :optional,
-    [to_address: [:scam_badge, :names, SmartContract.association_without_abi(), proxy_implementations_association()]] =>
-      :optional,
     [token: reputation_association()] => :optional
   }
+
+  @token_transfer_participant_necessity_by_association %{
+    :scam_badge => :optional,
+    :names => :optional,
+    SmartContract.association_without_abi() => :optional,
+    proxy_implementations_association() => :optional
+  }
+
+  @token_transfer_address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address}
+  ]
 
   # Transfer from/to address preloads are handled by
   # `Chain.preload_transaction_participants/3`, see
@@ -707,6 +715,11 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       |> render(:token_transfers, %{
         token_transfers:
           token_transfers
+          |> Chain.preload_address_participants(
+            @token_transfer_address_fields,
+            @token_transfer_participant_necessity_by_association,
+            @api_true
+          )
           |> Instance.preload_nft(@api_true)
           |> maybe_preload_ens_and_metadata(:token_transfers),
         next_page_params: next_page_params

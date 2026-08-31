@@ -107,6 +107,19 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     {:to_address_hash, :to_address}
   ]
 
+  @internal_transaction_participant_necessity_by_association %{
+    :scam_badge => :optional,
+    :names => :optional,
+    :smart_contract => :optional,
+    proxy_implementations_association() => :optional
+  }
+
+  @internal_transaction_address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address},
+    {:created_contract_address_hash, :created_contract_address}
+  ]
+
   case @chain_identity do
     {:optimism, :celo} ->
       @chain_type_address_necessity_by_association %{
@@ -625,15 +638,15 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Address.check_address_exists(address_hash, @api_true) do
         :ok ->
+          # Nested address-info preloads are intentionally absent from
+          # `:address_preloads`: `address_to_internal_transactions/2` resolves the
+          # bare addresses and aligns the `*_address_hash` fields for both the
+          # hash-based and the address-id-based schema, after which
+          # `Chain.preload_address_participants/4` loads the info for all three
+          # roles in a single pass instead of one per role.
           full_options =
-            [
-              address_preloads: [
-                created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
-                from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
-                to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]
-              ]
-            ]
-            |> Keyword.merge(paging_options(params))
+            params
+            |> paging_options()
             |> Keyword.merge(current_filter(params))
             |> Keyword.merge(@api_true)
 
@@ -647,7 +660,14 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> put_status(200)
           |> put_view(TransactionView)
           |> render(:internal_transactions, %{
-            internal_transactions: internal_transactions |> maybe_preload_ens_and_metadata(),
+            internal_transactions:
+              internal_transactions
+              |> Chain.preload_address_participants(
+                @internal_transaction_address_fields,
+                @internal_transaction_participant_necessity_by_association,
+                @api_true
+              )
+              |> maybe_preload_ens_and_metadata(),
             next_page_params: next_page_params
           })
 

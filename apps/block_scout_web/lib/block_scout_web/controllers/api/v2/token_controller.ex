@@ -52,6 +52,18 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   @api_true [api?: true]
 
+  @token_transfer_participant_necessity_by_association %{
+    :scam_badge => :optional,
+    :names => :optional,
+    :smart_contract => :optional,
+    proxy_implementations_association() => :optional
+  }
+
+  @token_transfer_address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address}
+  ]
+
   case @chain_type do
     :filecoin ->
       @chain_type_token_necessity_by_association %{contract_address: :optional}
@@ -203,6 +215,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> render(:token_transfers, %{
         token_transfers:
           token_transfers
+          |> Chain.preload_address_participants(
+            @token_transfer_address_fields,
+            @token_transfer_participant_necessity_by_association,
+            @api_true
+          )
           |> Instance.preload_nft(@api_true)
           |> maybe_preload_ens_and_metadata(:token_transfers),
         next_page_params: next_page_params
