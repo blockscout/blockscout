@@ -3180,6 +3180,48 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(tokentx_schema(), response)
     end
 
+    test "does not crash when token record is missing and tt denormalization finished", %{conn: conn} do
+      old_tt_denormalization_finished = BackgroundMigrations.get_tt_denormalization_finished()
+      BackgroundMigrations.set_tt_denormalization_finished(true)
+
+      on_exit(fn ->
+        BackgroundMigrations.set_tt_denormalization_finished(old_tt_denormalization_finished)
+      end)
+
+      transaction =
+        %{block: block} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer =
+        insert(:token_transfer, block: transaction.block, transaction: transaction, block_number: block.number)
+
+      # Delete the token record to simulate a missing token (e.g. race condition during indexing)
+      {:ok, token} = Chain.token_from_address_hash(token_transfer.token_contract_address_hash)
+      Repo.delete(token)
+
+      params = %{
+        "module" => "account",
+        "action" => "tokentx",
+        "address" => to_string(token_transfer.from_address.hash)
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert [result] = response["result"]
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert result["tokenName"] == ""
+      assert result["tokenSymbol"] == ""
+      assert result["tokenDecimal"] == ""
+      assert result["hash"] == to_string(token_transfer.transaction_hash)
+      assert :ok = ExJsonSchema.Validator.validate(tokentx_schema(), response)
+    end
+
     test "with an invalid contract address", %{conn: conn} do
       params = %{
         "module" => "account",
