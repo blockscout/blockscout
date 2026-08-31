@@ -121,7 +121,7 @@ defmodule Explorer.Mixfile do
       {:cloak_ecto, "~> 1.3.0"},
       {:redix, "~> 1.1"},
       {:hammer_backend_redis, "~> 7.0"},
-      {:typed_ecto_schema, "~> 0.4.1"},
+      {:typed_ecto_schema, "~> 0.5.0"},
       {:ueberauth, "~> 0.7"},
       {:recon, "~> 2.5"},
       {:varint, "~> 1.4"},
