@@ -329,13 +329,19 @@ defmodule Explorer.Chain.Cache.Counters.AddressCounters do
     :ets.whereis(@dirty_cache_name) == :undefined or :ets.info(@dirty_cache_name, :size) == 0
   end
 
+  @typedoc """
+  Opaque `:ets.select/1` continuation of a dirty-markers traversal (the
+  `:ets.continuation/0` type is not exported by `:ets`).
+  """
+  @type dirty_markers_continuation :: term()
+
   @doc """
   Starts (with a limit) or continues (with a previously returned continuation)
   a traversal of the dirty markers. Returns `{[{hash_bytes, block_number}], continuation}`
   or `:"$end_of_table"`.
   """
-  @spec select_dirty(pos_integer() | :ets.continuation()) ::
-          {[{binary(), non_neg_integer()}], :ets.continuation()} | :"$end_of_table"
+  @spec select_dirty(pos_integer() | dirty_markers_continuation()) ::
+          {[{binary(), non_neg_integer()}], dirty_markers_continuation()} | :"$end_of_table"
   def select_dirty(limit) when is_integer(limit) do
     :ets.select(@dirty_cache_name, [{{:"$1", :"$2"}, [], [{{:"$1", :"$2"}}]}], limit)
   end
