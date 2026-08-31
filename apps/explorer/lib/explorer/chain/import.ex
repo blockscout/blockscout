@@ -172,6 +172,10 @@ defmodule Explorer.Chain.Import do
   # internal transactions — or backfilled by migrators) cannot be covered by
   # incremental range aggregates anymore, so such addresses get their
   # watermark reset for a full recalculation.
+  #
+  # Runs after the import transaction committed, so failures here (e.g. a
+  # transient DB error in the watermark reset) must not fail the import or
+  # prevent the subsequent event broadcast — they only cost counter freshness.
   defp update_address_counters(data, broadcast_type) do
     transactions = Map.get(data, :transactions, [])
     token_transfers = Map.get(data, :token_transfers, [])
@@ -183,6 +187,13 @@ defmodule Explorer.Chain.Import do
     end
 
     :ok
+  rescue
+    error ->
+      Logger.error(fn ->
+        ["Could not update address counters for imported data: ", Exception.format(:error, error, __STACKTRACE__)]
+      end)
+
+      :ok
   end
 
   defp reset_watermarks_covering_token_transfers(token_transfers) do
