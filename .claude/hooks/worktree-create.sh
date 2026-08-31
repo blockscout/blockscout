@@ -118,5 +118,26 @@ else
   log "No deps directory in main repo, skipping symlink"
 fi
 
+# Create .ai symlink pointing to the main repo's .ai directory.
+# This keeps research notes, plans, and scripts shared across worktrees instead of
+# being missing (it's gitignored) or duplicated per worktree.
+# Only create the symlink if the source directory exists in the main repo (avoids dangling
+# symlinks) and the target is not already a symlink. If a regular directory already exists
+# (e.g. from a previous session), leave it in place rather than failing.
+AI_SYMLINK="$DIR/.ai"
+if [ ! -L "$AI_SYMLINK" ] && [ -d "$REPO_ROOT/.ai" ]; then
+  if [ -e "$AI_SYMLINK" ]; then
+    log "Regular directory/file already exists at $AI_SYMLINK, skipping symlink creation"
+  else
+    REL_TARGET=$(python3 -c "import os; print(os.path.relpath('$REPO_ROOT/.ai', '$DIR'))")
+    ln -s "$REL_TARGET" "$AI_SYMLINK"
+    log "Created symlink: $AI_SYMLINK -> $REL_TARGET"
+  fi
+elif [ -L "$AI_SYMLINK" ]; then
+  log "Symlink already exists: $AI_SYMLINK"
+else
+  log "No .ai directory in main repo, skipping symlink"
+fi
+
 log "Done, worktree path: $DIR"
 echo "$DIR"
