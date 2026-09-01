@@ -34,6 +34,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     @lower_confirmation_l1_block 198
     @lower_confirmation_l1_timestamp @confirmation_l1_timestamp - 24
 
+    # One parent chain range can also hold three `SendRootUpdated` events. The
+    # confirmation of the lowest rollup blocks is in the oldest block of the three.
+    @lowest_confirmation_l1_block 196
+    @lowest_confirmation_l1_timestamp @confirmation_l1_timestamp - 48
+
     # This is the parent chain block which the database holds for a confirmation
     # that a re-org moved. This block is less than the parent chain block of each
     # event. Thus the discovery always finds a difference and writes such a
@@ -45,6 +50,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # discovery read the same lookups in several chunks.
     @logs_block_range 1000
     @narrow_logs_block_range 50
+
+    # Short enough to put every lookup of a batch walk into several chunks, and to
+    # keep two confirmations of one run in two different chunks.
+    @short_logs_block_range 3
 
     # The parent chain block of a confirmation which happened before the one under
     # discovery. This block is between the commitments of the batches and the
@@ -59,6 +68,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     @commitment_l1_block 100
     @previous_commitment_l1_block 90
     @oldest_commitment_l1_block 80
+
+    # The parent chain block of a commitment transaction which is close to the
+    # confirmations. A batch with such a commitment has a short lookup range.
+    @recent_commitment_l1_block 194
 
     # The lowest indexed rollup block. The oldest batch of each test starts here.
     # Thus the discovery cannot move below this block.
@@ -86,6 +99,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     #   - two new confirmations
     #   - a new confirmation together with a known one
     #   - two known confirmations
+    #   - three new confirmations
     #
     # Even when another test already runs the same branches of the code, a scenario
     # keeps its test. There are two reasons:
@@ -1140,6 +1154,196 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       end
     end
 
+    # A parent chain range can hold three `SendRootUpdated` events. Then two
+    # confirmations are earlier than the last one, and the lookup range of the last
+    # confirmation holds both of them.
+    #
+    # The discovery must take the newest of the two confirmations. It reads a lookup
+    # range in chunks, from the newest chunk to the oldest chunk. It stops at the
+    # first chunk which holds a confirmation of the batch. Within one chunk it sorts
+    # the confirmations, and it takes the confirmation with the highest rollup block.
+    #
+    # The tests of this group give a name to each of the three confirmations. The
+    # names are the lowest confirmation, the lower confirmation and the upper
+    # confirmation, in the order of their rollup blocks.
+    describe "perform/5 with three new confirmations" do
+      # The database has one batch with the rollup blocks 1..20. No block of it is
+      # confirmed.
+      #
+      # The three events point to the rollup blocks 5, 10 and 20. All three blocks
+      # are in the same batch. The maximum range of one `eth_getLogs` request is wider
+      # than each lookup range. Thus the discovery reads each lookup range in one
+      # chunk.
+      #
+      # The lookup range of the upper confirmation holds two confirmations of the
+      # batch. They point to the rollup blocks 5 and 10. The discovery must take the
+      # block 10, because it is the higher block. As a result, the upper confirmation
+      # covers the blocks 11..20.
+      #
+      # This test is the only test which puts two confirmations of one batch into one
+      # chunk. If the discovery takes the block 5, the upper confirmation covers the
+      # blocks 6..20. Then the upper confirmation takes the blocks of the lower
+      # confirmation again, and the database operation fails.
+      test "takes the higher of the two earlier confirmations which are in one chunk", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        batch = seed_batch(@rollup_first_block, 20, @commitment_l1_block)
+
+        lowest_confirmation_transaction_hash = to_string(transaction_hash())
+        lower_confirmation_transaction_hash = to_string(transaction_hash())
+        upper_confirmation_transaction_hash = to_string(transaction_hash())
+
+        lowest_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 5),
+            lowest_confirmation_transaction_hash,
+            @lowest_confirmation_l1_block
+          )
+
+        lower_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 10),
+            lower_confirmation_transaction_hash,
+            @lower_confirmation_l1_block
+          )
+
+        upper_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 20),
+            upper_confirmation_transaction_hash,
+            @confirmation_l1_block
+          )
+
+        expect_discovery_of(
+          [lowest_confirmation_log, lower_confirmation_log, upper_confirmation_log],
+          %{
+            # The lookup range of the lowest confirmation holds no earlier
+            # confirmation.
+            {@commitment_l1_block, @lowest_confirmation_l1_block - 1} => [],
+            # The lookup range of the lower confirmation holds the lowest
+            # confirmation.
+            {@commitment_l1_block, @lower_confirmation_l1_block - 1} => [lowest_confirmation_log],
+            # The lookup range of the upper confirmation holds the two other
+            # confirmations. The parent chain gives the logs from the oldest block to
+            # the newest block.
+            {@commitment_l1_block, @confirmation_l1_block - 1} => [lowest_confirmation_log, lower_confirmation_log]
+          }
+        )
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        assert drain_get_logs_ranges() == [
+                 {@discovery_l1_start_block, @discovery_l1_end_block},
+                 {@commitment_l1_block, @lowest_confirmation_l1_block - 1},
+                 {@commitment_l1_block, @lower_confirmation_l1_block - 1},
+                 {@commitment_l1_block, @confirmation_l1_block - 1}
+               ]
+
+        # The number of the confirmations is less than the chunk size. Thus the
+        # discovery asks for the three parent chain blocks in one request.
+        assert drain_block_number_batches() == [
+                 [@lowest_confirmation_l1_block, @lower_confirmation_l1_block, @confirmation_l1_block]
+               ]
+
+        lowest_confirmation = Repo.get_by!(LifecycleTransaction, hash: lowest_confirmation_transaction_hash)
+        lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation_transaction_hash)
+        upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation_transaction_hash)
+
+        assert lowest_confirmation.block_number == @lowest_confirmation_l1_block
+        assert DateTime.to_unix(lowest_confirmation.timestamp) == @lowest_confirmation_l1_timestamp
+
+        assert confirmed_blocks(lowest_confirmation) == Enum.to_list(@rollup_first_block..5)
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(6..10)
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(11..20)
+        assert unconfirmed_blocks() == []
+      end
+
+      # The database has one batch with the rollup blocks 1..20, and no block of it
+      # is confirmed. The parent chain holds the commitment of the batch in the block
+      # 194, which is close to the three confirmations.
+      #
+      # The three events point to the rollup blocks 5, 10 and 20. The test before uses
+      # the same three blocks. But in this test the maximum range of one `eth_getLogs`
+      # request is three blocks. Thus the discovery reads a lookup range in several
+      # chunks.
+      #
+      # The lookup range of the upper confirmation is 194..199. The newest chunk of
+      # this range is 197..199, and this chunk holds the confirmation of the block
+      # 10. Thus the discovery stops at this chunk. It does not read the chunk
+      # 194..196, which holds the confirmation of the block 5.
+      #
+      # The list of the requested ranges shows this result. The discovery reads one
+      # chunk for each of the three confirmations.
+      test "stops at the newest chunk which holds an earlier confirmation", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        batch = seed_batch(@rollup_first_block, 20, @recent_commitment_l1_block)
+
+        lowest_confirmation_transaction_hash = to_string(transaction_hash())
+        lower_confirmation_transaction_hash = to_string(transaction_hash())
+        upper_confirmation_transaction_hash = to_string(transaction_hash())
+
+        lowest_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 5),
+            lowest_confirmation_transaction_hash,
+            @lowest_confirmation_l1_block
+          )
+
+        lower_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 10),
+            lower_confirmation_transaction_hash,
+            @lower_confirmation_l1_block
+          )
+
+        upper_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 20),
+            upper_confirmation_transaction_hash,
+            @confirmation_l1_block
+          )
+
+        expect_discovery_of(
+          [lowest_confirmation_log, lower_confirmation_log, upper_confirmation_log],
+          %{
+            # The lookup range of the lowest confirmation is 194..195, which is one
+            # chunk. This chunk holds no earlier confirmation.
+            {194, 195} => [],
+            # The lookup range of the lower confirmation is 194..197. The newest
+            # chunk of this range holds the lowest confirmation. Thus the discovery
+            # stops.
+            {195, 197} => [lowest_confirmation_log],
+            # The lookup range of the upper confirmation is 194..199. The newest
+            # chunk of this range holds the lower confirmation. Thus the discovery
+            # stops.
+            {197, 199} => [lower_confirmation_log]
+          }
+        )
+
+        assert :ok == discover(json_rpc_named_arguments, @short_logs_block_range)
+
+        # The discovery reads no older chunk of a lookup range. The list holds no
+        # chunk 194..196 of the upper confirmation, and that chunk holds the lowest
+        # confirmation.
+        assert drain_get_logs_ranges() == [
+                 {@discovery_l1_start_block, @discovery_l1_end_block},
+                 {194, 195},
+                 {195, 197},
+                 {197, 199}
+               ]
+
+        lowest_confirmation = Repo.get_by!(LifecycleTransaction, hash: lowest_confirmation_transaction_hash)
+        lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation_transaction_hash)
+        upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation_transaction_hash)
+
+        assert confirmed_blocks(lowest_confirmation) == Enum.to_list(@rollup_first_block..5)
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(6..10)
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(11..20)
+        assert unconfirmed_blocks() == []
+      end
+    end
+
     # Runs the discovery over the parent chain range holding the confirmation.
     defp discover(json_rpc_named_arguments, logs_block_range \\ @logs_block_range) do
       Discovery.perform(
@@ -1303,6 +1507,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     end
 
     # The timestamp of a parent chain block which holds a confirmation.
+    defp l1_block_timestamp(@lowest_confirmation_l1_block), do: @lowest_confirmation_l1_timestamp
     defp l1_block_timestamp(@lower_confirmation_l1_block), do: @lower_confirmation_l1_timestamp
     defp l1_block_timestamp(@confirmation_l1_block), do: @confirmation_l1_timestamp
 
