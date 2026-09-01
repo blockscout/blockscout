@@ -111,6 +111,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     #
     # A test which runs no branch of its own carries a remark. The remark names what
     # the test holds and no other test holds.
+    #
+    # Some scenarios show a defect of the discovery. The test of such a scenario holds
+    # the correct result. It carries the tag `@tag :skip` and a line with the name of
+    # the defect. Thus the output of the run shows the test as skipped. The correction
+    # of the defect removes the tag.
 
     # A `SendRootUpdated` event on the parent chain confirms one rollup block. The
     # event also confirms all rollup blocks below that block, down to the block of
@@ -808,6 +813,158 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert confirmed_blocks(lower_confirmation) == Enum.to_list(@rollup_first_block..5)
         assert confirmed_blocks(upper_confirmation) == Enum.to_list(6..15)
         assert unconfirmed_blocks() == Enum.to_list(16..20)
+      end
+
+      # Both events are new, and both events are in the same parent chain block. One
+      # parent chain block can hold two transactions which confirm a node. Then the
+      # parent chain gives this state.
+      #
+      # The database has one batch with the rollup blocks 1..20. No block of it is
+      # confirmed. The lower event points to the rollup block 10. The upper event
+      # points to the rollup block 20.
+      #
+      # The lower confirmation must cover the blocks 1..10, and the upper
+      # confirmation must cover the blocks 11..20.
+      #
+      # The discovery gives the blocks 1..20 to the upper confirmation. The lookup
+      # range of a confirmation ends one block before the parent chain block of that
+      # confirmation. Thus the lookup range of the upper confirmation holds no log of
+      # the lower confirmation. The walk goes down to the first block of the batch.
+      # Each of the two confirmations then holds the rollup blocks 1..10. One import
+      # gets two rows of each block of 1..10, and the database stops the import with a
+      # cardinality violation.
+      #
+      # A correction of this defect can change the lookup ranges of the run. Then this
+      # test needs other ranges in its mock.
+      #
+      # Defect: two new confirmations in the same parent chain block.
+      @tag :skip
+      test "splits one batch between the two confirmations of the same parent chain block", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        batch = seed_batch(@rollup_first_block, 20, @commitment_l1_block)
+
+        lower_confirmation_transaction_hash = to_string(transaction_hash())
+        upper_confirmation_transaction_hash = to_string(transaction_hash())
+
+        lower_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 10),
+            lower_confirmation_transaction_hash,
+            @confirmation_l1_block
+          )
+
+        upper_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 20),
+            upper_confirmation_transaction_hash,
+            @confirmation_l1_block,
+            log_index: 1,
+            transaction_index: 1
+          )
+
+        expect_discovery_of(
+          [lower_confirmation_log, upper_confirmation_log],
+          %{
+            # The block of the two events is outside this range. Thus neither
+            # confirmation finds an earlier confirmation.
+            {@commitment_l1_block, @confirmation_l1_block - 1} => []
+          },
+          # Both confirmations have the same lookup range, and the cache of the logs
+          # is empty at the start of each confirmation. Thus the discovery reads this
+          # range two times.
+          1
+        )
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        # The two events give one entry of the request for the timestamps.
+        assert drain_block_number_batches() == [[@confirmation_l1_block]]
+
+        lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation_transaction_hash)
+        upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation_transaction_hash)
+
+        assert lower_confirmation.id != upper_confirmation.id
+        assert lower_confirmation.block_number == @confirmation_l1_block
+        assert upper_confirmation.block_number == @confirmation_l1_block
+
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(@rollup_first_block..10)
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(11..20)
+        assert unconfirmed_blocks() == []
+      end
+
+      # Both events are new, and both events are in the same parent chain
+      # transaction. One transaction can call the outbox two times. Then the parent
+      # chain gives this state. The scenario of two events in the same parent chain
+      # block is more wide. The two events of this test also have the same transaction
+      # hash.
+      #
+      # The database has one batch with the rollup blocks 1..20. No block of it is
+      # confirmed. The lower event points to the rollup block 10. The upper event
+      # points to the rollup block 20.
+      #
+      # The database holds one confirmation per parent chain transaction. Thus the two
+      # events must give one confirmation, and that confirmation must hold the rollup
+      # blocks 1..20.
+      #
+      # The discovery examines the two events one after another. It finds no earlier
+      # confirmation for each of the two events. The lookup range ends one block
+      # before the parent chain block of the events. Thus the lower event gives the
+      # blocks 1..10, and the upper event gives the blocks 1..20. One import gets two
+      # rows of each block of 1..10, and the database stops the import with a
+      # cardinality violation. The two rows of a block hold the same confirmation.
+      #
+      # A correction of this defect can change the lookup ranges of the run. Then this
+      # test needs other ranges in its mock.
+      #
+      # Defect: two new confirmations in the same parent chain transaction.
+      @tag :skip
+      test "gives all rollup blocks to one confirmation when both events are in the same transaction", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        batch = seed_batch(@rollup_first_block, 20, @commitment_l1_block)
+
+        confirmation_transaction_hash = to_string(transaction_hash())
+
+        lower_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 10),
+            confirmation_transaction_hash,
+            @confirmation_l1_block
+          )
+
+        upper_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 20),
+            confirmation_transaction_hash,
+            @confirmation_l1_block,
+            log_index: 1
+          )
+
+        expect_discovery_of(
+          [lower_confirmation_log, upper_confirmation_log],
+          %{
+            # The block of the two events is outside this range. Thus the range holds
+            # no earlier confirmation.
+            {@commitment_l1_block, @confirmation_l1_block - 1} => []
+          },
+          # The discovery examines the rollup blocks of each event separately, and the
+          # cache of the logs is empty at the start of each event. Thus the discovery
+          # reads this range two times.
+          1
+        )
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        # The two events give one entry of the request for the timestamps.
+        assert drain_block_number_batches() == [[@confirmation_l1_block]]
+
+        confirmation = Repo.get_by!(LifecycleTransaction, hash: confirmation_transaction_hash)
+        assert confirmation.block_number == @confirmation_l1_block
+        assert DateTime.to_unix(confirmation.timestamp) == @confirmation_l1_timestamp
+
+        assert confirmed_blocks(confirmation) == Enum.to_list(@rollup_first_block..20)
+        assert unconfirmed_blocks() == []
       end
     end
 
@@ -1567,7 +1724,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     #
     # `extra_ranges` holds the responses for the parent chain ranges which the
     # batch walk reads afterwards.
-    defp expect_discovery_of(logs, extra_ranges \\ %{}) do
+    #
+    # The mock expects one `eth_getLogs` request per range. If a run reads one range
+    # two times, `additional_get_logs_calls` gives the number of the additional
+    # requests.
+    defp expect_discovery_of(logs, extra_ranges \\ %{}, additional_get_logs_calls \\ 0) do
       l1_blocks_to_timestamps =
         Map.new(logs, fn log ->
           l1_block_number = quantity_to_integer(log["blockNumber"])
@@ -1575,9 +1736,12 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
           {l1_block_number, l1_block_timestamp(l1_block_number)}
         end)
 
+      get_logs_responses = Map.put(extra_ranges, {@discovery_l1_start_block, @discovery_l1_end_block}, logs)
+
       expect_rpc(
-        Map.put(extra_ranges, {@discovery_l1_start_block, @discovery_l1_end_block}, logs),
-        l1_blocks_to_timestamps
+        get_logs_responses,
+        l1_blocks_to_timestamps,
+        map_size(get_logs_responses) + additional_get_logs_calls
       )
     end
 
@@ -1599,13 +1763,16 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     #
     # A parent chain range absent from `get_logs_responses` raises `KeyError`, so
     # an unexpected range fails the test loudly instead of being silently answered
-    # with no logs. Every `eth_getLogs` range is also sent to the calling test
+    # with no logs. `get_logs_calls` gives the number of the `eth_getLogs` requests of
+    # the run. If the run reads each range one time, this number is equal to the
+    # number of the ranges. Every `eth_getLogs` range is also sent to the calling test
     # process - the whole call path runs synchronously in it - to be drained with
     # `drain_get_logs_ranges/0` afterwards.
-    defp expect_rpc(get_logs_responses, l1_blocks_to_timestamps) do
+    defp expect_rpc(get_logs_responses, l1_blocks_to_timestamps, get_logs_calls \\ nil) do
       test_pid = self()
+      get_logs_calls = get_logs_calls || map_size(get_logs_responses)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, map_size(get_logs_responses) + 1, fn
+      expect(EthereumJSONRPC.Mox, :json_rpc, get_logs_calls + 1, fn
         %{
           method: "eth_getLogs",
           params: [
