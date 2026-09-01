@@ -1187,7 +1187,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
           build_send_root_updated_log(
             to_string(block_hash()),
             to_string(second_confirmation.hash),
-            @confirmation_l1_block
+            @confirmation_l1_block,
+            log_index: 1,
+            transaction_index: 1
           )
         ])
 
@@ -1250,10 +1252,13 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # blocks 6..20. Then the upper confirmation takes the blocks of the lower
       # confirmation again, and the database operation fails.
       #
+      # The lookup response of the upper confirmation intentionally puts the newer
+      # confirmation first. An `eth_getLogs` response usually puts the older
+      # confirmation first.
+      #
       # `fetch_and_sort_confirmations_logs/4` adds each block number to the front of
-      # its list. Thus the list of the parent chain logs is already descending before
-      # `Enum.sort/2` reads it. A removed sort does not break this test. A sort in
-      # ascending order breaks it.
+      # its list. It puts the lower block number first. Thus `Enum.sort/2` must put
+      # the higher block number first again.
       test "takes the higher of the two earlier confirmations which are in one chunk", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -1294,9 +1299,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
             # confirmation.
             {@commitment_l1_block, @lower_confirmation_l1_block - 1} => [lowest_confirmation_log],
             # The lookup range of the upper confirmation holds the two other
-            # confirmations. The parent chain gives the logs from the oldest block to
-            # the newest block.
-            {@commitment_l1_block, @confirmation_l1_block - 1} => [lowest_confirmation_log, lower_confirmation_log]
+            # confirmations. This response puts the newer confirmation first.
+            {@commitment_l1_block, @confirmation_l1_block - 1} => [lower_confirmation_log, lowest_confirmation_log]
           }
         )
 
@@ -1521,13 +1525,14 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # Builds a raw `SendRootUpdated` event log as it arrives from an `eth_getLogs`
     # JSON-RPC response. The hash of the top confirmed rollup block is the third
     # topic; the second topic (the send root) is not used by the discovery.
-    defp build_send_root_updated_log(rollup_block_hash, l1_transaction_hash, l1_block_number) do
+    # `options` assigns distinct positions to logs which share one parent chain block.
+    defp build_send_root_updated_log(rollup_block_hash, l1_transaction_hash, l1_block_number, options \\ []) do
       %{
         "address" => @outbox_address,
         "blockHash" => "0x" <> String.duplicate("0", 64),
         "blockNumber" => integer_to_quantity(l1_block_number),
         "data" => "0x",
-        "logIndex" => "0x0",
+        "logIndex" => integer_to_quantity(Keyword.get(options, :log_index, 0)),
         "removed" => false,
         "topics" => [
           @send_root_updated_topic,
@@ -1535,7 +1540,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
           rollup_block_hash
         ],
         "transactionHash" => l1_transaction_hash,
-        "transactionIndex" => "0x0"
+        "transactionIndex" => integer_to_quantity(Keyword.get(options, :transaction_index, 0))
       }
     end
 
