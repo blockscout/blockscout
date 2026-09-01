@@ -293,9 +293,10 @@ defmodule Explorer.Chain.Address.Counters do
         address_to_validation_count(address.hash, options)
       end)
 
-    Task.start_link(fn ->
-      transactions_count(address)
-    end)
+    # Transactions count calculation is temporarily disabled due to its DB cost.
+    # Task.start_link(fn ->
+    #   transactions_count(address)
+    # end)
 
     # Token transfers count calculation is temporarily disabled due to its DB cost.
     # Task.start_link(fn ->
