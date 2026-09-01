@@ -432,15 +432,15 @@ config :explorer, Explorer.Chain.Cache.OptimismFinalizationPeriod, enabled: Conf
 
 config :explorer, Explorer.Chain.Cache.Counters.AddressCounters,
   ttl: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_COUNTERS_TTL", "2h"),
-  max_dirty_markers: ConfigHelper.parse_integer_env_var("ADDRESS_COUNTERS_MAX_DIRTY_MARKERS", 1_000_000)
+  max_dirty_markers: ConfigHelper.parse_integer_env_var("CACHE_ADDRESS_COUNTERS_MAX_DIRTY_MARKERS", 1_000_000)
 
 config :explorer, Explorer.Chain.Cache.Counters.AddressCountersConsolidator,
-  enabled: !ConfigHelper.parse_bool_env_var("ADDRESS_COUNTERS_CONSOLIDATION_DISABLED"),
-  interval: ConfigHelper.parse_time_env_var("ADDRESS_COUNTERS_CONSOLIDATION_INTERVAL", "10m"),
-  batch_size: ConfigHelper.parse_integer_env_var("ADDRESS_COUNTERS_CONSOLIDATION_BATCH_SIZE", 100),
-  concurrency: ConfigHelper.parse_integer_env_var("ADDRESS_COUNTERS_CONSOLIDATION_CONCURRENCY", 4),
-  safe_block_lag: ConfigHelper.parse_integer_env_var("ADDRESS_COUNTERS_CONSOLIDATION_SAFE_BLOCK_LAG", 12),
-  query_timeout: ConfigHelper.parse_time_env_var("ADDRESS_COUNTERS_CONSOLIDATION_QUERY_TIMEOUT", "5m")
+  enabled: !ConfigHelper.parse_bool_env_var("CACHE_ADDRESS_COUNTERS_CONSOLIDATION_DISABLED"),
+  interval: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_COUNTERS_CONSOLIDATION_INTERVAL", "10m"),
+  batch_size: ConfigHelper.parse_integer_env_var("CACHE_ADDRESS_COUNTERS_CONSOLIDATION_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("CACHE_ADDRESS_COUNTERS_CONSOLIDATION_CONCURRENCY", 4),
+  safe_block_lag: ConfigHelper.parse_integer_env_var("CACHE_ADDRESS_COUNTERS_CONSOLIDATION_SAFE_BLOCK_LAG", 12),
+  query_timeout: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_COUNTERS_CONSOLIDATION_QUERY_TIMEOUT", "5m")
 
 config :explorer, Explorer.Chain.Cache.Counters.TokenHoldersCount,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_TOKEN_HOLDERS_COUNTER_PERIOD", "1h")
