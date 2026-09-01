@@ -20,5 +20,9 @@ defmodule Explorer.Chain.BridgedTokenTest do
     test "returns nil for a 0x response with non-hex payload instead of raising" do
       assert BridgedToken.decode_contract_integer_response("0xzz") == nil
     end
+
+    test "returns nil for a partially-hex response with trailing garbage instead of accepting the valid-looking prefix" do
+      assert BridgedToken.decode_contract_integer_response("0x64garbage") == nil
+    end
   end
 end
