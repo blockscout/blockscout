@@ -464,6 +464,20 @@ defmodule Explorer.Chain.BridgedToken do
     end
   end
 
+  # `foreign_chain_id` comes from `decode_contract_integer_response/1`, which
+  # returns `nil` when the eth_call response is malformed or empty (e.g. the
+  # RPC node returned "0x" or a non-hex/partially-hex payload). `foreign_chain_id`
+  # is a `field(:foreign_chain_id, :decimal)` column with a `null: false` DB
+  # constraint (see the `bridged_tokens` migration), and the insert below
+  # bypasses changeset validation, so passing `nil` through would not skip
+  # the insert — it would crash with a Postgrex NOT NULL violation instead.
+  # Skip the insert entirely rather than moving the crash downstream.
+  defp insert_bridged_token_metadata(_token_address_hash, %{foreign_chain_id: nil}) do
+    Logger.debug("skipping bridged token metadata insert: foreign_chain_id could not be decoded")
+
+    :ok
+  end
+
   defp insert_bridged_token_metadata(token_address_hash, %{
          foreign_chain_id: foreign_chain_id,
          foreign_token_address_hash: foreign_token_address_hash,
