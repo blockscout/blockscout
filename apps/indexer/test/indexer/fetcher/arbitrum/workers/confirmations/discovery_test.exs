@@ -27,6 +27,13 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     @confirmation_l1_block 200
     @confirmation_l1_timestamp 1_700_000_000
 
+    # One parent chain range can hold two `SendRootUpdated` events. The lower
+    # confirmation confirms the lower rollup blocks. Thus the parent chain holds it
+    # in an older block than the upper confirmation. The upper confirmation is the
+    # confirmation which every test of a single event uses.
+    @lower_confirmation_l1_block 198
+    @lower_confirmation_l1_timestamp @confirmation_l1_timestamp - 24
+
     # Wide enough to keep every parent chain lookup of the batch walk within one
     # `eth_getLogs` request. One test passes the narrow range instead, to make the
     # discovery read the same lookups in several chunks.
@@ -518,6 +525,441 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       end
     end
 
+    # A parent chain range can hold more than one `SendRootUpdated` event. The
+    # discovery reads all events of the range in one run. Then it writes the result
+    # of the run into the database in one operation.
+    #
+    # Thus the discovery works on the state of the database from the start of the
+    # run. It processes the confirmations one after another, from the lowest rollup
+    # block to the highest one. Each test of this group calls the first of two
+    # confirmations the lower confirmation, and the second one the upper
+    # confirmation. When the discovery processes the upper confirmation, the
+    # database still shows the rollup blocks of the lower confirmation as
+    # unconfirmed.
+    #
+    # For this reason the parent chain, and not the database, gives the lowest
+    # block of the upper confirmation. The lookup range of the upper confirmation
+    # ends one block before that confirmation. Thus the range holds the log of the
+    # lower confirmation. Each test of this group makes sure that the two
+    # confirmations do not take the same rollup blocks.
+    describe "perform/5 with two new confirmations" do
+      # The database has one batch with the rollup blocks 1..20. No block of it is
+      # confirmed.
+      #
+      # The lower event points to the rollup block 10. The upper event points to
+      # the rollup block 20. Both blocks are in the same batch.
+      #
+      # The lower confirmation covers the blocks 1..10, because the batch starts at
+      # the lowest indexed rollup block. The upper confirmation finds the log of the
+      # lower confirmation in its own lookup range. That log points to the block 10,
+      # which is in the middle of the batch. As a result, the upper confirmation
+      # covers the blocks 11..20.
+      #
+      # The highest confirmed block of the run is the block 20. Thus every L2-to-L1
+      # message up to that block becomes `:confirmed`. A message between the two
+      # confirmations becomes `:confirmed` as well.
+      test "splits one batch between the two confirmations", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        batch = seed_batch(@rollup_first_block, 20, @commitment_l1_block)
+
+        lower_confirmation_transaction_hash = to_string(transaction_hash())
+        upper_confirmation_transaction_hash = to_string(transaction_hash())
+
+        lower_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 10),
+            lower_confirmation_transaction_hash,
+            @lower_confirmation_l1_block
+          )
+
+        message_below_lower_confirmation = insert_sent_message_from_l2(5)
+        message_between_confirmations = insert_sent_message_from_l2(15)
+        message_above_upper_confirmation = insert_sent_message_from_l2(25)
+
+        expect_discovery_of(
+          [
+            {rollup_block_hash(batch, 10), lower_confirmation_transaction_hash, @lower_confirmation_l1_block},
+            {rollup_block_hash(batch, 20), upper_confirmation_transaction_hash, @confirmation_l1_block}
+          ],
+          %{
+            # The range of the lower confirmation ends before the block of that
+            # confirmation. Thus the range holds no confirmation.
+            {@commitment_l1_block, @lower_confirmation_l1_block - 1} => [],
+            # The range of the upper confirmation ends after the block of the
+            # lower confirmation. Thus the range holds the log of that
+            # confirmation.
+            {@commitment_l1_block, @confirmation_l1_block - 1} => [lower_confirmation_log]
+          }
+        )
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        # The discovery examines the lower confirmation first. Thus the shorter
+        # range comes first. The two ranges are different. Thus the discovery
+        # cannot use the kept logs of the first range for the second range.
+        assert drain_get_logs_ranges() == [
+                 {@discovery_l1_start_block, @discovery_l1_end_block},
+                 {@commitment_l1_block, @lower_confirmation_l1_block - 1},
+                 {@commitment_l1_block, @confirmation_l1_block - 1}
+               ]
+
+        lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation_transaction_hash)
+        upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation_transaction_hash)
+
+        assert lower_confirmation.id != upper_confirmation.id
+        assert lower_confirmation.block_number == @lower_confirmation_l1_block
+        assert DateTime.to_unix(lower_confirmation.timestamp) == @lower_confirmation_l1_timestamp
+        assert upper_confirmation.block_number == @confirmation_l1_block
+        assert DateTime.to_unix(upper_confirmation.timestamp) == @confirmation_l1_timestamp
+
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(@rollup_first_block..10)
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(11..20)
+
+        assert message_status(message_below_lower_confirmation) == :confirmed
+        assert message_status(message_between_confirmations) == :confirmed
+        assert message_status(message_above_upper_confirmation) == :sent
+      end
+
+      # The database has two batches: the blocks 1..10 and the blocks 11..20. No
+      # block is confirmed.
+      #
+      # The lower event points to the rollup block 10, which is the last block of
+      # the first batch. The upper event points to the rollup block 20, which is the
+      # last block of the second batch.
+      #
+      # The lower confirmation covers the full first batch. The upper confirmation
+      # finds no confirmation within the blocks of the second batch. Thus it moves
+      # one batch down. In that batch the database still shows the blocks 1..10 as
+      # unconfirmed. But the log of the lower confirmation points to the last block
+      # of that batch. Thus the walk stops, and the upper confirmation covers the
+      # blocks 11..20 only.
+      test "gives a full batch to each confirmation when both are aligned with a batch boundary", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        previous_batch = seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
+        batch = seed_batch(11, 20, @commitment_l1_block)
+
+        lower_confirmation_transaction_hash = to_string(transaction_hash())
+        upper_confirmation_transaction_hash = to_string(transaction_hash())
+
+        lower_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(previous_batch, 10),
+            lower_confirmation_transaction_hash,
+            @lower_confirmation_l1_block
+          )
+
+        expect_discovery_of(
+          [
+            {rollup_block_hash(previous_batch, 10), lower_confirmation_transaction_hash, @lower_confirmation_l1_block},
+            {rollup_block_hash(batch, 20), upper_confirmation_transaction_hash, @confirmation_l1_block}
+          ],
+          %{
+            # The lower confirmation reads the range of the first batch.
+            {@previous_commitment_l1_block, @lower_confirmation_l1_block - 1} => [],
+            # The upper confirmation reads the range of the second batch, then
+            # the range of the first batch. The log of the lower confirmation
+            # points to a rollup block with a number less than the first block of
+            # the second batch. Thus the walk continues to the first batch.
+            {@commitment_l1_block, @confirmation_l1_block - 1} => [lower_confirmation_log],
+            {@previous_commitment_l1_block, @confirmation_l1_block - 1} => [lower_confirmation_log]
+          }
+        )
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        assert drain_get_logs_ranges() == [
+                 {@discovery_l1_start_block, @discovery_l1_end_block},
+                 {@previous_commitment_l1_block, @lower_confirmation_l1_block - 1},
+                 {@commitment_l1_block, @confirmation_l1_block - 1},
+                 {@previous_commitment_l1_block, @confirmation_l1_block - 1}
+               ]
+
+        lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation_transaction_hash)
+        upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation_transaction_hash)
+
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(@rollup_first_block..10)
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(11..20)
+        assert unconfirmed_blocks() == []
+      end
+
+      # The database has two batches: the blocks 1..10 and the blocks 11..20. No
+      # block is confirmed.
+      #
+      # No event is aligned with a boundary of a batch. The lower event points to
+      # the rollup block 5. The upper event points to the rollup block 15.
+      #
+      # The lower confirmation covers the blocks 1..5. The upper confirmation takes
+      # the blocks 11..15 from the second batch. Then it moves one batch down,
+      # because the block 11 is the first block of that batch. In the first batch
+      # the log of the lower confirmation points to the block 5. As a result, the
+      # upper confirmation covers the blocks 6..15, and the blocks 16..20 wait for
+      # the next confirmation.
+      test "spans the previous batch down to the other confirmation when no confirmation is aligned with a batch", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        previous_batch = seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
+        batch = seed_batch(11, 20, @commitment_l1_block)
+
+        lower_confirmation_transaction_hash = to_string(transaction_hash())
+        upper_confirmation_transaction_hash = to_string(transaction_hash())
+
+        lower_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(previous_batch, 5),
+            lower_confirmation_transaction_hash,
+            @lower_confirmation_l1_block
+          )
+
+        expect_discovery_of(
+          [
+            {rollup_block_hash(previous_batch, 5), lower_confirmation_transaction_hash, @lower_confirmation_l1_block},
+            {rollup_block_hash(batch, 15), upper_confirmation_transaction_hash, @confirmation_l1_block}
+          ],
+          %{
+            {@previous_commitment_l1_block, @lower_confirmation_l1_block - 1} => [],
+            {@commitment_l1_block, @confirmation_l1_block - 1} => [lower_confirmation_log],
+            {@previous_commitment_l1_block, @confirmation_l1_block - 1} => [lower_confirmation_log]
+          }
+        )
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        assert drain_get_logs_ranges() == [
+                 {@discovery_l1_start_block, @discovery_l1_end_block},
+                 {@previous_commitment_l1_block, @lower_confirmation_l1_block - 1},
+                 {@commitment_l1_block, @confirmation_l1_block - 1},
+                 {@previous_commitment_l1_block, @confirmation_l1_block - 1}
+               ]
+
+        lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation_transaction_hash)
+        upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation_transaction_hash)
+
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(@rollup_first_block..5)
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(6..15)
+        assert unconfirmed_blocks() == Enum.to_list(16..20)
+      end
+    end
+
+    # A parent chain range can hold one new confirmation together with a
+    # confirmation which the database knows already. The discovery examines the
+    # rollup blocks of the new confirmation only. For the known confirmation it
+    # compares the parent chain block number and the timestamp with the values of
+    # the event. If the values are different, the discovery writes the known
+    # transaction again.
+    #
+    # Both results go into the database in the same operation.
+    describe "perform/5 with a new confirmation and an already known one" do
+      # The database has two batches: the blocks 1..10 and the blocks 11..20. The
+      # known confirmation holds the blocks 1..10 already. The parent chain block
+      # number and the timestamp of that confirmation are equal to the values in
+      # its event.
+      #
+      # The new event points to the rollup block 20. The discovery finds no
+      # confirmation within the blocks of the second batch. Thus it moves one batch
+      # down. In the first batch the database shows that all blocks are confirmed
+      # already. Thus the walk stops, and the discovery requests no logs for the
+      # range of that batch.
+      #
+      # The known confirmation shows no difference. Thus the discovery keeps it as
+      # it is. The result is `:ok`, because the discovery handles both events.
+      test "confirms the new blocks and keeps the known confirmation which did not move", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        previous_batch = seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
+        batch = seed_batch(11, 20, @commitment_l1_block)
+
+        known_confirmation = insert_confirmation(@lower_confirmation_l1_block, @lower_confirmation_l1_timestamp)
+        mark_confirmed(@rollup_first_block..10, known_confirmation)
+
+        known_confirmation_transaction_hash = to_string(known_confirmation.hash)
+        new_confirmation_transaction_hash = to_string(transaction_hash())
+
+        known_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(previous_batch, 10),
+            known_confirmation_transaction_hash,
+            @lower_confirmation_l1_block
+          )
+
+        expect_discovery_of(
+          [
+            {rollup_block_hash(previous_batch, 10), known_confirmation_transaction_hash, @lower_confirmation_l1_block},
+            {rollup_block_hash(batch, 20), new_confirmation_transaction_hash, @confirmation_l1_block}
+          ],
+          %{{@commitment_l1_block, @confirmation_l1_block - 1} => [known_confirmation_log]}
+        )
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        # The database alone stops the walk at the first batch. Thus the list
+        # holds no range of that batch.
+        assert drain_get_logs_ranges() == [
+                 {@discovery_l1_start_block, @discovery_l1_end_block},
+                 {@commitment_l1_block, @confirmation_l1_block - 1}
+               ]
+
+        # The discovery asks for the timestamp of the block of each event in one
+        # request.
+        assert drain_block_number_batches() == [[@lower_confirmation_l1_block, @confirmation_l1_block]]
+
+        new_confirmation = Repo.get_by!(LifecycleTransaction, hash: new_confirmation_transaction_hash)
+        assert confirmed_blocks(new_confirmation) == Enum.to_list(11..20)
+
+        kept_confirmation = Repo.get_by!(LifecycleTransaction, hash: known_confirmation.hash)
+        assert kept_confirmation.id == known_confirmation.id
+        assert kept_confirmation.block_number == @lower_confirmation_l1_block
+        assert DateTime.compare(kept_confirmation.timestamp, known_confirmation.timestamp) == :eq
+        assert confirmed_blocks(kept_confirmation) == Enum.to_list(@rollup_first_block..10)
+
+        assert unconfirmed_blocks() == []
+      end
+
+      # The database has the same two batches, and the known confirmation holds the
+      # blocks 1..10 already. A re-org moved that confirmation. The database holds
+      # the parent chain block 190, but the event of the confirmation is in the
+      # block 198.
+      #
+      # Thus the discovery writes two changes in one operation. It puts the new
+      # parent chain block and the new timestamp into the known transaction. It
+      # also links the blocks 11..20 to the new confirmation. The known transaction
+      # keeps its identifier and its rollup blocks.
+      test "confirms the new blocks and moves the known confirmation to its new parent chain block", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        previous_batch = seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
+        batch = seed_batch(11, 20, @commitment_l1_block)
+
+        known_confirmation = insert_confirmation(@confirmation_l1_block - 10)
+        mark_confirmed(@rollup_first_block..10, known_confirmation)
+
+        known_confirmation_transaction_hash = to_string(known_confirmation.hash)
+        new_confirmation_transaction_hash = to_string(transaction_hash())
+
+        known_confirmation_log =
+          build_send_root_updated_log(
+            rollup_block_hash(previous_batch, 10),
+            known_confirmation_transaction_hash,
+            @lower_confirmation_l1_block
+          )
+
+        expect_discovery_of(
+          [
+            {rollup_block_hash(previous_batch, 10), known_confirmation_transaction_hash, @lower_confirmation_l1_block},
+            {rollup_block_hash(batch, 20), new_confirmation_transaction_hash, @confirmation_l1_block}
+          ],
+          %{{@commitment_l1_block, @confirmation_l1_block - 1} => [known_confirmation_log]}
+        )
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        assert drain_get_logs_ranges() == [
+                 {@discovery_l1_start_block, @discovery_l1_end_block},
+                 {@commitment_l1_block, @confirmation_l1_block - 1}
+               ]
+
+        new_confirmation = Repo.get_by!(LifecycleTransaction, hash: new_confirmation_transaction_hash)
+        assert new_confirmation.block_number == @confirmation_l1_block
+        assert confirmed_blocks(new_confirmation) == Enum.to_list(11..20)
+
+        updated_confirmation = Repo.get_by!(LifecycleTransaction, hash: known_confirmation.hash)
+        assert updated_confirmation.id == known_confirmation.id
+        assert updated_confirmation.block_number == @lower_confirmation_l1_block
+        assert DateTime.to_unix(updated_confirmation.timestamp) == @lower_confirmation_l1_timestamp
+        assert updated_confirmation.status == known_confirmation.status
+        assert confirmed_blocks(updated_confirmation) == Enum.to_list(@rollup_first_block..10)
+      end
+    end
+
+    # The database can know both confirmations of the range already. Then the
+    # discovery examines no rollup block, and it reads no more logs. It compares
+    # the parent chain block number and the timestamp of each known transaction
+    # with the values of its event. It writes only the transactions which show a
+    # difference.
+    describe "perform/5 with two already known confirmations" do
+      # The database has one batch with the rollup blocks 1..10, and no block of it
+      # is confirmed. Both confirmations of the range are in the database.
+      #
+      # A re-org moved the first confirmation. The database holds the parent chain
+      # block 190, but the event of the confirmation is in the block 198. The
+      # second confirmation shows the same values as its event.
+      #
+      # Thus the discovery writes the first transaction only. The second transaction
+      # and all rollup blocks stay as they are.
+      test "updates the confirmation which moved and keeps the other one", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        seed_batch(@rollup_first_block, 10, @commitment_l1_block)
+
+        moved_confirmation = insert_confirmation(@confirmation_l1_block - 10)
+        kept_confirmation = insert_confirmation(@confirmation_l1_block, @confirmation_l1_timestamp)
+
+        expect_discovery_of([
+          {to_string(block_hash()), to_string(moved_confirmation.hash), @lower_confirmation_l1_block},
+          {to_string(block_hash()), to_string(kept_confirmation.hash), @confirmation_l1_block}
+        ])
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        # The discovery looks for no earlier confirmation, because it examines no
+        # rollup block.
+        assert drain_get_logs_ranges() == [{@discovery_l1_start_block, @discovery_l1_end_block}]
+        assert drain_block_number_batches() == [[@lower_confirmation_l1_block, @confirmation_l1_block]]
+
+        updated_confirmation = Repo.get_by!(LifecycleTransaction, hash: moved_confirmation.hash)
+        assert updated_confirmation.id == moved_confirmation.id
+        assert updated_confirmation.block_number == @lower_confirmation_l1_block
+        assert DateTime.to_unix(updated_confirmation.timestamp) == @lower_confirmation_l1_timestamp
+
+        untouched_confirmation = Repo.get_by!(LifecycleTransaction, hash: kept_confirmation.hash)
+        assert untouched_confirmation.id == kept_confirmation.id
+        assert untouched_confirmation.block_number == @confirmation_l1_block
+        assert DateTime.compare(untouched_confirmation.timestamp, kept_confirmation.timestamp) == :eq
+
+        assert unconfirmed_blocks() == Enum.to_list(@rollup_first_block..10)
+      end
+
+      # Both confirmations of the range are in the database, and the values of both
+      # are equal to the values of their events. When the discovery reads the same
+      # parent chain range one more time, it finds this condition.
+      #
+      # The discovery finds no difference. Thus it writes nothing, and the result
+      # is `:ok`.
+      test "leaves both confirmation transactions untouched when nothing changed", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        lower_confirmation = insert_confirmation(@lower_confirmation_l1_block, @lower_confirmation_l1_timestamp)
+        upper_confirmation = insert_confirmation(@confirmation_l1_block, @confirmation_l1_timestamp)
+
+        expect_discovery_of([
+          {to_string(block_hash()), to_string(lower_confirmation.hash), @lower_confirmation_l1_block},
+          {to_string(block_hash()), to_string(upper_confirmation.hash), @confirmation_l1_block}
+        ])
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        assert drain_get_logs_ranges() == [{@discovery_l1_start_block, @discovery_l1_end_block}]
+        assert drain_block_number_batches() == [[@lower_confirmation_l1_block, @confirmation_l1_block]]
+
+        # This test seeds no batch. Thus the database holds the two confirmations
+        # only.
+        assert Repo.aggregate(LifecycleTransaction, :count) == 2
+
+        kept_lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation.hash)
+        assert kept_lower_confirmation.id == lower_confirmation.id
+        assert kept_lower_confirmation.block_number == @lower_confirmation_l1_block
+        assert DateTime.compare(kept_lower_confirmation.timestamp, lower_confirmation.timestamp) == :eq
+        assert kept_lower_confirmation.status == lower_confirmation.status
+
+        kept_upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation.hash)
+        assert kept_upper_confirmation.id == upper_confirmation.id
+        assert kept_upper_confirmation.block_number == @confirmation_l1_block
+        assert DateTime.compare(kept_upper_confirmation.timestamp, upper_confirmation.timestamp) == :eq
+        assert kept_upper_confirmation.status == upper_confirmation.status
+      end
+    end
+
     # Runs the discovery over the parent chain range holding the confirmation.
     defp discover(json_rpc_named_arguments, logs_block_range \\ @logs_block_range) do
       Discovery.perform(
@@ -650,15 +1092,37 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # the responses for the parent chain ranges which the batch walk reads
     # afterwards.
     defp expect_discovery(top_block_hash, confirmation_transaction_hash, extra_ranges \\ %{}) do
-      expect_rpc(
-        Map.put(
-          extra_ranges,
-          {@discovery_l1_start_block, @discovery_l1_end_block},
-          [build_send_root_updated_log(top_block_hash, confirmation_transaction_hash, @confirmation_l1_block)]
-        ),
-        %{@confirmation_l1_block => @confirmation_l1_timestamp}
+      expect_discovery_of(
+        [{top_block_hash, confirmation_transaction_hash, @confirmation_l1_block}],
+        extra_ranges
       )
     end
+
+    # Mocks the RPC calls of one discovery run which reads several
+    # `SendRootUpdated` events. `events` holds one
+    # `{top_block_hash, confirmation_transaction_hash, l1_block_number}` tuple per
+    # event, in the order in which the parent chain holds the events.
+    #
+    # `extra_ranges` holds the responses for the parent chain ranges which the
+    # batch walk reads afterwards.
+    defp expect_discovery_of(events, extra_ranges \\ %{}) do
+      logs =
+        Enum.map(events, fn {top_block_hash, confirmation_transaction_hash, l1_block_number} ->
+          build_send_root_updated_log(top_block_hash, confirmation_transaction_hash, l1_block_number)
+        end)
+
+      l1_blocks_to_timestamps =
+        Map.new(events, fn {_, _, l1_block_number} -> {l1_block_number, l1_block_timestamp(l1_block_number)} end)
+
+      expect_rpc(
+        Map.put(extra_ranges, {@discovery_l1_start_block, @discovery_l1_end_block}, logs),
+        l1_blocks_to_timestamps
+      )
+    end
+
+    # The timestamp of a parent chain block which holds a confirmation.
+    defp l1_block_timestamp(@lower_confirmation_l1_block), do: @lower_confirmation_l1_timestamp
+    defp l1_block_timestamp(@confirmation_l1_block), do: @confirmation_l1_timestamp
 
     # Mocks both request shapes the discovery issues: the single `eth_getLogs`
     # requests (one per scanned parent chain range) and the batched
@@ -699,16 +1163,22 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
           {:ok, Map.fetch!(get_logs_responses, {from_block, to_block})}
 
         requests, _options when is_list(requests) ->
-          responses =
-            Enum.map(requests, fn %{id: id, method: "eth_getBlockByNumber", params: [block_quantity, false]} ->
-              timestamp = Map.fetch!(l1_blocks_to_timestamps, quantity_to_integer(block_quantity))
+          {block_numbers, responses} =
+            requests
+            |> Enum.map(fn %{id: id, method: "eth_getBlockByNumber", params: [block_quantity, false]} ->
+              block_number = quantity_to_integer(block_quantity)
+              timestamp = Map.fetch!(l1_blocks_to_timestamps, block_number)
 
-              %{
-                id: id,
-                jsonrpc: "2.0",
-                result: %{"number" => block_quantity, "timestamp" => integer_to_quantity(timestamp)}
-              }
+              {block_number,
+               %{
+                 id: id,
+                 jsonrpc: "2.0",
+                 result: %{"number" => block_quantity, "timestamp" => integer_to_quantity(timestamp)}
+               }}
             end)
+            |> Enum.unzip()
+
+          send(test_pid, {:eth_get_block_numbers, Enum.sort(block_numbers)})
 
           {:ok, responses}
       end)
@@ -717,6 +1187,18 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     defp drain_get_logs_ranges do
       receive do
         {:eth_get_logs_range, from_block, to_block} -> [{from_block, to_block} | drain_get_logs_ranges()]
+      after
+        0 -> []
+      end
+    end
+
+    # Returns one sorted list of parent chain block numbers per batched
+    # `eth_getBlockByNumber` request. If the number of the confirmations is less
+    # than the chunk size, the discovery asks for the block of each confirmation in
+    # one request.
+    defp drain_block_number_batches do
+      receive do
+        {:eth_get_block_numbers, block_numbers} -> [block_numbers | drain_block_number_batches()]
       after
         0 -> []
       end
