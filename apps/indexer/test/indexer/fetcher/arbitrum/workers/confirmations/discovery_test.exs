@@ -16,6 +16,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
     @outbox_address "0x0b9857ae2d4a3dbe74ffe1d7df045bb7f96e4840"
 
+    # Bound at compile time so that it can be matched in the `eth_getLogs` clause
+    # of the mock: a pattern cannot call a function.
+    @send_root_updated_topic ArbitrumEvents.send_root_updated()
+
     # One call of `perform/5` reads the logs of this parent chain range. The
     # `SendRootUpdated` event of each test is in the parent chain block 200.
     @discovery_l1_start_block 195
@@ -23,9 +27,17 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     @confirmation_l1_block 200
     @confirmation_l1_timestamp 1_700_000_000
 
-    # The parent chain block of an earlier confirmation, if a test has one. This
-    # block is between the commitments of the batches and the confirmation under
-    # discovery. Thus the discovery can find that earlier confirmation.
+    # Wide enough to keep every parent chain lookup of the batch walk within one
+    # `eth_getLogs` request. One test passes the narrow range instead, to make the
+    # discovery read the same lookups in several chunks.
+    @logs_block_range 1000
+    @narrow_logs_block_range 50
+
+    # The parent chain block of a confirmation which happened before the one under
+    # discovery. This block is between the commitments of the batches and the
+    # confirmation under discovery, thus the discovery can find that earlier
+    # confirmation. The test of the re-link also puts a stale link to this block,
+    # for a transaction which the discovery does not find on the parent chain.
     @earlier_confirmation_l1_block 150
 
     # The parent chain blocks of the commitment transactions of the batches. The
@@ -75,31 +87,23 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The discovery also changes the status of the L2-to-L1 messages. A message
       # that was sent in the block 10 or below becomes `:confirmed`. A message from
       # a higher block keeps the status `:sent`.
-      test "confirms every rollup block of the batch and the L2-to-L1 messages below the confirmed block", %{
+      test "confirms every rollup block of the batch and the L2-to-L1 messages up to the confirmed block", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
         batch = seed_batch(@rollup_first_block, 10, @commitment_l1_block)
 
         confirmation_transaction_hash = to_string(transaction_hash())
         confirmed_message = insert_sent_message_from_l2(9)
+        # The top confirmed block belongs to the confirmation as well, thus a
+        # message sent in that very block must change its status too.
+        boundary_message = insert_sent_message_from_l2(10)
         not_yet_confirmed_message = insert_sent_message_from_l2(11)
 
-        expect_rpc(
-          %{
-            # The range of the discovery, which contains the confirmation log.
-            {@discovery_l1_start_block, @discovery_l1_end_block} => [
-              build_send_root_updated_log(
-                rollup_block_hash(batch, 10),
-                confirmation_transaction_hash,
-                @confirmation_l1_block
-              )
-            ],
-            # The range between the commitment of the batch and the confirmation.
-            # It contains no earlier confirmation.
-            {@commitment_l1_block, @confirmation_l1_block - 1} => []
-          },
-          %{@confirmation_l1_block => @confirmation_l1_timestamp}
-        )
+        expect_discovery(rollup_block_hash(batch, 10), confirmation_transaction_hash, %{
+          # The range between the commitment of the batch and the confirmation.
+          # It contains no earlier confirmation.
+          {@commitment_l1_block, @confirmation_l1_block - 1} => []
+        })
 
         assert :ok == discover(json_rpc_named_arguments)
 
@@ -117,7 +121,38 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         # The full batch is linked to that lifecycle transaction.
         assert confirmed_blocks(confirmation) == Enum.to_list(@rollup_first_block..10)
         assert message_status(confirmed_message) == :confirmed
+        assert message_status(boundary_message) == :confirmed
         assert message_status(not_yet_confirmed_message) == :sent
+      end
+
+      # The database has one batch with the rollup blocks 1..10. No block of it is
+      # confirmed.
+      #
+      # The event points to the rollup block 7, which is in the middle of the batch:
+      # a confirmation is not always aligned with the boundary of a batch. As a
+      # result, the confirmation covers the blocks 1..7 only, and the blocks 8..10
+      # wait for the next confirmation.
+      test "confirms the blocks up to the confirmed block when that block is in the middle of the batch", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        batch = seed_batch(@rollup_first_block, 10, @commitment_l1_block)
+
+        confirmation_transaction_hash = to_string(transaction_hash())
+
+        expect_discovery(rollup_block_hash(batch, 7), confirmation_transaction_hash, %{
+          {@commitment_l1_block, @confirmation_l1_block - 1} => []
+        })
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        assert drain_get_logs_ranges() == [
+                 {@discovery_l1_start_block, @discovery_l1_end_block},
+                 {@commitment_l1_block, @confirmation_l1_block - 1}
+               ]
+
+        confirmation = Repo.get_by!(LifecycleTransaction, hash: confirmation_transaction_hash)
+        assert confirmed_blocks(confirmation) == Enum.to_list(@rollup_first_block..7)
+        assert unconfirmed_blocks() == Enum.to_list(8..10)
       end
 
       # The database has one batch with the rollup blocks 1..10. An earlier
@@ -137,25 +172,15 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         confirmation_transaction_hash = to_string(transaction_hash())
 
-        expect_rpc(
-          %{
-            {@discovery_l1_start_block, @discovery_l1_end_block} => [
-              build_send_root_updated_log(
-                rollup_block_hash(batch, 10),
-                confirmation_transaction_hash,
-                @confirmation_l1_block
-              )
-            ],
-            {@commitment_l1_block, @confirmation_l1_block - 1} => [
-              build_send_root_updated_log(
-                rollup_block_hash(batch, 5),
-                to_string(earlier_confirmation.hash),
-                @earlier_confirmation_l1_block
-              )
-            ]
-          },
-          %{@confirmation_l1_block => @confirmation_l1_timestamp}
-        )
+        expect_discovery(rollup_block_hash(batch, 10), confirmation_transaction_hash, %{
+          {@commitment_l1_block, @confirmation_l1_block - 1} => [
+            build_send_root_updated_log(
+              rollup_block_hash(batch, 5),
+              to_string(earlier_confirmation.hash),
+              @earlier_confirmation_l1_block
+            )
+          ]
+        })
 
         assert :ok == discover(json_rpc_named_arguments)
 
@@ -190,19 +215,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         confirmation_transaction_hash = to_string(transaction_hash())
 
-        expect_rpc(
-          %{
-            {@discovery_l1_start_block, @discovery_l1_end_block} => [
-              build_send_root_updated_log(
-                rollup_block_hash(batch, 20),
-                confirmation_transaction_hash,
-                @confirmation_l1_block
-              )
-            ],
-            {@commitment_l1_block, @confirmation_l1_block - 1} => []
-          },
-          %{@confirmation_l1_block => @confirmation_l1_timestamp}
-        )
+        expect_discovery(rollup_block_hash(batch, 20), confirmation_transaction_hash, %{
+          {@commitment_l1_block, @confirmation_l1_block - 1} => []
+        })
 
         assert :ok == discover(json_rpc_named_arguments)
 
@@ -239,30 +254,22 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         previous_batch = seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
         batch = seed_batch(11, 20, @commitment_l1_block)
 
+        earlier_confirmation_transaction_hash = to_string(transaction_hash())
+
         earlier_confirmation_log =
           build_send_root_updated_log(
             rollup_block_hash(previous_batch, 10),
-            to_string(transaction_hash()),
+            earlier_confirmation_transaction_hash,
             @earlier_confirmation_l1_block
           )
 
         confirmation_transaction_hash = to_string(transaction_hash())
 
-        expect_rpc(
-          %{
-            {@discovery_l1_start_block, @discovery_l1_end_block} => [
-              build_send_root_updated_log(
-                rollup_block_hash(batch, 20),
-                confirmation_transaction_hash,
-                @confirmation_l1_block
-              )
-            ],
-            # The range of the second batch, then the range of the first batch.
-            {@commitment_l1_block, @confirmation_l1_block - 1} => [earlier_confirmation_log],
-            {@previous_commitment_l1_block, @confirmation_l1_block - 1} => [earlier_confirmation_log]
-          },
-          %{@confirmation_l1_block => @confirmation_l1_timestamp}
-        )
+        expect_discovery(rollup_block_hash(batch, 20), confirmation_transaction_hash, %{
+          # The range of the second batch, then the range of the first batch.
+          {@commitment_l1_block, @confirmation_l1_block - 1} => [earlier_confirmation_log],
+          {@previous_commitment_l1_block, @confirmation_l1_block - 1} => [earlier_confirmation_log]
+        })
 
         assert :ok == discover(json_rpc_named_arguments)
 
@@ -278,6 +285,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         # The blocks of the first batch stay for the earlier confirmation. One of
         # the next iterations of the discovery finds that confirmation.
         assert unconfirmed_blocks() == Enum.to_list(@rollup_first_block..10)
+
+        # The discovery reads the log of the earlier confirmation only to find the
+        # bottom of the current one. It does not import that transaction.
+        refute Repo.get_by(LifecycleTransaction, hash: earlier_confirmation_transaction_hash)
       end
 
       # The database has two batches: the blocks 1..10 and the blocks 11..20. An
@@ -306,20 +317,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         confirmation_transaction_hash = to_string(transaction_hash())
 
-        expect_rpc(
-          %{
-            {@discovery_l1_start_block, @discovery_l1_end_block} => [
-              build_send_root_updated_log(
-                rollup_block_hash(batch, 20),
-                confirmation_transaction_hash,
-                @confirmation_l1_block
-              )
-            ],
-            {@commitment_l1_block, @confirmation_l1_block - 1} => [earlier_confirmation_log],
-            {@previous_commitment_l1_block, @confirmation_l1_block - 1} => [earlier_confirmation_log]
-          },
-          %{@confirmation_l1_block => @confirmation_l1_timestamp}
-        )
+        expect_discovery(rollup_block_hash(batch, 20), confirmation_transaction_hash, %{
+          {@commitment_l1_block, @confirmation_l1_block - 1} => [earlier_confirmation_log],
+          {@previous_commitment_l1_block, @confirmation_l1_block - 1} => [earlier_confirmation_log]
+        })
 
         assert :ok == discover(json_rpc_named_arguments)
 
@@ -353,23 +354,13 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         confirmation_transaction_hash = to_string(transaction_hash())
 
-        expect_rpc(
-          %{
-            {@discovery_l1_start_block, @discovery_l1_end_block} => [
-              build_send_root_updated_log(
-                rollup_block_hash(batch, 15),
-                confirmation_transaction_hash,
-                @confirmation_l1_block
-              )
-            ],
-            # No range contains an earlier confirmation. Thus the walk continues
-            # down to the lowest indexed rollup block.
-            {@commitment_l1_block, @confirmation_l1_block - 1} => [],
-            {@previous_commitment_l1_block, @confirmation_l1_block - 1} => [],
-            {@oldest_commitment_l1_block, @confirmation_l1_block - 1} => []
-          },
-          %{@confirmation_l1_block => @confirmation_l1_timestamp}
-        )
+        expect_discovery(rollup_block_hash(batch, 15), confirmation_transaction_hash, %{
+          # No range contains an earlier confirmation. Thus the walk continues
+          # down to the lowest indexed rollup block.
+          {@commitment_l1_block, @confirmation_l1_block - 1} => [],
+          {@previous_commitment_l1_block, @confirmation_l1_block - 1} => [],
+          {@oldest_commitment_l1_block, @confirmation_l1_block - 1} => []
+        })
 
         assert :ok == discover(json_rpc_named_arguments)
 
@@ -382,6 +373,46 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         confirmation = Repo.get_by!(LifecycleTransaction, hash: confirmation_transaction_hash)
         assert confirmed_blocks(confirmation) == Enum.to_list(@rollup_first_block..15)
+      end
+
+      # The database has two batches: the blocks 1..10 and the blocks 11..20. No
+      # block is confirmed, and no earlier confirmation exists on the parent chain.
+      #
+      # The parent chain range of each batch is wider than the maximum range of one
+      # `eth_getLogs` request. Thus the discovery reads such a range in chunks, from
+      # the newest chunk to the oldest one. The chunks of the second batch, which
+      # was committed in the block 100, are 150..199 and 100..149. The chunks of the
+      # first batch, which was committed in the block 90, are the same two plus
+      # 90..99. The discovery keeps the logs of the chunks it already read, thus it
+      # requests each chunk only once.
+      test "reads a wide parent chain range in chunks and requests a repeated chunk only once", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
+        batch = seed_batch(11, 20, @commitment_l1_block)
+
+        confirmation_transaction_hash = to_string(transaction_hash())
+
+        expect_discovery(rollup_block_hash(batch, 20), confirmation_transaction_hash, %{
+          {150, @confirmation_l1_block - 1} => [],
+          {@commitment_l1_block, 149} => [],
+          {@previous_commitment_l1_block, 99} => []
+        })
+
+        assert :ok == discover(json_rpc_named_arguments, @narrow_logs_block_range)
+
+        # Each chunk appears once. The chunks 150..199 and 100..149 belong to the
+        # ranges of both batches, and the walk to the first batch reuses the logs
+        # which the second batch read already.
+        assert drain_get_logs_ranges() == [
+                 {@discovery_l1_start_block, @discovery_l1_end_block},
+                 {150, @confirmation_l1_block - 1},
+                 {@commitment_l1_block, 149},
+                 {@previous_commitment_l1_block, 99}
+               ]
+
+        confirmation = Repo.get_by!(LifecycleTransaction, hash: confirmation_transaction_hash)
+        assert confirmed_blocks(confirmation) == Enum.to_list(@rollup_first_block..20)
       end
 
       # The database has one batch with the rollup blocks 1..10. The blocks 9 and 10
@@ -401,21 +432,16 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         confirmation_transaction_hash = to_string(transaction_hash())
 
-        expect_rpc(
-          %{
-            {@discovery_l1_start_block, @discovery_l1_end_block} => [
-              build_send_root_updated_log(
-                rollup_block_hash(batch, 10),
-                confirmation_transaction_hash,
-                @confirmation_l1_block
-              )
-            ],
-            {@commitment_l1_block, @confirmation_l1_block - 1} => []
-          },
-          %{@confirmation_l1_block => @confirmation_l1_timestamp}
-        )
+        expect_discovery(rollup_block_hash(batch, 10), confirmation_transaction_hash, %{
+          {@commitment_l1_block, @confirmation_l1_block - 1} => []
+        })
 
         assert :ok == discover(json_rpc_named_arguments)
+
+        assert drain_get_logs_ranges() == [
+                 {@discovery_l1_start_block, @discovery_l1_end_block},
+                 {@commitment_l1_block, @confirmation_l1_block - 1}
+               ]
 
         # The full batch is linked to the new confirmation. The other transaction
         # keeps no block.
@@ -449,18 +475,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         existing_confirmation = insert_confirmation(@confirmation_l1_block - 10)
 
-        expect_rpc(
-          %{
-            {@discovery_l1_start_block, @discovery_l1_end_block} => [
-              build_send_root_updated_log(
-                rollup_block_hash(batch, 10),
-                to_string(existing_confirmation.hash),
-                @confirmation_l1_block
-              )
-            ]
-          },
-          %{@confirmation_l1_block => @confirmation_l1_timestamp}
-        )
+        expect_discovery(rollup_block_hash(batch, 10), to_string(existing_confirmation.hash))
 
         assert :ok == discover(json_rpc_named_arguments)
 
@@ -487,18 +502,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       } do
         existing_confirmation = insert_confirmation(@confirmation_l1_block, @confirmation_l1_timestamp)
 
-        expect_rpc(
-          %{
-            {@discovery_l1_start_block, @discovery_l1_end_block} => [
-              build_send_root_updated_log(
-                to_string(block_hash()),
-                to_string(existing_confirmation.hash),
-                @confirmation_l1_block
-              )
-            ]
-          },
-          %{@confirmation_l1_block => @confirmation_l1_timestamp}
-        )
+        expect_discovery(to_string(block_hash()), to_string(existing_confirmation.hash))
 
         assert :ok == discover(json_rpc_named_arguments)
 
@@ -515,14 +519,14 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     end
 
     # Runs the discovery over the parent chain range holding the confirmation.
-    defp discover(json_rpc_named_arguments) do
+    defp discover(json_rpc_named_arguments, logs_block_range \\ @logs_block_range) do
       Discovery.perform(
         @outbox_address,
         @discovery_l1_start_block,
         @discovery_l1_end_block,
         %{
           json_rpc_named_arguments: json_rpc_named_arguments,
-          logs_block_range: 1000,
+          logs_block_range: logs_block_range,
           chunk_size: 10,
           track_finalization: true,
           finalized_confirmations: true
@@ -534,6 +538,12 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # Inserts a batch with its commitment transaction and the rollup blocks
     # belonging to it, all of them unconfirmed (`confirmation_id` is `nil`).
     # Returns the batch together with the inserted blocks keyed by block number.
+    #
+    # Note: `arbitrum_l1_batch_factory` inserts a lifecycle transaction of its own
+    # before the `commitment_id` override is applied. Thus each call leaves one
+    # unused lifecycle transaction in the database, and a count of the rows of
+    # `LifecycleTransaction` is not a usable assertion in a test which seeds a
+    # batch. Look the transaction up by its hash instead.
     defp seed_batch(start_block, end_block, commitment_l1_block) do
       commitment_transaction = insert(:arbitrum_lifecycle_transaction, block_number: commitment_l1_block)
 
@@ -624,7 +634,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         "logIndex" => "0x0",
         "removed" => false,
         "topics" => [
-          ArbitrumEvents.send_root_updated(),
+          @send_root_updated_topic,
           "0x" <> String.duplicate("1", 64),
           rollup_block_hash
         ],
@@ -633,12 +643,33 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       }
     end
 
+    # Mocks the RPC calls of one discovery run: the `eth_getLogs` request over the
+    # discovery range, answered with a single `SendRootUpdated` event confirming
+    # `top_block_hash` in the transaction `confirmation_transaction_hash`, and the
+    # timestamp of the parent chain block holding that event. `extra_ranges` holds
+    # the responses for the parent chain ranges which the batch walk reads
+    # afterwards.
+    defp expect_discovery(top_block_hash, confirmation_transaction_hash, extra_ranges \\ %{}) do
+      expect_rpc(
+        Map.put(
+          extra_ranges,
+          {@discovery_l1_start_block, @discovery_l1_end_block},
+          [build_send_root_updated_log(top_block_hash, confirmation_transaction_hash, @confirmation_l1_block)]
+        ),
+        %{@confirmation_l1_block => @confirmation_l1_timestamp}
+      )
+    end
+
     # Mocks both request shapes the discovery issues: the single `eth_getLogs`
     # requests (one per scanned parent chain range) and the batched
     # `eth_getBlockByNumber` request fetching the timestamps of the parent chain
     # blocks holding the confirmations. One closure with two clauses dispatches on
     # the shape of each call, so the two request kinds do not have to be
     # interleaved in the order `expect/4` queues them.
+    #
+    # The `eth_getLogs` clause also matches the contract and the event signature,
+    # so a request for another address or another topic fails the match instead of
+    # being answered as if it asked for the `SendRootUpdated` events of the outbox.
     #
     # A parent chain range absent from `get_logs_responses` raises `KeyError`, so
     # an unexpected range fails the test loudly instead of being silently answered
@@ -649,7 +680,18 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       test_pid = self()
 
       expect(EthereumJSONRPC.Mox, :json_rpc, map_size(get_logs_responses) + 1, fn
-        %{method: "eth_getLogs", params: [%{fromBlock: from_block_quantity, toBlock: to_block_quantity}]}, _options ->
+        %{
+          method: "eth_getLogs",
+          params: [
+            %{
+              fromBlock: from_block_quantity,
+              toBlock: to_block_quantity,
+              address: @outbox_address,
+              topics: [@send_root_updated_topic]
+            }
+          ]
+        },
+        _options ->
           from_block = quantity_to_integer(from_block_quantity)
           to_block = quantity_to_integer(to_block_quantity)
           send(test_pid, {:eth_get_logs_range, from_block, to_block})

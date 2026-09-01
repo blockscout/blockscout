@@ -56,7 +56,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
       * `:json_rpc_named_arguments` - Arguments for JSON RPC calls
       * `:logs_block_range` - Maximum block range for log requests
       * `:chunk_size` - Size of chunks for batch processing
-      * `:finalized_confirmations` - Whether to track finalization status
+      * `:track_finalization` - Whether the confirmation transactions are imported as unfinalized
     - `rollup_first_block`: The lowest block number of the L2 chain to consider
 
     ## Returns
@@ -71,7 +71,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             :logs_block_range => non_neg_integer(),
             :chunk_size => non_neg_integer(),
-            :finalized_confirmations => boolean(),
+            :track_finalization => boolean(),
             optional(any()) => any()
           },
           non_neg_integer()
@@ -146,7 +146,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             :logs_block_range => non_neg_integer(),
             :chunk_size => non_neg_integer(),
-            :finalized_confirmations => boolean(),
+            :track_finalization => boolean(),
             optional(any()) => any()
           },
           binary(),
