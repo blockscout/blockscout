@@ -128,6 +128,25 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # show this name. Thus the tag keeps the name of the defect in one place, and a
     # search for the word "Defect" gives every test of this kind. The correction of
     # the defect removes the tag.
+    #
+    # The result `:confirmation_missed` tells the caller to examine the same parent
+    # chain range again. Such a result is correct only when a change of the database
+    # can give another result for that range. The indexer makes such a change: it
+    # writes a batch, or it links a rollup block to its batch. The discovery does not
+    # make such a change.
+    #
+    # Thus a test of a postponement has two parts. The first part gives the result
+    # `:confirmation_missed` for the state of the database. The second part makes the
+    # change of the indexer, and it examines the same parent chain range again. The
+    # second part must give the result `:ok` and the correct confirmations. It also
+    # shows that the second run keeps the data of the first run.
+    #
+    # A loop is a defect of another kind, and its test has another shape. When no
+    # change of the database can give another result, the discovery examines the same
+    # parent chain range again and again. Such a test keeps the postponement of the
+    # first run, which is the current result. Its second part changes nothing in the
+    # database, and it requires the result `:ok` for the repeated run. Thus the test
+    # fails on the loop, and not on the result of the first run.
 
     # A `SendRootUpdated` event on the parent chain confirms one rollup block. The
     # event also confirms all rollup blocks below that block, down to the block of
@@ -470,9 +489,12 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # discovery does not use it. Thus the discovery writes nothing, and it returns
       # `:confirmation_missed`.
       #
-      # The caller repeats the same parent chain range after such a result. When the
-      # indexer links the other blocks to the batch, the discovery writes the
-      # confirmation.
+      # The second part of the test makes the change of the indexer: the indexer
+      # links the other blocks to the batch. Then the discovery examines the same
+      # parent chain range again. The parent chain holds the confirmation of the
+      # block 10 in the block 200, and the event gives that state. Thus the new
+      # confirmation takes the block 10 from the link of the earlier run, and it
+      # covers the full batch.
       test "postpones the confirmation when the batch is linked to a part of its blocks only", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -491,6 +513,15 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         assert confirmed_blocks(earlier_confirmation) == [10]
         assert unconfirmed_blocks() == []
+
+        link_blocks_to_batch(batch, @rollup_first_block..9)
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        confirmation = Repo.get_by!(LifecycleTransaction, hash: confirmation_transaction_hash)
+        assert confirmed_blocks(confirmation) == Enum.to_list(@rollup_first_block..10)
+        assert confirmed_blocks(earlier_confirmation) == []
+        assert unconfirmed_blocks() == []
       end
 
       # The database has one batch of the blocks 1..10. No block of it is confirmed.
@@ -503,9 +534,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # batch. A gap shows that the database does not have the whole batch. Thus the
       # discovery writes nothing, and it returns `:confirmation_missed`.
       #
-      # The caller repeats the same parent chain range after such a result. When the
-      # indexer links the block 5 to the batch, the discovery writes the
-      # confirmation.
+      # The second part of the test makes the change of the indexer: the indexer
+      # links the block 5 to the batch. Then the discovery examines the same parent
+      # chain range again, and the confirmation covers the full batch.
       test "postpones the confirmation when the blocks of the batch hold a gap", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -520,6 +551,14 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert Repo.get_by(LifecycleTransaction, hash: confirmation_transaction_hash) == nil
 
         assert unconfirmed_blocks() == Enum.to_list(@rollup_first_block..4) ++ Enum.to_list(6..10)
+
+        link_blocks_to_batch(batch, [5])
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        confirmation = Repo.get_by!(LifecycleTransaction, hash: confirmation_transaction_hash)
+        assert confirmed_blocks(confirmation) == Enum.to_list(@rollup_first_block..10)
+        assert unconfirmed_blocks() == []
       end
 
       # The database has one batch of the blocks 11..20. No block of it is confirmed.
@@ -534,8 +573,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # blocks of the batch 11..20 as well. It writes nothing, and it returns
       # `:confirmation_missed`.
       #
-      # The caller repeats the same parent chain range after such a result. When the
-      # batch below is in the database, the discovery writes the confirmation.
+      # The second part of the test makes the change of the indexer: the indexer
+      # writes the batch below. Then the discovery examines the same parent chain
+      # range again, and the confirmation covers the two batches.
       test "postpones the confirmation when the batch below the current one is missing", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -550,6 +590,14 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert Repo.get_by(LifecycleTransaction, hash: confirmation_transaction_hash) == nil
 
         assert unconfirmed_blocks() == Enum.to_list(11..20)
+
+        seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        confirmation = Repo.get_by!(LifecycleTransaction, hash: confirmation_transaction_hash)
+        assert confirmed_blocks(confirmation) == Enum.to_list(@rollup_first_block..20)
+        assert unconfirmed_blocks() == []
       end
 
       # The database has one batch of the blocks 11..20. No block of the batch is
@@ -579,12 +627,12 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # in the database. Thus the position of the earlier event does not change the
       # result.
       #
-      # The caller repeats the same parent chain range after such a result. When the
-      # batch of the block 10 is in the database, the discovery writes the
-      # confirmation of the blocks 11..20. The blocks 1..10 stay unconfirmed. Those
-      # blocks belong to the earlier confirmation. A later run of the historical
-      # discovery reaches the earlier event, and that run links those blocks to
-      # that event.
+      # The second part of the test makes the change of the indexer: the indexer
+      # writes the batch of the blocks 1..10. Then the discovery examines the same
+      # parent chain range again, and the confirmation covers the blocks 11..20. The
+      # blocks 1..10 stay unconfirmed. Those blocks belong to the earlier
+      # confirmation. A later run of the historical discovery reaches the earlier
+      # event, and that run links those blocks to that event.
       test "postpones the confirmation when an out-of-range earlier event points to a block without a batch", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -613,6 +661,15 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert Repo.get_by(LifecycleTransaction, hash: earlier_confirmation_transaction_hash) == nil
 
         assert unconfirmed_blocks() == Enum.to_list(11..20)
+
+        seed_batch_of_blocks(blocks_without_batch, @previous_commitment_l1_block)
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        confirmation = Repo.get_by!(LifecycleTransaction, hash: confirmation_transaction_hash)
+        assert confirmed_blocks(confirmation) == Enum.to_list(11..20)
+        assert Repo.get_by(LifecycleTransaction, hash: earlier_confirmation_transaction_hash) == nil
+        assert unconfirmed_blocks() == Enum.to_list(@rollup_first_block..10)
       end
 
       # The database has two batches: the blocks 1..10 and the blocks 11..20. No
@@ -679,9 +736,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # Arbitrum AnyTrust chain, holds such a pair of confirmations.
       #
       # The newer event confirms the blocks 1..5. Thus the discovery must write that
-      # confirmation with the blocks 1..5, and it must return `:ok`. The blocks 6..10
-      # belong to the earlier confirmation. A later run of the historical discovery
-      # reaches the earlier event, and that run links those blocks to that event.
+      # confirmation with the blocks 1..5. The blocks 6..10 belong to the earlier
+      # confirmation. A later run of the historical discovery reaches the earlier
+      # event, and that run links those blocks to that event.
       #
       # The discovery finds the log of the earlier event in the lookup range of the
       # newer event. That log points to the block 10. Thus the discovery takes the
@@ -689,9 +746,20 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # the block 5. Therefore the discovery finds no block for the confirmation, and
       # it writes nothing. The return value is `:confirmation_missed`.
       #
-      # The historical discovery keeps the same parent chain range after such a
-      # result. No change of the database can give another result for this range.
-      # Thus the historical discovery reads this range again and again.
+      # The first part of the test keeps `:confirmation_missed`, which is the current
+      # result. The second part changes nothing in the database. The database holds
+      # the whole batch already, and the indexer has nothing to add. Thus the repeated
+      # run of the same parent chain range must give `:ok`. The discovery
+      # gives `:confirmation_missed` again, and the test fails on that assertion.
+      # Therefore the historical discovery reads this range again and again.
+      #
+      # The correction of the defect can take one of two forms:
+      #   - the first run gives `:ok` with the blocks 1..5
+      #   - the first run keeps the postponement, and a change of the database ends
+      #     that postponement
+      #
+      # The person who removes the tag makes this decision. The assertions of the
+      # first part change with that decision.
       @tag skip: "Defect: a confirmation below an earlier confirmation of the same batch repeats the range"
       test "confirms the blocks below an earlier confirmation of the same batch", %{
         json_rpc_named_arguments: json_rpc_named_arguments
@@ -715,6 +783,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
             @confirmation_l1_block
           )
         ])
+
+        assert :confirmation_missed == discover(json_rpc_named_arguments)
+
+        assert Repo.get_by(LifecycleTransaction, hash: confirmation_transaction_hash) == nil
+        assert unconfirmed_blocks() == Enum.to_list(@rollup_first_block..10)
 
         assert :ok == discover(json_rpc_named_arguments)
 
@@ -1174,11 +1247,13 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # is `:confirmation_missed`, because the parent chain range holds two events
       # and the import holds one confirmation.
       #
-      # The caller repeats the same parent chain range after such a result. The lower
-      # confirmation is a known confirmation in that run. The lookup range of the
-      # upper confirmation holds the log of the lower confirmation. Thus the upper
-      # confirmation covers the blocks 11..20, and the import of the lower
-      # confirmation alone gives no hole in the confirmation history.
+      # The second part of the test makes the change of the indexer: the indexer
+      # writes the batch of the blocks 11..20. Then the discovery examines the same
+      # parent chain range again. The lower confirmation is a known confirmation of
+      # that run, and it keeps its blocks. The lookup range of the upper confirmation
+      # holds the log of the lower confirmation. Thus the upper confirmation covers
+      # the blocks 11..20, and the import of the lower confirmation alone gives no
+      # hole in the confirmation history.
       test "confirms the lower blocks only when the batch of the upper confirmed block is missing", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -1223,6 +1298,17 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         assert message_status(message_below_lower_confirmation) == :confirmed
         assert message_status(message_above_lower_confirmation) == :sent
+
+        seed_batch_of_blocks(blocks_without_batch, @recent_commitment_l1_block)
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation_transaction_hash)
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(11..20)
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(@rollup_first_block..10)
+        assert unconfirmed_blocks() == []
+
+        assert message_status(message_above_lower_confirmation) == :confirmed
       end
 
       # The database has one batch, and that batch holds the rollup blocks 11..20. No
@@ -1244,9 +1330,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # error, and the discovery writes nothing. The return value is
       # `:confirmation_missed`, and the walk to the batch below does not start.
       #
-      # The caller repeats the same parent chain range after such a result. When the
-      # batch of the block 10 is in the database, the two confirmations arrive
-      # together.
+      # The second part of the test makes the change of the indexer: the indexer
+      # writes the batch of the blocks 1..10. Then the discovery examines the same
+      # parent chain range again, and the two confirmations arrive together.
       test "postpones both confirmations when the batch of the lower confirmed block is missing", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -1282,6 +1368,18 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert unconfirmed_blocks() == Enum.to_list(11..20)
 
         assert message_status(message_below_lower_confirmation) == :sent
+
+        seed_batch_of_blocks(blocks_without_batch, @previous_commitment_l1_block)
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation_transaction_hash)
+        upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation_transaction_hash)
+
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(@rollup_first_block..10)
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(11..20)
+        assert unconfirmed_blocks() == []
+        assert message_status(message_below_lower_confirmation) == :confirmed
       end
 
       # The database has two batches: the blocks 1..10 and the blocks 11..20. No
@@ -1301,9 +1399,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # loses the blocks of the lower confirmation as well, and it writes nothing. The
       # return value is `:confirmation_missed`.
       #
-      # The caller repeats the same parent chain range after such a result. When the
-      # indexer links the block 15 to its batch, the two confirmations arrive
-      # together.
+      # The second part of the test makes the change of the indexer: the indexer
+      # links the block 15 to its batch. Then the discovery examines the same parent
+      # chain range again, and the two confirmations arrive together.
       test "drops the lower confirmation when the upper confirmation finds a gap in its batch", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -1339,6 +1437,19 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert unconfirmed_blocks() == Enum.to_list(@rollup_first_block..14) ++ Enum.to_list(16..20)
 
         assert message_status(message_below_lower_confirmation) == :sent
+
+        link_blocks_to_batch(batch, [15])
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation_transaction_hash)
+        upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation_transaction_hash)
+
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(@rollup_first_block..10)
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(11..20)
+        assert unconfirmed_blocks() == []
+
+        assert message_status(message_below_lower_confirmation) == :confirmed
       end
 
       # The database has two batches: the blocks 1..10 and the blocks 11..20. No
@@ -1365,8 +1476,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # confirms the block 5 already. Thus this status is correct, and only the link
       # of the block 5 is missing.
       #
-      # The caller repeats the same parent chain range after such a result. The upper
-      # confirmation is a known confirmation in that run.
+      # The second part of the test makes the change of the indexer: the indexer
+      # links the block 5 to its batch. Then the discovery examines the same parent
+      # chain range again. The upper confirmation is a known confirmation of that
+      # run, and it keeps its blocks. The lower confirmation covers the blocks
+      # 1..10.
       test "writes the upper confirmation only when the lower confirmation finds a gap in its batch", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -1408,6 +1522,15 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         assert message_status(message_below_lower_confirmation) == :confirmed
         assert message_status(message_above_upper_confirmation) == :sent
+
+        link_blocks_to_batch(previous_batch, [5])
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation_transaction_hash)
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(@rollup_first_block..10)
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(11..20)
+        assert unconfirmed_blocks() == []
       end
     end
 
@@ -1947,6 +2070,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # `LifecycleTransaction` is therefore not a usable assertion in a test which
     # seeds a batch. Find the transaction by its hash instead.
     defp seed_batch(start_block, end_block, commitment_l1_block, options \\ []) do
+      reserve_lifecycle_transaction_ids()
       commitment_transaction = insert(:arbitrum_lifecycle_transaction, block_number: commitment_l1_block)
 
       batch =
@@ -1982,6 +2106,45 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         end)
 
       %{blocks: blocks}
+    end
+
+    # Inserts a batch which holds rollup blocks which are in the database already.
+    # The indexer makes this change when it handles the batch of those blocks.
+    # Returns the batch together with the blocks, in the shape which `seed_batch/4`
+    # returns.
+    defp seed_batch_of_blocks(%{blocks: blocks}, commitment_l1_block) do
+      reserve_lifecycle_transaction_ids()
+      commitment_transaction = insert(:arbitrum_lifecycle_transaction, block_number: commitment_l1_block)
+      block_numbers = Map.keys(blocks)
+
+      batch =
+        insert(:arbitrum_l1_batch,
+          start_block: Enum.min(block_numbers),
+          end_block: Enum.max(block_numbers),
+          commitment_id: commitment_transaction.id
+        )
+
+      Enum.each(block_numbers, &insert(:arbitrum_batch_block, batch_number: batch.number, block_number: &1))
+
+      %{batch: batch, blocks: blocks}
+    end
+
+    # Makes the counter of the factory more than each identifier of the lifecycle
+    # transactions which the database holds. The factory holds a counter of its own,
+    # and the discovery does not use that counter. Thus a transaction of the factory
+    # can take the identifier of a transaction which the discovery wrote already. A
+    # test which seeds a batch after a run of the discovery needs this move.
+    defp reserve_lifecycle_transaction_ids do
+      max_id = Repo.aggregate(LifecycleTransaction, :max, :id) || 0
+      ids = Stream.repeatedly(fn -> ExMachina.sequence("arbitrum_lifecycle_tx_id", & &1, start_at: 1) end)
+
+      Enum.find(ids, &(&1 >= max_id))
+    end
+
+    # Links rollup blocks of the database to their batch. The indexer makes this
+    # change when it handles the whole batch.
+    defp link_blocks_to_batch(%{batch: batch}, block_numbers) do
+      Enum.each(block_numbers, &insert(:arbitrum_batch_block, batch_number: batch.number, block_number: &1))
     end
 
     defp rollup_block_hash(%{blocks: blocks}, block_number) do
