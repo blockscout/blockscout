@@ -458,8 +458,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       end
 
       # The database has one batch of the blocks 1..10, but only the block 10 is
-      # linked to that batch. A confirmation of an earlier run holds the block 10
-      # already.
+      # linked to that batch. The block 10 also holds a link to a confirmation of an
+      # earlier run. This pair of states shows an inconsistency of the database. A run
+      # which confirms the block 10 needs the links of the blocks below it. The
+      # discovery must not write a confirmation from such a state.
       #
       # The event points to the rollup block 10.
       #
@@ -518,6 +520,36 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert Repo.get_by(LifecycleTransaction, hash: confirmation_transaction_hash) == nil
 
         assert unconfirmed_blocks() == Enum.to_list(@rollup_first_block..4) ++ Enum.to_list(6..10)
+      end
+
+      # The database has one batch of the blocks 11..20. No block of it is confirmed.
+      # The batch below it is not in the database. If the discovery of the missing
+      # batches did not reach that batch, the database has this state.
+      #
+      # The event points to the rollup block 20.
+      #
+      # The parent chain range of the batch holds no other event. Thus the
+      # confirmation covers the whole batch, and the walk moves to the block 10. No
+      # batch of the database holds that block. Therefore the discovery drops the
+      # blocks of the batch 11..20 as well. It writes nothing, and it returns
+      # `:confirmation_missed`.
+      #
+      # The caller repeats the same parent chain range after such a result. When the
+      # batch below is in the database, the discovery writes the confirmation.
+      test "postpones the confirmation when the batch below the current one is missing", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        batch = seed_batch(11, 20, @commitment_l1_block)
+
+        confirmation_transaction_hash = to_string(transaction_hash())
+
+        expect_discovery(rollup_block_hash(batch, 20), confirmation_transaction_hash)
+
+        assert :confirmation_missed == discover(json_rpc_named_arguments)
+
+        assert Repo.get_by(LifecycleTransaction, hash: confirmation_transaction_hash) == nil
+
+        assert unconfirmed_blocks() == Enum.to_list(11..20)
       end
 
       # The database has two batches: the blocks 1..10 and the blocks 11..20. No
@@ -1121,6 +1153,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert Repo.get_by(LifecycleTransaction, hash: upper_confirmation_transaction_hash) == nil
 
         assert confirmed_blocks(lower_confirmation) == Enum.to_list(@rollup_first_block..10)
+
+        # `unconfirmed_blocks/0` reads the links of the batches. The blocks 11..20
+        # hold no link. Thus this assertion does not cover them.
         assert unconfirmed_blocks() == []
 
         assert message_status(message_below_lower_confirmation) == :confirmed
@@ -1139,10 +1174,12 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # block. The block 10 has no batch. Thus the discovery cannot find the number
       # of that block, and it drops the lower event.
       #
-      # The upper confirmation covers the block 11, which is the first block of the
-      # batch. Therefore the walk of the upper confirmation moves to the batch below.
-      # That batch is not in the database. Thus the walk stops. As a result, the
-      # discovery writes nothing, and it returns `:confirmation_missed`.
+      # The lookup of the upper confirmation examines its own batch. That lookup reads
+      # the parent chain from the commitment of the batch to the block before the
+      # upper event. That range holds the log of the lower event, and the discovery
+      # cannot find the number of the block 10 for that log. Thus the lookup gives an
+      # error, and the discovery writes nothing. The return value is
+      # `:confirmation_missed`, and the walk to the batch below does not start.
       #
       # The caller repeats the same parent chain range after such a result. When the
       # batch of the block 10 is in the database, the two confirmations arrive
@@ -1193,9 +1230,13 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # The lower confirmation covers the full first batch. The upper confirmation
       # finds a gap between the blocks 14 and 16. Thus the upper confirmation gives no
-      # rollup block. One run gives all its confirmations to one import. Therefore the
-      # run drops the rollup blocks of the lower confirmation as well, and it writes
-      # nothing. The return value is `:confirmation_missed`.
+      # rollup block.
+      #
+      # The discovery handles the confirmations of one run in the order of their
+      # rollup blocks, from the lowest block to the highest. A confirmation without
+      # blocks drops every block which the run collected before it. Therefore the run
+      # loses the blocks of the lower confirmation as well, and it writes nothing. The
+      # return value is `:confirmation_missed`.
       #
       # The caller repeats the same parent chain range after such a result. When the
       # indexer links the block 15 to its batch, the two confirmations arrive
@@ -1250,9 +1291,16 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # Thus the upper confirmation covers the blocks 11..20, and the run writes that
       # confirmation only. The return value is `:confirmation_missed`.
       #
+      # The lower confirmation comes first in the order of the run. Thus its empty
+      # result drops nothing, because the run collects the blocks of the upper
+      # confirmation after it. The test "drops the lower confirmation when the upper
+      # confirmation finds a gap in its batch" holds the other order.
+      #
       # The highest confirmed block of the run is the block 20. The discovery marks
       # the messages by the number of that block. Thus the message in the block 5
-      # becomes `:confirmed`, although the block 5 stays unconfirmed.
+      # becomes `:confirmed`, although the block 5 stays unconfirmed. The parent chain
+      # confirms the block 5 already. Thus this status is correct, and only the link
+      # of the block 5 is missing.
       #
       # The caller repeats the same parent chain range after such a result. The upper
       # confirmation is a known confirmation in that run.
@@ -1845,7 +1893,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
           commitment_id: commitment_transaction.id
         )
 
-      unlinked_blocks = options |> Keyword.get(:unlinked_blocks, []) |> Enum.to_list()
+      unlinked_blocks = Keyword.get(options, :unlinked_blocks, [])
 
       blocks =
         Map.new(start_block..end_block, fn block_number ->
@@ -1905,6 +1953,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       )
     end
 
+    # Returns the rollup blocks which hold a link to a batch and no link to a
+    # confirmation. A rollup block without a batch is not in this list.
     defp unconfirmed_blocks do
       Repo.all(
         from(rollup_block in BatchBlock,
