@@ -571,15 +571,21 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The discovery writes nothing after that error. The walk to the batch below
       # does not start. The return value is `:confirmation_missed`.
       #
-      # The test "postpones both confirmations when the batch of the lower confirmed
-      # block is missing" holds the same state of the database. In that test the two
-      # events are in the discovery range. When the earlier event is outside the
-      # discovery range, the result stays the same.
+      # Two other tests give the same result. The test "postpones both confirmations
+      # when the batch of the lower confirmed block is missing" holds the same state
+      # of the database. In that test the two events are in the discovery range. The
+      # test "postpones the confirmation when the batch below the current one is
+      # missing" holds no earlier event. In that test the rollup blocks 1..10 are not
+      # in the database. Thus the position of the earlier event does not change the
+      # result.
       #
       # The caller repeats the same parent chain range after such a result. When the
       # batch of the block 10 is in the database, the discovery writes the
-      # confirmation.
-      test "postpones the confirmation when an earlier event points to a block without a batch", %{
+      # confirmation of the blocks 11..20. The blocks 1..10 stay unconfirmed. Those
+      # blocks belong to the earlier confirmation. A later run of the historical
+      # discovery reaches the earlier event, and that run links those blocks to
+      # that event.
+      test "postpones the confirmation when an out-of-range earlier event points to a block without a batch", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
         blocks_without_batch = seed_blocks_without_batch(@rollup_first_block, 10)
@@ -612,19 +618,19 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The database has two batches: the blocks 1..10 and the blocks 11..20. No
       # block is confirmed.
       #
-      # The parent chain holds two events. The older event points to the rollup block
-      # 20, and it is outside the discovery range. The newer event points to the
-      # rollup block 10, and it is in the discovery range. Thus the newer transaction
-      # confirms the lower rollup blocks.
+      # The parent chain holds two events. The earlier event points to the rollup
+      # block 20, and it is outside the discovery range. The newer event points to
+      # the rollup block 10, and it is in the discovery range. Thus the newer
+      # transaction confirms the lower rollup blocks.
       #
       # The two blocks are in two different batches. The lookup of the newer
-      # confirmation examines the batch of the block 10 only. The log of the older
+      # confirmation examines the batch of the block 10 only. The log of the earlier
       # event points to a block above that batch. Thus the lookup does not use that
       # log, and the newer confirmation covers the blocks 1..10.
       #
-      # The blocks 11..20 stay unconfirmed. Those blocks belong to the older
-      # confirmation. A later run of the historical discovery reaches the older event,
-      # and it links those blocks to that event.
+      # The blocks 11..20 stay unconfirmed. Those blocks belong to the earlier
+      # confirmation. A later run of the historical discovery reaches the earlier
+      # event, and that run links those blocks to that event.
       #
       # This test holds the same order of the two events as the test "confirms the
       # blocks below an earlier confirmation of the same batch". The difference is the
@@ -666,18 +672,18 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
       # The database has one batch of the blocks 1..10. No block of it is confirmed.
       #
-      # The parent chain holds two events. The older event points to the rollup block
-      # 10, and it is outside the discovery range. The newer event points to the
-      # rollup block 5, and it is in the discovery range. Thus the newer transaction
-      # confirms the lower rollup blocks. The HPP mainnet, which is an Arbitrum
-      # AnyTrust chain, holds such a pair of confirmations.
+      # The parent chain holds two events. The earlier event points to the rollup
+      # block 10, and it is outside the discovery range. The newer event points to
+      # the rollup block 5, and it is in the discovery range. Thus the newer
+      # transaction confirms the lower rollup blocks. The HPP mainnet, which is an
+      # Arbitrum AnyTrust chain, holds such a pair of confirmations.
       #
       # The newer event confirms the blocks 1..5. Thus the discovery must write that
       # confirmation with the blocks 1..5, and it must return `:ok`. The blocks 6..10
-      # belong to the older confirmation. A later run of the historical discovery
-      # reaches the older event, and it links those blocks to that event.
+      # belong to the earlier confirmation. A later run of the historical discovery
+      # reaches the earlier event, and that run links those blocks to that event.
       #
-      # The discovery finds the log of the older event in the lookup range of the
+      # The discovery finds the log of the earlier event in the lookup range of the
       # newer event. That log points to the block 10. Thus the discovery takes the
       # block 11 as the first unconfirmed block of the batch. The block 11 is above
       # the block 5. Therefore the discovery finds no block for the confirmation, and
