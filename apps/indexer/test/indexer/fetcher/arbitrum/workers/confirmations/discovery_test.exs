@@ -46,10 +46,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     @stale_confirmation_l1_block 190
 
     # Wide enough to keep every parent chain lookup of the batch walk within one
-    # `eth_getLogs` request. One test passes the narrow range instead, to make the
-    # discovery read the same lookups in several chunks.
+    # `eth_getLogs` request. One test passes a short range instead, to make the
+    # discovery read a lookup in several chunks.
     @logs_block_range 1000
-    @narrow_logs_block_range 50
 
     # With this range the discovery splits the wider lookups of a batch walk into
     # several chunks. It also keeps two confirmations of one run in two different
@@ -390,14 +389,18 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The database has two batches: the blocks 1..10 and the blocks 11..20. No
       # block is confirmed, and no earlier confirmation exists on the parent chain.
       #
-      # The parent chain range of each batch is wider than the maximum range of one
-      # `eth_getLogs` request. Thus the discovery reads such a range in chunks, from
-      # the newest chunk to the oldest one. The chunks of the second batch, which
-      # was committed in the block 100, are 150..199 and 100..149. The chunks of the
-      # first batch, which was committed in the block 90, are the same two plus
-      # 90..99. The discovery keeps the logs of the chunks it already read, thus it
-      # requests each chunk only once.
-      test "reads a wide parent chain range in chunks and requests a repeated chunk only once", %{
+      # The event points to the rollup block 20, which is the last block of the
+      # second batch. The discovery finds no earlier confirmation in the range of
+      # that batch. Thus it moves to the first batch. That batch starts at the
+      # lowest indexed rollup block. As a result, the confirmation covers the blocks
+      # 1..20.
+      #
+      # This test is not redundant. The test "walks back through several batches
+      # until the lowest indexed rollup block" makes the same walk, but its event
+      # points to a block in the middle of a batch. This test is the only one where
+      # an event on the boundary of a batch starts a walk which reaches the start of
+      # the chain.
+      test "walks back to the lowest indexed rollup block when the event is on a batch boundary", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
         seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
@@ -407,7 +410,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         expect_discovery(rollup_block_hash(batch, 20), confirmation_transaction_hash)
 
-        assert :ok == discover(json_rpc_named_arguments, @narrow_logs_block_range)
+        assert :ok == discover(json_rpc_named_arguments)
 
         confirmation = Repo.get_by!(LifecycleTransaction, hash: confirmation_transaction_hash)
         assert confirmed_blocks(confirmation) == Enum.to_list(@rollup_first_block..20)
@@ -1119,10 +1122,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The values of both confirmations are equal to the values of their events. Thus
       # the discovery writes nothing, and the result is `:ok`.
       #
-      # This test is not redundant. It is the only test which puts two events into one
-      # parent chain block. The discovery asks for the timestamp of a parent chain
-      # block once per block, not once per event. Thus the batched request holds the
-      # block of the two events one time.
+      # This test is not redundant. It is the only test of this group which puts two
+      # events into one parent chain block. One parent chain block can hold two
+      # transactions which confirm a node.
       #
       # As in the test before, the events point to block hashes outside the database,
       # and the test seeds no batch. Thus the count of the rows is exact.
@@ -1130,7 +1132,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The two hashes are different, because each event confirms another node. The
       # discovery reads neither of them. It takes the hash of a rollup block only for a
       # confirmation which the database does not know.
-      test "asks for the parent chain block once when both events are in that block", %{
+      test "keeps both known confirmations when the two events are in one parent chain block", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
         first_confirmation = insert_confirmation(@confirmation_l1_block, @confirmation_l1_timestamp)
