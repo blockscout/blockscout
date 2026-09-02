@@ -123,9 +123,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # the test holds and no other test holds.
     #
     # Some scenarios show a defect of the discovery. The test of such a scenario holds
-    # the correct result. It carries the tag `@tag :skip` and a line with the name of
-    # the defect. Thus the output of the run shows the test as skipped. The correction
-    # of the defect removes the tag.
+    # the correct result. It carries the tag `@tag skip: "Defect: ..."`, which names
+    # the defect. The output of the run shows the test as skipped, but it does not
+    # show this name. Thus the tag keeps the name of the defect in one place, and a
+    # search for the word "Defect" gives every test of this kind. The correction of
+    # the defect removes the tag.
 
     # A `SendRootUpdated` event on the parent chain confirms one rollup block. The
     # event also confirms all rollup blocks below that block, down to the block of
@@ -726,12 +728,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # the upper confirmation holds the blocks 1..20. The blocks 1..10 belong to
       # both. One import gets two rows of each of those blocks, and the database
       # stops the import with a cardinality violation.
-      #
-      # A correction of this defect can change the lookup ranges of the run. Then this
-      # test needs other ranges in its mock.
-      #
-      # Defect: two new confirmations in the same parent chain block.
-      @tag :skip
+      @tag skip: "Defect: two new confirmations in the same parent chain block"
       test "splits one batch between the two confirmations of the same parent chain block", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -796,12 +793,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # blocks 1..10, and the upper event gives the blocks 1..20. One import gets two
       # rows of each block of 1..10, and the database stops the import with a
       # cardinality violation. The two rows of a block hold the same confirmation.
-      #
-      # A correction of this defect can change the lookup ranges of the run. Then this
-      # test needs other ranges in its mock.
-      #
-      # Defect: two new confirmations in the same parent chain transaction.
-      @tag :skip
+      @tag skip: "Defect: two new confirmations in the same parent chain transaction"
       test "gives all rollup blocks to one confirmation when both events are in the same transaction", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
