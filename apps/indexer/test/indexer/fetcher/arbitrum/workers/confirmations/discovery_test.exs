@@ -16,8 +16,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
     @outbox_address "0x0b9857ae2d4a3dbe74ffe1d7df045bb7f96e4840"
 
-    # Bound at compile time so that it can be matched in the `eth_getLogs` clause
-    # of the mock: a pattern cannot call a function.
+    # Bound at compile time so that the `eth_getLogs` clause of the mock can match
+    # it: a pattern cannot call a function.
     @send_root_updated_topic ArbitrumEvents.send_root_updated()
 
     # One call of `perform/5` reads the logs of this parent chain range. The
@@ -60,8 +60,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # The parent chain block of a confirmation which happened before the one under
     # discovery. This block is between the commitments of the batches and the
     # confirmation under discovery, thus the discovery can find that earlier
-    # confirmation. The test of the re-link also puts a stale link to this block,
-    # for a transaction which the discovery does not find on the parent chain.
+    # confirmation. The test of the re-link also puts a stale link to this block.
+    # That link belongs to a transaction which the parent chain does not hold.
     @earlier_confirmation_l1_block 150
 
     # The parent chain blocks of the commitment transactions of the batches. The
@@ -75,7 +75,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # confirmations. A batch with such a commitment has a short lookup range.
     @recent_commitment_l1_block 194
 
-    # The lowest indexed rollup block. The oldest batch of each test starts here.
+    # The lowest-indexed rollup block. The oldest batch of each test starts here.
     # Thus the discovery cannot move below this block.
     @rollup_first_block 1
 
@@ -95,9 +95,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     #   - one set of `SendRootUpdated` events which the parent chain holds
     #   - the result which the discovery must produce
     #
-    # A test gives the logs of the parent chain, and the mock answers each
-    # `eth_getLogs` request with the logs of the requested range. Thus a test holds
-    # neither the ranges which the discovery reads nor the number of the requests.
+    # A test gives one log per event. The mock answers each `eth_getLogs` request
+    # with the logs of the requested range. Thus a test holds neither the ranges
+    # which the discovery reads nor the number of the requests.
     # Those values show how the discovery collects the data, and a change of them
     # keeps a scenario correct. A test of the number of the requests belongs to
     # `Events.get_logs_for_confirmations/5` and to
@@ -138,10 +138,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # find all rollup blocks that belong to this confirmation.
     #
     # The discovery starts with the batch that contains the confirmed block. Then it
-    # can move down, from batch to batch. The walk stops on one of these conditions:
+    # can continue to the previous batch. The walk stops on one of these conditions:
     #   - the discovery finds an earlier confirmation inside the batch
     #   - all blocks of the batch below are confirmed already
-    #   - the batch starts at the lowest indexed rollup block
+    #   - the batch starts at the lowest-indexed rollup block
     #
     # To find an earlier confirmation, the discovery reads the parent chain logs
     # between the commitment of the batch and the confirmation under discovery.
@@ -151,7 +151,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # The event points to the rollup block 10, which is the highest block of the
       # batch. No earlier confirmation exists on the parent chain. The batch starts
-      # at the lowest indexed rollup block. As a result, the confirmation covers the
+      # at the lowest-indexed rollup block. As a result, the confirmation covers the
       # full batch.
       #
       # The discovery also changes the status of the L2-to-L1 messages. A message
@@ -379,10 +379,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # the parent chain.
       #
       # The event points to the rollup block 15. The discovery finds no earlier
-      # confirmation in the range of each batch. Thus it moves down from batch to
-      # batch. The first batch starts at the lowest indexed rollup block. As a
+      # confirmation in the range of each batch. Thus it continues to each previous
+      # batch. The first batch starts at the lowest-indexed rollup block. As a
       # result, the walk stops there, and the confirmation covers the blocks 1..15.
-      test "walks back through several batches until the lowest indexed rollup block", %{
+      test "walks back through several batches until the lowest-indexed rollup block", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
         seed_batch(@rollup_first_block, 5, @oldest_commitment_l1_block)
@@ -405,15 +405,15 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The event points to the rollup block 20, which is the last block of the
       # second batch. The discovery finds no earlier confirmation in the range of
       # that batch. Thus it moves to the first batch. That batch starts at the
-      # lowest indexed rollup block. As a result, the confirmation covers the blocks
+      # lowest-indexed rollup block. As a result, the confirmation covers the blocks
       # 1..20.
       #
       # This test is not redundant. The test "walks back through several batches
-      # until the lowest indexed rollup block" makes the same walk, but its event
+      # until the lowest-indexed rollup block" makes the same walk, but its event
       # points to a block in the middle of a batch. This test is the only one where
       # an event on the boundary of a batch starts a walk which reaches the start of
       # the chain.
-      test "walks back to the lowest indexed rollup block when the event is on a batch boundary", %{
+      test "walks back to the lowest-indexed rollup block when the event is on a batch boundary", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
         seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
@@ -463,8 +463,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # to it already.
     #
     # In this condition the discovery does not examine the rollup blocks one more
-    # time. It only compares the parent chain block number and the timestamp of the
-    # known transaction with the values from the event. A difference between them
+    # time. It only compares the block number and the timestamp of the known
+    # transaction with the values from the event. A difference between them
     # can occur after a re-org.
     describe "perform/5 with an already known confirmation" do
       # The database has one batch with the rollup blocks 1..10, and no block of it
@@ -495,12 +495,12 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert unconfirmed_blocks() == Enum.to_list(@rollup_first_block..10)
       end
 
-      # The lifecycle transaction of the confirmation is in the database. Its parent
-      # chain block number and its timestamp are equal to the values in the event.
+      # The lifecycle transaction of the confirmation is in the database. Its block
+      # number and its timestamp are equal to the values in the event.
       #
       # The discovery finds no difference, thus it writes nothing and the result is
-      # `:ok`. This is the usual result when the same parent chain range is
-      # processed one more time.
+      # `:ok`. This is the usual result when the discovery reads the same parent
+      # chain range one more time.
       test "leaves the confirmation transaction untouched when nothing changed", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -549,7 +549,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # the rollup block 20. Both blocks are in the same batch.
       #
       # The lower confirmation covers the blocks 1..10, because the batch starts at
-      # the lowest indexed rollup block. The upper confirmation finds the log of the
+      # the lowest-indexed rollup block. The upper confirmation finds the log of the
       # lower confirmation in its own lookup range. That log points to the block 10,
       # which is in the middle of the batch. As a result, the upper confirmation
       # covers the blocks 11..20.
@@ -723,7 +723,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # The lookup range of a confirmation ends one block before the parent chain
       # block of that confirmation. Thus the lookup range of the upper confirmation
-      # holds no log of the lower confirmation, and the walk goes down to the first
+      # holds no log of the lower confirmation. The walk continues to the first
       # block of the batch. The lower confirmation then holds the blocks 1..10, and
       # the upper confirmation holds the blocks 1..20. The blocks 1..10 belong to
       # both. One import gets two rows of each of those blocks, and the database
@@ -832,16 +832,14 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # A parent chain range can hold one new confirmation together with a
     # confirmation which the database knows already. The discovery examines the
     # rollup blocks of the new confirmation only. For the known confirmation it
-    # compares the parent chain block number and the timestamp with the values of
-    # the event. If the values are different, the discovery writes the known
+    # compares the block number and the timestamp with the values of the event. If the values are different, the discovery writes the known
     # transaction again.
     #
     # Both results go into the database in the same operation.
     describe "perform/5 with a new confirmation and an already known one" do
       # The database has two batches: the blocks 1..10 and the blocks 11..20. The
-      # known confirmation holds the blocks 1..10 already. The parent chain block
-      # number and the timestamp of that confirmation are equal to the values in
-      # its event.
+      # known confirmation holds the blocks 1..10 already. The block number and the
+      # timestamp of that confirmation are equal to the values in its event.
       #
       # The new event points to the rollup block 20. The discovery finds no
       # confirmation within the blocks of the second batch. Thus it moves one batch
@@ -1011,8 +1009,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
     # The database can know both confirmations of the range already. Then the
     # discovery examines no rollup block, and it reads no more logs. It compares
-    # the parent chain block number and the timestamp of each known transaction
-    # with the values of its event. It writes only the transactions which show a
+    # the block number and the timestamp of each known transaction with the values
+    # of its event. It writes only the transactions which show a
     # difference.
     describe "perform/5 with two already known confirmations" do
       # The database has one batch with the rollup blocks 1..10, and no block of it
@@ -1352,15 +1350,15 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       )
     end
 
-    # Inserts a batch with its commitment transaction and the rollup blocks
-    # belonging to it, all of them unconfirmed (`confirmation_id` is `nil`).
-    # Returns the batch together with the inserted blocks keyed by block number.
+    # Inserts a batch with its commitment transaction and the rollup blocks of that
+    # batch. No block of the batch is confirmed (`confirmation_id` is `nil`).
+    # Returns the batch together with the blocks, keyed by block number.
     #
     # Note: `arbitrum_l1_batch_factory` inserts a lifecycle transaction of its own
-    # before the `commitment_id` override is applied. Thus each call leaves one
-    # unused lifecycle transaction in the database, and a count of the rows of
-    # `LifecycleTransaction` is not a usable assertion in a test which seeds a
-    # batch. Look the transaction up by its hash instead.
+    # before it applies the `commitment_id` override. Thus each call leaves one
+    # unused lifecycle transaction in the database. A count of the rows of
+    # `LifecycleTransaction` is therefore not a usable assertion in a test which
+    # seeds a batch. Find the transaction by its hash instead.
     defp seed_batch(start_block, end_block, commitment_l1_block) do
       commitment_transaction = insert(:arbitrum_lifecycle_transaction, block_number: commitment_l1_block)
 
@@ -1386,8 +1384,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       to_string(blocks[block_number].hash)
     end
 
-    # Inserts a lifecycle transaction standing for a confirmation included in the
-    # given parent chain block.
+    # Inserts a lifecycle transaction which stands for a confirmation in the given
+    # parent chain block.
     defp insert_confirmation(l1_block_number, timestamp \\ @confirmation_l1_timestamp - 1000) do
       insert(:arbitrum_lifecycle_transaction,
         block_number: l1_block_number,
@@ -1395,8 +1393,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       )
     end
 
-    # Links the given rollup blocks to the given confirmation, as an already
-    # processed confirmation would have done.
+    # Links the given rollup blocks to the given confirmation. An earlier run of the
+    # discovery makes the same links.
     defp mark_confirmed(block_numbers, confirmation) do
       Repo.update_all(
         from(rollup_block in BatchBlock, where: rollup_block.block_number in ^Enum.to_list(block_numbers)),
@@ -1424,8 +1422,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       )
     end
 
-    # Inserts an L2-to-L1 message which was sent in the given rollup block and is
-    # waiting for a confirmation.
+    # Inserts an L2-to-L1 message which was sent in the given rollup block and which
+    # waits for a confirmation.
     defp insert_sent_message_from_l2(rollup_block_number) do
       insert(:arbitrum_message,
         direction: :from_l2,
@@ -1439,10 +1437,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       Repo.get_by!(Message, direction: :from_l2, message_id: message.message_id).status
     end
 
-    # Builds a raw `SendRootUpdated` event log as it arrives from an `eth_getLogs`
+    # Builds a raw `SendRootUpdated` event log, in the shape of an `eth_getLogs`
     # JSON-RPC response. The hash of the top confirmed rollup block is the third
-    # topic; the second topic (the send root) is not used by the discovery.
-    # `options` assigns distinct positions to logs which share one parent chain block.
+    # topic. The discovery does not use the second topic, which is the send root.
+    # `options` gives a different position to each log of one parent chain block.
     defp build_send_root_updated_log(rollup_block_hash, l1_transaction_hash, l1_block_number, options \\ []) do
       %{
         "address" => @outbox_address,
@@ -1473,7 +1471,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # Mocks the RPC calls of one discovery run. `logs` holds every
     # `SendRootUpdated` log which the parent chain has, and not only the logs of
     # the discovery range. The mock answers each `eth_getLogs` request with the
-    # logs of the requested range, thus a test gives the state of the parent chain
+    # logs of the requested range. Thus a test gives the state of the parent chain,
     # and it gives no range of its own.
     #
     # The order of `logs` is the order of each response. A test which needs a
@@ -1505,19 +1503,21 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     defp l1_block_timestamp(@lower_confirmation_l1_block), do: @lower_confirmation_l1_timestamp
     defp l1_block_timestamp(@confirmation_l1_block), do: @confirmation_l1_timestamp
 
-    # Mocks both request shapes the discovery issues: the single `eth_getLogs`
-    # requests (one per scanned parent chain range) and the batched
-    # `eth_getBlockByNumber` request fetching the timestamps of the parent chain
-    # blocks holding the confirmations. One closure with two clauses dispatches on
-    # the shape of each call.
+    # Mocks the two request shapes which the discovery makes:
+    #   - one `eth_getLogs` request per parent chain range
+    #   - one batched `eth_getBlockByNumber` request for the timestamps of the
+    #     parent chain blocks which hold the confirmations
     #
-    # The `eth_getLogs` clause also matches the contract and the event signature,
-    # so a request for another address or another topic fails the match instead of
-    # being answered as if it asked for the `SendRootUpdated` events of the outbox.
+    # One closure with two clauses dispatches on the shape of each call.
     #
-    # The `eth_getLogs` clause answers with the logs of the requested range. A
-    # change of the ranges of the walk thus does not fail the mock, and the state of
-    # the database stays the only subject of a test.
+    # The `eth_getLogs` clause also matches the contract and the event signature.
+    # Thus a request for another address or another topic fails the match. The mock
+    # does not answer it as a request for the `SendRootUpdated` events of the
+    # outbox.
+    #
+    # The `eth_getLogs` clause answers with the logs of the requested range. Thus a
+    # change of the ranges of the walk does not fail the mock. The state of the
+    # database stays the only subject of a test.
     defp expect_rpc(parent_chain_logs, l1_blocks_to_timestamps) do
       stub(EthereumJSONRPC.Mox, :json_rpc, fn
         %{
