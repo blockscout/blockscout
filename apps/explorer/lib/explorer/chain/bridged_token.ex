@@ -171,16 +171,17 @@ defmodule Explorer.Chain.BridgedToken do
              foreign_token_contract_hash_string <-
                decode_contract_address_hash_response(foreign_token_contract_hash_resp),
              {:ok, foreign_token_contract_hash} <- Chain.string_to_address_hash(foreign_token_contract_hash_string) do
-          insert_bridged_token_metadata(home_token_contract_hash, %{
-            foreign_chain_id: foreign_chain_id,
-            foreign_token_address_hash: foreign_token_contract_hash,
-            custom_metadata: nil,
-            custom_cap: nil,
-            lp_token: nil,
-            type: "amb"
-          })
-
-          set_token_bridged_status(home_token_contract_hash, true)
+          case insert_bridged_token_metadata(home_token_contract_hash, %{
+                 foreign_chain_id: foreign_chain_id,
+                 foreign_token_address_hash: foreign_token_contract_hash,
+                 custom_metadata: nil,
+                 custom_cap: nil,
+                 lp_token: nil,
+                 type: "amb"
+               }) do
+            :ok -> set_token_bridged_status(home_token_contract_hash, true)
+            :skipped -> :ok
+          end
         else
           result ->
             Logger.debug([
@@ -360,9 +361,10 @@ defmodule Explorer.Chain.BridgedToken do
         type: "omni"
       }
 
-      insert_bridged_token_metadata(token_address_hash, bridged_token_metadata)
-
-      set_token_bridged_status(token_address_hash, true)
+      case insert_bridged_token_metadata(token_address_hash, bridged_token_metadata) do
+        :ok -> set_token_bridged_status(token_address_hash, true)
+        :skipped -> :ok
+      end
     end
   end
 
@@ -472,10 +474,15 @@ defmodule Explorer.Chain.BridgedToken do
   # bypasses changeset validation, so passing `nil` through would not skip
   # the insert — it would crash with a Postgrex NOT NULL violation instead.
   # Skip the insert entirely rather than moving the crash downstream.
+  #
+  # Returns `:ok` when a `bridged_tokens` row was written, `:skipped`
+  # otherwise. Callers must only mark a token as bridged
+  # (`set_token_bridged_status/2`) when this returns `:ok` -- a `:skipped`
+  # result means there is no metadata row backing that status.
   defp insert_bridged_token_metadata(_token_address_hash, %{foreign_chain_id: nil}) do
     Logger.debug("skipping bridged token metadata insert: foreign_chain_id could not be decoded")
 
-    :ok
+    :skipped
   end
 
   defp insert_bridged_token_metadata(token_address_hash, %{
@@ -502,6 +509,10 @@ defmodule Explorer.Chain.BridgedToken do
           },
           on_conflict: :nothing
         )
+
+      :ok
+    else
+      :skipped
     end
   end
 
