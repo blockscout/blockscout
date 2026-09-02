@@ -552,6 +552,63 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert unconfirmed_blocks() == Enum.to_list(11..20)
       end
 
+      # The database has one batch of the blocks 11..20. No block of the batch is
+      # confirmed. The rollup blocks 1..10 are also in the database, but no batch of
+      # the database holds them. If the indexer did not handle the batch of those
+      # blocks, the database has this state.
+      #
+      # The discovery range holds one event, and that event points to the rollup
+      # block 20. The parent chain holds an earlier event in an older parent chain
+      # block. That older block is outside the discovery range, and the earlier event
+      # points to the rollup block 10.
+      #
+      # The lookup of the confirmation reads the parent chain from the commitment of
+      # the batch to the block before the event. That range holds the log of the
+      # earlier event. The discovery finds the number of a rollup block through the
+      # batch of that block. The block 10 has no batch. Thus the lookup gives an
+      # error.
+      #
+      # The discovery writes nothing after that error. The walk to the batch below
+      # does not start. The return value is `:confirmation_missed`.
+      #
+      # The test "postpones both confirmations when the batch of the lower confirmed
+      # block is missing" holds the same state of the database. In that test the two
+      # events are in the discovery range. When the earlier event is outside the
+      # discovery range, the result stays the same.
+      #
+      # The caller repeats the same parent chain range after such a result. When the
+      # batch of the block 10 is in the database, the discovery writes the
+      # confirmation.
+      test "postpones the confirmation when an earlier event points to a block without a batch", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        blocks_without_batch = seed_blocks_without_batch(@rollup_first_block, 10)
+        batch = seed_batch(11, 20, @commitment_l1_block)
+
+        earlier_confirmation_transaction_hash = to_string(transaction_hash())
+        confirmation_transaction_hash = to_string(transaction_hash())
+
+        expect_discovery_of([
+          build_send_root_updated_log(
+            rollup_block_hash(blocks_without_batch, 10),
+            earlier_confirmation_transaction_hash,
+            @earlier_confirmation_l1_block
+          ),
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 20),
+            confirmation_transaction_hash,
+            @confirmation_l1_block
+          )
+        ])
+
+        assert :confirmation_missed == discover(json_rpc_named_arguments)
+
+        assert Repo.get_by(LifecycleTransaction, hash: confirmation_transaction_hash) == nil
+        assert Repo.get_by(LifecycleTransaction, hash: earlier_confirmation_transaction_hash) == nil
+
+        assert unconfirmed_blocks() == Enum.to_list(11..20)
+      end
+
       # The database has two batches: the blocks 1..10 and the blocks 11..20. No
       # block is confirmed.
       #
