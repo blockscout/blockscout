@@ -1447,7 +1447,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
           )
 
         expect_discovery_of(
-          [lowest_confirmation_log, lower_confirmation_log, upper_confirmation_log],
+          # The mock keeps this order in every response. Thus a response which holds
+          # the two earlier confirmations puts the newer one first.
+          [lower_confirmation_log, lowest_confirmation_log, upper_confirmation_log],
           %{
             # The lookup range of the lowest confirmation holds no earlier
             # confirmation.
@@ -1725,24 +1727,50 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # `extra_ranges` holds the responses for the parent chain ranges which the
     # batch walk reads afterwards.
     #
-    # The mock expects one `eth_getLogs` request per range. If a run reads one range
-    # two times, `additional_get_logs_calls` gives the number of the additional
-    # requests.
-    defp expect_discovery_of(logs, extra_ranges \\ %{}, additional_get_logs_calls \\ 0) do
+    # The mock answers an `eth_getLogs` request with the logs of the requested
+    # parent chain range. Thus a test declares the state of the parent chain, and it
+    # does not declare the ranges which the discovery reads.
+    #
+    # `extra_ranges` and `additional_get_logs_calls` stay in the signature until the
+    # assertions on the requested ranges go away. The mock takes the logs of
+    # `extra_ranges` as a part of the parent chain state. It ignores the ranges
+    # themselves and the number of the requests.
+    defp expect_discovery_of(logs, extra_ranges \\ %{}, _additional_get_logs_calls \\ 0) do
+      parent_chain_logs = parent_chain_logs(logs, extra_ranges)
+
       l1_blocks_to_timestamps =
-        Map.new(logs, fn log ->
+        parent_chain_logs
+        |> logs_of_range(@discovery_l1_start_block, @discovery_l1_end_block)
+        |> Map.new(fn log ->
           l1_block_number = quantity_to_integer(log["blockNumber"])
 
           {l1_block_number, l1_block_timestamp(l1_block_number)}
         end)
 
-      get_logs_responses = Map.put(extra_ranges, {@discovery_l1_start_block, @discovery_l1_end_block}, logs)
+      expect_rpc(parent_chain_logs, l1_blocks_to_timestamps)
+    end
 
-      expect_rpc(
-        get_logs_responses,
-        l1_blocks_to_timestamps,
-        map_size(get_logs_responses) + additional_get_logs_calls
-      )
+    # Every `SendRootUpdated` log which the parent chain holds, without a duplicate.
+    # `logs` comes first. Thus a test which needs a certain order of a response gives
+    # that order in `logs`. The logs which only `extra_ranges` holds follow, from the
+    # oldest parent chain block to the newest one.
+    defp parent_chain_logs(logs, extra_ranges) do
+      extra_logs =
+        extra_ranges
+        |> Map.values()
+        |> Enum.concat()
+        |> Enum.sort_by(fn log -> quantity_to_integer(log["blockNumber"]) end)
+
+      Enum.uniq(logs ++ extra_logs)
+    end
+
+    # The logs of one parent chain range. Both ends of the range belong to it.
+    defp logs_of_range(logs, from_block, to_block) do
+      Enum.filter(logs, fn log ->
+        l1_block_number = quantity_to_integer(log["blockNumber"])
+
+        l1_block_number >= from_block and l1_block_number <= to_block
+      end)
     end
 
     # The timestamp of a parent chain block which holds a confirmation.
@@ -1754,25 +1782,21 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # requests (one per scanned parent chain range) and the batched
     # `eth_getBlockByNumber` request fetching the timestamps of the parent chain
     # blocks holding the confirmations. One closure with two clauses dispatches on
-    # the shape of each call, so the two request kinds do not have to be
-    # interleaved in the order `expect/4` queues them.
+    # the shape of each call.
     #
     # The `eth_getLogs` clause also matches the contract and the event signature,
     # so a request for another address or another topic fails the match instead of
     # being answered as if it asked for the `SendRootUpdated` events of the outbox.
     #
-    # A parent chain range absent from `get_logs_responses` raises `KeyError`, so
-    # an unexpected range fails the test loudly instead of being silently answered
-    # with no logs. `get_logs_calls` gives the number of the `eth_getLogs` requests of
-    # the run. If the run reads each range one time, this number is equal to the
-    # number of the ranges. Every `eth_getLogs` range is also sent to the calling test
-    # process - the whole call path runs synchronously in it - to be drained with
-    # `drain_get_logs_ranges/0` afterwards.
-    defp expect_rpc(get_logs_responses, l1_blocks_to_timestamps, get_logs_calls \\ nil) do
+    # The `eth_getLogs` clause answers with the logs of the requested range. A
+    # change of the ranges of the walk thus does not fail the mock, and the state of
+    # the database stays the only subject of a test. Every `eth_getLogs` range is
+    # also sent to the calling test process - the whole call path runs synchronously
+    # in it - to be drained with `drain_get_logs_ranges/0` afterwards.
+    defp expect_rpc(parent_chain_logs, l1_blocks_to_timestamps) do
       test_pid = self()
-      get_logs_calls = get_logs_calls || map_size(get_logs_responses)
 
-      expect(EthereumJSONRPC.Mox, :json_rpc, get_logs_calls + 1, fn
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn
         %{
           method: "eth_getLogs",
           params: [
@@ -1789,7 +1813,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
           to_block = quantity_to_integer(to_block_quantity)
           send(test_pid, {:eth_get_logs_range, from_block, to_block})
 
-          {:ok, Map.fetch!(get_logs_responses, {from_block, to_block})}
+          {:ok, logs_of_range(parent_chain_logs, from_block, to_block)}
 
         requests, _options when is_list(requests) ->
           {block_numbers, responses} =
