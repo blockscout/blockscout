@@ -28,9 +28,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     @confirmation_l1_timestamp 1_700_000_000
 
     # One parent chain range can hold two `SendRootUpdated` events. The lower
-    # confirmation confirms the lower rollup blocks. Thus the parent chain holds it
-    # in an older block than the upper confirmation. The upper confirmation is the
-    # confirmation which every test of a single event uses.
+    # confirmation confirms the lower rollup blocks. The parent chain usually holds
+    # it in an older block than the upper confirmation, and this block is that older
+    # block. Two tests hold both events in `@confirmation_l1_block` instead, because
+    # one parent chain block can hold two confirmations. The upper confirmation is
+    # the confirmation which every test of a single event uses.
     @lower_confirmation_l1_block 198
     @lower_confirmation_l1_timestamp @confirmation_l1_timestamp - 24
 
@@ -90,8 +92,17 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # The tests describe the scenarios which the discovery must handle. They do not
     # describe the branches of its code. One scenario has three parts:
     #   - one state of the database
-    #   - one set of `SendRootUpdated` events of a parent chain range
+    #   - one set of `SendRootUpdated` events which the parent chain holds
     #   - the result which the discovery must produce
+    #
+    # A test gives the logs of the parent chain, and the mock answers each
+    # `eth_getLogs` request with the logs of the requested range. Thus a test holds
+    # neither the ranges which the discovery reads nor the number of the requests.
+    # Those values show how the discovery collects the data, and a change of them
+    # keeps a scenario correct. A test of the number of the requests belongs to
+    # `Events.get_logs_for_confirmations/5` and to
+    # `RollupBlocks.extend_confirmations/3`, which are the functions that make the
+    # requests.
     #
     # The `describe` blocks group the scenarios by the set of events:
     #   - one new confirmation
@@ -521,9 +532,13 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     #
     # For this reason the parent chain, and not the database, gives the lowest
     # block of the upper confirmation. The lookup range of the upper confirmation
-    # ends one block before that confirmation. Thus the range holds the log of the
-    # lower confirmation. Each test of this group makes sure that the two
-    # confirmations do not take the same rollup blocks.
+    # ends one block before that confirmation. The range thus holds the log of the
+    # lower confirmation while the two events are in different parent chain blocks.
+    # The two last tests of this group hold the events of one parent chain block,
+    # where this is not true.
+    #
+    # Each test of this group makes sure that no rollup block belongs to two
+    # confirmations.
     describe "perform/5 with two new confirmations" do
       # The database has one batch with the rollup blocks 1..20. No block of it is
       # confirmed.
@@ -704,13 +719,13 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The lower confirmation must cover the blocks 1..10, and the upper
       # confirmation must cover the blocks 11..20.
       #
-      # The discovery gives the blocks 1..20 to the upper confirmation. The lookup
-      # range of a confirmation ends one block before the parent chain block of that
-      # confirmation. Thus the lookup range of the upper confirmation holds no log of
-      # the lower confirmation. The walk goes down to the first block of the batch.
-      # Each of the two confirmations then holds the rollup blocks 1..10. One import
-      # gets two rows of each block of 1..10, and the database stops the import with a
-      # cardinality violation.
+      # The lookup range of a confirmation ends one block before the parent chain
+      # block of that confirmation. Thus the lookup range of the upper confirmation
+      # holds no log of the lower confirmation, and the walk goes down to the first
+      # block of the batch. The lower confirmation then holds the blocks 1..10, and
+      # the upper confirmation holds the blocks 1..20. The blocks 1..10 belong to
+      # both. One import gets two rows of each of those blocks, and the database
+      # stops the import with a cardinality violation.
       #
       # A correction of this defect can change the lookup ranges of the run. Then this
       # test needs other ranges in its mock.
@@ -762,6 +777,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # chain gives this state. The scenario of two events in the same parent chain
       # block is more wide. The two events of this test also have the same transaction
       # hash.
+      #
+      # This test is in this group because the parent chain holds two new events. Its
+      # result holds one confirmation, and not two, because the database keeps one
+      # confirmation per parent chain transaction.
       #
       # The database has one batch with the rollup blocks 1..20. No block of it is
       # confirmed. The lower event points to the rollup block 10. The upper event
