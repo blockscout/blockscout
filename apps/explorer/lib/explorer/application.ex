@@ -26,7 +26,6 @@ defmodule Explorer.Application do
     AddressesCoinBalanceSumMinusBurnt,
     AddressTabsElementsCount,
     BlocksCount,
-    GasUsageSum,
     PendingBlockOperationCount,
     PendingTransactionOperationCount,
     TransactionsCount
@@ -92,7 +91,6 @@ defmodule Explorer.Application do
         Blocks,
         ChainId,
         GasPriceOracle,
-        GasUsageSum,
         PendingBlockOperationCount,
         PendingTransactionOperationCount,
         TransactionsCount,
