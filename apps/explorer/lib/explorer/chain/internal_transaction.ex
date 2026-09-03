@@ -508,8 +508,8 @@ defmodule Explorer.Chain.InternalTransaction do
   - returns a query considering that the given address_hash can be: to_address_hash,
     from_address_hash, created_contract_address_hash from internal_transactions' table.
   """
-  def where_address_fields_match(query, address_hash, direction) do
-    address_id = AddressIdToAddressHash.hash_to_id(address_hash)
+  def where_address_fields_match(query, address_hash, direction, options) do
+    address_id = AddressIdToAddressHash.hash_to_id(address_hash, options)
 
     case direction do
       :to ->
@@ -576,14 +576,15 @@ defmodule Explorer.Chain.InternalTransaction do
 
     An `Ecto.Query.t/0` with the address filter applied.
   """
-  @spec where_address_match(
+  @spec where_address_match_by_hash(
           Ecto.Query.t() | module(),
           :from_address | :to_address | :created_contract_address,
-          Hash.Address.t() | [Hash.Address.t()]
+          Hash.Address.t() | [Hash.Address.t()],
+          [Chain.api?()]
         ) :: Ecto.Query.t()
-  def where_address_match(query, address_field, address_hash_or_hashes) do
+  def where_address_match_by_hash(query, address_field, address_hash_or_hashes, options) do
     address_hashes = List.wrap(address_hash_or_hashes)
-    address_ids = AddressIdToAddressHash.hashes_to_ids(address_hashes)
+    address_ids = AddressIdToAddressHash.hashes_to_ids(address_hashes, options)
 
     where_address_match(query, address_field, address_hashes, address_ids)
   end
@@ -892,7 +893,7 @@ defmodule Explorer.Chain.InternalTransaction do
       query_to_address_hash_wrapped =
         __MODULE__
         |> where_nonpending_operation()
-        |> where_address_fields_match(hash, :to)
+        |> where_address_fields_match(hash, :to, options)
         |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
         |> where_is_different_from_parent_transaction()
         |> common_where_limit_order(paging_options)
@@ -901,7 +902,7 @@ defmodule Explorer.Chain.InternalTransaction do
       query_from_address_hash_wrapped =
         __MODULE__
         |> where_nonpending_operation()
-        |> where_address_fields_match(hash, :from_address_hash)
+        |> where_address_fields_match(hash, :from_address_hash, options)
         |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
         |> where_is_different_from_parent_transaction()
         |> common_where_limit_order(paging_options)
@@ -921,7 +922,7 @@ defmodule Explorer.Chain.InternalTransaction do
     else
       __MODULE__
       |> where_nonpending_operation()
-      |> where_address_fields_match(hash, direction)
+      |> where_address_fields_match(hash, direction, options)
       |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
       |> where_is_different_from_parent_transaction()
       |> common_where_limit_order(paging_options)
