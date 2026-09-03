@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   alias Explorer.Chain.{Address, Block, Transaction, PendingBlockOperation}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.{Chain, Repo}
-  alias Explorer.Utility.{AddressCountersRefetchBlock, MissingBlockRange}
+  alias Explorer.Utility.{CountersRefetchBlock, MissingBlockRange}
 
   describe "run/1" do
     setup do
@@ -118,7 +118,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
       %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
 
-      assert {:ok, %{address_counters_refetched_block_numbers: [^block_number]}} =
+      assert {:ok, %{counters_refetched_block_numbers: [^block_number]}} =
                Multi.new()
                |> Blocks.run([block_changes], options)
                |> Repo.transaction()
@@ -130,11 +130,11 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       assert reloaded.gas_used == 100
       assert reloaded.counters_updated_at == block_number + 10
 
-      assert Repo.aggregate(AddressCountersRefetchBlock, :count) == 1
+      assert Repo.aggregate(CountersRefetchBlock, :count) == 1
 
       # a second import of the same block applies no further deltas: the
       # re-fetch was already settled into the queue
-      assert {:ok, %{address_counters_refetched_block_numbers: []}} =
+      assert {:ok, %{counters_refetched_block_numbers: []}} =
                Multi.new()
                |> Blocks.run([block_changes], options)
                |> Repo.transaction()
@@ -170,7 +170,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
       %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
 
-      assert {:ok, %{address_counters_corrections: %{reset: reset_bytes}}} =
+      assert {:ok, %{counters_corrections: %{reset: reset_bytes}}} =
                Multi.new()
                |> Blocks.run([block_changes], options)
                |> Repo.transaction()

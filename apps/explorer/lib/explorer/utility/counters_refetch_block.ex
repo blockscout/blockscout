@@ -1,17 +1,18 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
-defmodule Explorer.Utility.AddressCountersRefetchBlock do
+defmodule Explorer.Utility.CountersRefetchBlock do
   @moduledoc """
   Keeps block numbers whose old content was already subtracted from the
-  incremental address counters (`addresses.transactions_count`,
-  `addresses.token_transfers_count`, `addresses.gas_used`) because the blocks
-  were queued for re-fetch (see `Explorer.Chain.Block.full_refetch/1`).
+  incremental counters (the address counters `addresses.transactions_count`,
+  `addresses.token_transfers_count`, `addresses.gas_used` and the token
+  counter `tokens.transfer_count`) because the blocks were queued for re-fetch
+  (see `Explorer.Chain.Block.full_refetch/1`).
 
-  A row means "the negative counters delta for this block was applied, the
-  positive delta from its re-imported content is still pending". Rows are
-  consumed by `Explorer.Chain.Cache.Counters.AddressCountersConsolidator` once
-  the corresponding block no longer requires a re-fetch. While a row exists,
-  the consolidator does not advance any address consolidation watermark past
-  this block number.
+  A row means "the negative counters deltas for this block were applied, the
+  positive deltas from its re-imported content are still pending". Rows are
+  consumed by `Explorer.Chain.Cache.Counters.Consolidation.settle_pending_refetch_blocks/0`
+  once the corresponding block no longer requires a re-fetch. While a row
+  exists, no consolidation watermark (address or token) advances past this
+  block number.
   """
 
   use Explorer.Schema
@@ -19,7 +20,7 @@ defmodule Explorer.Utility.AddressCountersRefetchBlock do
   alias Explorer.Repo
 
   @primary_key false
-  typed_schema "address_counters_refetch_blocks" do
+  typed_schema "counters_refetch_blocks" do
     field(:block_number, :integer, primary_key: true)
 
     timestamps()

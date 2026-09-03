@@ -3,9 +3,9 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidatorTest do
   use Explorer.DataCase, async: false
 
   alias Explorer.Chain.Address
-  alias Explorer.Chain.Cache.Counters.{AddressCounters, AddressCountersConsolidator}
+  alias Explorer.Chain.Cache.Counters.{AddressCounters, AddressCountersConsolidator, Consolidation}
   alias Explorer.Repo
-  alias Explorer.Utility.AddressCountersRefetchBlock
+  alias Explorer.Utility.CountersRefetchBlock
 
   describe "consolidate_addresses/2" do
     test "incrementally consolidates an address with a watermark" do
@@ -95,15 +95,15 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidatorTest do
 
   describe "safe_block/0" do
     setup do
-      initial_env = Application.get_env(:explorer, AddressCountersConsolidator) || []
+      initial_env = Application.get_env(:explorer, Consolidation) || []
 
       Application.put_env(
         :explorer,
-        AddressCountersConsolidator,
+        Consolidation,
         Keyword.merge(initial_env, safe_block_lag: 0)
       )
 
-      on_exit(fn -> Application.put_env(:explorer, AddressCountersConsolidator, initial_env) end)
+      on_exit(fn -> Application.put_env(:explorer, Consolidation, initial_env) end)
 
       :ok
     end
@@ -132,7 +132,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidatorTest do
     test "is capped below the lowest block pending a re-fetch counter correction" do
       insert(:block, number: 0)
       insert(:block, number: 100)
-      Repo.insert!(%AddressCountersRefetchBlock{block_number: 30})
+      Repo.insert!(%CountersRefetchBlock{block_number: 30})
 
       assert AddressCountersConsolidator.safe_block() == 29
     end
@@ -158,15 +158,15 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidatorTest do
 
   describe "consolidate/0" do
     setup do
-      initial_env = Application.get_env(:explorer, AddressCountersConsolidator) || []
+      initial_env = Application.get_env(:explorer, Consolidation) || []
 
       Application.put_env(
         :explorer,
-        AddressCountersConsolidator,
+        Consolidation,
         Keyword.merge(initial_env, safe_block_lag: 0)
       )
 
-      on_exit(fn -> Application.put_env(:explorer, AddressCountersConsolidator, initial_env) end)
+      on_exit(fn -> Application.put_env(:explorer, Consolidation, initial_env) end)
 
       start_supervised!(AddressCounters)
 
@@ -214,7 +214,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidatorTest do
       transaction = :transaction |> insert(from_address: address) |> with_block(reimported_block)
 
       insert(:block, number: 100)
-      Repo.insert!(%AddressCountersRefetchBlock{block_number: 50})
+      Repo.insert!(%CountersRefetchBlock{block_number: 50})
 
       AddressCountersConsolidator.consolidate()
 
@@ -224,17 +224,17 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidatorTest do
       assert reloaded.gas_used == Decimal.to_integer(transaction.gas_used)
       # settling a covered block does not move the watermark
       assert reloaded.counters_updated_at == 100
-      assert Repo.aggregate(AddressCountersRefetchBlock, :count) == 0
+      assert Repo.aggregate(CountersRefetchBlock, :count) == 0
     end
 
     test "does not settle blocks still awaiting their re-fetch" do
       insert(:block, number: 50, refetch_needed: true)
       insert(:block, number: 100)
-      Repo.insert!(%AddressCountersRefetchBlock{block_number: 50})
+      Repo.insert!(%CountersRefetchBlock{block_number: 50})
 
       AddressCountersConsolidator.consolidate()
 
-      assert Repo.aggregate(AddressCountersRefetchBlock, :count) == 1
+      assert Repo.aggregate(CountersRefetchBlock, :count) == 1
     end
 
     test "does not settle blocks still covered by a missing range" do
@@ -243,11 +243,11 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidatorTest do
       insert(:block, number: 50, refetch_needed: false)
       insert(:block, number: 100)
       insert(:missing_block_range, from_number: 50, to_number: 50)
-      Repo.insert!(%AddressCountersRefetchBlock{block_number: 50})
+      Repo.insert!(%CountersRefetchBlock{block_number: 50})
 
       AddressCountersConsolidator.consolidate()
 
-      assert Repo.aggregate(AddressCountersRefetchBlock, :count) == 1
+      assert Repo.aggregate(CountersRefetchBlock, :count) == 1
     end
   end
 

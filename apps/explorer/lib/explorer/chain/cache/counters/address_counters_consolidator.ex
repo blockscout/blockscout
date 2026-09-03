@@ -22,11 +22,12 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidator do
   that catchup and block re-fetch cannot make consolidated ranges lose or
   double-count rows.
 
-  Each cycle starts by settling pending block re-fetch corrections: for every
-  block whose old content was subtracted when it was queued for re-fetch (see
-  `Explorer.Utility.AddressCountersRefetchBlock`) and which has been fully
-  re-imported since, the new content is added back to the counters of the
-  addresses whose watermark already covers the block.
+  Each cycle starts by settling pending block re-fetch corrections via
+  `Explorer.Chain.Cache.Counters.Consolidation.settle_pending_refetch_blocks/0`:
+  for every block whose old content was subtracted when it was queued for
+  re-fetch (see `Explorer.Utility.CountersRefetchBlock`) and which has been
+  fully re-imported since, the new content is added back to the counters
+  covered by the consolidation watermarks.
 
   Known accepted limitations:
 
@@ -45,15 +46,12 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidator do
 
   require Logger
 
-  alias Explorer.Chain.{Address, Block, Hash, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Hash}
   alias Explorer.Chain.Address.Counters
-  alias Explorer.Chain.Cache.BlockNumber
-  alias Explorer.Chain.Cache.Counters.{AddressCounters, Helper}
+  alias Explorer.Chain.Cache.Counters.{AddressCounters, Consolidation, Helper}
   alias Explorer.Repo
-  alias Explorer.Utility.{AddressCountersRefetchBlock, MissingBlockRange}
 
   @int4_max 2_147_483_647
-  @refetch_blocks_chunk_size 100
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
@@ -110,7 +108,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidator do
   """
   @spec consolidate() :: :ok
   def consolidate do
-    apply_pending_refetch_deltas()
+    Consolidation.settle_pending_refetch_blocks()
 
     unless AddressCounters.dirty_empty?() do
       case safe_block() do
@@ -123,59 +121,9 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidator do
   end
 
   @doc """
-  Returns the highest block number consolidated ranges may currently cover or
-  `nil` when consolidation is not possible yet: the chain head minus the
-  configured safety lag, additionally capped below the lowest missing block
-  range and the lowest block pending a re-fetch counter correction.
-
-  While the chain is not yet indexed down to the configured first block —
-  initial backward sync, before the missing ranges collector has recorded the
-  unindexed tail — no safe block exists at all: consolidating past blocks that
-  are absent but not yet registered in `missing_block_ranges` would lose their
-  contributions forever.
+  See `Explorer.Chain.Cache.Counters.Consolidation.safe_block/0`.
   """
-  @spec safe_block() :: non_neg_integer() | nil
-  def safe_block do
-    if lower_chain_indexed?() do
-      [lagged_head(), min_missing_block_cap(), min_pending_refetch_cap()]
-      |> Enum.reject(&is_nil/1)
-      |> Enum.min(fn -> nil end)
-      |> case do
-        safe_block when is_integer(safe_block) and safe_block > 0 -> safe_block
-        _ -> nil
-      end
-    end
-  end
-
-  defp lower_chain_indexed? do
-    first_block = Application.get_env(:indexer, :first_block)
-
-    case BlockNumber.get_min() do
-      min_block_number when is_integer(min_block_number) -> min_block_number <= first_block
-      _ -> false
-    end
-  end
-
-  defp lagged_head do
-    case BlockNumber.get_max() do
-      max_block_number when is_integer(max_block_number) -> max_block_number - safe_block_lag()
-      _ -> nil
-    end
-  end
-
-  defp min_missing_block_cap do
-    case MissingBlockRange.fetch_min_max() do
-      %{min: min} when is_integer(min) -> min - 1
-      _ -> nil
-    end
-  end
-
-  defp min_pending_refetch_cap do
-    case AddressCountersRefetchBlock.min_block_number() do
-      block_number when is_integer(block_number) -> block_number - 1
-      _ -> nil
-    end
-  end
+  defdelegate safe_block, to: Consolidation
 
   @doc """
   Consolidates the given addresses up to `safe_block` synchronously: full
@@ -422,90 +370,6 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidator do
     Repo.all(query, timeout: query_timeout())
   end
 
-  ## Block re-fetch corrections (positive side)
-
-  defp apply_pending_refetch_deltas do
-    # a block is ready to settle once its re-fetch completed: the consensus
-    # block no longer requires a re-fetch AND the block is no longer covered
-    # by a missing range (the range row survives until the whole re-import —
-    # all its stages — succeeded, so old content can no longer be observed)
-    ready_query =
-      from(refetch_block in AddressCountersRefetchBlock,
-        as: :refetch_block,
-        where:
-          not exists(
-            from(block in Block,
-              where:
-                block.number == parent_as(:refetch_block).block_number and block.consensus == true and
-                  block.refetch_needed == true,
-              select: 1
-            )
-          ),
-        where:
-          not exists(
-            from(range in MissingBlockRange,
-              where:
-                range.from_number >= parent_as(:refetch_block).block_number and
-                  range.to_number <= parent_as(:refetch_block).block_number,
-              select: 1
-            )
-          ),
-        select: refetch_block.block_number,
-        limit: @refetch_blocks_chunk_size
-      )
-
-    case Repo.all(ready_query, timeout: query_timeout()) do
-      [] ->
-        :ok
-
-      block_numbers ->
-        settle_refetched_blocks(block_numbers)
-        # more rows may be ready
-        apply_pending_refetch_deltas()
-    end
-  rescue
-    error ->
-      Logger.error(fn ->
-        ["Failed to settle re-fetched blocks counters: ", Exception.format(:error, error, __STACKTRACE__)]
-      end)
-
-      :ok
-  end
-
-  defp settle_refetched_blocks(block_numbers) do
-    {:ok, updated_bytes} =
-      Repo.transaction(
-        fn ->
-          transactions =
-            Repo.all(
-              from(transaction in Transaction,
-                where: transaction.block_number in ^block_numbers,
-                select: struct(transaction, [:block_number, :from_address_hash, :to_address_hash, :gas_used])
-              ),
-              timeout: query_timeout()
-            )
-
-          token_transfers =
-            Repo.all(
-              from(token_transfer in TokenTransfer,
-                where: token_transfer.block_number in ^block_numbers,
-                select: struct(token_transfer, [:block_number, :from_address_hash, :to_address_hash])
-              ),
-              timeout: query_timeout()
-            )
-
-          updated_bytes = apply_covered_deltas(transactions, token_transfers, :positive)
-
-          AddressCountersRefetchBlock.delete_by_block_numbers(Enum.sort(block_numbers))
-
-          updated_bytes
-        end,
-        timeout: :infinity
-      )
-
-    AddressCounters.invalidate(updated_bytes)
-  end
-
   @doc """
   Applies the per-address counter deltas of the given transactions and token
   transfers directly to the `addresses` columns, restricted per address to the
@@ -709,10 +573,6 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidator do
 
   defp concurrency do
     Application.get_env(:explorer, __MODULE__)[:concurrency] || 4
-  end
-
-  defp safe_block_lag do
-    Application.get_env(:explorer, __MODULE__)[:safe_block_lag] || 12
   end
 
   defp query_timeout do

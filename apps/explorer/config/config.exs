@@ -84,13 +84,9 @@ config :explorer, Explorer.Chain.Cache.Counters.Blackfort.ValidatorsCount,
 
 config :explorer, Explorer.Market.Fetcher.Token, enabled: true
 
-config :explorer, Explorer.Chain.Cache.Counters.TokenHoldersCount,
-  enabled: true,
-  enable_consolidation: true
+config :explorer, Explorer.Chain.Cache.Counters.TokenCounters, enabled: true
 
-config :explorer, Explorer.Chain.Cache.Counters.TokenTransfersCount,
-  enabled: true,
-  enable_consolidation: true
+config :explorer, Explorer.Chain.Cache.Counters.TokenCountersConsolidator, enabled: true
 
 config :explorer, Explorer.Chain.Cache.Counters.BlockBurntFeeCount,
   enabled: true,
@@ -139,7 +135,8 @@ for migrator <- [
       Explorer.Migrator.ReindexBlocksWithUncatalogedTokenTransfers,
       Explorer.Migrator.EmptyInternalTransactionsData,
       Explorer.Migrator.FillInternalTransactionsAddressIds,
-      Explorer.Migrator.BackfillAddressCounters
+      Explorer.Migrator.BackfillAddressCounters,
+      Explorer.Migrator.BackfillTokenCounters
     ] do
   config :explorer, migrator, enabled: true
 end

@@ -439,14 +439,21 @@ config :explorer, Explorer.Chain.Cache.Counters.AddressCountersConsolidator,
   interval: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_COUNTERS_CONSOLIDATION_INTERVAL", "10m"),
   batch_size: ConfigHelper.parse_integer_env_var("CACHE_ADDRESS_COUNTERS_CONSOLIDATION_BATCH_SIZE", 100, min: 1),
   concurrency: ConfigHelper.parse_integer_env_var("CACHE_ADDRESS_COUNTERS_CONSOLIDATION_CONCURRENCY", 4, min: 1),
-  safe_block_lag: ConfigHelper.parse_integer_env_var("CACHE_ADDRESS_COUNTERS_CONSOLIDATION_SAFE_BLOCK_LAG", 12, min: 0),
   query_timeout: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_COUNTERS_CONSOLIDATION_QUERY_TIMEOUT", "5m")
 
-config :explorer, Explorer.Chain.Cache.Counters.TokenHoldersCount,
-  cache_period: ConfigHelper.parse_time_env_var("CACHE_TOKEN_HOLDERS_COUNTER_PERIOD", "1h")
+config :explorer, Explorer.Chain.Cache.Counters.Consolidation,
+  safe_block_lag: ConfigHelper.parse_integer_env_var("CACHE_COUNTERS_CONSOLIDATION_SAFE_BLOCK_LAG", 12, min: 0)
 
-config :explorer, Explorer.Chain.Cache.Counters.TokenTransfersCount,
-  cache_period: ConfigHelper.parse_time_env_var("CACHE_TOKEN_TRANSFERS_COUNTER_PERIOD", "1h")
+config :explorer, Explorer.Chain.Cache.Counters.TokenCounters,
+  ttl: ConfigHelper.parse_time_env_var("CACHE_TOKEN_COUNTERS_TTL", "2h"),
+  max_dirty_markers: ConfigHelper.parse_integer_env_var("CACHE_TOKEN_COUNTERS_MAX_DIRTY_MARKERS", 200_000, min: 1)
+
+config :explorer, Explorer.Chain.Cache.Counters.TokenCountersConsolidator,
+  enabled: !ConfigHelper.parse_bool_env_var("CACHE_TOKEN_COUNTERS_CONSOLIDATION_DISABLED"),
+  interval: ConfigHelper.parse_time_env_var("CACHE_TOKEN_COUNTERS_CONSOLIDATION_INTERVAL", "10m"),
+  batch_size: ConfigHelper.parse_integer_env_var("CACHE_TOKEN_COUNTERS_CONSOLIDATION_BATCH_SIZE", 100, min: 1),
+  concurrency: ConfigHelper.parse_integer_env_var("CACHE_TOKEN_COUNTERS_CONSOLIDATION_CONCURRENCY", 2, min: 1),
+  query_timeout: ConfigHelper.parse_time_env_var("CACHE_TOKEN_COUNTERS_CONSOLIDATION_QUERY_TIMEOUT", "5m")
 
 config :explorer, Explorer.Chain.Cache.Counters.AverageBlockTime,
   enabled: true,
@@ -956,6 +963,12 @@ config :explorer, Explorer.Migrator.BackfillAddressCounters,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_ADDRESS_COUNTERS_BATCH_SIZE", 10),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_ADDRESS_COUNTERS_CONCURRENCY", 2),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_BACKFILL_ADDRESS_COUNTERS_TIMEOUT", "500ms")
+
+config :explorer, Explorer.Migrator.BackfillTokenCounters,
+  enabled: !ConfigHelper.parse_bool_env_var("MIGRATION_BACKFILL_TOKEN_COUNTERS_DISABLED"),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_TOKEN_COUNTERS_BATCH_SIZE", 50),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_TOKEN_COUNTERS_CONCURRENCY", 4),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_BACKFILL_TOKEN_COUNTERS_TIMEOUT", "100ms")
 
 config :explorer, Explorer.Chain.BridgedToken,
   eth_omni_bridge_mediator: System.get_env("BRIDGED_TOKENS_ETH_OMNI_BRIDGE_MEDIATOR"),

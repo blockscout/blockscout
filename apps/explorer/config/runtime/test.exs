@@ -17,6 +17,8 @@ config :explorer, Explorer.Chain.Transaction.History.Historian, enabled: false
 
 config :explorer, Explorer.Chain.Cache.Counters.AddressCounters, enabled: false
 config :explorer, Explorer.Chain.Cache.Counters.AddressCountersConsolidator, enabled: false
+config :explorer, Explorer.Chain.Cache.Counters.TokenCounters, enabled: false
+config :explorer, Explorer.Chain.Cache.Counters.TokenCountersConsolidator, enabled: false
 
 for counter <- [
       Explorer.Chain.Cache.Counters.AddressesCount,
@@ -85,6 +87,7 @@ for migrator <- [
       Explorer.Migrator.EmptyInternalTransactionsData,
       Explorer.Migrator.FillInternalTransactionsAddressIds,
       Explorer.Migrator.BackfillAddressCounters,
+      Explorer.Migrator.BackfillTokenCounters,
 
       # Heavy DB index operations
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex,

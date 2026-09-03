@@ -5,17 +5,17 @@ defmodule Explorer.Migrator.BackfillAddressCountersTest do
   import Ecto.Query
 
   alias Explorer.Chain.Address
-  alias Explorer.Chain.Cache.Counters.AddressCountersConsolidator
+  alias Explorer.Chain.Cache.Counters.{AddressCountersConsolidator, Consolidation}
   alias Explorer.Migrator.{BackfillAddressCounters, MigrationStatus}
   alias Explorer.Repo
 
   setup do
-    initial_consolidator_env = Application.get_env(:explorer, AddressCountersConsolidator) || []
+    initial_consolidation_env = Application.get_env(:explorer, Consolidation) || []
 
     Application.put_env(
       :explorer,
-      AddressCountersConsolidator,
-      Keyword.merge(initial_consolidator_env, safe_block_lag: 0)
+      Consolidation,
+      Keyword.merge(initial_consolidation_env, safe_block_lag: 0)
     )
 
     initial_migrator_env = Application.get_env(:explorer, BackfillAddressCounters) || []
@@ -27,7 +27,7 @@ defmodule Explorer.Migrator.BackfillAddressCountersTest do
     )
 
     on_exit(fn ->
-      Application.put_env(:explorer, AddressCountersConsolidator, initial_consolidator_env)
+      Application.put_env(:explorer, Consolidation, initial_consolidation_env)
       Application.put_env(:explorer, BackfillAddressCounters, initial_migrator_env)
     end)
 
