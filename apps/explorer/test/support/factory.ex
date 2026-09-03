@@ -2029,14 +2029,24 @@ defmodule Explorer.Factory do
     }
   end
 
+  # The identifier of this table is a plain integer, and no database sequence gives
+  # it. The indexer takes the highest identifier of the table and adds one. The counter
+  # of the factory does not count the rows which the indexer wrote. Thus this counter
+  # gives an identifier which a row holds already. Therefore the factory uses the rule
+  # of the indexer. A test which seeds a lifecycle transaction after a run of the
+  # indexer needs this rule.
   def arbitrum_lifecycle_transaction_factory do
     %ArbitrumLifecycleTransaction{
-      id: sequence("arbitrum_lifecycle_tx_id", & &1, start_at: 1),
+      id: next_arbitrum_lifecycle_transaction_id(),
       hash: transaction_hash(),
       block_number: block_number(),
       timestamp: DateTime.utc_now(),
       status: :finalized
     }
+  end
+
+  defp next_arbitrum_lifecycle_transaction_id do
+    Kernel.+(Repo.aggregate(ArbitrumLifecycleTransaction, :max, :id) || 0, 1)
   end
 
   def arbitrum_l1_batch_factory do
