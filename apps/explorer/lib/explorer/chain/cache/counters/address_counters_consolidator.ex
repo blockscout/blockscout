@@ -48,6 +48,7 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidator do
 
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Cache.Counters.{AddressCounters, Consolidation, Helper}
   alias Explorer.Repo
 
@@ -409,9 +410,9 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidator do
   a full counters recalculation on their next consolidation — when their
   watermark already covers the given block number (a covered range changed
   under it: deep reorg, or rows inserted below the watermark by an
-  out-of-band importer). Returns the hash bytes of the reset addresses; the
-  caller is responsible for invalidating the display cache and marking them
-  dirty.
+  out-of-band importer). Reset addresses are marked dirty so the recalculation
+  is actually scheduled. Returns the hash bytes of the reset addresses; the
+  caller is responsible for invalidating the display cache.
   """
   @spec reset_covered_watermarks(%{binary() => non_neg_integer()}, Ecto.Repo.t()) :: [binary()]
   def reset_covered_watermarks(min_block_by_hash_bytes, repo \\ Repo)
@@ -439,7 +440,13 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidator do
 
     {_count, reset_hashes} = repo.update_all(query, [], timeout: query_timeout())
 
-    Enum.map(reset_hashes, & &1.bytes)
+    reset_bytes = Enum.map(reset_hashes, & &1.bytes)
+
+    # a spurious marker on transaction rollback is harmless (the guarded
+    # consolidation of a non-reset address is a no-op)
+    AddressCounters.mark_dirty(Enum.map(reset_bytes, &{&1, BlockNumber.get_max()}))
+
+    reset_bytes
   end
 
   defp apply_signed_deltas(deltas, watermarks, sign, repo) do

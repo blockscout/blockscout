@@ -49,6 +49,7 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidator do
 
   require Logger
 
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Cache.Counters.{Consolidation, TokenCounters}
   alias Explorer.Chain.{Hash, Token, TokenTransfer}
   alias Explorer.Repo
@@ -418,8 +419,9 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidator do
   full counters recalculation on their next consolidation — when their
   watermark already covers the given block number (a covered range changed
   under it: rows inserted below the watermark, or a missed correction guard).
+  Reset tokens are marked dirty so the recalculation is actually scheduled.
   Returns the hash bytes of the reset tokens; the caller is responsible for
-  invalidating the display cache and marking them dirty.
+  invalidating the display cache.
   """
   @spec reset_covered_watermarks(%{binary() => non_neg_integer()}, Ecto.Repo.t()) :: [binary()]
   def reset_covered_watermarks(min_block_by_hash_bytes, repo \\ Repo)
@@ -447,7 +449,13 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidator do
 
     {_count, reset_hashes} = repo.update_all(query, [], timeout: query_timeout())
 
-    Enum.map(reset_hashes, & &1.bytes)
+    reset_bytes = Enum.map(reset_hashes, & &1.bytes)
+
+    # a spurious marker on transaction rollback is harmless (the guarded
+    # consolidation of a non-reset token is a no-op)
+    TokenCounters.mark_dirty(Enum.map(reset_bytes, &{&1, BlockNumber.get_max()}))
+
+    reset_bytes
   end
 
   defp apply_signed_transfer_deltas(deltas, watermarks, sign, repo) do

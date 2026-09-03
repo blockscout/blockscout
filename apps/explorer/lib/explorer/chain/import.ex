@@ -232,7 +232,6 @@ defmodule Explorer.Chain.Import do
       |> AddressCountersConsolidator.reset_covered_watermarks()
 
     AddressCounters.invalidate(reset_bytes)
-    AddressCounters.mark_dirty(Enum.map(reset_bytes, &{&1, BlockNumber.get_max()}))
   end
 
   defp reset_token_watermarks(token_transfers) do
@@ -250,7 +249,6 @@ defmodule Explorer.Chain.Import do
       |> TokenCountersConsolidator.reset_covered_watermarks()
 
     TokenCounters.invalidate(reset_bytes)
-    TokenCounters.mark_dirty(Enum.map(reset_bytes, &{&1, BlockNumber.get_max()}))
   end
 
   defp token_transfer_participants(token_transfer) do

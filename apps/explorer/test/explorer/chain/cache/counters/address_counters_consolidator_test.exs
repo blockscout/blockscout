@@ -239,15 +239,40 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidatorTest do
 
     test "does not settle blocks still covered by a missing range" do
       # refetch_needed already flipped, but the re-import has not fully
-      # completed yet (the missing range row is only removed afterwards)
+      # completed yet (the missing range row is only removed afterwards);
+      # missing ranges are stored descending: from_number is the high end
       insert(:block, number: 50, refetch_needed: false)
       insert(:block, number: 100)
-      insert(:missing_block_range, from_number: 50, to_number: 50)
+      insert(:missing_block_range, from_number: 60, to_number: 40)
       Repo.insert!(%CountersRefetchBlock{block_number: 50})
 
       AddressCountersConsolidator.consolidate()
 
       assert Repo.aggregate(CountersRefetchBlock, :count) == 1
+    end
+  end
+
+  describe "reset_covered_watermarks/2" do
+    test "resets only addresses whose watermark covers the block and marks them dirty" do
+      start_supervised!(AddressCounters)
+
+      covered_address = insert(:address, counters_updated_at: 100)
+      fresh_address = insert(:address, counters_updated_at: 30)
+
+      reset_bytes =
+        AddressCountersConsolidator.reset_covered_watermarks(%{
+          covered_address.hash.bytes => 50,
+          fresh_address.hash.bytes => 50
+        })
+
+      assert reset_bytes == [covered_address.hash.bytes]
+      assert is_nil(Repo.get(Address, covered_address.hash).counters_updated_at)
+      assert Repo.get(Address, fresh_address.hash).counters_updated_at == 30
+
+      # the recalculation of the reset address is scheduled
+      :sys.get_state(AddressCounters)
+      assert {[{marked_bytes, _block_number}], _continuation} = AddressCounters.select_dirty(10)
+      assert marked_bytes == covered_address.hash.bytes
     end
   end
 

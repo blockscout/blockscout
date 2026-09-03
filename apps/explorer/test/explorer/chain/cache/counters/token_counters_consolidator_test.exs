@@ -218,7 +218,9 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidatorTest do
   end
 
   describe "reset_covered_watermarks/2" do
-    test "resets only tokens whose watermark covers the block" do
+    test "resets only tokens whose watermark covers the block and marks them dirty" do
+      start_supervised!(TokenCounters)
+
       covered_token = insert(:token, counters_updated_at: 100)
       fresh_token = insert(:token, counters_updated_at: 30)
 
@@ -231,6 +233,11 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidatorTest do
       assert reset_bytes == [covered_token.contract_address_hash.bytes]
       assert is_nil(Repo.get_by(Token, contract_address_hash: covered_token.contract_address_hash).counters_updated_at)
       assert Repo.get_by(Token, contract_address_hash: fresh_token.contract_address_hash).counters_updated_at == 30
+
+      # the recalculation of the reset token is scheduled
+      :sys.get_state(TokenCounters)
+      assert {[{marked_bytes, _block_number}], _continuation} = TokenCounters.select_dirty(10)
+      assert marked_bytes == covered_token.contract_address_hash.bytes
     end
   end
 

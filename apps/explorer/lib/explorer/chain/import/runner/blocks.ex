@@ -370,7 +370,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       subtract_refetched_blocks_content(repo, refetched_block_numbers, timeout, timestamps)
 
     AddressCounters.invalidate(reset_bytes ++ subtracted_address_bytes)
-    AddressCounters.mark_dirty(Enum.map(reset_bytes, &{&1, BlockNumber.get_max()}))
     TokenCounters.invalidate(subtracted_token_bytes)
 
     {:ok, %{reset: reset_bytes, refetched_block_numbers: refetched_block_numbers}}
