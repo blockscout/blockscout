@@ -687,6 +687,86 @@ defmodule Indexer.Transform.TokenTransfersTest do
     end
   end
 
+  describe "parse/1 with ERC-8056 logs" do
+    @erc8056_contract "0xf2eec76e45b328df99a34fa696320a262cb92154"
+    @transfer_topic "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+    @transfer_with_ui_amount_topic "0x0226a2f5c1ae0e071aeec3d4ebafcefdc5c549be11f40ed27e76e802acccf374"
+    @ui_multiplier_updated_topic "0x2205df4534432b2f60654a3fdb48737ffdaf3e9edb1a498bd985bc026b15b055"
+
+    defp erc8056_logs do
+      transfer = %{
+        address_hash: @erc8056_contract,
+        block_number: 3_530_917,
+        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
+        data: "0x000000000000000000000000000000000000000000000000ebec21ee1da40000",
+        first_topic: @transfer_topic,
+        second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
+        third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
+        fourth_topic: nil,
+        index: 8,
+        transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5"
+      }
+
+      # emitted by the same `_update` call as the `Transfer` above, carrying the
+      # same raw amount plus the amount scaled by the multiplier
+      transfer_with_ui_amount = %{
+        transfer
+        | first_topic: @transfer_with_ui_amount_topic,
+          index: 9,
+          data:
+            "0x000000000000000000000000000000000000000000000000ebec21ee1da40000" <>
+              "0000000000000000000000000000000000000000000000001d7d843dc3b48000"
+      }
+
+      {transfer, transfer_with_ui_amount}
+    end
+
+    test "does not count TransferWithUIAmount as a transfer of its own" do
+      {transfer, transfer_with_ui_amount} = erc8056_logs()
+
+      %{token_transfers: token_transfers, tokens: tokens} =
+        TokenTransfers.parse([transfer, transfer_with_ui_amount])
+
+      # the standard emits `TransferWithUIAmount` *in addition to* `Transfer`,
+      # so recognising it as a transfer would double every movement of the token
+      assert [%{log_index: 8, amount: amount}] = token_transfers
+      assert Decimal.equal?(amount, Decimal.new(17_000_000_000_000_000_000))
+      assert [%{type: "ERC-20"}] = tokens
+    end
+
+    test "decodes an announced change of the multiplier out of the log alone" do
+      {transfer, _transfer_with_ui_amount} = erc8056_logs()
+
+      ui_multiplier_updated = %{
+        transfer
+        | first_topic: @ui_multiplier_updated_topic,
+          index: 10,
+          second_topic: nil,
+          third_topic: nil,
+          # (oldMultiplier, newMultiplier, effectiveAtTimestamp), none indexed
+          data:
+            "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000" <>
+              "0000000000000000000000000000000000000000000000001bc16d674ec80000" <>
+              "000000000000000000000000000000000000000000000000000000006955b900"
+      }
+
+      assert [change] = TokenTransfers.parse_ui_multiplier_changes([transfer, ui_multiplier_updated])
+
+      assert change.token_contract_address_hash == @erc8056_contract
+      assert change.block_number == transfer.block_number
+      assert change.log_index == 10
+      assert Decimal.equal?(change.old_multiplier, Decimal.new("1000000000000000000"))
+      assert Decimal.equal?(change.new_multiplier, Decimal.new("2000000000000000000"))
+      assert change.effective_at == ~U[2026-01-01 00:00:00.000000Z]
+    end
+
+    test "ignores logs of other events when collecting multiplier changes" do
+      {transfer, transfer_with_ui_amount} = erc8056_logs()
+
+      assert TokenTransfers.parse_ui_multiplier_changes([transfer, transfer_with_ui_amount]) == []
+    end
+  end
+
   if Application.compile_env(:explorer, :chain_type) == :arc do
     describe "parse/1 on Arc chain" do
       @arc_native_token "0x3600000000000000000000000000000000000000"

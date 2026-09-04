@@ -16,8 +16,9 @@ defmodule Indexer.Transform.TokenTransfers do
   import Explorer.Helper, only: [decode_data: 2, truncate_address_hash: 1]
 
   alias Explorer.Chain.{Hash, Token, TokenTransfer}
+  alias Explorer.Chain.Token.ScaledUIAmount
   alias Explorer.Repo
-  alias Indexer.Fetcher.TokenTotalSupplyUpdater
+  alias Indexer.Fetcher.{TokenTotalSupplyUpdater, TokenUIMultiplierUpdater}
 
   @doc """
   Returns a list of token transfers given a list of logs.
@@ -101,13 +102,21 @@ defmodule Indexer.Transform.TokenTransfers do
         erc1155_token_transfers.token_transfers ++
         erc20_and_erc721_token_transfers.token_transfers ++ weth_transfers.token_transfers
 
-    tokens_uniq = sanitize_token_types(rough_tokens_uniq, rough_token_transfers)
-    token_transfers = sanitize_weth_transfers(tokens_uniq, rough_token_transfers, weth_transfers.token_transfers)
+    {tokens_uniq, token_types_map} = sanitize_token_types(rough_tokens_uniq, rough_token_transfers)
+
+    token_transfers =
+      tokens_uniq
+      |> sanitize_weth_transfers(rough_token_transfers, weth_transfers.token_transfers)
+      |> sanitize_scaled_ui_amount_transfer_types(token_types_map)
 
     if !skip_additional_fetchers? do
       token_transfers
       |> filter_tokens_for_supply_update()
       |> TokenTotalSupplyUpdater.add_tokens()
+
+      logs
+      |> parse_ui_multiplier_changes()
+      |> TokenUIMultiplierUpdater.add_changes()
     end
 
     token_transfers_from_logs_uniq = %{
@@ -203,8 +212,22 @@ defmodule Indexer.Transform.TokenTransfers do
         if token_type_priority(old_type) > token_type_priority(new_type), do: old_type, else: new_type
       end)
 
-    Enum.map(tokens, fn %{contract_address_hash: hash} = token ->
-      Map.put(token, :type, actual_token_types_map[hash])
+    {Enum.map(tokens, fn %{contract_address_hash: hash} = token ->
+       Map.put(token, :type, actual_token_types_map[hash])
+     end), actual_token_types_map}
+  end
+
+  # `token_transfers.token_type` is denormalized, and for every other type the
+  # value `do_parse/3` derived from the log is already right. ERC-8056 is the
+  # exception: its transfers look exactly like ERC-20 ones, so the type resolved
+  # for the token has to be carried over to them.
+  defp sanitize_scaled_ui_amount_transfer_types(token_transfers, token_types_map) do
+    Enum.map(token_transfers, fn token_transfer ->
+      if token_types_map[token_transfer.token_contract_address_hash] == "ERC-8056" do
+        %{token_transfer | token_type: "ERC-8056"}
+      else
+        token_transfer
+      end
     end)
   end
 
@@ -216,7 +239,7 @@ defmodule Indexer.Transform.TokenTransfers do
 
   defp token_type_priority(nil), do: -1
 
-  @token_types_priority_order ["ERC-20", "ERC-721", "ERC-1155", "ERC-404", "ERC-7984"]
+  @token_types_priority_order ["ERC-20", "ERC-8056", "ERC-721", "ERC-1155", "ERC-404", "ERC-7984"]
   defp token_type_priority(token_type) do
     Enum.find_index(@token_types_priority_order, &(&1 == token_type))
   end
@@ -692,5 +715,26 @@ defmodule Indexer.Transform.TokenTransfers do
     end)
     |> Enum.map(& &1.token_contract_address_hash)
     |> Enum.uniq()
+  end
+
+  @doc """
+  Returns the ERC-8056 multiplier changes announced in the given logs, as `t:Explorer.Chain.Token.UIMultiplierChange.t/0` parameters.
+
+  This is a candidate filter, not an acceptance: matching the topic says nothing
+  about the contract, since any contract can emit any topic it likes. Whether a
+  change is recorded, and whether the token becomes `ERC-8056`, is settled by
+  `Indexer.Fetcher.TokenUIMultiplierUpdater` once it has checked the ERC-165
+  claim — which keeps the block import path free of `eth_call`s.
+
+  Note that `TransferWithUIAmount`, the other event of the standard, is
+  intentionally not handled by this module: it is emitted *in addition to* the
+  regular ERC-20 `Transfer`, so parsing it as a transfer of its own would count
+  every movement of an ERC-8056 token twice.
+  """
+  @spec parse_ui_multiplier_changes([map()]) :: [map()]
+  def parse_ui_multiplier_changes(logs) do
+    logs
+    |> Enum.map(&ScaledUIAmount.parse_ui_multiplier_updated/1)
+    |> Enum.reject(&is_nil/1)
   end
 end

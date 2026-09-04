@@ -31,7 +31,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.AdvancedFilter do
           "ERC-721",
           "ERC-1155",
           "ERC-404",
-          "ERC-7984"
+          "ERC-7984",
+          "ERC-8056"
         ],
         description:
           "Kind of activity represented by the item. Values `coin_transfer`, `contract_interaction`, and " <>

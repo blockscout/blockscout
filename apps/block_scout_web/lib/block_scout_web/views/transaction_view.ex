@@ -146,6 +146,7 @@ defmodule BlockScoutWeb.TransactionView do
       amounts: [],
       token_ids: token_transfer.token_ids,
       token_type: token_transfer.token_type,
+      ui_multiplier: token_transfer.ui_multiplier,
       to_address_hash: token_transfer.to_address_hash,
       from_address_hash: token_transfer.from_address_hash
     }
@@ -161,6 +162,7 @@ defmodule BlockScoutWeb.TransactionView do
       amounts: amounts,
       token_ids: token_transfer.token_ids,
       token_type: token_transfer.token_type,
+      ui_multiplier: token_transfer.ui_multiplier,
       to_address_hash: token_transfer.to_address_hash,
       from_address_hash: token_transfer.from_address_hash
     }
@@ -175,6 +177,7 @@ defmodule BlockScoutWeb.TransactionView do
       amounts: [],
       token_ids: token_transfer.token_ids,
       token_type: token_transfer.token_type,
+      ui_multiplier: token_transfer.ui_multiplier,
       to_address_hash: token_transfer.to_address_hash,
       from_address_hash: token_transfer.from_address_hash
     }
