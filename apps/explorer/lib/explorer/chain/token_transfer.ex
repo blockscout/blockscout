@@ -411,6 +411,28 @@ defmodule Explorer.Chain.TokenTransfer do
     Repo.one(query, timeout: :infinity)
   end
 
+  @doc """
+  Builds a query for the token transfers of the given token, optionally
+  bounded by a `(from_block_number, to_block_number]` block range (either
+  bound may be `nil` to leave that side open). Used by the incremental token
+  counters consolidation.
+  """
+  @spec count_token_transfers_from_token_hash_query(
+          Hash.t(),
+          Explorer.Chain.Block.block_number() | nil,
+          Explorer.Chain.Block.block_number() | nil
+        ) :: Ecto.Query.t()
+  def count_token_transfers_from_token_hash_query(token_address_hash, from_block_number \\ nil, to_block_number \\ nil) do
+    TokenTransfer
+    |> where([tt], tt.token_contract_address_hash == ^token_address_hash)
+    |> then(fn query ->
+      if is_nil(from_block_number), do: query, else: where(query, [tt], tt.block_number > ^from_block_number)
+    end)
+    |> then(fn query ->
+      if is_nil(to_block_number), do: query, else: where(query, [tt], tt.block_number <= ^to_block_number)
+    end)
+  end
+
   @spec count_token_transfers_from_token_hash_and_token_id(Hash.t(), non_neg_integer(), [api?]) :: non_neg_integer()
   def count_token_transfers_from_token_hash_and_token_id(token_address_hash, token_id, options) do
     query =

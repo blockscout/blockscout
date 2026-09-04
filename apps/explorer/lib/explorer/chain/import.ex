@@ -8,7 +8,15 @@ defmodule Explorer.Chain.Import do
   alias Explorer.Account.Notify
   alias Explorer.Chain.{Block, Import}
   alias Explorer.Chain.Cache.BlockNumber
-  alias Explorer.Chain.Cache.Counters.{AddressCounters, AddressCountersConsolidator}
+
+  alias Explorer.Chain.Cache.Counters.{
+    AddressCounters,
+    AddressCountersConsolidator,
+    Consolidation,
+    TokenCounters,
+    TokenCountersConsolidator
+  }
+
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import.Stage
   alias Explorer.Repo
@@ -157,30 +165,31 @@ defmodule Explorer.Chain.Import do
          {:ok, runner_to_changes_list} <- runner_to_changes_list(valid_runner_option_pairs),
          {:ok, data} <- insert_runner_to_changes_list(runner_to_changes_list, options) do
       Notify.async(data[:transactions])
-      update_address_counters(data, Map.get(options, :broadcast, false))
+      update_counters(data, Map.get(options, :broadcast, false))
       Publisher.broadcast(Map.drop(data, @not_broadcasted_runners), Map.get(options, :broadcast, false))
       {:ok, data}
     end
   end
 
   # Registers imported transactions and token transfers in the incremental
-  # address counters, whatever the import source (block fetcher, on-demand and
-  # async fetchers, migrators): marks the involved addresses dirty for
-  # `Explorer.Chain.Cache.Counters.AddressCountersConsolidator` and live-bumps
-  # the display cache for realtime imports. Token transfers inserted below an
-  # address's consolidation watermark (derived asynchronously — e.g. from
-  # internal transactions — or backfilled by migrators) cannot be covered by
-  # incremental range aggregates anymore, so such addresses get their
-  # watermark reset for a full recalculation.
+  # address and token counters, whatever the import source (block fetcher,
+  # on-demand and async fetchers, migrators): marks the involved addresses and
+  # tokens dirty for their consolidators and live-bumps the display caches for
+  # realtime imports. Token transfers inserted below a consolidation watermark
+  # (derived asynchronously — e.g. from internal transactions — or backfilled
+  # by migrators) cannot be covered by incremental range aggregates anymore,
+  # so the affected addresses and tokens get their watermark reset for a full
+  # recalculation.
   #
   # Runs after the import transaction committed, so failures here (e.g. a
   # transient DB error in the watermark reset) must not fail the import or
   # prevent the subsequent event broadcast — they only cost counter freshness.
-  defp update_address_counters(data, broadcast_type) do
+  defp update_counters(data, broadcast_type) do
     transactions = Map.get(data, :transactions, [])
     token_transfers = Map.get(data, :token_transfers, [])
 
     AddressCounters.handle_new_data(transactions, token_transfers, broadcast_type == :realtime)
+    TokenCounters.handle_new_data(token_transfers, broadcast_type == :realtime)
 
     if token_transfers != [] and Explorer.mode() in [:indexer, :all] do
       reset_watermarks_covering_token_transfers(token_transfers)
@@ -190,13 +199,30 @@ defmodule Explorer.Chain.Import do
   rescue
     error ->
       Logger.error(fn ->
-        ["Could not update address counters for imported data: ", Exception.format(:error, error, __STACKTRACE__)]
+        ["Could not update counters for imported data: ", Exception.format(:error, error, __STACKTRACE__)]
       end)
 
       :ok
   end
 
   defp reset_watermarks_covering_token_transfers(token_transfers) do
+    # a covered watermark is at most the lagged head, so transfers above it can
+    # never land below any watermark — pure-realtime imports skip the DB round
+    # trips entirely
+    lagged_head = BlockNumber.get_max() - Consolidation.safe_block_lag()
+
+    covered_candidates =
+      Enum.filter(token_transfers, &(not is_nil(&1.block_number) and &1.block_number <= lagged_head))
+
+    if covered_candidates != [] do
+      reset_address_watermarks(covered_candidates)
+      reset_token_watermarks(covered_candidates)
+    end
+
+    :ok
+  end
+
+  defp reset_address_watermarks(token_transfers) do
     reset_bytes =
       token_transfers
       |> Enum.flat_map(&token_transfer_participants/1)
@@ -206,7 +232,23 @@ defmodule Explorer.Chain.Import do
       |> AddressCountersConsolidator.reset_covered_watermarks()
 
     AddressCounters.invalidate(reset_bytes)
-    AddressCounters.mark_dirty(Enum.map(reset_bytes, &{&1, BlockNumber.get_max()}))
+  end
+
+  defp reset_token_watermarks(token_transfers) do
+    reset_bytes =
+      token_transfers
+      |> Enum.reduce(%{}, fn token_transfer, acc ->
+        case token_transfer.token_contract_address_hash do
+          nil ->
+            acc
+
+          token_hash ->
+            Map.update(acc, token_hash.bytes, token_transfer.block_number, &min(&1, token_transfer.block_number))
+        end
+      end)
+      |> TokenCountersConsolidator.reset_covered_watermarks()
+
+    TokenCounters.invalidate(reset_bytes)
   end
 
   defp token_transfer_participants(token_transfer) do
