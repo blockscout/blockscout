@@ -193,6 +193,19 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersTest do
     end
   end
 
+  describe "stats/0" do
+    test "reports cached addresses and dirty markers" do
+      address = insert(:address, transactions_count: 5, token_transfers_count: 0, gas_used: 0)
+      AddressCounters.fetch(address)
+
+      AddressCounters.mark_dirty([{build(:address).hash.bytes, 10}])
+      :sys.get_state(AddressCounters)
+
+      assert %{cached_addresses: 1, dirty_markers: 1, memory_bytes: memory_bytes} = AddressCounters.stats()
+      assert memory_bytes > 0
+    end
+  end
+
   describe "delete_dirty_markers/2" do
     test "keeps markers above the safe block" do
       address_a = build(:address)
