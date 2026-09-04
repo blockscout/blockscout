@@ -137,6 +137,19 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersTest do
     end
   end
 
+  describe "stats/0" do
+    test "reports cached tokens and dirty markers" do
+      token = insert(:token, transfer_count: 5, counters_updated_at: 100)
+      TokenCounters.fetch(token)
+
+      TokenCounters.mark_dirty([{insert(:token).contract_address_hash.bytes, 10}])
+      :sys.get_state(TokenCounters)
+
+      assert %{cached_tokens: 1, dirty_markers: 1, memory_bytes: memory_bytes} = TokenCounters.stats()
+      assert memory_bytes > 0
+    end
+  end
+
   describe "delete_dirty_markers/2" do
     test "keeps markers above the safe block" do
       token_a = insert(:token)

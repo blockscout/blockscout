@@ -65,20 +65,48 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidator do
   def init(_args) do
     schedule_next_consolidation(:timer.seconds(10))
 
-    {:ok, %{}}
+    {:ok, %{cycle_task: nil, cycle_started_at: nil, last_cycle_finished_at: nil}}
   end
 
+  # A cycle can run for a long time (draining a large dirty backlog, full
+  # recalculations of heavy tokens), so it runs in a separate supervised task:
+  # the process itself stays responsive to system messages (`:sys.get_state/1`,
+  # observer) and its state reports the running cycle. The next cycle is
+  # scheduled only once the previous one finished, so cycles never overlap.
   @impl true
-  def handle_info(:consolidate, state) do
-    consolidate()
+  def handle_info(:consolidate, %{cycle_task: nil} = state) do
+    task = Task.Supervisor.async_nolink(Explorer.TaskSupervisor, &consolidate/0)
+
+    {:noreply, %{state | cycle_task: task, cycle_started_at: DateTime.utc_now()}}
+  end
+
+  # a stray tick while a cycle is still running — the next one is scheduled on
+  # its completion
+  def handle_info(:consolidate, state), do: {:noreply, state}
+
+  def handle_info({ref, _result}, %{cycle_task: %Task{ref: ref}} = state) do
+    Process.demonitor(ref, [:flush])
+
+    {:noreply, finish_cycle(state)}
+  end
+
+  def handle_info({:DOWN, ref, :process, _pid, reason}, %{cycle_task: %Task{ref: ref}} = state) do
+    Logger.error(fn -> ["Token counters consolidation cycle crashed: ", inspect(reason)] end)
+
+    {:noreply, finish_cycle(state)}
+  end
+
+  def handle_info(_, state), do: {:noreply, state}
+
+  defp finish_cycle(state) do
     schedule_next_consolidation(interval())
 
-    {:noreply, state}
+    %{state | cycle_task: nil, cycle_started_at: nil, last_cycle_finished_at: DateTime.utc_now()}
   end
 
   @doc """
   Runs one consolidation cycle synchronously. Exposed for tests and manual
-  runs; the supervised process calls it on every `:consolidate` tick.
+  runs; the supervised process runs it in a task on every `:consolidate` tick.
   """
   @spec consolidate() :: :ok
   def consolidate do

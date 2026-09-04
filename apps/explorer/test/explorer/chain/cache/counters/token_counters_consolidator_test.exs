@@ -116,6 +116,24 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidatorTest do
     end
   end
 
+  describe "consolidation cycle process" do
+    test "the process stays responsive while a cycle runs and reports it in its state" do
+      pid = start_supervised!(TokenCountersConsolidator)
+
+      send(pid, :consolidate)
+
+      # the cycle runs in a task, so the process answers immediately
+      assert %{cycle_task: _, cycle_started_at: _, last_cycle_finished_at: _} = :sys.get_state(pid, 1_000)
+
+      wait_for_results(fn ->
+        case :sys.get_state(pid, 1_000) do
+          %{cycle_task: nil, last_cycle_finished_at: %DateTime{}} -> :ok
+          _ -> raise Ecto.NoResultsError, queryable: "cycle completion"
+        end
+      end)
+    end
+  end
+
   describe "consolidate/0" do
     setup do
       initial_env = Application.get_env(:explorer, Consolidation) || []

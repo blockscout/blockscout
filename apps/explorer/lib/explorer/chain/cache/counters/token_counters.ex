@@ -248,6 +248,31 @@ defmodule Explorer.Chain.Cache.Counters.TokenCounters do
     :ets.whereis(@dirty_cache_name) == :undefined or :ets.info(@dirty_cache_name, :size) == 0
   end
 
+  @doc """
+  Returns cache statistics for inspection (the process state itself is empty —
+  all data lives in the ETS tables): the number of tokens in the display
+  cache, the number of dirty markers awaiting consolidation, and the memory
+  held by both tables in bytes.
+  """
+  @spec stats() :: %{
+          cached_tokens: non_neg_integer(),
+          dirty_markers: non_neg_integer(),
+          memory_bytes: non_neg_integer()
+        }
+  def stats do
+    if cache_table_exists?() do
+      word_size = :erlang.system_info(:wordsize)
+
+      %{
+        cached_tokens: :ets.select_count(@cache_name, [{{{:_, :ts}, :_}, [], [true]}]),
+        dirty_markers: :ets.info(@dirty_cache_name, :size),
+        memory_bytes: (:ets.info(@cache_name, :memory) + :ets.info(@dirty_cache_name, :memory)) * word_size
+      }
+    else
+      %{cached_tokens: 0, dirty_markers: 0, memory_bytes: 0}
+    end
+  end
+
   @typedoc """
   Opaque `:ets.select/1` continuation of a dirty-markers traversal.
   """
