@@ -330,7 +330,7 @@ defmodule Explorer.Chain.TokenTransferTest do
     end
   end
 
-  describe "uncataloged_token_transfer_block_numbers/0" do
+  describe "uncataloged_token_transfer_block_numbers/2" do
     test "returns a list of block numbers" do
       block = insert(:block)
       address = insert(:address)
@@ -351,7 +351,31 @@ defmodule Explorer.Chain.TokenTransferTest do
         )
 
       block_number = log.block_number
-      assert {:ok, [^block_number]} = TokenTransfer.uncataloged_token_transfer_block_numbers()
+      assert [^block_number] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
+    end
+
+    test "does not return block numbers outside the given range" do
+      block = insert(:block)
+      address = insert(:address)
+
+      log =
+        insert(:token_transfer_log,
+          transaction:
+            insert(:transaction,
+              block_number: block.number,
+              block_hash: block.hash,
+              cumulative_gas_used: 0,
+              gas_used: 0,
+              index: 0
+            ),
+          block: block,
+          address_hash: address.hash,
+          address: address
+        )
+
+      block_number = log.block_number
+      assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number + 1, block_number + 100)
+      assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(max(block_number - 100, 0), block_number - 1)
     end
   end
 
@@ -364,7 +388,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         )
 
       block_number = log.block_number
-      assert {:ok, [^block_number]} = TokenTransfer.uncataloged_token_transfer_block_numbers()
+      assert [^block_number] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
     end
 
     test "does not return block numbers when matching token transfer exists for Celo epoch blocks" do
@@ -398,7 +422,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         to_address: to_address
       )
 
-      assert {:ok, []} = TokenTransfer.uncataloged_token_transfer_block_numbers()
+      assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(log.block_number, log.block_number)
     end
   end
 
