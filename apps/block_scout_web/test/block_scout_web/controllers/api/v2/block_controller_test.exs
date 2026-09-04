@@ -7,6 +7,8 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Cache.{BlockNumber, Counters.AverageBlockTime}
 
+  @page_size 50
+
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
     Supervisor.restart_child(Explorer.Supervisor, Explorer.Chain.Cache.Blocks.child_id())
@@ -223,6 +225,55 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
                  | _
                ]
              } = json_response(request, 422)
+    end
+
+    # Regression: `select_block_type/1` marks `:nephews` as `:required`, and
+    # `nephews` is a `has_many through`. Joining a to-many association repeats the
+    # parent row per child, so the `limit/2` in `Explorer.Chain.fetch_blocks/4`
+    # used to count joined rows rather than blocks and returned a short page.
+    test "type=uncle returns a full page when every uncle has a single nephew", %{conn: conn} do
+      for _ <- 1..(@page_size + 10), do: insert_uncle_with_nephews(1)
+
+      response = json_response(get(conn, "/api/v2/blocks", %{"type" => "uncle"}), 200)
+
+      assert length(response["items"]) == @page_size
+      refute is_nil(response["next_page_params"])
+    end
+
+    test "type=uncle returns a full page when uncles have several nephews", %{conn: conn} do
+      for _ <- 1..(@page_size + 10), do: insert_uncle_with_nephews(2)
+
+      response = json_response(get(conn, "/api/v2/blocks", %{"type" => "uncle"}), 200)
+
+      assert length(response["items"]) == @page_size
+      refute is_nil(response["next_page_params"])
+    end
+
+    test "type=uncle returns every uncle once regardless of nephew count", %{conn: conn} do
+      for _ <- 1..10, do: insert_uncle_with_nephews(3)
+
+      response = json_response(get(conn, "/api/v2/blocks", %{"type" => "uncle"}), 200)
+
+      hashes = Enum.map(response["items"], & &1["hash"])
+
+      assert length(hashes) == 10
+      assert hashes == Enum.uniq(hashes)
+    end
+
+    # The default listing marks the to-many `:transactions` and `:rewards` as
+    # `:optional`. They must stay preloaded rather than joined, otherwise the
+    # `limit/2` counts joined rows and the page comes back short — the same
+    # failure the `type=uncle` cases above cover for `:required`.
+    test "a full page is returned when blocks carry several transactions", %{conn: conn} do
+      for _ <- 1..(@page_size + 10) do
+        block = insert(:block)
+        for _ <- 1..3, do: :transaction |> insert() |> with_block(block)
+      end
+
+      response = json_response(get(conn, "/api/v2/blocks"), 200)
+
+      assert length(response["items"]) == @page_size
+      refute is_nil(response["next_page_params"])
     end
   end
 
@@ -1040,6 +1091,16 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
         check_paginated_response(response, response_2nd_page, deposits)
       end
     end
+  end
+
+  defp insert_uncle_with_nephews(nephew_count) do
+    uncle = insert(:block, consensus: false)
+
+    for index <- 0..(nephew_count - 1) do
+      insert(:block_second_degree_relation, uncle_hash: uncle.hash, nephew: insert(:block), index: index)
+    end
+
+    uncle
   end
 
   defp compare_item(%Block{} = block, json) do
