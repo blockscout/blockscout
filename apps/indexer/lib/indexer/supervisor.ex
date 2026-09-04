@@ -72,10 +72,7 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Migrator.RecoveryWETHTokenTransfers
 
-  alias Indexer.Temporary.{
-    UncatalogedTokenTransfers,
-    UnclesWithoutIndex
-  }
+  alias Indexer.Temporary.UnclesWithoutIndex
 
   alias Indexer.Utils.EventNotificationsCleaner
 
@@ -279,7 +276,6 @@ defmodule Indexer.Supervisor do
         configure(EventNotificationsCleaner, [[]]),
 
         # Temporary workers
-        {UncatalogedTokenTransfers.Supervisor, [[]]},
         {UnclesWithoutIndex.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {PendingOpsCleaner, [[], []]},

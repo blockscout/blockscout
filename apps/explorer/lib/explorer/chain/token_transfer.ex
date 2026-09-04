@@ -686,21 +686,23 @@ defmodule Explorer.Chain.TokenTransfer do
   end
 
   @doc """
-  Returns a list of block numbers token transfer `t:Log.t/0`s that don't have an
-  associated `t:TokenTransfer.t/0` record.
+  Returns a list of block numbers within the given range that contain token
+  transfer `t:Log.t/0`s without an associated `t:TokenTransfer.t/0` record.
   """
-  @spec uncataloged_token_transfer_block_numbers :: {:ok, [non_neg_integer()]}
-  def uncataloged_token_transfer_block_numbers do
+  @spec uncataloged_token_transfer_block_numbers(non_neg_integer(), non_neg_integer()) :: [non_neg_integer()]
+  def uncataloged_token_transfer_block_numbers(from_block_number, to_block_number) do
     query =
       from(l in Log,
         as: :log,
+        where: l.block_number >= ^from_block_number,
+        where: l.block_number <= ^to_block_number,
         where: ^token_transfer_log_filter_dynamic(),
         where: not exists(token_transfer_exists_query()),
         select: l.block_number,
         distinct: l.block_number
       )
 
-    Repo.stream_reduce(query, [], &[&1 | &2])
+    Repo.all(query, timeout: :infinity)
   end
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
