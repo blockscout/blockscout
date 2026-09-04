@@ -10,6 +10,7 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   import EthereumJSONRPC, only: [id_to_params: 1, json_rpc: 2]
 
   alias EthereumJSONRPC.Contract
+  alias EthereumJSONRPC.Utility.CommonHelper
   alias Explorer.Chain.{Address, Data, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
@@ -301,7 +302,15 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   @spec fetch_values([ResolverBehaviour.fetch_requirement()], Hash.Address.t()) ::
           {:ok, %{ResolverBehaviour.fetch_requirement() => String.t() | nil}} | :error
   def fetch_values(reqs, address_hash) do
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    # `eth_getStorageAt` requests are batched together with `eth_call` ones here, and the endpoint
+    # of a batch is derived from its first request's method, so both methods are pinned to the
+    # `eth_call` endpoint (`ETHEREUM_JSONRPC_ETH_CALL_URL`) to keep the whole batch off the main
+    # HTTP endpoint.
+    json_rpc_named_arguments =
+      CommonHelper.force_eth_call_url(
+        Application.get_env(:explorer, :json_rpc_named_arguments),
+        [:eth_call, :eth_getStorageAt]
+      )
 
     id_to_params = id_to_params(reqs)
 
