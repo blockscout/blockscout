@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
   alias ABI.{TypeDecoder, TypeEncoder}
   alias Explorer.{Chain, Repo, TestHelper}
-  alias Explorer.Chain.Address.Counters
+  alias Explorer.Chain.Cache.Counters.AddressCountersConsolidator
 
   alias Explorer.Chain.{
     Address,
@@ -608,9 +608,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       insert(:block, miner: address)
 
-      Counters.transactions_count(address)
-      Counters.token_transfers_count(address)
-      Counters.gas_usage_count(address)
+      safe_block = Repo.aggregate(Block, :max, :number)
+      AddressCountersConsolidator.consolidate_addresses([address.hash], safe_block)
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/counters")
       json_response = json_response(request, 200)

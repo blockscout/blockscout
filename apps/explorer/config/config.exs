@@ -37,9 +37,9 @@ config :explorer, Explorer.Chain.Cache.Counters.AddressesCount,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsGasUsageSum,
-  enabled: true,
-  enable_consolidation: true
+config :explorer, Explorer.Chain.Cache.Counters.AddressCounters, enabled: true
+
+config :explorer, Explorer.Chain.Cache.Counters.AddressCountersConsolidator, enabled: true
 
 config :explorer, Explorer.Chain.Cache.Counters.AddressTokensUsdSum,
   enabled: true,
@@ -92,14 +92,6 @@ config :explorer, Explorer.Chain.Cache.Counters.TokenTransfersCount,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsCount,
-  enabled: true,
-  enable_consolidation: true
-
-config :explorer, Explorer.Chain.Cache.Counters.AddressTokenTransfersCount,
-  enabled: true,
-  enable_consolidation: true
-
 config :explorer, Explorer.Chain.Cache.Counters.BlockBurntFeeCount,
   enabled: true,
   enable_consolidation: true
@@ -146,7 +138,8 @@ for migrator <- [
       Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources,
       Explorer.Migrator.ReindexBlocksWithUncatalogedTokenTransfers,
       Explorer.Migrator.EmptyInternalTransactionsData,
-      Explorer.Migrator.FillInternalTransactionsAddressIds
+      Explorer.Migrator.FillInternalTransactionsAddressIds,
+      Explorer.Migrator.BackfillAddressCounters
     ] do
   config :explorer, migrator, enabled: true
 end

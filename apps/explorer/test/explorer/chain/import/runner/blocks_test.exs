@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   alias Explorer.Chain.{Address, Block, Transaction, PendingBlockOperation}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.{Chain, Repo}
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.{AddressCountersRefetchBlock, MissingBlockRange}
 
   describe "run/1" do
     setup do
@@ -87,6 +87,98 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
       assert Repo.one!(from(transaction_fork in Transaction.Fork, select: "ctid")) == ctid,
              "Tuple was written even though it is not distinct"
+    end
+
+    test "re-import of a block queued for re-fetch subtracts its old content from the address counters", %{
+      consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number},
+      options: options
+    } do
+      consensus_block = insert(:block, %{hash: block_hash, number: block_number, refetch_needed: true})
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(consensus_block)
+
+      gas_used = Decimal.to_integer(transaction.gas_used)
+
+      from_address = Repo.get(Address, transaction.from_address_hash)
+
+      from_address
+      |> Ecto.Changeset.change(%{
+        transactions_count: 5,
+        token_transfers_count: 2,
+        gas_used: gas_used + 100,
+        counters_updated_at: block_number + 10
+      })
+      |> Repo.update!()
+
+      block_params =
+        params_for(:block, hash: block_hash, miner_hash: miner_hash, number: block_number, consensus: true)
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
+
+      assert {:ok, %{address_counters_refetched_block_numbers: [^block_number]}} =
+               Multi.new()
+               |> Blocks.run([block_changes], options)
+               |> Repo.transaction()
+
+      reloaded = Repo.get(Address, transaction.from_address_hash)
+
+      assert reloaded.transactions_count == 4
+      assert reloaded.token_transfers_count == 2
+      assert reloaded.gas_used == 100
+      assert reloaded.counters_updated_at == block_number + 10
+
+      assert Repo.aggregate(AddressCountersRefetchBlock, :count) == 1
+
+      # a second import of the same block applies no further deltas: the
+      # re-fetch was already settled into the queue
+      assert {:ok, %{address_counters_refetched_block_numbers: []}} =
+               Multi.new()
+               |> Blocks.run([block_changes], options)
+               |> Repo.transaction()
+
+      assert Repo.get(Address, transaction.from_address_hash).transactions_count == 4
+    end
+
+    test "a reorg below the consolidation watermark resets it to force a full recalculation", %{
+      consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number},
+      options: options
+    } do
+      consensus_block = insert(:block, %{hash: block_hash, number: block_number})
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(consensus_block)
+
+      consolidated_address =
+        Address
+        |> Repo.get(transaction.from_address_hash)
+        |> Ecto.Changeset.change(%{counters_updated_at: block_number + 10})
+        |> Repo.update!()
+
+      fresh_address =
+        Address
+        |> Repo.get(transaction.to_address_hash)
+        |> Ecto.Changeset.change(%{counters_updated_at: block_number - 1})
+        |> Repo.update!()
+
+      block_params =
+        params_for(:block, hash: block_hash, miner_hash: miner_hash, number: block_number, consensus: false)
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
+
+      assert {:ok, %{address_counters_corrections: %{reset: reset_bytes}}} =
+               Multi.new()
+               |> Blocks.run([block_changes], options)
+               |> Repo.transaction()
+
+      assert reset_bytes == [consolidated_address.hash.bytes]
+      assert is_nil(Repo.get(Address, consolidated_address.hash).counters_updated_at)
+      # the forked transaction was above this watermark, so it stays intact
+      assert Repo.get(Address, fresh_address.hash).counters_updated_at == block_number - 1
     end
 
     test "coin balances are deleted and new balances are derived if some blocks lost consensus",

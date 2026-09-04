@@ -49,6 +49,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
   alias Explorer.{Chain, Market, PagingOptions}
   alias Explorer.Chain.{Address, Beacon.Deposit, Block, Hash, Token, Transaction}
   alias Explorer.Chain.Address.{CoinBalance, Counters}
+  alias Explorer.Chain.Cache.Counters.AddressCounters
 
   alias Explorer.Chain.Token.FiatValue
   alias Explorer.Chain.Token.Instance
@@ -290,16 +291,18 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     with {:ok, address_hash} <- validate_address_hash(address_hash_string, params) do
       case Chain.hash_to_address(address_hash, Keyword.merge(@api_true, necessity_by_association: %{})) do
         {:ok, address} ->
-          {validation_count} = Counters.address_counters(address, @api_true)
+          validation_count = Counters.address_to_validation_count(address.hash, @api_true)
 
-          transactions_from_db = address.transactions_count || 0
-          token_transfers_from_db = address.token_transfers_count || 0
-          address_gas_usage_from_db = address.gas_used || 0
+          %{
+            transactions_count: transactions_count,
+            token_transfers_count: token_transfers_count,
+            gas_used: gas_used
+          } = AddressCounters.fetch(address)
 
           json(conn, %{
-            transactions_count: to_string(transactions_from_db),
-            token_transfers_count: to_string(token_transfers_from_db),
-            gas_usage_count: to_string(address_gas_usage_from_db),
+            transactions_count: to_string(transactions_count),
+            token_transfers_count: to_string(token_transfers_count),
+            gas_usage_count: to_string(gas_used),
             validations_count: to_string(validation_count)
           })
 
