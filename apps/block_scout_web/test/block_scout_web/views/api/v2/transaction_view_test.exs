@@ -25,6 +25,42 @@ defmodule BlockScoutWeb.API.V2.TransactionViewTest do
   @tuple_value {"", "", "", "", ""}
   @tuple_json ["", "", "", "", ""]
 
+  describe "OP Stack transaction types" do
+    test "labels L1 attributes and PostExec transactions only on OP Stack chains" do
+      l1_attributes = build(:transaction, type: 0x7E, index: 0)
+      post_exec = build(:transaction, type: 0x7D, index: 1)
+      initial_stage = :op_stack_l1_attributes_transaction
+
+      assert :op_stack_l1_attributes_transaction in TransactionView.transaction_types(
+               l1_attributes,
+               [],
+               initial_stage,
+               :optimism
+             )
+
+      assert :op_stack_post_exec_transaction in TransactionView.transaction_types(
+               post_exec,
+               [],
+               initial_stage,
+               :optimism
+             )
+
+      refute :op_stack_l1_attributes_transaction in TransactionView.transaction_types(
+               l1_attributes,
+               [],
+               initial_stage,
+               :ethereum
+             )
+
+      refute :op_stack_post_exec_transaction in TransactionView.transaction_types(
+               post_exec,
+               [],
+               initial_stage,
+               :ethereum
+             )
+    end
+  end
+
   test "loads historic exchange rates once for a transaction list", %{conn: conn} do
     first_date = ~D[2026-07-20]
     second_date = ~D[2026-07-21]

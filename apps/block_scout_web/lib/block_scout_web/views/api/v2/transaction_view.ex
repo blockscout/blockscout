@@ -805,21 +805,57 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
                | :blob_transaction
                | :set_code_transaction
                | :sponsored_transaction
-  def transaction_types(transaction, types \\ [], stage \\ :sponsored_transaction)
+               | :op_stack_l1_attributes_transaction
+               | :op_stack_post_exec_transaction
+  def transaction_types(transaction, types \\ [], stage \\ :op_stack_l1_attributes_transaction),
+    do: transaction_types(transaction, types, stage, chain_type())
 
-  def transaction_types(%Transaction{type: type} = transaction, types, :sponsored_transaction) do
+  @doc false
+  def transaction_types(
+        %Transaction{type: type, index: index} = transaction,
+        types,
+        :op_stack_l1_attributes_transaction,
+        chain_type
+      ) do
+    types =
+      if chain_type == :optimism and type == 0x7E and index == 0 do
+        [:op_stack_l1_attributes_transaction | types]
+      else
+        types
+      end
+
+    transaction_types(transaction, types, :op_stack_post_exec_transaction, chain_type)
+  end
+
+  def transaction_types(
+        %Transaction{type: type} = transaction,
+        types,
+        :op_stack_post_exec_transaction,
+        chain_type
+      ) do
+    types =
+      if chain_type == :optimism and type == 0x7D do
+        [:op_stack_post_exec_transaction | types]
+      else
+        types
+      end
+
+    transaction_types(transaction, types, :sponsored_transaction, chain_type)
+  end
+
+  def transaction_types(%Transaction{type: type} = transaction, types, :sponsored_transaction, chain_type) do
     # Eden sponsored (batched) transaction type
     types =
-      if chain_type() == :eden and type == 118 do
+      if chain_type == :eden and type == 118 do
         [:sponsored_transaction | types]
       else
         types
       end
 
-    transaction_types(transaction, types, :set_code_transaction)
+    transaction_types(transaction, types, :set_code_transaction, chain_type)
   end
 
-  def transaction_types(%Transaction{type: type} = transaction, types, :set_code_transaction) do
+  def transaction_types(%Transaction{type: type} = transaction, types, :set_code_transaction, chain_type) do
     # EIP-7702 set code transaction type
     types =
       if type == 4 do
@@ -828,10 +864,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    transaction_types(transaction, types, :blob_transaction)
+    transaction_types(transaction, types, :blob_transaction, chain_type)
   end
 
-  def transaction_types(%Transaction{type: type} = transaction, types, :blob_transaction) do
+  def transaction_types(%Transaction{type: type} = transaction, types, :blob_transaction, chain_type) do
     # EIP-2718 blob transaction type
     types =
       if type == 3 do
@@ -840,10 +876,15 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    transaction_types(transaction, types, :token_transfer)
+    transaction_types(transaction, types, :token_transfer, chain_type)
   end
 
-  def transaction_types(%Transaction{token_transfers: token_transfers} = transaction, types, :token_transfer) do
+  def transaction_types(
+        %Transaction{token_transfers: token_transfers} = transaction,
+        types,
+        :token_transfer,
+        chain_type
+      ) do
     types =
       if (!is_nil(token_transfers) && token_transfers != [] && !match?(%NotLoaded{}, token_transfers)) ||
            transaction.has_token_transfers do
@@ -852,13 +893,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    transaction_types(transaction, types, :token_creation)
+    transaction_types(transaction, types, :token_creation, chain_type)
   end
 
   def transaction_types(
         %Transaction{created_contract_address: created_contract_address} = transaction,
         types,
-        :token_creation
+        :token_creation,
+        chain_type
       ) do
     types =
       if match?(%Address{}, created_contract_address) && match?(%Token{}, created_contract_address.token) do
@@ -867,13 +909,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    transaction_types(transaction, types, :contract_creation)
+    transaction_types(transaction, types, :contract_creation, chain_type)
   end
 
   def transaction_types(
         %Transaction{to_address_hash: to_address_hash} = transaction,
         types,
-        :contract_creation
+        :contract_creation,
+        chain_type
       ) do
     types =
       if is_nil(to_address_hash) do
@@ -882,10 +925,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    transaction_types(transaction, types, :contract_call)
+    transaction_types(transaction, types, :contract_call, chain_type)
   end
 
-  def transaction_types(%Transaction{to_address: to_address} = transaction, types, :contract_call) do
+  def transaction_types(%Transaction{to_address: to_address} = transaction, types, :contract_call, chain_type) do
     types =
       if Address.smart_contract?(to_address) do
         [:contract_call | types]
@@ -893,10 +936,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    transaction_types(transaction, types, :coin_transfer)
+    transaction_types(transaction, types, :coin_transfer, chain_type)
   end
 
-  def transaction_types(%Transaction{value: value} = transaction, types, :coin_transfer) do
+  def transaction_types(%Transaction{value: value} = transaction, types, :coin_transfer, chain_type) do
     types =
       if Decimal.compare(value.value, 0) == :gt do
         [:coin_transfer | types]
@@ -904,10 +947,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    transaction_types(transaction, types, :rootstock_remasc)
+    transaction_types(transaction, types, :rootstock_remasc, chain_type)
   end
 
-  def transaction_types(transaction, types, :rootstock_remasc) do
+  def transaction_types(transaction, types, :rootstock_remasc, chain_type) do
     types =
       if Transaction.rootstock_remasc_transaction?(transaction) do
         [:rootstock_remasc | types]
@@ -915,10 +958,10 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
         types
       end
 
-    transaction_types(transaction, types, :rootstock_bridge)
+    transaction_types(transaction, types, :rootstock_bridge, chain_type)
   end
 
-  def transaction_types(transaction, types, :rootstock_bridge) do
+  def transaction_types(transaction, types, :rootstock_bridge, _chain_type) do
     if Transaction.rootstock_bridge_transaction?(transaction) do
       [:rootstock_bridge | types]
     else
