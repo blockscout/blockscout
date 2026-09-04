@@ -8,6 +8,7 @@ defmodule Explorer.EthRPC do
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Ecto.Type, as: EctoType
+  alias EthereumJSONRPC.Utility.CommonHelper
   alias Explorer.{BloomFilter, Chain, Helper, Repo}
 
   alias Explorer.Chain.{
@@ -729,7 +730,23 @@ defmodule Explorer.EthRPC do
     end)
   end
 
+  # Proxied `eth_call` requests are routed to the `eth_call` endpoint
+  # (`ETHEREUM_JSONRPC_ETH_CALL_URL`), so they are batched separately from the rest
+  # of the proxied methods, which go to the main HTTP endpoint.
   defp json_rpc(map) when is_map(map) do
+    {eth_call_requests, other_requests} =
+      Enum.split_with(map, fn
+        {_index, %{"method" => "eth_call"}} -> true
+        {_index, _request} -> false
+      end)
+
+    other_requests
+    |> Map.new()
+    |> do_json_rpc(json_rpc_named_arguments())
+    |> Map.merge(eth_call_requests |> Map.new() |> do_json_rpc(eth_call_json_rpc_named_arguments()))
+  end
+
+  defp do_json_rpc(map, json_rpc_named_arguments) when is_map(map) do
     to_request =
       Enum.flat_map(Map.values(map), fn
         {:error, _} ->
@@ -740,8 +757,7 @@ defmodule Explorer.EthRPC do
       end)
 
     with [_ | _] = to_request <- to_request,
-         {:ok, responses} <-
-           EthereumJSONRPC.json_rpc(to_request, Application.get_env(:explorer, :json_rpc_named_arguments)) do
+         {:ok, responses} <- EthereumJSONRPC.json_rpc(to_request, json_rpc_named_arguments) do
       {map, []} =
         Enum.map_reduce(map, responses, fn
           {_index, {:error, _}} = elem, responses ->
@@ -771,6 +787,14 @@ defmodule Explorer.EthRPC do
 
   defp request_to_elixir(%{"jsonrpc" => json_rpc, "method" => method, "params" => params, "id" => id}) do
     %{jsonrpc: json_rpc, method: method, params: params, id: id}
+  end
+
+  defp json_rpc_named_arguments do
+    Application.get_env(:explorer, :json_rpc_named_arguments)
+  end
+
+  defp eth_call_json_rpc_named_arguments do
+    CommonHelper.force_eth_call_url(json_rpc_named_arguments(), [:eth_call])
   end
 
   @doc """

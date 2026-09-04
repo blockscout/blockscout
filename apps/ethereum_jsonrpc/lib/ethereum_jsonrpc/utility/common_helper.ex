@@ -34,6 +34,21 @@ defmodule EthereumJSONRPC.Utility.CommonHelper do
   end
 
   @doc """
+  Returns `json_rpc_named_arguments` with the given methods routed to the `:eth_call` url type
+  (`ETHEREUM_JSONRPC_ETH_CALL_URL`), overriding the configured `:method_to_url` routing.
+
+  The endpoint of a batched request is derived from the method of its first request, so this is
+  needed for batches that must be sent to the `eth_call` endpoint even when they contain methods
+  that are routed elsewhere by default.
+  """
+  @spec force_eth_call_url(Keyword.t(), [atom()]) :: Keyword.t()
+  def force_eth_call_url(json_rpc_named_arguments, methods) do
+    Enum.reduce(methods, json_rpc_named_arguments, fn method, acc ->
+      put_in_keyword_nested(acc, [:transport_options, :method_to_url, method], :eth_call)
+    end)
+  end
+
+  @doc """
   Get available json rpc url from `json_rpc_transport_options` (or global `json_rpc_named_arguments`) of `url_type` type
   based on `EthereumJSONRPC.Utility.EndpointAvailabilityObserver`.
   """
