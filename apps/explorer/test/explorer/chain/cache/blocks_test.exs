@@ -12,6 +12,20 @@ defmodule Explorer.Chain.Cache.BlocksTest do
     :ok
   end
 
+  describe "strip_for_propagation/1" do
+    test "keeps the aggregated transactions and strips the miner and rewards" do
+      block = insert(:block) |> Repo.preload([:transactions, [miner: :names], :rewards])
+
+      [{number, stripped}] = Blocks.strip_for_propagation([{block.number, Blocks.sanitize_before_update(block)}])
+
+      assert number == block.number
+      assert stripped.transactions == []
+      assert stripped.aggregated? == true
+      assert %Ecto.Association.NotLoaded{} = stripped.miner
+      assert %Ecto.Association.NotLoaded{} = stripped.rewards
+    end
+  end
+
   describe "update/1" do
     test "adds a new value to cache" do
       block = insert(:block) |> Repo.preload([:transactions, [miner: :names], :rewards])

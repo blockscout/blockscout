@@ -83,6 +83,7 @@ defmodule Explorer.Application do
         ),
         Supervisor.child_spec({Task.Supervisor, name: Explorer.WETHMigratorSupervisor}, id: WETHMigratorSupervisor),
         {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
+        Explorer.Chain.Cache.Propagator,
         Accounts,
         AddressesCoinBalanceSum,
         AddressesCoinBalanceSumMinusBurnt,
