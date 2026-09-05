@@ -112,6 +112,35 @@ defmodule Explorer.Chain.Cache.TransactionsTest do
     end
   end
 
+  describe "propagation" do
+    test "strip_for_propagation/1 resets the preloaded associations" do
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block) |> preload_all()
+
+      [{id, stripped}] = Transactions.strip_for_propagation([{Transactions.element_to_id(transaction), transaction}])
+
+      assert id == {block.number, transaction.index}
+      assert stripped.hash == transaction.hash
+      assert %Ecto.Association.NotLoaded{} = stripped.block
+      assert %Ecto.Association.NotLoaded{} = stripped.from_address
+      assert %Ecto.Association.NotLoaded{} = stripped.to_address
+      assert %Ecto.Association.NotLoaded{} = stripped.created_contract_address
+    end
+
+    test "do_raw_update/2 with propagate: false loads the associations back and writes locally" do
+      Application.put_env(:explorer, :mode, :api)
+
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block) |> preload_all()
+
+      [{Transactions.element_to_id(transaction), transaction}]
+      |> Transactions.strip_for_propagation()
+      |> Transactions.do_raw_update(false)
+
+      assert Transactions.take(1) == [transaction]
+    end
+  end
+
   defp preload_all(transactions) when is_list(transactions) do
     Enum.map(transactions, &preload_all(&1))
   end

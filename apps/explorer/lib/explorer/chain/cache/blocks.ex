@@ -22,6 +22,11 @@ defmodule Explorer.Chain.Cache.Blocks do
 
   def element_to_id(%Block{number: number}), do: number
 
+  # Cached blocks carry their transaction aggregates and an empty transactions
+  # list (see `sanitize_before_update/1`), so transactions must not be stripped
+  # or the receiving node would load them all back from the database.
+  def propagation_preloads, do: [[miner: :names], :rewards]
+
   def drop_nonconsensus(numbers) when is_nil(numbers) or numbers == [], do: :ok
 
   def drop_nonconsensus(numbers) when is_list(numbers) do
