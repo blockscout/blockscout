@@ -679,6 +679,10 @@ config :explorer, Explorer.Chain.Cache.Uncles,
   ttl_check_interval: false,
   global_ttl: nil
 
+config :explorer, Explorer.Chain.Cache.Propagator,
+  flush_interval: ConfigHelper.parse_time_env_var("CACHE_PROPAGATION_FLUSH_INTERVAL", "100ms"),
+  send_timeout: ConfigHelper.parse_time_env_var("CACHE_PROPAGATION_SEND_TIMEOUT", "30s")
+
 celo_l2_migration_block = ConfigHelper.parse_integer_or_nil_env_var("CELO_L2_MIGRATION_BLOCK")
 celo_epoch_manager_contract_address = System.get_env("CELO_EPOCH_MANAGER_CONTRACT")
 
