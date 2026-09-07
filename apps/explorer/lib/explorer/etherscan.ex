@@ -776,13 +776,33 @@ defmodule Explorer.Etherscan do
     |> maybe_preload_entities()
   end
 
+  # Transaction fields needed to render the `tokentx`-family RPC responses (see
+  # `BlockScoutWeb.API.RPC.AddressView.prepare_common_token_transfer/3`) and to decode the method call.
+  # Token transfers are fetched in pages of up to `@default_options.page_size` items, so preloading full
+  # transaction rows for each of them was one of the top consumers of DB time on the API read replica.
+  # `hash` must stay in the list: Ecto uses it to match preloaded transactions to token transfers.
+  @token_transfer_transaction_fields [
+    :hash,
+    :block_timestamp,
+    :nonce,
+    :index,
+    :gas,
+    :gas_price,
+    :gas_used,
+    :cumulative_gas_used,
+    :input,
+    :to_address_hash,
+    :created_contract_address_hash
+  ]
+
   defp maybe_preload_entities(query) do
+    transaction_query =
+      from(transaction in Transaction, select: struct(transaction, ^@token_transfer_transaction_fields))
+
     if DenormalizationHelper.tt_denormalization_finished?() do
-      query
-      |> preload([:transaction, :token])
+      preload(query, [:token, transaction: ^transaction_query])
     else
-      query
-      |> preload([:block, :token, :transaction])
+      preload(query, [:block, :token, transaction: ^transaction_query])
     end
   end
 
