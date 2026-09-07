@@ -58,5 +58,16 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.GeneralTest do
 
       assert result_numbers == [400]
     end
+
+    test "deduplicates repeated block numbers across separate chunks" do
+      _b1 = insert(:block, number: 500)
+      _b2 = insert(:block, number: 501)
+
+      # [500, 501, 500] with chunk_size 2 would span 2 chunks; deduplication ensures block 500 is only returned once
+      result = ArbitrumGeneralReader.rollup_blocks([500, 501, 500], 2)
+      result_numbers = Enum.map(result, & &1.number)
+
+      assert result_numbers == [500, 501]
+    end
   end
 end

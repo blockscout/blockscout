@@ -40,6 +40,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.General do
 
   def rollup_blocks(list_of_block_numbers, chunk_size) when is_integer(chunk_size) and chunk_size > 0 do
     list_of_block_numbers
+    |> Enum.uniq()
     |> Enum.chunk_every(chunk_size)
     |> Enum.flat_map(fn chunk ->
       from(
