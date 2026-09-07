@@ -198,6 +198,15 @@ defmodule Explorer.Chain.SmartContractTest do
 
       assert Repo.get_by(VerificationStatus, uid: "pending-uid").status == 0
     end
+
+    test "handles concurrent race condition when contract is inserted between check and create", %{
+      valid_attrs: valid_attrs,
+      address: address
+    } do
+      insert(:smart_contract, address_hash: address.hash, contract_code_md5: "123")
+
+      assert {:ok, %SmartContract{}} = SmartContract.create_or_update_smart_contract(address.hash, valid_attrs, false)
+    end
   end
 
   describe "update_smart_contract/1" do

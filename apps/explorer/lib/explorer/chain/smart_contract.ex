@@ -928,7 +928,33 @@ defmodule Explorer.Chain.SmartContract do
     result =
       cond do
         is_nil(smart_contract) ->
-          create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+          case create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources) do
+            {:error, %Changeset{errors: errors} = changeset} ->
+              if Keyword.has_key?(errors, :address_hash) do
+                existing_contract = address_hash_to_smart_contract(address_hash, api?: true)
+
+                if existing_contract && existing_contract.partially_verified && attrs.partially_verified &&
+                     Application.get_env(:block_scout_web, :contract)[:partial_reverification_disabled] do
+                  invalid_changeset =
+                    invalid_contract_changeset(
+                      %SmartContract{address_hash: address_hash},
+                      Helper.add_contract_code_md5(attrs),
+                      "Cannot update partially verified smart contract with another partially verified contract",
+                      nil,
+                      verification_with_files?
+                    )
+
+                  {:error, %{invalid_changeset | action: :insert}}
+                else
+                  update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+                end
+              else
+                {:error, changeset}
+              end
+
+            other ->
+              other
+          end
 
         smart_contract.partially_verified && attrs.partially_verified &&
             Application.get_env(:block_scout_web, :contract)[:partial_reverification_disabled] ->
