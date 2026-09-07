@@ -10,6 +10,7 @@ defmodule Explorer.Chain.Address.ScamBadgeToAddress do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Hash}
+  alias Explorer.Chain.Cache.ScamAddresses
 
   import Ecto.Query, only: [from: 2]
 
@@ -51,7 +52,11 @@ defmodule Explorer.Chain.Address.ScamBadgeToAddress do
       end)
       |> Enum.filter(&(!is_nil(&1)))
 
-    safe_add(insert_params)
+    result = safe_add(insert_params)
+
+    ScamAddresses.reload()
+
+    result
   end
 
   defp safe_add(insert_params) do
@@ -88,7 +93,11 @@ defmodule Explorer.Chain.Address.ScamBadgeToAddress do
         select: bta
       )
 
-    Repo.delete_all(query)
+    result = Repo.delete_all(query)
+
+    ScamAddresses.reload()
+
+    result
   end
 
   @doc """
