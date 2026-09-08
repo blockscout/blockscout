@@ -66,6 +66,43 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert DateTime.compare(kept_confirmation.timestamp, existing_confirmation.timestamp) == :eq
         assert kept_confirmation.status == existing_confirmation.status
       end
+
+      # The lifecycle transaction of the confirmation is in the database with the parent
+      # chain block 200. Its timestamp is not the timestamp of that block: the discovery
+      # of an earlier run wrote another value, or the parent chain changed the timestamp
+      # of the block.
+      #
+      # The event shows the same transaction in the same parent chain block 200. Thus
+      # the discovery finds no difference of the block number, and it finds a difference
+      # of the timestamp. Therefore it writes the new timestamp into the same record.
+      # The identifier, the block number and the status of the record stay as they are.
+      #
+      # This test is not redundant. The test "updates the confirmation transaction when
+      # its parent chain block changed" also writes the record again. In that test the
+      # block number is different, and the timestamp comes with it. This test is the
+      # only one where the timestamp alone gives the difference.
+      #
+      # The test seeds no batch, thus the count of the rows is exact and the event points
+      # to a block hash outside the database. The discovery examines no rollup block for
+      # a known confirmation.
+      test "updates the confirmation transaction when only its timestamp changed", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        existing_confirmation = insert_confirmation(@confirmation_l1_block)
+
+        expect_discovery(to_string(block_hash()), to_string(existing_confirmation.hash))
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        assert Repo.aggregate(LifecycleTransaction, :count) == 1
+
+        updated_confirmation = Repo.get_by!(LifecycleTransaction, hash: existing_confirmation.hash)
+        assert updated_confirmation.id == existing_confirmation.id
+        assert updated_confirmation.block_number == @confirmation_l1_block
+        assert DateTime.to_unix(updated_confirmation.timestamp) == @confirmation_l1_timestamp
+        assert DateTime.compare(updated_confirmation.timestamp, existing_confirmation.timestamp) == :gt
+        assert updated_confirmation.status == existing_confirmation.status
+      end
     end
   end
 end

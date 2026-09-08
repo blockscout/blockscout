@@ -27,6 +27,21 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery.TestCase do
   #   - two known confirmations
   #   - three new confirmations
   #
+  # One file holds one `describe` block. When a set of events holds many scenarios, a
+  # second dimension splits that set into several groups, and each group keeps its own
+  # file. The second dimension is the one which the scenarios of that set vary:
+  #   - one new confirmation: the walk of the batches, the re-link of the blocks of a
+  #     replaced transaction, an incomplete database, a chunked lookup of the
+  #     boundary, and a configured first rollup block
+  #   - two new confirmations: the pairs which the lookup of the boundary can see, the
+  #     pairs of one parent chain block or of the inverted order, and an incomplete
+  #     database
+  #   - a new confirmation together with a known one: two batches, one batch, and an
+  #     incomplete database
+  #
+  # The group of an incomplete database carries the same name in each of those sets.
+  # Thus a reader finds the two-part tests of the postponements by that name.
+  #
   # Even when another test already runs the same branches of the code, a scenario
   # keeps its test. There are two reasons:
   #   - the suite must show the whole matrix of the expected states. A missing
@@ -191,6 +206,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery.TestCase do
       # handle the whole batch, the database has this state. The discovery does not
       # find such a block through the batch of that block.
       #
+      # `absent_blocks` names the blocks of the range which are not in the database at
+      # all: neither the block nor its link to the batch. If the block fetcher did not
+      # reach those blocks yet, the database has this state.
+      #
       # Note: `arbitrum_l1_batch_factory` inserts a lifecycle transaction of its own
       # before it applies the `commitment_id` override. Thus each call leaves one
       # unused lifecycle transaction in the database. A count of the rows of
@@ -207,9 +226,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery.TestCase do
           )
 
         unlinked_blocks = Keyword.get(options, :unlinked_blocks, [])
+        absent_blocks = Keyword.get(options, :absent_blocks, [])
 
         blocks =
-          Map.new(start_block..end_block, fn block_number ->
+          start_block..end_block
+          |> Enum.reject(&(&1 in absent_blocks))
+          |> Map.new(fn block_number ->
             block = insert(:block, number: block_number)
 
             if block_number not in unlinked_blocks do
@@ -220,6 +242,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery.TestCase do
           end)
 
         %{batch: batch, blocks: blocks}
+      end
+
+      # Inserts a rollup block which is not in the database yet, and links it to the
+      # batch of that block. The block gets the given hash, thus a test can build an
+      # event which points to a block before the block fetcher reaches it. The block
+      # fetcher and the indexer make this change together.
+      def insert_block_and_link_to_batch(%{batch: batch}, block_number, block_hash) do
+        insert(:block, number: block_number, hash: block_hash)
+        insert(:arbitrum_batch_block, batch_number: batch.number, block_number: block_number)
       end
 
       # Inserts rollup blocks which no batch of the database holds. If the indexer did

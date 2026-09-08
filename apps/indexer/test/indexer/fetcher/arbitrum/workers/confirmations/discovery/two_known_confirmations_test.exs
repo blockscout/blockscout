@@ -177,6 +177,62 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert kept_second_confirmation.block_number == @confirmation_l1_block
         assert DateTime.compare(kept_second_confirmation.timestamp, second_confirmation.timestamp) == :eq
       end
+
+      # The database has two batches: the blocks 1..10 and the blocks 11..20. The first
+      # known confirmation holds the blocks 1..10, and the second one holds the blocks
+      # 11..20. A re-org moved both transactions: the database holds the parent chain
+      # block 190 for each of them, and their events are in the blocks 198 and 200.
+      #
+      # Thus the discovery writes both records again with their new block numbers and
+      # their new timestamps. The identifiers, the statuses and the rollup blocks of the
+      # two confirmations stay as they are.
+      #
+      # This test is not redundant. The test "updates the confirmation which moved and
+      # keeps the other one" writes one record of the two. This test is the only one
+      # where one run writes both known transactions. It is also the only test of this
+      # group which holds the rollup blocks of the two confirmations. Thus it shows that
+      # a run which moves two transactions does not move a rollup block.
+      test "updates both confirmations which moved", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+        previous_batch = seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
+        batch = seed_batch(11, 20, @commitment_l1_block)
+
+        lower_confirmation = insert_confirmation(@stale_confirmation_l1_block)
+        mark_confirmed(@rollup_first_block..10, lower_confirmation)
+
+        upper_confirmation = insert_confirmation(@stale_confirmation_l1_block)
+        mark_confirmed(11..20, upper_confirmation)
+
+        expect_discovery_of([
+          build_send_root_updated_log(
+            rollup_block_hash(previous_batch, 10),
+            to_string(lower_confirmation.hash),
+            @lower_confirmation_l1_block
+          ),
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 20),
+            to_string(upper_confirmation.hash),
+            @confirmation_l1_block
+          )
+        ])
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        updated_lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation.hash)
+        assert updated_lower_confirmation.id == lower_confirmation.id
+        assert updated_lower_confirmation.block_number == @lower_confirmation_l1_block
+        assert DateTime.to_unix(updated_lower_confirmation.timestamp) == @lower_confirmation_l1_timestamp
+        assert updated_lower_confirmation.status == lower_confirmation.status
+        assert confirmed_blocks(updated_lower_confirmation) == Enum.to_list(@rollup_first_block..10)
+
+        updated_upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation.hash)
+        assert updated_upper_confirmation.id == upper_confirmation.id
+        assert updated_upper_confirmation.block_number == @confirmation_l1_block
+        assert DateTime.to_unix(updated_upper_confirmation.timestamp) == @confirmation_l1_timestamp
+        assert updated_upper_confirmation.status == upper_confirmation.status
+        assert confirmed_blocks(updated_upper_confirmation) == Enum.to_list(11..20)
+
+        assert unconfirmed_blocks() == []
+      end
     end
   end
 end

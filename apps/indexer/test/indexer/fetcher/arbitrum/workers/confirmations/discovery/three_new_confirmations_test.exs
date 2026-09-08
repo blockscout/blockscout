@@ -13,7 +13,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # A lookup range holds two earlier confirmations in other conditions as well. The
     # parent chain can already hold two confirmations of the same batch below the
     # discovery range. Then one new event is enough. Only this group holds three new
-    # confirmations of one run, split over one batch.
+    # confirmations of one run. Three tests of the group split them over one batch,
+    # and the last test of the group splits them over three batches.
     #
     # The discovery must take the newest of the two earlier confirmations. It reads a
     # lookup range in chunks, from the newest chunk to the oldest chunk. It stops at
@@ -213,6 +214,99 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert confirmed_blocks(lowest_confirmation) == Enum.to_list(@rollup_first_block..5)
         assert confirmed_blocks(lower_confirmation) == Enum.to_list(6..10)
         assert confirmed_blocks(upper_confirmation) == Enum.to_list(11..20)
+        assert unconfirmed_blocks() == []
+      end
+
+      # The database has three batches: the blocks 1..10, the blocks 11..20 and the
+      # blocks 21..30. No block is confirmed. The block 15 is not linked to its batch.
+      # If the indexer did not handle the whole middle batch, the database has this
+      # state.
+      #
+      # The three events point to the rollup blocks 10, 20 and 30. Each block is the
+      # last block of its batch. Thus the lowest confirmation must cover the blocks
+      # 1..10, the lower confirmation must cover the blocks 11..20, and the upper
+      # confirmation must cover the blocks 21..30.
+      #
+      # The discovery handles the confirmations in the order of their rollup blocks. It
+      # collects the blocks 1..10 for the lowest confirmation. Then the lower
+      # confirmation finds a gap between the blocks 14 and 16, thus it gives no block.
+      # A confirmation without blocks drops every block which the run collected before
+      # it. Therefore the run loses the blocks of the lowest confirmation as well.
+      #
+      # After that the upper confirmation collects the blocks 21..30 and moves one batch
+      # down. In the middle batch the log of the lower confirmation points to the last
+      # block of that batch. Thus the walk stops, and the upper confirmation keeps the
+      # blocks 21..30. The run writes that confirmation only, and it returns
+      # `:confirmation_missed`.
+      #
+      # The highest confirmed block of the run is the block 30. The discovery marks the
+      # messages by the number of that block. Thus a message from the block 5 becomes
+      # `:confirmed`, although the block 5 stays unconfirmed.
+      #
+      # This test is the only one of this group which holds three batches and a state of
+      # the database which stops one of the three confirmations. The other tests of the
+      # group hold one batch, and they show how the size of the chunk of the lookup
+      # changes the boundary of a confirmation.
+      #
+      # The second part of the test makes the change of the indexer: the indexer links
+      # the block 15 to its batch. Then the discovery examines the same parent chain
+      # range again. The upper confirmation is a known confirmation of that run, and it
+      # keeps its blocks. The two other confirmations arrive together.
+      test "writes the upper confirmation only when the confirmation in the middle finds a gap in its batch", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        lowest_batch = seed_batch(@rollup_first_block, 10, @oldest_commitment_l1_block)
+        middle_batch = seed_batch(11, 20, @previous_commitment_l1_block, unlinked_blocks: [15])
+        batch = seed_batch(21, 30, @commitment_l1_block)
+
+        lowest_confirmation_transaction_hash = to_string(transaction_hash())
+        lower_confirmation_transaction_hash = to_string(transaction_hash())
+        upper_confirmation_transaction_hash = to_string(transaction_hash())
+
+        message_below_the_gap = insert_sent_message_from_l2(5)
+
+        expect_discovery_of([
+          build_send_root_updated_log(
+            rollup_block_hash(lowest_batch, 10),
+            lowest_confirmation_transaction_hash,
+            @lowest_confirmation_l1_block
+          ),
+          build_send_root_updated_log(
+            rollup_block_hash(middle_batch, 20),
+            lower_confirmation_transaction_hash,
+            @lower_confirmation_l1_block
+          ),
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 30),
+            upper_confirmation_transaction_hash,
+            @confirmation_l1_block
+          )
+        ])
+
+        assert :confirmation_missed == discover(json_rpc_named_arguments)
+
+        assert Repo.get_by(LifecycleTransaction, hash: lowest_confirmation_transaction_hash) == nil
+        assert Repo.get_by(LifecycleTransaction, hash: lower_confirmation_transaction_hash) == nil
+
+        upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation_transaction_hash)
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(21..30)
+
+        assert unconfirmed_blocks() == Enum.to_list(@rollup_first_block..14) ++ Enum.to_list(16..20)
+
+        # The parent chain confirms the block 5 already. Thus this status is correct,
+        # and only the link of the block 15 is missing.
+        assert message_status(message_below_the_gap) == :confirmed
+
+        link_blocks_to_batch(middle_batch, [15])
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        lowest_confirmation = Repo.get_by!(LifecycleTransaction, hash: lowest_confirmation_transaction_hash)
+        lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation_transaction_hash)
+
+        assert confirmed_blocks(lowest_confirmation) == Enum.to_list(@rollup_first_block..10)
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(11..20)
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(21..30)
         assert unconfirmed_blocks() == []
       end
     end
