@@ -203,9 +203,91 @@ defmodule Explorer.Chain.SmartContractTest do
       valid_attrs: valid_attrs,
       address: address
     } do
-      insert(:smart_contract, address_hash: address.hash, contract_code_md5: "123")
+      :meck.new(SmartContract, [:passthrough])
+      on_exit(fn -> :meck.unload(SmartContract) end)
 
-      assert {:ok, %SmartContract{}} = SmartContract.create_or_update_smart_contract(address.hash, valid_attrs, false)
+      conflict_changeset =
+        %SmartContract{address_hash: address.hash}
+        |> Ecto.Changeset.change()
+        |> Ecto.Changeset.add_error(
+          :address_hash,
+          "has already been taken",
+          constraint: :unique,
+          constraint_name: "smart_contracts_pkey"
+        )
+
+      :meck.expect(SmartContract, :create_smart_contract, fn _attrs, _libs, _sources ->
+        insert(:smart_contract, address_hash: address.hash, contract_code_md5: "123")
+        {:error, conflict_changeset}
+      end)
+
+      # Test when attrs omits :partially_verified to verify Map.get avoids KeyError
+      attrs_without_partially_verified = Map.delete(valid_attrs, :partially_verified)
+
+      assert {:ok, %SmartContract{}} =
+               SmartContract.create_or_update_smart_contract(
+                 address.hash,
+                 attrs_without_partially_verified,
+                 false
+               )
+    end
+
+    test "rejects partial reverification on race condition when partial reverification is disabled", %{
+      valid_attrs: valid_attrs,
+      address: address
+    } do
+      initial = Application.get_env(:block_scout_web, :contract) || []
+
+      Application.put_env(
+        :block_scout_web,
+        :contract,
+        Keyword.merge(initial, partial_reverification_disabled: true)
+      )
+
+      on_exit(fn -> Application.put_env(:block_scout_web, :contract, initial) end)
+
+      :meck.new(SmartContract, [:passthrough])
+      on_exit(fn -> :meck.unload(SmartContract) end)
+
+      conflict_changeset =
+        %SmartContract{address_hash: address.hash}
+        |> Ecto.Changeset.change()
+        |> Ecto.Changeset.add_error(
+          :address_hash,
+          "has already been taken",
+          constraint: :unique,
+          constraint_name: "smart_contracts_pkey"
+        )
+
+      :meck.expect(SmartContract, :create_smart_contract, fn _attrs, _libs, _sources ->
+        insert(:smart_contract, address_hash: address.hash, partially_verified: true, contract_code_md5: "123")
+        {:error, conflict_changeset}
+      end)
+
+      attrs = Map.put(valid_attrs, :partially_verified, true)
+
+      assert {:error, %Ecto.Changeset{action: :insert}} =
+               SmartContract.create_or_update_smart_contract(address.hash, attrs, false)
+    end
+
+    test "does not fall back to update when secondary source has address_hash error", %{
+      valid_attrs: valid_attrs,
+      address: address
+    } do
+      :meck.new(SmartContract, [:passthrough])
+      on_exit(fn -> :meck.unload(SmartContract) end)
+
+      secondary_source_changeset =
+        %Explorer.Chain.SmartContractAdditionalSource{address_hash: address.hash}
+        |> Ecto.Changeset.change()
+        |> Ecto.Changeset.add_error(:address_hash, "is invalid")
+
+      :meck.expect(SmartContract, :create_smart_contract, fn _attrs, _libs, _sources ->
+        {:error, secondary_source_changeset}
+      end)
+
+      assert {:error, %Ecto.Changeset{data: %Explorer.Chain.SmartContractAdditionalSource{}}} =
+               SmartContract.create_or_update_smart_contract(address.hash, valid_attrs, false)
     end
   end
 
