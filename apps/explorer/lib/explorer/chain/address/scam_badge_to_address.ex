@@ -20,7 +20,13 @@ defmodule Explorer.Chain.Address.ScamBadgeToAddress do
   """
   @primary_key false
   typed_schema "scam_address_badge_mappings" do
-    belongs_to(:address, Address, foreign_key: :address_hash, references: :hash, type: Hash.Address, null: false)
+    belongs_to(:address, Address,
+      foreign_key: :address_hash,
+      references: :hash,
+      type: Hash.Address,
+      null: false,
+      primary_key: true
+    )
 
     timestamps()
   end
