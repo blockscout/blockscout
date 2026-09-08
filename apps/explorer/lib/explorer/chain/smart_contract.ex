@@ -931,7 +931,7 @@ defmodule Explorer.Chain.SmartContract do
           case __MODULE__.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources) do
             {:error, %Changeset{} = changeset} ->
               if unique_smart_contract_conflict?(changeset) do
-                existing_contract = address_hash_to_smart_contract(address_hash, api?: true)
+                existing_contract = address_hash_to_smart_contract(address_hash)
 
                 if existing_contract && existing_contract.partially_verified &&
                      Map.get(attrs, :partially_verified, false) &&
