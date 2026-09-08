@@ -158,6 +158,18 @@ defmodule Explorer.Chain.TokenTransfer do
 
   @default_paging_options %PagingOptions{page_size: 50}
 
+  @participant_address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address}
+  ]
+
+  @participant_necessity_by_association %{
+    :scam_badge => :optional,
+    :names => :optional,
+    :smart_contract => :optional,
+    Implementation.proxy_implementations_association() => :optional
+  }
+
   @typep paging_options :: {:paging_options, PagingOptions.t()}
   @typep api? :: {:api?, true | false}
 
@@ -301,23 +313,16 @@ defmodule Explorer.Chain.TokenTransfer do
         []
 
       _ ->
-        preloads =
-          DenormalizationHelper.extend_transaction_preload([
-            :transaction,
-            [token: reputation_association()],
-            [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
-            [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
-          ])
-
         only_consensus_transfers_query()
         |> where([tt], tt.token_contract_address_hash == ^token_address_hash)
         |> where([tt], fragment("? @> ARRAY[?::decimal]", tt.token_ids, ^Decimal.new(token_id)))
         |> where([tt], not is_nil(tt.block_number))
-        |> preload(^preloads)
+        |> preload(^non_address_preloads())
         |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
         |> page_token_transfer(paging_options)
         |> limit(^paging_options.page_size)
         |> Chain.select_repo(options).all()
+        |> preload_participants(options)
     end
   end
 
@@ -334,23 +339,38 @@ defmodule Explorer.Chain.TokenTransfer do
         []
 
       _ ->
-        preloads =
-          DenormalizationHelper.extend_transaction_preload([
-            :transaction,
-            [token: reputation_association()],
-            [from_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]],
-            [to_address: [:scam_badge, :names, :smart_contract, Implementation.proxy_implementations_association()]]
-          ])
-
         only_consensus_transfers_query()
-        |> preload(^preloads)
+        |> preload(^non_address_preloads())
         |> order_by([tt], desc: tt.block_number, desc: tt.log_index)
         |> maybe_filter_by_token_type(token_type)
         |> ExplorerHelper.maybe_hide_scam_addresses_for_token_transfers(options)
         |> page_token_transfer(paging_options)
         |> limit(^paging_options.page_size)
         |> Chain.select_repo(options).all()
+        |> preload_participants(options)
     end
+  end
+
+  # Everything but the `from`/`to` addresses, which `preload_participants/2`
+  # loads afterwards.
+  defp non_address_preloads do
+    DenormalizationHelper.extend_transaction_preload([
+      :transaction,
+      [token: reputation_association()]
+    ])
+  end
+
+  # Loads the address info of every `from`/`to` participant of the page in one
+  # pass, deduplicating addresses shared between transfers and between the two
+  # roles of the same transfer. Preloading it per role instead repeats the
+  # `addresses` query and every one of these associations twice.
+  defp preload_participants(token_transfers, options) do
+    Chain.preload_address_participants(
+      token_transfers,
+      @participant_address_fields,
+      @participant_necessity_by_association,
+      options
+    )
   end
 
   @doc """

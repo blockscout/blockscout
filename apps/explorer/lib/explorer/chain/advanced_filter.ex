@@ -79,6 +79,22 @@ defmodule Explorer.Chain.AdvancedFilter do
     field(:token_transfer_batch_index, :integer, null: true)
   end
 
+  @address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address},
+    {:created_contract_address_hash, :created_contract_address}
+  ]
+
+  # Address-info associations shared by every participant role of a filter row.
+  # Loaded once for the whole page by `Chain.preload_address_participants/4`
+  # rather than per role, which repeats each of these queries three times.
+  @participant_necessity_by_association %{
+    :scam_badge => :optional,
+    :names => :optional,
+    :smart_contract => :optional,
+    proxy_implementations_association() => :optional
+  }
+
   @typep transaction_types :: {:transaction_types, [String.t()] | nil}
   @typep methods :: {:methods, [String.t()] | nil}
   @typep age :: {:age, [{:from, DateTime.t() | nil} | {:to, DateTime.t() | nil}] | nil}
@@ -153,10 +169,10 @@ defmodule Explorer.Chain.AdvancedFilter do
     |> Enum.map(&to_advanced_filter/1)
     |> Enum.sort(&sort_function/2)
     |> take_page_size(paging_options)
-    |> Chain.select_repo(options).preload(
-      from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
-      to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
-      created_contract_address: [:names, :smart_contract, proxy_implementations_association()]
+    |> Chain.preload_address_participants(
+      @address_fields,
+      @participant_necessity_by_association,
+      options
     )
     |> sanitize_fee()
     |> assign_type()
