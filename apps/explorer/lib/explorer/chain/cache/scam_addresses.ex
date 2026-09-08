@@ -161,7 +161,7 @@ defmodule Explorer.Chain.Cache.ScamAddresses do
     if estimated_size && estimated_size > max_size do
       Logger.warning(
         "Scam addresses cache is not used: #{@table_name} is estimated at #{estimated_size} rows, over the limit of #{max_size}. " <>
-          "Scam badge lookups fall back to the database. Raise SCAM_ADDRESSES_CACHE_MAX_SIZE to cache the table anyway."
+          "Scam badge lookups fall back to the database. Raise CACHE_SCAM_ADDRESSES_MAX_SIZE to cache the table anyway."
       )
 
       true

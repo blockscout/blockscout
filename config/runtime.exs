@@ -1004,8 +1004,8 @@ config :explorer, Explorer.Chain.Fetcher.AddressesBlacklist,
 
 config :explorer, Explorer.Chain.Cache.ScamAddresses,
   enabled: ConfigHelper.parse_bool_env_var("HIDE_SCAM_ADDRESSES"),
-  update_interval: ConfigHelper.parse_time_env_var("SCAM_ADDRESSES_CACHE_UPDATE_INTERVAL", "5m"),
-  max_size: ConfigHelper.parse_integer_env_var("SCAM_ADDRESSES_CACHE_MAX_SIZE", 200_000, min: 0)
+  update_interval: ConfigHelper.parse_time_env_var("CACHE_SCAM_ADDRESSES_UPDATE_INTERVAL", "5m"),
+  max_size: ConfigHelper.parse_integer_env_var("CACHE_SCAM_ADDRESSES_MAX_SIZE", 200_000, min: 0)
 
 rate_limiter_redis_url = ConfigHelper.parse_url_env_var("RATE_LIMITER_REDIS_URL")
 rate_limiter_redis_sentinel_urls = ConfigHelper.safe_get_env("RATE_LIMITER_REDIS_SENTINEL_URLS", "")
