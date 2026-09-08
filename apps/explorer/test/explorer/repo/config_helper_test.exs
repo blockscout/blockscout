@@ -101,6 +101,20 @@ defmodule Explorer.Repo.ConfigHelperTest do
       assert result[:database] == "test_database"
     end
 
+    test "parse params from database url with encoded database name and search_path" do
+      database_url =
+        "postgresql://test_username:test_password@hostname.test.com:7777/my%2Ddatabase?search_path=foo%2Cbar"
+
+      result = ConfigHelper.get_db_config(%{url: database_url, env_func: fn _ -> nil end})
+
+      assert result[:username] == "test_username"
+      assert result[:password] == "test_password"
+      assert result[:hostname] == "hostname.test.com"
+      assert result[:port] == "7777"
+      assert result[:database] == "my-database"
+      assert result[:search_path] == ["foo,bar"]
+    end
+
     test "get username without password" do
       database_url = "postgresql://test_username:@127.8.8.1:7777/test_database"
 

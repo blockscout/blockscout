@@ -122,7 +122,7 @@ defmodule Explorer.Repo.ConfigHelper do
   # sobelow_skip ["DOS.StringToAtom"]
   def extract_parameters(database_url) do
     case Regex.named_captures(
-           ~r/\w*:\/\/(?<username>[a-zA-Z0-9-*#!%^&$_.]*)(:(?<password>[a-zA-Z0-9-*#!%^&$_.]*))?@(?<hostname>(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])):(?<port>\d+)\/(?<database>[a-zA-Z0-9_\-]*)(\?.*search_path=(?<search_path>[a-zA-Z0-9_\-,]+))?/,
+           ~r/\w*:\/\/(?<username>[a-zA-Z0-9-*#!%^&$_.]*)(:(?<password>[a-zA-Z0-9-*#!%^&$_.]*))?@(?<hostname>(([a-zA-Z0-9%]|[a-zA-Z0-9%][a-zA-Z0-9\-%]*[a-zA-Z0-9%])\.)*([A-Za-z0-9%]|[A-Za-z0-9%][A-Za-z0-9\-%]*[A-Za-z0-9%])):(?<port>\d+)\/(?<database>[a-zA-Z0-9_\-%]*)(\?.*search_path=(?<search_path>[a-zA-Z0-9_\-,%]+))?/,
            database_url
          ) do
       nil ->
