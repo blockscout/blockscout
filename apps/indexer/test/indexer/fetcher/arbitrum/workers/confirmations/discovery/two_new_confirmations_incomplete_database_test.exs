@@ -54,10 +54,21 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # the discovery loses the rollup blocks of an event when another event of the
       # same transaction was handled before.
       #
-      # The correction of the defect gives `:confirmation_missed` in the first run.
-      # Thus the person who removes the tag also removes the assertions of the first
-      # part.
-      @tag skip: "Defect: an event of a known transaction is never examined again"
+      # The test holds the correct result of both runs. Thus the first part requires
+      # `:confirmation_missed`, and the current run fails that assertion already.
+      #
+      # The first part holds the result value only. A correction can import the blocks
+      # 1..10 of the resolvable event in the first run, as the test with two
+      # transactions does, or it can postpone the whole transaction and link the blocks
+      # 1..20 in one operation. Both forms are correct, thus the test requires neither
+      # of them.
+      #
+      # The second form needs one more correction: it leaves the batch of the blocks
+      # 1..10 unconfirmed for the second run. Then that run handles the two events of
+      # the transaction together, and it gives two rows of each block of 1..10. The
+      # test "gives all rollup blocks to one confirmation when both events are in the
+      # same transaction" holds that defect.
+      @tag skip: "Defect: a dropped event of one transaction gives :ok and is never examined again"
       test "gives all rollup blocks to one confirmation when the batch of the upper block arrives later", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -83,22 +94,19 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         expect_discovery_of([lower_confirmation_log, upper_confirmation_log])
 
-        assert :ok == discover(json_rpc_named_arguments)
-
-        confirmation = Repo.get_by!(LifecycleTransaction, hash: confirmation_transaction_hash)
-        assert confirmed_blocks(confirmation) == Enum.to_list(@rollup_first_block..10)
-
-        # `unconfirmed_blocks/0` reads the links of the batches. The blocks 11..20 hold
-        # no link. Thus this assertion does not cover them.
-        assert unconfirmed_blocks() == []
+        assert :confirmation_missed == discover(json_rpc_named_arguments)
 
         seed_batch_of_blocks(blocks_without_batch, @recent_commitment_l1_block)
 
         assert :ok == discover(json_rpc_named_arguments)
 
-        kept_confirmation = Repo.get_by!(LifecycleTransaction, hash: confirmation_transaction_hash)
-        assert kept_confirmation.id == confirmation.id
-        assert confirmed_blocks(kept_confirmation) == Enum.to_list(@rollup_first_block..20)
+        # The database holds one confirmation per parent chain transaction. Thus
+        # `Repo.get_by!/2` also shows that the two events gave one record.
+        confirmation = Repo.get_by!(LifecycleTransaction, hash: confirmation_transaction_hash)
+        assert confirmation.block_number == @confirmation_l1_block
+        assert DateTime.to_unix(confirmation.timestamp) == @confirmation_l1_timestamp
+
+        assert confirmed_blocks(confirmation) == Enum.to_list(@rollup_first_block..20)
         assert unconfirmed_blocks() == []
       end
 
