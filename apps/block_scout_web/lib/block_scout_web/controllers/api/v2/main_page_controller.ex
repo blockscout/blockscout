@@ -27,19 +27,31 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
       @chain_type_transaction_necessity_by_association %{}
   end
 
+  # Address-info preloads for the `from`/`to`/`created_contract` participants are
+  # intentionally absent: `preload_transaction_participants/1` loads them for the
+  # whole page in a single deduplicated pass.
   @transactions_options [
     necessity_by_association:
-      %{
-        :block => :required,
-        [created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] =>
-          :optional,
-        [from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional,
-        [to_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()]] => :optional
-      }
+      %{:block => :required}
       |> Map.merge(@chain_type_transaction_necessity_by_association),
     paging_options: %PagingOptions{page_size: 6},
     api?: true
   ]
+
+  @transaction_address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address},
+    {:created_contract_address_hash, :created_contract_address}
+  ]
+
+  @transaction_participant_necessity_by_association %{
+    :scam_badge => :optional,
+    :names => :optional,
+    :smart_contract => :optional,
+    proxy_implementations_association() => :optional
+  }
+
+  @api_true [api?: true]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -107,8 +119,22 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     |> put_status(200)
     |> put_view(TransactionView)
     |> render(:transactions, %{
-      transactions: recent_transactions |> maybe_preload_ens_and_metadata(:transactions)
+      transactions: recent_transactions |> preload_transaction_participants()
     })
+  end
+
+  # Loads the address info of every participant on the page in one pass,
+  # deduplicating addresses shared between items and between roles of the same
+  # item. Runs before `maybe_preload_ens_and_metadata/2`, which writes ENS and
+  # metadata into the very address structs assigned here.
+  defp preload_transaction_participants(transactions) do
+    transactions
+    |> Chain.preload_address_participants(
+      @transaction_address_fields,
+      @transaction_participant_necessity_by_association,
+      @api_true
+    )
+    |> maybe_preload_ens_and_metadata(:transactions)
   end
 
   operation :watchlist_transactions,
@@ -139,7 +165,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:transactions_watchlist, %{
-        transactions: transactions |> maybe_preload_ens_and_metadata(:transactions),
+        transactions: transactions |> preload_transaction_participants(),
         watchlist_names: watchlist_names
       })
     end
