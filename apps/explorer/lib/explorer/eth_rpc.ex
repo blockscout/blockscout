@@ -1334,6 +1334,13 @@ defmodule Explorer.EthRPC do
   defp block_param("earliest"), do: {:ok, :earliest}
   defp block_param("pending"), do: {:ok, :pending}
 
+  defp block_param("0x" <> hexadecimal_digits) do
+    case Integer.parse(hexadecimal_digits, 16) do
+      {integer, ""} -> {:ok, integer}
+      _ -> :error
+    end
+  end
+
   defp block_param(string_integer) when is_bitstring(string_integer) do
     case Integer.parse(string_integer) do
       {integer, ""} -> {:ok, integer}
