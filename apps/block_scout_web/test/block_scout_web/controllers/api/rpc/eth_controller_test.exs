@@ -710,6 +710,32 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
       assert response["result"] == "0x2"
     end
 
+    test "with a hexadecimal block provided", %{conn: conn, api_params: api_params} do
+      address = insert(:address)
+
+      insert(:fetched_balance, block_number: 1, address_hash: address.hash, value: 1)
+      insert(:fetched_balance, block_number: 2, address_hash: address.hash, value: 2)
+      insert(:fetched_balance, block_number: 3, address_hash: address.hash, value: 3)
+
+      assert response =
+               conn
+               |> post("/api/eth-rpc", params(api_params, [to_string(address.hash), "0x2"]))
+               |> json_response(200)
+
+      assert response["result"] == "0x2"
+    end
+
+    test "with an invalid hexadecimal block provided", %{conn: conn, api_params: api_params} do
+      address = insert(:address)
+
+      assert response =
+               conn
+               |> post("/api/eth-rpc", params(api_params, [to_string(address.hash), "0xnothex"]))
+               |> json_response(200)
+
+      assert response["error"] == "Query parameter 'block' is invalid"
+    end
+
     test "with a block provided and no balance", %{conn: conn, api_params: api_params} do
       address = insert(:address)
 
