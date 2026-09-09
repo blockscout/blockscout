@@ -20,9 +20,10 @@ defmodule Explorer.Chain.Cache.Propagator do
   - a sender that stays blocked (e.g. suspended on a busy distribution port) is
     killed after `send_timeout` and its batch is dropped.
 
-  Ordered caches are expected to hand over elements already stripped of their
-  heavy associations (see `Explorer.Chain.OrderedCache.strip_for_propagation/1`);
-  the receiving node loads them back from its replica database.
+  Elements are sent exactly as they were written locally, preloads included, so
+  the receiving nodes never touch the database to apply a propagated write. A
+  warning `Cache propagation to [...] did not complete` in the logs means the
+  distribution link cannot keep up with the payload.
 
   ## Configuration
 

@@ -40,12 +40,11 @@ defmodule Explorer.Chain.OrderedCache do
   ## Distributed writes
 
   In split API/indexer deployments, `update/1` uses `do_raw_update/2`: the ids list and
-  elements are written to the local `ConCache` first, then indexer nodes hand a copy of the
-  prepared update, stripped of the associations listed in `c:propagation_preloads/0`, to
-  `Explorer.Chain.Cache.Propagator`. The propagator coalesces updates and asynchronously
-  multicasts them to other cluster nodes via `:erpc`, which call `do_raw_update/2` with
-  `propagate: false`, load the stripped associations back from their replica database and
-  write locally. The local write never waits for a remote node.
+  elements are written to the local `ConCache` first, then indexer nodes hand the prepared
+  update to `Explorer.Chain.Cache.Propagator`. The propagator coalesces updates and
+  asynchronously multicasts them to other cluster nodes via `:erpc`, which call
+  `do_raw_update/2` with `propagate: false` and write locally without any database access.
+  The local write never waits for a remote node.
   """
 
   @type element :: struct()
@@ -74,14 +73,6 @@ defmodule Explorer.Chain.OrderedCache do
   For entities that are not stored in `Explorer.Repo` this should be empty.
   """
   @callback preloads :: [term()]
-
-  @doc """
-  Associations that are stripped from the elements before propagating them to other
-  nodes and loaded back from the replica database on the receiving node.
-  Defaults to `c:preloads/0`. Override it when some preloaded association must travel
-  with the element (e.g. because the receiving node cannot load it back cheaply).
-  """
-  @callback propagation_preloads :: [term()]
 
   @doc """
   The function that orders the elements and decides the ones that are stored.
@@ -189,9 +180,6 @@ defmodule Explorer.Chain.OrderedCache do
       @impl OrderedCache
       def preloads, do: unquote(preloads)
 
-      @impl OrderedCache
-      def propagation_preloads, do: preloads()
-
       ### Settable functions
 
       @impl OrderedCache
@@ -283,7 +271,7 @@ defmodule Explorer.Chain.OrderedCache do
             elements
             |> Enum.sort_by(&element_to_id(&1), &prevails?(&1, &2))
             |> Enum.take(max_size())
-            |> do_preloads(Explorer.Repo, preloads())
+            |> do_preloads()
             |> Enum.map(&{element_to_id(&1), sanitize_before_update(&1)})
             |> do_raw_update(true)
 
@@ -298,19 +286,19 @@ defmodule Explorer.Chain.OrderedCache do
       Merges prepared `{id, element}` pairs into the local ordered cache.
 
       With `propagate: true` (the writing side) the elements are written locally and, when
-      `Explorer.mode/0` is `:indexer`, a copy stripped with `strip_for_propagation/1` is handed
-      to `Explorer.Chain.Cache.Propagator`, which multicasts it to the other cluster nodes
-      asynchronously. The local write never waits for a remote node.
+      `Explorer.mode/0` is `:indexer`, handed to `Explorer.Chain.Cache.Propagator`, which
+      multicasts them to the other cluster nodes asynchronously. The local write never waits
+      for a remote node.
 
-      With `propagate: false` (the receiving side) the stripped associations are loaded back
-      from the replica database with `restore_propagated/1` before the local write.
+      With `propagate: false` (the receiving side) the elements, already preloaded by the
+      sender, are written locally without any database access.
       """
       def do_raw_update(prepared_elements, true) do
         write_locally(prepared_elements)
 
         if Explorer.mode() == :indexer do
           # credo:disable-for-next-line Credo.Check.Design.AliasUsage
-          Explorer.Chain.Cache.Propagator.enqueue_ordered(__MODULE__, strip_for_propagation(prepared_elements))
+          Explorer.Chain.Cache.Propagator.enqueue_ordered(__MODULE__, prepared_elements)
         end
 
         :ok
@@ -321,36 +309,7 @@ defmodule Explorer.Chain.OrderedCache do
           Logger.error("Indexer got unexpected propagation call to do_raw_update/2")
         end
 
-        prepared_elements
-        |> restore_propagated()
-        |> write_locally()
-      end
-
-      @doc """
-      Resets the associations listed in `c:propagation_preloads/0` on the prepared elements,
-      so that the copy shipped to other nodes carries no preloaded records (addresses with
-      their bytecode, blocks, names...). The receiving node loads them back with
-      `restore_propagated/1`.
-      """
-      def strip_for_propagation(prepared_elements) do
-        fields = preload_fields(propagation_preloads())
-
-        Enum.map(prepared_elements, fn
-          {id, element} when is_struct(element) -> {id, Ecto.reset_fields(element, fields)}
-          prepared_element -> prepared_element
-        end)
-      end
-
-      @doc """
-      Loads the associations stripped by `strip_for_propagation/1` back from the replica
-      database. Elements received from a node that did not strip them are left untouched.
-      """
-      def restore_propagated(prepared_elements) do
-        {ids, elements} = Enum.unzip(prepared_elements)
-
-        elements
-        |> do_preloads(Explorer.Repo.replica(), propagation_preloads())
-        |> then(&Enum.zip(ids, &1))
+        write_locally(prepared_elements)
       end
 
       defp write_locally(prepared_elements) do
@@ -364,12 +323,12 @@ defmodule Explorer.Chain.OrderedCache do
         end)
       end
 
-      defp do_preloads(elements, repo, preloads) do
-        if Enum.empty?(preloads) do
+      defp do_preloads(elements) do
+        if Enum.empty?(preloads()) do
           elements
         else
           try do
-            repo.preload(elements, preloads)
+            Explorer.Repo.preload(elements, preloads())
           rescue
             error in [Postgrex.Error, DBConnection.ConnectionError] ->
               Logger.error(fn ->
@@ -382,18 +341,6 @@ defmodule Explorer.Chain.OrderedCache do
               elements
           end
         end
-      end
-
-      # Top-level association names of a (possibly nested) preload specification.
-      defp preload_fields(preloads) do
-        preloads
-        |> List.wrap()
-        |> Enum.flat_map(fn
-          {field, _nested} -> [field]
-          field when is_atom(field) -> [field]
-          nested when is_list(nested) -> preload_fields(nested)
-        end)
-        |> Enum.uniq()
       end
 
       defp merge_and_update(_candidates, existing, 0) do
@@ -499,7 +446,6 @@ defmodule Explorer.Chain.OrderedCache do
                      ids_list_key: 0,
                      max_size: 0,
                      preloads: 0,
-                     propagation_preloads: 0,
                      prevails?: 2,
                      element_to_id: 1,
                      sanitize_before_update: 1
