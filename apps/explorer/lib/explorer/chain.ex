@@ -78,7 +78,7 @@ defmodule Explorer.Chain do
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.MicroserviceInterfaces.MultichainSearch
-  alias Explorer.{PagingOptions, Repo}
+  alias Explorer.{PagingOptions, QueryHelper, Repo}
 
   alias Dataloader.Ecto, as: DataloaderEcto
 
@@ -1506,7 +1506,7 @@ defmodule Explorer.Chain do
         elements
 
       blocks ->
-        blocks
+        blocks |> select_repo(options).preload(Map.keys(necessity_by_association))
     end
   end
 
@@ -2267,45 +2267,121 @@ defmodule Explorer.Chain do
   @doc """
     Dynamically joins and preloads associations in a query based on necessity.
 
-    This function adjusts the provided Ecto query to include joins for associations. It supports
-    both optional and required joins. Optional joins use the `preload` function to fetch associations
-    without enforcing their presence. Required joins ensure the association exists.
+    `:optional` returns the same rows as a plain preload; `:required` additionally
+    keeps only the entities that have the association.
+
+    A to-one association is fetched through a join — `LEFT` for `:optional`,
+    `INNER` for `:required` — and preloaded from it, saving a round trip. A
+    to-many association cannot be fetched that way: the join repeats the parent
+    row once per child, and while Ecto collapses the duplicates when assembling
+    structs, a `limit/2` applied elsewhere counts joined rows rather than
+    entities, so the page silently comes back short. Those keep the preload path,
+    with `:required` adding an `INNER JOIN` purely to filter, made row-preserving
+    by `distinct/2`.
+
+    The preload path is also taken whenever the join would be unsafe or
+    impossible: the source schema cannot be resolved, the association is a
+    `through` one or its related schema has no primary key (Ecto needs it to map
+    joined rows back onto parents), the query already binds the association, or
+    the spec is not a plain association name — `{name, query}` and `{name, fun}`
+    specs carry their own loading strategy that a join would drop.
+
+    None of that weakens `:required`: whenever the spec names an association at
+    all, the filtering `INNER JOIN` is applied on the preload path too, unaliased
+    so that it cannot collide with a binding the query already has.
 
     ## Parameters
     - `query`: The initial Ecto query.
-    - `associations`: A single association or a tuple with nested association preloads.
+    - `preload_spec`: An association name, or a preload spec naming one.
     - `necessity`: Specifies if the association is `:optional` or `:required`.
 
     ## Returns
     - The modified query with the specified associations joined according to the defined necessity.
   """
-  @spec join_association(atom() | Ecto.Query.t(), [{atom(), atom()}], :optional | :required) :: Ecto.Query.t()
-  def join_association(query, [{association, nested_preload}], necessity)
-      when is_atom(association) and is_atom(nested_preload) do
-    case necessity do
-      :optional ->
-        preload(query, [{^association, ^nested_preload}])
-
-      :required ->
-        from(q in query,
-          inner_join: a in assoc(q, ^association),
-          as: ^association,
-          left_join: b in assoc(a, ^nested_preload),
-          as: ^nested_preload,
-          preload: [{^association, {a, [{^nested_preload, b}]}}]
-        )
+  @spec join_association(atom() | Ecto.Query.t(), term(), :optional | :required) :: Ecto.Query.t()
+  def join_association(query, preload_spec, necessity) do
+    with {association, nested_preloads} <- join_target(preload_spec),
+         true <- joinable?(query, association) do
+      join_and_preload(query, association, nested_preloads, necessity)
+    else
+      _ -> preload_association(query, preload_spec, necessity)
     end
   end
 
-  @spec join_association(atom() | Ecto.Query.t(), atom(), :optional | :required) :: Ecto.Query.t()
-  def join_association(query, association, necessity) do
-    case necessity do
-      :optional ->
-        preload(query, ^association)
+  # `:required` keeps its filtering even when the spec itself cannot be joined.
+  # The `INNER JOIN` is what drops the entities that do not have the association,
+  # and the caller depends on that regardless of how the data ends up loaded, so
+  # it is applied off the association's name alone. The join is left unaliased,
+  # which is also what makes this path safe for an association the query already
+  # binds.
+  defp preload_association(query, preload_spec, :required) do
+    case spec_association(preload_spec) do
+      nil ->
+        preload(query, ^List.wrap(preload_spec))
 
-      :required ->
-        from(q in query, inner_join: a in assoc(q, ^association), as: ^association, preload: [{^association, a}])
+      association ->
+        query
+        |> filter_by_association(association)
+        |> preload(^List.wrap(preload_spec))
     end
+  end
+
+  defp preload_association(query, preload_spec, :optional), do: preload(query, ^List.wrap(preload_spec))
+
+  defp join_and_preload(query, association, nested_preloads, :optional) do
+    from(q in query,
+      left_join: a in assoc(q, ^association),
+      as: ^association,
+      preload: [{^association, {a, ^nested_preloads}}]
+    )
+  end
+
+  defp join_and_preload(query, association, nested_preloads, :required) do
+    from(q in query,
+      inner_join: a in assoc(q, ^association),
+      as: ^association,
+      preload: [{^association, {a, ^nested_preloads}}]
+    )
+  end
+
+  # An `INNER JOIN` is the only way to express "entities having this association"
+  # without knowing its keys, but on a to-many association it duplicates the
+  # parent row; `distinct/2` restores one row per entity so a `limit/2` applied
+  # elsewhere still counts entities.
+  defp filter_by_association(query, association) do
+    if QueryHelper.association_cardinality(query, association) == :one do
+      from(q in query, inner_join: assoc(q, ^association))
+    else
+      from(q in query, inner_join: assoc(q, ^association), distinct: true)
+    end
+  end
+
+  # The association and nested preloads a join could supply, or `nil` when the
+  # spec has to be loaded as written: `{name, query}` and `{name, fun}` carry
+  # their own loading strategy that a join would silently drop.
+  defp join_target(association) when is_atom(association) and not is_nil(association), do: {association, []}
+
+  defp join_target([{association, nested_preloads}])
+       when is_atom(association) and (is_atom(nested_preloads) or is_list(nested_preloads)),
+       do: {association, List.wrap(nested_preloads)}
+
+  defp join_target(_preload_spec), do: nil
+
+  # The association a spec names, whatever shape it takes — including the shapes
+  # `join_target/1` refuses, since `:required` still has to filter on them.
+  defp spec_association(association) when is_atom(association) and not is_nil(association), do: association
+  defp spec_association([{association, _nested_preloads}]) when is_atom(association), do: association
+  defp spec_association({association, _custom_preload}) when is_atom(association), do: association
+  defp spec_association(_preload_spec), do: nil
+
+  # Callers compose `join_associations/2` onto hand-written queries that may
+  # already bind or preload the very same association, and joining it again
+  # collides on the `as:` alias. Such associations fall back to the preload path,
+  # where `:required` still gets its filtering from an unaliased join.
+  defp joinable?(query, association) do
+    QueryHelper.join_preloadable?(query, association) and
+      QueryHelper.association_cardinality(query, association) == :one and
+      not QueryHelper.association_bound?(query, association)
   end
 
   @doc """
@@ -2334,12 +2410,9 @@ defmodule Explorer.Chain do
         join_association(acc_query, association, :required)
       end)
 
-    optional_preloads = Enum.map(optional_associations, fn {association, _join} -> association end)
-
-    case optional_preloads do
-      [] -> query_with_required_joins
-      _ -> preload(query_with_required_joins, ^optional_preloads)
-    end
+    Enum.reduce(optional_associations, query_with_required_joins, fn {association, _join}, acc_query ->
+      join_association(acc_query, association, :optional)
+    end)
   end
 
   def page_blocks(query, %PagingOptions{key: nil}), do: query
