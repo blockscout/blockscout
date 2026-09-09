@@ -48,9 +48,12 @@ defmodule Explorer.Chain.MapCache do
 
   ## Distributed writes
 
-  In split API/indexer deployments, `set/2` and `update/2` use `do_raw/2`: the write runs on
-  the local `ConCache` first, then indexer nodes multicast the same operation to other cluster
-  nodes via `:erpc` (`propagate: false` on receivers). Reads are not distributed.
+  In split API/indexer deployments, `set/2` and `update/2` write to the local `ConCache`
+  first, then indexer nodes mark the key as dirty in `Explorer.Chain.Cache.Propagator`. The
+  propagator later reads the current local value with `current_values/1` and asynchronously
+  multicasts it to other cluster nodes via `:erpc`, which store it with `apply_propagated/1`.
+  The local write never waits for a remote node. Reads are not distributed, and neither is
+  the `:async_task` key since pids are node-local.
   """
 
   @type key :: atom()
@@ -163,7 +166,8 @@ defmodule Explorer.Chain.MapCache do
 
       @impl MapCache
       def set(key, value) do
-        do_raw(fn -> ConCache.put(cache_name(), key, value) end)
+        ConCache.put(cache_name(), key, value)
+        propagate(key)
       end
 
       @impl MapCache
@@ -176,30 +180,63 @@ defmodule Explorer.Chain.MapCache do
 
       @impl MapCache
       def update(key, value) do
-        do_raw(fn -> ConCache.update(cache_name(), key, fn old_val -> handle_update(key, old_val, value) end) end)
+        ConCache.update(cache_name(), key, fn old_val -> handle_update(key, old_val, value) end)
+        propagate(key)
       end
 
       @doc """
-      Applies a ConCache write locally, then propagates it from indexer nodes.
+      Applies a ConCache write locally.
 
-      With the default `propagate: true`, the given zero-arity function runs on this node first.
-      When `Explorer.mode/0` is `:indexer`, the same function is multicast to `Node.list/0` with
-      `propagate: false` so API nodes apply the write without re-propagating.
+      With the default `propagate: true`, every key of the cache is then marked dirty in
+      `Explorer.Chain.Cache.Propagator` on indexer nodes. `propagate: false` is the entry point
+      used by indexer nodes running a version that still multicasts closures; new versions
+      propagate values through `apply_propagated/1`.
       """
       def do_raw(function, propagate \\ true) do
         function.()
 
-        case Explorer.mode() do
-          :indexer ->
-            if propagate do
-              Node.list() |> :erpc.multicast(__MODULE__, :do_raw, [function, false])
-            else
-              Logger.error("[#{__MODULE__}] Indexer got unexpected propagation call to do_raw/2")
-              :ok
-            end
+        if propagate do
+          Enum.each(cache_keys(), &propagate/1)
+        else
+          log_unexpected_propagation("do_raw/2")
+        end
 
-          _ ->
-            :ok
+        :ok
+      end
+
+      @doc """
+      Receiving side of the propagation: stores the given `%{key => value}` map as is.
+      Values come from the indexer node, which is the source of truth for the cache.
+      """
+      def apply_propagated(values) when is_map(values) do
+        log_unexpected_propagation("apply_propagated/1")
+
+        Enum.each(values, fn {key, value} -> ConCache.put(cache_name(), key, value) end)
+      end
+
+      @doc """
+      Current local values of the given keys, read without triggering `c:handle_fallback/1`.
+      Used by `Explorer.Chain.Cache.Propagator` when a batch is sent.
+      """
+      def current_values(keys) do
+        Map.new(keys, fn key -> {key, ConCache.get(cache_name(), key)} end)
+      end
+
+      # pids are node-local, propagating them makes no sense
+      defp propagate(:async_task), do: :ok
+
+      defp propagate(key) do
+        if Explorer.mode() == :indexer do
+          # credo:disable-for-next-line Credo.Check.Design.AliasUsage
+          Explorer.Chain.Cache.Propagator.enqueue_map(__MODULE__, key)
+        end
+
+        :ok
+      end
+
+      defp log_unexpected_propagation(function) do
+        if Explorer.mode() == :indexer do
+          Logger.error("[#{__MODULE__}] Indexer got unexpected propagation call to #{function}")
         end
       end
 
