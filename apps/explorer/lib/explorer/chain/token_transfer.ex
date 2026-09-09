@@ -166,7 +166,6 @@ defmodule Explorer.Chain.TokenTransfer do
   @participant_necessity_by_association %{
     :scam_badge => :optional,
     :names => :optional,
-    :smart_contract => :optional,
     Implementation.proxy_implementations_association() => :optional
   }
 

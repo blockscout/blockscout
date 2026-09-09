@@ -47,7 +47,6 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   @transaction_participant_necessity_by_association %{
     :scam_badge => :optional,
     :names => :optional,
-    :smart_contract => :optional,
     proxy_implementations_association() => :optional
   }
 
