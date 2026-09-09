@@ -1635,7 +1635,7 @@ msgstr ""
 msgid "L1 Gas Used by Transaction"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:480
+#: lib/block_scout_web/views/transaction_view.ex:484
 #, elixir-autogen, elixir-format
 msgid "L1 attr info tx"
 msgstr ""
@@ -2154,7 +2154,7 @@ msgstr ""
 msgid "Position %{index}"
 msgstr ""
 
-#: lib/block_scout_web/views/transaction_view.ex:482
+#: lib/block_scout_web/views/transaction_view.ex:485
 #, elixir-autogen, elixir-format
 msgid "Post exec tx"
 msgstr ""

@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.TransactionViewTest do
 
   alias BlockScoutWeb.API.V2.TransactionView
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Transaction, Wei}
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
@@ -27,37 +27,20 @@ defmodule BlockScoutWeb.API.V2.TransactionViewTest do
 
   describe "OP Stack transaction types" do
     test "labels L1 attributes and PostExec transactions only on OP Stack chains" do
-      l1_attributes = build(:transaction, type: 0x7E, index: 0)
-      post_exec = build(:transaction, type: 0x7D, index: 1)
-      initial_stage = :op_stack_l1_attributes_transaction
+      value = %Wei{value: Decimal.new(0)}
+      l1_attributes = build(:transaction, type: 0x7E, index: 0, value: value)
+      post_exec = build(:transaction, type: 0x7D, index: 1, value: value)
 
-      assert :op_stack_l1_attributes_transaction in TransactionView.transaction_types(
-               l1_attributes,
-               [],
-               initial_stage,
-               :optimism
-             )
+      if Application.get_env(:explorer, :chain_type) == :optimism do
+        assert :op_stack_l1_attributes_transaction in TransactionView.transaction_types(l1_attributes)
+        assert :op_stack_post_exec_transaction in TransactionView.transaction_types(post_exec)
+      else
+        refute :op_stack_l1_attributes_transaction in TransactionView.transaction_types(l1_attributes)
+        refute :op_stack_post_exec_transaction in TransactionView.transaction_types(post_exec)
+      end
 
-      assert :op_stack_post_exec_transaction in TransactionView.transaction_types(
-               post_exec,
-               [],
-               initial_stage,
-               :optimism
-             )
-
-      refute :op_stack_l1_attributes_transaction in TransactionView.transaction_types(
-               l1_attributes,
-               [],
-               initial_stage,
-               :ethereum
-             )
-
-      refute :op_stack_post_exec_transaction in TransactionView.transaction_types(
-               post_exec,
-               [],
-               initial_stage,
-               :ethereum
-             )
+      refute :op_stack_l1_attributes_transaction in TransactionView.transaction_types(%{l1_attributes | index: 1})
+      refute :op_stack_l1_attributes_transaction in TransactionView.transaction_types(%{l1_attributes | index: nil})
     end
   end
 

@@ -342,12 +342,8 @@ defmodule EthereumJSONRPC.Transaction do
       }
   """
   @spec elixir_to_params(elixir) :: params
-  def elixir_to_params(elixir), do: elixir_to_params(elixir, chain_type())
-
-  @doc false
-  @spec elixir_to_params(elixir, atom()) :: params
-  def elixir_to_params(elixir, chain_type) do
-    normalized_elixir = chain_type_normalization(elixir, chain_type)
+  def elixir_to_params(elixir) do
+    normalized_elixir = chain_type_normalization(elixir)
 
     normalized_elixir
     |> do_elixir_to_params()
@@ -574,9 +570,9 @@ defmodule EthereumJSONRPC.Transaction do
     ])
   end
 
-  @spec chain_type_normalization(%{String.t() => any()}, atom()) :: %{String.t() => any()}
-  defp chain_type_normalization(elixir, chain_type) do
-    case chain_type do
+  @spec chain_type_normalization(%{String.t() => any()}) :: %{String.t() => any()}
+  defp chain_type_normalization(elixir) do
+    case chain_type() do
       :eden -> eden_compatibility_fields(elixir)
       :optimism -> optimism_compatibility_fields(elixir)
       _ -> elixir

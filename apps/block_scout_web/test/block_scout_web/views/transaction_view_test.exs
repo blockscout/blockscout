@@ -13,11 +13,16 @@ defmodule BlockScoutWeb.TransactionViewTest do
       l1_attributes = build(:transaction, type: 0x7E, index: 0)
       post_exec = build(:transaction, type: 0x7D, index: 1)
 
-      assert TransactionView.transaction_display_type(l1_attributes, :optimism) == "L1 attr info tx"
-      assert TransactionView.transaction_display_type(post_exec, :optimism) == "Post exec tx"
+      if Application.get_env(:explorer, :chain_type) == :optimism do
+        assert TransactionView.transaction_display_type(l1_attributes) == "L1 attr info tx"
+        assert TransactionView.transaction_display_type(post_exec) == "Post exec tx"
+      else
+        refute TransactionView.transaction_display_type(l1_attributes) == "L1 attr info tx"
+        refute TransactionView.transaction_display_type(post_exec) == "Post exec tx"
+      end
 
-      refute TransactionView.transaction_display_type(l1_attributes, :ethereum) == "L1 attr info tx"
-      refute TransactionView.transaction_display_type(post_exec, :ethereum) == "Post exec tx"
+      refute TransactionView.transaction_display_type(%{l1_attributes | index: 1}) == "L1 attr info tx"
+      refute TransactionView.transaction_display_type(%{l1_attributes | index: nil}) == "L1 attr info tx"
     end
   end
 
