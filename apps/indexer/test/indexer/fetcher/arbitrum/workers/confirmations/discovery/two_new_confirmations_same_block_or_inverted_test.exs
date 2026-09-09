@@ -161,6 +161,69 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert unconfirmed_blocks() == []
       end
 
+      # Both events are new, and both events are in the same parent chain block. The
+      # database has two batches: the blocks 1..10 and the blocks 11..20. No block of
+      # them is confirmed. The lower event points to the rollup block 5, which is in
+      # the middle of the first batch. The upper event points to the rollup block 20,
+      # which is the last block of the second batch.
+      #
+      # The lower confirmation must cover the blocks 1..5, and the upper confirmation
+      # must cover the blocks 6..20.
+      #
+      # The lookup range of the upper confirmation ends one block before the parent
+      # chain block of that confirmation, thus it holds no log of the lower
+      # confirmation. The walk reaches the first block of the second batch, and it
+      # moves one batch down. The database shows no confirmed block in the first batch.
+      # Thus the walk takes the whole first batch, and the upper confirmation gets the
+      # blocks 1..20. The blocks 1..5 belong to both confirmations. One import gets two
+      # rows of each of those blocks, and the database stops the import with a
+      # cardinality violation. Neither `:ok` nor `:confirmation_missed` comes back.
+      #
+      # The test "splits one batch between the two confirmations of the same parent
+      # chain block" holds the same pair of events over a single batch. This test is
+      # the only one where the walk of the upper confirmation crosses a batch boundary
+      # and takes the batch of the lower confirmation in full. The position of the
+      # lower event within its batch does not change the result: the crossing of the
+      # boundary is what gives the rows of both confirmations.
+      @tag skip: "Defect: two new confirmations in the same parent chain block"
+      test "splits two batches between the two confirmations of the same parent chain block", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        previous_batch = seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
+        batch = seed_batch(11, 20, @commitment_l1_block)
+
+        lower_confirmation_transaction_hash = to_string(transaction_hash())
+        upper_confirmation_transaction_hash = to_string(transaction_hash())
+
+        expect_discovery_of([
+          build_send_root_updated_log(
+            rollup_block_hash(previous_batch, 5),
+            lower_confirmation_transaction_hash,
+            @confirmation_l1_block
+          ),
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 20),
+            upper_confirmation_transaction_hash,
+            @confirmation_l1_block,
+            log_index: 1,
+            transaction_index: 1
+          )
+        ])
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation_transaction_hash)
+        upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation_transaction_hash)
+
+        assert lower_confirmation.id != upper_confirmation.id
+        assert lower_confirmation.block_number == @confirmation_l1_block
+        assert upper_confirmation.block_number == @confirmation_l1_block
+
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(@rollup_first_block..5)
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(6..20)
+        assert unconfirmed_blocks() == []
+      end
+
       # Both events are new, and both events are in the same parent chain
       # transaction. One transaction can call the outbox two times. Then the parent
       # chain gives this state. The scenario of two events in the same parent chain

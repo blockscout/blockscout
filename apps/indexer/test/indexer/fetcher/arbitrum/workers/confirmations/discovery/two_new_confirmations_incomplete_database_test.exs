@@ -20,6 +20,12 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # Each test of a postponement has two parts. The first part gives the result for
     # the state of the database. The second part makes the change of the indexer, and
     # it examines the same parent chain range again.
+    #
+    # The last two scenarios of the group hold both events in one parent chain block.
+    # There the lookup of a confirmation sees no log of the other confirmation of the
+    # same run, thus the missing data and that blind lookup meet in one run. The group
+    # "perform/5 with two new confirmations in one parent chain block or in the
+    # inverted order" holds the same pairs of events over a complete database.
     describe "perform/5 with two new confirmations and an incomplete database" do
       # Both events are in the same parent chain transaction, and the database holds
       # one batch of the blocks 1..10. No block of the batch is confirmed. The rollup
@@ -412,6 +418,161 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert unconfirmed_blocks() == []
 
         assert message_status(message_above_upper_confirmation) == :sent
+      end
+
+      # Both events are new, and both events are in the same parent chain block. The
+      # database has one batch of the blocks 1..20, and no block of it is confirmed.
+      # The block 20 is in the database, but no row links it to the batch. If the
+      # indexer did not handle the whole batch, the database has this state.
+      #
+      # The lower event points to the rollup block 10. The upper event points to the
+      # rollup block 20.
+      #
+      # The discovery finds the number of a rollup block through the batch of that
+      # block. Thus it cannot find the number of the block 20, and it drops the upper
+      # event. The lookup range of the lower confirmation holds no log, and the batch
+      # starts at the lowest-indexed rollup block. Thus the lower confirmation covers
+      # the blocks 1..10, and the import writes it. The return value is
+      # `:confirmation_missed`, because the parent chain range holds two events and the
+      # import holds one confirmation.
+      #
+      # The second part of the test makes the change of the indexer: the indexer links
+      # the block 20 to its batch. Then the discovery examines the same parent chain
+      # range again. The lower confirmation is a known confirmation of that run. The
+      # lookup range of the upper confirmation ends one block before the parent chain
+      # block of that confirmation, thus it holds no log of the lower confirmation. The
+      # discovery takes the block 1 as the start of the range of the upper confirmation,
+      # while the database gives the unconfirmed blocks 11..20 only. It reads this
+      # difference as an incomplete batch, it writes nothing, and it returns
+      # `:confirmation_missed` again. Thus the blocks 11..20 stay unconfirmed, and the
+      # historical discovery reads this range again and again.
+      #
+      # The test "splits one batch between the known lower confirmation and the new
+      # upper one of the same parent chain block" of the group "perform/5 with a new
+      # confirmation and a known one in one batch" holds the state of the database of
+      # the second part with a seeded known confirmation. This test is the only one
+      # which shows that the discovery reaches that state itself, and that the indexer
+      # alone gives it: no re-org takes part in it.
+      @tag skip: "Defect: an upper confirmation of the parent chain block of a known one repeats the range"
+      test "postpones the upper confirmation when the batch link of its block arrives later", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        batch = seed_batch(@rollup_first_block, 20, @commitment_l1_block, unlinked_blocks: [20])
+
+        lower_confirmation_transaction_hash = to_string(transaction_hash())
+        upper_confirmation_transaction_hash = to_string(transaction_hash())
+
+        expect_discovery_of([
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 10),
+            lower_confirmation_transaction_hash,
+            @confirmation_l1_block
+          ),
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 20),
+            upper_confirmation_transaction_hash,
+            @confirmation_l1_block,
+            log_index: 1,
+            transaction_index: 1
+          )
+        ])
+
+        assert :confirmation_missed == discover(json_rpc_named_arguments)
+
+        lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation_transaction_hash)
+        assert Repo.get_by(LifecycleTransaction, hash: upper_confirmation_transaction_hash) == nil
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(@rollup_first_block..10)
+
+        # `unconfirmed_blocks/0` reads the links of the batches. The block 20 holds no
+        # link yet. Thus this assertion does not cover it.
+        assert unconfirmed_blocks() == Enum.to_list(11..19)
+
+        link_blocks_to_batch(batch, [20])
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation_transaction_hash)
+        assert upper_confirmation.block_number == @confirmation_l1_block
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(11..20)
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(@rollup_first_block..10)
+        assert unconfirmed_blocks() == []
+      end
+
+      # Both events are new, and both events are in the same parent chain block. The
+      # database has two batches: the blocks 1..10 and the blocks 11..20. No block is
+      # confirmed. The block 5 is not linked to its batch. If the indexer did not
+      # handle the whole batch, the database has this state.
+      #
+      # The lower event points to the rollup block 10. The upper event points to the
+      # rollup block 20.
+      #
+      # The lower confirmation finds the gap between the blocks 4 and 6, thus it gives
+      # no rollup block. The upper confirmation must give the blocks 11..20: every
+      # block of them is in the database, and the log of the lower confirmation ends
+      # the range of the upper one.
+      #
+      # The lookup range of the upper confirmation ends one block before the parent
+      # chain block of that confirmation, thus it holds no log of the lower
+      # confirmation. The walk crosses the boundary of the second batch, it meets the
+      # same gap in the first batch, and it drops the blocks 11..20 as well. Therefore
+      # the run writes nothing, and the first part of the test fails on the upper
+      # confirmation.
+      #
+      # The second part of the test makes the change of the indexer: the indexer links
+      # the block 5 to its batch. Then the lower confirmation gives the blocks 1..10,
+      # and the walk of the upper confirmation still finds no boundary. Thus it takes
+      # the whole first batch, and the blocks 1..10 belong to both confirmations. One
+      # import gets two rows of each of those blocks, and the database stops the import
+      # with a cardinality violation.
+      #
+      # The test "writes the upper confirmation only when the lower confirmation finds
+      # a gap in its batch" holds the same state of the database with the lower event in
+      # an older parent chain block. There the log of the lower confirmation ends the
+      # range of the upper one, and the run writes the upper confirmation. This test is
+      # the only one where a gap below an invisible boundary drops a confirmation whose
+      # own blocks are complete.
+      @tag skip: "Defect: two new confirmations in the same parent chain block"
+      test "drops the upper confirmation when the lower one of the same parent chain block finds a gap", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        previous_batch = seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block, unlinked_blocks: [5])
+        batch = seed_batch(11, 20, @commitment_l1_block)
+
+        lower_confirmation_transaction_hash = to_string(transaction_hash())
+        upper_confirmation_transaction_hash = to_string(transaction_hash())
+
+        expect_discovery_of([
+          build_send_root_updated_log(
+            rollup_block_hash(previous_batch, 10),
+            lower_confirmation_transaction_hash,
+            @confirmation_l1_block
+          ),
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 20),
+            upper_confirmation_transaction_hash,
+            @confirmation_l1_block,
+            log_index: 1,
+            transaction_index: 1
+          )
+        ])
+
+        assert :confirmation_missed == discover(json_rpc_named_arguments)
+
+        assert Repo.get_by(LifecycleTransaction, hash: lower_confirmation_transaction_hash) == nil
+
+        upper_confirmation = Repo.get_by!(LifecycleTransaction, hash: upper_confirmation_transaction_hash)
+        assert upper_confirmation.block_number == @confirmation_l1_block
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(11..20)
+        assert unconfirmed_blocks() == Enum.to_list(@rollup_first_block..4) ++ Enum.to_list(6..10)
+
+        link_blocks_to_batch(previous_batch, [5])
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        lower_confirmation = Repo.get_by!(LifecycleTransaction, hash: lower_confirmation_transaction_hash)
+        assert confirmed_blocks(lower_confirmation) == Enum.to_list(@rollup_first_block..10)
+        assert confirmed_blocks(upper_confirmation) == Enum.to_list(11..20)
+        assert unconfirmed_blocks() == []
       end
     end
   end

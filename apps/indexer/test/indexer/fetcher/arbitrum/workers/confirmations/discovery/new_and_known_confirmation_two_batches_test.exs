@@ -17,9 +17,14 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # In this group the two confirmations sit in two different batches. The walk of
     # the new confirmation stops either on the log of the known confirmation or on
     # the state of the database, which shows the batch below as confirmed in full.
-    # Thus every scenario of this group gives the correct pair of confirmations, and
-    # the four positions of the two events on the parent chain give the same result:
-    # the known confirmation can be older, newer, or in the same parent chain block.
+    # Thus the four positions of the two events on the parent chain give the same
+    # result: the known confirmation can be older, newer, or in the same parent chain
+    # block.
+    #
+    # A known confirmation which holds a part of the batch below gives neither of the
+    # two boundaries when its event is in the parent chain block of the new
+    # confirmation. The last scenario of this group holds that state, and it is the
+    # only scenario of this group which gives a defect.
     #
     # The group "perform/5 with a new confirmation and a known one in one batch"
     # holds the same four positions within one batch, where three of them give a
@@ -266,7 +271,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # parent chain block. This test is the only one where the two batches split
       # between a known confirmation and a new one of the same parent chain block. The
       # state of the database, and not the parent chain, ends the walk here. Thus the
-      # position of the known event does not change the result.
+      # position of the known event does not change the result. The test "postpones the
+      # new confirmation when the known one is in the middle of the batch below" holds
+      # the same pair of events with the known confirmation inside the first batch.
+      # There the database ends no walk, and the result is a defect.
       test "splits two batches between the known lower confirmation and the new upper one of the same parent chain block",
            %{json_rpc_named_arguments: json_rpc_named_arguments} do
         previous_batch = seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
@@ -302,6 +310,94 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert kept_confirmation.block_number == @confirmation_l1_block
         assert DateTime.compare(kept_confirmation.timestamp, known_confirmation.timestamp) == :eq
         assert confirmed_blocks(kept_confirmation) == Enum.to_list(@rollup_first_block..10)
+
+        assert unconfirmed_blocks() == []
+      end
+
+      # The database has two batches: the blocks 1..10 and the blocks 11..20. The known
+      # confirmation holds the blocks 1..5, which is a part of the first batch, and its
+      # values are equal to the values in its event. Both events are in the parent
+      # chain block 200.
+      #
+      # The new event points to the rollup block 20. Thus the new confirmation must
+      # cover the blocks 6..20, and the known confirmation must keep the blocks 1..5.
+      #
+      # The lookup range of the new confirmation ends one block before the parent chain
+      # block of that confirmation. Thus no range of the walk holds the log of the known
+      # confirmation. The walk collects the blocks 11..20, and it moves one batch down,
+      # because the first batch is not confirmed in full. There the discovery takes the
+      # block 1 as the start of the range of the new confirmation, while the database
+      # gives the unconfirmed blocks 6..10 only. The discovery reads this difference as
+      # an incomplete batch, and it drops the whole result of the new confirmation, the
+      # blocks 11..20 included. It writes nothing, and it returns `:confirmation_missed`.
+      #
+      # The test "walks into the batch of the known confirmation when that confirmation
+      # covers a part of it" holds the same state of the database with the known event
+      # in an older parent chain block. There the lookup range holds that log, the log
+      # ends the walk, and the new confirmation covers the blocks 6..20. This test is
+      # the only one where the known confirmation of the same parent chain block covers
+      # a part of the batch below the new confirmation. Thus the pair of the two tests
+      # shows that the position of the known event on the parent chain changes the
+      # result of this state of the database.
+      #
+      # The test "splits two batches between the known lower confirmation and the new
+      # upper one of the same parent chain block" holds the same pair of positions with
+      # the known confirmation on the boundary of the first batch. There the state of
+      # the database ends the walk, thus the invisible log costs nothing.
+      #
+      # The second part of the test changes nothing in the database. The database holds
+      # both batches already, thus the indexer has nothing to add. Therefore the
+      # repeated run of the same parent chain range must give `:ok` and the correct pair
+      # of confirmations. The discovery gives `:confirmation_missed` again, and the
+      # blocks 6..20 stay unconfirmed. Thus the historical discovery reads this range
+      # again and again.
+      #
+      # The correction of the defect gives `:ok` and the blocks 6..20 in the first run.
+      # Thus the person who removes the tag also removes the assertions of the first
+      # part.
+      @tag skip: "Defect: a new confirmation above a known one in the middle of a batch below repeats the range"
+      test "postpones the new confirmation when the known one is in the middle of the batch below", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        previous_batch = seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
+        batch = seed_batch(11, 20, @commitment_l1_block)
+
+        known_confirmation = insert_confirmation(@confirmation_l1_block, @confirmation_l1_timestamp)
+        mark_confirmed(@rollup_first_block..5, known_confirmation)
+
+        new_confirmation_transaction_hash = to_string(transaction_hash())
+
+        expect_discovery_of([
+          build_send_root_updated_log(
+            rollup_block_hash(previous_batch, 5),
+            to_string(known_confirmation.hash),
+            @confirmation_l1_block
+          ),
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 20),
+            new_confirmation_transaction_hash,
+            @confirmation_l1_block,
+            log_index: 1,
+            transaction_index: 1
+          )
+        ])
+
+        assert :confirmation_missed == discover(json_rpc_named_arguments)
+
+        assert Repo.get_by(LifecycleTransaction, hash: new_confirmation_transaction_hash) == nil
+        assert confirmed_blocks(known_confirmation) == Enum.to_list(@rollup_first_block..5)
+        assert unconfirmed_blocks() == Enum.to_list(6..20)
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        new_confirmation = Repo.get_by!(LifecycleTransaction, hash: new_confirmation_transaction_hash)
+        assert new_confirmation.block_number == @confirmation_l1_block
+        assert confirmed_blocks(new_confirmation) == Enum.to_list(6..20)
+
+        kept_confirmation = Repo.get_by!(LifecycleTransaction, hash: known_confirmation.hash)
+        assert kept_confirmation.id == known_confirmation.id
+        assert DateTime.compare(kept_confirmation.timestamp, known_confirmation.timestamp) == :eq
+        assert confirmed_blocks(kept_confirmation) == Enum.to_list(@rollup_first_block..5)
 
         assert unconfirmed_blocks() == []
       end
