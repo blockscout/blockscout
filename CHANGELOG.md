@@ -1,5 +1,38 @@
 # Changelog
 
+## 11.3.0
+
+### 🚀 Features
+
+- Support OP Stack post-exec transactions ([#14734](https://github.com/blockscout/blockscout/issues/14734))
+- Support API key for CryptoCompare market source ([#14746](https://github.com/blockscout/blockscout/issues/14746))
+
+### 🐛 Bug Fixes
+
+- Group JSON RPC requests by url type ([#14806](https://github.com/blockscout/blockscout/issues/14806))
+- Decouple cache propagation to API nodes from block import ([#14778](https://github.com/blockscout/blockscout/issues/14778))
+- Support hexadecimal block number in eth_getBalance ([#14804](https://github.com/blockscout/blockscout/issues/14804))
+- Disable old broadcast for token transfers without subscribers ([#14777](https://github.com/blockscout/blockscout/issues/14777))
+- Forward [api?: true] where missed ([#14740](https://github.com/blockscout/blockscout/issues/14740))
+
+### ⚡ Performance
+
+- Deduplicate preloads ([#14797](https://github.com/blockscout/blockscout/issues/14797))
+- Optimize join_associations ([#14775](https://github.com/blockscout/blockscout/issues/14775))
+- Make Postgrex prepared statements mode configurable per repo ([#14799](https://github.com/blockscout/blockscout/issues/14799))
+- Limit logs before joining transactions in topic-only getLogs ([#14780](https://github.com/blockscout/blockscout/issues/14780))
+- Scam addresses ETS cache ([#14781](https://github.com/blockscout/blockscout/issues/14781))
+- Preload only rendered transaction fields in v1 tokentx endpoints ([#14782](https://github.com/blockscout/blockscout/issues/14782))
+- Switch token counters to incremental consolidation ([#14773](https://github.com/blockscout/blockscout/issues/14773))
+- Switch address counters to incremental consolidation ([#14759](https://github.com/blockscout/blockscout/issues/14759))
+- Batch uncataloged token transfers scan via Migrator framework ([#14774](https://github.com/blockscout/blockscout/issues/14774))
+- Remove unused GasUsageSum cache with heavy DB query ([#14771](https://github.com/blockscout/blockscout/issues/14771))
+- Deduplicate addresses preloads ([#14758](https://github.com/blockscout/blockscout/issues/14758))
+- Reduce addresses preload queries count ([#14755](https://github.com/blockscout/blockscout/issues/14755))
+- Remove redundant preloads in api/v2/addresses/* ([#14751](https://github.com/blockscout/blockscout/issues/14751))
+- Remove unconditional contract_address preload for tokens ([#14750](https://github.com/blockscout/blockscout/issues/14750))
+
+
 ## 11.2.8
 
 ### 🚀 Features
