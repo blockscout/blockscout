@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.TransactionViewTest do
 
   alias BlockScoutWeb.API.V2.TransactionView
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{Transaction, Wei}
   alias Explorer.Market.MarketHistory
   alias Explorer.Repo
 
@@ -24,6 +24,25 @@ defmodule BlockScoutWeb.API.V2.TransactionViewTest do
   @tuple_type "(string,string,string,string,string)"
   @tuple_value {"", "", "", "", ""}
   @tuple_json ["", "", "", "", ""]
+
+  describe "OP Stack transaction types" do
+    test "labels L1 attributes and PostExec transactions only on OP Stack chains" do
+      value = %Wei{value: Decimal.new(0)}
+      l1_attributes = build(:transaction, type: 0x7E, index: 0, value: value)
+      post_exec = build(:transaction, type: 0x7D, index: 1, value: value)
+
+      if Application.get_env(:explorer, :chain_type) == :optimism do
+        assert :op_stack_l1_attributes_transaction in TransactionView.transaction_types(l1_attributes)
+        assert :op_stack_post_exec_transaction in TransactionView.transaction_types(post_exec)
+      else
+        refute :op_stack_l1_attributes_transaction in TransactionView.transaction_types(l1_attributes)
+        refute :op_stack_post_exec_transaction in TransactionView.transaction_types(post_exec)
+      end
+
+      refute :op_stack_l1_attributes_transaction in TransactionView.transaction_types(%{l1_attributes | index: 1})
+      refute :op_stack_l1_attributes_transaction in TransactionView.transaction_types(%{l1_attributes | index: nil})
+    end
+  end
 
   test "loads historic exchange rates once for a transaction list", %{conn: conn} do
     first_date = ~D[2026-07-20]
