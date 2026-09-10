@@ -7,10 +7,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # the conventions this suite of files follows.
 
     # The arguments of the run give the lowest indexed block of the chain. The walk
-    # of a confirmation cannot move below that block, and the discovery does not look
+    # of a confirmation cannot move below that block. The discovery does not look
     # for a batch below it.
     #
-    # This group holds the two reasons of such a stop: the block is the first rollup
+    # This group holds two reasons for the stop: the block is the first rollup
     # block of the run, or no block is below it.
     describe "perform/5 with a new confirmation and a configured first rollup block" do
       # The database has one batch with the rollup blocks 100..110, and no block of it
@@ -24,7 +24,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # not look for a batch below. The result is `:ok`, and the confirmation covers
       # the blocks 100..110.
       #
-      # With the value 1 the discovery stops at the block 1 for two reasons: the block
+      # With the value 1, the discovery stops at the block 1 for two reasons. The block
       # is the first rollup block, and no block is below it. This test holds the first
       # reason only. The test "stops at the block 1 when the run starts at the block
       # 0" holds the second reason only.
@@ -55,7 +55,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # below it. Thus the discovery stops there, and it does not look for a batch
       # below. The result is `:ok`, and the confirmation covers the blocks 1..10.
       #
-      # This test holds the second reason of the stop at the block 1 only. The test
+      # This test holds the second reason for the stop at the block 1 only. The test
       # "stops at the first rollup block of the run when that block is above 1" holds
       # the first reason only.
       test "stops at the block 1 when the run starts at the block 0", %{

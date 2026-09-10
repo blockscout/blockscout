@@ -7,7 +7,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # the conventions this suite of files follows.
 
     # A parent chain range can hold one new confirmation together with a confirmation
-    # which the database knows already. The discovery examines the rollup blocks of
+    # that the database knows already. The discovery examines the rollup blocks of
     # the new confirmation only. For the known confirmation it compares the block
     # number and the timestamp with the values of the event. If the values are
     # different, the discovery writes the known transaction again.
@@ -15,22 +15,22 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # Both results go into the database in the same operation.
     #
     # In this group the two confirmations sit in two different batches. The walk of
-    # the new confirmation stops either on the log of the known confirmation or on
-    # the state of the database, which shows the batch below as confirmed in full.
-    # Thus the four positions of the two events on the parent chain give the same
-    # result: the known confirmation can be older, newer, or in the same parent chain
-    # block.
+    # the new confirmation stops at one of two points. It stops at the log of the
+    # known confirmation, or at the database state that shows the batch below as
+    # fully confirmed. Thus the four positions of the two events on the parent chain
+    # give the same result. The known confirmation can be older, newer, or in the
+    # same parent chain block as the new one.
     #
-    # A known confirmation which holds a part of the batch below gives neither of the
-    # two boundaries when its event is in the parent chain block of the new
-    # confirmation. The last scenario of this group holds that state, and it is the
-    # only scenario of this group which gives a defect.
+    # A known confirmation can hold a part of the batch below. When its event is in
+    # the parent chain block of the new confirmation, it gives neither of the two
+    # boundaries. The last scenario of this group holds that state. It is the only
+    # scenario in this group that gives a defect.
     #
     # The group "perform/5 with a new confirmation and a known one in one batch"
-    # holds the same four positions within one batch, where three of them give a
-    # defect. The group "perform/5 with a new confirmation and a known one over an
-    # incomplete database" holds the scenarios where a part of the data of a batch is
-    # missing.
+    # holds the same four positions within one batch. Three of them give a defect.
+    # The group "perform/5 with a new confirmation and a known one over an
+    # incomplete database" holds different scenarios. In each one, a batch is
+    # missing part of its data.
     describe "perform/5 with a new confirmation and a known one in two batches" do
       # The database has two batches: the blocks 1..10 and the blocks 11..20. The
       # known confirmation holds the blocks 1..10 already. The block number and the
@@ -93,20 +93,20 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # The new event points to the rollup block 20. The discovery finds no
       # confirmation within the blocks of the second batch. Thus it continues with
-      # the previous batch. This time the database does not stop the walk, because
-      # the blocks 6..10 of the first batch are unconfirmed. Thus the discovery reads
+      # the previous batch. This time, the blocks 6..10 of the first batch are
+      # unconfirmed, so the database does not stop the walk. Thus the discovery reads
       # the range of that batch and finds the log of the known confirmation there.
       # That log points to the block 5, which is in the middle of the batch.
       #
       # As a result, the blocks 6..10 go to the new confirmation. They do not go to
-      # the known one. The discovery never extends a confirmation which it knows
+      # the known one. The discovery never extends a confirmation that it knows
       # already.
       #
-      # This test is not redundant. The walk itself is the walk of the single-event
+      # This test is not redundant. It uses the walk of the single-event
       # test "spans two batches down to an earlier confirmation in the middle of the
       # previous batch". In this test the log of the known confirmation does two jobs
-      # in one run. The log is the lifecycle transaction which the discovery compares
-      # with its event. The log is also the boundary which ends the walk of the new
+      # in one run. The log is the lifecycle transaction that the discovery compares
+      # with its event. The log is also the boundary that ends the walk of the new
       # confirmation. This test is the only scenario where one log of the range does
       # both jobs.
       test "walks into the batch of the known confirmation when that confirmation covers a part of it", %{
@@ -262,19 +262,19 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # chain block 200.
       #
       # The new event points to the rollup block 20. The discovery finds no
-      # confirmation within the blocks of the second batch, thus it moves one batch
+      # confirmation within the blocks of the second batch. Thus it moves one batch
       # down. The database shows that all blocks of the first batch are confirmed. Thus
       # the walk stops there, and the new confirmation covers the blocks 11..20.
       #
       # The test "confirms the new blocks and keeps the known confirmation which did
-      # not move" holds the same state of the database with the known event in an older
+      # not move" holds the same database state. There, the known event is in an older
       # parent chain block. This test is the only one where the two batches split
       # between a known confirmation and a new one of the same parent chain block. The
       # state of the database, and not the parent chain, ends the walk here. Thus the
       # position of the known event does not change the result. The test "postpones the
       # new confirmation when the known one is in the middle of the batch below" holds
-      # the same pair of events with the known confirmation inside the first batch.
-      # There the database ends no walk, and the result is a defect.
+      # the same pair of events. There, the known confirmation is inside the first
+      # batch. There the database ends no walk, and the result is a defect.
       test "splits two batches between the known lower confirmation and the new upper one of the same parent chain block",
            %{json_rpc_named_arguments: json_rpc_named_arguments} do
         previous_batch = seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
@@ -315,7 +315,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       end
 
       # The database has two batches: the blocks 1..10 and the blocks 11..20. The known
-      # confirmation holds the blocks 1..5, which is a part of the first batch, and its
+      # confirmation holds the blocks 1..5, which is a part of the first batch. Its
       # values are equal to the values in its event. Both events are in the parent
       # chain block 200.
       #
@@ -324,29 +324,29 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # The lookup range of the new confirmation ends one block before the parent chain
       # block of that confirmation. Thus no range of the walk holds the log of the known
-      # confirmation. The walk collects the blocks 11..20, and it moves one batch down,
-      # because the first batch is not confirmed in full. There the discovery takes the
-      # block 1 as the start of the range of the new confirmation, while the database
-      # gives the unconfirmed blocks 6..10 only. The discovery reads this difference as
-      # an incomplete batch, and it drops the whole result of the new confirmation, the
+      # confirmation. The first batch is not confirmed in full, so the walk collects
+      # the blocks 11..20 and moves one batch down. There the discovery takes the block
+      # 1 as the start of the range of the new confirmation. But the database gives
+      # only the unconfirmed blocks 6..10. The discovery reads this difference as an
+      # incomplete batch, and it drops the whole result of the new confirmation, the
       # blocks 11..20 included. It writes nothing, and it returns `:confirmation_missed`.
       #
       # The test "walks into the batch of the known confirmation when that confirmation
-      # covers a part of it" holds the same state of the database with the known event
-      # in an older parent chain block. There the lookup range holds that log, the log
+      # covers a part of it" holds the same database state. There, the known event is
+      # in an older parent chain block. There the lookup range holds that log. The log
       # ends the walk, and the new confirmation covers the blocks 6..20. This test is
-      # the only one where the known confirmation of the same parent chain block covers
-      # a part of the batch below the new confirmation. Thus the pair of the two tests
-      # shows that the position of the known event on the parent chain changes the
-      # result of this state of the database.
+      # the only one with this pattern. The known confirmation sits in the same parent
+      # chain block as the new one. It also covers part of the batch below the new
+      # confirmation. Thus these two tests show that the position of the known event on
+      # the parent chain changes the result for this database state.
       #
       # The test "splits two batches between the known lower confirmation and the new
-      # upper one of the same parent chain block" holds the same pair of positions with
-      # the known confirmation on the boundary of the first batch. There the state of
-      # the database ends the walk, thus the invisible log costs nothing.
+      # upper one of the same parent chain block" holds the same positions. There, the
+      # known confirmation is on the boundary of the first batch. There the state of
+      # the database ends the walk. Thus the unseen log has no effect on the result.
       #
       # The second part of the test changes nothing in the database. The database holds
-      # both batches already, thus the indexer has nothing to add. Therefore the
+      # both batches already. Thus the indexer has nothing to add. Therefore the
       # repeated run of the same parent chain range must give `:ok` and the correct pair
       # of confirmations. The discovery gives `:confirmation_missed` again, and the
       # blocks 6..20 stay unconfirmed. Thus the historical discovery reads this range
@@ -412,10 +412,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # covers the full first batch.
       #
       # The test "confirms the blocks below the known confirmation when the new event is
-      # the older one" holds the same state of the database with the new event in an
-      # older parent chain block. This test is the only one where the new confirmation
-      # of the lower batch and the known confirmation of the upper batch are in one
-      # parent chain block.
+      # the older one" holds the same database state. There, the new event is in an
+      # older parent chain block. This test is the only one with this pattern. The new
+      # confirmation of the lower batch and the known confirmation of the upper batch
+      # are in one parent chain block.
       test "splits two batches between the new lower confirmation and the known upper one of the same parent chain block",
            %{json_rpc_named_arguments: json_rpc_named_arguments} do
         previous_batch = seed_batch(@rollup_first_block, 10, @previous_commitment_l1_block)
@@ -520,8 +520,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The test "splits one batch when the known upper confirmation is older on the
       # parent chain" holds the same pair of events within one batch. There the log of
       # the known confirmation points to a block of the same batch, and the discovery
-      # postpones the new confirmation. Thus the two tests hold the two results of one
-      # pair of events: two batches give the correct result, and one batch gives a
+      # postpones the new confirmation. Thus these two tests give the two results for
+      # one pair of events. Two batches give the correct result, and one batch gives a
       # defect.
       test "splits two batches when the known upper confirmation is older on the parent chain", %{
         json_rpc_named_arguments: json_rpc_named_arguments

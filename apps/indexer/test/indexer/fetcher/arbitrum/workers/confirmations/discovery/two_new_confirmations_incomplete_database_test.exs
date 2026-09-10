@@ -7,13 +7,13 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # the conventions this suite of files follows.
 
     # A parent chain range can hold two new events while the database holds a part of
-    # the data which those confirmations need. The indexer writes a batch, the links
-    # of its rollup blocks and the blocks themselves in several steps, and the
-    # discovery can read the parent chain between those steps.
+    # the data that those confirmations need. The indexer writes a batch, the links
+    # of its rollup blocks, and the blocks themselves in several steps. The discovery
+    # can read the parent chain between those steps.
     #
     # The discovery collects the confirmations of one run from the lowest rollup
-    # block to the highest one, and it writes the result of the run in one operation.
-    # A confirmation without rollup blocks drops every block which the run collected
+    # block to the highest one. It writes the result of the run in one operation.
+    # A confirmation without rollup blocks drops every block that the run collected
     # before it. Thus the order of the two confirmations changes what the run writes,
     # and this group holds both orders of the missing data.
     #
@@ -23,7 +23,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     #
     # The last two scenarios of the group hold both events in one parent chain block.
     # There the lookup of a confirmation sees no log of the other confirmation of the
-    # same run, thus the missing data and that blind lookup meet in one run. The group
+    # same run. Thus the missing data and that blind lookup meet in one run. The group
     # "perform/5 with two new confirmations in one parent chain block or in the
     # inverted order" holds the same pairs of events over a complete database.
     describe "perform/5 with two new confirmations and an incomplete database" do
@@ -46,30 +46,30 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # although it dropped one event of the range. The correct result of this run is
       # `:confirmation_missed`, which sends the range to the historical discovery.
       #
-      # The second part of the test makes the change of the indexer: the indexer writes
+      # The second part of the test makes the change of the indexer. The indexer writes
       # the batch of the blocks 11..20. Then the discovery examines the same parent
-      # chain range again. The database knows the transaction of the two events now.
-      # For such a transaction the discovery examines no rollup block: it assumes that
-      # every block of that confirmation is linked already. Thus the blocks 11..20 stay
+      # chain range again. The database now has the transaction of the two events.
+      # For such a transaction, the discovery examines no rollup block. It treats
+      # every block of that confirmation as already linked. Thus the blocks 11..20 stay
       # unconfirmed, and no later run can link them.
       #
       # The test "confirms the lower blocks only when the batch of the upper confirmed
       # block is missing" holds the same state of the database with two transactions.
       # There the discovery returns `:confirmation_missed` for the first run, and the
-      # second run links the blocks 11..20. This test is the only one which shows that
-      # the discovery loses the rollup blocks of an event when another event of the
-      # same transaction was handled before.
+      # second run links the blocks 11..20. This test alone shows that the discovery
+      # loses the rollup blocks of one event when it already handled another event of
+      # the same transaction.
       #
       # The test holds the correct result of both runs. Thus the first part requires
       # `:confirmation_missed`, and the current run fails that assertion already.
       #
-      # The first part holds the result value only. A correction can import the blocks
-      # 1..10 of the resolvable event in the first run, as the test with two
-      # transactions does, or it can postpone the whole transaction and link the blocks
-      # 1..20 in one operation. Both forms are correct, thus the test requires neither
-      # of them.
+      # The first part holds the result value only. A correction can take one of two
+      # forms. It can import the blocks 1..10 of the resolvable event in the first
+      # run, as the test with two transactions does. Or it can postpone the whole
+      # transaction and link the blocks 1..20 in one operation. Both forms are
+      # correct, thus the test requires neither of them.
       #
-      # The second form needs one more correction: it leaves the batch of the blocks
+      # The second form needs one more correction. It leaves the batch of the blocks
       # 1..10 unconfirmed for the second run. Then that run handles the two events of
       # the transaction together, and it gives two rows of each block of 1..10. The
       # test "gives all rollup blocks to one confirmation when both events are in the
@@ -131,7 +131,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # is `:confirmation_missed`, because the parent chain range holds two events
       # and the import holds one confirmation.
       #
-      # The second part of the test makes the change of the indexer: the indexer
+      # The second part of the test makes the change of the indexer. The indexer
       # writes the batch of the blocks 11..20. Then the discovery examines the same
       # parent chain range again. The lower confirmation is a known confirmation of
       # that run, and it keeps its blocks. The lookup range of the upper confirmation
@@ -214,7 +214,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # error, and the discovery writes nothing. The return value is
       # `:confirmation_missed`, and the walk to the batch below does not start.
       #
-      # The second part of the test makes the change of the indexer: the indexer
+      # The second part of the test makes the change of the indexer. The indexer
       # writes the batch of the blocks 1..10. Then the discovery examines the same
       # parent chain range again, and the two confirmations arrive together.
       test "postpones both confirmations when the batch of the lower confirmed block is missing", %{
@@ -279,11 +279,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # The discovery handles the confirmations of one run in the order of their
       # rollup blocks, from the lowest block to the highest. A confirmation without
-      # blocks drops every block which the run collected before it. Therefore the run
+      # blocks drops every block that the run collected before it. Therefore the run
       # loses the blocks of the lower confirmation as well, and it writes nothing. The
       # return value is `:confirmation_missed`.
       #
-      # The second part of the test makes the change of the indexer: the indexer
+      # The second part of the test makes the change of the indexer. The indexer
       # links the block 15 to its batch. Then the discovery examines the same parent
       # chain range again, and the two confirmations arrive together.
       test "drops the lower confirmation when the upper confirmation finds a gap in its batch", %{
@@ -360,7 +360,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # confirms the block 5 already. Thus this status is correct, and only the link
       # of the block 5 is missing.
       #
-      # The second part of the test makes the change of the indexer: the indexer
+      # The second part of the test makes the change of the indexer. The indexer
       # links the block 5 to its batch. Then the discovery examines the same parent
       # chain range again. The upper confirmation is a known confirmation of that
       # run, and it keeps its blocks. The lower confirmation covers the blocks
@@ -436,23 +436,23 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # `:confirmation_missed`, because the parent chain range holds two events and the
       # import holds one confirmation.
       #
-      # The second part of the test makes the change of the indexer: the indexer links
+      # The second part of the test makes the change of the indexer. The indexer links
       # the block 20 to its batch. Then the discovery examines the same parent chain
       # range again. The lower confirmation is a known confirmation of that run. The
       # lookup range of the upper confirmation ends one block before the parent chain
-      # block of that confirmation, thus it holds no log of the lower confirmation. The
+      # block of that confirmation. Thus it holds no log of the lower confirmation. The
       # discovery takes the block 1 as the start of the range of the upper confirmation,
       # while the database gives the unconfirmed blocks 11..20 only. It reads this
-      # difference as an incomplete batch, it writes nothing, and it returns
+      # difference as an incomplete batch. It writes nothing, and it returns
       # `:confirmation_missed` again. Thus the blocks 11..20 stay unconfirmed, and the
       # historical discovery reads this range again and again.
       #
       # The test "splits one batch between the known lower confirmation and the new
-      # upper one of the same parent chain block" of the group "perform/5 with a new
-      # confirmation and a known one in one batch" holds the state of the database of
-      # the second part with a seeded known confirmation. This test is the only one
-      # which shows that the discovery reaches that state itself, and that the indexer
-      # alone gives it: no re-org takes part in it.
+      # upper one of the same parent chain block", in the group "perform/5 with a new
+      # confirmation and a known one in one batch", reaches the same state as the
+      # second part of this test, but with a seeded known confirmation. This test
+      # alone shows that the discovery reaches that state by itself. The indexer
+      # alone produces that state, with no re-org involved.
       @tag skip: "Defect: an upper confirmation of the parent chain block of a known one repeats the range"
       test "postpones the upper confirmation when the batch link of its block arrives later", %{
         json_rpc_named_arguments: json_rpc_named_arguments
@@ -506,19 +506,19 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The lower event points to the rollup block 10. The upper event points to the
       # rollup block 20.
       #
-      # The lower confirmation finds the gap between the blocks 4 and 6, thus it gives
-      # no rollup block. The upper confirmation must give the blocks 11..20: every
+      # The lower confirmation finds the gap between the blocks 4 and 6. Thus it gives
+      # no rollup block. The upper confirmation must give the blocks 11..20. Every
       # block of them is in the database, and the log of the lower confirmation ends
       # the range of the upper one.
       #
       # The lookup range of the upper confirmation ends one block before the parent
-      # chain block of that confirmation, thus it holds no log of the lower
-      # confirmation. The walk crosses the boundary of the second batch, it meets the
+      # chain block of that confirmation. Thus it holds no log of the lower
+      # confirmation. The walk crosses the boundary of the second batch. It meets the
       # same gap in the first batch, and it drops the blocks 11..20 as well. Therefore
       # the run writes nothing, and the first part of the test fails on the upper
       # confirmation.
       #
-      # The second part of the test makes the change of the indexer: the indexer links
+      # The second part of the test makes the change of the indexer. The indexer links
       # the block 5 to its batch. Then the lower confirmation gives the blocks 1..10,
       # and the walk of the upper confirmation still finds no boundary. Thus it takes
       # the whole first batch, and the blocks 1..10 belong to both confirmations. One

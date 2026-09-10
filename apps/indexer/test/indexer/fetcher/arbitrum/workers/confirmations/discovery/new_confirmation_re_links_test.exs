@@ -4,18 +4,18 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     use Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery.TestCase
 
     # See `Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery.TestCase` for
-    # the conventions this suite of files follows.
+    # the conventions that this suite of files follows.
 
     # The rollup blocks of a batch can hold a link to a parent chain transaction
     # which is not the confirmation of those blocks. A re-org of the parent chain
-    # gives this state: the discovery imported the confirmation before its parent
-    # chain block became safe, and the re-org replaced that transaction. After the
+    # gives this state. The discovery imported the confirmation before its parent
+    # chain block became safe. Then the re-org replaced that transaction. After the
     # re-org the parent chain holds no log of the replaced transaction.
     #
     # A new confirmation of the same rollup blocks must take those blocks from the
     # replaced transaction. This group holds one scenario per position of the
-    # replaced blocks within the batch of the event, and one scenario where the
-    # replaced blocks are in the batch below.
+    # replaced blocks within the batch of the event. It also holds one scenario
+    # where the replaced blocks are in the batch below.
     #
     # The discovery of the confirmations does not handle a re-org yet. Thus five
     # scenarios of this group carry the tag of a defect, and the last one holds the
@@ -49,8 +49,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert confirmed_blocks(wrong_confirmation) == []
       end
 
-      # The database has one batch with the rollup blocks 1..10. All blocks of it are
-      # linked to a parent chain transaction which is not the confirmation of this
+      # The database has one batch with the rollup blocks 1..10. All blocks of the batch
+      # are linked to a parent chain transaction which is not the confirmation of this
       # range.
       #
       # Such a state occurs after a re-org. The discovery imported the confirmation
@@ -68,7 +68,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # is equal to the size of the batch. The discovery reads this state as a batch
       # which needs no work, and it gives no block to the confirmation. The re-link
       # of the blocks on top of a batch starts from the highest unconfirmed block of
-      # the batch. In this state no block is unconfirmed, thus the re-link does not
+      # the batch. In this state no block is unconfirmed. Thus the re-link does not
       # start. The discovery writes nothing, and it returns `:confirmation_missed`.
       #
       # The first part of the test keeps `:confirmation_missed`, which is the current
@@ -117,7 +117,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # of the batch, and it extends upward only. Here the unconfirmed blocks are the
       # blocks 6..10, and the highest of them is the last block of the range. Thus the
       # re-link adds no block, and the selection holds five blocks. The lookup finds no
-      # earlier confirmation, thus the range of the confirmation starts at the block 1
+      # earlier confirmation. Thus the range of the confirmation starts at the block 1
       # and holds ten blocks. The discovery reads this difference as an incomplete
       # batch. It writes nothing, and it returns `:confirmation_missed`.
       #
@@ -128,7 +128,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # The first part of the test keeps `:confirmation_missed`, which is the current
       # result. The second part changes nothing in the database. The database holds the
-      # whole batch already, thus the indexer has nothing to add. Therefore the
+      # whole batch already. Thus the indexer has nothing to add. Therefore the
       # repeated run of the same parent chain range must give `:ok`. The discovery
       # gives `:confirmation_missed` again, and the test fails on that assertion.
       # Therefore the historical discovery reads this range again and again.
@@ -168,7 +168,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # transaction. The other blocks of the batch are not confirmed.
       #
       # A re-org gives this state when the replaced transaction confirmed the block 5
-      # as the top of its range, and another transaction confirmed the blocks below it.
+      # as the top of its range. Another transaction confirmed the blocks below it.
       #
       # The event points to the rollup block 10. Thus the discovery must take the
       # block 5 from the replaced transaction, and it must link the full batch to the
@@ -180,13 +180,13 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # The test "postpones the confirmation when the blocks of the batch hold a gap"
       # holds the same gap of the selection. In that test the block 5 holds no link to
-      # its batch, thus the indexer ends the postponement. This test is the only one
+      # its batch. Thus the indexer ends the postponement. This test is the only one
       # where a gap of the selection comes from a link to a confirmation. No change of
       # the indexer can end this postponement, because the link of the block 5 to its
       # batch exists already.
       #
       # The first part of the test keeps `:confirmation_missed`, which is the current
-      # result. The second part changes nothing in the database, thus the repeated run
+      # result. The second part changes nothing in the database. Thus the repeated run
       # must give `:ok`. The discovery gives `:confirmation_missed` again, and the test
       # fails on that assertion.
       #
@@ -238,12 +238,12 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # The test "postpones the confirmation when the batch is linked to a part of its
       # blocks only" reaches the same count of the confirmed blocks. In that test the
-      # other blocks of the batch hold no link to it, thus the indexer ends the
+      # other blocks of the batch hold no link to it. Thus the indexer ends the
       # postponement. This test is the only one where the whole batch is in the
       # database and the count still shows an incomplete batch.
       #
       # The first part of the test keeps `:confirmation_missed`, which is the current
-      # result. The second part changes nothing in the database, thus the repeated run
+      # result. The second part changes nothing in the database. Thus the repeated run
       # must give `:ok`. The discovery gives `:confirmation_missed` again, and the test
       # fails on that assertion.
       #
@@ -298,11 +298,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # confirmation of a batch below the event. The test holds the current behavior,
       # and not a defect, because a re-org repair is separate work.
       #
-      # When that work lands, this test changes: the discovery must drop the links of
+      # When that work lands, this test changes. The discovery must drop the links of
       # the replaced transaction and give the blocks 1..20 to the new confirmation. The
       # walk of this test is the walk of the test "stops at the previous batch when all
       # of its blocks are already confirmed". In that test the confirmation of the
-      # batch below is on the parent chain, thus the stop of the walk is correct there.
+      # batch below is on the parent chain. Thus the stop of the walk is correct there.
       test "keeps the confirmation of the previous batch which a re-org replaced", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do

@@ -24,9 +24,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # Both events point to a rollup block of the batch. A walk of the batch reads
       # the parent chain range of the commitment. The mock has no response for that
-      # range, thus it fails. This is the proof that the discovery examines no rollup
-      # block. With an unresolvable block hash, the walk ends quietly and the test
-      # shows nothing.
+      # range. Thus the walk fails. This is the proof that the discovery examines no
+      # rollup block. With an unresolvable block hash, the walk ends quietly and the
+      # test shows nothing.
       test "updates the confirmation which moved and keeps the other one", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -77,7 +77,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # one of the groups with two events which counts the rows of
       # `LifecycleTransaction`.
       #
-      # The count is exact here, because the test seeds no batch. Thus the count
+      # Because the test seeds no batch, the count is exact here. Thus the count
       # shows that neither of the two known events adds a row. The other test seeds a
       # batch, and `seed_batch/3` leaves lifecycle transactions of its own. Thus a
       # count there gives no information.
@@ -124,8 +124,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       end
 
       # Both confirmations of the range are in the database, and both events are in
-      # the same parent chain block. One block of the parent chain can hold two calls
-      # which confirm a node. Then the parent chain gives this state.
+      # the same parent chain block. One block of the parent chain can hold two
+      # transactions which confirm a node. Then the parent chain gives this state.
       #
       # The values of both confirmations are equal to the values of their events. Thus
       # the discovery writes nothing, and the result is `:ok`.
@@ -137,7 +137,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # As in the test before, the events point to block hashes outside the database,
       # and the test seeds no batch. Thus the count of the rows is exact.
       #
-      # The two hashes are different, because each event confirms another node. The
+      # Because each event confirms another node, the two hashes are different. The
       # discovery reads neither of them. It takes the hash of a rollup block only for a
       # confirmation which the database does not know.
       test "keeps both known confirmations when the two events are in one parent chain block", %{
@@ -180,8 +180,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
       # The database has two batches: the blocks 1..10 and the blocks 11..20. The first
       # known confirmation holds the blocks 1..10, and the second one holds the blocks
-      # 11..20. A re-org moved both transactions: the database holds the parent chain
-      # block 190 for each of them, and their events are in the blocks 198 and 200.
+      # 11..20. A re-org moved both transactions. The database holds the parent chain
+      # block 190 for each of them, but their events are in the blocks 198 and 200.
       #
       # Thus the discovery writes both records again with their new block numbers and
       # their new timestamps. The identifiers, the statuses and the rollup blocks of the

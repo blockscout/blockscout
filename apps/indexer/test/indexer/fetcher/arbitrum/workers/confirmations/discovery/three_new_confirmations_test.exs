@@ -12,7 +12,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     #
     # A lookup range holds two earlier confirmations in other conditions as well. The
     # parent chain can already hold two confirmations of the same batch below the
-    # discovery range. Then one new event is enough. Only this group holds three new
+    # parent chain range. Then one new event is enough. Only this group holds three new
     # confirmations of one run. Three tests of the group split them over one batch,
     # and the last test of the group splits them over three batches.
     #
@@ -34,8 +34,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # chunk.
       #
       # The lookup range of the upper confirmation holds two confirmations of the
-      # batch. They point to the rollup blocks 5 and 10. The discovery must take the
-      # block 10, because it is the higher block. As a result, the upper confirmation
+      # batch. They point to the rollup blocks 5 and 10. Because block 10 is the
+      # higher block, the discovery must take it. As a result, the upper confirmation
       # covers the blocks 11..20.
       #
       # This test is the only test which puts two confirmations of one batch into one
@@ -103,7 +103,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # is confirmed. The parent chain holds the commitment of the batch in the block
       # 194, which is close to the three confirmations.
       #
-      # The three events point to the rollup blocks 5, 10 and 20. The test before uses
+      # The three events point to the rollup blocks 5, 10 and 20. The previous test uses
       # the same three blocks. But in this test the maximum range of one `eth_getLogs`
       # request is three blocks. Thus the discovery reads a lookup range in several
       # chunks.
@@ -224,12 +224,12 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # The three events point to the rollup blocks 10, 20 and 30. Each block is the
       # last block of its batch. Thus the lowest confirmation must cover the blocks
-      # 1..10, the lower confirmation must cover the blocks 11..20, and the upper
+      # 1..10. The lower confirmation must cover the blocks 11..20. The upper
       # confirmation must cover the blocks 21..30.
       #
       # The discovery handles the confirmations in the order of their rollup blocks. It
       # collects the blocks 1..10 for the lowest confirmation. Then the lower
-      # confirmation finds a gap between the blocks 14 and 16, thus it gives no block.
+      # confirmation finds a gap between the blocks 14 and 16. Thus it gives no block.
       # A confirmation without blocks drops every block which the run collected before
       # it. Therefore the run loses the blocks of the lowest confirmation as well.
       #
@@ -243,12 +243,12 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # messages by the number of that block. Thus a message from the block 5 becomes
       # `:confirmed`, although the block 5 stays unconfirmed.
       #
-      # This test is the only one of this group which holds three batches and a state of
-      # the database which stops one of the three confirmations. The other tests of the
-      # group hold one batch, and they show how the size of the chunk of the lookup
+      # This test is the only one of this group with three batches. It is also the only
+      # one whose database state stops one of the three confirmations. The other tests
+      # of the group hold one batch. They show how the size of the lookup chunk
       # changes the boundary of a confirmation.
       #
-      # The second part of the test makes the change of the indexer: the indexer links
+      # The second part of the test represents a fix in the indexer: the indexer links
       # the block 15 to its batch. Then the discovery examines the same parent chain
       # range again. The upper confirmation is a known confirmation of that run, and it
       # keeps its blocks. The two other confirmations arrive together.

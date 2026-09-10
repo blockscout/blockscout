@@ -12,19 +12,20 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     #
     # The discovery examines the rollup blocks of the new confirmation only, and it
     # never extends the confirmation which it knows already. Thus it must find the
-    # boundary between the two confirmations within the batch. The state of the
-    # database cannot give that boundary, because the batch is not confirmed in full.
-    # The lookup of the parent chain gives it, and the lookup range ends one block
+    # boundary between the two confirmations within the batch. Because the batch is
+    # not fully confirmed, the state of the database cannot give that boundary.
+    # The lookup of the parent chain gives it. The lookup range ends one block
     # before the new confirmation.
     #
-    # This group holds the four positions of the two events on the parent chain: the
-    # known confirmation of the lower or of the upper blocks, and the known event in
-    # the same parent chain block, in an older one, or in a newer one. Three of the
-    # four scenarios give a defect, thus one batch is the state where the discovery
-    # cannot split the blocks between a known confirmation and a new one.
+    # This group covers four combinations of the two events on the parent chain. The
+    # known confirmation can hold the lower blocks or the upper blocks. Its event can
+    # be in the same parent chain block as the new event, in an older block, or in a
+    # newer block. Three of the four scenarios give a defect. Thus one batch is the
+    # state where the discovery cannot split the blocks between a known confirmation
+    # and a new one.
     #
     # The group "perform/5 with a new confirmation and a known one in two batches"
-    # holds the same four positions over two batches, where every scenario gives the
+    # holds the same four positions over two batches. There, every scenario gives the
     # correct result.
     describe "perform/5 with a new confirmation and a known one in one batch" do
       # The database has one batch of the blocks 1..20. The known confirmation holds
@@ -37,20 +38,20 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # The lookup range of the new confirmation ends one block before the parent chain
       # block of that confirmation. Thus the range holds no log of the known
-      # confirmation, and the discovery takes the block 1 as the start of the range of
-      # the new confirmation. The selection of the blocks holds the blocks 11..20 only,
-      # because the known confirmation holds the blocks below them. The discovery reads
-      # this difference as an incomplete batch. It writes nothing for the new event, and
-      # it returns `:confirmation_missed`.
+      # confirmation. The discovery takes the block 1 as the start of the range of
+      # the new confirmation. Because the known confirmation holds the blocks below
+      # them, the selection of the blocks holds only the blocks 11..20. The discovery
+      # reads this difference as an incomplete batch. It writes nothing for the new
+      # event, and it returns `:confirmation_missed`.
       #
       # The test "splits two batches between the known lower confirmation and the new
       # upper one of the same parent chain block" holds the same pair of events over two
-      # batches. There the walk stops at the fully confirmed batch below, and the result
-      # is correct. This test is the only one where the known confirmation of the same
-      # batch is in the parent chain block of the new confirmation.
+      # batches. There the discovery stops at the fully confirmed batch below, and the
+      # result is correct. This test is the only one where the known confirmation of
+      # the same batch is in the parent chain block of the new confirmation.
       #
       # The second part of the test changes nothing in the database. The database holds
-      # the whole batch already, thus the indexer has nothing to add. Therefore the
+      # the whole batch already. Thus the indexer has nothing to add. Therefore the
       # repeated run of the same parent chain range must give `:ok`. The discovery gives
       # `:confirmation_missed` again, and the test fails on that assertion.
       #
@@ -105,16 +106,16 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # the blocks below the known one.
       #
       # The discovery selects the unconfirmed blocks of the batch up to the block 10.
-      # The lookup range holds no log, because it ends one block before the parent chain
-      # block of the new confirmation. The batch starts at the lowest-indexed rollup
-      # block. Thus the new confirmation covers the blocks 1..10, and the discovery
-      # never extends the known confirmation.
+      # Because it ends one block before the parent chain block of the new
+      # confirmation, the lookup range holds no log. The batch starts at the
+      # lowest-indexed rollup block. Thus the new confirmation covers the blocks 1..10,
+      # and the discovery never extends the known confirmation.
       #
       # The test "confirms the blocks below a later known confirmation of the same
-      # batch" holds the same state of the database with the event of the known
-      # confirmation outside the discovery range. This test is the only one where the
-      # known confirmation of the upper blocks of the batch is in the parent chain block
-      # of the new confirmation.
+      # batch" holds the same state of the database. There, the event of the known
+      # confirmation is outside the discovery range. This test is the only one where
+      # the known confirmation of the batch's upper blocks is in the parent chain
+      # block of the new confirmation.
       test "splits one batch between the new lower confirmation and the known upper one of the same parent chain block",
            %{json_rpc_named_arguments: json_rpc_named_arguments} do
         batch = seed_batch(@rollup_first_block, 20, @commitment_l1_block)
@@ -170,12 +171,12 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # `:confirmation_missed`.
       #
       # The test "splits one batch between the known lower confirmation and the new
-      # upper one of the same parent chain block" gives the same result with both events
-      # in one parent chain block. This test is the only one where the known
+      # upper one of the same parent chain block" gives the same result. There, both
+      # events are in one parent chain block. This test is the only one where the known
       # confirmation of the lower blocks of the batch is newer than the new
       # confirmation.
       #
-      # The second part of the test changes nothing in the database, thus the repeated
+      # The second part of the test changes nothing in the database. Thus the repeated
       # run must give `:ok`. The discovery gives `:confirmation_missed` again, and the
       # test fails on that assertion.
       #
@@ -238,11 +239,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # event, and it returns `:confirmation_missed`.
       #
       # The test "confirms the blocks below an earlier confirmation of the same batch"
-      # holds the same defect with an earlier event which the database does not know.
-      # This test is the only one where the earlier confirmation of the same batch is a
-      # known confirmation inside the discovery range.
+      # holds the same defect. The earlier event in that test is one the database does
+      # not know. This test is the only one where the earlier confirmation of the same
+      # batch is a known confirmation inside the discovery range.
       #
-      # The second part of the test changes nothing in the database, thus the repeated
+      # The second part of the test changes nothing in the database. Thus the repeated
       # run must give `:ok`. The discovery gives `:confirmation_missed` again, and the
       # test fails on that assertion.
       #

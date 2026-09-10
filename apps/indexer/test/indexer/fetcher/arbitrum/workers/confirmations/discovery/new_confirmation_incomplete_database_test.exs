@@ -6,20 +6,20 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # See `Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery.TestCase` for
     # the conventions this suite of files follows.
 
-    # The database can hold a part of the data which a confirmation needs. The
-    # indexer writes a batch, the links of its rollup blocks and the blocks
-    # themselves in several steps, and the discovery can read the parent chain
-    # between those steps.
+    # The database can hold part of the data that a confirmation needs. The
+    # indexer writes a batch, the links to its rollup blocks, and the blocks
+    # themselves in several steps. The discovery can read the parent chain
+    # between these steps.
     #
     # This group holds one scenario per shape of the missing data. Most of them
     # postpone the confirmation with the result `:confirmation_missed`, which sends
     # the parent chain range to the historical discovery. Two of them show the
-    # opposite: the missing data is outside the range of the confirmation, thus the
-    # discovery writes that confirmation.
+    # opposite case: there, the missing data is outside the confirmation range,
+    # so the discovery writes the confirmation.
     #
     # Each test of a postponement has two parts. The first part gives
-    # `:confirmation_missed` for the state of the database. The second part makes the
-    # change of the indexer, and it examines the same parent chain range again.
+    # `:confirmation_missed` for the state of the database. The second part
+    # changes the indexer. It then examines the same parent chain range again.
     describe "perform/5 with a new confirmation and an incomplete database" do
       # The database has one batch of the blocks 1..10. No block of it is confirmed.
       # The block 10 is not linked to the batch. If the indexer did not handle the
@@ -37,8 +37,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # This test holds the shortest run of this suite: the discovery reads the logs of
       # the range and stops.
       #
-      # The second part of the test makes the change of the indexer: the indexer links
-      # the block 10 to the batch. Then the discovery examines the same parent chain
+      # The second part of the test changes the indexer. The indexer links the
+      # block 10 to the batch. Then the discovery examines the same parent chain
       # range again, and the confirmation covers the full batch.
       test "postpones the confirmation when the confirmed block is not linked to its batch", %{
         json_rpc_named_arguments: json_rpc_named_arguments
@@ -76,16 +76,19 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # This test is not redundant. The test "postpones the confirmation when the
       # confirmed block is not linked to its batch" gives the same run of the
-      # discovery, because the lookup of the number joins the blocks with the links to
-      # the batches. But the state of the database is another one, and the change of
-      # the indexer is another one: there the indexer writes the missing link, and here
-      # the block fetcher writes the block itself. This test is the only one where the
-      # event points to a rollup block which the database does not hold.
+      # discovery. This happens because the lookup of the number joins the blocks
+      # with the links to the batches.
       #
-      # The second part of the test makes the change of the block fetcher and the
-      # indexer: they write the block 10 with the hash of the event and the link of
-      # that block to its batch. Then the discovery examines the same parent chain
-      # range again, and the confirmation covers the full batch.
+      # But the state of the database is different in each test. The change that
+      # the indexer makes is different too. In the other test, the indexer writes
+      # the missing link. In this test, the block fetcher writes the block itself.
+      # This test is the only one where the event points to a rollup block which
+      # the database does not hold.
+      #
+      # The second part of the test changes the block fetcher and the indexer.
+      # They write the block 10 with the hash of the event. They also write the
+      # link of that block to its batch. Then the discovery examines the same
+      # parent chain range again, and the confirmation covers the full batch.
       test "postpones the confirmation when the confirmed block is not indexed yet", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -126,12 +129,12 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # discovery does not use it. Thus the discovery writes nothing, and it returns
       # `:confirmation_missed`.
       #
-      # The second part of the test makes the change of the indexer: the indexer
-      # links the other blocks to the batch. Then the discovery examines the same
-      # parent chain range again. The parent chain holds the confirmation of the
-      # block 10 in the block 200, and the event gives that state. Thus the new
-      # confirmation takes the block 10 from the link of the earlier run, and it
-      # covers the full batch.
+      # The second part of the test changes the indexer. The indexer links the
+      # other blocks to the batch. Then the discovery examines the same parent
+      # chain range again. The parent chain holds the confirmation of the block 10
+      # in the block 200, and the event gives that state. Thus the new confirmation
+      # takes the block 10 from the link of the earlier run, and it covers the full
+      # batch.
       test "postpones the confirmation when the batch is linked to a part of its blocks only", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -171,9 +174,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # batch. A gap shows that the database does not have the whole batch. Thus the
       # discovery writes nothing, and it returns `:confirmation_missed`.
       #
-      # The second part of the test makes the change of the indexer: the indexer
-      # links the block 5 to the batch. Then the discovery examines the same parent
-      # chain range again, and the confirmation covers the full batch.
+      # The second part of the test changes the indexer. The indexer links the
+      # block 5 to the batch. Then the discovery examines the same parent chain
+      # range again, and the confirmation covers the full batch.
       test "postpones the confirmation when the blocks of the batch hold a gap", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -212,11 +215,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # This test is not redundant. The test "postpones the confirmation when the last
       # block of the batch below is not linked" fails the same check of the count. In
       # that test the incomplete batch is the batch below the event, and the discovery
-      # drops the blocks of two batches. This test is the only one where the count of
-      # the batch of the event itself is short.
+      # drops the blocks of two batches. This test is the only one where the event's
+      # own batch has a short count.
       #
-      # The second part of the test makes the change of the indexer: the indexer links
-      # the block 1 to its batch. Then the discovery examines the same parent chain
+      # The second part of the test changes the indexer. The indexer links the
+      # block 1 to its batch. Then the discovery examines the same parent chain
       # range again, and the confirmation covers the full batch.
       test "postpones the confirmation when the first block of the batch is not linked", %{
         json_rpc_named_arguments: json_rpc_named_arguments
@@ -264,9 +267,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The discovery makes these two checks one after another, and this test is the
       # only one which fails the second check.
       #
-      # The second part of the test makes the change of the indexer: the indexer
-      # links the block 10 to its batch. Then the discovery examines the same parent
-      # chain range again, and the confirmation covers the two batches.
+      # The second part of the test changes the indexer. The indexer links the
+      # block 10 to its batch. Then the discovery examines the same parent chain
+      # range again, and the confirmation covers the two batches.
       test "postpones the confirmation when the last block of the batch below is not linked", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -304,9 +307,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # blocks of the batch 11..20 as well. It writes nothing, and it returns
       # `:confirmation_missed`.
       #
-      # The second part of the test makes the change of the indexer: the indexer
-      # writes the batch below. Then the discovery examines the same parent chain
-      # range again, and the confirmation covers the two batches.
+      # The second part of the test changes the indexer. The indexer writes the
+      # batch below. Then the discovery examines the same parent chain range
+      # again, and the confirmation covers the two batches.
       test "postpones the confirmation when the batch below the current one is missing", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -358,9 +361,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # in the database. Thus the position of the earlier event does not change the
       # result.
       #
-      # The second part of the test makes the change of the indexer: the indexer
-      # writes the batch of the blocks 1..10. Then the discovery examines the same
-      # parent chain range again, and the confirmation covers the blocks 11..20. The
+      # The second part of the test changes the indexer. The indexer writes the
+      # batch of the blocks 1..10. Then the discovery examines the same parent
+      # chain range again, and the confirmation covers the blocks 11..20. The
       # blocks 1..10 stay unconfirmed. Those blocks belong to the earlier
       # confirmation. A later run of the historical discovery reaches the earlier
       # event, and that run links those blocks to that event.
@@ -415,8 +418,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # points to the block 5, which is in the middle of the batch. Thus the range of
       # the confirmation starts at the block 6. The selection of the blocks holds the
       # blocks 6..10, and the missing link of the block 3 is below that range.
-      # Therefore the incomplete data does not take part in the checks of the
-      # continuity and of the count.
+      # Therefore the incomplete data does not take part in the continuity check or
+      # the count check.
       #
       # As a result, the confirmation covers the blocks 6..10, and the result is `:ok`.
       # The blocks below the block 6 belong to the earlier confirmation. A later run of
@@ -468,12 +471,12 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The event points to the rollup block 7, which is in the middle of the batch.
       #
       # The discovery selects the unconfirmed blocks of the batch up to the block 7.
-      # Thus the missing link of the block 9 is above that selection, and it does not
-      # take part in the checks of the continuity and of the count. The lookup finds no
+      # Thus the missing link of the block 9 is above that selection. It does not
+      # take part in the continuity check or the count check. The lookup finds no
       # earlier confirmation, and the batch starts at the lowest-indexed rollup block.
       #
       # As a result, the confirmation covers the blocks 1..7, and the result is `:ok`.
-      # The blocks above the block 7 wait for the next confirmation, and the indexer
+      # The blocks above the block 7 wait for the next confirmation. The indexer
       # writes the link of the block 9 before the run of that confirmation.
       #
       # This test holds the counterpart of the test "confirms its range when the data

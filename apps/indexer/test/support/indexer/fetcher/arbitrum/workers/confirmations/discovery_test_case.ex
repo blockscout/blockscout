@@ -29,7 +29,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery.TestCase do
   #
   # One file holds one `describe` block. When a set of events holds many scenarios, a
   # second dimension splits that set into several groups, and each group keeps its own
-  # file. The second dimension is the one which the scenarios of that set vary:
+  # file. The second dimension is the one in which the scenarios of that set vary:
   #   - one new confirmation: the walk of the batches, the re-link of the blocks of a
   #     replaced transaction, an incomplete database, a chunked lookup of the
   #     boundary, and a configured first rollup block
@@ -55,7 +55,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery.TestCase do
   # Some scenarios show a defect of the discovery. The test of such a scenario holds
   # the correct result. It carries the tag `@tag skip: "Defect: ..."`, which names
   # the defect. The output of the run shows the test as skipped, but it does not
-  # show this name. Thus the tag keeps the name of the defect in one place, and a
+  # show this name. Thus the tag keeps the name of the defect in one place. A
   # search for the word "Defect" gives every test of this kind. The correction of
   # the defect removes the tag.
   #
@@ -143,14 +143,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery.TestCase do
 
       # The parent chain block of a confirmation which happened before the one under
       # discovery. This block is between the commitments of the batches and the
-      # confirmation under discovery, thus the discovery can find that earlier
+      # confirmation under discovery. Thus the discovery can find that earlier
       # confirmation. The tests of the re-link also put a stale link to this block.
       # That link belongs to a transaction which the parent chain does not hold.
       @earlier_confirmation_l1_block 150
 
       # The parent chain block of a confirmation which happened after the one under
       # discovery. This block is more than the end block of the discovery range. The
-      # historical discovery moves backward, thus the database can know this confirmation
+      # historical discovery moves backward. Thus the database can know this confirmation
       # before the discovery reaches the one under discovery.
       @later_confirmation_l1_block 210
 
@@ -198,7 +198,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery.TestCase do
       end
 
       # Inserts a batch with its commitment transaction and the rollup blocks of that
-      # batch. No block of the batch is confirmed (`confirmation_id` is `nil`).
+      # batch. No block of the batch has a confirmation yet (`confirmation_id` is `nil`).
       # Returns the batch together with the blocks, keyed by block number.
       #
       # `unlinked_blocks` names the blocks which stay outside the batch. Such a block
@@ -245,7 +245,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery.TestCase do
       end
 
       # Inserts a rollup block which is not in the database yet, and links it to the
-      # batch of that block. The block gets the given hash, thus a test can build an
+      # batch of that block. The block gets the given hash. Thus a test can build an
       # event which points to a block before the block fetcher reaches it. The block
       # fetcher and the indexer make this change together.
       def insert_block_and_link_to_batch(%{batch: batch}, block_number, block_hash) do
@@ -335,8 +335,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery.TestCase do
         )
       end
 
-      # Inserts an L2-to-L1 message which was sent in the given rollup block and which
-      # waits for a confirmation.
+      # Inserts a rollup-to-parent-chain message which the given rollup block sent and
+      # which waits for a confirmation.
       def insert_sent_message_from_l2(rollup_block_number) do
         insert(:arbitrum_message,
           direction: :from_l2,

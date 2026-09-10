@@ -12,28 +12,28 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     #
     # Thus the discovery works on the state of the database from the start of the
     # run. It processes the confirmations one after another, from the lowest rollup
-    # block to the highest one. Each test of the groups of two new confirmations
-    # calls the first of two confirmations the lower confirmation, and the second one
-    # the upper confirmation. When the discovery processes the upper confirmation,
-    # the database still shows the rollup blocks of the lower confirmation as
-    # unconfirmed.
+    # block to the highest one. Each test in the groups of two new confirmations
+    # calls the first confirmation the lower confirmation. It calls the second
+    # confirmation the upper confirmation. When the discovery processes the upper
+    # confirmation, the database still shows the rollup blocks of the lower
+    # confirmation as unconfirmed.
     #
-    # For this reason the parent chain, and not the database, gives the lowest block
-    # of the upper confirmation. The lookup range of the upper confirmation ends one
-    # block before that confirmation. Thus the range holds the log of the lower
-    # confirmation, and this group holds the scenarios where this is true: the two
-    # events are in two parent chain blocks, and the older block holds the
-    # confirmation of the lower rollup blocks.
+    # For this reason, the parent chain gives the lowest block of the upper
+    # confirmation, not the database. The lookup range of the upper confirmation ends
+    # one block before that confirmation. Thus the range holds the log of the lower
+    # confirmation. This group holds the scenarios where this is true. In these
+    # scenarios, the two events are in two parent chain blocks. The older block holds
+    # the confirmation of the lower rollup blocks.
     #
-    # The database of this group is complete, thus these scenarios show how the two
+    # The database of this group is complete. Thus these scenarios show how the two
     # confirmations split the rollup blocks between them. Each test makes sure that
     # no rollup block belongs to two confirmations.
     #
     # The group "perform/5 with two new confirmations in one parent chain block or in
-    # the inverted order" holds the scenarios where the lookup range of the upper
-    # confirmation holds no log of the other one. The group "perform/5 with two new
-    # confirmations and an incomplete database" holds the scenarios where a part of
-    # the data of a batch is missing.
+    # the inverted order" holds some scenarios. In these scenarios, the lookup range
+    # of the upper confirmation holds no log of the other confirmation. The group
+    # "perform/5 with two new confirmations and an incomplete database" holds the
+    # scenarios where a part of the data of a batch is missing.
     describe "perform/5 with two new confirmations" do
       # The database has one batch with the rollup blocks 1..20. No block of it is
       # confirmed.
@@ -41,10 +41,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The lower event points to the rollup block 10. The upper event points to
       # the rollup block 20. Both blocks are in the same batch.
       #
-      # The lower confirmation covers the blocks 1..10, because the batch starts at
-      # the lowest-indexed rollup block. The upper confirmation finds the log of the
-      # lower confirmation in its own lookup range. That log points to the block 10,
-      # which is in the middle of the batch. As a result, the upper confirmation
+      # Because the batch starts at the lowest-indexed rollup block, the lower
+      # confirmation covers the blocks 1..10. The upper confirmation finds the log of
+      # the lower confirmation in its own lookup range. That log points to the block
+      # 10, which is in the middle of the batch. As a result, the upper confirmation
       # covers the blocks 11..20.
       #
       # The highest confirmed block of the run is the block 20. Thus every L2-to-L1
@@ -111,11 +111,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # of that batch. Thus the walk stops, and the upper confirmation covers the
       # blocks 11..20 only.
       #
-      # This test is not redundant. The walk of the upper confirmation is the walk of
-      # the single-event test "stops at the previous batch when an earlier
-      # confirmation covers exactly its last block". In that test the lower log is
-      # outside the discovery range. Thus the discovery uses the lower log as a
-      # boundary only, and it does not import that log.
+      # This test is not redundant. This is also the walk of the single-event test
+      # "stops at the previous batch when an earlier confirmation covers exactly its
+      # last block". In that test the lower log is outside the discovery range. Thus
+      # the discovery uses the lower log as a boundary only, and it does not import
+      # that log.
       #
       # In this test the lower log is a confirmation of the same run. Thus the same
       # log must give the boundary of the upper confirmation and a lifecycle
@@ -163,11 +163,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # the rollup block 5. The upper event points to the rollup block 15.
       #
       # The lower confirmation covers the blocks 1..5. The upper confirmation takes
-      # the blocks 11..15 from the second batch. Then it moves one batch down,
-      # because the block 11 is the first block of that batch. In the first batch
-      # the log of the lower confirmation points to the block 5. As a result, the
-      # upper confirmation covers the blocks 6..15, and the blocks 16..20 wait for
-      # the next confirmation.
+      # the blocks 11..15 from the second batch. Because the block 11 is the first
+      # block of that batch, it then moves one batch down. In the first batch the log
+      # of the lower confirmation points to the block 5. As a result, the upper
+      # confirmation covers the blocks 6..15, and the blocks 16..20 wait for the next
+      # confirmation.
       test "spans the previous batch down to the other confirmation when no confirmation is aligned with a batch", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -211,18 +211,18 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # middle of the second batch.
       #
       # The lower confirmation covers the full first batch. The upper confirmation
-      # takes the blocks 11..15 from the second batch. Then it moves one batch down,
-      # because the block 11 is the first block of that batch. In the first batch the
-      # log of the lower confirmation points to the last block. Thus the walk stops
-      # there, and the upper confirmation covers the blocks 11..15 only. The blocks
-      # 16..20 wait for the next confirmation.
+      # takes the blocks 11..15 from the second batch. Because the block 11 is the
+      # first block of that batch, it then moves one batch down. In the first batch
+      # the log of the lower confirmation points to the last block. Thus the walk
+      # stops there, and the upper confirmation covers the blocks 11..15 only. The
+      # blocks 16..20 wait for the next confirmation.
       #
       # This test holds the pair of a lower event on a batch boundary and an upper
       # event in the middle of a batch. The test "gives a full batch to each
-      # confirmation when both are aligned with a batch boundary" holds two events on a
-      # boundary. The test "spans the previous batch down to the other confirmation
-      # when no confirmation is aligned with a batch" holds two events in the middle of
-      # a batch.
+      # confirmation when both are aligned with a batch boundary" holds two events on
+      # a boundary. The test "spans the previous batch down to the other confirmation
+      # when no confirmation is aligned with a batch" holds two events. Both events
+      # are in the middle of a batch.
       test "splits the batches when the lower event is on a batch boundary and the upper event is not", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -267,10 +267,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # lower confirmation points to the block 5, which is in the middle of that batch.
       # Thus the upper confirmation covers the blocks 6..20.
       #
-      # This test holds the pair of a lower event in the middle of a batch and an upper
-      # event on a batch boundary. Together with the test "splits the batches when the
-      # lower event is on a batch boundary and the upper event is not" it holds the two
-      # mixed pairs of this group.
+      # This test holds the pair of a lower event in the middle of a batch and an
+      # upper event on a batch boundary. This test pairs with the test "splits the
+      # batches when the lower event is on a batch boundary and the upper event is
+      # not". Together they hold the two mixed pairs of this group.
       test "splits the batches when the upper event is on a batch boundary and the lower event is not", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do

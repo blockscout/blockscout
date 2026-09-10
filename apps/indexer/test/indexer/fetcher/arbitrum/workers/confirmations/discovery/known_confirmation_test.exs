@@ -68,13 +68,13 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       end
 
       # The lifecycle transaction of the confirmation is in the database with the parent
-      # chain block 200. Its timestamp is not the timestamp of that block: the discovery
-      # of an earlier run wrote another value, or the parent chain changed the timestamp
-      # of the block.
+      # chain block 200. Its timestamp is not the timestamp of that block. An earlier run
+      # of the discovery wrote a different value, or the parent chain later changed the
+      # timestamp of the block.
       #
       # The event shows the same transaction in the same parent chain block 200. Thus
-      # the discovery finds no difference of the block number, and it finds a difference
-      # of the timestamp. Therefore it writes the new timestamp into the same record.
+      # the discovery finds no difference in the block number, and it finds a difference
+      # in the timestamp. Thus it writes the new timestamp into the same record.
       # The identifier, the block number and the status of the record stay as they are.
       #
       # This test is not redundant. The test "updates the confirmation transaction when
@@ -82,7 +82,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # block number is different, and the timestamp comes with it. This test is the
       # only one where the timestamp alone gives the difference.
       #
-      # The test seeds no batch, thus the count of the rows is exact and the event points
+      # The test seeds no batch. Thus the count of the rows is exact, and the event points
       # to a block hash outside the database. The discovery examines no rollup block for
       # a known confirmation.
       test "updates the confirmation transaction when only its timestamp changed", %{

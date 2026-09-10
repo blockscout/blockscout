@@ -10,12 +10,12 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # event also confirms all rollup blocks below that block, down to the block of
     # the confirmation before it.
     #
-    # Each test of the groups of a single new confirmation gives the discovery one
+    # Each test in the groups for a single new confirmation gives the discovery one
     # such event. The parent chain transaction of the event is not in the database
     # yet. Thus the discovery must find all rollup blocks that belong to this
     # confirmation.
     #
-    # This group holds the scenarios where the database is complete: it holds every
+    # This group holds the scenarios where the database is complete. It holds every
     # rollup block of every batch which the confirmation touches. Thus these
     # scenarios show where the range of the confirmation starts and where it ends.
     #
@@ -28,10 +28,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # To find an earlier confirmation, the discovery reads the parent chain logs
     # between the commitment of the batch and the confirmation under discovery.
     #
-    # The other groups of a single new confirmation hold the scenarios of the
-    # incomplete database, of the blocks which belong to a replaced transaction, of
-    # the lookup which reads its range in several chunks, and of the configured first
-    # rollup block.
+    # The other groups also test a single new confirmation. They cover these cases:
+    #   - an incomplete database
+    #   - blocks which belong to a replaced transaction
+    #   - a lookup which reads its range in several chunks
+    #   - the configured first rollup block
     describe "perform/5 with a new confirmation" do
       # The database has one batch with the rollup blocks 1..10. No block of it is
       # confirmed.
@@ -42,7 +43,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # full batch.
       #
       # The discovery also changes the status of the L2-to-L1 messages. A message
-      # that was sent in the block 10 or below becomes `:confirmed`. A message from
+      # sent in the block 10 or below becomes `:confirmed`. A message from
       # a higher block keeps the status `:sent`.
       test "confirms every rollup block of the batch and the L2-to-L1 messages up to the confirmed block", %{
         json_rpc_named_arguments: json_rpc_named_arguments
@@ -51,8 +52,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         confirmation_transaction_hash = to_string(transaction_hash())
         confirmed_message = insert_sent_message_from_l2(9)
-        # The top confirmed block belongs to the confirmation as well, thus a
-        # message sent in that very block must change its status too.
+        # The top confirmed block belongs to the confirmation too. Thus a
+        # message sent in that block must also change its status.
         boundary_message = insert_sent_message_from_l2(10)
         not_yet_confirmed_message = insert_sent_message_from_l2(11)
 
@@ -66,7 +67,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert DateTime.to_unix(confirmation.timestamp) == @confirmation_l1_timestamp
         assert confirmation.status == :unfinalized
 
-        # The full batch is linked to that lifecycle transaction.
+        # The full batch belongs to that lifecycle transaction.
         assert confirmed_blocks(confirmation) == Enum.to_list(@rollup_first_block..10)
         assert message_status(confirmed_message) == :confirmed
         assert message_status(boundary_message) == :confirmed
@@ -76,8 +77,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The database has one batch with the rollup blocks 1..10. No block of it is
       # confirmed.
       #
-      # The event points to the rollup block 7, which is in the middle of the batch:
-      # a confirmation is not always aligned with the boundary of a batch. As a
+      # The event points to the rollup block 7, in the middle of the batch. A
+      # confirmation does not always align with the boundary of a batch. As a
       # result, the confirmation covers the blocks 1..7 only, and the blocks 8..10
       # wait for the next confirmation.
       test "confirms the blocks up to the confirmed block when that block is in the middle of the batch", %{
@@ -96,8 +97,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert unconfirmed_blocks() == Enum.to_list(8..10)
       end
 
-      # The database has one batch with the rollup blocks 1..10. An earlier
-      # confirmation is known already, and it covers the blocks 1..5.
+      # The database has one batch with the rollup blocks 1..10. The
+      # database already knows an earlier confirmation, which covers the blocks 1..5.
       #
       # The event points to the rollup block 10. In the parent chain range of the
       # batch, the discovery finds the log of the earlier confirmation. That log
@@ -136,14 +137,14 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The database has one batch with the rollup blocks 1..10. A known
       # confirmation covers the blocks 6..10. The blocks 1..5 are not confirmed.
       #
-      # The historical discovery usually holds this state. That discovery moves
-      # backward, and it handles the newer confirmation first. The run of the newer
+      # This state is usual for the historical discovery, because that discovery
+      # moves backward and processes the newer confirmations first. The run of the newer
       # confirmation found the log of the earlier confirmation. Thus that run left the
       # blocks 1..5 for the earlier confirmation. The known confirmation is in the
-      # parent chain block 210, which is more than the end block of the discovery range.
+      # parent chain block 210, above the end block of the discovery range.
       #
       # The event points to the rollup block 5. The lookup range of the event ends
-      # before the known confirmation, thus the lookup finds no log. The batch starts
+      # before the known confirmation. Thus the lookup finds no log. The batch starts
       # at the lowest-indexed rollup block. As a result, the new confirmation covers
       # the blocks 1..5, and the known confirmation keeps the blocks 6..10. Only this
       # test holds a batch with upper blocks that are linked to another confirmation
@@ -268,7 +269,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # The event points to the rollup block 20. In the range of the second batch,
       # the log of the earlier confirmation points to the rollup block 5. That block
-      # is below the batch, thus the discovery moves one batch down. In the range of
+      # is below the batch. Thus the discovery moves one batch down. In the range of
       # the first batch, the same log points to the block 5, which is in the middle
       # of that batch. As a result, the new confirmation covers the blocks 6..20.
       test "spans two batches down to an earlier confirmation in the middle of the previous batch", %{
@@ -320,7 +321,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       #
       # The event of this test points to a block in the middle of a batch. The test
       # "walks back to the lowest-indexed rollup block when the event is on a batch
-      # boundary" makes the same walk from an event on the boundary of a batch.
+      # boundary" makes the same walk. But there, the event is on a batch boundary,
+      # not in the middle.
       test "walks back through several batches until the lowest-indexed rollup block", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -349,7 +351,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # 1..20.
       #
       # This test is not redundant. The test "walks back through several batches
-      # until the lowest-indexed rollup block" makes the same walk, but its event
+      # until the lowest-indexed rollup block" makes the same walk. But its event
       # points to a block in the middle of a batch. This test is the only one where
       # an event on the boundary of a batch starts a walk which reaches the start of
       # the chain.
@@ -440,7 +442,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # The discovery finds the log of the earlier event in the lookup range of the
       # newer event. That log points to the block 10. Thus the discovery takes the
       # block 11 as the first unconfirmed block of the batch. The block 11 is above
-      # the block 5. Therefore the discovery finds no block for the confirmation, and
+      # the block 5. Thus the discovery finds no block for the confirmation, and
       # it writes nothing. The return value is `:confirmation_missed`.
       #
       # The first part of the test keeps `:confirmation_missed`, which is the current
@@ -448,11 +450,11 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       # the whole batch already, and the indexer has nothing to add. Thus the repeated
       # run of the same parent chain range must give `:ok`. The discovery
       # gives `:confirmation_missed` again, and the test fails on that assertion.
-      # Therefore the historical discovery reads this range again and again.
+      # Thus the historical discovery reads this range again and again.
       #
       # The correction of the defect gives `:ok` and the blocks 1..5 in the first run.
-      # No other form is possible here. The database holds the whole batch already,
-      # thus no change of the database can end the postponement.
+      # No other form is possible here. The database holds the whole batch already.
+      # Thus no change of the database can end the postponement.
       @tag skip: "Defect: a confirmation below an earlier confirmation of the same batch repeats the range"
       test "confirms the blocks below an earlier confirmation of the same batch", %{
         json_rpc_named_arguments: json_rpc_named_arguments
