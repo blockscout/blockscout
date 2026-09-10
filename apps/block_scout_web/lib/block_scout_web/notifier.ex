@@ -89,22 +89,26 @@ defmodule BlockScoutWeb.Notifier do
       @chain_type_transaction_associations []
   end
 
-  @transaction_associations [
-                              from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
-                              to_address: [
-                                :scam_badge,
-                                :names,
-                                :smart_contract,
-                                proxy_implementations_association()
-                              ],
-                              created_contract_address: [
-                                :scam_badge,
-                                :names,
-                                :smart_contract,
-                                proxy_implementations_association()
-                              ]
-                            ] ++
-                              @chain_type_transaction_associations
+  # Address-info associations shared by every participant role of a broadcast
+  # item. Loaded once per broadcast batch by
+  # `Chain.preload_address_participants/4` rather than per role, which repeats
+  # each of these queries once per role.
+  @participant_necessity_by_association %{
+    :scam_badge => :optional,
+    :names => :optional,
+    proxy_implementations_association() => :optional
+  }
+
+  @transaction_address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address},
+    {:created_contract_address_hash, :created_contract_address}
+  ]
+
+  @token_transfer_address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address}
+  ]
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
     addresses_count = AddressesCount.fetch()
@@ -304,21 +308,10 @@ defmodule BlockScoutWeb.Notifier do
         |> Repo.preload(
           DenormalizationHelper.extend_transaction_preload([
             [token: Reputation.reputation_association()],
-            :transaction,
-            from_address: [
-              :scam_badge,
-              :names,
-              :smart_contract,
-              proxy_implementations_association()
-            ],
-            to_address: [
-              :scam_badge,
-              :names,
-              :smart_contract,
-              proxy_implementations_association()
-            ]
+            :transaction
           ])
         )
+        |> preload_participants(@token_transfer_address_fields)
         |> Instance.preload_nft(@api_true)
 
       broadcast_token_transfers_websocket_v2(all_token_transfers_full)
@@ -796,7 +789,10 @@ defmodule BlockScoutWeb.Notifier do
       relevant_transactions ->
         prepared_transactions =
           TransactionView.render("transactions.json", %{
-            transactions: Repo.preload(relevant_transactions, transaction_broadcast_associations()),
+            transactions:
+              relevant_transactions
+              |> Repo.preload(transaction_broadcast_associations())
+              |> preload_participants(@transaction_address_fields),
             conn: nil
           })
 
@@ -818,7 +814,8 @@ defmodule BlockScoutWeb.Notifier do
 
     if relevant_transactions != [] do
       relevant_transactions
-      |> Repo.preload([:block | @transaction_associations])
+      |> Repo.preload([:block | @chain_type_transaction_associations])
+      |> preload_participants(@transaction_address_fields)
       |> Enum.map(fn transaction ->
         Map.put(transaction, :token_transfers, [])
       end)
@@ -828,8 +825,19 @@ defmodule BlockScoutWeb.Notifier do
 
   defp transaction_broadcast_associations do
     if API_V2.enabled?(),
-      do: [:block, {:token_transfers, [token: Reputation.reputation_association()]} | @transaction_associations],
-      else: [:block | @transaction_associations]
+      do: [
+        :block,
+        {:token_transfers, [token: Reputation.reputation_association()]} | @chain_type_transaction_associations
+      ],
+      else: [:block | @chain_type_transaction_associations]
+  end
+
+  # Loads the address info of every participant of the broadcast batch in one
+  # pass, deduplicating addresses shared between items and between roles of the
+  # same item. Broadcasts run off the primary repo, as the preloads they replace
+  # did.
+  defp preload_participants(items, address_fields) do
+    Chain.preload_address_participants(items, address_fields, @participant_necessity_by_association, [])
   end
 
   defp broadcast_transaction(%Transaction{block_number: nil} = pending) do

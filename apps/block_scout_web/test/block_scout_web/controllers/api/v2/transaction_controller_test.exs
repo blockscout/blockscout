@@ -44,6 +44,23 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response["next_page_params"] == nil
     end
 
+    # `token_creation` is reported off `created_contract_address.token`, which is
+    # only there while the participant preload keeps loading `:token`.
+    test "reports token_creation for a transaction that created a token", %{conn: conn} do
+      contract_address = insert(:contract_address)
+      insert(:token, contract_address: contract_address)
+
+      :transaction
+      |> insert()
+      |> with_block()
+      |> with_contract_creation(contract_address)
+
+      request = get(conn, "/api/v2/transactions")
+
+      assert %{"items" => [item]} = json_response(request, 200)
+      assert "token_creation" in item["transaction_types"]
+    end
+
     test "transactions with next_page_params", %{conn: conn} do
       transactions =
         51
