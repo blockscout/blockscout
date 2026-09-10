@@ -166,23 +166,7 @@ defmodule Explorer.Etherscan.Logs do
       |> where_topic_match(prepared_filter)
       |> where([log], log.block_number >= ^prepared_filter.from_block)
       |> where([log], log.block_number <= ^prepared_filter.to_block)
-      |> where_consensus()
-      |> page_logs(paging_options)
-      |> order_by([log], asc: log.block_number, asc: log.index)
-      |> limit(1000)
 
-    logs_query
-    |> join_transaction_data()
-    |> fetch_ordered()
-  end
-
-  # Keeps only logs whose consensus predicate matches the one applied by
-  # `join_transaction_data/1` in the current denormalization state. Each check
-  # is a primary-key lookup per candidate log. `transactions.block_consensus`
-  # can diverge from `blocks.consensus` (see
-  # `Explorer.Migrator.TransactionBlockConsensus`), which is why the predicate
-  # is not simply `blocks.consensus` in both states.
-  defp where_consensus(logs_query) do
     if DenormalizationHelper.transactions_denormalization_finished?() do
       block_transaction_query =
         from(transaction in Transaction,
@@ -243,9 +227,23 @@ defmodule Explorer.Etherscan.Logs do
       |> Repo.replica().all()
       |> Log.prepare_first_topic()
     else
-      join(logs_query, :inner, [log], block in assoc(log, :block), on: block.consensus == true)
-    end
-  end
+      block_transaction_query =
+        from(transaction in Transaction,
+          join: block in assoc(transaction, :block),
+          where: block.number >= ^prepared_filter.from_block,
+          where: block.number <= ^prepared_filter.to_block,
+          where: block.consensus == true,
+          select: %{
+            transaction_hash: transaction.hash,
+            gas_price: transaction.gas_price,
+            gas_used: transaction.gas_used,
+            transaction_index: transaction.index,
+            block_hash: block.hash,
+            block_number: block.number,
+            block_timestamp: block.timestamp,
+            block_consensus: block.consensus
+          }
+        )
 
       query_with_block_transaction_data =
         logs_query
