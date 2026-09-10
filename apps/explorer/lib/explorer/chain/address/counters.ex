@@ -198,7 +198,12 @@ defmodule Explorer.Chain.Address.Counters do
           Block.block_number() | nil,
           Keyword.t()
         ) :: Ecto.Query.t()
-  def address_to_token_transfer_count_query(address_hash, from_block_number \\ nil, to_block_number \\ nil, options \\ []) do
+  def address_to_token_transfer_count_query(
+        address_hash,
+        from_block_number \\ nil,
+        to_block_number \\ nil,
+        options \\ []
+      ) do
     TokenTransfer
     |> where(
       [token_transfer],
