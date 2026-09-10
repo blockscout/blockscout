@@ -373,6 +373,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
         ctb in __MODULE__,
         where:
           ((ctb.address_hash != ^@burn_address_hash and ctb.token_type == "ERC-721") or ctb.token_type == "ERC-20" or
+             ctb.token_type == "ERC-8056" or
              ctb.token_type == "ZRC-2" or
              ctb.token_type == "ERC-1155" or ctb.token_type == "ERC-404") and
             (is_nil(ctb.value_fetched_at) or is_nil(ctb.value)) and
@@ -384,7 +385,8 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
         join: t in Token,
         on: ctb.token_contract_address_hash == t.contract_address_hash,
         where:
-          ((ctb.address_hash != ^@burn_address_hash and t.type == "ERC-721") or t.type == "ERC-20" or t.type == "ZRC-2" or
+          ((ctb.address_hash != ^@burn_address_hash and t.type == "ERC-721") or t.type == "ERC-20" or
+             t.type == "ERC-8056" or t.type == "ZRC-2" or
              t.type == "ERC-1155" or t.type == "ERC-404") and
             (is_nil(ctb.value_fetched_at) or is_nil(ctb.value)) and
             (is_nil(ctb.refetch_after) or ctb.refetch_after < ^Timex.now())
