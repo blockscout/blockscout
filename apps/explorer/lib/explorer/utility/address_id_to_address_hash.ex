@@ -6,6 +6,7 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
 
   use Explorer.Schema
 
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Repo
 
@@ -100,12 +101,13 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
   ## Returns
   - The address_id if found, nil otherwise
   """
-  @spec hash_to_id(Hash.Address.t()) :: integer() | nil
-  def hash_to_id(nil), do: nil
+  @spec hash_to_id(Hash.Address.t(), [Chain.api?()]) :: integer() | nil
+  def hash_to_id(hash, options \\ [])
+  def hash_to_id(nil, _options), do: nil
 
-  def hash_to_id(hash) do
+  def hash_to_id(hash, options) do
     [hash]
-    |> hashes_to_ids()
+    |> hashes_to_ids(options)
     |> List.first()
   end
 
@@ -118,12 +120,12 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
   ## Returns
   - A list of address ids for the matching mappings
   """
-  @spec hashes_to_ids([Hash.Address.t()]) :: [integer()]
-  def hashes_to_ids(hashes) do
+  @spec hashes_to_ids([Hash.Address.t()], [Chain.api?()]) :: [integer()]
+  def hashes_to_ids(hashes, options \\ []) do
     __MODULE__
     |> where([a], a.address_hash in ^hashes)
     |> select([a], a.address_id)
-    |> Repo.all()
+    |> Chain.select_repo(options).all()
   end
 
   @doc """
@@ -139,12 +141,14 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
   - The address hash if found
   - `nil` if the id is `nil` or no mapping exists
   """
-  @spec id_to_hash(integer() | nil) :: Hash.Address.t() | nil
-  def id_to_hash(nil), do: nil
+  @spec id_to_hash(integer() | nil, [Chain.api?()]) :: Hash.Address.t() | nil
+  def id_to_hash(id, options \\ [])
 
-  def id_to_hash(id) do
+  def id_to_hash(nil, _options), do: nil
+
+  def id_to_hash(id, options) do
     [id]
-    |> ids_to_hashes()
+    |> ids_to_hashes(options)
     |> List.first()
   end
 
@@ -157,13 +161,15 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
   ## Returns
   - A list of address hashes for the matching mappings
   """
-  @spec ids_to_hashes([integer()]) :: [Hash.Address.t()]
-  def ids_to_hashes([]), do: []
+  @spec ids_to_hashes([integer()], [Chain.api?()]) :: [Hash.Address.t()]
+  def ids_to_hashes(ids, options \\ [])
 
-  def ids_to_hashes(ids) do
+  def ids_to_hashes([], _options), do: []
+
+  def ids_to_hashes(ids, options) do
     __MODULE__
     |> where([a], a.address_id in ^ids)
     |> select([a], a.address_hash)
-    |> Repo.all()
+    |> Chain.select_repo(options).all()
   end
 end

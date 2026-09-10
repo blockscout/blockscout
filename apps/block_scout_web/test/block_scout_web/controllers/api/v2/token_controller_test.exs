@@ -10,8 +10,9 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
   alias Explorer.{Repo, TestHelper}
 
-  alias Explorer.Chain.{Address, Token, Token.Instance, TokenTransfer}
+  alias Explorer.Chain.{Address, Block, Token, Token.Instance, TokenTransfer}
   alias Explorer.Chain.Address.CurrentTokenBalance
+  alias Explorer.Chain.Cache.Counters.TokenCountersConsolidator
   alias Explorer.Chain.Events.Subscriber
 
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
@@ -98,6 +99,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         3,
         :token_transfer,
         transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
         token_contract_address: contract_token_address
       )
 
@@ -111,10 +114,9 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
           )
         )
 
-      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/counters")
-      assert json_response(request, 200)
+      safe_block = Repo.aggregate(Block, :max, :number)
+      TokenCountersConsolidator.consolidate_tokens([token.contract_address_hash], safe_block)
 
-      Process.sleep(500)
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/counters")
       assert response = json_response(request, 200)
 

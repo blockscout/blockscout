@@ -1,7 +1,11 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.TokenController do
   use BlockScoutWeb, :controller
-  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]]
+
+  use Utils.CompileTimeEnvHelper,
+    bridged_tokens_enabled: [:explorer, [Explorer.Chain.BridgedToken, :enabled]],
+    chain_type: [:explorer, :chain_type]
+
   use OpenApiSpex.ControllerSpecs
 
   alias BlockScoutWeb.{AccessHelper, AuthenticationHelper}
@@ -54,7 +58,34 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   @api_true [api?: true]
 
-  @token_options [api?: true, necessity_by_association: %{reputation_association() => :optional}]
+  @token_transfer_participant_necessity_by_association %{
+    :scam_badge => :optional,
+    :names => :optional,
+    :smart_contract => :optional,
+    proxy_implementations_association() => :optional
+  }
+
+  @token_transfer_address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address}
+  ]
+
+  case @chain_type do
+    :filecoin ->
+      @chain_type_token_necessity_by_association %{contract_address: :optional}
+
+    :zilliqa ->
+      @chain_type_token_necessity_by_association %{contract_address: :optional}
+
+    _ ->
+      @chain_type_token_necessity_by_association %{}
+  end
+
+  @token_options [
+    api?: true,
+    necessity_by_association:
+      Map.merge(%{reputation_association() => :optional}, @chain_type_token_necessity_by_association)
+  ]
 
   operation :token,
     summary: "Retrieve detailed information about a specific token",
@@ -123,8 +154,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   def counters(conn, %{address_hash_param: address_hash_string} = params) do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
-         {:not_found, true} <- {:not_found, Token.by_contract_address_hash_exists?(address_hash, @api_true)} do
-      {transfers_count, holders_count} = Token.fetch_token_counters(address_hash, 5_000)
+         {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
+      {transfers_count, holders_count} = Token.fetch_token_counters(token)
 
       json(conn, %{transfers_count: to_string(transfers_count), token_holders_count: to_string(holders_count)})
     end
@@ -187,6 +218,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       |> render(:token_transfers, %{
         token_transfers:
           token_transfers
+          |> Chain.preload_address_participants(
+            @token_transfer_address_fields,
+            @token_transfer_participant_necessity_by_association,
+            @api_true
+          )
           |> Instance.preload_nft(@api_true)
           |> maybe_preload_ens_and_metadata(:token_transfers),
         next_page_params: next_page_params

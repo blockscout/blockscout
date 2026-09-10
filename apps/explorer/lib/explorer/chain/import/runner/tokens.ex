@@ -59,7 +59,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
         where: not is_nil(token.holder_count),
         update: [
           set: [
-            holder_count: token.holder_count + deltas.delta,
+            holder_count: fragment("LEAST(GREATEST(? + ?, 0), 2147483647)", token.holder_count, deltas.delta),
             updated_at: ^updated_at
           ]
         ],
@@ -199,8 +199,8 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
             cataloged: fragment("COALESCE(EXCLUDED.cataloged, ?)", token.cataloged),
             bridged: fragment("COALESCE(EXCLUDED.bridged, ?)", token.bridged),
             skip_metadata: fragment("COALESCE(EXCLUDED.skip_metadata, ?)", token.skip_metadata),
-            # `holder_count` and `transfer_count` are not updated as a pre-existing token means these counts are already initialized OR
-            #   need to be migrated with `priv/repo/migrations/scripts/update_new_tokens_holder_count_in_batches.sql.exs`
+            # `holder_count`, `transfer_count` and `counters_updated_at` are not updated: pre-existing tokens are maintained by
+            #   the incremental counters machinery (import-time holder deltas and the token counters consolidator)
             # Don't update `contract_address_hash` as it is the primary key and used for the conflict target
             inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token.inserted_at),
             updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.updated_at)
@@ -233,8 +233,8 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
             type: fragment("COALESCE(EXCLUDED.type, ?)", token.type),
             cataloged: fragment("COALESCE(EXCLUDED.cataloged, ?)", token.cataloged),
             skip_metadata: fragment("COALESCE(EXCLUDED.skip_metadata, ?)", token.skip_metadata),
-            # `holder_count` is not updated as a pre-existing token means the `holder_count` is already initialized OR
-            #   need to be migrated with `priv/repo/migrations/scripts/update_new_tokens_holder_count_in_batches.sql.exs`
+            # `holder_count`, `transfer_count` and `counters_updated_at` are not updated: pre-existing tokens are maintained by
+            #   the incremental counters machinery (import-time holder deltas and the token counters consolidator)
             # Don't update `contract_address_hash` as it is the primary key and used for the conflict target
             inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", token.inserted_at),
             updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.updated_at)

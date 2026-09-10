@@ -60,6 +60,7 @@ defmodule Indexer.Prometheus.Instrumenter do
   ]
   @gauge [name: :missing_current_token_balances_count, help: "Number of missing current token balances"]
   @gauge [name: :missing_archival_token_balances_count, help: "Number of missing token balances in history"]
+  @gauge [name: :missing_address_native_coin_balances_count, help: "Number of missing address native coin balances"]
   @gauge [name: :unfetched_token_instances_count, help: "Number of unfetched token instances"]
   @gauge [name: :failed_token_instances_metadata_count, help: "Number of failed token instances metadata"]
   @gauge [name: :token_instances_not_uploaded_to_cdn_count, help: "Token instances not uploaded to CDN"]
@@ -243,6 +244,13 @@ defmodule Indexer.Prometheus.Instrumenter do
   @spec missing_current_token_balances_count(integer()) :: :ok
   def missing_current_token_balances_count(value),
     do: Gauge.set([name: :missing_current_token_balances_count], value)
+
+  @doc """
+  Defines the metric for the number of missing address native coin balances.
+  """
+  @spec missing_address_native_coin_balances_count(integer()) :: :ok
+  def missing_address_native_coin_balances_count(value),
+    do: Gauge.set([name: :missing_address_native_coin_balances_count], value)
 
   @doc """
   Defines the metric for the number of missing token balances in history.

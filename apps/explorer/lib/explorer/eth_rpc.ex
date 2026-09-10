@@ -867,6 +867,8 @@ defmodule Explorer.EthRPC do
     3 => "fourth"
   }
 
+  @no_result "No result"
+
   @spec responses([map()]) :: [map()]
   def responses(requests) do
     requests =
@@ -980,32 +982,35 @@ defmodule Explorer.EthRPC do
     end)
   end
 
+  # Responses of a batch request are not guaranteed to be returned in the order of the
+  # requests, so they are matched by id. The index of the request is used as the id sent
+  # to the node, since the id provided by the user can be duplicated or nil. The user's
+  # id is attached to the response by `responses/1` anyway.
   defp json_rpc(map) when is_map(map) do
     to_request =
-      Enum.flat_map(Map.values(map), fn
-        {:error, _} ->
+      Enum.flat_map(map, fn
+        {_index, {:error, _}} ->
           []
 
-        %{"jsonrpc" => _json_rpc, "method" => _method, "params" => _params, "id" => _id} = request ->
-          [request_to_elixir(request)]
+        {index, request} when is_map(request) ->
+          [request |> request_to_elixir() |> Map.put(:id, index)]
 
         _ ->
           []
       end)
 
-    with [_ | _] = to_request <- to_request,
+    with [_ | _] <- to_request,
          {:ok, responses} <-
            EthereumJSONRPC.json_rpc(to_request, Application.get_env(:explorer, :json_rpc_named_arguments)) do
-      {map, []} =
-        Enum.map_reduce(map, responses, fn
-          {_index, {:error, _}} = elem, responses ->
-            {elem, responses}
+      index_to_response = Map.new(responses, &{&1.id, &1})
 
-          {index, _request}, [response | other_responses] ->
-            {{index, response}, other_responses}
-        end)
+      Map.new(map, fn
+        {_index, {:error, _}} = elem ->
+          elem
 
-      Enum.into(map, %{})
+        {index, _request} ->
+          {index, Map.get(index_to_response, index, {:error, @no_result})}
+      end)
     else
       [] ->
         map
@@ -1603,6 +1608,13 @@ defmodule Explorer.EthRPC do
   defp block_param("latest"), do: {:ok, :latest}
   defp block_param("earliest"), do: {:ok, :earliest}
   defp block_param("pending"), do: {:ok, :pending}
+
+  defp block_param("0x" <> hexadecimal_digits) do
+    case Integer.parse(hexadecimal_digits, 16) do
+      {integer, ""} -> {:ok, integer}
+      _ -> :error
+    end
+  end
 
   defp block_param(string_integer) when is_bitstring(string_integer) do
     case quantity_to_integer(string_integer) do

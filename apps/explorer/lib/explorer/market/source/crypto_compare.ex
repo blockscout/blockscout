@@ -65,7 +65,9 @@ defmodule Explorer.Market.Source.CryptoCompare do
              |> URI.append_query("tsym=#{config(:currency)}")
              |> URI.append_query("extraParams=Blockscout/#{Application.spec(:explorer)[:vsn]}")
              |> URI.to_string(),
-             headers()
+             headers(),
+             __MODULE__,
+             :data_histoday
            ) do
       result =
         for item <- data do
@@ -87,10 +89,9 @@ defmodule Explorer.Market.Source.CryptoCompare do
   end
 
   defp headers do
-    if config(:api_key) do
-      [{"Authorization", "Apikey #{config(:api_key)}"}]
-    else
-      []
+    case config(:api_key) do
+      empty when empty in [nil, ""] -> []
+      api_key -> [{"Authorization", "Apikey #{api_key}"}]
     end
   end
 

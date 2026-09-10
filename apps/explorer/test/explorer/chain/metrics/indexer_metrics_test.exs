@@ -145,6 +145,49 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetricsTest do
     end
   end
 
+  describe "missing_address_native_coin_balances_count/0" do
+    test "counts only unfetched coin balances within configured ranges and latest tail" do
+      previous_block_ranges = Application.get_env(:indexer, :block_ranges)
+      on_exit(fn -> Application.put_env(:indexer, :block_ranges, previous_block_ranges) end)
+
+      Application.put_env(:indexer, :block_ranges, "1..3,5..latest")
+
+      address = insert(:address)
+
+      # within ranges and unfetched -> counted
+      insert(:unfetched_balance, address_hash: address.hash, block_number: 1)
+      insert(:unfetched_balance, address_hash: address.hash, block_number: 7)
+      # within ranges but fetched -> not counted
+      insert(:unfetched_balance,
+        address_hash: address.hash,
+        block_number: 2,
+        value: 100,
+        value_fetched_at: DateTime.utc_now()
+      )
+
+      # unfetched but outside the ranges -> not counted
+      insert(:unfetched_balance, address_hash: address.hash, block_number: 4)
+
+      assert IndexerMetrics.missing_address_native_coin_balances_count() == 2
+    end
+
+    test "counts only within finite ranges" do
+      previous_block_ranges = Application.get_env(:indexer, :block_ranges)
+      on_exit(fn -> Application.put_env(:indexer, :block_ranges, previous_block_ranges) end)
+
+      Application.put_env(:indexer, :block_ranges, "10..12,20..22")
+
+      address = insert(:address)
+
+      insert(:unfetched_balance, address_hash: address.hash, block_number: 11)
+      insert(:unfetched_balance, address_hash: address.hash, block_number: 21)
+      # outside the finite ranges -> not counted
+      insert(:unfetched_balance, address_hash: address.hash, block_number: 30)
+
+      assert IndexerMetrics.missing_address_native_coin_balances_count() == 2
+    end
+  end
+
   describe "missing_archival_token_balances_count/0" do
     test "returns 0 when archival token balances fetcher is disabled" do
       previous_config =

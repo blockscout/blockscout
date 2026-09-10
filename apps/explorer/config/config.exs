@@ -37,9 +37,9 @@ config :explorer, Explorer.Chain.Cache.Counters.AddressesCount,
   enabled: true,
   enable_consolidation: true
 
-config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsGasUsageSum,
-  enabled: true,
-  enable_consolidation: true
+config :explorer, Explorer.Chain.Cache.Counters.AddressCounters, enabled: true
+
+config :explorer, Explorer.Chain.Cache.Counters.AddressCountersConsolidator, enabled: true
 
 config :explorer, Explorer.Chain.Cache.Counters.AddressTokensUsdSum,
   enabled: true,
@@ -84,21 +84,9 @@ config :explorer, Explorer.Chain.Cache.Counters.Blackfort.ValidatorsCount,
 
 config :explorer, Explorer.Market.Fetcher.Token, enabled: true
 
-config :explorer, Explorer.Chain.Cache.Counters.TokenHoldersCount,
-  enabled: true,
-  enable_consolidation: true
+config :explorer, Explorer.Chain.Cache.Counters.TokenCounters, enabled: true
 
-config :explorer, Explorer.Chain.Cache.Counters.TokenTransfersCount,
-  enabled: true,
-  enable_consolidation: true
-
-config :explorer, Explorer.Chain.Cache.Counters.AddressTransactionsCount,
-  enabled: true,
-  enable_consolidation: true
-
-config :explorer, Explorer.Chain.Cache.Counters.AddressTokenTransfersCount,
-  enabled: true,
-  enable_consolidation: true
+config :explorer, Explorer.Chain.Cache.Counters.TokenCountersConsolidator, enabled: true
 
 config :explorer, Explorer.Chain.Cache.Counters.BlockBurntFeeCount,
   enabled: true,
@@ -143,12 +131,15 @@ for migrator <- [
       Explorer.Migrator.UnescapeQuotesInTokens,
       Explorer.Migrator.UnescapeAmpersandsInTokens,
       Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources,
+      Explorer.Migrator.ReindexBlocksWithUncatalogedTokenTransfers,
       Explorer.Migrator.EmptyInternalTransactionsData,
       Explorer.Migrator.FillInternalTransactionsAddressIds,
       Explorer.Migrator.TransactionHasTokenTransfers,
       Explorer.Migrator.DeleteNonConsensusLogs,
       Explorer.Migrator.FillLogsOptimizedFields,
-      Explorer.Migrator.FillLogsCompressedData
+      Explorer.Migrator.FillLogsCompressedData,
+      Explorer.Migrator.BackfillAddressCounters,
+      Explorer.Migrator.BackfillTokenCounters
     ] do
   config :explorer, migrator, enabled: true
 end

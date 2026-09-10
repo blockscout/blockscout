@@ -27,12 +27,29 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   @request_error_msg "Error while sending request to Transaction Interpretation Service"
   @api_true api?: true
   @items_limit 50
+
+  case @chain_type do
+    :filecoin ->
+      @chain_type_token_necessity_by_association %{contract_address: :optional}
+
+    :zilliqa ->
+      @chain_type_token_necessity_by_association %{contract_address: :optional}
+
+    _ ->
+      @chain_type_token_necessity_by_association %{}
+  end
+
   @token_options [
     api?: true,
-    necessity_by_association: %{
-      reputation_association() => :optional
-    }
+    necessity_by_association:
+      Map.merge(
+        %{
+          reputation_association() => :optional
+        },
+        @chain_type_token_necessity_by_association
+      )
   ]
+
   @internal_transaction_address_preloads [
     address_preloads: [
       created_contract_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],

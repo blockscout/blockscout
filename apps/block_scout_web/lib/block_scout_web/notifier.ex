@@ -89,22 +89,26 @@ defmodule BlockScoutWeb.Notifier do
       @chain_type_transaction_associations []
   end
 
-  @transaction_associations [
-                              from_address: [:scam_badge, :names, :smart_contract, proxy_implementations_association()],
-                              to_address: [
-                                :scam_badge,
-                                :names,
-                                :smart_contract,
-                                proxy_implementations_association()
-                              ],
-                              created_contract_address: [
-                                :scam_badge,
-                                :names,
-                                :smart_contract,
-                                proxy_implementations_association()
-                              ]
-                            ] ++
-                              @chain_type_transaction_associations
+  # Address-info associations shared by every participant role of a broadcast
+  # item. Loaded once per broadcast batch by
+  # `Chain.preload_address_participants/4` rather than per role, which repeats
+  # each of these queries once per role.
+  @participant_necessity_by_association %{
+    :scam_badge => :optional,
+    :names => :optional,
+    proxy_implementations_association() => :optional
+  }
+
+  @transaction_address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address},
+    {:created_contract_address_hash, :created_contract_address}
+  ]
+
+  @token_transfer_address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address}
+  ]
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
     addresses_count = AddressesCount.fetch()
@@ -304,32 +308,16 @@ defmodule BlockScoutWeb.Notifier do
         |> Repo.preload(
           DenormalizationHelper.extend_transaction_preload([
             [token: Reputation.reputation_association()],
-            :transaction,
-            from_address: [
-              :scam_badge,
-              :names,
-              :smart_contract,
-              proxy_implementations_association()
-            ],
-            to_address: [
-              :scam_badge,
-              :names,
-              :smart_contract,
-              proxy_implementations_association()
-            ]
+            :transaction
           ])
         )
+        |> preload_participants(@token_transfer_address_fields)
         |> Instance.preload_nft(@api_true)
 
-      transfers_by_token =
-        Enum.group_by(all_token_transfers_full, fn tt -> to_string(tt.token_contract_address_hash) end)
+      broadcast_token_transfers_websocket_v2(all_token_transfers_full)
 
-      broadcast_token_transfers_websocket_v2(all_token_transfers_full, transfers_by_token)
-
-      for {_token_contract_address_hash, token_transfers} <- transfers_by_token do
-        token_transfers
-        |> Enum.each(&broadcast_token_transfer/1)
-      end
+      # TODO: delete duplicated event when old UI becomes deprecated
+      broadcast_token_transfers_websocket_v1(all_token_transfers_full)
     end
   end
 
@@ -801,7 +789,10 @@ defmodule BlockScoutWeb.Notifier do
       relevant_transactions ->
         prepared_transactions =
           TransactionView.render("transactions.json", %{
-            transactions: Repo.preload(relevant_transactions, transaction_broadcast_associations()),
+            transactions:
+              relevant_transactions
+              |> Repo.preload(transaction_broadcast_associations())
+              |> preload_participants(@transaction_address_fields),
             conn: nil
           })
 
@@ -823,7 +814,8 @@ defmodule BlockScoutWeb.Notifier do
 
     if relevant_transactions != [] do
       relevant_transactions
-      |> Repo.preload([:block | @transaction_associations])
+      |> Repo.preload([:block | @chain_type_transaction_associations])
+      |> preload_participants(@transaction_address_fields)
       |> Enum.map(fn transaction ->
         Map.put(transaction, :token_transfers, [])
       end)
@@ -833,8 +825,19 @@ defmodule BlockScoutWeb.Notifier do
 
   defp transaction_broadcast_associations do
     if API_V2.enabled?(),
-      do: [:block, {:token_transfers, [token: Reputation.reputation_association()]} | @transaction_associations],
-      else: [:block | @transaction_associations]
+      do: [
+        :block,
+        {:token_transfers, [token: Reputation.reputation_association()]} | @chain_type_transaction_associations
+      ],
+      else: [:block | @chain_type_transaction_associations]
+  end
+
+  # Loads the address info of every participant of the broadcast batch in one
+  # pass, deduplicating addresses shared between items and between roles of the
+  # same item. Broadcasts run off the primary repo, as the preloads they replace
+  # did.
+  defp preload_participants(items, address_fields) do
+    Chain.preload_address_participants(items, address_fields, @participant_necessity_by_association, [])
   end
 
   defp broadcast_transaction(%Transaction{block_number: nil} = pending) do
@@ -865,26 +868,40 @@ defmodule BlockScoutWeb.Notifier do
     end
   end
 
-  defp broadcast_token_transfers_websocket_v2(tokens_transfers, transfers_by_token) do
-    for {token_contract_address_hash, token_transfers} <- transfers_by_token do
-      Endpoint.broadcast("tokens:#{token_contract_address_hash}", "token_transfer", %{
-        token_transfer: Enum.count(token_transfers)
-      })
+  defp broadcast_token_transfers_websocket_v2(tokens_transfers) do
+    case Enum.filter(tokens_transfers, &token_transfer_has_v2_subscribers?/1) do
+      [] ->
+        :ok
+
+      relevant_token_transfers ->
+        for {token_contract_address_hash, token_transfers} <-
+              Enum.group_by(relevant_token_transfers, fn tt -> to_string(tt.token_contract_address_hash) end) do
+          Endpoint.broadcast("tokens:#{token_contract_address_hash}", "token_transfer", %{
+            token_transfer: Enum.count(token_transfers)
+          })
+        end
+
+        prepared_token_transfers =
+          TransactionView.render("token_transfers.json", %{
+            token_transfers: relevant_token_transfers,
+            conn: nil
+          })
+
+        relevant_token_transfers
+        |> Enum.zip(prepared_token_transfers)
+        |> group_by_address_hashes_and_broadcast(
+          "token_transfer",
+          :token_transfers,
+          &{&1["transaction_hash"], &1["block_hash"], &1["log_index"]}
+        )
     end
+  end
 
-    prepared_token_transfers =
-      TransactionView.render("token_transfers.json", %{
-        token_transfers: tokens_transfers,
-        conn: nil
-      })
-
+  # TODO: delete this function when old UI becomes deprecated
+  defp broadcast_token_transfers_websocket_v1(tokens_transfers) do
     tokens_transfers
-    |> Enum.zip(prepared_token_transfers)
-    |> group_by_address_hashes_and_broadcast(
-      "token_transfer",
-      :token_transfers,
-      &{&1["transaction_hash"], &1["block_hash"], &1["log_index"]}
-    )
+    |> Enum.filter(&token_transfer_has_old_subscribers?/1)
+    |> Enum.each(&broadcast_token_transfer/1)
   end
 
   defp broadcast_token_transfer(token_transfer) do
@@ -948,8 +965,14 @@ defmodule BlockScoutWeb.Notifier do
   defp address_has_subscribers?(nil), do: false
 
   defp address_has_subscribers?(address_hash) do
-    has_subscribers?("addresses:" <> to_string(address_hash)) or
+    address_has_v2_subscribers?(address_hash) or
       address_has_old_subscribers?(address_hash)
+  end
+
+  defp address_has_v2_subscribers?(nil), do: false
+
+  defp address_has_v2_subscribers?(address_hash) do
+    has_subscribers?("addresses:" <> to_string(address_hash))
   end
 
   # TODO: delete this function when old UI becomes deprecated
@@ -960,18 +983,34 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp token_transfer_has_subscribers?(tt) do
-    address_has_subscribers?(tt.from_address_hash) or
-      address_has_subscribers?(tt.to_address_hash) or
-      token_has_subscribers?(tt.token_contract_address_hash)
+    token_transfer_has_v2_subscribers?(tt) or
+      token_transfer_has_old_subscribers?(tt)
   end
 
-  defp token_has_subscribers?(nil), do: false
+  defp token_transfer_has_v2_subscribers?(tt) do
+    address_has_v2_subscribers?(tt.from_address_hash) or
+      address_has_v2_subscribers?(tt.to_address_hash) or
+      token_has_v2_subscribers?(tt.token_contract_address_hash)
+  end
 
-  defp token_has_subscribers?(token_address_hash) do
-    hash_string = to_string(token_address_hash)
+  # TODO: delete this function when old UI becomes deprecated
+  defp token_transfer_has_old_subscribers?(tt) do
+    address_has_old_subscribers?(tt.from_address_hash) or
+      address_has_old_subscribers?(tt.to_address_hash) or
+      token_has_old_subscribers?(tt.token_contract_address_hash)
+  end
 
-    has_subscribers?("tokens:" <> hash_string) or
-      has_subscribers?("tokens_old:" <> hash_string)
+  defp token_has_v2_subscribers?(nil), do: false
+
+  defp token_has_v2_subscribers?(token_address_hash) do
+    has_subscribers?("tokens:" <> to_string(token_address_hash))
+  end
+
+  # TODO: delete this function when old UI becomes deprecated
+  defp token_has_old_subscribers?(nil), do: false
+
+  defp token_has_old_subscribers?(token_address_hash) do
+    has_subscribers?("tokens_old:" <> to_string(token_address_hash))
   end
 
   defp transaction_has_subscribers?(transaction) do

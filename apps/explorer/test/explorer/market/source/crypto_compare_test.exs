@@ -125,6 +125,36 @@ defmodule Explorer.Market.Source.CryptoCompareTest do
                 }
               ]} == CryptoCompare.fetch_native_coin_price_history(3)
     end
+
+    test "sets Authorization header if api key is configured", %{bypass: bypass} do
+      config = Application.get_env(:explorer, CryptoCompare)
+      Application.put_env(:explorer, CryptoCompare, Keyword.merge(config, api_key: "test_api_key"))
+
+      on_exit(fn -> Application.put_env(:explorer, CryptoCompare, config) end)
+
+      Bypass.expect_once(bypass, "GET", "data/v2/histoday", fn conn ->
+        assert Conn.get_req_header(conn, "authorization") == ["Apikey test_api_key"]
+
+        Conn.resp(conn, 200, json_data_v2_histoday())
+      end)
+
+      assert {:ok, _} = CryptoCompare.fetch_native_coin_price_history(3)
+    end
+
+    test "doesn't set Authorization header if api key is empty", %{bypass: bypass} do
+      config = Application.get_env(:explorer, CryptoCompare)
+      Application.put_env(:explorer, CryptoCompare, Keyword.merge(config, api_key: ""))
+
+      on_exit(fn -> Application.put_env(:explorer, CryptoCompare, config) end)
+
+      Bypass.expect_once(bypass, "GET", "data/v2/histoday", fn conn ->
+        assert Conn.get_req_header(conn, "authorization") == []
+
+        Conn.resp(conn, 200, json_data_v2_histoday())
+      end)
+
+      assert {:ok, _} = CryptoCompare.fetch_native_coin_price_history(3)
+    end
   end
 
   describe "secondary_coin_price_history_fetching_enabled?" do

@@ -57,7 +57,9 @@ defmodule Explorer.Market.Source.CoinMarketCap do
              |> URI.append_query("convert_id=#{currency_id}")
              |> URI.append_query("aux=market_cap")
              |> URI.to_string(),
-             headers()
+             headers(),
+             __MODULE__,
+             :cryptocurrency_quotes_historical_market_cap
            ) do
       quotes = market_data["quotes"]
 
@@ -101,7 +103,9 @@ defmodule Explorer.Market.Source.CoinMarketCap do
              |> URI.append_query("convert_id=#{convert_id}")
              |> URI.append_query("aux=circulating_supply,total_supply")
              |> URI.to_string(),
-             headers()
+             headers(),
+             __MODULE__,
+             :cryptocurrency_quotes_latest
            ) do
       token_properties = market_data |> Map.values() |> List.first() || %{}
       currency_id = token_properties["quote"][config(:currency_id)]
@@ -150,7 +154,9 @@ defmodule Explorer.Market.Source.CoinMarketCap do
              |> URI.append_query("convert_id=#{currency_id}")
              |> URI.append_query("aux=price")
              |> URI.to_string(),
-             headers()
+             headers(),
+             __MODULE__,
+             :cryptocurrency_quotes_historical_price
            ) do
       closing_quotes =
         case quotes do

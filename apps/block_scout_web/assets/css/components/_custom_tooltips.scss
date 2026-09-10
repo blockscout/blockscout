@@ -84,18 +84,6 @@ $tooltip-background-color: $btn-line-color !default;
     }
 }
 
-.tooltip-gas-usage {
-    .tooltip-inner {
-        @media (min-width: 576px) {
-            max-width: 150px !important;
-        }
-        @media (min-width: 768px) {
-            max-width: 150px !important;
-        }
-        width: 150px !important;
-    }
-}
-
 .tooltip-gas-tracker {
     .tooltip-inner {
         @media (min-width: 576px) {

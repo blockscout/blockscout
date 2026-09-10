@@ -98,4 +98,74 @@ defmodule Explorer.QueryHelper do
       fragment(~s(?."ctid" = ?."ctid"), unquote(first_table_binding), unquote(second_table_binding))
     end
   end
+
+  @doc """
+  Returns the cardinality of `association` on the schema `queryable` selects from.
+
+  `:unknown` when the schema cannot be resolved — a query built on a subquery or
+  a raw source — or when it declares no such association.
+  """
+  @spec association_cardinality(Ecto.Queryable.t(), atom()) :: :one | :many | :unknown
+  def association_cardinality(queryable, association) do
+    case association_reflection(queryable, association) do
+      %{cardinality: cardinality} -> cardinality
+      _ -> :unknown
+    end
+  end
+
+  @doc """
+  Whether `association` can be fetched through a join and preloaded from it.
+
+  `Ecto.Repo.Assoc` maps joined rows back onto their parents by the related
+  schema's primary key and raises `Ecto.NoPrimaryKeyFieldError` without one, and
+  a `through` association's reflection does not even name a related schema.
+  Neither can come from a join.
+  """
+  @spec join_preloadable?(Ecto.Queryable.t(), atom()) :: boolean()
+  def join_preloadable?(queryable, association) do
+    with %{related: related} <- association_reflection(queryable, association),
+         schema when not is_nil(schema) <- ecto_schema(related) do
+      schema.__schema__(:primary_key) != []
+    else
+      _ -> false
+    end
+  end
+
+  @doc """
+  Whether `query` already carries `association` as a named binding or a
+  join-preload, in which case joining it again collides on the `as:` alias.
+  """
+  @spec association_bound?(Ecto.Queryable.t(), atom()) :: boolean()
+  def association_bound?(%Ecto.Query{assocs: assocs} = query, association),
+    do: has_named_binding?(query, association) or List.keymember?(assocs, association, 0)
+
+  def association_bound?(_queryable, _association), do: false
+
+  @doc """
+  Returns the association reflection `association` resolves to on `queryable`,
+  or `nil` when either the schema or the association cannot be resolved.
+  """
+  @spec association_reflection(Ecto.Queryable.t(), atom()) :: struct() | nil
+  def association_reflection(queryable, association) do
+    with schema when not is_nil(schema) <- query_schema(queryable),
+         %{} = reflection <- schema.__schema__(:association, association) do
+      reflection
+    else
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Returns the Ecto schema `queryable` selects from, or `nil` when it selects from
+  a subquery, a raw source, or anything that is not a schema.
+  """
+  @spec query_schema(Ecto.Queryable.t()) :: module() | nil
+  def query_schema(%Ecto.Query{from: %{source: {_source, schema}}}), do: ecto_schema(schema)
+  def query_schema(queryable), do: ecto_schema(queryable)
+
+  defp ecto_schema(module) when is_atom(module) and not is_nil(module) do
+    if Code.ensure_loaded?(module) and function_exported?(module, :__schema__, 2), do: module
+  end
+
+  defp ecto_schema(_module), do: nil
 end

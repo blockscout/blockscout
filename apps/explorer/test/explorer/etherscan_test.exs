@@ -1277,6 +1277,37 @@ defmodule Explorer.EtherscanTest do
       assert token_transfer.to_address_hash == found_token_transfer.to_address_hash
     end
 
+    test "preloads only the transaction fields used by the RPC view" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      token_transfer =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number
+        )
+
+      [found_token_transfer] = Etherscan.list_token_transfers(:erc20, token_transfer.from_address_hash, nil, %{})
+
+      assert %Transaction{} = found_transaction = found_token_transfer.transaction
+      assert found_transaction.hash == transaction.hash
+      assert found_transaction.input == transaction.input
+      assert found_transaction.nonce == transaction.nonce
+      assert found_transaction.index == transaction.index
+      assert found_transaction.gas == transaction.gas
+      assert found_transaction.gas_price == transaction.gas_price
+      assert found_transaction.gas_used == transaction.gas_used
+      assert found_transaction.cumulative_gas_used == transaction.cumulative_gas_used
+
+      # signature fields are not rendered by the RPC view, so they must not be fetched
+      assert is_nil(found_transaction.r)
+      assert is_nil(found_transaction.s)
+      assert is_nil(found_transaction.v)
+    end
+
     test "with address with 0 token transfers" do
       address = insert(:address)
 

@@ -41,7 +41,9 @@ defmodule Explorer.Market.Source.Mobula do
              |> URI.append_query("limit=#{batch_size}")
              |> URI.append_query("offset=#{offset}")
              |> URI.to_string(),
-             headers()
+             headers(),
+             __MODULE__,
+             :market_query
            ) do
       {tokens_to_import, initial_tokens_len} =
         Enum.reduce(tokens, {[], 0}, &reduce_mobula_token/2)
@@ -115,7 +117,9 @@ defmodule Explorer.Market.Source.Mobula do
              |> URI.append_path("/market/data")
              |> URI.append_query("asset=#{coin_id}")
              |> URI.to_string(),
-             headers()
+             headers(),
+             __MODULE__,
+             :market_data
            ) do
       {:ok,
        %Token{
@@ -155,7 +159,9 @@ defmodule Explorer.Market.Source.Mobula do
              |> URI.append_query("asset=#{coin_id}")
              |> URI.append_query("from=#{timestamp_ms}")
              |> URI.to_string(),
-             headers()
+             headers(),
+             __MODULE__,
+             :market_history
            ) do
       result =
         for [date_ms, price] <- price_history do

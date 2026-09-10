@@ -76,6 +76,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_create_addresses_hash_contract_code_not_null_index_finished,
     key: :heavy_indexes_create_address_ids_internal_transactions_indexes_finished,
     key: :fill_internal_transactions_address_ids_finished,
+    key: :backfill_address_counters_finished,
+    key: :backfill_token_counters_finished,
     key: :heavy_indexes_create_logs_address_hash_first_topic_second_topic_block_number_index_finished,
     key: :heavy_indexes_create_address_current_token_balances_address_hash_block_number_index_finished,
     key: :heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished,
@@ -88,8 +90,10 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     AddressCurrentTokenBalanceTokenType,
     AddressTokenBalanceTokenType,
     ArbitrumDaRecordsNormalization,
+    BackfillAddressCounters,
     BackfillMultichainSearchDB,
     BackfillMultichainSearchDbCurrentTokenBalances,
+    BackfillTokenCounters,
     EmptyInternalTransactionsData,
     FillInternalTransactionsAddressIds,
     FillLogsOptimizedFields,
@@ -483,6 +487,20 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       FillInternalTransactionsAddressIds,
       &set_fill_internal_transactions_address_ids_finished/1
+    )
+  end
+
+  defp handle_fallback(:backfill_address_counters_finished) do
+    set_and_return_migration_status(
+      BackfillAddressCounters,
+      &set_backfill_address_counters_finished/1
+    )
+  end
+
+  defp handle_fallback(:backfill_token_counters_finished) do
+    set_and_return_migration_status(
+      BackfillTokenCounters,
+      &set_backfill_token_counters_finished/1
     )
   end
 

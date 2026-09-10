@@ -2347,7 +2347,7 @@ defmodule Explorer.Chain.Transaction do
   """
   @spec decode_transactions([__MODULE__.t()], boolean(), Keyword.t()) :: [nil | {:ok, String.t(), String.t(), map()}]
   def decode_transactions(transactions, skip_sig_provider?, opts) do
-    smart_contract_full_abi_map = combine_smart_contract_full_abi_map(transactions)
+    smart_contract_full_abi_map = combine_smart_contract_full_abi_map(transactions, opts)
 
     # first we assemble an empty methods map, so that decoded_input_data will skip ContractMethod.t() lookup and decoding
     empty_methods_map =
@@ -2428,7 +2428,7 @@ defmodule Explorer.Chain.Transaction do
 
   defp decode_remaining_transaction({decoded, _}, _, _, _, _), do: decoded
 
-  defp combine_smart_contract_full_abi_map(transactions) do
+  defp combine_smart_contract_full_abi_map(transactions, opts) do
     # parse unique address hashes of smart-contracts from to_address and created_contract_address properties of the transactions list
     unique_to_address_hashes =
       transactions
@@ -2441,14 +2441,16 @@ defmodule Explorer.Chain.Transaction do
 
     # query from the DB proxy implementation objects for those address hashes
     multiple_proxy_implementations =
-      Implementation.get_proxy_implementations_for_multiple_proxies(unique_to_address_hashes)
+      Implementation.get_proxy_implementations_for_multiple_proxies(unique_to_address_hashes, opts)
 
     # query from the DB address objects with smart_contract preload for all found above proxy and implementation addresses
     addresses_with_smart_contracts =
       multiple_proxy_implementations
       |> Enum.flat_map(fn proxy_implementations -> proxy_implementations.address_hashes end)
       |> Enum.concat(unique_to_address_hashes)
-      |> Chain.hashes_to_addresses(necessity_by_association: %{smart_contract: :optional})
+      |> Chain.hashes_to_addresses(
+        Keyword.merge(Keyword.take(opts, [:api?]), necessity_by_association: %{smart_contract: :optional})
+      )
       |> Enum.into(%{}, &{&1.hash, &1})
 
     # combine map %{proxy_address_hash => implementation address hashes}
@@ -3035,19 +3037,19 @@ defmodule Explorer.Chain.Transaction do
   @doc """
   Finds all transactions of a certain block number
   """
-  def get_transactions_of_block_number(block_number) do
+  def get_transactions_of_block_number(block_number, options \\ []) do
     block_number
     |> transactions_with_block_number()
-    |> Repo.all()
+    |> Chain.select_repo(options).all()
   end
 
   @doc """
   Finds all transactions of a certain block numbers
   """
-  def get_transactions_of_block_numbers(block_numbers) do
+  def get_transactions_of_block_numbers(block_numbers, options \\ []) do
     block_numbers
     |> transactions_for_block_numbers()
-    |> Repo.all()
+    |> Chain.select_repo(options).all()
   end
 
   @doc """

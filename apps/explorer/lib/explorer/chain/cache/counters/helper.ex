@@ -36,6 +36,14 @@ defmodule Explorer.Chain.Cache.Counters.Helper do
   end
 
   @doc """
+  Normalizes a gas amount (`nil`, `Decimal` or integer) to an integer.
+  """
+  @spec gas_to_integer(Decimal.t() | non_neg_integer() | nil) :: non_neg_integer()
+  def gas_to_integer(nil), do: 0
+  def gas_to_integer(%Decimal{} = gas), do: Decimal.to_integer(gas)
+  def gas_to_integer(gas) when is_integer(gas), do: gas
+
+  @doc """
     Fetches a value from the ETS cache.
 
     This function fetches a value from the ETS cache by looking up the key in the
@@ -86,15 +94,17 @@ defmodule Explorer.Chain.Cache.Counters.Helper do
 
   ## Parameters
     - cache_name: The name of the cache table to be created.
+    - extra_opts: Additional `:ets.new/2` options appended to the default ones
+      (e.g. `[write_concurrency: true]`).
 
   ## Returns
     - The table identifier if the table is created.
     - `nil` if the table already exists.
   """
-  @spec create_cache_table(atom()) :: any()
-  def create_cache_table(cache_name) do
+  @spec create_cache_table(atom(), list()) :: any()
+  def create_cache_table(cache_name, extra_opts \\ []) do
     if :ets.whereis(cache_name) == :undefined do
-      :ets.new(cache_name, @ets_opts)
+      :ets.new(cache_name, @ets_opts ++ extra_opts)
     end
   end
 
