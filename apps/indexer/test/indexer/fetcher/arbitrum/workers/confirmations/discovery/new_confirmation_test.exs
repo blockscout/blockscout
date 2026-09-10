@@ -180,6 +180,83 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert unconfirmed_blocks() == []
       end
 
+      # The database has one batch with the rollup blocks 1..20. A known
+      # confirmation covers the blocks 1..10. The blocks 11..20 are not confirmed.
+      #
+      # The known confirmation is in the parent chain block 210, which is more than
+      # the end block of the discovery range. The event under discovery is in the
+      # parent chain block 200, and it points to the rollup block 20. Thus the newer
+      # transaction confirms the lower rollup blocks, and the two events are in the
+      # inverted order. The HPP mainnet, which is an Arbitrum AnyTrust chain, holds
+      # such pairs of confirmations. The historical discovery moves backward. Thus it
+      # handled the known confirmation in an earlier run, and the two events of the
+      # pair are in two different runs.
+      #
+      # The new confirmation must cover the blocks 11..20, and the known confirmation
+      # must keep the blocks 1..10.
+      #
+      # The lookup range of the event ends before the known confirmation. Thus the
+      # lookup finds no log, and the discovery takes the block 1 as the start of the
+      # range of the new confirmation. The selection of the blocks holds the blocks
+      # 11..20 only. The discovery reads this difference as an incomplete batch. It
+      # writes nothing for the event, and it returns `:confirmation_missed`.
+      #
+      # The test "splits one batch when the known lower confirmation is newer on the
+      # parent chain", in the group "perform/5 with a new confirmation and a known one
+      # in one batch", holds the same pair of events in one run. There the log of the
+      # known confirmation is in the discovery range. This test is the only one where
+      # the known confirmation of the lower blocks is outside the discovery range.
+      # Thus a correction which takes the boundary from the logs of the run does not
+      # give `:ok` in this test.
+      #
+      # The second part of the test changes nothing in the database. The database
+      # holds the whole batch already. Thus the indexer has nothing to add. Therefore
+      # the repeated run of the same parent chain range must give `:ok`. The
+      # discovery gives `:confirmation_missed` again, and the test fails on that
+      # assertion.
+      #
+      # The correction of the defect gives `:ok` and the blocks 11..20 in the first
+      # run. Thus the person who removes the tag also removes the assertions of the
+      # first part.
+      @tag skip: "Defect: a new confirmation above a later known confirmation of the same batch repeats the range"
+      test "confirms the blocks above a later known confirmation of the same batch", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        batch = seed_batch(@rollup_first_block, 20, @commitment_l1_block)
+
+        later_confirmation = insert_confirmation(@later_confirmation_l1_block, @confirmation_l1_timestamp + 120)
+        mark_confirmed(@rollup_first_block..10, later_confirmation)
+
+        confirmation_transaction_hash = to_string(transaction_hash())
+
+        expect_discovery_of([
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 20),
+            confirmation_transaction_hash,
+            @confirmation_l1_block
+          ),
+          build_send_root_updated_log(
+            rollup_block_hash(batch, 10),
+            to_string(later_confirmation.hash),
+            @later_confirmation_l1_block
+          )
+        ])
+
+        assert :confirmation_missed == discover(json_rpc_named_arguments)
+
+        assert Repo.get_by(LifecycleTransaction, hash: confirmation_transaction_hash) == nil
+        assert confirmed_blocks(later_confirmation) == Enum.to_list(@rollup_first_block..10)
+        assert unconfirmed_blocks() == Enum.to_list(11..20)
+
+        assert :ok == discover(json_rpc_named_arguments)
+
+        confirmation = Repo.get_by!(LifecycleTransaction, hash: confirmation_transaction_hash)
+        assert confirmation.block_number == @confirmation_l1_block
+        assert confirmed_blocks(confirmation) == Enum.to_list(11..20)
+        assert confirmed_blocks(later_confirmation) == Enum.to_list(@rollup_first_block..10)
+        assert unconfirmed_blocks() == []
+      end
+
       # The database has two batches: the blocks 1..10 and the blocks 11..20. An
       # earlier confirmation covers the full first batch. The blocks 11..20 are not
       # confirmed.
