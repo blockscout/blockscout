@@ -2092,9 +2092,10 @@ defmodule Explorer.Factory do
   end
 
   # Pure association factory — callers must supply `:batch_number` and `:block_number`
-  # as overrides referencing existing records. Both are required foreign keys on
-  # `Explorer.Chain.Arbitrum.BatchBlock`, so `insert(:arbitrum_batch_block)` without
-  # overrides will raise.
+  # as overrides referencing existing records. `batch_number` is a required foreign key
+  # on `Explorer.Chain.Arbitrum.BatchBlock`; `block_number` is a required standalone
+  # primary key with no foreign key to `blocks` (deliberate, so re-orgs of `blocks` don't
+  # cascade here). `insert(:arbitrum_batch_block)` without overrides will raise.
   def arbitrum_batch_block_factory do
     %ArbitrumBatchBlock{}
   end
