@@ -69,6 +69,10 @@ defmodule EthereumJSONRPC.Transport do
 
   @typedoc """
   A batch of `t:response/0`.  Each `t:response/0` will have an `"id"` corresponding to the `"id"` in the `t:request/0`.
+
+  The order of the responses is **not** guaranteed to match the order of the requests: the
+  [JSONRPC specification](https://www.jsonrpc.org/specification#batch) allows a server to respond in any order and
+  `EthereumJSONRPC.HTTP` can split a batch into several requests. Callers must match responses to requests by `"id"`.
   """
   @type batch_response :: [response]
 
