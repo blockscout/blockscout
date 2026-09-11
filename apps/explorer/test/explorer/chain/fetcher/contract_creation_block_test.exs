@@ -58,6 +58,19 @@ defmodule Explorer.Chain.Fetcher.ContractCreationBlockTest do
       assert {:error, :max_retries} = ContractCreationBlock.find(@address, opts(4, max_retries: 2))
     end
 
+    test "returns the only block of a singleton range without any request" do
+      assert {:ok, 0} = ContractCreationBlock.find(@address, opts(0))
+    end
+
+    test "returns block 0 when the nonce is already positive there" do
+      # Regression: a positive nonce at the lower block of a two-block range used to move
+      # the right bound below the left one and re-request the same block forever.
+      EthereumJSONRPC.Mox
+      |> eth_get_transaction_count_mock("0x0", "0x1")
+
+      assert {:ok, 0} = ContractCreationBlock.find(@address, opts(1))
+    end
+
     test "converges on the right bound when the nonce is 0 at every block" do
       # Pre-Spurious-Dragon contracts and some predeploys never get a nonce, so the
       # search cannot distinguish them from a contract created in the last block.
