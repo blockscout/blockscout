@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.RollupEntities do
 
   import EthereumJSONRPC, only: [quantity_to_integer: 1]
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1, log_warning: 1]
 
   alias EthereumJSONRPC.Block.ByNumber, as: BlockByNumber
 
@@ -65,7 +65,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.RollupEntities do
     if required_blocks_numbers == [] do
       {%{}, []}
     else
-      log_debug("Identified #{length(required_blocks_numbers)} rollup blocks")
+      total_blocks = length(required_blocks_numbers)
+      log_debug("Identified #{total_blocks} rollup blocks")
+
+      if total_blocks > 1000 do
+        log_warning(
+          "Unusually wide batch range detected: #{total_blocks} rollup blocks across batches. Fetching in bounded chunks..."
+        )
+      end
 
       {blocks_to_import_map, transactions_to_import_list} =
         get_rollup_blocks_and_transactions_from_db(required_blocks_numbers, blocks_to_batches)
