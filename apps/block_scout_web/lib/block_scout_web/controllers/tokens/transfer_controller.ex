@@ -92,13 +92,14 @@ defmodule BlockScoutWeb.Tokens.TransferController do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, token} <- Chain.token_from_address_hash(address_hash, options),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
+      TokenTotalSupplyOnDemand.trigger_fetch(ip, token)
+
       render(
         conn,
         "index.html",
         counters_path: token_path(conn, :token_counters, %{"id" => Address.checksum(address_hash)}),
         current_path: Controller.current_full_path(conn),
         token: token,
-        token_total_supply_status: TokenTotalSupplyOnDemand.trigger_fetch(ip, address_hash),
         tags: get_address_tags(address_hash, current_user(conn))
       )
     else
