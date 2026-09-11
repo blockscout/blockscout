@@ -23,12 +23,11 @@ defmodule Explorer.Repo.ConfigHelper do
 
   def get_db_config(opts) do
     url_encoded = opts[:url]
-    url = url_encoded && URI.decode(url_encoded)
     env_function = opts[:env_func] || (&System.get_env/1)
 
     @postgrex_env_vars
     |> get_env_vars(env_function)
-    |> Keyword.merge(extract_parameters(url))
+    |> Keyword.merge(extract_parameters(url_encoded))
   end
 
   def get_account_db_url,
@@ -122,11 +121,19 @@ defmodule Explorer.Repo.ConfigHelper do
 
   # sobelow_skip ["DOS.StringToAtom"]
   def extract_parameters(database_url) do
-    ~r/\w*:\/\/(?<username>[a-zA-Z0-9_-]*):(?<password>[a-zA-Z0-9-*#!%^&$_.]*)?@(?<hostname>(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])):(?<port>\d+)\/(?<database>[a-zA-Z0-9_\-]*)(\?.*search_path=(?<search_path>[a-zA-Z0-9_\-,]+))?/
-    |> Regex.named_captures(database_url)
-    |> Keyword.new(fn {k, v} -> {String.to_atom(k), v} end)
-    |> Keyword.put(:url, database_url)
-    |> adjust_search_path()
+    case Regex.named_captures(
+           ~r/\w*:\/\/(?<username>[a-zA-Z0-9-*#!%^&$_.]*)(:(?<password>[a-zA-Z0-9-*#!%^&$_.]*))?@(?<hostname>(([a-zA-Z0-9%]|[a-zA-Z0-9%][a-zA-Z0-9\-%]*[a-zA-Z0-9%])\.)*([A-Za-z0-9%]|[A-Za-z0-9%][A-Za-z0-9\-%]*[A-Za-z0-9%])):(?<port>\d+)\/(?<database>[a-zA-Z0-9_\-%]*)(\?.*search_path=(?<search_path>[a-zA-Z0-9_\-,%]+))?/,
+           database_url
+         ) do
+      nil ->
+        []
+
+      captures ->
+        captures
+        |> Keyword.new(fn {k, v} -> {String.to_atom(k), (if is_binary(v), do: URI.decode(v), else: v)} end)
+        |> Keyword.put(:url, database_url)
+        |> adjust_search_path()
+    end
   end
 
   defp adjust_search_path(params) do
