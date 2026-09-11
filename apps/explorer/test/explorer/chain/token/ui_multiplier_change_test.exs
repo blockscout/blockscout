@@ -2,6 +2,8 @@
 defmodule Explorer.Chain.Token.UIMultiplierChangeTest do
   use Explorer.DataCase
 
+  import ExUnit.CaptureLog
+
   alias Explorer.Chain.Token.UIMultiplierChange
 
   @one Decimal.new("1000000000000000000")
@@ -170,6 +172,58 @@ defmodule Explorer.Chain.Token.UIMultiplierChangeTest do
   end
 
   describe "insert_changes/1" do
+    test "records a change whose hashes are still the strings the log carried" do
+      # the shape `Indexer.Transform.TokenTransfers` hands over: both hashes are
+      # taken straight off the log and have not been cast yet, while
+      # `insert_all/3` dumps rather than casts and would raise on them
+      token = insert(:token)
+      block = insert(:block, number: 100)
+
+      UIMultiplierChange.insert_changes([
+        %{
+          token_contract_address_hash: to_string(token.contract_address_hash),
+          block_number: block.number,
+          block_hash: to_string(block.hash),
+          log_index: 5,
+          old_multiplier: @two,
+          new_multiplier: @four,
+          effective_at: ~U[2026-09-01 00:00:00.000000Z]
+        }
+      ])
+
+      assert change =
+               Repo.get_by(UIMultiplierChange,
+                 token_contract_address_hash: token.contract_address_hash,
+                 block_number: block.number,
+                 log_index: 5
+               )
+
+      assert change.block_hash == block.hash
+      assert Decimal.equal?(change.new_multiplier, @four)
+    end
+
+    test "drops a change carrying an unparsable hash instead of taking the caller down" do
+      block = insert(:block, number: 100)
+
+      log =
+        capture_log(fn ->
+          assert UIMultiplierChange.insert_changes([
+                   %{
+                     token_contract_address_hash: "not a hash",
+                     block_number: block.number,
+                     block_hash: to_string(block.hash),
+                     log_index: 5,
+                     old_multiplier: @two,
+                     new_multiplier: @four,
+                     effective_at: ~U[2026-09-01 00:00:00.000000Z]
+                   }
+                 ]) == {0, nil}
+        end)
+
+      assert log =~ "unparsable hash"
+      assert Repo.all(UIMultiplierChange) == []
+    end
+
     test "stops recording once a token reached the cap" do
       token = insert(:token)
       block = insert(:block, number: 100)
