@@ -14,7 +14,7 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
   alias Explorer.SmartContract.RustVerifierInterface
 
   import Explorer.SmartContract.Helper,
-    only: [fetch_data_for_verification: 1, prepare_bytecode_for_microservice: 3, contract_creation_input: 1]
+    only: [fetch_data_for_verification: 3, prepare_bytecode_for_microservice: 3, contract_creation_input: 1]
 
   def evaluate_authenticity(_, %{"contract_source_code" => ""}),
     do: {:error, :contract_source_code}
@@ -118,7 +118,8 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
   end
 
   defp vyper_verify_multipart(params, evm_version, files, address_hash) do
-    {creation_transaction_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
+    {creation_transaction_input, deployed_bytecode, verifier_metadata} =
+      fetch_data_for_verification(address_hash, nil, on_demand?: true)
 
     %{}
     |> prepare_bytecode_for_microservice(creation_transaction_input, deployed_bytecode)
@@ -130,7 +131,8 @@ defmodule Explorer.SmartContract.Vyper.Verifier do
   end
 
   defp vyper_verify_standard_json(params, address_hash) do
-    {creation_transaction_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
+    {creation_transaction_input, deployed_bytecode, verifier_metadata} =
+      fetch_data_for_verification(address_hash, nil, on_demand?: true)
 
     %{}
     |> prepare_bytecode_for_microservice(creation_transaction_input, deployed_bytecode)
