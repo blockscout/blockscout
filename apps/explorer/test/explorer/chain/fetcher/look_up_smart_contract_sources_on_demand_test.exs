@@ -96,4 +96,29 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemandTest do
       assert :ets.lookup(@ets_table, String.downcase(address_hash_string)) != []
     end
   end
+
+  describe "creation data" do
+    test "keeps chainId in the metadata and does not discover creation data on demand" do
+      test_pid = self()
+
+      # No `EthereumJSONRPC.Mox` expectations are set: a nonce or trace request
+      # would raise in the fetcher and the request below would never be sent.
+      Explorer.Mock.TeslaAdapter
+      |> stub(:call, fn %Tesla.Env{} = env, _opts ->
+        send(test_pid, {:eth_bytecode_db_request, Jason.decode!(env.body)})
+        {:ok, %Tesla.Env{env | status: 200, body: Jason.encode!(%{"sources" => []})}}
+      end)
+
+      address = insert(:contract_address)
+
+      GenServer.cast(LookUpSmartContractSourcesOnDemand, {:check_eligibility, to_string(address.hash)})
+
+      assert_receive {:eth_bytecode_db_request, body}, 1_000
+
+      assert body["bytecodeType"] == "DEPLOYED_BYTECODE"
+      assert Map.has_key?(body["metadata"], "chainId")
+      assert body["metadata"]["contractAddress"] == to_string(address.hash)
+      refute Map.has_key?(body["metadata"], "creationCode")
+    end
+  end
 end
