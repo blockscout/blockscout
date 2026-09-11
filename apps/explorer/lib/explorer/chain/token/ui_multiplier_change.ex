@@ -93,6 +93,10 @@ defmodule Explorer.Chain.Token.UIMultiplierChange do
   Replaying a log, or a reorg putting a different one at the same position, has
   to converge on the current content of the block, so an existing row is
   overwritten rather than kept.
+
+  The hashes of a change may arrive either as `0x`-prefixed strings or as
+  already cast structs, depending on which producer parsed the log, and both
+  shapes are accepted.
   """
   @spec insert_changes([map()]) :: {non_neg_integer(), nil}
   def insert_changes([]), do: {0, nil}
@@ -100,15 +104,41 @@ defmodule Explorer.Chain.Token.UIMultiplierChange do
   def insert_changes(changes) do
     now = DateTime.utc_now()
 
-    entries =
-      changes
-      |> reject_over_cap()
-      |> Enum.map(&Map.merge(&1, %{inserted_at: now, updated_at: now}))
+    changes
+    |> Enum.flat_map(&cast_hashes/1)
+    |> reject_over_cap()
+    |> Enum.map(&Map.merge(&1, %{inserted_at: now, updated_at: now}))
+    |> insert_entries()
+  end
 
+  defp insert_entries([]), do: {0, nil}
+
+  defp insert_entries(entries) do
     Repo.safe_insert_all(__MODULE__, entries,
       on_conflict: {:replace, [:block_hash, :old_multiplier, :new_multiplier, :effective_at, :updated_at]},
       conflict_target: [:token_contract_address_hash, :block_number, :log_index]
     )
+  end
+
+  # `Indexer.Transform.TokenTransfers` takes the hashes straight off the log,
+  # where they are still the strings the node answered with, while
+  # `Explorer.Migrator.BackfillScaledUIAmountTokens` reads its logs through Ecto
+  # and gets them as structs. `insert_all/3` dumps values rather than casting
+  # them the way a changeset would, and dumping a string raises — taking the
+  # caller down with it, along with everything else it was about to write — so
+  # both shapes are cast here, at the one point both producers go through.
+  defp cast_hashes(change) do
+    with {:ok, token_contract_address_hash} <- Hash.Address.cast(change.token_contract_address_hash),
+         {:ok, block_hash} <- Hash.Full.cast(change.block_hash) do
+      [%{change | token_contract_address_hash: token_contract_address_hash, block_hash: block_hash}]
+    else
+      :error ->
+        Logger.error(fn ->
+          "Refusing an ERC-8056 multiplier change that carries an unparsable hash: #{inspect(change)}"
+        end)
+
+        []
+    end
   end
 
   defp reject_over_cap(changes) do
