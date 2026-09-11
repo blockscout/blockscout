@@ -331,5 +331,11 @@ defmodule Explorer.SmartContract.CreationDataResolver do
 
   defp max_wait, do: Keyword.get(config(), :max_wait) || @default_max_wait
 
-  defp poll_interval, do: Keyword.get(config(), :poll_interval) || @default_poll_interval
+  # A non-positive interval would make `poll_block/2` spin without consuming `max_wait`.
+  defp poll_interval do
+    case Keyword.get(config(), :poll_interval) do
+      interval when is_integer(interval) and interval > 0 -> interval
+      _ -> @default_poll_interval
+    end
+  end
 end
