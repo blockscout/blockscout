@@ -101,7 +101,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @token_options)} do
-      TokenTotalSupplyOnDemand.trigger_fetch(ip, address_hash)
+      TokenTotalSupplyOnDemand.trigger_fetch(ip, token)
 
       conn
       |> token_response(token, address_hash)
