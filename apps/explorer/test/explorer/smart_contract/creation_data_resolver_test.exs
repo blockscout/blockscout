@@ -103,6 +103,25 @@ defmodule Explorer.SmartContract.CreationDataResolverTest do
       assert [%{from_number: 3, to_number: 3, priority: 1}] = Repo.all(MissingBlockRange)
     end
 
+    test "falls back to the default poll interval when the configured one is not positive", %{
+      address: address,
+      address_hash_string: address_hash_string
+    } do
+      # a zero interval would otherwise spin without ever consuming max_wait
+      Application.put_env(
+        :explorer,
+        CreationDataResolver,
+        Keyword.merge(Application.get_env(:explorer, CreationDataResolver), poll_interval: 0)
+      )
+
+      insert_blocks([0, 1, 2, 4])
+
+      EthereumJSONRPC.Mox
+      |> expect_discovery_of_block_3(address_hash_string)
+
+      assert {:error, :block_not_indexed} = CreationDataResolver.resolve(address.hash)
+    end
+
     test "returns the top-level creation transaction when the DB catches up during the wait", %{
       address: address,
       address_hash_string: address_hash_string

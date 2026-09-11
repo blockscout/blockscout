@@ -50,6 +50,10 @@ defmodule Explorer.Chain.Fetcher.ContractCreationBlock do
     search(block_ranges, context, Keyword.get(opts, :max_retries, @default_max_retries))
   end
 
+  # A singleton range needs no request: the only candidate is the block itself
+  # (which is also the right bound, validated by the caller).
+  defp search(%{left: block_number, right: block_number}, _context, _retries_left), do: {:ok, block_number}
+
   defp search(block_ranges, context, retries_left) do
     medium = trunc((block_ranges.right - block_ranges.left) / 2)
     medium_position = block_ranges.left + medium
@@ -69,8 +73,10 @@ defmodule Explorer.Chain.Fetcher.ContractCreationBlock do
             |> maybe_continue(context, 0, retries_left)
 
           {:ok, %{nonce: nonce}} when nonce > 0 ->
+            # a positive nonce means the contract exists at `medium_position`, so the
+            # block stays a candidate; moving the bound below it would invert the range
             block_ranges
-            |> Map.put(:right, new_right_position(medium, medium_position))
+            |> Map.put(:right, medium_position)
             |> maybe_continue(context, nonce, retries_left)
 
           _ ->
@@ -100,10 +106,6 @@ defmodule Explorer.Chain.Fetcher.ContractCreationBlock do
 
   defp new_left_position(medium, medium_position) do
     if medium == 0, do: medium_position + 1, else: medium_position
-  end
-
-  defp new_right_position(medium, medium_position) do
-    if medium == 0, do: medium_position - 1, else: medium_position
   end
 
   defp maybe_continue(block_ranges, context, nonce, retries_left) do
