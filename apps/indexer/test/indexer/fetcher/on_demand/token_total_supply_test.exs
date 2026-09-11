@@ -57,6 +57,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupplyTest do
       wait_until(fn -> :ets.lookup(@table, key(token)) == [] end)
       assert %{running: running} = :sys.get_state(Fetcher)
       assert running == %{}
+      assert :ets.lookup(@table, :slots) == [{:slots, 0}]
     end
 
     test "does not enqueue a token that is already in flight" do
@@ -144,6 +145,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupplyTest do
       sync()
 
       assert :ets.lookup(@table, key(token_b)) == []
+      assert :ets.lookup(@table, :slots) == [{:slots, 1}]
       assert %{running: running} = :sys.get_state(Fetcher)
       assert map_size(running) == 1
       refute_receive {:rpc, ^hash_b_string}, 100
@@ -151,6 +153,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupplyTest do
       send(task_pid, :continue)
       assert_receive {:chain_event, :token_total_supply, :on_demand, [%Token{}]}, 1_000
       wait_until(fn -> map_size(:sys.get_state(Fetcher).running) == 0 end)
+      assert :ets.lookup(@table, :slots) == [{:slots, 0}]
 
       expect_total_supply(hash_b_string, fn id -> {:ok, [%{id: id, result: @total_supply_hex}]} end)
       assert :ok = Fetcher.trigger_fetch(token_b)

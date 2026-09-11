@@ -33,6 +33,10 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupply do
   @default_threshold :timer.minutes(5)
   @sweep_interval :timer.minutes(1)
 
+  # Non-token entries kept in the same ETS table.
+  @slots_key :slots
+  @max_concurrency_key :max_concurrency
+
   @typep key :: binary()
 
   ## Interface
@@ -50,7 +54,9 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupply do
          true <- table_exists?(),
          true <- stale?(token, BlockNumber.get_max()),
          :allow <- RateLimiter.check_rate(caller, :on_demand),
-         true <- claim(key(token)) do
+         key = key(token),
+         true <- claim(key),
+         true <- reserve_slot(key) do
       GenServer.cast(__MODULE__, {:fetch, token})
     else
       _ -> :ok
@@ -73,24 +79,21 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupply do
         Application.get_env(:indexer, __MODULE__, [])[:max_concurrency] ||
         @default_max_concurrency
 
-    {:ok, %{running: %{}, max_concurrency: max_concurrency}}
+    :ets.insert(@table_name, [{@slots_key, 0}, {@max_concurrency_key, max_concurrency}])
+
+    {:ok, %{running: %{}}}
   end
 
   @impl true
-  def handle_cast({:fetch, %Token{} = token}, %{running: running, max_concurrency: max_concurrency} = state) do
+  def handle_cast({:fetch, %Token{} = token}, %{running: running} = state) do
     key = key(token)
 
-    cond do
-      key in Map.values(running) ->
-        {:noreply, state}
-
-      map_size(running) >= max_concurrency ->
-        :ets.delete(@table_name, key)
-        {:noreply, state}
-
-      true ->
-        %Task{ref: ref} = Task.Supervisor.async_nolink(__MODULE__.TaskSupervisor, fn -> do_fetch(token) end)
-        {:noreply, %{state | running: Map.put(running, ref, key)}}
+    if key in Map.values(running) do
+      release_slot()
+      {:noreply, state}
+    else
+      %Task{ref: ref} = Task.Supervisor.async_nolink(__MODULE__.TaskSupervisor, fn -> do_fetch(token) end)
+      {:noreply, %{state | running: Map.put(running, ref, key)}}
     end
   end
 
@@ -99,6 +102,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupply do
     Process.demonitor(ref, [:flush])
     {key, running} = Map.pop(running, ref)
     finish(key, result)
+    release_slot()
 
     {:noreply, %{state | running: running}}
   end
@@ -107,6 +111,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupply do
     {key, running} = Map.pop(running, ref)
     Logger.error("On-demand token total supply fetch crashed: #{inspect(reason)}")
     mark_failed(key)
+    release_slot()
 
     {:noreply, %{state | running: running}}
   end
@@ -169,13 +174,38 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupply do
       [{_key, :in_flight, _at}] ->
         false
 
-      [{_key, :failed, failed_at}] ->
-        if now - failed_at < threshold_ms() do
-          false
-        else
-          :ets.insert(@table_name, {key, :in_flight, now})
-          true
-        end
+      [{_key, :failed, _failed_at}] ->
+        # Atomically replace the failure record only if it is old enough, so
+        # concurrent callers cannot both claim the same expired token.
+        expired_before = now - threshold_ms()
+
+        match_spec = [
+          {{key, :failed, :"$1"}, [{:"=<", :"$1", expired_before}], [{{{:const, key}, :in_flight, {:const, now}}}]}
+        ]
+
+        :ets.select_replace(@table_name, match_spec) == 1
+    end
+  end
+
+  # Reserves one of `max_concurrency` fetch slots. On failure, releases the
+  # token claim so a later request can retry.
+  @spec reserve_slot(key()) :: boolean()
+  defp reserve_slot(key) do
+    if :ets.update_counter(@table_name, @slots_key, {2, 1}) > max_concurrency() do
+      release_slot()
+      :ets.delete(@table_name, key)
+      false
+    else
+      true
+    end
+  end
+
+  defp release_slot, do: :ets.update_counter(@table_name, @slots_key, {2, -1})
+
+  defp max_concurrency do
+    case :ets.lookup(@table_name, @max_concurrency_key) do
+      [{_key, max_concurrency}] -> max_concurrency
+      [] -> @default_max_concurrency
     end
   end
 
