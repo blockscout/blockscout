@@ -745,6 +745,11 @@ config :explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
   eth_bytecode_db?: enabled? && type == "eth_bytecode_db",
   api_key: System.get_env("MICROSERVICE_SC_VERIFIER_API_KEY")
 
+config :explorer, Explorer.SmartContract.CreationDataResolver,
+  enabled: ConfigHelper.parse_bool_env_var("CONTRACT_VERIFICATION_ON_DEMAND_CREATION_DATA_ENABLED", "true"),
+  max_wait: ConfigHelper.parse_time_env_var("CONTRACT_VERIFICATION_ON_DEMAND_CREATION_DATA_MAX_WAIT", "20s"),
+  poll_interval: ConfigHelper.parse_time_env_var("CONTRACT_VERIFICATION_ON_DEMAND_CREATION_DATA_POLL_INTERVAL", "2s")
+
 config :explorer, Explorer.Visualize.Sol2uml,
   service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_VISUALIZE_SOL2UML_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_VISUALIZE_SOL2UML_ENABLED")

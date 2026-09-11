@@ -12,7 +12,7 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   import Explorer.SmartContract.Helper,
     only: [
       cast_libraries: 1,
-      fetch_data_for_verification: 1,
+      fetch_data_for_verification: 3,
       parse_solidity_verification_language: 1,
       prepare_bytecode_for_microservice: 3
     ]
@@ -49,7 +49,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   end
 
   defp evaluate_authenticity_inner(true, address_hash, params) do
-    {creation_transaction_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
+    {creation_transaction_input, deployed_bytecode, verifier_metadata} =
+      fetch_data_for_verification(address_hash, nil, on_demand?: true)
 
     %{}
     |> prepare_bytecode_for_microservice(creation_transaction_input, deployed_bytecode)
@@ -131,7 +132,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   end
 
   def evaluate_authenticity_via_standard_json_input_inner(true, address_hash, params, json_input) do
-    {creation_transaction_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
+    {creation_transaction_input, deployed_bytecode, verifier_metadata} =
+      fetch_data_for_verification(address_hash, nil, on_demand?: true)
 
     verification_params =
       if Application.get_env(:explorer, :chain_type) == :zksync do
@@ -158,7 +160,8 @@ defmodule Explorer.SmartContract.Solidity.Verifier do
   end
 
   def evaluate_authenticity_via_multi_part_files(address_hash, params, files) do
-    {creation_transaction_input, deployed_bytecode, verifier_metadata} = fetch_data_for_verification(address_hash)
+    {creation_transaction_input, deployed_bytecode, verifier_metadata} =
+      fetch_data_for_verification(address_hash, nil, on_demand?: true)
 
     %{}
     |> prepare_bytecode_for_microservice(creation_transaction_input, deployed_bytecode)
