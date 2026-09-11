@@ -183,6 +183,19 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupplyTest do
       assert :ets.whereis(@table) == :undefined
       assert :ok = Fetcher.trigger_fetch(token)
     end
+
+    test "does not raise when ETS operations fail after the table check" do
+      token = stale_token()
+      # Simulates the table being torn down between `table_exists?/0` and the
+      # ETS calls: the slot counter is gone, so `:ets.update_counter/3` raises.
+      :ets.delete(@table, :slots)
+
+      assert :ok = Fetcher.trigger_fetch(token)
+      sync()
+
+      assert %{running: running} = :sys.get_state(Fetcher)
+      assert running == %{}
+    end
   end
 
   describe "sweep" do

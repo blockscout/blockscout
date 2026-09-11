@@ -54,9 +54,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupply do
          true <- table_exists?(),
          true <- stale?(token, BlockNumber.get_max()),
          :allow <- RateLimiter.check_rate(caller, :on_demand),
-         key = key(token),
-         true <- claim(key),
-         true <- reserve_slot(key) do
+         true <- claim_and_reserve_slot(key(token)) do
       GenServer.cast(__MODULE__, {:fetch, token})
     else
       _ -> :ok
@@ -160,6 +158,17 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupply do
 
   defp stale?(%Token{total_supply_updated_at_block: updated_at_block}, max_block_number),
     do: max_block_number - updated_at_block > @ttl_in_blocks
+
+  # Claims the token and a fetch slot. The ETS table is owned by the GenServer,
+  # so it can disappear between `table_exists?/0` and these calls when the
+  # fetcher is terminating; treat that as "nothing to do" instead of crashing
+  # the request process.
+  @spec claim_and_reserve_slot(key()) :: boolean()
+  defp claim_and_reserve_slot(key) do
+    claim(key) and reserve_slot(key)
+  rescue
+    ArgumentError -> false
+  end
 
   # Marks the token as in flight. Returns `false` when it is already in flight
   # or failed less than `threshold` ago.
