@@ -9,12 +9,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   use GenServer
   use Indexer.Fetcher, restart: :permanent
 
-  import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2]
-
-  alias EthereumJSONRPC.Nonce
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain.{Address, Block, PendingOperationsHelper}
-  alias Explorer.Chain.Cache.BlockNumber
+  alias Explorer.Chain.Fetcher.ContractCreationBlock
   alias Explorer.Utility.MissingBlockRange
   alias Indexer.Fetcher.InternalTransaction
 
@@ -79,88 +76,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
   @spec fetch_contract_creator_address_hash(Explorer.Chain.Hash.Address.t()) :: non_neg_integer() | :error
   defp fetch_contract_creator_address_hash(address_hash) do
-    max_block_number = BlockNumber.get_max()
-
-    initial_block_ranges = %{
-      left: 0,
-      right: max_block_number,
-      previous_nonce: nil
-    }
-
-    find_contract_creation_block_number(initial_block_ranges, address_hash, @max_json_rpc_retries)
-  end
-
-  defp find_contract_creation_block_number(block_ranges, address_hash, retries_left) do
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-    medium = trunc((block_ranges.right - block_ranges.left) / 2)
-    medium_position = block_ranges.left + medium
-
-    params = %{block_quantity: integer_to_quantity(medium_position), address: to_string(address_hash)}
-
-    id_to_params = id_to_params([params])
-
-    case params
-         |> Map.merge(%{id: 0})
-         |> Nonce.request()
-         |> json_rpc(json_rpc_named_arguments) do
-      {:ok, response} ->
-        case Nonce.from_response(%{id: 0, result: response}, id_to_params) do
-          {:ok, %{nonce: 0}} ->
-            left_new = new_left_position(medium, medium_position)
-            block_ranges = Map.put(block_ranges, :left, left_new)
-
-            maybe_continue_binary_search(block_ranges, address_hash, 0, retries_left)
-
-          {:ok, %{nonce: nonce}} when nonce > 0 ->
-            right_new = new_right_position(medium, medium_position)
-            block_ranges = Map.put(block_ranges, :right, right_new)
-
-            maybe_continue_binary_search(block_ranges, address_hash, nonce, retries_left)
-
-          _ ->
-            Logger.error("Error while fetching 'eth_getTransactionCount' for address #{to_string(address_hash)}")
-            retry_find_contract_creation_block_number(block_ranges, address_hash, retries_left)
-        end
-
-      {:error, reason} ->
-        Logger.error(
-          "Error while fetching 'eth_getTransactionCount' for address #{to_string(address_hash)}: #{inspect(reason)}"
-        )
-
-        retry_find_contract_creation_block_number(block_ranges, address_hash, retries_left)
-    end
-  end
-
-  defp retry_find_contract_creation_block_number(_block_ranges, address_hash, 0) do
-    Logger.error("Reached max retry attempts for 'eth_getTransactionCount' for address #{to_string(address_hash)}")
-
-    :error
-  end
-
-  defp retry_find_contract_creation_block_number(block_ranges, address_hash, retries_left) do
-    :timer.sleep(1000)
-    find_contract_creation_block_number(block_ranges, address_hash, retries_left - 1)
-  end
-
-  defp new_left_position(medium, medium_position) do
-    if medium == 0, do: medium_position + 1, else: medium_position
-  end
-
-  defp new_right_position(medium, medium_position) do
-    if medium == 0, do: medium_position - 1, else: medium_position
-  end
-
-  defp maybe_continue_binary_search(block_ranges, address_hash, nonce, retries_left) do
-    cond do
-      block_ranges.left == block_ranges.right ->
-        block_ranges.left
-
-      block_ranges.right - block_ranges.left == 1 && nonce !== block_ranges.previous_nonce ->
-        block_ranges.right
-
-      true ->
-        block_ranges = Map.put(block_ranges, :previous_nonce, nonce)
-        find_contract_creation_block_number(block_ranges, address_hash, retries_left)
+    case ContractCreationBlock.find(address_hash, max_retries: @max_json_rpc_retries) do
+      {:ok, block_number} -> block_number
+      {:error, _} -> :error
     end
   end
 
