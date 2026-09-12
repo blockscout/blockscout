@@ -45,6 +45,16 @@ services:
     extends:
       file: ./services/redis.yml
       service: redis-db
+    # redis.yml doesn't define one, and plain `depends_on: - redis-db` below
+    # only waits for the container to START, not for redis-server to actually
+    # accept connections — harmless on coolify.yml's long-lived prod instance,
+    # but a real race against a genuinely fresh redis-db on first boot here.
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
   db:
     image: postgres:17
@@ -67,8 +77,18 @@ services:
 
   backend:
     depends_on:
-      - db
-      - redis-db
+      # Plain `depends_on: - db` (what coolify.yml uses) only waits for the
+      # container to start, not for Postgres/Redis to actually accept
+      # connections. backend's command runs a DB migration immediately
+      # (`Explorer.ReleaseTasks.create_and_migrate()`) with no connection
+      # retry of its own — on a brand-new db/redis-db booting for the first
+      # time, that race loses often enough to crash-loop the whole stack.
+      # Production's coolify.yml never hits this because its db has been
+      # up for a long time by the point backend ever restarts.
+      db:
+        condition: service_healthy
+      redis-db:
+        condition: service_healthy
     extends:
       file: ./services/backend-source-build.yml
       service: backend
