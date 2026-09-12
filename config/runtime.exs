@@ -1187,6 +1187,9 @@ config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor, disabled?: disab
 
 config :indexer, Indexer.Fetcher.Token, concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_CONCURRENCY", 10)
 
+config :indexer, Indexer.Fetcher.Token.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_FETCHER")
+
 config :indexer, Indexer.Fetcher.TokenBalance.Historical,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_ARCHIVAL_TOKEN_BALANCES_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_ARCHIVAL_TOKEN_BALANCES_CONCURRENCY", 10),
@@ -1200,6 +1203,9 @@ config :indexer, Indexer.Fetcher.TokenBalance.Historical.Supervisor,
 config :indexer, Indexer.Fetcher.TokenBalance.Current,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_CURRENT_TOKEN_BALANCES_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_CURRENT_TOKEN_BALANCES_CONCURRENCY", 10)
+
+config :indexer, Indexer.Fetcher.TokenBalance.Current.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CURRENT_TOKEN_BALANCES_FETCHER")
 
 config :indexer, Indexer.Fetcher.TokenCountersUpdater,
   milliseconds_interval: ConfigHelper.parse_time_env_var("TOKEN_COUNTERS_UPDATE_INTERVAL", "3h")
