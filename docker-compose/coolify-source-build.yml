@@ -67,7 +67,7 @@ services:
       - POSTGRES_USER=blockscout
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?set a fresh password in Coolify env vars}
     volumes:
-      - blockscout-db-data:/var/lib/postgresql/data
+      - blockscout-db-data-v2:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U blockscout -d blockscout"]
       interval: 10s
@@ -140,7 +140,7 @@ services:
       - POSTGRES_USER=stats
       - POSTGRES_PASSWORD=${STATS_POSTGRES_PASSWORD:?set a fresh password in Coolify env vars}
     volumes:
-      - stats-db-data:/var/lib/postgresql/data
+      - stats-db-data-v2:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U stats -d stats"]
       interval: 10s
@@ -167,5 +167,11 @@ services:
       - STATS__SERVER__HTTP__CORS__ALLOWED_ORIGIN=*
 
 volumes:
-  blockscout-db-data:
-  stats-db-data:
+  # -v2: the original blockscout-db-data volume accumulated a half-migrated
+  # schema from the crash-loop before the depends_on fix above (backend's
+  # migration task got killed mid-run, repeatedly, before Postgres/Redis were
+  # ever confirmed ready). Renaming forces Compose to create a genuinely
+  # fresh, empty volume instead of reusing that corrupted one; the old
+  # volume is simply orphaned, not deleted, no destructive action needed here.
+  blockscout-db-data-v2:
+  stats-db-data-v2:
