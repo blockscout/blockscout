@@ -103,6 +103,15 @@ services:
       # Websocket/API calls come from whatever domain Coolify generated for
       # the frontend, which BLOCKSCOUT_HOST can't know ahead of time anyway.
       - CHECK_ORIGIN=false
+      # env_file (../envs/common-blockscout.env, shared with production's
+      # coolify.yml) hardcodes DATABASE_URL with PRODUCTION's db password.
+      # `environment:` here wins over `env_file:` for the same key, so this
+      # overrides it to match whatever POSTGRES_PASSWORD this instance's own
+      # `db` was actually created with — without this override, every
+      # connection attempt gets rejected with FATAL 28P01 invalid_password,
+      # instantly and unconditionally, regardless of db/redis readiness or
+      # migration state (confirmed by reproducing the crash locally).
+      - DATABASE_URL=postgresql://blockscout:${POSTGRES_PASSWORD}@db:5432/blockscout
 
   frontend:
     depends_on:
@@ -161,6 +170,11 @@ services:
       - SERVICE_FQDN_STATS_8050
       # Reach the backend over the internal Docker network
       - STATS__BLOCKSCOUT_API_URL=http://backend:4000
+      # services/stats.yml's own defaults hardcode PRODUCTION's db/stats-db
+      # passwords (same class of bug as backend's DATABASE_URL above) —
+      # override both to match this instance's own required passwords.
+      - STATS__DB_URL=postgres://stats:${STATS_POSTGRES_PASSWORD}@stats-db:5432/stats
+      - STATS__BLOCKSCOUT_DB_URL=postgresql://blockscout:${POSTGRES_PASSWORD}@db:5432/blockscout
       # Frontend's real origin isn't known at compose-parse time with an
       # auto-generated domain — see the header comment.
       - STATS__SERVER__HTTP__CORS__ENABLED=true
