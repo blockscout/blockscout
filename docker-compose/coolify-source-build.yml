@@ -12,11 +12,25 @@
 #   - backend is built (docker-compose/services/backend-source-build.yml)
 #     instead of pulling a prebuilt image; everything else (frontend,
 #     visualizer, sig-provider, stats) still pulls prebuilt images, unchanged.
-#   - hostnames are NOT hardcoded (coolify.yml hardcodes *.metrixchain.com —
-#     reusing those here would make Coolify fight the existing production
-#     instance for the same domains). Set BACKEND_HOST / EXPLORER_HOST /
-#     STATS_HOST / VISUALIZER_HOST as env vars on this Coolify resource before
-#     first deploy — e.g. backend-v11.metrixchain.com, explorer-v11...
+#   - No custom domains. `SERVICE_FQDN_*` below is left bare (no `=value`),
+#     which tells Coolify to generate its own *.sslip.io URL for each public
+#     service and wire the Traefik routing — same mechanism
+#     metrix-backend/docker-compose.coolify.yml already uses for SERVICE_FQDN_METRIX_3000.
+#     Nothing here needs BLOCKSCOUT_HOST or a per-service hostname var:
+#       - BLOCKSCOUT_HOST only affects a few self-referential URLs in some API
+#         JSON responses (config/runtime.exs) — left unset, defaults to
+#         "localhost". Cosmetic only, doesn't block anything.
+#       - The backend's own API CORS has no origin allowlist in prod builds
+#         (BlockScoutWeb.Endpoint's @cors_plug_options only restricts origin
+#         in Mix.env() == :dev) — wide open regardless of what domain the
+#         frontend ends up on.
+#       - The stats microservice DOES have its own CORS allowlist
+#         (STATS__SERVER__HTTP__CORS__ALLOWED_ORIGIN), which needs the
+#         frontend's real origin — unknowable at compose-parse time when the
+#         domain is auto-generated. Set to `*` below. Stats is read-only,
+#         unauthenticated aggregate chain data, so this is a low-risk
+#         simplification for a non-custom-domain deploy — tighten it to the
+#         actual generated frontend URL later if this becomes long-lived.
 #   - DB/stats-db passwords below are placeholders for a fresh instance; if
 #     this second instance is meant to serve the SAME data as production,
 #     point DATABASE_URL (in envs/common-blockscout.env) at the existing DB
@@ -63,9 +77,11 @@ services:
     expose:
       - "4000"
     environment:
-      - SERVICE_FQDN_BACKEND_4000=https://${BACKEND_HOST:?set BACKEND_HOST in Coolify env vars, e.g. backend-v11.metrixchain.com}
-      - BLOCKSCOUT_HOST=${BACKEND_HOST}
-      - BLOCKSCOUT_PROTOCOL=https
+      # Bare (no value): Coolify generates a *.sslip.io URL for this
+      # service:port and routes it via Traefik.
+      - SERVICE_FQDN_BACKEND_4000
+      # Websocket/API calls come from whatever domain Coolify generated for
+      # the frontend, which BLOCKSCOUT_HOST can't know ahead of time anyway.
       - CHECK_ORIGIN=false
 
   frontend:
@@ -77,7 +93,7 @@ services:
     expose:
       - "3000"
     environment:
-      - SERVICE_FQDN_FRONTEND_3000=https://${EXPLORER_HOST:?set EXPLORER_HOST in Coolify env vars, e.g. explorer-v11.metrixchain.com}
+      - SERVICE_FQDN_FRONTEND_3000
 
   visualizer:
     extends:
@@ -86,7 +102,7 @@ services:
     expose:
       - "8050"
     environment:
-      - SERVICE_FQDN_VISUALIZER_8050=https://${VISUALIZER_HOST:?set VISUALIZER_HOST in Coolify env vars, e.g. visualizer-v11.metrixchain.com}
+      - SERVICE_FQDN_VISUALIZER_8050
 
   sig-provider:
     extends:
@@ -122,10 +138,13 @@ services:
     expose:
       - "8050"
     environment:
-      - SERVICE_FQDN_STATS_8050=https://${STATS_HOST:?set STATS_HOST in Coolify env vars, e.g. stats-v11.metrixchain.com}
+      - SERVICE_FQDN_STATS_8050
+      # Reach the backend over the internal Docker network
       - STATS__BLOCKSCOUT_API_URL=http://backend:4000
+      # Frontend's real origin isn't known at compose-parse time with an
+      # auto-generated domain — see the header comment.
       - STATS__SERVER__HTTP__CORS__ENABLED=true
-      - STATS__SERVER__HTTP__CORS__ALLOWED_ORIGIN=https://${EXPLORER_HOST}
+      - STATS__SERVER__HTTP__CORS__ALLOWED_ORIGIN=*
 
 volumes:
   blockscout-db-data:
