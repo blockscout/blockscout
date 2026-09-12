@@ -1,0 +1,42 @@
+version: '3.9'
+
+# Variante de services/backend.yml que builda a imagem a partir do código-fonte
+# deste repositório (docker/Dockerfile) em vez de puxar ghcr.io/blockscout/blockscout.
+#
+# Motivo: a imagem pré-compilada está travada na v9.0.2 (ghcr.io/blockscout/blockscout
+# não publica há cerca de um ano), e recursos usados hoje só existem a partir da
+# v10.0.0 — por exemplo o auth de admin (API_SENSITIVE_ENDPOINTS_KEY) só passou a
+# aceitar a chave via header x-api-key na v10.0.0; na v9.0.2 ele só lê
+# ?api_key=... na query string. O HEAD deste repositório é v11.2.1.
+#
+# Build args replicados de .github/workflows/release-default.yml (o workflow
+# oficial que publica a imagem "default"/genérica, sem customização de chain) —
+# para o build daqui produzir o mesmo binário que o upstream publicaria.
+services:
+  backend:
+    build:
+      # Contexto = raiz do repo (este arquivo vive em docker-compose/services/,
+      # então ../.. sobe até a raiz onde ficam apps/, config/, mix.exs, rel/,
+      # que o Dockerfile espera copiar).
+      context: ../..
+      dockerfile: docker/Dockerfile
+      args:
+        RELEASE_VERSION: '11.2.1'
+        BLOCKSCOUT_VERSION: 'v11.2.1'
+        DECODE_NOT_A_CONTRACT_CALLS: 'false'
+        MIXPANEL_URL: ''
+        MIXPANEL_TOKEN: ''
+        AMPLITUDE_URL: ''
+        AMPLITUDE_API_KEY: ''
+    pull_policy: build
+    restart: always
+    stop_grace_period: 5m
+    container_name: 'backend'
+    command: sh -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      -  ../envs/common-blockscout.env
+    volumes:
+      - ./logs/:/app/logs/
+      - ./dets/:/app/dets/
