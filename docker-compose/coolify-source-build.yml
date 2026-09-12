@@ -16,21 +16,34 @@
 #     which tells Coolify to generate its own *.sslip.io URL for each public
 #     service and wire the Traefik routing — same mechanism
 #     metrix-backend/docker-compose.coolify.yml already uses for SERVICE_FQDN_METRIX_3000.
-#     Nothing here needs BLOCKSCOUT_HOST or a per-service hostname var:
-#       - BLOCKSCOUT_HOST only affects a few self-referential URLs in some API
-#         JSON responses (config/runtime.exs) — left unset, defaults to
-#         "localhost". Cosmetic only, doesn't block anything.
-#       - The backend's own API CORS has no origin allowlist in prod builds
-#         (BlockScoutWeb.Endpoint's @cors_plug_options only restricts origin
-#         in Mix.env() == :dev) — wide open regardless of what domain the
-#         frontend ends up on.
-#       - The stats microservice DOES have its own CORS allowlist
-#         (STATS__SERVER__HTTP__CORS__ALLOWED_ORIGIN), which needs the
-#         frontend's real origin — unknowable at compose-parse time when the
-#         domain is auto-generated. Set to `*` below. Stats is read-only,
-#         unauthenticated aggregate chain data, so this is a low-risk
-#         simplification for a non-custom-domain deploy — tighten it to the
-#         actual generated frontend URL later if this becomes long-lived.
+#     BLOCKSCOUT_HOST is still left unset on backend — it only affects a few
+#     self-referential URLs in some API JSON responses (config/runtime.exs),
+#     defaults to "localhost", cosmetic only. The backend's own API CORS also
+#     needs nothing here: it has no origin allowlist in prod builds
+#     (BlockScoutWeb.Endpoint's @cors_plug_options only restricts origin in
+#     Mix.env() == :dev), wide open regardless of the frontend's domain.
+#   - envs/common-frontend.env is SHARED with production's coolify.yml, so it
+#     can't hardcode this instance's domain (would break production, or vice
+#     versa) — it reads BACKEND_HOST/EXPLORER_HOST/STATS_HOST/VISUALIZER_HOST
+#     via Compose variable substitution instead, falling back to production's
+#     metrixchain.com domains when unset. Bootstrap in two steps because
+#     Coolify only generates the SERVICE_FQDN_* domains once this file is
+#     first deployed — there's no way to know them ahead of time:
+#       1. Deploy once with these four required vars still unset (Compose
+#          will refuse — that's expected). Or, if already deployed and the
+#          domains are already generated, check the application's resolved
+#          domains for the exact bare hostnames.
+#       2. Set BACKEND_HOST / EXPLORER_HOST / STATS_HOST / VISUALIZER_HOST in
+#          this Coolify resource's env vars to those bare hostnames (no
+#          scheme, no port) and redeploy.
+#     For this specific already-deployed resource (uuid
+#     rtga7pok9ym8rffzgjkkyldh, server 2.25.132.235), those are:
+#       BACKEND_HOST=backend-rtga7pok9ym8rffzgjkkyldh.2.25.132.235.sslip.io
+#       EXPLORER_HOST=frontend-rtga7pok9ym8rffzgjkkyldh.2.25.132.235.sslip.io
+#       STATS_HOST=stats-rtga7pok9ym8rffzgjkkyldh.2.25.132.235.sslip.io
+#       VISUALIZER_HOST=visualizer-rtga7pok9ym8rffzgjkkyldh.2.25.132.235.sslip.io
+#     Also lets stats' CORS allowlist use the real frontend origin instead of
+#     the `*` wildcard this file used before this was wired up.
 #   - DB/stats-db passwords below are placeholders for a fresh instance; if
 #     this second instance is meant to serve the SAME data as production,
 #     point DATABASE_URL (in envs/common-blockscout.env) at the existing DB
@@ -123,6 +136,13 @@ services:
       - "3000"
     environment:
       - SERVICE_FQDN_FRONTEND_3000
+      # envs/common-frontend.env (shared with production) reads these via
+      # Compose variable substitution to build NEXT_PUBLIC_API_HOST etc. —
+      # see the file header for how to find the right values.
+      - BACKEND_HOST=${BACKEND_HOST:?set BACKEND_HOST in Coolify env vars — see this file's header comment}
+      - EXPLORER_HOST=${EXPLORER_HOST:?set EXPLORER_HOST in Coolify env vars — see this file's header comment}
+      - STATS_HOST=${STATS_HOST:?set STATS_HOST in Coolify env vars — see this file's header comment}
+      - VISUALIZER_HOST=${VISUALIZER_HOST:?set VISUALIZER_HOST in Coolify env vars — see this file's header comment}
 
   visualizer:
     extends:
@@ -175,10 +195,8 @@ services:
       # override both to match this instance's own required passwords.
       - STATS__DB_URL=postgres://stats:${STATS_POSTGRES_PASSWORD}@stats-db:5432/stats
       - STATS__BLOCKSCOUT_DB_URL=postgresql://blockscout:${POSTGRES_PASSWORD}@db:5432/blockscout
-      # Frontend's real origin isn't known at compose-parse time with an
-      # auto-generated domain — see the header comment.
       - STATS__SERVER__HTTP__CORS__ENABLED=true
-      - STATS__SERVER__HTTP__CORS__ALLOWED_ORIGIN=*
+      - STATS__SERVER__HTTP__CORS__ALLOWED_ORIGIN=https://${EXPLORER_HOST:?set EXPLORER_HOST in Coolify env vars — see this file's header comment}
 
 volumes:
   # -v2: the original blockscout-db-data volume accumulated a half-migrated

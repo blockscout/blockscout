@@ -9,7 +9,10 @@
 #   - Frontend/stats are wired to the public HTTPS subdomains (the frontend runs
 #     in the user's browser, so it cannot use internal container hostnames).
 #
-# Subdomains (point these DNS records at the Coolify host):
+# Subdomains — overridable via BACKEND_HOST / EXPLORER_HOST / STATS_HOST /
+# VISUALIZER_HOST env vars on this Coolify resource; default to the current
+# production domains below, so this file needs no changes to keep working.
+# Point these DNS records at the Coolify host (or your own, if overridden):
 #   explorer.metrixchain.com   -> frontend  (UI)
 #   backend.metrixchain.com    -> backend   (API + websocket)
 #   stats.metrixchain.com      -> stats
@@ -57,9 +60,9 @@ services:
     expose:
       - "4000"
     environment:
-      # Coolify: route backend.metrixchain.com -> this container's port 4000
-      - SERVICE_FQDN_BACKEND_4000=https://backend.metrixchain.com
-      - BLOCKSCOUT_HOST=backend.metrixchain.com
+      # Coolify: route BACKEND_HOST -> this container's port 4000
+      - SERVICE_FQDN_BACKEND_4000=https://${BACKEND_HOST:-backend.metrixchain.com}
+      - BLOCKSCOUT_HOST=${BACKEND_HOST:-backend.metrixchain.com}
       - BLOCKSCOUT_PROTOCOL=https
       # Allow websocket/API calls coming from the frontend origin
       - CHECK_ORIGIN=false
@@ -73,9 +76,9 @@ services:
     expose:
       - "3000"
     environment:
-      # Coolify: route explorer.metrixchain.com -> this container's port 3000.
+      # Coolify: route EXPLORER_HOST -> this container's port 3000.
       # All NEXT_PUBLIC_* config lives in envs/common-frontend.env.
-      - SERVICE_FQDN_FRONTEND_3000=https://explorer.metrixchain.com
+      - SERVICE_FQDN_FRONTEND_3000=https://${EXPLORER_HOST:-explorer.metrixchain.com}
 
   visualizer:
     extends:
@@ -84,7 +87,7 @@ services:
     expose:
       - "8050"
     environment:
-      - SERVICE_FQDN_VISUALIZER_8050=https://visualizer.metrixchain.com
+      - SERVICE_FQDN_VISUALIZER_8050=https://${VISUALIZER_HOST:-visualizer.metrixchain.com}
 
   sig-provider:
     extends:
@@ -121,12 +124,12 @@ services:
     expose:
       - "8050"
     environment:
-      - SERVICE_FQDN_STATS_8050=https://stats.metrixchain.com
+      - SERVICE_FQDN_STATS_8050=https://${STATS_HOST:-stats.metrixchain.com}
       # Reach the backend over the internal Docker network
       - STATS__BLOCKSCOUT_API_URL=http://backend:4000
       # Allow the browser (explorer subdomain) to call the stats API
       - STATS__SERVER__HTTP__CORS__ENABLED=true
-      - STATS__SERVER__HTTP__CORS__ALLOWED_ORIGIN=https://explorer.metrixchain.com
+      - STATS__SERVER__HTTP__CORS__ALLOWED_ORIGIN=https://${EXPLORER_HOST:-explorer.metrixchain.com}
 
 volumes:
   blockscout-db-data:
