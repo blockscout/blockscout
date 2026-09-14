@@ -119,10 +119,19 @@ defmodule BlockScoutWeb.Notifier do
 
     exchange_rate = Market.get_coin_exchange_rate()
 
-    addresses
-    |> Stream.reject(fn %Address{fetched_coin_balance: fetched_coin_balance} -> is_nil(fetched_coin_balance) end)
-    |> Stream.filter(fn %Address{hash: hash} -> address_has_subscribers?(hash) end)
-    |> Enum.each(&broadcast_balance(&1, exchange_rate))
+    addresses_with_balance =
+      Enum.reject(addresses, fn %Address{fetched_coin_balance: fetched_coin_balance} ->
+        is_nil(fetched_coin_balance)
+      end)
+
+    addresses_with_balance
+    |> Enum.filter(fn %Address{hash: hash} -> address_has_v2_subscribers?(hash) end)
+    |> Enum.each(&broadcast_balance_v2(&1, exchange_rate))
+
+    # TODO: delete duplicated event when old UI becomes deprecated
+    addresses_with_balance
+    |> Enum.filter(fn %Address{hash: hash} -> address_has_old_subscribers?(hash) end)
+    |> Enum.each(&broadcast_balance_v1(&1, exchange_rate))
   end
 
   def handle_event({:chain_event, :address_coin_balances, type, address_coin_balances})
@@ -131,7 +140,6 @@ defmodule BlockScoutWeb.Notifier do
 
     address_coin_balances
     |> Enum.reject(fn balance -> is_nil(balance[:value]) end)
-    |> Enum.filter(fn balance -> address_has_subscribers?(balance[:address_hash]) end)
     # Only the most recent balance of an address is worth a query and a message,
     # the earlier ones are superseded by it right away.
     |> Enum.sort_by(& &1[:block_number], :desc)
@@ -142,8 +150,13 @@ defmodule BlockScoutWeb.Notifier do
   def handle_event({:chain_event, :address_token_balances, type, address_token_balances})
       when type in [:realtime, :on_demand] do
     address_token_balances
-    |> Enum.filter(fn balance -> address_has_subscribers?(balance.address_hash) end)
-    |> Enum.each(&broadcast_address_token_balance/1)
+    |> Enum.filter(fn balance -> address_has_v2_subscribers?(balance.address_hash) end)
+    |> Enum.each(&broadcast_address_token_balance_v2/1)
+
+    # TODO: delete duplicated event when old UI becomes deprecated
+    address_token_balances
+    |> Enum.filter(fn balance -> address_has_old_subscribers?(balance.address_hash) end)
+    |> Enum.each(&broadcast_address_token_balance_v1/1)
   end
 
   def handle_event(
@@ -590,51 +603,69 @@ defmodule BlockScoutWeb.Notifier do
     end
   end
 
+  # Subscribers of both channels are checked here rather than filtered upstream:
+  # the coin balance query below feeds both payloads, so it has to run once for
+  # an address subscribed to either of them.
   defp broadcast_address_coin_balance(%{address_hash: address_hash, block_number: block_number}, exchange_rate) do
-    coin_balance = CoinBalance.get_coin_balance(address_hash, block_number, @api_true)
+    old_subscribers? = address_has_old_subscribers?(address_hash)
+    v2_subscribers? = address_has_v2_subscribers?(address_hash)
+
+    coin_balance =
+      if old_subscribers? or v2_subscribers?,
+        do: CoinBalance.get_coin_balance(address_hash, block_number, @api_true)
 
     if coin_balance && coin_balance.delta && !Decimal.eq?(coin_balance.delta, Decimal.new(0)) do
       # TODO: delete duplicated event when old UI becomes deprecated
-      Endpoint.broadcast("addresses_old:#{address_hash}", "coin_balance", %{
-        block_number: block_number,
-        coin_balance: coin_balance
-      })
-    end
+      if old_subscribers? do
+        Endpoint.broadcast("addresses_old:#{address_hash}", "coin_balance", %{
+          block_number: block_number,
+          coin_balance: coin_balance
+        })
+      end
 
-    if coin_balance && coin_balance.value && coin_balance.delta && !Decimal.eq?(coin_balance.delta, Decimal.new(0)) do
-      rendered_coin_balance = AddressView.render("coin_balance.json", %{coin_balance: coin_balance})
-
-      Endpoint.broadcast("addresses:#{address_hash}", "coin_balance", %{
-        coin_balance: rendered_coin_balance
-      })
-
-      Endpoint.broadcast("addresses:#{address_hash}", "current_coin_balance", %{
-        coin_balance: coin_balance.value,
-        exchange_rate: exchange_rate.fiat_value,
-        block_number: block_number
-      })
+      if v2_subscribers? and coin_balance.value do
+        broadcast_address_coin_balance_v2(address_hash, block_number, coin_balance, exchange_rate)
+      end
     end
   end
 
-  defp broadcast_address_token_balance(%{address_hash: address_hash, block_number: block_number}) do
-    # TODO: delete duplicated event when old UI becomes deprecated
-    Endpoint.broadcast("addresses_old:#{address_hash}", "token_balance", %{
-      block_number: block_number
+  defp broadcast_address_coin_balance_v2(address_hash, block_number, coin_balance, exchange_rate) do
+    rendered_coin_balance = AddressView.render("coin_balance.json", %{coin_balance: coin_balance})
+
+    Endpoint.broadcast("addresses:#{address_hash}", "coin_balance", %{
+      coin_balance: rendered_coin_balance
     })
 
+    Endpoint.broadcast("addresses:#{address_hash}", "current_coin_balance", %{
+      coin_balance: coin_balance.value,
+      exchange_rate: exchange_rate.fiat_value,
+      block_number: block_number
+    })
+  end
+
+  defp broadcast_address_token_balance_v2(%{address_hash: address_hash, block_number: block_number}) do
     Endpoint.broadcast("addresses:#{address_hash}", "token_balance", %{
       block_number: block_number
     })
   end
 
-  defp broadcast_balance(%Address{hash: address_hash} = address, exchange_rate) do
-    v2_params = %{
+  # TODO: delete this function when old UI becomes deprecated
+  defp broadcast_address_token_balance_v1(%{address_hash: address_hash, block_number: block_number}) do
+    Endpoint.broadcast("addresses_old:#{address_hash}", "token_balance", %{
+      block_number: block_number
+    })
+  end
+
+  defp broadcast_balance_v2(%Address{hash: address_hash} = address, exchange_rate) do
+    Endpoint.broadcast("addresses:#{address_hash}", "balance", %{
       balance: address.fetched_coin_balance.value,
       block_number: address.fetched_coin_balance_block_number,
       exchange_rate: exchange_rate.fiat_value
-    }
+    })
+  end
 
-    # TODO: delete duplicated event when old UI becomes deprecated
+  # TODO: delete this function when old UI becomes deprecated
+  defp broadcast_balance_v1(%Address{hash: address_hash} = address, exchange_rate) do
     Endpoint.broadcast(
       "addresses_old:#{address_hash}",
       "balance_update",
@@ -643,8 +674,6 @@ defmodule BlockScoutWeb.Notifier do
         exchange_rate: exchange_rate
       }
     )
-
-    Endpoint.broadcast("addresses:#{address_hash}", "balance", v2_params)
   end
 
   defp broadcast_block(block) do
@@ -728,21 +757,35 @@ defmodule BlockScoutWeb.Notifier do
   defp merge_enriched_miner_field(block, _enriched_block, _field), do: block
 
   defp broadcast_rewards(rewards) do
-    preloaded_rewards = Repo.preload(rewards, [:address, :block])
-    emission_reward = Enum.find(preloaded_rewards, fn reward -> reward.address_type == :emission_funds end)
+    {emission_rewards, validator_rewards} =
+      Enum.split_with(rewards, fn reward -> reward.address_type == :emission_funds end)
 
-    preloaded_rewards_except_emission =
-      Enum.reject(preloaded_rewards, fn reward -> reward.address_type == :emission_funds end)
-
-    Enum.each(preloaded_rewards_except_emission, fn reward ->
-      # TODO: delete duplicated event when old UI becomes deprecated
-      Endpoint.broadcast("rewards_old:#{to_string(reward.address_hash)}", "new_reward", %{
-        emission_funds: emission_reward,
-        validator: reward
-      })
-
+    Enum.each(validator_rewards, fn reward ->
       Endpoint.broadcast("rewards:#{to_string(reward.address_hash)}", "new_reward", %{reward: 1})
     end)
+
+    # TODO: delete duplicated event when old UI becomes deprecated
+    broadcast_rewards_v1(validator_rewards, emission_rewards)
+  end
+
+  # TODO: delete this function when old UI becomes deprecated
+  defp broadcast_rewards_v1(validator_rewards, emission_rewards) do
+    case Enum.filter(validator_rewards, &reward_has_old_subscribers?/1) do
+      [] ->
+        :ok
+
+      relevant_rewards ->
+        emission_reward = emission_rewards |> Repo.preload([:address, :block]) |> List.first()
+
+        relevant_rewards
+        |> Repo.preload([:address, :block])
+        |> Enum.each(fn reward ->
+          Endpoint.broadcast("rewards_old:#{to_string(reward.address_hash)}", "new_reward", %{
+            emission_funds: emission_reward,
+            validator: reward
+          })
+        end)
+    end
   end
 
   defp broadcast_internal_transaction(internal_transaction) do
@@ -980,6 +1023,11 @@ defmodule BlockScoutWeb.Notifier do
 
   defp address_has_old_subscribers?(address_hash) do
     has_subscribers?("addresses_old:" <> to_string(address_hash))
+  end
+
+  # TODO: delete this function when old UI becomes deprecated
+  defp reward_has_old_subscribers?(reward) do
+    has_subscribers?("rewards_old:" <> to_string(reward.address_hash))
   end
 
   defp token_transfer_has_subscribers?(tt) do
