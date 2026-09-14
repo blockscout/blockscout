@@ -122,13 +122,22 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
               2 -> "Defender wins"
             end
 
-          l2_block_number = DisputeGame.l2_block_number_from_extra_data(g.extra_data)
+          # Games with Output Root claim are bound to L2 block number, whereas games with Super Root claim
+          # (OP Stack Upgrade 20) are bound to L2 timestamp
+          {l2_block_number, l2_timestamp} =
+            case DisputeGame.l2_sequence_number(g) do
+              {:block_number, block_number} -> {block_number, nil}
+              # zero timestamp means the extra data is unknown or malformed
+              {:timestamp, 0} -> {nil, nil}
+              {:timestamp, timestamp} -> {nil, DateTime.from_unix!(timestamp)}
+            end
 
           %{
             "index" => g.index,
             "game_type" => g.game_type,
             "contract_address_hash" => g.address_hash,
             "l2_block_number" => l2_block_number,
+            "l2_timestamp" => l2_timestamp,
             "created_at" => g.created_at,
             "status" => status,
             "resolved_at" => g.resolved_at
