@@ -216,20 +216,6 @@ defmodule BlockScoutWeb.API.V2.AddressController do
                                    |> Map.merge(@chain_identity_counter_name_to_json_field_name)
                                    |> Map.merge(@chain_type_counter_name_to_json_field_name)
 
-  @spec include_internal_transaction_association?() :: boolean()
-  defp include_internal_transaction_association? do
-    !Application.get_env(:explorer, :api_disable_contract_creation_internal_transaction_association, false)
-  end
-
-  @spec hash_to_address_options(keyword()) :: keyword()
-  defp hash_to_address_options(options) do
-    Keyword.put(
-      options,
-      :include_internal_transaction_association?,
-      include_internal_transaction_association?()
-    )
-  end
-
   @spec contract_address_preloads() :: [keyword()]
   defp contract_address_preloads do
     chain_type_associations =
