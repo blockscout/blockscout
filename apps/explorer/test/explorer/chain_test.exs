@@ -2206,6 +2206,30 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "balance_in_fiat/1" do
+    test "prices an ERC-8056 balance by its displayed amount, not its raw one" do
+      # `fiat_value` quotes the UI amount, which is twice the raw one here
+      token =
+        build(:token,
+          type: "ERC-8056",
+          decimals: Decimal.new(0),
+          fiat_value: Decimal.new(3),
+          ui_multiplier: Decimal.new("2000000000000000000")
+        )
+
+      token_balance = %{token: token, value: Decimal.new(5), fiat_value: nil}
+
+      assert Decimal.equal?(Chain.balance_in_fiat(token_balance), Decimal.new(30))
+    end
+
+    test "leaves a token without ERC-8056 support priced by its raw balance" do
+      token = build(:token, decimals: Decimal.new(0), fiat_value: Decimal.new(3))
+      token_balance = %{token: token, value: Decimal.new(5), fiat_value: nil}
+
+      assert Decimal.equal?(Chain.balance_in_fiat(token_balance), Decimal.new(15))
+    end
+  end
+
   describe "fetch_token_holders_from_token_hash/3" do
     test "returns the token holders" do
       %Token{contract_address_hash: contract_address_hash} = insert(:token)
