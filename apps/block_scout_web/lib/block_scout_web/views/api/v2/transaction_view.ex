@@ -1007,7 +1007,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "is_miner" => state_change.miner?,
       "type" => type,
       "token" => if(type == "token", do: TokenView.render("token.json", %{token: coin_or_transfer.token})),
-      "token_id" => state_change.token_id
+      "token_id" => state_change.token_id,
+      # the multiplier `balance_before`/`balance_after`/`change` are to be
+      # displayed with, as of this transaction. `token.ui_multiplier` is the one
+      # in force now, since that rendering of a token is shared with every other
+      # place a token shows up
+      "ui_multiplier" => state_change.ui_multiplier
     }
     |> append_balances(state_change.balance_before, state_change.balance_after)
     |> append_balance_change(state_change, coin_or_transfer)

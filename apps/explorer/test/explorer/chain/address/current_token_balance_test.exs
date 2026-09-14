@@ -200,6 +200,71 @@ defmodule Explorer.Chain.Address.CurrentTokenBalanceTest do
 
       assert token_balances == [current_token_balance_a.address_hash]
     end
+
+    test "prices an ERC-8056 balance by its displayed amount, not its raw one" do
+      address = insert(:address)
+
+      # `fiat_value` quotes the UI amount, which is twice the raw one here
+      token =
+        insert(:token,
+          type: "ERC-8056",
+          decimals: 0,
+          fiat_value: Decimal.new(3),
+          ui_multiplier: Decimal.new("2000000000000000000")
+        )
+
+      insert(:address_current_token_balance,
+        address: address,
+        token_contract_address_hash: token.contract_address_hash,
+        value: 5
+      )
+
+      assert [%{fiat_value: fiat_value}] =
+               address.hash |> CurrentTokenBalance.last_token_balances() |> Repo.all()
+
+      assert Decimal.equal?(fiat_value, Decimal.new(30))
+    end
+
+    test "takes the maturing of a scheduled multiplier change into account when pricing" do
+      address = insert(:address)
+
+      token =
+        insert(:token,
+          type: "ERC-8056",
+          decimals: 0,
+          fiat_value: Decimal.new(3),
+          ui_multiplier: Decimal.new("1000000000000000000"),
+          new_ui_multiplier: Decimal.new("2000000000000000000"),
+          ui_multiplier_effective_at: DateTime.add(DateTime.utc_now(), -1, :hour)
+        )
+
+      insert(:address_current_token_balance,
+        address: address,
+        token_contract_address_hash: token.contract_address_hash,
+        value: 5
+      )
+
+      assert [%{fiat_value: fiat_value}] =
+               address.hash |> CurrentTokenBalance.last_token_balances() |> Repo.all()
+
+      assert Decimal.equal?(fiat_value, Decimal.new(30))
+    end
+
+    test "leaves a token without ERC-8056 support priced by its raw balance" do
+      address = insert(:address)
+      token = insert(:token, decimals: 0, fiat_value: Decimal.new(3))
+
+      insert(:address_current_token_balance,
+        address: address,
+        token_contract_address_hash: token.contract_address_hash,
+        value: 5
+      )
+
+      assert [%{fiat_value: fiat_value}] =
+               address.hash |> CurrentTokenBalance.last_token_balances() |> Repo.all()
+
+      assert Decimal.equal?(fiat_value, Decimal.new(15))
+    end
   end
 
   describe "count_token_holders_from_token_hash" do
