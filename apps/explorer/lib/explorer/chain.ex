@@ -2743,6 +2743,14 @@ defmodule Explorer.Chain do
     |> select_repo(options).all()
   end
 
+  @doc """
+  Counts the distinct token holders for a given token contract address hash.
+  """
+  @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
+  def count_token_holders_from_token_hash(contract_address_hash) do
+    CurrentTokenBalance.count_token_holders_from_token_hash(contract_address_hash)
+  end
+
   @spec fetch_token_holders_from_token_hash_for_csv(Hash.Address.t(), [paging_options | api? | timeout_option]) :: [
           TokenBalance.t()
         ]
