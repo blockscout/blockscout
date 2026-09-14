@@ -5,7 +5,8 @@ defmodule Explorer.Chain.TransactionTest do
   import Mox
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Address, InternalTransaction, Transaction}
+  alias Explorer.Chain.{Address, InternalTransaction, SmartContract, Transaction}
+  alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.{PagingOptions, TestHelper}
 
   doctest Transaction
@@ -390,6 +391,112 @@ defmodule Explorer.Chain.TransactionTest do
       assert {:ok, "60fe47b1", "set(uint256 arg0)", [{"arg0", "uint256", 10}]} =
                Transaction.decoded_input_data(transaction, [])
     end
+  end
+
+  describe "decode_transactions/3" do
+    @decoded_set_10 {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}
+    @abi_sources ["proxy_implementations", "smart_contracts", "addresses"]
+
+    test "decodes input with the implementation ABI of a proxy whose associations are not preloaded" do
+      transaction =
+        insert_transaction_to_verified_proxy()
+        |> Repo.preload(to_address: :smart_contract)
+
+      assert [@decoded_set_10] = Transaction.decode_transactions([transaction], true, api?: true)
+    end
+
+    test "reuses preloaded proxy implementations and ABIs without querying them again" do
+      transaction =
+        insert_transaction_to_verified_proxy()
+        |> Repo.preload(
+          to_address: [:smart_contract, Implementation.proxy_implementations_smart_contracts_association()]
+        )
+
+      {result, sources} =
+        with_query_sources(fn -> Transaction.decode_transactions([transaction], true, api?: true) end)
+
+      assert [@decoded_set_10] = result
+      assert Enum.filter(sources, &(&1 in @abi_sources)) == []
+    end
+
+    test "skips the proxy implementations query when the association is preloaded and empty" do
+      smart_contract = insert(:smart_contract) |> Repo.preload(:address)
+      input_data = "set(uint)" |> ABI.encode([10]) |> Base.encode16(case: :lower)
+
+      transaction =
+        :transaction
+        |> insert(to_address: smart_contract.address, input: "0x" <> input_data)
+        |> Repo.preload(to_address: [:smart_contract, :proxy_implementations])
+
+      {result, sources} =
+        with_query_sources(fn -> Transaction.decode_transactions([transaction], true, api?: true) end)
+
+      assert [@decoded_set_10] = result
+      assert Enum.filter(sources, &(&1 in @abi_sources)) == []
+    end
+
+    test "fetches the ABI when the smart contract was preloaded without it" do
+      transaction =
+        insert_transaction_to_verified_proxy()
+        |> Repo.preload(to_address: [SmartContract.association_without_abi(), :proxy_implementations])
+
+      {result, sources} =
+        with_query_sources(fn -> Transaction.decode_transactions([transaction], true, api?: true) end)
+
+      assert [@decoded_set_10] = result
+      assert "smart_contracts" in sources
+      refute "proxy_implementations" in sources
+    end
+  end
+
+  # a verified proxy whose own ABI lacks `set(uint256)`, delegating to a
+  # verified implementation whose ABI has it
+  defp insert_transaction_to_verified_proxy do
+    proxy_smart_contract = :smart_contract |> insert(abi: []) |> Repo.preload(:address)
+    implementation_smart_contract = insert(:smart_contract)
+
+    insert(:proxy_implementation,
+      proxy_address_hash: proxy_smart_contract.address_hash,
+      proxy_type: :eip1967,
+      address_hashes: [implementation_smart_contract.address_hash],
+      names: [implementation_smart_contract.name]
+    )
+
+    input_data = "set(uint)" |> ABI.encode([10]) |> Base.encode16(case: :lower)
+
+    insert(:transaction, to_address: proxy_smart_contract.address, input: "0x" <> input_data)
+  end
+
+  # runs `fun` and returns its result with the `source` tables of every
+  # query issued by the calling process meanwhile
+  defp with_query_sources(fun) do
+    handler_id = {__MODULE__, :query_sources, make_ref()}
+
+    :telemetry.attach_many(
+      handler_id,
+      [[:explorer, :repo, :query], [:explorer, :repo, :replica1, :query]],
+      &__MODULE__.handle_query_event/4,
+      self()
+    )
+
+    try do
+      {fun.(), collect_query_sources([])}
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  defp collect_query_sources(acc) do
+    receive do
+      {:query_source, source} -> collect_query_sources([source | acc])
+    after
+      0 -> Enum.reverse(acc)
+    end
+  end
+
+  @doc false
+  def handle_query_event(_event, _measurements, %{source: source}, test_pid) do
+    if self() == test_pid, do: send(test_pid, {:query_source, source})
   end
 
   describe "Poison.encode!/1" do
