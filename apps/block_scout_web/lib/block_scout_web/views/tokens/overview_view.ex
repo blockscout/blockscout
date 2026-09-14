@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
   alias Explorer.{Chain, CustomContractsHelper}
   alias Explorer.Chain.{Address, CurrencyHelper, SmartContract, Token}
   alias Explorer.Chain.SmartContract.Proxy
+  alias Explorer.Chain.Token.ScaledUIAmount
   alias Explorer.SmartContract.{Helper, Writer}
 
   import BlockScoutWeb.AddressView, only: [from_address_hash: 1, contract_interaction_disabled?: 0]
@@ -82,7 +83,13 @@ defmodule BlockScoutWeb.Tokens.OverviewView do
     if Map.has_key?(token, :custom_cap) && token.custom_cap do
       token.custom_cap
     else
-      tokens = CurrencyHelper.divide_decimals(token.total_supply, token.decimals)
+      # `totalSupply()` is raw even for an ERC-8056 token, while `fiat_value`
+      # prices one displayed unit, so the supply is scaled before it is priced
+      tokens =
+        token.total_supply
+        |> ScaledUIAmount.scale(Token.effective_ui_multiplier(token))
+        |> CurrencyHelper.divide_decimals(token.decimals)
+
       price = token.fiat_value
       Decimal.mult(tokens, price)
     end

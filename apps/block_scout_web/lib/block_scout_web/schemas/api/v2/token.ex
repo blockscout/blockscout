@@ -72,12 +72,29 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         decimals: General.IntegerStringNullable,
         type: %Schema{allOf: [Type], nullable: true},
         holders_count: General.IntegerStringNullable,
-        exchange_rate: General.FloatStringNullable,
+        exchange_rate: %Schema{
+          allOf: [General.FloatStringNullable],
+          description:
+            "Price of one displayed unit of the token. For an ERC-8056 token that is the UI amount, the one that trades, so a fiat value is `raw_amount * ui_multiplier / 1e18 / 10 ^ decimals * exchange_rate`."
+        },
         volume_24h: General.FloatStringNullable,
-        total_supply: General.IntegerStringNullable,
+        total_supply: %Schema{
+          allOf: [General.IntegerStringNullable],
+          description:
+            "Raw `totalSupply()` of the contract. ERC-8056 leaves it unscaled, so displaying it takes the same `ui_multiplier` as any other raw amount."
+        },
         icon_url: General.URLNullable,
-        circulating_market_cap: General.FloatStringNullable,
-        circulating_supply: General.FloatStringNullable,
+        circulating_market_cap: %Schema{
+          allOf: [General.FloatStringNullable],
+          description: "Market capitalisation as reported by the price source. A fiat figure: never scaled.",
+          nullable: true
+        },
+        circulating_supply: %Schema{
+          allOf: [General.FloatStringNullable],
+          description:
+            "Circulating supply as reported by the price source, in whichever unit that source uses. Not scaled, since the base cannot be told.",
+          nullable: true
+        },
         reputation: %Schema{
           type: :string,
           enum: Reputation.enum_values(),

@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.{Chain, PagingOptions}
-  alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance}
+  alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance, Token.UIMultiplierChange}
   alias Explorer.Migrator.BackfillMetadataURL
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
@@ -26,6 +26,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       split_list_by_page: 1,
       paging_options: 1,
       next_page_params: 3,
+      next_page_params: 5,
       token_transfers_next_page_params: 3,
       unique_tokens_paging_options: 1,
       unique_tokens_next_page: 3,
@@ -133,7 +134,9 @@ defmodule BlockScoutWeb.API.V2.TokenController do
 
   operation :counters,
     summary: "Get holder and transfer count statistics for a specific token",
-    description: "Retrieves count statistics for a specific token, including holders count and transfers count.",
+    description:
+      "Retrieves count statistics for a specific token, including holders count, transfers count and, for an ERC-8056 token, " <>
+        "the number of multiplier changes listed by `/api/v2/tokens/{address_hash}/ui-multiplier-changes`.",
     parameters: [address_hash_param() | base_params()],
     responses: [
       ok: {"Count statistics for the specified token.", "application/json", Schemas.Token.Counters},
@@ -151,7 +154,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @api_true)} do
       {transfers_count, holders_count} = Token.fetch_token_counters(token)
 
-      json(conn, %{transfers_count: to_string(transfers_count), token_holders_count: to_string(holders_count)})
+      json(conn, %{
+        transfers_count: to_string(transfers_count),
+        token_holders_count: to_string(holders_count),
+        ui_multiplier_changes_count: to_string(UIMultiplierChange.count_for_token(address_hash, @api_true))
+      })
     end
   end
 
@@ -273,6 +280,63 @@ defmodule BlockScoutWeb.API.V2.TokenController do
       })
     end
   end
+
+  operation :ui_multiplier_changes,
+    summary: "List the ERC-8056 multiplier changes of a specific token",
+    description:
+      "Retrieves the history of `UIMultiplierUpdated` events of an ERC-8056 token, newest first. " <>
+        "Every entry carries the multiplier it replaces, the one it schedules and the moment that one takes effect, " <>
+        "so an entry whose `effective_at` is still in the future is an announced but pending change. " <>
+        "Entries from blocks that lost consensus are left out. Empty for a token that does not implement ERC-8056. " <>
+        "Note that a token which announces more than #{UIMultiplierChange.max_changes_per_token()} changes stops being " <>
+        "resolved altogether: its history stays listed here, but the `ui_multiplier` of its token transfers becomes `null`.",
+    parameters:
+      base_params() ++
+        [address_hash_param()] ++
+        define_paging_params(["block_number", "log_index", "items_count"]),
+    responses: [
+      ok:
+        {"ERC-8056 multiplier history of the specified token, with pagination.", "application/json",
+         paginated_response(
+           items: Schemas.Token.UIMultiplierChange,
+           next_page_params_example: %{
+             "block_number" => 12_345,
+             "log_index" => 3,
+             "items_count" => 50
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response(),
+      not_found: NotFoundResponse.response()
+    ]
+
+  @doc """
+  Handles GET requests to `/api/v2/tokens/:address_hash_param/ui-multiplier-changes` endpoint.
+  """
+  @spec ui_multiplier_changes(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def ui_multiplier_changes(conn, %{address_hash_param: address_hash_string} = params) do
+    with {:format, {:ok, address_hash}} <- {:format, Chain.string_to_address_hash(address_hash_string)},
+         {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
+         {:not_found, true} <- {:not_found, Token.by_contract_address_hash_exists?(address_hash, @api_true)} do
+      results_plus_one =
+        UIMultiplierChange.paginated_for_token(address_hash, Keyword.merge(paging_options(params), @api_true))
+
+      {ui_multiplier_changes, next_page} = split_list_by_page(results_plus_one)
+
+      next_page_params =
+        next_page
+        |> next_page_params(ui_multiplier_changes, params, false, &ui_multiplier_change_paging_params/1)
+
+      conn
+      |> put_status(200)
+      |> render(:ui_multiplier_changes, %{
+        ui_multiplier_changes: ui_multiplier_changes,
+        next_page_params: next_page_params
+      })
+    end
+  end
+
+  defp ui_multiplier_change_paging_params(%{block_number: block_number, log_index: log_index}),
+    do: %{block_number: block_number, log_index: log_index}
 
   operation :instances,
     summary: "List individual NFT instances for a token contract",

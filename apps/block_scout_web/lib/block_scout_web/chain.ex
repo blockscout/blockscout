@@ -503,6 +503,10 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {block_number, index}}]
   end
 
+  def paging_options(%{block_number: block_number, log_index: log_index}) do
+    [paging_options: %{@default_paging_options | key: {block_number, log_index}}]
+  end
+
   def paging_options(%{"block_number" => block_number_string}) when is_binary(block_number_string) do
     case Integer.parse(block_number_string) do
       {block_number, ""} ->
