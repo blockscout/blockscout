@@ -127,6 +127,8 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           {l2_block_number, l2_timestamp} =
             case DisputeGame.l2_sequence_number(g) do
               {:block_number, block_number} -> {block_number, nil}
+              # zero timestamp means the extra data is unknown or malformed
+              {:timestamp, 0} -> {nil, nil}
               {:timestamp, timestamp} -> {nil, DateTime.from_unix!(timestamp)}
             end
 

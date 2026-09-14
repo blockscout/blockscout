@@ -87,6 +87,28 @@ defmodule Explorer.Chain.Optimism.DisputeGameTest do
       test "returns zero when extra data is shorter than expected" do
         assert DisputeGame.l2_timestamp_from_extra_data(%Data{bytes: <<1, 2, 3>>}) == 0
       end
+
+      test "returns zero when the list of output roots is empty" do
+        assert DisputeGame.l2_timestamp_from_extra_data(%Data{bytes: <<1, @l2_timestamp::size(64)>>}) == 0
+      end
+
+      test "returns zero when an output root entry is truncated" do
+        # 32 bytes of chain ID followed by only 16 bytes of the output root
+        extra_data = %Data{bytes: <<1, @l2_timestamp::size(64), 10::size(256), 0xAA::size(128)>>}
+        assert DisputeGame.l2_timestamp_from_extra_data(extra_data) == 0
+
+        # one complete entry followed by a truncated one
+        extra_data = %Data{
+          bytes: <<1, @l2_timestamp::size(64), 10::size(256), 0xAA::size(256), 8453::size(256), 0xBB::size(64)>>
+        }
+
+        assert DisputeGame.l2_timestamp_from_extra_data(extra_data) == 0
+      end
+
+      test "accepts a single complete output root entry" do
+        extra_data = %Data{bytes: <<1, @l2_timestamp::size(64), 10::size(256), 0xAA::size(256)>>}
+        assert DisputeGame.l2_timestamp_from_extra_data(extra_data) == @l2_timestamp
+      end
     end
   end
 end

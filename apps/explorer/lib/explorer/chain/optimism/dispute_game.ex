@@ -27,6 +27,9 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
   # The only supported version of the Super Root proof encoding stored in the `extraData` of a Super Root game
   @super_root_proof_version 1
 
+  # The size (in bytes) of one output root entry in the Super Root proof: 32 bytes of chain ID + 32 bytes of output root
+  @super_root_output_root_size 64
+
   @typedoc """
     * `index` - A unique index of the dispute game.
     * `game_type` - A number encoding a type of the dispute game.
@@ -186,8 +189,9 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
   def l2_timestamp_from_extra_data(nil), do: 0
 
   def l2_timestamp_from_extra_data(%Data{
-        bytes: <<@super_root_proof_version, l2_timestamp::size(64), _output_roots::binary>>
-      }),
+        bytes: <<@super_root_proof_version, l2_timestamp::size(64), output_roots::binary>>
+      })
+      when byte_size(output_roots) > 0 and rem(byte_size(output_roots), @super_root_output_root_size) == 0,
       do: l2_timestamp
 
   def l2_timestamp_from_extra_data(%Data{}), do: 0
