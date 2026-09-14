@@ -853,13 +853,17 @@ defmodule Explorer.EthRPC do
   """
   @spec eth_get_transaction_by_hash(String.t()) :: {:ok, map() | nil} | {:error, String.t()}
   def eth_get_transaction_by_hash(transaction_hash_string) do
-    necessity_by_association =
-      %{signed_authorizations: :optional}
-      |> Map.merge(chain_type_transaction_necessity_by_association())
+    # `signed_authorizations` are preloaded separately, only for EIP-7702
+    # (type 4) transactions, to skip the query for every other type.
+    render_func = fn transaction ->
+      transaction
+      |> Transaction.preload_signed_authorizations(api?: true)
+      |> render_transaction()
+    end
 
-    validate_and_render_transaction(transaction_hash_string, &render_transaction/1,
+    validate_and_render_transaction(transaction_hash_string, render_func,
       api?: true,
-      necessity_by_association: necessity_by_association
+      necessity_by_association: chain_type_transaction_necessity_by_association()
     )
   end
 
@@ -995,25 +999,29 @@ defmodule Explorer.EthRPC do
 
   defp maybe_add_access_list(props, _transaction), do: props
 
-  defp maybe_add_chain_type_extra_transaction_info_properties(props, %{beacon_blob_transaction: beacon_blob_transaction}) do
-    if Application.get_env(:explorer, :chain_type) == :ethereum && beacon_blob_transaction do
+  # The `beacon_blob_transaction` association exists on the `Transaction` struct
+  # only when the chain type is `:ethereum` at compile time, so these clauses
+  # are compiled in under the same condition; otherwise dialyzer reports a
+  # pattern that can never match.
+  if @chain_type == :ethereum do
+    defp maybe_add_chain_type_extra_transaction_info_properties(props, %{
+           beacon_blob_transaction: beacon_blob_transaction
+         })
+         when not is_nil(beacon_blob_transaction) do
       props
       |> Map.put("maxFeePerBlobGas", Helper.decimal_to_hex(beacon_blob_transaction.max_fee_per_blob_gas))
       |> Map.put("blobVersionedHashes", beacon_blob_transaction.blob_versioned_hashes)
-    else
-      props
     end
   end
 
   defp maybe_add_chain_type_extra_transaction_info_properties(props, _transaction), do: props
 
-  defp maybe_add_chain_type_extra_receipt_properties(props, %{beacon_blob_transaction: beacon_blob_transaction}) do
-    if Application.get_env(:explorer, :chain_type) == :ethereum && beacon_blob_transaction do
+  if @chain_type == :ethereum do
+    defp maybe_add_chain_type_extra_receipt_properties(props, %{beacon_blob_transaction: beacon_blob_transaction})
+         when not is_nil(beacon_blob_transaction) do
       props
       |> Map.put("blobGasPrice", Helper.decimal_to_hex(beacon_blob_transaction.blob_gas_price))
       |> Map.put("blobGasUsed", Helper.decimal_to_hex(beacon_blob_transaction.blob_gas_used))
-    else
-      props
     end
   end
 
