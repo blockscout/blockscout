@@ -49,6 +49,8 @@ defmodule Explorer.Chain.Address.TokenTransfersTest do
                          _,
                          [[], tokens_transferred],
                          _,
+                         [[], ui_multiplier],
+                         _,
                          [[], transaction_fee],
                          _,
                          [[], status],
@@ -67,6 +69,7 @@ defmodule Explorer.Chain.Address.TokenTransfersTest do
             token_decimals: token_decimals,
             token_symbol: token_symbol,
             tokens_transferred: tokens_transferred,
+            ui_multiplier: ui_multiplier,
             transaction_fee: transaction_fee,
             status: status,
             err_code: err_code
@@ -84,6 +87,51 @@ defmodule Explorer.Chain.Address.TokenTransfersTest do
       assert result.status == to_string(token_transfer.transaction.status)
       assert result.err_code == to_string(token_transfer.transaction.error)
       assert result.type == "OUT"
+      assert result.ui_multiplier == ""
+    end
+
+    test "exports the ERC-8056 multiplier of the moment of the transfer, leaving the amount raw" do
+      address = insert(:address)
+
+      token =
+        insert(:token,
+          ui_multiplier: Decimal.new("2000000000000000000"),
+          new_ui_multiplier: Decimal.new("2000000000000000000"),
+          ui_multiplier_effective_at: ~U[2026-06-01 00:00:00.000000Z]
+        )
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block_number: 100,
+        log_index: 0,
+        old_multiplier: Decimal.new("1000000000000000000"),
+        new_multiplier: Decimal.new("2000000000000000000"),
+        effective_at: ~U[2026-06-01 00:00:00.000000Z]
+      )
+
+      block = insert(:block, number: 150, timestamp: ~U[2026-05-01 00:00:00.000000Z])
+      transaction = :transaction |> insert(from_address: address) |> with_block(block)
+
+      token_transfer =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: block,
+          block_number: block.number,
+          from_address: address,
+          token_contract_address: token.contract_address
+        )
+
+      [row] =
+        address.hash
+        |> AddressTokenTransfersCsvExporter.export("2026-04-01", "2026-07-01", [], nil, nil)
+        |> Enum.to_list()
+        |> Enum.drop(1)
+        |> Enum.map(&(&1 |> IO.iodata_to_binary() |> String.trim() |> String.split(",")))
+
+      # raw amount, plus the multiplier the holders saw back then rather than
+      # the one in force now
+      assert Enum.at(row, 9) == to_string(token_transfer.amount)
+      assert Enum.at(row, 10) == "1000000000000000000"
     end
 
     test "fetches all token transfers" do

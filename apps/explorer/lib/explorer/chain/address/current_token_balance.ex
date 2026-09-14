@@ -173,8 +173,49 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     )
   end
 
+  @doc """
+  Builds a `t:Ecto.Query.dynamic_expr/0` for the fiat value of a token balance.
+
+  `tokens.fiat_value` is the price of one *displayed* unit of the token, which
+  for an [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056) token is not the
+  same as one raw unit: what trades, and what a price source therefore quotes,
+  is the UI amount. So the raw balance is scaled by the multiplier before it is
+  priced, and the `CASE` falls back to `1e18` — a multiplier of exactly one —
+  for every token that does not implement the standard.
+
+  The branch mirrors `Explorer.Chain.Token.effective_ui_multiplier/2`: a
+  scheduled change takes effect with nothing happening on chain and nothing
+  written to the database, so which of the two stored values applies has to be
+  decided against the clock. It is the database clock here rather than the
+  application's, which keeps the expression free of a timestamp parameter; both
+  are UTC and the difference between them is far below the resolution at which
+  a multiplier change matters.
+
+  Expects the `tokens` table as the second binding.
+  """
+  @spec fiat_value_query() :: Ecto.Query.dynamic_expr()
   def fiat_value_query do
-    dynamic([ctb, t], ctb.value * t.fiat_value / fragment("10 ^ ?", t.decimals))
+    dynamic(
+      [ctb, t],
+      fragment(
+        """
+        ? * CASE
+              WHEN ? IS NULL THEN 1000000000000000000
+              WHEN ? IS NOT NULL AND ? IS NOT NULL AND ? <= (now() AT TIME ZONE 'utc') THEN ?
+              ELSE ?
+            END * ? / (10 ^ ?) / 1000000000000000000
+        """,
+        ctb.value,
+        t.ui_multiplier,
+        t.new_ui_multiplier,
+        t.ui_multiplier_effective_at,
+        t.ui_multiplier_effective_at,
+        t.new_ui_multiplier,
+        t.ui_multiplier,
+        t.fiat_value,
+        t.decimals
+      )
+    )
   end
 
   @doc """

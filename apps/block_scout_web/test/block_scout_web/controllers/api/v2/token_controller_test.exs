@@ -10,13 +10,16 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
   alias Explorer.{Repo, TestHelper}
 
-  alias Explorer.Chain.{Address, Block, Token, Token.Instance, TokenTransfer}
+  alias Explorer.Chain.{Address, Block, Token, Token.Instance, Token.UIMultiplierChange, TokenTransfer}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Cache.Counters.TokenCountersConsolidator
   alias Explorer.Chain.Events.Subscriber
 
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
+
+  @one Decimal.new("1000000000000000000")
+  @two Decimal.new("2000000000000000000")
 
   describe "/tokens/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -124,6 +127,30 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert response["transfers_count"] == "0"
       assert response["token_holders_count"] == "0"
+      assert response["ui_multiplier_changes_count"] == "0"
+    end
+
+    test "counts the ERC-8056 multiplier changes of the token", %{conn: conn} do
+      token = insert(:token, ui_multiplier: Decimal.new("2000000000000000000"))
+      block = insert(:block, number: 100)
+      reorged = insert(:block, number: 101, consensus: false)
+
+      for {block, log_index} <- [{block, 0}, {block, 1}, {reorged, 0}] do
+        insert(:token_ui_multiplier_change,
+          token: token,
+          block: block,
+          block_number: block.number,
+          log_index: log_index,
+          old_multiplier: Decimal.new("1000000000000000000"),
+          new_multiplier: Decimal.new("2000000000000000000"),
+          effective_at: ~U[2026-06-01 00:00:00.000000Z]
+        )
+      end
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/counters")
+
+      # the change of the reorged block is not listed, so it is not counted
+      assert %{"ui_multiplier_changes_count" => "2"} = json_response(request, 200)
     end
 
     test "get not zero counters", %{conn: conn} do
@@ -543,6 +570,152 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert response_2nd_page = json_response(request_2nd_page, 200)
 
       check_holders_paginated_response(response, response_2nd_page, token_balances)
+    end
+  end
+
+  describe "/tokens/{address_hash}/ui-multiplier-changes" do
+    test "get 404 on non existing address", %{conn: conn} do
+      token = build(:token)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/ui-multiplier-changes")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/tokens/0x/ui-multiplier-changes")
+
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
+    end
+
+    test "is empty for a token without ERC-8056 support", %{conn: conn} do
+      token = insert(:token)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/ui-multiplier-changes")
+
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
+    test "lists the history newest first, with the transaction and the moment of each change", %{conn: conn} do
+      token = insert(:token, ui_multiplier: @two)
+      block = insert(:block, number: 100, timestamp: ~U[2026-03-01 00:00:00.000000Z])
+      transaction = :transaction |> insert() |> with_block(block)
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block: block,
+        block_number: block.number,
+        log_index: 3,
+        transaction_hash: transaction.hash,
+        old_multiplier: @one,
+        new_multiplier: @two,
+        effective_at: ~U[2026-03-05 00:00:00.000000Z]
+      )
+
+      older = insert(:block, number: 50, timestamp: ~U[2026-01-01 00:00:00.000000Z])
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block: older,
+        block_number: older.number,
+        log_index: 0,
+        old_multiplier: @one,
+        new_multiplier: @one,
+        effective_at: ~U[2026-01-05 00:00:00.000000Z]
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/ui-multiplier-changes")
+
+      assert %{"items" => [newest, oldest], "next_page_params" => nil} = json_response(request, 200)
+
+      assert %{
+               "block_number" => 100,
+               "log_index" => 3,
+               "old_multiplier" => "1000000000000000000",
+               "new_multiplier" => "2000000000000000000"
+             } = newest
+
+      assert newest["block_hash"] == to_string(block.hash)
+      assert newest["transaction_hash"] == to_string(transaction.hash)
+      assert newest["timestamp"] == "2026-03-01T00:00:00.000000Z"
+      assert newest["effective_at"] == "2026-03-05T00:00:00.000000Z"
+
+      assert %{"block_number" => 50, "log_index" => 0, "transaction_hash" => nil} = oldest
+    end
+
+    test "keeps a change that is announced but not yet in force", %{conn: conn} do
+      token = insert(:token, ui_multiplier: @one)
+      block = insert(:block, number: 100)
+      effective_at = DateTime.add(DateTime.utc_now(), 1, :hour)
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block: block,
+        block_number: block.number,
+        log_index: 0,
+        old_multiplier: @one,
+        new_multiplier: @two,
+        effective_at: effective_at
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/ui-multiplier-changes")
+
+      assert %{"items" => [%{"new_multiplier" => "2000000000000000000"}]} = json_response(request, 200)
+    end
+
+    test "leaves out a change whose block lost consensus", %{conn: conn} do
+      token = insert(:token, ui_multiplier: @two)
+      reorged = insert(:block, number: 100, consensus: false)
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block: reorged,
+        block_number: reorged.number,
+        log_index: 0,
+        old_multiplier: @one,
+        new_multiplier: @two,
+        effective_at: ~U[2026-03-05 00:00:00.000000Z]
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/ui-multiplier-changes")
+
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
+    test "check pagination", %{conn: conn} do
+      token = insert(:token, ui_multiplier: @two)
+      block = insert(:block, number: 100)
+
+      changes =
+        for log_index <- 0..50 do
+          insert(:token_ui_multiplier_change,
+            token: token,
+            block: block,
+            block_number: block.number,
+            log_index: log_index,
+            old_multiplier: @one,
+            new_multiplier: @two,
+            effective_at: ~U[2026-03-05 00:00:00.000000Z]
+          )
+        end
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/ui-multiplier-changes")
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/tokens/#{token.contract_address.hash}/ui-multiplier-changes", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, changes)
     end
   end
 
@@ -2496,6 +2669,14 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
   def compare_item(%CurrentTokenBalance{} = ctb, json) do
     compare_holders_item(ctb, json)
     compare_item(Repo.preload(ctb, [{:token, :contract_address}]).token, json["token"])
+  end
+
+  def compare_item(%UIMultiplierChange{} = change, json) do
+    assert change.block_number == json["block_number"]
+    assert change.log_index == json["log_index"]
+    assert to_string(change.block_hash) == json["block_hash"]
+    assert to_string(change.old_multiplier) == json["old_multiplier"]
+    assert to_string(change.new_multiplier) == json["new_multiplier"]
   end
 
   def compare_item(%Instance{token: %Token{} = token} = instance, json) do
