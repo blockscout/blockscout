@@ -2397,6 +2397,39 @@ defmodule Explorer.Chain.Transaction do
     )
   end
 
+  # EIP-7702 set code transaction type: the only type carrying an authorization list.
+  @set_code_transaction_type 4
+
+  @doc """
+  Preloads `signed_authorizations` for a transaction, but only when it can have
+  any: EIP-7702 set code transactions (type #{@set_code_transaction_type}).
+
+  Every other transaction type gets an empty list without touching the DB,
+  which saves one query per transaction on the single-transaction endpoints.
+  A transaction whose `signed_authorizations` are already loaded is returned
+  as is.
+
+  ## Parameters
+  - `transaction`: The transaction to preload.
+  - `options`: Keyword list with `api?` used to pick the replica repo.
+
+  ## Returns
+  - The transaction with `signed_authorizations` loaded (or set to `[]`).
+  """
+  @spec preload_signed_authorizations(t(), Keyword.t()) :: t()
+  def preload_signed_authorizations(%__MODULE__{signed_authorizations: signed_authorizations} = transaction, _options)
+      when is_list(signed_authorizations) do
+    transaction
+  end
+
+  def preload_signed_authorizations(%__MODULE__{type: @set_code_transaction_type} = transaction, options) do
+    Chain.select_repo(options).preload(transaction, :signed_authorizations)
+  end
+
+  def preload_signed_authorizations(%__MODULE__{} = transaction, _options) do
+    %{transaction | signed_authorizations: []}
+  end
+
   @doc """
   Receives as input list of transactions and returns decoded_input_data
   Where
