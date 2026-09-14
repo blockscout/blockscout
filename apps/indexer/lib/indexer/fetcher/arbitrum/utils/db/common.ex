@@ -52,18 +52,22 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Common do
     BlockGeneralReader.timestamp_to_block_number(timestamp, :after, false, true)
   end
 
+  @default_db_chunk_size 500
+
   @doc """
     Retrieves full details of rollup blocks, including associated transactions, for each block number specified in the input list.
 
     ## Parameters
     - `list_of_block_numbers`: A list of block numbers for which full block details are to be retrieved.
+    - `chunk_size`: Optional maximum number of blocks per database query chunk. Defaults to 500.
 
     ## Returns
     - A list of `Explorer.Chain.Block` instances containing detailed information for each
       block number in the input list. Returns an empty list if no blocks are found for the given numbers.
   """
-  @spec rollup_blocks([FullBlock.block_number()]) :: [FullBlock.t()]
-  def rollup_blocks(list_of_block_numbers), do: ArbitrumReader.rollup_blocks(list_of_block_numbers)
+  @spec rollup_blocks([FullBlock.block_number()], pos_integer()) :: [FullBlock.t()]
+  def rollup_blocks(list_of_block_numbers, chunk_size \\ @default_db_chunk_size),
+    do: ArbitrumReader.rollup_blocks(list_of_block_numbers, chunk_size)
 
   @doc """
     Retrieves block numbers within a range that are missing Arbitrum-specific fields.
