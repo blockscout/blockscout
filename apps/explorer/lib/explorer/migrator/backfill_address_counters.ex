@@ -82,6 +82,7 @@ defmodule Explorer.Migrator.BackfillAddressCounters do
   @impl FillingMigration
   def update_batch(address_hashes) do
     AddressCountersConsolidator.consolidate_addresses(address_hashes, await_safe_block())
+    Enum.count(address_hashes)
   end
 
   @impl FillingMigration

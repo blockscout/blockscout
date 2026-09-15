@@ -9,8 +9,7 @@ defmodule Explorer.Etherscan.Logs do
   import Ecto.Query
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{DenormalizationHelper, Log, Transaction}
-  alias Explorer.Utility.LogHelper
+  alias Explorer.Chain.{DenormalizationHelper, Log}
 
   @base_filter %{
     from_block: nil,
@@ -88,75 +87,28 @@ defmodule Explorer.Etherscan.Logs do
       |> page_logs(paging_options)
       |> where_topic_match(prepared_filter, union_multiple_values: true)
 
-    if DenormalizationHelper.transactions_denormalization_finished?() do
-      all_transaction_logs_query =
-        logs_query
-        |> subquery()
-        |> Log.join_transaction_query()
-        |> Log.join_address_mapping_query()
-        |> where(as(:transaction).block_consensus == true)
-        |> select([log], map(log, ^@log_fields))
-        |> select_merge([log], %{
-          gas_price: as(:transaction).gas_price,
-          gas_used: as(:transaction).gas_used,
-          transaction_index: as(:transaction).index,
-          block_hash: as(:transaction).block_hash,
-          block_number: as(:transaction).block_number,
-          block_timestamp: as(:transaction).block_timestamp,
-          block_consensus: as(:transaction).block_consensus,
-          transaction_hash: as(:transaction).hash,
-          address_hash: coalesce(log.address_hash, as(:address_mapping).address_hash)
-        })
-        |> order_by([log], asc: log.block_number, asc: log.index)
-        |> limit(1000)
-
-      all_transaction_logs_query
-      |> Chain.wrapped_union_subquery()
-      |> order_by([log], asc: log.block_number, asc: log.index)
-      |> Repo.replica().all()
-      |> Log.preload_block()
-      |> Log.preload_transaction([], Repo.replica())
-      |> Log.prepare_data()
-      |> Log.prepare_first_topic()
-    else
-      all_transaction_logs_query =
-        logs_query
-        |> subquery()
-        |> Log.join_transaction_query()
-        |> Log.join_address_mapping_query()
-        |> join(:inner, [l, t], block in assoc(t, :block))
-        |> where([_l, _t, _am, block], block.consensus == true)
-        |> select([log], map(log, ^@log_fields))
-        |> select_merge([log, transaction, address_mapping, block], %{
-          gas_price: transaction.gas_price,
-          gas_used: transaction.gas_used,
-          transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_number: transaction.block_number,
-          block_timestamp: block.timestamp,
-          block_consensus: block.consensus,
-          transaction_hash: transaction.hash,
-          address_hash: coalesce(log.address_hash, address_mapping.address_hash)
-        })
-        |> order_by([log, _t, _am, _b], asc: log.block_number, asc: log.index)
-        |> limit(1000)
-
-      all_transaction_logs_query
-      |> Chain.wrapped_union_subquery()
-      |> order_by([log], asc: log.block_number, asc: log.index)
-      |> Repo.replica().all()
-      |> Log.preload_block()
-      |> Log.preload_transaction([], Repo.replica())
-      |> Log.prepare_data()
-      |> Log.prepare_first_topic()
-    end
+    logs_query
+    |> join_transaction_data()
+    |> limit(1000)
+    |> fetch_ordered()
+    |> Log.preload_block()
+    |> Log.preload_transaction([], Repo.replica())
   end
 
-  # Since address_hash was not present, we know that a
-  # topic filter has been applied, so we use a different
-  # query that is optimized for a logs filter over an
-  # address_hash
-  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  # Since address_hash was not present, we know that a topic filter has been
+  # applied. Ordering, paging and the LIMIT are applied inside a subquery over
+  # `logs` (with only the consensus check joined), so the planner has to
+  # produce at most 1000 logs before joining the transaction data. Joining
+  # first and limiting afterwards lets the planner scan the whole
+  # `transactions` block range up front, which is prohibitively slow for wide
+  # ranges.
+  #
+  # Logs of non-consensus blocks are not guaranteed to be deleted (see
+  # `Explorer.Migrator.DeleteNonConsensusLogs`), so consensus has to be checked
+  # before the LIMIT: otherwise a page could come back short, or empty with no
+  # cursor to continue from, while later consensus logs still exist. The check
+  # uses the same join and predicate as `join_transaction_data/1`, so no row
+  # that makes it into the page is dropped by the outer join afterwards.
   def list_logs(filter, paging_options) do
     paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
@@ -166,126 +118,93 @@ defmodule Explorer.Etherscan.Logs do
       |> where_topic_match(prepared_filter)
       |> where([log], log.block_number >= ^prepared_filter.from_block)
       |> where([log], log.block_number <= ^prepared_filter.to_block)
+      |> where_consensus()
+      |> page_logs(paging_options)
+      |> order_by([log], asc: log.block_number, asc: log.index)
+      |> limit(1000)
 
+    logs_query
+    |> join_transaction_data()
+    |> fetch_ordered()
+  end
+
+  # Keeps only logs whose consensus predicate matches the one applied by
+  # `join_transaction_data/1` in the current denormalization state. Logs are
+  # joined to transactions through `Log.join_transaction_query/1` in both
+  # places, so each check is a few index lookups per candidate log.
+  # `transactions.block_consensus` can diverge from `blocks.consensus` (see
+  # `Explorer.Migrator.TransactionBlockConsensus`), which is why the predicate
+  # is not simply `blocks.consensus` in both states.
+  defp where_consensus(logs_query) do
     if DenormalizationHelper.transactions_denormalization_finished?() do
-      block_transaction_query =
-        from(transaction in Transaction,
-          where: transaction.block_number >= ^prepared_filter.from_block,
-          where: transaction.block_number <= ^prepared_filter.to_block,
-          where: transaction.block_consensus == true,
-          select: %{
-            transaction_hash: transaction.hash,
-            gas_price: transaction.gas_price,
-            gas_used: transaction.gas_used,
-            transaction_index: transaction.index,
-            block_hash: transaction.block_hash,
-            block_number: transaction.block_number,
-            block_timestamp: transaction.block_timestamp,
-            block_consensus: transaction.block_consensus
-          }
-        )
-
-      query_with_block_transaction_data =
-        logs_query
-        |> then(fn query ->
-          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          cond do
-            LogHelper.fill_optimized_fields_migration_finished?() ->
-              join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
-                on:
-                  block_transaction_data.transaction_index == log.transaction_index and
-                    block_transaction_data.block_number == log.block_number
-              )
-
-            LogHelper.fill_optimized_fields_migration_started?() ->
-              join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
-                on:
-                  (block_transaction_data.transaction_hash == log.transaction_hash and
-                     block_transaction_data.block_hash == log.block_hash) or
-                    (block_transaction_data.transaction_index == log.transaction_index and
-                       block_transaction_data.block_number == log.block_number)
-              )
-
-            true ->
-              join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
-                on:
-                  block_transaction_data.transaction_hash == log.transaction_hash and
-                    block_transaction_data.block_hash == log.block_hash
-              )
-          end
-        end)
-        |> Log.join_address_mapping_query()
-        |> order_by([log, _b], log.block_number)
-        |> limit(1000)
-        |> select([_l, block_transaction_data], block_transaction_data)
-        |> select_merge([log], map(log, ^@log_fields))
-        |> select_merge([log], %{address_hash: coalesce(log.address_hash, as(:address_mapping).address_hash)})
-
-      query_with_block_transaction_data
-      |> order_by([log], asc: log.index)
-      |> page_logs(paging_options)
-      |> Repo.replica().all()
-      |> Log.prepare_first_topic()
+      logs_query
+      |> Log.join_transaction_query()
+      |> where(as(:transaction).block_consensus == true)
     else
-      block_transaction_query =
-        from(transaction in Transaction,
-          join: block in assoc(transaction, :block),
-          where: block.number >= ^prepared_filter.from_block,
-          where: block.number <= ^prepared_filter.to_block,
-          where: block.consensus == true,
-          select: %{
-            transaction_hash: transaction.hash,
-            gas_price: transaction.gas_price,
-            gas_used: transaction.gas_used,
-            transaction_index: transaction.index,
-            block_hash: block.hash,
-            block_number: block.number,
-            block_timestamp: block.timestamp,
-            block_consensus: block.consensus
-          }
-        )
+      logs_query
+      |> Log.join_transaction_query()
+      |> join(:inner, [transaction: transaction], block in assoc(transaction, :block), as: :block)
+      |> where(as(:block).consensus == true)
+    end
+  end
 
-      query_with_block_transaction_data =
-        logs_query
-        |> then(fn query ->
-          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          cond do
-            LogHelper.fill_optimized_fields_migration_finished?() ->
-              join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
-                on:
-                  block_transaction_data.transaction_index == log.transaction_index and
-                    block_transaction_data.block_number == log.block_number
-              )
+  # Re-selects the joined query through an outer subquery so that fields
+  # taken from the `logs` subquery are loaded with their schema types (`Hash`
+  # structs instead of raw binaries), then applies the final ordering and fills
+  # `data` and `first_topic` of logs stored with `compressed_data` and
+  # `first_topic_id` only.
+  defp fetch_ordered(query) do
+    query
+    |> Chain.wrapped_union_subquery()
+    |> order_by([log], asc: log.block_number, asc: log.index)
+    |> Repo.replica().all()
+    |> Log.prepare_data()
+    |> Log.prepare_first_topic()
+  end
 
-            LogHelper.fill_optimized_fields_migration_started?() ->
-              join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
-                on:
-                  (block_transaction_data.transaction_hash == log.transaction_hash and
-                     block_transaction_data.block_hash == log.block_hash) or
-                    (block_transaction_data.transaction_index == log.transaction_index and
-                       block_transaction_data.block_number == log.block_number)
-              )
-
-            true ->
-              join(query, :inner, [log], block_transaction_data in subquery(block_transaction_query),
-                on:
-                  block_transaction_data.transaction_hash == log.transaction_hash and
-                    block_transaction_data.block_hash == log.block_hash
-              )
-          end
-        end)
-        |> Log.join_address_mapping_query()
-        |> order_by([log, _b], log.block_number)
-        |> limit(1000)
-        |> select([_l, block_transaction_data], block_transaction_data)
-        |> select_merge([log], map(log, ^@log_fields))
-        |> select_merge([log], %{address_hash: coalesce(log.address_hash, as(:address_mapping).address_hash)})
-
-      query_with_block_transaction_data
-      |> order_by([log], asc: log.index)
-      |> page_logs(paging_options)
-      |> Repo.replica().all()
-      |> Log.prepare_first_topic()
+  # Wraps `logs_query` in a subquery and joins each log to its consensus
+  # transaction through `Log.join_transaction_query/1`, a few index lookups per
+  # log. The selected shape is identical in both denormalization states.
+  defp join_transaction_data(logs_query) do
+    if DenormalizationHelper.transactions_denormalization_finished?() do
+      logs_query
+      |> subquery()
+      |> Log.join_transaction_query()
+      |> Log.join_address_mapping_query()
+      |> where(as(:transaction).block_consensus == true)
+      |> select([log], map(log, ^@log_fields))
+      |> select_merge([log], %{
+        gas_price: as(:transaction).gas_price,
+        gas_used: as(:transaction).gas_used,
+        transaction_index: as(:transaction).index,
+        block_hash: as(:transaction).block_hash,
+        block_number: as(:transaction).block_number,
+        block_timestamp: as(:transaction).block_timestamp,
+        block_consensus: as(:transaction).block_consensus,
+        transaction_hash: as(:transaction).hash,
+        address_hash: coalesce(log.address_hash, as(:address_mapping).address_hash)
+      })
+      |> order_by([log], asc: log.block_number, asc: log.index)
+    else
+      logs_query
+      |> subquery()
+      |> Log.join_transaction_query()
+      |> Log.join_address_mapping_query()
+      |> join(:inner, [l, t], block in assoc(t, :block))
+      |> where([_l, _t, _am, block], block.consensus == true)
+      |> select([log], map(log, ^@log_fields))
+      |> select_merge([log, transaction, address_mapping, block], %{
+        gas_price: transaction.gas_price,
+        gas_used: transaction.gas_used,
+        transaction_index: transaction.index,
+        block_hash: transaction.block_hash,
+        block_number: transaction.block_number,
+        block_timestamp: block.timestamp,
+        block_consensus: block.consensus,
+        transaction_hash: transaction.hash,
+        address_hash: coalesce(log.address_hash, address_mapping.address_hash)
+      })
+      |> order_by([log, _t, _am, _b], asc: log.block_number, asc: log.index)
     end
   end
 

@@ -132,7 +132,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Stats.Response do
         :static_gas_price,
         :total_addresses,
         :total_blocks,
-        :total_gas_used,
         :total_transactions,
         :transactions_today,
         :tvl
