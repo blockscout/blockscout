@@ -390,8 +390,13 @@ defmodule Explorer.Chain.Token.UIMultiplierChange do
 
   Costs one query for the whole collection, and none at all — the usual case —
   when it holds no transfer of an ERC-8056 token. Requires `:token` to be
-  preloaded, plus either `:block` or `:transaction`, since the moment of the
-  transfer decides whether a scheduled change had already matured by then.
+  preloaded.
+
+  The moment of a transfer decides whether a scheduled change had already
+  matured by then. It is taken from `:block` or `:transaction` when either is
+  preloaded; transfers that come without both — those listed under a single
+  transaction, which the page carries once rather than per transfer — cost one
+  more query, for the timestamps of their blocks.
 
   `nil` entries are passed through, so a collection where a token transfer is
   optional can be handed over as is and zipped back afterwards.
@@ -409,24 +414,54 @@ defmodule Explorer.Chain.Token.UIMultiplierChange do
         token_transfers
 
       changes_by_token ->
-        Enum.map(token_transfers, &put_ui_multiplier(&1, changes_by_token))
+        block_timestamps = missing_block_timestamps(token_transfers, changes_by_token, options)
+
+        Enum.map(token_transfers, &put_ui_multiplier(&1, changes_by_token, block_timestamps))
     end
   end
 
-  defp put_ui_multiplier(%TokenTransfer{token: %Token{} = token} = token_transfer, changes_by_token) do
+  defp put_ui_multiplier(%TokenTransfer{token: %Token{} = token} = token_transfer, changes_by_token, block_timestamps) do
     case changes_by_token[token.contract_address_hash] do
       nil ->
         token_transfer
 
       changes ->
-        multiplier =
-          at(changes, token_transfer.block_number, token_transfer.log_index, timestamp_of(token_transfer))
+        timestamp = timestamp_of(token_transfer) || Map.get(block_timestamps, token_transfer.block_hash)
+        multiplier = at(changes, token_transfer.block_number, token_transfer.log_index, timestamp)
 
         %{token_transfer | ui_multiplier: multiplier}
     end
   end
 
-  defp put_ui_multiplier(token_transfer, _changes_by_token), do: token_transfer
+  defp put_ui_multiplier(token_transfer, _changes_by_token, _block_timestamps), do: token_transfer
+
+  # Reads the timestamps of the blocks of the transfers that are about to be
+  # resolved but carry no moment of their own, so that a caller loading
+  # transfers without their block or transaction is not silently answered with
+  # `nil`. Nothing is queried when every such transfer already has one.
+  defp missing_block_timestamps(token_transfers, changes_by_token, options) do
+    token_transfers
+    |> Enum.filter(&(resolvable?(&1, changes_by_token) and is_nil(timestamp_of(&1))))
+    |> Enum.map(& &1.block_hash)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+    |> case do
+      [] ->
+        %{}
+
+      block_hashes ->
+        Block
+        |> where([block], block.hash in ^block_hashes)
+        |> select([block], {block.hash, block.timestamp})
+        |> Chain.select_repo(options).all()
+        |> Map.new()
+    end
+  end
+
+  defp resolvable?(%TokenTransfer{token: %Token{contract_address_hash: contract_address_hash}}, changes_by_token),
+    do: Map.has_key?(changes_by_token, contract_address_hash)
+
+  defp resolvable?(_token_transfer, _changes_by_token), do: false
 
   defp timestamp_of(%TokenTransfer{block: %Block{timestamp: timestamp}}), do: timestamp
 
