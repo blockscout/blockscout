@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Counters do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.General
+  alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%Schema{
@@ -16,11 +17,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Counters do
     properties: %{
       token_holders_count: General.IntegerString,
       transfers_count: General.IntegerString,
-      ui_multiplier_changes_count: %Schema{
-        allOf: [General.IntegerString],
-        description:
-          "Number of ERC-8056 multiplier changes listed by `/api/v2/tokens/{address_hash}/ui-multiplier-changes`. Always `\"0\"` for a token that does not implement ERC-8056."
-      }
+      ui_multiplier_changes_count:
+        Helper.extend_schema(General.IntegerString.schema(),
+          description:
+            "Number of ERC-8056 multiplier changes listed by `/api/v2/tokens/{address_hash}/ui-multiplier-changes`. Always `\"0\"` for a token that does not implement ERC-8056."
+        )
     },
     required: [:token_holders_count, :transfers_count, :ui_multiplier_changes_count],
     additionalProperties: false,
