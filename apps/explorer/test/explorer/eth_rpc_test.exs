@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.EthRPCTest do
   use Explorer.DataCase, async: false
-  # the tested requests are proxied to the node, so no database is involved
-  use ExUnit.Case, async: false
 
   import Mox
 
@@ -46,8 +44,9 @@ defmodule Explorer.EthRPCTest do
   test "extended proxy methods are proxied when feature flag is enabled" do
     set_extended_proxy_methods_enabled(true)
 
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: 1, jsonrpc: "2.0", method: "net_version", params: []}], _options ->
-      {:ok, [%{id: 1, jsonrpc: "2.0", result: "1"}]}
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn
+      [%{id: id, jsonrpc: "2.0", method: "net_version", params: []}], _options ->
+        {:ok, [%{id: id, jsonrpc: "2.0", result: "1"}]}
     end)
 
     request = %{"id" => 1, "jsonrpc" => "2.0", "method" => "net_version", "params" => []}
@@ -71,15 +70,16 @@ defmodule Explorer.EthRPCTest do
   test "JSONRPC error returned by the node for a proxied request is passed through" do
     set_extended_proxy_methods_enabled(true)
 
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: 3, jsonrpc: "2.0", method: "eth_getProof", params: _}], _options ->
-      {:ok,
-       [
-         %{
-           id: 3,
-           jsonrpc: "2.0",
-           error: %{code: -32_602, message: "distance to target block exceeds maximum proof window"}
-         }
-       ]}
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn
+      [%{id: id, jsonrpc: "2.0", method: "eth_getProof", params: _}], _options ->
+        {:ok,
+         [
+           %{
+             id: id,
+             jsonrpc: "2.0",
+             error: %{code: -32_602, message: "distance to target block exceeds maximum proof window"}
+           }
+         ]}
     end)
 
     request = %{
@@ -100,7 +100,7 @@ defmodule Explorer.EthRPCTest do
   test "transport error for a proxied request is returned as an internal error" do
     set_extended_proxy_methods_enabled(true)
 
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: 1, jsonrpc: "2.0", method: "net_version", params: []}], _options ->
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: _, jsonrpc: "2.0", method: "net_version", params: []}], _options ->
       {:error, :timeout}
     end)
 
@@ -113,7 +113,7 @@ defmodule Explorer.EthRPCTest do
   test "undecodable node response for a proxied request is returned as an internal error without the node URL" do
     set_extended_proxy_methods_enabled(true)
 
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: 1, jsonrpc: "2.0", method: "net_version", params: []}], _options ->
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: _, jsonrpc: "2.0", method: "net_version", params: []}], _options ->
       {:error, {:bad_response, "http://node.example.com:8545"}}
     end)
 
@@ -127,8 +127,8 @@ defmodule Explorer.EthRPCTest do
     set_extended_proxy_methods_enabled(false)
 
     expect(EthereumJSONRPC.Mox, :json_rpc, fn
-      [%{id: 1, jsonrpc: "2.0", method: "eth_getCode", params: [_, "latest"]}], _options ->
-        {:ok, [%{id: 1, jsonrpc: "2.0", result: "0x"}]}
+      [%{id: id, jsonrpc: "2.0", method: "eth_getCode", params: [_, "latest"]}], _options ->
+        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x"}]}
     end)
 
     request = %{
@@ -147,14 +147,14 @@ defmodule Explorer.EthRPCTest do
 
     expect(EthereumJSONRPC.Mox, :json_rpc, fn
       [
-        %{id: 1, jsonrpc: "2.0", method: "eth_feeHistory", params: ["0x4", "latest"]},
-        %{id: 2, jsonrpc: "2.0", method: "eth_feeHistory", params: ["0x4", "latest", [25, 50]]}
+        %{id: first_id, jsonrpc: "2.0", method: "eth_feeHistory", params: ["0x4", "latest"]},
+        %{id: second_id, jsonrpc: "2.0", method: "eth_feeHistory", params: ["0x4", "latest", [25, 50]]}
       ],
       _options ->
         {:ok,
          [
-           %{id: 1, jsonrpc: "2.0", result: %{oldestBlock: "0x1"}},
-           %{id: 2, jsonrpc: "2.0", result: %{oldestBlock: "0x1"}}
+           %{id: first_id, jsonrpc: "2.0", result: %{oldestBlock: "0x1"}},
+           %{id: second_id, jsonrpc: "2.0", result: %{oldestBlock: "0x1"}}
          ]}
     end)
 
@@ -185,8 +185,8 @@ defmodule Explorer.EthRPCTest do
     set_core_proxy_methods_disabled(false)
 
     expect(EthereumJSONRPC.Mox, :json_rpc, fn
-      [%{id: 1, jsonrpc: "2.0", method: "eth_getCode", params: [_, "latest"]}], _options ->
-        {:ok, [%{id: 1, jsonrpc: "2.0", result: "0x"}]}
+      [%{id: id, jsonrpc: "2.0", method: "eth_getCode", params: [_, "latest"]}], _options ->
+        {:ok, [%{id: id, jsonrpc: "2.0", result: "0x"}]}
     end)
 
     request = %{
@@ -204,8 +204,9 @@ defmodule Explorer.EthRPCTest do
     set_core_proxy_methods_disabled(true)
     set_extended_proxy_methods_enabled(true)
 
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: 1, jsonrpc: "2.0", method: "net_version", params: []}], _options ->
-      {:ok, [%{id: 1, jsonrpc: "2.0", result: "1"}]}
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn
+      [%{id: id, jsonrpc: "2.0", method: "net_version", params: []}], _options ->
+        {:ok, [%{id: id, jsonrpc: "2.0", result: "1"}]}
     end)
 
     request = %{"id" => 1, "jsonrpc" => "2.0", "method" => "net_version", "params" => []}

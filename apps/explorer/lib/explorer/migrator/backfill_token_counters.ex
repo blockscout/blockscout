@@ -81,6 +81,7 @@ defmodule Explorer.Migrator.BackfillTokenCounters do
   @impl FillingMigration
   def update_batch(contract_address_hashes) do
     TokenCountersConsolidator.consolidate_tokens(contract_address_hashes, await_safe_block())
+    Enum.count(contract_address_hashes)
   end
 
   @impl FillingMigration
