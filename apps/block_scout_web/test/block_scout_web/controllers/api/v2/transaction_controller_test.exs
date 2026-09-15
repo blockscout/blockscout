@@ -255,6 +255,17 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response["authorization_list"] == []
     end
 
+    test "token transfers carry the ERC-8056 multiplier as of the transaction, not the current one", %{conn: conn} do
+      # the token transfers previewed inside a transaction are loaded without
+      # their block, which must not leave the multiplier unresolved
+      transaction = insert_erc_8056_transfer_before_split()
+
+      request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+
+      assert %{"token_transfers" => [%{"total" => total}]} = json_response(request, 200)
+      assert total["ui_multiplier"] == "1000000000000000000"
+    end
+
     test "get token-transfers with ok reputation", %{conn: conn} do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
       Application.put_env(:block_scout_web, :hide_scam_addresses, true)
@@ -832,6 +843,18 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   describe "/transactions/{transaction_hash}/token-transfers" do
+    test "total carries the ERC-8056 multiplier as of the transfer, not the current one", %{conn: conn} do
+      # the token doubled on 2026-06-01 and the transfer predates that; the
+      # transfers of a transaction are loaded without their block, which must
+      # not leave the multiplier unresolved
+      transaction = insert_erc_8056_transfer_before_split()
+
+      request = get(conn, "/api/v2/transactions/#{transaction.hash}/token-transfers")
+
+      assert %{"items" => [%{"total" => total}]} = json_response(request, 200)
+      assert total["ui_multiplier"] == "1000000000000000000"
+    end
+
     test "get token-transfers with ok reputation", %{conn: conn} do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
       Application.put_env(:block_scout_web, :hide_scam_addresses, true)
@@ -1901,6 +1924,160 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert token_data["reputation"] == "ok"
     end
 
+    test "balances of an ERC-8056 token carry the multiplier of the transaction, not the current one", %{conn: conn} do
+      one = Decimal.new("1000000000000000000")
+      two = Decimal.new("2000000000000000000")
+
+      # the token doubled on 2026-06-01, and the transaction below predates that,
+      # so its balances have to keep the multiplier they were seen with
+      token =
+        insert(:token,
+          type: "ERC-8056",
+          ui_multiplier: two,
+          new_ui_multiplier: two,
+          ui_multiplier_effective_at: ~U[2026-06-01 00:00:00.000000Z]
+        )
+
+      announcement = insert(:block, number: 100, timestamp: ~U[2026-03-01 00:00:00.000000Z])
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block: announcement,
+        block_number: announcement.number,
+        log_index: 0,
+        old_multiplier: one,
+        new_multiplier: two,
+        effective_at: ~U[2026-06-01 00:00:00.000000Z]
+      )
+
+      block_before = insert(:block, number: 149, timestamp: ~U[2026-04-30 00:00:00.000000Z])
+      block = insert(:block, number: 150, timestamp: ~U[2026-05-01 00:00:00.000000Z])
+
+      transaction = :transaction |> insert() |> with_block(block, status: :ok)
+
+      from_address = insert(:address)
+      to_address = insert(:address)
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: block,
+        block_number: block.number,
+        token_contract_address: token.contract_address,
+        from_address: from_address,
+        to_address: to_address,
+        amount: Decimal.new(100),
+        token_ids: nil
+      )
+
+      for address <- [transaction.from_address, transaction.to_address, block.miner] do
+        insert(:address_coin_balance,
+          address: address,
+          address_hash: address.hash,
+          block_number: block_before.number,
+          value: %Wei{value: Decimal.new(1000)}
+        )
+      end
+
+      for {address, value} <- [{from_address, Decimal.new(1000)}, {to_address, Decimal.new(0)}] do
+        insert(:address_current_token_balance,
+          address: address,
+          address_hash: address.hash,
+          token_contract_address_hash: token.contract_address_hash,
+          block_number: block_before.number,
+          value: value
+        )
+      end
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
+
+      assert response = json_response(request, 200)
+
+      assert [_ | _] = token_state_changes = Enum.filter(response["items"], &(&1["type"] == "token"))
+
+      for state_change <- token_state_changes do
+        assert state_change["ui_multiplier"] == "1000000000000000000"
+        # the shared rendering of the token keeps saying what is in force now
+        assert state_change["token"]["ui_multiplier"] == "2000000000000000000"
+      end
+
+      assert Enum.all?(response["items"], &(&1["type"] == "token" or is_nil(&1["ui_multiplier"])))
+    end
+
+    test "balances of an ERC-8056 token account for a change the transaction itself announced", %{conn: conn} do
+      one = Decimal.new("1000000000000000000")
+      two = Decimal.new("2000000000000000000")
+
+      token =
+        insert(:token,
+          type: "ERC-8056",
+          ui_multiplier: two,
+          new_ui_multiplier: two,
+          ui_multiplier_effective_at: ~U[2026-05-01 00:00:00.000000Z]
+        )
+
+      block_before = insert(:block, number: 149, timestamp: ~U[2026-04-30 00:00:00.000000Z])
+      block = insert(:block, number: 150, timestamp: ~U[2026-05-01 00:00:00.000000Z])
+
+      transaction = :transaction |> insert() |> with_block(block, status: :ok)
+
+      from_address = insert(:address)
+      to_address = insert(:address)
+
+      token_transfer =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: block,
+          block_number: block.number,
+          token_contract_address: token.contract_address,
+          from_address: from_address,
+          to_address: to_address,
+          amount: Decimal.new(100),
+          token_ids: nil
+        )
+
+      # announced by the same transaction, but after the transfer the balances
+      # were derived from, and effective right away
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block: block,
+        block_number: block.number,
+        log_index: token_transfer.log_index + 1,
+        transaction_hash: transaction.hash,
+        old_multiplier: one,
+        new_multiplier: two,
+        effective_at: ~U[2026-05-01 00:00:00.000000Z]
+      )
+
+      for address <- [transaction.from_address, transaction.to_address, block.miner] do
+        insert(:address_coin_balance,
+          address: address,
+          address_hash: address.hash,
+          block_number: block_before.number,
+          value: %Wei{value: Decimal.new(1000)}
+        )
+      end
+
+      for {address, value} <- [{from_address, Decimal.new(1000)}, {to_address, Decimal.new(0)}] do
+        insert(:address_current_token_balance,
+          address: address,
+          address_hash: address.hash,
+          token_contract_address_hash: token.contract_address_hash,
+          block_number: block_before.number,
+          value: value
+        )
+      end
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
+
+      assert response = json_response(request, 200)
+
+      assert [_ | _] = token_state_changes = Enum.filter(response["items"], &(&1["type"] == "token"))
+
+      for state_change <- token_state_changes do
+        assert state_change["ui_multiplier"] == "2000000000000000000"
+      end
+    end
+
     test "return state changes with scam token reputation properly set", %{conn: conn} do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
       Application.put_env(:block_scout_web, :hide_scam_addresses, true)
@@ -2670,6 +2847,39 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   end
 
   defp check_total(_, _, _), do: true
+
+  # An ERC-8056 token that doubled on 2026-06-01, and a transaction that moved
+  # it a month before, while the multiplier was still 1.0.
+  defp insert_erc_8056_transfer_before_split do
+    token =
+      insert(:token,
+        type: "ERC-8056",
+        ui_multiplier: Decimal.new("2000000000000000000"),
+        new_ui_multiplier: Decimal.new("2000000000000000000"),
+        ui_multiplier_effective_at: ~U[2026-06-01 00:00:00.000000Z]
+      )
+
+    insert(:token_ui_multiplier_change,
+      token: token,
+      block_number: 100,
+      log_index: 0,
+      old_multiplier: Decimal.new("1000000000000000000"),
+      new_multiplier: Decimal.new("2000000000000000000"),
+      effective_at: ~U[2026-06-01 00:00:00.000000Z]
+    )
+
+    block = insert(:block, number: 150, timestamp: ~U[2026-05-01 00:00:00.000000Z])
+    transaction = :transaction |> insert() |> with_block(block)
+
+    insert(:token_transfer,
+      transaction: transaction,
+      block: block,
+      block_number: block.number,
+      token_contract_address: token.contract_address
+    )
+
+    transaction
+  end
 
   describe "/transactions/{transaction_hash}/summary?just_request_body=true" do
     setup do

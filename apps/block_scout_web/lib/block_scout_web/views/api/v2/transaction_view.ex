@@ -30,6 +30,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation, as: ProxyImplementation
+  alias Explorer.Chain.Token.UIMultiplierChange
   alias Explorer.Chain.Transaction.StateChange
   alias Timex.Duration
 
@@ -126,6 +127,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     %{
       "items" =>
         token_transfers
+        |> UIMultiplierChange.put_ui_multipliers(@api_true)
         |> Enum.zip(decoded_transactions)
         |> Enum.map(fn {tt, decoded_input} -> TokenTransferView.prepare_token_transfer(tt, conn, decoded_input) end),
       "next_page_params" => next_page_params
@@ -137,13 +139,17 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       Transaction.decode_transactions(Enum.map(token_transfers, fn tt -> tt.transaction end), true, @api_true)
 
     token_transfers
+    |> UIMultiplierChange.put_ui_multipliers(@api_true)
     |> Enum.zip(decoded_transactions)
     |> Enum.map(fn {tt, decoded_input} -> TokenTransferView.prepare_token_transfer(tt, conn, decoded_input) end)
   end
 
   def render("token_transfer.json", %{token_transfer: token_transfer, conn: conn}) do
     [decoded_transaction] = Transaction.decode_transactions([token_transfer.transaction], true, @api_true)
-    TokenTransferView.prepare_token_transfer(token_transfer, conn, decoded_transaction)
+
+    [token_transfer_with_multiplier] = UIMultiplierChange.put_ui_multipliers([token_transfer], @api_true)
+
+    TokenTransferView.prepare_token_transfer(token_transfer_with_multiplier, conn, decoded_transaction)
   end
 
   def render("internal_transactions.json", %{
@@ -1001,7 +1007,12 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "is_miner" => state_change.miner?,
       "type" => type,
       "token" => if(type == "token", do: TokenView.render("token.json", %{token: coin_or_transfer.token})),
-      "token_id" => state_change.token_id
+      "token_id" => state_change.token_id,
+      # the multiplier `balance_before`/`balance_after`/`change` are to be
+      # displayed with, as of this transaction. `token.ui_multiplier` is the one
+      # in force now, since that rendering of a token is shared with every other
+      # place a token shows up
+      "ui_multiplier" => state_change.ui_multiplier
     }
     |> append_balances(state_change.balance_before, state_change.balance_after)
     |> append_balance_change(state_change, coin_or_transfer)
