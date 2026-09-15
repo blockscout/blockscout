@@ -31,6 +31,7 @@ defmodule Explorer.Application do
     TransactionsCount
   }
 
+  alias Explorer.Chain.Cache.AddressTags, as: AddressTagsCache
   alias Explorer.Chain.Cache.ContractMethods, as: ContractMethodsCache
   alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
   alias Explorer.Chain.Supply.RSK
@@ -106,6 +107,10 @@ defmodule Explorer.Application do
         ),
         con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
         con_cache_child_spec(ContractMethodsCache.cache_name(),
+          ttl_check_interval: :timer.minutes(1),
+          global_ttl: :infinity
+        ),
+        con_cache_child_spec(AddressTagsCache.cache_name(),
           ttl_check_interval: :timer.minutes(1),
           global_ttl: :infinity
         ),
