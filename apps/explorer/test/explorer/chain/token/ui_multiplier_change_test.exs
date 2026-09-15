@@ -121,6 +121,27 @@ defmodule Explorer.Chain.Token.UIMultiplierChangeTest do
       assert UIMultiplierChange.put_ui_multipliers([nil]) == [nil]
     end
 
+    test "resolves a transfer that comes without its block or transaction" do
+      # the shape the transaction endpoints hand over: the page carries the
+      # transaction once, so its transfers are loaded with nothing but the token
+      token = insert(:token, ui_multiplier: @four, new_ui_multiplier: @four, ui_multiplier_effective_at: nil)
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block_number: 100,
+        log_index: 0,
+        old_multiplier: @two,
+        new_multiplier: @four,
+        effective_at: ~U[2026-06-01 00:00:00.000000Z]
+      )
+
+      transfer = %{transfer_at(token, ~U[2026-05-01 00:00:00.000000Z], 150) | block: nil, transaction: nil}
+
+      assert [resolved] = UIMultiplierChange.put_ui_multipliers([transfer])
+
+      assert resolved.ui_multiplier == @two
+    end
+
     test "ignores a change whose block lost consensus" do
       token = insert(:token, ui_multiplier: @four)
       reorged = insert(:block, number: 100, consensus: false)
