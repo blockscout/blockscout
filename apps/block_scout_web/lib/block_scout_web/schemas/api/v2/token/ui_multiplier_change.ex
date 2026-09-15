@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.UIMultiplierChange do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.General
+  alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%Schema{
@@ -18,33 +19,29 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.UIMultiplierChange do
     properties: %{
       block_number: %Schema{type: :integer, nullable: false},
       block_hash: General.FullHash,
-      timestamp: %Schema{
-        type: :string,
-        format: :"date-time",
-        nullable: false,
-        description: "Moment the change was announced, i.e. the timestamp of the block holding the event."
-      },
-      transaction_hash: %Schema{
-        allOf: [General.FullHashNullable],
-        description:
-          "Transaction the event was emitted from. `null` for changes recorded before this field existed and for chains that emit logs outside of a transaction."
-      },
+      timestamp:
+        Helper.extend_schema(General.Timestamp.schema(),
+          description: "Moment the change was announced, i.e. the timestamp of the block holding the event."
+        ),
+      transaction_hash:
+        Helper.extend_schema(General.FullHashNullable.schema(),
+          description:
+            "Transaction the event was emitted from. `null` for changes recorded before this field existed and for chains that emit logs outside of a transaction."
+        ),
       log_index: %Schema{type: :integer, nullable: false},
-      old_multiplier: %Schema{
-        allOf: [General.IntegerString],
-        description: "Multiplier in force until `effective_at`, with 18 decimals of precision."
-      },
-      new_multiplier: %Schema{
-        allOf: [General.IntegerString],
-        description: "Multiplier in force from `effective_at` on, with 18 decimals of precision."
-      },
-      effective_at: %Schema{
-        type: :string,
-        format: :"date-time",
-        nullable: false,
-        description:
-          "Moment `new_multiplier` replaces `old_multiplier`. A moment still in the future means the change is announced but pending."
-      }
+      old_multiplier:
+        Helper.extend_schema(General.IntegerString.schema(),
+          description: "Multiplier in force until `effective_at`, with 18 decimals of precision."
+        ),
+      new_multiplier:
+        Helper.extend_schema(General.IntegerString.schema(),
+          description: "Multiplier in force from `effective_at` on, with 18 decimals of precision."
+        ),
+      effective_at:
+        Helper.extend_schema(General.Timestamp.schema(),
+          description:
+            "Moment `new_multiplier` replaces `old_multiplier`. A moment still in the future means the change is announced but pending."
+        )
     },
     required: [
       :block_number,
