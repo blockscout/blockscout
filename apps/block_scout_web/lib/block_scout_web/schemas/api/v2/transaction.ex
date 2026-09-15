@@ -434,7 +434,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
               "token_transfer",
               "blob_transaction",
               "set_code_transaction",
-              "sponsored_transaction"
+              "sponsored_transaction",
+              "op_stack_l1_attributes_transaction",
+              "op_stack_post_exec_transaction"
             ]
           }
         },
