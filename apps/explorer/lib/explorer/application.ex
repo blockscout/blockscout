@@ -110,10 +110,12 @@ defmodule Explorer.Application do
           ttl_check_interval: :timer.minutes(1),
           global_ttl: :infinity
         ),
-        con_cache_child_spec(AddressTagsCache.cache_name(),
+        AddressTagsCache.cache_name()
+        |> con_cache_child_spec(
           ttl_check_interval: :timer.minutes(1),
           global_ttl: :infinity
-        ),
+        )
+        |> only_in_mode(:api),
         {Redix, redix_opts()},
         {Explorer.Utility.ReplicaAccessibilityManager, []},
         :hackney_pool.child_spec(:default,
