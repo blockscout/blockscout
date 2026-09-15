@@ -109,6 +109,14 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
     additionalProperties: false
   }
 
+  # OP Stack-specific transaction types appended to the `transaction_types` enum
+  # for both `optimism` and `optimism-celo` chain types (the latter resolves to
+  # the `:optimism` chain type with a `{:optimism, :celo}` chain identity).
+  @optimism_transaction_types [
+    "op_stack_l1_attributes_transaction",
+    "op_stack_post_exec_transaction"
+  ]
+
   @scroll_schema %Schema{
     type: :object,
     nullable: false,
@@ -196,6 +204,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
             operator_fee: General.IntegerString
           }
         )
+        |> extend_transaction_types_enum(@optimism_transaction_types)
 
       :scroll ->
         schema |> Helper.extend_schema(properties: %{scroll: @scroll_schema})
@@ -293,6 +302,16 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
         schema
     end
     |> chain_identity_fields()
+  end
+
+  # Appends chain-specific values to the `transaction_types` items enum of the given schema.
+  @spec extend_transaction_types_enum(map(), [String.t()]) :: map()
+  defp extend_transaction_types_enum(schema, extra_types) do
+    update_in(
+      schema,
+      [:properties, :transaction_types, Access.key(:items), Access.key(:enum)],
+      &(&1 ++ extra_types)
+    )
   end
 
   defp chain_identity_fields(schema) do
