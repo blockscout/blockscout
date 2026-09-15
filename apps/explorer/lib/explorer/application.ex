@@ -31,6 +31,7 @@ defmodule Explorer.Application do
     TransactionsCount
   }
 
+  alias Explorer.Chain.Cache.AddressTags, as: AddressTagsCache
   alias Explorer.Chain.Cache.ContractMethods, as: ContractMethodsCache
   alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
   alias Explorer.Chain.Supply.RSK
@@ -60,66 +61,7 @@ defmodule Explorer.Application do
       %{}
     )
 
-    # Children to start in all environments
-    base_children =
-      [
-        Explorer.Repo,
-        Explorer.Repo.Replica1,
-        Explorer.Vault,
-        Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),
-        Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor},
-          id: Explorer.HistoryTaskSupervisor
-        ),
-        Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor},
-          id: Explorer.MarketTaskSupervisor
-        ),
-        Supervisor.child_spec({Task.Supervisor, name: Explorer.GenesisDataTaskSupervisor},
-          id: GenesisDataTaskSupervisor
-        ),
-        Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
-        Supervisor.child_spec({Task.Supervisor, name: Explorer.LookUpSmartContractSourcesTaskSupervisor},
-          id: LookUpSmartContractSourcesTaskSupervisor
-        ),
-        Supervisor.child_spec({Task.Supervisor, name: Explorer.WETHMigratorSupervisor}, id: WETHMigratorSupervisor),
-        {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
-        Explorer.Chain.Cache.Propagator,
-        Accounts,
-        AddressesCoinBalanceSum,
-        AddressesCoinBalanceSumMinusBurnt,
-        BackgroundMigrations,
-        BlocksCount,
-        BlockNumber,
-        Blocks,
-        ChainId,
-        GasPriceOracle,
-        PendingBlockOperationCount,
-        PendingTransactionOperationCount,
-        TransactionsCount,
-        StateChanges,
-        Transactions,
-        Uncles,
-        AddressTabsElementsCount,
-        con_cache_child_spec(MarketHistoryCache.cache_name()),
-        con_cache_child_spec(HotSmartContractsCache.cache_name(),
-          ttl_check_interval: :timer.seconds(1),
-          global_ttl: :infinity
-        ),
-        con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
-        con_cache_child_spec(ContractMethodsCache.cache_name(),
-          ttl_check_interval: :timer.minutes(1),
-          global_ttl: :infinity
-        ),
-        {Redix, redix_opts()},
-        {Explorer.Utility.ReplicaAccessibilityManager, []},
-        :hackney_pool.child_spec(:default,
-          recv_timeout: 60_000,
-          timeout: 60_000,
-          max_connections: Application.get_env(:explorer, :hackney_default_pool_size)
-        ),
-        Explorer.Promo.Autoscout
-      ] ++ HttpClient.pool_child_specs()
-
-    children = base_children ++ configurable_children()
+    children = children()
 
     opts = [strategy: :one_for_one, name: Explorer.Supervisor, max_restarts: 1_000]
 
@@ -130,6 +72,77 @@ defmodule Explorer.Application do
     end
   end
 
+  # The child list of the supervision tree for the current mode, exposed so a
+  # test can check that every entry is something a supervisor accepts. The
+  # mode- and chain-type-dependent helpers return `[]` for children that do not
+  # apply, and a bare `[]` crashes the supervisor unless the list holding it is
+  # flattened first — so those helpers belong in `configurable_children/0`.
+  @doc false
+  @spec children() :: [Supervisor.child_spec() | {module(), term()} | module()]
+  def children do
+    base_children() ++ configurable_children()
+  end
+
+  # Children to start in all environments
+  defp base_children do
+    [
+      Explorer.Repo,
+      Explorer.Repo.Replica1,
+      Explorer.Vault,
+      Supervisor.child_spec({SpandexDatadog.ApiServer, datadog_opts()}, id: SpandexDatadog.ApiServer),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.HistoryTaskSupervisor},
+        id: Explorer.HistoryTaskSupervisor
+      ),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.MarketTaskSupervisor},
+        id: Explorer.MarketTaskSupervisor
+      ),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.GenesisDataTaskSupervisor},
+        id: GenesisDataTaskSupervisor
+      ),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.TaskSupervisor}, id: Explorer.TaskSupervisor),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.LookUpSmartContractSourcesTaskSupervisor},
+        id: LookUpSmartContractSourcesTaskSupervisor
+      ),
+      Supervisor.child_spec({Task.Supervisor, name: Explorer.WETHMigratorSupervisor}, id: WETHMigratorSupervisor),
+      {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
+      Explorer.Chain.Cache.Propagator,
+      Accounts,
+      AddressesCoinBalanceSum,
+      AddressesCoinBalanceSumMinusBurnt,
+      BackgroundMigrations,
+      BlocksCount,
+      BlockNumber,
+      Blocks,
+      ChainId,
+      GasPriceOracle,
+      PendingBlockOperationCount,
+      PendingTransactionOperationCount,
+      TransactionsCount,
+      StateChanges,
+      Transactions,
+      Uncles,
+      AddressTabsElementsCount,
+      con_cache_child_spec(MarketHistoryCache.cache_name()),
+      con_cache_child_spec(HotSmartContractsCache.cache_name(),
+        ttl_check_interval: :timer.seconds(1),
+        global_ttl: :infinity
+      ),
+      con_cache_child_spec(RSK.cache_name(), ttl_check_interval: :timer.minutes(1), global_ttl: :timer.minutes(30)),
+      con_cache_child_spec(ContractMethodsCache.cache_name(),
+        ttl_check_interval: :timer.minutes(1),
+        global_ttl: :infinity
+      ),
+      {Redix, redix_opts()},
+      {Explorer.Utility.ReplicaAccessibilityManager, []},
+      :hackney_pool.child_spec(:default,
+        recv_timeout: 60_000,
+        timeout: 60_000,
+        max_connections: Application.get_env(:explorer, :hackney_default_pool_size)
+      ),
+      Explorer.Promo.Autoscout
+    ] ++ HttpClient.pool_child_specs()
+  end
+
   defp configurable_children do
     configurable_children_set =
       [
@@ -137,6 +150,15 @@ defmodule Explorer.Application do
         only_in_mode(Explorer.SmartContract.SolcDownloader, :api),
         only_in_mode(Explorer.SmartContract.VyperDownloader, :api),
         only_in_mode({Admin.Recovery, [[], [name: Admin.Recovery]]}, :api),
+        # only the web layer reads public address tags; this list is flattened,
+        # so the `[]` returned outside API mode is dropped rather than passed
+        # to the supervisor
+        AddressTagsCache.cache_name()
+        |> con_cache_child_spec(
+          ttl_check_interval: :timer.minutes(1),
+          global_ttl: :infinity
+        )
+        |> only_in_mode(:api),
         configure(Explorer.Utility.VersionUpgrade),
         configure_mode_dependent_process(Explorer.Utility.VersionConstantsUpdater, :indexer),
         configure_mode_dependent_process(Explorer.Market.Fetcher.Coin, :api),
