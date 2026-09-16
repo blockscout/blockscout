@@ -733,7 +733,7 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
                |> post("/api/eth-rpc", params(api_params, [to_string(address.hash), "0xnonsense"]))
                |> json_response(200)
 
-      assert response["error"] == "Query parameter 'block' is invalid"
+      assert response["error"]["message"] == "Query parameter 'block' is invalid"
     end
 
     test "with a block provided and no balance", %{conn: conn, api_params: api_params} do

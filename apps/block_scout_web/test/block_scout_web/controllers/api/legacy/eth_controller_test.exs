@@ -280,8 +280,8 @@ defmodule BlockScoutWeb.API.Legacy.EthControllerTest do
       expect(
         EthereumJSONRPC.Mox,
         :json_rpc,
-        fn [%{jsonrpc: "2.0", id: 4, method: "eth_getStorageAt", params: [^address, ^slot, "latest"]}], _options ->
-          {:ok, [%{id: 4, jsonrpc: "2.0", result: result_hex}]}
+        fn [%{jsonrpc: "2.0", id: id, method: "eth_getStorageAt", params: [^address, ^slot, "latest"]}], _options ->
+          {:ok, [%{id: id, jsonrpc: "2.0", result: result_hex}]}
         end
       )
 

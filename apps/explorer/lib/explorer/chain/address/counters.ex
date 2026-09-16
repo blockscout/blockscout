@@ -369,7 +369,7 @@ defmodule Explorer.Chain.Address.Counters do
       configure_task(
         :token_transfers,
         cached_counters,
-        address_to_token_transfer_count_query(address_hash, options),
+        address_to_token_transfer_count_query(address_hash, nil, nil, options),
         address_hash,
         options
       )
