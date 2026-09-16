@@ -1064,6 +1064,8 @@ config :explorer, Explorer.Chain.Cache.ScamAddresses,
   update_interval: ConfigHelper.parse_time_env_var("CACHE_SCAM_ADDRESSES_UPDATE_INTERVAL", "5m"),
   max_size: ConfigHelper.parse_integer_env_var("CACHE_SCAM_ADDRESSES_MAX_SIZE", 200_000, min: 0)
 
+config :explorer, Explorer.Chain.Cache.AddressTags, ttl: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TAGS_TTL", "5m")
+
 rate_limiter_redis_url = ConfigHelper.parse_url_env_var("RATE_LIMITER_REDIS_URL")
 rate_limiter_redis_sentinel_urls = ConfigHelper.safe_get_env("RATE_LIMITER_REDIS_SENTINEL_URLS", "")
 
@@ -1281,6 +1283,13 @@ config :indexer, Indexer.Fetcher.OnDemand.TokenBalance,
 
 config :indexer, Indexer.Fetcher.OnDemand.TokenBalance.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_BALANCE_ON_DEMAND_FETCHER")
+
+config :indexer, Indexer.Fetcher.OnDemand.TokenTotalSupply,
+  max_concurrency: ConfigHelper.parse_integer_env_var("TOKEN_TOTAL_SUPPLY_ON_DEMAND_FETCHER_CONCURRENCY", 5, min: 1),
+  threshold: ConfigHelper.parse_time_env_var("TOKEN_TOTAL_SUPPLY_ON_DEMAND_FETCHER_THRESHOLD", "5m")
+
+config :indexer, Indexer.Fetcher.OnDemand.TokenTotalSupply.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_TOTAL_SUPPLY_ON_DEMAND_FETCHER")
 
 config :indexer, Indexer.Fetcher.OnDemand.CoinBalance,
   threshold: ConfigHelper.parse_time_env_var("COIN_BALANCE_ON_DEMAND_FETCHER_THRESHOLD", "1h"),

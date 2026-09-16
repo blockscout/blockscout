@@ -338,6 +338,7 @@ defmodule Explorer.Chain.Transaction do
     Hash,
     InternalTransaction,
     MethodIdentifier,
+    SmartContract,
     SmartContract.Proxy,
     TokenTransfer,
     Wei
@@ -2340,6 +2341,39 @@ defmodule Explorer.Chain.Transaction do
     )
   end
 
+  # EIP-7702 set code transaction type: the only type carrying an authorization list.
+  @set_code_transaction_type 4
+
+  @doc """
+  Preloads `signed_authorizations` for a transaction, but only when it can have
+  any: EIP-7702 set code transactions (type #{@set_code_transaction_type}).
+
+  Every other transaction type gets an empty list without touching the DB,
+  which saves one query per transaction on the single-transaction endpoints.
+  A transaction whose `signed_authorizations` are already loaded is returned
+  as is.
+
+  ## Parameters
+  - `transaction`: The transaction to preload.
+  - `options`: Keyword list with `api?` used to pick the replica repo.
+
+  ## Returns
+  - The transaction with `signed_authorizations` loaded (or set to `[]`).
+  """
+  @spec preload_signed_authorizations(t(), Keyword.t()) :: t()
+  def preload_signed_authorizations(%__MODULE__{signed_authorizations: signed_authorizations} = transaction, _options)
+      when is_list(signed_authorizations) do
+    transaction
+  end
+
+  def preload_signed_authorizations(%__MODULE__{type: @set_code_transaction_type} = transaction, options) do
+    Chain.select_repo(options).preload(transaction, :signed_authorizations)
+  end
+
+  def preload_signed_authorizations(%__MODULE__{} = transaction, _options) do
+    %{transaction | signed_authorizations: []}
+  end
+
   @doc """
   Receives as input list of transactions and returns decoded_input_data
   Where
@@ -2428,51 +2462,111 @@ defmodule Explorer.Chain.Transaction do
 
   defp decode_remaining_transaction({decoded, _}, _, _, _, _), do: decoded
 
+  # Builds %{target address hash => combined proxy + implementations ABI} for the
+  # to_address / created_contract_address of every transaction.
+  #
+  # Associations already present on the address structs (`smart_contract` with
+  # its `abi`, `proxy_implementations`, and the implementations'
+  # `smart_contracts`) are reused, so a fully preloaded target address costs no
+  # query at all. Whatever is missing is fetched in at most two queries: one for
+  # proxy implementations, one for all outstanding ABIs.
   defp combine_smart_contract_full_abi_map(transactions, opts) do
-    # parse unique address hashes of smart-contracts from to_address and created_contract_address properties of the transactions list
-    unique_to_address_hashes =
+    # unique target addresses of the transactions list: to_address, or
+    # created_contract_address for contract creations
+    target_addresses =
       transactions
       |> Enum.flat_map(fn
-        %__MODULE__{to_address: %Address{hash: hash}} -> [hash]
-        %__MODULE__{created_contract_address: %Address{hash: hash}} -> [hash]
+        %__MODULE__{to_address: %Address{} = address} -> [address]
+        %__MODULE__{created_contract_address: %Address{} = address} -> [address]
         _ -> []
       end)
-      |> Enum.uniq()
+      |> Enum.uniq_by(& &1.hash)
 
-    # query from the DB proxy implementation objects for those address hashes
-    multiple_proxy_implementations =
-      Implementation.get_proxy_implementations_for_multiple_proxies(unique_to_address_hashes, opts)
+    # %{target address hash => implementation address hashes}
+    implementation_hashes_map = implementation_hashes_by_target_address(target_addresses, opts)
 
-    # query from the DB address objects with smart_contract preload for all found above proxy and implementation addresses
-    addresses_with_smart_contracts =
-      multiple_proxy_implementations
-      |> Enum.flat_map(fn proxy_implementations -> proxy_implementations.address_hashes end)
-      |> Enum.concat(unique_to_address_hashes)
-      |> Chain.hashes_to_addresses(
-        Keyword.merge(Keyword.take(opts, [:api?]), necessity_by_association: %{smart_contract: :optional})
-      )
-      |> Enum.into(%{}, &{&1.hash, &1})
+    # %{address hash => abi} for every target address and its implementations
+    abis_map = abis_by_address_hash(target_addresses, implementation_hashes_map, opts)
 
-    # combine map %{proxy_address_hash => implementation address hashes}
-    proxy_implementations_map =
-      multiple_proxy_implementations
-      |> Enum.into(%{}, &{&1.proxy_address_hash, &1.address_hashes})
-
-    # combine map %{proxy_address_hash => combined proxy abi}
-    unique_to_address_hashes
-    |> Enum.into(%{}, fn to_address_hash ->
+    Map.new(target_addresses, fn %Address{hash: target_hash} ->
       full_abi =
-        [to_address_hash | Map.get(proxy_implementations_map, to_address_hash, [])]
-        |> Enum.map(&Map.get(addresses_with_smart_contracts, &1))
-        |> Enum.flat_map(fn
-          %{smart_contract: %{abi: abi}} when is_list(abi) -> abi
-          _ -> []
-        end)
-        |> Enum.filter(&(!is_nil(&1)))
+        [target_hash | Map.get(implementation_hashes_map, target_hash, [])]
+        |> Enum.flat_map(&abi_from_map(abis_map, &1))
+        |> Enum.reject(&is_nil/1)
 
-      {to_address_hash, full_abi}
+      {target_hash, full_abi}
     end)
   end
+
+  defp abi_from_map(abis_map, address_hash) do
+    case Map.get(abis_map, address_hash) do
+      abi when is_list(abi) -> abi
+      _ -> []
+    end
+  end
+
+  # Takes implementation address hashes from the preloaded `proxy_implementations`
+  # association where present and queries them in one go for the rest.
+  defp implementation_hashes_by_target_address(target_addresses, opts) do
+    {preloaded_map, not_loaded_hashes} =
+      Enum.reduce(target_addresses, {%{}, []}, fn
+        %Address{hash: hash, proxy_implementations: %Implementation{address_hashes: address_hashes}},
+        {preloaded_map, not_loaded_hashes} ->
+          {Map.put(preloaded_map, hash, address_hashes), not_loaded_hashes}
+
+        # a loaded `has_one` without a row: the address is not a proxy
+        %Address{proxy_implementations: nil}, acc ->
+          acc
+
+        %Address{hash: hash}, {preloaded_map, not_loaded_hashes} ->
+          {preloaded_map, [hash | not_loaded_hashes]}
+      end)
+
+    not_loaded_hashes
+    |> Implementation.get_proxy_implementations_for_multiple_proxies(opts)
+    |> Enum.reduce(preloaded_map, &Map.put(&2, &1.proxy_address_hash, &1.address_hashes))
+  end
+
+  # Takes ABIs from the preloaded `smart_contract` and
+  # `proxy_implementations.smart_contracts` associations where present and
+  # fetches the outstanding ones in a single query.
+  defp abis_by_address_hash(target_addresses, implementation_hashes_map, opts) do
+    preloaded_abis_map =
+      Enum.reduce(target_addresses, %{}, fn %Address{hash: hash} = address, acc ->
+        acc
+        |> put_preloaded_abi(hash, address.smart_contract)
+        |> put_preloaded_implementation_abis(address.proxy_implementations)
+      end)
+
+    target_addresses
+    |> Enum.flat_map(fn %Address{hash: hash} -> [hash | Map.get(implementation_hashes_map, hash, [])] end)
+    |> Enum.uniq()
+    |> Enum.reject(&Map.has_key?(preloaded_abis_map, &1))
+    |> SmartContract.abis_by_address_hashes(opts)
+    |> Map.merge(preloaded_abis_map)
+  end
+
+  # a loaded `has_one` without a row: the address is not a verified contract
+  defp put_preloaded_abi(acc, hash, nil), do: Map.put(acc, hash, [])
+
+  # `abi` is a list only when the smart contract was loaded with its ABI; the
+  # ABI-less preload (`SmartContract.association_without_abi/0`) leaves it `nil`
+  # and falls through to the fetch below
+  defp put_preloaded_abi(acc, hash, %SmartContract{abi: abi}) when is_list(abi), do: Map.put(acc, hash, abi)
+
+  defp put_preloaded_abi(acc, _hash, _not_loaded_or_without_abi), do: acc
+
+  defp put_preloaded_implementation_abis(
+         acc,
+         %Implementation{address_hashes: address_hashes, smart_contracts: smart_contracts}
+       )
+       when is_list(smart_contracts) do
+    smart_contracts_map = Map.new(smart_contracts, &{&1.address_hash, &1})
+
+    Enum.reduce(address_hashes, acc, &put_preloaded_abi(&2, &1, Map.get(smart_contracts_map, &1)))
+  end
+
+  defp put_preloaded_implementation_abis(acc, _not_loaded), do: acc
 
   @doc """
   Receives as input result of decoded_input_data/5, returns either nil or decoded input in format: {:ok, _identifier, _text, _mapping}

@@ -139,6 +139,33 @@
 | <span style={{color: "red"}}>Deprecated</span> `MUD_POOL_SIZE`      | MUD indexer DB `pool_size`. | `50` | v6.6.0+ |  | v12.0.0+ |
 
 
+## 11.3.1
+
+### 🚀 Features
+
+- Support OP Stack Upgrade 20 (Super Root games, SystemConfig v4) ([#14818](https://github.com/blockscout/blockscout/issues/14818))
+
+### 📚 Documentation
+
+- Document OP Stack transaction types in Transaction schema ([#14835](https://github.com/blockscout/blockscout/issues/14835))
+
+### ⚡ Performance
+
+- Cache public address tags and index-driven tags lookup ([#14833](https://github.com/blockscout/blockscout/issues/14833))
+- Bound and deduplicate on-demand token total supply fetcher ([#14811](https://github.com/blockscout/blockscout/issues/14811))
+- Preload signed_authorizations only for EIP-7702 transactions ([#14828](https://github.com/blockscout/blockscout/issues/14828))
+- Reuse preloaded proxy and ABI associations in input decoding ([#14827](https://github.com/blockscout/blockscout/issues/14827))
+- Use Endpoint.local_broadcast instead of Endpoint.broadcast ([#14819](https://github.com/blockscout/blockscout/issues/14819))
+- Optimize realtime events broadcast for legacy topics ([#14810](https://github.com/blockscout/blockscout/issues/14810))
+
+### New ENV variables
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `INDEXER_DISABLE_TOKEN_TOTAL_SUPPLY_ON_DEMAND_FETCHER`        | If `true`, `Indexer.Fetcher.OnDemand.TokenTotalSupply` fetcher is disabled at runtime. Implemented in [#14811](https://github.com/blockscout/blockscout/pull/14811).                                                                                                                                                                                                                                                                                                                                                             | Version: v11.3.1\+ <br />Default: `false` <br />Applications: Indexer                                        |
+| `TOKEN_TOTAL_SUPPLY_ON_DEMAND_FETCHER_CONCURRENCY`             | Concurrency for `Indexer.Fetcher.OnDemand.TokenTotalSupply`. Implemented in [#14811](https://github.com/blockscout/blockscout/pull/14811).                                                                                                                                                                                                                                             | Version: v11.3.1\+ <br />Default: `5` <br />Applications: Indexer         |
+| `TOKEN_TOTAL_SUPPLY_ON_DEMAND_FETCHER_THRESHOLD`               | Backoff threshold after a failed token total supply fetch. [Time format](/setup/env-variables/backend-env-variables#time-format). Implemented in [#14811](https://github.com/blockscout/blockscout/pull/14811).                                                                                                                                                                        | Version: v11.3.1\+ <br />Default: `5m` <br />Applications: Indexer        |
+
+
 ## 11.3.0
 
 ### 🚀 Features
@@ -250,7 +277,6 @@
 | `INDEXER_ON_DEMAND_INTERNAL_TRANSACTIONS_BLOCKS_BATCH_SIZE`    | Batch size for block trace requests in the on-demand internal transactions fetcher. The minimum value is `1`. Implemented in [#14724](https://github.com/blockscout/blockscout/pull/14724).                                                                                                                                                                                                                                                                                                                                  | Version: v11.2.8\+ <br />Default: `2` <br />Applications: Indexer                                           |
 | `INDEXER_ON_DEMAND_INTERNAL_TRANSACTIONS_TRANSACTIONS_BATCH_SIZE` | Batch size for transaction trace requests in the on-demand internal transactions fetcher. The minimum value is `1`. Implemented in [#14724](https://github.com/blockscout/blockscout/pull/14724).                                                                                                                                                                                                                                                                                                                              | Version: v11.2.8\+ <br />Default: `20` <br />Applications: Indexer                                          |
 | `INDEXER_METRICS_ENABLED_MISSING_ADDRESS_NATIVE_COIN_BALANCES_COUNT` | Flag to enable indexer metric: the count of address native coin balances with missing values. Implemented in [#14729](https://github.com/blockscout/blockscout/pull/14729). | Version: v11.2.8\+ <br />Default: true <br />Applications: Indexer   |
->>>>>>> origin/master
 
 
 ## 11.2.7

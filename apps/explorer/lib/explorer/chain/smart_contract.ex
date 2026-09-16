@@ -1297,6 +1297,38 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
+  Gets ABIs of the verified smart contracts among the given address hashes in a
+  single query.
+
+  Only the `abi` column is selected. Address hashes without a verified smart
+  contract are absent from the result.
+
+  ## Parameters
+  - `address_hashes`: The address hashes to look up.
+  - `options`: An optional keyword list of options, such as selecting a specific repository.
+
+  ## Returns
+  - A map of address hash to ABI.
+  """
+  @spec abis_by_address_hashes([Hash.Address.t()], Keyword.t()) :: %{Hash.Address.t() => abi() | nil}
+  def abis_by_address_hashes(address_hashes, options \\ [])
+
+  def abis_by_address_hashes([], _options), do: %{}
+
+  def abis_by_address_hashes(address_hashes, options) do
+    query =
+      from(
+        smart_contract in __MODULE__,
+        where: smart_contract.address_hash in ^address_hashes,
+        select: {smart_contract.address_hash, smart_contract.abi}
+      )
+
+    query
+    |> Chain.select_repo(options).all()
+    |> Map.new()
+  end
+
+  @doc """
     Composes a query for fetching a smart contract by its address hash.
 
     ## Parameters

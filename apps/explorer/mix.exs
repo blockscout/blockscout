@@ -92,7 +92,7 @@ defmodule Explorer.Mixfile do
       {:logger_json, "~> 7.0"},
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
-      {:mox, "~> 1.1.0"},
+      {:mox, "~> 1.3.2"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
       {:prometheus, "~> 6.0", override: true},

@@ -175,21 +175,20 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   """
   @spec transaction(Plug.Conn.t(), map()) :: Plug.Conn.t() | {atom(), any()}
   def transaction(conn, %{transaction_hash_param: transaction_hash_string} = params) do
-    necessity_by_association_with_actions =
-      @transaction_necessity_by_association
-      |> Map.put(:signed_authorizations, :optional)
-
+    # `signed_authorizations` are not part of the necessity map on purpose: only
+    # EIP-7702 (type 4) transactions have any, so they are preloaded below via
+    # `Transaction.preload_signed_authorizations/2` once the type is known.
     necessity_by_association =
       case Application.get_env(:explorer, :chain_type) do
         :zksync ->
-          necessity_by_association_with_actions
+          @transaction_necessity_by_association
           |> Map.put(:zksync_batch, :optional)
           |> Map.put(:zksync_commit_transaction, :optional)
           |> Map.put(:zksync_prove_transaction, :optional)
           |> Map.put(:zksync_execute_transaction, :optional)
 
         :arbitrum ->
-          necessity_by_association_with_actions
+          @transaction_necessity_by_association
           |> Map.put(:arbitrum_batch, :optional)
           |> Map.put(:arbitrum_commitment_transaction, :optional)
           |> Map.put(:arbitrum_confirmation_transaction, :optional)
@@ -197,14 +196,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           |> Map.put(:arbitrum_message_from_l2, :optional)
 
         :suave ->
-          necessity_by_association_with_actions
+          @transaction_necessity_by_association
           |> Map.put(:logs, :optional)
           |> Map.put([execution_node: :names], :optional)
           |> Map.put([wrapped_to_address: :names], :optional)
 
         :eden ->
           Map.put(
-            necessity_by_association_with_actions,
+            @transaction_necessity_by_association,
             [
               fee_payer_address: [
                 :scam_badge,
@@ -217,7 +216,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           )
 
         _ ->
-          necessity_by_association_with_actions
+          @transaction_necessity_by_association
       end
 
     options =
@@ -225,9 +224,10 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
       |> Keyword.merge(@api_true)
 
     with {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params, options),
+         preloaded <- Transaction.preload_signed_authorizations(transaction, @api_true),
          preloaded <-
            Chain.preload_token_transfers(
-             transaction,
+             preloaded,
              @token_transfers_in_transaction_necessity_by_association,
              @api_true |> fetch_scam_token_toggle(conn)
            ),

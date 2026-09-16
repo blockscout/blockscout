@@ -189,9 +189,10 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
       on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized
     )
     |> join_message_passed_log()
-    |> select([w, _l2_transaction, _l2_block, we, log], %{
+    |> select([w, _l2_transaction, l2_block, we, log], %{
       hash: w.hash,
       l2_block_number: w.l2_block_number,
+      l2_timestamp: l2_block.timestamp,
       l1_transaction_hash: we.l1_transaction_hash,
       msg_nonce: w.msg_nonce,
       msg_log_sender_address_hash: log.third_topic,
@@ -293,7 +294,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
 
     if proven_events == [] do
       cond do
-        appropriate_games_found(w.l2_block_number, respected_games) ->
+        appropriate_games_found(w, respected_games) ->
           {@withdrawal_status_ready_to_prove, nil}
 
         appropriate_root_found(w.l2_block_number) ->
@@ -349,13 +350,40 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     @proof_maturity_delay_seconds
   end
 
-  defp appropriate_games_found(withdrawal_l2_block_number, respected_games) do
-    respected_games
-    |> Enum.any?(fn game ->
-      l2_block_number = DisputeGame.l2_block_number_from_extra_data(game.extra_data)
-      withdrawal_l2_block_number <= l2_block_number
+  # Checks whether there is a respected dispute game the given withdrawal can be proven against.
+  #
+  # For the games with Output Root claim the withdrawal's L2 block number is compared with the L2 block number
+  # of the game. For the games with Super Root claim (OP Stack Upgrade 20) the game's `extraData` contains
+  # the L2 timestamp of the Super Root instead of L2 block number, so the timestamp of the withdrawal's L2 block
+  # is compared with it.
+  #
+  # ## Parameters
+  # - `w`: A map with the withdrawal info. Must contain `l2_block_number` and (for Super Root games) `l2_timestamp`.
+  # - `respected_games`: A list of games returned by the `respected_games(options)` function.
+  #
+  # ## Returns
+  # - `true` if an appropriate game is found, `false` otherwise.
+  @spec appropriate_games_found(map(), list()) :: boolean()
+  defp appropriate_games_found(w, respected_games) do
+    Enum.any?(respected_games, fn game ->
+      case DisputeGame.l2_sequence_number(game) do
+        {:block_number, game_l2_block_number} ->
+          w.l2_block_number <= game_l2_block_number
+
+        {:timestamp, game_l2_timestamp} ->
+          withdrawal_covered_by_timestamp?(Map.get(w, :l2_timestamp), game_l2_timestamp)
+      end
     end)
   end
+
+  # Checks whether the withdrawal's L2 block timestamp is covered by the Super Root game bound to the given L2 timestamp.
+  # Returns `false` if the withdrawal's L2 block timestamp is unknown (e.g. the L2 block is not indexed yet).
+  @spec withdrawal_covered_by_timestamp?(DateTime.t() | nil, non_neg_integer()) :: boolean()
+  defp withdrawal_covered_by_timestamp?(%DateTime{} = withdrawal_l2_timestamp, game_l2_timestamp) do
+    DateTime.to_unix(withdrawal_l2_timestamp) <= game_l2_timestamp
+  end
+
+  defp withdrawal_covered_by_timestamp?(_withdrawal_l2_timestamp, _game_l2_timestamp), do: false
 
   defp appropriate_root_found(withdrawal_l2_block_number) do
     last_root_l2_block_number =
