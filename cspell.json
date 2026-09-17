@@ -206,6 +206,7 @@
         "decompiler",
         "Decompiler",
         "dedup",
+        "dedupe",
         "DefiLlama",
         "defmock",
         "defsupervisor",

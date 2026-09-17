@@ -1075,9 +1075,9 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     indexed_address_coin_balances_chunks =
       address_coin_balances
+      |> Enum.reject(&is_nil(&1.value))
       |> Enum.sort_by(& &1.address_hash)
       |> Enum.uniq_by(& &1.address_hash)
-      |> Enum.reject(&is_nil(&1.value))
       |> Enum.chunk_every(addresses_chunk_size())
       |> Enum.with_index()
 
