@@ -10,7 +10,7 @@ defmodule Indexer.Fetcher.Beacon.Client do
   @request_error_msg "Error while sending request to beacon rpc"
 
   defp http_get_request(url) do
-    case HttpClient.get(url) do
+    case HttpClient.get(url, [], recv_timeout: 30_000) do
       {:ok, %{body: body, status_code: 200}} ->
         Jason.decode(body)
 
