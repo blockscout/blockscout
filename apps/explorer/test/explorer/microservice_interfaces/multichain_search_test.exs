@@ -5,7 +5,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
   import Mox
 
   alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.MultichainSearchDb.{MainExportQueue, TokenInfoExportQueue}
+  alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue, TokenInfoExportQueue}
   alias Explorer.Chain.{Hash, Token, Wei}
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.{Repo, TestHelper}
@@ -156,6 +156,58 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                  (record.hash == transaction_1.hash.bytes && record.hash_type == :transaction) ||
                  (record.hash == transaction_2.hash.bytes && record.hash_type == :transaction)
              end)
+    end
+
+    test "dedupes the same address passed with different coin balances and populates queues on error without crashing" do
+      bypass = Bypass.open()
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      Application.put_env(:explorer, MultichainSearch,
+        service_url: "http://localhost:#{bypass.port}",
+        api_key: "12345",
+        addresses_chunk_size: 7000
+      )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
+        Bypass.down(bypass)
+      end)
+
+      TestHelper.get_chain_id_mock()
+
+      Bypass.expect_once(bypass, "POST", "/api/v1/import:batch", fn conn ->
+        Conn.resp(
+          conn,
+          500,
+          Jason.encode!(%{"code" => 0, "message" => "Error"})
+        )
+      end)
+
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
+      assert Repo.aggregate(BalancesExportQueue, :count, :id) == 0
+
+      address = insert(:address, fetched_coin_balance: 100)
+      # the same address row read at a different moment, after the indexer updated its balance
+      stale_address = %{address | fetched_coin_balance: Wei.from(Decimal.new(50), :wei)}
+
+      params = %{
+        addresses: [address, stale_address],
+        blocks: [],
+        transactions: [],
+        address_current_token_balances: []
+      }
+
+      expected_address = address_export_data(address)
+
+      assert {:error,
+              %{
+                addresses: [^expected_address],
+                address_coin_balances: [%{address_hash: _, value: _}]
+              }} = MultichainSearch.batch_import(params)
+
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 1
+      assert Repo.aggregate(BalancesExportQueue, :count, :id) == 1
     end
 
     test "returns {:error, data_to_retry} when at least one chunk is failed" do
