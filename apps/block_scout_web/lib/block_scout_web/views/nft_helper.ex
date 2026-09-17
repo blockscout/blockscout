@@ -27,20 +27,34 @@ defmodule BlockScoutWeb.NFTHelper do
           nil
       end
 
-    if result && String.trim(result) == "", do: nil, else: result
+    normalize_url(result)
   end
 
+  @doc """
+  Returns the `external_url` from the token instance metadata, or `nil` when it is
+  missing, blank, not a string, or not an `http(s)` URL. Metadata is user-controlled,
+  so the value may be of any JSON type; a list is unwrapped to its first element,
+  anything else that is not a string is treated as absent. The value is rendered as
+  a link `href`, so non-web schemes such as `javascript:` or `data:` are rejected.
+  """
+  @spec external_url(Explorer.Chain.Token.Instance.t() | nil) :: String.t() | nil
   def external_url(nil), do: nil
 
-  def external_url(instance) do
-    result =
-      if instance.metadata && instance.metadata["external_url"] do
-        instance.metadata["external_url"]
-      else
-        external_url(nil)
-      end
+  def external_url(%{metadata: %{"external_url" => external_url}}) do
+    external_url
+    |> normalize_url()
+    |> web_url()
+  end
 
-    if !result || (result && String.trim(result)) == "", do: external_url(nil), else: result
+  def external_url(_instance), do: nil
+
+  defp web_url(nil), do: nil
+
+  defp web_url(url) do
+    case URI.parse(url) do
+      %URI{scheme: scheme, host: host} when scheme in ["http", "https"] and is_binary(host) and host != "" -> url
+      _ -> nil
+    end
   end
 
   def retrieve_image(image) when is_nil(image), do: nil
@@ -54,12 +68,24 @@ defmodule BlockScoutWeb.NFTHelper do
     retrieve_image(image_url)
   end
 
-  def retrieve_image(image_url) do
+  def retrieve_image(image_url) when is_binary(image_url) do
     image_url
     |> URI.decode()
     |> URI.encode()
     |> compose_resource_url()
   end
+
+  def retrieve_image(_image), do: nil
+
+  # Metadata values come from arbitrary JSON, so a URL field may hold a list,
+  # a map, a number, etc. Only a non-blank string is a usable URL.
+  defp normalize_url(url) when is_binary(url) do
+    if String.trim(url) == "", do: nil, else: url
+  end
+
+  defp normalize_url([first | _]), do: normalize_url(first)
+
+  defp normalize_url(_), do: nil
 
   @doc """
   Composes a full IPFS URL from the given image URL.
