@@ -432,7 +432,9 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidator do
             ^min_blocks
           ),
         on: address.hash == affected.hash,
-        where: address.hash in subquery(addresses_lock_query(hashes)),
+        # addresses whose watermark is below every given block can't be reset, so
+        # they aren't locked: a reorg within the safety lag locks nothing
+        where: address.hash in subquery(covered_addresses_lock_query(hashes, Enum.min(min_blocks))),
         where: not is_nil(address.counters_updated_at) and address.counters_updated_at >= affected.block_number,
         update: [set: [counters_updated_at: nil, updated_at: ^DateTime.utc_now()]],
         select: address.hash
@@ -564,6 +566,10 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidator do
       order_by: address.hash,
       lock: "FOR NO KEY UPDATE"
     )
+  end
+
+  defp covered_addresses_lock_query(hashes_bytes, min_block_number) do
+    where(addresses_lock_query(hashes_bytes), [address], address.counters_updated_at >= ^min_block_number)
   end
 
   defp schedule_next_consolidation(timeout) do

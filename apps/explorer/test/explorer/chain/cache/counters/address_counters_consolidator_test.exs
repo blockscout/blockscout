@@ -257,17 +257,18 @@ defmodule Explorer.Chain.Cache.Counters.AddressCountersConsolidatorTest do
       start_supervised!(AddressCounters)
 
       covered_address = insert(:address, counters_updated_at: 100)
-      fresh_address = insert(:address, counters_updated_at: 30)
+      # covers the lowest given block, but not its own one
+      fresh_address = insert(:address, counters_updated_at: 60)
 
       reset_bytes =
         AddressCountersConsolidator.reset_covered_watermarks(%{
           covered_address.hash.bytes => 50,
-          fresh_address.hash.bytes => 50
+          fresh_address.hash.bytes => 70
         })
 
       assert reset_bytes == [covered_address.hash.bytes]
       assert is_nil(Repo.get(Address, covered_address.hash).counters_updated_at)
-      assert Repo.get(Address, fresh_address.hash).counters_updated_at == 30
+      assert Repo.get(Address, fresh_address.hash).counters_updated_at == 60
 
       # the recalculation of the reset address is scheduled
       :sys.get_state(AddressCounters)
