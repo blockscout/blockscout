@@ -117,6 +117,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
           :index_in_batch,
           :reverse_index_in_batch,
           :token_decimals,
+          :ui_multiplier,
           :from_address,
           :to_address,
           :token_contract_address,

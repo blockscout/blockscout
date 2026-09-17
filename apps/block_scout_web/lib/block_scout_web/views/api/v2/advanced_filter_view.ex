@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
 
   alias BlockScoutWeb.API.V2.{Helper, TokenTransferView, TokenView, TransactionView}
   alias Explorer.Chain.{Address, Data, Transaction}
+  alias Explorer.Chain.Token.UIMultiplierChange
 
   def render("advanced_filters.json", %{
         advanced_filters: advanced_filters,
@@ -17,6 +18,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
     %{
       items:
         advanced_filters
+        |> put_token_transfer_ui_multipliers()
         |> Enum.zip(decoded_transactions)
         |> Enum.map(fn {af, decoded_input} -> prepare_advanced_filter(af, decoded_input) end),
       search_params: prepare_search_params(method_ids, tokens),
@@ -26,6 +28,17 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterView do
 
   def render("methods.json", %{methods: methods}) do
     methods
+  end
+
+  defp put_token_transfer_ui_multipliers(advanced_filters) do
+    resolved_token_transfers =
+      advanced_filters
+      |> Enum.map(& &1.token_transfer)
+      |> UIMultiplierChange.put_ui_multipliers(api?: true)
+
+    advanced_filters
+    |> Enum.zip(resolved_token_transfers)
+    |> Enum.map(fn {advanced_filter, token_transfer} -> %{advanced_filter | token_transfer: token_transfer} end)
   end
 
   defp prepare_advanced_filter(advanced_filter, decoded_input) do
