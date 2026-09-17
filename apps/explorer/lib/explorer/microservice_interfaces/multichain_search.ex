@@ -909,7 +909,12 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         }
       end)
 
-    main_queue = Enum.sort_by(hashes_to_queue ++ addresses_to_queue, &{&1.hash, &1.hash_type})
+    # `ON CONFLICT DO UPDATE` fails with a cardinality violation if one `insert_all`
+    # statement carries two rows with the same conflict key, so dedupe on it here.
+    main_queue =
+      (hashes_to_queue ++ addresses_to_queue)
+      |> Enum.sort_by(&{&1.hash, &1.hash_type})
+      |> Enum.uniq_by(&{&1.hash, &1.hash_type})
 
     balances_queue = compose_balances_queue(address_coin_balances, address_token_balances)
 
@@ -954,10 +959,12 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
         }
       end)
 
-    Enum.sort_by(
-      coin_balances_queue ++ token_balances_queue,
-      &{&1.address_hash, &1.token_contract_address_hash_or_native, &1[:token_id]}
-    )
+    # Conflict target of the balances queue is
+    # `(address_hash, token_contract_address_hash_or_native, COALESCE(token_id, -1))`;
+    # duplicates within one `insert_all` would raise a cardinality violation.
+    (coin_balances_queue ++ token_balances_queue)
+    |> Enum.sort_by(&{&1.address_hash, &1.token_contract_address_hash_or_native, &1[:token_id]})
+    |> Enum.uniq_by(&{&1.address_hash, &1.token_contract_address_hash_or_native, &1[:token_id]})
   end
 
   @spec http_post_request(String.t(), map()) :: {:ok, any()} | {:error, String.t()}
@@ -1056,18 +1063,21 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
 
     block_transaction_hashes = block_hashes ++ transaction_hashes
 
+    # Dedupe by hash only: the same address can arrive several times with different
+    # non-key fields (e.g. coin balance read at different moments), and duplicates would
+    # later violate the export queues' unique constraints within a single `insert_all`.
     indexed_addresses_chunks =
       addresses
       |> Enum.sort_by(& &1.hash)
-      |> Enum.uniq()
+      |> Enum.uniq_by(& &1.hash)
       |> Enum.chunk_every(addresses_chunk_size())
       |> Enum.with_index()
 
     indexed_address_coin_balances_chunks =
       address_coin_balances
-      |> Enum.sort_by(& &1.address_hash)
-      |> Enum.uniq()
       |> Enum.reject(&is_nil(&1.value))
+      |> Enum.sort_by(& &1.address_hash)
+      |> Enum.uniq_by(& &1.address_hash)
       |> Enum.chunk_every(addresses_chunk_size())
       |> Enum.with_index()
 
