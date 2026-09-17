@@ -32,16 +32,30 @@ defmodule BlockScoutWeb.NFTHelper do
 
   @doc """
   Returns the `external_url` from the token instance metadata, or `nil` when it is
-  missing, blank or not a string. Metadata is user-controlled, so the value may be
-  of any JSON type; a list is unwrapped to its first element, anything else that is
-  not a string is treated as absent.
+  missing, blank, not a string, or not an `http(s)` URL. Metadata is user-controlled,
+  so the value may be of any JSON type; a list is unwrapped to its first element,
+  anything else that is not a string is treated as absent. The value is rendered as
+  a link `href`, so non-web schemes such as `javascript:` or `data:` are rejected.
   """
   @spec external_url(Explorer.Chain.Token.Instance.t() | nil) :: String.t() | nil
   def external_url(nil), do: nil
 
-  def external_url(%{metadata: %{"external_url" => external_url}}), do: normalize_url(external_url)
+  def external_url(%{metadata: %{"external_url" => external_url}}) do
+    external_url
+    |> normalize_url()
+    |> web_url()
+  end
 
   def external_url(_instance), do: nil
+
+  defp web_url(nil), do: nil
+
+  defp web_url(url) do
+    case URI.parse(url) do
+      %URI{scheme: scheme, host: host} when scheme in ["http", "https"] and is_binary(host) and host != "" -> url
+      _ -> nil
+    end
+  end
 
   def retrieve_image(image) when is_nil(image), do: nil
 

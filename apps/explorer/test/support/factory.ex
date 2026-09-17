@@ -1276,7 +1276,7 @@ defmodule Explorer.Factory do
         "key" => sequence("value"),
         "image_url" => sequence("image_url"),
         "animation_url" => sequence("image_url"),
-        "external_url" => sequence("external_url")
+        "external_url" => sequence("https://example.com/external_url")
       },
       error: nil,
       owner_address_hash: insert(:address).hash

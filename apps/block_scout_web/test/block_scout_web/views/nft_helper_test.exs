@@ -130,6 +130,24 @@ defmodule BlockScoutWeb.NFTHelperTest do
       assert NFTHelper.external_url(%{metadata: %{"external_url" => %{"url" => "https://example.com"}}}) == nil
       assert NFTHelper.external_url(%{metadata: %{"external_url" => true}}) == nil
     end
+
+    test "accepts http and https URLs only" do
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "http://example.com/path?q=1"}}) ==
+               "http://example.com/path?q=1"
+
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "HTTPS://Example.com"}}) ==
+               "HTTPS://Example.com"
+    end
+
+    test "returns nil for non-web schemes and scheme-less values" do
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "javascript:alert(1)"}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => ["javascript:alert(1)"]}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "data:text/html,<script>1</script>"}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "ipfs://QmHash"}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "example.com"}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "/relative/path"}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "http://"}}) == nil
+    end
   end
 
   describe "retrieve_image/1" do
