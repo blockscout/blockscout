@@ -240,17 +240,18 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidatorTest do
       start_supervised!(TokenCounters)
 
       covered_token = insert(:token, counters_updated_at: 100)
-      fresh_token = insert(:token, counters_updated_at: 30)
+      # covers the lowest given block, but not its own one
+      fresh_token = insert(:token, counters_updated_at: 60)
 
       reset_bytes =
         TokenCountersConsolidator.reset_covered_watermarks(%{
           covered_token.contract_address_hash.bytes => 50,
-          fresh_token.contract_address_hash.bytes => 50
+          fresh_token.contract_address_hash.bytes => 70
         })
 
       assert reset_bytes == [covered_token.contract_address_hash.bytes]
       assert is_nil(Repo.get_by(Token, contract_address_hash: covered_token.contract_address_hash).counters_updated_at)
-      assert Repo.get_by(Token, contract_address_hash: fresh_token.contract_address_hash).counters_updated_at == 30
+      assert Repo.get_by(Token, contract_address_hash: fresh_token.contract_address_hash).counters_updated_at == 60
 
       # the recalculation of the reset token is scheduled
       :sys.get_state(TokenCounters)

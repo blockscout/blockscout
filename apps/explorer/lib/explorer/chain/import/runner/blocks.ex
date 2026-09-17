@@ -172,18 +172,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :derive_transaction_forks
       )
     end)
-    |> Multi.run(:counters_corrections, fn repo,
-                                           %{
-                                             counters_refetched_block_numbers: refetched_block_numbers,
-                                             fork_transactions: forked_transactions
-                                           } ->
-      Instrumenter.block_import_stage_runner(
-        fn -> counters_corrections(repo, refetched_block_numbers, forked_transactions, insert_options) end,
-        :address_referencing,
-        :blocks,
-        :counters_corrections
-      )
-    end)
     |> Multi.run(:delete_address_token_balances, fn repo, %{lose_consensus: non_consensus_blocks} ->
       Instrumenter.block_import_stage_runner(
         fn -> delete_address_token_balances(repo, non_consensus_blocks, insert_options) end,
@@ -267,6 +255,20 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :address_referencing,
         :blocks,
         :update_token_instances_owner
+      )
+    end)
+    |> Multi.run(:counters_corrections, fn repo,
+                                           %{
+                                             counters_refetched_block_numbers: refetched_block_numbers,
+                                             fork_transactions: forked_transactions
+                                           } ->
+      Instrumenter.block_import_stage_runner(
+        fn ->
+          counters_corrections(repo, refetched_block_numbers, forked_transactions, insert_options)
+        end,
+        :address_referencing,
+        :blocks,
+        :counters_corrections
       )
     end)
     |> Multi.run(:blocks_update_token_holder_counts, fn repo,
