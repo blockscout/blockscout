@@ -41,6 +41,27 @@ defmodule Explorer.Chain.Cache.Accounts.RefresherTest do
       refute_received :addresses_query
     end
 
+    test "shares a failed refill with every concurrent caller instead of retrying it" do
+      insert_top_addresses(2)
+
+      start_refresher()
+      empty_cache()
+      count_addresses_queries()
+
+      # an unknown sort column fails inside the database, after the query was issued
+      options = [paging_options: %PagingOptions{page_size: 2}, sorting: [asc: :no_such_column]]
+
+      errors =
+        1..3
+        |> Enum.map(fn _ -> Task.async(fn -> catch_error(Refresher.fetch_top_addresses(options)) end) end)
+        |> Task.await_many()
+
+      assert Enum.all?(errors, &match?(%Postgrex.Error{postgres: %{code: :undefined_column}}, &1))
+
+      assert_received :addresses_query
+      refute_received :addresses_query
+    end
+
     test "runs the query in the caller while the refresher is not running" do
       hashes = insert_top_addresses(2)
 
