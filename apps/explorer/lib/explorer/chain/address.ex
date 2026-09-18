@@ -530,6 +530,10 @@ defmodule Explorer.Chain.Address do
   @doc """
   Lists the top `t:Explorer.Chain.Address.t/0`'s' in descending order based on coin balance and address hash.
 
+  The first page in the default order is served from `Explorer.Chain.Cache.Accounts`
+  when it holds enough entries; otherwise the cache is refilled through
+  `Explorer.Chain.Cache.Accounts.Refresher`, which runs the query once for all
+  requests that miss at the same time.
   """
   @spec list_top_addresses :: [{__MODULE__.t(), non_neg_integer()}]
   def list_top_addresses(options \\ []) do
@@ -541,7 +545,9 @@ defmodule Explorer.Chain.Address do
       |> Accounts.atomic_take_enough()
       |> case do
         nil ->
-          get_addresses(options)
+          options
+          |> Keyword.put(:paging_options, paging_options)
+          |> Accounts.Refresher.fetch_top_addresses()
 
         accounts ->
           accounts
@@ -549,6 +555,22 @@ defmodule Explorer.Chain.Address do
     else
       fetch_top_addresses(options)
     end
+  end
+
+  @doc """
+  Fetches the top addresses from the database and stores them in
+  `Explorer.Chain.Cache.Accounts`.
+
+  This is the cache refill behind `list_top_addresses/1`; request handlers
+  should call that function instead, so concurrent misses share one query.
+  """
+  @spec fetch_and_cache_top_addresses(keyword()) :: [__MODULE__.t()]
+  def fetch_and_cache_top_addresses(options) do
+    addresses = fetch_top_addresses(options)
+
+    Accounts.update(addresses)
+
+    addresses
   end
 
   @doc """
@@ -671,15 +693,6 @@ defmodule Explorer.Chain.Address do
 
   def eoa_with_code?(%NotLoaded{}), do: nil
   def eoa_with_code?(_), do: false
-
-  defp get_addresses(options) do
-    addresses = fetch_top_addresses(options)
-
-    addresses
-    |> Accounts.update()
-
-    addresses
-  end
 
   @default_sorting [desc: :fetched_coin_balance, asc: :hash]
 

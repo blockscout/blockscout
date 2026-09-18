@@ -472,6 +472,7 @@ defmodule Explorer.Application do
         |> configure_chain_type_dependent_process(:zksync),
         configure_mode_dependent_process(Explorer.Chain.Fetcher.AddressesBlacklist, :api),
         configure_mode_dependent_process(Explorer.Chain.Cache.ScamAddresses, :api),
+        configure_mode_dependent_process(Accounts.Refresher, :api),
         only_in_mode(Explorer.Migrator.SwitchPendingOperations, :indexer),
         configure_mode_dependent_process(Explorer.Utility.RateLimiter, :api),
         Hammer.child_for_supervisor() |> configure_mode_dependent_process(:api),
