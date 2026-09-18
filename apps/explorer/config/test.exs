@@ -106,6 +106,7 @@ config :logger, :explorer, path: Path.absname("logs/test/explorer.log")
 config :explorer, Explorer.Chain.Cache.ContractMethods, enabled: false
 
 config :explorer, Explorer.Chain.Cache.AddressTags, enabled: false, ttl: :timer.minutes(5)
+config :explorer, Explorer.Chain.Cache.Accounts.Refresher, enabled: false
 config :explorer, Explorer.Chain.Fetcher.CheckBytecodeMatchingOnDemand, enabled: false
 config :explorer, Explorer.Chain.Fetcher.FetchValidatorInfoOnDemand, enabled: false
 config :explorer, Explorer.Tags.AddressTag.Cataloger, enabled: false
