@@ -45,6 +45,17 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   """
   @type meta_field :: :ens_domain_name | :metadata
 
+  @typedoc """
+  Option of a microservice preload:
+
+    * `:timeout` - milliseconds the microservice requests may take. A request
+      that does not complete in time is dropped, and the entities are returned
+      without its data. Without it, concurrent requests are cut off by a 10
+      seconds backstop, and a single request is bounded by its own receive
+      timeout only.
+  """
+  @type preload_option :: {:timeout, non_neg_integer()}
+
   @all_meta_fields [:ens_domain_name, :metadata]
 
   # Backstop for the concurrent microservice requests. Both BENS and Metadata
@@ -62,16 +73,17 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   concurrently only for the slower one.
 
   `entity_kind` selects the `DISABLE_*_BENS_PRELOAD` flag that applies to the
-  input. The metadata preload is not flag-gated.
+  input. The metadata preload is not flag-gated. See `t:preload_option/0` for
+  the `options`.
   """
-  @spec maybe_preload_ens_and_metadata(supported_input(), entity_kind()) :: supported_input()
-  def maybe_preload_ens_and_metadata(input, entity_kind \\ :any) do
+  @spec maybe_preload_ens_and_metadata(supported_input(), entity_kind(), [preload_option()]) :: supported_input()
+  def maybe_preload_ens_and_metadata(input, entity_kind \\ :any, options \\ []) do
     fields =
       if BENS.ens_preload_disabled?(entity_kind),
         do: @all_meta_fields -- [:ens_domain_name],
         else: @all_meta_fields
 
-    maybe_preload_selected_meta(input, fields)
+    maybe_preload_selected_meta(input, fields, options)
   end
 
   @doc """
@@ -83,21 +95,22 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
   preview endpoint. Unlike `maybe_preload_ens_and_metadata/2`, no
   `DISABLE_*_BENS_PRELOAD` flag is consulted: those flags exist to keep the
   latency out of list endpoints that always preload, whereas here nothing is
-  requested unless the caller asks for it.
+  requested unless the caller asks for it. See `t:preload_option/0` for the
+  `options`.
   """
-  @spec maybe_preload_selected_meta(supported_input(), [meta_field()]) :: supported_input()
-  def maybe_preload_selected_meta(input, fields)
+  @spec maybe_preload_selected_meta(supported_input(), [meta_field()], [preload_option()]) :: supported_input()
+  def maybe_preload_selected_meta(input, fields, options \\ [])
 
-  def maybe_preload_selected_meta(input, []), do: input
+  def maybe_preload_selected_meta(input, [], _options), do: input
 
-  def maybe_preload_selected_meta(nil, _fields), do: nil
+  def maybe_preload_selected_meta(nil, _fields, _options), do: nil
 
-  def maybe_preload_selected_meta(items, fields) when is_list(items) do
-    preload_selected_meta(items, fields)
+  def maybe_preload_selected_meta(items, fields, options) when is_list(items) do
+    preload_selected_meta(items, fields, options)
   end
 
-  def maybe_preload_selected_meta(item, fields) do
-    [item_with_meta] = preload_selected_meta([item], fields)
+  def maybe_preload_selected_meta(item, fields, options) do
+    [item_with_meta] = preload_selected_meta([item], fields, options)
     item_with_meta
   end
 
@@ -190,7 +203,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     end)
   end
 
-  defp preload_selected_meta(items, fields) do
+  defp preload_selected_meta(items, fields, options) do
     case address_hash_strings(items) do
       [] ->
         items
@@ -198,7 +211,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
       address_hash_strings ->
         address_hash_strings
         |> meta_fetchers(fields)
-        |> fetch_meta()
+        |> fetch_meta(options[:timeout])
         |> Enum.reduce(items, fn {field, meta}, acc -> put_meta_to_items(acc, meta, field) end)
     end
   end
@@ -218,18 +231,19 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
     |> Enum.filter(fn {field, enabled?, _fetcher} -> enabled? and field in fields end)
   end
 
-  defp fetch_meta([]), do: []
+  defp fetch_meta([], _timeout), do: []
 
-  # A single request needs no task: running it in the caller keeps the logger
-  # metadata and the stacktrace of the calling process.
-  defp fetch_meta([{field, _enabled?, fetcher}]), do: fetched_meta(field, fetcher.())
+  # A single request needs no task unless it has a timeout to keep: running it
+  # in the caller keeps the logger metadata and the stacktrace of the calling
+  # process.
+  defp fetch_meta([{field, _enabled?, fetcher}], nil), do: fetched_meta(field, fetcher.())
 
-  defp fetch_meta(fetchers) do
+  defp fetch_meta(fetchers, timeout) do
     Explorer.TaskSupervisor
     |> Task.Supervisor.async_stream_nolink(
       fetchers,
       fn {field, _enabled?, fetcher} -> {field, fetcher.()} end,
-      timeout: @concurrent_preload_timeout,
+      timeout: timeout || @concurrent_preload_timeout,
       on_timeout: :kill_task,
       ordered: false
     )
