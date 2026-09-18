@@ -554,6 +554,7 @@
         "Postrge",
         "postwalk",
         "predeploy",
+        "predeploys",
         "prederive",
         "prederived",
         "preloadable",
