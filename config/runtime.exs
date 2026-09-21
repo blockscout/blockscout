@@ -678,8 +678,13 @@ config :explorer, Explorer.Chain.Cache.Accounts,
   ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
   global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?, "CACHE_TOP_ADDRESSES_TTL", "5m")
 
-config :explorer, Explorer.Chain.Cache.Accounts.Refresher,
-  update_interval: ConfigHelper.parse_time_env_var("CACHE_TOP_ADDRESSES_UPDATE_INTERVAL", "1m")
+top_addresses_update_interval = ConfigHelper.parse_time_env_var("CACHE_TOP_ADDRESSES_UPDATE_INTERVAL", "1m")
+
+if top_addresses_update_interval <= 0 do
+  raise "CACHE_TOP_ADDRESSES_UPDATE_INTERVAL must be a positive duration"
+end
+
+config :explorer, Explorer.Chain.Cache.Accounts.Refresher, update_interval: top_addresses_update_interval
 
 config :explorer, Explorer.Chain.Cache.Uncles,
   ttl_check_interval: false,

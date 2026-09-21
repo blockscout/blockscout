@@ -307,7 +307,7 @@ defmodule Explorer.Chain.OrderedCache do
 
           case Enum.reject(ids || [], &(&1 in new_ids)) do
             [] -> :ok
-            to_remove -> remove(to_remove)
+            to_remove -> remove_if_absent(to_remove)
           end
 
           # ids_list is set to never expire
@@ -437,6 +437,25 @@ defmodule Explorer.Chain.OrderedCache do
           else
             ConCache.delete(cache_name(), key)
           end
+        end)
+      end
+
+      # Like `remove/1`, but once the delay is over only deletes the ids that
+      # are still absent from the ids list, checked under its lock: unlike an
+      # update, a replace can be followed by one that stores an id it removed,
+      # and deleting that id would leave the ids list pointing at a missing
+      # element.
+      defp remove_if_absent(ids_to_remove) do
+        Task.start_link(fn ->
+          Process.sleep(100)
+
+          ConCache.isolated(cache_name(), ids_list_key(), fn ->
+            current_ids = ids_list()
+
+            ids_to_remove
+            |> Enum.reject(&(&1 in current_ids))
+            |> Enum.each(&ConCache.delete(cache_name(), &1))
+          end)
         end)
       end
 
