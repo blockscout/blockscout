@@ -134,19 +134,23 @@ defmodule Explorer.Chain.NullRoundHeight do
   end
 
   @doc """
-    Determines the actual neighboring block numbers of several blocks considering null rounds.
+    Determines the actual neighboring block numbers of several blocks
+    considering null rounds.
 
-    A batch counterpart of `neighbor_block_number/2`: a batch of null rounds per given block is fetched
-    with a single query, starting from the farthest block in the direction. For a run of consecutive
-    blocks, such as a realtime batch, this covers the null rounds between them and beyond. Further queries
-    are made only for the blocks whose neighbors lie beyond the fetched null rounds.
+    A batch counterpart of `neighbor_block_number/2`: a batch of null rounds
+    per given block is fetched with one query in the direction, starting from
+    the farthest given block. For a run of consecutive blocks, such as
+    a realtime batch, this covers the null rounds between them and beyond.
+    Further queries are made only for the blocks whose neighbors lie beyond
+    the fetched null rounds.
 
     ## Parameters
     - `numbers`: The reference block heights
     - `direction`: Either `:previous` or `:next` to indicate search direction
 
     ## Returns
-    - A map from each reference block height to its actual neighboring block number.
+    - A map from each reference block height to its actual neighboring block
+      number.
   """
   @spec neighbor_block_numbers([non_neg_integer()], :previous | :next) :: %{non_neg_integer() => non_neg_integer()}
   def neighbor_block_numbers([], _direction), do: %{}
