@@ -12,17 +12,21 @@ defmodule Explorer.Chain.Cache.Accounts.Refresher do
   arriving while that query was running.
 
   This process refills the cache on an interval (`:update_interval`,
-  `CACHE_TOP_ADDRESSES_UPDATE_INTERVAL`), which also renews the TTL of the
-  entries, so as long as the interval is shorter than the TTL
-  (`CACHE_TOP_ADDRESSES_TTL`) the cache never expires on an API node.
+  `CACHE_TOP_ADDRESSES_UPDATE_INTERVAL`). A refill replaces the whole content
+  of the cache, which renews the TTL of the entries, so as long as the interval
+  is shorter than the TTL (`CACHE_TOP_ADDRESSES_TTL`) the cache never expires on
+  an API node, and an entry whose balance changed does not linger next to its
+  replacement.
 
   It also serializes the on-demand refills that
   `Explorer.Chain.Address.list_top_addresses/1` falls back to when the cache
   cannot serve a request: right after boot, after the indexer dropped the
   entries, or once refreshes have failed for longer than the TTL. At most one
-  refill runs at a time, in a task; requests arriving while it runs wait for it
-  and all receive its result — the addresses, or the same failure — so the query
-  runs once per miss instead of once per request, whether it succeeds or not.
+  refill runs at a time, in a task, always for the whole cache; requests
+  arriving while it runs wait for it and all receive its result — their page of
+  the addresses, or the same failure — so the query runs once per miss instead
+  of once per request, whether it succeeds or not. The interval is measured
+  from the last refill, whatever started it.
 
   When the process is not running, `fetch_top_addresses/1` runs the query in
   the calling process, exactly as the request path did before.
@@ -34,18 +38,17 @@ defmodule Explorer.Chain.Cache.Accounts.Refresher do
 
   alias Explorer.Chain.Address
   alias Explorer.Chain.Cache.Accounts
-  alias Explorer.PagingOptions
-
-  # Bound on how long a request waits for a refill in progress. The refill itself
-  # is bounded by the repo's query timeout; this only has to outlast it.
-  @call_timeout :timer.minutes(1)
 
   @typep result :: {:ok, [Address.t()]} | {:error, {atom(), term(), Exception.stacktrace()}}
 
   # `refill` is the monitor reference of the running task, or `nil`; `waiters`
-  # are the callers to answer when it completes, each tagged with the reply
-  # shape they expect.
-  @typep state :: %{refill: reference() | nil, waiters: [{GenServer.from(), :fetch | :refresh}]}
+  # are the callers to answer when it completes, with the page size each asked
+  # for; `timer` is the reference of the next scheduled periodic refill.
+  @typep state :: %{
+           refill: reference() | nil,
+           waiters: [{GenServer.from(), non_neg_integer()}],
+           timer: reference() | nil
+         }
 
   @spec start_link(term()) :: GenServer.on_start()
   def start_link(_) do
@@ -56,15 +59,13 @@ defmodule Explorer.Chain.Cache.Accounts.Refresher do
   def init(_) do
     send(self(), :refresh)
 
-    {:ok, %{refill: nil, waiters: []}}
+    {:ok, %{refill: nil, waiters: [], timer: nil}}
   end
 
   @impl true
   def handle_info(:refresh, state) do
-    Process.send_after(self(), :refresh, update_interval())
-
     # A refill already running fills the cache just as well.
-    {:noreply, maybe_start_refill(state, default_options(), nil)}
+    {:noreply, maybe_start_refill(state)}
   end
 
   # The task finished: hand its result to everyone who waited for it.
@@ -81,71 +82,46 @@ defmodule Explorer.Chain.Cache.Accounts.Refresher do
   def handle_info(_message, state), do: {:noreply, state}
 
   @impl true
-  def handle_call(:refresh, from, state) do
-    {:noreply, state |> add_waiter(from, :refresh) |> maybe_start_refill(default_options(), nil)}
-  end
-
-  def handle_call({:fetch, options}, {caller, _tag} = from, state) do
-    page_size = Keyword.fetch!(options, :paging_options).page_size
-
+  def handle_call({:fetch, page_size}, from, state) do
     # A refill that finished while this request was queued already serves it.
     case Accounts.atomic_take_enough(page_size) do
-      nil -> {:noreply, state |> add_waiter(from, :fetch) |> maybe_start_refill(options, caller)}
+      nil -> {:noreply, state |> add_waiter(from, page_size) |> maybe_start_refill()}
       addresses -> {:reply, {:ok, addresses}, state}
     end
   end
 
   @doc """
-  Returns the top addresses for `options`, refilling the cache from the database
+  Returns the `page_size` top addresses, refilling the cache from the database
   when it cannot serve them.
 
-  Concurrent calls share one database query and its outcome. `options` must
-  carry `:paging_options`; a failed query raises in the caller, as a direct
-  query would.
+  Concurrent calls share one database query and its outcome: a failed query
+  raises in every caller, as a direct query would. When the process is not
+  running, the caller refills the cache itself. When the refill does not
+  complete within twice the repo's query timeout the call exits, so that the
+  requests waiting on a slow database do not each start a query of their own.
   """
-  @spec fetch_top_addresses(keyword()) :: [Address.t()]
-  def fetch_top_addresses(options) do
-    case GenServer.call(__MODULE__, {:fetch, options}, @call_timeout) do
+  @spec fetch_top_addresses(non_neg_integer()) :: [Address.t()]
+  def fetch_top_addresses(page_size) do
+    case GenServer.call(__MODULE__, {:fetch, page_size}, call_timeout()) do
       {:ok, addresses} -> addresses
       {:error, {kind, reason, stacktrace}} -> :erlang.raise(kind, reason, stacktrace)
     end
   catch
-    # The process is not running — disabled, or on its way down — or did not
-    # answer within the timeout, so the request refills the cache itself.
-    :exit, _ -> Address.fetch_and_cache_top_addresses(options)
+    # The process is not running: disabled, or on its way down.
+    :exit, {:noproc, _} -> Address.fetch_and_cache_top_addresses() |> Enum.take(page_size)
   end
 
-  @doc """
-  Refills the cache now, without waiting for the next interval, and waits for
-  the refill to complete.
+  @spec add_waiter(state(), GenServer.from(), non_neg_integer()) :: state()
+  defp add_waiter(state, from, page_size), do: %{state | waiters: [{from, page_size} | state.waiters]}
 
-  Returns `:ok`, or `:error` when the query failed (the cache keeps its previous
-  entries in that case).
-  """
-  @spec refresh() :: :ok | :error
-  def refresh do
-    GenServer.call(__MODULE__, :refresh, @call_timeout)
-  end
-
-  @spec add_waiter(state(), GenServer.from(), :fetch | :refresh) :: state()
-  defp add_waiter(state, from, kind), do: %{state | waiters: [{from, kind} | state.waiters]}
-
-  @spec maybe_start_refill(state(), keyword(), pid() | nil) :: state()
-  defp maybe_start_refill(%{refill: nil} = state, options, caller) do
-    %Task{ref: ref} =
-      Task.Supervisor.async_nolink(Explorer.TaskSupervisor, fn ->
-        # Listing the requester in `$callers` lets tooling that attributes work
-        # to the requesting process — Ecto's sandbox, telemetry handlers scoped
-        # to a request — see through the hop into this task.
-        if caller, do: Process.put(:"$callers", [caller | Process.get(:"$callers", [])])
-
-        fetch(options)
-      end)
+  @spec maybe_start_refill(state()) :: state()
+  defp maybe_start_refill(%{refill: nil} = state) do
+    %Task{ref: ref} = Task.Supervisor.async_nolink(Explorer.TaskSupervisor, &fetch/0)
 
     %{state | refill: ref}
   end
 
-  defp maybe_start_refill(state, _options, _caller), do: state
+  defp maybe_start_refill(state), do: state
 
   @spec complete_refill(state(), result()) :: state()
   defp complete_refill(%{waiters: waiters} = state, result) do
@@ -160,23 +136,45 @@ defmodule Explorer.Chain.Cache.Accounts.Refresher do
         Logger.error("Failed to refresh the top addresses cache: #{Exception.format_banner(kind, reason)}")
     end
 
-    Enum.each(waiters, fn
-      {from, :fetch} -> GenServer.reply(from, result)
-      {from, :refresh} -> GenServer.reply(from, if(match?({:ok, _}, result), do: :ok, else: :error))
+    Enum.each(waiters, fn {from, page_size} ->
+      GenServer.reply(from, with({:ok, addresses} <- result, do: {:ok, Enum.take(addresses, page_size)}))
     end)
 
-    %{state | refill: nil, waiters: []}
+    state
+    |> schedule_refresh()
+    |> Map.merge(%{refill: nil, waiters: []})
   end
 
-  @spec fetch(keyword()) :: result()
-  defp fetch(options) do
-    {:ok, Address.fetch_and_cache_top_addresses(options)}
+  # The next periodic refill is due one interval after the one that just
+  # completed, so a refill started by a request does not get followed by a
+  # periodic one right away.
+  @spec schedule_refresh(state()) :: state()
+  defp schedule_refresh(%{timer: timer} = state) do
+    if timer do
+      Process.cancel_timer(timer)
+
+      # The timer may have fired while the refill was running.
+      receive do
+        :refresh -> :ok
+      after
+        0 -> :ok
+      end
+    end
+
+    %{state | timer: Process.send_after(self(), :refresh, update_interval())}
+  end
+
+  @spec fetch() :: result()
+  defp fetch do
+    {:ok, Address.fetch_and_cache_top_addresses()}
   catch
     kind, reason -> {:error, {kind, reason, __STACKTRACE__}}
   end
 
-  defp default_options do
-    [paging_options: %PagingOptions{page_size: Accounts.max_size()}, api?: true]
+  # A refill runs the top-addresses query and then the cache's preload, each
+  # bounded by the repo's query timeout, and a request may join it at any point.
+  defp call_timeout do
+    2 * (Application.get_env(:explorer, Explorer.Repo)[:timeout] || :timer.seconds(15))
   end
 
   defp update_interval do

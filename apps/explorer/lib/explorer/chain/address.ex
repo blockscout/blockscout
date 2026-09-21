@@ -545,9 +545,7 @@ defmodule Explorer.Chain.Address do
       |> Accounts.atomic_take_enough()
       |> case do
         nil ->
-          options
-          |> Keyword.put(:paging_options, paging_options)
-          |> Accounts.Refresher.fetch_top_addresses()
+          Accounts.Refresher.fetch_top_addresses(paging_options.page_size)
 
         accounts ->
           accounts
@@ -558,17 +556,17 @@ defmodule Explorer.Chain.Address do
   end
 
   @doc """
-  Fetches the top addresses from the database and stores them in
-  `Explorer.Chain.Cache.Accounts`.
+  Fetches as many top addresses as `Explorer.Chain.Cache.Accounts` holds from
+  the database and replaces the content of the cache with them.
 
   This is the cache refill behind `list_top_addresses/1`; request handlers
   should call that function instead, so concurrent misses share one query.
   """
-  @spec fetch_and_cache_top_addresses(keyword()) :: [__MODULE__.t()]
-  def fetch_and_cache_top_addresses(options) do
-    addresses = fetch_top_addresses(options)
+  @spec fetch_and_cache_top_addresses() :: [__MODULE__.t()]
+  def fetch_and_cache_top_addresses do
+    addresses = fetch_top_addresses(paging_options: %PagingOptions{page_size: Accounts.max_size()}, api?: true)
 
-    Accounts.update(addresses)
+    Accounts.replace(addresses)
 
     addresses
   end

@@ -264,9 +264,18 @@ defmodule ConfigHelper do
     if(disable_indexer?, do: :timer.seconds(1), else: false)
   end
 
-  @spec cache_global_ttl(boolean()) :: non_neg_integer()
+  @doc """
+  TTL of a cache that the indexer keeps up to date: entries only expire when the
+  indexer is disabled, after 5 seconds or after the time set in `env_var`.
+  """
+  @spec cache_global_ttl(boolean()) :: non_neg_integer() | nil
   def cache_global_ttl(disable_indexer?) do
     if(disable_indexer?, do: :timer.seconds(5))
+  end
+
+  @spec cache_global_ttl(boolean(), String.t(), String.t()) :: non_neg_integer() | nil
+  def cache_global_ttl(disable_indexer?, env_var, default_value) do
+    if(disable_indexer?, do: parse_time_env_var(env_var, default_value))
   end
 
   @spec indexer_memory_limit() :: integer()

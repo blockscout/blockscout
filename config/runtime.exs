@@ -676,7 +676,7 @@ config :explorer, Explorer.Chain.Cache.Transactions,
 # the cache only expires when refreshes have been failing for the whole TTL.
 config :explorer, Explorer.Chain.Cache.Accounts,
   ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
-  global_ttl: if(disable_indexer?, do: ConfigHelper.parse_time_env_var("CACHE_TOP_ADDRESSES_TTL", "5m"))
+  global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?, "CACHE_TOP_ADDRESSES_TTL", "5m")
 
 config :explorer, Explorer.Chain.Cache.Accounts.Refresher,
   update_interval: ConfigHelper.parse_time_env_var("CACHE_TOP_ADDRESSES_UPDATE_INTERVAL", "1m")

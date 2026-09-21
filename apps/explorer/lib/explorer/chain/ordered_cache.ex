@@ -143,6 +143,13 @@ defmodule Explorer.Chain.OrderedCache do
   """
   @callback update([element] | element | nil) :: :ok
 
+  @doc """
+  Replaces the stored elements with `elements`: those are stored (which renews
+  their TTL, if any) and every other stored element is removed.
+  Unlike `update/1`, this is a local write that is not propagated to other nodes.
+  """
+  @callback replace([element]) :: :ok
+
   defmacro __using__(name) when is_atom(name), do: do_using(name, [])
 
   defmacro __using__(opts) when is_list(opts) do
@@ -241,7 +248,7 @@ defmodule Explorer.Chain.OrderedCache do
         if amount <= Enum.count(items) - 1 do
           items
           |> Enum.reject(fn {key, _value} -> key == ids_list_key() end)
-          |> Enum.sort(&prevails?/2)
+          |> Enum.sort_by(fn {id, _value} -> id end, &prevails?/2)
           |> Enum.take(amount)
           |> Enum.map(fn {_key, value} -> value end)
         end
@@ -281,6 +288,32 @@ defmodule Explorer.Chain.OrderedCache do
       end
 
       def update(element), do: update([element])
+
+      @impl OrderedCache
+      def replace(elements) when is_list(elements) do
+        prepared_elements =
+          elements
+          |> Enum.sort_by(&element_to_id(&1), &prevails?(&1, &2))
+          |> Enum.take(max_size())
+          |> do_preloads()
+          |> Enum.map(&{element_to_id(&1), sanitize_before_update(&1)})
+
+        ConCache.update(cache_name(), ids_list_key(), fn ids ->
+          new_ids =
+            Enum.map(prepared_elements, fn {element_id, element} ->
+              put_element(element_id, element)
+              element_id
+            end)
+
+          case Enum.reject(ids || [], &(&1 in new_ids)) do
+            [] -> :ok
+            to_remove -> remove(to_remove)
+          end
+
+          # ids_list is set to never expire
+          {:ok, %ConCache.Item{value: new_ids, ttl: :infinity}}
+        end)
+      end
 
       @doc """
       Merges prepared `{id, element}` pairs into the local ordered cache.

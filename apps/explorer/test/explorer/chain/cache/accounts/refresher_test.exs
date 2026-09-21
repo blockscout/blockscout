@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Cache.Accounts.RefresherTest do
   alias Explorer.Chain.Cache.Accounts.Refresher
   alias Explorer.PagingOptions
 
-  describe "refresh/0" do
+  describe "start_link/1" do
     test "fills the cache from the database" do
       hashes = insert_top_addresses(3)
 
@@ -35,7 +35,8 @@ defmodule Explorer.Chain.Cache.Accounts.RefresherTest do
       expected_hashes = Enum.take(hashes, 2)
 
       assert Enum.all?(results, fn addresses -> Enum.map(addresses, & &1.hash) == expected_hashes end)
-      assert cached_hashes() == expected_hashes
+      # the refill fills the whole cache, not only the page that missed
+      assert cached_hashes() == hashes
 
       assert_received :addresses_query
       refute_received :addresses_query
@@ -48,16 +49,20 @@ defmodule Explorer.Chain.Cache.Accounts.RefresherTest do
       empty_cache()
       count_addresses_queries()
 
-      # an unknown sort column fails inside the database, after the query was issued
-      options = [paging_options: %PagingOptions{page_size: 2}, sorting: [asc: :no_such_column]]
+      # Without the shared sandbox the refill task, which does not run on behalf
+      # of the test process, fails to check out a connection. The callers below
+      # do run on its behalf, so a retry in a caller would succeed and be counted.
+      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :manual)
 
       errors =
         1..3
-        |> Enum.map(fn _ -> Task.async(fn -> catch_error(Refresher.fetch_top_addresses(options)) end) end)
+        |> Enum.map(fn _ -> Task.async(fn -> catch_error(Refresher.fetch_top_addresses(2)) end) end)
         |> Task.await_many()
 
-      assert Enum.all?(errors, &match?(%Postgrex.Error{postgres: %{code: :undefined_column}}, &1))
+      assert Enum.all?(errors, &match?(%DBConnection.OwnershipError{}, &1))
 
+      # the failed attempt is reported as a query too; a retry in a caller would
+      # add a successful one
       assert_received :addresses_query
       refute_received :addresses_query
     end
@@ -82,12 +87,12 @@ defmodule Explorer.Chain.Cache.Accounts.RefresherTest do
     Accounts.all() |> Enum.map(& &1.hash)
   end
 
-  # The process refills the cache on start; `refresh/0` is handled after that
-  # first refill, so returning from it means the cache is filled.
+  # The process starts a refill on start; a fetch through it is served from that
+  # refill, so returning from it means the cache is filled.
   defp start_refresher do
     start_supervised!(Refresher)
 
-    :ok = Refresher.refresh()
+    Refresher.fetch_top_addresses(1)
   end
 
   defp empty_cache do
