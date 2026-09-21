@@ -61,8 +61,9 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
   end
 
   @doc """
-    Reads the configs actual before each of the specified blocks from the `op_eip1559_config_updates` table
-    with a single query. A batch counterpart of `actual_config_for_block/1`.
+    Reads the configs actual before each of the specified blocks from the `op_eip1559_config_updates` table with a single query.
+
+    A batch counterpart of `actual_config_for_block/1`.
 
     ## Parameters
     - `block_numbers`: The block numbers for which we need to read the actual configs.

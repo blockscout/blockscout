@@ -136,10 +136,10 @@ defmodule Explorer.Chain.NullRoundHeight do
   @doc """
     Determines the actual neighboring block numbers of several blocks considering null rounds.
 
-    A batch counterpart of `neighbor_block_number/2`: the null rounds between the given blocks,
-    along with a batch of those beyond the farthest one, are fetched with a single query. Further
-    queries are made only for a block preceded (or followed) by a run of consecutive null rounds
-    longer than the fetched batch.
+    A batch counterpart of `neighbor_block_number/2`: a batch of null rounds per given block is fetched
+    with a single query, starting from the farthest block in the direction. For a run of consecutive
+    blocks, such as a realtime batch, this covers the null rounds between them and beyond. Further queries
+    are made only for the blocks whose neighbors lie beyond the fetched null rounds.
 
     ## Parameters
     - `numbers`: The reference block heights
@@ -154,21 +154,21 @@ defmodule Explorer.Chain.NullRoundHeight do
   def neighbor_block_numbers(numbers, direction) do
     {min_number, max_number} = Enum.min_max(numbers)
 
-    # There are at most `max_number - min_number` null rounds between the blocks, so the batch size
-    # leaves room for a batch of null rounds beyond the farthest block
-    batch_size = max_number - min_number + @null_rounds_batch_size
+    # The fetched null rounds are bounded by the number of blocks rather than by their span
+    batch_size = length(numbers) * @null_rounds_batch_size
 
+    # One null round more than the batch size tells whether there are any beyond the batch
     null_rounds =
       case direction do
         :previous -> max_number
         :next -> min_number
       end
-      |> neighboring_null_rounds_query(direction, batch_size)
+      |> neighboring_null_rounds_query(direction, batch_size + 1)
       |> select([nrh], nrh.height)
       |> Repo.all()
 
-    # Fewer null rounds than requested mean there are none beyond the fetched ones
-    farthest_fetched = if length(null_rounds) < batch_size, do: nil, else: List.last(null_rounds)
+    # No more null rounds than the batch size mean there are none beyond the fetched ones
+    farthest_fetched = if length(null_rounds) <= batch_size, do: nil, else: List.last(null_rounds)
 
     null_rounds_set = MapSet.new(null_rounds)
 

@@ -500,10 +500,12 @@ defmodule Explorer.Chain.Block do
   def uncle_reward_coef, do: @uncle_reward_coef
 
   @doc """
-  Resolves the EIP-1559 config actual for each of the given blocks with a single query and puts it into
-  the `eip1559_config` virtual field, so that `gas_target/1` and `next_block_base_fee_per_gas/1` don't query
-  the config per block. Does nothing (and makes no queries) unless the chain type is `optimism`, where the config
-  is dynamic and read from the `op_eip1559_config_updates` table.
+  Resolves the EIP-1559 config actual for each of the given blocks with a single query.
+
+  The config is put into the `eip1559_config` virtual field, so that `gas_target/1` and
+  `next_block_base_fee_per_gas/1` don't query the config per block. Does nothing (and makes no queries)
+  unless the chain type is `optimism`, where the config is dynamic and read from the
+  `op_eip1559_config_updates` table.
 
   ## Parameters
   - `blocks`: The blocks to resolve the config for.
