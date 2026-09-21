@@ -158,6 +158,20 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
   end
 
   @doc """
+    Retrieves the block number for a hash without requiring a batch association.
+
+    ## Parameters
+    - `hash`: The hash of the block whose number is to be retrieved.
+
+    ## Returns
+    - The block number, or `nil` if the block is not indexed yet.
+  """
+  @spec block_number_by_hash(binary()) :: FullBlock.block_number() | nil
+  def block_number_by_hash(hash) when is_binary(hash) do
+    Reader.block_number_by_hash(hash)
+  end
+
+  @doc """
     Retrieves the L1 batch that includes a specified rollup block number.
 
     ## Parameters
