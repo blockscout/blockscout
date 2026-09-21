@@ -445,6 +445,9 @@ config :explorer, Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCount,
 
 config :explorer, Explorer.Chain.Cache.OptimismFinalizationPeriod, enabled: ConfigHelper.chain_type() == :optimism
 
+config :explorer, Explorer.Repo.LockTimeout,
+  timeout: ConfigHelper.parse_time_env_var("API_OPTIONAL_QUERIES_LOCK_TIMEOUT", "100ms")
+
 config :explorer, Explorer.Chain.Cache.Counters.AddressCounters,
   ttl: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_COUNTERS_TTL", "2h"),
   max_dirty_markers: ConfigHelper.parse_integer_env_var("CACHE_ADDRESS_COUNTERS_MAX_DIRTY_MARKERS", 1_000_000, min: 1)

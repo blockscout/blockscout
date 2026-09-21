@@ -57,6 +57,55 @@ defmodule Explorer.DataCase do
     :ok
   end
 
+  @doc """
+  Runs `fun` while the given table is locked in `ACCESS EXCLUSIVE` mode by
+  another database connection, emulating a running `VACUUM FULL`.
+
+  The lock is taken outside of the sandbox, in a transaction which is held
+  until `fun` returns. Since the sandbox connection is the one waiting for the
+  lock, the test must not touch the table before calling this function:
+  otherwise the lock waits for the sandbox transaction and both hang.
+  """
+  def with_table_locked(table, fun) when is_binary(table) and is_function(fun, 0) do
+    test_pid = self()
+    {locker_pid, locker_ref} = spawn_monitor(fn -> hold_table_lock(table, test_pid) end)
+
+    receive do
+      {:locked, ^locker_pid} -> :ok
+    after
+      :timer.seconds(10) -> raise "could not lock the #{table} table"
+    end
+
+    try do
+      fun.()
+    after
+      send(locker_pid, :release)
+
+      receive do
+        {:DOWN, ^locker_ref, :process, ^locker_pid, _reason} -> :ok
+      after
+        :timer.seconds(10) -> raise "could not release the lock on the #{table} table"
+      end
+    end
+  end
+
+  # Takes the lock outside of the sandbox and holds it until `:release` is received.
+  defp hold_table_lock(table, test_pid) do
+    Ecto.Adapters.SQL.Sandbox.unboxed_run(Explorer.Repo, fn ->
+      Explorer.Repo.transaction(
+        fn ->
+          Explorer.Repo.query!("LOCK TABLE #{table} IN ACCESS EXCLUSIVE MODE")
+          send(test_pid, {:locked, self()})
+
+          receive do
+            :release -> :ok
+          end
+        end,
+        timeout: :timer.minutes(1)
+      )
+    end)
+  end
+
   def wait_for_results(producer) do
     wait_for_results(producer, 30)
   end

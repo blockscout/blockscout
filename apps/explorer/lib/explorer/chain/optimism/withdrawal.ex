@@ -12,6 +12,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   alias Explorer.Chain.Cache.OptimismFinalizationPeriod
   alias Explorer.Chain.Optimism.{DisputeGame, OutputRoot, SuperchainConfig, WithdrawalEvent}
   alias Explorer.{Helper, PagingOptions, Repo}
+  alias Explorer.Repo.LockTimeout
   alias Explorer.Utility.{LogFirstTopic, LogHelper}
 
   @game_status_defender_wins 2
@@ -181,35 +182,45 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   """
   @spec transaction_statuses(Hash.t()) :: [{non_neg_integer(), String.t(), map()}]
   def transaction_statuses(l2_transaction_hash) do
-    __MODULE__
-    |> where([w], w.l2_transaction_hash == ^l2_transaction_hash)
-    |> join(:left, [w], l2_transaction in Transaction, on: w.l2_transaction_hash == l2_transaction.hash)
-    |> join(:left, [w], l2_block in Block, on: w.l2_block_number == l2_block.number and l2_block.consensus == true)
-    |> join(:left, [w], we in WithdrawalEvent,
-      on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized
-    )
-    |> join_message_passed_log()
-    |> select([w, _l2_transaction, l2_block, we, log], %{
-      hash: w.hash,
-      l2_block_number: w.l2_block_number,
-      l2_timestamp: l2_block.timestamp,
-      l1_transaction_hash: we.l1_transaction_hash,
-      msg_nonce: w.msg_nonce,
-      msg_log_sender_address_hash: log.third_topic,
-      msg_log_target_address_hash: log.fourth_topic,
-      msg_log_data: log.data
-    })
-    |> Repo.replica().all(timeout: :infinity)
-    |> Enum.map(fn w ->
-      msg_nonce =
-        Bitwise.band(
-          Decimal.to_integer(w.msg_nonce),
-          0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-        )
+    query =
+      __MODULE__
+      |> where([w], w.l2_transaction_hash == ^l2_transaction_hash)
+      |> join(:left, [w], l2_transaction in Transaction, on: w.l2_transaction_hash == l2_transaction.hash)
+      |> join(:left, [w], l2_block in Block, on: w.l2_block_number == l2_block.number and l2_block.consensus == true)
+      |> join(:left, [w], we in WithdrawalEvent,
+        on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized
+      )
+      |> join_message_passed_log()
+      |> select([w, _l2_transaction, l2_block, we, log], %{
+        hash: w.hash,
+        l2_block_number: w.l2_block_number,
+        l2_timestamp: l2_block.timestamp,
+        l1_transaction_hash: we.l1_transaction_hash,
+        msg_nonce: w.msg_nonce,
+        msg_log_sender_address_hash: log.third_topic,
+        msg_log_target_address_hash: log.fourth_topic,
+        msg_log_data: log.data
+      })
 
-      {status, _} = status(w, nil, @api_true)
-      {msg_nonce, status, w}
-    end)
+    # The withdrawals are optional data of the transaction page, which must not
+    # hang while the joined `logs` table is locked exclusively (e.g. by
+    # `VACUUM FULL`): the query fails fast and no withdrawals are shown instead.
+    case LockTimeout.run(Repo.replica(), fn repo -> repo.all(query) end, timeout: :infinity) do
+      {:ok, withdrawals} ->
+        Enum.map(withdrawals, fn w ->
+          msg_nonce =
+            Bitwise.band(
+              Decimal.to_integer(w.msg_nonce),
+              0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+            )
+
+          {status, _} = status(w, nil, @api_true)
+          {msg_nonce, status, w}
+        end)
+
+      {:error, :lock_timeout} ->
+        []
+    end
   end
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
