@@ -671,9 +671,20 @@ config :explorer, Explorer.Chain.Cache.Transactions,
   ttl_check_interval: false,
   global_ttl: nil
 
+# API nodes are not told about balance changes, so their entries expire on a TTL;
+# the refresher below rewrites them every interval, which renews the TTL, so
+# the cache only expires when refreshes have been failing for the whole TTL.
 config :explorer, Explorer.Chain.Cache.Accounts,
   ttl_check_interval: ConfigHelper.cache_ttl_check_interval(disable_indexer?),
-  global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?)
+  global_ttl: ConfigHelper.cache_global_ttl(disable_indexer?, "CACHE_TOP_ADDRESSES_TTL", "5m")
+
+top_addresses_update_interval = ConfigHelper.parse_time_env_var("CACHE_TOP_ADDRESSES_UPDATE_INTERVAL", "1m")
+
+if top_addresses_update_interval <= 0 do
+  raise "CACHE_TOP_ADDRESSES_UPDATE_INTERVAL must be a positive duration"
+end
+
+config :explorer, Explorer.Chain.Cache.Accounts.Refresher, update_interval: top_addresses_update_interval
 
 config :explorer, Explorer.Chain.Cache.Uncles,
   ttl_check_interval: false,

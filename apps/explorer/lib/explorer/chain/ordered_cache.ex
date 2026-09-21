@@ -143,6 +143,13 @@ defmodule Explorer.Chain.OrderedCache do
   """
   @callback update([element] | element | nil) :: :ok
 
+  @doc """
+  Replaces the stored elements with `elements`: those are stored (which renews
+  their TTL, if any) and every other stored element is removed.
+  Unlike `update/1`, this is a local write that is not propagated to other nodes.
+  """
+  @callback replace([element]) :: :ok
+
   defmacro __using__(name) when is_atom(name), do: do_using(name, [])
 
   defmacro __using__(opts) when is_list(opts) do
@@ -238,12 +245,22 @@ defmodule Explorer.Chain.OrderedCache do
           |> ConCache.ets()
           |> :ets.tab2list()
 
-        if amount <= Enum.count(items) - 1 do
-          items
-          |> Enum.reject(fn {key, _value} -> key == ids_list_key() end)
-          |> Enum.sort(&prevails?/2)
+        # Elements that `update/1` or `replace/1` dropped from the ids list stay
+        # in the table for a moment before their delayed deletion, so only the
+        # elements the ids list of the same snapshot still references count.
+        ids =
+          case List.keyfind(items, ids_list_key(), 0) do
+            {_key, ids} -> MapSet.new(ids)
+            nil -> MapSet.new()
+          end
+
+        elements = Enum.filter(items, fn {id, _value} -> MapSet.member?(ids, id) end)
+
+        if amount <= Enum.count(elements) do
+          elements
+          |> Enum.sort_by(fn {id, _value} -> id end, &prevails?/2)
           |> Enum.take(amount)
-          |> Enum.map(fn {_key, value} -> value end)
+          |> Enum.map(fn {_id, value} -> value end)
         end
       end
 
@@ -281,6 +298,32 @@ defmodule Explorer.Chain.OrderedCache do
       end
 
       def update(element), do: update([element])
+
+      @impl OrderedCache
+      def replace(elements) when is_list(elements) do
+        prepared_elements =
+          elements
+          |> Enum.sort_by(&element_to_id(&1), &prevails?(&1, &2))
+          |> Enum.take(max_size())
+          |> do_preloads()
+          |> Enum.map(&{element_to_id(&1), sanitize_before_update(&1)})
+
+        ConCache.update(cache_name(), ids_list_key(), fn ids ->
+          new_ids =
+            Enum.map(prepared_elements, fn {element_id, element} ->
+              put_element(element_id, element)
+              element_id
+            end)
+
+          case Enum.reject(ids || [], &(&1 in new_ids)) do
+            [] -> :ok
+            to_remove -> remove_if_absent(to_remove)
+          end
+
+          # ids_list is set to never expire
+          {:ok, %ConCache.Item{value: new_ids, ttl: :infinity}}
+        end)
+      end
 
       @doc """
       Merges prepared `{id, element}` pairs into the local ordered cache.
@@ -404,6 +447,25 @@ defmodule Explorer.Chain.OrderedCache do
           else
             ConCache.delete(cache_name(), key)
           end
+        end)
+      end
+
+      # Like `remove/1`, but once the delay is over only deletes the ids that
+      # are still absent from the ids list, checked under its lock: unlike an
+      # update, a replace can be followed by one that stores an id it removed,
+      # and deleting that id would leave the ids list pointing at a missing
+      # element.
+      defp remove_if_absent(ids_to_remove) do
+        Task.start_link(fn ->
+          Process.sleep(100)
+
+          ConCache.isolated(cache_name(), ids_list_key(), fn ->
+            current_ids = ids_list()
+
+            ids_to_remove
+            |> Enum.reject(&(&1 in current_ids))
+            |> Enum.each(&ConCache.delete(cache_name(), &1))
+          end)
         end)
       end
 
