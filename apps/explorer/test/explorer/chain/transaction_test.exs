@@ -3,6 +3,7 @@ defmodule Explorer.Chain.TransactionTest do
   use Explorer.DataCase
 
   import Mox
+  import Explorer.QuerySources, only: [with_query_sources: 1]
 
   alias Ecto.Changeset
   alias Explorer.Chain.{Address, InternalTransaction, SmartContract, Transaction}
@@ -465,38 +466,6 @@ defmodule Explorer.Chain.TransactionTest do
     input_data = "set(uint)" |> ABI.encode([10]) |> Base.encode16(case: :lower)
 
     insert(:transaction, to_address: proxy_smart_contract.address, input: "0x" <> input_data)
-  end
-
-  # runs `fun` and returns its result with the `source` tables of every
-  # query issued by the calling process meanwhile
-  defp with_query_sources(fun) do
-    handler_id = {__MODULE__, :query_sources, make_ref()}
-
-    :telemetry.attach_many(
-      handler_id,
-      [[:explorer, :repo, :query], [:explorer, :repo, :replica1, :query]],
-      &__MODULE__.handle_query_event/4,
-      self()
-    )
-
-    try do
-      {fun.(), collect_query_sources([])}
-    after
-      :telemetry.detach(handler_id)
-    end
-  end
-
-  defp collect_query_sources(acc) do
-    receive do
-      {:query_source, source} -> collect_query_sources([source | acc])
-    after
-      0 -> Enum.reverse(acc)
-    end
-  end
-
-  @doc false
-  def handle_query_event(_event, _measurements, %{source: source}, test_pid) do
-    if self() == test_pid, do: send(test_pid, {:query_source, source})
   end
 
   describe "Poison.encode!/1" do
