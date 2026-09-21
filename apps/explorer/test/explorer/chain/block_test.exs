@@ -2,6 +2,7 @@
 defmodule Explorer.Chain.BlockTest do
   use Explorer.DataCase
 
+  import Explorer.QuerySources, only: [with_query_sources: 1]
   import Mox
 
   alias Ecto.Changeset
@@ -150,6 +151,56 @@ defmodule Explorer.Chain.BlockTest do
       )
 
       assert Block.next_block_base_fee_per_gas() == Decimal.new(1100)
+    end
+  end
+
+  describe "preload_eip1559_config/1" do
+    if Application.compile_env(:explorer, :chain_type) == :optimism do
+      test "resolves the config of a batch of blocks with a single query" do
+        %Explorer.Chain.Optimism.EIP1559ConfigUpdate{}
+        |> Explorer.Chain.Optimism.EIP1559ConfigUpdate.changeset(%{
+          l2_block_number: 10,
+          l2_block_hash: block_hash(),
+          base_fee_max_change_denominator: 50,
+          elasticity_multiplier: 4
+        })
+        |> Repo.insert!()
+
+        blocks =
+          for number <- [5, 15] do
+            insert(:block, number: number, gas_limit: Decimal.new(30_000_000), gas_used: Decimal.new(15_000_000))
+          end
+
+        {[before_update, after_update], preload_query_sources} =
+          with_query_sources(fn -> Block.preload_eip1559_config(blocks) end)
+
+        assert preload_query_sources == ["op_eip1559_config_updates"]
+
+        # The env defaults apply before the first update
+        assert before_update.eip1559_config ==
+                 {Application.get_env(:explorer, :base_fee_max_change_denominator),
+                  Application.get_env(:explorer, :elasticity_multiplier)}
+
+        assert after_update.eip1559_config == {50, 4}
+
+        {gas_targets, gas_target_query_sources} =
+          with_query_sources(fn -> Enum.map([before_update, after_update], &Block.gas_target/1) end)
+
+        assert gas_targets == [0.0, 100.0]
+        assert gas_target_query_sources == []
+
+        # Not preloaded blocks still resolve the config on their own
+        {gas_targets, gas_target_query_sources} = with_query_sources(fn -> Enum.map(blocks, &Block.gas_target/1) end)
+
+        assert gas_targets == [0.0, 100.0]
+        assert gas_target_query_sources == ["op_eip1559_config_updates", "op_eip1559_config_updates"]
+      end
+    else
+      test "leaves the blocks as is without queries" do
+        blocks = insert_list(2, :block)
+
+        assert with_query_sources(fn -> Block.preload_eip1559_config(blocks) end) == {blocks, []}
+      end
     end
   end
 
