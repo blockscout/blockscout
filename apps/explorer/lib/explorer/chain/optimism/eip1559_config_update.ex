@@ -61,6 +61,48 @@ defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdate do
   end
 
   @doc """
+    Reads the configs actual before each of the specified blocks from the `op_eip1559_config_updates` table
+    with a single query. A batch counterpart of `actual_config_for_block/1`.
+
+    ## Parameters
+    - `block_numbers`: The block numbers for which we need to read the actual configs.
+
+    ## Returns
+    - A map from a block number to its `{denominator, multiplier, min_base_fee}` tuple,
+      or to `nil` if the config for the block is unknown.
+  """
+  @spec actual_configs_for_blocks([non_neg_integer()]) :: %{
+          non_neg_integer() => {non_neg_integer(), non_neg_integer(), non_neg_integer()} | nil
+        }
+  def actual_configs_for_blocks([]), do: %{}
+
+  def actual_configs_for_blocks(block_numbers) do
+    {min_block_number, max_block_number} = Enum.min_max(block_numbers)
+
+    # The update actual for the smallest block is the latest one registered before it. All the later updates
+    # registered before the largest block are relevant to the other blocks of the batch.
+    latest_update_before_min_block =
+      from(u in __MODULE__,
+        select: coalesce(max(u.l2_block_number), 0),
+        where: u.l2_block_number < ^min_block_number
+      )
+
+    updates =
+      from(u in __MODULE__,
+        select: {u.l2_block_number, {u.base_fee_max_change_denominator, u.elasticity_multiplier, u.min_base_fee}},
+        where: u.l2_block_number < ^max_block_number,
+        where: u.l2_block_number >= subquery(latest_update_before_min_block),
+        order_by: [desc: u.l2_block_number]
+      )
+      |> Repo.all()
+
+    Map.new(block_numbers, fn block_number ->
+      config = Enum.find_value(updates, fn {l2_block_number, config} -> l2_block_number < block_number && config end)
+      {block_number, config}
+    end)
+  end
+
+  @doc """
     Reads the last row from the `op_eip1559_config_updates` table.
 
     ## Returns

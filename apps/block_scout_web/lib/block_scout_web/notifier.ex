@@ -51,6 +51,7 @@ defmodule BlockScoutWeb.Notifier do
     Address,
     Address.CoinBalance,
     Address.Reputation,
+    Block,
     BlockNumberHelper,
     DenormalizationHelper,
     InternalTransaction,
@@ -469,12 +470,17 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp do_handle_blocks(blocks) do
-    blocks
-    |> Enum.sort_by(& &1.number, :asc)
-    |> preload_blocks_for_broadcast()
-    |> Enum.each(fn block ->
+    blocks =
+      blocks
+      |> Enum.sort_by(& &1.number, :asc)
+      |> preload_blocks_for_broadcast()
+
+    # The previous block number is a lookup of null rounds on Filecoin, so it is resolved for the whole batch at once
+    previous_block_numbers = blocks |> Enum.map(& &1.number) |> BlockNumberHelper.previous_block_numbers()
+
+    Enum.each(blocks, fn block ->
       last_broadcasted_block_number = Helper.fetch_from_ets_cache(:last_broadcasted_block, :number)
-      broadcast_latest_block?(block, last_broadcasted_block_number)
+      broadcast_latest_block?(block, last_broadcasted_block_number, previous_block_numbers[block.number])
     end)
   end
 
@@ -578,33 +584,33 @@ defmodule BlockScoutWeb.Notifier do
     })
   end
 
-  defp broadcast_latest_block?(block, last_broadcasted_block_number) do
+  defp broadcast_latest_block?(block, last_broadcasted_block_number, previous_block_number) do
     cond do
       last_broadcasted_block_number == 0 ||
-        last_broadcasted_block_number == BlockNumberHelper.previous_block_number(block.number) ||
+        last_broadcasted_block_number == previous_block_number ||
           last_broadcasted_block_number < block.number - 4 ->
         broadcast_block(block)
         :ets.insert(:last_broadcasted_block, {:number, block.number})
 
-      last_broadcasted_block_number > BlockNumberHelper.previous_block_number(block.number) ->
+      last_broadcasted_block_number > previous_block_number ->
         broadcast_block(block)
 
       true ->
         Task.start_link(fn ->
-          schedule_broadcasting(block)
+          schedule_broadcasting(block, previous_block_number)
         end)
     end
   end
 
-  defp schedule_broadcasting(block) do
+  defp schedule_broadcasting(block, previous_block_number) do
     :timer.sleep(@check_broadcast_sequence_period)
     last_broadcasted_block_number = Helper.fetch_from_ets_cache(:last_broadcasted_block, :number)
 
-    if last_broadcasted_block_number == BlockNumberHelper.previous_block_number(block.number) do
+    if last_broadcasted_block_number == previous_block_number do
       broadcast_block(block)
       :ets.insert(:last_broadcasted_block, {:number, block.number})
     else
-      schedule_broadcasting(block)
+      schedule_broadcasting(block, previous_block_number)
     end
   end
 
@@ -688,6 +694,7 @@ defmodule BlockScoutWeb.Notifier do
       :transactions,
       :rewards
     ])
+    |> Block.preload_eip1559_config()
     # TODO: the enrichment holds the broadcast of the whole batch back for up to
     # its timeout, consider broadcasting the enrichment data separately
     |> maybe_preload_enrichment_for_broadcast()
