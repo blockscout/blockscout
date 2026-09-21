@@ -245,12 +245,22 @@ defmodule Explorer.Chain.OrderedCache do
           |> ConCache.ets()
           |> :ets.tab2list()
 
-        if amount <= Enum.count(items) - 1 do
-          items
-          |> Enum.reject(fn {key, _value} -> key == ids_list_key() end)
+        # Elements that `update/1` or `replace/1` dropped from the ids list stay
+        # in the table for a moment before their delayed deletion, so only the
+        # elements the ids list of the same snapshot still references count.
+        ids =
+          case List.keyfind(items, ids_list_key(), 0) do
+            {_key, ids} -> MapSet.new(ids)
+            nil -> MapSet.new()
+          end
+
+        elements = Enum.filter(items, fn {id, _value} -> MapSet.member?(ids, id) end)
+
+        if amount <= Enum.count(elements) do
+          elements
           |> Enum.sort_by(fn {id, _value} -> id end, &prevails?/2)
           |> Enum.take(amount)
-          |> Enum.map(fn {_key, value} -> value end)
+          |> Enum.map(fn {_id, value} -> value end)
         end
       end
 
