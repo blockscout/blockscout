@@ -18,6 +18,7 @@
 
 ### 🐛 Bug Fixes
 
+- Keep address and transaction pages responsive while logs table is locked ([#14848](https://github.com/blockscout/blockscout/pull/14848))
 - Validate redirect targets and IPv6 hosts in NFT metadata fetching ([#14726](https://github.com/blockscout/blockscout/pull/14726))
 - Async fetch internal transactions after pending operations type switch ([#14330](https://github.com/blockscout/blockscout/issues/14330))
 - Adapt OnDemand IT fetcher test for rsk and filecoin ([#14315](https://github.com/blockscout/blockscout/issues/14315))

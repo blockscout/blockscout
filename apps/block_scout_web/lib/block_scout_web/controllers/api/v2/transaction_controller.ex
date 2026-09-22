@@ -1008,8 +1008,15 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     with {:transaction_interpreter_enabled, true} <-
            {:transaction_interpreter_enabled, TransactionInterpretationService.enabled?()},
          {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params, options) do
-      conn
-      |> json(TransactionInterpretationService.get_request_body(transaction))
+      case TransactionInterpretationService.get_request_body(transaction) do
+        {:ok, body} ->
+          json(conn, body)
+
+        {:error, :lock_timeout} ->
+          conn
+          |> put_status(503)
+          |> json(%{error: "Transaction data is temporarily unavailable"})
+      end
     end
   end
 

@@ -31,6 +31,7 @@ defmodule Explorer.Chain.Address.Counters do
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
 
   alias Explorer.Helper, as: ExplorerHelper
+  alias Explorer.Repo.LockTimeout
 
   require Logger
 
@@ -85,9 +86,25 @@ defmodule Explorer.Chain.Address.Counters do
     |> select_repo(options).exists?()
   end
 
+  @existence_checks_unavailable %{
+    has_validated_blocks: false,
+    has_logs: false,
+    has_tokens: false,
+    has_token_transfers: false,
+    has_beacon_chain_withdrawals: false
+  }
+
   @doc """
     Performs all existence checks needed by the address view in a single
     database round trip: `SELECT exists(...), exists(...), ...`.
+
+    The checks are optional data of the address page, so they must not make
+    the page hang while one of the checked tables is locked exclusively (e.g.
+    by `VACUUM FULL` or a heavy migration). The query fails fast in that case
+    (see `Explorer.Repo.LockTimeout`) and degrades: the `logs` table is by far
+    the biggest and the most likely one to be under maintenance, so the checks
+    are retried without it with `has_logs: false`; if that fails too, every
+    check is reported as `false`.
   """
   @spec address_existence_checks(Hash.Address.t(), Keyword.t()) :: %{
           has_validated_blocks: boolean(),
@@ -97,12 +114,20 @@ defmodule Explorer.Chain.Address.Counters do
           has_beacon_chain_withdrawals: boolean()
         }
   def address_existence_checks(address_hash, options \\ []) do
-    # the select has to be applied inside every union branch, see `Log.address_match_union_query/3`
-    logs_query =
-      Log.address_match_union_query(address_hash, fn address_match_dynamic ->
-        Log |> where(^address_match_dynamic) |> select([_], %{one: 1})
-      end)
+    repo = select_repo(options)
 
+    with {:error, :lock_timeout} <- run_address_existence_checks(repo, address_hash, true),
+         {:error, :lock_timeout} <- run_address_existence_checks(repo, address_hash, false) do
+      Logger.warning(fn -> "Existence checks for address #{address_hash} are unavailable: a table is locked" end)
+
+      @existence_checks_unavailable
+    else
+      {:ok, %{has_logs: _} = checks} -> checks
+      {:ok, checks} -> Map.put(checks, :has_logs, false)
+    end
+  end
+
+  defp run_address_existence_checks(repo, address_hash, check_logs?) do
     validated_blocks_query = address_hash |> address_hash_to_validated_blocks_query() |> select([_], 1)
     token_balances_query = address_hash |> address_hash_to_token_balances_query() |> select([_], 1)
     token_transfers_from_query = from(tt in TokenTransfer, where: tt.from_address_hash == ^address_hash, select: 1)
@@ -113,14 +138,26 @@ defmodule Explorer.Chain.Address.Counters do
       from(f in fragment("SELECT 1"),
         select: %{
           has_validated_blocks: exists(validated_blocks_query),
-          has_logs: exists(logs_query),
           has_tokens: exists(token_balances_query),
           has_token_transfers: exists(token_transfers_from_query) or exists(token_transfers_to_query),
           has_beacon_chain_withdrawals: exists(withdrawals_query)
         }
       )
 
-    select_repo(options).one(query)
+    query =
+      if check_logs? do
+        # the select has to be applied inside every union branch, see `Log.address_match_union_query/3`
+        logs_query =
+          Log.address_match_union_query(address_hash, fn address_match_dynamic ->
+            Log |> where(^address_match_dynamic) |> select([_], %{one: 1})
+          end)
+
+        select_merge(query, [_], %{has_logs: exists(logs_query)})
+      else
+        query
+      end
+
+    LockTimeout.run(repo, fn repo -> repo.one(query) end)
   end
 
   @doc """

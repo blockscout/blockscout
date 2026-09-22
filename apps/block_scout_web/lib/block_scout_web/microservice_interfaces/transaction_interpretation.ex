@@ -13,6 +13,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   alias Explorer.{Chain, HttpClient}
   alias Explorer.Chain.{Data, InternalTransaction, Log, TokenTransfer, Transaction}
   alias Explorer.Helper, as: ExplorerHelper
+  alias Explorer.Repo.LockTimeout
 
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
@@ -25,6 +26,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
   @post_timeout :timer.minutes(5)
   @request_error_msg "Error while sending request to Transaction Interpretation Service"
+  @lock_timeout_error_msg "Transaction data is temporarily unavailable"
   @api_true api?: true
   @items_limit 50
 
@@ -71,11 +73,10 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
            {:success_transaction, success_transaction_or_user_op?(transaction_or_map)},
          {:cache, :no_cached_data} <-
            {:cache, try_get_cached_value(get_hash(transaction_or_map))} do
-      url = interpret_url()
-
-      body = request_builder.(transaction_or_map)
-
-      http_post_request(url, body)
+      case request_builder.(transaction_or_map) do
+        {:ok, body} -> http_post_request(interpret_url(), body)
+        {:error, :lock_timeout} -> {{:error, @lock_timeout_error_msg}, 503}
+      end
     else
       {:cache, {:ok, _response} = result} -> result
       {:success_transaction, false} -> {:ok, nil}
@@ -96,8 +97,11 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
   @doc """
   Build the request body as for the transaction interpreter POST request.
+
+  Returns `{:error, :lock_timeout}` when the transaction logs can't be read
+  because the `logs` table is locked, see `Explorer.Repo.LockTimeout`.
   """
-  @spec get_request_body(Transaction.t()) :: map()
+  @spec get_request_body(Transaction.t()) :: {:ok, map()} | {:error, :lock_timeout}
   def get_request_body(transaction) do
     prepare_request_body(transaction)
   end
@@ -107,7 +111,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   """
   @spec get_user_op_request_body(map()) :: map()
   def get_user_op_request_body(user_op) do
-    prepare_request_body_from_user_op(user_op)
+    {:ok, body} = prepare_request_body_from_user_op(user_op)
+    body
   end
 
   defp http_post_request(url, body) do
@@ -173,8 +178,13 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     token_transfers = transaction |> fetch_token_transfers() |> Enum.reverse()
     internal_transactions = transaction |> fetch_internal_transactions() |> Enum.reverse()
-    logs = transaction |> fetch_logs() |> Enum.reverse()
 
+    with {:ok, logs} <- fetch_logs(transaction) do
+      {:ok, build_request_body(transaction, token_transfers, internal_transactions, Enum.reverse(logs))}
+    end
+  end
+
+  defp build_request_body(transaction, token_transfers, internal_transactions, logs) do
     [transaction_with_meta | other_elements] =
       ([transaction | token_transfers] ++ internal_transactions ++ logs)
       |> maybe_preload_metadata()
@@ -283,6 +293,9 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     |> Enum.map(&InternalTransactionView.prepare_internal_transaction(&1, transaction.block))
   end
 
+  # The `logs` table may be locked exclusively (e.g. by `VACUUM FULL`); the
+  # summary request must fail fast in that case instead of hanging and keeping
+  # a pool connection busy, see `Explorer.Repo.LockTimeout`.
   defp fetch_logs(transaction) do
     full_options =
       [
@@ -290,9 +303,11 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       ]
       |> Keyword.merge(@api_true)
 
-    transaction.hash
-    |> Chain.transaction_to_logs(full_options)
-    |> Enum.take(@items_limit)
+    LockTimeout.run(Chain.select_repo(@api_true), fn _repo ->
+      transaction.hash
+      |> Chain.transaction_to_logs(full_options)
+      |> Enum.take(@items_limit)
+    end)
   end
 
   defp prepare_logs(logs, transaction) do
@@ -425,7 +440,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
     to_address = Chain.hash_to_address(to_address_hash, [])
 
-    %{
+    body = %{
       data: %{
         to: Helper.address_with_info(nil, to_address, to_address_hash, true),
         from: Helper.address_with_info(nil, from_address, from_address_hash, true),
@@ -443,6 +458,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       logs_data: %{items: prepared_logs},
       chain_id: :block_scout_web |> Application.get_env(:chain_id) |> ExplorerHelper.parse_integer()
     }
+
+    {:ok, body}
   end
 
   @doc """
