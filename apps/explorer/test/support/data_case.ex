@@ -71,9 +71,12 @@ defmodule Explorer.DataCase do
     {locker_pid, locker_ref} = spawn_monitor(fn -> hold_table_lock(table, test_pid) end)
 
     receive do
-      {:locked, ^locker_pid} -> :ok
+      {:locked, ^locker_pid} ->
+        :ok
     after
-      :timer.seconds(10) -> raise "could not lock the #{table} table"
+      :timer.seconds(10) ->
+        kill_locker(locker_pid, locker_ref)
+        raise "could not lock the #{table} table"
     end
 
     try do
@@ -82,10 +85,23 @@ defmodule Explorer.DataCase do
       send(locker_pid, :release)
 
       receive do
-        {:DOWN, ^locker_ref, :process, ^locker_pid, _reason} -> :ok
+        {:DOWN, ^locker_ref, :process, ^locker_pid, _reason} ->
+          :ok
       after
-        :timer.seconds(10) -> raise "could not release the lock on the #{table} table"
+        :timer.seconds(10) ->
+          kill_locker(locker_pid, locker_ref)
+          raise "could not release the lock on the #{table} table"
       end
+    end
+  end
+
+  # Terminates a locker which didn't respond in time, so that it doesn't keep
+  # the lock and the connection, and consumes its `:DOWN` message.
+  defp kill_locker(locker_pid, locker_ref) do
+    Process.exit(locker_pid, :kill)
+
+    receive do
+      {:DOWN, ^locker_ref, :process, ^locker_pid, _reason} -> :ok
     end
   end
 
