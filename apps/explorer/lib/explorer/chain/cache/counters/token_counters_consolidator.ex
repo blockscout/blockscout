@@ -469,7 +469,9 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidator do
             ^min_blocks
           ),
         on: token.contract_address_hash == affected.hash,
-        where: token.contract_address_hash in subquery(tokens_lock_query(hashes)),
+        # tokens whose watermark is below every given block can't be reset, so
+        # they aren't locked
+        where: token.contract_address_hash in subquery(covered_tokens_lock_query(hashes, Enum.min(min_blocks))),
         where: not is_nil(token.counters_updated_at) and token.counters_updated_at >= affected.block_number,
         update: [set: [counters_updated_at: nil, updated_at: ^DateTime.utc_now()]],
         select: token.contract_address_hash
@@ -572,6 +574,10 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidator do
       order_by: token.contract_address_hash,
       lock: "FOR NO KEY UPDATE"
     )
+  end
+
+  defp covered_tokens_lock_query(hashes_bytes, min_block_number) do
+    where(tokens_lock_query(hashes_bytes), [token], token.counters_updated_at >= ^min_block_number)
   end
 
   defp burn_address_bytes do

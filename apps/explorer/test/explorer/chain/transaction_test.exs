@@ -3,6 +3,7 @@ defmodule Explorer.Chain.TransactionTest do
   use Explorer.DataCase
 
   import Mox
+  import Explorer.QuerySources, only: [with_query_sources: 1]
 
   alias Ecto.Changeset
   alias Explorer.Chain.{Address, InternalTransaction, SmartContract, Transaction}

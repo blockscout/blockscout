@@ -89,37 +89,55 @@ defmodule Explorer.Chain.PendingOperationsHelper do
     end
   end
 
+  # Moves a batch of pending transaction operations into pending block operations.
+  #
+  # Every batch is bounded by `transactions_batch_size` rows of `pending_transaction_operations`
+  # and touches only those rows: pending block operations are derived from them and then exactly
+  # those rows are deleted by primary key. Operations whose transaction has no block yet
+  # (`block_hash IS NULL`) produce no pending block operation and are simply dropped, the pending
+  # block operation will be created when the block is imported.
   defp from_transactions_to_blocks_function do
     batch_size = transactions_batch_size()
 
-    pbo_params_query =
+    batch_query =
       from(
         pto in PendingTransactionOperation,
         join: t in assoc(pto, :transaction),
-        select: %{block_hash: t.block_hash, block_number: t.block_number, priority: pto.priority},
+        select: %{
+          transaction_hash: pto.transaction_hash,
+          block_hash: t.block_hash,
+          block_number: t.block_number,
+          priority: pto.priority
+        },
         limit: ^batch_size
       )
 
-    case Repo.all(pbo_params_query) do
+    case Repo.all(batch_query) do
       [] ->
         :finish
 
-      pbo_params ->
-        filtered_pbo_params = Enum.reject(pbo_params, &is_nil(&1.block_hash))
-        Repo.insert_all(PendingBlockOperation, Helper.add_timestamps(filtered_pbo_params), on_conflict: :nothing)
+      batch ->
+        pbo_params =
+          batch
+          |> Enum.reject(&is_nil(&1.block_hash))
+          |> Enum.group_by(& &1.block_hash)
+          |> Enum.map(fn {block_hash, [%{block_number: block_number} | _] = rows} ->
+            %{block_hash: block_hash, block_number: block_number, priority: Enum.find_value(rows, & &1.priority)}
+          end)
+          |> Helper.add_timestamps()
 
-        block_numbers_to_delete = Enum.map(pbo_params, & &1.block_number)
+        Repo.insert_all(PendingBlockOperation, pbo_params,
+          on_conflict: default_pbo_on_conflict(),
+          conflict_target: [:block_hash]
+        )
 
-        delete_query =
-          from(
-            pto in PendingTransactionOperation,
-            join: t in assoc(pto, :transaction),
-            where: is_nil(t.block_number) or t.block_number in ^block_numbers_to_delete
-          )
+        transaction_hashes = Enum.map(batch, & &1.transaction_hash)
 
-        Repo.delete_all(delete_query)
+        PendingTransactionOperation
+        |> where([pto], pto.transaction_hash in ^transaction_hashes)
+        |> Repo.delete_all()
 
-        {:continue, {filtered_pbo_params |> Enum.map(& &1.block_number) |> Enum.uniq(), []}}
+        {:continue, {pbo_params |> Enum.map(& &1.block_number) |> Enum.uniq(), []}}
     end
   end
 

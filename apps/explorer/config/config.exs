@@ -27,6 +27,8 @@ config :explorer, Explorer.Chain.Cache.ContractMethods, enabled: true
 
 config :explorer, Explorer.Chain.Cache.AddressTags, enabled: true
 
+config :explorer, Explorer.Chain.Cache.Accounts.Refresher, enabled: true
+
 config :explorer, Explorer.Chain.Cache.Counters.AddressesCoinBalanceSum,
   enabled: true,
   ttl_check_interval: :timer.seconds(1)

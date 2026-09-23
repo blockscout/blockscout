@@ -7,7 +7,7 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   alias Explorer.Chain
   alias Explorer.Chain.Address.MetadataPreloader
 
-  alias Explorer.Chain.{Address, Block, Token.Instance, Transaction}
+  alias Explorer.Chain.{Address, Token.Instance, Transaction}
 
   alias Explorer.MicroserviceInterfaces.HttpClient
   alias Explorer.Utility.Microservice
@@ -334,14 +334,6 @@ defmodule Explorer.MicroserviceInterfaces.BENS do
   @spec maybe_preload_ens_to_address(Address.t()) :: Address.t()
   def maybe_preload_ens_to_address(address) do
     maybe_preload_meta(address, __MODULE__, &MetadataPreloader.preload_ens_to_address/1)
-  end
-
-  @doc """
-  Preloads ENS data to the block if BENS is enabled
-  """
-  @spec maybe_preload_ens_to_block(Block.t()) :: Block.t()
-  def maybe_preload_ens_to_block(block) do
-    maybe_preload_meta(block, __MODULE__, &MetadataPreloader.preload_ens_to_block/1)
   end
 
   @doc """

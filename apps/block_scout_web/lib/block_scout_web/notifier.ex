@@ -51,6 +51,7 @@ defmodule BlockScoutWeb.Notifier do
     Address,
     Address.CoinBalance,
     Address.Reputation,
+    Block,
     BlockNumberHelper,
     DenormalizationHelper,
     InternalTransaction,
@@ -62,13 +63,11 @@ defmodule BlockScoutWeb.Notifier do
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime, Helper}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
-  alias Explorer.MicroserviceInterfaces.{BENS, Metadata}
   alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
   alias Phoenix.View
   alias Timex.Duration
 
-  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens_to_block: 1]
-  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata_to_block: 1]
+  import Explorer.Chain.Address.MetadataPreloader, only: [maybe_preload_ens_and_metadata: 3]
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   @check_broadcast_sequence_period 500
@@ -471,12 +470,17 @@ defmodule BlockScoutWeb.Notifier do
   end
 
   defp do_handle_blocks(blocks) do
-    last_broadcasted_block_number = Helper.fetch_from_ets_cache(:last_broadcasted_block, :number)
+    blocks =
+      blocks
+      |> Enum.sort_by(& &1.number, :asc)
+      |> preload_blocks_for_broadcast()
 
-    blocks
-    |> Enum.sort_by(& &1.number, :asc)
-    |> Enum.each(fn block ->
-      broadcast_latest_block?(block, last_broadcasted_block_number)
+    # The previous block number is a lookup of null rounds on Filecoin, so it is resolved for the whole batch at once
+    previous_block_numbers = blocks |> Enum.map(& &1.number) |> BlockNumberHelper.previous_block_numbers()
+
+    Enum.each(blocks, fn block ->
+      last_broadcasted_block_number = Helper.fetch_from_ets_cache(:last_broadcasted_block, :number)
+      broadcast_latest_block?(block, last_broadcasted_block_number, previous_block_numbers[block.number])
     end)
   end
 
@@ -580,33 +584,33 @@ defmodule BlockScoutWeb.Notifier do
     })
   end
 
-  defp broadcast_latest_block?(block, last_broadcasted_block_number) do
+  defp broadcast_latest_block?(block, last_broadcasted_block_number, previous_block_number) do
     cond do
       last_broadcasted_block_number == 0 ||
-        last_broadcasted_block_number == BlockNumberHelper.previous_block_number(block.number) ||
+        last_broadcasted_block_number == previous_block_number ||
           last_broadcasted_block_number < block.number - 4 ->
         broadcast_block(block)
         :ets.insert(:last_broadcasted_block, {:number, block.number})
 
-      last_broadcasted_block_number > BlockNumberHelper.previous_block_number(block.number) ->
+      last_broadcasted_block_number > previous_block_number ->
         broadcast_block(block)
 
       true ->
         Task.start_link(fn ->
-          schedule_broadcasting(block)
+          schedule_broadcasting(block, previous_block_number)
         end)
     end
   end
 
-  defp schedule_broadcasting(block) do
+  defp schedule_broadcasting(block, previous_block_number) do
     :timer.sleep(@check_broadcast_sequence_period)
     last_broadcasted_block_number = Helper.fetch_from_ets_cache(:last_broadcasted_block, :number)
 
-    if last_broadcasted_block_number == BlockNumberHelper.previous_block_number(block.number) do
+    if last_broadcasted_block_number == previous_block_number do
       broadcast_block(block)
       :ets.insert(:last_broadcasted_block, {:number, block.number})
     else
-      schedule_broadcasting(block)
+      schedule_broadcasting(block, previous_block_number)
     end
   end
 
@@ -683,18 +687,20 @@ defmodule BlockScoutWeb.Notifier do
     )
   end
 
-  defp broadcast_block(block) do
-    preloaded_block =
-      block
-      |> Repo.preload([
-        [miner: [:names, :smart_contract, proxy_implementations_association()]],
-        :transactions,
-        :rewards
-      ])
-      # TODO: theoretically might introduce performance issues,
-      # consider async broadcast of enrichment data
-      |> maybe_preload_enrichment_for_broadcast()
+  defp preload_blocks_for_broadcast(blocks) do
+    blocks
+    |> Repo.preload([
+      [miner: [:names, :smart_contract, proxy_implementations_association()]],
+      :transactions,
+      :rewards
+    ])
+    |> Block.preload_eip1559_config()
+    # TODO: the enrichment holds the broadcast of the whole batch back for up to
+    # its timeout, consider broadcasting the enrichment data separately
+    |> maybe_preload_enrichment_for_broadcast()
+  end
 
+  defp broadcast_block(preloaded_block) do
     average_block_time = AverageBlockTime.average_block_time()
 
     # TODO: delete duplicated event when old UI becomes deprecated
@@ -703,7 +709,7 @@ defmodule BlockScoutWeb.Notifier do
       average_block_time: average_block_time
     })
 
-    Endpoint.local_broadcast("blocks_old:#{to_string(block.miner_hash)}", "new_block", %{
+    Endpoint.local_broadcast("blocks_old:#{to_string(preloaded_block.miner_hash)}", "new_block", %{
       block: preloaded_block,
       average_block_time: average_block_time
     })
@@ -718,50 +724,19 @@ defmodule BlockScoutWeb.Notifier do
     }
 
     Endpoint.local_broadcast("blocks:new_block", "new_block", block_params_v2)
-    Endpoint.local_broadcast("blocks:#{to_string(block.miner_hash)}", "new_block", block_params_v2)
+    Endpoint.local_broadcast("blocks:#{to_string(preloaded_block.miner_hash)}", "new_block", block_params_v2)
   end
 
-  defp maybe_preload_enrichment_for_broadcast(block) do
-    if !block_broadcast_enrichment_disabled?() and (BENS.enabled?() or Metadata.enabled?()) do
-      preload_enrichment_for_broadcast(block)
+  defp maybe_preload_enrichment_for_broadcast(blocks) do
+    if block_broadcast_enrichment_disabled?() do
+      blocks
     else
-      block
+      # The timeout is per miner, and a single request asks about all miners of the batch
+      miners_count = blocks |> Enum.uniq_by(& &1.miner_hash) |> Enum.count()
+
+      maybe_preload_ens_and_metadata(blocks, :blocks, timeout: block_broadcast_enrichment_timeout() * miners_count)
     end
   end
-
-  defp preload_enrichment_for_broadcast(block) do
-    timeout = block_broadcast_enrichment_timeout()
-
-    results =
-      Task.Supervisor.async_stream_nolink(
-        Explorer.TaskSupervisor,
-        [
-          {:ens_domain_name, &maybe_preload_ens_to_block/1},
-          {:metadata, &maybe_preload_metadata_to_block/1}
-        ],
-        fn {field, preload_fun} ->
-          {field, preload_fun.(block)}
-        end,
-        timeout: timeout,
-        on_timeout: :kill_task,
-        ordered: false
-      )
-
-    Enum.reduce(results, block, fn
-      {:ok, {field, enriched_block}}, acc -> merge_enriched_miner_field(acc, enriched_block, field)
-      _, acc -> acc
-    end)
-  end
-
-  defp merge_enriched_miner_field(%{miner: %{} = miner} = block, %{miner: %{} = enriched_miner}, field) do
-    case Map.fetch(enriched_miner, field) do
-      {:ok, nil} -> block
-      {:ok, value} -> %{block | miner: Map.replace(miner, field, value)}
-      :error -> block
-    end
-  end
-
-  defp merge_enriched_miner_field(block, _enriched_block, _field), do: block
 
   defp broadcast_rewards(rewards) do
     {emission_rewards, validator_rewards} =

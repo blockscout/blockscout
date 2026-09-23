@@ -91,7 +91,6 @@
 - Add support for the EigenDA blob schema in Optimism block OpenAPI ([#14496](https://github.com/blockscout/blockscout/pull/14496))
 - Add support for disallowing extra properties in Optimism Alt-DA block schema ([#14488](https://github.com/blockscout/blockscout/pull/14488))
 
-
 ### New ENV variables
 
 | Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
@@ -131,7 +130,6 @@
 | `CACHE_OPTIMISM_DEPOSITS_COUNTER_PERIOD`                         | Interval to update the Optimism deposits count. Introduced in [#14733](https://github.com/blockscout/blockscout/pull/14733).                                                                                                                                                                                                                                                           | Version: v12.0.0\+ <br />Default: `1h` <br />Applications: API, Indexer   |
 | `API_OPTIONAL_QUERIES_LOCK_TIMEOUT`                     | Maximum time optional API queries wait for a PostgreSQL table lock before failing fast and returning a degraded response. Implemented in [#14848](https://github.com/blockscout/blockscout/pull/14848).                                                                                                                                                                                                                                            | Version: v12.0.0\+ <br />Default: `100ms` <br />Applications: API                                                                                                                                                                                                                                                                                                               |
 
-
 ### Deprecated ENV variables
 
 | Variable | Description | Default | Version | Need recompile | Deprecated in Version |
@@ -140,6 +138,29 @@
 | <span style={{color: "red"}}>Deprecated</span> `MUD_INDEXER_ENABLED`      | If `true`, integration with [MUD](https://mud.dev/services/indexer#schemaless-indexing-with-postgresql-via-docker) is enabled. Implemented in [#9869](https://github.com/blockscout/blockscout/pull/9869). | (empty) | v6.6.0+ |  | v12.0.0+ |
 | <span style={{color: "red"}}>Deprecated</span> `MUD_DATABASE_URL`      | MUD indexer DB connection URL. | value from `DATABASE_URL` | v6.6.0+ |  | v12.0.0+ |
 | <span style={{color: "red"}}>Deprecated</span> `MUD_POOL_SIZE`      | MUD indexer DB `pool_size`. | `50` | v6.6.0+ |  | v12.0.0+ |
+
+
+## 11.3.2
+
+### 🐛 Bug Fixes
+
+- Increase beacon RPC client response timeout to 30s ([#14840](https://github.com/blockscout/blockscout/issues/14840))
+- Dedupe multichain export queue rows to avoid cardinality violation ([#14839](https://github.com/blockscout/blockscout/issues/14839))
+- Tolerate non-string NFT metadata values in NFTHelper ([#14838](https://github.com/blockscout/blockscout/issues/14838))
+- Move counters_corrections after ctb deriving ([#14837](https://github.com/blockscout/blockscout/issues/14837))
+
+### ⚡ Performance
+
+- Batch chain-specific lookups in realtime block broadcast ([#14849](https://github.com/blockscout/blockscout/issues/14849))
+- Refill top addresses cache in the background on API nodes ([#14843](https://github.com/blockscout/blockscout/issues/14843))
+- Preload data for realtime block events by batch ([#14842](https://github.com/blockscout/blockscout/issues/14842))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `CACHE_TOP_ADDRESSES_TTL`                                      | TTL of the top addresses cache (`/api/v2/addresses` first page) on API nodes (`APPLICATION_MODE=api` or `DISABLE_INDEXER=true`). The background refresher renews it on every refill, so the cache only expires when refills have been failing for the whole TTL. [Time format](/setup/env-variables/backend-env-variables#time-format). | Version: v11.3.2\+ <br />Default: `5m` <br />Applications: API             |
+| `CACHE_TOP_ADDRESSES_UPDATE_INTERVAL`                          | Interval at which `Explorer.Chain.Cache.Accounts.Refresher` refills the top addresses cache from the database. Should be lower than `CACHE_TOP_ADDRESSES_TTL`. [Time format](/setup/env-variables/backend-env-variables#time-format). | Version: v11.3.2\+ <br />Default: `1m` <br />Applications: API             |
 
 
 ## 11.3.1
@@ -162,6 +183,7 @@
 - Optimize realtime events broadcast for legacy topics ([#14810](https://github.com/blockscout/blockscout/issues/14810))
 
 ### New ENV variables
+
 | Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
 |-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
 | `INDEXER_DISABLE_TOKEN_TOTAL_SUPPLY_ON_DEMAND_FETCHER`        | If `true`, `Indexer.Fetcher.OnDemand.TokenTotalSupply` fetcher is disabled at runtime. Implemented in [#14811](https://github.com/blockscout/blockscout/pull/14811).                                                                                                                                                                                                                                                                                                                                                             | Version: v11.3.1\+ <br />Default: `false` <br />Applications: Indexer                                        |

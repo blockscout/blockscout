@@ -49,6 +49,21 @@ defmodule Explorer.Chain.BlockNumberHelper do
   def next_block_number(number), do: neighbor_block_number(number, :next)
 
   @doc """
+    Returns the previous block numbers of several blocks in the blockchain sequence.
+
+    A batch counterpart of `previous_block_number/1`: for Filecoin chain type, the null rounds
+    are looked up for all the blocks at once.
+
+    ## Parameters
+    - `numbers`: The reference block heights
+
+    ## Returns
+    - A map from each reference block height to its previous block number
+  """
+  @spec previous_block_numbers([non_neg_integer()]) :: %{non_neg_integer() => non_neg_integer()}
+  def previous_block_numbers(numbers), do: neighbor_block_numbers(numbers, :previous)
+
+  @doc """
     Returns the total count of null rounds in the blockchain.
 
     For Filecoin chain type, returns the actual count of null round heights stored
@@ -62,6 +77,7 @@ defmodule Explorer.Chain.BlockNumberHelper do
 
   @spec get_null_rounds_count() :: non_neg_integer()
   @spec neighbor_block_number(non_neg_integer(), :previous | :next) :: non_neg_integer()
+  @spec neighbor_block_numbers([non_neg_integer()], :previous | :next) :: %{non_neg_integer() => non_neg_integer()}
 
   case @chain_type do
     :filecoin ->
@@ -72,6 +88,10 @@ defmodule Explorer.Chain.BlockNumberHelper do
       defp neighbor_block_number(number, direction),
         do: Explorer.Chain.NullRoundHeight.neighbor_block_number(number, direction)
 
+      # Determines the actual neighboring block numbers of several blocks taking into account null rounds.
+      defp neighbor_block_numbers(numbers, direction),
+        do: Explorer.Chain.NullRoundHeight.neighbor_block_numbers(numbers, direction)
+
     _ ->
       defp get_null_rounds_count, do: 0
 
@@ -80,6 +100,8 @@ defmodule Explorer.Chain.BlockNumberHelper do
       # this simple approach differs from Filecoin which handles null rounds. Looks like
       # only blocks with consensus `true` must be taken into account here as well.
       defp neighbor_block_number(number, direction), do: move_by_one(number, direction)
+
+      defp neighbor_block_numbers(numbers, direction), do: Map.new(numbers, &{&1, move_by_one(&1, direction)})
   end
 
   @doc """

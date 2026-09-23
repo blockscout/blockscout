@@ -151,6 +151,49 @@ defmodule Explorer.Chain.Address.MetadataPreloaderTest do
     end
   end
 
+  describe "the :timeout option" do
+    setup do
+      # Accepts connections, but never answers them
+      {:ok, socket} = :gen_tcp.listen(0, [:binary, active: false])
+      {:ok, port} = :inet.port(socket)
+      on_exit(fn -> :gen_tcp.close(socket) end)
+
+      for microservice <- [BENS, Metadata] do
+        Application.put_env(
+          :explorer,
+          microservice,
+          Keyword.put(Application.get_env(:explorer, microservice), :service_url, "http://127.0.0.1:#{port}")
+        )
+      end
+
+      :ok
+    end
+
+    # Otherwise the requests would last until their receive timeout of 1 second
+    test "cuts the concurrent requests off" do
+      {elapsed, [address]} =
+        measure(fn -> MetadataPreloader.maybe_preload_ens_and_metadata([address()], :any, timeout: 100) end)
+
+      assert elapsed < 1_000
+      assert address.ens_domain_name == nil
+      assert address.metadata == nil
+    end
+
+    test "cuts a single request off" do
+      {elapsed, address} =
+        measure(fn -> MetadataPreloader.maybe_preload_selected_meta(address(), [:ens_domain_name], timeout: 100) end)
+
+      assert elapsed < 1_000
+      assert address.ens_domain_name == nil
+    end
+  end
+
+  defp measure(fun) do
+    started_at = System.monotonic_time(:millisecond)
+    result = fun.()
+    {System.monotonic_time(:millisecond) - started_at, result}
+  end
+
   defp address do
     {:ok, hash} = Chain.string_to_address_hash(@address_hash_string)
     %Address{hash: hash}
