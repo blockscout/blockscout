@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.NFTHelper
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.{Address, BridgedToken}
+  alias Explorer.Chain.{Address, BridgedToken, Token}
   alias Explorer.Chain.Token.Instance
 
   def render("token.json", %{token: nil = token, contract_address_hash: contract_address_hash}) do
@@ -23,7 +23,10 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "icon_url" => nil,
       "circulating_market_cap" => nil,
       "circulating_supply" => nil,
-      "reputation" => nil
+      "reputation" => nil,
+      "ui_multiplier" => nil,
+      "new_ui_multiplier" => nil,
+      "ui_multiplier_effective_at" => nil
     }
     |> maybe_append_bridged_info(token)
   end
@@ -46,7 +49,10 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "icon_url" => token.icon_url,
       "circulating_market_cap" => token.circulating_market_cap,
       "circulating_supply" => token.circulating_supply,
-      "reputation" => token.reputation
+      "reputation" => token.reputation,
+      "ui_multiplier" => Token.effective_ui_multiplier(token),
+      "new_ui_multiplier" => token.new_ui_multiplier,
+      "ui_multiplier_effective_at" => token.ui_multiplier_effective_at
     }
     |> maybe_append_bridged_info(token)
     |> chain_type_fields(%{address: token.contract_address, field_prefix: nil})
@@ -58,6 +64,16 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       }) do
     %{
       "items" => Enum.map(token_balances, &prepare_token_holder(&1)),
+      "next_page_params" => next_page_params
+    }
+  end
+
+  def render("ui_multiplier_changes.json", %{
+        ui_multiplier_changes: ui_multiplier_changes,
+        next_page_params: next_page_params
+      }) do
+    %{
+      "items" => Enum.map(ui_multiplier_changes, &prepare_ui_multiplier_change/1),
       "next_page_params" => next_page_params
     }
   end
@@ -97,6 +113,19 @@ defmodule BlockScoutWeb.API.V2.TokenView do
 
   def exchange_rate(%{fiat_value: fiat_value}) when not is_nil(fiat_value), do: to_string(fiat_value)
   def exchange_rate(_), do: nil
+
+  defp prepare_ui_multiplier_change(change) do
+    %{
+      "block_number" => change.block_number,
+      "block_hash" => to_string(change.block_hash),
+      "timestamp" => change.timestamp,
+      "transaction_hash" => change.transaction_hash && to_string(change.transaction_hash),
+      "log_index" => change.log_index,
+      "old_multiplier" => change.old_multiplier,
+      "new_multiplier" => change.new_multiplier,
+      "effective_at" => change.effective_at
+    }
+  end
 
   defp prepare_token_holder(token_balance) do
     %{

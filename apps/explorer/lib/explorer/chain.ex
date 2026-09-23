@@ -74,6 +74,7 @@ defmodule Explorer.Chain do
   alias Explorer.Chain.Cache.Counters.Helper, as: CacheCountersHelper
   alias Explorer.Chain.Health.Helper, as: HealthHelper
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
+  alias Explorer.Chain.Token.ScaledUIAmount
   alias Explorer.Helper, as: ExplorerHelper
 
   alias Explorer.Market.MarketHistoryCache
@@ -1554,6 +1555,10 @@ defmodule Explorer.Chain do
 
   @doc """
   Return the balance in usd corresponding to this token. Return nil if the fiat_value of the token is not present.
+
+  `fiat_value` prices one displayed unit of the token, so an ERC-8056 balance is
+  scaled by the multiplier in force before it is priced — the same base
+  `Explorer.Chain.Address.CurrentTokenBalance.fiat_value_query/0` computes in SQL.
   """
   def balance_in_fiat(%{fiat_value: fiat_value} = token_balance) when not is_nil(fiat_value) do
     token_balance.fiat_value
@@ -1563,8 +1568,12 @@ defmodule Explorer.Chain do
     nil
   end
 
-  def balance_in_fiat(%{token: %{fiat_value: fiat_value, decimals: decimals}} = token_balance) do
-    tokens = CurrencyHelper.divide_decimals(token_balance.value, decimals)
+  def balance_in_fiat(%{token: %{fiat_value: fiat_value, decimals: decimals} = token} = token_balance) do
+    tokens =
+      token_balance.value
+      |> ScaledUIAmount.scale(Token.effective_ui_multiplier(token))
+      |> CurrencyHelper.divide_decimals(decimals)
+
     Decimal.mult(tokens, fiat_value)
   end
 
@@ -2919,7 +2928,7 @@ defmodule Explorer.Chain do
 
     if token_transfer do
       case token_transfer.token do
-        %Token{type: "ERC-20"} -> :erc20
+        %Token{type: type} when type in ["ERC-20", "ERC-8056"] -> :erc20
         %Token{type: "ERC-721"} -> :erc721
         %Token{type: "ERC-1155"} -> :erc1155
         %Token{type: "ERC-404"} -> :erc404
@@ -2944,7 +2953,7 @@ defmodule Explorer.Chain do
 
   defp erc_20_token_type?(type) do
     case type do
-      "ERC-20" -> true
+      type when type in ["ERC-20", "ERC-8056"] -> true
       _ -> false
     end
   end

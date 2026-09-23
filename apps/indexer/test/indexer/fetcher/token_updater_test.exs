@@ -5,7 +5,9 @@ defmodule Indexer.Fetcher.TokenUpdaterTest do
   import Mox
 
   alias Explorer.Chain
+  alias Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue
   alias Explorer.Chain.Token
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.Fetcher.TokenUpdater
 
   setup :verify_on_exit!
@@ -52,6 +54,15 @@ defmodule Indexer.Fetcher.TokenUpdaterTest do
                id: id,
                result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
              }
+
+           # the ERC-165 probe, read along with the base metadata of an ERC-20
+           # token and reverting on one that does not implement ERC-8056
+           %{id: id, method: "eth_call", params: [%{data: _, to: _}, "latest"]} ->
+             %{
+               id: id,
+               error: %{code: -32015, data: "something", message: "some error"},
+               jsonrpc: "2.0"
+             }
          end)}
       end
     )
@@ -83,6 +94,55 @@ defmodule Indexer.Fetcher.TokenUpdaterTest do
                 symbol: "BNT",
                 cataloged: true
               }} = Chain.token_from_address_hash(token.contract_address_hash)
+    end
+
+    test "exports the ERC-8056 multiplier to the multichain service along with the metadata" do
+      initial = Application.get_env(:explorer, MultichainSearch) || []
+
+      Application.put_env(
+        :explorer,
+        MultichainSearch,
+        Keyword.merge(initial, service_url: "http://localhost:1234", api_key: "12345", token_info_chunk_size: 1000)
+      )
+
+      on_exit(fn -> Application.put_env(:explorer, MultichainSearch, initial) end)
+
+      plain_token = insert(:token)
+      # the row still says ERC-20: the metadata batch is what finds the ERC-8056 interface
+      scaled_token = insert(:token)
+
+      TokenUpdater.update_metadata([
+        %{name: "Plain", contract_address_hash: to_string(plain_token.contract_address_hash)},
+        %{
+          name: "Scaled",
+          type: "ERC-8056",
+          ui_multiplier: 2_000_000_000_000_000_000,
+          new_ui_multiplier: 4_000_000_000_000_000_000,
+          ui_multiplier_effective_at: ~U[2026-09-01 00:00:00.000000Z],
+          contract_address_hash: to_string(scaled_token.contract_address_hash)
+        }
+      ])
+
+      queue = TokenInfoExportQueue |> Repo.all() |> Map.new(&{&1.address_hash, {&1.data_type, &1.data}})
+
+      assert queue[plain_token.contract_address_hash] ==
+               {:metadata, %{"token_type" => "ERC-20", "name" => "Plain", "icon_url" => plain_token.icon_url}}
+
+      assert queue[scaled_token.contract_address_hash] ==
+               {:metadata,
+                %{
+                  "token_type" => "ERC-8056",
+                  "name" => "Scaled",
+                  "icon_url" => scaled_token.icon_url,
+                  "ui_multiplier" => "2000000000000000000",
+                  "new_ui_multiplier" => "4000000000000000000",
+                  "ui_multiplier_effective_at" => "2026-09-01T00:00:00Z"
+                }}
+
+      assert {:ok, %Token{type: "ERC-8056", ui_multiplier: ui_multiplier}} =
+               Chain.token_from_address_hash(scaled_token.contract_address_hash)
+
+      assert Decimal.equal?(ui_multiplier, Decimal.new("2000000000000000000"))
     end
   end
 end
