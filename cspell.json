@@ -522,6 +522,7 @@
         "paymentchannel",
         "pbcopy",
         "PBFT",
+        "pbos",
         "peeker",
         "peekers",
         "pendingtxlist",
