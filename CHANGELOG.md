@@ -18,6 +18,7 @@
 
 ### 🐛 Bug Fixes
 
+- Drop redundant logs_address_hash_first_topic_second_topic_block_number_index ([#14858](https://github.com/blockscout/blockscout/pull/14858))
 - Keep address and transaction pages responsive while logs table is locked ([#14848](https://github.com/blockscout/blockscout/pull/14848))
 - Validate redirect targets and IPv6 hosts in NFT metadata fetching ([#14726](https://github.com/blockscout/blockscout/pull/14726))
 - Async fetch internal transactions after pending operations type switch ([#14330](https://github.com/blockscout/blockscout/issues/14330))
