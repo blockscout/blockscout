@@ -174,9 +174,10 @@ defmodule Explorer.Chain.BlockTest do
         {[before_update, after_update], preload_query_sources} =
           with_query_sources(fn -> Block.preload_eip1559_config(blocks) end)
 
-        assert preload_query_sources == ["op_eip1559_config_updates"]
+        # The superchain config defaults (`constants`) are read once for the whole batch
+        assert preload_query_sources == ["op_eip1559_config_updates", "constants", "constants"]
 
-        # The env defaults apply before the first update
+        # The env defaults apply before the first update, as the superchain config is not set
         assert before_update.eip1559_config ==
                  {Application.get_env(:explorer, :base_fee_max_change_denominator),
                   Application.get_env(:explorer, :elasticity_multiplier)}
@@ -193,13 +194,48 @@ defmodule Explorer.Chain.BlockTest do
         {gas_targets, gas_target_query_sources} = with_query_sources(fn -> Enum.map(blocks, &Block.gas_target/1) end)
 
         assert gas_targets == [0.0, 100.0]
-        assert gas_target_query_sources == ["op_eip1559_config_updates", "op_eip1559_config_updates"]
+
+        assert gas_target_query_sources == [
+                 "op_eip1559_config_updates",
+                 "constants",
+                 "constants",
+                 "op_eip1559_config_updates"
+               ]
+      end
+
+      test "does not read the defaults when every block has an update" do
+        %Explorer.Chain.Optimism.EIP1559ConfigUpdate{}
+        |> Explorer.Chain.Optimism.EIP1559ConfigUpdate.changeset(%{
+          l2_block_number: 10,
+          l2_block_hash: block_hash(),
+          base_fee_max_change_denominator: 50,
+          elasticity_multiplier: 4
+        })
+        |> Repo.insert!()
+
+        blocks = for number <- [15, 16], do: insert(:block, number: number)
+
+        {preloaded_blocks, preload_query_sources} =
+          with_query_sources(fn -> Block.preload_eip1559_config(blocks) end)
+
+        assert preload_query_sources == ["op_eip1559_config_updates"]
+        assert Enum.map(preloaded_blocks, & &1.eip1559_config) == [{50, 4}, {50, 4}]
       end
     else
       test "leaves the blocks as is without queries" do
         blocks = insert_list(2, :block)
 
         assert with_query_sources(fn -> Block.preload_eip1559_config(blocks) end) == {blocks, []}
+      end
+
+      test "gas_target/1 uses the env config without queries" do
+        block = insert(:block, gas_limit: Decimal.new(30_000_000), gas_used: Decimal.new(15_000_000))
+
+        {gas_target, query_sources} = with_query_sources(fn -> Block.gas_target(block) end)
+
+        # The default elasticity multiplier is 2, so the gas target is met exactly
+        assert gas_target == 0.0
+        assert query_sources == []
       end
     end
   end
