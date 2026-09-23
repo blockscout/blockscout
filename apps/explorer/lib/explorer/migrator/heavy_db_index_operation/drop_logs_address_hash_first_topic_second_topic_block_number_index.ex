@@ -13,6 +13,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashFirstTopicS
   alias Explorer.Migrator.{FillLogsOptimizedFields, HeavyDbIndexOperation, MigrationStatus}
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
+    CreateLogsAddressHashFirstTopicSecondTopicBlockNumberIndex,
     CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex,
     DropLogsAddressHashFirstTopicBlockNumberIndexIndex
   }
@@ -32,9 +33,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashFirstTopicS
   @impl HeavyDbIndexOperation
   def index_name, do: @index_name
 
+  # The create migration of this very index is a dependency too: otherwise the drop could complete while the
+  # creation has not started yet or is being retried after an invalid build, and the index would be rebuilt afterwards.
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
     do: [
+      CreateLogsAddressHashFirstTopicSecondTopicBlockNumberIndex.migration_name(),
       FillLogsOptimizedFields.migration_name(),
       CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex.migration_name(),
       DropLogsAddressHashFirstTopicBlockNumberIndexIndex.migration_name()
