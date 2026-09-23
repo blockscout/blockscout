@@ -1,0 +1,71 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
+defmodule Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashFirstTopicSecondTopicBlockNumberIndex do
+  @moduledoc """
+  Drops B-tree index `logs_address_hash_first_topic_second_topic_block_number_index` on `logs` table for
+  (`address_hash`, `first_topic`, `second_topic`, `block_number`, `index`) columns.
+
+  The index is superseded by `logs_address_id_first_topic_id_second_topic_block_number_index` once
+  `address_hash` and `first_topic` are replaced with `address_id` and `first_topic_id`.
+  """
+
+  use Explorer.Migrator.HeavyDbIndexOperation
+
+  alias Explorer.Migrator.{FillLogsOptimizedFields, HeavyDbIndexOperation, MigrationStatus}
+
+  alias Explorer.Migrator.HeavyDbIndexOperation.{
+    CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex,
+    DropLogsAddressHashFirstTopicBlockNumberIndexIndex
+  }
+
+  alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
+
+  @table_name :logs
+  @index_name "logs_address_hash_first_topic_second_topic_block_number_index"
+  @operation_type :drop
+
+  @impl HeavyDbIndexOperation
+  def table_name, do: @table_name
+
+  @impl HeavyDbIndexOperation
+  def operation_type, do: @operation_type
+
+  @impl HeavyDbIndexOperation
+  def index_name, do: @index_name
+
+  @impl HeavyDbIndexOperation
+  def dependent_from_migrations,
+    do: [
+      FillLogsOptimizedFields.migration_name(),
+      CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex.migration_name(),
+      DropLogsAddressHashFirstTopicBlockNumberIndexIndex.migration_name()
+    ]
+
+  @impl HeavyDbIndexOperation
+  def db_index_operation do
+    HeavyDbIndexOperationHelper.safely_drop_db_index(@index_name)
+  end
+
+  @impl HeavyDbIndexOperation
+  def check_db_index_operation_progress do
+    operation = HeavyDbIndexOperationHelper.drop_index_query_string(@index_name)
+    HeavyDbIndexOperationHelper.check_db_index_operation_progress(@index_name, operation)
+  end
+
+  @impl HeavyDbIndexOperation
+  def db_index_operation_status do
+    HeavyDbIndexOperationHelper.db_index_dropping_status(@index_name)
+  end
+
+  @impl HeavyDbIndexOperation
+  def restart_db_index_operation do
+    HeavyDbIndexOperationHelper.safely_drop_db_index(@index_name)
+  end
+
+  @impl HeavyDbIndexOperation
+  def running_other_heavy_migration_exists?(migration_name) do
+    MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, migration_name)
+  end
+
+  @impl HeavyDbIndexOperation
+  def update_cache, do: :ok
+end
