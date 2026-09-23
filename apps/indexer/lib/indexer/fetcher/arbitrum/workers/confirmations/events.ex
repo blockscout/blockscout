@@ -115,7 +115,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Events do
       * `sorted_block_numbers` is a list of rollup block numbers in descending order
       * `new_cache` is the updated logs cache
       * `logs_length` is the number of logs processed
-    - `{:error, nil, new_cache, logs_length}` if any block hash cannot be resolved
+    - `{:error, nil, new_cache, logs_length}` if a block hash is not indexed yet, or the
+      indexed block is not block 0 and has no batch. Block 0 is omitted from the result.
   """
   @spec fetch_and_sort_confirmations_logs(
           non_neg_integer(),
@@ -150,8 +151,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Events do
 
         case rollup_block_num do
           nil ->
-            log_warning("The rollup block ##{rollup_block_hash} not found")
-            {:halt, :error}
+            case DbSettlement.block_number_by_hash(rollup_block_hash) do
+              0 ->
+                # Block 0 has no batch, so skip this SendRootUpdated and do not abort the same log scan.
+                {:cont, {:ok, acc}}
+
+              _ ->
+                log_warning("The rollup block ##{rollup_block_hash} not found")
+                {:halt, :error}
+            end
 
           value ->
             log_debug("Found rollup block ##{rollup_block_num}")
