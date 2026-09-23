@@ -323,7 +323,7 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
   end
 
   if @chain_type == :arc do
-    describe "address_to_coin_balances/2 on Arc" do
+    describe "address_hash_to_coin_balances/2 on Arc" do
       @arc_native_token "0x3600000000000000000000000000000000000000"
 
       setup do
@@ -367,7 +367,7 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
         insert(:fetched_balance, address_hash: address.hash, value: 100, block_number: block.number)
 
         [coin_balance] =
-          CoinBalance.address_to_coin_balances(address, paging_options: %PagingOptions{page_size: 50})
+          CoinBalance.address_hash_to_coin_balances(address.hash, paging_options: %PagingOptions{page_size: 50})
 
         assert coin_balance.transaction_hash == token_transfer.transaction_hash
         assert coin_balance.transaction_hash == transfer_transaction.hash
@@ -402,7 +402,7 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
         insert(:fetched_balance, address_hash: address.hash, value: 100, block_number: block.number)
 
         [coin_balance] =
-          CoinBalance.address_to_coin_balances(address, paging_options: %PagingOptions{page_size: 50})
+          CoinBalance.address_hash_to_coin_balances(address.hash, paging_options: %PagingOptions{page_size: 50})
 
         assert coin_balance.transaction_hash == regular_transaction.hash
       end
@@ -430,7 +430,7 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
         insert(:fetched_balance, address_hash: address.hash, value: 100, block_number: block.number)
 
         [coin_balance] =
-          CoinBalance.address_to_coin_balances(address, paging_options: %PagingOptions{page_size: 50})
+          CoinBalance.address_hash_to_coin_balances(address.hash, paging_options: %PagingOptions{page_size: 50})
 
         assert is_nil(coin_balance.transaction_hash)
       end
@@ -460,7 +460,7 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
         insert(:fetched_balance, address_hash: address.hash, value: 100, block_number: balance_block.number)
 
         [coin_balance] =
-          CoinBalance.address_to_coin_balances(address, paging_options: %PagingOptions{page_size: 50})
+          CoinBalance.address_hash_to_coin_balances(address.hash, paging_options: %PagingOptions{page_size: 50})
 
         assert is_nil(coin_balance.transaction_hash)
       end
