@@ -245,10 +245,12 @@ defmodule Indexer.Block.Catchup.Fetcher do
     |> MissingBlockRange.clear_batch()
   end
 
+  # Lotus reports a null round either with the bare message (older versions) or with
+  # the epoch appended, e.g. "requested epoch was a null round (6394248)" (newer versions).
   defp handle_null_rounds(errors) do
     {null_rounds, other_errors} =
       Enum.split_with(errors, fn
-        %{message: "requested epoch was a null round"} -> true
+        %{message: "requested epoch was a null round" <> _} -> true
         _ -> false
       end)
 
