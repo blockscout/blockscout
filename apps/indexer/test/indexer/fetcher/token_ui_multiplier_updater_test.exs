@@ -4,7 +4,9 @@ defmodule Indexer.Fetcher.TokenUIMultiplierUpdaterTest do
 
   import Mox
 
+  alias Explorer.Chain.MultichainSearchDb.TokenInfoExportQueue
   alias Explorer.Chain.Token.UIMultiplierChange
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.Fetcher.TokenUIMultiplierUpdater
 
   @abi_true "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -32,6 +34,39 @@ defmodule Indexer.Fetcher.TokenUIMultiplierUpdaterTest do
          end
        end)}
     end)
+  end
+
+  # supportsInterface(0xa60bf13d) == true and the getters answer: the multiplier
+  # is 2.0 and becomes 4.0 at `effective_at`
+  defp stub_json_rpc_with_getters(effective_at) do
+    stub(EthereumJSONRPC.Mox, :json_rpc, fn requests, _opts ->
+      {:ok,
+       Enum.map(requests, fn %{id: id, params: [%{data: data}, _]} ->
+         cond do
+           String.starts_with?(data, "0x01ffc9a7") -> %{id: id, result: @abi_true}
+           String.starts_with?(data, "0xa60bf13d") -> %{id: id, result: abi_uint(@two)}
+           String.starts_with?(data, "0xdc767007") -> %{id: id, result: abi_uint(@four)}
+           String.starts_with?(data, "0x97a4064f") -> %{id: id, result: abi_uint(DateTime.to_unix(effective_at))}
+         end
+       end)}
+    end)
+  end
+
+  defp abi_uint(%Decimal{} = value), do: value |> Decimal.to_integer() |> abi_uint()
+
+  defp abi_uint(value) when is_integer(value),
+    do: "0x" <> (value |> Integer.to_string(16) |> String.downcase() |> String.pad_leading(64, "0"))
+
+  defp enable_multichain_search do
+    initial = Application.get_env(:explorer, MultichainSearch) || []
+
+    Application.put_env(
+      :explorer,
+      MultichainSearch,
+      Keyword.merge(initial, service_url: "http://localhost:1234", api_key: "12345", token_info_chunk_size: 1000)
+    )
+
+    on_exit(fn -> Application.put_env(:explorer, MultichainSearch, initial) end)
   end
 
   setup do
@@ -158,6 +193,46 @@ defmodule Indexer.Fetcher.TokenUIMultiplierUpdaterTest do
       run_update([change_params(token, 200, 0, @two, @four, ~U[2026-09-01 00:00:00.000000Z])])
 
       assert [%{block_number: 200}] = recorded_changes(token)
+    end
+
+    test "sends the refreshed token metadata to the multichain service" do
+      effective_at = ~U[2026-09-01 00:00:00.000000Z]
+      stub_json_rpc_with_getters(effective_at)
+      enable_multichain_search()
+
+      token = insert(:token)
+
+      run_update([change_params(token, 200, 0, @two, @four, effective_at)])
+
+      assert [%TokenInfoExportQueue{address_hash: address_hash, data_type: :metadata, data: data}] =
+               Repo.all(TokenInfoExportQueue)
+
+      assert address_hash == token.contract_address_hash
+
+      assert data == %{
+               "token_type" => "ERC-8056",
+               "name" => token.name,
+               "symbol" => token.symbol,
+               "decimals" => 18,
+               "total_supply" => "1000000000",
+               "icon_url" => token.icon_url,
+               "ui_multiplier" => "2000000000000000000",
+               "new_ui_multiplier" => "4000000000000000000",
+               "ui_multiplier_effective_at" => "2026-09-01T00:00:00Z"
+             }
+    end
+
+    test "sends nothing to the multichain service when it is disabled" do
+      effective_at = ~U[2026-09-01 00:00:00.000000Z]
+      stub_json_rpc_with_getters(effective_at)
+
+      token = insert(:token)
+
+      run_update([change_params(token, 200, 0, @two, @four, effective_at)])
+
+      assert %{type: "ERC-8056", new_ui_multiplier: new_ui_multiplier} = Repo.reload(token)
+      assert Decimal.equal?(new_ui_multiplier, @four)
+      assert Repo.all(TokenInfoExportQueue) == []
     end
 
     test "gives up on a change whose contract hash cannot be parsed" do

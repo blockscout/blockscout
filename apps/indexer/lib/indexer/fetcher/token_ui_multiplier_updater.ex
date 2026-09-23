@@ -26,6 +26,7 @@ defmodule Indexer.Fetcher.TokenUIMultiplierUpdater do
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.Chain.Token.UIMultiplierChange
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Repo
   alias Explorer.Token.MetadataRetriever
   alias Timex.Duration
@@ -151,7 +152,12 @@ defmodule Indexer.Fetcher.TokenUIMultiplierUpdater do
     token_params = address_hash |> Hash.to_string() |> MetadataRetriever.get_ui_multiplier_of()
 
     case Token.update(token, Map.put(token_params, :type, "ERC-8056")) do
-      {:ok, _token} ->
+      {:ok, updated_token} ->
+        # the multiplier is part of the token metadata exported to the Multichain service,
+        # so the whole metadata entry is re-sent with the values in force now
+        %{address_hash => MultichainSearch.prepare_token_metadata_for_queue(updated_token)}
+        |> MultichainSearch.send_token_info_to_queue(:metadata)
+
         :ok
 
       {:error, changeset} ->
