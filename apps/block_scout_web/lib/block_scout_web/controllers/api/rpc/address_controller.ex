@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   alias BlockScoutWeb.Chain, as: BlockScoutWebChain
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.{Address, PendingOperationsHelper, Wei}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Etherscan.{Addresses, Blocks}
   alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
@@ -219,7 +220,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   end
 
   defp render_internal_transactions(conn, [], start_block_number, end_block_number) do
-    if PendingOperationsHelper.blocks_pending?(start_block_number, end_block_number) do
+    if blocks_pending?(start_block_number, end_block_number) do
       render(conn, :pending_internal_transaction,
         message: @block_range_not_yet_processed_message,
         data: []
@@ -230,7 +231,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   end
 
   defp render_internal_transactions(conn, internal_transactions, start_block_number, end_block_number) do
-    if PendingOperationsHelper.blocks_pending?(start_block_number, end_block_number) do
+    if blocks_pending?(start_block_number, end_block_number) do
       render(conn, :pending_internal_transaction,
         message: @block_range_not_yet_processed_message,
         data: internal_transactions
@@ -238,6 +239,37 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     else
       render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
     end
+  end
+
+  # Checks whether internal transactions of any block in the requested range are still
+  # being fetched.
+  #
+  # Internal transactions are fetched asynchronously, so on chains with a short block time
+  # the most recent blocks are practically always pending. When the requested range is
+  # open-ended towards the chain head (no `endblock`), pending blocks within the last
+  # `internal_transactions_pending_head_tolerance` blocks are therefore ignored; otherwise every
+  # request without an explicit `endblock` would permanently return status `2`.
+  # An explicit `endblock` keeps the strict check, because the requested range is then
+  # bounded and the response really is incomplete.
+  defp blocks_pending?(start_block_number, nil) do
+    tolerance = pending_head_tolerance()
+
+    if tolerance == 0 do
+      PendingOperationsHelper.blocks_pending?(start_block_number, nil)
+    else
+      head_block_number = BlockNumber.get_max()
+
+      head_block_number >= tolerance and
+        PendingOperationsHelper.blocks_pending?(start_block_number, head_block_number - tolerance)
+    end
+  end
+
+  defp blocks_pending?(start_block_number, end_block_number) do
+    PendingOperationsHelper.blocks_pending?(start_block_number, end_block_number)
+  end
+
+  defp pending_head_tolerance do
+    Application.get_env(:block_scout_web, __MODULE__)[:internal_transactions_pending_head_tolerance] || 0
   end
 
   def tokentx(conn, params) do
