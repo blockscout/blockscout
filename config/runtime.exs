@@ -1413,6 +1413,7 @@ config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC721,
 config :indexer, Indexer.Fetcher.InternalTransaction,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", 10),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY", 4),
+  import_timeout: ConfigHelper.parse_time_env_var("INDEXER_INTERNAL_TRANSACTIONS_IMPORT_TIMEOUT", "4m", min: 0),
   indexing_finished_threshold:
     ConfigHelper.parse_integer_env_var("API_INTERNAL_TRANSACTIONS_INDEXING_FINISHED_THRESHOLD", 1_000)
 
