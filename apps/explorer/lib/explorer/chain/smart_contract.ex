@@ -126,6 +126,7 @@ defmodule Explorer.Chain.SmartContract do
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Helper
+  alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
   alias Explorer.SmartContract.Solidity.Verifier
 
   @typep api? :: {:api?, true | false}
@@ -853,6 +854,7 @@ defmodule Explorer.Chain.SmartContract do
           smart_contract
       ) do
     if args = Verifier.parse_constructor_arguments_for_sourcify_contract(address_hash, smart_contract.abi) do
+      args = SolidityPublisher.clear_constructor_arguments(args)
       smart_contract |> __MODULE__.changeset(%{constructor_arguments: args}) |> Repo.update()
       %__MODULE__{smart_contract | constructor_arguments: args}
     else
@@ -869,6 +871,7 @@ defmodule Explorer.Chain.SmartContract do
       ) do
     if args =
          Verifier.parse_constructor_arguments_for_sourcify_contract(address_hash, smart_contract.abi, deployed_bytecode) do
+      args = SolidityPublisher.clear_constructor_arguments(args)
       smart_contract |> __MODULE__.changeset(%{constructor_arguments: args}) |> Repo.update()
       %Address{address | smart_contract: %__MODULE__{smart_contract | constructor_arguments: args}}
     else

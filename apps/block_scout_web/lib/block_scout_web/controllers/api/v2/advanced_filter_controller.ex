@@ -265,7 +265,8 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
         "transfers — filtered by transaction type, contract method, time window, address relations, value range " <>
         "and/or token contract. The response also echoes the resolved human-readable names of the methods and " <>
         "tokens referenced in the request filters.",
-    parameters: base_params() ++ @advanced_filter_query_params ++ @advanced_filter_keyset_params,
+    parameters:
+      base_params() ++ @advanced_filter_query_params ++ @advanced_filter_keyset_params ++ define_paging_params([]),
     responses: [
       ok:
         {"List of matching items with pagination information and resolved search params.", "application/json",

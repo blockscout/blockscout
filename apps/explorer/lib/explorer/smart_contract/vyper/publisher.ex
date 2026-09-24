@@ -10,6 +10,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
 
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.CompilerVersion
+  alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
   alias Explorer.SmartContract.Vyper.Verifier
 
   def publish(address_hash, params) do
@@ -167,7 +168,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
     constructor_arguments = params["constructor_arguments"]
     compiler_settings = params["compiler_settings"]
 
-    clean_constructor_arguments = clear_constructor_arguments(constructor_arguments)
+    clean_constructor_arguments = SolidityPublisher.clear_constructor_arguments(constructor_arguments)
 
     clean_compiler_settings =
       if compiler_settings in ["", nil, %{}] do
@@ -202,13 +203,5 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       is_blueprint: params["is_blueprint"] || false,
       language: :vyper
     }
-  end
-
-  defp clear_constructor_arguments(constructor_arguments) do
-    if constructor_arguments != nil && constructor_arguments != "" do
-      constructor_arguments
-    else
-      nil
-    end
   end
 end

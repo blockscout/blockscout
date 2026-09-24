@@ -8,10 +8,19 @@ defmodule BlockScoutWeb.LegacyPagingHelper do
   import BlockScoutWeb.PagingHelper, only: [delete_parameters_from_next_page_params: 1]
 
   alias BlockScoutWeb.Chain
+  alias Explorer.PagingOptions
 
   @page_size 50
 
   def split_list_by_page(list_plus_one), do: Enum.split(list_plus_one, @page_size)
+
+  @doc """
+  Splits the list by the page size of `paging_options`, which is the requested
+  page size plus one (see `BlockScoutWeb.Chain.paging_options/1`).
+  """
+  @spec split_list_by_page(list(), PagingOptions.t()) :: {list(), list()}
+  def split_list_by_page(list_plus_one, %PagingOptions{page_size: page_size_plus_one}),
+    do: Enum.split(list_plus_one, page_size_plus_one - 1)
 
   @spec next_page_params(list(), list(), map(), (any() -> map())) :: nil | map()
   def next_page_params(next_page, list, params, paging_function \\ &Chain.paging_params/1)
