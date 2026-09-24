@@ -33,6 +33,36 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
   @moduletag [capture_log: true, no_geth: true]
 
+  describe "import_timeout/0" do
+    setup do
+      initial_env = Application.get_env(:indexer, InternalTransaction)
+
+      on_exit(fn -> Application.put_env(:indexer, InternalTransaction, initial_env) end)
+
+      %{initial_env: initial_env || []}
+    end
+
+    test "defaults to a finite timeout when not configured", %{initial_env: initial_env} do
+      Application.put_env(:indexer, InternalTransaction, Keyword.delete(initial_env, :import_timeout))
+
+      timeout = InternalTransaction.import_timeout()
+
+      assert is_integer(timeout) and timeout > 0
+    end
+
+    test "returns the configured timeout", %{initial_env: initial_env} do
+      Application.put_env(:indexer, InternalTransaction, Keyword.put(initial_env, :import_timeout, 90_000))
+
+      assert InternalTransaction.import_timeout() == 90_000
+    end
+
+    test "0 disables the timeout", %{initial_env: initial_env} do
+      Application.put_env(:indexer, InternalTransaction, Keyword.put(initial_env, :import_timeout, 0))
+
+      assert InternalTransaction.import_timeout() == :infinity
+    end
+  end
+
   test "does not try to fetch pending transactions from Indexer.Fetcher.PendingTransaction", %{
     json_rpc_named_arguments: json_rpc_named_arguments
   } do

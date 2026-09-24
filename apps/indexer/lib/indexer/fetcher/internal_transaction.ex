@@ -33,6 +33,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
 
   @default_max_batch_size 10
   @default_max_concurrency 4
+  @default_import_timeout :timer.minutes(4)
 
   @doc """
   Asynchronously fetches internal transactions.
@@ -341,15 +342,52 @@ defmodule Indexer.Fetcher.InternalTransaction do
     end
   end
 
+  @doc """
+  Timeout of the DB transaction importing a batch of internal transactions.
+
+  Configured by `INDEXER_INTERNAL_TRANSACTIONS_IMPORT_TIMEOUT` (`import_timeout` key of the fetcher config).
+  It is applied both as the Ecto transaction timeout and as the server-side `statement_timeout`, so a batch
+  stuck on row locks or slow I/O is rolled back and re-queued instead of holding a fetcher worker
+  indefinitely. `0` disables the timeout.
+  """
+  @spec import_timeout() :: timeout()
+  def import_timeout do
+    case Application.get_env(:indexer, __MODULE__)[:import_timeout] do
+      nil -> @default_import_timeout
+      0 -> :infinity
+      timeout when is_integer(timeout) and timeout > 0 -> timeout
+    end
+  end
+
   defp safe_import_internal_transaction(internal_transactions_params, block_numbers, data_type) do
     import_internal_transaction(internal_transactions_params, block_numbers, data_type)
   rescue
     exception in Postgrex.Error ->
-      Logger.error(
-        "Error on internal transactions import: #{inspect(exception)}, block numbers: #{inspect(block_numbers)}"
-      )
+      case exception do
+        %Postgrex.Error{postgres: %{code: :query_canceled}} ->
+          log_import_timeout(exception, block_numbers)
+
+        _ ->
+          Logger.error(
+            "Error on internal transactions import: #{inspect(exception)}, block numbers: #{inspect(block_numbers)}"
+          )
+      end
 
       {:retry, block_numbers}
+
+    exception in DBConnection.ConnectionError ->
+      log_import_timeout(exception, block_numbers)
+
+      {:retry, block_numbers}
+  end
+
+  defp log_import_timeout(reason, block_numbers) do
+    Logger.warning(fn ->
+      [
+        "Internal transactions import was rolled back (import timeout: #{inspect(import_timeout())} ms), ",
+        "retrying block numbers: #{inspect(block_numbers)}. Reason: #{inspect(reason)}"
+      ]
+    end)
   end
 
   defp import_internal_transaction(internal_transactions_params, transactions_params_or_unique_numbers, data_type) do
@@ -404,7 +442,7 @@ defmodule Indexer.Fetcher.InternalTransaction do
         addresses: %{params: addresses_params},
         address_coin_balances: %{params: address_coin_balances_params_set},
         internal_transactions: %{params: internal_transactions_and_empty_block_numbers, with: :blockless_changeset},
-        timeout: :infinity
+        timeout: import_timeout()
       })
 
     case imports do
@@ -415,6 +453,11 @@ defmodule Indexer.Fetcher.InternalTransaction do
         async_import_coin_balances(imported)
 
         async_import_celo_token_balances(celo_token_transfers_params)
+
+      {:error, :timeout} ->
+        log_import_timeout(:timeout, transactions_params_or_unique_numbers)
+
+        {:retry, transactions_params_or_unique_numbers}
 
       {:error, step, reason, _changes_so_far} ->
         Logger.error(
