@@ -15,6 +15,9 @@
 - Add support for runtime Redis SSL/TLS and Sentinel-based configuration for rate limiting and account services ([#12827](https://github.com/blockscout/blockscout/issues/12827), [#12889](https://github.com/blockscout/blockscout/issues/12889))
 - Add support for Search + BENS integration ([#13180](https://github.com/blockscout/blockscout/issues/13180))
 - Add support for token instance media type collection and metadata backfill ([#11208](https://github.com/blockscout/blockscout/issues/11208))
+- Add api/v2/tokens/batch endpoint ([#14548](https://github.com/blockscout/blockscout/pull/14548))
+- Add pending status to v2 internal transaction APIs ([#14212](https://github.com/blockscout/blockscout/pull/14212))
+- Allow to change page size ([#14244](https://github.com/blockscout/blockscout/pull/14244))
 
 ### 🐛 Bug Fixes
 
@@ -45,6 +48,23 @@
 - Fix JSON-RPC error formatting and hex block parameter parsing ([#14216](https://github.com/blockscout/blockscout/issues/14216))
 - Fix scam-token counters when token filtering is disabled on an instance ([#13944](https://github.com/blockscout/blockscout/issues/13944))
 - Fix coin balance history websocket payloads to include transaction hashes ([#8849](https://github.com/blockscout/blockscout/issues/8849))
+- Distinguish eth_call reverts from RPC errors in proxy fetch ([#14747](https://github.com/blockscout/blockscout/pull/14747))
+- Fix Arbitrum missing origination chunking ([#14730](https://github.com/blockscout/blockscout/pull/14730))
+- Handle node JSON-RPC errors in batched eth-rpc proxy requests ([#14718](https://github.com/blockscout/blockscout/pull/14718))
+- Prepare logs for bloom filter ([#14713](https://github.com/blockscout/blockscout/pull/14713))
+- Rollback priority of address higher than ENS in search redirect ([#14712](https://github.com/blockscout/blockscout/pull/14712))
+- Filter non chain type related migrations in VersionUpgrade ([#14659](https://github.com/blockscout/blockscout/pull/14659))
+- Fix refetch multichain queue and eden OpenAPI spec generation ([#14656](https://github.com/blockscout/blockscout/pull/14656))
+- Regenerate types-package lockfile so npm ci works ([#14639](https://github.com/blockscout/blockscout/pull/14639))
+- Fix logs conflicts ([#14631](https://github.com/blockscout/blockscout/pull/14631))
+- Use named volume for backend dets to fix permission errors ([#14561](https://github.com/blockscout/blockscout/pull/14561))
+- Add required max_body_size option to Tesla.Middleware.Compression ([#14484](https://github.com/blockscout/blockscout/pull/14484))
+- Resolve beacon deposit status OpenAPI title collision ([#14440](https://github.com/blockscout/blockscout/pull/14440))
+- Fix swagger generation workflow ([#14439](https://github.com/blockscout/blockscout/pull/14439))
+- Fix BackfillMultichainSearchDbCurrentTokenBalancesTest ([#14429](https://github.com/blockscout/blockscout/pull/14429))
+- Use describe_inline for leaf-type properties in ZkSync batch schemas ([#14409](https://github.com/blockscout/blockscout/pull/14409))
+- Use string keys in ZkSync batches paging function ([#14408](https://github.com/blockscout/blockscout/pull/14408))
+- Fix compilation warning in OP chain types ([#14363](https://github.com/blockscout/blockscout/pull/14363))
 
 ### 🚜 Refactor
 
@@ -56,6 +76,8 @@
 - Remove the token object from token instance API responses to keep payloads smaller ([#8805](https://github.com/blockscout/blockscout/issues/8805))
 - Drop address_hash columns from the internal_transactions storage layout ([#14230](https://github.com/blockscout/blockscout/issues/14230))
 - Refactor event-log storage layout around first-topic handling and new primary keys ([#14012](https://github.com/blockscout/blockscout/issues/14012), [#14014](https://github.com/blockscout/blockscout/issues/14014), [#14016](https://github.com/blockscout/blockscout/issues/14016), [#14017](https://github.com/blockscout/blockscout/issues/14017), [#14021](https://github.com/blockscout/blockscout/issues/14021))
+- Name the transaction preview schemas TransactionPreview ([#14711](https://github.com/blockscout/blockscout/pull/14711))
+- Migrate JSON handling to Elixir built-in JSON lib ([#14302](https://github.com/blockscout/blockscout/pull/14302))
 
 ### 📚 Documentation
 
@@ -66,6 +88,7 @@
 - Add /api prefixes to endpoints in Swagger/OpenAPI docs ([#14263](https://github.com/blockscout/blockscout/pull/14263))
 - Add property-level description overlays without global component pollution ([#14367](https://github.com/blockscout/blockscout/issues/14367))
 - Improve API schema correctness and shared operation shorthands in the OpenAPI surface ([#14515](https://github.com/blockscout/blockscout/pull/14515))
+- Add OpenAPI specification for dedicated /api/eth-rpc methods ([#14407](https://github.com/blockscout/blockscout/pull/14407))
 
 ### ⚡ Performance
 
@@ -77,6 +100,7 @@
 - Backfill current token balances for the multichain DB exporter ([#12794](https://github.com/blockscout/blockscout/issues/12794))
 - Improve multichain search integration by importing addresses of smart-contract implementations ([#11491](https://github.com/blockscout/blockscout/issues/11491))
 - Add media type collection for token instances to improve NFT metadata workflows ([#11208](https://github.com/blockscout/blockscout/issues/11208))
+- Restore partial index usage for token holders queries ([#14728](https://github.com/blockscout/blockscout/pull/14728))
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -92,6 +116,8 @@
 - Add support for circulating supply reporting ([#14532](https://github.com/blockscout/blockscout/issues/14532))
 - Add support for the EigenDA blob schema in Optimism block OpenAPI ([#14496](https://github.com/blockscout/blockscout/pull/14496))
 - Add support for disallowing extra properties in Optimism Alt-DA block schema ([#14488](https://github.com/blockscout/blockscout/pull/14488))
+- Fix warnings ([#14821](https://github.com/blockscout/blockscout/pull/14821))
+- Propagate cache between API pods as well ([#14614](https://github.com/blockscout/blockscout/pull/14614))
 
 ### New ENV variables
 
