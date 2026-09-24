@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
     chain_identity: [:explorer, :chain_identity]
 
   if @chain_identity == {:optimism, :celo} do
+    alias Explorer.Chain.Address
     alias Explorer.Chain.Celo.ElectionReward
 
     setup do
@@ -303,8 +304,8 @@ defmodule BlockScoutWeb.API.V2.CeloControllerTest do
         assert [item] = response["items"]
 
         assert item["amount"] == "500"
-        assert item["account"]["hash"] == to_string(account_address.hash)
-        assert item["associated_account"]["hash"] == to_string(associated_account_address.hash)
+        assert item["account"]["hash"] == Address.checksum(account_address.hash)
+        assert item["associated_account"]["hash"] == Address.checksum(associated_account_address.hash)
       end
 
       test "filters rewards by type", %{conn: conn} do
