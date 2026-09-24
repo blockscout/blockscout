@@ -928,9 +928,36 @@ defmodule Explorer.Chain.SmartContract do
     result =
       cond do
         is_nil(smart_contract) ->
-          create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+          case __MODULE__.create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources) do
+            {:error, %Changeset{} = changeset} ->
+              if unique_smart_contract_conflict?(changeset) do
+                existing_contract = address_hash_to_smart_contract(address_hash)
 
-        smart_contract.partially_verified && attrs.partially_verified &&
+                if existing_contract && existing_contract.partially_verified &&
+                     Map.get(attrs, :partially_verified, false) &&
+                     Application.get_env(:block_scout_web, :contract)[:partial_reverification_disabled] do
+                  invalid_changeset =
+                    invalid_contract_changeset(
+                      %SmartContract{address_hash: address_hash},
+                      Helper.add_contract_code_md5(attrs),
+                      "Cannot update partially verified smart contract with another partially verified contract",
+                      nil,
+                      verification_with_files?
+                    )
+
+                  {:error, %{invalid_changeset | action: :insert}}
+                else
+                  update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+                end
+              else
+                {:error, changeset}
+              end
+
+            other ->
+              other
+          end
+
+        smart_contract.partially_verified && Map.get(attrs, :partially_verified, false) &&
             Application.get_env(:block_scout_web, :contract)[:partial_reverification_disabled] ->
           changeset =
             invalid_contract_changeset(
@@ -957,6 +984,15 @@ defmodule Explorer.Chain.SmartContract do
 
     result
   end
+
+  defp unique_smart_contract_conflict?(%Changeset{data: %__MODULE__{}, errors: errors}) do
+    case Keyword.get(errors, :address_hash) do
+      {_msg, opts} when is_list(opts) -> opts[:constraint] == :unique
+      _ -> false
+    end
+  end
+
+  defp unique_smart_contract_conflict?(_), do: false
 
   @doc """
     Inserts a new smart contract and associated data into the database.
