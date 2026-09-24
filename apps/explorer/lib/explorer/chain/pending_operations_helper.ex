@@ -226,7 +226,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
   end
 
   # Generates a query to find pending block operations within a specified range of block numbers.
-  @spec block_range_in_query(non_neg_integer(), non_neg_integer()) :: Ecto.Query.t()
+  @spec block_range_in_query(non_neg_integer() | nil, non_neg_integer() | nil) :: Ecto.Query.t()
   defp block_range_in_query(min_block_number, max_block_number)
        when is_integer(min_block_number) and is_integer(max_block_number) do
     from(

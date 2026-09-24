@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
   alias BlockScoutWeb.API.RPC.AddressController
   alias Explorer.{Chain, Repo, TestHelper}
-  alias Explorer.Chain.Cache.BackgroundMigrations
+  alias Explorer.Chain.Cache.{BackgroundMigrations, BlockNumber}
   alias Explorer.Chain.{Events.Subscriber, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
   alias Explorer.Utility.AddressIdToAddressHash
@@ -1794,6 +1794,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
   describe "txlistinternal with no address or transaction hash" do
     setup do
+      reset_block_number_cache()
+
       params = %{
         "module" => "account",
         "action" => "txlistinternal"
@@ -1886,6 +1888,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       block = insert(:block)
       insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+      # the pending block is exactly `tolerance` blocks behind the head, so it is not ignored
+      insert(:block, number: block.number + pending_head_tolerance())
 
       transaction =
         :transaction
@@ -1944,6 +1948,113 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["status"] == "2"
       assert response["message"] == "Some internal transactions within this block range have not yet been processed"
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
+    test "returns status = 1 when only blocks at the chain head are pending and no endblock is requested", %{
+      conn: conn,
+      params: params
+    } do
+      address = insert(:address)
+      address_2 = insert(:address)
+
+      block = insert(:block)
+      internal_transaction = insert_internal_transaction(block, address, address_2)
+
+      # the head block is pending, which is tolerated for open-ended ranges
+      head_block = insert(:block, number: block.number + pending_head_tolerance() - 1)
+      insert(:pending_block_operation, block_hash: head_block.hash, block_number: head_block.number)
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert [%{"transactionHash" => transaction_hash}] = response["result"]
+      assert transaction_hash == to_string(internal_transaction.transaction.hash)
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+
+      assert response =
+               conn
+               |> get("/api/v1", Map.put(params, "startblock", "#{block.number}"))
+               |> json_response(200)
+
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+    end
+
+    test "returns status = 2 for pending blocks at the chain head when endblock is requested", %{
+      conn: conn,
+      params: params
+    } do
+      address = insert(:address)
+      address_2 = insert(:address)
+
+      block = insert(:block)
+      insert_internal_transaction(block, address, address_2)
+
+      head_block = insert(:block, number: block.number + 1)
+      insert(:pending_block_operation, block_hash: head_block.hash, block_number: head_block.number)
+
+      assert response =
+               conn
+               |> get("/api/v1", Map.put(params, "endblock", "#{head_block.number}"))
+               |> json_response(200)
+
+      assert [_] = response["result"]
+      assert response["status"] == "2"
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
+    test "returns status = 2 when pending blocks at the chain head are older than the tolerance", %{
+      conn: conn,
+      params: params
+    } do
+      address = insert(:address)
+      address_2 = insert(:address)
+
+      block = insert(:block)
+      insert_internal_transaction(block, address, address_2)
+
+      pending_block = insert(:block, number: block.number + 1)
+      insert(:pending_block_operation, block_hash: pending_block.hash, block_number: pending_block.number)
+      insert(:block, number: pending_block.number + pending_head_tolerance())
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert [_] = response["result"]
+      assert response["status"] == "2"
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "returns status = 2 for pending blocks at the chain head when tolerance is disabled", %{
+      conn: conn,
+      params: params
+    } do
+      configuration = Application.get_env(:block_scout_web, AddressController)
+      Application.put_env(:block_scout_web, AddressController, internal_transactions_pending_head_tolerance: 0)
+      on_exit(fn -> Application.put_env(:block_scout_web, AddressController, configuration) end)
+
+      address = insert(:address)
+      address_2 = insert(:address)
+
+      block = insert(:block)
+      insert_internal_transaction(block, address, address_2)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert [_] = response["result"]
+      assert response["status"] == "2"
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
     end
 
     test "returns only non zero value internal transactions by default", %{conn: conn, params: params} do
@@ -2580,6 +2691,11 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   end
 
   describe "txlistinternal with address" do
+    setup do
+      reset_block_number_cache()
+      :ok
+    end
+
     test "with an invalid address", %{conn: conn} do
       params = %{
         "module" => "account",
@@ -2597,6 +2713,44 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert Map.has_key?(response, "result")
       refute response["result"]
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
+
+    test "returns status = 1 when only blocks at the chain head are pending and no endblock is requested", %{
+      conn: conn
+    } do
+      address = insert(:address)
+      address_2 = insert(:address)
+
+      block = insert(:block)
+      internal_transaction = insert_internal_transaction(block, address, address_2)
+
+      head_block = insert(:block, number: block.number + 1)
+      insert(:pending_block_operation, block_hash: head_block.hash, block_number: head_block.number)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "address" => "#{address.hash}"
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert [%{"transactionHash" => transaction_hash}] = response["result"]
+      assert transaction_hash == to_string(internal_transaction.transaction.hash)
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+
+      assert response =
+               conn
+               |> get("/api", Map.put(params, "endblock", "#{head_block.number}"))
+               |> json_response(200)
+
+      assert response["status"] == "2"
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
     end
 
     test "with a address that doesn't exist", %{conn: conn} do
@@ -5064,6 +5218,32 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       assert result == {:required_params, {:ok, params}}
     end
+  end
+
+  defp reset_block_number_cache do
+    Supervisor.terminate_child(Explorer.Supervisor, BlockNumber.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, BlockNumber.child_id())
+  end
+
+  defp pending_head_tolerance do
+    Application.get_env(:block_scout_web, AddressController)[:internal_transactions_pending_head_tolerance]
+  end
+
+  defp insert_internal_transaction(block, from_address, to_address) do
+    transaction =
+      :transaction
+      |> insert(from_address: from_address, to_address: to_address)
+      |> with_block(block)
+
+    insert(:internal_transaction,
+      transaction: transaction,
+      transaction_index: transaction.index,
+      index: 1,
+      value: 1,
+      from_address: from_address,
+      to_address: to_address,
+      block_number: block.number
+    )
   end
 
   defp listaccounts_schema do
