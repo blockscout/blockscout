@@ -15,6 +15,10 @@ defmodule BlockScoutWeb.API.RPC.TokenView do
     RPCView.render("show.json", data: data)
   end
 
+  def render("tokenholdercount.json", %{count: count}) do
+    RPCView.render("show.json", data: to_string(count))
+  end
+
   def render("bridgedtokenlist.json", %{bridged_tokens: bridged_tokens}) do
     data = Enum.map(bridged_tokens, &prepare_bridged_token/1)
     RPCView.render("show.json", data: data)
