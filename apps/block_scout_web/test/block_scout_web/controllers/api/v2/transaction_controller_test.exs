@@ -3413,6 +3413,34 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       Bypass.down(bypass)
     end
 
+    test "returns an error when the interpreter response can't be decoded", %{conn: conn} do
+      bypass = Bypass.open()
+
+      Application.put_env(:block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
+        enabled: true,
+        service_url: "http://localhost:#{bypass.port}"
+      )
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      Bypass.expect_once(bypass, "GET", "/cache/#{to_string(transaction.hash)}", fn conn ->
+        Plug.Conn.resp(conn, 404, "Not Found")
+      end)
+
+      Bypass.expect_once(bypass, "POST", "/transactions/summary", fn conn ->
+        Plug.Conn.resp(conn, 200, "{not a json")
+      end)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary")
+
+      assert json_response(request, 500) == %{"error" => "Error while transaction interpreter response decoding"}
+
+      Bypass.down(bypass)
+    end
+
     test "success preload template variables when scam token", %{conn: conn} do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
       Application.put_env(:block_scout_web, :hide_scam_addresses, true)
