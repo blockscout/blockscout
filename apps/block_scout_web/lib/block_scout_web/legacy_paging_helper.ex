@@ -15,8 +15,18 @@ defmodule BlockScoutWeb.LegacyPagingHelper do
   def split_list_by_page(list_plus_one), do: Enum.split(list_plus_one, @page_size)
 
   @doc """
-  Splits the list by the page size of `paging_options`, which is the requested
-  page size plus one (see `BlockScoutWeb.Chain.paging_options/1`).
+  Splits the list into the current page of `page_size - 1` items and the rest.
+
+  `paging_options.page_size` is the requested page size plus one (see
+  `BlockScoutWeb.Chain.paging_options/1`), so a non-empty rest means there is a
+  next page.
+
+  ## Parameters
+  - `list_plus_one`: Items fetched with `paging_options`.
+  - `paging_options`: Paging options the items were fetched with.
+
+  ## Returns
+  - `{page, rest}`, where `page` holds the first `page_size - 1` items.
   """
   @spec split_list_by_page(list(), PagingOptions.t()) :: {list(), list()}
   def split_list_by_page(list_plus_one, %PagingOptions{page_size: page_size_plus_one}),
