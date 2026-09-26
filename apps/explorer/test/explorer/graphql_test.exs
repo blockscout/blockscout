@@ -89,6 +89,72 @@ defmodule Explorer.GraphQLTest do
 
       assert block_number_and_index_order == Enum.sort(block_number_and_index_order, &(&1 >= &2))
     end
+
+    test "orders by ascending block and index" do
+      first_block = insert(:block)
+      second_block = insert(:block)
+
+      %Address{hash: address_hash} = address = insert(:address)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(second_block)
+
+      3
+      |> insert_list(:transaction, from_address: address)
+      |> with_block(first_block)
+
+      found_transactions =
+        address_hash
+        |> GraphQL.address_to_transactions_query(:asc)
+        |> Repo.replica().all()
+
+      block_number_and_index_order =
+        Enum.map(found_transactions, fn transaction ->
+          {transaction.block_number, transaction.index}
+        end)
+
+      assert block_number_and_index_order == Enum.sort(block_number_and_index_order, &(&1 <= &2))
+    end
+
+    test "does not return duplicate transactions when address appears in multiple roles" do
+      %Address{hash: address_hash} = address = insert(:address)
+
+      # address is both from and to in the same transaction
+      transaction =
+        insert(:transaction, from_address: address, to_address: address)
+
+      insert(:transaction)
+
+      found_transactions =
+        address_hash
+        |> GraphQL.address_to_transactions_query(:desc)
+        |> Repo.replica().all()
+
+      assert length(found_transactions) == 1
+      assert hd(found_transactions).hash == transaction.hash
+    end
+
+    test "returns transactions matching any of the three address roles" do
+      %Address{hash: address_hash} = address = insert(:address)
+
+      from_tx = insert(:transaction, from_address: address)
+      to_tx = insert(:transaction, to_address: address)
+      contract_tx = insert(:transaction, created_contract_address: address)
+      insert(:transaction)
+
+      found_hashes =
+        address_hash
+        |> GraphQL.address_to_transactions_query(:desc)
+        |> Repo.replica().all()
+        |> Enum.map(& &1.hash)
+        |> MapSet.new()
+
+      assert MapSet.member?(found_hashes, from_tx.hash)
+      assert MapSet.member?(found_hashes, to_tx.hash)
+      assert MapSet.member?(found_hashes, contract_tx.hash)
+      assert MapSet.size(found_hashes) == 3
+    end
   end
 
   describe "get_internal_transaction/1" do
