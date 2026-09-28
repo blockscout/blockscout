@@ -114,7 +114,7 @@
 - Spread scam-token filtering to GraphQL functionality ([#12140](https://github.com/blockscout/blockscout/issues/12140))
 - Support runtime Redis SSL/TLS and Sentinel-based configuration for rate limiting and account services ([#12827](https://github.com/blockscout/blockscout/issues/12827), [#12889](https://github.com/blockscout/blockscout/issues/12889))
 - Improve multichain search integration by importing smart-contract implementation addresses ([#11491](https://github.com/blockscout/blockscout/issues/11491))
-- Add support for circulating supply reporting ([#14532](https://github.com/blockscout/blockscout/issues/14532))
+- Add support for circulating supply reporting ([#14532](https://github.com/blockscout/blockscout/issues/14532), [#14873](https://github.com/blockscout/blockscout/pull/14873))
 - Add support for the EigenDA blob schema in Optimism block OpenAPI ([#14496](https://github.com/blockscout/blockscout/pull/14496))
 - Add support for disallowing extra properties in Optimism Alt-DA block schema ([#14488](https://github.com/blockscout/blockscout/pull/14488))
 - Fix warnings ([#14821](https://github.com/blockscout/blockscout/pull/14821))
