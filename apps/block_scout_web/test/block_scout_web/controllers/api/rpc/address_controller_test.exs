@@ -1974,7 +1974,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
 
-      # an explicit endblock at or above the head is clamped to the tolerance as well
+      # an explicit endblock at or above the head reaches the head as well, so it is tolerated too
       for endblock <- [head_block.number, 99_999_999] do
         assert response =
                  conn
@@ -1985,6 +1985,16 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         assert response["status"] == "1"
         assert response["message"] == "OK"
       end
+
+      # an explicit endblock below the head is a really bounded range, so the strict check applies
+      assert response =
+               conn
+               |> get("/api/v1", Map.put(params, "endblock", "#{head_block.number - 1}"))
+               |> json_response(200)
+
+      assert [_] = response["result"]
+      assert response["status"] == "2"
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
     end
 
     test "returns status = 2 when the requested endblock is below the chain head tolerance", %{

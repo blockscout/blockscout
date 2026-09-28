@@ -248,33 +248,34 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   end
 
   # Checks whether internal transactions of any block in the requested range are still
-  # being fetched, ignoring pending blocks at the chain head.
+  # being fetched, ignoring pending blocks at the chain head for ranges reaching the head.
   #
   # Internal transactions are fetched asynchronously, so on chains with a short block time
-  # the most recent blocks are practically always pending. Pending blocks within the last
+  # the most recent blocks are practically always pending. When the requested range reaches
+  # the chain head (no `endblock`, or an `endblock` at or above the head such as the
+  # `99999999` sent by common Etherscan clients), pending blocks within the last
   # `internal_transactions_pending_head_tolerance` blocks are therefore ignored; otherwise
-  # every request whose range reaches the chain head (no `endblock`, or an `endblock` at or
-  # above the head like the `99999999` sent by common Etherscan clients) would permanently
-  # return status `2`. The upper bound of the checked range is clamped to
-  # `head - tolerance`; an `endblock` below that bound is used as is.
+  # every such request would permanently return status `2`. An `endblock` below the head
+  # keeps the strict check, because the requested range is then really bounded and the
+  # response really is incomplete.
   #
   # The tolerance only applies to responses that return internal transactions: an empty
   # result and the single-transaction `txlistinternal` variant keep the strict check, since
   # for them the pending status is the only information about the missing data.
   defp blocks_pending_below_head_tolerance?(start_block_number, end_block_number) do
-    PendingOperationsHelper.blocks_pending?(start_block_number, clamp_to_head_tolerance(end_block_number))
+    PendingOperationsHelper.blocks_pending?(start_block_number, tolerated_end_block_number(end_block_number))
   end
 
-  defp clamp_to_head_tolerance(end_block_number) do
+  defp tolerated_end_block_number(end_block_number) do
     tolerance = pending_head_tolerance()
 
     if tolerance == 0 do
       end_block_number
     else
-      tolerated_end_block_number = max(BlockNumber.get_max() - tolerance, 0)
+      head_block_number = BlockNumber.get_max()
 
-      if is_nil(end_block_number) or end_block_number > tolerated_end_block_number do
-        tolerated_end_block_number
+      if is_nil(end_block_number) or end_block_number >= head_block_number do
+        max(head_block_number - tolerance, 0)
       else
         end_block_number
       end
