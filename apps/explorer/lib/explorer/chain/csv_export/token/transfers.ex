@@ -14,6 +14,7 @@ defmodule Explorer.Chain.CsvExport.Token.Transfers do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
   alias Explorer.Chain.CsvExport.{AsyncHelper, Helper}
   alias Explorer.{PagingOptions, Repo}
 
@@ -48,7 +49,7 @@ defmodule Explorer.Chain.CsvExport.Token.Transfers do
   defp token_transfers_query(token_address_hash, from_block, to_block) do
     TokenTransfer.only_consensus_transfers_query()
     |> where([tt], tt.token_contract_address_hash == ^token_address_hash and not is_nil(tt.block_number))
-    |> where([tt], tt.block_number >= ^from_block and tt.block_number <= ^to_block)
+    |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
   end
 
   @spec to_csv_format([TokenTransfer.t()], Token.t()) :: Enumerable.t()

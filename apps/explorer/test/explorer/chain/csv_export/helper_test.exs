@@ -23,6 +23,21 @@ defmodule Explorer.Chain.CsvExport.HelperTest do
     :ok
   end
 
+  describe "block_from_period/2" do
+    test "returns nil bounds when periods are missing or empty" do
+      assert Helper.block_from_period(nil, nil) == {nil, nil}
+      assert Helper.block_from_period("", "") == {nil, nil}
+      assert Helper.block_from_period(nil, "") == {nil, nil}
+    end
+
+    test "resolves only the provided bound and leaves the other unbounded" do
+      insert(:block, number: 100, timestamp: ~U[2023-01-02 12:00:00Z])
+
+      assert {100, nil} = Helper.block_from_period("2023-01-01", nil)
+      assert {nil, 100} = Helper.block_from_period("", "2023-01-03")
+    end
+  end
+
   describe "valid_filter?/3" do
     test "returns true for valid address filter to" do
       assert Helper.valid_filter?("address", "to", "transactions") == true
