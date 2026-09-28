@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
   alias BlockScoutWeb.API.RPC.AddressController
   alias Explorer.{Chain, Repo, TestHelper}
-  alias Explorer.Chain.Cache.{BackgroundMigrations, BlockNumber}
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.{Events.Subscriber, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
   alias Explorer.Utility.AddressIdToAddressHash
@@ -1794,8 +1794,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
   describe "txlistinternal with no address or transaction hash" do
     setup do
-      reset_block_number_cache()
-
       params = %{
         "module" => "account",
         "action" => "txlistinternal"
@@ -1950,7 +1948,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
     end
 
-    test "returns status = 1 when only blocks at the chain head are pending and no endblock is requested", %{
+    test "returns status = 1 when only blocks within the chain head tolerance are pending", %{
       conn: conn,
       params: params
     } do
@@ -1960,9 +1958,10 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       block = insert(:block)
       internal_transaction = insert_internal_transaction(block, address, address_2)
 
-      # the head block is pending, which is tolerated for open-ended ranges
-      head_block = insert(:block, number: block.number + pending_head_tolerance() - 1)
-      insert(:pending_block_operation, block_hash: head_block.hash, block_number: head_block.number)
+      # the pending block is one block inside the tolerance window, so it is ignored
+      pending_block = insert(:block, number: block.number + 1)
+      insert(:pending_block_operation, block_hash: pending_block.hash, block_number: pending_block.number)
+      head_block = insert(:block, number: pending_block.number + pending_head_tolerance() - 1)
 
       assert response =
                conn
@@ -1975,16 +1974,20 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
 
-      assert response =
-               conn
-               |> get("/api/v1", Map.put(params, "startblock", "#{block.number}"))
-               |> json_response(200)
+      # an explicit endblock at or above the head is clamped to the tolerance as well
+      for endblock <- [head_block.number, 99_999_999] do
+        assert response =
+                 conn
+                 |> get("/api/v1", Map.merge(params, %{"startblock" => "#{block.number}", "endblock" => "#{endblock}"}))
+                 |> json_response(200)
 
-      assert response["status"] == "1"
-      assert response["message"] == "OK"
+        assert [_] = response["result"]
+        assert response["status"] == "1"
+        assert response["message"] == "OK"
+      end
     end
 
-    test "returns status = 2 for pending blocks at the chain head when endblock is requested", %{
+    test "returns status = 2 when the requested endblock is below the chain head tolerance", %{
       conn: conn,
       params: params
     } do
@@ -1994,21 +1997,32 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       block = insert(:block)
       insert_internal_transaction(block, address, address_2)
 
-      head_block = insert(:block, number: block.number + 1)
-      insert(:pending_block_operation, block_hash: head_block.hash, block_number: head_block.number)
+      pending_block = insert(:block, number: block.number + 1)
+      insert(:pending_block_operation, block_hash: pending_block.hash, block_number: pending_block.number)
+      insert(:block, number: pending_block.number + pending_head_tolerance() + 1)
 
       assert response =
                conn
-               |> get("/api/v1", Map.put(params, "endblock", "#{head_block.number}"))
+               |> get("/api/v1", Map.put(params, "endblock", "#{pending_block.number}"))
                |> json_response(200)
 
       assert [_] = response["result"]
       assert response["status"] == "2"
       assert response["message"] == "Some internal transactions within this block range have not yet been processed"
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+
+      # an endblock below the pending block excludes it from the checked range
+      assert response =
+               conn
+               |> get("/api/v1", Map.put(params, "endblock", "#{block.number}"))
+               |> json_response(200)
+
+      assert [_] = response["result"]
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
     end
 
-    test "returns status = 2 when pending blocks at the chain head are older than the tolerance", %{
+    test "returns status = 2 when a pending block is exactly tolerance blocks behind the chain head", %{
       conn: conn,
       params: params
     } do
@@ -2021,6 +2035,64 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       pending_block = insert(:block, number: block.number + 1)
       insert(:pending_block_operation, block_hash: pending_block.hash, block_number: pending_block.number)
       insert(:block, number: pending_block.number + pending_head_tolerance())
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert [_] = response["result"]
+      assert response["status"] == "2"
+      assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "returns status = 2 with an empty result when blocks within the chain head tolerance are pending", %{
+      conn: conn,
+      params: params
+    } do
+      head_block = insert(:block)
+      insert(:pending_block_operation, block_hash: head_block.hash, block_number: head_block.number)
+
+      for request_params <- [params, Map.put(params, "startblock", "#{head_block.number}")] do
+        assert response =
+                 conn
+                 |> get("/api/v1", request_params)
+                 |> json_response(200)
+
+        assert response["result"] == []
+        assert response["status"] == "2"
+        assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+        assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+      end
+    end
+
+    test "returns status = 2 for pending block 0 when the chain head is below the tolerance", %{
+      conn: conn,
+      params: params
+    } do
+      address = insert(:address)
+      address_2 = insert(:address)
+
+      genesis_block = insert(:block, number: 0)
+
+      block = insert(:block, number: 1)
+      insert_internal_transaction(block, address, address_2)
+
+      # the head block is within the tolerance, so it is ignored
+      head_block = insert(:block, number: 2)
+      insert(:pending_block_operation, block_hash: head_block.hash, block_number: head_block.number)
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert [_] = response["result"]
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+
+      # block 0 is the only block outside the tolerance, so it is still reported
+      insert(:pending_block_operation, block_hash: genesis_block.hash, block_number: genesis_block.number)
 
       assert response =
                conn
@@ -2691,11 +2763,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   end
 
   describe "txlistinternal with address" do
-    setup do
-      reset_block_number_cache()
-      :ok
-    end
-
     test "with an invalid address", %{conn: conn} do
       params = %{
         "module" => "account",
@@ -2715,7 +2782,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
     end
 
-    test "returns status = 1 when only blocks at the chain head are pending and no endblock is requested", %{
+    test "returns status = 1 when only blocks within the chain head tolerance are pending", %{
       conn: conn
     } do
       address = insert(:address)
@@ -2724,8 +2791,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       block = insert(:block)
       internal_transaction = insert_internal_transaction(block, address, address_2)
 
-      head_block = insert(:block, number: block.number + 1)
-      insert(:pending_block_operation, block_hash: head_block.hash, block_number: head_block.number)
+      pending_block = insert(:block, number: block.number + 1)
+      insert(:pending_block_operation, block_hash: pending_block.hash, block_number: pending_block.number)
 
       params = %{
         "module" => "account",
@@ -2733,24 +2800,59 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         "address" => "#{address.hash}"
       }
 
+      # the pending block is the head, so it is ignored with and without an endblock reaching the head
+      for request_params <- [params, Map.put(params, "endblock", "99999999")] do
+        assert response =
+                 conn
+                 |> get("/api", request_params)
+                 |> json_response(200)
+
+        assert [%{"transactionHash" => transaction_hash}] = response["result"]
+        assert transaction_hash == to_string(internal_transaction.transaction.hash)
+        assert response["status"] == "1"
+        assert response["message"] == "OK"
+        assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+      end
+
+      # once the chain moves on, the pending block leaves the tolerance window
+      insert(:block, number: pending_block.number + pending_head_tolerance())
+
+      for request_params <- [params, Map.put(params, "endblock", "#{pending_block.number}")] do
+        assert response =
+                 conn
+                 |> get("/api", request_params)
+                 |> json_response(200)
+
+        assert [_] = response["result"]
+        assert response["status"] == "2"
+        assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+      end
+    end
+
+    test "returns status = 2 with an empty result when blocks within the chain head tolerance are pending", %{
+      conn: conn
+    } do
+      address = insert(:address)
+
+      head_block = insert(:block)
+      insert(:pending_block_operation, block_hash: head_block.hash, block_number: head_block.number)
+
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "address" => "#{address.hash}",
+        "startblock" => "#{head_block.number}"
+      }
+
       assert response =
                conn
                |> get("/api", params)
                |> json_response(200)
 
-      assert [%{"transactionHash" => transaction_hash}] = response["result"]
-      assert transaction_hash == to_string(internal_transaction.transaction.hash)
-      assert response["status"] == "1"
-      assert response["message"] == "OK"
-      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
-
-      assert response =
-               conn
-               |> get("/api", Map.put(params, "endblock", "#{head_block.number}"))
-               |> json_response(200)
-
+      assert response["result"] == []
       assert response["status"] == "2"
       assert response["message"] == "Some internal transactions within this block range have not yet been processed"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
     end
 
     test "with a address that doesn't exist", %{conn: conn} do
@@ -5218,11 +5320,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       assert result == {:required_params, {:ok, params}}
     end
-  end
-
-  defp reset_block_number_cache do
-    Supervisor.terminate_child(Explorer.Supervisor, BlockNumber.child_id())
-    Supervisor.restart_child(Explorer.Supervisor, BlockNumber.child_id())
   end
 
   defp pending_head_tolerance do
