@@ -40,6 +40,10 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
 
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json", "csv"])
+    # CSV responses set their content type explicitly; keep JSON as the render
+    # format so error responses (404/422/403) render their JSON templates even
+    # when the client sends `Accept: application/csv`.
+    plug(:put_format, "json")
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
