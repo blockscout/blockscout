@@ -106,14 +106,28 @@ defmodule Explorer.Market.Fetcher.TokenTest do
         end
       )
 
+      on_chain_total_supplies = Token |> Repo.all() |> Map.new(&{&1.contract_address_hash, &1.total_supply})
+
       GenServer.start_link(TokenFetcher, [])
 
       :timer.sleep(100)
 
       Repo.all(Token)
-      |> Enum.each(fn %{contract_address_hash: contract_address_hash, fiat_value: fiat_value} ->
+      |> Enum.each(fn %{
+                        contract_address_hash: contract_address_hash,
+                        fiat_value: fiat_value,
+                        circulating_supply: circulating_supply,
+                        total_supply: total_supply
+                      } ->
         matching = Enum.find(token_exchange_rates, &(&1["id"] == "#{contract_address_hash}_id"))
         assert matching["current_price"] == fiat_value
+
+        if matching do
+          assert Decimal.eq?(circulating_supply, Decimal.new(1_000_000))
+        end
+
+        # market data must never overwrite the raw on-chain total supply
+        assert Decimal.eq?(total_supply, on_chain_total_supplies[contract_address_hash])
       end)
     end
 
