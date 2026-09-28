@@ -60,6 +60,8 @@ defmodule BlockScoutWeb.Router do
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
     plug(BlockScoutWeb.Plug.RateLimit)
+    plug(:fetch_cookies)
+    plug(BlockScoutWeb.Plug.GraphQLContext)
   end
 
   pipeline :rate_limit do

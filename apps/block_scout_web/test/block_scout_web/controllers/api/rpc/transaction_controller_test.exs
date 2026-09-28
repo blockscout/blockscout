@@ -486,6 +486,47 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
       assert response1["result"]["logs"] != response2["result"]["logs"]
     end
 
+    test "paginates logs with items_count", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      address = insert(:address)
+
+      Enum.each(1..3, fn _ ->
+        insert(:log,
+          address: address,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number
+        )
+      end)
+
+      params = %{
+        "module" => "transaction",
+        "action" => "gettxinfo",
+        "txhash" => "#{transaction.hash}",
+        "items_count" => "2"
+      }
+
+      assert response1 =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert Enum.count(response1["result"]["logs"]) == 2
+      assert %{"index" => _} = next_page_params = response1["result"]["next_page_params"]
+
+      assert response2 =
+               conn
+               |> get("/api", Map.put(next_page_params, "items_count", "2"))
+               |> json_response(200)
+
+      assert Enum.count(response2["result"]["logs"]) == 1
+      assert is_nil(response2["result"]["next_page_params"])
+    end
+
     test "with a txhash with ok status", %{conn: conn} do
       block = insert(:block)
 

@@ -116,6 +116,23 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert json_response(request, 200)
     end
 
+    test "items_count sets the page size", %{conn: conn} do
+      insert_list(3, :transaction) |> with_block()
+
+      request = get(conn, "/api/v2/advanced-filters", %{"items_count" => "2"})
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 2
+      refute is_nil(response["next_page_params"])
+      refute Map.has_key?(response["next_page_params"], "items_count")
+
+      request_2nd_page =
+        get(conn, "/api/v2/advanced-filters", Map.put(response["next_page_params"], "items_count", "2"))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+      assert Enum.count(response_2nd_page["items"]) == 1
+      assert response_2nd_page["next_page_params"] == nil
+    end
+
     test "get and paginate advanced filter (transactions split between pages)", %{conn: conn} do
       first_transaction = :transaction |> insert() |> with_block()
       insert_list(3, :token_transfer, transaction: first_transaction)

@@ -119,6 +119,8 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(BlockScoutWeb.Plug.Logger, application: :api)
     plug(:accepts, ["json"])
     plug(BlockScoutWeb.Plug.GraphQLSchemaIntrospection)
+    plug(:fetch_cookies)
+    plug(BlockScoutWeb.Plug.GraphQLContext)
   end
 
   alias BlockScoutWeb.API.{Legacy, V2}

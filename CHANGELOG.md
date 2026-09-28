@@ -21,6 +21,7 @@
 
 ### 🐛 Bug Fixes
 
+- Sanitize 12 version ([#14867](https://github.com/blockscout/blockscout/pull/14867))
 - Compare checksummed hashes in Celo election rewards controller test ([#14863](https://github.com/blockscout/blockscout/pull/14863))
 - Update Arc coin balance tests after address_hash_to_coin_balances rename ([#14860](https://github.com/blockscout/blockscout/pull/14860))
 - Drop redundant logs_address_hash_first_topic_second_topic_block_number_index ([#14858](https://github.com/blockscout/blockscout/pull/14858))
