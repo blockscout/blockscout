@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   alias BlockScoutWeb.Chain, as: BlockScoutWebChain
   alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.{Address, PendingOperationsHelper, Wei}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Etherscan.{Addresses, Blocks}
   alias Explorer.Helper, as: ExplorerHelper
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
@@ -155,6 +156,9 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
+  # The pending check here is deliberately strict (no chain head tolerance, see
+  # `blocks_pending_below_head_tolerance?/2`): the response is all-or-nothing for a single
+  # transaction, so a pending block means the whole result is missing.
   def txlistinternal(conn, params, transaction_param, :transaction) do
     with {:params, {:ok, options}} <- {:params, optional_params(params)},
          {:format, {:ok, transaction_hash}} <- to_transaction_hash(transaction_param),
@@ -218,6 +222,9 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     end
   end
 
+  # With an empty result the pending status is the only useful information the response
+  # carries, so the strict check is kept here: pending blocks at the chain head are not
+  # tolerated (see `blocks_pending_below_head_tolerance?/2`).
   defp render_internal_transactions(conn, [], start_block_number, end_block_number) do
     if PendingOperationsHelper.blocks_pending?(start_block_number, end_block_number) do
       render(conn, :pending_internal_transaction,
@@ -230,7 +237,7 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   end
 
   defp render_internal_transactions(conn, internal_transactions, start_block_number, end_block_number) do
-    if PendingOperationsHelper.blocks_pending?(start_block_number, end_block_number) do
+    if blocks_pending_below_head_tolerance?(start_block_number, end_block_number) do
       render(conn, :pending_internal_transaction,
         message: @block_range_not_yet_processed_message,
         data: internal_transactions
@@ -238,6 +245,45 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     else
       render(conn, :txlistinternal, %{internal_transactions: internal_transactions})
     end
+  end
+
+  # Checks whether internal transactions of any block in the requested range are still
+  # being fetched, ignoring pending blocks at the chain head for ranges reaching the head.
+  #
+  # Internal transactions are fetched asynchronously, so on chains with a short block time
+  # the most recent blocks are practically always pending. When the requested range reaches
+  # the chain head (no `endblock`, or an `endblock` at or above the head such as the
+  # `99999999` sent by common Etherscan clients), pending blocks within the last
+  # `internal_transactions_pending_head_tolerance` blocks are therefore ignored; otherwise
+  # every such request would permanently return status `2`. An `endblock` below the head
+  # keeps the strict check, because the requested range is then really bounded and the
+  # response really is incomplete.
+  #
+  # The tolerance only applies to responses that return internal transactions: an empty
+  # result and the single-transaction `txlistinternal` variant keep the strict check, since
+  # for them the pending status is the only information about the missing data.
+  defp blocks_pending_below_head_tolerance?(start_block_number, end_block_number) do
+    PendingOperationsHelper.blocks_pending?(start_block_number, tolerated_end_block_number(end_block_number))
+  end
+
+  defp tolerated_end_block_number(end_block_number) do
+    tolerance = pending_head_tolerance()
+
+    if tolerance == 0 do
+      end_block_number
+    else
+      head_block_number = BlockNumber.get_max()
+
+      if is_nil(end_block_number) or end_block_number >= head_block_number do
+        max(head_block_number - tolerance, 0)
+      else
+        end_block_number
+      end
+    end
+  end
+
+  defp pending_head_tolerance do
+    Application.get_env(:block_scout_web, __MODULE__)[:internal_transactions_pending_head_tolerance] || 0
   end
 
   def tokentx(conn, params) do
