@@ -330,7 +330,16 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TokenTransfersTest do
     setup do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
       Application.put_env(:block_scout_web, :hide_scam_addresses, true)
-      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      # the global GraphQL rate limit (10 req/s by default) is shared by all GraphQL tests
+      # and this file alone issues more requests than that within a second
+      graphql_config = Application.get_env(:block_scout_web, Api.GraphQL)
+      Application.put_env(:block_scout_web, Api.GraphQL, Keyword.put(graphql_config, :rate_limit_disabled?, true))
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :hide_scam_addresses, init_value)
+        Application.put_env(:block_scout_web, Api.GraphQL, graphql_config)
+      end)
 
       token_address = insert(:contract_address)
       insert(:token, contract_address: token_address)
