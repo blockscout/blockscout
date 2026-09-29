@@ -15,9 +15,10 @@ defmodule BlockScoutWeb.API.Legacy.EthController do
 
   Behavioral divergence from `/api/eth-rpc` worth noting:
 
-    * the legacy endpoints run on the `:api_v2` pipeline, so when API v2 is
-      globally disabled the legacy routes return 404 while `/api/eth-rpc` keeps
-      working;
+    * the legacy endpoints run on the `:api_v2_no_session` pipeline (no
+      session and no CSRF check, because API clients send no CSRF token), so
+      when API v2 is globally disabled the legacy routes return 404 while
+      `/api/eth-rpc` keeps working;
     * batches are not supported here — POST an array body and the endpoint
       returns a JSON-RPC error envelope rather than dispatching the batch.
   """

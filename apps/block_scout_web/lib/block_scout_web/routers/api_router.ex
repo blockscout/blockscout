@@ -505,6 +505,11 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     scope "/block" do
       get("/get-block-number-by-time", Legacy.BlockController, :get_block_number_by_time)
     end
+  end
+
+  scope "/legacy" do
+    # POST endpoints for API clients that have no session and no CSRF token.
+    pipe_through(:api_v2_no_session)
 
     scope "/eth" do
       post("/eth-call", Legacy.EthController, :eth_call)
