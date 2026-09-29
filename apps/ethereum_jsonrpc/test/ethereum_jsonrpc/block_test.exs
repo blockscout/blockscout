@@ -97,7 +97,7 @@ defmodule EthereumJSONRPC.BlockTest do
 
   describe "to_elixir/1" do
     # Nethermind returns `nonce` and `mixHash` as `null` for AuRa blocks (e.g. pre-merge Gnosis)
-    test "drops nil nonce and mixHash so elixir_to_params/1 falls back to defaults" do
+    test "drops nil PoW-only fields so elixir_to_params/1 falls back to defaults" do
       elixir =
         Block.to_elixir(%{
           "difficulty" => "0xfffffffffffffffffffffffffffffffe",
@@ -112,21 +112,27 @@ defmodule EthereumJSONRPC.BlockTest do
           "number" => "0x13b09fd",
           "parentHash" => "0x39558c126fdbbb412271b6dc5b34922f16ae786a883f33ba3a55b5f0f5f0f5f0",
           "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-          "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+          "sha3Uncles" => nil,
           "size" => "0x92c",
           "stateRoot" => "0x6fd0a5d82ca77d9f38c3ebbde11b11d304a5fcf3854f291df64395ab38ed43ba",
           "timestamp" => "0x620b2ff9",
           "totalDifficulty" => nil,
           "transactions" => [],
           "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
-          "uncles" => [],
+          "uncles" => nil,
           "baseFeePerGas" => "0x8"
         })
 
-      refute Map.has_key?(elixir, "nonce")
-      refute Map.has_key?(elixir, "mixHash")
+      for key <- ~w(nonce mixHash sha3Uncles uncles) do
+        refute Map.has_key?(elixir, key), "expected #{key} to be dropped"
+      end
 
-      assert %{nonce: 0, mix_hash: "0x0"} = Block.elixir_to_params(elixir)
+      assert %{
+               nonce: "0x0000000000000000",
+               mix_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+               sha3_uncles: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+               uncles: []
+             } = Block.elixir_to_params(elixir)
     end
   end
 

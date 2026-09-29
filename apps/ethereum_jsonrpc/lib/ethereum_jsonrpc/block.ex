@@ -18,6 +18,11 @@ defmodule EthereumJSONRPC.Block do
   # (sha3Uncles) is the RLP-encoded hash of an empty list.
   @sha3_uncles_empty_list "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347"
 
+  # Defaults for PoW-only header fields that PoA/PoS nodes may omit or return as `null`.
+  # Kept full-width so they stay hex-decodable for header hashing (e.g. `Indexer.Transform.Blocks.Clique`).
+  @nonce_default "0x0000000000000000"
+  @mix_hash_default "0x0000000000000000000000000000000000000000000000000000000000000000"
+
   case @chain_type do
     :rsk ->
       @chain_type_fields quote(
@@ -103,8 +108,10 @@ defmodule EthereumJSONRPC.Block do
    * `"miner"` - `t:EthereumJSONRPC.address/0` of the beneficiary to whom the mining rewards were given.  Aliased by
       `"author"`.
    * `"mixHash"` - Generated from [DAG](https://ethereum.stackexchange.com/a/10353) as part of Proof-of-Work for EthHash
-     algorithm.  **[Geth](https://github.com/ethereum/go-ethereum/wiki/geth) + Proof-of-Work-only**
-   * `"nonce"` -  `t:EthereumJSONRPC.nonce/0`. `nil` when its pending block.
+     algorithm.  **[Geth](https://github.com/ethereum/go-ethereum/wiki/geth) + Proof-of-Work-only**. May be absent or
+     `nil` on PoA/PoS chains (e.g. Nethermind returns `nil` for AuRa blocks).
+   * `"nonce"` -  `t:EthereumJSONRPC.nonce/0`. `nil` when its pending block. May also be absent or `nil` on PoA/PoS
+     chains (e.g. Nethermind returns `nil` for AuRa blocks).
    * `"number"` - the block number `t:EthereumJSONRPC.quantity/0`. `nil` when block is pending.
    * `"parentHash" - the `t:EthereumJSONRPC.hash/0` of the parent block.
    * `"receiptsRoot"` - `t:EthereumJSONRPC.hash/0` of the root of the receipts.
@@ -246,8 +253,8 @@ defmodule EthereumJSONRPC.Block do
         hash: "0x52c867bc0a91e573dc39300143c3bead7408d09d45bdb686749f02684ece72f3",
         logs_bloom: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
         miner_hash: "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
-        mix_hash: "0x0",
-        nonce: 0,
+        mix_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+        nonce: "0x0000000000000000",
         number: 1,
         parent_hash: "0x5b28c1bfd3a15230c9a46b399cd0f9a6920d432e85381cc6a140b06e8410112f",
         receipts_root: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
@@ -389,8 +396,8 @@ defmodule EthereumJSONRPC.Block do
       hash: hash,
       logs_bloom: logs_bloom,
       miner_hash: miner_hash,
-      mix_hash: Map.get(elixir, "mixHash", "0x0"),
-      nonce: Map.get(elixir, "nonce", 0),
+      mix_hash: Map.get(elixir, "mixHash", @mix_hash_default),
+      nonce: Map.get(elixir, "nonce", @nonce_default),
       number: number,
       parent_hash: parent_hash,
       receipts_root: receipts_root,
@@ -434,8 +441,8 @@ defmodule EthereumJSONRPC.Block do
       hash: hash,
       logs_bloom: logs_bloom,
       miner_hash: miner_hash,
-      mix_hash: Map.get(elixir, "mixHash", "0x0"),
-      nonce: Map.get(elixir, "nonce", 0),
+      mix_hash: Map.get(elixir, "mixHash", @mix_hash_default),
+      nonce: Map.get(elixir, "nonce", @nonce_default),
       number: number,
       parent_hash: parent_hash,
       receipts_root: receipts_root,
@@ -478,8 +485,8 @@ defmodule EthereumJSONRPC.Block do
       hash: hash,
       logs_bloom: logs_bloom,
       miner_hash: miner_hash,
-      mix_hash: Map.get(elixir, "mixHash", "0x0"),
-      nonce: Map.get(elixir, "nonce", 0),
+      mix_hash: Map.get(elixir, "mixHash", @mix_hash_default),
+      nonce: Map.get(elixir, "nonce", @nonce_default),
       number: number,
       parent_hash: parent_hash,
       receipts_root: receipts_root,
@@ -522,8 +529,8 @@ defmodule EthereumJSONRPC.Block do
       hash: hash,
       logs_bloom: logs_bloom,
       miner_hash: miner_hash,
-      mix_hash: Map.get(elixir, "mixHash", "0x0"),
-      nonce: Map.get(elixir, "nonce", 0),
+      mix_hash: Map.get(elixir, "mixHash", @mix_hash_default),
+      nonce: Map.get(elixir, "nonce", @nonce_default),
       number: number,
       parent_hash: parent_hash,
       receipts_root: receipts_root,
@@ -926,9 +933,10 @@ defmodule EthereumJSONRPC.Block do
     {key, nil}
   end
 
-  # Nethermind returns `nonce` and `mixHash` as `null` for AuRa blocks (e.g. pre-merge Gnosis).
-  # Drop them so `elixir_to_params/1` falls back to its defaults (`nonce: 0`, `mix_hash: "0x0"`).
-  defp entry_to_elixir({key, nil}, _block) when key in ~w(nonce mixHash) do
+  # PoW-only header fields may be omitted or returned as `null` by PoA/PoS nodes (e.g. Nethermind returns `null`
+  # `nonce`/`mixHash` for AuRa blocks). Drop `nil` values so `elixir_to_params/1` applies the same defaults as
+  # for absent keys.
+  defp entry_to_elixir({key, nil}, _block) when key in ~w(nonce mixHash sha3Uncles uncles) do
     {:ignore, :ignore}
   end
 
