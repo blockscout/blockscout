@@ -41,6 +41,8 @@ config :explorer, Explorer.Chain.Cache.Counters.AddressesCount,
   enabled: true,
   enable_consolidation: true
 
+config :explorer, Explorer.Chain.Cache.Counters.TransactionsCount, enable_consolidation: true
+
 config :explorer, Explorer.Chain.Cache.Counters.AddressCounters, enabled: true
 
 config :explorer, Explorer.Chain.Cache.Counters.AddressCountersConsolidator, enabled: true
