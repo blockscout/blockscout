@@ -1208,6 +1208,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
             Map.put(
               acc,
               current_key,
+              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
               Enum.max_by([current, params], fn %{
                                                   owner_updated_at_block: block_number,
                                                   owner_updated_at_log_index: log_index
