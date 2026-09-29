@@ -86,6 +86,39 @@ defmodule Explorer.Chain.CsvExport.Token.HoldersTest do
       assert row =~ "1234.56789"
     end
 
+    test "scales balances of an ERC-8056 token by the multiplier in force now" do
+      # the export is human-readable, so it has to show what the holders page
+      # shows rather than the raw balance
+      token =
+        insert(:token,
+          type: "ERC-8056",
+          decimals: 6,
+          ui_multiplier: Decimal.new("1000000000000000000"),
+          new_ui_multiplier: Decimal.new("2000000000000000000"),
+          ui_multiplier_effective_at: DateTime.add(DateTime.utc_now(), -1, :hour)
+        )
+
+      holder =
+        insert(:address_current_token_balance,
+          token_contract_address_hash: token.contract_address_hash,
+          address: insert(:address),
+          value: 1_000_000
+        )
+
+      csv_string =
+        token.contract_address_hash
+        |> TokenHoldersExporter.export("2020-01-01", "2025-12-31", [], nil, nil)
+        |> Enum.to_list()
+        |> IO.iodata_to_binary()
+
+      [_header, row] = String.split(csv_string, "\r\n", trim: true)
+
+      # 1.0 of the token, doubled by the multiplier that has already matured
+      assert [address, balance] = String.split(row, ",")
+      assert address == Address.checksum(holder.address_hash)
+      assert Decimal.equal?(Decimal.new(balance), Decimal.new(2))
+    end
+
     test "respects pagination with many holders" do
       token = insert(:token, type: "ERC-20", decimals: 18)
 

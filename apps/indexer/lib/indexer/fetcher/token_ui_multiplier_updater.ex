@@ -23,10 +23,11 @@ defmodule Indexer.Fetcher.TokenUIMultiplierUpdater do
 
   require Logger
 
-  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.Chain.Token.UIMultiplierChange
+  alias Explorer.MicroserviceInterfaces.MultichainSearch
+  alias Explorer.Repo
   alias Explorer.Token.MetadataRetriever
   alias Timex.Duration
 
@@ -104,9 +105,12 @@ defmodule Indexer.Fetcher.TokenUIMultiplierUpdater do
     Process.send_after(self(), :update, update_interval)
   end
 
-  @spec update_token(String.t(), [map()]) :: :ok | {:retry, [map()]}
+  # the hash comes off the log, so it is the string the node answered with, but
+  # `Hash.Address.cast/1` takes an already cast struct just as well and keeps a
+  # producer that hands one over from being dropped silently
+  @spec update_token(String.t() | Hash.Address.t(), [map()]) :: :ok | {:retry, [map()]}
   defp update_token(contract_address_hash, changes) do
-    case Chain.string_to_address_hash(contract_address_hash) do
+    case Hash.Address.cast(contract_address_hash) do
       {:ok, address_hash} ->
         address_hash
         |> then(&Repo.get_by(Token, contract_address_hash: &1))
@@ -148,7 +152,12 @@ defmodule Indexer.Fetcher.TokenUIMultiplierUpdater do
     token_params = address_hash |> Hash.to_string() |> MetadataRetriever.get_ui_multiplier_of()
 
     case Token.update(token, Map.put(token_params, :type, "ERC-8056")) do
-      {:ok, _token} ->
+      {:ok, updated_token} ->
+        # the multiplier is part of the token metadata exported to the Multichain service,
+        # so the whole metadata entry is re-sent with the values in force now
+        %{address_hash => MultichainSearch.prepare_token_metadata_for_queue(updated_token)}
+        |> MultichainSearch.send_token_info_to_queue(:metadata)
+
         :ok
 
       {:error, changeset} ->

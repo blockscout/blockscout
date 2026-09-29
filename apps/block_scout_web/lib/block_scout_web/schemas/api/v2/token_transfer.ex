@@ -123,7 +123,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.Total do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.General
-  alias OpenApiSpex.Schema
+  alias BlockScoutWeb.Schemas.Helper
 
   OpenApiSpex.schema(%{
     title: "TokenTransferTotalFungible",
@@ -131,10 +131,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.Total do
     properties: %{
       value: General.IntegerStringNullable,
       decimals: General.IntegerStringNullable,
-      ui_multiplier: %Schema{
-        allOf: [General.IntegerStringNullable],
-        description: "ERC-8056 multiplier that was in force when this transfer happened, with 18 decimals of precision."
-      }
+      ui_multiplier:
+        Helper.describe_inline(
+          General.IntegerStringNullable.schema(),
+          "ERC-8056 multiplier that was in force when this transfer happened, with 18 decimals of precision."
+        )
     },
     required: [:value, :decimals],
     additionalProperties: false

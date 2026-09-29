@@ -3,17 +3,10 @@ defmodule Explorer.Repo.Migrations.CreateTokenUiMultiplierChanges do
 
   def change do
     create table(:token_ui_multiplier_changes, primary_key: false) do
-      add(
-        :token_contract_address_hash,
-        references(:tokens, column: :contract_address_hash, type: :bytea, on_delete: :delete_all),
-        null: false,
-        primary_key: true
-      )
-
+      add(:token_contract_address_hash, :bytea, null: false, primary_key: true)
       add(:block_number, :bigint, null: false, primary_key: true)
-      add(:block_hash, references(:blocks, column: :hash, type: :bytea, on_delete: :delete_all), null: false)
+      add(:block_hash, :bytea, null: false)
       add(:log_index, :integer, null: false, primary_key: true)
-
       add(:old_multiplier, :decimal, null: false)
       add(:new_multiplier, :decimal, null: false)
       add(:effective_at, :utc_datetime_usec, null: false)

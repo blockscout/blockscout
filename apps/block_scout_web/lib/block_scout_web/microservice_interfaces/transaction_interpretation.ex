@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   alias Ecto.Association.NotLoaded
   alias Explorer.{Chain, HttpClient}
   alias Explorer.Chain.{Data, InternalTransaction, Log, TokenTransfer, Transaction}
+  alias Explorer.Chain.Token.UIMultiplierChange
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Repo.LockTimeout
 
@@ -277,6 +278,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
 
   defp prepare_token_transfers(token_transfers, decoded_input) do
     token_transfers
+    |> UIMultiplierChange.put_ui_multipliers(@api_true)
     |> Enum.map(&TokenTransferView.prepare_token_transfer(&1, nil, decoded_input))
   end
 
@@ -352,6 +354,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
       |> TokenTransfer.logs_to_token_transfers(token_transfer_options)
       |> Chain.flat_1155_batch_token_transfers()
       |> Enum.take(@items_limit)
+      |> UIMultiplierChange.put_ui_multipliers(@api_true)
       |> Enum.map(&TokenTransferView.prepare_token_transfer(&1, nil, decoded_input))
 
     {prepared_logs, prepared_token_transfers}

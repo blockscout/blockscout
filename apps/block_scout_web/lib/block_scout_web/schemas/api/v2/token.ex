@@ -58,6 +58,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
 
   alias BlockScoutWeb.Schemas.API.V2.General
   alias BlockScoutWeb.Schemas.API.V2.Token.{ChainTypeCustomizations, Type}
+  alias BlockScoutWeb.Schemas.Helper
   alias Explorer.Chain.Address.Reputation
   alias OpenApiSpex.Schema
 
@@ -72,12 +73,28 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         decimals: General.IntegerStringNullable,
         type: %Schema{allOf: [Type], nullable: true},
         holders_count: General.IntegerStringNullable,
-        exchange_rate: General.FloatStringNullable,
+        exchange_rate:
+          Helper.describe_inline(
+            General.FloatStringNullable.schema(),
+            "Price of one displayed unit of the token. For an ERC-8056 token that is the UI amount, the one that trades, so a fiat value is `raw_amount * ui_multiplier / 1e18 / 10 ^ decimals * exchange_rate`."
+          ),
         volume_24h: General.FloatStringNullable,
-        total_supply: General.IntegerStringNullable,
+        total_supply:
+          Helper.describe_inline(
+            General.IntegerStringNullable.schema(),
+            "Raw `totalSupply()` of the contract. ERC-8056 leaves it unscaled, so displaying it takes the same `ui_multiplier` as any other raw amount."
+          ),
         icon_url: General.URLNullable,
-        circulating_market_cap: General.FloatStringNullable,
-        circulating_supply: General.FloatStringNullable,
+        circulating_market_cap:
+          Helper.describe_inline(
+            General.FloatStringNullable.schema(),
+            "Market capitalisation as reported by the price source. A fiat figure: never scaled."
+          ),
+        circulating_supply:
+          Helper.describe_inline(
+            General.FloatStringNullable.schema(),
+            "Circulating supply as reported by the price source, in whichever unit that source uses. Not scaled, since the base cannot be told."
+          ),
         reputation: %Schema{
           type: :string,
           enum: Reputation.enum_values(),
@@ -92,20 +109,18 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token do
         },
         foreign_address: %Schema{type: :string, pattern: General.address_hash_pattern(), nullable: true},
         origin_chain_id: General.IntegerStringNullable,
-        ui_multiplier: %Schema{
-          allOf: [General.IntegerStringNullable],
-          description: "ERC-8056 multiplier in effect at the time of the request, with 18 decimals of precision."
-        },
-        new_ui_multiplier: %Schema{
-          allOf: [General.IntegerStringNullable],
-          description: "ERC-8056 multiplier scheduled to replace `ui_multiplier` at `ui_multiplier_effective_at`."
-        },
-        ui_multiplier_effective_at: %Schema{
-          type: :string,
-          format: :"date-time",
-          nullable: true,
-          description: "Moment `new_ui_multiplier` takes effect."
-        }
+        ui_multiplier:
+          Helper.describe_inline(
+            General.IntegerStringNullable.schema(),
+            "ERC-8056 multiplier in effect at the time of the request, with 18 decimals of precision."
+          ),
+        new_ui_multiplier:
+          Helper.describe_inline(
+            General.IntegerStringNullable.schema(),
+            "ERC-8056 multiplier scheduled to replace `ui_multiplier` at `ui_multiplier_effective_at`."
+          ),
+        ui_multiplier_effective_at:
+          Helper.describe_inline(General.TimestampNullable.schema(), "Moment `new_ui_multiplier` takes effect.")
       },
       required: [
         :address_hash,

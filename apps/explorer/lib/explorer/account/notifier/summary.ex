@@ -109,7 +109,7 @@ defmodule Explorer.Account.Notifier.Summary do
           from_address_hash: transfer.from_address_hash,
           to_address_hash: transfer.to_address_hash,
           block_number: transfer.block_number,
-          amount: amount(transfer),
+          amount: amount(transfer, transaction.block_timestamp),
           subject: transfer.token.type,
           transaction_fee: fee(transaction),
           name: token_name(transfer),
@@ -148,7 +148,7 @@ defmodule Explorer.Account.Notifier.Summary do
         token_ids_string = token_ids(transfer)
 
         %Summary{
-          amount: amount(transfer),
+          amount: amount(transfer, transaction.block_timestamp),
           transaction_hash: transaction.hash,
           method: method(transfer),
           from_address_hash: transfer.from_address_hash,
@@ -196,9 +196,9 @@ defmodule Explorer.Account.Notifier.Summary do
     Wei.to(transaction.value, :ether)
   end
 
-  defp amount(%Chain.TokenTransfer{amount: amount}) when is_nil(amount), do: nil
+  defp amount(%Chain.TokenTransfer{amount: amount}, _at) when is_nil(amount), do: nil
 
-  defp amount(%Chain.TokenTransfer{amount: amount} = transfer) do
+  defp amount(%Chain.TokenTransfer{amount: amount} = transfer, at) do
     decimals =
       Decimal.new(
         Integer.pow(
@@ -208,7 +208,7 @@ defmodule Explorer.Account.Notifier.Summary do
       )
 
     amount
-    |> ScaledUIAmount.scale(Token.effective_ui_multiplier(transfer.token))
+    |> ScaledUIAmount.scale(Token.effective_ui_multiplier(transfer.token, at || DateTime.utc_now()))
     |> Decimal.div(decimals)
   end
 
