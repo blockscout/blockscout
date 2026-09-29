@@ -16,6 +16,7 @@ defmodule Explorer.Chain.CsvExport.Token.Transfers do
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, Token, TokenTransfer, Transaction}
   alias Explorer.Chain.Block.Reader.General, as: BlockReaderGeneral
   alias Explorer.Chain.CsvExport.{AsyncHelper, Helper}
+  alias Explorer.Chain.Token.UIMultiplierChange
   alias Explorer.{PagingOptions, Repo}
 
   @doc """
@@ -32,8 +33,18 @@ defmodule Explorer.Chain.CsvExport.Token.Transfers do
 
     token_address_hash
     |> fetch_all_token_transfers(from_block, to_block, paging_options)
+    |> with_ui_multipliers(token)
     |> to_csv_format(token)
     |> Helper.dump_to_stream()
+  end
+
+  # The transfers are loaded without their token, which is read once for the
+  # whole export, while resolving the ERC-8056 multiplier of a transfer takes
+  # the token it belongs to.
+  defp with_ui_multipliers(token_transfers, token) do
+    token_transfers
+    |> Enum.map(&%{&1 | token: token})
+    |> UIMultiplierChange.put_ui_multipliers()
   end
 
   defp fetch_all_token_transfers(token_address_hash, from_block, to_block, paging_options) do
@@ -64,6 +75,7 @@ defmodule Explorer.Chain.CsvExport.Token.Transfers do
       "TokenDecimals",
       "TokenSymbol",
       "TokensTransferred",
+      "UIMultiplier",
       "TransactionFee",
       "Status",
       "ErrCode"
@@ -82,6 +94,10 @@ defmodule Explorer.Chain.CsvExport.Token.Transfers do
           token.decimals,
           token.symbol,
           token_transfer.amount,
+          # amounts are exported raw, `TokenDecimals` and `UIMultiplier` being
+          # the separate columns they are displayed through, so that the export
+          # loses nothing
+          token_transfer.ui_multiplier,
           fee(token_transfer.transaction),
           token_transfer.transaction.status,
           token_transfer.transaction.error

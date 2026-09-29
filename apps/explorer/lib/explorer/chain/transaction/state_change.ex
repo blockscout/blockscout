@@ -17,14 +17,25 @@ defmodule Explorer.Chain.Transaction.StateChange do
     DenormalizationHelper,
     Hash,
     InternalTransaction,
+    Token,
     TokenTransfer,
     Transaction,
     Wei
   }
 
+  alias Explorer.Chain.Token.UIMultiplierChange
   alias Explorer.Chain.Transaction.StateChange
 
-  defstruct [:coin_or_token_transfers, :address, :token_id, :balance_before, :balance_after, :balance_diff, :miner?]
+  defstruct [
+    :coin_or_token_transfers,
+    :address,
+    :token_id,
+    :balance_before,
+    :balance_after,
+    :balance_diff,
+    :miner?,
+    :ui_multiplier
+  ]
 
   @type t :: %__MODULE__{
           coin_or_token_transfers: :coin | [TokenTransfer.t()],
@@ -33,7 +44,8 @@ defmodule Explorer.Chain.Transaction.StateChange do
           balance_before: Wei.t() | Decimal.t(),
           balance_after: Wei.t() | Decimal.t(),
           balance_diff: Wei.t() | Decimal.t(),
-          miner?: boolean()
+          miner?: boolean(),
+          ui_multiplier: Decimal.t() | nil
         }
 
   @type coin_balances_map :: %{Hash.Address.t() => {Address.t(), Wei.t()}}
@@ -424,7 +436,7 @@ defmodule Explorer.Chain.Transaction.StateChange do
       token_type =
         if DenormalizationHelper.tt_denormalization_finished?(), do: transfer.token_type, else: transfer.token.type
 
-      if token_type not in ["ERC-20", "ZRC-2"] or has_diff?(balance_diff) do
+      if token_type not in ["ERC-20", "ERC-8056", "ZRC-2"] or has_diff?(balance_diff) do
         %StateChange{
           coin_or_token_transfers: transfers,
           address: address,
@@ -439,4 +451,68 @@ defmodule Explorer.Chain.Transaction.StateChange do
     |> Enum.reject(&is_nil/1)
     |> Enum.sort_by(fn state_change -> to_string(state_change.address && state_change.address.hash) end)
   end
+
+  @doc """
+  Fills the `ui_multiplier` of the given token state changes with the
+  [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056) multiplier that was in
+  force at the end of the transaction.
+
+  A balance is a state of the transaction as a whole, so unlike the amount of a
+  single transfer it is resolved against the last log of the transaction: a
+  change the transaction announced itself applies to the balances it leaves
+  behind.
+
+  Costs one query for the whole transaction, and none at all — the usual case —
+  when none of the tokens involved implements ERC-8056. Requires `:token` to be
+  preloaded on the transfers of the state changes and on `transaction`, whose
+  block timestamp decides whether a scheduled change had already matured.
+  """
+  @spec put_ui_multipliers([t()], Transaction.t(), keyword()) :: [t()]
+  def put_ui_multipliers(state_changes, %Transaction{} = transaction, options \\ []) do
+    scaled_token_hashes =
+      state_changes
+      |> Enum.map(&scaled_token_hash/1)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    case UIMultiplierChange.for_tokens(scaled_token_hashes, options) do
+      changes_by_token when map_size(changes_by_token) == 0 ->
+        state_changes
+
+      changes_by_token ->
+        log_index = last_log_index(transaction)
+
+        Enum.map(state_changes, &put_ui_multiplier(&1, transaction, log_index, changes_by_token))
+    end
+  end
+
+  defp put_ui_multiplier(%StateChange{} = state_change, transaction, log_index, changes_by_token) do
+    with token_contract_address_hash when not is_nil(token_contract_address_hash) <- scaled_token_hash(state_change),
+         changes when not is_nil(changes) <- changes_by_token[token_contract_address_hash] do
+      %{state_change | ui_multiplier: UIMultiplierChange.at_end_of_transaction(changes, transaction, log_index)}
+    else
+      _ -> state_change
+    end
+  end
+
+  defp scaled_token_hash(%StateChange{coin_or_token_transfers: [{_direction, transfer} | _]}) do
+    case transfer.token do
+      %Token{ui_multiplier: %Decimal{}, contract_address_hash: contract_address_hash} -> contract_address_hash
+      _ -> nil
+    end
+  end
+
+  defp scaled_token_hash(_state_change), do: nil
+
+  # The transfers the balances were derived from are the part of the transaction
+  # known here; `UIMultiplierChange.at_end_of_transaction/3` reaches the rest of
+  # it through the hash the changes carry.
+  defp last_log_index(%Transaction{token_transfers: token_transfers}) when is_list(token_transfers) do
+    token_transfers
+    |> Enum.map(& &1.log_index)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.max(fn -> 0 end)
+  end
+
+  defp last_log_index(_transaction), do: 0
 end

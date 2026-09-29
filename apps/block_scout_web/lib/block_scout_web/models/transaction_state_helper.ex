@@ -113,7 +113,10 @@ defmodule BlockScoutWeb.Models.TransactionStateHelper do
       |> Enum.reduce(%{}, &token_transfers_to_balances_reducer(&1, &2, previous_block_number, options))
       |> StateChange.token_balances_before(transaction, block_transactions)
 
-    tokens_entries = StateChange.token_entries(transaction.token_transfers, token_balances_before)
+    tokens_entries =
+      transaction.token_transfers
+      |> StateChange.token_entries(token_balances_before)
+      |> StateChange.put_ui_multipliers(transaction, options)
 
     native_coin_entries ++ tokens_entries
   end
