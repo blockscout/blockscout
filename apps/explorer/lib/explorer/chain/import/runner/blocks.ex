@@ -1153,21 +1153,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       end)
 
     non_consensus_block_numbers = token_transfers |> Enum.map(fn tt -> tt.block_number end) |> Enum.uniq()
+    forked_token_ids = token_transfers |> Enum.map(fn tt -> tt.token_id end) |> Enum.uniq()
 
     filtered_query = TokenTransfer.only_consensus_transfers_query()
 
-    base_query =
-      from(token_transfer in subquery(filtered_query),
-        select: %{
-          token_contract_address_hash: token_transfer.token_contract_address_hash,
-          token_id: fragment("(?)[1]", token_transfer.token_ids),
-          block_number: max(token_transfer.block_number)
-        },
-        group_by: [token_transfer.token_contract_address_hash, fragment("(?)[1]", token_transfer.token_ids)]
-      )
-
-    historical_token_transfers_query =
-      Enum.reduce(token_transfers, base_query, fn tt, acc ->
+    matching_token_transfers_query =
+      Enum.reduce(token_transfers, subquery(filtered_query), fn tt, acc ->
         from(token_transfer in acc,
           or_where:
             token_transfer.token_contract_address_hash == ^tt.token_contract_address_hash and
@@ -1177,6 +1168,23 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         )
       end)
 
+    # A historical transfer may carry several token ids (e.g. an ERC-1155 batch
+    # transfer emitted by the same contract), so `token_ids` is unnested to find
+    # the latest block per forked token id instead of relying on the first
+    # element of the array.
+    historical_token_transfers_query =
+      from(token_transfer in subquery(matching_token_transfers_query),
+        inner_join: unnested in fragment("LATERAL (SELECT unnest(?) AS token_id)", token_transfer.token_ids),
+        on: true,
+        where: fragment("? = ANY(?)", unnested.token_id, type(^forked_token_ids, {:array, :decimal})),
+        select: %{
+          token_contract_address_hash: token_transfer.token_contract_address_hash,
+          token_id: fragment("?::numeric", unnested.token_id),
+          block_number: max(token_transfer.block_number)
+        },
+        group_by: [token_transfer.token_contract_address_hash, unnested.token_id]
+      )
+
     refs_to_token_transfers = refs_to_token_transfers_query(historical_token_transfers_query, filtered_query)
 
     derived_token_transfers_query = derived_token_transfers_query(refs_to_token_transfers, filtered_query)
@@ -1185,27 +1193,33 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       derived_token_transfers_query
       |> repo.all(timeout: options[:timeout])
       |> Enum.reduce(changes_initial, fn tt, acc ->
-        token_id = List.first(tt.token_ids)
-        current_key = {tt.token_contract_address_hash, token_id}
+        current_key = {tt.token_contract_address_hash, tt.token_id}
 
-        params = %{
-          token_contract_address_hash: tt.token_contract_address_hash,
-          token_id: token_id,
-          owner_address_hash: tt.to_address_hash,
-          owner_updated_at_block: tt.block_number,
-          owner_updated_at_log_index: tt.log_index
-        }
+        case acc do
+          %{^current_key => current} ->
+            params = %{
+              token_contract_address_hash: tt.token_contract_address_hash,
+              token_id: tt.token_id,
+              owner_address_hash: tt.to_address_hash,
+              owner_updated_at_block: tt.block_number,
+              owner_updated_at_log_index: tt.log_index
+            }
 
-        Map.put(
-          acc,
-          current_key,
-          Enum.max_by([acc[current_key], params], fn %{
-                                                       owner_updated_at_block: block_number,
-                                                       owner_updated_at_log_index: log_index
-                                                     } ->
-            {block_number, log_index}
-          end)
-        )
+            Map.put(
+              acc,
+              current_key,
+              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+              Enum.max_by([current, params], fn %{
+                                                  owner_updated_at_block: block_number,
+                                                  owner_updated_at_log_index: log_index
+                                                } ->
+                {block_number, log_index}
+              end)
+            )
+
+          _ ->
+            acc
+        end
       end)
       |> Map.values()
 
@@ -1286,7 +1300,17 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   defp derived_token_transfers_query(refs_to_token_transfers, filtered_query) do
     from(tt in filtered_query,
       inner_join: tt_1 in subquery(refs_to_token_transfers),
-      on: tt_1.log_index == tt.log_index and tt_1.block_number == tt.block_number
+      on:
+        tt_1.log_index == tt.log_index and tt_1.block_number == tt.block_number and
+          tt_1.token_contract_address_hash == tt.token_contract_address_hash and
+          fragment("? @> ARRAY[?::decimal]", tt.token_ids, tt_1.token_id),
+      select: %{
+        token_contract_address_hash: tt.token_contract_address_hash,
+        token_id: tt_1.token_id,
+        to_address_hash: tt.to_address_hash,
+        block_number: tt.block_number,
+        log_index: tt.log_index
+      }
     )
   end
 
