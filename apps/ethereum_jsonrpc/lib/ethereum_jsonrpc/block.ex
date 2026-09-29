@@ -926,6 +926,12 @@ defmodule EthereumJSONRPC.Block do
     {key, nil}
   end
 
+  # Nethermind returns `nonce` and `mixHash` as `null` for AuRa blocks (e.g. pre-merge Gnosis).
+  # Drop them so `elixir_to_params/1` falls back to its defaults (`nonce: 0`, `mix_hash: "0x0"`).
+  defp entry_to_elixir({key, nil}, _block) when key in ~w(nonce mixHash) do
+    {:ignore, :ignore}
+  end
+
   # double check that no new keys are being missed by requiring explicit match for passthrough
   # `t:EthereumJSONRPC.address/0` and `t:EthereumJSONRPC.hash/0` pass through as `Explorer.Chain` can verify correct
   # hash format
