@@ -81,6 +81,26 @@ defmodule BlockScoutWeb.API.Legacy.EthControllerTest do
     end
   end
 
+  describe "API v2 disabled" do
+    setup do
+      api_v2_env = Application.get_env(:block_scout_web, BlockScoutWeb.API.V2)
+      Application.put_env(:block_scout_web, BlockScoutWeb.API.V2, Keyword.put(api_v2_env, :enabled, false))
+
+      on_exit(fn -> Application.put_env(:block_scout_web, BlockScoutWeb.API.V2, api_v2_env) end)
+
+      :ok
+    end
+
+    test "POST /api/legacy/eth/eth-block-number returns 404", %{conn: conn} do
+      response =
+        conn
+        |> post_json("/api/legacy/eth/eth-block-number", jsonrpc_body("eth_blockNumber", [], 1))
+        |> json_response(404)
+
+      assert response == %{"message" => "API V2 is disabled"}
+    end
+  end
+
   describe "POST /api/legacy/eth/eth-get-balance" do
     test "with a valid address that has a balance", %{conn: conn} do
       block = insert(:block)

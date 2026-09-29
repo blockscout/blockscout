@@ -13,12 +13,15 @@ defmodule BlockScoutWeb.API.Legacy.EthController do
     * delegates to `BlockScoutWeb.API.EthRPC.EthController.eth_request/2`,
       which performs the actual work and renders via `EthRPCView`.
 
+  Like `/api/eth-rpc`, the legacy endpoints use no session authentication and
+  no CSRF check (the `:api_v2_no_session` pipeline), and they are compiled
+  only when `API_V1_READ_METHODS_DISABLED` is not set.
+
   Behavioral divergence from `/api/eth-rpc` worth noting:
 
-    * the legacy endpoints run on the `:api_v2_no_session` pipeline (no
-      session and no CSRF check, because API clients send no CSRF token), so
-      when API v2 is globally disabled the legacy routes return 404 while
-      `/api/eth-rpc` keeps working;
+    * the legacy endpoints check that API v2 is enabled, so when API v2 is
+      globally disabled the legacy routes return 404 while `/api/eth-rpc`
+      keeps working;
     * batches are not supported here — POST an array body and the endpoint
       returns a JSON-RPC error envelope rather than dispatching the batch.
   """
