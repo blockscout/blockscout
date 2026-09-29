@@ -169,8 +169,14 @@ defmodule ConfigHelper do
     end
   end
 
-  @spec parse_time_env_var(String.t(), String.t() | nil) :: non_neg_integer() | nil
-  def parse_time_env_var(env_var, default_value \\ nil) do
+  @doc """
+  Parses a time value (e.g. `10s`, `5m`, `1h`) from the env var into milliseconds.
+
+  Options:
+    * `:min` - the minimum allowed value in milliseconds; a smaller value (e.g. a negative duration) raises at startup.
+  """
+  @spec parse_time_env_var(String.t(), String.t() | nil, keyword()) :: integer() | nil
+  def parse_time_env_var(env_var, default_value \\ nil, opts \\ []) do
     case safe_get_env(env_var, default_value) do
       "" ->
         nil
@@ -181,10 +187,18 @@ defmodule ConfigHelper do
             raise "Invalid time format in environment variable #{env_var}: #{value}"
 
           time ->
-            time
+            validate_min(env_var, time, value, Keyword.get(opts, :min))
         end
     end
   end
+
+  defp validate_min(_env_var, time, _raw_value, nil), do: time
+
+  defp validate_min(env_var, time, raw_value, min) when time < min do
+    raise "#{env_var} must be >= #{min} ms, got: #{raw_value}"
+  end
+
+  defp validate_min(_env_var, time, _raw_value, _min), do: time
 
   @doc """
   Parses value of env var through catalogued values list. If a value is not in the list, nil is returned.
