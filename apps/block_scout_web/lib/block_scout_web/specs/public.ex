@@ -10,7 +10,8 @@ defmodule BlockScoutWeb.Specs.Public do
   alias Utils.Helper
 
   use Utils.CompileTimeEnvHelper,
-    chain_identity: [:explorer, :chain_identity]
+    chain_identity: [:explorer, :chain_identity],
+    reading_enabled: [:block_scout_web, [ApiRouter, :reading_enabled]]
 
   @behaviour OpenApi
 
@@ -56,6 +57,14 @@ defmodule BlockScoutWeb.Specs.Public do
       defp chain_type_category_tags, do: @chain_type_category_tags
   end
 
+  # The `/api/legacy` routes are compiled only when `API_V1_READ_METHODS_DISABLED`
+  # is not `true`, so the tag is added only when at least one operation carries it.
+  if @reading_enabled do
+    defp legacy_category_tags, do: [%Tag{name: "legacy"}]
+  else
+    defp legacy_category_tags, do: []
+  end
+
   @impl OpenApi
   def spec do
     %OpenApi{
@@ -77,7 +86,7 @@ defmodule BlockScoutWeb.Specs.Public do
         |> Map.merge(Paths.from_routes(Specs.routes_with_prefix(SmartContractsApiV2Router, "/api/v2/smart-contracts"))),
       tags:
         Enum.map(@default_api_categories, fn category -> %Tag{name: category} end) ++
-          chain_type_category_tags() ++ [%Tag{name: "legacy"}]
+          chain_type_category_tags() ++ legacy_category_tags()
     }
     |> OpenApiSpex.resolve_schema_modules()
   end
