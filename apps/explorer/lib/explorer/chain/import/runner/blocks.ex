@@ -894,7 +894,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     rewinding its cursor, which would be wrong if the import was rolled back.
     Does nothing when no block near the chain head actually lost consensus.
   """
-  @spec notify_beacon_deposit_fetcher(%{beacon_deposit_reorg_block_number: non_neg_integer() | nil} | nil) :: :ok
+  @spec notify_beacon_deposit_fetcher(
+          %{:beacon_deposit_reorg_block_number => non_neg_integer() | nil, optional(atom()) => any()}
+          | nil
+        ) :: :ok
   def notify_beacon_deposit_fetcher(%{beacon_deposit_reorg_block_number: block_number}) when is_integer(block_number) do
     GenServer.cast(Indexer.Fetcher.Beacon.Deposit, {:lost_consensus, block_number})
   end
