@@ -11,6 +11,9 @@ defmodule BlockScoutWeb.Routers.ApiRouterPipelinesTest do
 
   use ExUnit.Case, async: true
 
+  use Utils.CompileTimeEnvHelper,
+    reading_enabled: [:block_scout_web, [BlockScoutWeb.Routers.ApiRouter, :reading_enabled]]
+
   alias BlockScoutWeb.Routers.ApiRouter
 
   @csrf_protected_pipelines [:api_v2, :api_v2_csv]
@@ -26,15 +29,19 @@ defmodule BlockScoutWeb.Routers.ApiRouterPipelinesTest do
            "Non-GET routes on a pipeline with :protect_from_forgery return 403 to API clients: #{inspect(offending)}"
   end
 
-  test "all /legacy routes go through :api_v2_no_session" do
-    legacy_routes =
-      Enum.filter(routes_with_pipelines(), fn {route, _pipelines} -> String.starts_with?(route.path, "/legacy") end)
+  # The /legacy routes are compiled only when API_V1_READ_METHODS_DISABLED is
+  # not `true`.
+  if @reading_enabled do
+    test "all /legacy routes go through :api_v2_no_session" do
+      legacy_routes =
+        Enum.filter(routes_with_pipelines(), fn {route, _pipelines} -> String.starts_with?(route.path, "/legacy") end)
 
-    assert legacy_routes != [], "Expected /legacy routes to be compiled"
+      assert legacy_routes != [], "Expected /legacy routes to be compiled"
 
-    for {route, pipelines} <- legacy_routes do
-      assert pipelines == [:api_v2_no_session],
-             "Expected #{route.verb} #{route.path} to use :api_v2_no_session, got: #{inspect(pipelines)}"
+      for {route, pipelines} <- legacy_routes do
+        assert pipelines == [:api_v2_no_session],
+               "Expected #{route.verb} #{route.path} to use :api_v2_no_session, got: #{inspect(pipelines)}"
+      end
     end
   end
 
