@@ -1371,6 +1371,48 @@ defmodule Explorer.Chain.ImportTest do
       assert DateTime.compare(timestamp, timestamp_before) == :eq
     end
 
+    test "notifies the beacon deposit fetcher about a reorg near the chain head after the import committed" do
+      Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: true)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: false)
+      end)
+
+      Explorer.Chain.Cache.BlockNumber.set_max(50)
+
+      Process.register(self(), Indexer.Fetcher.Beacon.Deposit)
+
+      %Block{hash: old_block_hash} = insert(:block, consensus: true, number: 10)
+
+      miner_hash = address_hash()
+
+      assert {:ok, %{blocks_consensus: %{beacon_deposit_reorg_block_number: 10}}} =
+               Import.all(%{
+                 addresses: %{params: [%{hash: miner_hash}]},
+                 blocks: %{
+                   params: [
+                     %{
+                       consensus: true,
+                       difficulty: 1,
+                       gas_limit: 1,
+                       gas_used: 1,
+                       hash: block_hash(),
+                       miner_hash: miner_hash,
+                       nonce: 1,
+                       number: 10,
+                       parent_hash: block_hash(),
+                       size: 1,
+                       timestamp: Timex.parse!("2019-01-01T02:00:00Z", "{ISO:Extended:Z}"),
+                       total_difficulty: 1
+                     }
+                   ]
+                 }
+               })
+
+      assert %Block{consensus: false} = Repo.get(Block, old_block_hash)
+      assert_received {:"$gen_cast", {:lost_consensus, 10}}
+    end
+
     test "reorganizations nils transaction receipt fields for transactions that end up in non-consensus blocks" do
       block_number = 0
 
