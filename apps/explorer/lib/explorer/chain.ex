@@ -1331,22 +1331,16 @@ defmodule Explorer.Chain do
   def import(options) do
     case Import.all(options) do
       {:ok, imported} = result ->
-        imported_addresses = imported[:addresses] || []
+        addresses_to_import =
+          MultichainSearch.filter_addresses_to_multichain_import(imported[:addresses] || [], options[:broadcast])
 
-        assets_to_import = %{
-          addresses: imported_addresses,
+        MultichainSearch.send_data_to_queue(%{
+          addresses: addresses_to_import,
           blocks: imported[:blocks] || [],
           transactions: imported[:transactions] || [],
           address_current_token_balances: imported[:address_current_token_balances] || [],
-          address_coin_balances: coin_balances_to_export(imported_addresses, options)
-        }
-
-        filtered_addresses_to_import =
-          MultichainSearch.filter_addresses_to_multichain_import(assets_to_import[:addresses], options[:broadcast])
-
-        assets_to_import = Map.put(assets_to_import, :addresses, filtered_addresses_to_import)
-
-        MultichainSearch.send_data_to_queue(assets_to_import)
+          address_coin_balances: coin_balances_to_export(addresses_to_import, options)
+        })
 
         result
 
