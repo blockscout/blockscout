@@ -164,6 +164,9 @@ defmodule Explorer.Chain.Import do
          {:ok, valid_runner_option_pairs} <- validate_runner_options_pairs(runner_options_pairs),
          {:ok, runner_to_changes_list} <- runner_to_changes_list(valid_runner_option_pairs),
          {:ok, data} <- insert_runner_to_changes_list(runner_to_changes_list, options) do
+      # Only after the commit: the fetcher deletes deposits and rewinds its
+      # cursor in response, which must not happen for a rolled back import.
+      Import.Runner.Blocks.notify_beacon_deposit_fetcher(data[:blocks_consensus])
       Notify.async(data[:transactions])
       update_counters(data, Map.get(options, :broadcast, false))
       Publisher.broadcast(Map.drop(data, @not_broadcasted_runners), Map.get(options, :broadcast, false))

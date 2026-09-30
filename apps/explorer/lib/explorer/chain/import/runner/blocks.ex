@@ -80,22 +80,33 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     run_func = fn repo ->
-      {:ok, nonconsensus_items} = process_blocks_consensus(changes_list, repo, insert_options)
+      {:ok, %{nonconsensus_blocks: nonconsensus_items} = consensus_result} =
+        lose_consensus(repo, changes_list, insert_options)
 
       {:ok,
-       RangesHelper.filter_by_height_range(nonconsensus_items, fn {number, _hash} ->
-         RangesHelper.traceable_block_number?(number)
-       end)}
+       %{
+         consensus_result
+         | nonconsensus_blocks:
+             RangesHelper.filter_by_height_range(nonconsensus_items, fn {number, _hash} ->
+               RangesHelper.traceable_block_number?(number)
+             end)
+       }}
     end
 
     multi
-    |> Multi.run(:lose_consensus, fn repo, _ ->
+    |> Multi.run(:blocks_consensus, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> run_func.(repo) end,
         :address_referencing,
         :blocks,
         :lose_consensus
       )
+    end)
+    # The beacon deposit fetcher is notified by `Explorer.Chain.Import.all/1`
+    # from `:blocks_consensus` once the transaction has committed, see
+    # `notify_beacon_deposit_fetcher/1`.
+    |> Multi.run(:lose_consensus, fn _repo, %{blocks_consensus: %{nonconsensus_blocks: nonconsensus_blocks}} ->
+      {:ok, nonconsensus_blocks}
     end)
     |> Multi.run(:counters_refetched_block_numbers, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
@@ -718,8 +729,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   # - `_opts`: The options containing timeout and `updated_at` timestamp for db operations.
   #
   # ## Returns
-  # - `{:ok, removed_consensus_blocks}` tuple with the list of `{block_number, block_hash}`
-  #   tuples for the blocks that lost consensus.
+  # - `{:ok, %{nonconsensus_blocks: [{block_number, block_hash}], beacon_deposit_reorg_block_number: number | nil}}`
+  #   where `nonconsensus_blocks` lists every block marked non-consensus here (including
+  #   blocks that already were), and `beacon_deposit_reorg_block_number` is the lowest
+  #   block number near the chain head that actually lost consensus, see
+  #   `notify_beacon_deposit_fetcher/1`.
   # - `{:error, %{exception: postgrex_error}}` in case of database error.
   defp lose_consensus(
          repo,
@@ -738,13 +752,17 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         or_where: block.number in ^consensus_block_numbers,
         # we also need to acquire blocks that will be upserted here, for ordering
         or_where: block.hash in ^hashes,
-        select: %{hash: block.hash, number: block.number},
+        select: %{hash: block.hash, number: block.number, consensus: block.consensus},
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: block.hash],
         lock: "FOR NO KEY UPDATE"
       )
 
-    {_, removed_consensus_blocks} =
+    # `s.consensus` is read by the locked subquery before the update, so it
+    # tells whether the block actually lost consensus here or was already
+    # non-consensus (e.g. a fork block re-touched by a later import of its
+    # number).
+    {_, removed_consensus_blocks_with_previous_consensus} =
       repo.update_all(
         from(
           block in Block,
@@ -752,26 +770,26 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           on: block.hash == s.hash,
           # we don't want to remove consensus from blocks that will be upserted
           where: block.hash not in ^hashes,
-          select: {block.number, block.hash}
+          select: {block.number, block.hash, s.consensus}
         ),
         [set: [consensus: false, updated_at: updated_at]],
         timeout: timeout
       )
 
+    removed_consensus_blocks =
+      Enum.map(removed_consensus_blocks_with_previous_consensus, fn {number, hash, _previous_consensus} ->
+        {number, hash}
+      end)
+
     removed_consensus_block_numbers =
       removed_consensus_blocks
       |> Enum.map(fn {number, _hash} -> number end)
 
-    maximum_block_number = BlockNumber.get_max()
-
-    minimum_recent_block_number =
-      removed_consensus_block_numbers
-      |> Enum.filter(fn n -> n >= maximum_block_number - 64 end)
-      |> Enum.min(fn -> nil end)
-
-    if minimum_recent_block_number do
-      GenServer.cast(Indexer.Fetcher.Beacon.Deposit, {:lost_consensus, minimum_recent_block_number})
-    end
+    beacon_deposit_reorg_block_number =
+      removed_consensus_blocks_with_previous_consensus
+      |> Enum.filter(fn {_number, _hash, previous_consensus} -> previous_consensus end)
+      |> Enum.map(fn {number, _hash, _previous_consensus} -> number end)
+      |> recent_block_number()
 
     repo.update_all(
       from(
@@ -844,17 +862,55 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
     |> MissingBlockRange.add_ranges_by_block_numbers()
 
-    {:ok, removed_consensus_blocks}
+    {:ok,
+     %{
+       nonconsensus_blocks: removed_consensus_blocks,
+       beacon_deposit_reorg_block_number: beacon_deposit_reorg_block_number
+     }}
   rescue
     postgrex_error in Postgrex.Error ->
       {:error, %{exception: postgrex_error}}
   end
 
+  # The lowest of the given block numbers that lies within the reorg depth the
+  # beacon deposit fetcher cares about (64 blocks below the chain head), or
+  # `nil` when there is none.
+  defp recent_block_number([]), do: nil
+
+  defp recent_block_number(block_numbers) do
+    maximum_block_number = BlockNumber.get_max()
+
+    block_numbers
+    |> Enum.filter(fn n -> n >= maximum_block_number - 64 end)
+    |> Enum.min(fn -> nil end)
+  end
+
+  @doc """
+    Notifies the beacon deposit fetcher that blocks lost consensus, based on the
+    `:blocks_consensus` result of `run/3`.
+
+    Must be called only after the import transaction has committed: the
+    fetcher reacts by deleting deposits above the reported block number and
+    rewinding its cursor, which would be wrong if the import was rolled back.
+    Does nothing when no block near the chain head actually lost consensus.
+  """
+  @spec notify_beacon_deposit_fetcher(
+          %{:beacon_deposit_reorg_block_number => non_neg_integer() | nil, optional(atom()) => any()}
+          | nil
+        ) :: :ok
+  def notify_beacon_deposit_fetcher(%{beacon_deposit_reorg_block_number: block_number}) when is_integer(block_number) do
+    GenServer.cast(Indexer.Fetcher.Beacon.Deposit, {:lost_consensus, block_number})
+  end
+
+  def notify_beacon_deposit_fetcher(_), do: :ok
+
   @doc """
     Processes consensus for blocks that failed to import completely.
 
     This function handles the consistency updates needed when a block import fails,
-    ensuring that the chain's consensus state remains valid.
+    ensuring that the chain's consensus state remains valid. It runs outside of
+    the import transaction, so the beacon deposit fetcher is notified right away
+    when a block near the chain head lost consensus.
 
     ## Parameters
     - `blocks_changes`: List of block changes to process
@@ -873,7 +929,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           timestamps: %{updated_at: DateTime.utc_now()}
         }
 
-    lose_consensus(repo, blocks_changes, opts)
+    with {:ok, %{nonconsensus_blocks: nonconsensus_blocks} = consensus_result} <-
+           lose_consensus(repo, blocks_changes, opts) do
+      notify_beacon_deposit_fetcher(consensus_result)
+      {:ok, nonconsensus_blocks}
+    end
   end
 
   defp delete_address_coin_balances(_repo, [], _options), do: {:ok, []}
