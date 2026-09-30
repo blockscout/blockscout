@@ -110,6 +110,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
     plug(CheckApiV2)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.Specs.Public)
   end
 
   pipeline :api_v1_graphql do

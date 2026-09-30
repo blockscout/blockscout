@@ -15,7 +15,7 @@ defmodule BlockScoutWeb.API.Legacy.EthController do
 
   Like `/api/eth-rpc`, the legacy endpoints use no session authentication and
   no CSRF check (the `:api_v2_no_session` pipeline), and they are compiled
-  only when `API_V1_READ_METHODS_DISABLED` is not set.
+  unless `API_V1_READ_METHODS_DISABLED=true` at compile time.
 
   Behavioral divergence from `/api/eth-rpc` worth noting:
 
