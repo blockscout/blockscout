@@ -1331,11 +1331,14 @@ defmodule Explorer.Chain do
   def import(options) do
     case Import.all(options) do
       {:ok, imported} = result ->
+        imported_addresses = imported[:addresses] || []
+
         assets_to_import = %{
-          addresses: imported[:addresses] || [],
+          addresses: imported_addresses,
           blocks: imported[:blocks] || [],
           transactions: imported[:transactions] || [],
-          address_current_token_balances: imported[:address_current_token_balances] || []
+          address_current_token_balances: imported[:address_current_token_balances] || [],
+          address_coin_balances: coin_balances_to_export(imported_addresses, options)
         }
 
         filtered_addresses_to_import =
@@ -1349,6 +1352,44 @@ defmodule Explorer.Chain do
 
       other_result ->
         other_result
+    end
+  end
+
+  # Selects the coin balances to hand to the Multichain balances export queue after an import.
+  #
+  # Without an explicit `:address_coin_balances` list, `MultichainSearch.send_data_to_queue/1`
+  # derives a "current balance" row from every imported address. Most imports only touch
+  # addresses without changing their balance (internal transactions, token transfers, logs,
+  # ...) and would re-enqueue hundreds of unchanged balances per batch, which floods the queue
+  # and serializes all importers on the same hot rows. So only the addresses whose
+  # `fetched_coin_balance` this import supplied (realtime block imports, coin balance fetchers,
+  # on-demand fetches) are exported, with the balance stored after the upsert.
+  @spec coin_balances_to_export([Address.t()], Import.all_options()) :: [
+          %{address_hash: Hash.Address.t(), value: Wei.t() | nil}
+        ]
+  defp coin_balances_to_export([], _options), do: []
+
+  defp coin_balances_to_export(imported_addresses, options) do
+    hashes_with_supplied_balance =
+      options
+      |> get_in([:addresses, :params])
+      |> List.wrap()
+      |> Enum.reduce(MapSet.new(), fn address_params, acc ->
+        with %{hash: hash, fetched_coin_balance: fetched_coin_balance} when not is_nil(fetched_coin_balance) <-
+               address_params,
+             {:ok, address_hash} <- Hash.Address.cast(hash) do
+          MapSet.put(acc, address_hash)
+        else
+          _ -> acc
+        end
+      end)
+
+    if MapSet.size(hashes_with_supplied_balance) == 0 do
+      []
+    else
+      imported_addresses
+      |> Enum.filter(&MapSet.member?(hashes_with_supplied_balance, &1.hash))
+      |> Enum.map(&%{address_hash: &1.hash, value: &1.fetched_coin_balance})
     end
   end
 
