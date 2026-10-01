@@ -22,6 +22,7 @@
 
 ### 🐛 Bug Fixes
 
+- move /api/legacy/eth/* POST routes off the CSRF-protected pipeline ([#14881](https://github.com/blockscout/blockscout/pull/14881))
 - Sanitize 12 version ([#14867](https://github.com/blockscout/blockscout/pull/14867))
 - Compare checksummed hashes in Celo election rewards controller test ([#14863](https://github.com/blockscout/blockscout/pull/14863))
 - Update Arc coin balance tests after address_hash_to_coin_balances rename ([#14860](https://github.com/blockscout/blockscout/pull/14860))
