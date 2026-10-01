@@ -9,7 +9,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   alias Ecto.Adapters.SQL
   alias Ecto.{Changeset, Multi, Repo}
-  alias EthereumJSONRPC.Utility.RangesHelper
 
   alias Explorer.Chain.{
     Address,
@@ -24,6 +23,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
 
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import.Runner
+  alias Explorer.Helper
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
@@ -1026,20 +1026,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   defp traceable_blocks_dynamic_query do
-    if RangesHelper.trace_ranges_present?() do
-      block_ranges = RangesHelper.get_trace_block_ranges()
-
-      Enum.reduce(block_ranges, dynamic([_], false), fn
-        _from.._to//_ = range, acc ->
-          lower = min(range.first, range.last)
-          upper = max(range.first, range.last)
-          dynamic([block], ^acc or (block.number >= ^lower and block.number <= ^upper))
-
-        num_to_latest, acc ->
-          dynamic([block], ^acc or block.number >= ^num_to_latest)
-      end)
-    else
-      dynamic([_], true)
-    end
+    Helper.traceable_block_numbers_dynamic(:number)
   end
 end
