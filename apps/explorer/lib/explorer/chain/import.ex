@@ -497,18 +497,6 @@ defmodule Explorer.Chain.Import do
     runner_to_changes_list
     |> runner_to_changes_list_to_multis(options)
     |> logged_import(options)
-    |> case do
-      {:ok, result} ->
-        {:ok, result}
-
-      error ->
-        handle_partially_imported_blocks(options)
-        error
-    end
-  rescue
-    exception ->
-      handle_partially_imported_blocks(options)
-      reraise exception, __STACKTRACE__
   end
 
   defp logged_import(multis_batches, options) when is_list(multis_batches) and is_map(options) do
@@ -520,11 +508,14 @@ defmodule Explorer.Chain.Import do
   defp import_batch_transactions(multis_batches, options) when is_list(multis_batches) and is_map(options) do
     Enum.reduce_while(multis_batches, {:ok, %{}}, fn multis, {:ok, acc_changes} ->
       multis
-      |> run_parallel_multis(options)
-      |> handle_task_results(acc_changes)
+      |> import_multis_batch(acc_changes, options)
       |> case do
-        {:ok, changes} -> {:cont, {:ok, changes}}
-        error -> {:halt, error}
+        {:ok, changes} ->
+          {:cont, {:ok, changes}}
+
+        error ->
+          handle_failed_import(options, acc_changes)
+          {:halt, error}
       end
     end)
   rescue
@@ -533,6 +524,16 @@ defmodule Explorer.Chain.Import do
         "tcp recv: closed" <> _ -> {:error, :timeout}
         _ -> reraise exception, __STACKTRACE__
       end
+  end
+
+  defp import_multis_batch(multis, acc_changes, options) do
+    multis
+    |> run_parallel_multis(options)
+    |> handle_task_results(acc_changes)
+  rescue
+    exception ->
+      handle_failed_import(options, acc_changes)
+      reraise exception, __STACKTRACE__
   end
 
   defp run_parallel_multis(multis, options) do
@@ -583,23 +584,61 @@ defmodule Explorer.Chain.Import do
     end)
   end
 
-  defp handle_partially_imported_blocks(%{blocks: %{params: blocks_params}} = options) do
-    block_numbers = blocks_params |> Enum.map(& &1.number) |> Enum.uniq()
-    Block.set_refetch_needed(block_numbers)
-    Import.Runner.Blocks.process_blocks_consensus(blocks_params)
+  defp handle_failed_import(options, %{blocks: _}), do: handle_partially_imported_blocks(options)
+  defp handle_failed_import(options, _acc_changes), do: handle_not_imported_blocks(options)
 
-    Logger.warning("Set refetch_needed for partially imported block because of error: #{inspect(block_numbers)}")
-  rescue
-    exception ->
-      Logger.warning(
-        "Unable to set refetch_needed for partially imported block because of error: #{inspect(exception)}"
-      )
+  defp handle_partially_imported_blocks(%{blocks: %{params: blocks_params}}) do
+    retry_on_exception(
+      fn ->
+        block_numbers = blocks_params |> Enum.map(& &1.number) |> Enum.uniq()
+        Block.set_refetch_needed(block_numbers)
+        Import.Runner.Blocks.process_blocks_consensus(blocks_params)
 
-      Process.sleep(Application.get_env(:indexer, :handle_partially_imported_block_interval) || 1000)
-      handle_partially_imported_blocks(options)
+        Logger.warning("Set refetch_needed for partially imported block because of error: #{inspect(block_numbers)}")
+      end,
+      "Unable to set refetch_needed for partially imported block because of error"
+    )
   end
 
   defp handle_partially_imported_blocks(_options), do: :ok
+
+  defp handle_not_imported_blocks(%{blocks: %{params: blocks_params}}) do
+    blocks_params
+    |> Enum.filter(& &1[:consensus])
+    |> mark_possibly_stale_blocks()
+  end
+
+  defp handle_not_imported_blocks(_options), do: :ok
+
+  defp mark_possibly_stale_blocks([]), do: :ok
+
+  defp mark_possibly_stale_blocks(blocks_params) do
+    block_numbers = blocks_params |> Enum.map(& &1.number) |> Enum.uniq()
+    hashes = Enum.map(blocks_params, & &1.hash)
+
+    retry_on_exception(
+      fn ->
+        marked_numbers = Block.set_refetch_needed_for_other_consensus_blocks(block_numbers, hashes)
+
+        if marked_numbers != [] do
+          Logger.warning(
+            "Set refetch_needed for possibly stale blocks because of failed import: #{inspect(marked_numbers)}"
+          )
+        end
+      end,
+      "Unable to set refetch_needed for possibly stale blocks because of error"
+    )
+  end
+
+  defp retry_on_exception(fun, error_message) do
+    fun.()
+  rescue
+    exception ->
+      Logger.warning("#{error_message}: #{inspect(exception)}")
+
+      Process.sleep(Application.get_env(:indexer, :handle_partially_imported_block_interval) || 1000)
+      retry_on_exception(fun, error_message)
+  end
 
   @spec timestamps() :: timestamps
   def timestamps do

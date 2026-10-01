@@ -242,7 +242,7 @@ defmodule Indexer.Block.Catchup.Fetcher do
         acc
     end)
     |> numbers_to_ranges()
-    |> MissingBlockRange.clear_batch()
+    |> MissingBlockRange.clear_batch_if_indexed()
   end
 
   # Lotus reports a null round either with the bare message (older versions) or with

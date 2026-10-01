@@ -64,6 +64,21 @@ defmodule Explorer.Chain.BlockNumberHelper do
   def previous_block_numbers(numbers), do: neighbor_block_numbers(numbers, :previous)
 
   @doc """
+    Returns the next block numbers of several blocks in the blockchain sequence.
+
+    A batch counterpart of `next_block_number/1`: for Filecoin chain type, the null rounds
+    are looked up for all the blocks at once.
+
+    ## Parameters
+    - `numbers`: The reference block heights
+
+    ## Returns
+    - A map from each reference block height to its next block number
+  """
+  @spec next_block_numbers([non_neg_integer()]) :: %{non_neg_integer() => non_neg_integer()}
+  def next_block_numbers(numbers), do: neighbor_block_numbers(numbers, :next)
+
+  @doc """
     Returns the total count of null rounds in the blockchain.
 
     For Filecoin chain type, returns the actual count of null round heights stored
