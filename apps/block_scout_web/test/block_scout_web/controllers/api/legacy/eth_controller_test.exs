@@ -50,6 +50,57 @@ defmodule BlockScoutWeb.API.Legacy.EthControllerTest do
     |> post(path, Utils.JSON.encode!(body))
   end
 
+  describe "CSRF protection" do
+    # `Phoenix.ConnTest` skips CSRF checks by default, so a route that runs
+    # `:protect_from_forgery` still passes tests. Turn the check on to make sure
+    # that API clients without a CSRF token are not rejected with 403.
+    @csrf_paths [
+      {"/api/legacy/eth/eth-call", "eth_call"},
+      {"/api/legacy/eth/eth-get-balance", "eth_getBalance"},
+      {"/api/legacy/eth/eth-get-storage-at", "eth_getStorageAt"},
+      {"/api/legacy/eth/eth-send-raw-transaction", "eth_sendRawTransaction"},
+      {"/api/legacy/eth/eth-block-number", "eth_blockNumber"},
+      {"/api/legacy/eth/eth-get-logs", "eth_getLogs"}
+    ]
+
+    for {path, expected_method} <- @csrf_paths do
+      test "POST #{path} without a CSRF token is not rejected", %{conn: conn} do
+        path = unquote(path)
+        expected_method = unquote(expected_method)
+
+        response =
+          conn
+          |> put_private(:plug_skip_csrf_protection, false)
+          |> post_json(path, jsonrpc_body("unexpected_method", [], 7))
+          |> json_response(200)
+
+        assert response["jsonrpc"] == "2.0"
+        assert response["id"] == 7
+        assert response["error"] =~ "must be `#{expected_method}`"
+      end
+    end
+  end
+
+  describe "API v2 disabled" do
+    setup do
+      api_v2_env = Application.get_env(:block_scout_web, BlockScoutWeb.API.V2)
+      Application.put_env(:block_scout_web, BlockScoutWeb.API.V2, Keyword.put(api_v2_env, :enabled, false))
+
+      on_exit(fn -> Application.put_env(:block_scout_web, BlockScoutWeb.API.V2, api_v2_env) end)
+
+      :ok
+    end
+
+    test "POST /api/legacy/eth/eth-block-number returns 404", %{conn: conn} do
+      response =
+        conn
+        |> post_json("/api/legacy/eth/eth-block-number", jsonrpc_body("eth_blockNumber", [], 1))
+        |> json_response(404)
+
+      assert response == %{"message" => "API V2 is disabled"}
+    end
+  end
+
   describe "POST /api/legacy/eth/eth-get-balance" do
     test "with a valid address that has a balance", %{conn: conn} do
       block = insert(:block)

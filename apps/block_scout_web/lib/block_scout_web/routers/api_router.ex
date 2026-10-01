@@ -110,6 +110,7 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
     plug(CheckApiV2)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.Specs.Public)
   end
 
   pipeline :api_v1_graphql do
@@ -499,20 +500,22 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
     get("/advanced-filters/csv", V2.AdvancedFilterController, :list_csv)
   end
 
-  scope "/legacy" do
-    pipe_through(:api_v2)
+  if @reading_enabled do
+    scope "/legacy" do
+      pipe_through(:api_v2_no_session)
 
-    scope "/block" do
-      get("/get-block-number-by-time", Legacy.BlockController, :get_block_number_by_time)
-    end
+      scope "/block" do
+        get("/get-block-number-by-time", Legacy.BlockController, :get_block_number_by_time)
+      end
 
-    scope "/eth" do
-      post("/eth-call", Legacy.EthController, :eth_call)
-      post("/eth-get-balance", Legacy.EthController, :eth_get_balance)
-      post("/eth-get-storage-at", Legacy.EthController, :eth_get_storage_at)
-      post("/eth-send-raw-transaction", Legacy.EthController, :eth_send_raw_transaction)
-      post("/eth-block-number", Legacy.EthController, :eth_block_number)
-      post("/eth-get-logs", Legacy.EthController, :eth_get_logs)
+      scope "/eth" do
+        post("/eth-call", Legacy.EthController, :eth_call)
+        post("/eth-get-balance", Legacy.EthController, :eth_get_balance)
+        post("/eth-get-storage-at", Legacy.EthController, :eth_get_storage_at)
+        post("/eth-send-raw-transaction", Legacy.EthController, :eth_send_raw_transaction)
+        post("/eth-block-number", Legacy.EthController, :eth_block_number)
+        post("/eth-get-logs", Legacy.EthController, :eth_get_logs)
+      end
     end
   end
 

@@ -2,6 +2,9 @@
 defmodule BlockScoutWeb.Specs.PublicLegacyTagTest do
   use ExUnit.Case, async: true
 
+  use Utils.CompileTimeEnvHelper,
+    reading_enabled: [:block_scout_web, [BlockScoutWeb.Routers.ApiRouter, :reading_enabled]]
+
   @legacy_paths [
     {:get, "/api/legacy/block/get-block-number-by-time"},
     {:post, "/api/legacy/eth/eth-call"},
@@ -16,53 +19,65 @@ defmodule BlockScoutWeb.Specs.PublicLegacyTagTest do
     {:ok, spec: BlockScoutWeb.Specs.Public.spec()}
   end
 
-  for {method, path} <- @legacy_paths do
-    describe "#{String.upcase(to_string(method))} #{path}" do
-      test "path exists in spec.paths", %{spec: spec} do
-        path = unquote(path)
-        assert Map.has_key?(spec.paths, path), "Expected path #{path} to be present in spec.paths"
-      end
-
-      test "operation carries tags: [\"legacy\"]", %{spec: spec} do
-        path = unquote(path)
-        method = unquote(method)
-        operation = operation_for(spec, path, method)
-
-        assert operation != nil, "Expected a #{method} operation for #{path}"
-        assert operation.tags == ["legacy"], "Expected tags [\"legacy\"] on #{path}, got: #{inspect(operation.tags)}"
-      end
-
-      test "operation has a declared 200 response", %{spec: spec} do
-        path = unquote(path)
-        method = unquote(method)
-        operation = operation_for(spec, path, method)
-
-        assert operation != nil, "Expected a #{method} operation for #{path}"
-
-        response = Map.get(operation.responses, "200") || Map.get(operation.responses, 200)
-
-        assert response != nil,
-               "Expected a 200 response on #{path}, got keys: #{inspect(Map.keys(operation.responses))}"
-      end
-
-      test "200 response has an application/json schema", %{spec: spec} do
-        path = unquote(path)
-        method = unquote(method)
-        operation = operation_for(spec, path, method)
-
-        assert operation != nil, "Expected a #{method} operation for #{path}"
-
-        response = Map.get(operation.responses, "200") || Map.get(operation.responses, 200)
-        assert response != nil, "Expected a 200 response on #{path}"
-
-        schema = get_in(response, [Access.key!(:content), "application/json", Access.key!(:schema)])
-        assert schema != nil, "Expected an application/json schema in the 200 response of #{path}"
-      end
+  if @reading_enabled do
+    test "spec declares the legacy tag", %{spec: spec} do
+      assert Enum.any?(spec.tags, &(&1.name == "legacy"))
+    end
+  else
+    test "spec does not declare the legacy tag when API_V1_READ_METHODS_DISABLED=true", %{spec: spec} do
+      refute Enum.any?(spec.tags, &(&1.name == "legacy"))
     end
   end
 
-  defp operation_for(spec, path, method) do
-    path_item = Map.fetch!(spec.paths, path)
-    Map.get(path_item, method)
+  if @reading_enabled do
+    for {method, path} <- @legacy_paths do
+      describe "#{String.upcase(to_string(method))} #{path}" do
+        test "path exists in spec.paths", %{spec: spec} do
+          path = unquote(path)
+          assert Map.has_key?(spec.paths, path), "Expected path #{path} to be present in spec.paths"
+        end
+
+        test "operation carries tags: [\"legacy\"]", %{spec: spec} do
+          path = unquote(path)
+          method = unquote(method)
+          operation = operation_for(spec, path, method)
+
+          assert operation != nil, "Expected a #{method} operation for #{path}"
+          assert operation.tags == ["legacy"], "Expected tags [\"legacy\"] on #{path}, got: #{inspect(operation.tags)}"
+        end
+
+        test "operation has a declared 200 response", %{spec: spec} do
+          path = unquote(path)
+          method = unquote(method)
+          operation = operation_for(spec, path, method)
+
+          assert operation != nil, "Expected a #{method} operation for #{path}"
+
+          response = Map.get(operation.responses, "200") || Map.get(operation.responses, 200)
+
+          assert response != nil,
+                 "Expected a 200 response on #{path}, got keys: #{inspect(Map.keys(operation.responses))}"
+        end
+
+        test "200 response has an application/json schema", %{spec: spec} do
+          path = unquote(path)
+          method = unquote(method)
+          operation = operation_for(spec, path, method)
+
+          assert operation != nil, "Expected a #{method} operation for #{path}"
+
+          response = Map.get(operation.responses, "200") || Map.get(operation.responses, 200)
+          assert response != nil, "Expected a 200 response on #{path}"
+
+          schema = get_in(response, [Access.key!(:content), "application/json", Access.key!(:schema)])
+          assert schema != nil, "Expected an application/json schema in the 200 response of #{path}"
+        end
+      end
+    end
+
+    defp operation_for(spec, path, method) do
+      path_item = Map.fetch!(spec.paths, path)
+      Map.get(path_item, method)
+    end
   end
 end
