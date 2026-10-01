@@ -12,6 +12,7 @@ defmodule Explorer.Chain.BlockTest do
   alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue}
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.PagingOptions
+  alias Explorer.Utility.MissingBlockRange
   alias Explorer.TestHelper
 
   describe "changeset/2" do
@@ -584,6 +585,21 @@ defmodule Explorer.Chain.BlockTest do
 
       # Balances are intentionally excluded from `full_refetch/1`.
       assert Repo.aggregate(BalancesExportQueue, :count, :id) == 0
+    end
+  end
+
+  describe "set_refetch_needed_for_other_consensus_blocks/2" do
+    test "marks only the consensus blocks with other hashes and adds their numbers to the missing ranges" do
+      other_block = insert(:block, number: 10)
+      non_consensus_block = insert(:block, number: 10, consensus: false)
+      given_block = insert(:block, number: 11)
+
+      assert [10] = Block.set_refetch_needed_for_other_consensus_blocks([10, 11], [given_block.hash])
+
+      assert %Block{refetch_needed: true} = Repo.get(Block, other_block.hash)
+      assert %Block{refetch_needed: false} = Repo.get(Block, non_consensus_block.hash)
+      assert %Block{refetch_needed: false} = Repo.get(Block, given_block.hash)
+      assert [%MissingBlockRange{from_number: 10, to_number: 10}] = Repo.all(MissingBlockRange)
     end
   end
 end

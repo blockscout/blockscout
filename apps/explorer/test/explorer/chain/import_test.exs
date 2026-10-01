@@ -389,7 +389,7 @@ defmodule Explorer.Chain.ImportTest do
       assert %{consensus: true, refetch_needed: true} = Repo.one(Block)
     end
 
-    test "stored blocks are not touched and nothing is queued if the blocks transaction fails" do
+    test "stored consensus blocks keep consensus and are refetched if the blocks transaction fails" do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
 
       on_exit(fn ->
@@ -404,6 +404,28 @@ defmodule Explorer.Chain.ImportTest do
 
       # two consensus blocks at the same height make the blocks transaction fail
       # on the `one_consensus_block_at_height` unique index
+      conflicting_blocks_params = [block_params, %{block_params | hash: block_hash(), parent_hash: block_hash()}]
+
+      assert_raise(Postgrex.Error, fn -> Import.all(%{blocks: %{params: conflicting_blocks_params}}) end)
+
+      assert [%Block{hash: ^stored_block_hash, consensus: true, refetch_needed: true}] = Repo.all(Block)
+      assert [%MissingBlockRange{from_number: 37, to_number: 37}] = Repo.all(MissingBlockRange)
+    end
+
+    test "stored blocks from a failed blocks transaction are not refetched" do
+      Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
+
+      on_exit(fn ->
+        Repo.delete_all(MissingBlockRange)
+        Repo.delete_all(Block)
+      end)
+
+      [block_params] = @import_data.blocks.params
+      {:ok, stored_block_hash} = Hash.Full.cast(block_params.hash)
+
+      assert {:ok, _} = Import.all(%{blocks: %{params: [block_params]}})
+
+      # the stored block is imported again together with another consensus block at the same height
       conflicting_blocks_params = [block_params, %{block_params | hash: block_hash(), parent_hash: block_hash()}]
 
       assert_raise(Postgrex.Error, fn -> Import.all(%{blocks: %{params: conflicting_blocks_params}}) end)
