@@ -7,7 +7,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
 
   use Explorer.Schema
 
-  alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.{Chain, Helper, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.Address.CoinBalance
 
@@ -129,10 +129,15 @@ defmodule Explorer.Chain.Address.CoinBalance do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_unfetched_balances(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
+    # Balances at non-traceable block numbers are skipped by the catch-up fetcher
+    # (see `Indexer.Fetcher.CoinBalance.Helper.run/3`), so they must be excluded
+    # here as well. Otherwise they are never marked as fetched and, once their
+    # count reaches the init query limit, they shadow all fetchable balances.
     query =
       from(
         balance in CoinBalance,
         where: is_nil(balance.value_fetched_at),
+        where: ^Helper.traceable_block_numbers_dynamic(:block_number),
         select: %{address_hash: balance.address_hash, block_number: balance.block_number}
       )
 
