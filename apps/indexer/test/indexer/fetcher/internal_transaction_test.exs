@@ -28,7 +28,16 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
     config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
     Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(config, :block_traceable?, true))
 
-    on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config) end)
+    # The block factory sequence starts at 0, so whichever test inserts the first block of a run
+    # would hit the genesis check in `InternalTransaction.run/2` and issue an unexpected block
+    # fetch. Point the check at a block number no test uses.
+    trace_first_block = Application.get_env(:indexer, :trace_first_block)
+    Application.put_env(:indexer, :trace_first_block, -1)
+
+    on_exit(fn ->
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, config)
+      Application.put_env(:indexer, :trace_first_block, trace_first_block)
+    end)
   end
 
   @moduletag [capture_log: true, no_geth: true]
@@ -348,6 +357,166 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
       assert nil == Repo.get(PendingBlockOperation, block_hash)
 
       assert Repo.exists?(from(i in Chain.InternalTransaction, where: i.block_number == ^block_number))
+    end
+
+    test "does not touch existing participant addresses but still stores created contracts", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block)
+      block_hash = block.hash
+      block_number = block.number
+      insert(:pending_block_operation, block_hash: block_hash, block_number: block_number)
+
+      # a participant that already exists with an older balance snapshot must not be upserted
+      # (bumping its block number row-locks hot addresses from every concurrent batch)
+      %Chain.Address{hash: participant_hash} =
+        insert(:address, fetched_coin_balance: 100, fetched_coin_balance_block_number: block_number - 10)
+
+      # a contract created in this block whose address already exists (e.g. a pre-funded CREATE2
+      # wallet) must still receive its code
+      %Chain.Address{hash: created_contract_hash} =
+        insert(:address, fetched_coin_balance_block_number: block_number - 10)
+
+      new_participant_hash_string = "0x1469b17ebf82fedf56f04109e5207bdc4554288c"
+      created_contract_code = "0x6080604052"
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        case Keyword.fetch!(json_rpc_named_arguments, :variant) do
+          EthereumJSONRPC.Nethermind ->
+            EthereumJSONRPC.Mox
+            |> expect(:json_rpc, fn [%{id: id, method: "trace_replayBlockTransactions"}], _options ->
+              {:ok,
+               [
+                 %{
+                   id: id,
+                   result: [
+                     %{
+                       "output" => "0x",
+                       "stateDiff" => nil,
+                       "trace" => [
+                         %{
+                           "action" => %{
+                             "callType" => "call",
+                             "from" => to_string(participant_hash),
+                             "gas" => "0x8600",
+                             "input" => "0xb118e2db0000000000000000000000000000000000000000000000000000000000000008",
+                             "to" => new_participant_hash_string,
+                             "value" => "0x174876e800"
+                           },
+                           "result" => %{"gasUsed" => "0x7d37", "output" => "0x"},
+                           "subtraces" => 1,
+                           "traceAddress" => [],
+                           "type" => "call"
+                         },
+                         %{
+                           "action" => %{
+                             "from" => to_string(participant_hash),
+                             "gas" => "0x32dcf",
+                             "init" => created_contract_code,
+                             "value" => "0x0"
+                           },
+                           "result" => %{
+                             "address" => to_string(created_contract_hash),
+                             "code" => created_contract_code,
+                             "gasUsed" => "0xb08"
+                           },
+                           "subtraces" => 0,
+                           "traceAddress" => [0],
+                           "type" => "create"
+                         }
+                       ],
+                       "transactionHash" => to_string(transaction.hash),
+                       "vmTrace" => nil
+                     }
+                   ]
+                 }
+               ]}
+            end)
+
+          EthereumJSONRPC.Geth ->
+            EthereumJSONRPC.Mox
+            |> expect(:json_rpc, fn [%{id: id, method: "debug_traceTransaction"}], _options ->
+              {:ok,
+               [
+                 %{
+                   id: id,
+                   result: [
+                     %{
+                       "blockNumber" => block.number,
+                       "transactionIndex" => 0,
+                       "transactionHash" => to_string(transaction.hash),
+                       "index" => 0,
+                       "traceAddress" => [],
+                       "type" => "call",
+                       "callType" => "call",
+                       "from" => to_string(participant_hash),
+                       "to" => new_participant_hash_string,
+                       "gas" => "0x8600",
+                       "gasUsed" => "0x7d37",
+                       "input" => "0xb118e2db0000000000000000000000000000000000000000000000000000000000000008",
+                       "output" => "0x",
+                       "value" => "0x174876e800"
+                     },
+                     %{
+                       "blockNumber" => block.number,
+                       "transactionIndex" => 0,
+                       "transactionHash" => to_string(transaction.hash),
+                       "index" => 1,
+                       "traceAddress" => [0],
+                       "type" => "create",
+                       "from" => to_string(participant_hash),
+                       "createdContractAddressHash" => to_string(created_contract_hash),
+                       "createdContractCode" => created_contract_code,
+                       "gas" => "0x32dcf",
+                       "gasUsed" => "0xb08",
+                       "init" => created_contract_code,
+                       "value" => "0x0"
+                     }
+                   ]
+                 }
+               ]}
+            end)
+
+          variant_name ->
+            raise ArgumentError, "Unsupported variant name (#{variant_name})"
+        end
+      end
+
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      start_token_balance_fetcher(json_rpc_named_arguments)
+
+      assert :ok == InternalTransaction.run([block_number], json_rpc_named_arguments)
+
+      assert nil == Repo.get(PendingBlockOperation, block_hash)
+
+      # existing participant: untouched
+      assert %Chain.Address{fetched_coin_balance_block_number: participant_block_number} =
+               Repo.get(Chain.Address, participant_hash)
+
+      assert participant_block_number == block_number - 10
+
+      # created contract: code and block number stored even though the row already existed
+      assert %Chain.Address{contract_code: %Chain.Data{}, fetched_coin_balance_block_number: ^block_number} =
+               Repo.get(Chain.Address, created_contract_hash)
+
+      # new participant: inserted, its balance snapshot will be set by the coin balance fetcher
+      {:ok, new_participant_hash} = Chain.string_to_address_hash(new_participant_hash_string)
+
+      assert %Chain.Address{fetched_coin_balance_block_number: nil} = Repo.get(Chain.Address, new_participant_hash)
+
+      # balance fetching is still driven by the coin balance rows written for every participant
+      assert Repo.exists?(
+               from(cb in Chain.Address.CoinBalance,
+                 where: cb.address_hash == ^participant_hash and cb.block_number == ^block_number
+               )
+             )
+
+      assert Repo.exists?(
+               from(cb in Chain.Address.CoinBalance,
+                 where: cb.address_hash == ^new_participant_hash and cb.block_number == ^block_number
+               )
+             )
     end
 
     test "retries fetching by transactions when fetching by block returns incorrect number of top-level calls", %{
