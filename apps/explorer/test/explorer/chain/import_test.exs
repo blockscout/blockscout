@@ -389,7 +389,7 @@ defmodule Explorer.Chain.ImportTest do
       assert %{consensus: true, refetch_needed: true} = Repo.one(Block)
     end
 
-    test "stored blocks are not touched and the heights are requeued if the blocks transaction fails" do
+    test "stored blocks are not touched and nothing is queued if the blocks transaction fails" do
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
 
       on_exit(fn ->
@@ -409,7 +409,7 @@ defmodule Explorer.Chain.ImportTest do
       assert_raise(Postgrex.Error, fn -> Import.all(%{blocks: %{params: conflicting_blocks_params}}) end)
 
       assert [%Block{hash: ^stored_block_hash, consensus: true, refetch_needed: false}] = Repo.all(Block)
-      assert [%MissingBlockRange{from_number: 37, to_number: 37}] = Repo.all(MissingBlockRange)
+      assert [] = Repo.all(MissingBlockRange)
     end
 
     test "inserts a token_balance" do

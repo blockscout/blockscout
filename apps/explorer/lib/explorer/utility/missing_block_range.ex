@@ -366,41 +366,58 @@ defmodule Explorer.Utility.MissingBlockRange do
 
     Repo.transaction(fn ->
       {locked_ranges, _lower_range, _higher_range} = lock_related_ranges(max_number, min_number)
-
-      missing_numbers =
-        min_number..max_number
-        |> Chain.missing_block_number_ranges()
-        |> Enum.flat_map(&Enum.to_list/1)
-        |> MapSet.new()
-
-      Enum.each(locked_ranges, &remove_indexed_numbers(&1, min_number..max_number, missing_numbers))
+      remove_indexed_numbers(locked_ranges, min_number..max_number//1)
     end)
   end
 
-  defp remove_indexed_numbers(range, min_number..max_number//_, missing_numbers) do
-    overlap = max(range.to_number, min_number)..min(range.from_number, max_number)//1
+  defp remove_indexed_numbers([], _range), do: :ok
+
+  defp remove_indexed_numbers(locked_ranges, range) do
+    missing_numbers =
+      range
+      |> Chain.missing_block_number_ranges()
+      |> Enum.flat_map(&Enum.to_list/1)
+      |> MapSet.new()
 
     indexed_ranges =
-      overlap
+      range
       |> Enum.reject(&MapSet.member?(missing_numbers, &1))
       |> numbers_to_ranges()
 
-    if indexed_ranges != [] do
+    remove_from_locked_ranges(locked_ranges, indexed_ranges)
+  end
+
+  defp remove_from_locked_ranges(_locked_ranges, []), do: :ok
+
+  defp remove_from_locked_ranges(locked_ranges, removed_ranges) do
+    previous_numbers = removed_ranges |> Enum.map(& &1.first) |> BlockNumberHelper.previous_block_numbers()
+    next_numbers = removed_ranges |> Enum.map(& &1.last) |> BlockNumberHelper.next_block_numbers()
+
+    Enum.each(locked_ranges, &remove_from_locked_range(&1, removed_ranges, previous_numbers, next_numbers))
+  end
+
+  defp remove_from_locked_range(range, removed_ranges, previous_numbers, next_numbers) do
+    overlapping_ranges = Enum.filter(removed_ranges, &(&1.first <= range.from_number and &1.last >= range.to_number))
+
+    if overlapping_ranges != [] do
       Repo.delete(range)
 
-      inner_bounds =
-        Enum.flat_map(indexed_ranges, fn first..last//_ ->
-          [BlockNumberHelper.previous_block_number(first), BlockNumberHelper.next_block_number(last)]
-        end)
-
-      [range.to_number | inner_bounds]
-      |> Enum.concat([range.from_number])
-      |> Enum.chunk_every(2)
-      |> Enum.filter(fn [lower, upper] -> lower <= upper end)
-      |> Enum.each(fn [lower, upper] ->
+      range
+      |> remaining_parts(overlapping_ranges, previous_numbers, next_numbers)
+      |> Enum.each(fn {lower, upper} ->
         insert_range(%{from_number: upper, to_number: lower, priority: range.priority})
       end)
     end
+  end
+
+  defp remaining_parts(range, overlapping_ranges, previous_numbers, next_numbers) do
+    {parts, last_part_start} =
+      Enum.reduce(overlapping_ranges, {[], range.to_number}, fn first..last//_, {parts, part_start} ->
+        parts = if part_start < first, do: [{part_start, previous_numbers[first]} | parts], else: parts
+        {parts, next_numbers[last]}
+      end)
+
+    Enum.filter([{last_part_start, range.from_number} | parts], fn {lower, upper} -> lower <= upper end)
   end
 
   @doc """

@@ -20,7 +20,6 @@ defmodule Explorer.Chain.Import do
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import.Stage
   alias Explorer.Repo
-  alias Explorer.Utility.MissingBlockRange
 
   require Logger
 
@@ -586,7 +585,7 @@ defmodule Explorer.Chain.Import do
   end
 
   defp handle_failed_import(options, %{blocks: _}), do: handle_partially_imported_blocks(options)
-  defp handle_failed_import(options, _acc_changes), do: requeue_not_imported_blocks(options)
+  defp handle_failed_import(_options, _acc_changes), do: :ok
 
   defp handle_partially_imported_blocks(%{blocks: %{params: blocks_params}} = options) do
     block_numbers = blocks_params |> Enum.map(& &1.number) |> Enum.uniq()
@@ -605,27 +604,6 @@ defmodule Explorer.Chain.Import do
   end
 
   defp handle_partially_imported_blocks(_options), do: :ok
-
-  defp requeue_not_imported_blocks(%{blocks: %{params: blocks_params}} = options) do
-    block_numbers =
-      blocks_params
-      |> Enum.filter(& &1[:consensus])
-      |> Enum.map(& &1.number)
-      |> Enum.uniq()
-
-    if block_numbers != [] do
-      MissingBlockRange.add_ranges_by_block_numbers(block_numbers)
-      Logger.warning("Requeued blocks that failed to import because of error: #{inspect(block_numbers)}")
-    end
-  rescue
-    exception ->
-      Logger.warning("Unable to requeue blocks that failed to import because of error: #{inspect(exception)}")
-
-      Process.sleep(Application.get_env(:indexer, :handle_partially_imported_block_interval) || 1000)
-      requeue_not_imported_blocks(options)
-  end
-
-  defp requeue_not_imported_blocks(_options), do: :ok
 
   @spec timestamps() :: timestamps
   def timestamps do

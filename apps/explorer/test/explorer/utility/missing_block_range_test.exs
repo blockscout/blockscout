@@ -510,6 +510,30 @@ defmodule Explorer.Utility.MissingBlockRangeTest do
       assert [%{from_number: 10, to_number: 6}, %{from_number: 2, to_number: 1}] = sorted_ranges()
     end
 
+    test "keeps the not indexed numbers between the indexed ones" do
+      Repo.insert!(%MissingBlockRange{from_number: 10, to_number: 1, priority: nil})
+
+      insert(:block, number: 2)
+      insert(:block, number: 3)
+      insert(:block, number: 6)
+      insert(:block, number: 7)
+
+      MissingBlockRange.clear_batch_if_indexed([1..10])
+
+      assert [%{from_number: 10, to_number: 8}, %{from_number: 5, to_number: 4}, %{from_number: 1, to_number: 1}] =
+               sorted_ranges()
+    end
+
+    test "clears the numbers at the lower bound of the block ranges" do
+      Repo.insert!(%MissingBlockRange{from_number: 3, to_number: 0, priority: nil})
+
+      Enum.each(0..3, &insert(:block, number: &1))
+
+      MissingBlockRange.clear_batch_if_indexed([0..3])
+
+      assert [] = sorted_ranges()
+    end
+
     test "keeps the priority of the not indexed numbers" do
       Repo.insert!(%MissingBlockRange{from_number: 5, to_number: 1, priority: 1})
 
