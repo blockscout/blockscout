@@ -20,6 +20,7 @@ defmodule Explorer.Chain.Import do
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Import.Stage
   alias Explorer.Repo
+  alias Explorer.Utility.MissingBlockRange
 
   require Logger
 
@@ -497,18 +498,6 @@ defmodule Explorer.Chain.Import do
     runner_to_changes_list
     |> runner_to_changes_list_to_multis(options)
     |> logged_import(options)
-    |> case do
-      {:ok, result} ->
-        {:ok, result}
-
-      error ->
-        handle_partially_imported_blocks(options)
-        error
-    end
-  rescue
-    exception ->
-      handle_partially_imported_blocks(options)
-      reraise exception, __STACKTRACE__
   end
 
   defp logged_import(multis_batches, options) when is_list(multis_batches) and is_map(options) do
@@ -520,11 +509,14 @@ defmodule Explorer.Chain.Import do
   defp import_batch_transactions(multis_batches, options) when is_list(multis_batches) and is_map(options) do
     Enum.reduce_while(multis_batches, {:ok, %{}}, fn multis, {:ok, acc_changes} ->
       multis
-      |> run_parallel_multis(options)
-      |> handle_task_results(acc_changes)
+      |> import_multis_batch(acc_changes, options)
       |> case do
-        {:ok, changes} -> {:cont, {:ok, changes}}
-        error -> {:halt, error}
+        {:ok, changes} ->
+          {:cont, {:ok, changes}}
+
+        error ->
+          handle_failed_import(options, acc_changes)
+          {:halt, error}
       end
     end)
   rescue
@@ -533,6 +525,16 @@ defmodule Explorer.Chain.Import do
         "tcp recv: closed" <> _ -> {:error, :timeout}
         _ -> reraise exception, __STACKTRACE__
       end
+  end
+
+  defp import_multis_batch(multis, acc_changes, options) do
+    multis
+    |> run_parallel_multis(options)
+    |> handle_task_results(acc_changes)
+  rescue
+    exception ->
+      handle_failed_import(options, acc_changes)
+      reraise exception, __STACKTRACE__
   end
 
   defp run_parallel_multis(multis, options) do
@@ -583,6 +585,9 @@ defmodule Explorer.Chain.Import do
     end)
   end
 
+  defp handle_failed_import(options, %{blocks: _}), do: handle_partially_imported_blocks(options)
+  defp handle_failed_import(options, _acc_changes), do: requeue_not_imported_blocks(options)
+
   defp handle_partially_imported_blocks(%{blocks: %{params: blocks_params}} = options) do
     block_numbers = blocks_params |> Enum.map(& &1.number) |> Enum.uniq()
     Block.set_refetch_needed(block_numbers)
@@ -600,6 +605,27 @@ defmodule Explorer.Chain.Import do
   end
 
   defp handle_partially_imported_blocks(_options), do: :ok
+
+  defp requeue_not_imported_blocks(%{blocks: %{params: blocks_params}} = options) do
+    block_numbers =
+      blocks_params
+      |> Enum.filter(& &1[:consensus])
+      |> Enum.map(& &1.number)
+      |> Enum.uniq()
+
+    if block_numbers != [] do
+      MissingBlockRange.add_ranges_by_block_numbers(block_numbers)
+      Logger.warning("Requeued blocks that failed to import because of error: #{inspect(block_numbers)}")
+    end
+  rescue
+    exception ->
+      Logger.warning("Unable to requeue blocks that failed to import because of error: #{inspect(exception)}")
+
+      Process.sleep(Application.get_env(:indexer, :handle_partially_imported_block_interval) || 1000)
+      requeue_not_imported_blocks(options)
+  end
+
+  defp requeue_not_imported_blocks(_options), do: :ok
 
   @spec timestamps() :: timestamps
   def timestamps do
