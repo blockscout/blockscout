@@ -1,5 +1,40 @@
 # Changelog
 
+
+## 11.3.3
+
+### 🐛 Bug Fixes
+
+- Fix internal transactions fetcher test on zksync chain type ([#14894](https://github.com/blockscout/blockscout/issues/14894))
+- Export only supplied coin balances to the multichain balances queue ([#14885](https://github.com/blockscout/blockscout/issues/14885))
+- Stop internal transactions import from upserting existing addresses ([#14890](https://github.com/blockscout/blockscout/issues/14890))
+- Missing blocks clearing on failed import ([#14888](https://github.com/blockscout/blockscout/issues/14888))
+- Exclude non-traceable blocks from coin balance catchup init query ([#14889](https://github.com/blockscout/blockscout/issues/14889))
+- ReindexBlocksWithStaleInternalTransactions migration ([#14884](https://github.com/blockscout/blockscout/issues/14884))
+- Do not move the beacon deposit fetcher cursor forward on reorgs ([#14883](https://github.com/blockscout/blockscout/issues/14883))
+- Handle null nonce/mixHash returned by Nethermind for AuRa blocks ([#14880](https://github.com/blockscout/blockscout/issues/14880))
+- Handle multi-id historical transfers when reverting token instance owner on reorg ([#14879](https://github.com/blockscout/blockscout/issues/14879))
+- Apply a finite timeout to the internal transactions import ([#14864](https://github.com/blockscout/blockscout/issues/14864))
+- Tolerate pending internal transactions at chain head in txlistinternal ([#14866](https://github.com/blockscout/blockscout/issues/14866))
+- Recognize null round errors with epoch suffix in catchup fetcher for Filecoin ([#14859](https://github.com/blockscout/blockscout/issues/14859))
+- Bound pending operations PTO->PBO migration batches by transaction_hash ([#14856](https://github.com/blockscout/blockscout/issues/14856))
+
+### ⚙️ Miscellaneous Tasks
+
+- Add env var to disable transactions count consolidation ([#14877](https://github.com/blockscout/blockscout/issues/14877))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `API_INTERNAL_TRANSACTIONS_PENDING_HEAD_TOLERANCE`      | Number of most recent blocks whose internal transactions may still be pending without API endpoints returning internal transactions marking the response as pending (`status: "2"`), for requests whose range reaches the chain head (no `endblock`, or `endblock` at or above the latest block). Requests with `endblock` below the head, empty results, and requests by `txhash` keep the strict check. Set to `0` to disable the tolerance. Implemented in [#14866](https://github.com/blockscout/blockscout/pull/14866). | Version: v11.3.3\+ <br />Default: `200` <br />Applications: API                                                                                                                                                                                                                                                                                                                 |
+| `INDEXER_INTERNAL_TRANSACTIONS_IMPORT_TIMEOUT`                | DB transaction timeout for internal transactions import. [Time format](/setup/env-variables/backend-env-variables#time-format). Set to `0` to disable the timeout. Implemented in [#14864](https://github.com/blockscout/blockscout/pull/14864).                                                                                                                                                                                                                                                                                 | Version: v11.3.3\+ <br />Default: `4m` <br />Applications: Indexer                                       |
+| `MIGRATION_REINDEX_BLOCKS_WITH_STALE_INTERNAL_TRANSACTIONS_BATCH_SIZE`     | Number of blocks to reindex in the batch. Implemented in [#14884](https://github.com/blockscout/blockscout/pull/14884).                                                                                                                                                                                                                 | Version: v11.3.3\+ <br />Default: `1000` <br />Applications: Indexer          |
+| `MIGRATION_REINDEX_BLOCKS_WITH_STALE_INTERNAL_TRANSACTIONS_CONCURRENCY`     | Number of parallel reindexing block batches processing. Implemented in [#14884](https://github.com/blockscout/blockscout/pull/14884).                                                                                                                                                                                                                 | Version: v11.3.3\+ <br />Default: `1` <br />Applications: Indexer          |
+| `MIGRATION_REINDEX_BLOCKS_WITH_STALE_INTERNAL_TRANSACTIONS_TIMEOUT`     | Timeout between reindexing block batches processing. Implemented in [#14884](https://github.com/blockscout/blockscout/pull/14884).                                                                                                                                                                                                              | Version: v11.3.3\+ <br />Default: `0s` <br />Applications: Indexer          |
+| `CACHE_TXS_COUNT_CONSOLIDATION_DISABLED`                      | If `true`, disables exact total transaction count consolidation and uses the PostgreSQL `pg_class` estimate directly. Implemented in [#14877](https://github.com/blockscout/blockscout/pull/14877).                                                                                                                                                                                     | Version: v11.3.3\+ <br />Default: `false` <br />Applications: API         |
+
+
 ## 11.3.2
 
 ### 🐛 Bug Fixes
