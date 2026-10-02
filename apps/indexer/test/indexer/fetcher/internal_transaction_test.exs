@@ -496,9 +496,20 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
 
       assert participant_block_number == block_number - 10
 
-      # created contract: code and block number stored even though the row already existed
-      assert %Chain.Address{contract_code: %Chain.Data{}, fetched_coin_balance_block_number: ^block_number} =
-               Repo.get(Chain.Address, created_contract_hash)
+      created_contract = Repo.get(Chain.Address, created_contract_hash)
+
+      if elem(@chain_identity, 0) == :zksync do
+        # zksync traces carry no created contract code (`Indexer.Transform.Addresses` does not
+        # extract it there), so the created contract is a plain participant: untouched as well
+        assert %Chain.Address{contract_code: nil, fetched_coin_balance_block_number: created_contract_block_number} =
+                 created_contract
+
+        assert created_contract_block_number == block_number - 10
+      else
+        # created contract: code and block number stored even though the row already existed
+        assert %Chain.Address{contract_code: %Chain.Data{}, fetched_coin_balance_block_number: ^block_number} =
+                 created_contract
+      end
 
       # new participant: inserted, its balance snapshot will be set by the coin balance fetcher
       {:ok, new_participant_hash} = Chain.string_to_address_hash(new_participant_hash_string)
