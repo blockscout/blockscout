@@ -703,6 +703,71 @@ defmodule Indexer.Block.Catchup.FetcherTest do
       assert %{from_number: 1, to_number: 0} = Repo.one(MissingBlockRange)
     end
 
+    if Application.compile_env(:explorer, :chain_type) == :filecoin do
+      test "records null rounds reported with and without the epoch suffix and clears them from missing ranges", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        Application.put_env(:indexer, Indexer.Block.Catchup.Fetcher, batch_size: 2, concurrency: 10)
+        Application.put_env(:indexer, :block_ranges, "0..1")
+        start_supervised!({Task.Supervisor, name: Indexer.Block.Catchup.TaskSupervisor})
+        MissingRangesCollector.start_link([])
+
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, 2, fn
+          [
+            %{
+              id: id_1,
+              jsonrpc: "2.0",
+              method: "eth_getBlockByNumber",
+              params: ["0x1", true]
+            },
+            %{
+              id: id_2,
+              jsonrpc: "2.0",
+              method: "eth_getBlockByNumber",
+              params: ["0x0", true]
+            }
+          ],
+          _options ->
+            {:ok,
+             [
+               # Newer Lotus: typed error with the epoch appended to the message
+               %{
+                 id: id_1,
+                 jsonrpc: "2.0",
+                 error: %{code: 12, message: "requested epoch was a null round (1)"}
+               },
+               # Older Lotus: bare message
+               %{
+                 id: id_2,
+                 jsonrpc: "2.0",
+                 error: %{message: "requested epoch was a null round"}
+               }
+             ]}
+
+          # No blocks were fetched, so the beneficiaries request is an empty batch
+          [], _options ->
+            {:ok, []}
+        end)
+
+        Process.sleep(50)
+
+        assert %{first_block_number: 1, last_block_number: 0, missing_block_count: 2, shrunk: false} =
+                 Fetcher.task(%Fetcher{
+                   block_fetcher: %Block.Fetcher{
+                     callback_module: Fetcher,
+                     json_rpc_named_arguments: json_rpc_named_arguments,
+                     task_supervisor: Indexer.Block.Catchup.TaskSupervisor
+                   }
+                 })
+
+        Process.sleep(1000)
+
+        assert [0, 1] == Explorer.Chain.NullRoundHeight |> Repo.all() |> Enum.map(& &1.height) |> Enum.sort()
+        assert [] == Repo.all(MissingBlockRange)
+      end
+    end
+
     if Application.compile_env(:explorer, :chain_type) == :stability do
       test "update stability validator counter", %{
         json_rpc_named_arguments: json_rpc_named_arguments

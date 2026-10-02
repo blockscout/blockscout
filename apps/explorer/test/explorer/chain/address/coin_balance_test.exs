@@ -482,6 +482,56 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       assert {:ok, []} = CoinBalance.stream_unfetched_balances([], &[&1 | &2])
     end
 
+    test "does not return balances at block numbers below TRACE_FIRST_BLOCK" do
+      original_config = Application.get_env(:indexer, :trace_block_ranges)
+      on_exit(fn -> Application.put_env(:indexer, :trace_block_ranges, original_config) end)
+
+      %Address{hash: genesis_address_hash} = insert(:address)
+      %Address{hash: traceable_address_hash} = insert(:address)
+      insert(:unfetched_balance, address_hash: genesis_address_hash, block_number: 0)
+      insert(:unfetched_balance, address_hash: traceable_address_hash, block_number: 1)
+
+      Application.put_env(:indexer, :trace_block_ranges, "1..latest")
+
+      assert {:ok, [%{address_hash: ^traceable_address_hash, block_number: 1}]} =
+               CoinBalance.stream_unfetched_balances([], &[&1 | &2])
+
+      assert {:ok, [%{address_hash: ^traceable_address_hash, block_number: 1}]} =
+               CoinBalance.stream_unfetched_balances([], &[&1 | &2], true)
+    end
+
+    test "returns only balances within TRACE_BLOCK_RANGES" do
+      original_config = Application.get_env(:indexer, :trace_block_ranges)
+      on_exit(fn -> Application.put_env(:indexer, :trace_block_ranges, original_config) end)
+
+      %Address{hash: address_hash} = insert(:address)
+
+      for block_number <- [0, 5, 10, 15, 20, 25, 30] do
+        insert(:unfetched_balance, address_hash: address_hash, block_number: block_number)
+      end
+
+      Application.put_env(:indexer, :trace_block_ranges, "5..10,20..latest")
+
+      {:ok, balance_fields_list} = CoinBalance.stream_unfetched_balances([], &[&1 | &2])
+
+      assert balance_fields_list |> Enum.map(& &1.block_number) |> Enum.sort() == [5, 10, 20, 25, 30]
+    end
+
+    test "returns all unfetched balances when trace ranges are not configured" do
+      original_config = Application.get_env(:indexer, :trace_block_ranges)
+      on_exit(fn -> Application.put_env(:indexer, :trace_block_ranges, original_config) end)
+
+      %Address{hash: address_hash} = insert(:address)
+      insert(:unfetched_balance, address_hash: address_hash, block_number: 0)
+      insert(:unfetched_balance, address_hash: address_hash, block_number: 1)
+
+      Application.put_env(:indexer, :trace_block_ranges, "0..latest")
+
+      {:ok, balance_fields_list} = CoinBalance.stream_unfetched_balances([], &[&1 | &2])
+
+      assert balance_fields_list |> Enum.map(& &1.block_number) |> Enum.sort() == [0, 1]
+    end
+
     test "with `t:Explorer.Chain.Address.CoinBalance.t/0` with value_fetched_at with same `address_hash` and `block_number` " <>
            "does not return `t:Explorer.Chain.Transaction.t/0` `from_address_hash`" do
       %Address{hash: from_address_hash} = from_address = insert(:address)

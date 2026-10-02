@@ -84,6 +84,7 @@ for migrator <- [
       Explorer.Migrator.UnescapeAmpersandsInTokens,
       Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources,
       Explorer.Migrator.ReindexBlocksWithUncatalogedTokenTransfers,
+      Explorer.Migrator.ReindexBlocksWithStaleInternalTransactions,
       Explorer.Migrator.DeleteZeroValueInternalTransactions,
       Explorer.Migrator.EmptyInternalTransactionsData,
       Explorer.Migrator.FillInternalTransactionsAddressIds,

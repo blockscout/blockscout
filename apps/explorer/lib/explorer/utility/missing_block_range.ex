@@ -7,6 +7,7 @@ defmodule Explorer.Utility.MissingBlockRange do
   use Explorer.Schema
 
   alias EthereumJSONRPC.Utility.RangesHelper
+  alias Explorer.Chain
   alias Explorer.Chain.{Block, BlockNumberHelper}
   alias Explorer.Repo
 
@@ -329,6 +330,94 @@ defmodule Explorer.Utility.MissingBlockRange do
 
   def clear_batch(batch) do
     Enum.map(batch, &delete_range/1)
+  end
+
+  @doc """
+    Removes the numbers of the given ranges that are indexed, i.e. have a consensus
+    block that is not marked with `refetch_needed`, and keeps the rest of them.
+
+    Must be used instead of `clear_batch/1` after a successful import: a block can be
+    invalidated while its import is still in flight (e.g. a concurrent import removes
+    its consensus, or it is marked with `refetch_needed`), and the invalidating side
+    adds its number to the missing ranges. Removing such a number unconditionally
+    leaves the block unindexed until `Indexer.Block.Catchup.MissingRangesCollector`
+    passes over it again.
+
+    Only the ranges locked before the blocks are checked are modified, and the ranges
+    are not queried again after the check. So a range added concurrently by
+    `save_range/2` is never removed by mistake: if it was committed before the lock,
+    it is locked and its blocks are checked after that; otherwise it either waits for
+    this transaction (when it overlaps a locked range) or is a new row left intact.
+
+    ## Parameters
+    - `batch`: A list of `Range` structs to clear
+
+    ## Returns
+    - A list of transaction results, one per range
+  """
+  @spec clear_batch_if_indexed([Range.t()]) :: [{:ok, :ok} | {:error, any()}]
+  def clear_batch_if_indexed(batch) do
+    Enum.map(batch, &delete_range_if_indexed/1)
+  end
+
+  defp delete_range_if_indexed(from..to//_) do
+    min_number = min(from, to)
+    max_number = max(from, to)
+
+    Repo.transaction(fn ->
+      {locked_ranges, _lower_range, _higher_range} = lock_related_ranges(max_number, min_number)
+      remove_indexed_numbers(locked_ranges, min_number..max_number//1)
+    end)
+  end
+
+  defp remove_indexed_numbers([], _range), do: :ok
+
+  defp remove_indexed_numbers(locked_ranges, range) do
+    missing_numbers =
+      range
+      |> Chain.missing_block_number_ranges()
+      |> Enum.flat_map(&Enum.to_list/1)
+      |> MapSet.new()
+
+    indexed_ranges =
+      range
+      |> Enum.reject(&MapSet.member?(missing_numbers, &1))
+      |> numbers_to_ranges()
+
+    remove_from_locked_ranges(locked_ranges, indexed_ranges)
+  end
+
+  defp remove_from_locked_ranges(_locked_ranges, []), do: :ok
+
+  defp remove_from_locked_ranges(locked_ranges, removed_ranges) do
+    previous_numbers = removed_ranges |> Enum.map(& &1.first) |> BlockNumberHelper.previous_block_numbers()
+    next_numbers = removed_ranges |> Enum.map(& &1.last) |> BlockNumberHelper.next_block_numbers()
+
+    Enum.each(locked_ranges, &remove_from_locked_range(&1, removed_ranges, previous_numbers, next_numbers))
+  end
+
+  defp remove_from_locked_range(range, removed_ranges, previous_numbers, next_numbers) do
+    overlapping_ranges = Enum.filter(removed_ranges, &(&1.first <= range.from_number and &1.last >= range.to_number))
+
+    if overlapping_ranges != [] do
+      Repo.delete(range)
+
+      range
+      |> remaining_parts(overlapping_ranges, previous_numbers, next_numbers)
+      |> Enum.each(fn {lower, upper} ->
+        insert_range(%{from_number: upper, to_number: lower, priority: range.priority})
+      end)
+    end
+  end
+
+  defp remaining_parts(range, overlapping_ranges, previous_numbers, next_numbers) do
+    {parts, last_part_start} =
+      Enum.reduce(overlapping_ranges, {[], range.to_number}, fn first..last//_, {parts, part_start} ->
+        parts = if part_start < first, do: [{part_start, previous_numbers[first]} | parts], else: parts
+        {parts, next_numbers[last]}
+      end)
+
+    Enum.filter([{last_part_start, range.from_number} | parts], fn {lower, upper} -> lower <= upper end)
   end
 
   @doc """

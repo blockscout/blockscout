@@ -566,6 +566,10 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearch do
       - `:blocks` - List of block data.
       - `:transactions` - List of transaction data.
       - `:address_current_token_balances` - List of address token balance data.
+      - `:address_coin_balances` (optional) - List of `%{address_hash: Hash.Address.t(), value: Wei.t()}`
+        coin balances to export. When the key is absent, a current coin balance row is derived from
+        every entry of `:addresses`, so callers whose addresses were merely touched (and whose
+        balances did not change) should pass the list explicitly, possibly empty.
 
   ## Returns
 

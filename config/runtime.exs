@@ -249,6 +249,10 @@ config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
 
 config :block_scout_web, BlockScoutWeb.API.V2, enabled: ConfigHelper.parse_bool_env_var("API_V2_ENABLED", "true")
 
+config :block_scout_web, BlockScoutWeb.API.RPC.AddressController,
+  internal_transactions_pending_head_tolerance:
+    ConfigHelper.parse_integer_env_var("API_INTERNAL_TRANSACTIONS_PENDING_HEAD_TOLERANCE", 200, min: 0)
+
 config :block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
   service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_TRANSACTION_INTERPRETATION_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_TRANSACTION_INTERPRETATION_ENABLED")
@@ -419,7 +423,8 @@ config :explorer, Explorer.Chain.Cache.Counters.AddressesCount,
   update_interval_in_milliseconds: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_COUNT_PERIOD", "30m")
 
 config :explorer, Explorer.Chain.Cache.Counters.TransactionsCount,
-  global_ttl: ConfigHelper.parse_time_env_var("CACHE_TXS_COUNT_PERIOD", "2h")
+  global_ttl: ConfigHelper.parse_time_env_var("CACHE_TXS_COUNT_PERIOD", "2h"),
+  enable_consolidation: !ConfigHelper.parse_bool_env_var("CACHE_TXS_COUNT_CONSOLIDATION_DISABLED")
 
 config :explorer, Explorer.Chain.Cache.Counters.PendingBlockOperationCount,
   global_ttl: ConfigHelper.parse_time_env_var("CACHE_PENDING_OPERATIONS_COUNT_PERIOD", "5m")
@@ -917,6 +922,13 @@ config :explorer, Explorer.Migrator.ReindexBlocksWithUncatalogedTokenTransfers,
   concurrency:
     ConfigHelper.parse_integer_env_var("MIGRATION_REINDEX_BLOCKS_WITH_UNCATALOGED_TOKEN_TRANSFERS_CONCURRENCY", 1),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_REINDEX_BLOCKS_WITH_UNCATALOGED_TOKEN_TRANSFERS_TIMEOUT", "0s")
+
+config :explorer, Explorer.Migrator.ReindexBlocksWithStaleInternalTransactions,
+  batch_size:
+    ConfigHelper.parse_integer_env_var("MIGRATION_REINDEX_BLOCKS_WITH_STALE_INTERNAL_TRANSACTIONS_BATCH_SIZE", 1000),
+  concurrency:
+    ConfigHelper.parse_integer_env_var("MIGRATION_REINDEX_BLOCKS_WITH_STALE_INTERNAL_TRANSACTIONS_CONCURRENCY", 1),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_REINDEX_BLOCKS_WITH_STALE_INTERNAL_TRANSACTIONS_TIMEOUT", "0s")
 
 config :explorer, Explorer.Migrator.RestoreOmittedWETHTransfers,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_RESTORE_OMITTED_WETH_TOKEN_TRANSFERS_CONCURRENCY", 5),
@@ -1488,6 +1500,7 @@ config :indexer, Indexer.Fetcher.TokenInstance.SanitizeERC721,
 config :indexer, Indexer.Fetcher.InternalTransaction,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_BATCH_SIZE", 10),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_CONCURRENCY", 4),
+  import_timeout: ConfigHelper.parse_time_env_var("INDEXER_INTERNAL_TRANSACTIONS_IMPORT_TIMEOUT", "4m", min: 0),
   indexing_finished_threshold:
     ConfigHelper.parse_integer_env_var("API_INTERNAL_TRANSACTIONS_INDEXING_FINISHED_THRESHOLD", 1_000)
 

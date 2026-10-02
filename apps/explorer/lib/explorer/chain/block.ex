@@ -791,9 +791,35 @@ defmodule Explorer.Chain.Block do
 
   @spec set_refetch_needed(integer | [integer]) :: :ok
   def set_refetch_needed(block_numbers) when is_list(block_numbers) do
-    query =
-      from(block in Block,
-        where: block.number in ^block_numbers,
+    Block
+    |> where([block], block.number in ^block_numbers)
+    |> set_refetch_needed_by_query()
+
+    :ok
+  end
+
+  def set_refetch_needed(block_number), do: set_refetch_needed([block_number])
+
+  @doc """
+  Marks the consensus blocks with the given numbers, except for the blocks with the
+  given hashes, with `refetch_needed` and adds their numbers to the missing block ranges.
+
+  Used when an import of the blocks with these numbers and hashes has failed before
+  storing them: the consensus blocks stored at these numbers may belong to a stale fork.
+
+  ## Returns
+  - The numbers of the marked blocks
+  """
+  @spec set_refetch_needed_for_other_consensus_blocks([integer], [Hash.Full.t() | String.t()]) :: [integer]
+  def set_refetch_needed_for_other_consensus_blocks(block_numbers, hashes) do
+    Block
+    |> where([block], block.number in ^block_numbers and block.consensus and block.hash not in ^hashes)
+    |> set_refetch_needed_by_query()
+  end
+
+  defp set_refetch_needed_by_query(query) do
+    locked_query =
+      from(block in query,
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: block.hash],
         lock: "FOR NO KEY UPDATE"
@@ -801,16 +827,14 @@ defmodule Explorer.Chain.Block do
 
     {_count, updated_numbers} =
       Repo.update_all(
-        from(b in Block, join: s in subquery(query), on: b.hash == s.hash, select: b.number),
+        from(b in Block, join: s in subquery(locked_query), on: b.hash == s.hash, select: b.number),
         set: [refetch_needed: true, updated_at: Timex.now()]
       )
 
     MissingBlockRange.add_ranges_by_block_numbers(updated_numbers)
 
-    :ok
+    updated_numbers
   end
-
-  def set_refetch_needed(block_number), do: set_refetch_needed([block_number])
 
   # Re-enqueues the blocks, their transactions, and the addresses they touched for export to
   # the Multichain Service database.

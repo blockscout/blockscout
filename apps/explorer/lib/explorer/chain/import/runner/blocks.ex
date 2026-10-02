@@ -82,22 +82,33 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     # Enforce ShareLocks tables order (see docs: sharelocks.md)
     run_func = fn repo ->
-      {:ok, nonconsensus_items} = process_blocks_consensus(changes_list, repo, insert_options)
+      {:ok, %{nonconsensus_blocks: nonconsensus_items} = consensus_result} =
+        lose_consensus(repo, changes_list, insert_options)
 
       {:ok,
-       RangesHelper.filter_by_height_range(nonconsensus_items, fn {number, _hash} ->
-         RangesHelper.traceable_block_number?(number)
-       end)}
+       %{
+         consensus_result
+         | nonconsensus_blocks:
+             RangesHelper.filter_by_height_range(nonconsensus_items, fn {number, _hash} ->
+               RangesHelper.traceable_block_number?(number)
+             end)
+       }}
     end
 
     multi
-    |> Multi.run(:lose_consensus, fn repo, _ ->
+    |> Multi.run(:blocks_consensus, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
         fn -> run_func.(repo) end,
         :address_referencing,
         :blocks,
         :lose_consensus
       )
+    end)
+    # The beacon deposit fetcher is notified by `Explorer.Chain.Import.all/1`
+    # from `:blocks_consensus` once the transaction has committed, see
+    # `notify_beacon_deposit_fetcher/1`.
+    |> Multi.run(:lose_consensus, fn _repo, %{blocks_consensus: %{nonconsensus_blocks: nonconsensus_blocks}} ->
+      {:ok, nonconsensus_blocks}
     end)
     |> Multi.run(:counters_refetched_block_numbers, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
@@ -728,8 +739,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   # - `_opts`: The options containing timeout and `updated_at` timestamp for db operations.
   #
   # ## Returns
-  # - `{:ok, removed_consensus_blocks}` tuple with the list of `{block_number, block_hash}`
-  #   tuples for the blocks that lost consensus.
+  # - `{:ok, %{nonconsensus_blocks: [{block_number, block_hash}], beacon_deposit_reorg_block_number: number | nil}}`
+  #   where `nonconsensus_blocks` lists every block marked non-consensus here (including
+  #   blocks that already were), and `beacon_deposit_reorg_block_number` is the lowest
+  #   block number near the chain head that actually lost consensus, see
+  #   `notify_beacon_deposit_fetcher/1`.
   # - `{:error, %{exception: postgrex_error}}` in case of database error.
   defp lose_consensus(
          repo,
@@ -748,13 +762,17 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         or_where: block.number in ^consensus_block_numbers,
         # we also need to acquire blocks that will be upserted here, for ordering
         or_where: block.hash in ^hashes,
-        select: %{hash: block.hash, number: block.number},
+        select: %{hash: block.hash, number: block.number, consensus: block.consensus},
         # Enforce Block ShareLocks order (see docs: sharelocks.md)
         order_by: [asc: block.hash],
         lock: "FOR NO KEY UPDATE"
       )
 
-    {_, removed_consensus_blocks} =
+    # `s.consensus` is read by the locked subquery before the update, so it
+    # tells whether the block actually lost consensus here or was already
+    # non-consensus (e.g. a fork block re-touched by a later import of its
+    # number).
+    {_, removed_consensus_blocks_with_previous_consensus} =
       repo.update_all(
         from(
           block in Block,
@@ -762,33 +780,37 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           on: block.hash == s.hash,
           # we don't want to remove consensus from blocks that will be upserted
           where: block.hash not in ^hashes,
-          select: {block.number, block.hash}
+          select: {block.number, block.hash, s.consensus}
         ),
         [set: [consensus: false, updated_at: updated_at]],
         timeout: timeout
       )
 
+    removed_consensus_blocks =
+      Enum.map(removed_consensus_blocks_with_previous_consensus, fn {number, hash, _previous_consensus} ->
+        {number, hash}
+      end)
+
     removed_consensus_block_numbers =
       removed_consensus_blocks
       |> Enum.map(fn {number, _hash} -> number end)
 
-    maximum_block_number = BlockNumber.get_max()
-
-    minimum_recent_block_number =
-      removed_consensus_block_numbers
-      |> Enum.filter(fn n -> n >= maximum_block_number - 64 end)
-      |> Enum.min(fn -> nil end)
-
-    if minimum_recent_block_number do
-      GenServer.cast(Indexer.Fetcher.Beacon.Deposit, {:lost_consensus, minimum_recent_block_number})
-    end
+    beacon_deposit_reorg_block_number =
+      removed_consensus_blocks_with_previous_consensus
+      |> Enum.filter(fn {_number, _hash, previous_consensus} -> previous_consensus end)
+      |> Enum.map(fn {number, _hash, _previous_consensus} -> number end)
+      |> recent_block_number()
 
     if Enum.empty?(removed_consensus_blocks) do
       removed_consensus_block_numbers
       |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
       |> MissingBlockRange.add_ranges_by_block_numbers()
 
-      {:ok, removed_consensus_blocks}
+      {:ok,
+       %{
+         nonconsensus_blocks: removed_consensus_blocks,
+         beacon_deposit_reorg_block_number: beacon_deposit_reorg_block_number
+       }}
     else
       repo.update_all(
         from(
@@ -861,18 +883,56 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
       |> MissingBlockRange.add_ranges_by_block_numbers()
 
-      {:ok, removed_consensus_blocks}
+      {:ok,
+       %{
+         nonconsensus_blocks: removed_consensus_blocks,
+         beacon_deposit_reorg_block_number: beacon_deposit_reorg_block_number
+       }}
     end
   rescue
     postgrex_error in Postgrex.Error ->
       {:error, %{exception: postgrex_error}}
   end
 
+  # The lowest of the given block numbers that lies within the reorg depth the
+  # beacon deposit fetcher cares about (64 blocks below the chain head), or
+  # `nil` when there is none.
+  defp recent_block_number([]), do: nil
+
+  defp recent_block_number(block_numbers) do
+    maximum_block_number = BlockNumber.get_max()
+
+    block_numbers
+    |> Enum.filter(fn n -> n >= maximum_block_number - 64 end)
+    |> Enum.min(fn -> nil end)
+  end
+
+  @doc """
+    Notifies the beacon deposit fetcher that blocks lost consensus, based on the
+    `:blocks_consensus` result of `run/3`.
+
+    Must be called only after the import transaction has committed: the
+    fetcher reacts by deleting deposits above the reported block number and
+    rewinding its cursor, which would be wrong if the import was rolled back.
+    Does nothing when no block near the chain head actually lost consensus.
+  """
+  @spec notify_beacon_deposit_fetcher(
+          %{:beacon_deposit_reorg_block_number => non_neg_integer() | nil, optional(atom()) => any()}
+          | nil
+        ) :: :ok
+  def notify_beacon_deposit_fetcher(%{beacon_deposit_reorg_block_number: block_number}) when is_integer(block_number) do
+    GenServer.cast(Indexer.Fetcher.Beacon.Deposit, {:lost_consensus, block_number})
+  end
+
+  def notify_beacon_deposit_fetcher(_), do: :ok
+
   @doc """
     Processes consensus for blocks that failed to import completely.
 
     This function handles the consistency updates needed when a block import fails,
-    ensuring that the chain's consensus state remains valid.
+    ensuring that the chain's consensus state remains valid. It runs outside of
+    the import transaction, so the beacon deposit fetcher is notified right away
+    when a block near the chain head lost consensus.
 
     ## Parameters
     - `blocks_changes`: List of block changes to process
@@ -891,7 +951,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           timestamps: %{updated_at: DateTime.utc_now()}
         }
 
-    lose_consensus(repo, blocks_changes, opts)
+    with {:ok, %{nonconsensus_blocks: nonconsensus_blocks} = consensus_result} <-
+           lose_consensus(repo, blocks_changes, opts) do
+      notify_beacon_deposit_fetcher(consensus_result)
+      {:ok, nonconsensus_blocks}
+    end
   end
 
   defp delete_address_coin_balances(_repo, [], _options), do: {:ok, []}
@@ -1205,21 +1269,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       end)
 
     non_consensus_block_numbers = token_transfers |> Enum.map(fn tt -> tt.block_number end) |> Enum.uniq()
+    forked_token_ids = token_transfers |> Enum.map(fn tt -> tt.token_id end) |> Enum.uniq()
 
     filtered_query = TokenTransfer.only_consensus_transfers_query()
 
-    base_query =
-      from(token_transfer in subquery(filtered_query),
-        select: %{
-          token_contract_address_hash: token_transfer.token_contract_address_hash,
-          token_id: fragment("(?)[1]", token_transfer.token_ids),
-          block_number: max(token_transfer.block_number)
-        },
-        group_by: [token_transfer.token_contract_address_hash, fragment("(?)[1]", token_transfer.token_ids)]
-      )
-
-    historical_token_transfers_query =
-      Enum.reduce(token_transfers, base_query, fn tt, acc ->
+    matching_token_transfers_query =
+      Enum.reduce(token_transfers, subquery(filtered_query), fn tt, acc ->
         from(token_transfer in acc,
           or_where:
             token_transfer.token_contract_address_hash == ^tt.token_contract_address_hash and
@@ -1229,6 +1284,23 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         )
       end)
 
+    # A historical transfer may carry several token ids (e.g. an ERC-1155 batch
+    # transfer emitted by the same contract), so `token_ids` is unnested to find
+    # the latest block per forked token id instead of relying on the first
+    # element of the array.
+    historical_token_transfers_query =
+      from(token_transfer in subquery(matching_token_transfers_query),
+        inner_join: unnested in fragment("LATERAL (SELECT unnest(?) AS token_id)", token_transfer.token_ids),
+        on: true,
+        where: fragment("? = ANY(?)", unnested.token_id, type(^forked_token_ids, {:array, :decimal})),
+        select: %{
+          token_contract_address_hash: token_transfer.token_contract_address_hash,
+          token_id: fragment("?::numeric", unnested.token_id),
+          block_number: max(token_transfer.block_number)
+        },
+        group_by: [token_transfer.token_contract_address_hash, unnested.token_id]
+      )
+
     refs_to_token_transfers = refs_to_token_transfers_query(historical_token_transfers_query, filtered_query)
 
     derived_token_transfers_query = derived_token_transfers_query(refs_to_token_transfers, filtered_query)
@@ -1237,27 +1309,33 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       derived_token_transfers_query
       |> repo.all(timeout: options[:timeout])
       |> Enum.reduce(changes_initial, fn tt, acc ->
-        token_id = List.first(tt.token_ids)
-        current_key = {tt.token_contract_address_hash, token_id}
+        current_key = {tt.token_contract_address_hash, tt.token_id}
 
-        params = %{
-          token_contract_address_hash: tt.token_contract_address_hash,
-          token_id: token_id,
-          owner_address_hash: tt.to_address_hash,
-          owner_updated_at_block: tt.block_number,
-          owner_updated_at_log_index: tt.log_index
-        }
+        case acc do
+          %{^current_key => current} ->
+            params = %{
+              token_contract_address_hash: tt.token_contract_address_hash,
+              token_id: tt.token_id,
+              owner_address_hash: tt.to_address_hash,
+              owner_updated_at_block: tt.block_number,
+              owner_updated_at_log_index: tt.log_index
+            }
 
-        Map.put(
-          acc,
-          current_key,
-          Enum.max_by([acc[current_key], params], fn %{
-                                                       owner_updated_at_block: block_number,
-                                                       owner_updated_at_log_index: log_index
-                                                     } ->
-            {block_number, log_index}
-          end)
-        )
+            Map.put(
+              acc,
+              current_key,
+              # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+              Enum.max_by([current, params], fn %{
+                                                  owner_updated_at_block: block_number,
+                                                  owner_updated_at_log_index: log_index
+                                                } ->
+                {block_number, log_index}
+              end)
+            )
+
+          _ ->
+            acc
+        end
       end)
       |> Map.values()
 
@@ -1338,7 +1416,17 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   defp derived_token_transfers_query(refs_to_token_transfers, filtered_query) do
     from(tt in filtered_query,
       inner_join: tt_1 in subquery(refs_to_token_transfers),
-      on: tt_1.log_index == tt.log_index and tt_1.block_number == tt.block_number
+      on:
+        tt_1.log_index == tt.log_index and tt_1.block_number == tt.block_number and
+          tt_1.token_contract_address_hash == tt.token_contract_address_hash and
+          fragment("? @> ARRAY[?::decimal]", tt.token_ids, tt_1.token_id),
+      select: %{
+        token_contract_address_hash: tt.token_contract_address_hash,
+        token_id: tt_1.token_id,
+        to_address_hash: tt.to_address_hash,
+        block_number: tt.block_number,
+        log_index: tt.log_index
+      }
     )
   end
 

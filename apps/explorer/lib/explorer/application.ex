@@ -262,6 +262,7 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.UnescapeAmpersandsInTokens, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.ReindexBlocksWithMissingTransactions, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.ReindexBlocksWithUncatalogedTokenTransfers, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.ReindexBlocksWithStaleInternalTransactions, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeDuplicateSmartContractAdditionalSources, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.DeleteZeroValueInternalTransactions, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.EmptyInternalTransactionsData, :indexer),
