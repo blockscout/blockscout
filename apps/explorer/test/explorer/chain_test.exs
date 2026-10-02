@@ -1583,6 +1583,58 @@ defmodule Explorer.ChainTest do
       # token balance value has been updated
       assert token_balance_export_item.value == %Explorer.Chain.Wei{value: Decimal.new(500)}
     end
+
+    test "populates balances multichain export queue only with coin balances supplied by the import, if the multichain service is enabled" do
+      Supervisor.terminate_child(Explorer.Supervisor, ChainId.child_id())
+      Supervisor.restart_child(Explorer.Supervisor, ChainId.child_id())
+      multichain_configuration = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.MultichainSearch, multichain_configuration)
+      end)
+
+      bypass = Bypass.open()
+
+      Application.put_env(
+        :explorer,
+        Explorer.MicroserviceInterfaces.MultichainSearch,
+        Keyword.merge(multichain_configuration || [],
+          service_url: "http://localhost:#{bypass.port}",
+          addresses_chunk_size: 7_000
+        )
+      )
+
+      %Address{hash: address_hash} =
+        insert(:address, fetched_coin_balance: Decimal.new(100), fetched_coin_balance_block_number: 10)
+
+      address_hash_string = to_string(address_hash)
+
+      TestHelper.get_chain_id_mock()
+
+      # An import that only touches the address (as internal transactions or token transfers
+      # imports do) leaves its balance unchanged and must not re-enqueue it
+      {:ok, %{addresses: [%Address{hash: ^address_hash}]}} =
+        Chain.import(%{
+          addresses: %{params: [%{hash: address_hash_string, fetched_coin_balance_block_number: 11}]}
+        })
+
+      assert Repo.aggregate(BalancesExportQueue, :count, :id) == 0
+
+      # An import that supplies the current balance is exported with the stored value
+      {:ok, %{addresses: [%Address{hash: ^address_hash}]}} =
+        Chain.import(%{
+          addresses: %{
+            params: [
+              %{hash: address_hash_string, fetched_coin_balance: 250, fetched_coin_balance_block_number: 12}
+            ]
+          }
+        })
+
+      assert [%BalancesExportQueue{address_hash: ^address_hash, value: %Wei{value: value}}] =
+               Repo.all(BalancesExportQueue)
+
+      assert Decimal.equal?(value, 250)
+    end
   end
 
   describe "list_blocks/2" do
