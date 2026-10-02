@@ -397,9 +397,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
     internal_transactions_params_marked = mark_failed_transactions(internal_transactions_params)
 
     addresses_params =
-      Addresses.extract_addresses(%{
-        internal_transactions: internal_transactions_params_marked
-      })
+      %{internal_transactions: internal_transactions_params_marked}
+      |> Addresses.extract_addresses()
+      |> drop_block_number_from_participant_addresses()
 
     address_coin_balances_params_set =
       AddressCoinBalances.params_set(%{internal_transactions_params: internal_transactions_params_marked})
@@ -477,6 +477,21 @@ defmodule Indexer.Fetcher.InternalTransaction do
         # re-queue the de-duped entries
         {:retry, transactions_params_or_unique_numbers}
     end
+  end
+
+  # Internal transactions only reference their participants, they carry no balances. Bumping
+  # `fetched_coin_balance_block_number` for every touched address made the `addresses` import
+  # upsert (and row-lock) the same hot rows from every concurrent batch, serializing all importers
+  # on them. Without the block number the `Addresses` runner's pre-filter skips existing
+  # participants altogether, so only genuinely new addresses are inserted. Created contracts keep
+  # it because their `contract_code` must land on the row even when the address already exists
+  # (e.g. pre-funded CREATE2 wallets). Balance fetching is still driven by the
+  # `address_coin_balances` rows this import writes for every participant.
+  defp drop_block_number_from_participant_addresses(addresses_params) do
+    Enum.map(addresses_params, fn
+      %{contract_code: _} = created_contract_params -> created_contract_params
+      participant_params -> Map.delete(participant_params, :fetched_coin_balance_block_number)
+    end)
   end
 
   defp mark_failed_transactions(internal_transactions_params) do
