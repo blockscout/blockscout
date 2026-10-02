@@ -89,7 +89,7 @@ defmodule Explorer.Mixfile do
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       {:libcluster, "~> 3.5"},
       # Log errors and application output to separate files
-      {:logger_file_backend, "~> 0.0.10"},
+      {:logger_file_backend, "~> 0.1.1"},
       {:logger_json, "~> 7.0"},
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
