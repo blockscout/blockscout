@@ -40,6 +40,14 @@
     "bypass_token_scope": "token_instance_refetch_metadata",
     "isolate_rate_limit?": true
   },
+  "api/v2/tokens/:param/refetch-metadata": {
+    "recaptcha_to_bypass_429": true,
+    "ip": {
+      "period": "1h",
+      "limit": 10
+    },
+    "isolate_rate_limit?": true
+  },
   "api/v2/advanced-filters/csv": {
     "recaptcha_to_bypass_429": true,
     "ip": {
