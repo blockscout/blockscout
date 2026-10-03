@@ -234,7 +234,7 @@ function trimmedAddressHash (account) {
 
 function convertToBool (value, type) {
   if (isBoolInputType(type)) {
-    const boolVal = (value === 'true' || value === '1' || value === 1)
+    const boolVal = (value === true || value === 'true' || value === '1' || value === 1)
 
     return boolVal
   } else {
