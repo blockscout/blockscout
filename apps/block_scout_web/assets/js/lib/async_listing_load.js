@@ -236,20 +236,17 @@ export const elements = {
       $el.show()
       $el.attr('disabled', false)
 
-      let url
+      const firstPageParameters = new URLSearchParams()
       if (blockParam !== null) {
-        url = firstPageHref + '?block_type=' + blockParam
-      } else {
-        url = firstPageHref
+        firstPageParameters.set('block_type', blockParam)
       }
 
       if (queryParam !== null) {
-        url = firstPageHref + '?q=' + queryParam
-      } else {
-        url = firstPageHref
+        firstPageParameters.set('q', queryParam)
       }
 
-      $el.attr('href', url)
+      const queryString = firstPageParameters.toString()
+      $el.attr('href', firstPageHref + (queryString ? '?' + queryString : ''))
     }
   },
   '[data-async-listing] [data-page-number]': {
