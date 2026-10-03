@@ -12,7 +12,7 @@ defmodule Explorer.SmartContract.Stylus.Verifier do
   """
   alias EthereumJSONRPC.Utility.CommonHelper
   alias Explorer.Chain.{Hash, SmartContract}
-  alias Explorer.SmartContract.StylusVerifierInterface
+  alias Explorer.SmartContract.{CreationDataResolver, StylusVerifierInterface}
 
   require Logger
 
@@ -86,15 +86,16 @@ defmodule Explorer.SmartContract.Stylus.Verifier do
   # Retrieves the transaction hash that created a Stylus smart contract.
 
   # Looks up the creation transaction for the given contract address and returns its hash.
-  # Checks both regular transactions and internal transactions.
+  # Checks both regular transactions and internal transactions. When neither is in the DB,
+  # tries to discover the creation data on demand via `CreationDataResolver`.
 
   # ## Parameters
   # - `address_hash`: The address hash of the smart contract as a binary or `t:Hash.Address.t/0`
 
   # ## Returns
-  # - `t:Hash.t/0` - The transaction hash if found
+  # - `t:Hash.t/0` or `t:String.t/0` - The transaction hash if found
   # - `nil` - If no creation transaction exists
-  @spec fetch_data_for_stylus_verification(binary() | Hash.Address.t()) :: Hash.t() | nil
+  @spec fetch_data_for_stylus_verification(binary() | Hash.Address.t()) :: Hash.t() | String.t() | nil
   defp fetch_data_for_stylus_verification(address_hash) do
     case SmartContract.creation_transaction_with_bytecode(address_hash) do
       %{transaction: transaction} ->
@@ -104,7 +105,10 @@ defmodule Explorer.SmartContract.Stylus.Verifier do
         internal_transaction.transaction.hash
 
       _ ->
-        nil
+        case CreationDataResolver.resolve(address_hash) do
+          {:ok, %{transaction_hash: transaction_hash}} -> transaction_hash
+          _ -> nil
+        end
     end
   end
 end
