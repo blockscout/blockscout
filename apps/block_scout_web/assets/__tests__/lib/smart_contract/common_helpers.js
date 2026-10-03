@@ -284,3 +284,48 @@ test('prepare contract args | type: tuple[]', () => {
     const $functionInputs = $('[data-function-form]').find('input[name=function_input]')
     expect(prepareMethodArgs($functionInputs, inputs)).toEqual(expectedValue)
 })
+
+describe('prepare contract args | boolean values', () => {
+    function prepareArgs(inputValue, input) {
+        document.body.innerHTML = oneFieldHTML
+        document.getElementById('first').value = inputValue
+        const $functionInputs = $('[data-function-form]').find('input[name=function_input]')
+        return prepareMethodArgs($functionInputs, [input])
+    }
+
+    test.each(['bool[][]', 'bool[][2]', 'bool[2][2]'])('preserves JSON booleans in %s', (type) => {
+        expect(prepareArgs('[[true, false], [false, true]]', { type }))
+            .toEqual([[[true, false], [false, true]]])
+    })
+
+    test('preserves JSON booleans in tuple arrays without changing other components', () => {
+        const input = {
+            type: 'tuple[]',
+            components: [{ type: 'bool' }, { type: 'uint256' }, { type: 'string' }]
+        }
+        const tuples = [[true, '200000000000000000000', 'true'], [false, '100500', 'false']]
+
+        expect(prepareArgs(JSON.stringify(tuples), input)).toEqual([tuples])
+    })
+
+    test('keeps string and numeric boolean representations in JSON arrays', () => {
+        expect(prepareArgs('[[true, false, 1, 0], ["true", "false", "1", "0"]]', { type: 'bool[][]' }))
+            .toEqual([[[true, false, true, false], [true, false, true, false]]])
+    })
+
+    test.each([
+        ['true', true],
+        ['1', true],
+        ['false', false],
+        ['0', false],
+        ['', false],
+        ['2', false]
+    ])('keeps scalar input %j as %j', (inputValue, expected) => {
+        expect(prepareArgs(inputValue, { type: 'bool' })).toEqual([expected])
+    })
+
+    test('keeps single-dimensional boolean array conversion', () => {
+        expect(prepareArgs('[true, false, 1, 0]', { type: 'bool[]' }))
+            .toEqual([[true, false, true, false]])
+    })
+})
