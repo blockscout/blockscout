@@ -8,9 +8,8 @@ const weiToEtherConverter = (element, event) => {
   const $conversionTextWei = $element.find('[data-conversion-text-wei]')
   const $conversionTextEth = $element.find('[data-conversion-text-eth]')
   const $conversionUnit = $element.find('[data-conversion-unit]')
-  const originalValueStr = $conversionUnit.data('original-value')
-  // @ts-ignore
-  const unitVal = new BigNumber(numeral(originalValueStr).value())
+  const originalValueStr = $conversionUnit.attr('data-original-value')
+  const unitVal = new BigNumber(originalValueStr.replace(/,/g, ''))
   const weiVal = unitVal.dividedBy(weiUnit)
 
   if (event.target.checked) {
