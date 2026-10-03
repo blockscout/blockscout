@@ -182,9 +182,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
 
     # This step must be run only if there are hashes of the confirmed rollup blocks
     # in rollup_blocks_to_l1_transactions - when there are newly discovered confirmations.
-    rollup_blocks =
+    {rollup_blocks, confirmation_outcomes} =
       if Enum.empty?(rollup_blocks_to_l1_transactions) do
-        []
+        {[], %{}}
       else
         RollupBlocks.extend_confirmations(
           rollup_blocks_to_l1_transactions,
@@ -199,7 +199,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
 
     # Will return %{} if there are no new confirmations
     applicable_lifecycle_transactions =
-      take_lifecycle_transactions_for_confirmed_blocks(rollup_blocks, lifecycle_transactions_basic)
+      take_lifecycle_transactions_for_handled_confirmations(confirmation_outcomes, lifecycle_transactions_basic)
 
     # Will contain :ok if no new confirmations are found
     retcode =
@@ -338,21 +338,32 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
      Map.values(existing_lifecycle_transactions)}
   end
 
-  # Selects lifecycle transaction descriptions used for confirming a given list of rollup blocks.
-  @spec take_lifecycle_transactions_for_confirmed_blocks(
-          [Arbitrum.BatchBlock.to_import()],
+  # Selects lifecycle transaction descriptions for confirmations that were handled -
+  # either claimed at least one rollup block or were found fully covered by blocks
+  # already claimed (`:claimed` or `:covered` outcome).
+  #
+  # A `:covered` confirmation is imported as a lifecycle transaction with no
+  # referencing `arbitrum_batch_blocks` row: this is safe because gap detection in
+  # `DbSettlement.l1_blocks_to_expect_rollup_blocks_confirmation/1` is derived from
+  # `arbitrum_batch_blocks`, not from the lifecycle-transaction table, and no API
+  # path reaches a confirmation except through a block row.
+  #
+  # A confirmation with an `:error` outcome, or with no outcome at all (its top hash
+  # failed to resolve to a block number, or it was never reached because an earlier
+  # descent in the same tick halted processing), is excluded here and therefore
+  # counted as missed by the caller's retcode derivation.
+  @spec take_lifecycle_transactions_for_handled_confirmations(
+          %{binary() => RollupBlocks.confirmation_outcome()},
           %{binary() => %{hash: binary(), block_number: non_neg_integer()}}
         ) :: %{binary() => %{hash: binary(), block_number: non_neg_integer()}}
-  defp take_lifecycle_transactions_for_confirmed_blocks(confirmed_rollup_blocks, lifecycle_transactions) do
-    confirmed_rollup_blocks
-    |> Enum.reduce(%{}, fn block_descr, updated_transactions ->
-      confirmation_transaction_hash = block_descr.confirmation_transaction
-
-      Map.put_new(
-        updated_transactions,
-        confirmation_transaction_hash,
-        lifecycle_transactions[confirmation_transaction_hash]
-      )
+  defp take_lifecycle_transactions_for_handled_confirmations(confirmation_outcomes, lifecycle_transactions) do
+    confirmation_outcomes
+    |> Enum.reduce(%{}, fn {l1_transaction_hash, outcome}, updated_transactions ->
+      if outcome in [:claimed, :covered] do
+        Map.put_new(updated_transactions, l1_transaction_hash, lifecycle_transactions[l1_transaction_hash])
+      else
+        updated_transactions
+      end
     end)
   end
 
