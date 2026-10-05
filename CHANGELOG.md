@@ -22,6 +22,7 @@
 
 ### 🐛 Bug Fixes
 
+- ReindexBlocksWithStaleInternalTransactions return value ([#14901](https://github.com/blockscout/blockscout/pull/14901))
 - move /api/legacy/eth/* POST routes off the CSRF-protected pipeline ([#14881](https://github.com/blockscout/blockscout/pull/14881))
 - Sanitize 12 version ([#14867](https://github.com/blockscout/blockscout/pull/14867))
 - Compare checksummed hashes in Celo election rewards controller test ([#14863](https://github.com/blockscout/blockscout/pull/14863))
