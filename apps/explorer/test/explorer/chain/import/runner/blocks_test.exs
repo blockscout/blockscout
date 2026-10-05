@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
   alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
-  alias Explorer.Chain.{Address, Block, Transaction, PendingBlockOperation}
+  alias Explorer.Chain.{Address, Block, PendingBlockOperation, SmartContract, TokenTransfer, Transaction}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.{Chain, Repo}
   alias Explorer.Utility.{CountersRefetchBlock, MissingBlockRange}
@@ -1040,6 +1040,64 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       }
 
       assert {:ok, [{0, _}, {1, _}]} = Blocks.process_blocks_consensus([new_block1_changes], Repo, opts)
+    end
+
+    test "marks data of a block that lost consensus as non-consensus and removes contracts created in it" do
+      %{hash: old_block_hash} = old_block = insert(:block, consensus: true, number: 0)
+      smart_contract = insert(:smart_contract)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(old_block)
+        |> with_contract_creation(Repo.get!(Address, smart_contract.address_hash))
+
+      token_transfer = insert(:token_transfer, transaction: transaction, block: old_block, block_number: 0)
+
+      new_block = params_for(:block, miner_hash: insert(:address).hash, number: 0)
+      %Ecto.Changeset{valid?: true, changes: new_block_changes} = Block.changeset(%Block{}, new_block)
+
+      opts = %{
+        timeout: 60_000,
+        timestamps: %{updated_at: DateTime.utc_now()}
+      }
+
+      assert {:ok, [{0, ^old_block_hash}]} = Blocks.process_blocks_consensus([new_block_changes], Repo, opts)
+
+      assert Repo.get!(Transaction, transaction.hash).block_consensus == false
+
+      assert Repo.get_by!(TokenTransfer, transaction_hash: transaction.hash, log_index: token_transfer.log_index).block_consensus ==
+               false
+
+      assert Repo.get_by(SmartContract, address_hash: smart_contract.address_hash) == nil
+      assert Repo.get!(Address, smart_contract.address_hash).contract_code == nil
+    end
+
+    test "keeps transactions and contracts of a re-imported block" do
+      block = insert(:block, consensus: true, number: 0)
+      smart_contract = insert(:smart_contract)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+        |> with_contract_creation(Repo.get!(Address, smart_contract.address_hash))
+
+      block_params =
+        params_for(:block, hash: block.hash, parent_hash: block.parent_hash, miner_hash: block.miner_hash, number: 0)
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
+
+      opts = %{
+        timeout: 60_000,
+        timestamps: %{updated_at: DateTime.utc_now()}
+      }
+
+      assert {:ok, []} = Blocks.process_blocks_consensus([block_changes], Repo, opts)
+
+      assert Repo.get!(Transaction, transaction.hash).block_consensus == true
+      assert %SmartContract{} = Repo.get_by(SmartContract, address_hash: smart_contract.address_hash)
+      assert Repo.get!(Address, smart_contract.address_hash).contract_code != nil
     end
 
     test "does not trigger beacon deposit reorg handling on old blocks" do
