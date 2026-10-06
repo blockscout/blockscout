@@ -196,6 +196,35 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert String.starts_with?(stored_error, "\\0\\0")
     end
 
+    test "caps a trace error by code points, not graphemes, so multi-code-point graphemes fit varchar(255)" do
+      transaction = insert(:transaction) |> with_block(status: :error)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      # "e" + combining acute accent: one grapheme, two code points. 200 graphemes = 400 code points,
+      # which PostgreSQL counts as 400 characters for `varchar(255)`.
+      error = String.duplicate("é", 200)
+
+      assert 200 == String.length(error)
+      assert 400 == length(String.codepoints(error))
+
+      internal_transaction_changes = make_internal_transaction_changes(transaction, 0, error)
+
+      assert {:ok, _} = run_internal_transactions([internal_transaction_changes])
+
+      assert %InternalTransaction{error_id: error_id} =
+               Repo.get_by(InternalTransaction,
+                 block_number: transaction.block_number,
+                 transaction_index: transaction.index,
+                 index: 0
+               )
+
+      stored_error = TransactionError.id_to_error(error_id)
+
+      assert length(String.codepoints(stored_error)) <= 255
+      assert String.starts_with?(error, stored_error)
+      assert stored_error == Repo.get(Transaction, transaction.hash).error
+    end
+
     # test "simple coin transfer has no internal transaction inserted for Nethermind" do
     #   transaction = insert(:transaction) |> with_block(status: :ok)
     #   insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)

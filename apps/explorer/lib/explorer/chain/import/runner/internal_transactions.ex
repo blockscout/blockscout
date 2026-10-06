@@ -595,8 +595,10 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   end
 
   # Makes a trace error message storable: non-printable binaries are escaped via `inspect/2`, then the
-  # result is capped at `@max_error_length` characters (`varchar(n)` counts characters, not bytes). The cap
-  # is applied after escaping, since escaping can only make the message longer.
+  # result is capped at `@max_error_length` code points. PostgreSQL `varchar(n)` counts code points, not
+  # bytes and not graphemes, so `String.slice/3` (grapheme-based) is not enough: a grapheme made of a base
+  # character plus combining marks is several code points. The cap is applied after escaping, since
+  # escaping can only make the message longer.
   defp sanitize_error(entry) do
     error = Map.get(entry, :error)
 
@@ -604,12 +606,19 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       if is_binary(error) do
         error
         |> escape_non_printable_error()
-        |> String.slice(0, @max_error_length)
+        |> truncate_code_points(@max_error_length)
       else
         error
       end
 
     Map.put(entry, :error, sanitized_error)
+  end
+
+  defp truncate_code_points(string, max_code_points) do
+    string
+    |> String.codepoints()
+    |> Enum.take(max_code_points)
+    |> Enum.join()
   end
 
   defp escape_non_printable_error(error) do
