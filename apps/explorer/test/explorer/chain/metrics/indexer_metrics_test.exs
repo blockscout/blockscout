@@ -32,6 +32,24 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetricsTest do
 
       assert IndexerMetrics.missing_blocks_count() == 1
     end
+
+    if Application.compile_env(:explorer, :chain_type) == :filecoin do
+      test "does not count recorded null rounds as missing blocks" do
+        previous_block_ranges = Application.get_env(:indexer, :block_ranges)
+        on_exit(fn -> Application.put_env(:indexer, :block_ranges, previous_block_ranges) end)
+
+        Application.put_env(:indexer, :block_ranges, "1..5,10..latest")
+
+        Enum.each([1, 3, 5, 10, 13], fn number ->
+          insert(:block, number: number, consensus: true)
+        end)
+
+        # 2 and 11 are null rounds, 4 and 12 are genuinely missing
+        Explorer.Chain.NullRoundHeight.insert_heights([2, 11])
+
+        assert IndexerMetrics.missing_blocks_count() == 2
+      end
+    end
   end
 
   describe "refetch_needed_blocks_count/0" do
