@@ -22,6 +22,7 @@
 
 ### 🐛 Bug Fixes
 
+- Cap internal transaction error message at 255 characters ([#14907](https://github.com/blockscout/blockscout/pull/14907))
 - Exclude recorded null rounds from missing_blocks_count metric ([#14906](https://github.com/blockscout/blockscout/pull/14906))
 - ReindexBlocksWithStaleInternalTransactions return value ([#14901](https://github.com/blockscout/blockscout/pull/14901))
 - move /api/legacy/eth/* POST routes off the CSRF-protected pipeline ([#14881](https://github.com/blockscout/blockscout/pull/14881))

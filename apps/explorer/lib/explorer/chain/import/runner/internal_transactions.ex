@@ -36,6 +36,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   # milliseconds
   @timeout 60_000
 
+  # Maximum number of characters kept from a trace error message. Error messages are stored in
+  # `transaction_errors.message` and copied to `transactions.error`; both columns are `varchar(255)`,
+  # and some clients (custom precompiles, L2 system contracts) return much longer errors that would
+  # otherwise fail the whole import batch with `value too long for type character varying(255)`.
+  @max_error_length 255
+
   @type imported :: [InternalTransaction.t()]
 
   @impl Runner
@@ -588,19 +594,41 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
+  # Makes a trace error message storable: non-printable binaries are escaped via `inspect/2`, then the
+  # result is capped at `@max_error_length` code points. PostgreSQL `varchar(n)` counts code points, not
+  # bytes and not graphemes, so `String.slice/3` (grapheme-based) is not enough: a grapheme made of a base
+  # character plus combining marks is several code points. The cap is applied after escaping, since
+  # escaping can only make the message longer.
   defp sanitize_error(entry) do
     error = Map.get(entry, :error)
 
     sanitized_error =
-      if is_binary(error) and not String.printable?(error) do
+      if is_binary(error) do
         error
-        |> inspect(binaries: :as_strings)
-        |> String.trim("\"")
+        |> escape_non_printable_error()
+        |> truncate_code_points(@max_error_length)
       else
         error
       end
 
     Map.put(entry, :error, sanitized_error)
+  end
+
+  defp truncate_code_points(string, max_code_points) do
+    string
+    |> String.codepoints()
+    |> Enum.take(max_code_points)
+    |> Enum.join()
+  end
+
+  defp escape_non_printable_error(error) do
+    if String.printable?(error) do
+      error
+    else
+      error
+      |> inspect(binaries: :as_strings)
+      |> String.trim("\"")
+    end
   end
 
   # Shifts the `created_contract_address_id` value to `to_address_id` when applicable.
