@@ -11,6 +11,45 @@ defmodule Explorer.Token.MetadataRetrieverTest do
   setup :verify_on_exit!
   setup :set_mox_global
 
+  describe "fetch_metadata_from_uri/2 SSRF protection" do
+    setup do
+      initial = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper) || []
+
+      Application.put_env(
+        :indexer,
+        Indexer.Fetcher.TokenInstance.Helper,
+        Keyword.merge(initial, host_filtering_enabled?: true)
+      )
+
+      :persistent_term.erase(:parsed_cidr_list)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, initial)
+        :persistent_term.erase(:parsed_cidr_list)
+      end)
+
+      :ok
+    end
+
+    test "rejects a redirect from a public host to an internal address and stores nothing" do
+      # The initial (public) host passes validation, but the 302 target is internal.
+      # SafeFetch re-validates each hop, so the internal address is never fetched.
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: "http://8.8.8.8/token.json"}, _opts ->
+          {:ok, %Tesla.Env{status: 302, headers: [{"location", "http://127.0.0.1/"}], body: ""}}
+        end
+      )
+
+      assert {:error, error} = MetadataRetriever.fetch_metadata_from_uri("http://8.8.8.8/token.json", [])
+      assert error =~ "blacklist"
+    end
+
+    test "rejects a token uri whose host is an internal address" do
+      assert {:error, "blacklist"} = MetadataRetriever.fetch_metadata_from_uri("http://169.254.169.254/latest/meta", [])
+    end
+  end
+
   describe "get_functions_of/1" do
     test "returns all functions read in the smart contract" do
       token = insert(:token, contract_address: build(:contract_address))
@@ -96,6 +135,15 @@ defmodule Explorer.Token.MetadataRetrieverTest do
                  id: id,
                  result: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000"
                }
+
+             # the ERC-165 probe, which an ERC-20 token not implementing the
+             # extension reverts on
+             %{id: id, method: "eth_call", params: [%{data: _, to: _}, "latest"]} ->
+               %{
+                 id: id,
+                 error: %{code: -32015, data: "something", message: "some error"},
+                 jsonrpc: "2.0"
+               }
            end)}
         end
       )
@@ -115,6 +163,147 @@ defmodule Explorer.Token.MetadataRetrieverTest do
                   decimals: 18
                 }
               ]} = MetadataRetriever.get_functions_of([token, token])
+    end
+
+    # The ERC-165 probe carries its argument, so its request data is the selector
+    # followed by the interface id; matching has to be on the prefix.
+    defp erc8056_mock_response(id, data) do
+      cond do
+        String.starts_with?(data, "0x01ffc9a7") ->
+          # supportsInterface(0xa60bf13d) == true
+          %{id: id, result: "0x0000000000000000000000000000000000000000000000000000000000000001"}
+
+        data == "0xa60bf13d" ->
+          # uiMultiplier() == 2e18
+          %{id: id, result: "0x0000000000000000000000000000000000000000000000001bc16d674ec80000"}
+
+        data == "0xdc767007" ->
+          # newUIMultiplier() == 4e18
+          %{id: id, result: "0x0000000000000000000000000000000000000000000000003782dace9d900000"}
+
+        data == "0x97a4064f" ->
+          # effectiveAt() == 2026-01-01T00:00:00Z
+          %{id: id, result: "0x000000000000000000000000000000000000000000000000000000006955b900"}
+
+        true ->
+          %{id: id, error: %{code: -32015, data: "something", message: "some error"}, jsonrpc: "2.0"}
+      end
+    end
+
+    defp selectors_of(requests) do
+      requests
+      |> Enum.map(&(&1.params |> hd() |> Map.fetch!(:data) |> String.slice(0, 10)))
+      |> Enum.sort()
+    end
+
+    test "reads the ERC-8056 multiplier of a token that claims the interface" do
+      token = insert(:token, contract_address: build(:contract_address))
+
+      # the base metadata batch carries the ERC-165 probe, one extra call rather
+      # than the three getters
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        assert selectors_of(requests) == ["0x01ffc9a7", "0x06fdde03", "0x18160ddd", "0x313ce567", "0x95d89b41"]
+
+        {:ok, Enum.map(requests, &erc8056_mock_response(&1.id, &1.params |> hd() |> Map.fetch!(:data)))}
+      end)
+
+      # only a token that claimed the interface is asked for the getters
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        assert selectors_of(requests) == ["0x97a4064f", "0xa60bf13d", "0xdc767007"]
+
+        {:ok, Enum.map(requests, &erc8056_mock_response(&1.id, &1.params |> hd() |> Map.fetch!(:data)))}
+      end)
+
+      assert {:ok,
+              [
+                %{
+                  ui_multiplier: 2_000_000_000_000_000_000,
+                  new_ui_multiplier: 4_000_000_000_000_000_000,
+                  ui_multiplier_effective_at: ~U[2026-01-01 00:00:00.000000Z],
+                  type: "ERC-8056"
+                }
+              ]} = MetadataRetriever.get_functions_of([token])
+    end
+
+    test "does not read the getters of a contract that answers ERC-165 with false" do
+      # a contract may well expose a function named `uiMultiplier()` meaning
+      # something else entirely; only the ERC-165 claim makes it an ERC-8056
+      # token, and a denied claim has to stop the getters from being asked at all
+      token = insert(:token, contract_address: build(:contract_address))
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        selectors = selectors_of(requests)
+
+        assert "0x01ffc9a7" in selectors
+        assert Enum.all?(["0xa60bf13d", "0xdc767007", "0x97a4064f"], &(&1 not in selectors))
+
+        {:ok,
+         Enum.map(requests, fn %{id: id, params: [%{data: data}, _]} ->
+           if String.starts_with?(data, "0x01ffc9a7") do
+             # supportsInterface(0xa60bf13d) == false
+             %{id: id, result: "0x0000000000000000000000000000000000000000000000000000000000000000"}
+           else
+             %{id: id, error: %{code: -32015, data: "something", message: "some error"}, jsonrpc: "2.0"}
+           end
+         end)}
+      end)
+
+      assert {:ok, [metadata]} = MetadataRetriever.get_functions_of([token])
+
+      refute Map.has_key?(metadata, :type)
+      refute Map.has_key?(metadata, :ui_multiplier)
+      refute Map.has_key?(metadata, :supports_scaled_ui_amount)
+    end
+
+    test "keeps probing a token already typed as ERC-8056" do
+      # dropping it from the batch here would freeze its multiplier at whatever
+      # was read the first time
+      token = insert(:token, contract_address: build(:contract_address), type: "ERC-8056")
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        assert selectors_of(requests) == ["0x01ffc9a7", "0x06fdde03", "0x18160ddd", "0x313ce567", "0x95d89b41"]
+
+        {:ok, Enum.map(requests, &erc8056_mock_response(&1.id, &1.params |> hd() |> Map.fetch!(:data)))}
+      end)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        {:ok, Enum.map(requests, &erc8056_mock_response(&1.id, &1.params |> hd() |> Map.fetch!(:data)))}
+      end)
+
+      assert {:ok, [%{ui_multiplier: 2_000_000_000_000_000_000, type: "ERC-8056"}]} =
+               MetadataRetriever.get_functions_of([token])
+    end
+
+    test "does not assign a type to an ERC-20 token that has no multiplier" do
+      token = insert(:token, contract_address: build(:contract_address))
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        {:ok,
+         Enum.map(requests, fn %{id: id} ->
+           %{id: id, error: %{code: -32015, data: "something", message: "some error"}, jsonrpc: "2.0"}
+         end)}
+      end)
+
+      assert {:ok, [metadata]} = MetadataRetriever.get_functions_of([token])
+
+      refute Map.has_key?(metadata, :type)
+      refute Map.has_key?(metadata, :ui_multiplier)
+      refute Map.has_key?(metadata, :supports_scaled_ui_amount)
+    end
+
+    test "does not probe tokens that are not ERC-20" do
+      token = insert(:token, contract_address: build(:contract_address), type: "ERC-721")
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        assert selectors_of(requests) == ["0x06fdde03", "0x18160ddd", "0x313ce567", "0x95d89b41"]
+
+        {:ok,
+         Enum.map(requests, fn %{id: id} ->
+           %{id: id, error: %{code: -32015, data: "something", message: "some error"}, jsonrpc: "2.0"}
+         end)}
+      end)
+
+      assert {:ok, [_metadata]} = MetadataRetriever.get_functions_of([token])
     end
 
     test "returns only the functions that were read without error" do
@@ -731,7 +920,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(result)
+             body: Utils.JSON.encode!(result)
            }}
         end
       )
@@ -776,7 +965,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(result)
+             body: Utils.JSON.encode!(result)
            }}
         end
       )
@@ -825,7 +1014,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(result)
+             body: Utils.JSON.encode!(result)
            }}
         end
       )
@@ -896,7 +1085,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       {:ok_store_uri, %{metadata: metadata}, ^url} =
         MetadataRetriever.fetch_metadata_from_uri(url, [])
 
-      assert Map.get(metadata, "attributes") == Jason.decode!(attributes)
+      assert Map.get(metadata, "attributes") == Utils.JSON.decode!(attributes)
     end
 
     test "decodes json file in tokenURI" do
@@ -1055,7 +1244,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
 
       assert {:ok_store_uri,
               %{
-                metadata: Jason.decode!(json)
+                metadata: Utils.JSON.decode!(json)
               }, url} == MetadataRetriever.fetch_json(data)
     end
 
@@ -1084,7 +1273,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(result)
+             body: Utils.JSON.encode!(result)
            }}
         end
       )
@@ -1144,7 +1333,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
 
       assert {:ok_store_uri,
               %{
-                metadata: Jason.decode!(json)
+                metadata: Utils.JSON.decode!(json)
               }, url} ==
                MetadataRetriever.fetch_json({:ok, [url]})
     end
@@ -1274,6 +1463,217 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       # We assert that it returns the error immediately without any HTTP mock being called.
       # If it tried to make a request, it would fail because no expectation is set for this URL.
       assert MetadataRetriever.fetch_json({:ok, [invalid_path]}) == {:error, "invalid ipfs path"}
+    end
+  end
+
+  describe "swarm_link/1" do
+    @swarm_hash String.duplicate("a", 64)
+
+    test "returns default gateway URL when no config override is set" do
+      original = Application.get_env(:indexer, :swarm, [])
+      on_exit(fn -> Application.put_env(:indexer, :swarm, original) end)
+      Application.put_env(:indexer, :swarm, [])
+
+      expected = "https://gateway.ethswarm.org/bzz/#{@swarm_hash}/"
+      assert MetadataRetriever.swarm_link(@swarm_hash) == expected
+    end
+
+    test "uses configured gateway_url" do
+      original = Application.get_env(:indexer, :swarm, [])
+      on_exit(fn -> Application.put_env(:indexer, :swarm, original) end)
+      Application.put_env(:indexer, :swarm, gateway_url: "https://my-swarm-node.example.com")
+
+      expected = "https://my-swarm-node.example.com/bzz/#{@swarm_hash}/"
+      assert MetadataRetriever.swarm_link(@swarm_hash) == expected
+    end
+
+    test "strips trailing slash from configured gateway_url" do
+      original = Application.get_env(:indexer, :swarm, [])
+      on_exit(fn -> Application.put_env(:indexer, :swarm, original) end)
+      Application.put_env(:indexer, :swarm, gateway_url: "https://my-swarm-node.example.com/")
+
+      expected = "https://my-swarm-node.example.com/bzz/#{@swarm_hash}/"
+      assert MetadataRetriever.swarm_link(@swarm_hash) == expected
+    end
+
+    test "preserves deep path without forcing trailing slash" do
+      original = Application.get_env(:indexer, :swarm, [])
+      on_exit(fn -> Application.put_env(:indexer, :swarm, original) end)
+      Application.put_env(:indexer, :swarm, gateway_url: "https://my-swarm-node.example.com/")
+
+      uid = "#{@swarm_hash}/metadata.json"
+      expected = "https://my-swarm-node.example.com/bzz/#{uid}"
+
+      assert MetadataRetriever.swarm_link(uid) == expected
+    end
+  end
+
+  describe "swarm_headers/0" do
+    test "returns only default headers when no bearer token is configured" do
+      original = Application.get_env(:indexer, :swarm, [])
+      on_exit(fn -> Application.put_env(:indexer, :swarm, original) end)
+      Application.put_env(:indexer, :swarm, [])
+
+      assert MetadataRetriever.swarm_headers() == MetadataRetriever.ar_headers()
+    end
+
+    test "prepends Authorization header when bearer_token is configured" do
+      original = Application.get_env(:indexer, :swarm, [])
+      on_exit(fn -> Application.put_env(:indexer, :swarm, original) end)
+      Application.put_env(:indexer, :swarm, bearer_token: "secret-token")
+
+      headers = MetadataRetriever.swarm_headers()
+      assert {"Authorization", "Bearer secret-token"} in headers
+      assert headers == [{"Authorization", "Bearer secret-token"} | MetadataRetriever.ar_headers()]
+    end
+
+    test "does not prepend Authorization header when bearer_token is empty" do
+      original = Application.get_env(:indexer, :swarm, [])
+      on_exit(fn -> Application.put_env(:indexer, :swarm, original) end)
+      Application.put_env(:indexer, :swarm, bearer_token: "")
+
+      assert MetadataRetriever.swarm_headers() == MetadataRetriever.ar_headers()
+    end
+
+    test "does not prepend Authorization header when bearer_token is whitespace" do
+      original = Application.get_env(:indexer, :swarm, [])
+      on_exit(fn -> Application.put_env(:indexer, :swarm, original) end)
+      Application.put_env(:indexer, :swarm, bearer_token: "   ")
+
+      assert MetadataRetriever.swarm_headers() == MetadataRetriever.ar_headers()
+    end
+  end
+
+  describe "valid_swarm_hash?/1" do
+    @valid_hash String.duplicate("a1", 32)
+
+    test "returns true for a 64-character lowercase hex hash" do
+      assert MetadataRetriever.valid_swarm_hash?(@valid_hash)
+    end
+
+    test "returns true for a hash embedded in a path" do
+      assert MetadataRetriever.valid_swarm_hash?("#{@valid_hash}/path/to/resource")
+    end
+
+    test "returns false for uppercase hex" do
+      refute MetadataRetriever.valid_swarm_hash?(String.upcase(@valid_hash))
+    end
+
+    test "returns false for a hash that is too short" do
+      refute MetadataRetriever.valid_swarm_hash?(String.duplicate("a", 63))
+    end
+
+    test "returns false for a hash that is too long" do
+      refute MetadataRetriever.valid_swarm_hash?(String.duplicate("a", 65))
+    end
+
+    test "returns false for an empty string" do
+      refute MetadataRetriever.valid_swarm_hash?("")
+    end
+
+    test "returns false for non-binary" do
+      refute MetadataRetriever.valid_swarm_hash?(nil)
+    end
+  end
+
+  describe "ETH Swarm URI routing" do
+    @valid_hash String.duplicate("b2", 32)
+    @swarm_metadata %{"name" => "Swarm NFT", "description" => "stored on Swarm"}
+
+    test "fetch_json resolves bzz:// URI scheme via Swarm gateway" do
+      original = Application.get_env(:indexer, :swarm, [])
+      on_exit(fn -> Application.put_env(:indexer, :swarm, original) end)
+      Application.put_env(:indexer, :swarm, gateway_url: "https://gateway.ethswarm.org")
+
+      expected_url = "https://gateway.ethswarm.org/bzz/#{@valid_hash}/"
+
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^expected_url}, _opts ->
+          {:ok, %Tesla.Env{status: 200, body: Utils.JSON.encode!(@swarm_metadata)}}
+        end
+      )
+
+      assert {:ok, %{metadata: metadata}} =
+               MetadataRetriever.fetch_json({:ok, ["bzz://#{@valid_hash}"]})
+
+      assert metadata["name"] == "Swarm NFT"
+    end
+
+    test "fetch_json resolves https://gateway.ethswarm.org/bzz/<hash>/ URL" do
+      original = Application.get_env(:indexer, :swarm, [])
+      on_exit(fn -> Application.put_env(:indexer, :swarm, original) end)
+      Application.put_env(:indexer, :swarm, gateway_url: "https://gateway.ethswarm.org")
+
+      url = "https://gateway.ethswarm.org/bzz/#{@valid_hash}/"
+
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok, %Tesla.Env{status: 200, body: Utils.JSON.encode!(@swarm_metadata)}}
+        end
+      )
+
+      assert {:ok, %{metadata: metadata}} =
+               MetadataRetriever.fetch_json({:ok, [url]})
+
+      assert metadata["description"] == "stored on Swarm"
+    end
+
+    test "fetch_json preserves deep path for https swarm URLs" do
+      original = Application.get_env(:indexer, :swarm, [])
+      on_exit(fn -> Application.put_env(:indexer, :swarm, original) end)
+      Application.put_env(:indexer, :swarm, gateway_url: "https://gateway.ethswarm.org")
+
+      url = "https://gateway.ethswarm.org/bzz/#{@valid_hash}/meta/1.json"
+
+      Tesla.Test.expect_tesla_call(
+        times: 1,
+        returns: fn %{url: ^url}, _opts ->
+          {:ok, %Tesla.Env{status: 200, body: Utils.JSON.encode!(@swarm_metadata)}}
+        end
+      )
+
+      assert {:ok, %{metadata: metadata}} =
+               MetadataRetriever.fetch_json({:ok, [url]})
+
+      assert metadata["name"] == "Swarm NFT"
+    end
+
+    test "fetch_json returns error for invalid Swarm hash in bzz:// URI" do
+      assert MetadataRetriever.fetch_json({:ok, ["bzz://not-a-valid-hash"]}) ==
+               {:error, "invalid swarm path"}
+    end
+  end
+
+  describe "scaled_ui_amount_support/1" do
+    defp probe(response) do
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        {:ok, Enum.map(requests, fn %{id: id} -> Map.put(response, :id, id) end)}
+      end)
+
+      MetadataRetriever.scaled_ui_amount_support(to_string(insert(:contract_address).hash))
+    end
+
+    test "an explicit true is a claim" do
+      assert probe(%{result: "0x0000000000000000000000000000000000000000000000000000000000000001"}) == {:ok, true}
+    end
+
+    test "an explicit false is a denial" do
+      assert probe(%{result: "0x0000000000000000000000000000000000000000000000000000000000000000"}) == {:ok, false}
+    end
+
+    test "a revert is a denial, since a contract without ERC-165 is not ERC-8056" do
+      assert probe(%{error: %{code: -32015, data: "something", message: "execution reverted"}, jsonrpc: "2.0"}) ==
+               {:ok, false}
+    end
+
+    test "an empty answer is a denial, not a failure" do
+      assert probe(%{result: "0x"}) == {:ok, false}
+    end
+
+    test "an unanswered call is neither" do
+      assert probe(%{error: %{code: -32603, message: "timeout"}, jsonrpc: "2.0"}) == :error
     end
   end
 end

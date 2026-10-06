@@ -28,7 +28,7 @@ defmodule Indexer.Block.Fetcher.ReceiptsTest do
 
     @tag :no_nethermind
     @tag :no_geth
-    test "fetches logs setting their blocks if they're null", %{
+    test "fetches logs setting their block numbers and transaction indexes if they're null", %{
       block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
     } do
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
@@ -54,7 +54,7 @@ defmodule Indexer.Block.Fetcher.ReceiptsTest do
                      "logIndex" => "0x0",
                      "topics" => ["0x600bcf04a13e752d1e3670a5a9f1c21177ca2a93c6f5391d4f1298d098097c22"],
                      "transactionHash" => "0x43bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-                     "transactionIndex" => "0x0",
+                     "transactionIndex" => nil,
                      "transactionLogIndex" => "0x0"
                    }
                  ],
@@ -108,7 +108,7 @@ defmodule Indexer.Block.Fetcher.ReceiptsTest do
           gas: 21000,
           gas_price: 50_000_000_000_000,
           hash: "0x43bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5",
-          index: 0,
+          index: 2,
           input: "0x",
           nonce: 0,
           r: 61_965_845_294_689_009_770_156_372_156_374_760_022_787_886_965_323_743_865_986_648_153_755_601_564_112,
@@ -116,7 +116,7 @@ defmodule Indexer.Block.Fetcher.ReceiptsTest do
           to_address_hash: "0x5df9b87991262f6ba471f09758cde1c0fc1de734",
           v: 28,
           value: 31337,
-          transaction_index: 0
+          transaction_index: 2
         },
         %{
           block_hash: "0xf7b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471bd",
@@ -141,12 +141,12 @@ defmodule Indexer.Block.Fetcher.ReceiptsTest do
 
       assert Enum.find(logs, fn log ->
                log[:transaction_hash] == "0x53bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5" &&
-                 log[:block_number] == 37
+                 log[:block_number] == 37 && log[:transaction_index] == 0
              end)
 
       assert Enum.find(logs, fn log ->
                log[:transaction_hash] == "0x43bd884872de3e488692881baeec262e7b95234d3965248c39fe992fffd433e5" &&
-                 log[:block_number] == 46147
+                 log[:block_number] == 46147 && log[:transaction_index] == 2
              end)
     end
   end

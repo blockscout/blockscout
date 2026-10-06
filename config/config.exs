@@ -24,7 +24,17 @@ for config <- "../apps/*/config/config.exs" |> Path.expand(__DIR__) |> Path.wild
   import_config config
 end
 
-config :phoenix, :json_library, Jason
+config :mime, :types, %{
+  "application/csv" => ["csv"],
+  "text/csv" => ["csv"]
+}
+
+config :mime, :extensions, %{
+  "csv" => "application/csv"
+}
+
+config :phoenix, :json_library, Utils.JSON
+config :postgrex, :json_library, Utils.JSON
 
 config :logger, :default_formatter, format: "$dateT$time $metadata[$level] $message\n"
 

@@ -32,7 +32,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
       Application.put_env(:block_scout_web, :api_rate_limit, config_url: "http://localhost:#{bypass.port}/config")
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
-        Plug.Conn.resp(conn, 200, Jason.encode!(config))
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(config))
       end)
 
       RateLimitConfigHelper.store_rate_limit_config()
@@ -82,7 +82,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
-        Plug.Conn.resp(conn, 200, Jason.encode!(config))
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(config))
       end)
 
       RateLimitConfigHelper.store_rate_limit_config()
@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
-        Plug.Conn.resp(conn, 200, Jason.encode!(config))
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(config))
       end)
 
       RateLimitConfigHelper.store_rate_limit_config()
@@ -138,7 +138,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
-        Plug.Conn.resp(conn, 200, Jason.encode!(config))
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(config))
       end)
 
       RateLimitConfigHelper.store_rate_limit_config()
@@ -164,7 +164,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
-        Plug.Conn.resp(conn, 200, Jason.encode!(config))
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(config))
       end)
 
       RateLimitConfigHelper.store_rate_limit_config()
@@ -195,7 +195,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
-        Plug.Conn.resp(conn, 200, Jason.encode!(config))
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(config))
       end)
 
       RateLimitConfigHelper.store_rate_limit_config()
@@ -242,7 +242,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
-        Plug.Conn.resp(conn, 200, Jason.encode!(config))
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(config))
       end)
 
       RateLimitConfigHelper.store_rate_limit_config()
@@ -285,7 +285,7 @@ defmodule BlockScoutWeb.Utility.RateLimitConfigHelperTest do
       Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
 
       Bypass.expect_once(bypass, "GET", "/config", fn conn ->
-        Plug.Conn.resp(conn, 200, Jason.encode!(config))
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(config))
       end)
 
       RateLimitConfigHelper.store_rate_limit_config()

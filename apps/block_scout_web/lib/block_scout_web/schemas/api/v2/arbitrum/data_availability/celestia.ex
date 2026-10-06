@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.DataAvailability.Celestia do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "ArbitrumDataAvailabilityCelestia",
     description: "Celestia data availability blob reference.",
     type: :object,
     properties: %{

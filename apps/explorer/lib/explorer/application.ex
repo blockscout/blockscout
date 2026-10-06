@@ -186,6 +186,9 @@ defmodule Explorer.Application do
         Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount
         |> configure_mode_dependent_process(:indexer)
         |> configure_chain_type_dependent_process(:optimism),
+        Explorer.Chain.Cache.Counters.Optimism.DepositsCount
+        |> configure_mode_dependent_process(:indexer)
+        |> configure_chain_type_dependent_process(:optimism),
         configure_mode_dependent_process(Explorer.Chain.Cache.Counters.NewPendingTransactionsCount, :indexer),
         configure_mode_dependent_process(Explorer.Chain.Cache.Counters.Transactions24hCount, :indexer),
         configure_mode_dependent_process(Explorer.Validator.MetadataProcessor, :indexer),
@@ -207,6 +210,8 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.SanitizeMissingBlockRanges, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.TokenTransferTokenType, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.BackfillScaledUIAmountTokens, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.SanitizeScaledUIAmountTokenTransferTypes, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.TransactionBlockConsensus, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.TokenTransferBlockConsensus, :indexer),
@@ -218,7 +223,11 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.CeloAccounts, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.CeloAggregatedElectionRewards, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeErc1155TokenBalancesWithoutTokenIds, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.TransactionHasTokenTransfers, :indexer),
         Explorer.Migrator.BackfillMultichainSearchDB
+        |> configure_mode_dependent_process(:indexer)
+        |> configure_multichain_search_microservice(),
+        Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalances
         |> configure_mode_dependent_process(:indexer)
         |> configure_multichain_search_microservice(),
         configure_mode_dependent_process(Explorer.Migrator.ArbitrumDaRecordsNormalization, :indexer),
@@ -258,6 +267,7 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.DeleteZeroValueInternalTransactions, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.EmptyInternalTransactionsData, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.FillInternalTransactionsAddressIds, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.DeleteNonConsensusLogs, :indexer),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesVerifiedIndex,
           :indexer
@@ -361,6 +371,14 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateUnfetchedAddressTokenBalancesV3Index,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.DropUnfetchedAddressTokenBalancesV2Index,
+          :indexer
+        ),
+        configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCountAscCoinBalanceDescHashPartialIndex,
           :indexer
         ),
@@ -441,6 +459,10 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsAddressHashes,
+          :indexer
+        ),
+        configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsBlockNumberCreatedContractAddressHashIndex,
           :indexer
         ),
@@ -468,6 +490,72 @@ defmodule Explorer.Application do
           Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesAddressHashBlockNumberIndex,
           :indexer
         ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsTokenTransferMethodIdOrderedIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransactionIndexIndexUniqueIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdBlockNumberDescIndexDescIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicBlockNumberIndexIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(Explorer.Migrator.FillLogsOptimizedFields, :indexer),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsBlockNumberTransactionIndexNotNull,
+          :indexer
+        ),
+        configure_mode_dependent_process(Explorer.Migrator.FillLogsCompressedData, :indexer),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashBlockNumberDescIndexDescIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashFirstTopicBlockNumberIndexIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashFirstTopicSecondTopicBlockNumberIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.DropLogsDepositsWithdrawalsIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsFirstTopicIdFkey,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.UpdateLogsPrimaryKey,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsIndexWithUpdatedPk,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesTokenHoldersIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalancesTokenContractAddressHashValueIndex,
+          :indexer
+        ),
         Explorer.Migrator.RefetchContractCodes
         |> configure_mode_dependent_process(:indexer)
         |> configure_chain_type_dependent_process(:zksync),
@@ -487,7 +575,7 @@ defmodule Explorer.Application do
       ]
       |> List.flatten()
 
-    repos_by_chain_type() ++ account_repo() ++ mud_repo() ++ event_notification_repo() ++ configurable_children_set
+    repos_by_chain_type() ++ account_repo() ++ event_notification_repo() ++ configurable_children_set
   end
 
   defp repos_by_chain_type do
@@ -518,14 +606,6 @@ defmodule Explorer.Application do
   defp account_repo do
     if Application.get_env(:explorer, Explorer.Account)[:enabled] || Mix.env() == :test do
       [Explorer.Repo.Account]
-    else
-      []
-    end
-  end
-
-  defp mud_repo do
-    if Application.get_env(:explorer, Explorer.Chain.Mud)[:enabled] || Mix.env() == :test do
-      [Explorer.Repo.Mud]
     else
       []
     end

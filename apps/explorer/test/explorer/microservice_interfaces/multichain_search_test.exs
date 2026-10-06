@@ -58,7 +58,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{"status" => "ok"})
+          Utils.JSON.encode!(%{"status" => "ok"})
         )
       end)
 
@@ -106,7 +106,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           500,
-          Jason.encode!(%{"code" => 0, "message" => "Error"})
+          Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
         )
       end)
 
@@ -243,7 +243,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(%{"status" => "ok"})
+             body: Utils.JSON.encode!(%{"status" => "ok"})
            }}
         end
       )
@@ -255,7 +255,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
           {:ok,
            %Tesla.Env{
              status: 500,
-             body: Jason.encode!(%{"code" => 0, "message" => "Error"})
+             body: Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
            }}
         end
       )
@@ -297,7 +297,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           500,
-          Jason.encode!(%{"code" => 0, "message" => "Error"})
+          Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
         )
       end)
 
@@ -342,7 +342,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           500,
-          Jason.encode!(%{"code" => 0, "message" => "Error"})
+          Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
         )
       end)
 
@@ -405,7 +405,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{"status" => "ok"})
+          Utils.JSON.encode!(%{"status" => "ok"})
         )
       end)
 
@@ -447,7 +447,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           500,
-          Jason.encode!(%{"code" => 0, "message" => "Error"})
+          Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
         )
       end)
 
@@ -504,7 +504,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           500,
-          Jason.encode!(%{"code" => 0, "message" => "Error"})
+          Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
         )
       end)
 
@@ -569,7 +569,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(%{"status" => "ok"})
+             body: Utils.JSON.encode!(%{"status" => "ok"})
            }}
         end
       )
@@ -581,7 +581,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
           {:ok,
            %Tesla.Env{
              status: 500,
-             body: Jason.encode!(%{"code" => 0, "message" => "Error"})
+             body: Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
            }}
         end
       )
@@ -613,7 +613,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           500,
-          Jason.encode!(%{"code" => 0, "message" => "Error"})
+          Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
         )
       end)
 
@@ -654,7 +654,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
         Conn.resp(
           conn,
           500,
-          Jason.encode!(%{"code" => 0, "message" => "Error"})
+          Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})
         )
       end)
 
@@ -871,6 +871,98 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                %{}
              ) == %{
                token_type: "ERC-1155"
+             }
+    end
+
+    test "adds ERC-8056 multiplier fields taken from the fetched metadata" do
+      enable_multichain_search()
+
+      # the token row still says ERC-20: the fetched metadata is what found the ERC-8056 interface
+      assert MultichainSearch.prepare_token_metadata_for_queue(
+               %Token{type: "ERC-20", name: "Scaled", symbol: "SCL"},
+               %{
+                 type: "ERC-8056",
+                 name: "Scaled",
+                 symbol: "SCL",
+                 decimals: 18,
+                 ui_multiplier: 1_000_000_000_000_000_000,
+                 new_ui_multiplier: 2_000_000_000_000_000_000,
+                 ui_multiplier_effective_at: ~U[2026-09-01 00:00:00.000000Z]
+               }
+             ) == %{
+               token_type: "ERC-8056",
+               name: "Scaled",
+               symbol: "SCL",
+               decimals: 18,
+               ui_multiplier: "1000000000000000000",
+               new_ui_multiplier: "2000000000000000000",
+               ui_multiplier_effective_at: "2026-09-01T00:00:00Z"
+             }
+    end
+
+    test "falls back to the multiplier stored in the token row and omits the missing fields" do
+      enable_multichain_search()
+
+      assert MultichainSearch.prepare_token_metadata_for_queue(
+               %Token{type: "ERC-8056", ui_multiplier: Decimal.new("1000000000000000000")},
+               %{name: "Scaled"}
+             ) == %{
+               token_type: "ERC-8056",
+               name: "Scaled",
+               ui_multiplier: "1000000000000000000"
+             }
+    end
+
+    test "does not add multiplier fields to tokens of other types" do
+      enable_multichain_search()
+
+      assert MultichainSearch.prepare_token_metadata_for_queue(
+               %Token{type: "ERC-20", ui_multiplier: Decimal.new("1000000000000000000")},
+               %{name: "Plain", ui_multiplier: 1_000_000_000_000_000_000}
+             ) == %{
+               token_type: "ERC-20",
+               name: "Plain"
+             }
+    end
+  end
+
+  describe "prepare_token_metadata_for_queue/1" do
+    test "returns an empty map when the service is disabled" do
+      assert MultichainSearch.prepare_token_metadata_for_queue(%Token{type: "ERC-8056", name: "Scaled"}) == %{}
+    end
+
+    test "takes the whole metadata from the token row" do
+      enable_multichain_search()
+
+      assert MultichainSearch.prepare_token_metadata_for_queue(%Token{
+               type: "ERC-8056",
+               name: "Scaled",
+               symbol: "SCL",
+               decimals: Decimal.new(18),
+               total_supply: Decimal.new("1000000000000000000000"),
+               icon_url: "http://localhost:1235/test.png",
+               ui_multiplier: Decimal.new("1000000000000000000"),
+               new_ui_multiplier: Decimal.new("2000000000000000000"),
+               ui_multiplier_effective_at: ~U[2026-09-01 00:00:00.000000Z]
+             }) == %{
+               token_type: "ERC-8056",
+               name: "Scaled",
+               symbol: "SCL",
+               decimals: 18,
+               total_supply: "1000000000000000000000",
+               icon_url: "http://localhost:1235/test.png",
+               ui_multiplier: "1000000000000000000",
+               new_ui_multiplier: "2000000000000000000",
+               ui_multiplier_effective_at: "2026-09-01T00:00:00Z"
+             }
+    end
+
+    test "omits the fields the token row lacks" do
+      enable_multichain_search()
+
+      assert MultichainSearch.prepare_token_metadata_for_queue(%Token{type: "ERC-20", symbol: "PLN"}) == %{
+               token_type: "ERC-20",
+               symbol: "PLN"
              }
     end
   end
@@ -1422,5 +1514,17 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       contract_name: nil,
       is_verified_contract: false
     }
+  end
+
+  defp enable_multichain_search do
+    initial = Application.get_env(:explorer, MultichainSearch) || []
+
+    Application.put_env(
+      :explorer,
+      MultichainSearch,
+      Keyword.merge(initial, service_url: "http://localhost:1234", api_key: "12345", token_info_chunk_size: 1000)
+    )
+
+    on_exit(fn -> Application.put_env(:explorer, MultichainSearch, initial) end)
   end
 end

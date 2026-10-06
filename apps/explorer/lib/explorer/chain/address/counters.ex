@@ -6,7 +6,7 @@ defmodule Explorer.Chain.Address.Counters do
   use Utils.RuntimeEnvHelper,
     chain_identity: [:explorer, :chain_identity]
 
-  import Ecto.Query, only: [from: 2, limit: 2, select: 3, union_all: 2, where: 3]
+  import Ecto.Query
 
   import Explorer.Chain,
     only: [select_repo: 1, wrapped_union_subquery: 1]
@@ -30,6 +30,9 @@ defmodule Explorer.Chain.Address.Counters do
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
 
+  alias Explorer.Helper, as: ExplorerHelper
+  alias Explorer.Repo.LockTimeout
+
   require Logger
 
   @typep counter :: non_neg_integer() | nil
@@ -48,7 +51,7 @@ defmodule Explorer.Chain.Address.Counters do
   @transactions_types [:transactions_from, :transactions_to, :transactions_contract]
 
   defp address_hash_to_logs_query(address_hash) do
-    from(l in Log, where: l.address_hash == ^address_hash)
+    Log.address_match_union_query(address_hash, fn address_match_dynamic -> where(Log, ^address_match_dynamic) end)
   end
 
   defp address_hash_to_validated_blocks_query(address_hash) do
@@ -60,7 +63,11 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   def check_if_logs_at_address(address_hash, options \\ []) do
-    select_repo(options).exists?(address_hash_to_logs_query(address_hash))
+    address_hash
+    |> Log.address_match_dynamics()
+    |> Enum.any?(fn address_match_dynamic ->
+      select_repo(options).exists?(where(Log, ^address_match_dynamic))
+    end)
   end
 
   def check_if_token_transfers_at_address(address_hash, options \\ []) do
@@ -69,7 +76,7 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   def check_if_tokens_at_address(address_hash, options \\ []) do
-    select_repo(options).exists?(address_hash_to_token_balances_query(address_hash))
+    select_repo(options).exists?(address_hash_to_token_balances_query(address_hash, options))
   end
 
   @spec check_if_withdrawals_at_address(Hash.Address.t()) :: boolean()
@@ -79,9 +86,25 @@ defmodule Explorer.Chain.Address.Counters do
     |> select_repo(options).exists?()
   end
 
+  @existence_checks_unavailable %{
+    has_validated_blocks: false,
+    has_logs: false,
+    has_tokens: false,
+    has_token_transfers: false,
+    has_beacon_chain_withdrawals: false
+  }
+
   @doc """
     Performs all existence checks needed by the address view in a single
     database round trip: `SELECT exists(...), exists(...), ...`.
+
+    The checks are optional data of the address page, so they must not make
+    the page hang while one of the checked tables is locked exclusively (e.g.
+    by `VACUUM FULL` or a heavy migration). The query fails fast in that case
+    (see `Explorer.Repo.LockTimeout`) and degrades: the `logs` table is by far
+    the biggest and the most likely one to be under maintenance, so the checks
+    are retried without it with `has_logs: false`; if that fails too, every
+    check is reported as `false`.
   """
   @spec address_existence_checks(Hash.Address.t(), Keyword.t()) :: %{
           has_validated_blocks: boolean(),
@@ -91,8 +114,21 @@ defmodule Explorer.Chain.Address.Counters do
           has_beacon_chain_withdrawals: boolean()
         }
   def address_existence_checks(address_hash, options \\ []) do
+    repo = select_repo(options)
+
+    with {:error, :lock_timeout} <- run_address_existence_checks(repo, address_hash, true),
+         {:error, :lock_timeout} <- run_address_existence_checks(repo, address_hash, false) do
+      Logger.warning(fn -> "Existence checks for address #{address_hash} are unavailable: a table is locked" end)
+
+      @existence_checks_unavailable
+    else
+      {:ok, %{has_logs: _} = checks} -> checks
+      {:ok, checks} -> Map.put(checks, :has_logs, false)
+    end
+  end
+
+  defp run_address_existence_checks(repo, address_hash, check_logs?) do
     validated_blocks_query = address_hash |> address_hash_to_validated_blocks_query() |> select([_], 1)
-    logs_query = address_hash |> address_hash_to_logs_query() |> select([_], 1)
     token_balances_query = address_hash |> address_hash_to_token_balances_query() |> select([_], 1)
     token_transfers_from_query = from(tt in TokenTransfer, where: tt.from_address_hash == ^address_hash, select: 1)
     token_transfers_to_query = from(tt in TokenTransfer, where: tt.to_address_hash == ^address_hash, select: 1)
@@ -102,14 +138,26 @@ defmodule Explorer.Chain.Address.Counters do
       from(f in fragment("SELECT 1"),
         select: %{
           has_validated_blocks: exists(validated_blocks_query),
-          has_logs: exists(logs_query),
           has_tokens: exists(token_balances_query),
           has_token_transfers: exists(token_transfers_from_query) or exists(token_transfers_to_query),
           has_beacon_chain_withdrawals: exists(withdrawals_query)
         }
       )
 
-    select_repo(options).one(query)
+    query =
+      if check_logs? do
+        # the select has to be applied inside every union branch, see `Log.address_match_union_query/3`
+        logs_query =
+          Log.address_match_union_query(address_hash, fn address_match_dynamic ->
+            Log |> where(^address_match_dynamic) |> select([_], %{one: 1})
+          end)
+
+        select_merge(query, [_], %{has_logs: exists(logs_query)})
+      else
+        query
+      end
+
+    LockTimeout.run(repo, fn repo -> repo.one(query) end)
   end
 
   @doc """
@@ -184,15 +232,22 @@ defmodule Explorer.Chain.Address.Counters do
   @spec address_to_token_transfer_count_query(
           Hash.Address.t(),
           Block.block_number() | nil,
-          Block.block_number() | nil
+          Block.block_number() | nil,
+          Keyword.t()
         ) :: Ecto.Query.t()
-  def address_to_token_transfer_count_query(address_hash, from_block_number \\ nil, to_block_number \\ nil) do
+  def address_to_token_transfer_count_query(
+        address_hash,
+        from_block_number \\ nil,
+        to_block_number \\ nil,
+        options \\ []
+      ) do
     TokenTransfer
     |> where(
       [token_transfer],
       token_transfer.to_address_hash == ^address_hash or token_transfer.from_address_hash == ^address_hash
     )
     |> where_block_number_in_range(from_block_number, to_block_number)
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
   end
 
   defp where_block_number_in_range(query, from_block_number, to_block_number) do
@@ -205,12 +260,13 @@ defmodule Explorer.Chain.Address.Counters do
     end)
   end
 
-  def address_hash_to_token_balances_query(address_hash) do
+  def address_hash_to_token_balances_query(address_hash, options \\ []) do
     from(
       tb in CurrentTokenBalance,
       where: tb.address_hash == ^address_hash,
       where: tb.value > 0 or tb.token_type == "ERC-7984"
     )
+    |> ExplorerHelper.maybe_hide_scam_addresses(:token_contract_address_hash, options)
   end
 
   defp address_hash_to_internal_transactions_limited_count_query(address_hash, options) do
@@ -243,10 +299,15 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   @spec address_limited_counters(Hash.t(), Keyword.t()) :: %{atom() => counter}
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def address_limited_counters(address_hash, options) do
+    show_scam_tokens? = options[:show_scam_tokens?] || false
+
     cached_counters =
       Enum.reduce(@types, %{}, fn type, acc ->
-        case AddressTabsElementsCount.get_counter(type, address_hash) do
+        scam_flag = if type in [:token_transfers, :token_balances], do: show_scam_tokens?, else: false
+
+        case AddressTabsElementsCount.get_counter(type, address_hash, scam_flag) do
           {_datetime, counter, status} ->
             Map.put(acc, type, {status, counter})
 
@@ -345,7 +406,7 @@ defmodule Explorer.Chain.Address.Counters do
       configure_task(
         :token_transfers,
         cached_counters,
-        address_to_token_transfer_count_query(address_hash),
+        address_to_token_transfer_count_query(address_hash, nil, nil, options),
         address_hash,
         options
       )
@@ -354,7 +415,7 @@ defmodule Explorer.Chain.Address.Counters do
       configure_task(
         :token_balances,
         cached_counters,
-        address_hash_to_token_balances_query(address_hash),
+        address_hash_to_token_balances_query(address_hash, options),
         address_hash,
         options
       )
@@ -475,11 +536,24 @@ defmodule Explorer.Chain.Address.Counters do
     end
   end
 
+  defp run_or_ignore({ok, _counter}, _type, _address_hash, _show_scam_tokens?, _fun)
+       when ok in [:up_to_date, :limit_value],
+       do: nil
+
+  defp run_or_ignore(_, type, address_hash, show_scam_tokens?, fun) do
+    if !AddressTabsElementsCount.get_task(type, address_hash, show_scam_tokens?) do
+      AddressTabsElementsCount.set_task(type, address_hash, show_scam_tokens?)
+
+      Task.async(fun)
+    end
+  end
+
   defp configure_task(counter_type, cache, query, address_hash, options) do
     address_hash = to_string(address_hash)
+    show_scam_tokens? = options[:show_scam_tokens?] || false
     start = System.monotonic_time()
 
-    run_or_ignore(cache[counter_type], counter_type, address_hash, fn ->
+    run_or_ignore(cache[counter_type], counter_type, address_hash, show_scam_tokens?, fn ->
       result =
         query
         |> count(options, counter_type)
@@ -489,8 +563,8 @@ defmodule Explorer.Chain.Address.Counters do
 
       Logger.debug("Time consumed for #{counter_type} counter task for #{address_hash} is #{diff}ms")
 
-      AddressTabsElementsCount.set_counter(counter_type, address_hash, result)
-      AddressTabsElementsCount.drop_task(counter_type, address_hash)
+      AddressTabsElementsCount.set_counter(counter_type, address_hash, result, show_scam_tokens?)
+      AddressTabsElementsCount.drop_task(counter_type, address_hash, show_scam_tokens?)
 
       {counter_type, result}
     end)

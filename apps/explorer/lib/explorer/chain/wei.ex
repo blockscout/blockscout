@@ -333,9 +333,9 @@ defimpl Inspect, for: Explorer.Chain.Wei do
   end
 end
 
-defimpl Jason.Encoder, for: Explorer.Chain.Wei do
-  def encode(wei, opts) do
+defimpl JSON.Encoder, for: Explorer.Chain.Wei do
+  def encode(wei, encoder) do
     # changed since it's needed to return wei value (which is big number) as string
-    Jason.Encode.struct(wei.value, opts)
+    JSON.Encoder.encode(wei.value, encoder)
   end
 end

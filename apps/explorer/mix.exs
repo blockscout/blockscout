@@ -21,7 +21,7 @@ defmodule Explorer.Mixfile do
       lockfile: "../../mix.lock",
       package: package(),
       start_permanent: Mix.env() == :prod,
-      version: "11.3.3",
+      version: "12.0.0",
       xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper, Indexer.Fetcher.InternalTransaction]]
     ]
   end
@@ -85,7 +85,6 @@ defmodule Explorer.Mixfile do
       {:ezstd, "~> 1.2"},
       {:exvcr, "~> 0.10", only: :test},
       {:httpoison, "~> 2.0"},
-      {:jason, "~> 1.3"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       {:libcluster, "~> 3.5"},
       # Log errors and application output to separate files
@@ -94,7 +93,6 @@ defmodule Explorer.Mixfile do
       {:math, "~> 0.7.0"},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 1.3.2"},
-      {:poison, "~> 5.0.0"},
       {:nimble_csv, "~> 1.1"},
       {:postgrex, ">= 0.0.0"},
       {:prometheus, "~> 6.0", override: true},
@@ -132,14 +130,13 @@ defmodule Explorer.Mixfile do
       {:joken, "~> 2.6"},
       {:joken_jwks, "~> 1.7.0"},
       {:utils, in_umbrella: true},
-      {:dns, "~> 2.4.0"},
-      {:inet_cidr, "~> 1.0.0"},
       {:hammer, "~> 7.0"},
       {:ton, "~> 0.5.0"},
       {:mint, "~> 1.0"},
       # pooled HTTP client on top of mint, used for microservice requests
       {:finch, "~> 0.18"},
-      {:oban, "~> 2.19"}
+      {:oban, "~> 2.19"},
+      {:nimble_lz4, "~> 1.1"}
     ]
   end
 

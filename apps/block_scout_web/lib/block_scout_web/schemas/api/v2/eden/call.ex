@@ -10,7 +10,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Eden.Call do
     properties: %{
       to: General.AddressHashNullable,
       value: General.IntegerString,
-      input: General.HexString
+      input: General.HexData
     },
     required: [:to, :value, :input],
     additionalProperties: false

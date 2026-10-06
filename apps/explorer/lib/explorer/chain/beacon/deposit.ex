@@ -262,6 +262,7 @@ defmodule Explorer.Chain.Beacon.Deposit do
         ) :: [
           %{
             first_topic: Hash.Full.t(),
+            first_topic_id: integer(),
             data: Data.t(),
             index: non_neg_integer(),
             block_number: non_neg_integer(),
@@ -273,24 +274,37 @@ defmodule Explorer.Chain.Beacon.Deposit do
         ]
   def get_logs_with_deposits(deposit_contract_address_hash, log_block_number, log_index, limit) do
     query =
-      from(log in Log,
-        join: transaction in assoc(log, :transaction),
-        where: transaction.block_consensus == true,
-        where: log.block_hash == transaction.block_hash,
-        where: log.address_hash == ^deposit_contract_address_hash,
-        where: log.first_topic == ^@deposit_event_signature,
-        where: {log.block_number, log.index} > {^log_block_number, ^log_index},
-        limit: ^limit,
-        select:
-          map(
-            log,
-            ^~w(first_topic data index block_number block_hash transaction_hash)a
-          ),
-        order_by: [asc: log.block_number, asc: log.index],
-        select_merge: map(transaction, ^~w(from_address_hash block_timestamp)a)
+      Log.address_match_union_query(
+        deposit_contract_address_hash,
+        fn address_match_dynamic ->
+          Log
+          |> Log.join_transaction_query()
+          |> where(^address_match_dynamic)
+          |> where(as(:transaction).block_consensus == true)
+          |> Log.filter_by_topic_query(:first_topic, @deposit_event_signature)
+          |> where([log], {log.block_number, log.index} > {^log_block_number, ^log_index})
+          |> select([log], %{
+            first_topic: log.first_topic,
+            first_topic_id: log.first_topic_id,
+            data: log.data,
+            index: log.index,
+            block_number: log.block_number,
+            block_hash: as(:transaction).block_hash,
+            transaction_hash: as(:transaction).hash,
+            from_address_hash: as(:transaction).from_address_hash,
+            block_timestamp: as(:transaction).block_timestamp
+          })
+        end,
+        fn query ->
+          query
+          |> order_by([log], asc: log.block_number, asc: log.index)
+          |> limit(^limit)
+        end
       )
 
-    Repo.all(query)
+    query
+    |> Repo.all()
+    |> Log.prepare_first_topic()
   end
 
   defp put_withdrawal_address_hash(deposit) do

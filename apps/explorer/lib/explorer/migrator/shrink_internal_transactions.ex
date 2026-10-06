@@ -54,7 +54,9 @@ defmodule Explorer.Migrator.ShrinkInternalTransactions do
         update: [set: [input: fragment("substring(? FOR 4)", it.input), output: nil]]
       )
 
-    Repo.update_all(query, [], timeout: :infinity)
+    {count, _} = Repo.update_all(query, [], timeout: :infinity)
+
+    count
   end
 
   @impl FillingMigration

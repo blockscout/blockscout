@@ -10,6 +10,10 @@ defmodule Explorer.Market.Source.CoinGecko do
 
   @behaviour Source
 
+  # CoinGecko rejects `/coins/markets` requests with `per_page` above 250, so a
+  # larger configured batch size is capped here and processed across several requests.
+  @coins_markets_max_per_page 250
+
   @impl Source
   def native_coin_fetching_enabled?, do: not is_nil(config(:coin_id))
 
@@ -41,25 +45,29 @@ defmodule Explorer.Market.Source.CoinGecko do
 
   @impl Source
   def fetch_tokens(state, batch_size) do
-    {to_fetch, remaining} = Enum.split(state, batch_size)
+    per_page = min(batch_size, @coins_markets_max_per_page)
+    {to_fetch, remaining} = Enum.split(state, per_page)
 
     joined_token_ids = Enum.map_join(to_fetch, ",", & &1.id)
 
     case Source.http_request(
            base_url()
-           |> URI.append_path("/simple/price")
-           |> URI.append_query("vs_currencies=#{config(:currency)}")
-           |> URI.append_query("include_market_cap=true")
-           |> URI.append_query("include_24hr_vol=true")
+           |> URI.append_path("/coins/markets")
+           |> URI.append_query("vs_currency=#{config(:currency)}")
            |> URI.append_query("ids=#{joined_token_ids}")
+           |> URI.append_query("per_page=#{per_page}")
+           |> URI.append_query("page=1")
            |> URI.to_string(),
            headers(),
            __MODULE__,
-           :simple_price
+           :coins_markets
          ) do
-      {:ok, data} ->
+      {:ok, data} when is_list(data) ->
         to_import = put_market_data_to_tokens(to_fetch, data)
         {:ok, remaining, Enum.empty?(remaining), to_import}
+
+      {:ok, unexpected_response} ->
+        {:error, Source.unexpected_response_error("CoinGecko", unexpected_response)}
 
       {:error, _reason} = error ->
         error
@@ -222,19 +230,22 @@ defmodule Explorer.Market.Source.CoinGecko do
   end
 
   defp put_market_data_to_tokens(tokens, market_data) do
-    currency = config(:currency)
-    market_cap = currency <> "_market_cap"
-    volume_24h = currency <> "_24h_vol"
+    # /coins/markets returns an array of coin objects, each carrying its "id".
+    # Note: `total_supply` from the response is intentionally not imported: `Token.total_supply`
+    # holds the raw on-chain `totalSupply()` value maintained by the token total supply fetchers,
+    # while CoinGecko reports a unit-scaled amount.
+    market_data_map = Map.new(market_data, &{&1["id"], &1})
 
     tokens
     |> Enum.reduce([], fn token, to_import ->
-      case Map.fetch(market_data, token.id) do
-        {:ok, %{^currency => fiat_value, ^market_cap => market_cap, ^volume_24h => volume_24h}} ->
+      case Map.fetch(market_data_map, token.id) do
+        {:ok, coin_data} ->
           token_with_market_data =
             Map.merge(token, %{
-              fiat_value: Source.to_decimal(fiat_value),
-              circulating_market_cap: Source.to_decimal(market_cap),
-              volume_24h: Source.to_decimal(volume_24h)
+              fiat_value: Source.to_decimal(coin_data["current_price"]),
+              circulating_market_cap: Source.to_decimal(coin_data["market_cap"]),
+              volume_24h: Source.to_decimal(coin_data["total_volume"]),
+              circulating_supply: Source.to_decimal(coin_data["circulating_supply"])
             })
 
           [token_with_market_data | to_import]

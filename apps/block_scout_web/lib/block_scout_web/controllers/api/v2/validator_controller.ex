@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
   alias Explorer.Chain.Stability.Validator, as: ValidatorStability
   alias Explorer.Chain.Zilliqa.Hash.BLSPublicKey
   alias Explorer.Chain.Zilliqa.Staker, as: ValidatorZilliqa
+  alias OpenApiSpex.Parameter
 
   import BlockScoutWeb.PagingHelper,
     only: [
@@ -22,9 +23,9 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
 
   import BlockScoutWeb.Chain,
     only: [
-      split_list_by_page: 1,
-      paging_options: 1,
-      next_page_params: 5
+      maybe_override_page_size: 2,
+      paginate_list: 4,
+      paging_options: 1
     ]
 
   @api_true api?: true
@@ -33,7 +34,73 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
 
   plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
 
-  operation :stability_validators_list, false
+  tags(["stability"])
+
+  operation :stability_validators_list,
+    summary: "List Stability validators.",
+    description:
+      "Retrieves a paginated list of validators on the Stability chain, optionally filtered by state and sorted by state, address hash or number of blocks produced.",
+    parameters:
+      base_params() ++
+        [
+          %Parameter{
+            name: :state_filter,
+            in: :query,
+            schema: %Schema{
+              type: :string,
+              pattern: ~r/^(active|probation|inactive)(,(active|probation|inactive))*$/
+            },
+            required: false,
+            description:
+              "Comma-separated list of validator states to keep. Allowed values: `active`, `probation`, `inactive` (case-sensitive)."
+          },
+          sort_param(["state", "address_hash", "blocks_validated"]),
+          order_param(),
+          # NOTE: this cursor parameter is intentionally NOT marked `nullable: true`, even though
+          # the `StabilityValidator.state` response property is. HTTP query strings cannot carry
+          # JSON `null` — a client can only send a string value, an empty string, or omit the
+          # parameter — so `nullable: true` on a query parameter is meaningless and misleading.
+          # If the previous page's last validator had `state == nil`, the client cannot echo that
+          # null back; the cursor for that boundary is effectively non-resumable. This asymmetry
+          # is a property of HTTP, not of the spec.
+          %Parameter{
+            name: :state,
+            in: :query,
+            schema: %Schema{
+              type: :string,
+              enum: ["active", "probation", "inactive"]
+            },
+            required: false,
+            description: "Cursor field — validator state from the previous page's `next_page_params`."
+          },
+          %Parameter{
+            name: :address_hash,
+            in: :query,
+            schema: Schemas.General.AddressHash,
+            required: false,
+            description: "Cursor field — validator address hash from the previous page's `next_page_params`."
+          },
+          %Parameter{
+            name: :blocks_validated,
+            in: :query,
+            schema: %Schema{type: :integer, minimum: 0},
+            required: false,
+            description: "Cursor field — number of blocks validated from the previous page's `next_page_params`."
+          }
+        ],
+    responses: [
+      ok:
+        {"List of Stability validators.", "application/json",
+         paginated_response(
+           items: Schemas.Stability.Validator,
+           next_page_params_example: %{
+             "state" => "active",
+             "address_hash" => "0x0000000000000000000000000000000000000805",
+             "blocks_validated" => 100
+           }
+         )},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/validators/stability` endpoint.
@@ -51,22 +118,23 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       |> Keyword.merge(validators_stability_sorting(params))
       |> Keyword.merge(stability_validators_state_options(params))
 
-    {validators, next_page} = options |> ValidatorStability.get_paginated_validators() |> split_list_by_page()
-
-    next_page_params =
-      next_page
-      |> next_page_params(
-        validators,
-        params,
-        false,
-        &ValidatorStability.next_page_params/1
-      )
+    {validators, next_page_params} =
+      options
+      |> ValidatorStability.get_paginated_validators()
+      |> paginate_list(params, options[:paging_options], paging_function: &ValidatorStability.next_page_params/1)
 
     conn
     |> render(:stability_validators, %{validators: validators, next_page_params: next_page_params})
   end
 
-  operation :stability_validators_counters, false
+  operation :stability_validators_counters,
+    summary: "Get Stability validators counters.",
+    description: "Retrieves aggregate counters for the Stability chain validator set.",
+    parameters: base_params(),
+    responses: [
+      ok: {"Stability validators counters.", "application/json", Schemas.Stability.Counters},
+      unprocessable_entity: JsonErrorResponse.response()
+    ]
 
   @doc """
     Function to handle GET requests to `/api/v2/validators/stability/counters` endpoint.
@@ -106,16 +174,10 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       |> Keyword.merge(paging_options(params))
       |> Keyword.merge(validators_blackfort_sorting(params))
 
-    {validators, next_page} = options |> ValidatorBlackfort.get_paginated_validators() |> split_list_by_page()
-
-    next_page_params =
-      next_page
-      |> next_page_params(
-        validators,
-        params,
-        false,
-        &ValidatorBlackfort.next_page_params/1
-      )
+    {validators, next_page_params} =
+      options
+      |> ValidatorBlackfort.get_paginated_validators()
+      |> paginate_list(params, options[:paging_options], paging_function: &ValidatorBlackfort.next_page_params/1)
 
     conn
     |> render(:blackfort_validators, %{validators: validators, next_page_params: next_page_params})
@@ -157,28 +219,10 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     description: "Retrieves the list of Zilliqa validators.",
     parameters:
       base_params() ++
-        define_paging_params(["index", "items_count"]) ++
+        define_paging_params(["index"]) ++
         [
-          %OpenApiSpex.Parameter{
-            name: :sort,
-            in: :query,
-            schema: %OpenApiSpex.Schema{
-              type: :string,
-              enum: ["index"],
-              nullable: false
-            },
-            required: false
-          },
-          %OpenApiSpex.Parameter{
-            name: :order,
-            in: :query,
-            schema: %OpenApiSpex.Schema{
-              type: :string,
-              enum: ["asc", "desc"],
-              nullable: false
-            },
-            required: false
-          }
+          sort_param(["index"]),
+          order_param()
         ],
     responses: [
       ok:
@@ -186,10 +230,8 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
          paginated_response(
            items: Schemas.Zilliqa.Staker,
            next_page_params_example: %{
-             "index" => 55,
-             "items_count" => 50
-           },
-           title_prefix: "Validators"
+             "index" => 55
+           }
          )},
       unprocessable_entity: JsonErrorResponse.response()
     ]
@@ -215,21 +257,13 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
     options =
       @api_true
       |> Keyword.merge(paging_options: paging_options)
+      |> maybe_override_page_size(params)
       |> Keyword.merge(sorting_options: sorting_options)
 
-    {validators, next_page} =
+    {validators, next_page_params} =
       options
       |> ValidatorZilliqa.paginated_active_stakers()
-      |> split_list_by_page()
-
-    next_page_params =
-      next_page
-      |> next_page_params(
-        validators,
-        params,
-        false,
-        &ValidatorZilliqa.next_page_params/1
-      )
+      |> paginate_list(params, options[:paging_options], paging_function: &ValidatorZilliqa.next_page_params/1)
 
     conn
     |> render(:zilliqa_validators, %{
@@ -245,7 +279,7 @@ defmodule BlockScoutWeb.API.V2.ValidatorController do
       %OpenApiSpex.Parameter{
         name: :bls_public_key,
         in: :path,
-        schema: Schemas.General.HexString,
+        schema: Schemas.General.HexData,
         required: true
       }
       | base_params()

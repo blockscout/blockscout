@@ -34,6 +34,8 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   - **Range-specific scanning** - Used when specific finite ranges or multiple ranges
     are configured. This strategy:
     * Clears all existing missing block ranges from the database
+    * Removes the massive blocks that fall outside the configured ranges, so they
+      are not re-fetched by `Indexer.Block.Catchup.MassiveBlocksFetcher`
     * For each configured range (e.g., "100..200,1000..9000"), identifies all missing
       blocks within those ranges by querying the blockchain
     * Saves all identified missing ranges to the database in a single batch operation
@@ -65,7 +67,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.{MassiveBlock, MissingBlockRange}
 
   @default_missing_ranges_batch_size 100_000
   @past_check_interval 10
@@ -165,14 +167,18 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
   #
   # Performs the following steps:
   # 1. Clears all existing missing block ranges from the database
-  # 2. Identifies missing blocks within each range and saves the new identified
+  # 2. Deletes the massive blocks that don't fall into the given ranges, so that
+  #    `Indexer.Block.Catchup.MassiveBlocksFetcher` doesn't keep refetching blocks
+  #    outside of the configured ranges
+  # 3. Identifies missing blocks within each range and saves the new identified
   #    ranges of missing blocks to the database
-  # 3. If `max_fetched_block_number` is provided, schedules future block checks
+  # 4. If `max_fetched_block_number` is provided, schedules future block checks
   #
   # ## Parameters
   # - `ranges`: List of `Range` structs defining the block ranges to initialize
   # - `max_fetched_block_number`: Optional highest block number processed, used for
-  #   scheduling future checks
+  #   scheduling future checks and as the boundary of the trailing `..latest` range:
+  #   every block above it belongs to the configured ranges
   #
   # ## Returns
   # A map containing:
@@ -184,6 +190,7 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
         }
   defp ranges_init(ranges, max_fetched_block_number \\ nil) do
     Repo.delete_all(MissingBlockRange)
+    MassiveBlock.delete_numbers_out_of_ranges(ranges, max_fetched_block_number)
 
     ranges
     |> Enum.reverse()

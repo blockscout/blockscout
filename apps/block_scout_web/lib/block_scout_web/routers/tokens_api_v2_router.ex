@@ -18,11 +18,32 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
       parsers: [:urlencoded, :multipart, :json],
       query_string_length: @max_query_string_length,
       pass: ["*/*"],
-      json_decoder: Poison
+      json_decoder: JSON
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
+    plug(CheckApiV2)
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(OpenApiSpex.Plug.PutApiSpec, module: BlockScoutWeb.Specs.Public)
+  end
+
+  pipeline :api_v2_csv do
+    plug(
+      Plug.Parsers,
+      parsers: [:urlencoded, :multipart, :json],
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: JSON
+    )
+
+    plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
+    plug(:accepts, ["json", "csv"])
+    # CSV responses set their content type explicitly; keep JSON as the render
+    # format so error responses (404/422/403) render their JSON templates even
+    # when the client sends `Accept: application/csv`.
+    plug(:put_format, "json")
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
@@ -36,7 +57,7 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
       length: 20_000_000,
       query_string_length: 5_000,
       pass: ["*/*"],
-      json_decoder: Poison
+      json_decoder: JSON
     )
 
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
@@ -56,6 +77,8 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
       V2.TokenController,
       :trigger_nft_collection_metadata_refetch
     )
+
+    post("/batch", V2.TokenController, :tokens_batch)
   end
 
   scope "/", as: :api_v2 do
@@ -70,9 +93,10 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
     get("/:address_hash_param/counters", V2.TokenController, :counters)
     get("/:address_hash_param/transfers", V2.TokenController, :transfers)
     get("/:address_hash_param/holders", V2.TokenController, :holders)
-    get("/:address_hash_param/holders/csv", V2.CsvExportController, :export_token_holders)
+    get("/:address_hash_param/ui-multiplier-changes", V2.TokenController, :ui_multiplier_changes)
     get("/:address_hash_param/instances", V2.TokenController, :instances)
     get("/:address_hash_param/instances/:token_id_param", V2.TokenController, :instance)
+    get("/:address_hash_param/instances/:token_id_param/media-type", V2.TokenController, :media_type)
     get("/:address_hash_param/instances/:token_id_param/transfers", V2.TokenController, :transfers_by_instance)
     get("/:address_hash_param/instances/:token_id_param/holders", V2.TokenController, :holders_by_instance)
 
@@ -81,5 +105,12 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
       V2.TokenController,
       :transfers_count_by_instance
     )
+  end
+
+  scope "/", as: :api_v2 do
+    pipe_through(:api_v2_csv)
+
+    get("/:address_hash_param/holders/csv", V2.CsvExportController, :export_token_holders)
+    get("/:address_hash_param/transfers/csv", V2.CsvExportController, :export_token_transfers)
   end
 end

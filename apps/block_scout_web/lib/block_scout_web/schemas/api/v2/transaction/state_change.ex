@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.StateChange do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
+  alias BlockScoutWeb.Schemas.Helper
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -17,7 +18,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.StateChange do
       :change,
       :is_miner,
       :token,
-      :type
+      :type,
+      :ui_multiplier
     ],
     properties: %{
       # Should reference Address schema if available
@@ -28,7 +30,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.StateChange do
       is_miner: %Schema{type: :boolean},
       token: %Schema{allOf: [Token], nullable: true},
       token_id: General.IntegerStringNullable,
-      type: %Schema{type: :string, enum: ["token", "coin"]}
+      type: %Schema{type: :string, enum: ["token", "coin"]},
+      ui_multiplier:
+        Helper.describe_inline(
+          General.IntegerStringNullable.schema(),
+          "ERC-8056 multiplier `balance_before`, `balance_after` and `change` are to be displayed with, as of this transaction, with 18 decimals of precision. The nested `token.ui_multiplier` is the one in force now, not then."
+        )
     },
     additionalProperties: false
   })

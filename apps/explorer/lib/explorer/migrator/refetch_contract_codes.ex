@@ -59,10 +59,14 @@ defmodule Explorer.Migrator.RefetchContractCodes do
           timestamps: Import.timestamps()
         })
 
+        Enum.count(addresses_params)
+
       {:error, reason} ->
         Logger.error(fn -> ["failed to fetch contract codes: ", inspect(reason)] end,
           error_count: Enum.count(address_hashes)
         )
+
+        0
     end
   end
 

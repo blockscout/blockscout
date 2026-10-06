@@ -4,7 +4,6 @@ defmodule BlockScoutWeb.LayoutView do
 
   alias EthereumJSONRPC.Variant
   alias Explorer.{Chain, Helper}
-  alias Poison.Parser
 
   import BlockScoutWeb.APIDocsView, only: [blockscout_url: 1]
 
@@ -130,7 +129,7 @@ defmodule BlockScoutWeb.LayoutView do
         try do
           :block_scout_web
           |> Application.get_env(:other_networks)
-          |> Parser.parse!(%{keys: :atoms!})
+          |> Utils.JSON.decode!(keys: :atoms)
         rescue
           _ ->
             []
@@ -196,7 +195,7 @@ defmodule BlockScoutWeb.LayoutView do
   defp decode_other_explorers_json(nil), do: %{}
 
   defp decode_other_explorers_json(data) do
-    Jason.decode!(~s(#{data}))
+    Utils.JSON.decode!(~s(#{data}))
   rescue
     _ -> %{}
   end
@@ -227,7 +226,7 @@ defmodule BlockScoutWeb.LayoutView do
     if apps do
       try do
         apps
-        |> Parser.parse!(%{keys: :atoms!})
+        |> Utils.JSON.decode!(keys: :atoms)
       rescue
         _ ->
           []

@@ -243,7 +243,9 @@ defmodule Explorer.Chain.Block do
   alias Explorer.Chain.Address.CoinBalance
   alias Explorer.Chain.Block.{EmissionReward, Reward, SecondDegreeRelation}
   alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
+  alias Explorer.Chain.Optimism.SuperchainConfig
   alias Explorer.MicroserviceInterfaces.MultichainSearch
+  alias Explorer.Utility.AddressIdToAddressHash
   alias Explorer.Utility.MissingBlockRange
 
   @optional_attrs ~w(size refetch_needed total_difficulty difficulty base_fee_per_gas)a
@@ -351,6 +353,22 @@ defmodule Explorer.Chain.Block do
       on: [block_hash: b.hash],
       where: is_nil(r.block_hash)
     )
+  end
+
+  @doc """
+  Adds a filter by block numbers to the given query.
+  """
+  @spec by_numbers_query(Ecto.Queryable.t(), [block_number()]) :: Ecto.Query.t()
+  def by_numbers_query(query \\ __MODULE__, block_numbers) do
+    where(query, [b], b.number in ^block_numbers)
+  end
+
+  @doc """
+  Adds a consensus filter to the given block query.
+  """
+  @spec consensus_query(Ecto.Queryable.t(), boolean()) :: Ecto.Query.t()
+  def consensus_query(query \\ __MODULE__, consensus) do
+    where(query, [b], b.consensus == ^consensus)
   end
 
   @doc """
@@ -505,7 +523,8 @@ defmodule Explorer.Chain.Block do
   The config is put into the `eip1559_config` virtual field, so that `gas_target/1` and
   `next_block_base_fee_per_gas/1` don't query the config per block. Does nothing (and makes no queries)
   unless the chain type is `optimism`, where the config is dynamic and read from the
-  `op_eip1559_config_updates` table.
+  `op_eip1559_config_updates` table, with the superchain config as the default for the blocks
+  preceding the first update. The default is resolved once for the whole batch.
 
   ## Parameters
   - `blocks`: The blocks to resolve the config for.
@@ -522,8 +541,11 @@ defmodule Explorer.Chain.Block do
         # credo:disable-for-next-line Credo.Check.Design.AliasUsage
         |> Explorer.Chain.Optimism.EIP1559ConfigUpdate.actual_configs_for_blocks()
 
+      # The default is read from the database as well, so it is resolved at most once per batch
+      default_config = if Enum.any?(Map.values(configs), &is_nil/1), do: default_eip1559_config()
+
       Enum.map(blocks, fn block ->
-        %{block | eip1559_config: eip1559_config_or_default(Map.fetch!(configs, block.number))}
+        %{block | eip1559_config: eip1559_config_or_default(Map.fetch!(configs, block.number), default_config)}
       end)
     else
       blocks
@@ -531,7 +553,7 @@ defmodule Explorer.Chain.Block do
   end
 
   # Gets EIP-1559 config actual for the given block, preferring the one resolved by `preload_eip1559_config/1`.
-  # If not found, returns EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR and EIP_1559_ELASTICITY_MULTIPLIER env values.
+  # If not found, returns the default config (see `default_eip1559_config/0`).
   #
   # ## Parameters
   # - `block`: The given block.
@@ -546,17 +568,33 @@ defmodule Explorer.Chain.Block do
       block.number
       # credo:disable-for-next-line Credo.Check.Design.AliasUsage
       |> Explorer.Chain.Optimism.EIP1559ConfigUpdate.actual_config_for_block()
-      |> eip1559_config_or_default()
+      |> eip1559_config_or_default(nil)
     else
-      eip1559_config_or_default(nil)
+      default_eip1559_config()
     end
   end
 
-  defp eip1559_config_or_default({denominator, multiplier, _min_base_fee}), do: {denominator, multiplier}
+  # Converts an `op_eip1559_config_updates` record into the `{denominator, multiplier}` config, or returns
+  # `default_config` when there is no record. A `nil` `default_config` is resolved on demand.
+  defp eip1559_config_or_default({denominator, multiplier, _min_base_fee}, _default_config),
+    do: {denominator, multiplier}
 
-  defp eip1559_config_or_default(nil) do
-    {Application.get_env(:explorer, :base_fee_max_change_denominator),
-     Application.get_env(:explorer, :elasticity_multiplier)}
+  defp eip1559_config_or_default(nil, nil), do: default_eip1559_config()
+  defp eip1559_config_or_default(nil, default_config), do: default_config
+
+  # The EIP-1559 config to use when no `op_eip1559_config_updates` record applies to a block.
+  #
+  # On Optimism, it comes from the superchain config stored in the `constants` table (two queries), falling back
+  # to the EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR and EIP_1559_ELASTICITY_MULTIPLIER env values. Other chain
+  # types never write those constants, so they read the env values directly without querying.
+  @spec default_eip1559_config() :: {non_neg_integer(), non_neg_integer()}
+  defp default_eip1559_config do
+    if Application.get_env(:explorer, :chain_type) == :optimism do
+      {SuperchainConfig.eip1559_base_fee_max_change_denominator(), SuperchainConfig.eip1559_elasticity_multiplier()}
+    else
+      {Application.get_env(:explorer, :base_fee_max_change_denominator),
+       Application.get_env(:explorer, :elasticity_multiplier)}
+    end
   end
 
   @doc """
@@ -865,17 +903,23 @@ defmodule Explorer.Chain.Block do
       |> Repo.all()
       |> List.flatten()
 
-    internal_transaction_address_hashes =
+    # `InternalTransaction` stores participant addresses as `address_id` foreign keys into
+    # `address_ids_to_address_hashes`, and exposes the hashes only as virtual fields, so the ids
+    # are collected here and resolved to hashes in bulk.
+    internal_transaction_address_ids =
       from(internal_transaction in InternalTransaction,
         where: internal_transaction.block_number in ^block_numbers,
         select: [
-          internal_transaction.from_address_hash,
-          internal_transaction.to_address_hash,
-          internal_transaction.created_contract_address_hash
+          internal_transaction.from_address_id,
+          internal_transaction.to_address_id,
+          internal_transaction.created_contract_address_id
         ]
       )
       |> Repo.all()
       |> List.flatten()
+      |> Enum.reject(&is_nil/1)
+
+    internal_transaction_address_hashes = AddressIdToAddressHash.ids_to_hashes(internal_transaction_address_ids)
 
     transaction_address_hashes =
       Enum.flat_map(transactions, &[&1.from_address_hash, &1.to_address_hash, &1.created_contract_address_hash])

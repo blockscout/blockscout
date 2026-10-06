@@ -44,6 +44,51 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert response["next_page_params"] == nil
     end
 
+    test "items_count=10 returns 10 items with next_page_params", %{conn: conn} do
+      15
+      |> insert_list(:transaction)
+      |> with_block()
+
+      request = get(conn, "/api/v2/transactions", %{"items_count" => "10"})
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 10
+      assert response["next_page_params"] != nil
+
+      request_2nd_page =
+        get(conn, "/api/v2/transactions", Map.merge(response["next_page_params"], %{"items_count" => "10"}))
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      assert Enum.count(response_2nd_page["items"]) == 5
+      assert response_2nd_page["next_page_params"] == nil
+    end
+
+    test "items_count=1 returns 1 item with valid cursor", %{conn: conn} do
+      3
+      |> insert_list(:transaction)
+      |> with_block()
+
+      request = get(conn, "/api/v2/transactions", %{"items_count" => "1"})
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 1
+      assert response["next_page_params"] != nil
+      refute Map.has_key?(response["next_page_params"], "items_count")
+    end
+
+    test "absent items_count returns default 50", %{conn: conn} do
+      51
+      |> insert_list(:transaction)
+      |> with_block()
+
+      request = get(conn, "/api/v2/transactions")
+      assert response = json_response(request, 200)
+
+      assert Enum.count(response["items"]) == 50
+      assert response["next_page_params"] != nil
+    end
+
     # `token_creation` is reported off `created_contract_address.token`, which is
     # only there while the participant preload keeps loading `:token`.
     test "reports token_creation for a transaction that created a token", %{conn: conn} do
@@ -253,6 +298,17 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       response = json_response(request, 200)
 
       assert response["authorization_list"] == []
+    end
+
+    test "token transfers carry the ERC-8056 multiplier as of the transaction, not the current one", %{conn: conn} do
+      # the token transfers previewed inside a transaction are loaded without
+      # their block, which must not leave the multiplier unresolved
+      transaction = insert_erc_8056_transfer_before_split()
+
+      request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+
+      assert %{"token_transfers" => [%{"total" => total}]} = json_response(request, 200)
+      assert total["ui_multiplier"] == "1000000000000000000"
     end
 
     test "get token-transfers with ok reputation", %{conn: conn} do
@@ -728,6 +784,91 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       check_paginated_response(response, response_2nd_page, internal_transactions)
     end
+
+    test "returns pending status when transaction block is pending", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "returns pending status when transaction is in pending_transaction_operations", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert response["items"] == []
+      assert response["next_page_params"] == nil
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "include_zero_value=false excludes zero-value call internal transactions", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 0,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      request =
+        get(
+          conn,
+          "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions",
+          %{"include_zero_value" => "false"}
+        )
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert List.first(response["items"])["index"] == 2
+
+      request_default = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
+      assert response_default = json_response(request_default, 200)
+      assert Enum.count(response_default["items"]) == 2
+    end
   end
 
   describe "/transactions/{transaction_hash}/logs" do
@@ -829,9 +970,63 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       check_paginated_response(response, response_2nd_page, logs)
     end
+
+    test "includes called method ABI and arguments", %{conn: conn} do
+      event_abi = %{
+        "name" => "Set",
+        "type" => "event",
+        "inputs" => [%{"name" => "x", "type" => "uint256", "indexed" => false, "internalType" => "uint256"}],
+        "anonymous" => false
+      }
+
+      contract_address = insert(:contract_address)
+      insert(:smart_contract, address_hash: contract_address.hash, abi: [event_abi])
+
+      topic1_bytes = ExKeccak.hash_256("Set(uint256)")
+      topic1 = "0x" <> Base.encode16(topic1_bytes, case: :lower)
+
+      log_data = "0x0000000000000000000000000000000000000000000000000000000000000032"
+
+      transaction = :transaction |> insert() |> with_block()
+
+      insert(:log,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        address: contract_address,
+        first_topic: TestHelper.topic(topic1),
+        data: log_data
+      )
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/logs")
+
+      assert response = json_response(request, 200)
+      assert [log_from_api] = response["items"]
+
+      assert log_from_api["decoded"]["abi"]["name"] == "Set"
+      assert log_from_api["decoded"]["abi"]["type"] == "event"
+
+      assert log_from_api["decoded"]["abi"]["inputs"] == [
+               %{"indexed" => false, "internalType" => "uint256", "name" => "x", "type" => "uint256"}
+             ]
+
+      refute Map.has_key?(log_from_api["decoded"], "called_method")
+    end
   end
 
   describe "/transactions/{transaction_hash}/token-transfers" do
+    test "total carries the ERC-8056 multiplier as of the transfer, not the current one", %{conn: conn} do
+      # the token doubled on 2026-06-01 and the transfer predates that; the
+      # transfers of a transaction are loaded without their block, which must
+      # not leave the multiplier unresolved
+      transaction = insert_erc_8056_transfer_before_split()
+
+      request = get(conn, "/api/v2/transactions/#{transaction.hash}/token-transfers")
+
+      assert %{"items" => [%{"total" => total}]} = json_response(request, 200)
+      assert total["ui_multiplier"] == "1000000000000000000"
+    end
+
     test "get token-transfers with ok reputation", %{conn: conn} do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
       Application.put_env(:block_scout_web, :hide_scam_addresses, true)
@@ -1622,7 +1817,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         |> with_block(status: :ok)
 
       request =
-        get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes?items_count=50&state_changes=null")
+        get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes?state_changes_count=50")
 
       assert %{} = json_response(request, 200)
     end
@@ -1899,6 +2094,160 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert token_data["type"] == "ERC-20"
       assert token_data["address_hash"] == to_string(token.contract_address)
       assert token_data["reputation"] == "ok"
+    end
+
+    test "balances of an ERC-8056 token carry the multiplier of the transaction, not the current one", %{conn: conn} do
+      one = Decimal.new("1000000000000000000")
+      two = Decimal.new("2000000000000000000")
+
+      # the token doubled on 2026-06-01, and the transaction below predates that,
+      # so its balances have to keep the multiplier they were seen with
+      token =
+        insert(:token,
+          type: "ERC-8056",
+          ui_multiplier: two,
+          new_ui_multiplier: two,
+          ui_multiplier_effective_at: ~U[2026-06-01 00:00:00.000000Z]
+        )
+
+      announcement = insert(:block, number: 100, timestamp: ~U[2026-03-01 00:00:00.000000Z])
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block: announcement,
+        block_number: announcement.number,
+        log_index: 0,
+        old_multiplier: one,
+        new_multiplier: two,
+        effective_at: ~U[2026-06-01 00:00:00.000000Z]
+      )
+
+      block_before = insert(:block, number: 149, timestamp: ~U[2026-04-30 00:00:00.000000Z])
+      block = insert(:block, number: 150, timestamp: ~U[2026-05-01 00:00:00.000000Z])
+
+      transaction = :transaction |> insert() |> with_block(block, status: :ok)
+
+      from_address = insert(:address)
+      to_address = insert(:address)
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: block,
+        block_number: block.number,
+        token_contract_address: token.contract_address,
+        from_address: from_address,
+        to_address: to_address,
+        amount: Decimal.new(100),
+        token_ids: nil
+      )
+
+      for address <- [transaction.from_address, transaction.to_address, block.miner] do
+        insert(:address_coin_balance,
+          address: address,
+          address_hash: address.hash,
+          block_number: block_before.number,
+          value: %Wei{value: Decimal.new(1000)}
+        )
+      end
+
+      for {address, value} <- [{from_address, Decimal.new(1000)}, {to_address, Decimal.new(0)}] do
+        insert(:address_current_token_balance,
+          address: address,
+          address_hash: address.hash,
+          token_contract_address_hash: token.contract_address_hash,
+          block_number: block_before.number,
+          value: value
+        )
+      end
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
+
+      assert response = json_response(request, 200)
+
+      assert [_ | _] = token_state_changes = Enum.filter(response["items"], &(&1["type"] == "token"))
+
+      for state_change <- token_state_changes do
+        assert state_change["ui_multiplier"] == "1000000000000000000"
+        # the shared rendering of the token keeps saying what is in force now
+        assert state_change["token"]["ui_multiplier"] == "2000000000000000000"
+      end
+
+      assert Enum.all?(response["items"], &(&1["type"] == "token" or is_nil(&1["ui_multiplier"])))
+    end
+
+    test "balances of an ERC-8056 token account for a change the transaction itself announced", %{conn: conn} do
+      one = Decimal.new("1000000000000000000")
+      two = Decimal.new("2000000000000000000")
+
+      token =
+        insert(:token,
+          type: "ERC-8056",
+          ui_multiplier: two,
+          new_ui_multiplier: two,
+          ui_multiplier_effective_at: ~U[2026-05-01 00:00:00.000000Z]
+        )
+
+      block_before = insert(:block, number: 149, timestamp: ~U[2026-04-30 00:00:00.000000Z])
+      block = insert(:block, number: 150, timestamp: ~U[2026-05-01 00:00:00.000000Z])
+
+      transaction = :transaction |> insert() |> with_block(block, status: :ok)
+
+      from_address = insert(:address)
+      to_address = insert(:address)
+
+      token_transfer =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: block,
+          block_number: block.number,
+          token_contract_address: token.contract_address,
+          from_address: from_address,
+          to_address: to_address,
+          amount: Decimal.new(100),
+          token_ids: nil
+        )
+
+      # announced by the same transaction, but after the transfer the balances
+      # were derived from, and effective right away
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block: block,
+        block_number: block.number,
+        log_index: token_transfer.log_index + 1,
+        transaction_hash: transaction.hash,
+        old_multiplier: one,
+        new_multiplier: two,
+        effective_at: ~U[2026-05-01 00:00:00.000000Z]
+      )
+
+      for address <- [transaction.from_address, transaction.to_address, block.miner] do
+        insert(:address_coin_balance,
+          address: address,
+          address_hash: address.hash,
+          block_number: block_before.number,
+          value: %Wei{value: Decimal.new(1000)}
+        )
+      end
+
+      for {address, value} <- [{from_address, Decimal.new(1000)}, {to_address, Decimal.new(0)}] do
+        insert(:address_current_token_balance,
+          address: address,
+          address_hash: address.hash,
+          token_contract_address_hash: token.contract_address_hash,
+          block_number: block_before.number,
+          value: value
+        )
+      end
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/state-changes")
+
+      assert response = json_response(request, 200)
+
+      assert [_ | _] = token_state_changes = Enum.filter(response["items"], &(&1["type"] == "token"))
+
+      for state_change <- token_state_changes do
+        assert state_change["ui_multiplier"] == "2000000000000000000"
+      end
     end
 
     test "return state changes with scam token reputation properly set", %{conn: conn} do
@@ -2671,6 +3020,39 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
   defp check_total(_, _, _), do: true
 
+  # An ERC-8056 token that doubled on 2026-06-01, and a transaction that moved
+  # it a month before, while the multiplier was still 1.0.
+  defp insert_erc_8056_transfer_before_split do
+    token =
+      insert(:token,
+        type: "ERC-8056",
+        ui_multiplier: Decimal.new("2000000000000000000"),
+        new_ui_multiplier: Decimal.new("2000000000000000000"),
+        ui_multiplier_effective_at: ~U[2026-06-01 00:00:00.000000Z]
+      )
+
+    insert(:token_ui_multiplier_change,
+      token: token,
+      block_number: 100,
+      log_index: 0,
+      old_multiplier: Decimal.new("1000000000000000000"),
+      new_multiplier: Decimal.new("2000000000000000000"),
+      effective_at: ~U[2026-06-01 00:00:00.000000Z]
+    )
+
+    block = insert(:block, number: 150, timestamp: ~U[2026-05-01 00:00:00.000000Z])
+    transaction = :transaction |> insert() |> with_block(block)
+
+    insert(:token_transfer,
+      transaction: transaction,
+      block: block,
+      block_number: block.number,
+      token_contract_address: token.contract_address
+    )
+
+    transaction
+  end
+
   describe "/transactions/{transaction_hash}/summary?just_request_body=true" do
     setup do
       original_config =
@@ -3039,7 +3421,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       log_from_api = Enum.at(response["logs_data"]["items"], 0)
       assert not is_nil(log_from_api["decoded"])
 
-      assert log_from_api["decoded"] == %{
+      assert Map.drop(log_from_api["decoded"], ["abi"]) == %{
                "method_call" =>
                  "OptionSettled(uint256 indexed accountId, address option, uint256 subId, int256 amount, int256 value)",
                "method_id" => "d20a68b2",
@@ -3076,6 +3458,9 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
                  }
                ]
              }
+
+      assert log_from_api["decoded"]["abi"]["name"] == "OptionSettled"
+      assert log_from_api["decoded"]["abi"]["type"] == "event"
     end
 
     test "test corner case, when preload functions face absent smart contract", %{conn: conn} do
@@ -3234,6 +3619,34 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       address_json = Enum.at(response["data"]["summaries"], 0)["summary_template_variables"]["rnd_address"]["value"]
       assert Map.has_key?(address_json, "ens_domain_name")
       assert address_json["hash"] == to_string(address.hash)
+
+      Bypass.down(bypass)
+    end
+
+    test "returns an error when the interpreter response can't be decoded", %{conn: conn} do
+      bypass = Bypass.open()
+
+      Application.put_env(:block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
+        enabled: true,
+        service_url: "http://localhost:#{bypass.port}"
+      )
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(status: :ok)
+
+      Bypass.expect_once(bypass, "GET", "/cache/#{to_string(transaction.hash)}", fn conn ->
+        Plug.Conn.resp(conn, 404, "Not Found")
+      end)
+
+      Bypass.expect_once(bypass, "POST", "/transactions/summary", fn conn ->
+        Plug.Conn.resp(conn, 200, "{not a json")
+      end)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary")
+
+      assert json_response(request, 500) == %{"error" => "Error while transaction interpreter response decoding"}
 
       Bypass.down(bypass)
     end

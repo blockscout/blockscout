@@ -68,7 +68,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.FheOperation do
       hcu_depth: %Schema{type: :integer, nullable: false, example: 1, minimum: 0},
       caller: %Schema{allOf: [Address], nullable: true},
       inputs: @fhe_operation_inputs_schema,
-      result: General.HexString,
+      result: General.HexData,
       block_number: %Schema{type: :integer, nullable: false, example: 12_345_678}
     },
     required: [

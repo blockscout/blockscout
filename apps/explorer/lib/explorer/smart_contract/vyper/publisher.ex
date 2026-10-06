@@ -10,6 +10,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
 
   alias Explorer.Chain.SmartContract
   alias Explorer.SmartContract.CompilerVersion
+  alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
   alias Explorer.SmartContract.Vyper.Verifier
 
   def publish(address_hash, params) do
@@ -98,7 +99,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
 
     %{^file_name => contract_source_code} = sources
 
-    compiler_settings = Jason.decode!(compiler_settings_string)
+    compiler_settings = Utils.JSON.decode!(compiler_settings_string)
 
     prepared_params =
       %{}
@@ -122,7 +123,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       |> Map.put("license_type", initial_params["license_type"])
       |> Map.put("is_blueprint", source["isBlueprint"])
 
-    publish_smart_contract(address_hash, prepared_params, Jason.decode!(abi_string), save_file_path?)
+    publish_smart_contract(address_hash, prepared_params, Utils.JSON.decode!(abi_string), save_file_path?)
   end
 
   def publish_smart_contract(address_hash, params, abi, verification_with_files?) do
@@ -167,7 +168,7 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
     constructor_arguments = params["constructor_arguments"]
     compiler_settings = params["compiler_settings"]
 
-    clean_constructor_arguments = clear_constructor_arguments(constructor_arguments)
+    clean_constructor_arguments = SolidityPublisher.clear_constructor_arguments(constructor_arguments)
 
     clean_compiler_settings =
       if compiler_settings in ["", nil, %{}] do
@@ -202,13 +203,5 @@ defmodule Explorer.SmartContract.Vyper.Publisher do
       is_blueprint: params["is_blueprint"] || false,
       language: :vyper
     }
-  end
-
-  defp clear_constructor_arguments(constructor_arguments) do
-    if constructor_arguments != nil && constructor_arguments != "" do
-      constructor_arguments
-    else
-      nil
-    end
   end
 end

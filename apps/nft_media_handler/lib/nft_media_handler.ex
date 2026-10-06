@@ -29,7 +29,8 @@ defmodule NFTMediaHandler do
   @spec prepare_and_upload_by_url(binary(), binary()) :: {:error, any()} | {list(), {binary(), binary()}}
   def prepare_and_upload_by_url(url, r2_folder) do
     with {prepared_url, headers} <- maybe_process_ipfs(url),
-         {:fetch, {:ok, media_type, body}} <- {:fetch, Fetcher.fetch_media(prepared_url, headers)},
+         {:fetch, {:ok, media_type, body}} <-
+           {:fetch, Fetcher.fetch_media(prepared_url, headers, prepared_url == url)},
          {:ok, result} <- prepare_and_upload_inner(media_type, body, url, r2_folder) do
       result
     else
@@ -159,50 +160,11 @@ defmodule NFTMediaHandler do
     end
   end
 
-  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  # Rewrites ipfs://, ar:// and swarm URIs to their operator-configured gateway, and returns
+  # regular URLs unchanged. So an unchanged URL means the host still comes from on-chain
+  # metadata and must be validated against the SSRF blacklist, while a rewritten one points at
+  # a gateway the operator chose (possibly on a private address) and must not be.
   defp maybe_process_ipfs(uri) do
-    case URI.parse(uri) do
-      %URI{scheme: "ipfs", host: host, path: path} ->
-        resource_id =
-          cond do
-            host == "ipfs" and is_binary(path) and String.starts_with?(path, "/") ->
-              String.replace_leading(path, "/", "")
-
-            is_binary(host) and host != "" ->
-              build_ipfs_resource_id(host, path)
-
-            true ->
-              path
-          end
-
-        maybe_fetch_ipfs_url(resource_id, uri)
-
-      %URI{scheme: "ar", host: _host, path: resource_id} ->
-        {TokenMetadataRetriever.arweave_link(resource_id), TokenMetadataRetriever.ar_headers()}
-
-      %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
-        maybe_fetch_ipfs_url(resource_id, uri)
-
-      %URI{scheme: _, path: "ipfs/" <> resource_id} ->
-        maybe_fetch_ipfs_url(resource_id, uri)
-
-      %URI{scheme: scheme} when not is_nil(scheme) ->
-        {uri, []}
-
-      %URI{path: path} ->
-        maybe_fetch_ipfs_url(path, uri)
-    end
-  end
-
-  defp build_ipfs_resource_id(host, path) do
-    if is_nil(path), do: host, else: host <> path
-  end
-
-  defp maybe_fetch_ipfs_url(resource_id, uri) do
-    if is_binary(resource_id) and TokenMetadataRetriever.valid_ipfs_path?("ipfs://" <> resource_id) do
-      {TokenMetadataRetriever.ipfs_link(resource_id), TokenMetadataRetriever.ipfs_headers()}
-    else
-      {uri, []}
-    end
+    TokenMetadataRetriever.resolve_nft_media_url(uri)
   end
 end

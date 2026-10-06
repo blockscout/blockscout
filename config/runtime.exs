@@ -196,6 +196,8 @@ config :block_scout_web, :api_rate_limit,
       do: BlockScoutWeb.RateLimit.Hammer.ETS,
       else: BlockScoutWeb.RateLimit.Hammer.Redis
     ),
+  recaptcha_disabled_limit_multiplier:
+    ConfigHelper.parse_integer_env_var("API_RATE_LIMIT_RECAPTCHA_DISABLED_LIMIT_MULTIPLIER", 2, min: 1),
   config_url: ConfigHelper.parse_url_env_var("API_RATE_LIMIT_CONFIG_URL")
 
 config :block_scout_web, :remote_ip,
@@ -287,8 +289,14 @@ config :ethereum_jsonrpc, EthereumJSONRPC.HTTP,
     %{"Content-Type" => "application/json"}
     |> Map.merge(ConfigHelper.parse_json_env_var("ETHEREUM_JSONRPC_HTTP_HEADERS", "{}"))
     |> Map.to_list(),
-  gzip_enabled?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_HTTP_GZIP_ENABLED", "false"),
-  batch_size: ConfigHelper.parse_integer_env_var("ETHEREUM_JSONRPC_HTTP_BATCH_SIZE", 500)
+  batch_size: ConfigHelper.parse_integer_env_var("ETHEREUM_JSONRPC_HTTP_BATCH_SIZE", 500),
+  request_compression_heavy_methods_enabled?:
+    ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_HTTP_REQUEST_COMPRESSION_HEAVY_METHODS_ENABLED", "true"),
+  request_compression_all_methods_enabled?:
+    ConfigHelper.parse_bool_env_var(
+      "ETHEREUM_JSONRPC_HTTP_REQUEST_COMPRESSION_ALL_METHODS_ENABLED",
+      "false"
+    )
 
 config :ethereum_jsonrpc, EthereumJSONRPC.Geth,
   block_traceable?: ConfigHelper.parse_bool_env_var("ETHEREUM_JSONRPC_GETH_TRACE_BY_BLOCK"),
@@ -355,6 +363,13 @@ config :explorer,
   hackney_default_pool_size: ConfigHelper.parse_integer_env_var("HACKNEY_DEFAULT_POOL_SIZE", 1_000),
   microservice_http_pool_size: ConfigHelper.parse_integer_env_var("MICROSERVICE_HTTP_POOL_SIZE", 1_000),
   microservice_http_pool_count: ConfigHelper.parse_integer_env_var("MICROSERVICE_HTTP_POOL_COUNT", 20, min: 1)
+
+config :explorer, Explorer.PagingOptions, max_page_size: ConfigHelper.parse_integer_env_var("MAX_ITEMS_PER_PAGE", 100)
+
+config :explorer, Explorer.EthRPC,
+  extended_proxy_methods_enabled:
+    ConfigHelper.parse_bool_env_var("API_ETH_RPC_EXTENDED_PROXY_METHODS_ENABLED", "false"),
+  disable_core_proxy_methods: ConfigHelper.parse_bool_env_var("API_ETH_RPC_DISABLE_CORE_PROXY_METHODS", "false")
 
 config :explorer, Explorer.Chain.Health.Monitor,
   check_interval: ConfigHelper.parse_time_env_var("HEALTH_MONITOR_CHECK_INTERVAL", "1m"),
@@ -435,6 +450,9 @@ config :explorer, Explorer.Chain.Cache.Counters.Rootstock.LockedBTCCount,
 
 config :explorer, Explorer.Chain.Cache.OptimismFinalizationPeriod, enabled: ConfigHelper.chain_type() == :optimism
 
+config :explorer, Explorer.Repo.LockTimeout,
+  timeout: ConfigHelper.parse_time_env_var("API_OPTIONAL_QUERIES_LOCK_TIMEOUT", "100ms")
+
 config :explorer, Explorer.Chain.Cache.Counters.AddressCounters,
   ttl: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_COUNTERS_TTL", "2h"),
   max_dirty_markers: ConfigHelper.parse_integer_env_var("CACHE_ADDRESS_COUNTERS_MAX_DIRTY_MARKERS", 1_000_000, min: 1)
@@ -482,6 +500,11 @@ config :explorer, Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount
   enabled: ConfigHelper.chain_type() == :optimism,
   enable_consolidation: ConfigHelper.chain_type() == :optimism,
   cache_period: ConfigHelper.parse_time_env_var("CACHE_OPTIMISM_LAST_OUTPUT_ROOT_SIZE_COUNTER_PERIOD", "5m")
+
+config :explorer, Explorer.Chain.Cache.Counters.Optimism.DepositsCount,
+  enabled: ConfigHelper.chain_type() == :optimism,
+  enable_consolidation: ConfigHelper.chain_type() == :optimism,
+  cache_period: ConfigHelper.parse_time_env_var("CACHE_OPTIMISM_DEPOSITS_COUNTER_PERIOD", "1h")
 
 config :explorer, Explorer.Chain.Cache.Counters.Transactions24hCount,
   enabled: true,
@@ -717,7 +740,9 @@ config :explorer, Explorer.ThirdPartyIntegrations.Sourcify,
   server_url: ConfigHelper.parse_url_env_var("SOURCIFY_SERVER_URL", "https://sourcify.dev/server"),
   enabled: ConfigHelper.parse_bool_env_var("SOURCIFY_INTEGRATION_ENABLED"),
   chain_id: System.get_env("CHAIN_ID"),
-  repo_url: ConfigHelper.parse_url_env_var("SOURCIFY_REPO_URL", "https://repo.sourcify.dev/contracts")
+  repo_url: ConfigHelper.parse_url_env_var("SOURCIFY_REPO_URL", "https://repo.sourcify.dev"),
+  verification_poll_interval_ms: ConfigHelper.parse_time_env_var("SOURCIFY_POLL_INTERVAL", "3s"),
+  verification_max_attempts: ConfigHelper.parse_integer_env_var("SOURCIFY_POLL_MAX_ATTEMPTS", 20)
 
 config :explorer, Explorer.ThirdPartyIntegrations.SolidityScan,
   platform_id: System.get_env("SOLIDITYSCAN_PLATFORM_ID", "16"),
@@ -860,6 +885,16 @@ config :explorer, Explorer.Migrator.TokenTransferTokenType,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_TRANSFER_TOKEN_TYPE_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TOKEN_TRANSFER_TOKEN_TYPE_CONCURRENCY", 1)
 
+config :explorer, Explorer.Migrator.BackfillScaledUIAmountTokens,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_SCALED_UI_AMOUNT_TOKENS_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_SCALED_UI_AMOUNT_TOKENS_CONCURRENCY", 1)
+
+config :explorer, Explorer.Migrator.SanitizeScaledUIAmountTokenTransferTypes,
+  batch_size:
+    ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_SCALED_UI_AMOUNT_TOKEN_TRANSFER_TYPES_BATCH_SIZE", 100),
+  concurrency:
+    ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_SCALED_UI_AMOUNT_TOKEN_TRANSFER_TYPES_CONCURRENCY", 1)
+
 config :explorer, Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_NFT_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_NFT_CONCURRENCY", 1),
@@ -911,6 +946,22 @@ config :explorer, Explorer.Migrator.RefetchContractCodes,
 config :explorer, Explorer.Migrator.BackfillMultichainSearchDB,
   concurrency: 1,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_BATCH_SIZE", 10)
+
+max_block_number =
+  ConfigHelper.parse_integer_or_nil_env_var(
+    "MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_LAST_BLOCK_NUMBER"
+  )
+
+config :explorer, Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalances,
+  enabled:
+    !ConfigHelper.parse_bool_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_DISABLED") &&
+      !is_nil(System.get_env("MICROSERVICE_MULTICHAIN_SEARCH_URL")) &&
+      !is_nil(max_block_number),
+  batch_size:
+    ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_BATCH_SIZE", 100),
+  concurrency:
+    ConfigHelper.parse_integer_env_var("MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_CONCURRENCY", 4),
+  max_block_number: max_block_number
 
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation,
   check_interval: ConfigHelper.parse_time_env_var("MIGRATION_HEAVY_INDEX_OPERATIONS_CHECK_INTERVAL", "10m")
@@ -984,6 +1035,21 @@ config :explorer, Explorer.Migrator.FillInternalTransactionsAddressIds,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_BATCH_SIZE", 30),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_CONCURRENCY", 10),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_TIMEOUT", "5s")
+
+config :explorer, Explorer.Migrator.TransactionHasTokenTransfers,
+  enabled: ConfigHelper.parse_bool_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_ENABLED", "true"),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_BATCH_SIZE", 30),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_CONCURRENCY", 5)
+
+config :explorer, Explorer.Migrator.FillLogsOptimizedFields,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_BATCH_SIZE", 30),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_CONCURRENCY", 5),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_TIMEOUT", "5s")
+
+config :explorer, Explorer.Migrator.FillLogsCompressedData,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_COMPRESSED_DATA_BATCH_SIZE", 5000),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_COMPRESSED_DATA_CONCURRENCY", 10),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_LOGS_COMPRESSED_DATA_TIMEOUT", "1s")
 
 config :explorer, Explorer.Migrator.BackfillAddressCounters,
   enabled: !ConfigHelper.parse_bool_env_var("MIGRATION_BACKFILL_ADDRESS_COUNTERS_DISABLED"),
@@ -1074,8 +1140,6 @@ config :explorer, Explorer.ThirdPartyIntegrations.UniversalProxy,
   config_url: universal_proxy_config_url,
   config_json: universal_proxy_config
 
-config :explorer, Explorer.Chain.Mud, enabled: ConfigHelper.parse_bool_env_var("MUD_INDEXER_ENABLED")
-
 config :explorer, Explorer.Chain.Scroll.L1FeeParam,
   curie_upgrade_block: ConfigHelper.parse_integer_env_var("SCROLL_L2_CURIE_UPGRADE_BLOCK", 0),
   scalar_init: ConfigHelper.parse_integer_env_var("SCROLL_L1_SCALAR_INIT", 0),
@@ -1148,6 +1212,20 @@ disable_multichain_search_db_export_counters_queue_fetcher =
 
 optimism_l2_isthmus_timestamp =
   ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_ISTHMUS_TIMESTAMP")
+
+superchain_config_file_path =
+  case System.get_env("INDEXER_OPTIMISM_SUPERCHAIN_CONFIG_FILE_PATH") do
+    nil ->
+      nil
+
+    value ->
+      value
+      |> String.trim()
+      |> case do
+        "" -> nil
+        trimmed -> trimmed
+      end
+  end
 
 config :indexer,
   block_transformer: ConfigHelper.block_transformer(),
@@ -1258,6 +1336,13 @@ config :indexer, Indexer.Fetcher.OnDemand.ContractCode,
 
 config :indexer, Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch,
   threshold: ConfigHelper.parse_time_env_var("TOKEN_INSTANCE_METADATA_REFETCH_ON_DEMAND_FETCHER_THRESHOLD", "5s")
+
+config :indexer, Indexer.Fetcher.TokenInstance.MediaType.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_MEDIA_TYPE_FETCHER")
+
+config :indexer, Indexer.Fetcher.TokenInstance.MediaType,
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_MEDIA_TYPE_CONCURRENCY", 5),
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_MEDIA_TYPE_BATCH_SIZE", 10)
 
 config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BLOCK_REWARD_FETCHER")
@@ -1529,6 +1614,7 @@ config :indexer, Indexer.Fetcher.Optimism.Interop.MultichainExport.Supervisor,
       ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_OPTIMISM_INTEROP_MULTICHAIN_EXPORT", "true")
 
 config :indexer, Indexer.Fetcher.Optimism,
+  superchain_config_file_path: superchain_config_file_path,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
   optimism_l1_system_config: System.get_env("INDEXER_OPTIMISM_L1_SYSTEM_CONFIG_CONTRACT"),
   l1_eth_get_logs_range_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L1_ETH_GET_LOGS_RANGE_SIZE", 250),
@@ -1592,7 +1678,9 @@ config :indexer, Indexer.Fetcher.Optimism.OperatorFee,
   init_limit: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_INIT_QUERY_LIMIT", 1_000)
 
 config :indexer, Indexer.Fetcher.Optimism.OperatorFee.Supervisor,
-  disabled?: is_nil(optimism_l2_isthmus_timestamp) or ConfigHelper.chain_type() != :optimism
+  disabled?:
+    (is_nil(optimism_l2_isthmus_timestamp) and is_nil(superchain_config_file_path)) or
+      ConfigHelper.chain_type() != :optimism
 
 config :indexer, Indexer.Fetcher.Withdrawal.Supervisor,
   disabled?: System.get_env("INDEXER_DISABLE_WITHDRAWALS_FETCHER", "true") == "true"

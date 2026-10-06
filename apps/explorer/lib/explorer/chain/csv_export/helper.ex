@@ -44,6 +44,7 @@ defmodule Explorer.Chain.CsvExport.Helper do
   ## Returns
 
   - A tuple `{from_block, to_block}` where `from_block` is the minimum block number from the `from_period` and `to_block` is the maximum block number from the `to_period`.
+    A missing (`nil` or empty) period yields `nil` for the corresponding bound, meaning "no bound".
 
   ## Examples
 
@@ -53,8 +54,12 @@ defmodule Explorer.Chain.CsvExport.Helper do
     iex> block_from_period("2023-01-01", "2023-12-31")
     {1000, 2000}
 
+    iex> block_from_period(nil, "")
+    {nil, nil}
+
   """
-  @spec block_from_period(String.t(), String.t()) :: {Block.block_number(), Block.block_number()}
+  @spec block_from_period(String.t() | nil, String.t() | nil) ::
+          {Block.block_number() | nil, Block.block_number() | nil}
   def block_from_period(from_period, to_period) do
     from_block = convert_date_string_to_block(from_period, :after, :from)
     to_block = convert_date_string_to_block(to_period, :before, :to)
@@ -62,7 +67,10 @@ defmodule Explorer.Chain.CsvExport.Helper do
     {from_block, to_block}
   end
 
-  @spec convert_date_string_to_block(String.t(), :before | :after, :from | :to) :: integer()
+  @spec convert_date_string_to_block(String.t() | nil, :before | :after, :from | :to) :: integer() | nil
+  defp convert_date_string_to_block(nil, _direction, _range_type), do: nil
+  defp convert_date_string_to_block("", _direction, _range_type), do: nil
+
   defp convert_date_string_to_block(date_string, direction, range_type) do
     with {:ok, timestamp, _utc_offset} <- date_string_to_timestamp(date_string, range_type),
          {:ok, block} <- BlockGeneralReader.timestamp_to_block_number(timestamp, direction, true) do

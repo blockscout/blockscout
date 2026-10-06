@@ -704,8 +704,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
           assert conn.params["name"] == name
 
           case conn.params["page_token"] do
-            nil -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_1))
-            ^page_token_1 -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_2))
+            nil -> Plug.Conn.resp(conn, 200, Utils.JSON.encode!(metadata_response_1))
+            ^page_token_1 -> Plug.Conn.resp(conn, 200, Utils.JSON.encode!(metadata_response_2))
             _ -> raise "Unexpected page_token"
           end
         end
@@ -1062,8 +1062,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
           assert conn.params["name"] == name
 
           case conn.params["page_token"] do
-            nil -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_1))
-            ^page_token_1 -> Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response_2))
+            nil -> Plug.Conn.resp(conn, 200, Utils.JSON.encode!(metadata_response_1))
+            ^page_token_1 -> Plug.Conn.resp(conn, 200, Utils.JSON.encode!(metadata_response_2))
             _ -> raise "Unexpected page_token"
           end
         end
@@ -1880,6 +1880,74 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
                } == json_response(next_page_request, 200)
       end
     end
+
+    test "finds ens domain with partial query (without dot)", %{conn: conn} do
+      bypass = Bypass.open()
+      bens_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, bens_envs)
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      partial_name = "vitalik"
+      full_name = "vitalik.eth"
+      ens_address = insert(:address)
+
+      ens_response = """
+      {
+      "items": [
+          {
+              "id": "0xee6c4522aab0003e8d14cd40a6af439055fd2577951148c14b6cea9a53475835",
+              "name": "#{full_name}",
+              "resolved_address": {
+                  "hash": "#{to_string(ens_address)}"
+              },
+              "owner": {
+                  "hash": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+              },
+              "wrapped_owner": null,
+              "registration_date": "2017-06-18T08:39:14.000Z",
+              "expiry_date": null,
+              "protocol": {
+                  "id": "ens",
+                  "short_name": "ENS",
+                  "title": "Ethereum Name Service"
+              }
+          }
+      ],
+      "next_page_params": null
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/1/domains%3Alookup",
+        fn conn ->
+          assert conn.params["name"] == partial_name
+          Plug.Conn.resp(conn, 200, ens_response)
+        end
+      )
+
+      request = get(conn, "/api/v2/search?q=#{partial_name}")
+      assert response = json_response(request, 200)
+
+      assert Enum.at(response["items"], 0)["type"] == "ens_domain"
+      assert Enum.at(response["items"], 0)["ens_info"]["name"] == full_name
+      assert Enum.at(response["items"], 0)["address_hash"] == to_string(ens_address)
+    end
   end
 
   describe "/search/check-redirect" do
@@ -1903,8 +1971,6 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
 
     test "finds non-consensus block by hash", %{conn: conn} do
       %Block{hash: hash} = insert(:block, consensus: false)
-
-      conn = get(conn, "/search?q=#{hash}")
 
       hash = to_string(hash)
 
@@ -1977,6 +2043,73 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       request = get(conn, "/api/v2/search/check-redirect?q=qwerty")
 
       %{"redirect" => false, "type" => nil, "parameter" => nil} = json_response(request, 200)
+    end
+
+    test "finds resolved address of ens domain with partial query (without dot)", %{conn: conn} do
+      bypass = Bypass.open()
+      bens_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, bens_envs)
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      partial_name = "vitalik"
+      full_name = "vitalik.eth"
+      ens_address = insert(:address)
+      ens_address_hash_string = to_string(ens_address)
+
+      ens_response = """
+      {
+      "items": [
+          {
+              "id": "0xee6c4522aab0003e8d14cd40a6af439055fd2577951148c14b6cea9a53475835",
+              "name": "#{full_name}",
+              "resolved_address": {
+                  "hash": "#{ens_address_hash_string}"
+              },
+              "owner": {
+                  "hash": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+              },
+              "wrapped_owner": null,
+              "registration_date": "2017-06-18T08:39:14.000Z",
+              "expiry_date": null,
+              "protocol": {
+                  "id": "ens",
+                  "short_name": "ENS",
+                  "title": "Ethereum Name Service"
+              }
+          }
+      ],
+      "next_page_params": null
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/1/domains%3Alookup",
+        fn conn ->
+          assert conn.params["name"] == partial_name
+          Plug.Conn.resp(conn, 200, ens_response)
+        end
+      )
+
+      request = get(conn, "/api/v2/search/check-redirect?q=#{partial_name}")
+
+      assert %{"redirect" => true, "type" => "address", "parameter" => ^ens_address_hash_string} =
+               json_response(request, 200)
     end
   end
 
@@ -2162,7 +2295,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
         fn conn ->
           assert conn.params["name"] == name
 
-          Plug.Conn.resp(conn, 200, Jason.encode!(metadata_response))
+          Plug.Conn.resp(conn, 200, Utils.JSON.encode!(metadata_response))
         end
       )
 
@@ -2246,6 +2379,75 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
              |> Enum.all?(fn {x, index} ->
                x["address_hash"] == to_string(address_1) && x["metadata"]["name"] == "#{name} #{index}"
              end)
+    end
+
+    test "finds ens domain with partial query (without dot)", %{conn: conn} do
+      bypass = Bypass.open()
+      bens_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, bens_envs)
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      end)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      partial_name = "vitalik"
+      full_name = "vitalik.eth"
+      ens_address = insert(:address)
+
+      ens_response = """
+      {
+      "items": [
+          {
+              "id": "0xee6c4522aab0003e8d14cd40a6af439055fd2577951148c14b6cea9a53475835",
+              "name": "#{full_name}",
+              "resolved_address": {
+                  "hash": "#{to_string(ens_address)}"
+              },
+              "owner": {
+                  "hash": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+              },
+              "wrapped_owner": null,
+              "registration_date": "2017-06-18T08:39:14.000Z",
+              "expiry_date": null,
+              "protocol": {
+                  "id": "ens",
+                  "short_name": "ENS",
+                  "title": "Ethereum Name Service"
+              }
+          }
+      ],
+      "next_page_params": null
+      }
+      """
+
+      Bypass.expect(
+        bypass,
+        "GET",
+        "/api/v1/1/domains%3Alookup",
+        fn conn ->
+          assert conn.params["name"] == partial_name
+          Plug.Conn.resp(conn, 200, ens_response)
+        end
+      )
+
+      request = get(conn, "/api/v2/search/quick?q=#{partial_name}")
+      response = json_response(request, 200)
+
+      ens_result = response |> Enum.find(fn item -> item["type"] == "ens_domain" end)
+      assert ens_result != nil
+      assert ens_result["ens_info"]["name"] == full_name
+      assert ens_result["address_hash"] == to_string(ens_address)
     end
 
     if @chain_type == :default do

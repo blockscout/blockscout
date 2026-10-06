@@ -10,10 +10,8 @@ defmodule BlockScoutWeb.Specs.Public do
   alias Utils.Helper
 
   use Utils.CompileTimeEnvHelper,
-    chain_identity: [:explorer, :chain_identity]
-
-  use Utils.RuntimeEnvHelper,
-    mud_enabled?: [:explorer, [Explorer.Chain.Mud, :enabled]]
+    chain_identity: [:explorer, :chain_identity],
+    reading_enabled: [:block_scout_web, [ApiRouter, :reading_enabled]]
 
   @behaviour OpenApi
 
@@ -47,14 +45,10 @@ defmodule BlockScoutWeb.Specs.Public do
 
     {:optimism, nil} ->
       defp chain_type_category_tags do
-        if mud_enabled?() do
-          [%Tag{name: "optimism"}, %Tag{name: "mud"}]
-        else
-          [%Tag{name: "optimism"}]
-        end
+        [%Tag{name: "optimism"}]
       end
 
-    {chain_type, nil} when chain_type in [:arbitrum, :scroll, :zilliqa] ->
+    {chain_type, nil} when chain_type in [:arbitrum, :scroll, :shibarium, :stability, :zilliqa, :zksync] ->
       @chain_type_category_tags [%Tag{name: to_string(chain_type)}]
       defp chain_type_category_tags, do: @chain_type_category_tags
 
@@ -63,11 +57,19 @@ defmodule BlockScoutWeb.Specs.Public do
       defp chain_type_category_tags, do: @chain_type_category_tags
   end
 
+  # The `/api/legacy` routes are compiled only when `API_V1_READ_METHODS_DISABLED`
+  # is not `true`, so the tag is added only when at least one operation carries it.
+  if @reading_enabled do
+    defp legacy_category_tags, do: [%Tag{name: "legacy"}]
+  else
+    defp legacy_category_tags, do: []
+  end
+
   @impl OpenApi
   def spec do
     %OpenApi{
       servers: [
-        %Server{url: to_string(Helper.instance_url() |> URI.append_path("/api"))}
+        %Server{url: to_string(Helper.instance_url())}
       ],
       info: %Info{
         title: "Blockscout",
@@ -78,12 +80,13 @@ defmodule BlockScoutWeb.Specs.Public do
       },
       paths:
         ApiRouter
-        |> Paths.from_router()
-        |> Map.merge(Paths.from_routes(Specs.routes_with_prefix(TokensApiV2Router, "/v2/tokens")))
-        |> Map.merge(Paths.from_routes(Specs.routes_with_prefix(SmartContractsApiV2Router, "/v2/smart-contracts"))),
+        |> Specs.routes_with_prefix("/api")
+        |> Paths.from_routes()
+        |> Map.merge(Paths.from_routes(Specs.routes_with_prefix(TokensApiV2Router, "/api/v2/tokens")))
+        |> Map.merge(Paths.from_routes(Specs.routes_with_prefix(SmartContractsApiV2Router, "/api/v2/smart-contracts"))),
       tags:
         Enum.map(@default_api_categories, fn category -> %Tag{name: category} end) ++
-          chain_type_category_tags() ++ [%Tag{name: "legacy"}]
+          chain_type_category_tags() ++ legacy_category_tags()
     }
     |> OpenApiSpex.resolve_schema_modules()
   end

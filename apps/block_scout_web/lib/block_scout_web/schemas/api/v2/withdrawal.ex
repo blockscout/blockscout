@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Withdrawal do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "BeaconWithdrawal",
     type: :object,
     properties: %{
       index: %Schema{type: :integer, nullable: false},

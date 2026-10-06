@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Withdrawal.Counter do
   alias BlockScoutWeb.Schemas.API.V2.General
 
   OpenApiSpex.schema(%{
+    title: "BeaconWithdrawalCounter",
     type: :object,
     properties: %{
       withdrawals_count: General.IntegerString,

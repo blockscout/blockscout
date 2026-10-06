@@ -53,7 +53,9 @@ defmodule Explorer.Migrator.SanitizeEmptyContractCodeAddresses do
         update: [set: [contract_code: ^@empty_contract_code]]
       )
 
-    Repo.update_all(query, [], timeout: :infinity)
+    {count, _} = Repo.update_all(query, [], timeout: :infinity)
+
+    count
   end
 
   @impl FillingMigration

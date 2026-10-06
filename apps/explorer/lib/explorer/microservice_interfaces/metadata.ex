@@ -5,7 +5,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   """
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address.MetadataPreloader, Transaction}
+  alias Explorer.Chain.{Address.MetadataPreloader, Token.Instance, Transaction}
   alias Explorer.MicroserviceInterfaces.HttpClient
   alias Explorer.Utility.Microservice
 
@@ -43,7 +43,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
 
   """
   @spec get_addresses_tags([String.t()]) ::
-          {:error, :disabled | <<_::416>> | Jason.DecodeError.t()} | {:ok, any()} | :ignore
+          {:error, :disabled | <<_::416>> | Exception.t()} | {:ok, any()} | :ignore
   def get_addresses_tags([]), do: :ignore
 
   def get_addresses_tags(addresses) do
@@ -112,7 +112,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
 
     case HttpClient.get(url, headers, params: params, recv_timeout: recv_timeout) do
       {:ok, %{body: body, status_code: 200}} ->
-        body |> Jason.decode() |> parsing_function.()
+        body |> Utils.JSON.decode() |> parsing_function.()
 
       {_, error} ->
         Logger.error(fn ->
@@ -129,7 +129,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   defp http_get_request_for_proxy_method(url, params, parsing_function) do
     case HttpClient.proxy_get(url, [], params: params, recv_timeout: config()[:proxy_requests_timeout]) do
       {:ok, %{body: body, status_code: 200}} ->
-        {200, body |> Jason.decode() |> parsing_function.()}
+        {200, body |> Utils.JSON.decode() |> parsing_function.()}
 
       {_, %{body: body, status_code: status_code} = error} ->
         Logger.error(fn ->
@@ -139,8 +139,10 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
           ]
         end)
 
-        {:ok, response_json} = Jason.decode(body)
-        {status_code, response_json}
+        case Utils.JSON.decode(body) do
+          {:ok, response_json} -> {status_code, response_json}
+          {:error, _} -> {status_code, %{error: body}}
+        end
 
       {:error, reason} ->
         {500, %{error: reason}}
@@ -186,6 +188,14 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
     maybe_preload_meta(transaction, __MODULE__, &MetadataPreloader.preload_metadata_to_transaction/1)
   end
 
+  @doc """
+  Preloads metadata to NFT instance if Metadata microservice is enabled
+  """
+  @spec maybe_preload_metadata_to_instance(Instance.t()) :: Instance.t()
+  def maybe_preload_metadata_to_instance(instance) do
+    maybe_preload_meta(instance, __MODULE__, &MetadataPreloader.preload_metadata_to_instance/1)
+  end
+
   defp decode_meta({:ok, %{"addresses" => addresses} = result}) do
     prepared_address =
       Enum.reduce(addresses, %{}, fn {address, meta}, acc ->
@@ -199,7 +209,7 @@ defmodule Explorer.MicroserviceInterfaces.Metadata do
   defp decode_meta(other), do: other
 
   defp decode_meta_in_tag(%{"meta" => meta} = tag) do
-    Map.put(tag, "meta", Jason.decode!(meta))
+    Map.put(tag, "meta", Utils.JSON.decode!(meta))
   end
 
   defp prepare_addresses_response({:ok, %{"items" => addresses} = response}) do

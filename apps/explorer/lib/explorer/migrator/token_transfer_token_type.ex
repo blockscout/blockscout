@@ -61,7 +61,9 @@ defmodule Explorer.Migrator.TokenTransferTokenType do
         ]
       )
 
-    Repo.update_all(query, [], timeout: :infinity)
+    {count, _} = Repo.update_all(query, [], timeout: :infinity)
+
+    count
   end
 
   @impl FillingMigration

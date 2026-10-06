@@ -19,6 +19,8 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
   @migration_name "sanitize_incorrect_nft"
   @default_batch_size 500
 
+  def migration_name, do: @migration_name
+
   def start_link(_) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
@@ -107,10 +109,18 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
 
     logs_query =
       base_query
+      |> Log.join_transaction_query()
+      |> Log.join_address_mapping_query()
       |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
-      |> join(:left, [log], token in Token, on: log.address_hash == token.contract_address_hash)
-      |> where([log, token], token.type == ^"ERC-721")
-      |> select([log], %{block_hash: log.block_hash, transaction_hash: log.transaction_hash, index: log.index})
+      |> join(:left, [log], token in Token,
+        on: coalesce(log.address_hash, as(:address_mapping).address_hash) == token.contract_address_hash
+      )
+      |> where([log, _t, _am, token], token.type == ^"ERC-721")
+      |> select([log], %{
+        block_hash: as(:transaction).block_hash,
+        transaction_hash: as(:transaction).hash,
+        index: log.index
+      })
 
     TokenTransfer
     |> select([tt], {tt.transaction_hash, tt.block_hash, tt.log_index})

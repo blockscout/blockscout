@@ -72,7 +72,7 @@ defmodule Indexer.Fetcher.Celo.EpochLogs do
          {:ok, logs} <- Logs.from_responses(responses) do
       logs
       |> Enum.filter(&(&1.transaction_hash == &1.block_hash))
-      |> Enum.map(&Map.put(&1, :transaction_hash, nil))
+      |> Enum.map(&%{&1 | transaction_hash: nil, transaction_index: nil})
     end
   end
 

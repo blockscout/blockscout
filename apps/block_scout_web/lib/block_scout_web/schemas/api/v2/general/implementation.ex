@@ -15,7 +15,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.General.Implementation do
         address_hash: General.AddressHash,
         name: %Schema{type: :string, nullable: true}
       },
-      required: [:address_hash, :name],
+      # `name` is omitted for conflicting proxy implementations (see
+      # `Explorer.Chain.SmartContract.Proxy.conflicting_implementations_info/1`),
+      # so only `address_hash` is required.
+      required: [:address_hash],
       additionalProperties: false
     }
     |> ChainTypeCustomizations.chain_type_fields()

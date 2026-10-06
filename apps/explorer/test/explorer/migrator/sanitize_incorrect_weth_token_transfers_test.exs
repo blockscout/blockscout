@@ -20,7 +20,16 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         token_ids: nil
       )
 
-      deposit_log = insert(:log, first_topic: TokenTransfer.weth_deposit_signature())
+      transaction_1 = :transaction |> insert() |> with_block()
+
+      deposit_log =
+        insert(:log,
+          first_topic: TokenTransfer.weth_deposit_signature(),
+          transaction: transaction_1,
+          transaction_index: transaction_1.index,
+          block_number: transaction_1.block_number,
+          block: transaction_1.block
+        )
 
       insert(:token_transfer,
         from_address: insert(:address),
@@ -30,7 +39,16 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         log_index: deposit_log.index
       )
 
-      withdrawal_log = insert(:log, first_topic: TokenTransfer.weth_withdrawal_signature())
+      transaction_2 = :transaction |> insert() |> with_block()
+
+      withdrawal_log =
+        insert(:log,
+          first_topic: TokenTransfer.weth_withdrawal_signature(),
+          transaction: transaction_2,
+          transaction_index: transaction_2.index,
+          block_number: transaction_2.block_number,
+          block: transaction_2.block
+        )
 
       insert(:token_transfer,
         from_address: insert(:address),
@@ -52,7 +70,16 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         |> Keyword.put(:weth_token_transfers_filtering_enabled, true)
       )
 
-      withdrawal_log = insert(:log, first_topic: TokenTransfer.weth_withdrawal_signature())
+      transaction_3 = :transaction |> insert() |> with_block()
+
+      withdrawal_log =
+        insert(:log,
+          first_topic: TokenTransfer.weth_withdrawal_signature(),
+          transaction: transaction_3,
+          transaction_index: transaction_3.index,
+          block_number: transaction_3.block_number,
+          block: transaction_3.block
+        )
 
       insert(:token_transfer,
         from_address: insert(:address),
@@ -62,7 +89,16 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         log_index: withdrawal_log.index
       )
 
-      deposit_log = insert(:log, first_topic: TokenTransfer.weth_deposit_signature())
+      transaction_4 = :transaction |> insert() |> with_block()
+
+      deposit_log =
+        insert(:log,
+          first_topic: TokenTransfer.weth_deposit_signature(),
+          transaction: transaction_4,
+          transaction_index: transaction_4.index,
+          block_number: transaction_4.block_number,
+          block: transaction_4.block
+        )
 
       insert(:token_transfer,
         from_address: insert(:address),
@@ -72,8 +108,17 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         log_index: deposit_log.index
       )
 
+      transaction_5 = :transaction |> insert() |> with_block()
+
       withdrawal_log_duplicate =
-        insert(:log, first_topic: TokenTransfer.weth_withdrawal_signature(), address: whitelisted_token_address)
+        insert(:log,
+          first_topic: TokenTransfer.weth_withdrawal_signature(),
+          address: whitelisted_token_address,
+          transaction: transaction_5,
+          transaction_index: transaction_5.index,
+          block_number: transaction_5.block_number,
+          block: transaction_5.block
+        )
 
       tt_withdrawal =
         insert(:token_transfer,
@@ -89,7 +134,9 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
           first_topic: TokenTransfer.constant(),
           address: whitelisted_token_address,
           transaction: withdrawal_log_duplicate.transaction,
-          block: withdrawal_log_duplicate.block
+          block: withdrawal_log_duplicate.block,
+          transaction_index: transaction_5.index,
+          block_number: transaction_5.block_number
         )
 
       insert(:token_transfer,
@@ -102,7 +149,16 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         amount: tt_withdrawal.amount
       )
 
-      deposit_log_duplicate = insert(:log, first_topic: TokenTransfer.weth_deposit_signature())
+      transaction_6 = :transaction |> insert() |> with_block()
+
+      deposit_log_duplicate =
+        insert(:log,
+          first_topic: TokenTransfer.weth_deposit_signature(),
+          transaction: transaction_6,
+          transaction_index: transaction_6.index,
+          block_number: transaction_6.block_number,
+          block: transaction_6.block
+        )
 
       tt_deposit =
         insert(:token_transfer,
@@ -118,7 +174,9 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
           first_topic: TokenTransfer.constant(),
           address: whitelisted_token_address,
           transaction: deposit_log_duplicate.transaction,
-          block: deposit_log_duplicate.block
+          block: deposit_log_duplicate.block,
+          transaction_index: transaction_6.index,
+          block_number: transaction_6.block_number
         )
 
       insert(:token_transfer,

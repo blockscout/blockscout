@@ -47,7 +47,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
 
       {:ok, %{"items" => items}} =
         conn.resp_body
-        |> Poison.decode()
+        |> Utils.JSON.decode()
 
       assert Enum.count(items) == 2
     end
@@ -90,7 +90,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
 
       {:ok, %{"items" => items}} =
         conn.resp_body
-        |> Poison.decode()
+        |> Utils.JSON.decode()
 
       assert Enum.count(items) == 1
     end
@@ -107,7 +107,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
 
       {:ok, %{"items" => items}} =
         conn.resp_body
-        |> Poison.decode()
+        |> Utils.JSON.decode()
 
       assert Enum.empty?(items)
     end
@@ -134,7 +134,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
 
       {:ok, %{"items" => items}} =
         conn.resp_body
-        |> Poison.decode()
+        |> Utils.JSON.decode()
 
       assert Enum.empty?(items)
     end
@@ -149,7 +149,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
 
       {:ok, %{"items" => items}} =
         conn.resp_body
-        |> Poison.decode()
+        |> Utils.JSON.decode()
 
       assert Enum.empty?(items)
     end
@@ -165,7 +165,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
 
       {:ok, %{"next_page_path" => next_page_path}} =
         conn.resp_body
-        |> Poison.decode()
+        |> Utils.JSON.decode()
 
       assert next_page_path
     end
@@ -181,7 +181,7 @@ defmodule BlockScoutWeb.BlockTransactionControllerTest do
 
       {:ok, %{"next_page_path" => next_page_path}} =
         conn.resp_body
-        |> Poison.decode()
+        |> Utils.JSON.decode()
 
       refute next_page_path
     end

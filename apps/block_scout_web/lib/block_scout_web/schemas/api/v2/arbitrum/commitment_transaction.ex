@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Arbitrum.CommitmentTransaction do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "ArbitrumCommitmentTransaction",
     description: "Parent chain transaction that committed the batch.",
     type: :object,
     properties: %{

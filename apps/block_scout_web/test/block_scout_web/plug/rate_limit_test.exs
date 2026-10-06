@@ -410,6 +410,108 @@ defmodule BlockScoutWeb.Plug.RateLimitTest do
       assert get_resp_header(request, "x-ratelimit-reset") |> hd() |> String.to_integer() > 0
     end
 
+    test "multiplies IP limit for recaptcha_to_bypass_429 endpoint when recaptcha is disabled", %{conn: conn} do
+      Application.put_env(
+        :block_scout_web,
+        :recaptcha,
+        Keyword.put(Application.get_env(:block_scout_web, :recaptcha), :is_disabled, true)
+      )
+
+      Application.put_env(
+        :block_scout_web,
+        :api_rate_limit,
+        Keyword.put(Application.get_env(:block_scout_web, :api_rate_limit), :recaptcha_disabled_limit_multiplier, 2)
+      )
+
+      config = %{
+        static_match: %{
+          "api/v2/addresses" => %{
+            ip: %{period: 60_000, limit: 2},
+            recaptcha_to_bypass_429: true,
+            bucket_key_prefix: "test_recaptcha_disabled_"
+          }
+        },
+        wildcard_match: %{},
+        parametrized_match: %{}
+      }
+
+      :persistent_term.put(:rate_limit_config, config)
+
+      # Effective limit = 2 * 2 = 4; first four requests should be allowed
+      for _ <- 1..4 do
+        resp = conn |> put_req_header("user-agent", "test-agent") |> get("/api/v2/addresses")
+        assert resp.status == 200
+        assert get_resp_header(resp, "bypass-429-option") == ["no_bypass"]
+      end
+
+      # Fifth request should be denied
+      denied = conn |> put_req_header("user-agent", "test-agent") |> get("/api/v2/addresses")
+      assert denied.status == 429
+    end
+
+    test "does not advertise recaptcha bypass when recaptcha is disabled", %{conn: conn} do
+      Application.put_env(
+        :block_scout_web,
+        :recaptcha,
+        Keyword.put(Application.get_env(:block_scout_web, :recaptcha), :is_disabled, true)
+      )
+
+      config = %{
+        static_match: %{
+          "api/v2/addresses" => %{
+            ip: %{period: 60_000, limit: 100},
+            recaptcha_to_bypass_429: true
+          }
+        },
+        wildcard_match: %{},
+        parametrized_match: %{}
+      }
+
+      :persistent_term.put(:rate_limit_config, config)
+
+      resp = conn |> put_req_header("user-agent", "test-agent") |> get("/api/v2/addresses")
+      assert resp.status == 200
+      assert get_resp_header(resp, "bypass-429-option") == ["no_bypass"]
+    end
+
+    test "multiplies IP limit for temporary_token endpoint when recaptcha is disabled", %{conn: conn} do
+      Application.put_env(
+        :block_scout_web,
+        :recaptcha,
+        Keyword.put(Application.get_env(:block_scout_web, :recaptcha), :is_disabled, true)
+      )
+
+      Application.put_env(
+        :block_scout_web,
+        :api_rate_limit,
+        Keyword.put(Application.get_env(:block_scout_web, :api_rate_limit), :recaptcha_disabled_limit_multiplier, 2)
+      )
+
+      config = %{
+        static_match: %{
+          "api/v2/transactions" => %{
+            ip: %{period: 60_000, limit: 2},
+            temporary_token: true,
+            bucket_key_prefix: "test_temp_token_disabled_"
+          }
+        },
+        wildcard_match: %{},
+        parametrized_match: %{}
+      }
+
+      :persistent_term.put(:rate_limit_config, config)
+
+      # Effective limit = 2 * 2 = 4; first four requests should be allowed
+      for _ <- 1..4 do
+        resp = conn |> put_req_header("user-agent", "test-agent") |> get("/api/v2/transactions")
+        assert resp.status == 200
+      end
+
+      # Fifth request should be denied
+      denied = conn |> put_req_header("user-agent", "test-agent") |> get("/api/v2/transactions")
+      assert denied.status == 429
+    end
+
     test "rate limit requests with isolated rate limit", %{conn: conn} do
       config = %{
         static_match: %{

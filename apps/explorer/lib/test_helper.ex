@@ -21,7 +21,9 @@ defmodule Explorer.TestHelper do
   def run_necessary_background_migrations do
     for background_migration <- [
           Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex,
-          Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey
+          Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey,
+          Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransactionIndexIndexUniqueIndex,
+          Explorer.Migrator.HeavyDbIndexOperation.UpdateLogsPrimaryKey
         ] do
       case background_migration.db_index_operation_status() do
         :completed ->
@@ -246,7 +248,7 @@ defmodule Explorer.TestHelper do
          mocks |> Keyword.get(:eip1967, @zero_address_hash) |> encode_in_batch_response(id1),
          mocks |> Keyword.get(:eip1822, @zero_address_hash) |> encode_in_batch_response(id2),
          mocks |> Keyword.get(:eip1967_beacon, @zero_address_hash) |> encode_in_batch_response(id3),
-         %{id: id4, error: "error"},
+         %{id: id4, error: %{code: 3, message: "execution reverted"}},
          mocks |> Keyword.get(:eip1967_oz, @zero_address_hash) |> encode_in_batch_response(id5)
        ] ++
          Enum.map(rest, fn

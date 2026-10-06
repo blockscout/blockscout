@@ -7,15 +7,23 @@ defmodule Explorer.Token.MetadataRetriever do
   require Logger
 
   alias Explorer.Chain.{Hash, Token}
+  alias Explorer.Chain.Token.ScaledUIAmount
   alias Explorer.Helper, as: ExplorerHelper
-  alias Explorer.{HttpClient, MetadataURIValidator}
+  alias Explorer.HttpClient
   alias Explorer.SmartContract.Reader
+  alias Utils.HttpClient.SafeFetch
+
+  # Reasons `Utils.UrlValidator` can reject a URL. These are reported as bare strings (rather
+  # than `inspect/1`-ed like transport errors) since `Explorer.Chain.Token.Instance` matches
+  # them to decide retry/ban intervals.
+  @url_validation_errors [:not_printable, :empty_host, :disallowed_protocol, :nxdomain, :blacklist]
 
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
   @invalid_base64_data "invalid data:application/json;base64"
   @invalid_ipfs_path "invalid ipfs path"
-  @default_headers [{"User-Agent", "blockscout-11.3.3"}]
+  @invalid_swarm_path "invalid swarm path"
+  @default_headers [{"User-Agent", "blockscout-12.0.0"}]
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
@@ -129,6 +137,20 @@ defmodule Explorer.Token.MetadataRetriever do
     @total_supply_signature => []
   }
 
+  # The order the base functions are requested in and their results are read
+  # back in. `Reader.query_contracts/2` answers with a flat list, so the zip that
+  # restores the mapping has to know the exact order rather than depend on the
+  # iteration order of `@contract_functions`.
+  @base_signatures [@name_signature, @total_supply_signature, @decimals_signature, @symbol_signature]
+
+  @supports_interface_signature ScaledUIAmount.supports_interface_signature()
+  @ui_multiplier_signature ScaledUIAmount.ui_multiplier_signature()
+  @new_ui_multiplier_signature ScaledUIAmount.new_ui_multiplier_signature()
+  @effective_at_signature ScaledUIAmount.effective_at_signature()
+  @ui_multiplier_functions Map.new(ScaledUIAmount.signatures(), &{&1, []})
+
+  @full_contract_abi @contract_abi ++ ScaledUIAmount.contract_abi()
+
   # e8a3d485 = keccak256(contractURI())
   @erc1155_contract_uri_signature "e8a3d485"
   @erc1155_contract_uri_function %{
@@ -176,34 +198,18 @@ defmodule Explorer.Token.MetadataRetriever do
   def get_functions_of(tokens, opts \\ [])
 
   def get_functions_of(tokens, _opts) when is_list(tokens) do
-    requests =
-      tokens
-      |> Enum.flat_map(fn token ->
-        @contract_functions
-        |> Enum.map(fn {method_id, args} ->
-          %{contract_address: token.contract_address_hash, method_id: method_id, args: args}
-        end)
-      end)
-
-    hashes = Enum.map(tokens, fn token -> token.contract_address_hash end)
-
     updated_at = DateTime.utc_now()
 
     fetched_result =
-      requests
-      |> Reader.query_contracts(@contract_abi)
-      |> Enum.chunk_every(4)
-      |> Enum.zip(hashes)
-      |> Enum.map(fn {result, hash} ->
-        formatted_result =
-          [@name_signature, @total_supply_signature, @decimals_signature, @symbol_signature]
-          |> Enum.zip(result)
-          |> format_contract_functions_result(hash)
-
-        formatted_result
+      tokens
+      |> Enum.map(&{&1.contract_address_hash, signatures_of(&1)})
+      |> query_per_token()
+      |> Enum.map(fn {hash, metadata} ->
+        metadata
         |> Map.put(:contract_address_hash, hash)
         |> Map.put(:updated_at, updated_at)
       end)
+      |> read_scaled_ui_amount()
 
     erc_1155_tokens = tokens |> Enum.filter(fn token -> token.type == "ERC-1155" end)
 
@@ -251,6 +257,84 @@ defmodule Explorer.Token.MetadataRetriever do
     else
       metadata
     end
+  end
+
+  # ERC-8056 extends ERC-20 only, so the ERC-165 probe rides along in the batch
+  # that is sent anyway for ERC-20 tokens, costing one more `eth_call` inside an
+  # existing batch request and no extra round trip.
+  #
+  # It is deliberately not asked on the single token code path: that one retries
+  # every reverting call `:token_functions_reader_max_retries` times, and for a
+  # contract without ERC-165 the probe does revert. Such a token gets its
+  # multiplier on the next metadata refresh, or at once if it emits
+  # `UIMultiplierUpdated`.
+  defp signatures_of(%{type: type}) when type in ["ERC-20", "ERC-8056"],
+    do: @base_signatures ++ [@supports_interface_signature]
+
+  defp signatures_of(_token), do: @base_signatures
+
+  defp query_per_token([]), do: []
+
+  defp query_per_token(tokens_with_signatures) do
+    requests =
+      Enum.flat_map(tokens_with_signatures, fn {contract_address_hash, signatures} ->
+        Enum.map(signatures, &request(contract_address_hash, &1))
+      end)
+
+    requests
+    |> Reader.query_contracts(@full_contract_abi)
+    |> split_results_per_token(tokens_with_signatures)
+    |> Enum.map(fn {hash, signatures, results} ->
+      {hash, signatures |> Enum.zip(results) |> format_contract_functions_result(hash)}
+    end)
+  end
+
+  defp request(contract_address_hash, @supports_interface_signature) do
+    %{
+      contract_address: contract_address_hash,
+      method_id: @supports_interface_signature,
+      args: [ScaledUIAmount.interface_id()]
+    }
+  end
+
+  defp request(contract_address_hash, method_id),
+    do: %{contract_address: contract_address_hash, method_id: method_id, args: []}
+
+  # ERC-8056 makes ERC-165 detection mandatory, so the getters are only worth
+  # reading — and the type only worth assigning — once the contract has claimed
+  # the interface. That keeps an ordinary ERC-20 to a single extra call instead
+  # of three reverting ones, and stops a contract that happens to expose a
+  # `uiMultiplier()` of its own from being relabelled ERC-8056.
+  defp read_scaled_ui_amount(results) do
+    supporting_hashes =
+      results
+      |> Enum.filter(& &1[:supports_scaled_ui_amount])
+      |> Enum.map(& &1.contract_address_hash)
+
+    multipliers =
+      supporting_hashes
+      |> Enum.map(&{&1, ScaledUIAmount.signatures()})
+      |> query_per_token()
+      |> Map.new()
+
+    Enum.map(results, fn metadata ->
+      metadata
+      |> Map.merge(Map.get(multipliers, metadata.contract_address_hash, %{}))
+      |> put_scaled_ui_amount_type(metadata[:supports_scaled_ui_amount])
+      |> Map.delete(:supports_scaled_ui_amount)
+    end)
+  end
+
+  defp put_scaled_ui_amount_type(metadata, true), do: Map.put(metadata, :type, "ERC-8056")
+  defp put_scaled_ui_amount_type(metadata, _supports?), do: metadata
+
+  defp split_results_per_token(results, tokens_with_signatures) do
+    tokens_with_signatures
+    |> Enum.map_reduce(results, fn {hash, signatures}, rest ->
+      {token_results, remaining} = Enum.split(rest, length(signatures))
+      {{hash, signatures, token_results}, remaining}
+    end)
+    |> elem(0)
   end
 
   defp contract_failure?({:error, %{message: message}}) when is_binary(message),
@@ -333,6 +417,77 @@ defmodule Explorer.Token.MetadataRetriever do
     |> format_contract_functions_result(contract_address_hash)
   end
 
+  @doc """
+  Whether the contract claims the
+  [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056) `IScaledUIAmount`
+  interface through ERC-165.
+
+  This is the single authority on whether a contract is an ERC-8056 token.
+  Nothing else qualifies: a `uiMultiplier()` that answers may well mean
+  something entirely different, and a log carrying the `UIMultiplierUpdated`
+  topic proves nothing at all, since any contract can emit any topic it likes.
+
+  Anything that is not a definitive answer counts as "no", which suits a caller
+  that will look again later. A caller that will not — a migration about to
+  checkpoint past the contract, say — must use `scaled_ui_amount_support/1` and
+  treat a failed lookup differently from a denied claim.
+  """
+  @spec supports_scaled_ui_amount?(String.t()) :: boolean()
+  def supports_scaled_ui_amount?(contract_address_hash) when is_binary(contract_address_hash) do
+    scaled_ui_amount_support(contract_address_hash) == {:ok, true}
+  end
+
+  @doc """
+  Same as `supports_scaled_ui_amount?/1` but keeps a failed lookup apart from a
+  denied claim.
+
+  Returns `{:ok, true}` or `{:ok, false}` when the contract answered — a revert
+  counts as an answer, since a contract without ERC-165 is definitively not an
+  ERC-8056 token — and `:error` when the node did not, so the caller can try
+  again rather than record a "no" that is really "unknown".
+  """
+  @spec scaled_ui_amount_support(String.t()) :: {:ok, boolean()} | :error
+  def scaled_ui_amount_support(contract_address_hash) when is_binary(contract_address_hash) do
+    contract_address_hash
+    |> Reader.query_contract(
+      @full_contract_abi,
+      %{@supports_interface_signature => [ScaledUIAmount.interface_id()]},
+      false
+    )
+    |> Map.get(@supports_interface_signature)
+    |> case do
+      {:ok, [supports?]} when is_boolean(supports?) ->
+        {:ok, supports?}
+
+      {:error, :invalid_data} ->
+        {:ok, false}
+
+      {:error, _reason} = error ->
+        if contract_failure?(error), do: {:ok, false}, else: :error
+
+      _other ->
+        :error
+    end
+  end
+
+  @doc """
+  Reads the [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056) multiplier of a
+  token: `uiMultiplier()`, `newUIMultiplier()` and `effectiveAt()`.
+
+  Returns a map with `:ui_multiplier`, `:new_ui_multiplier` and
+  `:ui_multiplier_effective_at`, each present only if its call succeeded — an
+  empty map means the token does not implement ERC-8056. `newUIMultiplier()` and
+  `effectiveAt()` belong to a required extension of the standard, but are
+  tolerated to be missing so that a token exposing the bare `uiMultiplier()` is
+  still displayed correctly, just without the scheduled change.
+  """
+  @spec get_ui_multiplier_of(String.t()) :: map()
+  def get_ui_multiplier_of(contract_address_hash) when is_binary(contract_address_hash) do
+    contract_address_hash
+    |> fetch_functions_from_contract(@ui_multiplier_functions)
+    |> format_contract_functions_result(contract_address_hash)
+  end
+
   defp fetch_functions_from_contract(contract_address_hash, contract_functions) do
     max_retries = Application.get_env(:explorer, :token_functions_reader_max_retries)
 
@@ -343,7 +498,8 @@ defmodule Explorer.Token.MetadataRetriever do
 
   defp fetch_functions_with_retries(contract_address_hash, contract_functions, accumulator, retries_left)
        when retries_left > 0 do
-    contract_functions_result = Reader.query_contract(contract_address_hash, @contract_abi, contract_functions, false)
+    contract_functions_result =
+      Reader.query_contract(contract_address_hash, @full_contract_abi, contract_functions, false)
 
     functions_with_errors =
       Enum.filter(contract_functions_result, fn function ->
@@ -404,6 +560,7 @@ defmodule Explorer.Token.MetadataRetriever do
     |> handle_invalid_strings(contract_address_hash)
     |> handle_large_strings()
     |> limit_decimals()
+    |> convert_ui_multiplier_effective_at()
   end
 
   defp atomized_key(@name_signature), do: :name
@@ -411,6 +568,23 @@ defmodule Explorer.Token.MetadataRetriever do
   defp atomized_key(@decimals_signature), do: :decimals
   defp atomized_key(@total_supply_signature), do: :total_supply
   defp atomized_key(@erc1155_contract_uri_signature), do: :name
+  defp atomized_key(@supports_interface_signature), do: :supports_scaled_ui_amount
+  defp atomized_key(@ui_multiplier_signature), do: :ui_multiplier
+  defp atomized_key(@new_ui_multiplier_signature), do: :new_ui_multiplier
+  defp atomized_key(@effective_at_signature), do: :ui_multiplier_effective_at
+
+  defp convert_ui_multiplier_effective_at(%{ui_multiplier_effective_at: timestamp} = contract_functions)
+       when is_integer(timestamp) do
+    case ScaledUIAmount.effective_at_from_unix(timestamp) do
+      {:ok, effective_at} ->
+        %{contract_functions | ui_multiplier_effective_at: effective_at}
+
+      {:error, _reason} ->
+        Map.delete(contract_functions, :ui_multiplier_effective_at)
+    end
+  end
+
+  defp convert_ui_multiplier_effective_at(contract_functions), do: contract_functions
 
   # It's a temp fix to store tokens that have names and/or symbols with characters that the database
   # doesn't accept. See https://github.com/blockscout/blockscout/issues/669 for more info.
@@ -554,6 +728,42 @@ defmodule Explorer.Token.MetadataRetriever do
     "https://arweave.net/#{uid}"
   end
 
+  @doc """
+  Generates an ETH Swarm gateway link for the given hash.
+
+  The hash can be a 64-character hex Swarm hash (keccak-256 based) or any
+  Swarm-compatible identifier (e.g. from SOC or feeds). The configured
+  gateway URL defaults to `https://gateway.ethswarm.org`.
+
+  ## Parameters
+  - uid: The Swarm hash or resource identifier.
+
+  ## Returns
+  - A string representing the full URL to the resource on the Swarm gateway.
+
+  ## Examples
+
+      iex> swarm_link("1234abcd" <> String.duplicate("0", 56))
+      "https://gateway.ethswarm.org/bzz/1234abcd" <> String.duplicate("0", 56) <> "/"
+
+  """
+  @spec swarm_link(uid :: any()) :: String.t()
+  def swarm_link(uid) do
+    uid = to_string(uid)
+
+    base_url =
+      :indexer
+      |> Application.get_env(:swarm, [])
+      |> Keyword.get(:gateway_url, "https://gateway.ethswarm.org")
+      |> String.trim_trailing("/")
+
+    if String.contains?(uid, "/") do
+      "#{base_url}/bzz/#{uid}"
+    else
+      "#{base_url}/bzz/#{uid}/"
+    end
+  end
+
   defp maybe_add_ipfs_gateway_params_to_url?(url, true), do: url
 
   defp maybe_add_ipfs_gateway_params_to_url?(url, _) do
@@ -621,6 +831,128 @@ defmodule Explorer.Token.MetadataRetriever do
   @spec ar_headers() :: [{binary(), binary()}]
   def ar_headers do
     @default_headers
+  end
+
+  @type nft_url_class ::
+          {:ipfs, binary() | nil}
+          | {:arweave, binary()}
+          | {:swarm, binary() | nil}
+          | {:regular, binary()}
+          | {:bare_path, binary() | nil}
+
+  @doc """
+  Classifies an NFT URL into one of: `{:ipfs, resource_id}`, `{:arweave, resource_id}`, `{:regular, url}`, or `{:bare_path, path}`.
+  """
+  @spec classify_nft_url(binary()) :: nft_url_class()
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  def classify_nft_url(url) do
+    case URI.parse(url) do
+      %URI{scheme: "ipfs", host: host, path: path} ->
+        {:ipfs, extract_ipfs_resource_id(host, path)}
+
+      %URI{scheme: "ar", host: host, path: path} when is_binary(host) and host != "" ->
+        resource_id = if is_binary(path) and path != "", do: host <> path, else: host
+        {:arweave, resource_id}
+
+      %URI{scheme: "bzz", host: host, path: path} ->
+        uid =
+          cond do
+            is_binary(host) and is_binary(path) -> host <> path
+            is_binary(host) -> host
+            true -> nil
+          end
+
+        {:swarm, uid}
+
+      %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
+        {:ipfs, resource_id}
+
+      %URI{scheme: _, path: "ipfs/" <> resource_id} ->
+        {:ipfs, resource_id}
+
+      %URI{scheme: _, path: "/bzz/" <> resource_id} ->
+        {:swarm, resource_id}
+
+      %URI{scheme: scheme} when not is_nil(scheme) ->
+        {:regular, url}
+
+      %URI{path: path} ->
+        {:bare_path, path}
+    end
+  end
+
+  @doc """
+  Resolves an NFT media URL to a fetchable gateway URL with appropriate headers (e.g. IPFS gateway, Arweave gateway).
+  """
+  @spec resolve_nft_media_url(binary()) :: {binary(), list()}
+  # credo:disable-for-next-line /Complexity/
+  def resolve_nft_media_url(url) do
+    case classify_nft_url(url) do
+      {:ipfs, resource_id} ->
+        if is_binary(resource_id) and valid_ipfs_path?(public_ipfs_link(resource_id)) do
+          {ipfs_link(resource_id), ipfs_headers()}
+        else
+          {url, []}
+        end
+
+      {:arweave, resource_id} ->
+        {arweave_link(resource_id), ar_headers()}
+
+      {:swarm, resource_id} ->
+        if is_binary(resource_id) do
+          {swarm_link(resource_id), swarm_headers()}
+        else
+          {url, []}
+        end
+
+      {:regular, url} ->
+        {url, []}
+
+      {:bare_path, path} ->
+        if is_binary(path) and valid_ipfs_path?(public_ipfs_link(path)) do
+          {ipfs_link(path), ipfs_headers()}
+        else
+          {url, []}
+        end
+    end
+  end
+
+  defp extract_ipfs_resource_id(host, path) do
+    cond do
+      host == "ipfs" and is_binary(path) and String.starts_with?(path, "/") ->
+        String.replace_leading(path, "/", "")
+
+      is_binary(host) and host != "" ->
+        if is_nil(path), do: host, else: host <> path
+
+      true ->
+        path
+    end
+  end
+
+  @doc """
+  Returns the headers for making requests to the ETH Swarm gateway.
+
+  If `INDEXER_SWARM_GATEWAY_BEARER_TOKEN` is configured the token is sent as
+  an `Authorization: Bearer <token>` header, which is the mechanism used by
+  private / gateway-as-a-service Swarm nodes.
+
+  ## Examples
+
+      iex> Explorer.Token.MetadataRetriever.swarm_headers()
+      [{"User-Agent", "blockscout-11.0.1"}]
+
+  """
+  @spec swarm_headers() :: [{binary(), binary()}]
+  def swarm_headers do
+    swarm_params = Application.get_env(:indexer, :swarm, [])
+    bearer_token = Keyword.get(swarm_params, :bearer_token)
+
+    if is_binary(bearer_token) and String.trim(bearer_token) != "" do
+      [{"Authorization", "Bearer #{bearer_token}"} | @default_headers]
+    else
+      @default_headers
+    end
   end
 
   @doc """
@@ -720,38 +1052,20 @@ defmodule Explorer.Token.MetadataRetriever do
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp fetch_from_ipfs_or_ar?(token_uri_string, ipfs_params, token_id, hex_token_id, from_base_uri?) do
-    case URI.parse(token_uri_string) do
-      %URI{scheme: "ipfs", host: host, path: path} ->
-        resource_id =
-          cond do
-            host == "ipfs" and is_binary(path) and String.starts_with?(path, "/") ->
-              String.replace_leading(path, "/", "")
-
-            is_binary(host) and is_binary(path) ->
-              host <> path
-
-            is_binary(host) and is_nil(path) ->
-              host
-
-            true ->
-              nil
-          end
-
+    case classify_nft_url(token_uri_string) do
+      {:ipfs, resource_id} ->
         fetch_from_ipfs_if_valid_path(resource_id, hex_token_id)
 
-      %URI{scheme: "ar", host: _host, path: resource_id} ->
+      {:arweave, resource_id} ->
         fetch_from_arweave(resource_id, hex_token_id)
 
-      %URI{scheme: _, path: "/ipfs/" <> resource_id} ->
-        fetch_from_ipfs_if_valid_path(resource_id, hex_token_id)
+      {:swarm, resource_id} ->
+        fetch_from_swarm_if_valid_hash(resource_id, hex_token_id)
 
-      %URI{scheme: _, path: "ipfs/" <> resource_id} ->
-        fetch_from_ipfs_if_valid_path(resource_id, hex_token_id)
+      {:regular, url} ->
+        fetch_metadata_inner(url, ipfs_params, token_id, hex_token_id, from_base_uri?)
 
-      %URI{scheme: scheme} when not is_nil(scheme) ->
-        fetch_metadata_inner(token_uri_string, ipfs_params, token_id, hex_token_id, from_base_uri?)
-
-      %URI{path: path} ->
+      {:bare_path, path} ->
         if is_binary(path) and valid_ipfs_path?(public_ipfs_link(path)) do
           fetch_from_ipfs(path, hex_token_id)
         else
@@ -799,6 +1113,19 @@ defmodule Explorer.Token.MetadataRetriever do
     fetch_metadata_inner(arweave_url, ipfs_params, nil, hex_token_id)
   end
 
+  defp fetch_from_swarm(uid, hex_token_id) do
+    url = swarm_link(uid)
+    fetch_metadata_inner(url, [ipfs?: false, swarm?: true], nil, hex_token_id)
+  end
+
+  defp fetch_from_swarm_if_valid_hash(uid, hex_token_id) do
+    if is_binary(uid) and valid_swarm_hash?(uid) do
+      fetch_from_swarm(uid, hex_token_id)
+    else
+      {:error, @invalid_swarm_path}
+    end
+  end
+
   defp fetch_metadata_inner(uri, ipfs_params, token_id, hex_token_id, from_base_uri? \\ false)
 
   defp fetch_metadata_inner(uri, ipfs_params, token_id, hex_token_id, from_base_uri?) do
@@ -839,34 +1166,28 @@ defmodule Explorer.Token.MetadataRetriever do
   """
   @spec fetch_metadata_from_uri(String.t(), keyword(), String.t() | nil) :: {:ok, %{metadata: any}} | {:error, binary()}
   def fetch_metadata_from_uri(uri, ipfs_params, hex_token_id \\ nil) do
-    case Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper)[:host_filtering_enabled?] &&
-           !ipfs?(ipfs_params) && !arweave?(ipfs_params) && MetadataURIValidator.validate_uri(uri) do
-      {:error, reason} ->
-        if reason == :blacklist do
-          Logger.warning(
-            [
-              "Request to token uri failed: #{inspect(uri)}.",
-              "Host is blacklisted.",
-              "To disable IPs blacklisting set INDEXER_TOKEN_INSTANCE_HOST_FILTERING_ENABLED=false"
-            ],
-            fetcher: :token_instances
-          )
-        end
-
-        {:error, reason |> to_string() |> truncate_error()}
-
-      _ ->
-        fetch_metadata_from_uri_request(uri, hex_token_id, ipfs_params)
-    end
+    fetch_metadata_from_uri_request(uri, hex_token_id, ipfs_params)
   end
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp fetch_metadata_from_uri_request(uri, hex_token_id, ipfs_params) do
-    headers = if ipfs?(ipfs_params), do: ipfs_headers(), else: @default_headers
+    headers =
+      cond do
+        ipfs?(ipfs_params) -> ipfs_headers()
+        swarm?(ipfs_params) -> swarm_headers()
+        true -> @default_headers
+      end
 
-    case HttpClient.get(uri, headers,
-           recv_timeout: 30_000,
-           follow_redirect: true,
-           pool: :token_instance_fetcher
+    case SafeFetch.request(
+           uri,
+           headers,
+           [
+             validate_host?: regular_url?(ipfs_params),
+             transport_opts: [recv_timeout: 30_000, pool: :token_instance_fetcher]
+           ],
+           fn request_uri, request_headers, request_opts ->
+             HttpClient.get(request_uri, request_headers, request_opts)
+           end
          ) do
       {:ok, %{body: body, status_code: 200, headers: response_headers}} ->
         content_type = get_content_type_from_headers(response_headers)
@@ -887,6 +1208,20 @@ defmodule Explorer.Token.MetadataRetriever do
 
         {:error_code, code}
 
+      {:error, reason} when reason in @url_validation_errors ->
+        if reason == :blacklist do
+          Logger.warning(
+            [
+              "Request to token uri failed: #{inspect(uri)}.",
+              "Host is blacklisted.",
+              "To disable IPs blacklisting set INDEXER_TOKEN_INSTANCE_HOST_FILTERING_ENABLED=false"
+            ],
+            fetcher: :token_instances
+          )
+        end
+
+        {:error, reason |> to_string() |> truncate_error()}
+
       {:error, reason} ->
         Logger.warning(
           ["Request to token uri failed: #{inspect(uri)}.", inspect(reason)],
@@ -906,7 +1241,7 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   defp process_result(metadata, uri, ipfs_params) do
-    if arweave?(ipfs_params) || ipfs?(ipfs_params) do
+    if arweave?(ipfs_params) || ipfs?(ipfs_params) || swarm?(ipfs_params) do
       {:ok, metadata}
     else
       {:ok_store_uri, metadata, uri}
@@ -919,6 +1254,17 @@ defmodule Explorer.Token.MetadataRetriever do
 
   defp arweave?(ipfs_params) do
     Keyword.get(ipfs_params, :arweave?)
+  end
+
+  defp swarm?(ipfs_params) do
+    Keyword.get(ipfs_params, :swarm?)
+  end
+
+  # A regular (attacker-controlled) URL, as opposed to one resolved to an operator-trusted
+  # IPFS/Arweave/Swarm gateway. Only regular URLs have their host validated against the
+  # SSRF blacklist.
+  defp regular_url?(ipfs_params) do
+    !(ipfs?(ipfs_params) || arweave?(ipfs_params) || swarm?(ipfs_params))
   end
 
   defp check_content_type(content_type, uri, hex_token_id, body, ipfs_params) do
@@ -961,9 +1307,9 @@ defmodule Explorer.Token.MetadataRetriever do
   defp check_type(json, hex_token_id) when is_map(json) do
     metadata =
       case json
-           |> Jason.encode!()
+           |> Utils.JSON.encode!()
            |> String.replace(@erc1155_token_id_placeholder, hex_token_id)
-           |> Jason.decode() do
+           |> Utils.JSON.decode() do
         {:ok, map} ->
           map
 
@@ -1007,6 +1353,22 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   def valid_ipfs_path?(_), do: false
+
+  @doc """
+  Returns `true` when `hash` is a valid ETH Swarm keccak-256 content address.
+
+  Swarm hashes (both legacy and new-style) are 64 lower-case hex characters.
+  The function also accepts hashes embedded in a path (e.g.
+  `"<hash>/path/to/file"`) by checking only the first path segment, so that
+  deep-linked Swarm URLs work correctly.
+  """
+  @spec valid_swarm_hash?(binary()) :: boolean()
+  def valid_swarm_hash?(hash) when is_binary(hash) do
+    bare = hash |> String.split("/") |> List.first()
+    String.match?(bare, ~r/^[0-9a-f]{64}$/)
+  end
+
+  def valid_swarm_hash?(_), do: false
 
   defp fetch_from_ipfs_if_valid_path(resource_id, hex_token_id) do
     if is_binary(resource_id) and valid_ipfs_path?(public_ipfs_link(resource_id)) do

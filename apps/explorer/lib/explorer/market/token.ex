@@ -36,7 +36,7 @@ defmodule Explorer.Market.Token do
           circulating_supply: Decimal.t() | nil
         }
 
-  @derive Jason.Encoder
+  @derive JSON.Encoder
   @enforce_keys ~w(available_supply total_supply btc_value last_updated market_cap tvl name symbol fiat_value volume_24h image_url circulating_supply)a
   defstruct ~w(available_supply total_supply btc_value last_updated market_cap tvl name symbol fiat_value volume_24h image_url circulating_supply)a
 

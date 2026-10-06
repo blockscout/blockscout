@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.SmartContract.Counters do
   alias BlockScoutWeb.Schemas.API.V2.General
 
   OpenApiSpex.schema(%{
+    title: "SmartContractCounters",
     description: "Smart contracts counters",
     type: :object,
     properties: %{

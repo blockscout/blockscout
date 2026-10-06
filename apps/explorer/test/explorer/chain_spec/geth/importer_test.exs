@@ -15,19 +15,19 @@ defmodule Explorer.ChainSpec.Geth.ImporterTest do
 
   @geth_genesis "#{File.cwd!()}/test/support/fixture/chain_spec/qdai_genesis.json"
                 |> File.read!()
-                |> Jason.decode!()
+                |> Utils.JSON.decode!()
 
   @polygon_genesis "#{File.cwd!()}/test/support/fixture/chain_spec/polygon_genesis.json"
                    |> File.read!()
-                   |> Jason.decode!()
+                   |> Utils.JSON.decode!()
 
   @optimism_genesis "#{File.cwd!()}/test/support/fixture/chain_spec/optimism_genesis.json"
                     |> File.read!()
-                    |> Jason.decode!()
+                    |> Utils.JSON.decode!()
 
   @zkatana_genesis "#{File.cwd!()}/test/support/fixture/chain_spec/zkatana_genesis.json"
                    |> File.read!()
-                   |> Jason.decode!()
+                   |> Utils.JSON.decode!()
 
   describe "genesis_accounts/1" do
     test "parses coin balance and contract code" do

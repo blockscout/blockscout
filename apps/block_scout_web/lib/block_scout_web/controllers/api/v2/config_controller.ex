@@ -50,15 +50,10 @@ defmodule BlockScoutWeb.API.V2.ConfigController do
 
   @spec chain_type_translate_to_openapi_spec_folder_name() :: String.t()
   defp chain_type_translate_to_openapi_spec_folder_name do
-    cond do
-      Application.get_env(:explorer, Explorer.Chain.Mud)[:enabled] ->
-        "mud"
-
-      chain_identity() == {:optimism, :celo} ->
-        "optimism-celo"
-
-      true ->
-        chain_type() || "default"
+    if chain_identity() == {:optimism, :celo} do
+      "optimism-celo"
+    else
+      chain_type() || "default"
     end
   end
 

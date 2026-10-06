@@ -73,7 +73,7 @@ The view layer is lossy about types. A field that renders as a plain string may 
 1. Find the corresponding Ecto schema module in `apps/explorer/lib/explorer/chain/`. Grep for `Ecto.Enum` in that file.
 2. If the field is an `Ecto.Enum`, the OpenAPI property should use `enum: [...]` with the correct values, not just `type: :string`.
 3. If the property already uses `enum:`, verify the values are **complete and current** by comparing against the Ecto enum definition. New values may have been added to the Ecto schema without updating the OpenAPI schema — this is a silent breakage where `CastAndValidate` rejects the new value on input.
-4. Verify there is a code comment on the enum property pointing to the source Ecto field (e.g., `# Enum values must be kept in sync with Explorer.Chain.<Module> :<field_name> field.`). If missing, add one.
+4. If the property lists enum values literally (`enum: ["a", "b"]`), verify there's a sync comment pointing to the source Ecto field (e.g., `# Enum values must be kept in sync with Explorer.Chain.<Module> :<field_name> field.`). Skip the check when values are pulled in at compile time — shared leaf schema, helper call like `SomeView.status_enum()`, or module attribute — since there is no copy to drift. If missing, add one.
 5. Check existing schemas in the same domain for precedent — similar entities often already use enum for comparable fields.
 
 Also check for other type refinements: large integers serialized as strings should use `IntegerString`, hash fields should use `FullHash`/`AddressHash`, timestamps should use `Timestamp`/`TimestampNullable`.
@@ -86,7 +86,9 @@ Every key the view always emits should be in `required:`. Keys that are conditio
 - Not be in `required:` (if the key might be absent)
 - Be in `required:` but have `nullable: true` on the schema (if the key is always present but sometimes null)
 
-**Scope.** "Always emits" and "sometimes `nil`" refer to the render paths reachable via the **endpoints that currently reference this schema** in their `operation/2` `responses:`. Before flagging a `nullable: false` property as wrong:
+`nullable: false` is the OpenAPI 3.0 default — file a nullability finding only when a nilable field lacks `nullable: true`, never to add or change `nullable: false`.
+
+**Scope.** "Always emits" and "sometimes `nil`" refer to the render paths reachable via the **endpoints that currently reference this schema** in their `operation/2` `responses:`. Before flagging a not-nullable property as wrong (i.e., claiming it should be `nullable: true`):
 
 1. Enumerate those call sites mechanically: `Grep "Schemas\.<SchemaName>\b" apps/block_scout_web/lib/block_scout_web/controllers`.
 2. For each call site, check the controller's `necessity_by_association` / explicit `Repo.preload/2` / other data-shaping code to determine whether the value can in fact reach the view as `nil`.
@@ -139,6 +141,16 @@ For each property in the response schema that uses `oneOf` or `anyOf`, verify th
 To find all endpoints whose 200 response currently uses `oneOf` (for precedent), run recipe G in `references/oastools-audit-recipes.md`.
 
 This check is especially important for endpoints that filter by a specific discriminator value (e.g., a DA-type lookup that always returns one DA variant, but references a shared batch schema containing all DA variants).
+
+### 2h. No `allOf: [Leaf]` overlay over `general/` primitives
+
+Never wrap a `general/` leaf as `%Schema{allOf: [Leaf], description: ...}` to attach `description:`/`example:`/`nullable:`. `OpenApiSpex.Cast.AllOf` enumerates per-branch results as maps and fails at runtime on non-Enumerable structs (`%DateTime{}`, `%Decimal{}`) produced by leaves with non-trivial `format:` casts. Use `Helper.extend_schema/2` at the property position instead.
+
+Source-side scan: `Grep "allOf: \[" apps/block_scout_web/lib/block_scout_web/schemas` and triage each hit.
+
+Severity: **Major** for primitive leaves with non-trivial `format:` casts (`Timestamp`, `Decimal`-typed, anything casting to a struct) — `CastAndValidate` will reject the response at runtime. **Minor** for object leaves (`Address`) where the cast succeeds but the convention is still violated.
+
+See `references/schema-conventions.md` section "Helper.extend_schema/2".
 
 ## 3. Convention compliance
 
@@ -193,6 +205,10 @@ See `references/schema-conventions.md` for full conventions.
 ### 4b. Module naming follows conventions
 
 `BlockScoutWeb.Schemas.API.V2.<Domain>` for base schemas, `BlockScoutWeb.Schemas.API.V2.<Domain>.Response` for response wrappers.
+
+**Chain-namespaced schemas (under `schemas/api/v2/<chain>/`) must declare an explicit `title: "<Chain>.<Name>"`.** Without it, the bare module name keys `components.schemas` and collides with same-named schemas from other chains when the all-in-one swagger merge unions per-chain specs (first-wins → silent substitution). Source-side scan: list files under `schemas/api/v2/<chain>/` and check each `OpenApiSpex.schema(%{...})` block for a prefixed `title:`.
+
+See `references/schema-conventions.md` section "Chain-specific schemas".
 
 ## 5. Verification
 
@@ -250,6 +266,22 @@ Independent of any single-endpoint audit, run this sweep once per work session t
 - Recipe I — tags violating kebab-case
 
 Full recipes in `references/oastools-audit-recipes.md`. Results belong in the "Convention deviations" section of the audit output below.
+
+## 7. Finding-quality gates
+
+Apply these gates **after** identifying a candidate issue but **before** writing it into the report. They reduce two failure modes: overengineered suggested fixes, and Minor/Nit findings that are taste rather than rule violations.
+
+### Gate 1 — Suggested fix is minimum-viable
+
+Propose the smallest edit that resolves the finding. Do not bundle new modules, shared schemas, or helpers into the fix unless **≥2 real duplicates already exist** in the audited code.
+
+If a larger refactor is also worth doing, file it as a separate Nit titled `Follow-up: consolidate <X>`. Severity is independent of fix size — a trivial fix does not downgrade a Critical finding.
+
+### Gate 2 — Minor and Nit findings must cite a rule
+
+Every Minor/Nit finding must cite a section in one of the references (e.g., `inspection-checklist.md §2b`, `schema-conventions.md` "Nullable fields", `oastools-audit-recipes.md` Recipe N). If no section fits, drop the finding — or, if it actually violates an implicit rule, raise the severity and cite.
+
+**Critical/Major are exempt.** They may violate implicit rules that no single section captures cleanly. Do not downgrade Critical/Major to Nit to make this gate applicable — that is the failure mode this gate is *not* trying to enable.
 
 ## Audit output
 

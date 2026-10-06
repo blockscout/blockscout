@@ -106,8 +106,6 @@ config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enable
 
 config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions, enabled: false
 
-config :explorer, Explorer.Chain.Mud, enabled: ConfigHelper.parse_bool_env_var("MUD_INDEXER_ENABLED")
-
 config :explorer, Explorer.Utility.VersionConstantsUpdater, enabled: true
 
 config :explorer, Explorer.Utility.VersionUpgrade, enabled: true
@@ -120,6 +118,8 @@ for migrator <- [
       Explorer.Migrator.SanitizeMissingBlockRanges,
       Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers,
       Explorer.Migrator.TokenTransferTokenType,
+      Explorer.Migrator.BackfillScaledUIAmountTokens,
+      Explorer.Migrator.SanitizeScaledUIAmountTokenTransferTypes,
       Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
       Explorer.Migrator.TransactionBlockConsensus,
       Explorer.Migrator.TokenTransferBlockConsensus,
@@ -130,6 +130,7 @@ for migrator <- [
       Explorer.Migrator.SanitizeDuplicatedLogIndexLogs,
       Explorer.Migrator.RefetchContractCodes,
       Explorer.Migrator.BackfillMultichainSearchDB,
+      Explorer.Migrator.BackfillMultichainSearchDbCurrentTokenBalances,
       Explorer.Migrator.SanitizeVerifiedAddresses,
       Explorer.Migrator.SanitizeEmptyContractCodeAddresses,
       Explorer.Migrator.BackfillMetadataURL,
@@ -142,6 +143,10 @@ for migrator <- [
       Explorer.Migrator.ReindexBlocksWithStaleInternalTransactions,
       Explorer.Migrator.EmptyInternalTransactionsData,
       Explorer.Migrator.FillInternalTransactionsAddressIds,
+      Explorer.Migrator.TransactionHasTokenTransfers,
+      Explorer.Migrator.DeleteNonConsensusLogs,
+      Explorer.Migrator.FillLogsOptimizedFields,
+      Explorer.Migrator.FillLogsCompressedData,
       Explorer.Migrator.BackfillAddressCounters,
       Explorer.Migrator.BackfillTokenCounters
     ] do
@@ -175,6 +180,8 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsToAddressHashWithPendingIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCountDescPartialIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateUnfetchedAddressTokenBalancesV3Index,
+      Explorer.Migrator.HeavyDbIndexOperation.DropUnfetchedAddressTokenBalancesV2Index,
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesTransactionsCountAscCoinBalanceDescHashPartialIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex,
       Explorer.Migrator.HeavyDbIndexOperation.ValidateInternalTransactionsBlockNumberTransactionIndexNotNull,
@@ -191,13 +198,30 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsCreatedContractAddressIdIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBlockNumberCreatedContractAddressIdPartialIndex,
       Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBlockHashTransactionHashBlockIndexError,
+      Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsAddressHashes,
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressesHashContractCodeNotNullIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsBlockNumberCreatedContractAddressHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsCreatedContractAddressHashIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsFromAddressHashPartialIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropInternalTransactionsToAddressHashPartialIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressHashFirstTopicSecondTopicBlockNumberIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesAddressHashBlockNumberIndex
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesAddressHashBlockNumberIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsTokenTransferMethodIdOrderedIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransactionIndexIndexUniqueIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsBlockNumberTransactionIndexNotNull,
+      Explorer.Migrator.HeavyDbIndexOperation.UpdateLogsPrimaryKey,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdBlockNumberDescIndexDescIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicBlockNumberIndexIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsDepositsWithdrawalsIndexWithUpdatedPk,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashBlockNumberDescIndexDescIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashFirstTopicBlockNumberIndexIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsAddressHashFirstTopicSecondTopicBlockNumberIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropLogsDepositsWithdrawalsIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsFirstTopicIdFkey,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesTokenHoldersIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalancesTokenContractAddressHashValueIndex
     ] do
   config :explorer, index_operation, enabled: true
 end

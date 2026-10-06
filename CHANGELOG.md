@@ -1,5 +1,182 @@
 # Changelog
 
+## 12.0.0
+
+### 🚀 Features
+
+- Add ERC-8056 token type ([#14731](https://github.com/blockscout/blockscout/pull/14731))
+- Migrate Sourcify integration from API v1 to v2 ([#14584](https://github.com/blockscout/blockscout/pull/14584))
+- Add universal merged API types, operation shorthands, and API v2 schema correctness improvements ([#14515](https://github.com/blockscout/blockscout/pull/14515))
+- Add an option to disable core proxy methods in the Ethereum JSON-RPC API ([#14495](https://github.com/blockscout/blockscout/pull/14495))
+- Add ETH Swarm (bzz://) support for token metadata ([#14446](https://github.com/blockscout/blockscout/pull/14446), [#14744](https://github.com/blockscout/blockscout/pull/14744))
+- Add ENS and metadata preloads to advanced filters and NFT owner output ([#14443](https://github.com/blockscout/blockscout/issues/14443), [#14428](https://github.com/blockscout/blockscout/pull/14428))
+- Add an include_zero_value flag for filtering zero-value internal transactions in REST endpoints ([#14400](https://github.com/blockscout/blockscout/issues/14400))
+- Add transaction log input decoding in ABI-like format ([#13783](https://github.com/blockscout/blockscout/issues/13783))
+- Add support for exporting token transfers from a token through CSV export ([#7909](https://github.com/blockscout/blockscout/issues/7909))
+- Add support for runtime Redis SSL/TLS and Sentinel-based configuration for rate limiting and account services ([#12827](https://github.com/blockscout/blockscout/issues/12827), [#12889](https://github.com/blockscout/blockscout/issues/12889))
+- Add support for Search + BENS integration ([#13180](https://github.com/blockscout/blockscout/issues/13180))
+- Add support for token instance media type collection and metadata backfill ([#11208](https://github.com/blockscout/blockscout/issues/11208))
+- Add api/v2/tokens/batch endpoint ([#14548](https://github.com/blockscout/blockscout/pull/14548))
+- Add pending status to v2 internal transaction APIs ([#14212](https://github.com/blockscout/blockscout/pull/14212))
+- Allow to change page size ([#14244](https://github.com/blockscout/blockscout/pull/14244))
+
+### 🐛 Bug Fixes
+
+- Cap internal transaction error message at 255 characters ([#14907](https://github.com/blockscout/blockscout/pull/14907))
+- Exclude recorded null rounds from missing_blocks_count metric ([#14906](https://github.com/blockscout/blockscout/pull/14906))
+- ReindexBlocksWithStaleInternalTransactions return value ([#14901](https://github.com/blockscout/blockscout/pull/14901))
+- move /api/legacy/eth/* POST routes off the CSRF-protected pipeline ([#14881](https://github.com/blockscout/blockscout/pull/14881))
+- Sanitize 12 version ([#14867](https://github.com/blockscout/blockscout/pull/14867))
+- Compare checksummed hashes in Celo election rewards controller test ([#14863](https://github.com/blockscout/blockscout/pull/14863))
+- Update Arc coin balance tests after address_hash_to_coin_balances rename ([#14860](https://github.com/blockscout/blockscout/pull/14860))
+- Drop redundant logs_address_hash_first_topic_second_topic_block_number_index ([#14858](https://github.com/blockscout/blockscout/pull/14858))
+- Keep address and transaction pages responsive while logs table is locked ([#14848](https://github.com/blockscout/blockscout/pull/14848))
+- Validate redirect targets and IPv6 hosts in NFT metadata fetching ([#14726](https://github.com/blockscout/blockscout/pull/14726))
+- Async fetch internal transactions after pending operations type switch ([#14330](https://github.com/blockscout/blockscout/issues/14330))
+- Adapt OnDemand IT fetcher test for rsk and filecoin ([#14315](https://github.com/blockscout/blockscout/issues/14315))
+- Reorganize logs indexes creation order ([#14676](https://github.com/blockscout/blockscout/pull/14676))
+- Correct API v2 schemas and drop dead internal-tx limit param ([#14662](https://github.com/blockscout/blockscout/pull/14662))
+- Delete massive blocks as well on ranges_init in MissingRangesCollector ([#14661](https://github.com/blockscout/blockscout/pull/14661))
+- Update logs PK fixes ([#14660](https://github.com/blockscout/blockscout/pull/14660))
+- Fix DeleteZeroValueInternalTransactions status inconsistency ([#14658](https://github.com/blockscout/blockscout/pull/14658))
+- Fix bytes32 ERC-20 name and symbol decoding ([#14578](https://github.com/blockscout/blockscout/pull/14578))
+- Restore per-instance results for on-demand NFT metadata refetch ([#14530](https://github.com/blockscout/blockscout/pull/14530))
+- Fix Solidity verifier false positives caused by substring collisions in constructor argument matching ([#14477](https://github.com/blockscout/blockscout/issues/14477))
+- Fix Solidity verifier version-check bypass and malformed version parsing ([#14475](https://github.com/blockscout/blockscout/issues/14475))
+- Fix unguarded Integer.parse issues in Solidity version parsing ([#14505](https://github.com/blockscout/blockscout/issues/14505))
+- Fix silent fallback and empty-map masking in bytecode metadata extraction and CBOR decoding ([#14504](https://github.com/blockscout/blockscout/issues/14504), [#14503](https://github.com/blockscout/blockscout/issues/14503), [#14502](https://github.com/blockscout/blockscout/issues/14502), [#14499](https://github.com/blockscout/blockscout/issues/14499), [#14497](https://github.com/blockscout/blockscout/issues/14497))
+- Fix an OpenAPI issue where CSV-returning endpoints could return 406 errors ([#14416](https://github.com/blockscout/blockscout/issues/14416))
+- Fix OpenAPI coverage for Stability validators and Shibarium endpoints ([#14323](https://github.com/blockscout/blockscout/issues/14323), [#14322](https://github.com/blockscout/blockscout/issues/14322))
+- Fix missing transaction links in Arc coin balance history ([#14382](https://github.com/blockscout/blockscout/pull/14382))
+- Fix recaptcha bypass handling when reCAPTCHA is disabled ([#14379](https://github.com/blockscout/blockscout/pull/14379))
+- Fix recaptcha_to_bypass_429 handling when reCAPTCHA is disabled and restore scoped bypass token query support ([#13703](https://github.com/blockscout/blockscout/issues/13703), [#13513](https://github.com/blockscout/blockscout/issues/13513))
+- Fix address tab counters by chain identity and type ([#14271](https://github.com/blockscout/blockscout/pull/14271))
+- Fix JSON-RPC error formatting and hex block parameter parsing ([#14216](https://github.com/blockscout/blockscout/issues/14216))
+- Fix scam-token counters when token filtering is disabled on an instance ([#13944](https://github.com/blockscout/blockscout/issues/13944))
+- Fix coin balance history websocket payloads to include transaction hashes ([#8849](https://github.com/blockscout/blockscout/issues/8849))
+- Distinguish eth_call reverts from RPC errors in proxy fetch ([#14747](https://github.com/blockscout/blockscout/pull/14747))
+- Fix Arbitrum missing origination chunking ([#14730](https://github.com/blockscout/blockscout/pull/14730))
+- Handle node JSON-RPC errors in batched eth-rpc proxy requests ([#14718](https://github.com/blockscout/blockscout/pull/14718))
+- Prepare logs for bloom filter ([#14713](https://github.com/blockscout/blockscout/pull/14713))
+- Rollback priority of address higher than ENS in search redirect ([#14712](https://github.com/blockscout/blockscout/pull/14712))
+- Filter non chain type related migrations in VersionUpgrade ([#14659](https://github.com/blockscout/blockscout/pull/14659))
+- Fix refetch multichain queue and eden OpenAPI spec generation ([#14656](https://github.com/blockscout/blockscout/pull/14656))
+- Regenerate types-package lockfile so npm ci works ([#14639](https://github.com/blockscout/blockscout/pull/14639))
+- Fix logs conflicts ([#14631](https://github.com/blockscout/blockscout/pull/14631))
+- Use named volume for backend dets to fix permission errors ([#14561](https://github.com/blockscout/blockscout/pull/14561))
+- Add required max_body_size option to Tesla.Middleware.Compression ([#14484](https://github.com/blockscout/blockscout/pull/14484))
+- Resolve beacon deposit status OpenAPI title collision ([#14440](https://github.com/blockscout/blockscout/pull/14440))
+- Fix swagger generation workflow ([#14439](https://github.com/blockscout/blockscout/pull/14439))
+- Fix BackfillMultichainSearchDbCurrentTokenBalancesTest ([#14429](https://github.com/blockscout/blockscout/pull/14429))
+- Use describe_inline for leaf-type properties in ZkSync batch schemas ([#14409](https://github.com/blockscout/blockscout/pull/14409))
+- Use string keys in ZkSync batches paging function ([#14408](https://github.com/blockscout/blockscout/pull/14408))
+- Fix compilation warning in OP chain types ([#14363](https://github.com/blockscout/blockscout/pull/14363))
+
+### 🚜 Refactor
+
+- Refactor smart contract decoding and reader flow for ABI-like input parsing ([#7744](https://github.com/blockscout/blockscout/issues/7744))
+- Refactor JSON-RPC HTTP compression handling ([#12997](https://github.com/blockscout/blockscout/issues/12997))
+- Remove MUD customizations from the codebase ([#14485](https://github.com/blockscout/blockscout/pull/14485))
+- Remove the key from next_page_params to prevent secret leaks ([#14361](https://github.com/blockscout/blockscout/issues/14361))
+- Remove items_count from API v2 next_page_params responses to simplify payloads ([#12901](https://github.com/blockscout/blockscout/issues/12901))
+- Remove the token object from token instance API responses to keep payloads smaller ([#8805](https://github.com/blockscout/blockscout/issues/8805))
+- Drop address_hash columns from the internal_transactions storage layout ([#14230](https://github.com/blockscout/blockscout/issues/14230))
+- Refactor event-log storage layout around first-topic handling and new primary keys ([#14012](https://github.com/blockscout/blockscout/issues/14012), [#14014](https://github.com/blockscout/blockscout/issues/14014), [#14016](https://github.com/blockscout/blockscout/issues/14016), [#14017](https://github.com/blockscout/blockscout/issues/14017), [#14021](https://github.com/blockscout/blockscout/issues/14021))
+- Name the transaction preview schemas TransactionPreview ([#14711](https://github.com/blockscout/blockscout/pull/14711))
+- Migrate JSON handling to Elixir built-in JSON lib ([#14302](https://github.com/blockscout/blockscout/pull/14302))
+
+### 📚 Documentation
+
+- document reCAPTCHA as headers in refetch-metadata OpenAPI spec ([#14690](https://github.com/blockscout/blockscout/pull/14690))
+- Add OpenAPI coverage for Stability validators endpoints ([#14323](https://github.com/blockscout/blockscout/issues/14323))
+- Add OpenAPI coverage for Shibarium endpoints ([#14322](https://github.com/blockscout/blockscout/issues/14322))
+- Add OpenAPI coverage for ZKSync-specific REST API methods ([#13753](https://github.com/blockscout/blockscout/issues/13753))
+- Add /api prefixes to endpoints in Swagger/OpenAPI docs ([#14263](https://github.com/blockscout/blockscout/pull/14263))
+- Add property-level description overlays without global component pollution ([#14367](https://github.com/blockscout/blockscout/issues/14367))
+- Improve API schema correctness and shared operation shorthands in the OpenAPI surface ([#14515](https://github.com/blockscout/blockscout/pull/14515))
+- Add OpenAPI specification for dedicated /api/eth-rpc methods ([#14407](https://github.com/blockscout/blockscout/pull/14407))
+
+### ⚡ Performance
+
+- Cache Optimism deposits count ([#14733](https://github.com/blockscout/blockscout/pull/14733))
+- Skip expensive cleanup queries in lose_consensus when there are no block changes ([#14489](https://github.com/blockscout/blockscout/pull/14489))
+- Improve filling migration scheduling for background backfills ([#14493](https://github.com/blockscout/blockscout/pull/14493))
+- Optimize event-log storage and compression migrations for larger datasets ([#14012](https://github.com/blockscout/blockscout/issues/14012), [#14014](https://github.com/blockscout/blockscout/issues/14014), [#14016](https://github.com/blockscout/blockscout/issues/14016), [#14021](https://github.com/blockscout/blockscout/issues/14021))
+- Improve advanced filters performance and backfill throughput ([#13428](https://github.com/blockscout/blockscout/pull/13428), [#14493](https://github.com/blockscout/blockscout/pull/14493))
+- Backfill current token balances for the multichain DB exporter ([#12794](https://github.com/blockscout/blockscout/issues/12794))
+- Improve multichain search integration by importing addresses of smart-contract implementations ([#11491](https://github.com/blockscout/blockscout/issues/11491))
+- Add media type collection for token instances to improve NFT metadata workflows ([#11208](https://github.com/blockscout/blockscout/issues/11208))
+- Restore partial index usage for token holders queries ([#14728](https://github.com/blockscout/blockscout/pull/14728))
+
+### ⚙️ Miscellaneous Tasks
+
+- Optimize logs by address queries ([#14680](https://github.com/blockscout/blockscout/pull/14680))
+- Improve endpoint availability fault tolerance ([#14514](https://github.com/blockscout/blockscout/pull/14514))
+- Improve migration scheduling for log-filling tasks ([#14493](https://github.com/blockscout/blockscout/pull/14493))
+- Update smart_contracts.constructor_arguments from text to bytea ([#13371](https://github.com/blockscout/blockscout/issues/13371))
+- Encrypt management JWTs for Auth0 before storing them in Redis ([#12832](https://github.com/blockscout/blockscout/issues/12832))
+- Add automatic Optimism Holocene timestamp loading from Superchain registry TOML config ([#11641](https://github.com/blockscout/blockscout/issues/11641))
+- Spread scam-token filtering to GraphQL functionality ([#12140](https://github.com/blockscout/blockscout/issues/12140))
+- Support runtime Redis SSL/TLS and Sentinel-based configuration for rate limiting and account services ([#12827](https://github.com/blockscout/blockscout/issues/12827), [#12889](https://github.com/blockscout/blockscout/issues/12889))
+- Improve multichain search integration by importing smart-contract implementation addresses ([#11491](https://github.com/blockscout/blockscout/issues/11491))
+- Add support for circulating supply reporting ([#14532](https://github.com/blockscout/blockscout/issues/14532))
+- Add support for the EigenDA blob schema in Optimism block OpenAPI ([#14496](https://github.com/blockscout/blockscout/pull/14496))
+- Add support for disallowing extra properties in Optimism Alt-DA block schema ([#14488](https://github.com/blockscout/blockscout/pull/14488))
+- Fix warnings ([#14821](https://github.com/blockscout/blockscout/pull/14821))
+- Propagate cache between API pods as well ([#14614](https://github.com/blockscout/blockscout/pull/14614))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `API_ETH_RPC_EXTENDED_PROXY_METHODS_ENABLED`            | Enables extended proxy method support for API ETH RPC. Added for the `v12.0.0` release and disabled by default for backward compatibility.                                                                                                                                                                                                                                                                                                          | Version: v12.0.0\+ <br />Default: `false` <br />Applications: API                                                                                                                                                                                                                                                                                                                  |
+| `API_ETH_RPC_DISABLE_CORE_PROXY_METHODS`                | If `true`, disables core proxy methods (e.g. `eth_getCode`, `eth_getTransactionCount`, `eth_call`, etc.) in the API ETH RPC JSON-RPC method set. Extended proxy methods controlled by `API_ETH_RPC_EXTENDED_PROXY_METHODS_ENABLED` are unaffected. Implemented in [#14495](https://github.com/blockscout/blockscout/pull/14495).                                                                                                                   | Version: v12.0.0\+ <br />Default: `false` <br />Applications: API                                                                                                                                                                                                                                                                                                                  |
+| `MAX_ITEMS_PER_PAGE`                                    | Maximum size of the page returned by the API, in other words, the maximum allowed value for `items_count` query param. Implemented in [#14244](https://github.com/blockscout/blockscout/pull/14244).                                                                                                                                                                                                                                               | Version: v12.0.0\+ <br />Default: `100` <br />Applications: API                                                                                                                                                                                                                                                                                                       |
+| `ETHEREUM_JSONRPC_HTTP_REQUEST_COMPRESSION_HEAVY_METHODS_ENABLED`      | Controls whether compression is applied when calling high-volume JSON-RPC endpoints (such as debug_*, trace_*, and eth_getBlockReceipts). Implemented in [#14319](https://github.com/blockscout/blockscout/pull/14303).                                                            | Version: v12.0.0\+ <br />Default: `true` <br />Applications: API, Indexer                       |
+| `ETHEREUM_JSONRPC_HTTP_REQUEST_COMPRESSION_ALL_METHODS_ENABLED`        | Controls whether compression is applied when calling all JSON RPC endpoints. Implemented in [#14319](https://github.com/blockscout/blockscout/pull/14303).                                                                                                                         | Version: v12.0.0\+ <br />Default: `false` <br />Applications: API, Indexer                      |
+| `INDEXER_DISABLE_TOKEN_INSTANCE_MEDIA_TYPE_FETCHER`             | If `true`, token instance media type backfill fetcher is disabled. When disabled, `image_type` and `animation_type` fields will not be populated for existing token instances. Implemented in [#14365](https://github.com/blockscout/blockscout/pull/14365).                                                                                                                                                                                                                                                                   | Version: v12.0.0\+ <br />Default: `false` <br />Applications: Indexer                                        |
+| `INDEXER_TOKEN_INSTANCE_MEDIA_TYPE_BATCH_SIZE`                | Number of token instances processed per batch by the media type fetcher, which backfills MIME types (`image_type`, `animation_type`) for NFT instances via HTTP HEAD requests to image/animation URLs from metadata. Implemented in [#14365](https://github.com/blockscout/blockscout/pull/14365).                                                                                                                                                                                                                               | Version: v12.0.0\+ <br />Default: `10` <br />Applications: Indexer                                           |
+| `INDEXER_TOKEN_INSTANCE_MEDIA_TYPE_CONCURRENCY`               | Max number of concurrent workers resolving media types for token instances. Implemented in [#14365](https://github.com/blockscout/blockscout/pull/14365).                                                                                                                                                                                                                                                                                                                                                                      | Version: v12.0.0\+ <br />Default: `5` <br />Applications: Indexer                                            |
+| `MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_ENABLED`              | Enable background migration to backfill `has_token_transfers` for existing transactions. Implemented in [#13428](https://github.com/blockscout/blockscout/pull/13428).                                                                                                                                                                                                 | Version: v12.0.0\+ <br />Default: `true` <br />Applications: API, Indexer    |
+| `MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_BATCH_SIZE`           | Number of transactions to backfill `has_token_transfers` in the batch. Implemented in [#13428](https://github.com/blockscout/blockscout/pull/13428).                                                                                                                                                                                                                   | Version: v12.0.0\+ <br />Default: `100` <br />Applications: API, Indexer     |
+| `MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_CONCURRENCY`          | Number of parallel backfilling transaction batches processing. Implemented in [#13428](https://github.com/blockscout/blockscout/pull/13428).                                                                                                                                                                                                                           | Version: v12.0.0\+ <br />Default: `10` <br />Applications: API, Indexer      |
+| `MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_DISABLED` | If `true`, the backfill migration that exports current token balances from Blockscout to Multichain Search DB does not run. The migration is also disabled when `MICROSERVICE_MULTICHAIN_SEARCH_URL` is unset or `MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_LAST_BLOCK_NUMBER` is unset. Implemented in [#14304](https://github.com/blockscout/blockscout/pull/14304). | Version: v12.0.0\+ <br />Default: `false` <br />Applications: Indexer |
+| `MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_LAST_BLOCK_NUMBER` | Upper block number bound for the current token balances backfill. Only records from `address_current_token_balances` with `block_number` less than or equal to this value are exported. Required for the migration to start. When `TRACE_BLOCK_RANGES` is configured, only balances within those ranges are exported. Implemented in [#14304](https://github.com/blockscout/blockscout/pull/14304). | Version: v12.0.0\+ <br />Default: (empty) <br />Applications: Indexer |
+| `MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_BATCH_SIZE` | Number of current token balances to export in each batch during the Multichain Search DB backfill. Implemented in [#14304](https://github.com/blockscout/blockscout/pull/14304). | Version: v12.0.0\+ <br />Default: `100` <br />Applications: Indexer |
+| `MIGRATION_BACKFILL_MULTICHAIN_SEARCH_CURRENT_TOKEN_BALANCES_CONCURRENCY` | Number of parallel batches processing during the current token balances Multichain Search DB backfill. Implemented in [#14304](https://github.com/blockscout/blockscout/pull/14304). | Version: v12.0.0\+ <br />Default: `4` <br />Applications: Indexer |
+| `MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_BATCH_SIZE`     | Number of logs to fill their address ids, first topic ids, transaction indexes and trimmed topics in the batch. Implemented in [#14494](https://github.com/blockscout/blockscout/pull/14494).                                                                                                                                                                                                                 | Version: v12.0.0\+ <br />Default: `30` <br />Applications: Indexer          |
+| `MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_CONCURRENCY`     | Number of parallel processes filling logs address ids, first topic ids, transaction indexes and trimmed topics. Implemented in [#14494](https://github.com/blockscout/blockscout/pull/14494).                                                                                                                                                                                                                 | Version: v12.0.0\+ <br />Default: `10` <br />Applications: Indexer          |
+| `MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_TIMEOUT`     | Timeout between filling logs address ids, first topic ids, transaction indexes and trimmed topics batches processing. Implemented in [#14494](https://github.com/blockscout/blockscout/pull/14494).                                                                                                                                                                                                              | Version: v12.0.0\+ <br />Default: `5s` <br />Applications: Indexer          |
+| `MIGRATION_FILL_LOGS_COMPRESSED_DATA_BATCH_SIZE`     | Number of logs to fill their compressed data in the batch. Implemented in [#14526](https://github.com/blockscout/blockscout/pull/14526).                                                                                                                                                                                                                 | Version: v12.0.0\+ <br />Default: `5000` <br />Applications: Indexer          |
+| `MIGRATION_FILL_LOGS_COMPRESSED_DATA_CONCURRENCY`     | Number of parallel processes filling logs compressed data. Implemented in [#14526](https://github.com/blockscout/blockscout/pull/14526).                                                                                                                                                                                                                 | Version: v12.0.0\+ <br />Default: `10` <br />Applications: Indexer          |
+| `MIGRATION_FILL_LOGS_COMPRESSED_DATA_TIMEOUT`     | Timeout between filling logs compressed data batches processing. Implemented in [#14526](https://github.com/blockscout/blockscout/pull/14526).                                                                                                                                                                                                              | Version: v12.0.0\+ <br />Default: `1s` <br />Applications: Indexer          |
+| `API_RATE_LIMIT_HAMMER_REDIS_SSL_ENABLED`         | If `true` Blockscout will use SSL to connect to Redis DB for Hammer rate limit library. Implemented in [#13901](https://github.com/blockscout/blockscout/pull/13901)                                                                                  | Version: v12.0.0\+ <br />Default: (empty) <br />Applications: API                       |
+| `API_RATE_LIMIT_HAMMER_REDIS_SENTINEL_URLS`       | List of Redis sentinel urls for Hammer rate limit library. Implemented in [#13901](https://github.com/blockscout/blockscout/pull/13901)                                                                                                               | Version: v12.0.0\+ <br />Default: (empty) <br />Applications: API                       |
+| `API_RATE_LIMIT_HAMMER_REDIS_SENTINEL_MASTER_NAME`| Sentinel master name for Hammer rate limit library. Implemented in [#13901](https://github.com/blockscout/blockscout/pull/13901)                                                                                                                      | Version: v12.0.0\+ <br />Default: (empty) <br />Applications: API                       |
+| `API_RATE_LIMIT_RECAPTCHA_DISABLED_LIMIT_MULTIPLIER` | Integer multiplier applied to rate limits on endpoints that use `recaptcha_to_bypass_429` or `temporary_token` when reCAPTCHA is disabled (`RE_CAPTCHA_DISABLED=true`). When reCAPTCHA is disabled, neither bypass mechanism is available, so this multiplier compensates by raising the base limit for all users. Implemented in [#14379](https://github.com/blockscout/blockscout/pull/14379) | Version: v12.0.0\+ <br />Default: `2` <br />Applications: API                           |
+| `RATE_LIMITER_REDIS_SSL_ENABLED`                   | If `true` Blockscout will use SSL to connect to Redis DB for rate limiter. Implemented in [#13901](https://github.com/blockscout/blockscout/pull/13901)   | Version: v12.0.0\+ <br />Default: (empty) <br />Applications: API   |
+| `RATE_LIMITER_REDIS_SENTINEL_URLS`                 | List of Redis sentinel urls for rate limiter. Implemented in [#13901](https://github.com/blockscout/blockscout/pull/13901)                                | Version: v12.0.0\+ <br />Default: (empty) <br />Applications: API   |
+| `RATE_LIMITER_REDIS_SENTINEL_MASTER_NAME`          | Sentinel master name for rate limiter. Implemented in [#13901](https://github.com/blockscout/blockscout/pull/13901)                                       | Version: v12.0.0\+ <br />Default: (empty) <br />Applications: API   |
+| `ACCOUNT_REDIS_SSL_ENABLED`                         | If `true` Blockscout will use SSL to connect to Account Redis DB. Implemented in [#13901](https://github.com/blockscout/blockscout/pull/13901).                                                          | Version: v12.0.0\+ <br />Default: (empty) <br />Applications: API                              |
+| `ACCOUNT_REDIS_SENTINEL_URLS`                       | List of Account Redis sentinel urls. Implemented in [#13901](https://github.com/blockscout/blockscout/pull/13901).                                                                                       | Version: v12.0.0\+ <br />Default: (empty) <br />Applications: API                              |
+| `ACCOUNT_REDIS_SENTINEL_MASTER_NAME`                | Account Sentinel master name. Implemented in [#13901](https://github.com/blockscout/blockscout/pull/13901).                                                                                              | Version: v12.0.0\+ <br />Default: (empty) <br />Applications: API                              |
+| `INDEXER_OPTIMISM_SUPERCHAIN_CONFIG_FILE_PATH`       | Points to a Superchain TOML source (local file path or http(s) URL, including GitHub blob URLs) used to auto-load Optimism network parameters at startup and persist them into constants; empty/blank values are treated as unset. When provided, TOML values take priority and legacy envs are used only as per-field fallback; if neither TOML nor fallback provides a valid value, the stored constant is cleared to avoid stale config. This single variable can replace manual setup of: `INDEXER_OPTIMISM_L2_HOLOCENE_TIMESTAMP`, `INDEXER_OPTIMISM_L2_ISTHMUS_TIMESTAMP`, `INDEXER_OPTIMISM_L2_JOVIAN_TIMESTAMP`, `EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR`, `EIP_1559_ELASTICITY_MULTIPLIER`, `INDEXER_OPTIMISM_L1_SYSTEM_CONFIG_CONTRACT`, `INDEXER_OPTIMISM_L1_PORTAL_CONTRACT`, `INDEXER_OPTIMISM_L1_BATCH_SUBMITTER`, `INDEXER_OPTIMISM_L1_BATCH_INBOX`, `INDEXER_OPTIMISM_L1_START_BLOCK`, and `INDEXER_OPTIMISM_L2_BATCH_GENESIS_BLOCK_NUMBER`. | Version: v12.0.0\+ <br />Default: (empty) <br />Applications: Indexer                                      |
+| `CACHE_OPTIMISM_DEPOSITS_COUNTER_PERIOD`                         | Interval to update the Optimism deposits count. Introduced in [#14733](https://github.com/blockscout/blockscout/pull/14733).                                                                                                                                                                                                                                                           | Version: v12.0.0\+ <br />Default: `1h` <br />Applications: API, Indexer   |
+| `API_OPTIONAL_QUERIES_LOCK_TIMEOUT`                     | Maximum time optional API queries wait for a PostgreSQL table lock before failing fast and returning a degraded response. Implemented in [#14848](https://github.com/blockscout/blockscout/pull/14848).                                                                                                                                                                                                                                            | Version: v12.0.0\+ <br />Default: `100ms` <br />Applications: API                                                                                                                                                                                                                                                                                                               |
+| `MIGRATION_BACKFILL_SCALED_UI_AMOUNT_TOKENS_BATCH_SIZE`     | ERC-8056 - related. Number of logs to backfill scaled UI amount from in the batch. Implemented in [#14731](https://github.com/blockscout/blockscout/pull/14731).                                                                                                                                                                                                              | Version: v12.0.0\+ <br />Default: `100` <br />Applications: Indexer          |
+| `MIGRATION_BACKFILL_SCALED_UI_AMOUNT_TOKENS_CONCURRENCY`     | ERC-8056 - related. Number of parallel processes backfilling scaled UI amount from logs. Implemented in [#14731](https://github.com/blockscout/blockscout/pull/14731).                                                                                                                                                                                                              | Version: v12.0.0\+ <br />Default: `1` <br />Applications: Indexer          |
+| `MIGRATION_SANITIZE_SCALED_UI_AMOUNT_TOKEN_TRANSFER_TYPES_BATCH_SIZE`     | ERC-8056 - related. Number of token transfers to sanitize their token type in batch. Implemented in [#14731](https://github.com/blockscout/blockscout/pull/14731).                                                                                                                                                                                                              | Version: v12.0.0\+ <br />Default: `100` <br />Applications: Indexer          |
+| `MIGRATION_SANITIZE_SCALED_UI_AMOUNT_TOKEN_TRANSFER_TYPES_CONCURRENCY`     | ERC-8056 - related. Number of parallel processes sanitizing token types. Implemented in [#14731](https://github.com/blockscout/blockscout/pull/14731).                                                                                                                                                                                                              | Version: v12.0.0\+ <br />Default: `1` <br />Applications: Indexer          |
+
+### Deprecated ENV variables
+
+| Variable | Description | Default | Version | Need recompile | Deprecated in Version |
+| -------- | ----------- | ------- | ------- | -------------- | --------------------- |
+| <span style={{color: "red"}}>Deprecated</span> `ETHEREUM_JSONRPC_HTTP_GZIP_ENABLED`      | If `true`, then send gzip encoding header and expect encoding in response. Implemented in [#11292](https://github.com/blockscout/blockscout/pull/11292). Replaced with `ETHEREUM_JSONRPC_HTTP_REQUEST_COMPRESSION_ALL_METHODS_ENABLED`. | `false` | v6.10.0+ |  | v12.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `MUD_INDEXER_ENABLED`      | If `true`, integration with [MUD](https://mud.dev/services/indexer#schemaless-indexing-with-postgresql-via-docker) is enabled. Implemented in [#9869](https://github.com/blockscout/blockscout/pull/9869). | (empty) | v6.6.0+ |  | v12.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `MUD_DATABASE_URL`      | MUD indexer DB connection URL. | value from `DATABASE_URL` | v6.6.0+ |  | v12.0.0+ |
+| <span style={{color: "red"}}>Deprecated</span> `MUD_POOL_SIZE`      | MUD indexer DB `pool_size`. | `50` | v6.6.0+ |  | v12.0.0+ |
+
 
 ## 11.3.3
 
@@ -23,6 +200,7 @@
 
 - Add env var to disable transactions count consolidation ([#14877](https://github.com/blockscout/blockscout/issues/14877))
 
+
 ### New ENV variables
 
 | Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
@@ -33,7 +211,6 @@
 | `MIGRATION_REINDEX_BLOCKS_WITH_STALE_INTERNAL_TRANSACTIONS_CONCURRENCY`     | Number of parallel reindexing block batches processing. Implemented in [#14884](https://github.com/blockscout/blockscout/pull/14884).                                                                                                                                                                                                                 | Version: v11.3.3\+ <br />Default: `1` <br />Applications: Indexer          |
 | `MIGRATION_REINDEX_BLOCKS_WITH_STALE_INTERNAL_TRANSACTIONS_TIMEOUT`     | Timeout between reindexing block batches processing. Implemented in [#14884](https://github.com/blockscout/blockscout/pull/14884).                                                                                                                                                                                                              | Version: v11.3.3\+ <br />Default: `0s` <br />Applications: Indexer          |
 | `CACHE_TXS_COUNT_CONSOLIDATION_DISABLED`                      | If `true`, disables exact total transaction count consolidation and uses the PostgreSQL `pg_class` estimate directly. Implemented in [#14877](https://github.com/blockscout/blockscout/pull/14877).                                                                                                                                                                                     | Version: v11.3.3\+ <br />Default: `false` <br />Applications: API         |
-
 
 ## 11.3.2
 

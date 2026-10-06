@@ -11,7 +11,7 @@ defmodule Explorer.Account.Watchlist do
   alias Ecto.Multi
   alias Explorer.Account.{Identity, WatchlistAddress}
 
-  @derive {Jason.Encoder, only: [:name, :watchlist_addresses]}
+  @derive {JSON.Encoder, only: [:name, :watchlist_addresses]}
   typed_schema "account_watchlists" do
     field(:name, :string, null: false)
     belongs_to(:identity, Identity)

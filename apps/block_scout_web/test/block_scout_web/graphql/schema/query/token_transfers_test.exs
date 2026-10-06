@@ -325,4 +325,79 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TokenTransfersTest do
       assert Enum.all?(page3["edges"], &(&1["node"]["transaction_hash"] == to_string(transaction1.hash)))
     end
   end
+
+  describe "token_transfers field with scam tokens" do
+    setup do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+
+      # the global GraphQL rate limit (10 req/s by default) is shared by all GraphQL tests
+      # and this file alone issues more requests than that within a second
+      graphql_config = Application.get_env(:block_scout_web, Api.GraphQL)
+      Application.put_env(:block_scout_web, Api.GraphQL, Keyword.put(graphql_config, :rate_limit_disabled?, true))
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :hide_scam_addresses, init_value)
+        Application.put_env(:block_scout_web, Api.GraphQL, graphql_config)
+      end)
+
+      token_address = insert(:contract_address)
+      insert(:token, contract_address: token_address)
+      insert(:scam_badge_to_address, address_hash: token_address.hash)
+      transaction = insert(:transaction)
+      token_transfer = insert(:token_transfer, transaction: transaction, token_contract_address: token_address)
+
+      query = """
+      query ($token_contract_address_hash: AddressHash!, $first: Int!) {
+        token_transfers(token_contract_address_hash: $token_contract_address_hash, first: $first) {
+          edges {
+            node {
+              transaction_hash
+            }
+          }
+        }
+      }
+      """
+
+      variables = %{"token_contract_address_hash" => to_string(token_address.hash), "first" => 10}
+
+      %{query: query, variables: variables, token_transfer: token_transfer}
+    end
+
+    test "hides scam token transfers by default", %{conn: conn, query: query, variables: variables} do
+      conn = post(conn, "/api/v1/graphql", query: query, variables: variables)
+
+      assert json_response(conn, 200) == %{"data" => %{"token_transfers" => %{"edges" => []}}}
+    end
+
+    test "shows scam token transfers when show-scam-tokens header is set", %{
+      conn: conn,
+      query: query,
+      variables: variables,
+      token_transfer: token_transfer
+    } do
+      conn =
+        conn
+        |> put_req_header("show-scam-tokens", "true")
+        |> post("/api/v1/graphql", query: query, variables: variables)
+
+      assert %{"data" => %{"token_transfers" => %{"edges" => [%{"node" => node}]}}} = json_response(conn, 200)
+      assert node["transaction_hash"] == to_string(token_transfer.transaction_hash)
+    end
+
+    test "shows scam token transfers when show_scam_tokens cookie is set", %{
+      conn: conn,
+      query: query,
+      variables: variables,
+      token_transfer: token_transfer
+    } do
+      conn =
+        conn
+        |> put_req_cookie("show_scam_tokens", "true")
+        |> post("/api/v1/graphql", query: query, variables: variables)
+
+      assert %{"data" => %{"token_transfers" => %{"edges" => [%{"node" => node}]}}} = json_response(conn, 200)
+      assert node["transaction_hash"] == to_string(token_transfer.transaction_hash)
+    end
+  end
 end

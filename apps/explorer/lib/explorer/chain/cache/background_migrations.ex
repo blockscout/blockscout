@@ -28,16 +28,20 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :tt_denormalization_finished,
     key: :sanitize_duplicated_log_index_logs_finished,
     key: :backfill_multichain_search_db_finished,
+    key: :backfill_multichain_search_db_current_token_balances_finished,
     key: :arbitrum_da_records_normalization_finished,
     key: :sanitize_verified_addresses_finished,
     key: :backfill_call_type_enum_finished,
+    key: :transaction_has_token_transfers_finished,
     key: :heavy_indexes_create_logs_block_hash_index_finished,
     key: :heavy_indexes_drop_logs_block_number_asc_index_asc_index_finished,
     key: :heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished,
+    key: :heavy_indexes_create_logs_address_id_block_number_desc_index_desc_index_finished,
     key: :heavy_indexes_drop_logs_address_hash_index_finished,
     key: :heavy_indexes_drop_logs_address_hash_transaction_hash_index_finished,
     key: :heavy_indexes_drop_logs_index_index_finished,
     key: :heavy_indexes_create_logs_address_hash_first_topic_block_number_index_index_finished,
+    key: :heavy_indexes_create_logs_address_id_first_topic_id_block_number_index_index_finished,
     key: :heavy_indexes_drop_token_transfers_block_number_asc_log_index_asc_index_finished,
     key: :heavy_indexes_drop_token_transfers_from_address_hash_transaction_hash_index_finished,
     key: :heavy_indexes_drop_token_transfers_to_address_hash_transaction_hash_index_finished,
@@ -55,6 +59,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_transactions_from_address_hash_with_pending_index_finished,
     key: :heavy_indexes_drop_transactions_to_address_hash_with_pending_index_finished,
     key: :heavy_indexes_create_logs_deposits_withdrawals_index_finished,
+    key: :heavy_indexes_create_logs_deposits_withdrawals_index_with_updated_pk_finished,
     key: :heavy_indexes_create_addresses_transactions_count_desc_partial_index_finished,
     key: :heavy_indexes_create_addresses_transactions_count_asc_coin_balance_desc_hash_partial_index_finished,
     key: :heavy_indexes_drop_token_instances_token_id_index_finished,
@@ -64,6 +69,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_create_idx_tokens_ord_fiat_holder_name_finished,
     key: :heavy_indexes_create_idx_tokens_ord_holder_name_finished,
     key: :heavy_indexes_update_internal_transactions_primary_key_finished,
+    key: :heavy_indexes_update_logs_primary_key_finished,
     key: :empty_internal_transactions_data_finished,
     key: :heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished,
     key: :heavy_indexes_drop_transactions_created_contract_address_hash_with_pending_index_a_finished,
@@ -73,7 +79,10 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :backfill_address_counters_finished,
     key: :backfill_token_counters_finished,
     key: :heavy_indexes_create_logs_address_hash_first_topic_second_topic_block_number_index_finished,
-    key: :heavy_indexes_create_address_current_token_balances_address_hash_block_number_index_finished
+    key: :heavy_indexes_create_address_current_token_balances_address_hash_block_number_index_finished,
+    key: :heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished,
+    key: :create_logs_block_number_transaction_index_index_unique_index_finished,
+    key: :fill_logs_optimized_fields_finished
 
   @dialyzer :no_match
 
@@ -83,11 +92,14 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     ArbitrumDaRecordsNormalization,
     BackfillAddressCounters,
     BackfillMultichainSearchDB,
+    BackfillMultichainSearchDbCurrentTokenBalances,
     BackfillTokenCounters,
     EmptyInternalTransactionsData,
     FillInternalTransactionsAddressIds,
+    FillLogsOptimizedFields,
     SanitizeDuplicatedLogIndexLogs,
     TokenTransferTokenType,
+    TransactionHasTokenTransfers,
     TransactionsDenormalization
   }
 
@@ -105,14 +117,19 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateLogsAddressHashBlockNumberDescIndexDescIndex,
     CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
     CreateLogsAddressHashFirstTopicSecondTopicBlockNumberIndex,
+    CreateLogsAddressIdBlockNumberDescIndexDescIndex,
+    CreateLogsAddressIdFirstTopicBlockNumberIndexIndex,
     CreateLogsBlockHashIndex,
+    CreateLogsBlockNumberTransactionIndexIndexUniqueIndex,
     CreateLogsDepositsWithdrawalsIndex,
+    CreateLogsDepositsWithdrawalsIndexWithUpdatedPk,
     CreateSmartContractsLanguageIndex,
     CreateTokensNamePartialFtsIndex,
     CreateTokensOrdFiatHolderNameIndex,
     CreateTokensOrdHolderNameIndex,
     CreateTokensOrdMcapFiatHolderNameIndex,
     CreateTransactionsCreatedContractAddressHashWPendingIndex,
+    CreateTransactionsTokenTransferMethodIdOrderedIndex,
     DropInternalTransactionsCreatedContractAddressHashPartialIndex,
     DropInternalTransactionsFromAddressHashIndex,
     DropLogsAddressHashIndex,
@@ -129,7 +146,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     DropTransactionsCreatedContractAddressHashWithPendingIndexA,
     DropTransactionsFromAddressHashWithPendingIndex,
     DropTransactionsToAddressHashWithPendingIndex,
-    UpdateInternalTransactionsPrimaryKey
+    UpdateInternalTransactionsPrimaryKey,
+    UpdateLogsPrimaryKey
   }
 
   defp handle_fallback(:transactions_denormalization_finished) do
@@ -174,6 +192,20 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     )
   end
 
+  defp handle_fallback(:backfill_multichain_search_db_current_token_balances_finished) do
+    set_and_return_migration_status(
+      BackfillMultichainSearchDbCurrentTokenBalances,
+      &set_backfill_multichain_search_db_current_token_balances_finished/1
+    )
+  end
+
+  defp handle_fallback(:transaction_has_token_transfers_finished) do
+    set_and_return_migration_status(
+      TransactionHasTokenTransfers,
+      &set_transaction_has_token_transfers_finished/1
+    )
+  end
+
   defp handle_fallback(:heavy_indexes_create_logs_block_hash_index_finished) do
     set_and_return_migration_status(
       CreateLogsBlockHashIndex,
@@ -192,6 +224,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       CreateLogsAddressHashBlockNumberDescIndexDescIndex,
       &set_heavy_indexes_create_logs_address_hash_block_number_desc_index_desc_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_logs_address_id_block_number_desc_index_desc_index_finished) do
+    set_and_return_migration_status(
+      CreateLogsAddressIdBlockNumberDescIndexDescIndex,
+      &set_heavy_indexes_create_logs_address_id_block_number_desc_index_desc_index_finished/1
     )
   end
 
@@ -220,6 +259,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
       &set_heavy_indexes_create_logs_address_hash_first_topic_block_number_index_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_logs_address_id_first_topic_id_block_number_index_index_finished) do
+    set_and_return_migration_status(
+      CreateLogsAddressIdFirstTopicBlockNumberIndexIndex,
+      &set_heavy_indexes_create_logs_address_id_first_topic_id_block_number_index_index_finished/1
     )
   end
 
@@ -337,6 +383,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     )
   end
 
+  defp handle_fallback(:heavy_indexes_create_logs_deposits_withdrawals_index_with_updated_pk_finished) do
+    set_and_return_migration_status(
+      CreateLogsDepositsWithdrawalsIndexWithUpdatedPk,
+      &set_heavy_indexes_create_logs_deposits_withdrawals_index_with_updated_pk_finished/1
+    )
+  end
+
   defp handle_fallback(:arbitrum_da_records_normalization_finished) do
     set_and_return_migration_status(
       ArbitrumDaRecordsNormalization,
@@ -416,6 +469,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     )
   end
 
+  defp handle_fallback(:heavy_indexes_update_logs_primary_key_finished) do
+    set_and_return_migration_status(
+      UpdateLogsPrimaryKey,
+      &set_heavy_indexes_update_logs_primary_key_finished/1
+    )
+  end
+
   defp handle_fallback(:empty_internal_transactions_data_finished) do
     set_and_return_migration_status(
       EmptyInternalTransactionsData,
@@ -451,6 +511,20 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     )
   end
 
+  defp handle_fallback(:create_logs_block_number_transaction_index_index_unique_index_finished) do
+    set_and_return_migration_status(
+      CreateLogsBlockNumberTransactionIndexIndexUniqueIndex,
+      &set_create_logs_block_number_transaction_index_index_unique_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:fill_logs_optimized_fields_finished) do
+    set_and_return_migration_status(
+      FillLogsOptimizedFields,
+      &set_fill_logs_optimized_fields_finished/1
+    )
+  end
+
   defp handle_fallback(:heavy_indexes_create_transactions_created_contract_address_hash_w_pending_index_finished) do
     set_and_return_migration_status(
       CreateTransactionsCreatedContractAddressHashWPendingIndex,
@@ -476,6 +550,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       CreateInternalTransactionsBlockNumberCreatedContractAddressIdPartialIndex,
       &set_heavy_indexes_create_address_ids_internal_transactions_indexes_finished/1
+    )
+  end
+
+  defp handle_fallback(:heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished) do
+    set_and_return_migration_status(
+      CreateTransactionsTokenTransferMethodIdOrderedIndex,
+      &set_heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished/1
     )
   end
 

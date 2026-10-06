@@ -4,7 +4,9 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
   use OpenApiSpex.ControllerSpecs
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  import BlockScoutWeb.Chain, only: [split_list_by_page: 1, next_page_params: 5, fetch_scam_token_toggle: 2]
+  import BlockScoutWeb.Chain, only: [paginate_list: 4, fetch_scam_token_toggle: 2, maybe_override_page_size: 2]
+  import Explorer.MicroserviceInterfaces.BENS, only: [maybe_preload_ens: 1]
+  import Explorer.MicroserviceInterfaces.Metadata, only: [maybe_preload_metadata: 1]
   import Explorer.PagingOptions, only: [default_paging_options: 0]
 
   alias BlockScoutWeb.AccessHelper
@@ -75,7 +77,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       required: false,
       description:
         "Comma-separated list of transaction types to include. Allowed values: `COIN_TRANSFER`, " <>
-          "`CONTRACT_INTERACTION`, `CONTRACT_CREATION`, `ERC-20`, `ERC-404`, `ERC-721`, `ERC-1155`, `ERC-7984` " <>
+          "`CONTRACT_INTERACTION`, `CONTRACT_CREATION`, `ERC-20`, `ERC-404`, `ERC-721`, `ERC-1155`, `ERC-7984`, `ERC-8056` " <>
           "(plus `ZRC-2` on Zilliqa). Values are matched case-insensitively; unknown entries are silently dropped.",
       example: "COIN_TRANSFER,ERC-20"
     },
@@ -256,14 +258,6 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     }
   ]
 
-  @items_count_param %OpenApiSpex.Parameter{
-    name: :items_count,
-    in: :query,
-    schema: %OpenApiSpex.Schema{type: :integer, minimum: 1},
-    required: false,
-    description: "Cumulative number of items already returned across previous pages."
-  }
-
   operation :list,
     summary: "List transactions, internal transactions and token transfers matching the advanced filter criteria",
     description:
@@ -272,7 +266,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
         "and/or token contract. The response also echoes the resolved human-readable names of the methods and " <>
         "tokens referenced in the request filters.",
     parameters:
-      base_params() ++ @advanced_filter_query_params ++ @advanced_filter_keyset_params ++ [@items_count_param],
+      base_params() ++ @advanced_filter_query_params ++ @advanced_filter_keyset_params ++ define_paging_params([]),
     responses: [
       ok:
         {"List of matching items with pagination information and resolved search params.", "application/json",
@@ -289,20 +283,24 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       params
       |> extract_filters()
       |> Keyword.merge(paging_options(params))
+      |> maybe_override_page_size(params)
       |> Keyword.merge(@api_true)
       |> fetch_scam_token_toggle(conn)
 
     advanced_filters_plus_one = AdvancedFilter.list(full_options)
 
-    {advanced_filters, next_page} = split_list_by_page(advanced_filters_plus_one)
+    {advanced_filters, next_page_params} =
+      paginate_list(advanced_filters_plus_one, %{}, full_options[:paging_options], paging_function: &paging_params/1)
+
+    advanced_filters =
+      advanced_filters
+      |> maybe_preload_ens()
+      |> maybe_preload_metadata()
 
     decoded_transactions =
       advanced_filters
       |> Enum.map(fn af -> %Transaction{to_address: af.to_address, input: af.input, hash: af.hash} end)
       |> Transaction.decode_transactions(true, @api_true)
-
-    next_page_params =
-      next_page |> next_page_params(advanced_filters, Map.take(params, [:items_count]), false, &paging_params/1)
 
     render(conn, :advanced_filters,
       advanced_filters: advanced_filters,
@@ -536,7 +534,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
     ]
   end
 
-  @default_allowed_transaction_types ~w(COIN_TRANSFER CONTRACT_INTERACTION CONTRACT_CREATION ERC-20 ERC-404 ERC-721 ERC-1155 ERC-7984)
+  @default_allowed_transaction_types ~w(COIN_TRANSFER CONTRACT_INTERACTION CONTRACT_CREATION ERC-20 ERC-404 ERC-721 ERC-1155 ERC-7984 ERC-8056)
 
   if @chain_type == :zilliqa do
     @chain_type_allowed_transaction_types ~w(ZRC-2)

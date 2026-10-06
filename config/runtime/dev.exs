@@ -92,17 +92,6 @@ config :explorer, Explorer.Repo.Account,
   pool_size: ConfigHelper.parse_integer_env_var("ACCOUNT_POOL_SIZE", 10),
   queue_target: queue_target
 
-database_mud = if System.get_env("MUD_DATABASE_URL"), do: nil, else: database
-hostname_mud = if System.get_env("MUD_DATABASE_URL"), do: nil, else: hostname
-
-# Configure MUD indexer database
-config :explorer, Explorer.Repo.Mud,
-  database: database_mud,
-  hostname: hostname_mud,
-  url: ExplorerConfigHelper.get_mud_db_url(),
-  pool_size: ConfigHelper.parse_integer_env_var("MUD_POOL_SIZE", 10),
-  queue_target: queue_target
-
 # Configure Suave database
 config :explorer, Explorer.Repo.Suave,
   database: database,

@@ -28,9 +28,9 @@ Create a subdirectory when 2+ sub-schemas exist for a domain entity. Simple leaf
 
 ### Shared primitives in `general/`
 
-`general/` contains ~22 reusable type schemas: `AddressHash`, `FullHash`, `IntegerString`, `Timestamp`, nullable variants, etc. These are leaf schemas referenced by property types across all domain schemas.
+`general/` contains ~24 reusable type schemas: `AddressHash`, `FullHash`, `IntegerString`, `Timestamp`, nullable variants, etc. These are leaf schemas referenced by property types across all domain schemas.
 
-To discover available primitives, glob `schemas/api/v2/general/*.ex`.
+To discover available primitives, consult the auto-generated catalog at `references/cache/leaf-schemas/catalog.md` — it lists every leaf with its type, constraints, and intended purpose, and is the fastest way to pick the right primitive without reading 24 source files. The catalog is maintained by the `leaf-schemas-cataloger` agent (see SKILL.md §"Leaf-schemas catalog (bootstrap step)"). If the catalog is unavailable, fall back to globbing `schemas/api/v2/general/*.ex` and reading individual files.
 
 ### Domain-scoped shared schemas
 
@@ -113,6 +113,8 @@ Note: the "keep in sync" comment lives in the leaf module. Schemas that referenc
 
 Chain-specific schemas get top-level subdirectories: `optimism/`, `scroll/`, `celo/`, `zilliqa/`, `beacon/`. These map to chain-conditional router scopes.
 
+**Every schema under a chain subdir must set `title: "<Chain>.<Name>"` explicitly.** Without it, OpenApiSpex auto-derives the title from the bare module name (`Batch`, `Message`, …) and the all-in-one swagger merge in `.github/workflows/generate-swagger.yml` (first-wins union over `components.schemas`) silently drops same-keyed schemas from other chains. The prefix tracks the directory: `arbitrum/batch.ex` → `"Arbitrum.Batch"`. Chain-agnostic schemas keep their bare title.
+
 ### File naming
 
 Snake_case files, CamelCase modules: `transaction/fee.ex` contains `BlockScoutWeb.Schemas.API.V2.Transaction.Fee`.
@@ -129,7 +131,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.General.FullHash do
   require OpenApiSpex
   alias BlockScoutWeb.Schemas.API.V2.General
 
-  OpenApiSpex.schema(%{type: :string, pattern: General.full_hash_pattern(), nullable: false})
+  OpenApiSpex.schema(%{type: :string, pattern: General.full_hash_pattern()})
 end
 ```
 
@@ -244,34 +246,58 @@ OpenApiSpex.schema(
 
 The pattern is: base schema -> extend with metadata -> apply chain-type fields.
 
-### Helper.extend_schema/2
+### Helper.extend_schema/2 — define a new schema by extending another
 
-Located at `schemas/helper.ex`. Merges `:properties`, `:required`, `:title`, `:description`, `:nullable`, and `:enum` into an existing schema map:
-- Properties are merged (new keys added, existing overwritten)
-- Required lists are concatenated
-- Scalar fields (title, description, nullable) are replaced
+Located at `schemas/helper.ex`. Merges `:properties`, `:required`, `:title`, `:description`, `:nullable`, `:enum` into a base schema. Properties are merged, required lists concatenated, scalars replaced.
+
+**Use only inside an outer `OpenApiSpex.schema(…)` macro** that re-establishes a new component identity (fresh `:title` + `x-struct`). Examples: `AddressNullable` (extends `Address` with `nullable: true`), `Arbitrum.Message` (extends `MinimalMessage`), `*Response` wrappers.
 
 ```elixir
-schema_map
-|> Helper.extend_schema(
-  title: "ExtendedSchema",
-  properties: %{new_field: %Schema{type: :string}},
-  required: [:new_field]
+OpenApiSpex.schema(
+  Base.schema()
+  |> Helper.extend_schema(
+    title: "Extended",                  # REQUIRED on every extend — see "Schema reuse and naming"
+    properties: %{new_field: ...},
+    required: [:new_field]
+  )
 )
 ```
 
-**Reusing a leaf primitive with a per-property override.** When you want the type/format/nullable of a `general/` leaf (`Timestamp`, `IntegerString`, `FullHash`, …) *and* a per-property field like `description:`, `example:`, or a flipped `nullable:`, use `Helper.extend_schema` at the property position:
+**Do not use at a property position** to overlay attributes on a `general/` leaf (`Timestamp`, `IntegerString`, `FullHash`, …). The result keeps the leaf's `:title` and `x-struct`, so `OpenApiSpex.resolve_schema_modules/1` re-registers it as `components.schemas.<Title>` (last-encounter wins). The overlay leaks onto the global component and every `$ref` to it across the spec.
+
+### Helper.describe_inline/2 — per-property description overlay on a primitive leaf
+
+Use at a property position when you want a leaf's exact type/format/nullable plus a per-property `description:`. Strips `:title` and `x-struct` (sets both to `nil`) so the result renders inline at the call site and the global component is untouched.
 
 ```elixir
 timestamp:
-  Helper.extend_schema(General.Timestamp.schema(),
-    description: "Block timestamp of the parent transaction."
+  Helper.describe_inline(
+    General.Timestamp.schema(),
+    "Block timestamp of the parent transaction."
   )
 ```
 
-This inlines the leaf's shape and overlays the description, no `allOf` casting layer involved.
+**Intentionally narrow — description only.** If a property needs a different `pattern:`, flipped `nullable:`, or any other constraint, define a new primitive in `schemas/api/v2/general/` and reference it. Do not reach for `extend_schema` at the property position to bend a leaf.
 
-Avoid `%Schema{allOf: [Leaf], description: "..."}` as the overlay mechanism. `allOf` is for *object* composition: it works fine for object leaves like `Address` (and `advanced_filter.ex` does this for `from`/`to`/`created_contract`), but for primitive leaves with a non-trivial `format:` cast — `Timestamp`'s `format: :"date-time"` casts strings to `%DateTime{}`, `Decimal`-typed leaves cast to `%Decimal{}` — `OpenApiSpex.Cast.AllOf` enumerates the per-branch results as maps and fails on non-Enumerable structs. The `extend_schema` form sidesteps the cast composition entirely.
+### Picking the right per-property overlay
+
+Two leaf shapes exist; treat them separately:
+
+- **Primitive leaf** — `type: :string` / `:integer` / `:number` / `:boolean`. Examples: `General.Timestamp`, `General.IntegerString`, `General.FullHash`, `General.AddressHash`. The schema body is 1–3 fields; inlining is cheap.
+- **Object leaf** — `type: :object` with its own `properties`. Examples: `Address`, `Token`, `Arbitrum.MinimalMessage`. The schema body is many fields; inlining duplicates the entire structure at every call site and breaks `$ref` dedup.
+
+| Goal | Mechanism | Why |
+|---|---|---|
+| Description on a primitive leaf | `Helper.describe_inline(Leaf.schema(), "…")` | Inlines 1–3 fields cheaply; `$ref` dedup not meaningful at that size. `allOf` would crash at runtime when the leaf has a `format:` cast (`Timestamp` → `%DateTime{}`, `Decimal` → `%Decimal{}`) because `OpenApiSpex.Cast.AllOf` enumerates per-branch results as maps and fails on non-Enumerable structs. |
+| Description (and/or `nullable:` flip) on an object leaf | `%Schema{allOf: [Leaf], description: "…", nullable: true}` | Keeps `$ref: '#/components/schemas/<Leaf>'`, so the object's properties stay deduplicated across the spec. No runtime crash because object branches all cast to maps. See `advanced_filter.ex` `from`/`to`/`created_contract`. |
+| Any per-property override beyond description on either leaf shape (pattern, enum, narrower bounds, …) | Define a new primitive in `general/`, then reference it | Pushes `general/` to grow as a real library of reusable primitives instead of every domain bending a leaf locally. |
+| Derived schema with its own component identity (response wrapper, nullable variant of an object, …) | `OpenApiSpex.schema(Base.schema() \|> Helper.extend_schema(title: …, …))` | The outer macro re-establishes `:title` + `x-struct`, so the result is a new registered component, not a property-position overlay. |
+
+**Anti-patterns — do not use:**
+
+- `Helper.extend_schema(Leaf.schema(), description: "…")` at a property position → leaks the description onto `components.schemas.<Leaf>` (last-encounter wins) and pollutes every `$ref` to that leaf across the spec.
+- `Helper.describe_inline(ObjectLeaf.schema(), "…")` at a property position → technically works, but inlines the entire object structure at every call site and kills `$ref` dedup; tests still pass, so the bloat goes unnoticed in review.
+- `%Schema{allOf: [PrimitiveLeaf], description: "…"}` at a property position → crashes at runtime on primitive leaves with `format:` casts.
 
 ### Schema reuse and naming for related schemas
 
@@ -478,14 +504,14 @@ Note: `minimum:` is a JSON-Schema *numeric* keyword and is silently ignored on `
 
 ### Required: Ecto.Enum sync comments
 
-**Every `enum:` property in an OpenAPI schema must have a comment pointing to the source Ecto field.** There is no automatic sync between Ecto enums and OpenAPI enums — if someone adds a new value to the Ecto enum without updating the OpenAPI schema, `CastAndValidate` will reject the new value on input, and test-time validation will fail on output only if a test exercises that specific value. The comment is the only signal that tells the next developer where to look.
+**Every `enum:` property whose values are listed literally in the OpenAPI schema must have a comment pointing to the source Ecto field.** There is no automatic sync between Ecto enums and OpenAPI enums — if someone adds a new value to the Ecto enum without updating the OpenAPI schema, `CastAndValidate` will reject the new value on input, and test-time validation will fail on output only if a test exercises that specific value. The comment is the only signal that tells the next developer where to look.
 
 Format:
 ```elixir
 # Enum values must be kept in sync with Explorer.Chain.<Module> :<field_name> field.
 ```
 
-When using a shared enum leaf schema (see "Domain-scoped shared schemas" above), the comment lives in the leaf module only — schemas that reference it don't need their own copy. When using an inline enum, the comment goes directly above the `%Schema{type: :string, enum: [...]}` definition.
+When the property pulls values from the source at compile time — a shared enum leaf schema, a helper call like `SomeView.status_enum()`, or a module attribute — there is no separate copy to drift, so no sync comment is needed (the shared leaf module, if any, still carries the comment). When using a literal inline enum, the comment goes directly above the `%Schema{type: :string, enum: [...]}` definition.
 
 Before writing an inline enum, check existing schemas in the same domain — if another schema already defines the same enum, extract it into a shared leaf schema instead of duplicating it (and the comment).
 
@@ -507,6 +533,8 @@ batch_data_container: %Schema{
 ```
 
 ### Nullable fields
+
+`nullable: false` is the OpenAPI 3.0 default — never declare it explicitly. Only set `nullable: true` when the field can be `nil`.
 
 If the Ecto schema field can be `nil` (not in `@required_attrs`, or the view conditionally emits it), the OpenAPI property should have `nullable: true`. If the key is always present but sometimes null, keep it in `required:` and set `nullable: true`. If the key is sometimes absent entirely, remove it from `required:`.
 

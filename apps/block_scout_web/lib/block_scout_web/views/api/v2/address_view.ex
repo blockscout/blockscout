@@ -62,7 +62,15 @@ defmodule BlockScoutWeb.API.V2.AddressView do
   end
 
   def render("nft_list.json", %{token_instances: token_instances, token: token, next_page_params: next_page_params}) do
-    %{"items" => Enum.map(token_instances, &prepare_nft(&1, token)), "next_page_params" => next_page_params}
+    %{
+      "items" =>
+        Enum.map(token_instances, fn nft ->
+          nft
+          |> prepare_nft(token)
+          |> Map.delete("token")
+        end),
+      "next_page_params" => next_page_params
+    }
   end
 
   def render("nft_list.json", %{token_instances: token_instances, next_page_params: next_page_params}) do

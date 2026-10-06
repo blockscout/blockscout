@@ -1,15 +1,14 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule TupleEncoder do
   @moduledoc """
-    Implementation of Jason.Encoder for Tuple
+    Implementation of JSON.Encoder for Tuple
   """
-  alias Jason.{Encode, Encoder}
 
-  defimpl Encoder, for: Tuple do
-    def encode(value, opts) when is_tuple(value) do
+  defimpl JSON.Encoder, for: Tuple do
+    def encode(value, encoder) when is_tuple(value) do
       value
       |> Tuple.to_list()
-      |> Encode.list(opts)
+      |> JSON.Encoder.encode(encoder)
     end
   end
 end

@@ -32,10 +32,12 @@ defmodule Explorer.Chain.Token.Instance do
   * `retries_count` - number of times the token instance has been retried
   * `is_banned` - if the token instance is banned
   * `thumbnails` - info for deriving thumbnails urls. Stored as array: [file_path, sizes, original_uploaded?]
-  * `media_type` - mime type of media
+  * `media_type` - mime type of original media that was processed to create thumbnails
   * `cdn_upload_error` - error while processing(resizing)/uploading media to CDN
   * `metadata_url` - URL where metadata is fetched from
   * `skip_metadata_url` - bool flag indicating if metadata_url intentionally skipped
+  * `image_type` - mime type of image URL ("image/*", "video/*", "text/*", nil or ""). "" means that failed to determine the media type. nil means that the media type is not determined yet.
+  * `animation_type` - mime type of animation URL ("image/*", "video/*", "text/*", nil or ""). "" means that failed to determine the media type. nil means that the media type is not determined yet.
   """
   @primary_key false
   typed_schema "token_instances" do
@@ -54,6 +56,8 @@ defmodule Explorer.Chain.Token.Instance do
     field(:cdn_upload_error, :string)
     field(:metadata_url, :string)
     field(:skip_metadata_url, :boolean)
+    field(:image_type, :string)
+    field(:animation_type, :string)
 
     belongs_to(:owner, Address, foreign_key: :owner_address_hash, references: :hash, type: Hash.Address)
 
@@ -87,7 +91,9 @@ defmodule Explorer.Chain.Token.Instance do
       :media_type,
       :cdn_upload_error,
       :metadata_url,
-      :skip_metadata_url
+      :skip_metadata_url,
+      :image_type,
+      :animation_type
     ])
     |> validate_required([:token_id, :token_contract_address_hash])
     |> foreign_key_constraint(:token_contract_address_hash)
@@ -727,6 +733,8 @@ defmodule Explorer.Chain.Token.Instance do
           thumbnails: nil,
           media_type: nil,
           cdn_upload_error: nil,
+          image_type: nil,
+          animation_type: nil,
           skip_metadata_url: skip_metadata_url,
           metadata_url: result[:metadata_url]
         ]
@@ -827,6 +835,35 @@ defmodule Explorer.Chain.Token.Instance do
 
   def get_media_url_from_metadata_for_nft_media_handler(nil), do: nil
 
+  @doc """
+  Extracts image URL from NFT metadata. Checks `image_url`, `image`, and `properties.image` fields in order.
+  """
+  @spec get_image_url_from_metadata(nil | map()) :: nil | binary()
+  def get_image_url_from_metadata(metadata) when is_map(metadata) do
+    result =
+      cond do
+        is_binary(metadata["image_url"]) -> metadata["image_url"]
+        is_binary(metadata["image"]) -> metadata["image"]
+        is_map(metadata["properties"]) && is_binary(metadata["properties"]["image"]) -> metadata["properties"]["image"]
+        true -> nil
+      end
+
+    if result && String.trim(result) == "", do: nil, else: result
+  end
+
+  def get_image_url_from_metadata(nil), do: nil
+
+  @doc """
+  Extracts `animation_url` from NFT metadata. Returns `nil` if absent or blank.
+  """
+  @spec get_animation_url_from_metadata(nil | map()) :: nil | binary()
+  def get_animation_url_from_metadata(metadata) when is_map(metadata) do
+    url = metadata["animation_url"]
+    if is_binary(url) && String.trim(url) != "", do: url, else: nil
+  end
+
+  def get_animation_url_from_metadata(nil), do: nil
+
   @spec batch_upsert_cdn_results([map()]) :: [t()]
   def batch_upsert_cdn_results([]), do: []
 
@@ -872,6 +909,17 @@ defmodule Explorer.Chain.Token.Instance do
   def media_type_to_string({type, subtype}) do
     "#{type}/#{subtype}"
   end
+
+  @doc """
+  Maps a MIME type string to a high-level media category: `"image"`, `"video"`, `"html"`, or `nil`.
+  """
+  @spec mime_to_media_category(String.t() | nil) :: String.t() | nil
+  def mime_to_media_category(nil), do: nil
+  def mime_to_media_category(""), do: nil
+  def mime_to_media_category("image" <> _), do: "image"
+  def mime_to_media_category("video" <> _), do: "video"
+  def mime_to_media_category("text/html"), do: "html"
+  def mime_to_media_category(_), do: nil
 
   @doc """
   Preloads NFTs for a list of `TokenTransfer` structs.
@@ -1034,6 +1082,8 @@ defmodule Explorer.Chain.Token.Instance do
           thumbnails: nil,
           media_type: nil,
           cdn_upload_error: nil,
+          image_type: nil,
+          animation_type: nil,
           is_banned: false,
           retries_count: 0,
           refetch_after: nil,
@@ -1078,6 +1128,57 @@ defmodule Explorer.Chain.Token.Instance do
       token_id: instance.token_id
     })
     |> Repo.stream_reduce(initial, reducer)
+  end
+
+  @doc """
+  Streams token instances that have metadata but missing `image_type` or `animation_type`.
+  """
+  @spec stream_token_instances_with_unfetched_media_type(
+          initial :: accumulator,
+          reducer :: (entry :: map(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_token_instances_with_unfetched_media_type(initial, reducer) when is_function(reducer, 2) do
+    __MODULE__
+    |> where(
+      [instance],
+      not is_nil(instance.metadata) and (is_nil(instance.image_type) or is_nil(instance.animation_type))
+    )
+    |> select([instance], %{
+      contract_address_hash: instance.token_contract_address_hash,
+      token_id: instance.token_id
+    })
+    |> Repo.stream_reduce(initial, reducer)
+  end
+
+  @doc """
+  Upserts `image_type` and `animation_type` for a batch of token instances.
+  """
+  @spec batch_update_media_types([map()]) :: {non_neg_integer(), nil}
+  def batch_update_media_types([]), do: {0, nil}
+
+  def batch_update_media_types(updates) do
+    now = DateTime.utc_now()
+
+    params =
+      Enum.map(updates, fn update ->
+        %{
+          token_contract_address_hash: update.token_contract_address_hash,
+          token_id: update.token_id,
+          image_type: update.image_type,
+          animation_type: update.animation_type,
+          inserted_at: now,
+          updated_at: now
+        }
+      end)
+
+    {count, _} =
+      Repo.insert_all(__MODULE__, params,
+        on_conflict: {:replace, [:image_type, :animation_type, :updated_at]},
+        conflict_target: [:token_id, :token_contract_address_hash]
+      )
+
+    {count, nil}
   end
 
   @doc """

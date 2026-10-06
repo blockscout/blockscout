@@ -40,4 +40,33 @@ defmodule Explorer.Utility.MassiveBlock do
     |> where([mb], mb.number == ^number)
     |> Repo.delete_all()
   end
+
+  @doc """
+  Deletes the block numbers that don't fall into the given block ranges.
+
+  ## Parameters
+  - `ranges`: The list of finite block ranges to keep.
+  - `open_range_boundary`: The highest block number that is not covered by the
+    trailing `..latest` range, if such a range is configured: every number above
+    it is kept. `nil` means that all the configured ranges are finite.
+
+  ## Returns
+  - `{deleted_count, nil}`
+  """
+  @spec delete_numbers_out_of_ranges([Range.t()], non_neg_integer() | nil) :: {non_neg_integer(), nil}
+  def delete_numbers_out_of_ranges(ranges, open_range_boundary \\ nil) do
+    base_query =
+      if is_nil(open_range_boundary),
+        do: __MODULE__,
+        else: where(__MODULE__, [mb], mb.number <= ^open_range_boundary)
+
+    ranges
+    |> Enum.reduce(base_query, fn from..to//_, query ->
+      min_number = min(from, to)
+      max_number = max(from, to)
+
+      where(query, [mb], mb.number < ^min_number or mb.number > ^max_number)
+    end)
+    |> Repo.delete_all()
+  end
 end

@@ -108,7 +108,7 @@ defmodule Explorer.Migrator.ReindexBlocksWithStaleInternalTransactions do
     )
   end
 
-  defp full_refetch([]), do: :ok
+  defp full_refetch([]), do: 0
 
   defp full_refetch(block_numbers) do
     case Block.full_refetch(block_numbers) do
@@ -117,7 +117,7 @@ defmodule Explorer.Migrator.ReindexBlocksWithStaleInternalTransactions do
           "Migration #{@migration_name} sent blocks to full refetch: #{inspect(block_numbers, limit: :infinity)}"
         )
 
-        :ok
+        Enum.count(block_numbers)
 
       {:error, reason} ->
         raise "Migration #{@migration_name} failed to send blocks #{inspect(block_numbers, limit: :infinity)} to full refetch: #{inspect(reason)}"

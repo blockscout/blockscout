@@ -49,8 +49,12 @@ defmodule Explorer.Migrator.ReindexBlocksWithUncatalogedTokenTransfers do
     {min_block_number, max_block_number} = Enum.min_max(block_numbers)
 
     case TokenTransfer.uncataloged_token_transfer_block_numbers(min_block_number, max_block_number) do
-      [] -> :ok
-      uncataloged_block_numbers -> MissingBlockRange.add_ranges_by_block_numbers(uncataloged_block_numbers)
+      [] ->
+        0
+
+      uncataloged_block_numbers ->
+        MissingBlockRange.add_ranges_by_block_numbers(uncataloged_block_numbers)
+        Enum.count(uncataloged_block_numbers)
     end
   end
 

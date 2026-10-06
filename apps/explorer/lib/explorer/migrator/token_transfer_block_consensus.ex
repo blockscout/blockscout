@@ -47,7 +47,9 @@ defmodule Explorer.Migrator.TokenTransferBlockConsensus do
       |> join(:inner, [tt], b in assoc(tt, :block))
       |> update([tt, b], set: [block_consensus: b.consensus])
 
-    Repo.update_all(query, [], timeout: :infinity)
+    {count, _} = Repo.update_all(query, [], timeout: :infinity)
+
+    count
   end
 
   @impl FillingMigration

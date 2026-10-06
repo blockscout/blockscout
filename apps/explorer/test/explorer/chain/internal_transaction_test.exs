@@ -321,6 +321,70 @@ defmodule Explorer.Chain.InternalTransactionTest do
                )
                |> Enum.map(&{&1.transaction_index, &1.index})
     end
+
+    test "excludes zero-value call internal transactions when include_zero_value: false" do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      %InternalTransaction{transaction_index: t_index, index: kept_index} =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 2,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          type: :call,
+          value: Decimal.new(1)
+        )
+
+      result =
+        transaction.hash
+        |> InternalTransaction.transaction_to_internal_transactions(include_zero_value: false)
+        |> Enum.map(&{&1.transaction_index, &1.index})
+
+      assert result == [{t_index, kept_index}]
+    end
+
+    test "includes zero-value call internal transactions by default" do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      assert length(InternalTransaction.transaction_to_internal_transactions(transaction.hash)) == 2
+    end
   end
 
   describe "all_transaction_to_internal_transactions/1" do
@@ -994,6 +1058,142 @@ defmodule Explorer.Chain.InternalTransactionTest do
       assert {actual.block_number, actual.transaction_index, actual.index} ==
                {expected.block_number, expected.transaction_index, expected.index}
     end
+
+    test "excludes zero-value call internal transactions when include_zero_value: false" do
+      address = insert(:address)
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        to_address: address,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      %InternalTransaction{transaction_index: t_index, index: kept_index} =
+        insert(:internal_transaction,
+          transaction: transaction,
+          to_address: address,
+          index: 2,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          type: :call,
+          value: Decimal.new(1)
+        )
+
+      result =
+        address.hash
+        |> InternalTransaction.address_to_internal_transactions(include_zero_value: false)
+        |> Enum.map(&{&1.transaction_index, &1.index})
+
+      assert result == [{t_index, kept_index}]
+    end
+
+    test "includes zero-value call internal transactions by default" do
+      address = insert(:address)
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        to_address: address,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        to_address: address,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      assert length(InternalTransaction.address_to_internal_transactions(address.hash)) == 2
+    end
+  end
+
+  describe "block_to_internal_transactions/1" do
+    test "excludes zero-value call internal transactions when include_zero_value: false" do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      %InternalTransaction{transaction_index: t_index, index: kept_index} =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 2,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          type: :call,
+          value: Decimal.new(1)
+        )
+
+      result =
+        block.number
+        |> InternalTransaction.block_to_internal_transactions(include_zero_value: false)
+        |> Enum.map(&{&1.transaction_index, &1.index})
+
+      assert result == [{t_index, kept_index}]
+    end
+
+    test "includes zero-value call internal transactions by default" do
+      block = insert(:block)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(block)
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      assert length(InternalTransaction.block_to_internal_transactions(block.number)) == 2
+    end
   end
 
   describe "fetch/1" do
@@ -1032,6 +1232,66 @@ defmodule Explorer.Chain.InternalTransactionTest do
     #              |> InternalTransaction.fetch()
     #              |> Enum.map(&{&1.transaction_hash, &1.index, &1.block_hash})
     #   end
+
+    test "excludes zero-value call internal transactions when include_zero_value: false" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      %InternalTransaction{transaction_index: t_index, index: kept_index} =
+        insert(:internal_transaction,
+          transaction: transaction,
+          index: 2,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          type: :call,
+          value: Decimal.new(1)
+        )
+
+      result =
+        [include_zero_value: false, exclude_origin_internal_transaction: false]
+        |> InternalTransaction.fetch()
+        |> Enum.map(&{&1.transaction_index, &1.index})
+
+      assert result == [{t_index, kept_index}]
+    end
+
+    test "includes zero-value call internal transactions by default" do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 1,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        index: 2,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      assert length(InternalTransaction.fetch(exclude_origin_internal_transaction: false)) == 2
+    end
   end
 
   describe "fetch_first_trace/2" do

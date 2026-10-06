@@ -11,7 +11,6 @@ defmodule Explorer.Etherscan do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, InternalTransaction, TokenTransfer, Transaction}
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
-  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Etherscan.Logs
 
@@ -141,10 +140,9 @@ defmodule Explorer.Etherscan do
           merge(map(it, ^@internal_transaction_fields), %{
             block_timestamp: as(:transaction).block_timestamp,
             transaction_hash: as(:transaction).hash,
-            from_address_hash: coalesce(it.from_address_hash, as(:from_address_mapping).address_hash),
-            to_address_hash: coalesce(it.to_address_hash, as(:to_address_mapping).address_hash),
-            created_contract_address_hash:
-              coalesce(it.created_contract_address_hash, as(:created_contract_address_mapping).address_hash)
+            from_address_hash: as(:from_address_mapping).address_hash,
+            to_address_hash: as(:to_address_mapping).address_hash,
+            created_contract_address_hash: as(:created_contract_address_mapping).address_hash
           })
         )
       else
@@ -161,10 +159,9 @@ defmodule Explorer.Etherscan do
           merge(map(it, ^@internal_transaction_fields), %{
             block_timestamp: as(:block).timestamp,
             transaction_hash: as(:transaction).hash,
-            from_address_hash: coalesce(it.from_address_hash, as(:from_address_mapping).address_hash),
-            to_address_hash: coalesce(it.to_address_hash, as(:to_address_mapping).address_hash),
-            created_contract_address_hash:
-              coalesce(it.created_contract_address_hash, as(:created_contract_address_mapping).address_hash)
+            from_address_hash: as(:from_address_mapping).address_hash,
+            to_address_hash: as(:to_address_mapping).address_hash,
+            created_contract_address_hash: as(:created_contract_address_mapping).address_hash
           })
         )
       end
@@ -194,8 +191,7 @@ defmodule Explorer.Etherscan do
     options
     |> options_to_directions()
     |> then(fn directions ->
-      if BackgroundMigrations.get_empty_internal_transactions_data_finished() and
-           Enum.member?(directions, :to_address_hash) do
+      if Enum.member?(directions, :to_address_hash) do
         directions
         |> Kernel.--([:created_contract_address_hash, :to_address_hash])
         |> Enum.concat([:to])
@@ -276,10 +272,9 @@ defmodule Explorer.Etherscan do
         merge(map(it, ^@internal_transaction_fields), %{
           block_timestamp: transaction.block_timestamp,
           transaction_hash: transaction.hash,
-          from_address_hash: coalesce(it.from_address_hash, as(:from_address_mapping).address_hash),
-          to_address_hash: coalesce(it.to_address_hash, as(:to_address_mapping).address_hash),
-          created_contract_address_hash:
-            coalesce(it.created_contract_address_hash, as(:created_contract_address_mapping).address_hash)
+          from_address_hash: as(:from_address_mapping).address_hash,
+          to_address_hash: as(:to_address_mapping).address_hash,
+          created_contract_address_hash: as(:created_contract_address_mapping).address_hash
         })
       )
     else
@@ -305,10 +300,9 @@ defmodule Explorer.Etherscan do
         merge(map(it, ^@internal_transaction_fields), %{
           block_timestamp: as(:block).timestamp,
           transaction_hash: as(:transaction).hash,
-          from_address_hash: coalesce(it.from_address_hash, as(:from_address_mapping).address_hash),
-          to_address_hash: coalesce(it.to_address_hash, as(:to_address_mapping).address_hash),
-          created_contract_address_hash:
-            coalesce(it.created_contract_address_hash, as(:created_contract_address_mapping).address_hash)
+          from_address_hash: as(:from_address_mapping).address_hash,
+          to_address_hash: as(:to_address_mapping).address_hash,
+          created_contract_address_hash: as(:created_contract_address_mapping).address_hash
         })
       )
     end
@@ -337,10 +331,9 @@ defmodule Explorer.Etherscan do
       merge(map(it, ^@internal_transaction_fields), %{
         block_timestamp: as(:block).timestamp,
         transaction_hash: as(:transaction).hash,
-        from_address_hash: coalesce(it.from_address_hash, as(:from_address_mapping).address_hash),
-        to_address_hash: coalesce(it.to_address_hash, as(:to_address_mapping).address_hash),
-        created_contract_address_hash:
-          coalesce(it.created_contract_address_hash, as(:created_contract_address_mapping).address_hash)
+        from_address_hash: as(:from_address_mapping).address_hash,
+        to_address_hash: as(:to_address_mapping).address_hash,
+        created_contract_address_hash: as(:created_contract_address_mapping).address_hash
       })
     )
   end
@@ -624,7 +617,9 @@ defmodule Explorer.Etherscan do
   end
 
   defp list_erc20_token_transfers(address_hash, contract_address_hash, options) do
-    "ERC-20" |> base_token_transfers_query(address_hash, contract_address_hash, options) |> Repo.replica().all()
+    ["ERC-20", "ERC-8056"]
+    |> base_token_transfers_query(address_hash, contract_address_hash, options)
+    |> Repo.replica().all()
   end
 
   # Retrieves token transfers filtered by ZRC-2 type with optional address and contract filtering.

@@ -264,8 +264,8 @@ defmodule Explorer.Account.TagTransaction do
   end
 end
 
-defimpl Jason.Encoder, for: Explorer.Account.TagTransaction do
-  def encode(transaction_tag, opts) do
-    Jason.Encode.string(transaction_tag.name, opts)
+defimpl JSON.Encoder, for: Explorer.Account.TagTransaction do
+  def encode(transaction_tag, encoder) do
+    JSON.Encoder.encode(transaction_tag.name, encoder)
   end
 end

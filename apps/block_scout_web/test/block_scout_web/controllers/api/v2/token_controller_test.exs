@@ -10,13 +10,16 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
   alias Explorer.{Repo, TestHelper}
 
-  alias Explorer.Chain.{Address, Block, Token, Token.Instance, TokenTransfer}
+  alias Explorer.Chain.{Address, Block, Token, Token.Instance, Token.UIMultiplierChange, TokenTransfer}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Cache.Counters.TokenCountersConsolidator
   alias Explorer.Chain.Events.Subscriber
 
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
+
+  @one Decimal.new("1000000000000000000")
+  @two Decimal.new("2000000000000000000")
 
   describe "/tokens/{address_hash}" do
     test "get 404 on non existing address", %{conn: conn} do
@@ -49,6 +52,46 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert response = json_response(request, 200)
 
       compare_item(token, response)
+    end
+
+    test "get token without ERC-8056 support", %{conn: conn} do
+      token = insert(:token)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{"ui_multiplier" => nil, "new_ui_multiplier" => nil, "ui_multiplier_effective_at" => nil} =
+               json_response(request, 200)
+    end
+
+    test "get ERC-8056 token with a pending multiplier change", %{conn: conn} do
+      token =
+        insert(:token,
+          ui_multiplier: Decimal.new("1000000000000000000"),
+          new_ui_multiplier: Decimal.new("2000000000000000000"),
+          ui_multiplier_effective_at: DateTime.add(DateTime.utc_now(), 1, :hour)
+        )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{
+               "ui_multiplier" => "1000000000000000000",
+               "new_ui_multiplier" => "2000000000000000000"
+             } = json_response(request, 200)
+    end
+
+    test "get ERC-8056 token whose scheduled multiplier change has matured", %{conn: conn} do
+      # the change takes effect with no transaction on chain and no write to the
+      # database: the response has to follow the clock, not the stored column
+      token =
+        insert(:token,
+          ui_multiplier: Decimal.new("1000000000000000000"),
+          new_ui_multiplier: Decimal.new("2000000000000000000"),
+          ui_multiplier_effective_at: DateTime.add(DateTime.utc_now(), -1, :hour)
+        )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{"ui_multiplier" => "2000000000000000000"} = json_response(request, 200)
     end
   end
 
@@ -84,6 +127,30 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert response["transfers_count"] == "0"
       assert response["token_holders_count"] == "0"
+      assert response["ui_multiplier_changes_count"] == "0"
+    end
+
+    test "counts the ERC-8056 multiplier changes of the token", %{conn: conn} do
+      token = insert(:token, ui_multiplier: Decimal.new("2000000000000000000"))
+      block = insert(:block, number: 100)
+      reorged = insert(:block, number: 101, consensus: false)
+
+      for {block, log_index} <- [{block, 0}, {block, 1}, {reorged, 0}] do
+        insert(:token_ui_multiplier_change,
+          token: token,
+          block: block,
+          block_number: block.number,
+          log_index: log_index,
+          old_multiplier: Decimal.new("1000000000000000000"),
+          new_multiplier: Decimal.new("2000000000000000000"),
+          effective_at: ~U[2026-06-01 00:00:00.000000Z]
+        )
+      end
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/counters")
+
+      # the change of the reorged block is not listed, so it is not counted
+      assert %{"ui_multiplier_changes_count" => "2"} = json_response(request, 200)
     end
 
     test "get not zero counters", %{conn: conn} do
@@ -154,6 +221,41 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/transfers")
 
       assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
+    test "total carries the ERC-8056 multiplier as of the transfer, not the current one", %{conn: conn} do
+      # the token doubled on 2026-06-01; a transfer from before that has to keep
+      # showing the multiplier its holders saw at the time
+      token =
+        insert(:token,
+          ui_multiplier: Decimal.new("2000000000000000000"),
+          new_ui_multiplier: Decimal.new("2000000000000000000"),
+          ui_multiplier_effective_at: ~U[2026-06-01 00:00:00.000000Z]
+        )
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block_number: 100,
+        log_index: 0,
+        old_multiplier: Decimal.new("1000000000000000000"),
+        new_multiplier: Decimal.new("2000000000000000000"),
+        effective_at: ~U[2026-06-01 00:00:00.000000Z]
+      )
+
+      block = insert(:block, number: 150, timestamp: ~U[2026-05-01 00:00:00.000000Z])
+      transaction = :transaction |> insert() |> with_block(block)
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: block,
+        block_number: block.number,
+        token_contract_address: token.contract_address
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/transfers")
+
+      assert %{"items" => [%{"total" => total}]} = json_response(request, 200)
+      assert total["ui_multiplier"] == "1000000000000000000"
     end
 
     test "check pagination", %{conn: conn} do
@@ -471,6 +573,152 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
   end
 
+  describe "/tokens/{address_hash}/ui-multiplier-changes" do
+    test "get 404 on non existing address", %{conn: conn} do
+      token = build(:token)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/ui-multiplier-changes")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/tokens/0x/ui-multiplier-changes")
+
+      assert %{
+               "errors" => [
+                 %{
+                   "detail" => "Invalid format. Expected ~r/^0x([A-Fa-f0-9]{40})$/",
+                   "source" => %{"pointer" => "/address_hash_param"},
+                   "title" => "Invalid value"
+                 }
+               ]
+             } = json_response(request, 422)
+    end
+
+    test "is empty for a token without ERC-8056 support", %{conn: conn} do
+      token = insert(:token)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/ui-multiplier-changes")
+
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
+    test "lists the history newest first, with the transaction and the moment of each change", %{conn: conn} do
+      token = insert(:token, ui_multiplier: @two)
+      block = insert(:block, number: 100, timestamp: ~U[2026-03-01 00:00:00.000000Z])
+      transaction = :transaction |> insert() |> with_block(block)
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block: block,
+        block_number: block.number,
+        log_index: 3,
+        transaction_hash: transaction.hash,
+        old_multiplier: @one,
+        new_multiplier: @two,
+        effective_at: ~U[2026-03-05 00:00:00.000000Z]
+      )
+
+      older = insert(:block, number: 50, timestamp: ~U[2026-01-01 00:00:00.000000Z])
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block: older,
+        block_number: older.number,
+        log_index: 0,
+        old_multiplier: @one,
+        new_multiplier: @one,
+        effective_at: ~U[2026-01-05 00:00:00.000000Z]
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/ui-multiplier-changes")
+
+      assert %{"items" => [newest, oldest], "next_page_params" => nil} = json_response(request, 200)
+
+      assert %{
+               "block_number" => 100,
+               "log_index" => 3,
+               "old_multiplier" => "1000000000000000000",
+               "new_multiplier" => "2000000000000000000"
+             } = newest
+
+      assert newest["block_hash"] == to_string(block.hash)
+      assert newest["transaction_hash"] == to_string(transaction.hash)
+      assert newest["timestamp"] == "2026-03-01T00:00:00.000000Z"
+      assert newest["effective_at"] == "2026-03-05T00:00:00.000000Z"
+
+      assert %{"block_number" => 50, "log_index" => 0, "transaction_hash" => nil} = oldest
+    end
+
+    test "keeps a change that is announced but not yet in force", %{conn: conn} do
+      token = insert(:token, ui_multiplier: @one)
+      block = insert(:block, number: 100)
+      effective_at = DateTime.add(DateTime.utc_now(), 1, :hour)
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block: block,
+        block_number: block.number,
+        log_index: 0,
+        old_multiplier: @one,
+        new_multiplier: @two,
+        effective_at: effective_at
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/ui-multiplier-changes")
+
+      assert %{"items" => [%{"new_multiplier" => "2000000000000000000"}]} = json_response(request, 200)
+    end
+
+    test "leaves out a change whose block lost consensus", %{conn: conn} do
+      token = insert(:token, ui_multiplier: @two)
+      reorged = insert(:block, number: 100, consensus: false)
+
+      insert(:token_ui_multiplier_change,
+        token: token,
+        block: reorged,
+        block_number: reorged.number,
+        log_index: 0,
+        old_multiplier: @one,
+        new_multiplier: @two,
+        effective_at: ~U[2026-03-05 00:00:00.000000Z]
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/ui-multiplier-changes")
+
+      assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
+    test "check pagination", %{conn: conn} do
+      token = insert(:token, ui_multiplier: @two)
+      block = insert(:block, number: 100)
+
+      changes =
+        for log_index <- 0..50 do
+          insert(:token_ui_multiplier_change,
+            token: token,
+            block: block,
+            block_number: block.number,
+            log_index: log_index,
+            old_multiplier: @one,
+            new_multiplier: @two,
+            effective_at: ~U[2026-03-05 00:00:00.000000Z]
+          )
+        end
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/ui-multiplier-changes")
+      assert response = json_response(request, 200)
+
+      request_2nd_page =
+        get(conn, "/api/v2/tokens/#{token.contract_address.hash}/ui-multiplier-changes", response["next_page_params"])
+
+      assert response_2nd_page = json_response(request_2nd_page, 200)
+
+      check_paginated_response(response, response_2nd_page, changes)
+    end
+  end
+
   describe "/tokens" do
     setup do
       initial_value = :persistent_term.get(:market_token_fetcher_enabled, false)
@@ -757,6 +1005,30 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       check_tokens_pagination(erc_1155_tokens |> Enum.reverse(), conn, %{"type" => "ERC-1155"})
       check_tokens_pagination(erc_404_tokens |> Enum.reverse(), conn, %{"type" => "ERC-404"})
       check_tokens_pagination(erc_7984_tokens |> Enum.reverse(), conn, %{"type" => "ERC-7984"})
+    end
+
+    test "ERC-8056 is a type of its own, kept apart from ERC-20", %{conn: conn} do
+      erc_20_token = insert(:token)
+
+      erc_8056_token =
+        insert(:token, type: "ERC-8056", ui_multiplier: Decimal.new("2000000000000000000"))
+
+      erc_20_hash = Address.checksum(erc_20_token.contract_address_hash)
+      erc_8056_hash = Address.checksum(erc_8056_token.contract_address_hash)
+
+      # asking for ERC-20 must not widen to ERC-8056
+      assert %{"items" => [%{"address_hash" => ^erc_20_hash, "type" => "ERC-20"}]} =
+               conn |> get("/api/v2/tokens", %{"type" => "ERC-20"}) |> json_response(200)
+
+      assert %{"items" => [%{"address_hash" => ^erc_8056_hash, "type" => "ERC-8056"}]} =
+               conn |> get("/api/v2/tokens", %{"type" => "ERC-8056"}) |> json_response(200)
+
+      # a caller after every fungible token has to ask for both
+      assert %{"items" => both} =
+               conn |> get("/api/v2/tokens", %{"type" => "ERC-20,ERC-8056"}) |> json_response(200)
+
+      assert both |> Enum.map(& &1["address_hash"]) |> Enum.sort() ==
+               Enum.sort([erc_20_hash, erc_8056_hash])
     end
 
     test "tokens are filtered by multiple type", %{conn: conn} do
@@ -1185,6 +1457,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert data = json_response(request, 200)
       assert compare_item(instance, data)
       assert Address.checksum(instance.owner_address_hash) == data["owner"]["hash"]
+      assert data["token"]["address_hash"] == Address.checksum(token.contract_address_hash)
+      assert data["token"]["type"] == token.type
     end
 
     test "get 404 on token instance which is not presented in DB", %{conn: conn} do
@@ -1306,6 +1580,97 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       assert instance.metadata == nil
       assert instance.error == "blacklist"
       assert instance.skip_metadata_url == false
+    end
+
+    test "preloads ENS and metadata for owner address", %{conn: conn} do
+      owner = insert(:address)
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        token_id: 0,
+        token_contract_address_hash: token.contract_address_hash,
+        owner_address_hash: owner.hash,
+        skip_metadata_url: true
+      )
+
+      bypass = Bypass.open()
+
+      old_tesla_adapter = Application.get_env(:tesla, :adapter)
+      old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+      old_env_bens = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.BENS)
+      old_env_metadata = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.Metadata)
+
+      on_exit(fn ->
+        Application.put_env(:tesla, :adapter, old_tesla_adapter)
+        Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS, old_env_bens)
+        Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata, old_env_metadata)
+        Bypass.down(bypass)
+      end)
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      chain_id = 1
+      Application.put_env(:block_scout_web, :chain_id, chain_id)
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.BENS,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.Metadata,
+        service_url: "http://localhost:#{bypass.port}",
+        enabled: true
+      )
+
+      owner_hash_string = Address.checksum(owner.hash)
+
+      Bypass.expect_once(bypass, "POST", "api/v1/#{chain_id}/addresses:batch_resolve_names", fn conn ->
+        Plug.Conn.resp(
+          conn,
+          200,
+          Utils.JSON.encode!(%{"names" => %{owner_hash_string => "owner.eth"}})
+        )
+      end)
+
+      Bypass.expect_once(bypass, "GET", "api/v1/metadata", fn conn ->
+        Plug.Conn.resp(
+          conn,
+          200,
+          Utils.JSON.encode!(%{
+            "addresses" => %{
+              owner_hash_string => %{
+                "tags" => [
+                  %{
+                    "name" => "Known Address",
+                    "ordinal" => 0,
+                    "slug" => "known-address",
+                    "tagType" => "generic",
+                    "meta" => "{}"
+                  }
+                ]
+              }
+            }
+          })
+        )
+      end)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0")
+
+      assert data = json_response(request, 200)
+      assert data["owner"]["ens_domain_name"] == "owner.eth"
+
+      assert data["owner"]["metadata"] == %{
+               "tags" => [
+                 %{
+                   "name" => "Known Address",
+                   "ordinal" => 0,
+                   "slug" => "known-address",
+                   "tagType" => "generic",
+                   "meta" => %{}
+                 }
+               ]
+             }
     end
   end
 
@@ -2038,7 +2403,11 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         |> subscribe_and_join(topic)
 
       request =
-        patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
+        patch(
+          conn,
+          "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata?scoped_recaptcha_bypass_token=#{scoped_bypass_token}",
+          %{}
+        )
 
       assert %{"message" => "OK"} = json_response(request, 200)
 
@@ -2078,8 +2447,10 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       request =
         Phoenix.ConnTest.build_conn()
         |> put_req_header("user-agent", "test-agent")
-        |> put_req_header("scoped-recaptcha-bypass-token", scoped_bypass_token)
-        |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
+        |> patch(
+          "/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata?scoped_recaptcha_bypass_token=#{scoped_bypass_token}",
+          %{}
+        )
 
       assert %{"message" => "OK"} = json_response(request, 200)
 
@@ -2104,6 +2475,40 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
       assert(token_instance_from_db)
       assert token_instance_from_db.metadata == metadata
+
+      # Verify header-based scoped bypass token also works (prevent regression)
+      request =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("user-agent", "test-agent")
+        |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
+
+      assert json_response(request, 429)
+
+      TestHelper.fetch_token_uri_mock(url, token_contract_address_hash_string)
+
+      token_instance_success_metadata_expectation(url, metadata)
+
+      request =
+        Phoenix.ConnTest.build_conn()
+        |> put_req_header("user-agent", "test-agent")
+        |> put_req_header("scoped-recaptcha-bypass-token", scoped_bypass_token)
+        |> patch("/api/v2/tokens/#{token.contract_address.hash}/instances/#{token_id}/refetch-metadata", %{})
+
+      assert %{"message" => "OK"} = json_response(request, 200)
+
+      :timer.sleep(100)
+
+      assert_receive(
+        {:chain_event, :fetched_token_instance_metadata, :on_demand,
+         [^token_contract_address_hash_string, ^token_id, ^metadata]}
+      )
+
+      assert_receive %Phoenix.Socket.Message{
+                       payload: %{token_id: ^token_id_string, fetched_metadata: ^metadata},
+                       event: "fetched_token_instance_metadata",
+                       topic: ^topic
+                     },
+                     :timer.seconds(1)
     end
 
     test "falls back to normal reCAPTCHA when incorrect scoped bypass api key is supplied", %{
@@ -2399,16 +2804,21 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     compare_item(Repo.preload(ctb, [{:token, :contract_address}]).token, json["token"])
   end
 
+  def compare_item(%UIMultiplierChange{} = change, json) do
+    assert change.block_number == json["block_number"]
+    assert change.log_index == json["log_index"]
+    assert to_string(change.block_hash) == json["block_hash"]
+    assert to_string(change.old_multiplier) == json["old_multiplier"]
+    assert to_string(change.new_multiplier) == json["new_multiplier"]
+  end
+
   def compare_item(%Instance{token: %Token{} = token} = instance, json) do
-    token_type = token.type
     value = to_string(value(token.type, instance))
     id = to_string(instance.token_id)
     metadata = instance.metadata
-    token_address_hash = Address.checksum(token.contract_address_hash)
     app_url = instance.metadata["external_url"]
     animation_url = instance.metadata["animation_url"]
     image_url = instance.metadata["image_url"]
-    token_name = token.name
     owner_address_hash = Address.checksum(instance.owner.hash)
     is_contract = !is_nil(instance.owner.contract_code)
     is_unique = value == "1"
@@ -2416,7 +2826,6 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     assert %{
              "id" => ^id,
              "metadata" => ^metadata,
-             "token" => %{"address_hash" => ^token_address_hash, "name" => ^token_name, "type" => ^token_type},
              "external_app_url" => ^app_url,
              "animation_url" => ^animation_url,
              "image_url" => ^image_url,
@@ -2433,9 +2842,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
   def compare_item(%Instance{} = instance, json) do
     assert to_string(instance.token_id) == json["id"]
-    assert Jason.decode!(Jason.encode!(instance.metadata)) == json["metadata"]
+    assert Utils.JSON.decode!(Utils.JSON.encode!(instance.metadata)) == json["metadata"]
     assert json["is_unique"]
-    compare_item(Repo.preload(instance, [{:token, :contract_address}]).token, json["token"])
   end
 
   defp value("ERC-721", _), do: 1
@@ -2706,7 +3114,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         {:ok,
          %Tesla.Env{
            status: 200,
-           body: Jason.encode!(metadata)
+           body: Utils.JSON.encode!(metadata)
          }}
       end
     )
@@ -2720,12 +3128,189 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
          %Tesla.Env{
            status: 200,
            body:
-             Jason.encode!(%{
+             Utils.JSON.encode!(%{
                "success" => true,
                "hostname" => Application.get_env(:block_scout_web, BlockScoutWeb.Endpoint)[:url][:host]
              })
          }}
       end
     )
+  end
+
+  describe "POST /tokens/batch" do
+    test "get token info for a batch of addresses", %{conn: conn} do
+      token1 = insert(:token)
+      token2 = insert(:token)
+
+      request =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/v2/tokens/batch", %{
+          "address_hashes" => [
+            to_string(token1.contract_address.hash),
+            to_string(token2.contract_address.hash)
+          ]
+        })
+
+      assert response = json_response(request, 200)
+      assert is_list(response)
+      assert length(response) == 2
+
+      hashes = Enum.map(response, & &1["address_hash"])
+      assert Address.checksum(token1.contract_address.hash) in hashes
+      assert Address.checksum(token2.contract_address.hash) in hashes
+
+      Enum.each(response, fn item ->
+        token =
+          if item["address_hash"] == Address.checksum(token1.contract_address.hash),
+            do: token1,
+            else: token2
+
+        compare_item(token, item)
+      end)
+    end
+
+    test "returns empty list for non-existing tokens", %{conn: conn} do
+      address = build(:address)
+
+      request =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/v2/tokens/batch", %{
+          "address_hashes" => [to_string(address.hash)]
+        })
+
+      assert json_response(request, 200) == []
+    end
+
+    test "rejects invalid address hashes", %{conn: conn} do
+      token = insert(:token)
+
+      request =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/v2/tokens/batch", %{
+          "address_hashes" => [
+            to_string(token.contract_address.hash),
+            "0xinvalid",
+            "not_a_hash"
+          ]
+        })
+
+      assert %{"errors" => [_ | _]} = Phoenix.ConnTest.json_response(request, 422)
+    end
+
+    test "returns empty list for empty input", %{conn: conn} do
+      request =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/v2/tokens/batch", %{"address_hashes" => []})
+
+      assert json_response(request, 200) == []
+    end
+
+    test "deduplicates address hashes", %{conn: conn} do
+      token = insert(:token)
+      hash = to_string(token.contract_address.hash)
+
+      request =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/v2/tokens/batch", %{
+          "address_hashes" => [hash, hash, hash]
+        })
+
+      assert response = json_response(request, 200)
+      assert length(response) == 1
+      compare_item(token, List.first(response))
+    end
+
+    test "rejects batch exceeding max size", %{conn: conn} do
+      hashes = for i <- 1..51, do: "0x" <> String.pad_leading(Integer.to_string(i), 40, "0")
+
+      request =
+        conn
+        |> put_req_header("content-type", "application/json")
+        |> post("/api/v2/tokens/batch", %{"address_hashes" => hashes})
+
+      assert %{"errors" => [%{"detail" => detail}]} = Phoenix.ConnTest.json_response(request, 422)
+      assert detail =~ "maxItems"
+    end
+  end
+
+  describe "/tokens/{address_hash}/instances/{token_id}/media-type" do
+    test "get 404 on non existing address", %{conn: conn} do
+      token = build(:token)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/0/media-type")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
+
+    test "get 422 on invalid address", %{conn: conn} do
+      request = get(conn, "/api/v2/tokens/0x/instances/0/media-type")
+
+      assert %{"errors" => _} = json_response(request, 422)
+    end
+
+    test "returns already fetched media types without re-fetching", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 1,
+        metadata: %{"image" => "https://example.com/img.png"},
+        image_type: "image/png",
+        animation_type: ""
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/1/media-type")
+      response = json_response(request, 200)
+
+      assert response["image_media_type"] == "image"
+      assert response["animation_media_type"] == nil
+    end
+
+    test "returns 422 when metadata is nil", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 1,
+        metadata: nil,
+        image_type: nil,
+        animation_type: nil
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/1/media-type")
+
+      assert %{"message" => "Metadata is not fetched yet"} = Phoenix.ConnTest.json_response(request, 422)
+    end
+
+    test "fetches and returns media types for instance with metadata", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      insert(:token_instance,
+        token_contract_address_hash: token.contract_address_hash,
+        token_id: 1,
+        metadata: %{"image_url" => "https://example.com/image.png", "animation_url" => "https://example.com/anim.mp4"},
+        image_type: nil,
+        animation_type: nil
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/1/media-type")
+      response = json_response(request, 200)
+
+      assert response["image_media_type"] == "image"
+      assert response["animation_media_type"] == "video"
+    end
+
+    test "get 404 for non-existing instance", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address_hash}/instances/999/media-type")
+
+      assert %{"message" => "Not found"} = json_response(request, 404)
+    end
   end
 end

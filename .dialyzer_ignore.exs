@@ -9,5 +9,6 @@
     {"lib/explorer/smart_contract/stylus/publisher_worker.ex", :pattern_match, 1},
     {"lib/explorer/smart_contract/stylus/publisher_worker.ex", :exact_eq, 15},
     {"lib/explorer/smart_contract/stylus/publisher_worker.ex", :pattern_match, 15},
-    ~r/lib\/phoenix\/router.ex/
+    ~r/lib\/phoenix\/router.ex/,
+    ~r/Poison\.Encoder/
 ]

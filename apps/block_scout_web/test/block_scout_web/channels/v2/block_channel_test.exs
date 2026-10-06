@@ -67,7 +67,7 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
       Conn.resp(
         conn,
         200,
-        Jason.encode!(%{
+        Utils.JSON.encode!(%{
           "names" => %{
             Address.checksum(miner.hash) => "miner.eth"
           }
@@ -79,7 +79,7 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
       Conn.resp(
         conn,
         200,
-        Jason.encode!(%{
+        Utils.JSON.encode!(%{
           "addresses" => %{
             Address.checksum(miner.hash) => %{
               "tags" => []

@@ -62,7 +62,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(metadata)
+             body: Utils.JSON.encode!(metadata)
            }}
         end
       )
@@ -122,7 +122,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetchTest do
           {:ok,
            %Tesla.Env{
              status: 200,
-             body: Jason.encode!(metadata)
+             body: Utils.JSON.encode!(metadata)
            }}
         end
       )

@@ -8,6 +8,10 @@ defmodule EthereumJSONRPC.ERC20 do
     Currently supports fetching token properties like name, symbol and decimals
     through direct contract calls.
 
+    Some older tokens (for example Maker/MKR) return `bytes32` for `name()` /
+    `symbol()` instead of `string`. The ABI below includes both return types so
+    decoding can fall back to `bytes32` when the dynamic-string decode fails.
+
     ## Examples
 
         iex> EthereumJSONRPC.ERC20.fetch_token_properties(
@@ -32,6 +36,8 @@ defmodule EthereumJSONRPC.ERC20 do
   @selector_name "06fdde03"
   # symbol()
   @selector_symbol "95d89b41"
+  # `string` variants must come before `bytes32` so `Encoder.decode_result/3`
+  # prefers the standard ERC-20 return type when both decode successfully.
   @erc20_contract_abi [
     %{
       "inputs" => [],
@@ -61,14 +67,38 @@ defmodule EthereumJSONRPC.ERC20 do
     },
     %{
       "inputs" => [],
+      "name" => "name",
+      "outputs" => [
+        %{
+          "internalType" => "bytes32",
+          "name" => "",
+          "type" => "bytes32"
+        }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "inputs" => [],
       "name" => "symbol",
       "outputs" => [
         %{
           "internalType" => "string",
           "name" => "",
-          # TODO: Research the compatibility of this ABI
-          # with tokens that return bytes32 for the symbol method
           "type" => "string"
+        }
+      ],
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "inputs" => [],
+      "name" => "symbol",
+      "outputs" => [
+        %{
+          "internalType" => "bytes32",
+          "name" => "",
+          "type" => "bytes32"
         }
       ],
       "stateMutability" => "view",
@@ -119,7 +149,8 @@ defmodule EthereumJSONRPC.ERC20 do
     |> Enum.zip(method_ids)
     |> Enum.reduce(%{}, fn
       {{:ok, [response]}, method_id}, retval ->
-        Map.put(retval, atomized_erc20_selector(method_id), response)
+        property = atomized_erc20_selector(method_id)
+        Map.put(retval, property, normalize_property(property, response))
 
       {{:error, reason}, method_id}, retval ->
         Logger.error("[EthereumJSONRPC.ERC20] Failed to fetch token property! \
@@ -146,4 +177,17 @@ defmodule EthereumJSONRPC.ERC20 do
   defp atomized_erc20_selector(@selector_decimals), do: :decimals
   defp atomized_erc20_selector(@selector_name), do: :name
   defp atomized_erc20_selector(@selector_symbol), do: :symbol
+
+  # `bytes32` name/symbol values are null-padded; strip padding to a display string.
+  defp normalize_property(property, value) when property in [:name, :symbol] and is_binary(value) do
+    cleaned = String.replace(value, <<0>>, "")
+
+    if cleaned != "" and String.valid?(cleaned) do
+      cleaned
+    else
+      nil
+    end
+  end
+
+  defp normalize_property(_property, value), do: value
 end

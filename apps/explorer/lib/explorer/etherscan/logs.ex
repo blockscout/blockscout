@@ -6,11 +6,10 @@ defmodule Explorer.Etherscan.Logs do
 
   """
 
-  import Ecto.Query,
-    only: [dynamic: 2, from: 2, join: 5, limit: 2, where: 2, where: 3, subquery: 1, order_by: 3, union_all: 2]
+  import Ecto.Query
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{DenormalizationHelper, Log, Transaction}
+  alias Explorer.Chain.{DenormalizationHelper, Log}
 
   @base_filter %{
     from_block: nil,
@@ -30,13 +29,13 @@ defmodule Explorer.Etherscan.Logs do
 
   @log_fields [
     :data,
+    :compressed_data,
     :first_topic,
+    :first_topic_id,
     :second_topic,
     :third_topic,
     :fourth_topic,
-    :index,
-    :address_hash,
-    :transaction_hash
+    :index
   ]
 
   @default_paging_options %{block_number: nil, log_index: nil}
@@ -82,7 +81,7 @@ defmodule Explorer.Etherscan.Logs do
     # combination query would only affect its first branch.
     logs_query =
       Log
-      |> where([log], log.address_hash == ^address_hash)
+      |> Log.address_match_query(address_hash)
       |> where([log], log.block_number >= ^prepared_filter.from_block)
       |> where([log], log.block_number <= ^prepared_filter.to_block)
       |> page_logs(paging_options)
@@ -92,19 +91,23 @@ defmodule Explorer.Etherscan.Logs do
     |> join_transaction_data()
     |> limit(1000)
     |> fetch_ordered()
+    |> Log.preload_block()
+    |> Log.preload_transaction([], Repo.replica())
   end
 
   # Since address_hash was not present, we know that a topic filter has been
   # applied. Ordering, paging and the LIMIT are applied inside a subquery over
-  # `logs` alone, so the planner has to produce at most 1000 logs before
-  # joining `transactions`. Joining first and limiting afterwards lets the
-  # planner scan the whole `transactions` block range up front, which is
-  # prohibitively slow for wide ranges.
+  # `logs` (with only the consensus check joined), so the planner has to
+  # produce at most 1000 logs before joining the transaction data. Joining
+  # first and limiting afterwards lets the planner scan the whole
+  # `transactions` block range up front, which is prohibitively slow for wide
+  # ranges.
   #
-  # Logs of non-consensus blocks are never deleted, so consensus has to be
-  # checked before the LIMIT: otherwise a page could come back short, or empty
-  # with no cursor to continue from, while later consensus logs still exist.
-  # The check uses the same predicate as `join_transaction_data/1`, so no row
+  # Logs of non-consensus blocks are not guaranteed to be deleted (see
+  # `Explorer.Migrator.DeleteNonConsensusLogs`), so consensus has to be checked
+  # before the LIMIT: otherwise a page could come back short, or empty with no
+  # cursor to continue from, while later consensus logs still exist. The check
+  # uses the same join and predicate as `join_transaction_data/1`, so no row
   # that makes it into the page is dropped by the outer join afterwards.
   def list_logs(filter, paging_options) do
     paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
@@ -126,72 +129,82 @@ defmodule Explorer.Etherscan.Logs do
   end
 
   # Keeps only logs whose consensus predicate matches the one applied by
-  # `join_transaction_data/1` in the current denormalization state. Each check
-  # is a primary-key lookup per candidate log. `transactions.block_consensus`
-  # can diverge from `blocks.consensus` (see
+  # `join_transaction_data/1` in the current denormalization state. Logs are
+  # joined to transactions through `Log.join_transaction_query/1` in both
+  # places, so each check is a few index lookups per candidate log.
+  # `transactions.block_consensus` can diverge from `blocks.consensus` (see
   # `Explorer.Migrator.TransactionBlockConsensus`), which is why the predicate
   # is not simply `blocks.consensus` in both states.
   defp where_consensus(logs_query) do
     if DenormalizationHelper.transactions_denormalization_finished?() do
-      join(logs_query, :inner, [log], transaction in Transaction,
-        on:
-          log.transaction_hash == transaction.hash and log.block_hash == transaction.block_hash and
-            transaction.block_consensus == true
-      )
+      logs_query
+      |> Log.join_transaction_query()
+      |> where(as(:transaction).block_consensus == true)
     else
-      join(logs_query, :inner, [log], block in assoc(log, :block), on: block.consensus == true)
+      logs_query
+      |> Log.join_transaction_query()
+      |> join(:inner, [transaction: transaction], block in assoc(transaction, :block), as: :block)
+      |> where(as(:block).consensus == true)
     end
   end
 
   # Re-selects the joined query through an outer subquery so that fields
   # taken from the `logs` subquery are loaded with their schema types (`Hash`
-  # structs instead of raw binaries), then applies the final ordering.
+  # structs instead of raw binaries), then applies the final ordering and fills
+  # `data` and `first_topic` of logs stored with `compressed_data` and
+  # `first_topic_id` only.
   defp fetch_ordered(query) do
     query
     |> Chain.wrapped_union_subquery()
     |> order_by([log], asc: log.block_number, asc: log.index)
     |> Repo.replica().all()
+    |> Log.prepare_data()
+    |> Log.prepare_first_topic()
   end
 
   # Wraps `logs_query` in a subquery and joins each log to its consensus
-  # transaction by `(hash, block_hash)`, a primary-key lookup per log. The
-  # selected shape is identical in both denormalization states.
+  # transaction through `Log.join_transaction_query/1`, a few index lookups per
+  # log. The selected shape is identical in both denormalization states.
   defp join_transaction_data(logs_query) do
     if DenormalizationHelper.transactions_denormalization_finished?() do
-      from(log in subquery(logs_query),
-        join: transaction in Transaction,
-        on: log.transaction_hash == transaction.hash and log.block_hash == transaction.block_hash,
-        where: transaction.block_consensus == true,
-        select: map(log, ^@log_fields),
-        select_merge: %{
-          gas_price: transaction.gas_price,
-          gas_used: transaction.gas_used,
-          transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_number: transaction.block_number,
-          block_timestamp: transaction.block_timestamp,
-          block_consensus: transaction.block_consensus
-        },
-        order_by: [asc: log.block_number, asc: log.index]
-      )
+      logs_query
+      |> subquery()
+      |> Log.join_transaction_query()
+      |> Log.join_address_mapping_query()
+      |> where(as(:transaction).block_consensus == true)
+      |> select([log], map(log, ^@log_fields))
+      |> select_merge([log], %{
+        gas_price: as(:transaction).gas_price,
+        gas_used: as(:transaction).gas_used,
+        transaction_index: as(:transaction).index,
+        block_hash: as(:transaction).block_hash,
+        block_number: as(:transaction).block_number,
+        block_timestamp: as(:transaction).block_timestamp,
+        block_consensus: as(:transaction).block_consensus,
+        transaction_hash: as(:transaction).hash,
+        address_hash: coalesce(log.address_hash, as(:address_mapping).address_hash)
+      })
+      |> order_by([log], asc: log.block_number, asc: log.index)
     else
-      from(log in subquery(logs_query),
-        join: transaction in Transaction,
-        on: log.transaction_hash == transaction.hash and log.block_hash == transaction.block_hash,
-        inner_join: block in assoc(transaction, :block),
-        where: block.consensus == true,
-        select: map(log, ^@log_fields),
-        select_merge: %{
-          gas_price: transaction.gas_price,
-          gas_used: transaction.gas_used,
-          transaction_index: transaction.index,
-          block_hash: transaction.block_hash,
-          block_number: transaction.block_number,
-          block_timestamp: block.timestamp,
-          block_consensus: block.consensus
-        },
-        order_by: [asc: log.block_number, asc: log.index]
-      )
+      logs_query
+      |> subquery()
+      |> Log.join_transaction_query()
+      |> Log.join_address_mapping_query()
+      |> join(:inner, [l, t], block in assoc(t, :block))
+      |> where([_l, _t, _am, block], block.consensus == true)
+      |> select([log], map(log, ^@log_fields))
+      |> select_merge([log, transaction, address_mapping, block], %{
+        gas_price: transaction.gas_price,
+        gas_used: transaction.gas_used,
+        transaction_index: transaction.index,
+        block_hash: transaction.block_hash,
+        block_number: transaction.block_number,
+        block_timestamp: block.timestamp,
+        block_consensus: block.consensus,
+        transaction_hash: transaction.hash,
+        address_hash: coalesce(log.address_hash, address_mapping.address_hash)
+      })
+      |> order_by([log, _t, _am, _b], asc: log.block_number, asc: log.index)
     end
   end
 
@@ -211,10 +224,6 @@ defmodule Explorer.Etherscan.Logs do
     topic2_3_opr: {:third_topic, :fourth_topic}
   }
 
-  # Above this number of values for a single topic, fall back to
-  # `= ANY(...)` to keep query size and planning time bounded.
-  @max_topic_union_branches 16
-
   defp where_topic_match(query, filter, opts \\ []) do
     filter = sanitize_filter_topics(filter)
 
@@ -223,45 +232,11 @@ defmodule Explorer.Etherscan.Logs do
         query
 
       [topic] ->
-        where_single_topic_match(query, topic, filter[topic], opts)
+        Log.filter_by_topic_query(query, topic, filter[topic], opts)
 
       _ ->
         where_multiple_topics_match(query, filter)
     end
-  end
-
-  # With `union_multiple_values: true`, a single topic with multiple values
-  # is combined with UNION ALL (one equality branch per value) instead of
-  # `topic = ANY(...)`: a scalar-array condition on a topic column prevents
-  # PostgreSQL from returning rows in `(block_number, index)` order from the
-  # (address_hash, first_topic, block_number, index) index, forcing it to
-  # materialize and sort every match in the block range before applying the
-  # LIMIT. With UNION ALL each branch is an ordered index scan, so the
-  # planner can merge branches and stop at the LIMIT. The resulting
-  # combination query must be wrapped in `subquery/1` by the caller before
-  # any further composition.
-  defp where_single_topic_match(query, topic, values, opts) when is_list(values) do
-    if Keyword.get(opts, :union_multiple_values, false) and length(values) <= @max_topic_union_branches do
-      values
-      |> Enum.map(fn value -> where(query, [l], field(l, ^topic) == ^value) end)
-      |> Enum.reduce(fn branch, acc -> union_all(acc, ^branch) end)
-    else
-      where(query, ^topic_condition(topic, values))
-    end
-  end
-
-  defp where_single_topic_match(query, topic, value, _opts) do
-    where(query, [l], field(l, ^topic) == ^value)
-  end
-
-  # Equality instead of `= ANY(...)` for scalar values matters for
-  # performance: see `where_single_topic_match/3`.
-  defp topic_condition(topic, values) when is_list(values) do
-    dynamic([l], field(l, ^topic) in ^values)
-  end
-
-  defp topic_condition(topic, value) do
-    dynamic([l], field(l, ^topic) == ^value)
   end
 
   defp sanitize_filter_topics(filter) do
@@ -313,19 +288,19 @@ defmodule Explorer.Etherscan.Logs do
   defp where_multiple_topics_match(query, filter, topic_operation, "and") do
     {topic_a, topic_b} = @topic_operations[topic_operation]
 
-    where(
-      query,
-      ^dynamic([l], ^topic_condition(topic_a, filter[topic_a]) and ^topic_condition(topic_b, filter[topic_b]))
-    )
+    dynamic =
+      dynamic(
+        [l],
+        ^Log.topic_filter_dynamic(topic_a, [filter[topic_a]]) and
+          ^Log.topic_filter_dynamic(topic_b, List.wrap(filter[topic_b]))
+      )
+
+    where(query, [l], ^dynamic)
   end
 
   defp where_multiple_topics_match(query, filter, topic_operation, "or") do
     {topic_a, topic_b} = @topic_operations[topic_operation]
-
-    where(
-      query,
-      ^dynamic([l], ^topic_condition(topic_a, filter[topic_a]) or ^topic_condition(topic_b, filter[topic_b]))
-    )
+    where(query, [l], ^Log.filter_by_topic_dynamic([topic_a, topic_b], [[filter[topic_a]], List.wrap(filter[topic_b])]))
   end
 
   defp where_multiple_topics_match(query, _, _, _), do: query

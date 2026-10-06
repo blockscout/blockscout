@@ -79,9 +79,9 @@ defmodule Explorer.Chain.Address.TokenBalance do
   def unfetched_token_balances do
     token_types =
       if Application.get_env(:explorer, :chain_type) == :zilliqa do
-        ["ERC-20", "ZRC-2", "ERC-1155", "ERC-404"]
+        ["ERC-20", "ERC-8056", "ZRC-2", "ERC-1155", "ERC-404"]
       else
-        ["ERC-20", "ERC-1155", "ERC-404"]
+        ["ERC-20", "ERC-8056", "ERC-1155", "ERC-404"]
       end
 
     if BackgroundMigrations.get_tb_token_type_finished() do

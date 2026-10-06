@@ -65,6 +65,8 @@ defmodule Explorer.Migrator.FilecoinPendingAddressOperations do
       timeout: :infinity,
       timestamps: Import.timestamps()
     )
+
+    Enum.count(ordered_address_hashes)
   end
 
   @impl FillingMigration

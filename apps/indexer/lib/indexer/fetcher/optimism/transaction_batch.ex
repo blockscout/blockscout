@@ -36,8 +36,10 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   alias Explorer.Chain.{Block, Hash}
   alias Explorer.Chain.Events.Publisher
   alias Explorer.Chain.Optimism.{FrameSequence, FrameSequenceBlob}
+  alias Explorer.Chain.Optimism.SuperchainConfig
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
-  alias Indexer.Fetcher.{Optimism, RollupL1ReorgMonitor}
+  alias Indexer.Fetcher.Optimism
+  alias Indexer.Fetcher.RollupL1ReorgMonitor
   alias Indexer.Helper
   alias Indexer.Prometheus.Instrumenter
   alias Indexer.RollupReorgMonitorQueue
@@ -83,15 +85,16 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
         %{json_rpc_named_arguments_l2: json_rpc_named_arguments_l2} = state
       ) do
     env = Application.get_all_env(:indexer)[__MODULE__]
+    genesis_block_l2 = SuperchainConfig.optimism_l2_batch_genesis_block_number()
 
     optimism_env = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism]
-    system_config = optimism_env[:optimism_l1_system_config]
+    system_config = SuperchainConfig.optimism_l1_system_config_contract()
     optimism_l1_rpc = l1_rpc_url()
 
     with {:system_config_valid, true} <-
            {:system_config_valid, Helper.address_correct?(system_config)},
          {:genesis_block_l2_invalid, false} <-
-           {:genesis_block_l2_invalid, is_nil(env[:genesis_block_l2]) or env[:genesis_block_l2] < 0},
+           {:genesis_block_l2_invalid, is_nil(genesis_block_l2) or genesis_block_l2 < 0},
          _ <- RollupL1ReorgMonitor.wait_for_start(__MODULE__),
          {:rpc_l1_undefined, false} <- {:rpc_l1_undefined, is_nil(optimism_l1_rpc)},
          json_rpc_named_arguments = Helper.l1_json_rpc_named_arguments(optimism_l1_rpc),
@@ -142,7 +145,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
          end_block: last_safe_block,
          chunk_size: chunk_size,
          incomplete_channels: %{},
-         genesis_block_l2: env[:genesis_block_l2],
+         genesis_block_l2: genesis_block_l2,
          block_duration: optimism_env[:block_duration],
          json_rpc_named_arguments: json_rpc_named_arguments,
          json_rpc_named_arguments_l2: json_rpc_named_arguments_l2,
@@ -1568,6 +1571,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   # from the contract. In particular, SystemConfig v4.0.0 (OP Stack Upgrade 20) removed the `batchInbox()` getter,
   # so the inbox address must be defined through INDEXER_OPTIMISM_L1_BATCH_INBOX for such chains, whereas
   # `startBlock()` and `batcherHash()` are still readable.
+  # If SystemConfig has obsolete implementation, the values are fallen back from the corresponding
+  # SuperchainConfig-backed values.
   #
   # Moreover, if INDEXER_OPTIMISM_L1_BATCH_INBOX and/or INDEXER_OPTIMISM_L1_BATCH_SUBMITTER are explicitly set,
   # they take precedence over the corresponding values read from the SystemConfig contract. This is needed when
@@ -1599,8 +1604,9 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
     error_message = &"Cannot call public getters of SystemConfig. Error: #{inspect(&1)}"
 
-    env = Application.get_all_env(:indexer)[__MODULE__]
-    fallback_start_block = Application.get_all_env(:indexer)[Indexer.Fetcher.Optimism][:start_block_l1]
+    fallback_start_block = SuperchainConfig.optimism_l1_batch_start_block()
+    fallback_inbox = SuperchainConfig.optimism_l1_batch_inbox()
+    fallback_submitter = SuperchainConfig.optimism_l1_batch_submitter()
 
     result_by_id =
       case Helper.repeated_call(
@@ -1622,8 +1628,8 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     # An explicitly configured inbox/submitter overrides the value read from the SystemConfig contract.
     # Only kicks in when the corresponding env variable holds a correct address, so the on-chain value
     # is still used by default.
-    batch_inbox = system_config_address(result_by_id[batch_inbox_request_id], env[:inbox])
-    batch_submitter = system_config_address(result_by_id[batch_submitter_request_id], env[:submitter])
+    batch_inbox = system_config_address(result_by_id[batch_inbox_request_id], fallback_inbox)
+    batch_submitter = system_config_address(result_by_id[batch_submitter_request_id], fallback_submitter)
 
     if is_nil(batch_inbox) and Map.has_key?(result_by_id, batch_submitter_request_id) do
       Logger.error(

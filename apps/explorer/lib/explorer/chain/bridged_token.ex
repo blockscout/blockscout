@@ -41,15 +41,7 @@ defmodule Explorer.Chain.BridgedToken do
   # keccak 256 from token1()
   @token1_signature "0xd21220a7"
 
-  @derive {Poison.Encoder,
-           except: [
-             :__meta__,
-             :home_token_contract_address,
-             :inserted_at,
-             :updated_at
-           ]}
-
-  @derive {Jason.Encoder,
+  @derive {JSON.Encoder,
            except: [
              :__meta__,
              :home_token_contract_address,
@@ -308,8 +300,7 @@ defmodule Explorer.Chain.BridgedToken do
         |> where([it], it.transaction_index == ^transaction_index)
         |> where(
           [it],
-          it.to_address_hash == ^omni_bridge_mediator_hash or
-            as(:to_address_mapping).address_hash == ^omni_bridge_mediator_hash
+          as(:to_address_mapping).address_hash == ^omni_bridge_mediator_hash
         )
 
       created_by_amb_mediator =

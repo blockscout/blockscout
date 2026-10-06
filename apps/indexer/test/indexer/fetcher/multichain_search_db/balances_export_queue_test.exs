@@ -164,7 +164,7 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
         Conn.resp(
           conn,
           200,
-          Jason.encode!(%{"status" => "ok"})
+          Utils.JSON.encode!(%{"status" => "ok"})
         )
       end)
 
@@ -332,9 +332,9 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
       Tesla.Test.expect_tesla_call(
         times: 1,
         returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
-          case Jason.decode(body) do
+          case Utils.JSON.decode(body) do
             _ ->
-              {:ok, %Tesla.Env{status: 200, body: Jason.encode!(%{"status" => "ok"})}}
+              {:ok, %Tesla.Env{status: 200, body: Utils.JSON.encode!(%{"status" => "ok"})}}
           end
         end
       )
@@ -351,12 +351,12 @@ defmodule Indexer.Fetcher.MultichainSearchDb.BalancesExportQueueTest do
     Tesla.Test.expect_tesla_call(
       times: 2,
       returns: fn %{url: "http://localhost:1234/api/v1/import:batch", body: body}, _opts ->
-        case Jason.decode(body) do
+        case Utils.JSON.decode(body) do
           {:ok, %{"address_coin_balances" => [%{"address_hash" => ^address_hash_string}]}} ->
-            {:ok, %Tesla.Env{status: 500, body: Jason.encode!(%{"code" => 0, "message" => "Error"})}}
+            {:ok, %Tesla.Env{status: 500, body: Utils.JSON.encode!(%{"code" => 0, "message" => "Error"})}}
 
           _ ->
-            {:ok, %Tesla.Env{status: 200, body: Jason.encode!(%{"status" => "ok"})}}
+            {:ok, %Tesla.Env{status: 200, body: Utils.JSON.encode!(%{"status" => "ok"})}}
         end
       end
     )

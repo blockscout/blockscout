@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Scroll.Bridge do
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "ScrollBridge",
     description: "Scroll Bridge item struct.",
     type: :object,
     properties: %{

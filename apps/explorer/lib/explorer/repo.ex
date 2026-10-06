@@ -144,7 +144,6 @@ defmodule Explorer.Repo do
         Explorer.Repo.Celo,
         Explorer.Repo.Eden,
         Explorer.Repo.Filecoin,
-        Explorer.Repo.Mud,
         Explorer.Repo.Optimism,
         Explorer.Repo.PolygonEdge,
         Explorer.Repo.RSK,

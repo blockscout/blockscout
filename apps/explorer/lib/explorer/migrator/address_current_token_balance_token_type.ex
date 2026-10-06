@@ -45,7 +45,9 @@ defmodule Explorer.Migrator.AddressCurrentTokenBalanceTokenType do
         update: [set: [token_type: token.type]]
       )
 
-    Repo.update_all(query, [], timeout: :infinity)
+    {count, _} = Repo.update_all(query, [], timeout: :infinity)
+
+    count
   end
 
   @impl FillingMigration

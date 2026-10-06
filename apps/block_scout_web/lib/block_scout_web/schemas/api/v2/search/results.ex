@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Search.Results do
   """
   require OpenApiSpex
 
-  alias BlockScoutWeb.Schemas.API.V2.Search.ResultItem
+  alias BlockScoutWeb.Schemas.API.V2.Search.Result
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
@@ -13,9 +13,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Search.Results do
     description: "Search results containing blocks, transactions, and addresses",
     type: :object,
     properties: %{
-      items: %Schema{type: :array, items: ResultItem},
+      items: %Schema{type: :array, items: Result.Item},
       next_page_params: %Schema{type: :object, nullable: true, additionalProperties: true}
     },
-    required: []
+    required: [:items, :next_page_params]
   })
 end

@@ -12,7 +12,7 @@ defmodule Explorer.GraphQL do
       where: 3
     ]
 
-  alias Explorer.{Chain, Repo}
+  alias Explorer.{Chain, Helper, Repo}
 
   alias Explorer.Chain.{
     Hash,
@@ -118,13 +118,17 @@ defmodule Explorer.GraphQL do
 
   Orders token transfers by descending block number.
   """
-  @spec list_token_transfers_query(Hash.t()) :: Ecto.Query.t()
-  def list_token_transfers_query(%Hash{byte_count: unquote(Hash.Address.byte_count())} = token_contract_address_hash) do
+  @spec list_token_transfers_query(Hash.t(), Keyword.t()) :: Ecto.Query.t()
+  def list_token_transfers_query(
+        %Hash{byte_count: unquote(Hash.Address.byte_count())} = token_contract_address_hash,
+        options \\ []
+      ) do
     from(
       tt in TokenTransfer,
       inner_join: t in assoc(tt, :transaction),
       where: tt.token_contract_address_hash == ^token_contract_address_hash,
       order_by: [desc: tt.block_number, desc: tt.log_index]
     )
+    |> Helper.maybe_hide_scam_addresses_for_token_transfers(options)
   end
 end

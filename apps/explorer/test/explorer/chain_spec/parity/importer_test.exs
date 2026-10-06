@@ -16,11 +16,11 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
 
   @chain_spec "#{File.cwd!()}/test/support/fixture/chain_spec/foundation.json"
               |> File.read!()
-              |> Jason.decode!()
+              |> Utils.JSON.decode!()
 
   @chain_classic_spec "#{File.cwd!()}/test/support/fixture/chain_spec/classic.json"
                       |> File.read!()
-                      |> Jason.decode!()
+                      |> Utils.JSON.decode!()
 
   describe "emission_rewards/1" do
     test "fetches and formats reward ranges" do

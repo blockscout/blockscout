@@ -10,6 +10,7 @@ defmodule Explorer.Chain.SmartContract.Schema do
   alias Explorer.Chain.{
     Address,
     Address.Reputation,
+    Data,
     Hash,
     SmartContractAdditionalSource
   }
@@ -43,7 +44,7 @@ defmodule Explorer.Chain.SmartContract.Schema do
         field(:compiler_version, :string, null: false)
         field(:optimization, :boolean, null: false)
         field(:contract_source_code, :string, null: false)
-        field(:constructor_arguments, :string)
+        field(:constructor_arguments, Data)
         field(:evm_version, :string)
         embeds_many(:external_libraries, ExternalLibrary, on_replace: :delete)
         field(:abi, {:array, :map})
@@ -125,6 +126,7 @@ defmodule Explorer.Chain.SmartContract do
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Helper
+  alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
   alias Explorer.SmartContract.Solidity.Verifier
 
   @typep api? :: {:api?, true | false}
@@ -852,6 +854,7 @@ defmodule Explorer.Chain.SmartContract do
           smart_contract
       ) do
     if args = Verifier.parse_constructor_arguments_for_sourcify_contract(address_hash, smart_contract.abi) do
+      args = SolidityPublisher.clear_constructor_arguments(args)
       smart_contract |> __MODULE__.changeset(%{constructor_arguments: args}) |> Repo.update()
       %__MODULE__{smart_contract | constructor_arguments: args}
     else
@@ -868,6 +871,7 @@ defmodule Explorer.Chain.SmartContract do
       ) do
     if args =
          Verifier.parse_constructor_arguments_for_sourcify_contract(address_hash, smart_contract.abi, deployed_bytecode) do
+      args = SolidityPublisher.clear_constructor_arguments(args)
       smart_contract |> __MODULE__.changeset(%{constructor_arguments: args}) |> Repo.update()
       %Address{address | smart_contract: %__MODULE__{smart_contract | constructor_arguments: args}}
     else

@@ -18,19 +18,22 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
     requests = Helper.decode_requests(json)
     method = requests |> List.first(%{}) |> Map.get("method")
     l1? = Keyword.get(options, :layer) == :l1
+    request_compression_enabled? = Helper.request_compression_enabled?(method)
 
     Instrumenter.json_rpc_requests(method, l1?)
     Helper.track_json_rpc_calls(requests, l1?)
     Helper.track_eth_call_methods(requests, l1?)
 
-    case do_post(url, json, headers, options) do
+    case do_post(url, request_compression_enabled?, json, headers, options) do
       {:ok, %Tesla.Env{body: body, status: status_code, headers: headers}} ->
-        with {:ok, decoded_body} <- Jason.decode(body),
+        with {:ok, decoded_body} <- Utils.JSON.decode(body),
              true <- Helper.response_body_has_error?(decoded_body) do
           Instrumenter.json_rpc_errors(method, l1?)
         end
 
-        {:ok, %{body: Helper.try_unzip(body, headers), status_code: status_code}}
+        response_body = if request_compression_enabled?, do: body, else: Helper.try_unzip(body, headers)
+
+        {:ok, %{body: response_body, status_code: status_code}}
 
       {:error, error} ->
         Instrumenter.json_rpc_errors(method, l1?)
@@ -41,8 +44,10 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
 
   def json_rpc(url, _json, _headers, _options) when is_nil(url), do: {:error, "URL is nil"}
 
-  defp do_post(url, json, headers, options) do
-    Tesla.post(TeslaHelper.client(options), url, json,
+  defp do_post(url, request_compression_enabled?, json, headers, options) do
+    client = TeslaHelper.client(options, compression_middleware(request_compression_enabled?))
+
+    Tesla.post(client, url, json,
       headers: headers,
       opts: TeslaHelper.request_opts(options)
     )
@@ -70,7 +75,17 @@ defmodule EthereumJSONRPC.HTTP.Tesla do
 
   defp log_normalized_timeout(source, url, headers, options) do
     Logger.warning(
-      "Normalized timeout in do_post/4 source=#{source} url=#{inspect(url)} timeout=#{inspect(options[:timeout])} recv_timeout=#{inspect(options[:recv_timeout])} headers_count=#{length(headers)}"
+      "Normalized timeout in do_post/5 source=#{source} url=#{inspect(url)} timeout=#{inspect(options[:timeout])} recv_timeout=#{inspect(options[:recv_timeout])} headers_count=#{length(headers)}"
     )
   end
+
+  defp compression_middleware(true) do
+    max_body_size =
+      Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.HTTP, [])
+      |> Keyword.get(:response_decompression_max_body_size, 100 * 1024 * 1024)
+
+    [{Tesla.Middleware.Compression, format: "gzip", max_body_size: max_body_size}]
+  end
+
+  defp compression_middleware(false), do: []
 end

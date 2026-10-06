@@ -88,6 +88,8 @@ defmodule Explorer.Migrator.CeloAggregatedElectionRewards do
         params: aggregates
       }
     })
+
+    Enum.count(aggregates)
   end
 
   @impl FillingMigration

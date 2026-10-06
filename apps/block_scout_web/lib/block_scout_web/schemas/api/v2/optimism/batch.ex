@@ -6,9 +6,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Batch do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.General
+  alias BlockScoutWeb.Schemas.API.V2.Optimism.Batch.DataContainer
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(%{
+    title: "OptimismBatch",
     description: "Optimism Batch struct.",
     type: :object,
     properties: %{
@@ -20,11 +22,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Optimism.Batch do
         items: General.FullHash,
         nullable: false
       },
-      batch_data_container: %Schema{
-        type: :string,
-        enum: ["in_blob4844", "in_celestia", "in_eigenda", "in_alt_da", "in_calldata"],
-        nullable: true
-      },
+      batch_data_container: %Schema{allOf: [DataContainer], nullable: true},
       l2_end_block_number: %Schema{type: :integer},
       l2_start_block_number: %Schema{type: :integer}
     },

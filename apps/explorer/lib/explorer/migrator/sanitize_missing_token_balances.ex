@@ -54,19 +54,22 @@ defmodule Explorer.Migrator.SanitizeMissingTokenBalances do
         {[ctb_id | ctb_acc], [tb_id | tb_acc]}
       end)
 
-    Repo.transaction(fn ->
-      ctb_query = from(ctb in CurrentTokenBalance, where: ctb.id in ^ctb_ids)
+    {:ok, {count, _}} =
+      Repo.transaction(fn ->
+        ctb_query = from(ctb in CurrentTokenBalance, where: ctb.id in ^ctb_ids)
 
-      Repo.delete_all(ctb_query, timeout: :infinity)
+        Repo.delete_all(ctb_query, timeout: :infinity)
 
-      tb_query =
-        from(tb in TokenBalance,
-          where: tb.id in ^tb_ids,
-          update: [set: [value: nil, value_fetched_at: nil]]
-        )
+        tb_query =
+          from(tb in TokenBalance,
+            where: tb.id in ^tb_ids,
+            update: [set: [value: nil, value_fetched_at: nil]]
+          )
 
-      Repo.update_all(tb_query, [], timeout: :infinity)
-    end)
+        Repo.update_all(tb_query, [], timeout: :infinity)
+      end)
+
+    count
   end
 
   @impl FillingMigration

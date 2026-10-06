@@ -109,9 +109,9 @@ defmodule Explorer.Migrator.FillingMigration do
       usage during migration.
 
     ## Returns
-    N/A
+    Number of processed elements.
   """
-  @callback update_batch([any()]) :: any()
+  @callback update_batch([any()]) :: non_neg_integer()
 
   @doc """
     This callback updates the migration completion status in the cache.
@@ -279,10 +279,12 @@ defmodule Explorer.Migrator.FillingMigration do
             {:stop, :normal, new_state}
 
           {identifiers, new_state} ->
-            identifiers
-            |> Enum.chunk_every(batch_size())
-            |> Enum.map(&run_task/1)
-            |> Task.await_many(:infinity)
+            migrated_count =
+              identifiers
+              |> Enum.chunk_every(batch_size())
+              |> Enum.map(&run_task/1)
+              |> Task.await_many(:infinity)
+              |> Enum.sum()
 
             unquote do
               if !opts[:skip_meta_update?] do
@@ -292,7 +294,10 @@ defmodule Explorer.Migrator.FillingMigration do
               end
             end
 
-            schedule_batch_migration()
+            case migrated_count do
+              0 -> schedule_batch_migration(0)
+              _ -> schedule_batch_migration()
+            end
 
             {:noreply, new_state}
         end

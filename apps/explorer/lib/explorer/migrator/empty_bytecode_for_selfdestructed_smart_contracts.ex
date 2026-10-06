@@ -64,7 +64,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
   @impl FillingMigration
   def update_batch(block_numbers) do
     if Enum.empty?(block_numbers) do
-      {:ok, []}
+      0
     else
       # Find all selfdestruct internal transactions in these blocks
       selfdestruct_query =
@@ -74,14 +74,14 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
         |> where([it], it.type == :selfdestruct)
         |> select([it], %{
           transaction_index: it.transaction_index,
-          from_address_hash: coalesce(it.from_address_hash, as(:from_address_mapping).address_hash),
+          from_address_hash: as(:from_address_mapping).address_hash,
           block_number: it.block_number
         })
 
       selfdestruct_transactions = Repo.all(selfdestruct_query, timeout: :infinity)
 
       if Enum.empty?(selfdestruct_transactions) do
-        {:ok, []}
+        0
       else
         # Get unique transaction block numbers and indexes to check for create/create2
         transaction_identifiers =
@@ -98,8 +98,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
           |> select([it], %{
             block_number: it.block_number,
             transaction_index: it.transaction_index,
-            created_contract_address_hash:
-              coalesce(it.created_contract_address_hash, as(:created_contract_address_mapping).address_hash)
+            created_contract_address_hash: as(:created_contract_address_mapping).address_hash
           })
 
         created_contracts = Repo.all(create_query, timeout: :infinity)
@@ -120,7 +119,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
           |> Enum.uniq()
 
         if Enum.empty?(addresses_to_empty) do
-          {:ok, []}
+          0
         else
           # Only update addresses that still have non-empty contract_code
           update_query =
@@ -142,7 +141,7 @@ defmodule Explorer.Migrator.EmptyBytecodeForSelfdestructedSmartContracts do
             )
           end
 
-          {:ok, count}
+          count
         end
       end
     end

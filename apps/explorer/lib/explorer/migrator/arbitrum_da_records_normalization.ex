@@ -56,7 +56,9 @@ defmodule Explorer.Migrator.ArbitrumDaRecordsNormalization do
         }
       end)
 
-    Repo.insert_all(BatchToDaBlob, records, timeout: :infinity)
+    {count, _} = Repo.insert_all(BatchToDaBlob, records, timeout: :infinity)
+
+    count
   end
 
   @impl FillingMigration

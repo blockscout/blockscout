@@ -42,13 +42,17 @@ defmodule Explorer.Migrator.ReindexBlocksWithMissingTransactions do
 
   @impl FillingMigration
   def update_batch(block_numbers) do
-    Block
-    |> where([b], b.number in ^block_numbers)
-    |> where([b], b.consensus == true)
-    |> where([b], b.refetch_needed == false)
-    |> select([b], b.number)
-    |> Repo.all()
-    |> do_update()
+    blocks =
+      Block
+      |> where([b], b.number in ^block_numbers)
+      |> where([b], b.consensus == true)
+      |> where([b], b.refetch_needed == false)
+      |> select([b], b.number)
+      |> Repo.all()
+
+    do_update(blocks)
+
+    Enum.count(blocks)
   end
 
   @impl FillingMigration

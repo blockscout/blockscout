@@ -54,4 +54,6 @@ The report should include:
 6. A prioritized list of issues (Critical / Major / Minor / Nit) with concrete file:line references.
 7. Suggested fixes (described, not applied).
 
+Apply the finding-quality gates in `references/inspection-checklist.md` §7 before finalizing items (6) and (7).
+
 Keep the report focused and actionable. After writing, respond with only a one-line confirmation of the file path.
