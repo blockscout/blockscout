@@ -10,8 +10,8 @@ permissions:
   packages: write
 
 env:
-  OTP_VERSION: '27.3.4.6'
-  ELIXIR_VERSION: '1.19.4'
+  OTP_VERSION: '28.5'
+  ELIXIR_VERSION: '1.19.6'
 
 jobs:
   push_to_registry:
