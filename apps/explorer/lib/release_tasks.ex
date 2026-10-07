@@ -5,6 +5,7 @@ defmodule Explorer.ReleaseTasks do
   """
 
   alias Ecto.Migrator
+  alias Explorer.Utility.VersionUpgrade
 
   @start_apps [
     :crypto,
@@ -78,6 +79,11 @@ defmodule Explorer.ReleaseTasks do
   end
 
   defp run_migrations do
+    # must precede the migrations of all repos: a rejected upgrade has to leave
+    # the database untouched, so that the previous version can be run again
+    IO.puts("Validating version upgrade..")
+    VersionUpgrade.validate_before_migrations()
+
     Enum.each(repos(), &run_migrations_for/1)
   end
 
