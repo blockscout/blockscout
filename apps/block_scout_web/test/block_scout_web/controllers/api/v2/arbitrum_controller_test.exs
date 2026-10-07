@@ -1019,19 +1019,14 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
       <<0x2E, 0x56, 0x7B, 0x36>> <> args
     end
 
-    # Inserts a confirmed Arbitrum batch + block linkage so that
+    # Inserts a confirmation of rollup blocks so that
     # `SettlementReader.highest_confirmed_block/0` returns a block whose `:send_count`
     # is the supplied value. Used to drive `get_size_for_proof_from_database/0`.
     defp seed_highest_confirmed_block!(send_count) do
       lifecycle_tx = insert(:arbitrum_lifecycle_transaction)
       block = insert(:block, send_count: send_count, consensus: true)
-      batch = insert(:arbitrum_l1_batch)
 
-      insert(:arbitrum_batch_block,
-        batch_number: batch.number,
-        block_number: block.number,
-        confirmation_id: lifecycle_tx.id
-      )
+      insert(:arbitrum_rollup_block_confirmation, top: block.number, confirmation_id: lifecycle_tx.id)
 
       block
     end

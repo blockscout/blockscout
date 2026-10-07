@@ -31,6 +31,7 @@ defmodule Explorer.Factory do
   alias Explorer.Chain.Arbitrum.L1Batch, as: ArbitrumL1Batch
   alias Explorer.Chain.Arbitrum.LifecycleTransaction, as: ArbitrumLifecycleTransaction
   alias Explorer.Chain.Arbitrum.Message, as: ArbitrumMessage
+  alias Explorer.Chain.Arbitrum.RollupBlockConfirmation, as: ArbitrumRollupBlockConfirmation
   alias Explorer.Chain.Scroll.Batch, as: ScrollBatch
   alias Explorer.Chain.Scroll.BatchBundle, as: ScrollBatchBundle
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
@@ -2115,5 +2116,14 @@ defmodule Explorer.Factory do
   # without overrides will raise.
   def arbitrum_batch_transaction_factory do
     %ArbitrumBatchTransaction{}
+  end
+
+  # A confirmation of the rollup blocks up to `top`. Callers must supply `:top`.
+  # The factory inserts a lifecycle transaction for the confirmation when the
+  # override `:confirmation_id` is absent.
+  def arbitrum_rollup_block_confirmation_factory do
+    %ArbitrumRollupBlockConfirmation{
+      confirmation_id: insert(:arbitrum_lifecycle_transaction).id
+    }
   end
 end

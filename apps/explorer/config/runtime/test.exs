@@ -148,7 +148,9 @@ for migrator <- [
       Explorer.Migrator.HeavyDbIndexOperation.DropLogsDepositsWithdrawalsIndex,
       Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsFirstTopicIdFkey,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex
+      Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.DropArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.RemoveArbitrumBatchL2BlocksConfirmationId
     ] do
   config :explorer, migrator, enabled: false
 end

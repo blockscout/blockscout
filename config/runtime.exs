@@ -930,6 +930,12 @@ config :explorer, Explorer.Migrator.ArbitrumDaRecordsNormalization,
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
   enabled: ConfigHelper.chain_type() == :arbitrum
 
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
+  enabled: ConfigHelper.chain_type() == :arbitrum
+
+config :explorer, Explorer.Migrator.HeavyDbIndexOperation.RemoveArbitrumBatchL2BlocksConfirmationId,
+  enabled: ConfigHelper.chain_type() == :arbitrum
+
 config :explorer, Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsOperatorFeeConstantIndex,
   enabled: ConfigHelper.chain_type() == :optimism
 

@@ -24,7 +24,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       transactions.
     - `:missing_batches`: Inspects for missing batches of rollup transactions.
     - `:historical_confirmations`: Handles historical confirmations of
-      rollup blocks.
+      rollup blocks, below the start point of the new confirmations discovery.
     - `:historical_executions`: Manages historical executions of L2-to-L1
       messages.
     - `:settlement_transactions_finalization`: Finalizes the status of lifecycle
@@ -33,15 +33,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     Task scheduling behavior:
     Each task is responsible for its own re-scheduling. Some tasks (historical ones)
     can be conditionally re-scheduled based on their completion status. The interval
-    between task executions is dynamic and can vary depending on:
-    - Task's returned status (e.g., :ok, :confirmation_missed, :not_ready)
-    - Current state of the system
+    between task executions depends on:
     - Type of the task (new vs historical)
     - Failure frequency of the task
-
-    For example, confirmation tasks use longer intervals when data is not yet
-    available (:confirmation_missed status) and shorter intervals when data is
-    ready for processing.
 
     Tasks that fail abnormally within a configurable threshold period will enter a
     cooldown state for 10 minutes to prevent resource exhaustion.
@@ -71,7 +65,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
     Discovery of rollup block confirmations is executed by requesting logs on L1
     that correspond to the `SendRootUpdated` event emitted by the Arbitrum `Outbox`
-    contract.
+    contract. Each event gives one row of the table of confirmations, and the
+    processes keep their cursors in the database. See
+    `Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks`.
 
     Discovery of the L2-to-L1 message executions occurs by requesting logs on L1
     that correspond to the `OutBoxTransactionExecuted` event emitted by the
@@ -377,8 +373,6 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     new_batches_start_block = DbSettlement.l1_block_to_discover_latest_committed_batch(l1_start_block)
     historical_batches_end_block = DbSettlement.l1_block_to_discover_earliest_committed_batch(l1_start_block - 1)
 
-    new_confirmations_start_block = DbSettlement.l1_block_of_latest_confirmed_block(l1_start_block)
-
     new_executions_start_block = DbMessages.l1_block_to_discover_latest_execution(l1_start_block)
     historical_executions_end_block = DbMessages.l1_block_to_discover_earliest_execution(l1_start_block - 1)
 
@@ -400,13 +394,13 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
         end_block: historical_batches_end_block
         # lowest_l1_block_for_commitments: nil <- will be added during handle_historical_batches
       },
+      # The cursors of the confirmations discovery live in the database. The tasks
+      # read them at their first run, or compute the start point if no cursor exists.
       new_confirmations: %{
-        start_block: new_confirmations_start_block
+        cursor: nil
       },
       historical_confirmations: %{
-        end_block: nil,
-        start_block: nil
-        # lowest_l1_block_for_confirmations: nil <- will be added during handle_historical_confirmations
+        cursor: nil
       },
       new_executions: %{
         start_block: new_executions_start_block
@@ -466,46 +460,16 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:ok, updated_state}
   end
 
-  # Handles the discovery of new confirmations for rollup blocks. Uses different intervals
-  # based on status: standard interval for :confirmation_missed, catchup interval for :ok,
-  # and DB migration check interval for :not_ready. When a confirmation is missed and
-  # historical confirmations task was completed, re-enables and reschedules the historical
-  # confirmations task with updated interval.
+  # Handles the discovery of new confirmations for rollup blocks
   defp handle_new_confirmations(state) do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
-    {status, updated_state} = ConfirmationsDiscoveryTasks.check_new(state)
+    {:ok, updated_state} = ConfirmationsDiscoveryTasks.check_new(state)
 
-    # Schedule next run for this task
-    # The same interval is used when `:ok` or `:confirmation_missed` statuses are returned,
-    # expecting that a specific DB migration task interval is returned for `:not_ready` status
-    next_run_time =
-      now +
-        ConfirmationsDiscoveryTasks.select_interval_by_status(status, %{
-          standard: updated_state.intervals[:new_confirmations],
-          catchup: updated_state.intervals[:new_confirmations]
-        })
-
+    next_run_time = now + updated_state.intervals[:new_confirmations]
     BufferedTask.buffer(__MODULE__, [{next_run_time, :new_confirmations}], false)
 
-    # If confirmation was missed and historical confirmations task is completed,
-    # reset its completion flag and schedule it
-    if status == :confirmation_missed and updated_state.completed_tasks.historical_confirmations do
-      # Reset completion flag and update interval to match new confirmations
-      updated_completed_tasks = Map.put(updated_state.completed_tasks, :historical_confirmations, false)
-
-      updated_intervals =
-        Map.put(updated_state.intervals, :historical_confirmations, updated_state.intervals.new_confirmations)
-
-      final_state = %{updated_state | completed_tasks: updated_completed_tasks, intervals: updated_intervals}
-
-      next_run_time = now + final_state.intervals[:historical_confirmations]
-      BufferedTask.buffer(__MODULE__, [{next_run_time, :historical_confirmations}], false)
-
-      {:ok, final_state}
-    else
-      {:ok, updated_state}
-    end
+    {:ok, updated_state}
   end
 
   # Handles the discovery of new L2-to-L1 message executions
@@ -545,28 +509,9 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     run_worker_with_conditional_rescheduling(
       state,
       :historical_confirmations,
-      &ConfirmationsDiscoveryTasks.check_unprocessed/1,
-      &ConfirmationsDiscoveryTasks.historical_confirmations_discovery_completed?/1,
-      &select_historical_confirmations_interval/2,
-      true
+      &ConfirmationsDiscoveryTasks.check_historical/1,
+      &ConfirmationsDiscoveryTasks.historical_confirmations_discovery_completed?/1
     )
-  end
-
-  # Selects interval for historical confirmations processing based on worker status.
-  # For :confirmation_missed status, uses longer :new_confirmations interval since data
-  # is not yet available. For :not_ready status, uses DB migration check interval to
-  # periodically check readiness. For all other statuses, uses shorter
-  # :historical_confirmations interval since data is available for rapid processing.
-  @spec select_historical_confirmations_interval(:confirmation_missed | :ok | :not_ready, %{
-          :intervals => fetcher_tasks_intervals(),
-          optional(any()) => any()
-        }) ::
-          non_neg_integer()
-  defp select_historical_confirmations_interval(status, state) do
-    ConfirmationsDiscoveryTasks.select_interval_by_status(status, %{
-      standard: state.intervals[:new_confirmations],
-      catchup: state.intervals[:historical_confirmations]
-    })
   end
 
   # Handles the discovery of historical L2-to-L1 message executions
@@ -598,8 +543,6 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   # - `task_tag`: The identifier of the stoppable fetcher task
   # - `worker_function`: The function to execute the task's work
   # - `completion_check_function`: The function to check if the task is completed
-  # - `interval_selection_function`: Optional function to determine the next run interval
-  # - `any_status?`: Whether to accept any worker status or only :ok
   #
   # ## Returns
   # - `{:ok, updated_state}` with the new state after task execution
@@ -607,9 +550,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
           %{:completed_tasks => completion_status(), :intervals => fetcher_tasks_intervals(), optional(any()) => any()},
           stoppable_fetcher_task(),
           function(),
-          function(),
-          function() | nil,
-          boolean()
+          function()
         ) ::
           {:ok,
            %{:completed_tasks => completion_status(), :intervals => fetcher_tasks_intervals(), optional(any()) => any()}}
@@ -617,37 +558,20 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
          state,
          task_tag,
          worker_function,
-         completion_check_function,
-         interval_selection_function \\ nil,
-         any_status? \\ false
+         completion_check_function
        ) do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
-    {worker_status, state_after_worker_run} = worker_function.(state)
 
-    # It allows to handle two cases when there is a strict requirement for the worker's status
-    # or when the worker's status is not important
-    case {any_status?, worker_status} do
-      {true, _} ->
-        nil
-
-      {false, :ok} ->
-        nil
-
-      _ ->
-        raise("Worker #{worker_function} returned unexpected status #{worker_status}")
-    end
+    state_after_worker_run =
+      case worker_function.(state) do
+        {:ok, new_state} -> new_state
+        {status, _} -> raise("Worker #{inspect(worker_function)} returned unexpected status #{inspect(status)}")
+      end
 
     updated_state = update_completed_tasks(state_after_worker_run, task_tag, completion_check_function)
 
     if rescheduled?(task_tag, updated_state) do
-      interval =
-        if interval_selection_function do
-          interval_selection_function.(worker_status, updated_state)
-        else
-          updated_state.intervals[task_tag]
-        end
-
-      next_run_time = now + interval
+      next_run_time = now + updated_state.intervals[task_tag]
       BufferedTask.buffer(__MODULE__, [{next_run_time, task_tag}], false)
     end
 

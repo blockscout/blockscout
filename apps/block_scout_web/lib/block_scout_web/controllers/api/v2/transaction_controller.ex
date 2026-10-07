@@ -167,7 +167,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           necessity_by_association_with_actions
           |> Map.put(:arbitrum_batch, :optional)
           |> Map.put(:arbitrum_commitment_transaction, :optional)
-          |> Map.put(:arbitrum_confirmation_transaction, :optional)
           |> Map.put(:arbitrum_message_to_l2, :optional)
           |> Map.put(:arbitrum_message_from_l2, :optional)
 
@@ -219,7 +218,20 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           preloaded
           |> Instance.preload_nft(@api_true)
           |> maybe_preload_ens_and_metadata()
+          |> maybe_put_arbitrum_confirmation_transaction()
       })
+    end
+  end
+
+  # Fills the virtual field `arbitrum_confirmation_transaction` of the transaction
+  # for the Arbitrum chain type. The confirmation of a rollup block is not an
+  # association of the transaction, so the controller reads it after the main query.
+  @spec maybe_put_arbitrum_confirmation_transaction(Transaction.t()) :: Transaction.t()
+  defp maybe_put_arbitrum_confirmation_transaction(transaction) do
+    if Application.get_env(:explorer, :chain_type) == :arbitrum do
+      ArbitrumSettlementReader.put_confirmation_transaction(transaction)
+    else
+      transaction
     end
   end
 

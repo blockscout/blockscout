@@ -87,8 +87,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       @chain_type_transaction_necessity_by_association %{}
       @chain_type_block_necessity_by_association %{
         :arbitrum_batch => :optional,
-        :arbitrum_commitment_transaction => :optional,
-        :arbitrum_confirmation_transaction => :optional
+        :arbitrum_commitment_transaction => :optional
       }
 
     :zilliqa ->
@@ -157,7 +156,19 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     with {:ok, block} <- block_param_to_block(block_hash_or_number, @block_params) do
       conn
       |> put_status(200)
-      |> render(:block, %{block: block})
+      |> render(:block, %{block: maybe_put_arbitrum_confirmation_transaction(block)})
+    end
+  end
+
+  # Fills the virtual field `arbitrum_confirmation_transaction` of the block for the
+  # Arbitrum chain type. The confirmation of a rollup block is not an association of
+  # the block, so the controller reads it after the main query.
+  @spec maybe_put_arbitrum_confirmation_transaction(Block.t()) :: Block.t()
+  defp maybe_put_arbitrum_confirmation_transaction(block) do
+    if Application.get_env(:explorer, :chain_type) == :arbitrum do
+      ArbitrumSettlementReader.put_confirmation_transaction(block)
+    else
+      block
     end
   end
 

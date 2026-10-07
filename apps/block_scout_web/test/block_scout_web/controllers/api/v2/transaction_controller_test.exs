@@ -3840,6 +3840,40 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{"errors" => [_]} = json_response(request, 422)
       end
     end
+
+    # The confirmation of a transaction is the confirmation of its rollup block.
+    # It comes from the table of confirmations: the row with the lowest `top` not
+    # below the block.
+    describe "/transactions/{transaction_hash} with Arbitrum confirmations" do
+      test "shows the confirmation transaction of a transaction in a confirmed block", %{conn: conn} do
+        transaction = :transaction |> insert() |> with_block()
+        confirmation = insert(:arbitrum_lifecycle_transaction)
+        insert(:arbitrum_rollup_block_confirmation, top: transaction.block_number, confirmation_id: confirmation.id)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+        assert response = json_response(request, 200)
+        assert response["arbitrum"]["confirmation_transaction"]["hash"] == to_string(confirmation.hash)
+        assert response["arbitrum"]["status"] == "Confirmed on base"
+      end
+
+      test "shows no confirmation transaction for a transaction above the highest confirmed block", %{conn: conn} do
+        transaction = :transaction |> insert() |> with_block()
+        insert(:arbitrum_rollup_block_confirmation, top: transaction.block_number - 1)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+        assert response = json_response(request, 200)
+        assert is_nil(response["arbitrum"]["confirmation_transaction"]["hash"])
+      end
+
+      test "shows no confirmation transaction for a pending transaction", %{conn: conn} do
+        transaction = insert(:transaction)
+        insert(:arbitrum_rollup_block_confirmation, top: 1_000_000)
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+        assert response = json_response(request, 200)
+        assert is_nil(response["arbitrum"]["confirmation_transaction"]["hash"])
+      end
+    end
   end
 
   describe "/transactions/{transaction_hash}/preview" do

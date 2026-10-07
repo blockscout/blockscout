@@ -163,7 +163,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     # executions on the parent chain cannot occur before their corresponding L2
     # blocks are confirmed, this provides a safe lower bound for message execution
     # discovery.
-    {lowest_l1_block, new_state} = ConfirmationsTasks.get_lowest_l1_block_for_confirmations(state)
+    lowest_l1_block = ConfirmationsTasks.lowest_l1_block_for_confirmations(state)
 
     data_for_next_iteration =
       if end_block >= lowest_l1_block do
@@ -182,7 +182,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
         %{end_block: lowest_l1_block - 1}
       end
 
-    {:ok, ArbitrumHelper.update_fetcher_task_data(new_state, :historical_executions, data_for_next_iteration)}
+    {:ok, ArbitrumHelper.update_fetcher_task_data(state, :historical_executions, data_for_next_iteration)}
   end
 
   @doc """
@@ -208,9 +208,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
           task_data: %{historical_executions: %{end_block: end_block}}
         } = state
       ) do
-    {lowest_l1_block, _} = ConfirmationsTasks.get_lowest_l1_block_for_confirmations(state)
-
-    end_block < lowest_l1_block
+    end_block < ConfirmationsTasks.lowest_l1_block_for_confirmations(state)
   end
 
   # Discovers and imports execution transactions for L2-to-L1 messages within a specified L1 block range.

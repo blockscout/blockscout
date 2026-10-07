@@ -33,9 +33,11 @@ defmodule Explorer.Chain.Arbitrum.Reader.API.Settlement do
   }
 
   alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain.Arbitrum.LifecycleTransaction
   alias Explorer.Chain.Arbitrum.Reader.Common
   alias Explorer.Chain.Block, as: FullBlock
   alias Explorer.Chain.Cache.BackgroundMigrations, as: MigrationStatuses
+  alias Explorer.Chain.Transaction
 
   @api_true [api?: true]
 
@@ -453,6 +455,50 @@ defmodule Explorer.Chain.Arbitrum.Reader.API.Settlement do
   @spec highest_confirmed_block() :: FullBlock.block_number() | nil
   def highest_confirmed_block do
     Common.highest_confirmed_block(@api_true)
+  end
+
+  @doc """
+    Retrieves the parent chain transaction that confirms the given rollup block.
+
+    It calls `Common.confirmation_transaction_for_rollup_block/2` with `@api_true`
+    option to use replica database.
+
+    ## Parameters
+    - `rollup_block_number`: The number of the rollup block.
+
+    ## Returns
+    - The `Explorer.Chain.Arbitrum.LifecycleTransaction` that confirms the block, or
+      `nil` if the block is not confirmed.
+  """
+  @spec confirmation_transaction_for_rollup_block(FullBlock.block_number()) :: LifecycleTransaction.t() | nil
+  def confirmation_transaction_for_rollup_block(rollup_block_number) do
+    Common.confirmation_transaction_for_rollup_block(rollup_block_number, @api_true)
+  end
+
+  @doc """
+    Fills the virtual field `arbitrum_confirmation_transaction` of a block or a transaction.
+
+    The field holds the parent chain transaction that confirms the rollup block of
+    the entity, or `nil` if the block is not confirmed. A transaction without a
+    block gets `nil`.
+
+    ## Parameters
+    - `entity`: A `Explorer.Chain.Block` or a `Explorer.Chain.Transaction`.
+
+    ## Returns
+    - The same entity with the field `arbitrum_confirmation_transaction` filled.
+  """
+  @spec put_confirmation_transaction(FullBlock.t() | Transaction.t()) :: FullBlock.t() | Transaction.t()
+  def put_confirmation_transaction(%FullBlock{number: number} = block) do
+    Map.put(block, :arbitrum_confirmation_transaction, confirmation_transaction_for_rollup_block(number))
+  end
+
+  def put_confirmation_transaction(%Transaction{block_number: nil} = transaction) do
+    Map.put(transaction, :arbitrum_confirmation_transaction, nil)
+  end
+
+  def put_confirmation_transaction(%Transaction{block_number: block_number} = transaction) do
+    Map.put(transaction, :arbitrum_confirmation_transaction, confirmation_transaction_for_rollup_block(block_number))
   end
 
   @doc """
