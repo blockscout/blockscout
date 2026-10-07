@@ -5,6 +5,10 @@ defmodule Indexer.Fetcher.PendingTransaction do
 
   *NOTE*: Pending transactions are imported with with `on_conflict: :nothing`, so that they don't overwrite their own
   validated version that may make it to the database first.
+
+  After a successful import the inserted transactions are handed to `Indexer.Fetcher.ReplacedTransaction`, so that a
+  pending transaction whose replacement (same `from_address_hash` and `nonce`) has already been mined gets marked as
+  `dropped/replaced` even though the block import happened before the pending transaction reached the database.
   """
   use GenServer
   use Indexer.Fetcher, restart: :permanent
@@ -16,7 +20,7 @@ defmodule Indexer.Fetcher.PendingTransaction do
   alias Ecto.Changeset
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Accounts
-  alias Indexer.Fetcher.PendingTransaction
+  alias Indexer.Fetcher.{PendingTransaction, ReplacedTransaction}
   alias Indexer.Transform.Addresses
 
   @chunk_size 250
@@ -177,6 +181,13 @@ defmodule Indexer.Fetcher.PendingTransaction do
          }) do
       {:ok, imported} ->
         Accounts.drop(imported[:addresses])
+
+        # The block containing a replacement for one of these transactions may already have been imported, in which
+        # case `Indexer.Fetcher.ReplacedTransaction.async_fetch/3` ran before the pending transaction existed.
+        imported
+        |> Map.get(:transactions, [])
+        |> ReplacedTransaction.async_fetch_pending(true, 10_000)
+
         :ok
 
       {:error, [%Changeset{} | _] = changesets} ->
