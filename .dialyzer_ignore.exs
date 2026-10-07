@@ -10,5 +10,39 @@
     {"lib/explorer/smart_contract/stylus/publisher_worker.ex", :exact_eq, 15},
     {"lib/explorer/smart_contract/stylus/publisher_worker.ex", :pattern_match, 15},
     ~r/lib\/phoenix\/router.ex/,
-    ~r/Poison\.Encoder/
+    ~r/Poison\.Encoder/,
+    # OTP 28 Dialyzer applies stricter opaqueness checks. Elixir inlines `MapSet.new()` (and thus
+    # `Ecto.Multi.new()`, whose struct embeds a MapSet) and `%URI{}` literals at compile time, so
+    # Dialyzer sees plain structs where the typespec declares an opaque type and reports false
+    # positives for the `MapSet.member?/2`, `MapSet.subset?/2`, `Ecto.Multi.run/3`,
+    # `Ecto.Multi.delete_all/3`, `URI.append_path/2`, etc. calls in the files below.
+    # See https://elixirforum.com/t/function-call-without-opaqueness-type-mismatch-under-otp-28/72407
+    {"lib/explorer/account.ex", :call_without_opaque},
+    {"lib/explorer/account/api/key.ex", :call_without_opaque},
+    {"lib/explorer/account/auth0_to_keycloak_migration.ex", :call_without_opaque},
+    {"lib/explorer/account/custom_abi.ex", :call_without_opaque},
+    {"lib/explorer/account/notifier/email.ex", :call_without_opaque},
+    {"lib/explorer/account/tag_address.ex", :call_without_opaque},
+    {"lib/explorer/account/tag_transaction.ex", :call_without_opaque},
+    {"lib/explorer/account/watchlist_address.ex", :call_without_opaque},
+    {"lib/explorer/chain/address/reputation.ex", :call_without_opaque},
+    {"lib/explorer/chain/cache/accounts.ex", :call_without_opaque},
+    {"lib/explorer/chain/cache/blocks.ex", :call_without_opaque},
+    {"lib/explorer/chain/cache/celo_epochs.ex", :call_without_opaque},
+    {"lib/explorer/chain/cache/state_changes.ex", :call_without_opaque},
+    {"lib/explorer/chain/cache/transactions.ex", :call_without_opaque},
+    {"lib/explorer/chain/cache/uncles.ex", :call_without_opaque},
+    {"lib/explorer/chain/import.ex", :call_without_opaque},
+    {"lib/explorer/chain/import/runner/internal_transactions.ex", :call_without_opaque},
+    {"lib/explorer/chain/smart_contract.ex", :call_without_opaque},
+    {"lib/explorer/chain/token.ex", :call_without_opaque},
+    {"lib/explorer/market/fetcher/token.ex", :call_without_opaque},
+    {"lib/explorer/smart_contract/solidity/code_compiler.ex", :call_without_opaque},
+    {"lib/indexer/fetcher/arbitrum/workers/backfill.ex", :call_without_opaque},
+    {"lib/indexer/fetcher/beacon/deposit/status.ex", :call_without_opaque},
+    {"lib/indexer/fetcher/celo/epoch_block_operations.ex", :call_without_opaque},
+    {"lib/indexer/fetcher/filecoin/address_info.ex", :call_without_opaque},
+    {"lib/indexer/fetcher/optimism/transaction_batch.ex", :call_without_opaque},
+    {"lib/indexer/fetcher/scroll/batch.ex", :call_without_opaque},
+    {"lib/utils/helper.ex", :contract_with_opaque}
 ]
