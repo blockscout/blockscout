@@ -127,6 +127,9 @@ defmodule Utils.TokenInstanceHelper do
       {:ok, %HTTPoison.Response{status_code: status_code}} ->
         {:error, "HTTP HEAD returned #{status_code}"}
 
+      {:error, :not_a_web_url} ->
+        {:error, "not an http(s) URL with a host: #{String.slice(media_src, 0, 100)}"}
+
       {:error, %HTTPoison.Error{reason: reason}} ->
         {:error, "HTTP HEAD failed: #{inspect(reason)}"}
 
@@ -137,12 +140,29 @@ defmodule Utils.TokenInstanceHelper do
 
   # Issues a HEAD request that validates the host (and any redirect target) against the
   # SSRF blacklist, following redirects manually since the media URL is attacker-controlled.
+  #
+  # Only `http(s)` URLs with a host are fetched. Metadata is arbitrary JSON, so the value
+  # may be a bare word or a relative path; hackney would prepend `http://` and resolve it as
+  # a hostname, which costs blocking DNS lookups (very slow on resolvers that answer
+  # SERVFAIL for single-label names). `UrlValidator` already rejects such values when host
+  # filtering is enabled, so this keeps behavior consistent when it is disabled.
   defp safe_head(media_src, headers, validate_host?) do
-    SafeFetch.request(
-      media_src,
-      headers,
-      [validate_host?: validate_host?, transport_opts: [timeout: 30_000, recv_timeout: 30_000]],
-      fn url, request_headers, opts -> HTTPoison.head(url, request_headers, opts) end
-    )
+    if web_url?(media_src) do
+      SafeFetch.request(
+        media_src,
+        headers,
+        [validate_host?: validate_host?, transport_opts: [timeout: 30_000, recv_timeout: 30_000]],
+        fn url, request_headers, opts -> HTTPoison.head(url, request_headers, opts) end
+      )
+    else
+      {:error, :not_a_web_url}
+    end
+  end
+
+  defp web_url?(url) do
+    case URI.parse(url) do
+      %URI{scheme: scheme, host: host} when scheme in ["http", "https"] and is_binary(host) and host != "" -> true
+      _ -> false
+    end
   end
 end

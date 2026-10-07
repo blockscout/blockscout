@@ -45,6 +45,14 @@ defmodule Utils.TokenInstanceHelperTest do
       assert TokenInstanceHelper.media_type("http://127.0.0.1:#{bypass.port}/media", [], false, false) ==
                {"image", "jpeg"}
     end
+
+    test "does not issue a request for an extension-less value that is not an http(s) URL", %{bypass: bypass} do
+      Bypass.stub(bypass, "HEAD", "/media", fn _conn -> flunk("unexpected HEAD request") end)
+
+      for url <- ["image_url0", "media/image_url0", "ftp://127.0.0.1:#{bypass.port}/media", "http:///media"] do
+        assert TokenInstanceHelper.media_type(url, [], false, false) == nil
+      end
+    end
   end
 
   describe "media_type_detailed/3" do
@@ -64,6 +72,19 @@ defmodule Utils.TokenInstanceHelperTest do
 
       assert TokenInstanceHelper.media_type_detailed("http://127.0.0.1:#{bypass.port}/media", [], false) ==
                {:ok, {"image", "jpeg"}}
+    end
+
+    test "reports an extension-less value that is not an http(s) URL without a request", %{bypass: bypass} do
+      Bypass.stub(bypass, "HEAD", "/media", fn _conn -> flunk("unexpected HEAD request") end)
+
+      for url <- ["image_url0", "media/image_url0", "ftp://127.0.0.1:#{bypass.port}/media"] do
+        assert {:error, reason} = TokenInstanceHelper.media_type_detailed(url, [], false)
+        assert reason =~ "not an http(s) URL"
+      end
+    end
+
+    test "still resolves the media type from the extension of a non-web URL" do
+      assert TokenInstanceHelper.media_type_detailed("image_url0.png", [], false) == {:ok, {"image", "png"}}
     end
   end
 end
