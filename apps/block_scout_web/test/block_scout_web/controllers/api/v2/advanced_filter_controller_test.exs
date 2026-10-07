@@ -684,6 +684,19 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert Enum.count(response["items"]) == 9
     end
 
+    test "accepts age preset alongside age_from and age_to", %{conn: conn} do
+      transaction = :transaction |> insert() |> with_block(status: :ok)
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "age" => "1h",
+          "age_from" => transaction.block.timestamp |> DateTime.add(-1, :hour) |> DateTime.to_iso8601(),
+          "age_to" => DateTime.to_iso8601(transaction.block.timestamp)
+        })
+
+      assert %{"items" => [_]} = json_response(request, 200)
+    end
+
     test "filter by from address include", %{conn: conn} do
       address = insert(:address)
 
