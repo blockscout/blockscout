@@ -9,13 +9,25 @@ defmodule Indexer.Fetcher.Beacon.Client do
 
   @request_error_msg "Error while sending request to beacon rpc"
 
+  @typedoc """
+  A blob normalized to the same shape regardless of the beacon API endpoint it came from.
+
+  `kzg_proof` is `nil` when the blob was taken from `/eth/v1/beacon/blobs`, which carries no
+  single-blob KZG proofs (they were replaced by cell proofs since the Fulu fork).
+  """
+  @type blob_item :: %{
+          blob: String.t(),
+          kzg_commitment: String.t(),
+          kzg_proof: String.t() | nil
+        }
+
   defp http_get_request(url) do
     case HttpClient.get(url, [], recv_timeout: 30_000) do
       {:ok, %{body: body, status_code: 200}} ->
         Utils.JSON.decode(body)
 
-      {:ok, %{body: body, status_code: _}} ->
-        {:error, body}
+      {:ok, %{body: body, status_code: status}} ->
+        {:error, {status, body}}
 
       {:error, error} ->
         Logger.error(fn ->
@@ -30,18 +42,20 @@ defmodule Indexer.Fetcher.Beacon.Client do
   end
 
   @doc """
-  Fetches blob sidecars for multiple given beacon `slots` from the beacon RPC.
+  Fetches blobs for multiple given beacon `slots` from the beacon RPC. See `get_blobs/1` for the
+  per-slot logic (`/eth/v1/beacon/blobs` first, `/eth/v1/beacon/blob_sidecars` as a fallback).
 
-  Returns `{:ok, blob_sidecars_list, retry_indices_list}`
-  where `retry_indices_list` is the list of indices from `slots` for which the request failed and should be retried.
+  Returns `{:ok, blobs_per_slot, retry_indices_list}` where `blobs_per_slot` is a list of
+  `t:blob_item/0` lists (one list per successfully fetched slot) and `retry_indices_list` is the
+  list of indices from `slots` for which the request failed and should be retried.
   """
-  @spec get_blob_sidecars([integer()]) :: {:ok, list(), [integer()]}
-  def get_blob_sidecars([]), do: {:ok, [], []}
+  @spec get_blobs_batch([integer()]) :: {:ok, [[blob_item()]], [integer()]}
+  def get_blobs_batch([]), do: {:ok, [], []}
 
-  def get_blob_sidecars(slots) when is_list(slots) do
+  def get_blobs_batch(slots) when is_list(slots) do
     {oks, errors_with_retries} =
       slots
-      |> Enum.map(&get_blob_sidecars/1)
+      |> Enum.map(&get_blobs/1)
       |> Enum.with_index()
       |> Enum.map(&first_if_ok/1)
       |> Enum.split_with(&successful?/1)
@@ -51,18 +65,127 @@ defmodule Indexer.Fetcher.Beacon.Client do
     if not Enum.empty?(errors) do
       Logger.error(fn ->
         [
-          "Errors while fetching blob sidecars (failed for #{Enum.count(errors)}/#{Enum.count(slots)}) from beacon rpc: ",
+          "Errors while fetching blobs (failed for #{Enum.count(errors)}/#{Enum.count(slots)}) from beacon rpc: ",
           inspect(Enum.take(errors, 3), limit: :infinity, printable_limit: :infinity)
         ]
       end)
     end
 
-    {:ok, oks |> Enum.map(fn {_, blob} -> blob end), retries}
+    {:ok, oks |> Enum.map(fn {_, blobs} -> blobs end), retries}
   end
 
+  @doc """
+  Fetches blobs of the given beacon `slot`.
+
+  The `/eth/v1/beacon/blobs/{slot}` endpoint is tried first. It returns the raw blobs only (a list of
+  hex strings), so the KZG commitments are taken from the block (`/eth/v2/beacon/blocks/{slot}`): from
+  the execution payload bid for Gloas blocks or from the block body for Deneb..Fulu blocks. Blobs are
+  returned by the beacon node in the order of the commitments, so they are zipped by index.
+
+  If the `blobs` endpoint fails (e.g. the beacon node doesn't support it yet), the deprecated
+  `/eth/v1/beacon/blob_sidecars/{slot}` endpoint is used instead. Note that `blob_sidecars` cannot
+  serve Gloas blocks since their commitments are not part of the block body anymore.
+
+  Returns `{:ok, [blob_item]}` or `{:error, reason}`.
+  """
+  @spec get_blobs(integer()) :: {:ok, [blob_item()]} | {:error, any()}
+  def get_blobs(slot) do
+    case http_get_request(blobs_url(slot)) do
+      {:ok, %{"data" => blobs}} when is_list(blobs) ->
+        with {:ok, commitments} <- get_blob_kzg_commitments(slot) do
+          zip_blobs_with_commitments(slot, blobs, commitments)
+        end
+
+      {:ok, unexpected} ->
+        {:error, {:unexpected_blobs_response, slot, unexpected}}
+
+      {:error, reason} ->
+        Logger.debug(fn ->
+          "Cannot get blobs for slot #{slot} from the blobs endpoint (#{inspect(reason)}). Falling back to blob_sidecars."
+        end)
+
+        get_blob_sidecars_normalized(slot)
+    end
+  end
+
+  @doc """
+  Fetches the raw `/eth/v1/beacon/blob_sidecars/{slot}` response for the given `slot`.
+  """
   @spec get_blob_sidecars(integer()) :: {:error, any()} | {:ok, any()}
   def get_blob_sidecars(slot) do
     http_get_request(blob_sidecars_url(slot))
+  end
+
+  @doc """
+  Fetches the KZG commitments of the blobs included into the block at the given `slot`.
+
+  Gloas blocks keep the commitments in the execution payload bid
+  (`body.signed_execution_payload_bid.message.blob_kzg_commitments`), earlier forks keep them
+  directly in the block body (`body.blob_kzg_commitments`).
+  """
+  @spec get_blob_kzg_commitments(integer()) :: {:ok, [String.t()]} | {:error, any()}
+  def get_blob_kzg_commitments(slot) do
+    case http_get_request(block_url(slot)) do
+      {:ok, %{"data" => %{"message" => %{"body" => body}}}} ->
+        extract_blob_kzg_commitments(body)
+
+      {:ok, unexpected} ->
+        {:error, {:unexpected_block_response, slot, unexpected}}
+
+      {:error, _} = error ->
+        error
+    end
+  end
+
+  @doc """
+  Extracts blob KZG commitments from a decoded beacon block body.
+  """
+  @spec extract_blob_kzg_commitments(map()) :: {:ok, [String.t()]} | {:error, :blob_kzg_commitments_not_found}
+  def extract_blob_kzg_commitments(%{
+        "signed_execution_payload_bid" => %{"message" => %{"blob_kzg_commitments" => commitments}}
+      })
+      when is_list(commitments),
+      do: {:ok, commitments}
+
+  def extract_blob_kzg_commitments(%{"blob_kzg_commitments" => commitments}) when is_list(commitments),
+    do: {:ok, commitments}
+
+  def extract_blob_kzg_commitments(_), do: {:error, :blob_kzg_commitments_not_found}
+
+  defp zip_blobs_with_commitments(_slot, blobs, commitments) when length(blobs) == length(commitments) do
+    {:ok,
+     Enum.zip_with(blobs, commitments, fn item, commitment ->
+       %{blob: blob_from_blobs_item(item), kzg_commitment: commitment, kzg_proof: nil}
+     end)}
+  end
+
+  defp zip_blobs_with_commitments(slot, blobs, commitments) do
+    {:error, {:blob_count_mismatch, slot, length(blobs), length(commitments)}}
+  end
+
+  @doc """
+  Extracts the blob hex string from an item of the `data` list returned by `/eth/v1/beacon/blobs/{slot}`.
+
+  The spec defines the items as plain hex strings, but a wrapped form (`{"blob": "0x..."}`) is accepted too.
+  """
+  @spec blob_from_blobs_item(String.t() | map()) :: String.t()
+  def blob_from_blobs_item(blob) when is_binary(blob), do: blob
+  def blob_from_blobs_item(%{"blob" => blob}) when is_binary(blob), do: blob
+
+  defp get_blob_sidecars_normalized(slot) do
+    case get_blob_sidecars(slot) do
+      {:ok, %{"data" => sidecars}} when is_list(sidecars) ->
+        {:ok,
+         Enum.map(sidecars, fn %{"blob" => blob, "kzg_commitment" => commitment} = sidecar ->
+           %{blob: blob, kzg_commitment: commitment, kzg_proof: Map.get(sidecar, "kzg_proof")}
+         end)}
+
+      {:ok, unexpected} ->
+        {:error, {:unexpected_blob_sidecars_response, slot, unexpected}}
+
+      {:error, _} = error ->
+        error
+    end
   end
 
   defp first_if_ok({{:ok, _} = first, _}), do: first
@@ -85,6 +208,20 @@ defmodule Indexer.Fetcher.Beacon.Client do
   def get_pending_deposits(slot) do
     http_get_request(pending_deposits_url(slot))
   end
+
+  @doc """
+  Builds the URL of the `/eth/v1/beacon/blobs/{slot}` endpoint. When `versioned_hashes` is not
+  empty, only the blobs with the given versioned hashes are requested.
+  """
+  @spec blobs_url(integer(), [String.t()]) :: String.t()
+  def blobs_url(slot, versioned_hashes \\ [])
+
+  def blobs_url(slot, []), do: "#{base_url()}/eth/v1/beacon/blobs/#{slot}"
+
+  def blobs_url(slot, versioned_hashes) when is_list(versioned_hashes),
+    do: blobs_url(slot, []) <> "?versioned_hashes=" <> Enum.join(versioned_hashes, ",")
+
+  def block_url(slot), do: "#{base_url()}/eth/v2/beacon/blocks/#{slot}"
 
   def blob_sidecars_url(slot), do: "#{base_url()}" <> "/eth/v1/beacon/blob_sidecars/" <> to_string(slot)
 

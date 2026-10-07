@@ -11,7 +11,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Blob do
       blob_data: General.HexData,
       hash: General.FullHash,
       kzg_commitment: General.HexData,
-      kzg_proof: General.HexData
+      kzg_proof: General.HexDataNullable
     },
     required: [:blob_data, :hash, :kzg_commitment, :kzg_proof],
     additionalProperties: false

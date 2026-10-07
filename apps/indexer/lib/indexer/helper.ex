@@ -43,6 +43,8 @@ defmodule Indexer.Helper do
   @chain_id_eth 1
   @chain_id_sepolia 11_155_111
   @chain_id_holesky 17000
+  # HTTP statuses of Beacon Node responses which are not worth retrying
+  @beacon_non_retryable_statuses [400, 404]
 
   @doc """
   Checks whether the given Ethereum address looks correct.
@@ -877,6 +879,14 @@ defmodule Indexer.Helper do
   @doc """
     Sends an HTTP request to Beacon Node to get EIP-4844 blob data by blob's versioned hash.
 
+    The `/eth/v1/beacon/blobs/{slot}?versioned_hashes={blob_hash}` endpoint is tried first.
+    If it fails (e.g. the beacon node doesn't support it), the deprecated `/eth/v1/beacon/blob_sidecars/{slot}`
+    endpoint is used as a fallback. The fallback cannot serve blobs of Gloas (post-Glamsterdam) blocks
+    since their KZG commitments are not part of the beacon block body anymore.
+
+    Responses with 400 and 404 statuses are not retried as they indicate a persistent condition
+    (unsupported endpoint, unknown slot, pruned blobs, etc.).
+
     ## Parameters
     - `blob_hash`: The blob versioned hash in form of `0x` string.
     - `l1_block_timestamp`: Timestamp of L1 block to convert it to beacon slot.
@@ -890,43 +900,84 @@ defmodule Indexer.Helper do
   """
   @spec get_eip4844_blob_from_beacon_node(String.t(), DateTime.t(), non_neg_integer() | nil) :: binary() | nil
   def get_eip4844_blob_from_beacon_node(blob_hash, l1_block_timestamp, l1_chain_id) do
-    beacon_config =
-      case l1_chain_id do
-        @chain_id_eth ->
-          %{
-            reference_slot: @beacon_blob_fetcher_reference_slot_eth,
-            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_eth,
-            slot_duration: @beacon_blob_fetcher_slot_duration
-          }
-
-        @chain_id_sepolia ->
-          %{
-            reference_slot: @beacon_blob_fetcher_reference_slot_sepolia,
-            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_sepolia,
-            slot_duration: @beacon_blob_fetcher_slot_duration
-          }
-
-        @chain_id_holesky ->
-          %{
-            reference_slot: @beacon_blob_fetcher_reference_slot_holesky,
-            reference_timestamp: @beacon_blob_fetcher_reference_timestamp_holesky,
-            slot_duration: @beacon_blob_fetcher_slot_duration
-          }
-
-        _ ->
-          :indexer
-          |> Application.get_env(BeaconBlobFetcher)
-          |> Keyword.take([:reference_slot, :reference_timestamp, :slot_duration])
-          |> Enum.into(%{})
-      end
-
-    sidecars_url =
+    slot =
       l1_block_timestamp
       |> DateTime.to_unix()
-      |> BeaconBlobFetcher.timestamp_to_slot(beacon_config)
-      |> BeaconClient.blob_sidecars_url()
+      |> BeaconBlobFetcher.timestamp_to_slot(beacon_config(l1_chain_id))
 
-    {:ok, fetched_blobs} = http_get_request(sidecars_url)
+    case get_eip4844_blob_via_blobs_endpoint(slot, blob_hash) do
+      {:ok, blob} ->
+        blob
+
+      :error ->
+        get_eip4844_blob_via_blob_sidecars_endpoint(slot, blob_hash)
+    end
+  rescue
+    reason ->
+      Logger.warning("Cannot get the blob #{blob_hash} from the Beacon Node. Reason: #{inspect(reason)}")
+      nil
+  end
+
+  # Defines the parameters for calculating beacon slot number from L1 block timestamp
+  # based on the L1 chain id (or the fallback env variables if the chain id is unknown).
+  @spec beacon_config(non_neg_integer() | nil) :: map()
+  defp beacon_config(l1_chain_id) do
+    case l1_chain_id do
+      @chain_id_eth ->
+        %{
+          reference_slot: @beacon_blob_fetcher_reference_slot_eth,
+          reference_timestamp: @beacon_blob_fetcher_reference_timestamp_eth,
+          slot_duration: @beacon_blob_fetcher_slot_duration
+        }
+
+      @chain_id_sepolia ->
+        %{
+          reference_slot: @beacon_blob_fetcher_reference_slot_sepolia,
+          reference_timestamp: @beacon_blob_fetcher_reference_timestamp_sepolia,
+          slot_duration: @beacon_blob_fetcher_slot_duration
+        }
+
+      @chain_id_holesky ->
+        %{
+          reference_slot: @beacon_blob_fetcher_reference_slot_holesky,
+          reference_timestamp: @beacon_blob_fetcher_reference_timestamp_holesky,
+          slot_duration: @beacon_blob_fetcher_slot_duration
+        }
+
+      _ ->
+        :indexer
+        |> Application.get_env(BeaconBlobFetcher)
+        |> Keyword.take([:reference_slot, :reference_timestamp, :slot_duration])
+        |> Enum.into(%{})
+    end
+  end
+
+  # Requests the blob with the given versioned hash from the `/eth/v1/beacon/blobs/{slot}` endpoint.
+  # The response doesn't contain KZG commitments, so the `versioned_hashes` filter is used to get exactly one blob.
+  @spec get_eip4844_blob_via_blobs_endpoint(non_neg_integer(), String.t()) :: {:ok, binary()} | :error
+  defp get_eip4844_blob_via_blobs_endpoint(slot, blob_hash) do
+    url = BeaconClient.blobs_url(slot, [blob_hash])
+
+    case http_get_request(url, :json, 0, @beacon_non_retryable_statuses) do
+      {:ok, %{"data" => [item]}} ->
+        {:ok, item |> BeaconClient.blob_from_blobs_item() |> hash_to_binary()}
+
+      other ->
+        Logger.warning(
+          "Cannot get the blob #{blob_hash} from the blobs endpoint of the Beacon Node. Response: #{inspect(other)}. Trying blob_sidecars endpoint..."
+        )
+
+        :error
+    end
+  end
+
+  # Requests all blob sidecars of the given slot from the deprecated `/eth/v1/beacon/blob_sidecars/{slot}` endpoint
+  # and finds the one whose KZG commitment corresponds to the given versioned hash.
+  @spec get_eip4844_blob_via_blob_sidecars_endpoint(non_neg_integer(), String.t()) :: binary()
+  defp get_eip4844_blob_via_blob_sidecars_endpoint(slot, blob_hash) do
+    sidecars_url = BeaconClient.blob_sidecars_url(slot)
+
+    {:ok, fetched_blobs} = http_get_request(sidecars_url, :json, 0, @beacon_non_retryable_statuses)
 
     blobs = Map.get(fetched_blobs, "data", [])
 
@@ -945,10 +996,6 @@ defmodule Indexer.Helper do
     end)
     |> Map.get("blob")
     |> hash_to_binary()
-  rescue
-    reason ->
-      Logger.warning("Cannot get the blob #{blob_hash} from the Beacon Node. Reason: #{inspect(reason)}")
-      nil
   end
 
   @doc """
