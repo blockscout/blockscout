@@ -250,6 +250,47 @@ defmodule Indexer.Fetcher.Beacon.BlobTest do
         assert {:error, :not_found} = Reader.blob(blob_a.hash, true)
         assert {:error, :not_found} = Reader.blob(blob_b.hash, true)
       end
+
+      test "doesn't crash on malformed blob sidecars and retries the slot" do
+        {:ok, now, _} = DateTime.from_iso8601("2024-01-24 00:00:00Z")
+        block_a = insert(:block, timestamp: now)
+
+        blob_a = build(:blob)
+
+        test_pid = self()
+
+        # the fetcher retries the slot twice before giving up (the block is older than the retry deadline)
+        Tesla.Test.expect_tesla_call(
+          times: 6,
+          returns: fn %{url: url}, _opts ->
+            case url do
+              @beacon_rpc <> "/eth/v1/beacon/blobs/8269198" ->
+                {:ok, %Tesla.Env{status: 404, body: ~s({"code":404,"message":"Not Found"})}}
+
+              @beacon_rpc <> "/eth/v1/beacon/blob_sidecars/8269198" ->
+                send(test_pid, :sidecars_requested)
+
+                # `kzg_commitment` is missing
+                {:ok,
+                 %Tesla.Env{
+                   status: 200,
+                   body: Jason.encode!(%{"data" => [%{"index" => "0", "blob" => to_string(blob_a.blob_data)}]})
+                 }}
+            end
+          end
+        )
+
+        BlobSupervisor.Case.start_supervised!()
+
+        assert :ok = Indexer.Fetcher.Beacon.Blob.async_fetch([block_a.timestamp], false)
+
+        # initial attempt + 2 retries
+        for _ <- 1..3 do
+          assert_receive :sidecars_requested, 10_000
+        end
+
+        assert {:error, :not_found} = Reader.blob(blob_a.hash, true)
+      end
     end
   end
 

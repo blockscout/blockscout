@@ -152,11 +152,22 @@ defmodule Indexer.Fetcher.Beacon.Client do
 
   def extract_blob_kzg_commitments(_), do: {:error, :blob_kzg_commitments_not_found}
 
-  defp zip_blobs_with_commitments(_slot, blobs, commitments) when length(blobs) == length(commitments) do
-    {:ok,
-     Enum.zip_with(blobs, commitments, fn item, commitment ->
-       %{blob: blob_from_blobs_item(item), kzg_commitment: commitment, kzg_proof: nil}
-     end)}
+  defp zip_blobs_with_commitments(slot, blobs, commitments) when length(blobs) == length(commitments) do
+    blobs
+    |> Enum.zip(commitments)
+    |> map_items(fn
+      {item, commitment} when is_binary(commitment) ->
+        with {:ok, blob} <- blob_from_blobs_item(item) do
+          {:ok, %{blob: blob, kzg_commitment: commitment, kzg_proof: nil}}
+        end
+
+      {_item, _commitment} ->
+        {:error, :malformed_blob_kzg_commitment}
+    end)
+    |> case do
+      {:ok, _} = ok -> ok
+      {:error, reason} -> {:error, {reason, slot}}
+    end
   end
 
   defp zip_blobs_with_commitments(slot, blobs, commitments) do
@@ -167,24 +178,55 @@ defmodule Indexer.Fetcher.Beacon.Client do
   Extracts the blob hex string from an item of the `data` list returned by `/eth/v1/beacon/blobs/{slot}`.
 
   The spec defines the items as plain hex strings, but a wrapped form (`{"blob": "0x..."}`) is accepted too.
+
+  Returns `{:ok, blob}` or `{:error, :malformed_blobs_item}` for an item of unexpected shape.
   """
-  @spec blob_from_blobs_item(String.t() | map()) :: String.t()
-  def blob_from_blobs_item(blob) when is_binary(blob), do: blob
-  def blob_from_blobs_item(%{"blob" => blob}) when is_binary(blob), do: blob
+  @spec blob_from_blobs_item(any()) :: {:ok, String.t()} | {:error, :malformed_blobs_item}
+  def blob_from_blobs_item(blob) when is_binary(blob), do: {:ok, blob}
+  def blob_from_blobs_item(%{"blob" => blob}) when is_binary(blob), do: {:ok, blob}
+  def blob_from_blobs_item(_), do: {:error, :malformed_blobs_item}
 
   defp get_blob_sidecars_normalized(slot) do
     case get_blob_sidecars(slot) do
       {:ok, %{"data" => sidecars}} when is_list(sidecars) ->
-        {:ok,
-         Enum.map(sidecars, fn %{"blob" => blob, "kzg_commitment" => commitment} = sidecar ->
-           %{blob: blob, kzg_commitment: commitment, kzg_proof: Map.get(sidecar, "kzg_proof")}
-         end)}
+        case map_items(sidecars, &normalize_blob_sidecar/1) do
+          {:ok, _} = ok -> ok
+          {:error, reason} -> {:error, {reason, slot}}
+        end
 
       {:ok, unexpected} ->
         {:error, {:unexpected_blob_sidecars_response, slot, unexpected}}
 
       {:error, _} = error ->
         error
+    end
+  end
+
+  defp normalize_blob_sidecar(%{"blob" => blob, "kzg_commitment" => commitment} = sidecar)
+       when is_binary(blob) and is_binary(commitment) do
+    case Map.get(sidecar, "kzg_proof") do
+      kzg_proof when is_nil(kzg_proof) or is_binary(kzg_proof) ->
+        {:ok, %{blob: blob, kzg_commitment: commitment, kzg_proof: kzg_proof}}
+
+      _ ->
+        {:error, :malformed_blob_sidecar}
+    end
+  end
+
+  defp normalize_blob_sidecar(_), do: {:error, :malformed_blob_sidecar}
+
+  # Maps `items` with `fun` returning `{:ok, mapped_items}` or the first `{:error, reason}` returned by `fun`.
+  defp map_items(items, fun) do
+    items
+    |> Enum.reduce_while({:ok, []}, fn item, {:ok, acc} ->
+      case fun.(item) do
+        {:ok, mapped} -> {:cont, {:ok, [mapped | acc]}}
+        {:error, _} = error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, acc} -> {:ok, Enum.reverse(acc)}
+      error -> error
     end
   end
 

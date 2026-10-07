@@ -77,6 +77,31 @@ defmodule Indexer.Helper.BeaconBlobTest do
       assert elapsed_microseconds < 3_000_000
     end
 
+    test "falls back to blob_sidecars endpoint without retries when blobs endpoint responds with 405", %{
+      bypass: bypass,
+      blob_hash: blob_hash
+    } do
+      Bypass.expect_once(bypass, "GET", "/eth/v1/beacon/blobs/#{@slot}", fn conn ->
+        Plug.Conn.resp(conn, 405, ~s({"code":405,"message":"Method Not Allowed"}))
+      end)
+
+      Bypass.expect_once(bypass, "GET", "/eth/v1/beacon/blob_sidecars/#{@slot}", fn conn ->
+        Plug.Conn.resp(
+          conn,
+          200,
+          Jason.encode!(%{
+            "data" => [%{"index" => "0", "blob" => @blob, "kzg_commitment" => @kzg_commitment, "kzg_proof" => "0x"}]
+          })
+        )
+      end)
+
+      {elapsed_microseconds, result} =
+        :timer.tc(fn -> Helper.get_eip4844_blob_from_beacon_node(blob_hash, @block_timestamp, @sepolia_chain_id) end)
+
+      assert result == hash_to_binary(@blob)
+      assert elapsed_microseconds < 3_000_000
+    end
+
     test "falls back to blob_sidecars endpoint when the blobs endpoint doesn't know the versioned hash", %{
       bypass: bypass,
       blob_hash: blob_hash

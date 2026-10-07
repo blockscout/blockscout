@@ -40,8 +40,15 @@ defmodule Indexer.Fetcher.Beacon.ClientTest do
     test "accepts plain hex string and wrapped forms" do
       blob = "0x" <> String.duplicate("01", 32)
 
-      assert Client.blob_from_blobs_item(blob) == blob
-      assert Client.blob_from_blobs_item(%{"blob" => blob}) == blob
+      assert Client.blob_from_blobs_item(blob) == {:ok, blob}
+      assert Client.blob_from_blobs_item(%{"blob" => blob}) == {:ok, blob}
+    end
+
+    test "returns error for malformed items" do
+      assert Client.blob_from_blobs_item(%{"index" => "0"}) == {:error, :malformed_blobs_item}
+      assert Client.blob_from_blobs_item(%{"blob" => 123}) == {:error, :malformed_blobs_item}
+      assert Client.blob_from_blobs_item(nil) == {:error, :malformed_blobs_item}
+      assert Client.blob_from_blobs_item(42) == {:error, :malformed_blobs_item}
     end
   end
 

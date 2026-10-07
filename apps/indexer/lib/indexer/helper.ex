@@ -43,8 +43,10 @@ defmodule Indexer.Helper do
   @chain_id_eth 1
   @chain_id_sepolia 11_155_111
   @chain_id_holesky 17000
-  # HTTP statuses of Beacon Node responses which are not worth retrying
-  @beacon_non_retryable_statuses [400, 404]
+  # HTTP statuses of Beacon Node responses which are not worth retrying: all client errors (4xx)
+  # indicate a persistent condition (unsupported endpoint, unknown slot, pruned blobs, etc.)
+  # except `408 Request Timeout` and `429 Too Many Requests` which are transient.
+  @beacon_non_retryable_statuses Enum.to_list(400..499) -- [408, 429]
 
   @doc """
   Checks whether the given Ethereum address looks correct.
@@ -884,8 +886,8 @@ defmodule Indexer.Helper do
     endpoint is used as a fallback. The fallback cannot serve blobs of Gloas (post-Glamsterdam) blocks
     since their KZG commitments are not part of the beacon block body anymore.
 
-    Responses with 400 and 404 statuses are not retried as they indicate a persistent condition
-    (unsupported endpoint, unknown slot, pruned blobs, etc.).
+    Responses with 4xx statuses (except 408 and 429) are not retried as they indicate a persistent condition
+    (unsupported endpoint, unknown slot, pruned blobs, etc.). 5xx responses and network errors are retried.
 
     ## Parameters
     - `blob_hash`: The blob versioned hash in form of `0x` string.
@@ -958,10 +960,10 @@ defmodule Indexer.Helper do
   defp get_eip4844_blob_via_blobs_endpoint(slot, blob_hash) do
     url = BeaconClient.blobs_url(slot, [blob_hash])
 
-    case http_get_request(url, :json, 0, @beacon_non_retryable_statuses) do
-      {:ok, %{"data" => [item]}} ->
-        {:ok, item |> BeaconClient.blob_from_blobs_item() |> hash_to_binary()}
-
+    with {:ok, %{"data" => [item]}} <- http_get_request(url, :json, 0, @beacon_non_retryable_statuses),
+         {:ok, blob} <- BeaconClient.blob_from_blobs_item(item) do
+      {:ok, hash_to_binary(blob)}
+    else
       other ->
         Logger.warning(
           "Cannot get the blob #{blob_hash} from the blobs endpoint of the Beacon Node. Response: #{inspect(other)}. Trying blob_sidecars endpoint..."
