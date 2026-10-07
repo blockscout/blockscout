@@ -108,6 +108,16 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterController do
       example: "2024-12-31T23:59:59Z"
     },
     %OpenApiSpex.Parameter{
+      name: :age,
+      in: :query,
+      schema: %OpenApiSpex.Schema{type: :string, nullable: true},
+      required: false,
+      description:
+        "Relative time-window preset selected in the UI (e.g. `1h`, `24h`, `7d`). Accepted for compatibility " <>
+          "and ignored by the backend: the actual window is taken from `age_from` and `age_to`.",
+      example: "1h"
+    },
+    %OpenApiSpex.Parameter{
       name: :from_address_hashes_to_include,
       in: :query,
       schema: %OpenApiSpex.Schema{type: :string, nullable: true},
