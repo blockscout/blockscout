@@ -18,6 +18,23 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
   processing is postponed. The module also verifies block continuity to detect and handle
   potential database inconsistencies, ensuring that no gaps exist in the confirmed blocks
   sequence.
+
+  Confirmations of a single discovery tick are processed in ascending parent-chain
+  (L1) block order rather than ascending rollup block order. In the ordinary case the
+  two orders coincide, but a `SendRootUpdated` event whose parent-chain position is
+  inverted relative to the rollup range it confirms is possible; ascending parent-chain
+  order guarantees that every confirmation processed earlier in the tick is visible to
+  later confirmations' log scans (which only cover L1 blocks up to `l1_block_num - 1`).
+  A "highest rollup block already claimed in this tick" watermark is carried through the
+  processing: it lets a confirmation whose top block was already claimed by an
+  earlier-on-parent-chain confirmation be skipped entirely (attribution rule: on overlap,
+  the confirmation earlier on the parent chain owns the overlapping blocks), and it acts
+  as a floor under the database-derived lower boundary so that two confirmations of the
+  same tick never produce overlapping rollup block ranges - even when their events share
+  the same L1 block and are therefore mutually invisible to each other's log scan. A
+  descent that errors halts the remaining confirmations of the tick; every confirmation
+  actually processed - whether it claimed blocks, was found fully covered, or failed - is
+  reported back through a per-confirmation outcome.
   """
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_info: 1, log_debug: 1]
@@ -32,15 +49,39 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
   @logs_per_report 10
   @zero_counters %{pairs_counter: 1, capped_logs_counter: 0, report?: false}
 
+  @typedoc """
+  The outcome of processing a single confirmation within a discovery tick:
+    * `:claimed` - the confirmation was processed and claimed at least one rollup block.
+    * `:covered` - the confirmation was processed successfully but claimed zero rollup
+      blocks, because everything it could have claimed was already claimed either by a
+      confirmation earlier on the parent chain within the same tick, or by a previous
+      tick.
+    * `:error` - the confirmation's descent failed (for example, a batch that is not
+      yet fully synced, or a database inconsistency).
+  """
+  @type confirmation_outcome :: :claimed | :covered | :error
+
   @doc """
     Discovers and marks all rollup blocks associated with provided confirmations.
 
     First, converts the input map of rollup block hashes to a map keyed by block numbers,
     transforming confirmation descriptions to use block numbers instead of hashes. Then
-    processes these confirmations sequentially starting from the lowest rollup block
-    number, ensuring that each block is associated with the correct confirmation. This
-    sequential handling preserves the confirmation history, allowing future processing
-    to accurately associate blocks with their respective confirmations.
+    processes these confirmations in ascending parent-chain (L1) block order, carrying a
+    running watermark of the highest rollup block already claimed in this tick.
+
+    A confirmation whose top block does not exceed the watermark is skipped - every block
+    it could claim was already claimed by a confirmation earlier on the parent chain (the
+    attribution rule). Otherwise the confirmation's descent is attempted with the watermark
+    passed down as a floor under the database-derived lower boundary, which guarantees that
+    no rollup block is claimed by two confirmations of the same tick even when two
+    `SendRootUpdated` events share the same L1 block. The watermark is raised to a
+    confirmation's top block only once that confirmation actually claims at least one
+    block; a covered (zero-block) or failed confirmation never raises it.
+
+    A descent that fails halts processing of the remaining confirmations in the tick:
+    confirmations already processed keep their claimed blocks, while the failed
+    confirmation and every later-on-parent-chain confirmation are left with no outcome and
+    are deferred to a following tick.
 
     ## Parameters
     - `rollup_blocks_to_l1_transactions`: A map linking rollup block hashes (the "top" blocks
@@ -50,8 +91,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
       the chain
 
     ## Returns
-    - A list of rollup blocks each associated with the transaction's hash that
-      confirms the block
+    - `{blocks, outcomes}` where
+      - `blocks` is a list of rollup blocks each associated with the transaction's hash
+        that confirms the block
+      - `outcomes` maps a confirmation's L1 transaction hash to its `confirmation_outcome()`.
+        A confirmation whose top block hash failed to resolve to a rollup block number, or
+        that was never reached because an earlier descent in the same tick failed, has no
+        entry in this map.
   """
   @spec extend_confirmations(
           %{binary() => %{l1_transaction_hash: binary(), l1_block_num: non_neg_integer()}},
@@ -62,7 +108,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
             optional(any()) => any()
           },
           non_neg_integer()
-        ) :: [Arbitrum.BatchBlock.to_import()]
+        ) :: {[Arbitrum.BatchBlock.to_import()], %{binary() => confirmation_outcome()}}
   def extend_confirmations(rollup_blocks_to_l1_transactions, outbox_config, rollup_first_block) do
     block_to_l1_transactions =
       rollup_blocks_to_l1_transactions
@@ -83,35 +129,165 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
       end)
 
     if Enum.empty?(block_to_l1_transactions) do
-      []
+      {[], %{}}
     else
-      # Oldest (with the lowest number) block is first
-      rollup_block_numbers = Enum.sort(Map.keys(block_to_l1_transactions), :asc)
+      # Confirmations of this tick are processed in ascending parent-chain (L1) block
+      # order so that an earlier-processed confirmation is always visible to a later
+      # confirmation's log scan.
+      confirmations_in_parent_chain_order =
+        block_to_l1_transactions
+        |> Enum.sort_by(fn {_block_number, confirmation_desc} -> confirmation_desc.l1_block_num end, :asc)
 
-      rollup_block_numbers
-      |> Enum.reduce([], fn block_number, updated_rollup_blocks ->
-        log_info("Attempting to mark all rollup blocks including ##{block_number} and lower as confirmed")
+      {blocks, outcomes, _high_watermark} =
+        Enum.reduce_while(confirmations_in_parent_chain_order, {[], %{}, 0}, fn confirmation,
+                                                                                {updated_blocks, outcomes,
+                                                                                 high_watermark} ->
+          {block_number, confirmation_desc} = confirmation
 
-        {_, confirmed_blocks} =
-          discover_rollup_blocks_belonging_to_one_confirmation(
+          process_one_confirmation_in_tick(
             block_number,
-            block_to_l1_transactions[block_number],
+            confirmation_desc,
             outbox_config,
-            rollup_first_block
+            rollup_first_block,
+            high_watermark,
+            updated_blocks,
+            outcomes
           )
+        end)
 
-        # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-        if Enum.empty?(confirmed_blocks) do
-          log_info("Either no unconfirmed blocks found or DB inconsistency error discovered")
-          []
-        else
-          log_info("Found #{length(confirmed_blocks)} confirmed blocks")
-
-          add_confirmation_transaction(confirmed_blocks, block_to_l1_transactions[block_number].l1_transaction_hash) ++
-            updated_rollup_blocks
-        end
-      end)
+      {blocks, outcomes}
     end
+  end
+
+  # Processes a single confirmation within a discovery tick's reduce_while.
+  #
+  # If the confirmation's top block does not exceed the watermark, every block it could
+  # claim was already claimed by a confirmation earlier on the parent chain in this same
+  # tick, so it is marked `:covered` without attempting a descent. Otherwise the descent
+  # is attempted with the current watermark passed down as a floor.
+  @spec process_one_confirmation_in_tick(
+          non_neg_integer(),
+          %{:l1_transaction_hash => binary(), :l1_block_num => non_neg_integer(), optional(any()) => any()},
+          %{
+            :logs_block_range => non_neg_integer(),
+            :outbox_address => binary(),
+            :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
+            optional(any()) => any()
+          },
+          non_neg_integer(),
+          non_neg_integer(),
+          [Arbitrum.BatchBlock.to_import()],
+          %{binary() => confirmation_outcome()}
+        ) ::
+          {:cont | :halt, {[Arbitrum.BatchBlock.to_import()], %{binary() => confirmation_outcome()}, non_neg_integer()}}
+  defp process_one_confirmation_in_tick(
+         block_number,
+         confirmation_desc,
+         outbox_config,
+         rollup_first_block,
+         high_watermark,
+         updated_blocks,
+         outcomes
+       ) do
+    if block_number <= high_watermark do
+      log_info(
+        "Rollup block ##{block_number} and lower are already claimed by a confirmation processed earlier in this tick, skipping"
+      )
+
+      {:cont, {updated_blocks, Map.put(outcomes, confirmation_desc.l1_transaction_hash, :covered), high_watermark}}
+    else
+      log_info("Attempting to mark all rollup blocks including ##{block_number} and lower as confirmed")
+
+      {status, confirmed_blocks} =
+        discover_rollup_blocks_belonging_to_one_confirmation(
+          block_number,
+          confirmation_desc,
+          outbox_config,
+          rollup_first_block,
+          high_watermark
+        )
+
+      handle_confirmation_descent_result(
+        status,
+        confirmed_blocks,
+        block_number,
+        confirmation_desc,
+        high_watermark,
+        updated_blocks,
+        outcomes
+      )
+    end
+  end
+
+  # Folds the result of a single confirmation's descent into the tick's accumulator.
+  #
+  # An `:error` status halts the remaining confirmations of the tick: blocks accumulated
+  # by confirmations already processed successfully are kept, the failed confirmation is
+  # marked `:error`, and the watermark is not raised so a following tick retries from the
+  # same point.
+  #
+  # An `:ok` status with an empty block list means the confirmation is fully covered by
+  # blocks already confirmed (in the database, from a previous tick) - it is marked
+  # `:covered` and the watermark is not raised, since nothing new was claimed in this
+  # tick.
+  #
+  # An `:ok` status with a non-empty block list means the confirmation claimed new
+  # blocks - it is marked `:claimed` and the watermark is raised to the confirmation's top
+  # block.
+  @spec handle_confirmation_descent_result(
+          :ok | :error,
+          [Arbitrum.BatchBlock.to_import()],
+          non_neg_integer(),
+          %{:l1_transaction_hash => binary(), optional(any()) => any()},
+          non_neg_integer(),
+          [Arbitrum.BatchBlock.to_import()],
+          %{binary() => confirmation_outcome()}
+        ) ::
+          {:cont | :halt, {[Arbitrum.BatchBlock.to_import()], %{binary() => confirmation_outcome()}, non_neg_integer()}}
+  defp handle_confirmation_descent_result(
+         :error,
+         _confirmed_blocks,
+         _block_number,
+         confirmation_desc,
+         high_watermark,
+         updated_blocks,
+         outcomes
+       ) do
+    log_info("Either no unconfirmed blocks found or DB inconsistency error discovered")
+
+    {:halt, {updated_blocks, Map.put(outcomes, confirmation_desc.l1_transaction_hash, :error), high_watermark}}
+  end
+
+  defp handle_confirmation_descent_result(
+         :ok,
+         [],
+         _block_number,
+         confirmation_desc,
+         high_watermark,
+         updated_blocks,
+         outcomes
+       ) do
+    log_info("The confirmation is fully covered by blocks already claimed, no new blocks to add")
+
+    {:cont, {updated_blocks, Map.put(outcomes, confirmation_desc.l1_transaction_hash, :covered), high_watermark}}
+  end
+
+  defp handle_confirmation_descent_result(
+         :ok,
+         confirmed_blocks,
+         block_number,
+         confirmation_desc,
+         high_watermark,
+         updated_blocks,
+         outcomes
+       ) do
+    log_info("Found #{length(confirmed_blocks)} confirmed blocks")
+
+    new_blocks =
+      add_confirmation_transaction(confirmed_blocks, confirmation_desc.l1_transaction_hash) ++ updated_blocks
+
+    {:cont,
+     {new_blocks, Map.put(outcomes, confirmation_desc.l1_transaction_hash, :claimed), max(high_watermark, block_number)}}
   end
 
   # Takes first 6 and last 6 nibbles of the hash
@@ -130,8 +306,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
   #    are covered by the current confirmation and those that a going to be covered
   #    by the predecessor confirmation.
   # 3. Determine the first unconfirmed block in the batch. It could be the first
-  #    block in the batch or a block the next after the last confirmed block in the
-  #    predecessor confirmation.
+  #    block in the batch, a block the next after the last confirmed block in the
+  #    predecessor confirmation, or the block right above the in-tick watermark when
+  #    that watermark is higher than what the database or the log scan can prove.
   # 4. Verify the continuity of the unconfirmed blocks to be covered by the current
   #    confirmation to ensure there are no database inconsistencies or unindexed
   #    blocks.
@@ -168,6 +345,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
   # - `outbox_config`: Configuration for the Arbitrum outbox contract.
   # - `rollup_first_block`: The block number limiting the lowest indexed block of
   #   the chain.
+  # - `high_watermark`: The highest rollup block number already claimed by a
+  #   confirmation earlier on the parent chain within the current tick. Used as a
+  #   floor under the database-derived lower boundary.
   # - `cache`: A cache to minimize repetitive `eth_getLogs` calls.
   #
   # ## Returns
@@ -185,6 +365,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
             optional(any()) => any()
           },
           non_neg_integer(),
+          non_neg_integer(),
           EventsUtils.cached_logs()
         ) :: {:ok, [Arbitrum.BatchBlock.to_import()]} | {:error, []}
   defp discover_rollup_blocks_belonging_to_one_confirmation(
@@ -192,6 +373,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
          confirmation_desc,
          outbox_config,
          rollup_first_block,
+         high_watermark,
          cache \\ %{}
        ) do
     # The following batch fields are required in the further processing:
@@ -206,7 +388,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
          # If it returns `{:ok, []}` it will be passed as the return value of
          # discover_rollup_blocks_belonging_to_one_confirmation function.
          {:ok, {first_unconfirmed_block, new_cache}} <-
-           check_confirmed_blocks_of_batch(rollup_block_num, batch, confirmation_desc, outbox_config, cache),
+           check_confirmed_blocks_of_batch(
+             rollup_block_num,
+             batch,
+             confirmation_desc,
+             outbox_config,
+             raw_unconfirmed_rollup_blocks,
+             high_watermark,
+             cache
+           ),
          {:ok, unconfirmed_rollup_blocks} <-
            check_consecutive_rollup_blocks(
              raw_unconfirmed_rollup_blocks,
@@ -226,6 +416,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
           confirmation_desc,
           outbox_config,
           rollup_first_block,
+          high_watermark,
           new_cache,
           unconfirmed_rollup_blocks,
           raw_unconfirmed_rollup_blocks
@@ -247,6 +438,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
          confirmation_desc,
          outbox_config,
          rollup_first_block,
+         high_watermark,
          new_cache,
          unconfirmed_rollup_blocks,
          _raw_unconfirmed_rollup_blocks
@@ -257,6 +449,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
         confirmation_desc,
         outbox_config,
         rollup_first_block,
+        high_watermark,
         new_cache
       )
 
@@ -349,10 +542,23 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
   #
   # This function attempts to find a `SendRootUpdated` event between the already
   # discovered confirmation and the L1 block where the batch was committed, that
-  # mentions any block of the batch as the top of the confirmed blocks. Depending
-  # on the lookup result, it either considers the found block or the very
-  # first block of the batch as the start of the range of unconfirmed blocks ending
-  # with `rollup_block_num`.
+  # mentions any block of the batch as the top of the confirmed blocks. When such
+  # an event is found, the block right after it starts the range of unconfirmed
+  # blocks ending with `rollup_block_num`.
+  #
+  # When no such event is found in the scanned logs, the lower boundary already
+  # known to the database is used instead of unconditionally falling back to the
+  # start of the batch: `raw_unconfirmed_rollup_blocks` (fetched by the caller from
+  # `DbSettlement.unconfirmed_rollup_blocks/2`) reflects a boundary recorded by an
+  # earlier discovery pass at a higher parent-chain block than the current log
+  # scan window can see. Its minimum block number is accepted as the boundary only
+  # when it is proven safe (see `boundary_proven?/3`); otherwise the minimum is
+  # ambiguous - it may mean "confirmed" or "batch not fully synced below this
+  # point" - so the confirmation is postponed as before. Once a boundary is
+  # accepted, it is raised to `high_watermark + 1` if that is higher, so that a
+  # confirmation processed earlier in the same tick can never have its claimed
+  # blocks claimed again by this confirmation.
+  #
   # To optimize `eth_getLogs` calls required for the `SendRootUpdated` event lookup,
   # it uses a cache.
   # Since this function only discovers the number of the unconfirmed block, it does
@@ -363,6 +569,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
   # - `batch`: The batch containing the rollup blocks.
   # - `confirmation_desc`: Details of the latest confirmation.
   # - `outbox_config`: Configuration for the Arbitrum outbox contract.
+  # - `raw_unconfirmed_rollup_blocks`: The list of unconfirmed (and potentially
+  #   re-confirmation) rollup blocks of the batch already read from the database,
+  #   used to derive a database-backed lower boundary when no boundary event is
+  #   found in the scanned logs.
+  # - `high_watermark`: The highest rollup block number already claimed by a
+  #   confirmation earlier on the parent chain within the current tick.
   # - `cache`: A cache to minimize `eth_getLogs` calls.
   #
   # ## Returns
@@ -381,6 +593,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
             :json_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             optional(any()) => any()
           },
+          [Arbitrum.BatchBlock.to_import()],
+          non_neg_integer(),
           EventsUtils.cached_logs()
         ) :: {:ok, {non_neg_integer(), EventsUtils.cached_logs()}} | {:ok, []} | {:error, []}
   defp check_confirmed_blocks_of_batch(
@@ -388,6 +602,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
          batch,
          confirmation_desc,
          outbox_config,
+         raw_unconfirmed_rollup_blocks,
+         high_watermark,
          cache
        ) do
     # This function might look like over-engineered, but confirmations are not always
@@ -407,17 +623,98 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
         {:ok, []}
 
       {_, false} ->
-        first_unconfirmed_block_in_batch =
-          case block? do
-            nil ->
-              batch.start_block
+        case block? do
+          nil ->
+            database_derived_boundary(batch, raw_unconfirmed_rollup_blocks, high_watermark, new_cache)
 
-            value ->
-              log_info("Blocks up to ##{value} of the batch have been already confirmed by another transaction")
-              value + 1
-          end
+          value ->
+            log_info("Blocks up to ##{value} of the batch have been already confirmed by another transaction")
+            {:ok, {value + 1, new_cache}}
+        end
+    end
+  end
 
-        {:ok, {first_unconfirmed_block_in_batch, new_cache}}
+  # Derives the lower boundary of the unconfirmed range from the database when no
+  # boundary event was found in the scanned `SendRootUpdated` logs.
+  #
+  # The minimum block number of `raw_unconfirmed_rollup_blocks` (as returned by
+  # `DbSettlement.unconfirmed_rollup_blocks/2`, which can append already-confirmed
+  # "re-confirmation" blocks at the top of the range, but never lowers the true
+  # minimum) is accepted as the boundary only when `boundary_proven?/3` holds.
+  # Otherwise the minimum is ambiguous between "confirmed" and "batch not fully
+  # synced below this point", so the confirmation is postponed, preserving the
+  # module's existing defense against partially-synced batches.
+  #
+  # Once accepted, the boundary is raised to `high_watermark + 1` if that is
+  # higher, so that blocks already claimed earlier in the same tick can never be
+  # claimed again by this confirmation.
+  #
+  # ## Parameters
+  # - `batch`: The batch containing the rollup blocks.
+  # - `raw_unconfirmed_rollup_blocks`: The list of unconfirmed rollup blocks of the
+  #   batch already read from the database.
+  # - `high_watermark`: The highest rollup block number already claimed by a
+  #   confirmation earlier on the parent chain within the current tick.
+  # - `cache`: The current logs cache to thread through unchanged.
+  #
+  # ## Returns
+  # - `{:ok, {first_unconfirmed_block_in_batch, cache}}` when the boundary is
+  #   proven safe.
+  # - `{:error, []}` when the boundary is ambiguous.
+  @spec database_derived_boundary(
+          Arbitrum.L1Batch.t(),
+          [Arbitrum.BatchBlock.to_import()],
+          non_neg_integer(),
+          EventsUtils.cached_logs()
+        ) :: {:ok, {non_neg_integer(), EventsUtils.cached_logs()}} | {:error, []}
+  defp database_derived_boundary(batch, raw_unconfirmed_rollup_blocks, high_watermark, cache) do
+    minimum_unconfirmed_block =
+      raw_unconfirmed_rollup_blocks
+      |> List.first()
+      |> Map.fetch!(:block_number)
+
+    if boundary_proven?(batch, minimum_unconfirmed_block, high_watermark) do
+      {:ok, {max(minimum_unconfirmed_block, high_watermark + 1), cache}}
+    else
+      log_warning(
+        "Could not confirm that block ##{minimum_unconfirmed_block - 1} of the batch ##{batch.number} is confirmed, postponing the confirmation"
+      )
+
+      {:error, []}
+    end
+  end
+
+  # Checks whether `minimum_unconfirmed_block` is provably safe to use as the lower
+  # boundary of the unconfirmed range, considering three independent proofs:
+  # - it equals `batch.start_block`, the ordinary case where nothing in the batch
+  #   is confirmed yet;
+  # - the in-tick watermark already covers everything below it, i.e. blocks below
+  #   it were claimed earlier in this same tick and are simply not yet imported
+  #   into the database; or
+  # - the immediately preceding rollup block is confirmed in the database, proving
+  #   the row exists and carries a valid confirmation.
+  @spec boundary_proven?(Arbitrum.L1Batch.t(), non_neg_integer(), non_neg_integer()) :: boolean()
+  defp boundary_proven?(batch, minimum_unconfirmed_block, high_watermark) do
+    cond do
+      minimum_unconfirmed_block == batch.start_block ->
+        true
+
+      high_watermark >= minimum_unconfirmed_block - 1 ->
+        log_info(
+          "Block ##{minimum_unconfirmed_block - 1} of the batch ##{batch.number} is claimed by a confirmation processed earlier in this tick, using ##{minimum_unconfirmed_block} as the lower boundary"
+        )
+
+        true
+
+      not is_nil(DbSettlement.l1_block_of_confirmation_for_rollup_block(minimum_unconfirmed_block - 1)) ->
+        log_info(
+          "Block ##{minimum_unconfirmed_block - 1} of the batch ##{batch.number} is confirmed according to the database, using ##{minimum_unconfirmed_block} as the lower boundary"
+        )
+
+        true
+
+      true ->
+        false
     end
   end
 
