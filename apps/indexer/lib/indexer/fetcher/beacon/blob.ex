@@ -92,7 +92,7 @@ defmodule Indexer.Fetcher.Beacon.Blob do
 
     entries
     |> Enum.map(&entry_to_slot(&1, state))
-    |> Client.get_blob_sidecars()
+    |> Client.get_blobs_batch()
     |> case do
       {:ok, fetched_blobs, retry_indices} ->
         run_fetched_blobs(fetched_blobs)
@@ -140,20 +140,22 @@ defmodule Indexer.Fetcher.Beacon.Blob do
   defp run_fetched_blobs(fetched_blobs) do
     blobs =
       fetched_blobs
-      |> Enum.flat_map(fn %{"data" => blobs} -> blobs end)
+      |> Enum.concat()
       |> Enum.map(&blob_entry/1)
 
     Repo.insert_all(Blob, blobs, on_conflict: :nothing, conflict_target: [:hash])
   end
 
+  # `kzg_proof` is `nil` for blobs taken from the `/eth/v1/beacon/blobs` endpoint
+  # which doesn't expose single-blob KZG proofs.
   defp blob_entry(%{
-         "blob" => blob,
-         "kzg_commitment" => kzg_commitment,
-         "kzg_proof" => kzg_proof
+         blob: blob,
+         kzg_commitment: kzg_commitment,
+         kzg_proof: kzg_proof
        }) do
     {:ok, kzg_commitment} = Data.cast(kzg_commitment)
     {:ok, blob} = Data.cast(blob)
-    {:ok, kzg_proof} = Data.cast(kzg_proof)
+    kzg_proof = cast_optional_data(kzg_proof)
 
     %{
       hash: Blob.hash(kzg_commitment.bytes),
@@ -161,6 +163,13 @@ defmodule Indexer.Fetcher.Beacon.Blob do
       kzg_commitment: kzg_commitment,
       kzg_proof: kzg_proof
     }
+  end
+
+  defp cast_optional_data(nil), do: nil
+
+  defp cast_optional_data(value) do
+    {:ok, data} = Data.cast(value)
+    data
   end
 
   defp defaults do

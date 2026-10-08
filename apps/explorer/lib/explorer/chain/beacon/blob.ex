@@ -1,18 +1,24 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.Beacon.Blob do
-  @moduledoc "Models a data blob broadcasted using eip4844 blob transactions."
+  @moduledoc """
+  Models a data blob broadcasted using eip4844 blob transactions.
+
+  `kzg_proof` is optional: since the Fulu fork the beacon node doesn't expose single-blob KZG proofs
+  (they were replaced by cell proofs), so blobs fetched via `/eth/v1/beacon/blobs` have no proof.
+  """
 
   use Explorer.Schema
 
   alias Explorer.Chain.{Data, Hash}
 
-  @required_attrs ~w(hash blob_data kzg_commitment kzg_proof)a
+  @required_attrs ~w(hash blob_data kzg_commitment)a
+  @optional_attrs ~w(kzg_proof)a
 
   @type t :: %__MODULE__{
           hash: Hash.t(),
           blob_data: Data.t(),
           kzg_commitment: Data.t(),
-          kzg_proof: Data.t()
+          kzg_proof: Data.t() | nil
         }
 
   @primary_key {:hash, Hash.Full, autogenerate: false}
@@ -30,7 +36,7 @@ defmodule Explorer.Chain.Beacon.Blob do
   @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Schema.t()
   def changeset(%__MODULE__{} = struct, attrs \\ %{}) do
     struct
-    |> cast(attrs, @required_attrs)
+    |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
     |> unique_constraint(:hash)
   end
