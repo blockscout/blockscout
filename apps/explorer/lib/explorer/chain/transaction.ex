@@ -2949,7 +2949,11 @@ defmodule Explorer.Chain.Transaction do
             required(:hash) => Hash.t()
           }
         ]) :: {integer(), nil | [term()]}
-  def find_and_update_replaced_transactions(transactions, timeout \\ :infinity) do
+  def find_and_update_replaced_transactions(transactions, timeout \\ :infinity)
+
+  def find_and_update_replaced_transactions([], _timeout), do: {0, []}
+
+  def find_and_update_replaced_transactions(transactions, timeout) do
     query =
       transactions
       |> Enum.reduce(
@@ -3061,12 +3065,57 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
+  Streams pending transactions that have already been replaced, i.e. pending transactions for which a mined
+  transaction with the same `from_address_hash` and `nonce` exists, but which have not been marked as
+  `dropped/replaced` yet.
+
+  Unlike `stream_pending_transactions/4` the result is not limited by the fetcher init limit: the result set only
+  contains transactions that need to be updated, so it stays small.
+  """
+  @spec stream_replaced_pending_transactions(
+          fields :: [:block_hash | :from_address_hash | :hash | :nonce],
+          initial :: accumulator,
+          reducer :: (entry :: term(), accumulator -> accumulator)
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_replaced_pending_transactions(fields, initial, reducer) when is_function(reducer, 2) do
+    query =
+      __MODULE__
+      |> replaced_pending_transactions_query()
+      |> select(^fields)
+
+    Repo.stream_reduce(query, initial, reducer)
+  end
+
+  @doc """
   Query to return all pending transactions
   """
   @spec pending_transactions_query(Ecto.Queryable.t()) :: Ecto.Queryable.t()
   def pending_transactions_query(query) do
     from(transaction in query,
       where: is_nil(transaction.block_hash) and (is_nil(transaction.error) or transaction.error != "dropped/replaced")
+    )
+  end
+
+  @doc """
+  Query to return pending transactions (see `pending_transactions_query/1`) for which a mined transaction with the same
+  `from_address_hash` and `nonce` already exists. Such transactions should be marked as `dropped/replaced`.
+  """
+  @spec replaced_pending_transactions_query(Ecto.Queryable.t()) :: Ecto.Queryable.t()
+  def replaced_pending_transactions_query(query) do
+    mined_duplicate_query =
+      from(mined in __MODULE__,
+        where:
+          mined.nonce == parent_as(:pending).nonce and
+            mined.from_address_hash == parent_as(:pending).from_address_hash and
+            not is_nil(mined.block_hash),
+        select: 1
+      )
+
+    from(transaction in query,
+      as: :pending,
+      where: is_nil(transaction.block_hash) and (is_nil(transaction.error) or transaction.error != "dropped/replaced"),
+      where: exists(mined_duplicate_query)
     )
   end
 
