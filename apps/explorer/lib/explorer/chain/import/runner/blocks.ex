@@ -19,6 +19,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     Block,
     BlockNumberHelper,
     DenormalizationHelper,
+    Hash,
     Import,
     Log,
     PendingOperationsHelper,
@@ -281,11 +282,19 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     |> Multi.run(:counters_corrections, fn repo,
                                            %{
                                              counters_refetched_block_numbers: refetched_block_numbers,
-                                             fork_transactions: forked_transactions
+                                             fork_transactions: forked_transactions,
+                                             delete_address_current_token_balances: deleted,
+                                             insert_derived_address_current_token_balances: inserted
                                            } ->
       Instrumenter.block_import_stage_runner(
         fn ->
-          counters_corrections(repo, refetched_block_numbers, forked_transactions, insert_options)
+          counters_corrections(
+            repo,
+            refetched_block_numbers,
+            forked_transactions,
+            holder_count_token_hashes(deleted, inserted),
+            insert_options
+          )
         end,
         :address_referencing,
         :blocks,
@@ -300,6 +309,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       Instrumenter.block_import_stage_runner(
         fn ->
           deltas = CurrentTokenBalances.token_holder_count_deltas(repo, %{deleted: deleted, inserted: inserted})
+          # if `counters_corrections` updated tokens, these ones are already locked by `acquire_tokens/4`
           Tokens.update_holder_counts_with_deltas(repo, deltas, insert_options)
         end,
         :address_referencing,
@@ -383,14 +393,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   #   content back once the re-fetch completes. Content of forked transactions
   #   is excluded (`block_number` already nulled) — those addresses are
   #   covered by the watermark reset.
-  defp counters_corrections(repo, refetched_block_numbers, forked_transactions, %{
+  defp counters_corrections(repo, refetched_block_numbers, forked_transactions, holder_count_token_hashes, %{
          timeout: timeout,
          timestamps: timestamps
        }) do
     reset_bytes = reset_watermarks_for_forked(repo, forked_transactions, timeout)
 
     {subtracted_address_bytes, subtracted_token_bytes} =
-      subtract_refetched_blocks_content(repo, refetched_block_numbers, timeout, timestamps)
+      subtract_refetched_blocks_content(repo, refetched_block_numbers, holder_count_token_hashes, timeout, timestamps)
 
     AddressCounters.invalidate(reset_bytes ++ subtracted_address_bytes)
     TokenCounters.invalidate(subtracted_token_bytes)
@@ -427,9 +437,16 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     |> AddressCountersConsolidator.reset_covered_watermarks(repo)
   end
 
-  defp subtract_refetched_blocks_content(_repo, [], _timeout, _timestamps), do: {[], []}
+  # tokens whose holder counts `blocks_update_token_holder_counts` may update
+  defp holder_count_token_hashes(deleted_current_token_balances, inserted_current_token_balances) do
+    (deleted_current_token_balances ++ inserted_current_token_balances)
+    |> Enum.map(& &1.token_contract_address_hash)
+    |> Enum.uniq()
+  end
 
-  defp subtract_refetched_blocks_content(repo, block_numbers, timeout, timestamps) do
+  defp subtract_refetched_blocks_content(_repo, [], _holder_count_token_hashes, _timeout, _timestamps), do: {[], []}
+
+  defp subtract_refetched_blocks_content(repo, block_numbers, holder_count_token_hashes, timeout, timestamps) do
     transactions =
       repo.all(
         from(transaction in Transaction,
@@ -452,6 +469,8 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     updated_address_bytes =
       AddressCountersConsolidator.apply_covered_deltas(transactions, token_transfers, :negative, repo)
 
+    acquire_tokens(repo, token_transfers, holder_count_token_hashes, timeout)
+
     updated_token_bytes = TokenCountersConsolidator.apply_covered_transfer_deltas(token_transfers, :negative, repo)
 
     # Enforce CountersRefetchBlock ShareLocks order (see docs: sharelocks.md)
@@ -465,6 +484,34 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     )
 
     {updated_address_bytes, updated_token_bytes}
+  end
+
+  # Both the token counters correction and `blocks_update_token_holder_counts` update `tokens` in this transaction.
+  # Each of them locks its tokens in order, but the second one would lock its tokens while holding the ones of the
+  # first one, so concurrent imports could deadlock. The tokens both of them may update are locked here at once.
+  # Enforce Token ShareLocks order (see docs: sharelocks.md)
+  defp acquire_tokens(_repo, [], _holder_count_token_hashes, _timeout), do: :ok
+
+  defp acquire_tokens(_repo, _token_transfers, [], _timeout), do: :ok
+
+  defp acquire_tokens(repo, token_transfers, holder_count_token_hashes, timeout) do
+    hashes =
+      token_transfers
+      |> Enum.map(& &1.token_contract_address_hash)
+      |> Enum.concat(holder_count_token_hashes)
+      |> Enum.uniq()
+
+    repo.all(
+      from(token in Token,
+        where: token.contract_address_hash in ^hashes,
+        select: token.contract_address_hash,
+        order_by: token.contract_address_hash,
+        lock: "FOR NO KEY UPDATE"
+      ),
+      timeout: timeout
+    )
+
+    :ok
   end
 
   defp fork_transactions(%{
@@ -723,12 +770,10 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
   defp on_conflict_chain_type_extension(_), do: nil
 
-  defp consensus_block_identifiers(blocks_changes) when is_list(blocks_changes) do
+  defp consensus_block_numbers(blocks_changes) when is_list(blocks_changes) do
     blocks_changes
     |> Enum.filter(& &1.consensus)
-    |> Enum.reduce({[], []}, fn block_change, {numbers, hashes} ->
-      {[block_change.number | numbers], [block_change.hash | hashes]}
-    end)
+    |> Enum.map(& &1.number)
   end
 
   # Handles block consensus loss.
@@ -754,7 +799,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          } = _opts
        ) do
     hashes = Enum.map(changes_list, & &1.hash)
-    {consensus_block_numbers, consensus_hashes} = consensus_block_identifiers(changes_list)
+    consensus_block_numbers = consensus_block_numbers(changes_list)
 
     acquire_query =
       from(
@@ -801,97 +846,90 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       |> Enum.map(fn {number, _hash, _previous_consensus} -> number end)
       |> recent_block_number()
 
-    if Enum.empty?(removed_consensus_blocks) do
-      removed_consensus_block_numbers
-      |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
-      |> MissingBlockRange.add_ranges_by_block_numbers()
+    imported_non_consensus_blocks =
+      changes_list
+      |> Enum.reject(& &1.consensus)
+      |> Enum.map(&{&1.number, &1.hash})
 
-      {:ok,
-       %{
-         nonconsensus_blocks: removed_consensus_blocks,
-         beacon_deposit_reorg_block_number: beacon_deposit_reorg_block_number
-       }}
-    else
-      repo.update_all(
-        from(
-          transaction in Transaction,
-          join: s in subquery(acquire_query),
-          on: transaction.block_hash == s.hash,
-          # we don't want to remove consensus from blocks that will be upserted
-          where: transaction.block_hash not in ^consensus_hashes
-        ),
-        [set: [block_consensus: false, updated_at: updated_at]],
-        timeout: timeout
-      )
+    non_consensus_blocks =
+      removed_consensus_blocks
+      |> Enum.filter(fn {number, _hash} -> Enum.member?(consensus_block_numbers, number) end)
+      |> Enum.concat(imported_non_consensus_blocks)
+      |> Enum.uniq()
 
-      repo.update_all(
-        from(
-          token_transfer in TokenTransfer,
-          join: s in subquery(acquire_query),
-          on: token_transfer.block_number == s.number and token_transfer.block_hash == s.hash,
-          # we don't want to remove consensus from blocks that will be upserted
-          where: token_transfer.block_hash not in ^consensus_hashes
-        ),
-        [set: [block_consensus: false, updated_at: updated_at]],
-        timeout: timeout
-      )
+    remove_non_consensus_blocks_data(repo, non_consensus_blocks, updated_at, timeout)
 
-      # Query to find addresses created in lost consensus blocks
-      created_contract_addresses_query =
-        from(
-          t in Transaction,
-          join: s in subquery(acquire_query),
-          on: t.block_hash == s.hash,
-          # we don't want to remove contract code from blocks that will be upserted
-          where: t.block_hash not in ^consensus_hashes,
-          where: not is_nil(t.created_contract_address_hash),
-          select: t.created_contract_address_hash
-        )
+    removed_consensus_block_numbers
+    |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
+    |> MissingBlockRange.add_ranges_by_block_numbers()
 
-      # Delete smart contracts for addresses created in lost consensus blocks
-      repo.delete_all(
-        from(
-          sc in SmartContract,
-          where: sc.address_hash in subquery(created_contract_addresses_query)
-        ),
-        timeout: timeout
-      )
-
-      # Clear contract code from addresses created in lost consensus blocks
-      repo.update_all(
-        from(
-          address in Address,
-          where: address.hash in subquery(created_contract_addresses_query)
-        ),
-        [set: [contract_code: nil, updated_at: updated_at]],
-        timeout: timeout
-      )
-
-      if Application.get_env(:explorer, :chain_type) == :zilliqa do
-        repo.delete_all(
-          from(
-            zrc2_token_transfer in Zrc2TokenTransfer,
-            join: s in subquery(acquire_query),
-            on: zrc2_token_transfer.block_number == s.number and zrc2_token_transfer.block_hash == s.hash,
-            where: zrc2_token_transfer.block_hash not in ^consensus_hashes
-          ),
-          timeout: timeout
-        )
-      end
-
-      removed_consensus_block_numbers
-      |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
-      |> MissingBlockRange.add_ranges_by_block_numbers()
-
-      {:ok,
-       %{
-         nonconsensus_blocks: removed_consensus_blocks,
-         beacon_deposit_reorg_block_number: beacon_deposit_reorg_block_number
-       }}
-    end
+    {:ok,
+     %{
+       nonconsensus_blocks: removed_consensus_blocks,
+       beacon_deposit_reorg_block_number: beacon_deposit_reorg_block_number
+     }}
   rescue
     postgrex_error in Postgrex.Error ->
       {:error, %{exception: postgrex_error}}
+  end
+
+  # Marks transactions and token transfers of the given `{number, hash}` blocks as non-consensus and removes
+  # the contracts created in them. The blocks are filtered by explicit hashes: joining the locking subquery
+  # instead let the planner scan all contract creation transactions for `created_contract_address_hash IS NOT NULL`.
+  defp remove_non_consensus_blocks_data(_repo, [], _updated_at, _timeout), do: :ok
+
+  defp remove_non_consensus_blocks_data(repo, non_consensus_blocks, updated_at, timeout) do
+    {block_numbers, block_hashes} = Enum.unzip(non_consensus_blocks)
+
+    repo.update_all(
+      from(transaction in Transaction, where: transaction.block_hash in ^block_hashes),
+      [set: [block_consensus: false, updated_at: updated_at]],
+      timeout: timeout
+    )
+
+    repo.update_all(
+      from(
+        token_transfer in TokenTransfer,
+        where: token_transfer.block_number in ^block_numbers and token_transfer.block_hash in ^block_hashes
+      ),
+      [set: [block_consensus: false, updated_at: updated_at]],
+      timeout: timeout
+    )
+
+    # `created_contract_address_hash` is filtered here, not in the query, to keep the planner on the block hash index
+    created_contract_address_hashes =
+      from(transaction in Transaction,
+        where: transaction.block_hash in ^block_hashes,
+        select: transaction.created_contract_address_hash
+      )
+      |> repo.all(timeout: timeout)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    if created_contract_address_hashes != [] do
+      repo.delete_all(
+        from(smart_contract in SmartContract, where: smart_contract.address_hash in ^created_contract_address_hashes),
+        timeout: timeout
+      )
+
+      repo.update_all(
+        from(address in Address, where: address.hash in ^created_contract_address_hashes),
+        [set: [contract_code: nil, updated_at: updated_at]],
+        timeout: timeout
+      )
+    end
+
+    if Application.get_env(:explorer, :chain_type) == :zilliqa do
+      repo.delete_all(
+        from(
+          zrc2_token_transfer in Zrc2TokenTransfer,
+          where: zrc2_token_transfer.block_number in ^block_numbers and zrc2_token_transfer.block_hash in ^block_hashes
+        ),
+        timeout: timeout
+      )
+    end
+
+    :ok
   end
 
   # The lowest of the given block numbers that lies within the reorg depth the
@@ -1140,9 +1178,28 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
          %{timeout: timeout}
        )
        when is_list(deleted_address_current_token_balances) do
-    base_query =
+    keys =
+      Enum.uniq_by(
+        deleted_address_current_token_balances,
+        &{&1.address_hash, &1.token_contract_address_hash, &1.token_id}
+      )
+
+    address_hashes = Enum.map(keys, & &1.address_hash)
+    token_contract_address_hashes = Enum.map(keys, & &1.token_contract_address_hash)
+    token_ids = Enum.map(keys, & &1.token_id)
+
+    # The latest balance of every key is looked up separately, by the unique index on
+    # (address_hash, token_contract_address_hash, COALESCE(token_id, -1), block_number).
+    # DISTINCT ON over all the keys at once read the whole balance history of every key.
+    latest_token_balance_query =
       from(
         tb in Address.TokenBalance,
+        where:
+          tb.address_hash == parent_as(:key).address_hash and
+            tb.token_contract_address_hash == parent_as(:key).token_contract_address_hash and
+            fragment("COALESCE(?, -1::numeric) = COALESCE(?, -1::numeric)", tb.token_id, parent_as(:key).token_id),
+        order_by: [desc: tb.block_number],
+        limit: 1,
         select: %{
           address_hash: tb.address_hash,
           token_contract_address_hash: tb.token_contract_address_hash,
@@ -1151,15 +1208,21 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           token_type: tb.token_type,
           value: tb.value,
           value_fetched_at: tb.value_fetched_at
-        },
-        distinct: [tb.address_hash, tb.token_contract_address_hash, fragment("COALESCE(?, -1::numeric)", tb.token_id)],
-        order_by: [desc: tb.block_number]
+        }
       )
 
     query =
-      derive_address_current_token_balances_to_deleted_entries_only_query(
-        base_query,
-        deleted_address_current_token_balances
+      from(
+        key in fragment(
+          "SELECT * FROM unnest(?, ?, ?) AS key(address_hash, token_contract_address_hash, token_id)",
+          type(^address_hashes, {:array, Hash.Address}),
+          type(^token_contract_address_hashes, {:array, Hash.Address}),
+          type(^token_ids, {:array, :decimal})
+        ),
+        as: :key,
+        inner_lateral_join: tb in subquery(latest_token_balance_query),
+        on: true,
+        select: tb
       )
 
     {:ok, repo.all(query, timeout: timeout)}
@@ -1354,9 +1417,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         where: token_transfer.transaction_hash in ^forked_transaction_hashes,
         where: token_transfer.token_type == "ERC-721",
         inner_join: instance in Instance,
+        # `token_id = ANY(token_ids)` lets instances be looked up by (token_contract_address_hash, token_id);
+        # with `token_ids @> ARRAY[token_id]` the planner hashed the whole token_instances table instead
         on:
-          fragment("? @> ARRAY[?::decimal]", token_transfer.token_ids, instance.token_id) and
-            instance.token_contract_address_hash == token_transfer.token_contract_address_hash,
+          instance.token_contract_address_hash == token_transfer.token_contract_address_hash and
+            instance.token_id == fragment("ANY(?)", token_transfer.token_ids),
         # per one token instance we will have only one token transfer
         where:
           token_transfer.block_number == instance.owner_updated_at_block and
@@ -1377,9 +1442,11 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         on: token.contract_address_hash == token_transfer.token_contract_address_hash,
         where: token.type == "ERC-721",
         inner_join: instance in Instance,
+        # `token_id = ANY(token_ids)` lets instances be looked up by (token_contract_address_hash, token_id);
+        # with `token_ids @> ARRAY[token_id]` the planner hashed the whole token_instances table instead
         on:
-          fragment("? @> ARRAY[?::decimal]", token_transfer.token_ids, instance.token_id) and
-            instance.token_contract_address_hash == token_transfer.token_contract_address_hash,
+          instance.token_contract_address_hash == token_transfer.token_contract_address_hash and
+            instance.token_id == fragment("ANY(?)", token_transfer.token_ids),
         # per one token instance we will have only one token transfer
         where:
           token_transfer.block_number == instance.owner_updated_at_block and
@@ -1444,31 +1511,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token_instance.updated_at)
         ]
       ]
-    )
-  end
-
-  defp derive_address_current_token_balances_to_deleted_entries_only_query(
-         base_query,
-         deleted_address_current_token_balances
-       ) do
-    Enum.reduce(
-      deleted_address_current_token_balances,
-      base_query,
-      fn address_current_token_balance, accumulated_query ->
-        %{
-          address_hash: address_hash,
-          token_contract_address_hash: token_contract_address_hash,
-          token_id: token_id
-        } = address_current_token_balance
-
-        from(
-          tb in accumulated_query,
-          or_where:
-            tb.address_hash == ^address_hash and
-              tb.token_contract_address_hash == ^token_contract_address_hash and
-              fragment("coalesce(?.\"token_id\", -1::numeric) = coalesce(?::numeric, -1::numeric)", tb, ^token_id)
-        )
-      end
     )
   end
 

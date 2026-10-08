@@ -162,7 +162,8 @@ defmodule Explorer.Utility.MissingBlockRange do
     max_number = max(from, to)
 
     Repo.transaction(fn ->
-      {all_ranges, lower_range, higher_range} = lock_related_ranges(max_number, min_number)
+      # the adjacent ranges are locked as well: `fill_ranges_between/4` merges the new range into them
+      {all_ranges, lower_range, higher_range} = lock_related_ranges(max_number, min_number, 1)
 
       case {lower_range, higher_range} do
         {%__MODULE__{} = same_range, %__MODULE__{} = same_range} ->
@@ -314,13 +315,27 @@ defmodule Explorer.Utility.MissingBlockRange do
     end)
   end
 
-  defp lock_related_ranges(from, to) do
-    all_ranges =
+  # Locks the ranges overlapping [to, from] and returns them. With a non-zero `margin` the ranges within
+  # `margin` blocks of the interval are locked too (in the same statement, so in the same order), but
+  # they are not returned.
+  defp lock_related_ranges(from, to, margin \\ 0) do
+    locked_ranges =
       __MODULE__
-      |> where([m], fragment("int4range(?, ?, '[]') && int4range(?, ?, '[]')", ^to, ^from, m.to_number, m.from_number))
+      |> where(
+        [m],
+        fragment(
+          "int4range(?, ?, '[]') && int4range(?, ?, '[]')",
+          ^(to - margin),
+          ^(from + margin),
+          m.to_number,
+          m.from_number
+        )
+      )
       |> order_by([m], desc: m.from_number)
       |> lock("FOR UPDATE")
       |> Repo.all()
+
+    all_ranges = Enum.filter(locked_ranges, &(&1.from_number >= to and &1.to_number <= from))
 
     lower_range = Enum.find(all_ranges, &(&1.from_number >= to and &1.to_number <= to))
     higher_range = Enum.find(all_ranges, &(&1.from_number >= from and &1.to_number <= from))
@@ -613,8 +628,8 @@ defmodule Explorer.Utility.MissingBlockRange do
   defp fill_ranges_between(_all_ranges, _from, _to, _priority), do: :ok
 
   defp insert_or_update_adjacent_ranges(from, to, priority, :both) do
-    upper_range = get_range_by_block_number(from + 1, priority)
-    lower_range = get_range_by_block_number(to - 1, priority)
+    upper_range = lock_range_by_block_number(from + 1, priority)
+    lower_range = lock_range_by_block_number(to - 1, priority)
 
     case {lower_range, upper_range} do
       {nil, nil} ->
@@ -635,8 +650,8 @@ defmodule Explorer.Utility.MissingBlockRange do
   defp insert_or_update_adjacent_ranges(from, to, priority, direction) do
     {range, update_params} =
       case direction do
-        :up -> {get_range_by_block_number(from + 1, priority), %{to_number: to}}
-        :down -> {get_range_by_block_number(to - 1, priority), %{from_number: from}}
+        :up -> {lock_range_by_block_number(from + 1, priority), %{to_number: to}}
+        :down -> {lock_range_by_block_number(to - 1, priority), %{from_number: from}}
       end
 
     if is_nil(range) do
@@ -644,6 +659,16 @@ defmodule Explorer.Utility.MissingBlockRange do
     else
       update_range(range, update_params)
     end
+  end
+
+  # The adjacent range is updated right after it is read: without the lock a concurrent transaction may
+  # delete it in between (e.g. `clear_batch_if_indexed/1`), and the update fails with `Ecto.StaleEntryError`.
+  defp lock_range_by_block_number(number, priority) do
+    number
+    |> include_bound_query()
+    |> priority_query(priority)
+    |> lock("FOR UPDATE")
+    |> Repo.one()
   end
 
   defp select_all_ranges_within_the_range(all_ranges, from, to) do
