@@ -150,14 +150,14 @@ defmodule Explorer.DataCase do
   leaks a finished status into the whole test run.
   """
   def set_fill_logs_optimized_fields_migration_started do
-    initial_started? = BackgroundMigrations.get_create_logs_block_number_transaction_index_index_unique_index_finished()
+    initial_started? = BackgroundMigrations.get_create_logs_first_topic_id_index_finished()
     initial_finished? = BackgroundMigrations.get_fill_logs_optimized_fields_finished()
 
-    BackgroundMigrations.set_create_logs_block_number_transaction_index_index_unique_index_finished(true)
+    BackgroundMigrations.set_create_logs_first_topic_id_index_finished(true)
     BackgroundMigrations.set_fill_logs_optimized_fields_finished(false)
 
     ExUnit.Callbacks.on_exit(fn ->
-      BackgroundMigrations.set_create_logs_block_number_transaction_index_index_unique_index_finished(initial_started?)
+      BackgroundMigrations.set_create_logs_first_topic_id_index_finished(initial_started?)
       BackgroundMigrations.set_fill_logs_optimized_fields_finished(initial_finished?)
     end)
   end

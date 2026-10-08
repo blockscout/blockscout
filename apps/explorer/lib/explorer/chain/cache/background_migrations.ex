@@ -82,6 +82,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_create_address_current_token_balances_address_hash_block_number_index_finished,
     key: :heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished,
     key: :create_logs_block_number_transaction_index_index_unique_index_finished,
+    key: :create_logs_first_topic_id_index_finished,
     key: :fill_logs_optimized_fields_finished
 
   @dialyzer :no_match
@@ -123,6 +124,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateLogsBlockNumberTransactionIndexIndexUniqueIndex,
     CreateLogsDepositsWithdrawalsIndex,
     CreateLogsDepositsWithdrawalsIndexWithUpdatedPk,
+    CreateLogsFirstTopicIdIndex,
     CreateSmartContractsLanguageIndex,
     CreateTokensNamePartialFtsIndex,
     CreateTokensOrdFiatHolderNameIndex,
@@ -515,6 +517,13 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       CreateLogsBlockNumberTransactionIndexIndexUniqueIndex,
       &set_create_logs_block_number_transaction_index_index_unique_index_finished/1
+    )
+  end
+
+  defp handle_fallback(:create_logs_first_topic_id_index_finished) do
+    set_and_return_migration_status(
+      CreateLogsFirstTopicIdIndex,
+      &set_create_logs_first_topic_id_index_finished/1
     )
   end
 
