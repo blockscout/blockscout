@@ -18,6 +18,6 @@ defmodule Explorer.Utility.LogHelper do
 
   @spec fill_optimized_fields_migration_started? :: boolean()
   def fill_optimized_fields_migration_started? do
-    BackgroundMigrations.get_create_logs_block_number_transaction_index_index_unique_index_finished()
+    BackgroundMigrations.get_create_logs_first_topic_id_index_finished()
   end
 end

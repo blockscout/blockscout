@@ -8,6 +8,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex do
 
   require Logger
 
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
@@ -59,5 +60,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex do
   end
 
   @impl HeavyDbIndexOperation
-  def update_cache, do: :ok
+  def update_cache do
+    BackgroundMigrations.set_create_logs_first_topic_id_index_finished(true)
+  end
 end
