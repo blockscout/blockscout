@@ -130,6 +130,28 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
   end
 
   @doc """
+    Gets the block number by hash without requiring the block to belong to a batch.
+
+    ## Parameters
+    - `block_hash`: The hash of the block.
+
+    ## Returns
+    - The block number, or `nil` if the block is not indexed yet.
+  """
+  @spec block_number_by_hash(binary()) :: FullBlock.block_number() | nil
+  def block_number_by_hash(block_hash) when is_binary(block_hash) do
+    query =
+      from(
+        fb in FullBlock,
+        select: fb.number,
+        where: fb.hash == ^block_hash
+      )
+
+    query
+    |> Repo.one()
+  end
+
+  @doc """
     Checks if the numbers from the provided list correspond to the numbers of indexed batches.
 
     ## Parameters
