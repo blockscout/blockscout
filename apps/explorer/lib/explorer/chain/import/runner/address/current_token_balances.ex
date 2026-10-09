@@ -233,15 +233,51 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   defp pairs_with_other_qualifying_rows(_repo, [], _batch_triples, _timeout), do: MapSet.new()
 
   defp pairs_with_other_qualifying_rows(repo, pairs, batch_triples, timeout) do
-    ids =
-      Enum.map(pairs, fn {token_contract_address_hash, address_hash} ->
-        {address_hash.bytes, token_contract_address_hash.bytes}
+    batch_rows_count_by_pair =
+      Enum.frequencies_by(batch_triples, fn {address_hash_bytes, token_contract_address_hash_bytes, _token_id} ->
+        {address_hash_bytes, token_contract_address_hash_bytes}
       end)
 
-    query =
+    address_hashes = Enum.map(pairs, fn {_token_contract_address_hash, address_hash} -> address_hash end)
+
+    token_contract_address_hashes =
+      Enum.map(pairs, fn {token_contract_address_hash, _address_hash} -> token_contract_address_hash end)
+
+    # A pair with more qualifying rows than it has in the batch has a qualifying row outside the batch,
+    # so reading one row more than the batch rows of the pair is enough, even for an address holding
+    # many token ids of one ERC-1155/ERC-404 token.
+    rows_limits =
+      Enum.map(pairs, fn {token_contract_address_hash, address_hash} ->
+        Map.get(batch_rows_count_by_pair, {address_hash.bytes, token_contract_address_hash.bytes}, 0) + 1
+      end)
+
+    qualifying_rows_query =
       from(ctb in CurrentTokenBalance,
-        where: ^QueryHelper.tuple_in([:address_hash, :token_contract_address_hash], ids),
+        where:
+          ctb.address_hash == parent_as(:pair).address_hash and
+            ctb.token_contract_address_hash == parent_as(:pair).token_contract_address_hash,
         where: ctb.value > 0 or ctb.token_type == "ERC-7984",
+        limit: parent_as(:pair).rows_limit,
+        select: %{
+          token_contract_address_hash: ctb.token_contract_address_hash,
+          address_hash: ctb.address_hash,
+          token_id: ctb.token_id
+        }
+      )
+
+    # every pair is looked up separately by the unique index on
+    # (address_hash, token_contract_address_hash, COALESCE(token_id, -1))
+    query =
+      from(
+        pair in fragment(
+          "SELECT * FROM unnest(?, ?, ?) AS pair(address_hash, token_contract_address_hash, rows_limit)",
+          type(^address_hashes, {:array, Hash.Address}),
+          type(^token_contract_address_hashes, {:array, Hash.Address}),
+          type(^rows_limits, {:array, :integer})
+        ),
+        as: :pair,
+        inner_lateral_join: ctb in subquery(qualifying_rows_query),
+        on: true,
         select: {ctb.token_contract_address_hash, ctb.address_hash, ctb.token_id}
       )
 

@@ -231,6 +231,36 @@ defmodule Explorer.Utility.MissingBlockRangeTest do
              end)
     end
 
+    test "does not fail when the adjacent range is deleted by a concurrent transaction" do
+      adjacent_range = Repo.insert!(%MissingBlockRange{from_number: 10, to_number: 8, priority: nil})
+      test_pid = self()
+
+      # e.g. `clear_batch_if_indexed/1` of a concurrent catchup task
+      deleting_task =
+        Task.async(fn ->
+          Repo.transaction(fn ->
+            Repo.delete!(adjacent_range)
+            send(test_pid, :deleted)
+
+            receive do
+              :commit -> :ok
+            end
+          end)
+        end)
+
+      assert_receive :deleted
+
+      adding_task = Task.async(fn -> MissingBlockRange.add_ranges_by_block_numbers([11]) end)
+
+      # let the adding task reach the adjacent range locked by the deleting one
+      Process.sleep(200)
+      send(deleting_task.pid, :commit)
+      Task.await(deleting_task)
+
+      assert :ok = Task.await(adding_task)
+      assert [%{from_number: 11, to_number: 11, priority: nil}] = sorted_ranges()
+    end
+
     test "handles case when applying range with 1 priority doesn't overlap with the existing different ranges in the DB" do
       Repo.insert!(%MissingBlockRange{from_number: 5, to_number: 4, priority: nil})
       Repo.insert!(%MissingBlockRange{from_number: 8, to_number: 7, priority: 1})
