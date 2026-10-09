@@ -5,7 +5,6 @@ defmodule Explorer.Market.Source.CoinGecko do
   """
 
   alias Explorer.Chain.Hash
-  alias Explorer.Helper
   alias Explorer.Market.{Source, Token}
 
   @behaviour Source
@@ -92,7 +91,7 @@ defmodule Explorer.Market.Source.CoinGecko do
   @impl Source
   def fetch_market_cap_history(previous_days) do
     with coin_id when not is_nil(coin_id) <- config(:coin_id),
-         {:ok, %{"market_caps" => market_caps_dates}} <-
+         {:ok, %{"market_caps" => market_caps}} <-
            Source.http_request(
              base_url()
              |> URI.append_path("/coins/#{coin_id}/market_chart")
@@ -103,18 +102,9 @@ defmodule Explorer.Market.Source.CoinGecko do
              __MODULE__,
              :coins_market_chart_market_cap
            ) do
-      market_caps =
-        case market_caps_dates do
-          [_ | market_caps] -> market_caps
-          _ -> []
-        end
-
       result =
-        for {[_, market_cap], [date, _]} <- Stream.zip(market_caps, market_caps_dates) do
-          %{
-            market_cap: Source.to_decimal(market_cap),
-            date: Helper.unix_timestamp_to_date(date, :millisecond)
-          }
+        for %{date: date, closing: market_cap} <- fold_into_daily_records(market_caps) do
+          %{market_cap: market_cap, date: date}
         end
 
       {:ok, result}
@@ -270,18 +260,12 @@ defmodule Explorer.Market.Source.CoinGecko do
              __MODULE__,
              :coins_market_chart_price
            ) do
-      closings =
-        case prices do
-          [_ | closings] -> closings
-          _ -> []
-        end
-
       result =
-        for {[date, opening_price], [_, closing_price]} <- Stream.zip(prices, closings) do
+        for %{date: date, opening: opening_price, closing: closing_price} <- fold_into_daily_records(prices) do
           %{
-            closing_price: Source.to_decimal(closing_price),
-            date: Helper.unix_timestamp_to_date(date, :millisecond),
-            opening_price: Source.to_decimal(opening_price) || Source.to_decimal(closing_price),
+            closing_price: closing_price,
+            date: date,
+            opening_price: opening_price,
             secondary_coin: secondary_coin?
           }
         end
@@ -292,6 +276,68 @@ defmodule Explorer.Market.Source.CoinGecko do
       {:ok, nil} -> {:ok, []}
       {:error, _reason} = error -> error
     end
+  end
+
+  # `/coins/{id}/market_chart` returns one point per day (at 00:00 UTC) only for
+  # ranges longer than 90 days. Shorter ranges, including the periodic `days=1`
+  # refetch of the history fetcher, come with hourly or 5-minute granularity, so the
+  # points are folded into a single record per UTC date here:
+  #
+  #   * `opening` is the first value of the date;
+  #   * `closing` is the first value of the next date, or the last value of the
+  #     range for its latest date (CoinGecko appends the current value as the last
+  #     point, so this is the live price for today).
+  #
+  # The opening value of the earliest date is only known when the range starts at
+  # the beginning of that date. A range starting mid-day (e.g. the `days=1` refetch
+  # covers the last 24 hours) yields `nil` instead, so that the value already stored
+  # in `market_history` is kept by the upsert.
+  @day_start_tolerance ~T[01:00:00]
+
+  @spec fold_into_daily_records([[number() | nil]]) :: [
+          %{date: Date.t(), opening: Decimal.t() | nil, closing: Decimal.t()}
+        ]
+  defp fold_into_daily_records(points) when is_list(points) do
+    points
+    |> Enum.flat_map(fn
+      [timestamp, value] when is_integer(timestamp) and not is_nil(value) ->
+        [{DateTime.from_unix!(timestamp, :millisecond), Source.to_decimal(value)}]
+
+      _ ->
+        []
+    end)
+    |> Enum.sort_by(fn {datetime, _value} -> datetime end, DateTime)
+    |> Enum.chunk_by(fn {datetime, _value} -> DateTime.to_date(datetime) end)
+    |> fold_daily_chunks(true, [])
+  end
+
+  defp fold_into_daily_records(_points), do: []
+
+  defp fold_daily_chunks([], _earliest?, acc), do: Enum.reverse(acc)
+
+  defp fold_daily_chunks([[{first_datetime, first_value} | _] = chunk | rest], earliest?, acc) do
+    closing =
+      case rest do
+        [[{_next_datetime, next_first_value} | _] | _] -> next_first_value
+        [] -> chunk |> List.last() |> elem(1)
+      end
+
+    opening =
+      if earliest? and not day_start?(first_datetime) do
+        nil
+      else
+        first_value
+      end
+
+    record = %{date: DateTime.to_date(first_datetime), opening: opening, closing: closing}
+
+    fold_daily_chunks(rest, false, [record | acc])
+  end
+
+  defp day_start?(datetime) do
+    datetime
+    |> DateTime.to_time()
+    |> Time.compare(@day_start_tolerance) == :lt
   end
 
   defp base_url do

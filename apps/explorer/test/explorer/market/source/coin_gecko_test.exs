@@ -327,6 +327,55 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
                 }
               ]} == CoinGecko.fetch_native_coin_price_history(3)
     end
+
+    test "folds intraday points into one record per date", %{bypass: bypass} do
+      Bypass.expect_once(bypass, "GET", "/coins/native_coin_id/market_chart", fn conn ->
+        assert conn.query_string == "vs_currency=aed&days=1"
+
+        Conn.resp(conn, 200, json_coin_market_chart_intraday())
+      end)
+
+      # The range starts mid-day, so the opening price of its first date is unknown;
+      # the closing price of a date is the first price of the next one, and the
+      # closing price of the latest date is the last (live) price.
+      assert {:ok,
+              [
+                %{
+                  date: ~D[2025-02-13],
+                  opening_price: nil,
+                  closing_price: Decimal.new("12.5"),
+                  secondary_coin: false
+                },
+                %{
+                  date: ~D[2025-02-14],
+                  opening_price: Decimal.new("12.5"),
+                  closing_price: Decimal.new("13.5"),
+                  secondary_coin: false
+                }
+              ]} == CoinGecko.fetch_native_coin_price_history(1)
+    end
+
+    test "skips points with null values", %{bypass: bypass} do
+      Bypass.expect_once(bypass, "GET", "/coins/native_coin_id/market_chart", fn conn ->
+        Conn.resp(conn, 200, ~s({"prices": [[1739318400000, null], [1739404800000, 2.2], [1739491200000, 3.3]]}))
+      end)
+
+      assert {:ok,
+              [
+                %{
+                  date: ~D[2025-02-13],
+                  opening_price: Decimal.new("2.2"),
+                  closing_price: Decimal.new("3.3"),
+                  secondary_coin: false
+                },
+                %{
+                  date: ~D[2025-02-14],
+                  opening_price: Decimal.new("3.3"),
+                  closing_price: Decimal.new("3.3"),
+                  secondary_coin: false
+                }
+              ]} == CoinGecko.fetch_native_coin_price_history(3)
+    end
   end
 
   describe "secondary_coin_price_history_fetching_enabled?" do
@@ -426,6 +475,20 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
                   market_cap: Decimal.new("4.4")
                 }
               ]} == CoinGecko.fetch_market_cap_history(3)
+    end
+
+    test "folds intraday points into one record per date", %{bypass: bypass} do
+      Bypass.expect_once(bypass, "GET", "/coins/native_coin_id/market_chart", fn conn ->
+        assert conn.query_string == "vs_currency=aed&days=1"
+
+        Conn.resp(conn, 200, json_coin_market_chart_intraday())
+      end)
+
+      assert {:ok,
+              [
+                %{date: ~D[2025-02-13], market_cap: Decimal.new("120.5")},
+                %{date: ~D[2025-02-14], market_cap: Decimal.new("130.5")}
+              ]} == CoinGecko.fetch_market_cap_history(1)
     end
   end
 
@@ -763,6 +826,28 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
         "total_supply": 8000000
       }
     ]
+    """
+  end
+
+  # 5-minute granularity response of `days=1`: starts at 2025-02-13 15:00:00 UTC,
+  # crosses midnight and ends with the live point at 2025-02-14 07:28:26 UTC.
+  defp json_coin_market_chart_intraday do
+    """
+    {
+      "prices": [
+        [1739458800000, 10.5],
+        [1739490900000, 11.5],
+        [1739491380000, 12.5],
+        [1739518106000, 13.5]
+      ],
+      "market_caps": [
+        [1739458800000, 100.5],
+        [1739490900000, 110.5],
+        [1739491380000, 120.5],
+        [1739518106000, 130.5]
+      ],
+      "total_volumes": []
+    }
     """
   end
 
