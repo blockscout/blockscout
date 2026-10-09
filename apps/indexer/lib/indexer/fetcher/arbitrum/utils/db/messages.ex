@@ -181,30 +181,31 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
   def initiated_l2_to_l1_messages(block_number)
       when is_integer(block_number) and block_number >= 0 do
     # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.l2_to_l1_messages(:initiated, block_number)
+    Reader.l2_to_l1_messages([:initiated], block_number)
     |> Enum.map(&message_to_map/1)
   end
 
   @doc """
-    Retrieves a list of L2-to-L1 'sent' messages that have been included up to
-    a specified rollup block number.
+    Retrieves a list of L2-to-L1 messages that are not confirmed yet and that
+    originate in rollup blocks up to a specified block number.
 
-    A message is considered 'sent' when there is a batch including the transaction
-    that initiated the message, and this batch has been successfully delivered to L1.
+    A message is not confirmed when its status is 'initiated' or 'sent'. The
+    confirmation of the rollup block of such a message changes its status to
+    'confirmed'. One query reads both statuses.
 
     ## Parameters
-    - `block_number`: The block number up to which sent L2-to-L1 messages are to be retrieved.
+    - `block_number`: The block number up to which the messages are to be retrieved.
 
     ## Returns
-    - A list of maps, each representing a sent L2-to-L1 message compatible with the
-      database import operation. If no messages with the 'sent' status are found by
-      the specified block number, an empty list is returned.
+    - A list of maps, each representing a not yet confirmed L2-to-L1 message
+      compatible with the database import operation. If no such message is found
+      by the specified block number, an empty list is returned.
   """
-  @spec sent_l2_to_l1_messages(FullBlock.block_number()) :: [Message.to_import()]
-  def sent_l2_to_l1_messages(block_number)
+  @spec unconfirmed_l2_to_l1_messages(FullBlock.block_number()) :: [Message.to_import()]
+  def unconfirmed_l2_to_l1_messages(block_number)
       when is_integer(block_number) and block_number >= 0 do
     # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.l2_to_l1_messages(:sent, block_number)
+    Reader.l2_to_l1_messages([:initiated, :sent], block_number)
     |> Enum.map(&message_to_map/1)
   end
 
@@ -226,7 +227,7 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
   @spec confirmed_l2_to_l1_messages() :: [Message.to_import()]
   def confirmed_l2_to_l1_messages do
     # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
-    Reader.l2_to_l1_messages(:confirmed, nil)
+    Reader.l2_to_l1_messages([:confirmed], nil)
     |> Enum.map(&message_to_map/1)
   end
 

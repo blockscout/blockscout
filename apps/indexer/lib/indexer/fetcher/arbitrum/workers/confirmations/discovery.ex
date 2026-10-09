@@ -145,7 +145,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
     %{
       lifecycle_transactions: Map.values(lifecycle_transactions),
       rollup_block_confirmations: rollup_block_confirmations,
-      messages: confirmed_l2_to_l1_messages(Enum.max(tops)),
+      messages: messages_to_confirm(Enum.max(tops)),
       lowest_top: Enum.min(tops)
     }
   end
@@ -214,11 +214,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
   # `:initiated`. Thus the function takes the messages in `:initiated` and in
   # `:sent`. The import runner keeps the highest status, so a later `:sent` from
   # the batch discovery does not replace `:confirmed`.
-  @spec confirmed_l2_to_l1_messages(non_neg_integer()) :: [Arbitrum.Message.to_import()]
-  defp confirmed_l2_to_l1_messages(highest_top_of_window) do
+  @spec messages_to_confirm(non_neg_integer()) :: [Arbitrum.Message.to_import()]
+  defp messages_to_confirm(highest_top_of_window) do
     if highest_top_of_window > DbSettlement.highest_confirmed_block(-1) do
-      (DbMessages.initiated_l2_to_l1_messages(highest_top_of_window) ++
-         DbMessages.sent_l2_to_l1_messages(highest_top_of_window))
+      highest_top_of_window
+      |> DbMessages.unconfirmed_l2_to_l1_messages()
       |> Enum.map(fn message -> Map.put(message, :status, :confirmed) end)
     else
       []

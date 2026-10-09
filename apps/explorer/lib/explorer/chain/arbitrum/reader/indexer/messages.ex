@@ -226,44 +226,44 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
   end
 
   @doc """
-    Retrieves all L2-to-L1 messages with the specified status.
+    Retrieves all L2-to-L1 messages with one of the specified statuses.
 
     If `block_number` is not `nil`, only messages originating in rollup blocks with
     numbers not higher than the specified block are considered. Otherwise, all
     messages are considered.
 
     ## Parameters
-    - `status`: The status of the messages to retrieve, such as `:initiated`,
-      `:sent`, `:confirmed`, or `:relayed`.
+    - `statuses`: The list of the statuses of the messages to retrieve, with the
+      elements `:initiated`, `:sent`, `:confirmed`, or `:relayed`.
     - `block_number`: The number of a rollup block that limits the messages lookup,
       or `nil`.
 
     ## Returns
     - Instances of `Explorer.Chain.Arbitrum.Message` corresponding to the criteria,
-      or `[]` if no messages with the given status are found.
+      or `[]` if no messages with the given statuses are found.
   """
-  @spec l2_to_l1_messages(:confirmed | :initiated | :relayed | :sent, FullBlock.block_number() | nil) :: [
+  @spec l2_to_l1_messages([:confirmed | :initiated | :relayed | :sent], FullBlock.block_number() | nil) :: [
           Message.t()
         ]
-  def l2_to_l1_messages(status, block_number)
-      when status in [:initiated, :sent, :confirmed, :relayed] and
+  def l2_to_l1_messages(statuses, block_number)
+      when is_list(statuses) and
              is_integer(block_number) and
              block_number >= 0 do
     query =
       from(msg in Message,
         where:
           msg.direction == :from_l2 and msg.originating_transaction_block_number <= ^block_number and
-            msg.status == ^status,
+            msg.status in ^statuses,
         order_by: [desc: msg.message_id]
       )
 
     Repo.all(query)
   end
 
-  def l2_to_l1_messages(status, nil) when status in [:initiated, :sent, :confirmed, :relayed] do
+  def l2_to_l1_messages(statuses, nil) when is_list(statuses) do
     query =
       from(msg in Message,
-        where: msg.direction == :from_l2 and msg.status == ^status,
+        where: msg.direction == :from_l2 and msg.status in ^statuses,
         order_by: [desc: msg.message_id]
       )
 
