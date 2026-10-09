@@ -1036,6 +1036,11 @@ config :explorer, Explorer.Migrator.FillInternalTransactionsAddressIds,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_CONCURRENCY", 10),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_INTERNAL_TRANSACTIONS_ADDRESS_IDS_TIMEOUT", "5s")
 
+config :explorer, Explorer.Migrator.DeleteNonConsensusLogs,
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_DELETE_NON_CONSENSUS_LOGS_BATCH_SIZE", 100),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_DELETE_NON_CONSENSUS_LOGS_CONCURRENCY", 10),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_DELETE_NON_CONSENSUS_LOGS_TIMEOUT", "0s")
+
 config :explorer, Explorer.Migrator.TransactionHasTokenTransfers,
   enabled: ConfigHelper.parse_bool_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_ENABLED", "true"),
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_BATCH_SIZE", 30),
