@@ -521,25 +521,6 @@ defmodule Explorer.Utility.MissingBlockRange do
   defp update_to_number_or_delete_range(%{from_number: from} = range, to) when to >= from, do: Repo.delete(range)
   defp update_to_number_or_delete_range(range, to), do: update_range(range, %{to_number: to + 1})
 
-  @doc """
-    Fetches the range of blocks that includes the given block number if it falls
-    within any of the ranges that need to be (re)fetched.
-
-    ## Parameters
-    - `number`: The block number to check against the missing block ranges.
-
-    ## Returns
-    - A single range record of `Explorer.Utility.MissingBlockRange` that includes
-      the given block number, or `nil` if no such range is found.
-  """
-  @spec get_range_by_block_number(Block.block_number(), integer() | nil | :not_specified) :: nil | __MODULE__.t()
-  def get_range_by_block_number(number, priority \\ :not_specified) do
-    number
-    |> include_bound_query()
-    |> priority_query(priority)
-    |> Repo.one()
-  end
-
   # Fills all missing block ranges that overlap with the interval [from, to]
   @spec fill_ranges_between([__MODULE__.t()], Block.block_number(), Block.block_number(), integer() | nil) :: :ok
   defp fill_ranges_between(all_ranges, from, to, priority) when from >= to do
@@ -802,7 +783,6 @@ defmodule Explorer.Utility.MissingBlockRange do
     from(r in __MODULE__, where: fragment("int4range(?, ?, '[]') @> ?::int", r.to_number, r.from_number, ^bound))
   end
 
-  defp priority_query(query, :not_specified), do: query
   defp priority_query(query, nil), do: where(query, [m], is_nil(m.priority))
   defp priority_query(query, _priority), do: where(query, [m], not is_nil(m.priority))
 
