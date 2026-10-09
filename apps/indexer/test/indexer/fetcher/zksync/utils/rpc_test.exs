@@ -73,4 +73,23 @@ defmodule Indexer.Fetcher.ZkSync.Utils.RpcTest do
                ZksyncRpc.fetch_transaction_receipt_by_hash(raw_transaction_hash, json_rpc_named_arguments)
     end
   end
+
+  describe "get_proven_batches_from_calldata/1" do
+    test "returns proven batch numbers from v27+ proveBatchesSharedBridge calldata" do
+      calldata =
+        "0x9271e450" <>
+          # _chainAddress
+          "0000000000000000000000001111111111111111111111111111111111111111" <>
+          # _processBatchFrom
+          "000000000000000000000000000000000000000000000000000000000000000c" <>
+          # _processBatchTo
+          "000000000000000000000000000000000000000000000000000000000000000e" <>
+          # offset to _proofData
+          "0000000000000000000000000000000000000000000000000000000000000080" <>
+          # empty _proofData
+          "0000000000000000000000000000000000000000000000000000000000000000"
+
+      assert ZksyncRpc.get_proven_batches_from_calldata(calldata) == [12, 13, 14]
+    end
+  end
 end
