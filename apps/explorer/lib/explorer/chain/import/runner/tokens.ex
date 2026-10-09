@@ -36,15 +36,6 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
       end)
       |> Enum.unzip()
 
-    token_query =
-      from(
-        token in Token,
-        where: token.contract_address_hash in ^hashes,
-        select: token.contract_address_hash,
-        order_by: token.contract_address_hash,
-        lock: "FOR NO KEY UPDATE"
-      )
-
     query =
       from(
         token in Token,
@@ -55,7 +46,7 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
             ^deltas
           ),
         on: token.contract_address_hash == deltas.contract_address_hash,
-        where: token.contract_address_hash in subquery(token_query),
+        where: token.contract_address_hash in subquery(Token.lock_query(hashes)),
         where: not is_nil(token.holder_count),
         update: [
           set: [

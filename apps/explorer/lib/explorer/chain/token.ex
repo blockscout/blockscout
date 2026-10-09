@@ -395,6 +395,22 @@ defmodule Explorer.Chain.Token do
     from(token in __MODULE__, where: token.contract_address_hash in ^contract_address_hashes)
   end
 
+  @doc """
+  Locks the tokens with the given contract address hashes in the Token ShareLocks order (see docs: sharelocks.md).
+  Statements updating tokens take their locks with this query, as a subquery or in advance, so that the order is
+  the same everywhere.
+  """
+  @spec lock_query([Hash.Address.t() | binary()]) :: Ecto.Query.t()
+  def lock_query(contract_address_hashes) do
+    from(
+      token in __MODULE__,
+      where: token.contract_address_hash in ^contract_address_hashes,
+      select: token.contract_address_hash,
+      order_by: token.contract_address_hash,
+      lock: "FOR NO KEY UPDATE"
+    )
+  end
+
   def base_token_query(type, sorting) do
     query = from(t in Token, preload: [:contract_address])
 

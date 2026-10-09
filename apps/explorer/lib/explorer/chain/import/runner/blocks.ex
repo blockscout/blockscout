@@ -489,27 +489,17 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   # Both the token counters correction and `blocks_update_token_holder_counts` update `tokens` in this transaction.
   # Each of them locks its tokens in order, but the second one would lock its tokens while holding the ones of the
   # first one, so concurrent imports could deadlock. The tokens both of them may update are locked here at once.
-  # Enforce Token ShareLocks order (see docs: sharelocks.md)
   defp acquire_tokens(_repo, [], _holder_count_token_hashes, _timeout), do: :ok
 
   defp acquire_tokens(_repo, _token_transfers, [], _timeout), do: :ok
 
   defp acquire_tokens(repo, token_transfers, holder_count_token_hashes, timeout) do
-    hashes =
-      token_transfers
-      |> Enum.map(& &1.token_contract_address_hash)
-      |> Enum.concat(holder_count_token_hashes)
-      |> Enum.uniq()
-
-    repo.all(
-      from(token in Token,
-        where: token.contract_address_hash in ^hashes,
-        select: token.contract_address_hash,
-        order_by: token.contract_address_hash,
-        lock: "FOR NO KEY UPDATE"
-      ),
-      timeout: timeout
-    )
+    token_transfers
+    |> Enum.map(& &1.token_contract_address_hash)
+    |> Enum.concat(holder_count_token_hashes)
+    |> Enum.uniq()
+    |> Token.lock_query()
+    |> repo.all(timeout: timeout)
 
     :ok
   end
@@ -846,18 +836,21 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       |> Enum.map(fn {number, _hash, _previous_consensus} -> number end)
       |> recent_block_number()
 
-    imported_non_consensus_blocks =
-      changes_list
-      |> Enum.reject(& &1.consensus)
-      |> Enum.map(&{&1.number, &1.hash})
+    # the imported non-consensus blocks are processed only along with the blocks that lost consensus here
+    unless Enum.empty?(removed_consensus_blocks) do
+      imported_non_consensus_blocks =
+        changes_list
+        |> Enum.reject(& &1.consensus)
+        |> Enum.map(&{&1.number, &1.hash})
 
-    non_consensus_blocks =
-      removed_consensus_blocks
-      |> Enum.filter(fn {number, _hash} -> Enum.member?(consensus_block_numbers, number) end)
-      |> Enum.concat(imported_non_consensus_blocks)
-      |> Enum.uniq()
+      non_consensus_blocks =
+        removed_consensus_blocks
+        |> Enum.filter(fn {number, _hash} -> Enum.member?(consensus_block_numbers, number) end)
+        |> Enum.concat(imported_non_consensus_blocks)
+        |> Enum.uniq()
 
-    remove_non_consensus_blocks_data(repo, non_consensus_blocks, updated_at, timeout)
+      remove_non_consensus_blocks_data(repo, non_consensus_blocks, updated_at, timeout)
+    end
 
     removed_consensus_block_numbers
     |> Enum.reject(&Enum.member?(consensus_block_numbers, &1))
@@ -881,11 +874,15 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   defp remove_non_consensus_blocks_data(repo, non_consensus_blocks, updated_at, timeout) do
     {block_numbers, block_hashes} = Enum.unzip(non_consensus_blocks)
 
-    repo.update_all(
-      from(transaction in Transaction, where: transaction.block_hash in ^block_hashes),
-      [set: [block_consensus: false, updated_at: updated_at]],
-      timeout: timeout
-    )
+    {_count, transactions_created_contract_address_hashes} =
+      repo.update_all(
+        from(transaction in Transaction,
+          where: transaction.block_hash in ^block_hashes,
+          select: transaction.created_contract_address_hash
+        ),
+        [set: [block_consensus: false, updated_at: updated_at]],
+        timeout: timeout
+      )
 
     repo.update_all(
       from(
@@ -896,13 +893,9 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       timeout: timeout
     )
 
-    # `created_contract_address_hash` is filtered here, not in the query, to keep the planner on the block hash index
+    # the update returns `created_contract_address_hash` of every transaction of the blocks
     created_contract_address_hashes =
-      from(transaction in Transaction,
-        where: transaction.block_hash in ^block_hashes,
-        select: transaction.created_contract_address_hash
-      )
-      |> repo.all(timeout: timeout)
+      transactions_created_contract_address_hashes
       |> Enum.reject(&is_nil/1)
       |> Enum.uniq()
 
