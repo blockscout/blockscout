@@ -68,6 +68,39 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert message_status(not_yet_confirmed_message) == :sent
       end
 
+      # The `top` of the event is above the highest block of the committed
+      # batches, for example when the batch discovery is behind. The messages of
+      # the blocks up to `top` are still `:initiated`. The discovery marks them
+      # `:confirmed` too. Without this, the messages stay `:sent` after the batch
+      # discovery, until the next event with a higher `top`.
+      test "confirms the L2-to-L1 messages which are not in a committed batch yet", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        blocks = seed_blocks(1..12)
+        seed_cursors()
+
+        confirmation_transaction_hash = to_string(transaction_hash())
+        initiated_message = insert_initiated_message_from_l2(9)
+        boundary_initiated_message = insert_initiated_message_from_l2(10)
+        sent_message = insert_sent_message_from_l2(8)
+        not_yet_confirmed_message = insert_initiated_message_from_l2(11)
+
+        expect_parent_chain([
+          build_send_root_updated_log(
+            rollup_block_hash(blocks, 10),
+            confirmation_transaction_hash,
+            @confirmation_l1_block
+          )
+        ])
+
+        run_main(state(json_rpc_named_arguments))
+
+        assert message_status(initiated_message) == :confirmed
+        assert message_status(boundary_initiated_message) == :confirmed
+        assert message_status(sent_message) == :confirmed
+        assert message_status(not_yet_confirmed_message) == :initiated
+      end
+
       # The database knows the parent chain transaction of the event already, but
       # the table of confirmations has no row for it. This is the state after the
       # switch to the table of confirmations.

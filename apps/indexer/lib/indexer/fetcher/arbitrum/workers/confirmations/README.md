@@ -25,7 +25,7 @@ The discovery only adds rows. It never changes or deletes a row. Thus the rows a
 
 Both processes read the parent chain in windows. A window is a range of parent chain blocks. Its size is `INDEXER_ARBITRUM_L1_RPC_HISTORICAL_BLOCKS_RANGE`. Each process keeps a cursor in the table `last_fetched_counters`: the number of the last parent chain block that the process read. The process writes the rows of a window and its cursor in one database transaction.
 
-At the first start, the start point is the parent chain block of the commitment of the latest batch. The main process reads up from the start point. The backfill process reads down from the block below it. If no batch exists, the discovery waits and writes a log message.
+At the first start, the start point is the parent chain block of the commitment of the latest batch. The main process reads up from the start point. The backfill process reads down from the block below it. If no batch exists, the discovery waits and writes a log message. The backfill process then runs again after the recheck interval of the main process, not after the short catchup interval.
 
 The main process does not start while the table of the confirmations is empty and the backfill cursor is above `INDEXER_ARBITRUM_L1_ROLLUP_INIT_BLOCK`. The first event that the backfill process finds confirms almost all indexed rollup blocks.
 

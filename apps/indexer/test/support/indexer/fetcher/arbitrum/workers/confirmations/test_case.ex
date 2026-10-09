@@ -161,6 +161,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.TestCase do
         new_state
       end
 
+      # Runs the backfill process and returns the status with the state.
+      def run_backfill_with_status(state) do
+        Tasks.check_historical(state)
+      end
+
       # Writes the cursors of both processes. An earlier run of the discovery
       # writes the same cursors. By default, the backfill process is complete:
       # its cursor is at `l1_rollup_init_block`. Thus the main process does not
@@ -247,6 +252,17 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.TestCase do
         insert(:arbitrum_message,
           direction: :from_l2,
           status: :sent,
+          originating_transaction_block_number: rollup_block_number,
+          completion_transaction_hash: nil
+        )
+      end
+
+      # Inserts a rollup-to-parent-chain message which the given rollup block sent
+      # and which is not in a committed batch yet.
+      def insert_initiated_message_from_l2(rollup_block_number) do
+        insert(:arbitrum_message,
+          direction: :from_l2,
+          status: :initiated,
           originating_transaction_block_number: rollup_block_number,
           completion_transaction_hash: nil
         )

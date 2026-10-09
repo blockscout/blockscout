@@ -202,7 +202,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     the instance does not index.
 
     The function does nothing if no batch exists, or if the cursor is at
-    `l1_rollup_init_block` or below it.
+    `l1_rollup_init_block` or below it. If no batch exists, the function returns
+    the status `:no_batches`, so the caller can run the next check after a longer
+    interval.
 
     ## Parameters
     - `state`: A map containing:
@@ -211,13 +213,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
       - `task_data`: Task-related data including the cursors of both processes
 
     ## Returns
-    - `{:ok, new_state}`
+    - `{:ok, new_state}` after a window, or when the backfill is complete
+    - `{:no_batches, state}` if no cursor and no batch exist
   """
-  @spec check_historical(confirmations_related_state()) :: {:ok, confirmations_related_state()}
+  @spec check_historical(confirmations_related_state()) ::
+          {:ok | :no_batches, confirmations_related_state()}
   def check_historical(state) do
     case load_cursors(state) do
       {:ok, state} -> discover_historical(state)
-      {:no_batches, state} -> {:ok, state}
+      {:no_batches, state} -> {:no_batches, state}
     end
   end
 

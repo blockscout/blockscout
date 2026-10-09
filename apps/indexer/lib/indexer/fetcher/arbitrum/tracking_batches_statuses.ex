@@ -538,6 +538,11 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
   # Executes a worker function and conditionally reschedules the task based on its completion status.
   #
+  # The worker returns `{:ok, new_state}` or `{:no_batches, new_state}`. For `:ok`,
+  # the next run comes after the interval of the task. For `:no_batches`, the
+  # worker waits for the first batch, and the next run comes after the interval of
+  # `:new_confirmations`. Thus a task that waits does not fill the log.
+  #
   # ## Parameters
   # - `state`: The current state containing completed tasks and intervals
   # - `task_tag`: The identifier of the stoppable fetcher task
@@ -562,21 +567,29 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
        ) do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
-    state_after_worker_run =
+    {status, state_after_worker_run} =
       case worker_function.(state) do
-        {:ok, new_state} -> new_state
+        {status, new_state} when status in [:ok, :no_batches] -> {status, new_state}
         {status, _} -> raise("Worker #{inspect(worker_function)} returned unexpected status #{inspect(status)}")
       end
 
     updated_state = update_completed_tasks(state_after_worker_run, task_tag, completion_check_function)
 
     if rescheduled?(task_tag, updated_state) do
-      next_run_time = now + updated_state.intervals[task_tag]
+      next_run_time = now + select_interval_by_status(status, task_tag, updated_state.intervals)
       BufferedTask.buffer(__MODULE__, [{next_run_time, task_tag}], false)
     end
 
     {:ok, updated_state}
   end
+
+  # Selects the interval before the next run of a stoppable task by the status of
+  # the worker. A worker that waits for the first batch runs after the interval of
+  # `:new_confirmations`, which is the configured recheck interval.
+  @spec select_interval_by_status(:ok | :no_batches, stoppable_fetcher_task(), fetcher_tasks_intervals()) ::
+          non_neg_integer()
+  defp select_interval_by_status(:ok, task_tag, intervals), do: intervals[task_tag]
+  defp select_interval_by_status(:no_batches, _task_tag, intervals), do: intervals[:new_confirmations]
 
   # Returns true if the task should be rescheduled (not marked as completed)
   @spec rescheduled?(atom(), %{:completed_tasks => completion_status(), optional(any()) => any()}) :: boolean()

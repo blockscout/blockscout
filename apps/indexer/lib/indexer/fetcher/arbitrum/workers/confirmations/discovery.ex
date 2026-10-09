@@ -208,11 +208,17 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
   #
   # If the given `top` is not above the highest `top` in the database, no message
   # changes its status: the messages up to the highest `top` are confirmed already.
+  #
+  # A `top` can be above the highest block of the committed batches, for example
+  # when the batch discovery is behind. The messages in these blocks are still
+  # `:initiated`. Thus the function takes the messages in `:initiated` and in
+  # `:sent`. The import runner keeps the highest status, so a later `:sent` from
+  # the batch discovery does not replace `:confirmed`.
   @spec confirmed_l2_to_l1_messages(non_neg_integer()) :: [Arbitrum.Message.to_import()]
   defp confirmed_l2_to_l1_messages(highest_top_of_window) do
     if highest_top_of_window > DbSettlement.highest_confirmed_block(-1) do
-      highest_top_of_window
-      |> DbMessages.sent_l2_to_l1_messages()
+      (DbMessages.initiated_l2_to_l1_messages(highest_top_of_window) ++
+         DbMessages.sent_l2_to_l1_messages(highest_top_of_window))
       |> Enum.map(fn message -> Map.put(message, :status, :confirmed) end)
     else
       []

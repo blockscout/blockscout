@@ -2119,8 +2119,10 @@ defmodule Explorer.Factory do
   end
 
   # A confirmation of the rollup blocks up to `top`. Callers must supply `:top`.
-  # The factory inserts a lifecycle transaction for the confirmation when the
-  # override `:confirmation_id` is absent.
+  # The factory always inserts a lifecycle transaction for the confirmation,
+  # because ExMachina runs the factory body before it applies the overrides. An
+  # override `:confirmation_id` replaces the inserted id, and the inserted
+  # transaction stays in the database unused.
   def arbitrum_rollup_block_confirmation_factory do
     %ArbitrumRollupBlockConfirmation{
       confirmation_id: insert(:arbitrum_lifecycle_transaction).id

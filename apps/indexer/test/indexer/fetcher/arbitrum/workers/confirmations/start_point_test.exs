@@ -74,7 +74,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       end
 
       # The database holds no cursor and no batch. The discovery waits, writes a
-      # log message, and sends no request.
+      # log message, and sends no request. The backfill process returns the status
+      # `:no_batches`, so the tracker runs it again after a longer interval.
       test "waits and writes a log message when no batch exists", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -85,7 +86,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
             state = run_main(state(json_rpc_named_arguments))
             assert is_nil(state.task_data.new_confirmations.cursor)
 
-            state = run_backfill(state(json_rpc_named_arguments))
+            assert {:no_batches, state} = run_backfill_with_status(state(json_rpc_named_arguments))
             assert is_nil(state.task_data.historical_confirmations.cursor)
             refute Tasks.historical_confirmations_discovery_completed?(state)
           end)

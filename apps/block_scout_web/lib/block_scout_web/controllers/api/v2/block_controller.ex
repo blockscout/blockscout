@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     chain_type: [:explorer, :chain_type],
     chain_identity: [:explorer, :chain_identity]
 
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
   use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Chain,
@@ -156,21 +157,29 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     with {:ok, block} <- block_param_to_block(block_hash_or_number, @block_params) do
       conn
       |> put_status(200)
-      |> render(:block, %{block: maybe_put_arbitrum_confirmation_transaction(block)})
+      |> render(:block, %{block: with_chain_type_virtual_fields(block)})
     end
   end
 
-  # Fills the virtual field `arbitrum_confirmation_transaction` of the block for the
-  # Arbitrum chain type. The confirmation of a rollup block is not an association of
-  # the block, so the controller reads it after the main query.
-  @spec maybe_put_arbitrum_confirmation_transaction(Block.t()) :: Block.t()
-  defp maybe_put_arbitrum_confirmation_transaction(block) do
-    if Application.get_env(:explorer, :chain_type) == :arbitrum do
-      ArbitrumSettlementReader.put_confirmation_transaction(block)
-    else
-      block
-    end
+  # Fills the virtual fields of the block that depend on the chain type.
+  #
+  # For Arbitrum, the field `arbitrum_confirmation_transaction` gets the parent
+  # chain transaction that confirms the block. The confirmation is not an
+  # association of the block, so the controller reads it after the main query.
+  @spec with_chain_type_virtual_fields(Block.t()) :: Block.t()
+  defp with_chain_type_virtual_fields(block) do
+    do_with_chain_type_virtual_fields(block, chain_type())
   end
+
+  defp do_with_chain_type_virtual_fields(%Block{number: number} = block, :arbitrum) do
+    Map.put(
+      block,
+      :arbitrum_confirmation_transaction,
+      ArbitrumSettlementReader.confirmation_transaction_for_rollup_block(number)
+    )
+  end
+
+  defp do_with_chain_type_virtual_fields(block, _chain_type), do: block
 
   defp fetch_block(:hash, hash, params) do
     Chain.hash_to_block(hash, params)
