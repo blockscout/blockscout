@@ -1,8 +1,90 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.SourceTest do
-  use ExUnit.Case, async: true
+  # Source selection tests below mutate application config, so the module cannot run async.
+  use ExUnit.Case, async: false
 
   alias Explorer.Market.Source
+  alias Explorer.Market.Source.{CoinGecko, CoinMarketCap, CryptoCompare}
+
+  describe "native_coin_price_history_source/0" do
+    setup :reset_history_sources_config
+
+    test "returns configured source when set" do
+      put_source_config(native_coin_history_source: CryptoCompare)
+      put_coin_gecko_config(coin_id: "ethereum")
+
+      assert Source.native_coin_price_history_source() == CryptoCompare
+    end
+
+    test "prefers CoinGecko over CryptoCompare when CoinGecko coin ID is configured" do
+      put_coin_gecko_config(coin_id: "ethereum")
+      put_crypto_compare_config(coin_symbol: "ETH")
+
+      assert Source.native_coin_price_history_source() == CoinGecko
+    end
+
+    test "falls back to CryptoCompare when CoinGecko coin ID is not configured" do
+      put_coin_gecko_config(coin_id: nil)
+      put_coin_market_cap_config(coin_id: nil)
+      put_crypto_compare_config(coin_symbol: "ETH")
+
+      assert Source.native_coin_price_history_source() == CryptoCompare
+    end
+  end
+
+  describe "secondary_coin_price_history_source/0" do
+    setup :reset_history_sources_config
+
+    test "returns configured source when set" do
+      put_source_config(secondary_coin_history_source: CryptoCompare)
+      put_coin_gecko_config(secondary_coin_id: "optimism")
+
+      assert Source.secondary_coin_price_history_source() == CryptoCompare
+    end
+
+    test "prefers CoinGecko over CryptoCompare when CoinGecko secondary coin ID is configured" do
+      put_coin_gecko_config(secondary_coin_id: "optimism")
+      put_crypto_compare_config(secondary_coin_symbol: "OP")
+
+      assert Source.secondary_coin_price_history_source() == CoinGecko
+    end
+
+    test "falls back to CryptoCompare when CoinGecko secondary coin ID is not configured" do
+      put_coin_gecko_config(secondary_coin_id: nil)
+      put_coin_market_cap_config(secondary_coin_id: nil)
+      put_crypto_compare_config(secondary_coin_symbol: "OP")
+
+      assert Source.secondary_coin_price_history_source() == CryptoCompare
+    end
+  end
+
+  defp reset_history_sources_config(_context) do
+    source_configuration = Application.get_env(:explorer, Source)
+    coin_gecko_configuration = Application.get_env(:explorer, CoinGecko)
+    coin_market_cap_configuration = Application.get_env(:explorer, CoinMarketCap)
+    crypto_compare_configuration = Application.get_env(:explorer, CryptoCompare)
+
+    put_source_config(native_coin_history_source: nil, secondary_coin_history_source: nil)
+
+    on_exit(fn ->
+      Application.put_env(:explorer, Source, source_configuration)
+      Application.put_env(:explorer, CoinGecko, coin_gecko_configuration)
+      Application.put_env(:explorer, CoinMarketCap, coin_market_cap_configuration)
+      Application.put_env(:explorer, CryptoCompare, crypto_compare_configuration)
+    end)
+
+    :ok
+  end
+
+  defp put_source_config(overrides), do: put_config(Source, overrides)
+  defp put_coin_gecko_config(overrides), do: put_config(CoinGecko, overrides)
+  defp put_coin_market_cap_config(overrides), do: put_config(CoinMarketCap, overrides)
+  defp put_crypto_compare_config(overrides), do: put_config(CryptoCompare, overrides)
+
+  defp put_config(module, overrides) do
+    initial = Application.get_env(:explorer, module) || []
+    Application.put_env(:explorer, module, Keyword.merge(initial, overrides))
+  end
 
   describe "zero_or_nil?/1" do
     test "returns true for nil" do

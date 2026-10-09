@@ -97,4 +97,36 @@ defmodule Explorer.Market.MarketHistoryTest do
     assert fetched_record.closing_price == old_record.closing_price
     assert fetched_record.opening_price == old_record.opening_price
   end
+
+  test "keeps existing opening price when the new record has no opening price" do
+    date = ~D[2018-04-01]
+
+    {:ok, old_record} =
+      Repo.insert(%MarketHistory{date: date, closing_price: Decimal.new(1), opening_price: Decimal.new(5)})
+
+    new_record = %{
+      date: date,
+      closing_price: Decimal.new(2),
+      opening_price: nil
+    }
+
+    assert {:ok, {1, _}} = MarketHistory.bulk_insert([new_record])
+
+    fetched_record = Repo.get_by(MarketHistory, date: date)
+    assert fetched_record.closing_price == Decimal.new(2)
+    assert fetched_record.opening_price == old_record.opening_price
+  end
+
+  test "doesn't replace existing records with zero closing price and no opening price" do
+    date = ~D[2018-04-01]
+
+    {:ok, old_record} =
+      Repo.insert(%MarketHistory{date: date, closing_price: Decimal.new(1), opening_price: Decimal.new(1)})
+
+    assert {:ok, {0, _}} = MarketHistory.bulk_insert([%{date: date, closing_price: Decimal.new(0), opening_price: nil}])
+
+    fetched_record = Repo.get_by(MarketHistory, date: date)
+    assert fetched_record.closing_price == old_record.closing_price
+    assert fetched_record.opening_price == old_record.opening_price
+  end
 end

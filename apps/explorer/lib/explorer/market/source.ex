@@ -71,10 +71,14 @@ defmodule Explorer.Market.Source do
                  }
 
   # Price history processing
+  #
+  # `opening_price` may be `nil` when the source cannot tell the opening price of a
+  # date (e.g. the fetched range starts mid-day); the value already stored for that
+  # date is then kept on upsert.
   @type history_price_record() :: %{
           closing_price: Decimal.t(),
           date: Date.t(),
-          opening_price: Decimal.t(),
+          opening_price: Decimal.t() | nil,
           secondary_coin: boolean()
         }
 
@@ -330,8 +334,11 @@ defmodule Explorer.Market.Source do
   @doc """
   Returns a module for fetching native coin price history.
 
-  Uses configured source or finds the first available provider, preferring
-  CryptoCompare as the default source.
+  Uses configured source (`MARKET_NATIVE_COIN_HISTORY_SOURCE`) or finds the first
+  available provider in `@sources` order, so CoinGecko is preferred whenever
+  `MARKET_COINGECKO_COIN_ID` is set. CryptoCompare remains available as an
+  explicit choice (`MARKET_NATIVE_COIN_HISTORY_SOURCE=crypto_compare`) or as a
+  fallback when no earlier source is configured.
 
   ## Returns
   - A module ready to fetch data, or
@@ -340,7 +347,7 @@ defmodule Explorer.Market.Source do
   @spec native_coin_price_history_source() :: module
   def native_coin_price_history_source do
     config(:native_coin_history_source) ||
-      Enum.find([CryptoCompare | @sources], fn source ->
+      Enum.find(@sources, fn source ->
         source.native_coin_price_history_fetching_enabled?() == true
       end)
   end
@@ -348,8 +355,10 @@ defmodule Explorer.Market.Source do
   @doc """
   Returns a module for fetching secondary coin price history.
 
-  Uses configured source or finds the first available provider, preferring
-  CryptoCompare as the default source.
+  Uses configured source (`MARKET_SECONDARY_COIN_HISTORY_SOURCE`) or finds the
+  first available provider in `@sources` order, so CoinGecko is preferred whenever
+  `MARKET_COINGECKO_SECONDARY_COIN_ID` is set. CryptoCompare remains available as
+  an explicit choice or as a fallback when no earlier source is configured.
 
   ## Returns
   - A module ready to fetch data, or
@@ -358,7 +367,7 @@ defmodule Explorer.Market.Source do
   @spec secondary_coin_price_history_source() :: module
   def secondary_coin_price_history_source do
     config(:secondary_coin_history_source) ||
-      Enum.find([CryptoCompare | @sources], fn source ->
+      Enum.find(@sources, fn source ->
         source.secondary_coin_price_history_fetching_enabled?() == true
       end)
   end

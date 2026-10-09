@@ -7,7 +7,7 @@ defmodule Explorer.Market.MarketHistory do
   use Explorer.Schema
 
   alias Explorer.{Chain, Repo}
-  alias Explorer.Market.Token
+  alias Explorer.Market.{Source, Token}
 
   @typedoc """
   The recorded values of the configured coin to USD for a single day.
@@ -65,8 +65,8 @@ defmodule Explorer.Market.MarketHistory do
       records
       |> Enum.reject(fn item ->
         Map.has_key?(item, :opening_price) && Map.has_key?(item, :closing_price) &&
-          Decimal.equal?(item.closing_price, 0) &&
-          Decimal.equal?(item.opening_price, 0)
+          Source.zero_or_nil?(item.closing_price) &&
+          Source.zero_or_nil?(item.opening_price)
       end)
       # Enforce MarketHistory ShareLocks order (see docs: sharelocks.md)
       |> Enum.sort_by(& &1.date)
