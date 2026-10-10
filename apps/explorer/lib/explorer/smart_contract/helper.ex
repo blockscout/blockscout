@@ -4,12 +4,14 @@ defmodule Explorer.SmartContract.Helper do
   SmartContract helper functions
   """
 
+  require Logger
+
   alias Explorer.{Chain, Helper}
   alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
-  alias Explorer.SmartContract.{Reader, Writer}
+  alias Explorer.SmartContract.{CreationDataResolver, Reader, Writer}
 
   @api_true [api?: true]
 
@@ -188,33 +190,85 @@ defmodule Explorer.SmartContract.Helper do
         "transactionIndex": "string"
       }
 
-    Metadata will be sent to a verifier microservice
+    Metadata will be sent to a verifier microservice.
+
+    ## Options
+
+      * `:on_demand?` - when `true` and the creation data is not in the DB,
+        `Explorer.SmartContract.CreationDataResolver.resolve/1` is called to
+        discover it from the JSON RPC node (blocking, bounded by its `max_wait`).
+        Defaults to `false`.
+
+    `"chainId"` is **absent** from the metadata when `:on_demand?` is `true` and
+    the creation data could not be resolved (including when the resolver is
+    disabled). eth-bytecode-db treats a request with a chain id and no creation
+    fields as a genesis contract, which would write a bogus deployment to the
+    Verifier Alliance DB for factory-created contracts. Without a chain id it
+    only verifies. Confirmed genesis contracts (code present in block 0) keep
+    `"chainId"` and no creation fields.
   """
-  @spec fetch_data_for_verification(binary() | Hash.t()) :: {binary() | nil, binary(), map()}
-  def fetch_data_for_verification(address_hash, deployed_bytecode \\ nil) do
+  @spec fetch_data_for_verification(binary() | Hash.t(), binary() | nil, keyword()) ::
+          {binary() | nil, binary(), map()}
+  def fetch_data_for_verification(address_hash, deployed_bytecode \\ nil, options \\ []) do
     deployed_bytecode = deployed_bytecode || Chain.smart_contract_bytecode(address_hash)
 
-    metadata = %{
+    base_metadata = %{
       "contractAddress" => to_string(address_hash),
-      "runtimeCode" => to_string(deployed_bytecode),
-      "chainId" => Application.get_env(:block_scout_web, :chain_id)
+      "runtimeCode" => to_string(deployed_bytecode)
     }
 
+    metadata_with_chain_id = Map.put(base_metadata, "chainId", Application.get_env(:block_scout_web, :chain_id))
+
     if Application.get_env(:explorer, :chain_type) == :zksync do
-      {nil, deployed_bytecode, metadata}
+      {nil, deployed_bytecode, metadata_with_chain_id}
     else
       case SmartContract.creation_transaction_with_bytecode(address_hash) do
         %{init: init, transaction: transaction} ->
-          {init, deployed_bytecode, transaction |> transaction_to_metadata(init) |> Map.merge(metadata)}
+          {init, deployed_bytecode, transaction |> transaction_to_metadata(init) |> Map.merge(metadata_with_chain_id)}
 
         %{init: init, internal_transaction: internal_transaction} ->
           {init, deployed_bytecode,
-           internal_transaction |> internal_transaction_to_metadata(init) |> Map.merge(metadata)}
+           internal_transaction |> internal_transaction_to_metadata(init) |> Map.merge(metadata_with_chain_id)}
 
         _ ->
-          {nil, deployed_bytecode, metadata}
+          fetch_creation_data_on_demand(
+            Keyword.get(options, :on_demand?, false),
+            address_hash,
+            deployed_bytecode,
+            base_metadata,
+            metadata_with_chain_id
+          )
       end
     end
+  end
+
+  defp fetch_creation_data_on_demand(false, _address_hash, deployed_bytecode, _base_metadata, metadata_with_chain_id) do
+    {nil, deployed_bytecode, metadata_with_chain_id}
+  end
+
+  defp fetch_creation_data_on_demand(true, address_hash, deployed_bytecode, base_metadata, metadata_with_chain_id) do
+    case CreationDataResolver.resolve(address_hash) do
+      {:ok, %{init: init} = creation_data} ->
+        {init, deployed_bytecode, creation_data |> creation_data_to_metadata() |> Map.merge(metadata_with_chain_id)}
+
+      {:error, :genesis} ->
+        {nil, deployed_bytecode, metadata_with_chain_id}
+
+      {:error, reason} ->
+        Logger.info("Creation data for #{address_hash} is unavailable (#{inspect(reason)}); omitting chainId")
+
+        {nil, deployed_bytecode, base_metadata}
+    end
+  end
+
+  defp creation_data_to_metadata(creation_data) do
+    %{
+      "blockNumber" => to_string(creation_data.block_number),
+      "transactionHash" => to_string(creation_data.transaction_hash),
+      "transactionIndex" => to_string(creation_data.transaction_index),
+      "deployer" => to_string(creation_data.from_address_hash),
+      "creationCode" => to_string(creation_data.init)
+    }
   end
 
   defp transaction_to_metadata(transaction, init) do

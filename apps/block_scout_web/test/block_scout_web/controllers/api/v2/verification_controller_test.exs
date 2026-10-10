@@ -287,6 +287,99 @@ defmodule BlockScoutWeb.API.V2.VerificationControllerTest do
     #   end
     # end
 
+    describe "/api/v2/smart-contracts/{address_hash}/verification/via/flattened-code eth-bytecode-db metadata" do
+      setup do
+        bypass = Bypass.open()
+
+        rust_verifier_env = Application.get_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour)
+        resolver_env = Application.get_env(:explorer, Explorer.SmartContract.CreationDataResolver) || []
+        chain_id_env = Application.get_env(:block_scout_web, :chain_id)
+
+        Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour,
+          service_url: "http://localhost:#{bypass.port}",
+          enabled: true,
+          type: "eth_bytecode_db",
+          eth_bytecode_db?: true
+        )
+
+        Application.put_env(
+          :explorer,
+          Explorer.SmartContract.CreationDataResolver,
+          Keyword.merge(resolver_env, enabled: false)
+        )
+
+        Application.put_env(:block_scout_web, :chain_id, "1")
+
+        on_exit(fn ->
+          Application.put_env(:explorer, Explorer.SmartContract.RustVerifierInterfaceBehaviour, rust_verifier_env)
+          Application.put_env(:explorer, Explorer.SmartContract.CreationDataResolver, resolver_env)
+          Application.put_env(:block_scout_web, :chain_id, chain_id_env)
+          Bypass.down(bypass)
+        end)
+
+        test_pid = self()
+
+        Bypass.expect_once(bypass, "POST", "/api/v2//verifier/solidity/sources%3Averify-multi-part", fn conn ->
+          {:ok, body, conn} = Conn.read_body(conn)
+          send(test_pid, {:verifier_request, Jason.decode!(body)})
+          Conn.resp(conn, 200, Jason.encode!(%{"status" => "FAILURE", "message" => "No matching contracts"}))
+        end)
+
+        %{
+          params: %{
+            "source_code" => "pragma solidity ^0.8.0; contract A {}",
+            "compiler_version" => "v0.8.20+commit.a1b79de6",
+            "contract_name" => "A"
+          }
+        }
+      end
+
+      test "omits chainId when the creation data is missing and discovery is disabled", %{
+        conn: conn,
+        params: params
+      } do
+        contract_address = insert(:contract_address)
+
+        request =
+          post(conn, "/api/v2/smart-contracts/#{contract_address.hash}/verification/via/flattened-code", params)
+
+        assert %{"message" => "Smart-contract verification started"} = json_response(request, 200)
+
+        assert_receive {:verifier_request, body}, :timer.seconds(30)
+
+        assert body["bytecodeType"] == "DEPLOYED_BYTECODE"
+        assert body["metadata"]["contractAddress"] == to_string(contract_address.hash)
+        refute Map.has_key?(body["metadata"], "chainId")
+        refute Map.has_key?(body["metadata"], "creationCode")
+      end
+
+      test "sends creation data and chainId when the creation transaction is indexed", %{
+        conn: conn,
+        params: params
+      } do
+        contract_address = insert(:contract_address)
+
+        transaction =
+          :transaction
+          |> insert(created_contract_address_hash: contract_address.hash)
+          |> with_block(status: :ok)
+
+        request =
+          post(conn, "/api/v2/smart-contracts/#{contract_address.hash}/verification/via/flattened-code", params)
+
+        assert %{"message" => "Smart-contract verification started"} = json_response(request, 200)
+
+        assert_receive {:verifier_request, body}, :timer.seconds(30)
+
+        assert body["bytecodeType"] == "CREATION_INPUT"
+        assert body["metadata"]["chainId"] == "1"
+        assert body["metadata"]["transactionHash"] == to_string(transaction.hash)
+        assert body["metadata"]["blockNumber"] == to_string(transaction.block_number)
+        assert body["metadata"]["deployer"] == to_string(transaction.from_address_hash)
+        assert body["metadata"]["creationCode"] == to_string(transaction.input)
+      end
+    end
+
     describe "/api/v2/smart-contracts/{address_hash}/verification/via/multi-part" do
       test "get 404", %{conn: conn} do
         contract = insert(:smart_contract)
