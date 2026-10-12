@@ -5,7 +5,7 @@
   router: "lib/block_scout_web/router.ex",
   exit: "low",
   format: "compact",
-  ignore: ["Config.Headers", "Config.CSWH", "XSS.SendResp", "XSS.Raw"],
+  ignore: ["Config.Headers", "Config.CSWH", "Config.HTTPS", "XSS.SendResp", "XSS.Raw"],
   ignore_files: [
     "apps/block_scout_web/lib/block_scout_web/routers/tokens_api_v2_router.ex",
     "apps/block_scout_web/lib/block_scout_web/routers/smart_contracts_api_v2_router.ex",
