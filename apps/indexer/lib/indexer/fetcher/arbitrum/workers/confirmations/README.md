@@ -25,7 +25,7 @@ The discovery only adds rows. It never changes or deletes a row. Thus the rows a
 
 Both processes read the parent chain in windows. A window is a range of parent chain blocks. Its size is `INDEXER_ARBITRUM_L1_RPC_HISTORICAL_BLOCKS_RANGE`. Each process keeps a cursor in the table `last_fetched_counters`: the number of the last parent chain block that the process read. The process writes the rows of a window and its cursor in one database transaction.
 
-At the first start, the start point is the parent chain block of the commitment of the latest batch. The main process reads up from the start point. The backfill process reads down from the block below it. If no batch exists, the discovery waits and writes a log message. The backfill process then runs again after the recheck interval of the main process, not after the short catchup interval.
+At the first start, the start point is the parent chain block of the commitment of the latest batch. The main process reads up from the start point. The backfill process reads down from the block below it. If `INDEXER_ARBITRUM_CONFIRMATIONS_TRACKING_FINALIZED` is `true`, the start point is not above the safe block of the parent chain, because the backfill process reads a block only once. The start point is not below `INDEXER_ARBITRUM_L1_ROLLUP_INIT_BLOCK`. If no batch exists, the discovery waits and writes a log message. The backfill process then runs again after the recheck interval of the main process, not after the short catchup interval.
 
 The main process does not start while the table of the confirmations is empty and the backfill cursor is above `INDEXER_ARBITRUM_L1_ROLLUP_INIT_BLOCK`. The first event that the backfill process finds confirms almost all indexed rollup blocks.
 
@@ -37,6 +37,10 @@ The backfill process stops in two cases:
 If `INDEXER_ARBITRUM_CONFIRMATIONS_TRACKING_FINALIZED` is `false`, each window of the main process starts at the lower of the block after the cursor and the safe block. Thus the process reads the blocks above the safe block again, and a re-org of the parent chain does not lose an event. The upsert of the lifecycle transaction on its hash updates the block number and the timestamp of a moved transaction.
 
 If an RPC request fails, the process does not move its cursor and reads the same window again. A repeated window does not damage the data: the import of a row with a known `top` does nothing.
+
+## The lower bound of other discoveries
+
+The discovery of historical executions of L2-to-L1 messages reads the parent chain down to the lower bound that `Tasks.lowest_l1_block_for_confirmations/1` gives. The bound is the parent chain block of the confirmation that owns the first indexed rollup block. While the backfill process runs, the bound can move down, and it never moves up. Thus the discovery of executions does not stop at the bound before the backfill process is complete. It waits at the bound, and it reads the blocks above a bound that moved down. If the table is empty and the backfill process runs, the bound is unknown, and the discovery of executions reads nothing.
 
 ## Update & Extension Guidelines
 

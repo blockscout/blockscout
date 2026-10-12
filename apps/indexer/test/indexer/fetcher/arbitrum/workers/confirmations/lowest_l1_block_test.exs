@@ -9,10 +9,14 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # Other historical discoveries use `lowest_l1_block_for_confirmations/1` as
     # their lower bound. A result that is too high stops them early. A result that
     # is too low makes them read the parent chain down to `l1_rollup_init_block`.
+    # While the backfill process runs, the result can move down, and it never
+    # moves up. The result is `nil` if the table gives no bound yet.
     describe "lowest_l1_block_for_confirmations/1" do
-      # The backfill cursor is above `l1_rollup_init_block`. The row that owns
-      # `rollup_first_block` can still change. The result is the init block.
-      test "gives the rollup init block while the backfill process runs", %{
+      # The backfill cursor is above `l1_rollup_init_block`, and a row owns
+      # `rollup_first_block`. The backfill can find an earlier confirmation later,
+      # but the row never gives a block below the true one. The result is the
+      # parent chain block of the confirmation of that row.
+      test "gives the block of the confirmation of the first rollup block while the backfill process runs", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
         seed_cursors(@main_cursor, @backfill_cursor)
@@ -22,7 +26,21 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         state = run_main(state(json_rpc_named_arguments))
 
         refute Tasks.historical_confirmations_discovery_completed?(state)
-        assert Tasks.lowest_l1_block_for_confirmations(state) == @l1_rollup_init_block
+        assert Tasks.lowest_l1_block_for_confirmations(state) == @earlier_confirmation_l1_block
+      end
+
+      # The backfill cursor is above `l1_rollup_init_block`, and the table is
+      # empty. The bound is unknown.
+      test "gives nil while the backfill process runs and the table is empty", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        seed_cursors(@main_cursor, @backfill_cursor)
+        expect_no_rpc()
+
+        state = run_main(state(json_rpc_named_arguments))
+
+        refute Tasks.historical_confirmations_discovery_completed?(state)
+        assert is_nil(Tasks.lowest_l1_block_for_confirmations(state))
       end
 
       # The backfill is complete, and a row owns `rollup_first_block`. The result

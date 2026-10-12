@@ -58,9 +58,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.TestCase do
 
       @outbox_address "0x0b9857ae2d4a3dbe74ffe1d7df045bb7f96e4840"
 
-      # Bound at compile time so that the `eth_getLogs` clause of the mock can match
-      # it: a pattern cannot call a function.
+      # Bound at compile time so that the `eth_getLogs` clauses of the mock can
+      # match them: a pattern cannot call a function.
       @send_root_updated_topic ArbitrumEvents.send_root_updated()
+      @outbox_transaction_executed_topic ArbitrumEvents.outbox_transaction_executed()
 
       # The parent chain block in which the rollup starts. The backfill process
       # stops when its cursor reaches this block.
@@ -257,6 +258,17 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.TestCase do
         )
       end
 
+      # Inserts a rollup-to-parent-chain message with the given identifier, which
+      # is confirmed and waits for its execution on the parent chain.
+      def insert_confirmed_message_from_l2(message_id) do
+        insert(:arbitrum_message,
+          direction: :from_l2,
+          message_id: message_id,
+          status: :confirmed,
+          completion_transaction_hash: nil
+        )
+      end
+
       # Inserts a rollup-to-parent-chain message which the given rollup block sent
       # and which is not in a committed batch yet.
       def insert_initiated_message_from_l2(rollup_block_number) do
@@ -270,6 +282,36 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.TestCase do
 
       def message_status(message) do
         Repo.get_by!(Message, direction: :from_l2, message_id: message.message_id).status
+      end
+
+      # The hash of the execution transaction of the message, or `nil` if the
+      # discovery of executions did not find the execution.
+      def execution(message) do
+        case Repo.get_by(Message, direction: :from_l2, message_id: message.message_id).completion_transaction_hash do
+          nil -> nil
+          hash -> to_string(hash)
+        end
+      end
+
+      # Builds a raw `OutBoxTransactionExecuted` event log, in the shape of an
+      # `eth_getLogs` JSON-RPC response. The identifier of the executed message is
+      # the data of the event.
+      def build_outbox_transaction_executed_log(message_id, l1_transaction_hash, l1_block_number) do
+        %{
+          "address" => @outbox_address,
+          "blockHash" => "0x" <> String.duplicate("0", 64),
+          "blockNumber" => integer_to_quantity(l1_block_number),
+          "data" => "0x" <> String.pad_leading(Integer.to_string(message_id, 16), 64, "0"),
+          "logIndex" => "0x0",
+          "removed" => false,
+          "topics" => [
+            @outbox_transaction_executed_topic,
+            "0x" <> String.duplicate("0", 64),
+            "0x" <> String.duplicate("0", 64)
+          ],
+          "transactionHash" => l1_transaction_hash,
+          "transactionIndex" => "0x0"
+        }
       end
 
       # Builds a raw `SendRootUpdated` event log, in the shape of an `eth_getLogs`
@@ -314,8 +356,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.TestCase do
       # range. Thus a test gives the state of the parent chain, and it gives no
       # range of its own. The order of `logs` is the order of each response.
       #
-      # The mock answers four request shapes:
-      #   - one `eth_getLogs` request per parent chain range
+      # The mock answers five request shapes:
+      #   - one `eth_getLogs` request per parent chain range for the
+      #     `SendRootUpdated` events
+      #   - one `eth_getLogs` request per parent chain range for the
+      #     `OutBoxTransactionExecuted` events, for the discovery of executions
       #   - one batched `eth_getBlockByNumber` request with the tag `safe` or
       #     `latest`, for the limits of the window of the main process
       #   - one batched `eth_getBlockByNumber` request for the timestamps of the
@@ -328,12 +373,16 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.TestCase do
       #   - `latest`: the latest block of the parent chain
       #   - `rollup_blocks`: a map of the hash of a rollup block which is not
       #     indexed to its number
-      #   - `logs_fail?`: when `true`, each `eth_getLogs` request fails
+      #   - `logs_fail?`: when `true`, each `eth_getLogs` request gives an error,
+      #     as the transport does when the RPC node does not answer
+      #   - `executions`: every `OutBoxTransactionExecuted` log which the parent
+      #     chain has
       def expect_parent_chain(logs, options \\ []) do
         safe_block = Keyword.get(options, :safe, @safe_l1_block)
         latest_block = Keyword.get(options, :latest, @latest_l1_block)
         rollup_blocks = Keyword.get(options, :rollup_blocks, %{})
         logs_fail? = Keyword.get(options, :logs_fail?, false)
+        executions = Keyword.get(options, :executions, [])
 
         stub(EthereumJSONRPC.Mox, :json_rpc, fn
           %{
@@ -349,13 +398,30 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.TestCase do
           },
           _options ->
             if logs_fail? do
-              raise "The RPC node does not give the logs"
+              {:error, "The RPC node does not give the logs"}
+            else
+              from_block = quantity_to_integer(from_block_quantity)
+              to_block = quantity_to_integer(to_block_quantity)
+
+              {:ok, logs_of_range(logs, from_block, to_block)}
             end
 
+          %{
+            method: "eth_getLogs",
+            params: [
+              %{
+                fromBlock: from_block_quantity,
+                toBlock: to_block_quantity,
+                address: @outbox_address,
+                topics: [@outbox_transaction_executed_topic]
+              }
+            ]
+          },
+          _options ->
             from_block = quantity_to_integer(from_block_quantity)
             to_block = quantity_to_integer(to_block_quantity)
 
-            {:ok, logs_of_range(logs, from_block, to_block)}
+            {:ok, logs_of_range(executions, from_block, to_block)}
 
           %{method: "eth_getBlockByHash", params: [rollup_block_hash, false]}, _options ->
             case Map.get(rollup_blocks, rollup_block_hash) do

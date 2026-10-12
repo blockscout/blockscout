@@ -141,12 +141,22 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
       - `data`: Contains the ending block number for the historical execution
                 discovery.
 
+    The lower bound of the discovery is the lowest parent chain block that can
+    hold a confirmation of an indexed rollup block. The function
+    `Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks.lowest_l1_block_for_confirmations/1`
+    gives the bound. While the backfill process of the confirmations discovery
+    runs, the bound can move down. Thus the function does not read a window below
+    the bound. It keeps `end_block` until the bound moves below it or the
+    backfill process is complete. If the bound is unknown, the function reads
+    nothing.
+
     ## Returns
     - `{:ok, state}`: On successful discovery and processing, where `state` includes
-      an updated `end_block` for the next iteration. If executions were found,
-      `end_block` is set to the block before the last processed block. If the
-      historical discovery process has reached the lowest L1 block that needs to
-      be checked, `end_block` is set to one block before that lowest block.
+      an updated `end_block` for the next iteration. If the function read a
+      window, it sets `end_block` to the block before the first block of the
+      window. If the backfill process of the confirmations discovery is complete
+      and `end_block` is below the bound, the function sets `end_block` to one
+      block before the bound. Otherwise, `end_block` does not change.
   """
   @spec discover_historical_l1_messages_executions(executions_related_state()) :: {:ok, executions_related_state()}
   def discover_historical_l1_messages_executions(
@@ -166,20 +176,35 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     lowest_l1_block = ConfirmationsTasks.lowest_l1_block_for_confirmations(state)
 
     data_for_next_iteration =
-      if end_block >= lowest_l1_block do
-        start_block = max(lowest_l1_block, end_block - l1_rpc_config.logs_block_range + 1)
+      cond do
+        is_nil(lowest_l1_block) ->
+          log_debug("Historical l2-to-l1 messages executions discovery waits for the first confirmation")
+          %{end_block: end_block}
 
-        log_info("Block range for historical l2-to-l1 messages executions discovery: #{start_block}..#{end_block}")
+        end_block >= lowest_l1_block ->
+          start_block = max(lowest_l1_block, end_block - l1_rpc_config.logs_block_range + 1)
 
-        discover(outbox_address, start_block, end_block, l1_rpc_config)
+          log_info("Block range for historical l2-to-l1 messages executions discovery: #{start_block}..#{end_block}")
 
-        # The next iteration will consider the block range which ends by the block
-        # before the last processed block
-        %{end_block: start_block - 1}
-      else
-        # The historical discovery process has reached the lowest L1 block that
-        # needs to be checked for executions
-        %{end_block: lowest_l1_block - 1}
+          discover(outbox_address, start_block, end_block, l1_rpc_config)
+
+          # The next iteration will consider the block range which ends by the block
+          # before the last processed block
+          %{end_block: start_block - 1}
+
+        ConfirmationsTasks.historical_confirmations_discovery_completed?(state) ->
+          # The historical discovery process has reached the lowest L1 block that
+          # needs to be checked for executions
+          %{end_block: lowest_l1_block - 1}
+
+        true ->
+          # The bound can move down while the backfill process of the confirmations
+          # discovery runs. The task waits at the bound.
+          log_debug(
+            "Historical l2-to-l1 messages executions discovery waits at the block #{end_block} for the historical confirmations discovery"
+          )
+
+          %{end_block: end_block}
       end
 
     {:ok, ArbitrumHelper.update_fetcher_task_data(state, :historical_executions, data_for_next_iteration)}
@@ -188,18 +213,21 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   @doc """
     Determines whether the historical executions discovery process has completed.
 
-    This function checks if the end block of historical executions discovery has
-    reached below the lowest L1 block that needs to be checked for executions.
-    When this happens, it means we have searched back far enough in history and can
-    stop the historical discovery process.
+    The process is complete in one case. The backfill process of the
+    confirmations discovery is complete, and the end block of the historical
+    executions discovery is below the lowest L1 block of the discovery. While the
+    backfill process runs, the lowest L1 block can move down, so the process is
+    not complete.
 
     ## Parameters
     - A map containing:
-      - `task_data`: Contains historical executions data with an end block
+      - `task_data`: Contains historical executions data with an end block, and
+        the cursor of the backfill process of the confirmations discovery
       - Other configuration needed to determine the lowest L1 block
 
     ## Returns
-    - `true` if the end block is less than the lowest L1 block that needs checking
+    - `true` if the backfill process of the confirmations discovery is complete
+      and the end block is below the lowest L1 block of the discovery
     - `false` otherwise
   """
   @spec historical_executions_discovery_completed?(executions_related_state()) :: boolean()
@@ -208,7 +236,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
           task_data: %{historical_executions: %{end_block: end_block}}
         } = state
       ) do
-    end_block < ConfirmationsTasks.lowest_l1_block_for_confirmations(state)
+    case ConfirmationsTasks.lowest_l1_block_for_confirmations(state) do
+      nil ->
+        false
+
+      lowest_l1_block ->
+        ConfirmationsTasks.historical_confirmations_discovery_completed?(state) and end_block < lowest_l1_block
+    end
   end
 
   # Discovers and imports execution transactions for L2-to-L1 messages within a specified L1 block range.

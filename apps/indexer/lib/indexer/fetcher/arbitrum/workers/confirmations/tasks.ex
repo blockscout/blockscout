@@ -25,7 +25,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     chain block that the process read. The process writes its cursor after each
     window, in one database transaction with the rows of the window. At the first
     start, the start point of both processes is the parent chain block of the
-    commitment of the latest batch. If no batch exists, the discovery waits.
+    commitment of the latest batch. If `finalized_confirmations` is `true`, the
+    start point is not above the safe block, because the backfill process reads
+    a block only once. If no batch exists, the discovery waits.
 
     The main process does not start while the table of the confirmations is empty
     and the backfill cursor is above `l1_rollup_init_block`. Thus the first event
@@ -297,11 +299,17 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     L2-to-L1 message cannot come before the confirmation of its rollup block.
     Thus other historical discoveries use this block as their lower bound.
 
-    While the backfill process runs, the confirmation transaction of the first
-    indexed rollup block in the table can be later than the true one. Thus the
-    function gives `l1_rollup_init_block` until the backfill process is complete.
-    After that, it gives the parent chain block of the confirmation of the first
-    indexed rollup block, or `l1_rollup_init_block` if the block is not confirmed.
+    The function gives the parent chain block of the confirmation that owns the
+    first indexed rollup block in the table. While the backfill process runs, the
+    backfill can find an earlier confirmation of this rollup block later. Thus the
+    bound can move down while the backfill process runs, and it never moves up.
+    A discovery that uses the bound must not stop at it before the backfill
+    process is complete.
+
+    If the table does not hold a confirmation of the first indexed rollup block,
+    the function gives `l1_rollup_init_block` after the backfill process is
+    complete, and `nil` while the backfill process runs. In the second case, the
+    bound is unknown, and a discovery that uses it must wait.
 
     ## Parameters
     - `state`: A map containing the configuration with `l1_rollup_init_block` and
@@ -309,24 +317,27 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
 
     ## Returns
     - The number of the parent chain block
+    - `nil` if the bound is unknown
   """
-  @spec lowest_l1_block_for_confirmations(confirmations_related_state()) :: non_neg_integer()
+  @spec lowest_l1_block_for_confirmations(confirmations_related_state()) :: non_neg_integer() | nil
   def lowest_l1_block_for_confirmations(
         %{config: %{l1_rollup_init_block: l1_rollup_init_block, rollup_first_block: rollup_first_block}} = state
       ) do
-    if historical_confirmations_discovery_completed?(state) do
-      DbSettlement.l1_block_of_confirmation_for_rollup_block(rollup_first_block) || l1_rollup_init_block
-    else
-      l1_rollup_init_block
+    case DbSettlement.l1_block_of_confirmation_for_rollup_block(rollup_first_block) do
+      nil ->
+        if historical_confirmations_discovery_completed?(state), do: l1_rollup_init_block, else: nil
+
+      l1_block_number ->
+        l1_block_number
     end
   end
 
   # Loads the cursors of both processes into the state.
   #
-  # The cursors come from the database. If the database has no cursors, the start
-  # point is the parent chain block of the commitment of the latest batch. The
-  # function writes both cursors before the first window. A restart does not
-  # compute the start point again.
+  # The cursors come from the database. If the database has no cursors, the
+  # function computes the start point with `start_point/1`. The function writes
+  # both cursors before the first window. A restart does not compute the start
+  # point again.
   #
   # ## Returns
   # - `{:ok, state}` with the cursors in the task data
@@ -343,7 +354,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
         {:ok, put_cursors(state, main_cursor, backfill_cursor)}
 
       _ ->
-        case DbSettlement.l1_block_of_latest_committed_batch() do
+        case start_point(state) do
           nil ->
             log_warning("Rollup confirmations discovery waits for the first batch to find its start point")
             {:no_batches, state}
@@ -353,6 +364,37 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
             :ok = DbSettlement.initialize_confirmations_cursors(start_point)
             {:ok, put_cursors(state, start_point - 1, start_point)}
         end
+    end
+  end
+
+  # Computes the start point of both processes.
+  #
+  # The start point is the parent chain block of the commitment of the latest
+  # batch. If `finalized_confirmations` is `true`, the main process reads only
+  # the blocks up to the safe block, and the backfill process reads each block
+  # once. A re-org, a change of the recent blocks of the parent chain, can move
+  # a block above the safe block. Thus the start point is the lower of the
+  # commitment block and the safe block in this case. The start point is not
+  # below `l1_rollup_init_block`.
+  #
+  # ## Returns
+  # - The number of the parent chain block, or `nil` if no batch exists
+  @spec start_point(confirmations_related_state()) :: non_neg_integer() | nil
+  defp start_point(%{config: %{l1_rpc: l1_rpc_config, l1_rollup_init_block: l1_rollup_init_block}}) do
+    case DbSettlement.l1_block_of_latest_committed_batch() do
+      nil ->
+        nil
+
+      commitment_block ->
+        upper_limit =
+          if l1_rpc_config.finalized_confirmations do
+            {safe_block, _} = IndexerHelper.get_safe_block(l1_rpc_config.json_rpc_named_arguments)
+            safe_block
+          else
+            commitment_block
+          end
+
+        max(l1_rollup_init_block, min(commitment_block, upper_limit))
     end
   end
 

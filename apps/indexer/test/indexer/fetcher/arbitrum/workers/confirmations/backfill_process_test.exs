@@ -144,15 +144,16 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert Tasks.historical_confirmations_discovery_completed?(state)
       end
 
-      # The RPC node does not give the logs. The run fails, the cursor does not
-      # move, and the next run reads the same window.
+      # The RPC node does not give the logs. The request gives an error after the
+      # retries. The run fails, the cursor does not move, and the next run reads
+      # the same window.
       test "does not move the cursor when an RPC request fails", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
         seed_cursors(@main_cursor, @backfill_cursor)
         expect_parent_chain([], logs_fail?: true)
 
-        assert_raise(RuntimeError, fn ->
+        assert_raise(MatchError, fn ->
           run_backfill(state(json_rpc_named_arguments, logs_block_range: @backfill_logs_block_range))
         end)
 
