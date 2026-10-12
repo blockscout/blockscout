@@ -25,8 +25,6 @@ defmodule Indexer.Fetcher.Arbitrum.MessagesToL2Matcher do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1]
 
-  require Logger
-
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Arbitrum.MessagesToL2Matcher.Supervisor, as: MessagesToL2MatcherSupervisor
   alias Indexer.Fetcher.Arbitrum.Messaging, as: MessagingUtils

@@ -45,8 +45,6 @@ defmodule Indexer.Fetcher.ZkSync.BatchesStatusTracker do
   use GenServer
   use Indexer.Fetcher
 
-  require Logger
-
   # alias Explorer.Chain.Events.Publisher
   # TODO: publish event when new committed batches appear
 

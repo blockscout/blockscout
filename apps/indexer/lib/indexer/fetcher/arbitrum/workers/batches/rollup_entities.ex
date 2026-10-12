@@ -15,8 +15,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.RollupEntities do
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Common, as: DbCommon
   alias Indexer.Fetcher.Arbitrum.Utils.{Logging, Rpc}
 
-  require Logger
-
   @doc """
     Retrieves and associates rollup blocks and transactions for a list of batches.
 

@@ -66,8 +66,6 @@ defmodule Indexer.Fetcher.Arbitrum.RollupMessagesCatchup do
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Common, as: DbCommon
   alias Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2
 
-  require Logger
-
   @wait_for_new_block_delay 15
   @release_cpu_delay 2
 

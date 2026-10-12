@@ -4,8 +4,6 @@ defmodule Explorer.Chain.Import.Runner.Celo.AggregatedElectionRewards do
   Bulk imports `t:Explorer.Chain.Celo.AggregatedElectionReward.t/0`.
   """
 
-  require Ecto.Query
-
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Celo.AggregatedElectionReward
   alias Explorer.Chain.Import

@@ -11,8 +11,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.DiscoveryUtils do
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
 
-  require Logger
-
   @doc """
     Determines the block range for a batch using either message counts or neighboring batch information.
 

@@ -6,8 +6,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockHashIndex do
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  require Logger
-
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper

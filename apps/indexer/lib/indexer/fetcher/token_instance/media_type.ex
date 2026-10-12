@@ -5,8 +5,6 @@ defmodule Indexer.Fetcher.TokenInstance.MediaType do
   but missing image_type or animation_type.
   """
 
-  require Logger
-
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 

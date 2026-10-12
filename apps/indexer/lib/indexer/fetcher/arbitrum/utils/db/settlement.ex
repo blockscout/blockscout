@@ -23,8 +23,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
 
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Tools, as: DbTools
 
-  require Logger
-
   @doc """
     Calculates the next L1 block number to search for the latest committed batch.
 

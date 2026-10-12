@@ -29,8 +29,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Tasks do
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery, as: BatchesDiscovery
 
-  require Logger
-
   @type new_batches_data_map :: %{
           :start_block => non_neg_integer()
         }

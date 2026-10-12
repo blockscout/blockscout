@@ -37,8 +37,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   alias Explorer.Chain.Arbitrum.Message, as: ArbitrumMessage
   alias Explorer.Chain.Events.Publisher
 
-  require Logger
-
   @types_of_l1_messages_forwarded_to_l2 [3, 7, 9, 12]
 
   @doc """

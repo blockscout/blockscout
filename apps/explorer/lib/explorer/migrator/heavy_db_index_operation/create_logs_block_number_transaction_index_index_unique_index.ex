@@ -13,8 +13,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsBlockNumberTransacti
 
   use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
 
-  require Logger
-
   alias Explorer.Chain.Cache.BackgroundMigrations
 
   alias Explorer.Migrator.{

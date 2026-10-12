@@ -6,8 +6,6 @@ defmodule Explorer.Chain.Filecoin.IDAddress do
 
   alias Explorer.Chain.Filecoin.NativeAddress
 
-  require Integer
-
   defstruct ~w(value)a
 
   @protocol_indicator 0

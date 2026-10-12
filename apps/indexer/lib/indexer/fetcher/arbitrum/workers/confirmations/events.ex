@@ -16,8 +16,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Events do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_debug: 1, log_warning: 1]
 
-  require Logger
-
   @typedoc """
     A map containing list of transaction logs for a specific block range.
     - the key is the tuple with the start and end of the block range

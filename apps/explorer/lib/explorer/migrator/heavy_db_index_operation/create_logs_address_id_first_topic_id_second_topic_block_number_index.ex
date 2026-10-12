@@ -7,8 +7,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicI
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  require Logger
-
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicBlockNumberIndexIndex
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper

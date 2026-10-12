@@ -36,8 +36,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Backfill do
 
   alias Ecto.Multi
 
-  require Logger
-
   @doc """
     Discovers and backfills missing Arbitrum-specific fields for blocks and their
     transactions within a calculated range.

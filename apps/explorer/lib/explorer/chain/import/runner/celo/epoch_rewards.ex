@@ -4,8 +4,6 @@ defmodule Explorer.Chain.Import.Runner.Celo.EpochRewards do
   Bulk imports `t:Explorer.Chain.Celo.EpochReward.t/0`.
   """
 
-  require Ecto.Query
-
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Celo.EpochReward
   alias Explorer.Chain.Import

@@ -4,8 +4,6 @@ defmodule Indexer.Fetcher.TokenBalance.Helper do
   Common functions for `Indexer.Fetcher.TokenBalance.Historical` and `Indexer.Fetcher.TokenBalance.Current` modules
   """
 
-  require Logger
-
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
   alias Explorer.Chain.{Hash, Token}

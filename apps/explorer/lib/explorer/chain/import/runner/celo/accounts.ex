@@ -4,8 +4,6 @@ defmodule Explorer.Chain.Import.Runner.Celo.Accounts do
   Bulk imports `t:Explorer.Chain.Celo.Account.t/0`.
   """
 
-  require Ecto.Query
-
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Celo.Account
   alias Explorer.Chain.Import

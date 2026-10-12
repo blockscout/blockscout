@@ -6,8 +6,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdBlockNumber
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  require Logger
-
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
 

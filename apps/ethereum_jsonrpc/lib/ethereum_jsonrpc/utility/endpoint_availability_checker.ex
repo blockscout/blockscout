@@ -51,8 +51,6 @@ defmodule EthereumJSONRPC.Utility.EndpointAvailabilityChecker do
 
   use GenServer
 
-  require Logger
-
   alias EthereumJSONRPC.Utility.EndpointAvailabilityObserver
 
   @check_interval :timer.seconds(1)

@@ -4,8 +4,6 @@ defmodule Indexer.Transform.Stability.Validators do
   Helper functions for transforming blocks into stability validator counter updates.
   """
 
-  require Logger
-
   @doc """
   Returns a list of validator counter updates given a list of blocks.
   Only processes blocks for stability chain type.

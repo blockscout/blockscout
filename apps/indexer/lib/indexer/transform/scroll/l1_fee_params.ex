@@ -6,8 +6,6 @@ defmodule Indexer.Transform.Scroll.L1FeeParams do
   """
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  require Logger
-
   @doc """
     Takes logs from the realtime fetcher, filters them
     by signatures (L1 Gas Oracle events), and prepares an output for

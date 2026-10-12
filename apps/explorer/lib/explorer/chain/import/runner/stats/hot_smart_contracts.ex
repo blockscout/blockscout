@@ -4,8 +4,6 @@ defmodule Explorer.Chain.Import.Runner.Stats.HotSmartContracts do
   Bulk imports `t:Explorer.Stats.HotSmartContracts.t/0` rows (hot_smart_contracts_daily).
   """
 
-  require Ecto.Query
-
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Import
   alias Explorer.Prometheus.Instrumenter

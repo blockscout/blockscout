@@ -98,8 +98,6 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
   alias Indexer.Helper, as: IndexerHelper
 
-  require Logger
-
   @behaviour BufferedTask
 
   # 250ms interval between processing buffered entries.

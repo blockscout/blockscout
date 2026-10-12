@@ -6,8 +6,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateInternalTransactionsBloc
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  require Logger
-
   alias Explorer.Migrator.{
     EmptyInternalTransactionsData,
     HeavyDbIndexOperation,

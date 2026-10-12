@@ -36,8 +36,6 @@ defmodule Indexer.Fetcher.Arbitrum.DataBackfill do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1, log_debug: 1, log_info: 1]
 
-  require Logger
-
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Common, as: ArbitrumDbUtils

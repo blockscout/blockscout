@@ -4,8 +4,6 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.BatchTransactions do
     Bulk imports of Explorer.Chain.Arbitrum.BatchTransaction.
   """
 
-  require Ecto.Query
-
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Arbitrum.BatchTransaction
   alias Explorer.Chain.Import

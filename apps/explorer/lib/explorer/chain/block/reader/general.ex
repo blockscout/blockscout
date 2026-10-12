@@ -20,8 +20,6 @@ defmodule Explorer.Chain.Block.Reader.General do
     BlockNumberHelper
   }
 
-  require Logger
-
   @doc """
     Converts a timestamp to its nearest block number.
 

@@ -2,8 +2,6 @@
 defmodule BlockScoutWeb.AddressView do
   use BlockScoutWeb, :view
 
-  require Logger
-
   alias BlockScoutWeb.{AccessHelper, LayoutView}
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
   alias BlockScoutWeb.API.V2.TransactionView, as: APIV2TransactionView

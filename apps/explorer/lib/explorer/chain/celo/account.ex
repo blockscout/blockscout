@@ -8,8 +8,6 @@ defmodule Explorer.Chain.Celo.Account do
   with different roles in the network governance and consensus mechanisms.
   """
 
-  require Logger
-
   use Explorer.Schema
 
   alias Explorer.Chain.{Address, Hash, Wei}

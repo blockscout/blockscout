@@ -4,8 +4,6 @@ defmodule Explorer.Chain.Import.Runner.Zilliqa.Zrc2.TokenAdapters do
   Bulk imports `t:Explorer.Chain.Zilliqa.Zrc2.TokenAdapter.t/0`.
   """
 
-  require Ecto.Query
-
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Import
   alias Explorer.Chain.Zilliqa.Zrc2.TokenAdapter

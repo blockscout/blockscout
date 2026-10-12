@@ -21,8 +21,6 @@ defmodule Explorer.Chain do
       where: 3
     ]
 
-  require Logger
-
   alias ABI.TypeDecoder
 
   alias EthereumJSONRPC.Utility.RangesHelper

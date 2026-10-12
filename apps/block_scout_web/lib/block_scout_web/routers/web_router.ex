@@ -4,7 +4,6 @@ defmodule BlockScoutWeb.Routers.WebRouter do
   Router for web app
   """
   use BlockScoutWeb, :router
-  require Ueberauth
 
   alias BlockScoutWeb.Routers.AccountRouter
 

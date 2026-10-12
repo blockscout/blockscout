@@ -6,8 +6,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractAdditionalS
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  require Logger
-
   alias Explorer.Migrator.{
     HeavyDbIndexOperation,
     MigrationStatus,

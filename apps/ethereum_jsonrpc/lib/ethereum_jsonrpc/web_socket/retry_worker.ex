@@ -6,8 +6,6 @@ defmodule EthereumJSONRPC.WebSocket.RetryWorker do
 
   use GenServer
 
-  require Logger
-
   alias EthereumJSONRPC.WebSocket.Supervisor, as: WebSocketSupervisor
 
   def start_link(_) do

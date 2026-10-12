@@ -89,7 +89,6 @@ defmodule Explorer.Chain.Token do
   * [ERC-7984](https://github.com/ethereum/ERCs/blob/39197cde3e32d8fc7fde74c7d0ce5e67ad4de409/ERCS/erc-7984.md)
   * [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056)
   """
-  require Logger
 
   use Explorer.Schema
 

@@ -16,8 +16,6 @@ defmodule Indexer.Fetcher.Optimism.Interop.MessageFailed do
   use GenServer
   use Indexer.Fetcher
 
-  require Logger
-
   import EthereumJSONRPC, only: [fetch_blocks_by_range: 2, fetch_transaction_receipts: 2]
   import Explorer.Helper, only: [decode_data: 2]
 
