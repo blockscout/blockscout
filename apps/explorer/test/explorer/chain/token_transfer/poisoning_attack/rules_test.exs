@@ -402,7 +402,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
     end
 
     test "an address from the ignored list suppresses the sender signals" do
-      result = Rules.evaluate(fake_outgoing(), config(ignored_addresses: MapSet.new([hash(@attacker)])))
+      result = Rules.evaluate(fake_outgoing(), config(ignored_addresses: [hash(@attacker)]))
 
       assert "suspicious_outgoing" in result.suppressed
       assert result.score == 5

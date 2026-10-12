@@ -45,7 +45,7 @@ defmodule Explorer.Chain.Cache.KnownAssetsTest do
       extra_contract = address_hash()
 
       index =
-        KnownAssets.build_index(%{"usdt" => MapSet.new([override_contract]), "extra" => MapSet.new([extra_contract])})
+        KnownAssets.build_index(%{"usdt" => [override_contract], "extra" => [extra_contract]})
 
       assert index.symbols["usdt"] == MapSet.new([db_token.contract_address_hash, override_contract])
       assert index.symbols["extra"] == MapSet.new([extra_contract])
@@ -57,7 +57,7 @@ defmodule Explorer.Chain.Cache.KnownAssetsTest do
     test "uses the operator's entries for both symbols and names" do
       contract = address_hash()
 
-      assert KnownAssets.index_from_override(%{"usdt" => MapSet.new([contract])}) == %{
+      assert KnownAssets.index_from_override(%{"usdt" => [contract]}) == %{
                symbols: %{"usdt" => MapSet.new([contract])},
                names: %{"usdt" => MapSet.new([contract])}
              }

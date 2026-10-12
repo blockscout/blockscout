@@ -85,7 +85,7 @@ defmodule Explorer.Chain.Cache.KnownAssets do
   @doc """
   Builds the index from the database and the operator's `known_assets_override`.
   """
-  @spec build_index(%{String.t() => MapSet.t(Hash.Address.t())}) :: Context.known_assets()
+  @spec build_index(%{String.t() => [Hash.Address.t()]}) :: Context.known_assets()
   def build_index(override) do
     db_index = known_tokens_query() |> Repo.all() |> index_from_tokens()
 
@@ -99,8 +99,12 @@ defmodule Explorer.Chain.Cache.KnownAssets do
   The index made of the operator's entries alone, for when the cache has not
   been built.
   """
-  @spec index_from_override(%{String.t() => MapSet.t(Hash.Address.t())}) :: Context.known_assets()
-  def index_from_override(override), do: %{symbols: override, names: override}
+  @spec index_from_override(%{String.t() => [Hash.Address.t()]}) :: Context.known_assets()
+  def index_from_override(override) do
+    sets = Map.new(override, fn {key, contracts} -> {key, MapSet.new(contracts)} end)
+
+    %{symbols: sets, names: sets}
+  end
 
   defp load do
     index = build_index(Config.load().known_assets_override)
@@ -142,8 +146,8 @@ defmodule Explorer.Chain.Cache.KnownAssets do
   end
 
   defp merge_override(assets, override) do
-    Map.merge(assets, override, fn _key, db_contracts, override_contracts ->
-      MapSet.union(db_contracts, override_contracts)
+    Enum.reduce(override, assets, fn {key, contracts}, acc ->
+      Map.update(acc, key, MapSet.new(contracts), &MapSet.union(&1, MapSet.new(contracts)))
     end)
   end
 
