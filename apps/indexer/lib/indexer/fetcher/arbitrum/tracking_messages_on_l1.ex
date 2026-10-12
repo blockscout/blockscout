@@ -419,5 +419,4 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
   defp rescheduled?(task_tag, state) when task_tag in @stoppable_tasks do
     not Map.get(state.completed_tasks, task_tag)
   end
-
 end
