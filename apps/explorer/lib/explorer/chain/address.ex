@@ -175,7 +175,6 @@ defmodule Explorer.Chain.Address do
   A stored representation of a web3 address.
   """
 
-  require Bitwise
   require Explorer.Chain.Address.Schema
 
   use Explorer.Schema

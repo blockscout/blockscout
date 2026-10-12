@@ -4,8 +4,6 @@ defmodule Indexer.Fetcher.Scroll.Bridge do
   Contains common functions for Indexer.Fetcher.Scroll.Bridge* modules.
   """
 
-  require Logger
-
   import EthereumJSONRPC,
     only: [
       quantity_to_integer: 1,

@@ -801,13 +801,9 @@ defmodule Explorer.Etherscan do
     end
   end
 
-  defp where_start_block_match(query, %{startblock: nil}), do: query
-
   defp where_start_block_match(query, %{startblock: start_block}) do
     where(query, [..., block], block.number >= ^start_block)
   end
-
-  defp where_end_block_match(query, %{endblock: nil}), do: query
 
   defp where_end_block_match(query, %{endblock: end_block}) do
     where(query, [..., block], block.number <= ^end_block)

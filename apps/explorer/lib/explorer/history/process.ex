@@ -49,7 +49,7 @@ defmodule Explorer.History.Process do
 
   # Actions
 
-  @spec successful_compilation(Historian.record(), module()) :: any()
+  @spec successful_compilation(Historian.history_record(), module()) :: any()
   defp successful_compilation(records, historian) do
     historian.save_records(records)
     schedule_next_compilation()

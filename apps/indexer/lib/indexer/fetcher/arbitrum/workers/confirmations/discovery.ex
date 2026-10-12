@@ -36,8 +36,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
   alias Indexer.Fetcher.Arbitrum.Workers.Confirmations.Events, as: EventsUtils
   alias Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks
 
-  require Logger
-
   @doc """
     Discovers and processes new confirmations of rollup blocks within a specified parent chain
     block range.

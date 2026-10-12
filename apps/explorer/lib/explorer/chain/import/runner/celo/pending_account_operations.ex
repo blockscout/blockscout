@@ -4,8 +4,6 @@ defmodule Explorer.Chain.Import.Runner.Celo.PendingAccountOperations do
   Bulk imports `t:Explorer.Chain.Celo.PendingAccountOperation.t/0`.
   """
 
-  require Ecto.Query
-
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Celo.PendingAccountOperation
   alias Explorer.Chain.Import

@@ -15,8 +15,6 @@ defmodule BlockScoutWeb.AccessHelper do
 
   alias RemoteIp
 
-  require Logger
-
   @invalid_address_hash "Invalid address hash"
   @restricted_access "Restricted access"
 

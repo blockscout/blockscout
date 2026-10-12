@@ -7,6 +7,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   alias Explorer.Chain.Arbitrum.{L1Batch, LifecycleTransaction}
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: SettlementReader
   alias Explorer.Chain.{Block, Hash, Transaction, Wei}
+  alias Explorer.Helper, as: ExplorerHelper
 
   @doc """
     Function to render error\\text responses for GET requests
@@ -296,8 +297,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     out_json
     |> add_l1_transactions_info_and_status(%{
       batch_number: get_batch_number(arbitrum_entity),
-      commitment_transaction: arbitrum_entity.arbitrum_commitment_transaction,
-      confirmation_transaction: arbitrum_entity.arbitrum_confirmation_transaction
+      commitment_transaction: ExplorerHelper.chain_type_field(arbitrum_entity, :arbitrum_commitment_transaction),
+      confirmation_transaction: ExplorerHelper.chain_type_field(arbitrum_entity, :arbitrum_confirmation_transaction)
     })
     |> Map.put("batch_data_container", get_batch_data_container(arbitrum_entity))
     |> Map.put("batch_number", get_batch_number(arbitrum_entity))
@@ -609,8 +610,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
         }) :: map()
   defp extend_if_message(arbitrum_json, %Transaction{} = arbitrum_transaction) do
     {message_type, message_data} =
-      case {APIV2Helper.specified?(Map.get(arbitrum_transaction, :arbitrum_message_to_l2)),
-            APIV2Helper.specified?(Map.get(arbitrum_transaction, :arbitrum_message_from_l2))} do
+      case {APIV2Helper.specified?(ExplorerHelper.chain_type_field(arbitrum_transaction, :arbitrum_message_to_l2)),
+            APIV2Helper.specified?(ExplorerHelper.chain_type_field(arbitrum_transaction, :arbitrum_message_from_l2))} do
         {true, false} ->
           {"incoming", l1_transaction_and_status_for_message(arbitrum_transaction, :incoming)}
 
@@ -685,7 +686,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
     # Map.get is only needed for the case when the module is compiled with
     # chain_type different from "arbitrum", `|| 0` is used to avoid nil values
     # for the transaction prior to the migration to Arbitrum specific BS build.
-    gas_used_for_l1 = Map.get(arbitrum_transaction, :gas_used_for_l1) || Decimal.new(0)
+    gas_used_for_l1 = ExplorerHelper.chain_type_field(arbitrum_transaction, :gas_used_for_l1) || Decimal.new(0)
 
     gas_used = Map.get(arbitrum_transaction, :gas_used) || Decimal.new(0)
     gas_price = Map.get(arbitrum_transaction, :gas_price) || %Wei{value: Decimal.new(0)}
@@ -722,8 +723,8 @@ defmodule BlockScoutWeb.API.V2.ArbitrumView do
   defp extend_with_block_info(out_json, %Block{} = arbitrum_block) do
     out_json
     |> Map.put("delayed_messages", Hash.to_integer(arbitrum_block.nonce))
-    |> Map.put("l1_block_number", Map.get(arbitrum_block, :l1_block_number))
-    |> Map.put("send_count", Map.get(arbitrum_block, :send_count))
-    |> Map.put("send_root", Map.get(arbitrum_block, :send_root))
+    |> Map.put("l1_block_number", ExplorerHelper.chain_type_field(arbitrum_block, :l1_block_number))
+    |> Map.put("send_count", ExplorerHelper.chain_type_field(arbitrum_block, :send_count))
+    |> Map.put("send_root", ExplorerHelper.chain_type_field(arbitrum_block, :send_root))
   end
 end

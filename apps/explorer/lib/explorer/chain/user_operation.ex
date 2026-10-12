@@ -4,8 +4,6 @@ defmodule Explorer.Chain.UserOperation do
   The representation of a user operation for account abstraction (EIP-4337).
   """
 
-  require Logger
-
   import Ecto.Query,
     only: [
       where: 2

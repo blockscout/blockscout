@@ -592,7 +592,7 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
     padding_needed = rem(chunk_size - rem(byte_size(value), chunk_size), chunk_size)
     padded = value <> :binary.copy(<<0>>, padding_needed)
 
-    for <<chunk::binary-size(chunk_size) <- padded>>, do: chunk
+    for <<chunk::binary-size(^chunk_size) <- padded>>, do: chunk
   end
 
   defp merkleize_chunks([chunk]), do: chunk

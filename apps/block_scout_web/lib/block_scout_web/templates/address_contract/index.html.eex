@@ -40,7 +40,7 @@
           </div>
         <% end %>
       <% end %>
-      <%= if smart_contract_verified || (!smart_contract_verified && bytecode_twin_contract) do %>
+      <%= if smart_contract_verified || bytecode_twin_contract do %>
         <% target_contract = if smart_contract_verified, do: @address.smart_contract, else: bytecode_twin_contract %>
         <%= if @address.smart_contract && @address.smart_contract.verified_via_sourcify && @address.smart_contract.partially_verified && smart_contract_verified do %>
           <div class="mb-4">
@@ -222,7 +222,7 @@
                   <button type="button" class="btn-line" style="float: left;" id="button" data-clipboard-text="<%= contract_code %>" aria-label="copy contract creation code">
                     <%= gettext "Copy Deployed ByteCode" %>
                   </button>
-                  <%= if !fully_verified and !creation_code(@address) do %>
+                  <%= if !creation_code(@address) do %>
                     <% path = address_verify_contract_path(@conn, :new, @address.hash) %>
                     <%= link(
                           gettext("Verify & Publish"),
@@ -240,7 +240,7 @@
         <% end %>
       </section>
 
-      <%= if smart_contract_verified || (!smart_contract_verified && bytecode_twin_contract) do %>
+      <%= if smart_contract_verified || bytecode_twin_contract do %>
         <% target_contract = if smart_contract_verified, do: @address.smart_contract, else: bytecode_twin_contract %>
         <%= if target_contract.external_libraries && target_contract.external_libraries != [] do %>
           <section>

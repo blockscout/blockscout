@@ -16,8 +16,8 @@ defmodule Indexer.MixProject do
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
       version: "12.0.1",
-      xref: [
-        exclude: [
+      elixirc_options: [
+        no_warn_undefined: [
           Explorer.Chain.Optimism.Deposit,
           Explorer.Chain.Optimism.FrameSequence,
           Explorer.Chain.Optimism.OutputRoot,

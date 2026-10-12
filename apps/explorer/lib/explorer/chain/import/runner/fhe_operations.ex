@@ -11,7 +11,6 @@ defmodule Explorer.Chain.Import.Runner.FheOperations do
   """
 
   require Ecto.Query
-  require Logger
 
   alias Ecto.{Changeset, Multi}
   alias Explorer.Chain.FheContractChecker

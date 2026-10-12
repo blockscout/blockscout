@@ -7,8 +7,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContr
   use Explorer.Migrator.HeavyDbIndexOperation
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  require Logger
-
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper

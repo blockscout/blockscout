@@ -15,8 +15,6 @@ defmodule Indexer.Fetcher.ZkSync.TransactionBatch do
   use GenServer
   use Indexer.Fetcher
 
-  require Logger
-
   alias Explorer.Chain.ZkSync.Reader
   alias Indexer.Fetcher.ZkSync.Discovery.Workers
   alias Indexer.Fetcher.ZkSync.Utils.Rpc

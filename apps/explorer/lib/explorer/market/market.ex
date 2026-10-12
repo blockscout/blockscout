@@ -6,7 +6,6 @@ defmodule Explorer.Market do
 
   use GenServer
 
-  require Logger
   alias Explorer.Helper
   alias Explorer.Market.Fetcher.Coin, as: CoinFetcher
   alias Explorer.Market.Fetcher.History, as: HistoryFetcher

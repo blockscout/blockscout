@@ -3,7 +3,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.General do
   @moduledoc """
   This module defines the schema for general types used in the API.
   """
-  require OpenApiSpex
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias BlockScoutWeb.Schemas.API.V2.Celo.ElectionReward.Type, as: CeloElectionRewardType

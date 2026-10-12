@@ -83,8 +83,6 @@ defmodule Explorer.Tags.AddressTag do
     |> Repo.all()
   end
 
-  defp get_by_label(nil), do: nil
-
   defp get_by_label(label) do
     label
     |> get_by_label_query()

@@ -108,7 +108,7 @@ defmodule Explorer.Chain.Scroll.Batch do
          {:size_is_correct, true} <- {:size_is_correct, blob_payload_size + 5 <= byte_size(blob_data_raw)},
          {:compression_flag_is_correct, true} <-
            {:compression_flag_is_correct, is_compressed in [0, 1]},
-         <<payload::binary-size(blob_payload_size), _::binary>> = rest,
+         <<payload::binary-size(^blob_payload_size), _::binary>> = rest,
          {:is_compressed, 1, _payload} <- {:is_compressed, is_compressed, payload},
          decompressed when is_binary(decompressed) <- :ezstd.decompress(@zstd_magic_number <> payload) do
       decompressed

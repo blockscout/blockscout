@@ -17,8 +17,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.L1Finalization do
 
   alias Explorer.Chain
 
-  require Logger
-
   @doc """
     Determines whether settlement transactions finalization should be run based on configuration.
 

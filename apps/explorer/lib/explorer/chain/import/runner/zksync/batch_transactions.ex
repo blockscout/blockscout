@@ -4,8 +4,6 @@ defmodule Explorer.Chain.Import.Runner.ZkSync.BatchTransactions do
   Bulk imports `t:Explorer.Chain.ZkSync.BatchTransaction.t/0`.
   """
 
-  require Ecto.Query
-
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Import
   alias Explorer.Chain.ZkSync.BatchTransaction

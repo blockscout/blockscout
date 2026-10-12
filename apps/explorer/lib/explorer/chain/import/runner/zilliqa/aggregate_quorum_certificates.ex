@@ -4,8 +4,6 @@ defmodule Explorer.Chain.Import.Runner.Zilliqa.AggregateQuorumCertificates do
   Bulk imports `t:Explorer.Chain.Zilliqa.AggregateQuorumCertificate.t/0`.
   """
 
-  require Ecto.Query
-
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Import
   alias Explorer.Chain.Zilliqa.AggregateQuorumCertificate

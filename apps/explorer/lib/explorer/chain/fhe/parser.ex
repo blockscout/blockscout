@@ -4,8 +4,6 @@ defmodule Explorer.Chain.Fhe.Parser do
   Logic for parsing FHE operations from transaction logs.
   """
 
-  require Logger
-
   alias Explorer.Chain.{FheOperatorPrices, Hash, Log}
   alias Explorer.Helper
 

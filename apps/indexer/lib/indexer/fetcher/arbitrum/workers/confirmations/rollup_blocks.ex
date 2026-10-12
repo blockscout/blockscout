@@ -27,8 +27,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.RollupBlocks do
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
   alias Indexer.Fetcher.Arbitrum.Workers.Confirmations.Events, as: EventsUtils
 
-  require Logger
-
   @logs_per_report 10
   @zero_counters %{pairs_counter: 1, capped_logs_counter: 0, report?: false}
 

@@ -6,8 +6,6 @@ defmodule Indexer.Transform.Scroll.L1FeeParams do
   """
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  require Logger
-
   @doc """
     Takes logs from the realtime fetcher, filters them
     by signatures (L1 Gas Oracle events), and prepares an output for
@@ -25,6 +23,8 @@ defmodule Indexer.Transform.Scroll.L1FeeParams do
   def parse(logs)
 
   if @chain_type == :scroll do
+    require Logger
+
     def parse(logs) do
       prev_metadata = Logger.metadata()
       Logger.metadata(fetcher: :scroll_l1_fee_params_realtime)

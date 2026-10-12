@@ -4,8 +4,6 @@ defmodule Explorer.Chain.Import.Runner.Celo.ValidatorGroupVotes do
   Bulk imports `t:Explorer.Chain.Celo.ValidatorGroupVote.t/0`.
   """
 
-  require Ecto.Query
-
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Celo.ValidatorGroupVote
   alias Explorer.Chain.Import

@@ -4,8 +4,6 @@ defmodule Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch do
   Re-fetches token metadata.
   """
 
-  require Logger
-
   use GenServer
   use Indexer.Fetcher, restart: :permanent
 

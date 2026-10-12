@@ -763,7 +763,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           transaction_receipt_from_node
         )
 
-      transaction_from_db && Map.get(transaction_from_db, :cumulative_gas_used) ->
+      Map.get(transaction_from_db, :cumulative_gas_used) ->
         update_transactions_inner(
           repo,
           valid_internal_transactions,

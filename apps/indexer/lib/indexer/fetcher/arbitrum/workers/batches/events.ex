@@ -9,8 +9,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Events do
   alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
   alias Indexer.Helper, as: IndexerHelper
 
-  require Logger
-
   @doc """
     Fetches `SequencerBatchDelivered` event logs from the `SequencerInbox` contract within a block range.
 

@@ -4,7 +4,6 @@ defmodule NFTMediaHandler.DispatcherInterface do
   Interface to call the Indexer.NFTMediaHandler.Queue.
   Calls performed either via direct call to Queue module, or via :rpc.call/4
   """
-  require Logger
   use GenServer
 
   alias Explorer.Helper

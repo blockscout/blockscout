@@ -6,8 +6,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTokensNamePartialFtsInde
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  require Logger
-
   alias Explorer.Chain.Cache.BackgroundMigrations
 
   alias Explorer.Migrator.{

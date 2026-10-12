@@ -9,8 +9,6 @@ defmodule Indexer.Transform.Celo.ValidatorEpochPaymentDistributions do
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.Chain.{Hash, Log}
 
-  require Logger
-
   @event_signature "0x6f5937add2ec38a0fa4959bccd86e3fcc2aafb706cd3e6c0565f87a7b36b9975"
 
   @event_abi [

@@ -22,7 +22,6 @@ defmodule Indexer.Transform.Celo.TransactionTokenTransfers do
 
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.Chain.Hash
-  alias Explorer.Repo
   alias Indexer.Fetcher.TokenTotalSupplyUpdater
   @token_type "ERC-20"
   @transaction_buffer_size 20_000

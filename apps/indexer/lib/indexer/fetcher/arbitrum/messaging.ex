@@ -19,7 +19,6 @@ defmodule Indexer.Fetcher.Arbitrum.Messaging do
   alias Explorer.Chain.Arbitrum.Message
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
-  require Logger
 
   @zero_hex_prefix "0x" <> String.duplicate("0", 56)
 

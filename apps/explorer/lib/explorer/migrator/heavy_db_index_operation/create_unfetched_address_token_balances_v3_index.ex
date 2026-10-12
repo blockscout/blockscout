@@ -26,8 +26,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateUnfetchedAddressTokenBal
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  require Logger
-
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 

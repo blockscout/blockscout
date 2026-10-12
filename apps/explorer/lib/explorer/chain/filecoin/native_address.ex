@@ -292,7 +292,7 @@ defmodule Explorer.Chain.Filecoin.NativeAddress do
   defp cast_base32_digits(digits) do
     with {:ok, bytes} <- Base.decode32(digits, case: :lower, padding: false),
          <<
-           payload::binary-size(byte_size(bytes) - @checksum_bytes_count),
+           payload::binary-size(byte_size(^bytes) - @checksum_bytes_count),
            checksum::binary-size(@checksum_bytes_count)
          >> <- bytes do
       {:ok, {payload, checksum}}

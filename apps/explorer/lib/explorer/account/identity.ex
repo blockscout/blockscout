@@ -5,8 +5,6 @@ defmodule Explorer.Account.Identity do
   """
   use Explorer.Schema
 
-  require Logger
-
   alias BlockScoutWeb.Chain
   alias Ecto.Multi
   alias Explorer.Account.Api.Plan

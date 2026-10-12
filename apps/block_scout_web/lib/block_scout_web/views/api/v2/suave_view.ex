@@ -17,22 +17,22 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
         conn,
         watchlist_names
       ) do
-    if is_nil(Map.get(transaction, :execution_node_hash)) do
+    if is_nil(ExplorerHelper.chain_type_field(transaction, :execution_node_hash)) do
       out_json
     else
-      wrapped_to_address = Map.get(transaction, :wrapped_to_address)
-      wrapped_to_address_hash = Map.get(transaction, :wrapped_to_address_hash)
-      wrapped_input = Map.get(transaction, :wrapped_input)
-      wrapped_hash = Map.get(transaction, :wrapped_hash)
-      execution_node = Map.get(transaction, :execution_node)
-      execution_node_hash = Map.get(transaction, :execution_node_hash)
-      wrapped_type = Map.get(transaction, :wrapped_type)
-      wrapped_nonce = Map.get(transaction, :wrapped_nonce)
-      wrapped_gas = Map.get(transaction, :wrapped_gas)
-      wrapped_gas_price = Map.get(transaction, :wrapped_gas_price)
-      wrapped_max_priority_fee_per_gas = Map.get(transaction, :wrapped_max_priority_fee_per_gas)
-      wrapped_max_fee_per_gas = Map.get(transaction, :wrapped_max_fee_per_gas)
-      wrapped_value = Map.get(transaction, :wrapped_value)
+      wrapped_to_address = ExplorerHelper.chain_type_field(transaction, :wrapped_to_address)
+      wrapped_to_address_hash = ExplorerHelper.chain_type_field(transaction, :wrapped_to_address_hash)
+      wrapped_input = ExplorerHelper.chain_type_field(transaction, :wrapped_input)
+      wrapped_hash = ExplorerHelper.chain_type_field(transaction, :wrapped_hash)
+      execution_node = ExplorerHelper.chain_type_field(transaction, :execution_node)
+      execution_node_hash = ExplorerHelper.chain_type_field(transaction, :execution_node_hash)
+      wrapped_type = ExplorerHelper.chain_type_field(transaction, :wrapped_type)
+      wrapped_nonce = ExplorerHelper.chain_type_field(transaction, :wrapped_nonce)
+      wrapped_gas = ExplorerHelper.chain_type_field(transaction, :wrapped_gas)
+      wrapped_gas_price = ExplorerHelper.chain_type_field(transaction, :wrapped_gas_price)
+      wrapped_max_priority_fee_per_gas = ExplorerHelper.chain_type_field(transaction, :wrapped_max_priority_fee_per_gas)
+      wrapped_max_fee_per_gas = ExplorerHelper.chain_type_field(transaction, :wrapped_max_fee_per_gas)
+      wrapped_value = ExplorerHelper.chain_type_field(transaction, :wrapped_value)
 
       [wrapped_decoded_input] =
         Transaction.decode_transactions(

@@ -24,8 +24,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
 
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Tools, as: DbTools
 
-  require Logger
-
   @no_messages_warning "No messages to L2 found in DB"
   @no_executions_warning "No L1 executions found in DB"
 

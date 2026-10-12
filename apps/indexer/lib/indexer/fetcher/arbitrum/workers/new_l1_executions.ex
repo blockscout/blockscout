@@ -36,8 +36,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum
 
-  require Logger
-
   @type new_executions_data_map :: %{
           :start_block => non_neg_integer()
         }

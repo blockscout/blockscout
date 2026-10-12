@@ -35,8 +35,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.Discovery do
   alias Indexer.Fetcher.Arbitrum.Workers.Batches.RollupEntities, as: RollupEntities
   alias Indexer.Prometheus.Instrumenter
 
-  require Logger
-
   @doc """
     Performs discovery of new or historical batches within a specified block range.
 

@@ -7,8 +7,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateTokensOrdHolderNameIndex
 
   use Explorer.Migrator.HeavyDbIndexOperation
 
-  require Logger
-
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.CreateTokensOrdFiatHolderNameIndex

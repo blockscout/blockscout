@@ -15,8 +15,6 @@ defmodule BlockScoutWeb.API.V2.SmartContractView do
   alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Visualize.Sol2uml
 
-  require Logger
-
   @api_true [api?: true]
 
   def render("smart_contracts.json", %{addresses: addresses, next_page_params: next_page_params}) do

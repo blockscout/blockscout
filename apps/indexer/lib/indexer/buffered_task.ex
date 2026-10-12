@@ -400,8 +400,8 @@ defmodule Indexer.BufferedTask do
           max_concurrency: non_neg_integer(),
           poll: boolean(),
           metadata: Logger.metadata(),
-          current_buffer: [term(), ...],
-          current_front_buffer: [term(), ...],
+          current_buffer: [term()],
+          current_front_buffer: [term()],
           bound_queue: BoundQueue.t(term()),
           task_ref_to_batch: %{reference() => [term(), ...]}
         }

@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.EthereumView do
   alias Explorer.Chain.{Block, Transaction}
+  alias Explorer.Helper, as: ExplorerHelper
 
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
-    case Map.get(transaction, :beacon_blob_transaction) do
+    case ExplorerHelper.chain_type_field(transaction, :beacon_blob_transaction) do
       nil ->
         out_json
 
@@ -21,9 +22,9 @@ defmodule BlockScoutWeb.API.V2.EthereumView do
   end
 
   def extend_block_json_response(out_json, %Block{} = block, single_block?) do
-    blob_gas_used = Map.get(block, :blob_gas_used)
-    excess_blob_gas = Map.get(block, :excess_blob_gas)
-    beacon_deposits = Map.get(block, :beacon_deposits, [])
+    blob_gas_used = ExplorerHelper.chain_type_field(block, :blob_gas_used)
+    excess_blob_gas = ExplorerHelper.chain_type_field(block, :excess_blob_gas)
+    beacon_deposits = ExplorerHelper.chain_type_field(block, :beacon_deposits, [])
 
     blob_transaction_count = block.blob_transactions_count
 

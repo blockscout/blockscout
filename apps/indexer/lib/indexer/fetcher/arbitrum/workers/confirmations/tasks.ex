@@ -67,8 +67,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
 
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
 
-  require Logger
-
   @type new_confirmations_data_map :: %{
           :start_block => non_neg_integer()
         }

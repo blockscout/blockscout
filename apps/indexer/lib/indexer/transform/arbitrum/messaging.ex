@@ -7,8 +7,6 @@ defmodule Indexer.Transform.Arbitrum.Messaging do
   alias Explorer.Chain.Arbitrum.Message
   alias Indexer.Fetcher.Arbitrum.Messaging, as: ArbitrumMessages
 
-  require Logger
-
   @doc """
     Parses and combines lists of rollup transactions and logs to identify and process both L1-to-L2 and L2-to-L1 messages.
 

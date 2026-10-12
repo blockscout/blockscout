@@ -25,8 +25,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.HistoricalMessagesOnL2 do
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
   alias Indexer.Fetcher.Arbitrum.Utils.Rpc
 
-  require Logger
-
   @doc """
     Initiates the discovery process for historical messages sent from L2 to L1 up to a specified block number.
 

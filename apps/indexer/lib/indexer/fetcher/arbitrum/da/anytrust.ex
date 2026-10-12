@@ -434,7 +434,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
     <<high_byte, low_byte, rest::binary>> = data
     pubkey_len = high_byte * 256 + low_byte
 
-    <<pubkey_data::binary-size(pubkey_len), remaining::binary>> = rest
+    <<pubkey_data::binary-size(^pubkey_len), remaining::binary>> = rest
     pubkey = parse_pubkey(pubkey_data)
     decode_pubkeys(remaining, num_keys - 1, [pubkey | acc])
   end
@@ -457,7 +457,7 @@ defmodule Indexer.Fetcher.Arbitrum.DA.Anytrust do
       # Trusted source, no proof bytes, the rest is the key
       %{trusted: true, key: ArbitrumHelper.bytes_to_hex_str(rest)}
     else
-      <<proof_bytes::binary-size(proof_len), key_bytes::binary>> = rest
+      <<proof_bytes::binary-size(^proof_len), key_bytes::binary>> = rest
 
       %{
         trusted: false,
