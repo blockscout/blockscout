@@ -56,7 +56,7 @@ defmodule Explorer.BloomFilter do
     byte = :binary.at(filter, byte_position)
     value = set_bit(byte, shift)
 
-    <<head::binary-size(byte_position), _byte::binary-size(1), tail::binary>> = filter
+    <<head::binary-size(^byte_position), _byte::binary-size(1), tail::binary>> = filter
 
     <<head::binary, value, tail::binary>>
   end

@@ -895,4 +895,25 @@ defmodule Explorer.Helper do
       dynamic([_], true)
     end
   end
+
+  @doc """
+  Reads a chain-type-specific field from a struct.
+
+  Fields that exist only for particular `CHAIN_TYPE` values are absent from the
+  struct when the application is compiled for another chain type. Reading them
+  through this function keeps such call sites compiling without type warnings
+  and returns `default` when the field is missing.
+
+  ## Parameters
+  - `struct`: The struct (or map) to read the field from.
+  - `field`: The name of the chain-type-specific field.
+  - `default`: The value to return when the field is absent. Defaults to `nil`.
+
+  ## Returns
+  - The field value if present, otherwise `default`.
+  """
+  @spec chain_type_field(struct() | map(), atom(), any()) :: any()
+  def chain_type_field(struct, field, default \\ nil) when is_map(struct) and is_atom(field) do
+    Map.get(struct, field, default)
+  end
 end

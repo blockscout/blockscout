@@ -207,10 +207,10 @@ defmodule Explorer.Chain.Optimism.TransactionBatch do
   end
 
   defp decode_eip4844_field_element(b, opos, ipos, output) do
-    <<_::binary-size(ipos), ipos_byte::size(8), insert::binary-size(31), _::binary>> = b
+    <<_::binary-size(^ipos), ipos_byte::size(8), insert::binary-size(31), _::binary>> = b
 
     if Bitwise.band(ipos_byte, 0b11000000) == 0 do
-      <<output_before_opos::binary-size(opos), _::binary-size(31), rest::binary>> = output
+      <<output_before_opos::binary-size(^opos), _::binary-size(31), rest::binary>> = output
 
       {ipos_byte, opos + 32, ipos + 32, output_before_opos <> insert <> rest}
     end
@@ -233,7 +233,7 @@ defmodule Explorer.Chain.Optimism.TransactionBatch do
   end
 
   defp replace_byte(bytes, byte, pos) do
-    <<bytes_before::binary-size(pos), _::size(8), bytes_after::binary>> = bytes
+    <<bytes_before::binary-size(^pos), _::size(8), bytes_after::binary>> = bytes
     bytes_before <> <<byte>> <> bytes_after
   end
 end

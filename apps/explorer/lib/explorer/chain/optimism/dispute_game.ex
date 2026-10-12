@@ -166,7 +166,7 @@ defmodule Explorer.Chain.Optimism.DisputeGame do
       end
 
     case extra_data do
-      <<l2_block_number::size(first_bits), _::binary>> -> l2_block_number
+      <<l2_block_number::size(^first_bits), _::binary>> -> l2_block_number
       _ -> 0
     end
   end

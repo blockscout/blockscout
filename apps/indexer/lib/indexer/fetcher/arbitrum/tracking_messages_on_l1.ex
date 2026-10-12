@@ -420,5 +420,4 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingMessagesOnL1 do
     not Map.get(state.completed_tasks, task_tag)
   end
 
-  defp rescheduled?(_task_tag, _state), do: true
 end

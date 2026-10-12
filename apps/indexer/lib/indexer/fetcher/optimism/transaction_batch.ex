@@ -775,7 +775,7 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   end
 
   defp eigenda_blob_to_input(transaction_input, offset, transaction_hash, blobs_api_url) when blobs_api_url != "" do
-    <<_::binary-size(offset), cert::binary>> = transaction_input
+    <<_::binary-size(^offset), cert::binary>> = transaction_input
 
     url = blobs_api_url <> "/0x" <> Base.encode16(cert, case: :lower)
 

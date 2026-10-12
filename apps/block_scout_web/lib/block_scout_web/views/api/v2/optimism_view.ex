@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Data, Hash, Transaction}
   alias Explorer.Chain.Optimism.{DisputeGame, FrameSequence, FrameSequenceBlob, InteropMessage, Withdrawal}
+  alias Explorer.Helper, as: ExplorerHelper
 
   @api_true [api?: true]
 
@@ -409,7 +410,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
           optional(any()) => any()
         }) :: map()
   def extend_block_json_response(out_json, %Block{} = block) do
-    frame_sequence = Map.get(block, :op_frame_sequence)
+    frame_sequence = ExplorerHelper.chain_type_field(block, :op_frame_sequence)
 
     if is_nil(frame_sequence) do
       out_json

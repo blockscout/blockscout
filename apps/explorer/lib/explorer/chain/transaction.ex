@@ -2157,8 +2157,8 @@ defmodule Explorer.Chain.Transaction do
         } = transaction
       ) do
     gas_used = gas_used || gas
-    operator_fee_scalar = Map.get(transaction, :operator_fee_scalar) || Decimal.new(0)
-    operator_fee_constant = Map.get(transaction, :operator_fee_constant) || Decimal.new(0)
+    operator_fee_scalar = Helper.chain_type_field(transaction, :operator_fee_scalar) || Decimal.new(0)
+    operator_fee_constant = Helper.chain_type_field(transaction, :operator_fee_constant) || Decimal.new(0)
 
     jovian_timestamp = op_jovian_timestamp()
 

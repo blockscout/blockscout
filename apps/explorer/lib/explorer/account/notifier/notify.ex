@@ -7,6 +7,7 @@ defmodule Explorer.Account.Notifier.Notify do
   alias Explorer.Account.Notifier.{Email, ForbiddenAddress, Summary}
   alias Explorer.Account.{WatchlistAddress, WatchlistNotification}
   alias Explorer.Chain.Transaction
+  alias Explorer.Helper
   alias Explorer.{Mailer, Repo}
 
   require Logger
@@ -157,8 +158,8 @@ defmodule Explorer.Account.Notifier.Notify do
       {"ERC-1155", :outgoing} -> address.watch_erc_1155_output
       {"ERC-404", :incoming} -> address.watch_erc_404_input
       {"ERC-404", :outgoing} -> address.watch_erc_404_output
-      {"ZRC-2", :incoming} -> Map.get(address, :watch_zrc_2_input)
-      {"ZRC-2", :outgoing} -> Map.get(address, :watch_zrc_2_output)
+      {"ZRC-2", :incoming} -> Helper.chain_type_field(address, :watch_zrc_2_input)
+      {"ZRC-2", :outgoing} -> Helper.chain_type_field(address, :watch_zrc_2_output)
     end
   end
 

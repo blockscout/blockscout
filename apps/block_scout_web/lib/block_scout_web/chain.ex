@@ -798,7 +798,7 @@ defmodule BlockScoutWeb.Chain do
     do: validate_block_number(number, validate_max_block_number?)
 
   defp validate_block_number(number, validate_max_block_number?) when is_integer(number) and number >= 0 do
-    if not validate_max_block_number? or (validate_max_block_number? and number <= BlockNumber.get_max()) do
+    if not validate_max_block_number? or number <= BlockNumber.get_max() do
       {:ok, number}
     else
       {:error, :not_found}

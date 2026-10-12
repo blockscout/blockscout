@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
 
   alias Explorer.Chain.{Block, Transaction}
   alias Explorer.Chain.ZkSync.TransactionBatch
+  alias Explorer.Helper, as: ExplorerHelper
 
   alias BlockScoutWeb.API.V2.Helper, as: APIV2Helper
 
@@ -128,9 +129,9 @@ defmodule BlockScoutWeb.API.V2.ZkSyncView do
       %{}
       |> do_add_l1_transactions_info_and_status(%{
         batch_number: get_batch_number(zksync_entity),
-        commit_transaction: zksync_entity.zksync_commit_transaction,
-        prove_transaction: zksync_entity.zksync_prove_transaction,
-        execute_transaction: zksync_entity.zksync_execute_transaction
+        commit_transaction: ExplorerHelper.chain_type_field(zksync_entity, :zksync_commit_transaction),
+        prove_transaction: ExplorerHelper.chain_type_field(zksync_entity, :zksync_prove_transaction),
+        execute_transaction: ExplorerHelper.chain_type_field(zksync_entity, :zksync_execute_transaction)
       })
       |> Map.put("batch_number", get_batch_number(zksync_entity))
 

@@ -46,10 +46,10 @@ defmodule Explorer.Chain.Hash do
     byte_count = callback_module.byte_count()
 
     case term do
-      %__MODULE__{byte_count: ^byte_count, bytes: <<_::big-integer-size(byte_count)-unit(@bits_per_byte)>>} = cast ->
+      %__MODULE__{byte_count: ^byte_count, bytes: <<_::big-integer-size(^byte_count)-unit(@bits_per_byte)>>} = cast ->
         {:ok, cast}
 
-      <<_::big-integer-size(byte_count)-unit(@bits_per_byte)>> ->
+      <<_::big-integer-size(^byte_count)-unit(@bits_per_byte)>> ->
         {:ok, %__MODULE__{byte_count: byte_count, bytes: term}}
 
       <<"0x", hexadecimal_digits::binary>> ->
@@ -73,7 +73,7 @@ defmodule Explorer.Chain.Hash do
     case term do
       # ensure inconsistent `t` with a different `byte_count` from the `callback_module` isn't dumped to the database,
       # in case `%__MODULE__{}` is set in a field value directly
-      %__MODULE__{byte_count: ^byte_count, bytes: <<_::big-integer-size(byte_count)-unit(@bits_per_byte)>> = bytes} ->
+      %__MODULE__{byte_count: ^byte_count, bytes: <<_::big-integer-size(^byte_count)-unit(@bits_per_byte)>> = bytes} ->
         {:ok, bytes}
 
       _ ->
@@ -91,7 +91,7 @@ defmodule Explorer.Chain.Hash do
     case term do
       # ensure that only hashes of `byte_count` that matches `callback_module` can be loaded back from database to
       # prevent using `Ecto.Type` with wrong byte_count on a database column
-      <<_::big-integer-size(byte_count)-unit(@bits_per_byte)>> ->
+      <<_::big-integer-size(^byte_count)-unit(@bits_per_byte)>> ->
         {:ok, %__MODULE__{byte_count: byte_count, bytes: term}}
 
       _ ->
@@ -121,7 +121,7 @@ defmodule Explorer.Chain.Hash do
   """
   @spec to_integer(t()) :: pos_integer()
   def to_integer(%__MODULE__{byte_count: byte_count, bytes: bytes}) do
-    <<integer::big-integer-size(byte_count)-unit(@bits_per_byte)>> = bytes
+    <<integer::big-integer-size(^byte_count)-unit(@bits_per_byte)>> = bytes
 
     integer
   end

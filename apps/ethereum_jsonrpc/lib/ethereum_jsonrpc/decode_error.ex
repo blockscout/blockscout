@@ -5,7 +5,7 @@ defmodule EthereumJSONRPC.DecodeError do
   """
 
   @enforce_keys [:request, :response]
-  defexception [:request, :response]
+  defexception [:request, :response, hide_url: false]
 
   defmodule Request do
     @moduledoc """
@@ -55,7 +55,7 @@ defmodule EthereumJSONRPC.DecodeError do
         result
       end
 
-    hide_url = Map.get(decode_error, :hide_url, false)
+    hide_url = decode_error.hide_url
 
     """
     Failed to decode Ethereum JSONRPC response:

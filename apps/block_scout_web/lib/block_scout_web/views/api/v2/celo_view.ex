@@ -16,6 +16,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   alias Explorer.Chain.Cache.{CeloCoreContracts, CeloEpochs}
   alias Explorer.Chain.Celo.{Account, Epoch, EpochReward}
   alias Explorer.Chain.Celo.Helper, as: CeloHelper
+  alias Explorer.Helper, as: ExplorerHelper
 
   @address_params [
     necessity_by_association: %{
@@ -239,7 +240,7 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   def extend_address_json_response(out_json, %Address{} = address) do
     account_json =
       address
-      |> Map.get(:celo_account)
+      |> ExplorerHelper.chain_type_field(:celo_account)
       |> case do
         %Account{} = account ->
           %{
@@ -288,8 +289,8 @@ defmodule BlockScoutWeb.API.V2.CeloView do
   def extend_transaction_json_response(out_json, %Transaction{} = transaction) do
     token_json =
       case {
-        Map.get(transaction, :gas_token_contract_address),
-        Map.get(transaction, :gas_token)
+        ExplorerHelper.chain_type_field(transaction, :gas_token_contract_address),
+        ExplorerHelper.chain_type_field(transaction, :gas_token)
       } do
         {%NotLoaded{}, _} ->
           nil

@@ -73,10 +73,6 @@ defmodule Indexer.Fetcher.TokenInstance.Realtime do
     BufferedTask.buffer(__MODULE__, data, true)
   end
 
-  def async_fetch(data, _disabled?) do
-    BufferedTask.buffer(__MODULE__, data, true)
-  end
-
   @spec retry_some_instances([map()], boolean(), map()) :: any()
   defp retry_some_instances(token_instances, true, token_instances_retry_map) do
     token_instances_to_refetch =
