@@ -17,7 +17,7 @@ on:
 env:
   OTP_VERSION: '28.5'
   ELIXIR_VERSION: '1.19.6'
-  RELEASE_VERSION: 12.0.0
+  RELEASE_VERSION: 12.0.1
 
 jobs:
   matrix-builder:

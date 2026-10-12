@@ -1,5 +1,42 @@
 # Changelog
 
+## 12.0.1
+
+### 🚀 Features
+
+- Prefer CoinGecko over CryptoCompare for coin price history ([#14928](https://github.com/blockscout/blockscout/issues/14928))
+
+### 🐛 Bug Fixes
+
+- Fix parsing celo transfers from internal transactions ([#14929](https://github.com/blockscout/blockscout/issues/14929))
+- Support Gloas blob fetching via /eth/v1/beacon/blobs endpoint ([#14921](https://github.com/blockscout/blockscout/issues/14921))
+- Mark replaced pending transactions imported after their replacement confirmed ([#14922](https://github.com/blockscout/blockscout/issues/14922))
+- Fix started? condition of optimize logs fields migration ([#14923](https://github.com/blockscout/blockscout/issues/14923))
+- Skip media type HEAD request for non-http(s) NFT media URLs ([#14920](https://github.com/blockscout/blockscout/issues/14920))
+- Declare `age` query param in advanced-filters OpenAPI spec ([#14919](https://github.com/blockscout/blockscout/issues/14919))
+- Validate version upgrade before executing migrations ([#14915](https://github.com/blockscout/blockscout/issues/14915))
+- Fix SanitizeDuplicatedLogIndexLogs migration query options ([#14916](https://github.com/blockscout/blockscout/issues/14916))
+
+### ⚡ Performance
+
+- Block import optimizations ([#14925](https://github.com/blockscout/blockscout/issues/14925))
+
+### ⚙️ Miscellaneous Tasks
+
+- Add envs for DeleteNonConsensusLogs migration ([#14927](https://github.com/blockscout/blockscout/issues/14927))
+- Erlang OTP 27 -> 28 ([#14917](https://github.com/blockscout/blockscout/issues/14917))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `MIGRATION_DELETE_NON_CONSENSUS_LOGS_BATCH_SIZE`     | Number of blocks to delete non-consensus logs from in the batch. Implemented in [#14927](https://github.com/blockscout/blockscout/pull/14927).                                                                                                                                                                                                              | Version: v12.0.1\+ <br />Default: `100` <br />Applications: Indexer          |
+| `MIGRATION_DELETE_NON_CONSENSUS_LOGS_CONCURRENCY`     | Number of parallel deleting log batches processing. Implemented in [#14927](https://github.com/blockscout/blockscout/pull/14927).                                                                                                                                                                                                              | Version: v12.0.1\+ <br />Default: `10` <br />Applications: Indexer          |
+| `MIGRATION_DELETE_NON_CONSENSUS_LOGS_TIMEOUT`     | Timeout between deleting log batches processing. Implemented in [#14927](https://github.com/blockscout/blockscout/pull/14927).                                                                                                                                                                                                              | Version: v12.0.1\+ <br />Default: `0s` <br />Applications: Indexer          |
+| `MARKET_NATIVE_COIN_HISTORY_SOURCE`          | Sets the source for native coin price history fetching. Available values are `crypto_compare`, `coin_gecko`, `mobula`, `coin_market_cap`, `crypto_rank` and `dia`. When unset, the source is auto-detected; CoinGecko is preferred when `MARKET_COINGECKO_COIN_ID` is configured, and CryptoCompare remains the fallback when no CoinGecko or CoinMarketCap coin ID is configured. Set to `crypto_compare` to keep using CryptoCompare. Behavior changed in v12.0.1. Implemented in [#14928](https://github.com/blockscout/blockscout/pull/14928). | Version: v8.0.0\+ <br />Default: auto-detected <br />Applications: Indexer                            |
+| `MARKET_SECONDARY_COIN_HISTORY_SOURCE`       | Sets the source for secondary coin price history fetching. Available values are `crypto_compare`, `coin_gecko`, `mobula`, `coin_market_cap`, `crypto_rank` and `dia`. When unset, the source is auto-detected; CoinGecko is preferred when `MARKET_COINGECKO_SECONDARY_COIN_ID` is configured, and CryptoCompare remains the fallback when no CoinGecko or CoinMarketCap coin ID is configured. Set to `crypto_compare` to keep using CryptoCompare. Behavior changed in v12.0.1. Implemented in [#14928](https://github.com/blockscout/blockscout/pull/14928). | Version: v8.0.0\+ <br />Default: auto-detected <br />Applications: Indexer                            |
+
+
 ## 12.0.0
 
 ### 🚀 Features
