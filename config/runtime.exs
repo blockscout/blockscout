@@ -1107,6 +1107,29 @@ config :explorer, Explorer.Chain.Cache.ScamAddresses,
 
 config :explorer, Explorer.Chain.Cache.AddressTags, ttl: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TAGS_TTL", "5m")
 
+config :explorer, Explorer.Chain.Cache.KnownAssets,
+  enabled: ConfigHelper.parse_bool_env_var("INDEXER_TOKEN_TRANSFER_POISONING_FETCHER_ENABLED")
+
+config :explorer, Explorer.Chain.TokenTransfer.PoisoningAttack,
+  score_threshold: ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_POISONING_SCORE_THRESHOLD", 5, min: 1),
+  store_min_score: ConfigHelper.parse_integer_or_nil_env_var("TOKEN_TRANSFER_POISONING_STORE_MIN_SCORE"),
+  prefix_length: ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_POISONING_PREFIX_LENGTH", 4, min: 0),
+  suffix_length: ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_POISONING_SUFFIX_LENGTH", 4, min: 0),
+  recipients_limit: ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_POISONING_RECIPIENTS_LIMIT", 200, min: 1),
+  recipients_cache_ttl: ConfigHelper.parse_time_env_var("TOKEN_TRANSFER_POISONING_RECIPIENTS_CACHE_TTL", "10m"),
+  fanout_threshold: ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_POISONING_FANOUT_THRESHOLD", 10, min: 1),
+  dust_thresholds: ConfigHelper.parse_json_env_var("TOKEN_TRANSFER_POISONING_DUST_THRESHOLDS", "{}"),
+  dust_default_threshold: ConfigHelper.safe_get_env("TOKEN_TRANSFER_POISONING_DUST_DEFAULT_THRESHOLD", "0.01"),
+  unverified_token_weight:
+    ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_POISONING_UNVERIFIED_TOKEN_WEIGHT", 1, min: 0),
+  token_types: ConfigHelper.parse_list_env_var("TOKEN_TRANSFER_POISONING_TOKEN_TYPES", "ERC-20,ERC-8056"),
+  ignored_addresses: ConfigHelper.parse_list_env_var("TOKEN_TRANSFER_POISONING_IGNORED_ADDRESSES", ""),
+  known_assets_override: ConfigHelper.parse_json_env_var("TOKEN_TRANSFER_POISONING_KNOWN_ASSETS", "{}"),
+  known_assets_update_interval:
+    ConfigHelper.parse_time_env_var("TOKEN_TRANSFER_POISONING_KNOWN_ASSETS_UPDATE_INTERVAL", "1h"),
+  actions_enabled: ConfigHelper.parse_bool_env_var("TOKEN_TRANSFER_POISONING_ACTIONS_ENABLED", "true"),
+  reporter: Explorer.Chain.TokenTransfer.PoisoningAttack.LocalReporter
+
 rate_limiter_redis_url = ConfigHelper.parse_url_env_var("RATE_LIMITER_REDIS_URL")
 rate_limiter_redis_sentinel_urls = ConfigHelper.safe_get_env("RATE_LIMITER_REDIS_SENTINEL_URLS", "")
 
@@ -1395,6 +1418,17 @@ config :indexer, Indexer.Fetcher.ReplacedTransaction.Supervisor,
 config :indexer, Indexer.Fetcher.ReplacedTransaction,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_REPLACED_TRANSACTIONS_BATCH_SIZE", 10),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_REPLACED_TRANSACTIONS_CONCURRENCY", 4)
+
+token_transfer_poisoning_fetcher_enabled? =
+  ConfigHelper.parse_bool_env_var("INDEXER_TOKEN_TRANSFER_POISONING_FETCHER_ENABLED")
+
+config :indexer, Indexer.Fetcher.TokenTransferPoisoning.Supervisor,
+  enabled: token_transfer_poisoning_fetcher_enabled?,
+  disabled?: not token_transfer_poisoning_fetcher_enabled?
+
+config :indexer, Indexer.Fetcher.TokenTransferPoisoning,
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_TRANSFER_POISONING_BATCH_SIZE", 10),
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_TRANSFER_POISONING_CONCURRENCY", 2)
 
 config :indexer, Indexer.Fetcher.TokenInstance.Realtime.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_INSTANCE_REALTIME_FETCHER")

@@ -1234,6 +1234,48 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
   end
 
   describe "/addresses/{address_hash}/token-transfers" do
+    test "carries the poisoning attack verdict of a flagged transfer", %{conn: conn} do
+      address = insert(:address)
+      transaction = :transaction |> insert() |> with_block()
+
+      flagged =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          from_address: address
+        )
+
+      clean =
+        insert(:token_transfer,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          to_address: address
+        )
+
+      attack = insert(:token_transfer_poisoning_attack, token_transfer: flagged)
+
+      response = conn |> get("/api/v2/addresses/#{address.hash}/token-transfers") |> json_response(200)
+      by_log_index = Map.new(response["items"], &{&1["log_index"], &1})
+
+      assert by_log_index[clean.log_index]["poisoning"] == nil
+      flagged_json = by_log_index[flagged.log_index]
+
+      assert %{
+               "score" => 7,
+               "rules" => ["suspicious_outgoing", "lookalike_recipient"],
+               "victim" => victim,
+               "mimic" => mimic,
+               "issuer" => issuer,
+               "details" => %{"lookalike_recipient" => %{"matched_recipient" => _}}
+             } = flagged_json["poisoning"]
+
+      assert victim == Address.checksum(attack.victim_address_hash)
+      assert mimic == Address.checksum(attack.mimic_address_hash)
+      assert issuer == Address.checksum(attack.issuer_address_hash)
+    end
+
     test "get token transfers with ok reputation", %{conn: conn} do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
       Application.put_env(:block_scout_web, :hide_scam_addresses, true)

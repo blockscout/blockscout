@@ -61,6 +61,7 @@ defmodule Explorer.Factory do
     SmartContractAdditionalSource,
     Token,
     TokenTransfer,
+    TokenTransfer.PoisoningAttack,
     Token.Instance,
     Token.UIMultiplierChange,
     Transaction,
@@ -1876,6 +1877,33 @@ defmodule Explorer.Factory do
     %ScamBadgeToAddress{
       address_hash: insert(:address).hash
     }
+  end
+
+  @doc """
+  An attack row for an already inserted token transfer: `insert(:token_transfer_poisoning_attack, token_transfer: tt)`.
+  Without `:token_transfer` a transfer is inserted first.
+  """
+  def token_transfer_poisoning_attack_factory(attrs) do
+    {token_transfer, attrs} =
+      Map.pop_lazy(attrs, :token_transfer, fn ->
+        insert(:token_transfer, transaction: :transaction |> insert() |> with_block())
+      end)
+
+    attack = %PoisoningAttack{
+      block_hash: token_transfer.block_hash,
+      log_index: token_transfer.log_index,
+      transaction_hash: token_transfer.transaction_hash,
+      block_number: token_transfer.block_number,
+      token_contract_address_hash: token_transfer.token_contract_address_hash,
+      victim_address_hash: token_transfer.from_address_hash,
+      mimic_address_hash: token_transfer.to_address_hash,
+      issuer_address_hash: address_hash(),
+      score: 7,
+      rules: ["suspicious_outgoing", "lookalike_recipient"],
+      details: %{"lookalike_recipient" => %{"matched_recipient" => to_string(address_hash())}}
+    }
+
+    struct!(attack, attrs)
   end
 
   def internal_transaction_delete_queue_factory do

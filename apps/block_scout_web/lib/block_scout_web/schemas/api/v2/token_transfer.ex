@@ -29,6 +29,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, Token}
 
   alias BlockScoutWeb.Schemas.API.V2.TokenTransfer.{
+    PoisoningAttack,
     Total,
     TotalERC1155,
     TotalERC721,
@@ -41,6 +42,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
     type: :object,
     properties: %{
       transaction_hash: TransactionHashCustomization.schema(),
+      poisoning: PoisoningAttack,
       from: Address,
       to: Address,
       total: %Schema{
@@ -62,6 +64,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer do
     },
     required: [
       :transaction_hash,
+      :poisoning,
       :from,
       :to,
       :total,

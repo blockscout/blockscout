@@ -68,6 +68,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
   alias Explorer.Chain.Token.Instance
+  alias Explorer.Chain.TokenTransfer.PoisoningAttack
   alias Explorer.Chain.ZkSync.Reader, as: ZkSyncReader
   alias Indexer.Fetcher.OnDemand.FirstTrace, as: FirstTraceOnDemand
   alias Indexer.Fetcher.OnDemand.NeonSolanaTransactions, as: NeonSolanaTransactions
@@ -243,6 +244,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
         transaction:
           preloaded
           |> Instance.preload_nft(@api_true)
+          |> PoisoningAttack.preload_for_transaction(@api_true)
           |> maybe_preload_ens_and_metadata()
       })
     end
@@ -716,6 +718,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
             @api_true
           )
           |> Instance.preload_nft(@api_true)
+          |> PoisoningAttack.preload_for_token_transfers(@api_true)
           |> maybe_preload_ens_and_metadata(:token_transfers),
         next_page_params: next_page_params
       })
