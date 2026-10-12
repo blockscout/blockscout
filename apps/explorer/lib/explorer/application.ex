@@ -33,9 +33,9 @@ defmodule Explorer.Application do
 
   alias Explorer.Chain.Cache.AddressTags, as: AddressTagsCache
   alias Explorer.Chain.Cache.ContractMethods, as: ContractMethodsCache
-  alias Explorer.Chain.TokenTransfer.PoisoningAttack.Recipients, as: PoisoningRecipientsCache
   alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
   alias Explorer.Chain.Supply.RSK
+  alias Explorer.Chain.TokenTransfer.PoisoningAttack.Recipients, as: PoisoningRecipientsCache
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.MicroserviceInterfaces.{HttpClient, MultichainSearch}
