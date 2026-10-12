@@ -23,6 +23,8 @@ defmodule Indexer.Transform.Scroll.L1FeeParams do
   def parse(logs)
 
   if @chain_type == :scroll do
+    require Logger
+
     def parse(logs) do
       prev_metadata = Logger.metadata()
       Logger.metadata(fetcher: :scroll_l1_fee_params_realtime)
