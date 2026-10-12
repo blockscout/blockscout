@@ -29,7 +29,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
         }
 
   # Chain performance stats.
-  @typep record :: %{
+  @typep stats_record :: %{
            number_of_transactions: non_neg_integer(),
            gas_used: non_neg_integer(),
            total_fee: non_neg_integer()
@@ -159,7 +159,7 @@ defmodule Explorer.Chain.Transaction.History.Historian do
   # - `:number_of_transactions`: The total number of transactions in the range.
   # - `:gas_used`: The total amount of gas used by all transactions in the range.
   # - `:total_fee`: The sum of all transaction fees in the range.
-  @spec compile_records_in_range(non_neg_integer(), non_neg_integer()) :: record()
+  @spec compile_records_in_range(non_neg_integer(), non_neg_integer()) :: stats_record()
   defp compile_records_in_range(min_block, max_block) do
     Logger.info("tx/per day chart: min/max block numbers [#{min_block}, #{max_block}]")
 

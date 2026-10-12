@@ -45,8 +45,6 @@
           <div class="alert alert-danger">
             <%= gettext "Failed to decode log data." %>
           </div>
-        <% {:error, :no_matching_function} -> %>
-          <%= nil %>
         <% {:ok, method_id, text, mapping} -> %>
           <dt class="col-lg-2"><%= gettext "Decoded" %></dt>
           <dd class="col-lg-10">
@@ -62,22 +60,6 @@
           </table>
           <%= render BlockScoutWeb.LogView, "_data_decoded_view.html", mapping: mapping %>
           <% {:error, :contract_not_verified, results} -> %>
-            <%= for {:ok, method_id, text, mapping} <- results do %>
-               <dt class="col-md-2"><%= gettext "Decoded" %></dt>
-               <dd class="col-md-10">
-               <table summary="Transaction Info" class="table thead-light table-bordered transaction-input-table">
-                 <tr>
-                   <td>Method Id</td>
-                   <td colspan="3"><code>0x<%= method_id %></code></td>
-                 </tr>
-                 <tr>
-                   <td>Call</td>
-                   <td colspan="3"><code><%= text %></code></td>
-                 </tr>
-               </table>
-               <%= render BlockScoutWeb.LogView, "_data_decoded_view.html", mapping: mapping %>
-            <% end %>
-          <% {:error, :contract_verified, results} -> %>
             <%= for {:ok, method_id, text, mapping} <- results do %>
                <dt class="col-md-2"><%= gettext "Decoded" %></dt>
                <dd class="col-md-10">

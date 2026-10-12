@@ -7,7 +7,7 @@ defmodule Explorer.History.Historian do
   @typedoc """
   Record of historical values for a specific date.
   """
-  @type record :: %{
+  @type history_record :: %{
           required(:date) => Date.t(),
           optional(atom()) => any()
         }
@@ -15,12 +15,12 @@ defmodule Explorer.History.Historian do
   @doc """
   Compile history for a specified amount of units in the past. Units are defined by historian impl
   """
-  @callback compile_records(number_of_records :: non_neg_integer()) :: {:ok, [record()]} | :error
+  @callback compile_records(number_of_records :: non_neg_integer()) :: {:ok, [history_record()]} | :error
 
   @doc """
   Takes records and saves them to a database or some other data store
   """
-  @callback save_records(records :: [record()]) :: integer()
+  @callback save_records(records :: [history_record()]) :: integer()
 
   defmacro __using__(_opts) do
     quote do

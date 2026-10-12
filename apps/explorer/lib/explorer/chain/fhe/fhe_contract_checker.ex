@@ -29,7 +29,7 @@ defmodule Explorer.Chain.FheContractChecker do
     address = Address.get(address_hash, options)
 
     cond do
-      not Address.smart_contract?(address) or is_nil(address.contract_code) -> :empty
+      not Address.smart_contract?(address) -> :empty
       already_checked?(address_hash, options) -> :already_checked
       true -> do_check_and_save_fhe_status(address_hash, options)
     end

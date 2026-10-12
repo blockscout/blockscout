@@ -22,7 +22,13 @@ defmodule Explorer.Mixfile do
       package: package(),
       start_permanent: Mix.env() == :prod,
       version: "12.0.1",
-      xref: [exclude: [BlockScoutWeb.Routers.WebRouter.Helpers, Indexer.Helper, Indexer.Fetcher.InternalTransaction]]
+      elixirc_options: [
+        no_warn_undefined: [
+          BlockScoutWeb.Routers.WebRouter.Helpers,
+          Indexer.Helper,
+          Indexer.Fetcher.InternalTransaction
+        ]
+      ]
     ]
   end
 

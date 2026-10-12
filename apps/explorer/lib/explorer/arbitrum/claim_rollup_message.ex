@@ -88,7 +88,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
     - `{:error, :not_found}` if either:
       * the message with the given ID cannot be found in the database
       * the associated L2ToL1Tx event log cannot be found
-    - `{:error, :initiated}` if the message is not yet confirmed
     - `{:error, :sent}` if the message is not yet confirmed
     - `{:error, :relayed}` if the message has already been claimed
     - `{:error, :internal_error}` if the message status is unknown
@@ -122,13 +121,12 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
   # - `{:error, :not_found}` if either:
   #   * the associated L2ToL1Tx event log cannot be found
   #   * the withdrawal cannot be found in the transaction logs
-  # - `{:error, :initiated}` if the message is not yet confirmed
   # - `{:error, :sent}` if the message is not yet confirmed
   # - `{:error, :relayed}` if the message has already been claimed
   # - `{:error, :internal_error}` if the message status is unknown
   @spec claim_message(Explorer.Chain.Arbitrum.Message.t()) ::
           {:ok, list({:contract_address, binary()} | {:calldata, binary()})}
-          | {:error, :initiated | :sent | :relayed | :internal_error}
+          | {:error, :not_found | :sent | :relayed | :internal_error}
   defp claim_message(message) do
     # request associated log from the database
     case message.originating_transaction_hash
@@ -149,9 +147,6 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
           withdrawal when withdrawal.status == :confirmed ->
             construct_claim(withdrawal)
-
-          w when w.status == :initiated ->
-            {:error, :initiated}
 
           w when w.status == :sent ->
             {:error, :sent}

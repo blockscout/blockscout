@@ -80,7 +80,7 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
     responses: [
       ok: {"Claim data for the withdrawal.", "application/json", Schemas.Arbitrum.ClaimMessage},
       bad_request:
-        {"Withdrawal cannot be claimed. Returned when the withdrawal is unconfirmed, just initiated, or already executed.",
+        {"Withdrawal cannot be claimed. Returned when the withdrawal is unconfirmed or already executed.",
          "application/json", BadRequestResponse},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()
@@ -389,11 +389,6 @@ defmodule BlockScoutWeb.API.V2.ArbitrumController do
         conn
         |> put_status(:bad_request)
         |> render(:message, %{message: "withdrawal is unconfirmed yet"})
-
-      {:error, :initiated} ->
-        conn
-        |> put_status(:bad_request)
-        |> render(:message, %{message: "withdrawal is just initiated, please wait a bit"})
 
       {:error, :relayed} ->
         conn

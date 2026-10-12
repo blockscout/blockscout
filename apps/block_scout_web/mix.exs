@@ -21,8 +21,8 @@ defmodule BlockScoutWeb.Mixfile do
       package: package(),
       start_permanent: Mix.env() == :prod,
       version: "12.0.1",
-      xref: [
-        exclude: [
+      elixirc_options: [
+        no_warn_undefined: [
           Explorer.Chain.Beacon.Reader,
           Explorer.Chain.Cache.OptimismFinalizationPeriod,
           Explorer.Chain.Optimism.OutputRoot,
