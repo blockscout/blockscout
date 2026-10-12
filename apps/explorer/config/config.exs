@@ -29,18 +29,6 @@ config :explorer, Explorer.Chain.Cache.AddressTags, enabled: true
 
 config :explorer, Explorer.Chain.Cache.Accounts.Refresher, enabled: true
 
-config :explorer, Explorer.Chain.Cache.Counters.AddressesCoinBalanceSum,
-  enabled: true,
-  ttl_check_interval: :timer.seconds(1)
-
-config :explorer, Explorer.Chain.Cache.Counters.AddressesCoinBalanceSumMinusBurnt,
-  enabled: true,
-  ttl_check_interval: :timer.seconds(1)
-
-config :explorer, Explorer.Chain.Cache.Counters.AddressesCount,
-  enabled: true,
-  enable_consolidation: true
-
 config :explorer, Explorer.Chain.Cache.Counters.TransactionsCount, enable_consolidation: true
 
 config :explorer, Explorer.Chain.Cache.Counters.AddressCounters, enabled: true

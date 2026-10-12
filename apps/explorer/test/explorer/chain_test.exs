@@ -23,7 +23,6 @@ defmodule Explorer.ChainTest do
     Wei
   }
 
-  alias Explorer.{Chain, Etherscan}
   alias Explorer.Chain.Cache.{ChainId, Uncles}
 
   alias Explorer.Chain.Cache.Counters.{
@@ -36,7 +35,6 @@ defmodule Explorer.ChainTest do
   alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue}
 
   alias Explorer.Chain.Supply.ProofOfAuthority
-  alias Explorer.Chain.Cache.Counters.AddressesCount
 
   alias Explorer.TestHelper
 
@@ -51,27 +49,6 @@ defmodule Explorer.ChainTest do
   setup :set_mox_global
 
   setup :verify_on_exit!
-
-  describe "address_estimated_count/0" do
-    test "returns the number of all addresses" do
-      insert(:address, fetched_coin_balance: 0)
-      insert(:address, fetched_coin_balance: 1)
-      insert(:address, fetched_coin_balance: 2)
-
-      start_supervised!(AddressesCount)
-      AddressesCount.consolidate()
-
-      addresses_with_balance = AddressesCount.fetch()
-
-      assert is_integer(addresses_with_balance)
-      assert addresses_with_balance == 3
-    end
-
-    test "returns 0 on empty table" do
-      start_supervised!(AddressesCount)
-      assert 0 == AddressesCount.fetch()
-    end
-  end
 
   describe "address_to_logs/2" do
     test "fetches logs" do
@@ -1025,20 +1002,6 @@ defmodule Explorer.ChainTest do
       end
 
       assert Decimal.compare(Chain.indexed_ratio_internal_transactions(), 1) == :eq
-    end
-  end
-
-  describe "fetch_sum_coin_total_supply/0" do
-    test "fetches coin total supply" do
-      for index <- 0..4 do
-        insert(:address, fetched_coin_balance: index)
-      end
-
-      assert "10" = Decimal.to_string(Etherscan.fetch_sum_coin_total_supply())
-    end
-
-    test "fetches coin total supply when there are no blocks" do
-      assert 0 = Etherscan.fetch_sum_coin_total_supply()
     end
   end
 

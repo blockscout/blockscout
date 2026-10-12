@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
   use BlockScoutWeb, :controller
 
   alias Explorer.{Chain, Etherscan, Market}
-  alias Explorer.Chain.Cache.Counters.{AddressesCoinBalanceSum, AddressesCoinBalanceSumMinusBurnt, LastFetchedCounter}
+  alias Explorer.Chain.Cache.Counters.AddressesAggregates
   alias Explorer.Chain.Wei
 
   @cmc_token_supply_precision 9
@@ -54,23 +54,17 @@ defmodule BlockScoutWeb.API.RPC.StatsController do
   end
 
   def ethsupply(conn, _params) do
-    cached_wei_total_supply = AddressesCoinBalanceSum.get_sum()
+    cached_wei_total_supply = AddressesAggregates.get_sum()
 
     render(conn, "ethsupply.json", total_supply: cached_wei_total_supply)
   end
 
   def coinsupply(conn, _params) do
-    cached_coin_total_supply_wei = AddressesCoinBalanceSumMinusBurnt.get_sum_minus_burnt()
-
-    coin_total_supply_wei =
-      if Decimal.compare(cached_coin_total_supply_wei, 0) == :gt do
-        cached_coin_total_supply_wei
-      else
-        LastFetchedCounter.get("sum_coin_total_supply_minus_burnt")
-      end
+    # falls back to the last persisted value while the cache is empty
+    cached_coin_total_supply_wei = AddressesAggregates.get_sum_minus_burnt()
 
     cached_coin_total_supply =
-      %Wei{value: Decimal.new(coin_total_supply_wei)}
+      %Wei{value: cached_coin_total_supply_wei}
       |> Wei.to(:ether)
       |> Decimal.to_string(:normal)
 

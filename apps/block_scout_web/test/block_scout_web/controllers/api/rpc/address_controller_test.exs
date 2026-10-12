@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   alias Explorer.{Chain, Repo, TestHelper}
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.{Events.Subscriber, InternalTransaction, Transaction, Wei}
-  alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Utility.AddressIdToAddressHash
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
 
@@ -28,8 +28,6 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     Application.put_env(:indexer, CoinBalanceOnDemand.Supervisor, disabled?: false)
 
     CoinBalanceOnDemand.Supervisor.Case.start_supervised!(json_rpc_named_arguments: mocked_json_rpc_named_arguments)
-
-    start_supervised!(AddressesCount)
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 
