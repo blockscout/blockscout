@@ -55,8 +55,8 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Config do
           dust_default_threshold: Decimal.t() | nil,
           unverified_token_weight: non_neg_integer(),
           token_types: [String.t()],
-          ignored_addresses: MapSet.t(Hash.Address.t()),
-          known_assets_override: %{String.t() => MapSet.t(Hash.Address.t())},
+          ignored_addresses: [Hash.Address.t()],
+          known_assets_override: %{String.t() => [Hash.Address.t()]},
           recipients_cache_ttl: pos_integer(),
           known_assets_update_interval: pos_integer(),
           actions_enabled: boolean(),
@@ -73,7 +73,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Config do
             dust_default_threshold: Decimal.new("0.01"),
             unverified_token_weight: 1,
             token_types: @default_token_types,
-            ignored_addresses: MapSet.new(),
+            ignored_addresses: [],
             known_assets_override: %{},
             recipients_cache_ttl: :timer.minutes(10),
             known_assets_update_interval: :timer.hours(1),
@@ -101,7 +101,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Config do
       dust_default_threshold: decimal(env[:dust_default_threshold], Decimal.new("0.01")),
       unverified_token_weight: integer(env[:unverified_token_weight], 1),
       token_types: token_types(env[:token_types]),
-      ignored_addresses: address_set(env[:ignored_addresses]),
+      ignored_addresses: address_list(env[:ignored_addresses]),
       known_assets_override: known_assets(env[:known_assets_override]),
       recipients_cache_ttl: integer(env[:recipients_cache_ttl], :timer.minutes(10)),
       known_assets_update_interval: integer(env[:known_assets_update_interval], :timer.hours(1)),
@@ -148,7 +148,10 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Config do
 
   defp token_types(_), do: @default_token_types
 
-  defp address_set(hash_strings) when is_list(hash_strings) do
+  # Plain lists rather than sets: these are a handful of operator-provided
+  # addresses, and a set in a struct field trips dialyzer over `MapSet`'s
+  # opaque internals.
+  defp address_list(hash_strings) when is_list(hash_strings) do
     hash_strings
     |> Enum.flat_map(fn hash_string ->
       case Hash.Address.cast(hash_string) do
@@ -156,16 +159,16 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Config do
         :error -> []
       end
     end)
-    |> MapSet.new()
+    |> Enum.uniq()
   end
 
-  defp address_set(_), do: MapSet.new()
+  defp address_list(_), do: []
 
   defp known_assets(map) when is_map(map) do
     Enum.reduce(map, %{}, fn {asset, hash_strings}, acc ->
       case Rules.normalize_asset_name(asset) do
         nil -> acc
-        key -> Map.update(acc, key, address_set(hash_strings), &MapSet.union(&1, address_set(hash_strings)))
+        key -> Map.update(acc, key, address_list(hash_strings), &Enum.uniq(&1 ++ address_list(hash_strings)))
       end
     end)
   end

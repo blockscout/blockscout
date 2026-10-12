@@ -340,6 +340,6 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
       context.transaction_to
     ]
     |> Enum.reject(&is_nil/1)
-    |> Enum.any?(fn hash -> MapSet.member?(ignored, hash) or Context.participant(context, hash).attributed? end)
+    |> Enum.any?(fn hash -> hash in ignored or Context.participant(context, hash).attributed? end)
   end
 end
