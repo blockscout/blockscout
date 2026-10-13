@@ -1341,7 +1341,8 @@ config :indexer, Indexer.Fetcher.TokenInstance.MediaType.Supervisor,
 
 config :indexer, Indexer.Fetcher.TokenInstance.MediaType,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_MEDIA_TYPE_CONCURRENCY", 5),
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_MEDIA_TYPE_BATCH_SIZE", 10)
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_MEDIA_TYPE_BATCH_SIZE", 10),
+  init_limit: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_INSTANCE_MEDIA_TYPE_INIT_QUERY_LIMIT", 1_000)
 
 config :indexer, Indexer.Fetcher.BlockReward.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_BLOCK_REWARD_FETCHER")

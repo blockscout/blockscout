@@ -3,6 +3,10 @@ defmodule Indexer.Fetcher.TokenInstance.MediaType do
   @moduledoc """
   Backfills MIME types for token instances that have metadata
   but missing image_type or animation_type.
+
+  Runs only under `Indexer.Supervisor`, i.e. on indexer nodes. Each init pass
+  loads at most `init_limit` instances into the queue and the fetcher polls
+  the database again once that chunk has been processed.
   """
 
   use Indexer.Fetcher, restart: :permanent

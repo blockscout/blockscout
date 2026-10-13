@@ -35,6 +35,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Fetcher.Stats.HotSmartContracts
   alias Indexer.Fetcher.TokenBalance.Current, as: TokenBalanceCurrent
   alias Indexer.Fetcher.TokenBalance.Historical, as: TokenBalanceHistorical
+  alias Indexer.Fetcher.TokenInstance.MediaType, as: TokenInstanceMediaType
   alias Indexer.Fetcher.TokenInstance.Realtime, as: TokenInstanceRealtime
   alias Indexer.Fetcher.TokenInstance.Retry, as: TokenInstanceRetry
   alias Indexer.Fetcher.TokenInstance.Sanitize, as: TokenInstanceSanitize
@@ -153,6 +154,7 @@ defmodule Indexer.Supervisor do
         {TokenInstanceSanitize.Supervisor, [[memory_monitor: memory_monitor]]},
         configure(TokenInstanceSanitizeERC721, [[memory_monitor: memory_monitor]]),
         configure(TokenInstanceSanitizeERC1155, [[memory_monitor: memory_monitor]]),
+        {TokenInstanceMediaType.Supervisor, [[memory_monitor: memory_monitor]]},
         {ContractCode.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {TokenBalanceHistorical.Supervisor,
