@@ -1071,12 +1071,14 @@ defmodule BlockScoutWeb.Etherscan do
       divisor: @token_decimal_type,
       tokenType: %{
         type: "token type",
-        enum: ~s(["ERC20", "ERC721", "ERC1155", "ERC404"]),
+        enum: ~s(["ERC20", "ERC721", "ERC1155", "ERC404", "ERC7984", "ERC8056"]),
         enum_interpretation: %{
           "ERC20" => "ERC-20 token standard",
           "ERC721" => "ERC-721 token standard",
           "ERC1155" => "ERC-1155 token standard",
-          "ERC404" => "ERC-404 token standard"
+          "ERC404" => "ERC-404 token standard",
+          "ERC7984" => "ERC-7984 token standard",
+          "ERC8056" => "ERC-8056 token standard"
         }
       },
       totalSupply: %{
