@@ -32,7 +32,10 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQuery do
           {sorting_options, [asc: :hash]}
       end
 
-    addresses_query = verified_addresses_query_by_join(options)
+    addresses_query =
+      options
+      |> verified_addresses_query_by_join()
+      |> maybe_filter_verified_addresses(sorting_options)
 
     addresses_query
     |> ExplorerHelper.maybe_hide_scam_addresses_with_select(:hash, options)
@@ -40,6 +43,24 @@ defmodule Explorer.Chain.SmartContract.VerifiedContractAddressesQuery do
     |> SortingHelper.page_with_sorting(paging_options, sorting_options, default_sorting_options)
     |> Chain.join_associations(necessity_by_association)
     |> Chain.select_repo(options).all()
+  end
+
+  # For address-level sorting, restrict to `addresses.verified = true` so the planner can
+  # drive the scan from the partial indexes
+
+  @spec maybe_filter_verified_addresses(Ecto.Query.t(), list()) :: Ecto.Query.t()
+  defp maybe_filter_verified_addresses(query, sorting_options) do
+    address_level_sorting? =
+      Enum.any?(sorting_options, fn
+        {_order, column} when column in [:transactions_count, :fetched_coin_balance] -> true
+        _ -> false
+      end)
+
+    if address_level_sorting? do
+      where(query, [address], address.verified == true)
+    else
+      query
+    end
   end
 
   # Kept for reference in case we need to revisit the lateral-join approach.
