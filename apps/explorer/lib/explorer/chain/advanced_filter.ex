@@ -539,53 +539,24 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp token_transfers_query_function(paging_options, options) do
     token_transfer_query =
-      if DenormalizationHelper.transactions_denormalization_finished?() do
-        from(token_transfer in TokenTransfer,
-          as: :token_transfer,
-          join: transaction in assoc(token_transfer, :transaction),
-          as: :transaction,
-          join: token in assoc(token_transfer, :token),
-          as: :token,
-          select: %TokenTransfer{
-            token_transfer
-            | token_id: fragment("UNNEST(?)", token_transfer.token_ids),
-              amount:
-                fragment("UNNEST(COALESCE(?, ARRAY[COALESCE(?, 1)]))", token_transfer.amounts, token_transfer.amount),
-              reverse_index_in_batch:
-                fragment("GENERATE_SERIES(COALESCE(ARRAY_LENGTH(?, 1), 1), 1, -1)", token_transfer.amounts),
-              token_decimals: token.decimals
-          },
-          where: transaction.block_consensus == true,
-          order_by: [
-            desc: token_transfer.block_number,
-            desc: token_transfer.log_index
-          ]
-        )
-      else
-        from(token_transfer in TokenTransfer,
-          as: :token_transfer,
-          join: transaction in assoc(token_transfer, :transaction),
-          as: :transaction,
-          join: token in assoc(token_transfer, :token),
-          as: :token,
-          join: block in assoc(token_transfer, :block),
-          as: :block,
-          select: %TokenTransfer{
-            token_transfer
-            | token_id: fragment("UNNEST(?)", token_transfer.token_ids),
-              amount:
-                fragment("UNNEST(COALESCE(?, ARRAY[COALESCE(?, 1)]))", token_transfer.amounts, token_transfer.amount),
-              reverse_index_in_batch:
-                fragment("GENERATE_SERIES(COALESCE(ARRAY_LENGTH(?, 1), 1), 1, -1)", token_transfer.amounts),
-              token_decimals: token.decimals
-          },
-          where: block.consensus == true,
-          order_by: [
-            desc: token_transfer.block_number,
-            desc: token_transfer.log_index
-          ]
-        )
-      end
+      TokenTransfer.only_consensus_transfers_query()
+      |> from(as: :token_transfer)
+      |> join(:inner, [token_transfer: token_transfer], transaction in assoc(token_transfer, :transaction),
+        as: :transaction
+      )
+      |> join(:inner, [token_transfer: token_transfer], token in assoc(token_transfer, :token), as: :token)
+      |> select([token_transfer: token_transfer, token: token], %TokenTransfer{
+        token_transfer
+        | token_id: fragment("UNNEST(?)", token_transfer.token_ids),
+          amount: fragment("UNNEST(COALESCE(?, ARRAY[COALESCE(?, 1)]))", token_transfer.amounts, token_transfer.amount),
+          reverse_index_in_batch:
+            fragment("GENERATE_SERIES(COALESCE(ARRAY_LENGTH(?, 1), 1), 1, -1)", token_transfer.amounts),
+          token_decimals: token.decimals
+      })
+      |> order_by([token_transfer: token_transfer],
+        desc: token_transfer.block_number,
+        desc: token_transfer.log_index
+      )
 
     query_function =
       (&make_token_transfer_query_unnested/2)
@@ -1050,8 +1021,8 @@ defmodule Explorer.Chain.AdvancedFilter do
     filter_by_block_number(query, block_number, entity, direction)
   end
 
-  defp do_filter_by_age(query, _block_number, timestamp, _entity, direction) do
-    filter_by_timestamp(query, timestamp, direction)
+  defp do_filter_by_age(query, _block_number, timestamp, entity, direction) do
+    filter_by_timestamp(query, timestamp, entity, direction)
   end
 
   defp filter_by_block_number(query, from, entity, :from) when not is_nil(from) do
@@ -1064,23 +1035,29 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp filter_by_block_number(query, _, _, _), do: query
 
-  defp filter_by_timestamp(query, %DateTime{} = from, :from) do
+  defp filter_by_timestamp(query, %DateTime{} = from, entity, :from) do
     if DenormalizationHelper.transactions_denormalization_finished?() do
       query |> where(as(:transaction).block_timestamp >= ^from)
     else
-      query |> where(as(:block).timestamp >= ^from)
+      query |> join_block(entity) |> where(as(:block).timestamp >= ^from)
     end
   end
 
-  defp filter_by_timestamp(query, %DateTime{} = to, :to) do
+  defp filter_by_timestamp(query, %DateTime{} = to, entity, :to) do
     if DenormalizationHelper.transactions_denormalization_finished?() do
       query |> where(as(:transaction).block_timestamp <= ^to)
     else
-      query |> where(as(:block).timestamp <= ^to)
+      query |> join_block(entity) |> where(as(:block).timestamp <= ^to)
     end
   end
 
-  defp filter_by_timestamp(query, _, _), do: query
+  defp filter_by_timestamp(query, _, _, _), do: query
+
+  defp join_block(query, entity) do
+    with_named_binding(query, :block, fn query, binding ->
+      join(query, :inner, [{^entity, parent}], block in assoc(parent, :block), as: ^binding)
+    end)
+  end
 
   defp filter_token_transfers_by_addresses(query_function, from_addresses_params, to_addresses_params, relation) do
     case {process_address_inclusion(from_addresses_params), process_address_inclusion(to_addresses_params)} do
