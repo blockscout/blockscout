@@ -710,27 +710,44 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert_only_consensus_token_transfers_returned(conn)
     end
 
-    test "filters token transfers by age when only transactions denormalization is not finished", %{conn: conn} do
+    test "filters token transfers by block timestamp when only transactions denormalization is not finished",
+         %{conn: conn} do
       set_denormalization_finished(tt: true, transactions: false)
 
-      block = insert(:block, consensus: false)
-      transaction = insert(:transaction)
+      [before_window, within_window] =
+        for timestamp <- [~U[2024-01-01 00:00:00.000000Z], ~U[2024-01-03 00:00:00.000000Z]] do
+          block = insert(:block, consensus: false, timestamp: timestamp)
 
-      insert(:token_transfer,
-        transaction: transaction,
-        block: block,
-        block_number: block.number,
-        block_consensus: false
-      )
+          transaction =
+            insert(:transaction,
+              block_hash: block.hash,
+              block_number: block.number,
+              block_timestamp: block.timestamp,
+              block_consensus: false,
+              index: 0,
+              cumulative_gas_used: 21_000,
+              gas_used: 21_000,
+              status: :ok
+            )
+
+          insert(:token_transfer,
+            transaction: transaction,
+            block: block,
+            block_number: block.number,
+            block_consensus: true
+          )
+        end
 
       request =
         get(conn, "/api/v2/advanced-filters", %{
-          "age_from" => DateTime.to_iso8601(block.timestamp),
+          "age_from" => DateTime.to_iso8601(~U[2024-01-02 00:00:00.000000Z]),
           "transaction_types" => "ERC-20"
         })
 
       assert response = json_response(request, 200)
-      assert response["items"] == []
+
+      assert Enum.map(response["items"], & &1["block_number"]) == [within_window.block_number]
+      refute before_window.block_number in Enum.map(response["items"], & &1["block_number"])
     end
 
     test "filter by from address include", %{conn: conn} do

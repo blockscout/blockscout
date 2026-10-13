@@ -545,7 +545,6 @@ defmodule Explorer.Chain.AdvancedFilter do
         as: :transaction
       )
       |> join(:inner, [token_transfer: token_transfer], token in assoc(token_transfer, :token), as: :token)
-      |> maybe_join_token_transfer_block()
       |> select([token_transfer: token_transfer, token: token], %TokenTransfer{
         token_transfer
         | token_id: fragment("UNNEST(?)", token_transfer.token_ids),
@@ -579,16 +578,6 @@ defmodule Explorer.Chain.AdvancedFilter do
       filtered_and_paginated_query
       |> repo.all(repo_options)
       |> repo.preload([:transaction, [token: Reputation.reputation_association()]])
-    end
-  end
-
-  defp maybe_join_token_transfer_block(query) do
-    if DenormalizationHelper.transactions_denormalization_finished?() do
-      query
-    else
-      with_named_binding(query, :block, fn query, binding ->
-        join(query, :inner, [token_transfer: token_transfer], block in assoc(token_transfer, :block), as: ^binding)
-      end)
     end
   end
 
@@ -1032,8 +1021,8 @@ defmodule Explorer.Chain.AdvancedFilter do
     filter_by_block_number(query, block_number, entity, direction)
   end
 
-  defp do_filter_by_age(query, _block_number, timestamp, _entity, direction) do
-    filter_by_timestamp(query, timestamp, direction)
+  defp do_filter_by_age(query, _block_number, timestamp, entity, direction) do
+    filter_by_timestamp(query, timestamp, entity, direction)
   end
 
   defp filter_by_block_number(query, from, entity, :from) when not is_nil(from) do
@@ -1046,23 +1035,29 @@ defmodule Explorer.Chain.AdvancedFilter do
 
   defp filter_by_block_number(query, _, _, _), do: query
 
-  defp filter_by_timestamp(query, %DateTime{} = from, :from) do
+  defp filter_by_timestamp(query, %DateTime{} = from, entity, :from) do
     if DenormalizationHelper.transactions_denormalization_finished?() do
       query |> where(as(:transaction).block_timestamp >= ^from)
     else
-      query |> where(as(:block).timestamp >= ^from)
+      query |> join_block(entity) |> where(as(:block).timestamp >= ^from)
     end
   end
 
-  defp filter_by_timestamp(query, %DateTime{} = to, :to) do
+  defp filter_by_timestamp(query, %DateTime{} = to, entity, :to) do
     if DenormalizationHelper.transactions_denormalization_finished?() do
       query |> where(as(:transaction).block_timestamp <= ^to)
     else
-      query |> where(as(:block).timestamp <= ^to)
+      query |> join_block(entity) |> where(as(:block).timestamp <= ^to)
     end
   end
 
-  defp filter_by_timestamp(query, _, _), do: query
+  defp filter_by_timestamp(query, _, _, _), do: query
+
+  defp join_block(query, entity) do
+    with_named_binding(query, :block, fn query, binding ->
+      join(query, :inner, [{^entity, parent}], block in assoc(parent, :block), as: ^binding)
+    end)
+  end
 
   defp filter_token_transfers_by_addresses(query_function, from_addresses_params, to_addresses_params, relation) do
     case {process_address_inclusion(from_addresses_params), process_address_inclusion(to_addresses_params)} do
