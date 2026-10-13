@@ -307,29 +307,23 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     process is complete.
 
     If the table does not hold a confirmation of the first indexed rollup block,
-    the function gives `l1_rollup_init_block` after the backfill process is
-    complete, and `nil` while the backfill process runs. In the second case, the
-    bound is unknown, and a discovery that uses it must wait.
+    the function gives `nil`. The bound is unknown, and a discovery that uses it
+    must wait. The backfill process can stop early at an event with a `top` below
+    the first indexed rollup block. Then the table holds no such confirmation
+    until the main process finds one. No execution of an indexed message can
+    exist on the parent chain before this confirmation, so the wait loses
+    nothing.
 
     ## Parameters
-    - `state`: A map containing the configuration with `l1_rollup_init_block` and
-      `rollup_first_block`, and the task data with the cursor of the backfill process
+    - `state`: A map containing the configuration with `rollup_first_block`
 
     ## Returns
     - The number of the parent chain block
     - `nil` if the bound is unknown
   """
   @spec lowest_l1_block_for_confirmations(confirmations_related_state()) :: non_neg_integer() | nil
-  def lowest_l1_block_for_confirmations(
-        %{config: %{l1_rollup_init_block: l1_rollup_init_block, rollup_first_block: rollup_first_block}} = state
-      ) do
-    case DbSettlement.l1_block_of_confirmation_for_rollup_block(rollup_first_block) do
-      nil ->
-        if historical_confirmations_discovery_completed?(state), do: l1_rollup_init_block, else: nil
-
-      l1_block_number ->
-        l1_block_number
-    end
+  def lowest_l1_block_for_confirmations(%{config: %{rollup_first_block: rollup_first_block}}) do
+    DbSettlement.l1_block_of_confirmation_for_rollup_block(rollup_first_block)
   end
 
   # Loads the cursors of both processes into the state.

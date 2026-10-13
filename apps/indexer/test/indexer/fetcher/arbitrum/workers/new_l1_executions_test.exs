@@ -21,7 +21,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # block of the confirmation which owns the first indexed rollup block. The
     # discovery does not read the parent chain below the bound. While the
     # backfill process runs, the bound can move down, and the discovery must not
-    # stop at it.
+    # stop at it. A run which reads nothing and waits gives the status
+    # `:no_confirmations`. Then the tracker runs the discovery again after the
+    # recheck interval, not after the short catchup interval.
 
     # The end block of the historical executions discovery when the scenario
     # starts above the bound.
@@ -46,16 +48,17 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       }
     end
 
+    # Runs the historical executions discovery once and gives its status and the
+    # new state.
     defp run_historical(state) do
-      {:ok, new_state} = NewL1Executions.discover_historical_l1_messages_executions(state)
-      new_state
+      NewL1Executions.discover_historical_l1_messages_executions(state)
     end
 
     describe "the lower bound of the historical executions discovery" do
       # The table of confirmations is empty, and the backfill process of the
       # confirmations discovery runs. The bound is unknown. The discovery reads
-      # nothing: the execution in the parent chain stays unknown, and the end
-      # block does not move.
+      # nothing and waits: the execution in the parent chain stays unknown, and
+      # the end block does not move.
       test "waits while the backfill process runs and the table of confirmations is empty", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -68,8 +71,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
           ]
         )
 
-        state = run_historical(executions_state(json_rpc_named_arguments, @executions_end_block, @backfill_cursor))
+        {status, state} =
+          run_historical(executions_state(json_rpc_named_arguments, @executions_end_block, @backfill_cursor))
 
+        assert status == :no_confirmations
         assert is_nil(execution(message))
         assert message_status(message) == :confirmed
         assert state.task_data.historical_executions.end_block == @executions_end_block
@@ -77,10 +82,14 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       end
 
       # The table of confirmations is empty, and the backfill process is
-      # complete. The bound is `l1_rollup_init_block`. The discovery reads down
-      # to it and finds the execution in the init block.
-      test "reads down to the rollup init block after the backfill process when the table of confirmations is empty",
-           %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      # complete. The backfill stopped early at an event which confirms only
+      # rollup blocks below the first indexed one. The bound stays unknown until
+      # the main process finds a confirmation. The discovery reads nothing and
+      # waits. The execution in the init block cannot belong to an indexed
+      # rollup block, so the discovery does not need it.
+      test "waits after the backfill process when the table of confirmations is empty", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
         message = insert_confirmed_message_from_l2(7)
         execution_transaction_hash = to_string(transaction_hash())
 
@@ -90,12 +99,14 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
           ]
         )
 
-        state = run_historical(executions_state(json_rpc_named_arguments, @executions_end_block, @l1_rollup_init_block))
+        {status, state} =
+          run_historical(executions_state(json_rpc_named_arguments, @executions_end_block, @l1_rollup_init_block))
 
-        assert execution(message) == execution_transaction_hash
-        assert message_status(message) == :relayed
-        assert state.task_data.historical_executions.end_block == @l1_rollup_init_block - 1
-        assert NewL1Executions.historical_executions_discovery_completed?(state)
+        assert status == :no_confirmations
+        assert is_nil(execution(message))
+        assert message_status(message) == :confirmed
+        assert state.task_data.historical_executions.end_block == @executions_end_block
+        refute NewL1Executions.historical_executions_discovery_completed?(state)
       end
 
       # A row owns the first indexed rollup block, and the backfill process runs.
@@ -118,8 +129,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
           ]
         )
 
-        state = run_historical(executions_state(json_rpc_named_arguments, @executions_end_block, @backfill_cursor))
+        {status, state} =
+          run_historical(executions_state(json_rpc_named_arguments, @executions_end_block, @backfill_cursor))
 
+        assert status == :ok
         assert execution(message_at_bound) == execution_at_bound_hash
         assert message_status(message_at_bound) == :relayed
         assert is_nil(execution(message_below_bound))
@@ -129,8 +142,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
       end
 
       # The end block is below the bound, and the backfill process runs. The
-      # discovery reads nothing and keeps its end block. The execution below the
-      # bound stays unknown until the backfill process moves the bound down.
+      # discovery reads nothing, keeps its end block, and waits. The execution
+      # below the bound stays unknown until the backfill process moves the bound
+      # down.
       test "waits at the bound while the backfill process runs", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -146,8 +160,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         end_block = @earlier_confirmation_l1_block - 1
 
-        state = run_historical(executions_state(json_rpc_named_arguments, end_block, @backfill_cursor))
+        {status, state} = run_historical(executions_state(json_rpc_named_arguments, end_block, @backfill_cursor))
 
+        assert status == :no_confirmations
         assert is_nil(execution(message))
         assert message_status(message) == :confirmed
         assert state.task_data.historical_executions.end_block == end_block
@@ -177,8 +192,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         end_block = @earlier_confirmation_l1_block - 1
 
-        state = run_historical(executions_state(json_rpc_named_arguments, end_block, @backfill_cursor))
+        {status, state} = run_historical(executions_state(json_rpc_named_arguments, end_block, @backfill_cursor))
 
+        assert status == :ok
         assert execution(message_above_bound) == execution_above_bound_hash
         assert message_status(message_above_bound) == :relayed
         assert is_nil(execution(message_below_bound))
@@ -206,8 +222,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         end_block = @earlier_confirmation_l1_block - 1
 
-        state = run_historical(executions_state(json_rpc_named_arguments, end_block, @l1_rollup_init_block))
+        {status, state} = run_historical(executions_state(json_rpc_named_arguments, end_block, @l1_rollup_init_block))
 
+        assert status == :ok
         assert is_nil(execution(message))
         assert message_status(message) == :confirmed
         assert state.task_data.historical_executions.end_block == end_block

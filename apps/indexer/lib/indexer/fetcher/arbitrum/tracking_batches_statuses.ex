@@ -538,10 +538,13 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
   # Executes a worker function and conditionally reschedules the task based on its completion status.
   #
-  # The worker returns `{:ok, new_state}` or `{:no_batches, new_state}`. For `:ok`,
-  # the next run comes after the interval of the task. For `:no_batches`, the
-  # worker waits for the first batch, and the next run comes after the interval of
-  # `:new_confirmations`. Thus a task that waits does not fill the log.
+  # The worker returns `{:ok, new_state}`, `{:no_batches, new_state}`, or
+  # `{:no_confirmations, new_state}`. For `:ok`, the next run comes after the
+  # interval of the task. For `:no_batches`, the worker waits for the first
+  # batch. For `:no_confirmations`, the worker waits for the confirmations
+  # discovery. In both cases of a wait, the next run comes after the interval of
+  # `:new_confirmations`. Thus a task that waits does not fill the log and does
+  # not query the database often.
   #
   # ## Parameters
   # - `state`: The current state containing completed tasks and intervals
@@ -569,7 +572,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
     {status, state_after_worker_run} =
       case worker_function.(state) do
-        {status, new_state} when status in [:ok, :no_batches] -> {status, new_state}
+        {status, new_state} when status in [:ok, :no_batches, :no_confirmations] -> {status, new_state}
         {status, _} -> raise("Worker #{inspect(worker_function)} returned unexpected status #{inspect(status)}")
       end
 
@@ -584,12 +587,17 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   end
 
   # Selects the interval before the next run of a stoppable task by the status of
-  # the worker. A worker that waits for the first batch runs after the interval of
-  # `:new_confirmations`, which is the configured recheck interval.
-  @spec select_interval_by_status(:ok | :no_batches, stoppable_fetcher_task(), fetcher_tasks_intervals()) ::
-          non_neg_integer()
+  # the worker. A worker that waits for the first batch or for the confirmations
+  # discovery runs after the interval of `:new_confirmations`, which is the
+  # configured recheck interval.
+  @spec select_interval_by_status(
+          :ok | :no_batches | :no_confirmations,
+          stoppable_fetcher_task(),
+          fetcher_tasks_intervals()
+        ) :: non_neg_integer()
   defp select_interval_by_status(:ok, task_tag, intervals), do: intervals[task_tag]
   defp select_interval_by_status(:no_batches, _task_tag, intervals), do: intervals[:new_confirmations]
+  defp select_interval_by_status(:no_confirmations, _task_tag, intervals), do: intervals[:new_confirmations]
 
   # Returns true if the task should be rescheduled (not marked as completed)
   @spec rescheduled?(atom(), %{:completed_tasks => completion_status(), optional(any()) => any()}) :: boolean()

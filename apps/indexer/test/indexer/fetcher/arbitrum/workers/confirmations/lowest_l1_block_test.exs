@@ -10,7 +10,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # their lower bound. A result that is too high stops them early. A result that
     # is too low makes them read the parent chain down to `l1_rollup_init_block`.
     # While the backfill process runs, the result can move down, and it never
-    # moves up. The result is `nil` if the table gives no bound yet.
+    # moves up. The result is `nil` if no row owns `rollup_first_block`, also
+    # after the backfill process. Then the other discoveries wait.
     describe "lowest_l1_block_for_confirmations/1" do
       # The backfill cursor is above `l1_rollup_init_block`, and a row owns
       # `rollup_first_block`. The backfill can find an earlier confirmation later,
@@ -59,9 +60,10 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert Tasks.lowest_l1_block_for_confirmations(state) == @earlier_confirmation_l1_block
       end
 
-      # The backfill is complete, but no row owns `rollup_first_block`. The result
-      # is the init block.
-      test "gives the rollup init block when the first rollup block is not confirmed", %{
+      # The backfill is complete, but no row owns `rollup_first_block`. The
+      # backfill stopped early at an event with a `top` below it. The bound is
+      # unknown until the main process finds a confirmation of the block.
+      test "gives nil after the backfill when the first rollup block is not confirmed", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
         seed_cursors(@main_cursor, @l1_rollup_init_block)
@@ -71,7 +73,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         state = run_backfill(state(json_rpc_named_arguments, rollup_first_block: 11))
 
         assert Tasks.historical_confirmations_discovery_completed?(state)
-        assert Tasks.lowest_l1_block_for_confirmations(state) == @l1_rollup_init_block
+        assert is_nil(Tasks.lowest_l1_block_for_confirmations(state))
       end
     end
   end

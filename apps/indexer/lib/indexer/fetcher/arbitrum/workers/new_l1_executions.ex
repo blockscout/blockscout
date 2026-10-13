@@ -156,9 +156,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
       window, it sets `end_block` to the block before the first block of the
       window. If the backfill process of the confirmations discovery is complete
       and `end_block` is below the bound, the function sets `end_block` to one
-      block before the bound. Otherwise, `end_block` does not change.
+      block before the bound.
+    - `{:no_confirmations, state}`: If the function waits for the confirmations
+      discovery and reads nothing. `end_block` does not change. The bound is
+      unknown, or `end_block` is below the bound while the backfill process runs.
   """
-  @spec discover_historical_l1_messages_executions(executions_related_state()) :: {:ok, executions_related_state()}
+  @spec discover_historical_l1_messages_executions(executions_related_state()) ::
+          {:ok, executions_related_state()} | {:no_confirmations, executions_related_state()}
   def discover_historical_l1_messages_executions(
         %{
           config: %{
@@ -175,11 +179,14 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     # discovery.
     lowest_l1_block = ConfirmationsTasks.lowest_l1_block_for_confirmations(state)
 
-    data_for_next_iteration =
+    # The task that waits returns `:no_confirmations`. Then the tracker runs it
+    # again after the recheck interval of the confirmations discovery, not after
+    # the short catchup interval.
+    {status, data_for_next_iteration} =
       cond do
         is_nil(lowest_l1_block) ->
           log_debug("Historical l2-to-l1 messages executions discovery waits for the first confirmation")
-          %{end_block: end_block}
+          {:no_confirmations, %{end_block: end_block}}
 
         end_block >= lowest_l1_block ->
           start_block = max(lowest_l1_block, end_block - l1_rpc_config.logs_block_range + 1)
@@ -190,12 +197,12 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
 
           # The next iteration will consider the block range which ends by the block
           # before the last processed block
-          %{end_block: start_block - 1}
+          {:ok, %{end_block: start_block - 1}}
 
         ConfirmationsTasks.historical_confirmations_discovery_completed?(state) ->
           # The historical discovery process has reached the lowest L1 block that
           # needs to be checked for executions
-          %{end_block: lowest_l1_block - 1}
+          {:ok, %{end_block: lowest_l1_block - 1}}
 
         true ->
           # The bound can move down while the backfill process of the confirmations
@@ -204,10 +211,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
             "Historical l2-to-l1 messages executions discovery waits at the block #{end_block} for the historical confirmations discovery"
           )
 
-          %{end_block: end_block}
+          {:no_confirmations, %{end_block: end_block}}
       end
 
-    {:ok, ArbitrumHelper.update_fetcher_task_data(state, :historical_executions, data_for_next_iteration)}
+    {status, ArbitrumHelper.update_fetcher_task_data(state, :historical_executions, data_for_next_iteration)}
   end
 
   @doc """
@@ -223,7 +230,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     - A map containing:
       - `task_data`: Contains historical executions data with an end block, and
         the cursor of the backfill process of the confirmations discovery
-      - Other configuration needed to determine the lowest L1 block
+      - `config`: Contains the first indexed rollup block, which gives the lowest
+        L1 block
 
     ## Returns
     - `true` if the backfill process of the confirmations discovery is complete
