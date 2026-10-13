@@ -60,7 +60,7 @@ defmodule BlockScoutWeb.Notifier do
     Transaction
   }
 
-  alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime, Helper}
+  alias Explorer.Chain.Cache.Counters.{AddressesAggregates, AverageBlockTime, Helper}
   alias Explorer.Chain.Supply.RSK
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.SmartContract.{CompilerVersion, Solidity.CodeCompiler}
@@ -116,7 +116,7 @@ defmodule BlockScoutWeb.Notifier do
   ]
 
   def handle_event({:chain_event, :addresses, type, addresses}) when type in [:realtime, :on_demand] do
-    addresses_count = AddressesCount.fetch()
+    addresses_count = AddressesAggregates.get_addresses_count()
 
     # TODO: delete duplicated event when old UI becomes deprecated
     Endpoint.local_broadcast("addresses_old:new_address", "count", %{count: addresses_count})

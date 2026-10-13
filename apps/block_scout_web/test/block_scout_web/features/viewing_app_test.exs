@@ -6,13 +6,12 @@ defmodule BlockScoutWeb.ViewingAppTest do
 
   # alias BlockScoutWeb.AppPage
   # alias BlockScoutWeb.Counters.BlocksIndexedCounter
-  # alias Explorer.Chain.Cache.Counters.AddressesCount
+  # alias Explorer.Chain.Cache.Counters.AddressesAggregates
   # alias Explorer.{Repo}
   # alias Explorer.Chain.PendingBlockOperation
 
   # setup do
-  #   start_supervised!(AddressesCount)
-  #   AddressesCount.consolidate()
+  #   AddressesAggregates.consolidate()
 
   #   :ok
   # end

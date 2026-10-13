@@ -2,7 +2,7 @@
 defmodule BlockScoutWeb.API.RPC.EthControllerTest do
   use BlockScoutWeb.ConnCase, async: false
 
-  alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Repo
 
   @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
@@ -23,8 +23,6 @@ defmodule BlockScoutWeb.API.RPC.EthControllerTest do
     Indexer.Fetcher.OnDemand.CoinBalance.Supervisor.Case.start_supervised!(
       json_rpc_named_arguments: mocked_json_rpc_named_arguments
     )
-
-    start_supervised!(AddressesCount)
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 

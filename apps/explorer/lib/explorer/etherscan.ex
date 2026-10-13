@@ -6,11 +6,9 @@ defmodule Explorer.Etherscan do
 
   import Ecto.Query
 
-  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
-
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Block, DenormalizationHelper, Hash, InternalTransaction, TokenTransfer, Transaction}
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
+  alias Explorer.Chain.{Block, DenormalizationHelper, Hash, InternalTransaction, TokenTransfer, Transaction}
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Etherscan.Logs
 
@@ -922,33 +920,6 @@ defmodule Explorer.Etherscan do
   """
   @spec list_logs(map()) :: [map()]
   def list_logs(filter), do: Logs.list_logs(filter)
-
-  @spec fetch_sum_coin_total_supply() :: non_neg_integer
-  def fetch_sum_coin_total_supply do
-    query =
-      from(
-        a0 in Address,
-        select: fragment("SUM(a0.fetched_coin_balance)"),
-        where: a0.fetched_coin_balance > ^0
-      )
-
-    Repo.replica().one!(query, timeout: :infinity) || 0
-  end
-
-  @spec fetch_sum_coin_total_supply_minus_burnt() :: non_neg_integer
-  def fetch_sum_coin_total_supply_minus_burnt do
-    {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
-
-    query =
-      from(
-        a0 in Address,
-        select: fragment("SUM(a0.fetched_coin_balance)"),
-        where: a0.hash != ^burn_address_hash,
-        where: a0.fetched_coin_balance > ^0
-      )
-
-    Repo.replica().one!(query, timeout: :infinity) || 0
-  end
 
   @doc """
   It is used by `totalfees` API endpoint of `stats` module for retrieving of total fee per day

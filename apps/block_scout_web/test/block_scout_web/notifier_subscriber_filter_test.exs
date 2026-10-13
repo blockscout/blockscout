@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.NotifierSubscriberFilterTest do
   alias BlockScoutWeb.Notifier
   alias Explorer.Chain.{Transaction, Wei}
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.Cache.Counters.AddressesCount
+  alias Explorer.Chain.Cache.Counters.AddressesAggregates
   alias Explorer.Repo
 
   defp without_loaded_associations(%Transaction{hash: hash}), do: Repo.get!(Transaction, hash)
@@ -47,8 +47,7 @@ defmodule BlockScoutWeb.NotifierSubscriberFilterTest do
       @endpoint.subscribe(subscribed_topic)
       @endpoint.subscribe(unsubscribed_topic)
 
-      start_supervised!(AddressesCount)
-      AddressesCount.consolidate()
+      AddressesAggregates.consolidate()
 
       Phoenix.PubSub.unsubscribe(BlockScoutWeb.PubSub, unsubscribed_topic)
 
@@ -62,8 +61,7 @@ defmodule BlockScoutWeb.NotifierSubscriberFilterTest do
       {:ok, balance} = Wei.cast(1)
       address = insert(:address, fetched_coin_balance: balance, fetched_coin_balance_block_number: 1)
 
-      start_supervised!(AddressesCount)
-      AddressesCount.consolidate()
+      AddressesAggregates.consolidate()
 
       Notifier.handle_event({:chain_event, :addresses, :realtime, [address]})
     end
@@ -76,8 +74,7 @@ defmodule BlockScoutWeb.NotifierSubscriberFilterTest do
       topic = "addresses_old:#{address.hash}"
       @endpoint.subscribe(topic)
 
-      start_supervised!(AddressesCount)
-      AddressesCount.consolidate()
+      AddressesAggregates.consolidate()
 
       Notifier.handle_event({:chain_event, :addresses, :realtime, [address]})
 
@@ -103,8 +100,7 @@ defmodule BlockScoutWeb.NotifierSubscriberFilterTest do
       @endpoint.subscribe(subscribed_topic)
       @endpoint.subscribe(unsubscribed_topic)
 
-      start_supervised!(AddressesCount)
-      AddressesCount.consolidate()
+      AddressesAggregates.consolidate()
 
       Phoenix.PubSub.unsubscribe(BlockScoutWeb.PubSub, unsubscribed_topic)
 
@@ -121,8 +117,7 @@ defmodule BlockScoutWeb.NotifierSubscriberFilterTest do
 
       @endpoint.subscribe("addresses_old:new_address")
 
-      start_supervised!(AddressesCount)
-      AddressesCount.consolidate()
+      AddressesAggregates.consolidate()
 
       Notifier.handle_event({:chain_event, :addresses, :realtime, [address]})
 

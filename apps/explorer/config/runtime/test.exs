@@ -21,7 +21,6 @@ config :explorer, Explorer.Chain.Cache.Counters.TokenCounters, enabled: false
 config :explorer, Explorer.Chain.Cache.Counters.TokenCountersConsolidator, enabled: false
 
 for counter <- [
-      Explorer.Chain.Cache.Counters.AddressesCount,
       Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount,
       Explorer.Chain.Cache.Counters.Optimism.DepositsCount,
       Explorer.Chain.Cache.Counters.Transactions24hCount,

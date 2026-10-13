@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.API.Legacy.EthControllerTest do
   import Mox
 
   alias Explorer.Chain.Cache.BlockNumber
-  alias Explorer.Chain.Cache.Counters.{AddressesCount, AverageBlockTime}
+  alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.Transaction
 
   setup do
@@ -28,8 +28,6 @@ defmodule BlockScoutWeb.API.Legacy.EthControllerTest do
     Indexer.Fetcher.OnDemand.CoinBalance.Supervisor.Case.start_supervised!(
       json_rpc_named_arguments: mocked_json_rpc_named_arguments
     )
-
-    start_supervised!(AddressesCount)
 
     Application.put_env(:explorer, AverageBlockTime, enabled: true, cache_period: 1_800_000)
 

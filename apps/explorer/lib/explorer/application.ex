@@ -22,8 +22,7 @@ defmodule Explorer.Application do
   }
 
   alias Explorer.Chain.Cache.Counters.{
-    AddressesCoinBalanceSum,
-    AddressesCoinBalanceSumMinusBurnt,
+    AddressesAggregates,
     AddressTabsElementsCount,
     BlocksCount,
     PendingBlockOperationCount,
@@ -107,8 +106,7 @@ defmodule Explorer.Application do
       {Registry, keys: :duplicate, name: Registry.ChainEvents, id: Registry.ChainEvents},
       Explorer.Chain.Cache.Propagator,
       Accounts,
-      AddressesCoinBalanceSum,
-      AddressesCoinBalanceSumMinusBurnt,
+      AddressesAggregates,
       BackgroundMigrations,
       BlocksCount,
       BlockNumber,
@@ -174,7 +172,6 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Chain.Cache.Counters.WithdrawalsSum, :indexer),
         configure_mode_dependent_process(Explorer.Chain.Transaction.History.Historian, :indexer),
         configure(Explorer.Chain.Events.Listener),
-        configure_mode_dependent_process(Explorer.Chain.Cache.Counters.AddressesCount, :api),
         configure(Explorer.Chain.Cache.Counters.AddressCounters),
         configure_mode_dependent_process(Explorer.Chain.Cache.Counters.AddressCountersConsolidator, :indexer),
         configure_mode_dependent_process(Explorer.Chain.Cache.Counters.AddressTokensUsdSum, :api),

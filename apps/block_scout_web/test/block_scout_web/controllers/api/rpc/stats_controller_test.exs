@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
 
   import Mox
 
-  alias Explorer.Chain.Cache.Counters.{AddressesCoinBalanceSum, AddressesCoinBalanceSumMinusBurnt, LastFetchedCounter}
+  alias Explorer.Chain.Cache.Counters.{AddressesAggregates, LastFetchedCounter}
   alias Explorer.Chain.Transaction.History.TransactionStats
   alias Explorer.Market.Fetcher.Coin
   alias Explorer.Market.Token
@@ -171,18 +171,10 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
   end
 
   describe "ethsupply" do
-    setup do
-      original_sum = AddressesCoinBalanceSum.get_sum()
-
-      on_exit(fn ->
-        AddressesCoinBalanceSum.set_sum(original_sum)
-      end)
-
-      :ok
-    end
+    setup :reset_addresses_aggregates
 
     test "returns cached total supply from counter", %{conn: conn} do
-      AddressesCoinBalanceSum.set_sum(Decimal.new("3400000000000000000"))
+      AddressesAggregates.set_sum(Decimal.new("3400000000000000000"))
 
       params = %{
         "module" => "stats",
@@ -202,18 +194,10 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
   end
 
   describe "coinsupply" do
-    setup do
-      original_sum_minus_burnt = AddressesCoinBalanceSumMinusBurnt.get_sum_minus_burnt()
+    setup :reset_addresses_aggregates
 
-      on_exit(fn ->
-        AddressesCoinBalanceSumMinusBurnt.set_sum_minus_burnt(original_sum_minus_burnt)
-      end)
-
-      :ok
-    end
-
-    test "returns value from cached sum minus burnt when it is positive", %{conn: conn} do
-      AddressesCoinBalanceSumMinusBurnt.set_sum_minus_burnt(Decimal.new("2000000000000000000"))
+    test "returns value from cached sum minus burnt", %{conn: conn} do
+      AddressesAggregates.set_sum_minus_burnt(Decimal.new("2000000000000000000"))
 
       params = %{
         "module" => "stats",
@@ -231,41 +215,26 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(coinsupply_schema(), response)
     end
 
-    test "falls back to last fetched counter when cached sum minus burnt is non-positive", %{conn: conn} do
-      original_last_fetched_counter = LastFetchedCounter.get("sum_coin_total_supply_minus_burnt", nullable: true)
+    test "falls back to last fetched counter when the sum minus burnt is not cached", %{conn: conn} do
+      LastFetchedCounter.upsert(%{
+        counter_type: "addresses_coin_balance_sum_minus_burnt",
+        value: Decimal.new("1500000000000000000")
+      })
 
-      try do
-        AddressesCoinBalanceSumMinusBurnt.set_sum_minus_burnt(Decimal.new(0))
+      params = %{
+        "module" => "stats",
+        "action" => "coinsupply"
+      }
 
-        LastFetchedCounter.upsert(%{
-          counter_type: "sum_coin_total_supply_minus_burnt",
-          value: Decimal.new("1500000000000000000")
-        })
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
 
-        params = %{
-          "module" => "stats",
-          "action" => "coinsupply"
-        }
-
-        assert response =
-                 conn
-                 |> get("/api", params)
-                 |> json_response(200)
-
-        assert response["result"] == "1.5"
-        assert response["status"] == "1"
-        assert response["message"] == "OK"
-        assert :ok = ExJsonSchema.Validator.validate(coinsupply_schema(), response)
-      after
-        if is_nil(original_last_fetched_counter) do
-          LastFetchedCounter.delete("sum_coin_total_supply_minus_burnt")
-        else
-          LastFetchedCounter.upsert(%{
-            counter_type: "sum_coin_total_supply_minus_burnt",
-            value: original_last_fetched_counter
-          })
-        end
-      end
+      assert response["result"] == "1.5"
+      assert response["status"] == "1"
+      assert response["message"] == "OK"
+      assert :ok = ExJsonSchema.Validator.validate(coinsupply_schema(), response)
     end
   end
 
@@ -463,6 +432,13 @@ defmodule BlockScoutWeb.API.RPC.StatsControllerTest do
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(totalfees_schema(), response)
     end
+  end
+
+  defp reset_addresses_aggregates(_context) do
+    Supervisor.terminate_child(Explorer.Supervisor, AddressesAggregates.child_id())
+    Supervisor.restart_child(Explorer.Supervisor, AddressesAggregates.child_id())
+
+    :ok
   end
 
   defp tokensupply_schema do
