@@ -11,14 +11,14 @@ defmodule Indexer.Fetcher.TokenInstance.MediaTypeTest do
 
       assert %{
                id: MediaType,
-               start: {Indexer.BufferedTask, :start_link, [[{MediaType, init_options}, [name: :test_server]]]}
+               start: {Indexer.BufferedTask, :start_link, [{MediaType, init_options}, [name: :test_server]]}
              } = child_spec
 
       assert init_options[:max_batch_size] == 5
     end
 
     test "uses a finite flush interval so the next chunk of the backlog gets polled" do
-      %{start: {_, _, [[{MediaType, init_options}, _]]}} = MediaType.child_spec([[], []])
+      %{start: {_, _, [{MediaType, init_options}, _]}} = MediaType.child_spec([[], []])
 
       assert is_integer(init_options[:flush_interval])
     end
