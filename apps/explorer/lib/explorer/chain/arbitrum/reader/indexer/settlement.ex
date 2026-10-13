@@ -8,16 +8,16 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
 
     * L1 batches - Sequential groups of L2 blocks committed to L1 via commitment transactions
     * Batch blocks - Individual L2 blocks included in L1 batches
-    * Block confirmations - L1 transactions that confirm the state of L2 blocks
+    * Block confirmations - The highest confirmed rollup block, through `Explorer.Chain.Arbitrum.Reader.Common`
     * Data availability records - Additional data associated with batches (e.g., AnyTrust keysets)
   """
 
   import Ecto.Query, only: [from: 2]
 
   alias Explorer.Chain.Arbitrum.{
-    BatchBlock,
     DaMultiPurposeRecord,
-    L1Batch
+    L1Batch,
+    RollupBlockConfirmation
   }
 
   alias Explorer.Chain.Arbitrum.Reader.Common
@@ -102,25 +102,21 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
   end
 
   @doc """
-    Gets the rollup block number by the hash of the block. Lookup is performed only
-    for blocks explicitly included in a batch, i.e., the batch has been identified by
-    the corresponding fetcher. The function may return `nil` as a successful response
-    if the batch containing the rollup block has not been indexed yet.
+    Gets the rollup block number by the hash of the block. The lookup reads the
+    indexed blocks. The function returns `nil` if the block is not indexed yet.
 
     ## Parameters
-    - `block_hash`: The hash of a block included in the batch.
+    - `block_hash`: The hash of a rollup block.
 
     ## Returns
     - the number of the rollup block corresponding to the given hash or `nil` if the
-      block or batch were not indexed yet.
+      block is not indexed yet.
   """
   @spec rollup_block_hash_to_num(binary()) :: FullBlock.block_number() | nil
   def rollup_block_hash_to_num(block_hash) when is_binary(block_hash) do
     query =
       from(
         fb in FullBlock,
-        inner_join: rb in BatchBlock,
-        on: rb.block_number == fb.number,
         select: fb.number,
         where: fb.hash == ^block_hash
       )
@@ -200,40 +196,6 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
   end
 
   @doc """
-    Retrieves the L1 block number where the confirmation transaction of the highest confirmed rollup block was included.
-
-    ## Returns
-    - The L1 block number if a confirmed rollup block is found and the confirmation transaction is indexed;
-      `nil` if no confirmed rollup blocks are found or if there is a database inconsistency.
-  """
-  @spec l1_block_of_latest_confirmed_block() :: FullBlock.block_number() | nil
-  def l1_block_of_latest_confirmed_block do
-    query =
-      from(
-        rb in BatchBlock,
-        where: not is_nil(rb.confirmation_id),
-        order_by: [desc: rb.block_number],
-        limit: 1
-      )
-
-    case query
-         # :required is used since existence of the confirmation id is checked above
-         |> Chain.join_associations(%{:confirmation_transaction => :required})
-         |> Repo.one(timeout: :infinity) do
-      nil ->
-        nil
-
-      block ->
-        case block.confirmation_transaction do
-          # `nil` and `%Ecto.Association.NotLoaded{}` indicate DB inconsistency
-          nil -> nil
-          %Ecto.Association.NotLoaded{} -> nil
-          confirmation_transaction -> confirmation_transaction.block_number
-        end
-    end
-  end
-
-  @doc """
     Retrieves the number of the highest confirmed rollup block.
 
     It calls `Common.highest_confirmed_block/1` with `api?: false` option to use
@@ -248,80 +210,31 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
   end
 
   @doc """
-    Retrieves all rollup blocks within the specified range from `first_block` to `last_block`, inclusive.
+    Retrieves the lowest L1 block that holds a confirmation of a rollup block not below the given one.
 
-    The results are ordered by block_number in descending order.
-
-    ## Parameters
-    - `first_block`: The rollup block number starting the lookup range.
-    - `last_block`: The rollup block number ending the lookup range.
-
-    ## Returns
-    - A list of blocks, ordered by block_number in descending order. Returns `[]`
-      if no blocks are found within the range.
-  """
-  @spec rollup_blocks_by_range(FullBlock.block_number(), FullBlock.block_number()) :: [BatchBlock.t()]
-  def rollup_blocks_by_range(first_block, last_block)
-      when is_integer(first_block) and first_block >= 0 and
-             is_integer(last_block) and first_block <= last_block do
-    query =
-      from(
-        rb in BatchBlock,
-        where: rb.block_number >= ^first_block and rb.block_number <= ^last_block,
-        order_by: [desc: rb.block_number]
-      )
-
-    Repo.all(query)
-  end
-
-  @doc """
-    Retrieves all unconfirmed rollup blocks within the specified range from `first_block` to `last_block`, inclusive.
-
-    The results are ordered by block_number in descending order to take advantage of the index
-    (confirmation_id, block_number DESC) where confirmation_id IS NULL.
+    The function reads all confirmations with `top` not below the given rollup
+    block, and gives the lowest L1 block of their confirmation transactions. The
+    confirmations can come in the inverted order: an older L1 block holds the
+    confirmation of a higher `top`. Thus the confirmation with the lowest such
+    `top` is not always the earliest one on L1, and the function does not use it.
 
     ## Parameters
-    - `first_block`: The rollup block number starting the lookup range.
-    - `last_block`:The rollup block number ending the lookup range.
+    - `rollup_block_number`: The number of the rollup block.
 
     ## Returns
-    - A list of unconfirmed blocks within the range, ordered by block_number in
-      descending order. Returns `[]` if no unconfirmed blocks are found within
-      the range.
+    - The L1 block number, or `nil` if the rollup block is not confirmed.
   """
-  @spec unconfirmed_rollup_blocks(FullBlock.block_number(), FullBlock.block_number()) :: [BatchBlock.t()]
-  def unconfirmed_rollup_blocks(first_block, last_block)
-      when is_integer(first_block) and first_block >= 0 and
-             is_integer(last_block) and first_block <= last_block do
+  @spec lowest_l1_block_of_confirmations_from_rollup_block(FullBlock.block_number()) :: FullBlock.block_number() | nil
+  def lowest_l1_block_of_confirmations_from_rollup_block(rollup_block_number) do
     query =
       from(
-        rb in BatchBlock,
-        where: rb.block_number >= ^first_block and rb.block_number <= ^last_block and is_nil(rb.confirmation_id),
-        order_by: [desc: rb.block_number]
+        confirmation in RollupBlockConfirmation,
+        join: transaction in assoc(confirmation, :confirmation_transaction),
+        where: confirmation.top >= ^rollup_block_number,
+        select: min(transaction.block_number)
       )
 
-    Repo.all(query)
-  end
-
-  @doc """
-    Calculates the number of confirmed rollup blocks in the specified batch.
-
-    ## Parameters
-    - `batch_number`: The number of the batch for which the count of confirmed blocks is to be calculated.
-
-    ## Returns
-    - The number of confirmed blocks in the batch with the given number.
-  """
-  @spec count_confirmed_rollup_blocks_in_batch(non_neg_integer()) :: non_neg_integer
-  def count_confirmed_rollup_blocks_in_batch(batch_number)
-      when is_integer(batch_number) and batch_number >= 0 do
-    query =
-      from(
-        rb in BatchBlock,
-        where: rb.batch_number == ^batch_number and not is_nil(rb.confirmation_id)
-      )
-
-    Repo.aggregate(query, :count)
+    Repo.one(query)
   end
 
   @doc """
@@ -427,189 +340,6 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
       )
 
     Repo.one(query, timeout: :infinity)
-  end
-
-  @doc """
-    Retrieves the L1 block number where the confirmation transaction for a specific rollup block was included.
-
-    ## Parameters
-    - `rollup_block_number`: The number of the rollup block for which to find the confirmation L1 block.
-
-    ## Returns
-    - `{:ok, block_number}` if the rollup block is confirmed and the confirmation transaction is indexed
-    - `{:not_confirmed, nil}` if the rollup block is not confirmed yet or not found
-    - `{:error, :inconsistent}` if there is a database inconsistency (confirmation transaction association is broken)
-  """
-  @spec l1_block_of_confirmation_for_rollup_block(FullBlock.block_number()) ::
-          {:ok, FullBlock.block_number()}
-          | {:not_confirmed, nil}
-          | {:error, :inconsistent}
-  def l1_block_of_confirmation_for_rollup_block(rollup_block_number)
-      when is_integer(rollup_block_number) and rollup_block_number >= 0 do
-    base_query =
-      from(
-        rb in BatchBlock,
-        where: rb.block_number == ^rollup_block_number and not is_nil(rb.confirmation_id)
-      )
-
-    case base_query
-         |> Chain.join_associations(%{:confirmation_transaction => :required})
-         |> Repo.one(timeout: :infinity) do
-      nil ->
-        {:not_confirmed, nil}
-
-      block ->
-        case block.confirmation_transaction do
-          nil -> {:error, :inconsistent}
-          %Ecto.Association.NotLoaded{} -> {:error, :inconsistent}
-          confirmation_transaction -> {:ok, confirmation_transaction.block_number}
-        end
-    end
-  end
-
-  @doc """
-    Retrieves the number of the highest unconfirmed rollup block that is below a given block number.
-
-    ## Parameters
-    - `block_number`: The rollup block number above which to search for unconfirmed blocks.
-
-    ## Returns
-    - The number of the highest unconfirmed rollup block below the given block number,
-      or `nil` if no unconfirmed rollup blocks are found below that number.
-  """
-  @spec highest_unconfirmed_block_below(FullBlock.block_number()) :: FullBlock.block_number() | nil
-  def highest_unconfirmed_block_below(block_number)
-      when is_integer(block_number) and block_number >= 0 do
-    query =
-      from(
-        rb in BatchBlock,
-        where: rb.block_number < ^block_number and is_nil(rb.confirmation_id),
-        select: rb.block_number,
-        order_by: [desc: rb.block_number],
-        limit: 1
-      )
-
-    Repo.one(query)
-  end
-
-  @doc """
-    Retrieves the L1 block number where the confirmation transaction for the closest confirmed rollup block above a given block number was included.
-
-    The function first checks if the next block (block_number + 1) is confirmed, as this
-    is the most common case. If not, it searches for the closest confirmed block above
-    the given block number and returns its L1 confirmation block number.
-
-    ## Parameters
-    - `block_number`: The rollup block number below which to search for confirmed blocks.
-
-    ## Returns
-    - `{:ok, l1_block}` if a confirmed block is found, where `l1_block` is the number
-      of the L1 block containing the confirmation transaction
-    - `{:error, :not_found}` if no confirmed blocks are found above the given block number
-    - `{:error, :inconsistent}` if there is a database inconsistency
-  """
-  @spec l1_block_of_closest_confirmed_block_above(FullBlock.block_number()) ::
-          {:ok, FullBlock.block_number()}
-          | {:error, :not_found | :inconsistent}
-  def l1_block_of_closest_confirmed_block_above(block_number)
-      when is_integer(block_number) and block_number >= 0 do
-    # First try the next block as it's the most common case
-    next_block = block_number + 1
-
-    case l1_block_of_confirmation_for_rollup_block(next_block) do
-      {:ok, l1_block} ->
-        {:ok, l1_block}
-
-      {:not_confirmed, nil} ->
-        # If next block is not confirmed, search for the closest confirmed block above
-        query =
-          from(
-            rb in BatchBlock,
-            inner_join: lt in assoc(rb, :confirmation_transaction),
-            where: rb.block_number > ^block_number and not is_nil(rb.confirmation_id),
-            select: lt.block_number,
-            order_by: [asc: rb.block_number],
-            limit: 1
-          )
-
-        case Repo.one(query) do
-          nil -> {:error, :not_found}
-          l1_block -> {:ok, l1_block}
-        end
-
-      {:error, :inconsistent} ->
-        {:error, :inconsistent}
-    end
-  end
-
-  @doc """
-    Retrieves the L1 block number where the confirmation transaction for the closest confirmed rollup block below a given block number was included.
-
-    ## Parameters
-    - `block_number`: The rollup block number above which to search for confirmed blocks.
-
-    ## Returns
-    - `{:ok, l1_block}` if a confirmed block is found, where `l1_block` is the number
-      of the L1 block containing the confirmation transaction
-    - `{:error, :not_found}` if no confirmed blocks are found below the given block number
-    - `{:error, :inconsistent}` if there is a database inconsistency
-  """
-  @spec l1_block_of_closest_confirmed_block_below(FullBlock.block_number()) ::
-          {:ok, FullBlock.block_number()}
-          | {:error, :not_found | :inconsistent}
-  def l1_block_of_closest_confirmed_block_below(block_number)
-      when is_integer(block_number) and block_number >= 0 do
-    query =
-      from(
-        rb in BatchBlock,
-        inner_join: lt in assoc(rb, :confirmation_transaction),
-        where: rb.block_number < ^block_number and not is_nil(rb.confirmation_id),
-        select: lt.block_number,
-        order_by: [desc: rb.block_number],
-        limit: 1
-      )
-
-    case Repo.one(query) do
-      nil -> {:error, :not_found}
-      l1_block -> {:ok, l1_block}
-    end
-  end
-
-  @doc """
-    Retrieves the L1 block number where the confirmation transaction for the earliest discovered rollup block was included.
-
-    Note: Due to the asynchronous nature of different fetchers, this block may not be
-    the actual earliest block in the chain, nor the earliest block discovered by the
-    block fetcher. It represents only the earliest block that has been processed and
-    stored by the batch fetcher.
-
-    This function assumes that at least one confirmed block has already been identified.
-    It should only be called after verifying that confirmed blocks exist in the database.
-    If no confirmed blocks are found, it raises an error.
-
-    ## Returns
-    - The L1 block number containing the confirmation transaction for the earliest discovered block
-
-    ## Raises
-    - RuntimeError if no confirmed blocks are found, which indicates a programming error
-      since the function should only be called when confirmed blocks exist
-  """
-  @spec l1_block_of_earliest_block_confirmation() :: FullBlock.block_number()
-  def l1_block_of_earliest_block_confirmation do
-    query =
-      from(
-        rb in BatchBlock,
-        where: not is_nil(rb.confirmation_id),
-        join: lt in assoc(rb, :confirmation_transaction),
-        select: lt.block_number,
-        order_by: [asc: rb.block_number],
-        limit: 1
-      )
-
-    case Repo.one(query) do
-      nil -> raise "No confirmed blocks found when at least one was expected"
-      l1_block -> l1_block
-    end
   end
 
   @doc """

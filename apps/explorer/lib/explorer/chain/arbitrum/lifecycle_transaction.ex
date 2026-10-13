@@ -14,7 +14,7 @@ defmodule Explorer.Chain.Arbitrum.LifecycleTransaction do
 
   alias Explorer.Chain.Hash
 
-  alias Explorer.Chain.Arbitrum.{BatchBlock, L1Batch}
+  alias Explorer.Chain.Arbitrum.{L1Batch, RollupBlockConfirmation}
 
   @required_attrs ~w(id hash block_number timestamp status)a
 
@@ -42,8 +42,8 @@ defmodule Explorer.Chain.Arbitrum.LifecycleTransaction do
     * `status` - The status of the transaction: `:unfinalized` or `:finalized`.
     * `committed_batches` - A list of `Explorer.Chain.Arbitrum.L1Batch` instances
                             that are committed by the transaction.
-    * `confirmed_blocks` - A list of `Explorer.Chain.Arbitrum.BatchBlock` instances
-                           that are confirmed by the transaction.
+    * `rollup_block_confirmations` - A list of `Explorer.Chain.Arbitrum.RollupBlockConfirmation`
+                                     instances that the transaction made.
   """
   @primary_key {:id, :integer, autogenerate: false}
   typed_schema "arbitrum_lifecycle_l1_transactions" do
@@ -53,7 +53,7 @@ defmodule Explorer.Chain.Arbitrum.LifecycleTransaction do
     field(:status, Ecto.Enum, values: [:unfinalized, :finalized])
 
     has_many(:committed_batches, L1Batch, foreign_key: :commitment_id)
-    has_many(:confirmed_blocks, BatchBlock, foreign_key: :confirmation_id)
+    has_many(:rollup_block_confirmations, RollupBlockConfirmation, foreign_key: :confirmation_id)
 
     timestamps()
   end

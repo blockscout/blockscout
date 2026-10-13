@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   use Utils.CompileTimeEnvHelper,
     chain_identity: [:explorer, :chain_identity]
 
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
   use OpenApiSpex.ControllerSpecs
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
@@ -191,7 +192,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           @transaction_necessity_by_association
           |> Map.put(:arbitrum_batch, :optional)
           |> Map.put(:arbitrum_commitment_transaction, :optional)
-          |> Map.put(:arbitrum_confirmation_transaction, :optional)
           |> Map.put(:arbitrum_message_to_l2, :optional)
           |> Map.put(:arbitrum_message_from_l2, :optional)
 
@@ -244,9 +244,36 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
           preloaded
           |> Instance.preload_nft(@api_true)
           |> maybe_preload_ens_and_metadata()
+          |> with_chain_type_virtual_fields()
       })
     end
   end
+
+  # Fills the virtual fields of the transaction that depend on the chain type.
+  #
+  # For Arbitrum, the field `arbitrum_confirmation_transaction` gets the parent
+  # chain transaction that confirms the block of the transaction. A pending
+  # transaction has no block, so the field gets `nil`. The confirmation is not an
+  # association of the transaction, so the controller reads it after the main
+  # query.
+  @spec with_chain_type_virtual_fields(Transaction.t()) :: Transaction.t()
+  defp with_chain_type_virtual_fields(transaction) do
+    do_with_chain_type_virtual_fields(transaction, chain_type())
+  end
+
+  defp do_with_chain_type_virtual_fields(%Transaction{block_number: nil} = transaction, :arbitrum) do
+    Map.put(transaction, :arbitrum_confirmation_transaction, nil)
+  end
+
+  defp do_with_chain_type_virtual_fields(%Transaction{block_number: block_number} = transaction, :arbitrum) do
+    Map.put(
+      transaction,
+      :arbitrum_confirmation_transaction,
+      ArbitrumSettlementReader.confirmation_transaction_for_rollup_block(block_number)
+    )
+  end
+
+  defp do_with_chain_type_virtual_fields(transaction, _chain_type), do: transaction
 
   operation :transactions,
     summary: "List blockchain transactions with filtering options for status, type, and method",
