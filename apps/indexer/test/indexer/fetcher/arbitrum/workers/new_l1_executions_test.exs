@@ -17,8 +17,8 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     #   - the result which the discovery must produce: the execution of each
     #     message, the end block, and whether the discovery is complete
     #
-    # The lower bound of the historical executions discovery is the parent chain
-    # block of the confirmation which owns the first indexed rollup block. The
+    # The lower bound of the historical executions discovery is the lowest parent
+    # chain block among the confirmations of the indexed rollup blocks. The
     # discovery does not read the parent chain below the bound. While the
     # backfill process runs, the bound can move down, and the discovery must not
     # stop at it. A run which reads nothing and waits gives the status
@@ -109,7 +109,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         refute NewL1Executions.historical_executions_discovery_completed?(state)
       end
 
-      # A row owns the first indexed rollup block, and the backfill process runs.
+      # A row confirms the first indexed rollup block, and the backfill process runs.
       # The bound is the parent chain block of the confirmation of that row. The
       # discovery finds the execution in the block of the bound, and not the one
       # below it. The discovery is not complete, because the bound can move down.

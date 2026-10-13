@@ -16,7 +16,8 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
 
   alias Explorer.Chain.Arbitrum.{
     DaMultiPurposeRecord,
-    L1Batch
+    L1Batch,
+    RollupBlockConfirmation
   }
 
   alias Explorer.Chain.Arbitrum.Reader.Common
@@ -209,10 +210,13 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
   end
 
   @doc """
-    Retrieves the L1 block number of the confirmation transaction of a specific rollup block.
+    Retrieves the lowest L1 block that holds a confirmation of a rollup block not below the given one.
 
-    It calls `Common.confirmation_transaction_for_rollup_block/2` with `api?: false`
-    option to use primary database.
+    The function reads all confirmations with `top` not below the given rollup
+    block, and gives the lowest L1 block of their confirmation transactions. The
+    confirmations can come in the inverted order: an older L1 block holds the
+    confirmation of a higher `top`. Thus the confirmation with the lowest such
+    `top` is not always the earliest one on L1, and the function does not use it.
 
     ## Parameters
     - `rollup_block_number`: The number of the rollup block.
@@ -220,12 +224,17 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
     ## Returns
     - The L1 block number, or `nil` if the rollup block is not confirmed.
   """
-  @spec l1_block_of_confirmation_for_rollup_block(FullBlock.block_number()) :: FullBlock.block_number() | nil
-  def l1_block_of_confirmation_for_rollup_block(rollup_block_number) do
-    case Common.confirmation_transaction_for_rollup_block(rollup_block_number, api?: false) do
-      nil -> nil
-      transaction -> transaction.block_number
-    end
+  @spec lowest_l1_block_of_confirmations_from_rollup_block(FullBlock.block_number()) :: FullBlock.block_number() | nil
+  def lowest_l1_block_of_confirmations_from_rollup_block(rollup_block_number) do
+    query =
+      from(
+        confirmation in RollupBlockConfirmation,
+        join: transaction in assoc(confirmation, :confirmation_transaction),
+        where: confirmation.top >= ^rollup_block_number,
+        select: min(transaction.block_number)
+      )
+
+    Repo.one(query)
   end
 
   @doc """

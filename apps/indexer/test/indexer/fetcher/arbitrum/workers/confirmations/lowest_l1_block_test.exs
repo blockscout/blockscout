@@ -9,11 +9,13 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     # Other historical discoveries use `lowest_l1_block_for_confirmations/1` as
     # their lower bound. A result that is too high stops them early. A result that
     # is too low makes them read the parent chain down to `l1_rollup_init_block`.
-    # While the backfill process runs, the result can move down, and it never
-    # moves up. The result is `nil` if no row owns `rollup_first_block`, also
-    # after the backfill process. Then the other discoveries wait.
+    # The result is the lowest parent chain block among the rows with a `top` not
+    # below `rollup_first_block`, also in the inverted order. While the backfill
+    # process runs, the result can move down, and it never moves up. The result
+    # is `nil` if no row confirms `rollup_first_block`, also after the backfill
+    # process. Then the other discoveries wait.
     describe "lowest_l1_block_for_confirmations/1" do
-      # The backfill cursor is above `l1_rollup_init_block`, and a row owns
+      # The backfill cursor is above `l1_rollup_init_block`, and a row confirms
       # `rollup_first_block`. The backfill can find an earlier confirmation later,
       # but the row never gives a block below the true one. The result is the
       # parent chain block of the confirmation of that row.
@@ -44,8 +46,9 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert is_nil(Tasks.lowest_l1_block_for_confirmations(state))
       end
 
-      # The backfill is complete, and a row owns `rollup_first_block`. The result
-      # is the parent chain block of the confirmation of that row.
+      # The backfill is complete, and two rows confirm `rollup_first_block` in the
+      # normal order. The result is the parent chain block of the confirmation of
+      # the row with the lowest `top`, which is the earlier one.
       test "gives the block of the confirmation of the first rollup block after the backfill", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
@@ -60,7 +63,25 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert Tasks.lowest_l1_block_for_confirmations(state) == @earlier_confirmation_l1_block
       end
 
-      # The backfill is complete, but no row owns `rollup_first_block`. The
+      # The backfill is complete, and two rows confirm `rollup_first_block` in the
+      # inverted order. The row with the lowest `top` holds the later
+      # confirmation. The result is the parent chain block of the earlier
+      # confirmation, because an execution can exist between the two.
+      test "gives the block of the earlier confirmation in the inverted order", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        seed_cursors(@main_cursor, @l1_rollup_init_block)
+        insert_row(10, insert_confirmation(@confirmation_l1_block))
+        insert_row(20, insert_confirmation(@earlier_confirmation_l1_block))
+        expect_no_rpc()
+
+        state = run_backfill(state(json_rpc_named_arguments, rollup_first_block: 5))
+
+        assert Tasks.historical_confirmations_discovery_completed?(state)
+        assert Tasks.lowest_l1_block_for_confirmations(state) == @earlier_confirmation_l1_block
+      end
+
+      # The backfill is complete, but no row confirms `rollup_first_block`. The
       # backfill stopped early at an event with a `top` below it. The bound is
       # unknown until the main process finds a confirmation of the block.
       test "gives nil after the backfill when the first rollup block is not confirmed", %{

@@ -198,10 +198,19 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     backfill cursor, imports the confirmations of the window, and moves the cursor
     to the first block of the window.
 
-    If the window holds an event with a `top` below the lowest rollup block that
-    the instance indexes, the function imports the event and sets the cursor to
+    The backfill has two stop conditions. The first condition is the cursor at
+    `l1_rollup_init_block`. The rollup contract makes the confirmation of rollup
+    block 0 in this parent chain block, when the contract is initialized. Thus
+    no confirmation exists below this block. This condition stops an instance
+    that indexes the rollup from its genesis.
+
+    The second condition is a window with an event with a `top` below the first
+    indexed rollup block. The function imports the event and sets the cursor to
     `l1_rollup_init_block`. The events below confirm only the rollup blocks that
-    the instance does not index.
+    the instance does not index. This condition stops an instance that indexes
+    only the recent rollup blocks before it reads the full history of the parent
+    chain. If the first indexed rollup block is 0, this condition never occurs,
+    and the first condition stops the backfill.
 
     The function does nothing if no batch exists, or if the cursor is at
     `l1_rollup_init_block` or below it. If no batch exists, the function returns
@@ -240,6 +249,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
            task_data: %{historical_confirmations: %{cursor: cursor}}
          } = state
        ) do
+    # The first stop condition. No confirmation exists below
+    # `l1_rollup_init_block`, because the rollup contract makes the confirmation
+    # of rollup block 0 in this parent chain block.
     if cursor <= l1_rollup_init_block do
       {:ok, state}
     else
@@ -251,6 +263,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
       discovered =
         ConfirmationsDiscovery.perform(outbox_address, start_block, end_block, l1_rpc_config, rollup_rpc_config)
 
+      # The second stop condition. The events below an event with a `top` below
+      # the first indexed rollup block confirm only the rollup blocks that the
+      # instance does not index. If the first indexed rollup block is 0, this
+      # condition never occurs, and the first condition stops the backfill.
       new_cursor =
         if not is_nil(discovered.lowest_top) and discovered.lowest_top < rollup_first_block do
           log_info(
@@ -299,12 +315,18 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     L2-to-L1 message cannot come before the confirmation of its rollup block.
     Thus other historical discoveries use this block as their lower bound.
 
-    The function gives the parent chain block of the confirmation that owns the
-    first indexed rollup block in the table. While the backfill process runs, the
-    backfill can find an earlier confirmation of this rollup block later. Thus the
-    bound can move down while the backfill process runs, and it never moves up.
-    A discovery that uses the bound must not stop at it before the backfill
-    process is complete.
+    The function reads the confirmations with a `top` not below the first
+    indexed rollup block. It gives the lowest parent chain block among them. The
+    function does not use the confirmation that owns the first indexed rollup
+    block. In the inverted order, an older parent chain block holds the
+    confirmation of a higher `top`. Then the owner is not the earliest
+    confirmation of an indexed rollup block. A bound at the owner loses the
+    executions below it.
+
+    While the backfill process runs, the backfill can find an earlier
+    confirmation of an indexed rollup block later. Thus the bound can move down,
+    and it never moves up. A discovery that uses the bound must not stop at it
+    before the backfill process is complete.
 
     If the table does not hold a confirmation of the first indexed rollup block,
     the function gives `nil`. The bound is unknown, and a discovery that uses it
@@ -323,7 +345,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
   """
   @spec lowest_l1_block_for_confirmations(confirmations_related_state()) :: non_neg_integer() | nil
   def lowest_l1_block_for_confirmations(%{config: %{rollup_first_block: rollup_first_block}}) do
-    DbSettlement.l1_block_of_confirmation_for_rollup_block(rollup_first_block)
+    DbSettlement.lowest_l1_block_of_confirmations_from_rollup_block(rollup_first_block)
   end
 
   # Loads the cursors of both processes into the state.
