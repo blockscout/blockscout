@@ -252,7 +252,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     # The first stop condition. No confirmation exists below
     # `l1_rollup_init_block`, because the rollup contract makes the confirmation
     # of rollup block 0 in this parent chain block.
-    if cursor <= l1_rollup_init_block do
+    if historical_confirmations_discovery_completed?(state) do
       {:ok, state}
     else
       end_block = cursor - 1
