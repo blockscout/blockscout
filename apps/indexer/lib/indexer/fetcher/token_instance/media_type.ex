@@ -3,6 +3,10 @@ defmodule Indexer.Fetcher.TokenInstance.MediaType do
   @moduledoc """
   Backfills MIME types for token instances that have metadata
   but missing image_type or animation_type.
+
+  Runs only under `Indexer.Supervisor`, i.e. on indexer nodes. Each init pass
+  loads at most `init_limit` instances into the queue and the fetcher polls
+  the database again once that chunk has been processed.
   """
 
   use Indexer.Fetcher, restart: :permanent
@@ -71,7 +75,10 @@ defmodule Indexer.Fetcher.TokenInstance.MediaType do
 
   defp defaults do
     [
-      flush_interval: :infinity,
+      # `BufferedTask` only re-runs `init/3` (polling) from its periodic flush, so
+      # the interval must be finite for the next chunk of the backlog to be loaded
+      # after the current one has been processed.
+      flush_interval: :timer.seconds(10),
       max_concurrency: Application.get_env(:indexer, __MODULE__)[:concurrency],
       max_batch_size: Application.get_env(:indexer, __MODULE__)[:batch_size],
       task_supervisor: __MODULE__.TaskSupervisor

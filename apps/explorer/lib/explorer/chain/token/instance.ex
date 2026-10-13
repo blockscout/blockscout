@@ -1148,7 +1148,18 @@ defmodule Explorer.Chain.Token.Instance do
       contract_address_hash: instance.token_contract_address_hash,
       token_id: instance.token_id
     })
+    |> add_media_type_fetcher_limit()
     |> Repo.stream_reduce(initial, reducer)
+  end
+
+  # The backlog of instances without media types can be tens of millions of rows,
+  # so each init pass only loads a bounded chunk into the fetcher queue. The
+  # fetcher polls again once the chunk is drained.
+  defp add_media_type_fetcher_limit(query) do
+    case Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.MediaType)[:init_limit] do
+      nil -> query
+      init_limit -> limit(query, ^init_limit)
+    end
   end
 
   @doc """

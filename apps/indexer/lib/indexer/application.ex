@@ -14,7 +14,6 @@ defmodule Indexer.Application do
   alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
-  alias Indexer.Fetcher.TokenInstance.MediaType, as: TokenInstanceMediaType
   alias Indexer.Fetcher.TokenInstance.Refetch, as: TokenInstanceRefetch
 
   alias Indexer.Memory
@@ -66,7 +65,6 @@ defmodule Indexer.Application do
       {ContractCreatorOnDemand.Supervisor, [json_rpc_named_arguments]},
       {NFTCollectionMetadataRefetchOnDemand.Supervisor, [json_rpc_named_arguments]},
       {TokenInstanceMetadataRefetchOnDemand.Supervisor, [json_rpc_named_arguments]},
-      {TokenInstanceMediaType.Supervisor, []},
       {TokenInstanceRefetch.Supervisor, []},
       {TokenTotalSupplyOnDemand.Supervisor, []},
       {FirstTraceOnDemand.Supervisor, [json_rpc_named_arguments]}
