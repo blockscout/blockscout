@@ -86,5 +86,49 @@ defmodule Utils.TokenInstanceHelperTest do
     test "still resolves the media type from the extension of a non-web URL" do
       assert TokenInstanceHelper.media_type_detailed("image_url0.png", [], false) == {:ok, {"image", "png"}}
     end
+
+    test "normalizes a quoted, repeated content-type header", %{bypass: bypass} do
+      Bypass.stub(bypass, "HEAD", "/media", fn conn ->
+        conn
+        |> Plug.Conn.put_resp_header("content-type", ~s("image/png", "image/png"))
+        |> Plug.Conn.resp(200, "")
+      end)
+
+      assert TokenInstanceHelper.media_type_detailed("http://127.0.0.1:#{bypass.port}/media", [], false) ==
+               {:ok, {"image", "png"}}
+    end
+
+    test "reports a content-type header that does not reduce to type/subtype", %{bypass: bypass} do
+      Bypass.stub(bypass, "HEAD", "/media", fn conn ->
+        conn
+        |> Plug.Conn.put_resp_header("content-type", "image/png/extra")
+        |> Plug.Conn.resp(200, "")
+      end)
+
+      assert {:error, reason} =
+               TokenInstanceHelper.media_type_detailed("http://127.0.0.1:#{bypass.port}/media", [], false)
+
+      assert reason =~ "malformed content-type"
+    end
+  end
+
+  describe "parse_mime_type/1" do
+    test "accepts a plain type/subtype" do
+      assert TokenInstanceHelper.parse_mime_type("image/png") == {:ok, {"image", "png"}}
+    end
+
+    test "drops parameters, whitespace and quotes and downcases the value" do
+      assert TokenInstanceHelper.parse_mime_type(" Image/JPEG; charset=utf-8 ") == {:ok, {"image", "jpeg"}}
+      assert TokenInstanceHelper.parse_mime_type(~s("video/mp4")) == {:ok, {"video", "mp4"}}
+      assert TokenInstanceHelper.parse_mime_type(~s("image/png", "image/png")) == {:ok, {"image", "png"}}
+      assert TokenInstanceHelper.parse_mime_type("image/svg+xml") == {:ok, {"image", "svg+xml"}}
+    end
+
+    test "rejects values without exactly one non-empty type and subtype" do
+      for value <- ["", "image", "image/", "/png", "image/png/extra", "\"\""] do
+        assert {:error, reason} = TokenInstanceHelper.parse_mime_type(value)
+        assert reason =~ "malformed content-type"
+      end
+    end
   end
 end
