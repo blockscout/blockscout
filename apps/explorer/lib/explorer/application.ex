@@ -565,6 +565,7 @@ defmodule Explorer.Application do
         only_in_mode(Explorer.Migrator.SwitchPendingOperations, :indexer),
         configure_mode_dependent_process(Explorer.Utility.RateLimiter, :api),
         Hammer.child_for_supervisor() |> configure_mode_dependent_process(:api),
+        Hammer.fallback_child_for_supervisor() |> configure_mode_dependent_process(:api),
         configure_mode_dependent_process(Explorer.ThirdPartyIntegrations.Dynamic.Strategy, :api),
         # keep at the end
         configure_libcluster(),
