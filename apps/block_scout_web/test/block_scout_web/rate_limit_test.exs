@@ -520,4 +520,38 @@ defmodule BlockScoutWeb.RateLimitTest do
       assert time_to_reset > 0
     end
   end
+
+  describe "rate_limit/4 with Redis backend unavailable" do
+    setup do
+      original_config = Application.get_env(:block_scout_web, :api_rate_limit)
+
+      Application.put_env(
+        :block_scout_web,
+        :api_rate_limit,
+        original_config
+        |> Keyword.put(:disabled, false)
+        |> Keyword.put(:rate_limit_backend, BlockScoutWeb.RateLimit.Hammer.Redis)
+      )
+
+      # Nothing listens on this port, so the Redix connection never becomes ready
+      # and every command fails, the same way it does when Redis goes down.
+      start_supervised!({BlockScoutWeb.RateLimit.Hammer.Redis, [host: "127.0.0.1", port: 1]})
+
+      on_exit(fn ->
+        Application.put_env(:block_scout_web, :api_rate_limit, original_config)
+        :ets.delete_all_objects(BlockScoutWeb.RateLimit.Hammer.ETS)
+      end)
+    end
+
+    test "falls back to the ETS backend instead of failing the request" do
+      key = "redis_down_key"
+      period = 60_000
+      limit = 1
+      multiplier = 1
+
+      assert {:allow, 1, ^limit, ^period} = RateLimit.rate_limit(key, period, limit, multiplier)
+      assert {:deny, time_to_reset, ^limit, ^period} = RateLimit.rate_limit(key, period, limit, multiplier)
+      assert time_to_reset > 0
+    end
+  end
 end
