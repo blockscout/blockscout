@@ -52,10 +52,9 @@ defmodule Utils.TokenInstanceHelper do
         |> MIME.type()
       end
 
-    if mime_type do
-      mime_type |> String.split("/") |> List.to_tuple()
-    else
-      nil
+    case mime_type && parse_mime_type(mime_type) do
+      {:ok, type_tuple} -> type_tuple
+      _ -> nil
     end
   end
 
@@ -94,12 +93,54 @@ defmodule Utils.TokenInstanceHelper do
 
     if ext == "" do
       case process_missing_extension_detailed(media_src, headers, validate_host?) do
-        {:ok, mime_type} -> {:ok, mime_type |> String.split("/") |> List.to_tuple()}
+        {:ok, mime_type} -> parse_mime_type(mime_type)
         {:error, _} = error -> error
       end
     else
       "." <> ext_without_dot = Path.extname(media_src)
-      {:ok, ext_without_dot |> MIME.type() |> String.split("/") |> List.to_tuple()}
+      ext_without_dot |> MIME.type() |> parse_mime_type()
+    end
+  end
+
+  @doc """
+  Parses a `Content-Type` header value into a `{type, subtype}` tuple.
+
+  The header comes from an arbitrary host referenced by NFT metadata, so it is treated as
+  untrusted input: only the first comma-separated value is considered, parameters after `;`
+  are dropped, surrounding whitespace and quotes are stripped, and the result is downcased.
+  Anything that does not reduce to exactly `type/subtype` is reported as an error instead of
+  being turned into a tuple of unexpected arity.
+
+  ## Examples
+
+      iex> Utils.TokenInstanceHelper.parse_mime_type("image/png")
+      {:ok, {"image", "png"}}
+
+      iex> Utils.TokenInstanceHelper.parse_mime_type("Image/PNG; charset=utf-8")
+      {:ok, {"image", "png"}}
+
+      iex> Utils.TokenInstanceHelper.parse_mime_type("image")
+      {:error, "malformed content-type: image"}
+
+      iex> Utils.TokenInstanceHelper.parse_mime_type("image/png/extra")
+      {:error, "malformed content-type: image/png/extra"}
+  """
+  @spec parse_mime_type(binary()) :: {:ok, {binary(), binary()}} | {:error, binary()}
+  def parse_mime_type(value) when is_binary(value) do
+    normalized =
+      value
+      |> String.split(",", parts: 2)
+      |> hd()
+      |> String.split(";", parts: 2)
+      |> hd()
+      |> String.trim()
+      |> String.trim("\"")
+      |> String.trim()
+      |> String.downcase()
+
+    case String.split(normalized, "/") do
+      [type, subtype] when type != "" and subtype != "" -> {:ok, {type, subtype}}
+      _ -> {:error, "malformed content-type: #{String.slice(value, 0, 100)}"}
     end
   end
 

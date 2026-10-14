@@ -289,6 +289,16 @@ defmodule Indexer.Fetcher.TokenInstance.Helper do
         Logger.warning("Failed to determine media type for URL: #{url}, reason: #{inspect(reason)}")
         ""
     end
+  rescue
+    # The URL and the remote host's response are untrusted input. A single instance that
+    # trips an unexpected error must not crash the whole batch it is processed in, so it is
+    # stored with the "cannot be determined" sentinel like any other detection failure.
+    error ->
+      Logger.error(
+        "Unexpected error while determining media type for URL: #{inspect(url)}, error: #{Exception.message(error)}"
+      )
+
+      ""
   end
 
   defp mime_tuple_to_string({type, ""}), do: type

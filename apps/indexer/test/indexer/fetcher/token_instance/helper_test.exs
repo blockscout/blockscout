@@ -733,6 +733,26 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       assert Helper.determine_media_type("http://localhost:#{bypass.port}/media") == ""
     end
 
+    test "tolerates a quoted and repeated content-type header", %{bypass: bypass} do
+      Bypass.expect_once(bypass, "HEAD", "/media", fn conn ->
+        conn
+        |> Conn.put_resp_header("content-type", ~s("image/png", "image/png"))
+        |> Conn.resp(200, "")
+      end)
+
+      assert Helper.determine_media_type("http://localhost:#{bypass.port}/media") == "image/png"
+    end
+
+    test "returns empty string for a content-type header without a subtype", %{bypass: bypass} do
+      Bypass.expect_once(bypass, "HEAD", "/media", fn conn ->
+        conn
+        |> Conn.put_resp_header("content-type", "image")
+        |> Conn.resp(200, "")
+      end)
+
+      assert Helper.determine_media_type("http://localhost:#{bypass.port}/media") == ""
+    end
+
     test "resolves ipfs:// URL via gateway and determines type" do
       assert Helper.determine_media_type("ipfs://QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG/image.png") ==
                "image/png"
