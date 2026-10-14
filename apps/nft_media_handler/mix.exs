@@ -26,10 +26,10 @@ defmodule NFTMediaHandler.MixProject do
     [
       {:ex_aws, "~> 2.0"},
       {:ex_aws_s3, "~> 2.0"},
-      {:hackney, "~> 1.9"},
+      {:hackney, "~> 4.0"},
       {:sweet_xml, "~> 0.7"},
       {:image, "~> 0.54"},
-      {:httpoison, "~> 2.0"},
+      {:httpoison, "~> 3.0"},
       {:xav, "~> 0.10"},
       {:mime, "~> 2.0"},
       {:utils, in_umbrella: true}

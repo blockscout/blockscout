@@ -56,14 +56,14 @@ defmodule EthereumJSONRPC.MixProject do
   defp deps do
     [
       # CACerts bundle for `EthereumJSONRPC.WebSocket.WebSocketClient`
-      {:certifi, "~> 2.3"},
+      {:certifi, "~> 2.17"},
       # WebSocket-server for testing `EthereumJSONRPC.WebSocket.WebSocketClient`.
       {:cowboy, "~> 2.0", only: [:dev, :test]},
       # Static Type Checking
       {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       {:ex_keccak, "~> 0.7.5"},
       # JSONRPC HTTP Post calls
-      {:httpoison, "~> 2.0"},
+      {:httpoison, "~> 3.0"},
 
       # Log errors and application output to separate files
       {:logger_file_backend, "~> 0.0.10"},
@@ -85,7 +85,7 @@ defmodule EthereumJSONRPC.MixProject do
       # `EthereumJSONRPC.WebSocket`
       {:decimal, "~> 2.0"},
       {:decorator, "~> 1.4"},
-      {:hackney, "~> 1.18"},
+      {:hackney, "~> 4.0"},
       {:poolboy, "~> 1.5.2"},
       {:utils, in_umbrella: true},
       {:websockex, "~> 0.5.0"}

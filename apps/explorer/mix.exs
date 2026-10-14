@@ -89,8 +89,7 @@ defmodule Explorer.Mixfile do
       {:ex_machina, "~> 2.3", only: [:test]},
       # ZSTD compression/decompression
       {:ezstd, "~> 1.2"},
-      {:exvcr, "~> 0.10", only: :test},
-      {:httpoison, "~> 2.0"},
+      {:httpoison, "~> 3.0"},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       {:libcluster, "~> 3.5"},
       # Log errors and application output to separate files
@@ -134,7 +133,7 @@ defmodule Explorer.Mixfile do
       {:oauth2, "~> 2.0"},
       {:siwe, github: "royal-markets/siwe-ex", ref: "51c9c08240eb7eea3c35693011f8d260cd9bb3be"},
       {:joken, "~> 2.6"},
-      {:joken_jwks, "~> 1.7.0"},
+      {:joken_jwks, "~> 1.8"},
       {:utils, in_umbrella: true},
       {:hammer, "~> 7.0"},
       {:ton, "~> 0.5.0"},
