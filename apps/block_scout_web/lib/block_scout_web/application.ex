@@ -105,18 +105,18 @@ defmodule BlockScoutWeb.Application do
         "Current API rate limit by IP #{inspect(Application.get_env(:block_scout_web, :api_rate_limit)[:limit_by_ip])} reqs/sec"
       )
 
-      base_workers = [
-        {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
-        {MainPage, name: MainPage},
-        {Main, name: Main},
-        {SmartContract, name: SmartContract},
-        {TokenTransfer, name: TokenTransfer},
-        {BlocksIndexedCounter, name: BlocksIndexedCounter},
-        {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
-        {EventHandlersMetrics, []},
-        {PublicChainMetrics, []},
-        Hammer.child_for_supervisor()
-      ]
+      base_workers =
+        [
+          {Phoenix.PubSub, name: BlockScoutWeb.PubSub},
+          {MainPage, name: MainPage},
+          {Main, name: Main},
+          {SmartContract, name: SmartContract},
+          {TokenTransfer, name: TokenTransfer},
+          {BlocksIndexedCounter, name: BlocksIndexedCounter},
+          {InternalTransactionsIndexedCounter, name: InternalTransactionsIndexedCounter},
+          {EventHandlersMetrics, []},
+          {PublicChainMetrics, []}
+        ] ++ Hammer.child_for_supervisor()
 
       # Define workers and child supervisors to be supervised
       {
