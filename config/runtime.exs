@@ -1510,7 +1510,7 @@ config :indexer, Indexer.Fetcher.InternalTransaction.DeleteQueue,
   threshold: ConfigHelper.parse_time_env_var("INDEXER_INTERNAL_TRANSACTIONS_DELETE_QUEUE_THRESHOLD", "0s")
 
 coin_balances_batch_size = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_BATCH_SIZE", 100)
-coin_balances_concurrency = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_CONCURRENCY", 4)
+coin_balances_concurrency = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_CONCURRENCY", 10)
 
 config :indexer, Indexer.Fetcher.CoinBalance.Catchup,
   batch_size: coin_balances_batch_size,
