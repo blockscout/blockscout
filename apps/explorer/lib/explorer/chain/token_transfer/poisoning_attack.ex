@@ -42,7 +42,14 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
   alias Explorer.Chain.{Block, Hash, TokenTransfer, Transaction}
   alias Explorer.Utility.AddressIdToAddressHash
 
-  @address_fields ~w(token_contract_address victim_address mimic_address issuer_address)a
+  # `{hash field, id field}` of every participant: the hashes come in, the ids
+  # are stored
+  @address_fields [
+    {:token_contract_address_hash, :token_contract_address_id},
+    {:victim_address_hash, :victim_address_id},
+    {:mimic_address_hash, :mimic_address_id},
+    {:issuer_address_hash, :issuer_address_id}
+  ]
 
   @required_attrs ~w(block_hash log_index block_number token_contract_address_id victim_address_id mimic_address_id score rules)a
   @optional_attrs ~w(transaction_hash issuer_address_id details)a
@@ -147,7 +154,9 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
 
   defp address_ids(attacks) do
     attacks
-    |> Enum.flat_map(fn attack -> Enum.map(@address_fields, &Map.get(attack, :"#{&1}_hash")) end)
+    |> Enum.flat_map(fn attack ->
+      Enum.map(@address_fields, fn {hash_field, _id_field} -> Map.get(attack, hash_field) end)
+    end)
     |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
     |> AddressIdToAddressHash.find_or_create_multiple(true)
@@ -155,10 +164,10 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
 
   # `find_or_create_multiple/2` keys its map by the string form of the hash
   defp put_address_ids(attack, ids_by_hash) do
-    Enum.reduce(@address_fields, attack, fn field, acc ->
-      case Map.get(acc, :"#{field}_hash") do
+    Enum.reduce(@address_fields, attack, fn {hash_field, id_field}, acc ->
+      case Map.get(acc, hash_field) do
         nil -> acc
-        hash -> Map.put(acc, :"#{field}_id", Map.fetch!(ids_by_hash, to_string(hash)))
+        hash -> Map.put(acc, id_field, Map.fetch!(ids_by_hash, to_string(hash)))
       end
     end)
   end
