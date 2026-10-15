@@ -3,7 +3,27 @@ defmodule BlockScoutWeb.Etherscan do
   @moduledoc """
   Documentation data for Etherscan-compatible API.
   """
-  use Utils.CompileTimeEnvHelper, bridged_tokens_enabled: [:block_scout_web, [Explorer.Chain.BridgedToken, :enabled]]
+  use Utils.CompileTimeEnvHelper,
+    bridged_tokens_enabled: [:block_scout_web, [Explorer.Chain.BridgedToken, :enabled]],
+    chain_type: [:explorer, :chain_type]
+
+  # Rollup L1 data fee fields (Etherscan naming) returned by `txlist`, `txlistinternal`, the `tokentx`
+  # family and `gettxinfo`. Present only on chain types storing an L1 fee (see `BlockScoutWeb.API.RPC.RPCView`).
+  @l1_fee_example_fields (case @chain_type do
+                            :optimism ->
+                              %{
+                                "L1FeesPaid" => "83741055139",
+                                "L1GasUsed" => "1600",
+                                "L1GasPrice" => "2227405",
+                                "L1FeeScalar" => "0.684"
+                              }
+
+                            :scroll ->
+                              %{"L1FeesPaid" => "83741055139"}
+
+                            _ ->
+                              %{}
+                          end)
 
   @account_balance_example_value %{
     "status" => "1",
@@ -86,6 +106,7 @@ defmodule BlockScoutWeb.Etherscan do
         "confirmations" => "5994246",
         "methodId" => "0xf00d4b5d"
       }
+      |> Map.merge(@l1_fee_example_fields)
     ]
   }
 
@@ -116,6 +137,7 @@ defmodule BlockScoutWeb.Etherscan do
         "isError" => "0",
         "errCode" => ""
       }
+      |> Map.merge(@l1_fee_example_fields)
     ]
   }
 
@@ -158,6 +180,7 @@ defmodule BlockScoutWeb.Etherscan do
           "0xa9059cbb00000000000000000000000021e21ba085289f81a86921de890eed30f1ad23750000000000000000000000000000000000000000000000008ac7230489e80000",
         "confirmations" => "199384"
       }
+      |> Map.merge(@l1_fee_example_fields)
     ]
   }
 
@@ -630,6 +653,12 @@ defmodule BlockScoutWeb.Etherscan do
     }
   }
 
+  @transaction_gettxinfo_example_value Map.update!(
+                                         @transaction_gettxinfo_example_value,
+                                         "result",
+                                         &Map.merge(&1, @l1_fee_example_fields)
+                                       )
+
   @transaction_gettxreceiptstatus_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -696,6 +725,43 @@ defmodule BlockScoutWeb.Etherscan do
     definition: "A nonnegative number roughly equivalent to computational steps.",
     example: ~s("122261")
   }
+
+  l1_fees_paid_type = %{
+    type: "wei",
+    definition:
+      "The rollup L1 data fee paid for the transaction, in wei. The total fee is gasUsed * gasPrice + L1FeesPaid. \"0\" when the fee is unknown (e.g. deposit transactions). For internal transactions this is the parent transaction's value.",
+    example: ~s("83741055139")
+  }
+
+  # Merged into the `Transaction`, `InternalTransaction`, `TokenTransfer` and `TransactionInfo` models below.
+  @l1_fee_doc_fields (case @chain_type do
+                        :optimism ->
+                          %{
+                            L1FeesPaid: l1_fees_paid_type,
+                            L1GasUsed: %{
+                              type: "gas",
+                              definition: "The L1 gas used to post the transaction's data. Empty when unknown.",
+                              example: ~s("1600")
+                            },
+                            L1GasPrice: %{
+                              type: "wei",
+                              definition:
+                                "The L1 gas price used to compute the L1 data fee, in wei. Empty when unknown.",
+                              example: ~s("2227405")
+                            },
+                            L1FeeScalar: %{
+                              type: "decimal",
+                              definition: "The L1 fee scalar applied to the L1 gas used. Empty when unknown.",
+                              example: ~s("0.684")
+                            }
+                          }
+
+                        :scroll ->
+                          %{L1FeesPaid: l1_fees_paid_type}
+
+                        _ ->
+                          %{}
+                      end)
 
   @address_hash_type %{
     type: "address hash",
@@ -879,6 +945,11 @@ defmodule BlockScoutWeb.Etherscan do
     }
   }
 
+  # `pendingtxlist` renders no rollup L1 fee fields: pending transactions have no receipt yet.
+  @pending_transaction @transaction
+
+  @transaction Map.update!(@transaction, :fields, &Map.merge(&1, @l1_fee_doc_fields))
+
   @internal_transaction %{
     name: "InternalTransaction",
     fields: %{
@@ -917,6 +988,8 @@ defmodule BlockScoutWeb.Etherscan do
       }
     }
   }
+
+  @internal_transaction Map.update!(@internal_transaction, :fields, &Map.merge(&1, @l1_fee_doc_fields))
 
   @block_model %{
     name: "Block",
@@ -984,6 +1057,8 @@ defmodule BlockScoutWeb.Etherscan do
       confirmations: @confirmation_type
     }
   }
+
+  @token_transfer_model Map.update!(@token_transfer_model, :fields, &Map.merge(&1, @l1_fee_doc_fields))
 
   @log %{
     name: "Log",
@@ -1288,6 +1363,8 @@ defmodule BlockScoutWeb.Etherscan do
     }
   }
 
+  @transaction_info_model Map.update!(@transaction_info_model, :fields, &Map.merge(&1, @l1_fee_doc_fields))
+
   @transaction_status_model %{
     name: "TransactionStatus",
     fields: %{
@@ -1509,7 +1586,7 @@ defmodule BlockScoutWeb.Etherscan do
             message: @message_type,
             result: %{
               type: "array",
-              array_type: @transaction
+              array_type: @pending_transaction
             }
           }
         }
