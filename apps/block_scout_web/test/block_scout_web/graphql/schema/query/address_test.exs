@@ -627,4 +627,104 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.AddressTest do
       assert Enum.all?(page3["edges"], &(&1["node"]["block_number"] == first_block.number))
     end
   end
+
+  describe "address token_transfers field" do
+    setup do
+      # the global GraphQL rate limit (10 req/s by default) is shared by all GraphQL tests
+      graphql_config = Application.get_env(:block_scout_web, Api.GraphQL)
+      Application.put_env(:block_scout_web, Api.GraphQL, Keyword.put(graphql_config, :rate_limit_disabled?, true))
+      on_exit(fn -> Application.put_env(:block_scout_web, Api.GraphQL, graphql_config) end)
+
+      address = insert(:address)
+
+      # Incoming and outgoing transfers alternate, so every page takes rows from
+      # both sides of the UNION.
+      transactions =
+        for participant <- [:to_address, :from_address, :to_address, :from_address, :to_address, :from_address] do
+          transaction = :transaction |> insert() |> with_block(insert(:block))
+
+          insert(:token_transfer, [
+            {participant, address},
+            transaction: transaction,
+            block_number: transaction.block_number
+          ])
+
+          transaction
+        end
+
+      %{address: address, newest_first: transactions |> Enum.reverse() |> Enum.map(&to_string(&1.hash))}
+    end
+
+    test "pagination support with 'first' and 'after' arguments", %{
+      conn: conn,
+      address: address,
+      newest_first: newest_first
+    } do
+      query = """
+      query ($hash: AddressHash!, $first: Int!, $after: String) {
+        address(hash: $hash) {
+          token_transfers(first: $first, after: $after) {
+            page_info {
+              has_next_page
+            }
+            edges {
+              node {
+                transaction_hash
+              }
+              cursor
+            }
+          }
+        }
+      }
+      """
+
+      pages =
+        Stream.unfold(%{"hash" => to_string(address.hash), "first" => 2}, fn
+          nil ->
+            nil
+
+          variables ->
+            %{"data" => %{"address" => %{"token_transfers" => page}}} =
+              conn
+              |> post("/api/v1/graphql", query: query, variables: variables)
+              |> json_response(200)
+
+            next_variables =
+              if page["page_info"]["has_next_page"] do
+                Map.put(variables, "after", page["edges"] |> List.last() |> Map.get("cursor"))
+              end
+
+            {Enum.map(page["edges"], & &1["node"]["transaction_hash"]), next_variables}
+        end)
+        |> Enum.to_list()
+
+      assert pages == Enum.chunk_every(newest_first, 2)
+    end
+
+    test "with 'last' and 'count' arguments", %{conn: conn, address: address, newest_first: newest_first} do
+      query = """
+      query ($hash: AddressHash!, $last: Int!, $count: Int!) {
+        address(hash: $hash) {
+          token_transfers(last: $last, count: $count) {
+            edges {
+              node {
+                transaction_hash
+              }
+            }
+          }
+        }
+      }
+      """
+
+      variables = %{"hash" => to_string(address.hash), "last" => 2, "count" => 6}
+
+      edges =
+        conn
+        |> post("/api/v1/graphql", query: query, variables: variables)
+        |> json_response(200)
+        |> get_in(["data", "address", "token_transfers", "edges"])
+
+      assert Enum.map(edges, & &1["node"]["transaction_hash"]) == Enum.take(newest_first, -2)
+    end
+  end
 end

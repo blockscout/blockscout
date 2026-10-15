@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.GraphQL.Resolvers.TokenTransfer do
 
   alias Absinthe.Relay.Connection
   alias Explorer.Chain.{Address, TokenTransfer}
-  alias Explorer.{GraphQL, Repo}
+  alias Explorer.{GraphQL, PagingOptions, Repo}
 
   def get_by(%{transaction_hash: _, log_index: _} = args, _) do
     GraphQL.get_token_transfer(args)
@@ -27,9 +27,17 @@ defmodule BlockScoutWeb.GraphQL.Resolvers.TokenTransfer do
     replica = Repo.replica()
     scam_opts = scam_token_opts(resolution)
 
-    address_hash
-    |> TokenTransfer.token_transfers_by_address_hash(nil, nil, [], nil, scam_opts)
-    |> Connection.from_query(&replica.all/1, connection_args, options(args))
+    # Incoming and outgoing transfers are merged with UNION, and Relay applies
+    # OFFSET and LIMIT only to the merged rows. Without a bound of their own both
+    # sides are read in full, while the page never needs more than the first
+    # offset + limit + 1 rows of either.
+    with {:ok, offset, limit} <- Connection.offset_and_limit_for_query(connection_args, options(args)) do
+      paging_options = %PagingOptions{page_size: offset + limit + 1}
+
+      address_hash
+      |> TokenTransfer.token_transfers_by_address_hash(nil, nil, [], paging_options, scam_opts)
+      |> Connection.from_query(&replica.all/1, connection_args, options(args))
+    end
   end
 
   defp scam_token_opts(%{context: context}),
