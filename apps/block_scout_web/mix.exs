@@ -103,7 +103,6 @@ defmodule BlockScoutWeb.Mixfile do
       {:cldr_utils, "~> 2.3"},
       {:ex_machina, "~> 2.1", only: [:test]},
       {:explorer, in_umbrella: true},
-      {:exvcr, "~> 0.10", only: :test},
       {:file_info, "~> 0.0.4"},
       # HTML CSS selectors for Phoenix controller tests
       {:floki, "~> 0.31"},
@@ -111,7 +110,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:gettext, "~> 0.26.1"},
       {:hammer, "~> 7.0"},
       {:hammer_backend_redis, "~> 7.0"},
-      {:httpoison, "~> 2.0"},
+      {:httpoison, "~> 3.0"},
       {:indexer, in_umbrella: true, runtime: false},
       {:junit_formatter, ">= 0.0.0", only: [:test], runtime: false},
       # Log errors and application output to separate files
