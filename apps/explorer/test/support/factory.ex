@@ -1889,15 +1889,23 @@ defmodule Explorer.Factory do
         insert(:token_transfer, transaction: :transaction |> insert() |> with_block())
       end)
 
+    issuer_address_hash = address_hash()
+
+    # the row stores address ids; the hashes are kept on the virtual fields the
+    # way a read through `PoisoningAttack.with_address_hashes/1` returns them
     attack = %PoisoningAttack{
       block_hash: token_transfer.block_hash,
       log_index: token_transfer.log_index,
       transaction_hash: token_transfer.transaction_hash,
       block_number: token_transfer.block_number,
       token_contract_address_hash: token_transfer.token_contract_address_hash,
+      token_contract_address_id: address_id(token_transfer.token_contract_address_hash),
       victim_address_hash: token_transfer.from_address_hash,
+      victim_address_id: address_id(token_transfer.from_address_hash),
       mimic_address_hash: token_transfer.to_address_hash,
-      issuer_address_hash: address_hash(),
+      mimic_address_id: address_id(token_transfer.to_address_hash),
+      issuer_address_hash: issuer_address_hash,
+      issuer_address_id: address_id(issuer_address_hash),
       score: 7,
       rules: ["suspicious_outgoing", "lookalike_recipient"],
       details: %{"lookalike_recipient" => %{"matched_recipient" => to_string(address_hash())}}
@@ -1905,6 +1913,8 @@ defmodule Explorer.Factory do
 
     struct!(attack, attrs)
   end
+
+  defp address_id(address_hash), do: AddressIdToAddressHash.find_or_create(address_hash).address_id
 
   def internal_transaction_delete_queue_factory do
     %DeleteQueue{

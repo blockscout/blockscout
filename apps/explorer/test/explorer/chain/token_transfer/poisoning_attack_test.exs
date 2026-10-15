@@ -6,6 +6,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttackTest do
 
   alias Explorer.Chain.TokenTransfer.PoisoningAttack
   alias Explorer.Repo
+  alias Explorer.Utility.AddressIdToAddressHash
 
   defp insert_token_transfer do
     insert(:token_transfer, transaction: :transaction |> insert() |> with_block())
@@ -39,14 +40,18 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttackTest do
     test "records attacks and fills the timestamps" do
       token_transfer = insert_token_transfer()
 
-      assert {1, nil} = PoisoningAttack.insert_all([attack_params(token_transfer)])
+      params = attack_params(token_transfer)
 
-      assert [%PoisoningAttack{} = attack] = Repo.all(PoisoningAttack)
+      assert {1, nil} = PoisoningAttack.insert_all([params])
+
+      assert [%PoisoningAttack{} = attack] = PoisoningAttack |> PoisoningAttack.with_address_hashes() |> Repo.all()
       assert attack.block_hash == token_transfer.block_hash
       assert attack.log_index == token_transfer.log_index
       assert attack.transaction_hash == token_transfer.transaction_hash
+      assert attack.token_contract_address_hash == token_transfer.token_contract_address_hash
       assert attack.victim_address_hash == token_transfer.from_address_hash
       assert attack.mimic_address_hash == token_transfer.to_address_hash
+      assert attack.issuer_address_hash == params.issuer_address_hash
       assert attack.score == 7
       assert attack.rules == ["suspicious_outgoing", "lookalike_recipient"]
       assert attack.details == %{"lookalike_recipient" => %{"prefix" => "ab12"}}
@@ -65,7 +70,28 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttackTest do
 
       assert {1, nil} = PoisoningAttack.insert_all([params])
 
-      assert [%PoisoningAttack{details: %{}, issuer_address_hash: nil}] = Repo.all(PoisoningAttack)
+      assert [%PoisoningAttack{details: %{}, issuer_address_id: nil, issuer_address_hash: nil}] =
+               PoisoningAttack |> PoisoningAttack.with_address_hashes() |> Repo.all()
+    end
+
+    test "stores the participants by address id, creating missing mappings" do
+      token_transfer = insert_token_transfer()
+      issuer_hash = address_hash()
+      assert AddressIdToAddressHash.hash_to_id(issuer_hash) == nil
+
+      assert {1, nil} = PoisoningAttack.insert_all([attack_params(token_transfer, %{issuer_address_hash: issuer_hash})])
+
+      assert [%PoisoningAttack{} = attack] = Repo.all(PoisoningAttack)
+      assert attack.victim_address_id == AddressIdToAddressHash.hash_to_id(token_transfer.from_address_hash)
+      assert attack.mimic_address_id == AddressIdToAddressHash.hash_to_id(token_transfer.to_address_hash)
+
+      assert attack.token_contract_address_id ==
+               AddressIdToAddressHash.hash_to_id(token_transfer.token_contract_address_hash)
+
+      assert attack.issuer_address_id == AddressIdToAddressHash.hash_to_id(issuer_hash)
+      assert is_integer(attack.issuer_address_id)
+      # the hashes are not stored, only joined on read
+      assert attack.victim_address_hash == nil
     end
 
     test "overwrites the row of a transfer recorded earlier" do
