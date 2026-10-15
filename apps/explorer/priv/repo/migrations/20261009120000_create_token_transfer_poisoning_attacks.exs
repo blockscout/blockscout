@@ -8,10 +8,11 @@ defmodule Explorer.Repo.Migrations.CreateTokenTransferPoisoningAttacks do
       add(:log_index, :integer, null: false, primary_key: true)
       add(:transaction_hash, :bytea, null: true)
       add(:block_number, :bigint, null: false)
-      add(:token_contract_address_hash, :bytea, null: false)
-      add(:victim_address_hash, :bytea, null: false)
-      add(:mimic_address_hash, :bytea, null: false)
-      add(:issuer_address_hash, :bytea, null: true)
+      # address ids as mapped by `address_ids_to_address_hashes`
+      add(:token_contract_address_id, :bigint, null: false)
+      add(:victim_address_id, :bigint, null: false)
+      add(:mimic_address_id, :bigint, null: false)
+      add(:issuer_address_id, :bigint, null: true)
       add(:score, :integer, null: false)
       add(:rules, {:array, :string}, null: false)
       add(:details, :map, null: false, default: %{})
@@ -20,7 +21,7 @@ defmodule Explorer.Repo.Migrations.CreateTokenTransferPoisoningAttacks do
     end
 
     create(
-      index(:token_transfer_poisoning_attacks, [:victim_address_hash, "block_number DESC"],
+      index(:token_transfer_poisoning_attacks, [:victim_address_id, "block_number DESC"],
         name: :token_transfer_poisoning_attacks_victim_block_number_index
       )
     )

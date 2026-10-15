@@ -13,13 +13,19 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
   score reaches the configured threshold are recorded here. The settings are
   listed in `Explorer.Chain.TokenTransfer.PoisoningAttack.Config`.
 
-  Each row names the three participants of the attack:
+  Each row names the three participants of the attack, as well as the token
+  contract, by their address id — the compact key
+  `Explorer.Utility.AddressIdToAddressHash` maintains for every address:
 
-  * `victim_address_hash` — the address whose history is being poisoned;
-  * `mimic_address_hash` — the look-alike counterparty of the transfer;
-  * `issuer_address_hash` — the sender of the transaction that emitted the
+  * `victim_address_id` — the address whose history is being poisoned;
+  * `mimic_address_id` — the look-alike counterparty of the transfer;
+  * `issuer_address_id` — the sender of the transaction that emitted the
     transfer, when it is known (transfers emitted outside a transaction, as Celo
     has them, carry `nil`).
+
+  The matching `*_address_hash` fields are virtual: `insert_all/1` takes the
+  hashes and resolves the ids, and the queries built on `with_address_hashes/1`
+  join the mapping back so that readers never see an id.
 
   `rules` lists the names of the rules that fired and `details` carries what
   each of them matched, so the API can explain the verdict.
@@ -34,9 +40,12 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Hash, TokenTransfer, Transaction}
+  alias Explorer.Utility.AddressIdToAddressHash
 
-  @required_attrs ~w(block_hash log_index block_number token_contract_address_hash victim_address_hash mimic_address_hash score rules)a
-  @optional_attrs ~w(transaction_hash issuer_address_hash details)a
+  @address_fields ~w(token_contract_address victim_address mimic_address issuer_address)a
+
+  @required_attrs ~w(block_hash log_index block_number token_contract_address_id victim_address_id mimic_address_id score rules)a
+  @optional_attrs ~w(transaction_hash issuer_address_id details)a
 
   @primary_key false
   typed_schema "token_transfer_poisoning_attacks" do
@@ -44,13 +53,42 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
     field(:log_index, :integer, primary_key: true, null: false)
     field(:transaction_hash, Hash.Full, null: true)
     field(:block_number, :integer, null: false) :: Block.block_number()
-    field(:token_contract_address_hash, Hash.Address, null: false)
-    field(:victim_address_hash, Hash.Address, null: false)
-    field(:mimic_address_hash, Hash.Address, null: false)
-    field(:issuer_address_hash, Hash.Address, null: true)
     field(:score, :integer, null: false)
     field(:rules, {:array, :string}, null: false)
     field(:details, :map, null: false, default: %{})
+
+    field(:token_contract_address_hash, Hash.Address, virtual: true)
+    field(:victim_address_hash, Hash.Address, virtual: true)
+    field(:mimic_address_hash, Hash.Address, virtual: true)
+    field(:issuer_address_hash, Hash.Address, virtual: true)
+
+    belongs_to(:token_contract_address_mapping, AddressIdToAddressHash,
+      foreign_key: :token_contract_address_id,
+      references: :address_id,
+      type: :integer,
+      null: false
+    )
+
+    belongs_to(:victim_address_mapping, AddressIdToAddressHash,
+      foreign_key: :victim_address_id,
+      references: :address_id,
+      type: :integer,
+      null: false
+    )
+
+    belongs_to(:mimic_address_mapping, AddressIdToAddressHash,
+      foreign_key: :mimic_address_id,
+      references: :address_id,
+      type: :integer,
+      null: false
+    )
+
+    belongs_to(:issuer_address_mapping, AddressIdToAddressHash,
+      foreign_key: :issuer_address_id,
+      references: :address_id,
+      type: :integer,
+      null: true
+    )
 
     timestamps()
   end
@@ -67,19 +105,22 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
   @doc """
   Records the given attacks, overwriting an existing row of the same transfer.
 
-  Each entry is a map with the fields of this schema (hashes already cast to
-  their `Explorer.Chain.Hash` structs); `inserted_at`/`updated_at` are filled in
-  here.
+  Each entry is a map with the fields of this schema, naming the participants
+  by their `*_address_hash` (already cast to `Explorer.Chain.Hash.Address`);
+  the address ids are resolved here, creating the mappings that do not exist
+  yet, and `inserted_at`/`updated_at` are filled in.
   """
   @spec insert_all([map()]) :: {non_neg_integer(), nil}
   def insert_all([]), do: {0, nil}
 
   def insert_all(attacks) do
     now = DateTime.utc_now()
+    ids_by_hash = address_ids(attacks)
 
     entries =
       Enum.map(attacks, fn attack ->
         attack
+        |> put_address_ids(ids_by_hash)
         |> Map.take(@required_attrs ++ @optional_attrs)
         |> Map.put_new(:details, %{})
         |> Map.merge(%{inserted_at: now, updated_at: now})
@@ -91,10 +132,10 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
          [
            :transaction_hash,
            :block_number,
-           :token_contract_address_hash,
-           :victim_address_hash,
-           :mimic_address_hash,
-           :issuer_address_hash,
+           :token_contract_address_id,
+           :victim_address_id,
+           :mimic_address_id,
+           :issuer_address_id,
            :score,
            :rules,
            :details,
@@ -102,6 +143,55 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
          ]},
       conflict_target: [:block_hash, :log_index]
     )
+  end
+
+  defp address_ids(attacks) do
+    attacks
+    |> Enum.flat_map(fn attack -> Enum.map(@address_fields, &Map.get(attack, :"#{&1}_hash")) end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+    |> AddressIdToAddressHash.find_or_create_multiple(true)
+  end
+
+  # `find_or_create_multiple/2` keys its map by the string form of the hash
+  defp put_address_ids(attack, ids_by_hash) do
+    Enum.reduce(@address_fields, attack, fn field, acc ->
+      case Map.get(acc, :"#{field}_hash") do
+        nil -> acc
+        hash -> Map.put(acc, :"#{field}_id", Map.fetch!(ids_by_hash, to_string(hash)))
+      end
+    end)
+  end
+
+  @doc """
+  Joins the address mappings and fills the virtual `*_address_hash` fields of
+  the selected attacks, so that readers get hashes rather than ids.
+  """
+  @spec with_address_hashes(Ecto.Query.t() | module()) :: Ecto.Query.t()
+  def with_address_hashes(query \\ __MODULE__) do
+    query
+    |> join(:inner, [attack], token_contract in AddressIdToAddressHash,
+      as: :token_contract,
+      on: token_contract.address_id == attack.token_contract_address_id
+    )
+    |> join(:inner, [attack], victim in AddressIdToAddressHash,
+      as: :victim,
+      on: victim.address_id == attack.victim_address_id
+    )
+    |> join(:inner, [attack], mimic in AddressIdToAddressHash,
+      as: :mimic,
+      on: mimic.address_id == attack.mimic_address_id
+    )
+    |> join(:left, [attack], issuer in AddressIdToAddressHash,
+      as: :issuer,
+      on: issuer.address_id == attack.issuer_address_id
+    )
+    |> select_merge([token_contract: token_contract, victim: victim, mimic: mimic, issuer: issuer], %{
+      token_contract_address_hash: token_contract.address_hash,
+      victim_address_hash: victim.address_hash,
+      mimic_address_hash: mimic.address_hash,
+      issuer_address_hash: issuer.address_hash
+    })
   end
 
   @doc """
@@ -154,6 +244,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
 
     __MODULE__
     |> where([attack], attack.block_hash in ^Enum.uniq(block_hashes) and attack.log_index in ^Enum.uniq(log_indexes))
+    |> with_address_hashes()
     |> Chain.select_repo(options).all()
     |> Enum.filter(&MapSet.member?(key_set, {&1.block_hash, &1.log_index}))
     |> Map.new(&{{&1.block_hash, &1.log_index}, &1})
