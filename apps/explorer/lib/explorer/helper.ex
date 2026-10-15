@@ -11,6 +11,7 @@ defmodule Explorer.Helper do
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain
   alias Explorer.Chain.{Address.Reputation, Address.ScamBadgeToAddress, Data, Hash, Wei}
+  alias Explorer.Chain.Cache.ScamAddresses
   alias Redix.URI, as: RedixURI
 
   require Logger
@@ -338,22 +339,32 @@ defmodule Explorer.Helper do
   Conditionally hides scam addresses in the given query for token transfers.
   If query already has a named binding :token, it MUST be an inner join with the token table.
 
-  Rationale of inner join with token table:
+  The filter takes the form `Explorer.Chain.Cache.ScamAddresses.token_transfers_filter/0`
+  chooses for the chain:
 
-  PostgreSQL query planner misestimates anti-join selectivity when
-  scam_address_badge_mappings has more unique addresses (50k) than
-  token_transfers.token_contract_address_hash n_distinct (10k).
-  The planner assumes nearly all contracts are covered by the scam table,
-  estimates rows=1 after anti-join, and chooses a full sequential scan
-  instead of using the (block_number DESC, log_index DESC) index with
-  early LIMIT termination.
+  * `:anti_join` — an inner join with the token table and an anti-join with
+    scam_address_badge_mappings. PostgreSQL estimates the anti-join from distinct
+    counts alone and assumes that every token is a scam one once there are at
+    least as many scam addresses as distinct tokens. Anti-joining through the
+    token table rather than token_transfers.token_contract_address_hash (10k
+    distinct values against 50k scam addresses on the chain this was tuned on)
+    keeps the estimate sane while tokens outnumber scam addresses. The planner then
+    walks the (block_number DESC, log_index DESC) index and stops at the LIMIT
+    (~5ms instead of ~1500s).
 
-  Workaround: adding an INNER JOIN to the tokens table changes the
-  intermediate n_distinct estimate — the join with tokens produces a much
-  higher row/distinct estimate, making the planner correctly recognize that
-  the anti-join will filter out only a small fraction. This allows it to
-  choose Nested Loop Anti Join + Index Scan with early termination (~5ms
-  instead of ~1500s).
+  * `:not_exists` — the same inner join with the token table and a NOT EXISTS
+    filter on the badges, for chains with fewer tokens than scam addresses,
+    where the anti-join is estimated at a single row and every transfer of
+    every token is read and sorted. `OFFSET 0` keeps PostgreSQL from turning the
+    subquery back into an anti-join, so it is planned with a fixed 0.5
+    selectivity and checked per row by primary key. That gives up hashing and
+    parallel plans, which is why it is not used where the anti-join is
+    estimated well.
+
+  Both forms join the token table, because a token transfer is not guaranteed
+  to have a token row and the form can change at runtime: without the join the
+  same request would return different rows depending on the planner's
+  statistics.
   """
   @spec maybe_hide_scam_addresses_for_token_transfers(nil | Ecto.Query.t(), [
           Chain.paging_options() | Chain.api?() | Chain.show_scam_tokens?()
@@ -363,13 +374,7 @@ defmodule Explorer.Helper do
   def maybe_hide_scam_addresses_for_token_transfers(query, options) do
     cond do
       Application.get_env(:block_scout_web, :hide_scam_addresses) && !options[:show_scam_tokens?] ->
-        query
-        |> maybe_join_token_table()
-        |> join(:left, [token: token], sabm in ScamBadgeToAddress,
-          as: :sabm,
-          on: sabm.address_hash == token.contract_address_hash
-        )
-        |> where([sabm: sabm], is_nil(sabm.address_hash))
+        hide_scam_token_transfers(query, ScamAddresses.token_transfers_filter())
 
       Application.get_env(:block_scout_web, :hide_scam_addresses) && options[:show_scam_tokens?] ->
         query
@@ -377,6 +382,28 @@ defmodule Explorer.Helper do
       true ->
         query
     end
+  end
+
+  defp hide_scam_token_transfers(query, :anti_join) do
+    query
+    |> maybe_join_token_table()
+    |> join(:left, [token: token], sabm in ScamBadgeToAddress,
+      as: :sabm,
+      on: sabm.address_hash == token.contract_address_hash
+    )
+    |> where([sabm: sabm], is_nil(sabm.address_hash))
+  end
+
+  defp hide_scam_token_transfers(query, :not_exists) do
+    query
+    |> maybe_join_token_table()
+    |> where(
+      [tt],
+      fragment(
+        "NOT EXISTS (SELECT 1 FROM scam_address_badge_mappings AS sabm WHERE sabm.address_hash = ? OFFSET 0)",
+        tt.token_contract_address_hash
+      )
+    )
   end
 
   defp maybe_join_token_table(query) do

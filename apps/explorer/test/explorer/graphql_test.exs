@@ -6,6 +6,7 @@ defmodule Explorer.GraphQLTest do
 
   alias Explorer.{GraphQL, Repo}
   alias Explorer.Chain.{Address, InternalTransaction}
+  alias Explorer.Chain.Cache.ScamAddresses
 
   describe "address_to_transactions_query/1" do
     test "with address hash with zero transactions" do
@@ -366,6 +367,21 @@ defmodule Explorer.GraphQLTest do
       assert result == []
     end
 
+    test "does not return transfers of a token without a token row when hiding scam tokens" do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      assert ScamAddresses.token_transfers_filter() == :anti_join
+
+      token_address = insert(:contract_address)
+      insert(:token_transfer, transaction: insert(:transaction), token_contract_address: token_address)
+
+      assert token_address.hash
+             |> GraphQL.list_token_transfers_query(show_scam_tokens?: false)
+             |> Repo.replica().all() == []
+    end
+
     test "shows scam token transfers when show_scam_tokens? is true" do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
       Application.put_env(:block_scout_web, :hide_scam_addresses, true)
@@ -404,6 +420,74 @@ defmodule Explorer.GraphQLTest do
 
       assert found_token_transfer.transaction_hash == token_transfer.transaction_hash
       assert found_token_transfer.log_index == token_transfer.log_index
+    end
+  end
+
+  describe "list_token_transfers_query/2 with the NOT EXISTS scam filter" do
+    setup do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      scam_token_address = insert(:contract_address)
+      insert(:token, contract_address: scam_token_address)
+      insert(:scam_badge_to_address, address_hash: scam_token_address.hash)
+      insert(:token_transfer, transaction: insert(:transaction), token_contract_address: scam_token_address)
+
+      token_address = insert(:contract_address)
+      insert(:token, contract_address: token_address)
+      token_transfer = insert(:token_transfer, transaction: insert(:transaction), token_contract_address: token_address)
+
+      # With more scam addresses than tokens PostgreSQL expects no token to
+      # survive the anti-join, which is what makes the cache pick NOT EXISTS.
+      insert_list(10, :scam_badge_to_address)
+      Repo.query!("ANALYZE tokens")
+      Repo.query!("ANALYZE scam_address_badge_mappings")
+
+      start_supervised!(ScamAddresses)
+      ScamAddresses.reload()
+
+      assert ScamAddresses.token_transfers_filter() == :not_exists
+
+      %{scam_token_address: scam_token_address, token_address: token_address, token_transfer: token_transfer}
+    end
+
+    test "hides scam token transfers", %{
+      scam_token_address: scam_token_address,
+      token_address: token_address,
+      token_transfer: token_transfer
+    } do
+      assert scam_token_address.hash
+             |> GraphQL.list_token_transfers_query(show_scam_tokens?: false)
+             |> Repo.replica().all() == []
+
+      assert [found_token_transfer] =
+               token_address.hash
+               |> GraphQL.list_token_transfers_query(show_scam_tokens?: false)
+               |> Repo.replica().all()
+
+      assert found_token_transfer.transaction_hash == token_transfer.transaction_hash
+      assert found_token_transfer.log_index == token_transfer.log_index
+    end
+
+    # The anti-join drops such transfers through its inner join with the token
+    # table, and the result must not depend on which form the cache picked.
+    test "does not return transfers of a token without a token row" do
+      token_address = insert(:contract_address)
+      insert(:token_transfer, transaction: insert(:transaction), token_contract_address: token_address)
+
+      assert token_address.hash
+             |> GraphQL.list_token_transfers_query(show_scam_tokens?: false)
+             |> Repo.replica().all() == []
+    end
+
+    test "keeps OFFSET 0 in the filter", %{token_address: token_address} do
+      {sql, _params} =
+        Repo.to_sql(:all, GraphQL.list_token_transfers_query(token_address.hash, show_scam_tokens?: false))
+
+      # Without OFFSET 0 PostgreSQL turns the subquery back into the anti-join
+      # whose estimate the NOT EXISTS filter is there to avoid.
+      assert sql =~ ~r/NOT EXISTS \(SELECT .* OFFSET 0\)/
     end
   end
 end
