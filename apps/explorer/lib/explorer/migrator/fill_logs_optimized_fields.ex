@@ -9,7 +9,7 @@ defmodule Explorer.Migrator.FillLogsOptimizedFields do
   import Ecto.Query
   import Explorer.QueryHelper, only: [select_ctid: 1, join_on_ctid: 2]
 
-  alias Explorer.Chain.Cache.{BackgroundMigrations, BlockNumber}
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.{Log, Transaction}
   alias Explorer.Migrator.FillingMigration
   alias Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex
@@ -29,17 +29,64 @@ defmodule Explorer.Migrator.FillLogsOptimizedFields do
   def last_unprocessed_identifiers(%{"max_block_number" => -1} = state), do: {[], state}
 
   def last_unprocessed_identifiers(state) do
-    block_number = state["max_block_number"] || BlockNumber.get_max()
-
     limit = batch_size() * concurrency()
 
-    from_block_number = max(block_number - limit, 0)
+    block_numbers =
+      state
+      |> unprocessed_data_query()
+      |> select([l], l.block_number)
+      |> limit(^limit)
+      |> Repo.all(timeout: :infinity)
 
-    {Enum.to_list(from_block_number..block_number), Map.put(state, "max_block_number", from_block_number - 1)}
+    max_block_number =
+      case List.last(block_numbers) do
+        nil -> -1
+        block_number -> block_number - 1
+      end
+
+    {block_numbers, Map.put(state, "max_block_number", max_block_number)}
   end
 
   @impl FillingMigration
-  def unprocessed_data_query, do: nil
+  def unprocessed_data_query(state) do
+    Log
+    |> where(^not_migrated_condition())
+    |> then(fn query ->
+      case Map.get(state, "max_block_number") do
+        nil -> query
+        max_block_number -> where(query, [l], l.block_number <= ^max_block_number)
+      end
+    end)
+    |> order_by([l], desc: l.block_number)
+  end
+
+  # Groups the blocks into batches of about `batch_size` logs. A block is never split between the batches,
+  # so all its logs are migrated by the same task. Since every batch except the last one has at least
+  # `batch_size` logs, there are no more batches than `concurrency`.
+  @impl FillingMigration
+  def split_into_batches(block_numbers) do
+    batch_size = batch_size()
+
+    block_numbers
+    |> Enum.chunk_by(& &1)
+    |> Enum.chunk_while(
+      {[], 0},
+      fn [block_number | _] = block_logs, {batch, logs_count} ->
+        batch = [block_number | batch]
+        logs_count = logs_count + length(block_logs)
+
+        if logs_count >= batch_size do
+          {:cont, Enum.reverse(batch), {[], 0}}
+        else
+          {:cont, {batch, logs_count}}
+        end
+      end,
+      fn
+        {[], _logs_count} -> {:cont, {[], 0}}
+        {batch, _logs_count} -> {:cont, Enum.reverse(batch), {[], 0}}
+      end
+    )
+  end
 
   @impl FillingMigration
   def update_batch(block_numbers) do
@@ -56,6 +103,7 @@ defmodule Explorer.Migrator.FillLogsOptimizedFields do
                 first_topic: l.first_topic
               },
               where: l.block_number in ^block_numbers,
+              where: ^not_migrated_condition(),
               order_by: [asc: l.block_number, asc: l.transaction_index, asc: l.index],
               lock: "FOR UPDATE"
             )
@@ -99,9 +147,9 @@ defmodule Explorer.Migrator.FillLogsOptimizedFields do
               on: lft.value == locked_l.first_topic,
               update: [
                 set: [
-                  address_id: it_to_hash_map.address_id,
+                  address_id: coalesce(it_to_hash_map.address_id, l.address_id),
                   address_hash: nil,
-                  first_topic_id: lft.id,
+                  first_topic_id: coalesce(lft.id, l.first_topic_id),
                   first_topic: nil,
                   # Logs which are not linked to a transaction (Celo epoch logs) keep `NULL`:
                   # `transaction_index` is nullable and excluded from the primary key for such
@@ -135,5 +183,13 @@ defmodule Explorer.Migrator.FillLogsOptimizedFields do
   @impl FillingMigration
   def update_cache do
     BackgroundMigrations.set_fill_logs_optimized_fields_finished(true)
+  end
+
+  defp not_migrated_condition do
+    dynamic(
+      [l],
+      not is_nil(l.address_hash) or not is_nil(l.first_topic) or
+        (is_nil(l.transaction_index) and not is_nil(l.transaction_hash))
+    )
   end
 end

@@ -1041,9 +1041,9 @@ config :explorer, Explorer.Migrator.TransactionHasTokenTransfers,
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_TRANSACTION_HAS_TOKEN_TRANSFERS_CONCURRENCY", 5)
 
 config :explorer, Explorer.Migrator.FillLogsOptimizedFields,
-  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_BATCH_SIZE", 30),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_BATCH_SIZE", 1000),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_CONCURRENCY", 5),
-  timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_TIMEOUT", "5s")
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_FILL_LOGS_OPTIMIZED_FIELDS_TIMEOUT", "1s")
 
 config :explorer, Explorer.Migrator.FillLogsCompressedData,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_FILL_LOGS_COMPRESSED_DATA_BATCH_SIZE", 5000),
