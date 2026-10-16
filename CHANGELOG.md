@@ -1,5 +1,33 @@
 # Changelog
 
+## 12.0.2
+
+### 🚀 Features
+
+- Expose rollup L1 data fee in the Etherscan-compatible API ([#14954](https://github.com/blockscout/blockscout/issues/14954))
+- Add JSON-RPC-compatible tokenholderlist, tokenholdercount, tokeninfo endpoints ([#14935](https://github.com/blockscout/blockscout/issues/14935))
+
+### 🐛 Bug Fixes
+
+- Fix log join in optimism withdrawal list ([#14955](https://github.com/blockscout/blockscout/issues/14955))
+- Tolerate malformed content-type headers in NFT media type detection ([#14949](https://github.com/blockscout/blockscout/issues/14949))
+- Widen withdrawals.validator_index to bigint for ePBS builder withdrawals ([#14948](https://github.com/blockscout/blockscout/issues/14948))
+- Run token instance media type fetcher only on indexer nodes ([#14936](https://github.com/blockscout/blockscout/issues/14936))
+
+### ⚡ Performance
+
+- Optimize scam tokens filtering ([#14952](https://github.com/blockscout/blockscout/issues/14952))
+- Merge address count and coin balance sum counters into one query ([#14934](https://github.com/blockscout/blockscout/issues/14934))
+
+### ⚙️ Miscellaneous Tasks
+
+- Refactor FillLogsOptimizedFields to iterate over logs instead of blocks ([#14956](https://github.com/blockscout/blockscout/issues/14956))
+- Increase default concurrency of coin balance fetcher ([#14953](https://github.com/blockscout/blockscout/issues/14953))
+- Update Hackney 1.18 -> 4.0 ([#14947](https://github.com/blockscout/blockscout/issues/14947))
+- Bump phoenix to v1.6.17 ([#14946](https://github.com/blockscout/blockscout/issues/14946))
+- Remove deprecated blocks join in token_transfers_query_function ([#14700](https://github.com/blockscout/blockscout/issues/14700))
+- Migrate to Elixir 1.20.x ([#14932](https://github.com/blockscout/blockscout/issues/14932))
+
 ## 12.0.1
 
 ### 🚀 Features
