@@ -28,6 +28,21 @@
 - Remove deprecated blocks join in token_transfers_query_function ([#14700](https://github.com/blockscout/blockscout/issues/14700))
 - Migrate to Elixir 1.20.x ([#14932](https://github.com/blockscout/blockscout/issues/14932))
 
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `INDEXER_TOKEN_INSTANCE_MEDIA_TYPE_INIT_QUERY_LIMIT`          | Limit on the number of token instances loaded into the media type fetcher queue during each init pass. Implemented in [#14936](https://github.com/blockscout/blockscout/pull/14936).                                                                                                                                                                                                                                                                                                                                             | Version: v12.0.2\+ <br />Default: `1000` <br />Applications: Indexer                                         |
+| `CACHE_ADDRESS_AGGREGATES_PERIOD`                             | Refresh period for the combined addresses count and coin balance sums. [Time format](/setup/env-variables/backend-env-variables#time-format). Implemented in [#14934](https://github.com/blockscout/blockscout/pull/14934).                                                                                                          | Version: v12.0.2\+ <br />Default: `1h` <br />Applications: API, Indexer   |
+
+### Deprecated ENV variables
+
+| Variable | Description | Default | Version | Need recompile | Deprecated in Version |
+| -------- | ----------- | ------- | ------- | -------------- | --------------------- |
+| <span style={{color: "red"}}>Deprecated</span> `CACHE_ADDRESS_COUNT_PERIOD` | Interval for restarting the task that calculates the total number of addresses. Replaced with `CACHE_ADDRESS_AGGREGATES_PERIOD`, which refreshes the addresses count and coin balance sums together. Removed in [#14934](https://github.com/blockscout/blockscout/pull/14934). | `30m` | v8.0.0\+ |  | v12.0.2+ |
+| <span style={{color: "red"}}>Deprecated</span> `CACHE_ADDRESS_SUM_PERIOD` | Time to live of addresses sum (except burn address) cache. Replaced with `CACHE_ADDRESS_AGGREGATES_PERIOD`, which refreshes the addresses count and coin balance sums together. Removed in [#14934](https://github.com/blockscout/blockscout/pull/14934). | `1h` | v4.1.3\+ |  | v12.0.2+ |
+
+
 ## 12.0.1
 
 ### 🚀 Features
