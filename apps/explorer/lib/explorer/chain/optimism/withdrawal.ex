@@ -63,7 +63,6 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
 
   """
   @spec list :: [__MODULE__.t()]
-  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def list(options \\ []) do
     paging_options = Keyword.get(options, :paging_options, default_paging_options())
 
@@ -79,39 +78,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         |> join(:left, [w], we in WithdrawalEvent,
           on: we.withdrawal_hash == w.hash and we.l1_event_type == :WithdrawalFinalized
         )
-        |> then(fn query ->
-          # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          cond do
-            LogHelper.fill_optimized_fields_migration_finished?() ->
-              first_topic_id = LogFirstTopic.value_to_id(@message_passed_event)
-
-              join(query, :left, [w, l2_transaction], log in Log,
-                on:
-                  log.block_number == w.l2_block_number and log.transaction_index == l2_transaction.index and
-                    log.first_topic_id == ^first_topic_id and
-                    log.second_topic == fragment("bytea_ltrim_zeroes(numeric_to_bytea32(msg_nonce))")
-              )
-
-            LogHelper.fill_optimized_fields_migration_started?() ->
-              first_topic_id = LogFirstTopic.value_to_id(@message_passed_event)
-
-              join(query, :left, [w, l2_transaction], log in Log,
-                on:
-                  (log.transaction_hash == w.l2_transaction_hash or
-                     (log.block_number == w.l2_block_number and log.transaction_index == l2_transaction.index)) and
-                    (log.first_topic_id == ^first_topic_id or log.first_topic == ^@message_passed_event) and
-                    (log.second_topic == fragment("numeric_to_bytea32(msg_nonce)") or
-                       log.second_topic == fragment("bytea_ltrim_zeroes(numeric_to_bytea32(msg_nonce))"))
-              )
-
-            true ->
-              join(query, :left, [w, l2_transaction], log in Log,
-                on:
-                  log.transaction_hash == w.l2_transaction_hash and log.first_topic == ^@message_passed_event and
-                    log.second_topic == fragment("numeric_to_bytea32(msg_nonce)")
-              )
-          end
-        end)
+        |> join_message_passed_log()
         |> select([w, l2_transaction, l2_block, we, log], %{
           msg_nonce: w.msg_nonce,
           hash: w.hash,
