@@ -76,6 +76,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionView do
       "revertReason" => "#{transaction.revert_reason}",
       "next_page_params" => next_page_params
     }
+    |> Map.merge(RPCView.l1_fee_fields(transaction))
   end
 
   defp prepare_log(log) do

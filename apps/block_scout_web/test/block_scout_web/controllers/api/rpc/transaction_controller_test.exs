@@ -6,6 +6,8 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
 
   @moduletag capture_log: true
 
+  @chain_type Application.compile_env(:explorer, :chain_type)
+
   @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
   @second_topic_hex_string_1 "0x00000000000000000000000098a9dc37d3650b5b30d6c12789b3881ee0b70c16"
 
@@ -578,10 +580,16 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
         "revertReason" => ""
       }
 
+      expected_result = Map.merge(expected_result, expected_l1_fee_fields())
+
       schema =
         resolve_schema(%{
           "type" => "object",
           "properties" => %{
+            "L1FeesPaid" => %{"type" => "string"},
+            "L1GasUsed" => %{"type" => "string"},
+            "L1GasPrice" => %{"type" => "string"},
+            "L1FeeScalar" => %{"type" => "string"},
             "hash" => %{"type" => "string"},
             "timeStamp" => %{"type" => "string"},
             "blockNumber" => %{"type" => "string"},
@@ -630,6 +638,76 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
       assert response["result"] == expected_result
       assert response["status"] == "1"
       assert response["message"] == "OK"
+    end
+
+    if @chain_type in [:optimism, :scroll] do
+      test "returns the rollup L1 fee so that gasUsed * gasPrice + L1FeesPaid is the total fee", %{conn: conn} do
+        {attrs, expected_fields} =
+          case @chain_type do
+            :optimism ->
+              {[
+                 l1_fee: %Explorer.Chain.Wei{value: Decimal.new(83_741_055_139)},
+                 l1_gas_used: Decimal.new(1600),
+                 l1_gas_price: %Explorer.Chain.Wei{value: Decimal.new(2_227_405)},
+                 l1_fee_scalar: Decimal.new("0.684")
+               ],
+               %{
+                 "L1FeesPaid" => "83741055139",
+                 "L1GasUsed" => "1600",
+                 "L1GasPrice" => "2227405",
+                 "L1FeeScalar" => "0.684"
+               }}
+
+            :scroll ->
+              {[l1_fee: %Explorer.Chain.Wei{value: Decimal.new(83_741_055_139)}], %{"L1FeesPaid" => "83741055139"}}
+          end
+
+        transaction =
+          :transaction
+          |> insert(attrs)
+          |> with_block(status: :ok)
+
+        params = %{
+          "module" => "transaction",
+          "action" => "gettxinfo",
+          "txhash" => "#{transaction.hash}"
+        }
+
+        assert %{"result" => result, "status" => "1"} =
+                 conn
+                 |> get("/api", params)
+                 |> json_response(200)
+
+        assert Map.take(result, Map.keys(expected_fields)) == expected_fields
+
+        {:actual, total_fee} = Explorer.Chain.Transaction.fee(transaction, :wei)
+
+        assert Decimal.equal?(
+                 total_fee,
+                 String.to_integer(result["gasUsed"]) * String.to_integer(result["gasPrice"]) +
+                   String.to_integer(result["L1FeesPaid"])
+               )
+      end
+    else
+      test "carries no rollup L1 fee fields on chains without an L1 fee", %{conn: conn} do
+        transaction =
+          :transaction
+          |> insert()
+          |> with_block()
+
+        params = %{
+          "module" => "transaction",
+          "action" => "gettxinfo",
+          "txhash" => "#{transaction.hash}"
+        }
+
+        assert %{"result" => result, "status" => "1"} =
+                 conn
+                 |> get("/api", params)
+                 |> json_response(200)
+
+        refute Map.has_key?(result, "L1FeesPaid")
+      end
     end
 
     test "with a txhash with revert reason from DB", %{conn: conn} do
@@ -896,6 +974,21 @@ defmodule BlockScoutWeb.API.RPC.TransactionControllerTest do
     assert response["message"] == "OK"
 
     Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, init_config)
+  end
+
+  # Rollup L1 fee fields added by `BlockScoutWeb.API.RPC.RPCView.l1_fee_fields/1` on chain types storing an
+  # L1 fee. Factory transactions carry no L1 fee, so these are the renderings for an unknown fee.
+  case @chain_type do
+    :optimism ->
+      defp expected_l1_fee_fields do
+        %{"L1FeesPaid" => "0", "L1GasUsed" => "", "L1GasPrice" => "", "L1FeeScalar" => ""}
+      end
+
+    :scroll ->
+      defp expected_l1_fee_fields, do: %{"L1FeesPaid" => "0"}
+
+    _ ->
+      defp expected_l1_fee_fields, do: %{}
   end
 
   defp resolve_schema(result \\ %{}) do

@@ -637,6 +637,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "confirmations" => "0",
           "methodId" => "0x"
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       assert response =
@@ -1865,6 +1866,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "isError" => "0",
           "errCode" => "#{internal_transaction.error}"
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       assert response =
@@ -1933,6 +1935,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "isError" => "0",
           "errCode" => "#{internal_transaction.error}"
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       assert response =
@@ -2200,6 +2203,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "isError" => "0",
           "errCode" => "#{internal_transaction.error}"
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       assert response =
@@ -2279,7 +2283,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "transactionHash" => "#{transaction.hash}",
           "isError" => "0",
           "errCode" => "#{internal_transaction_b.error}"
-        },
+        }
+        |> Map.merge(expected_l1_fee_fields()),
         %{
           "blockNumber" => "#{internal_transaction_a.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
@@ -2297,6 +2302,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "isError" => "0",
           "errCode" => "#{internal_transaction_a.error}"
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       assert response =
@@ -2398,6 +2404,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "isError" => "0",
           "errCode" => "#{internal_transaction.error}"
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       assert response =
@@ -2580,6 +2587,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "isError" => "0",
           "errCode" => "#{internal_transaction.error}"
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       params = %{
@@ -2653,7 +2661,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "transactionHash" => "#{transaction.hash}",
           "isError" => "0",
           "errCode" => "#{internal_transaction_b.error}"
-        },
+        }
+        |> Map.merge(expected_l1_fee_fields()),
         %{
           "blockNumber" => "#{transaction.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
@@ -2671,6 +2680,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "isError" => "0",
           "errCode" => "#{internal_transaction_a.error}"
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       params = %{
@@ -2725,6 +2735,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "type" => "create",
           "value" => "0"
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       params = %{
@@ -2921,6 +2932,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "transactionHash" => "#{transaction.hash}",
           "errCode" => "#{internal_transaction.error}"
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       response =
@@ -3070,6 +3082,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "isError" => "0",
           "errCode" => "#{internal_transaction.error}"
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       params = %{
@@ -3148,7 +3161,8 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "transactionHash" => "#{transaction.hash}",
           "isError" => "0",
           "errCode" => "#{internal_transaction_b.error}"
-        },
+        }
+        |> Map.merge(expected_l1_fee_fields()),
         %{
           "blockNumber" => "#{internal_transaction_a.block_number}",
           "timeStamp" => "#{DateTime.to_unix(block.timestamp)}",
@@ -3166,6 +3180,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "isError" => "0",
           "errCode" => "#{internal_transaction_a.error}"
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       params = %{
@@ -3352,6 +3367,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "functionName" => "",
           "methodId" => ""
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       assert response =
@@ -3407,6 +3423,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "functionName" => "",
           "methodId" => ""
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       assert response =
@@ -3648,6 +3665,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "functionName" => "",
           "methodId" => ""
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       assert response =
@@ -4022,6 +4040,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "functionName" => "",
           "methodId" => ""
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       assert response =
@@ -4505,6 +4524,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "functionName" => "",
           "methodId" => ""
         }
+        |> Map.merge(expected_l1_fee_fields())
       ]
 
       assert response =
@@ -4704,6 +4724,135 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
       assert Enum.at(token_transfers_3, 1)["value"] == ""
       assert(Enum.count(token_transfers_3) == 2)
+    end
+  end
+
+  if Application.compile_env(:explorer, :chain_type) in [:optimism, :scroll] do
+    describe "rollup L1 fee fields" do
+      test "txlist returns the L1 fee so that gasUsed * gasPrice + L1FeesPaid is the total fee", %{conn: conn} do
+        address = insert(:address)
+
+        transaction =
+          :transaction
+          |> insert([from_address: address] ++ known_l1_fee_attrs())
+          |> with_block(status: :ok)
+
+        params = %{
+          "module" => "account",
+          "action" => "txlist",
+          "address" => "#{address.hash}"
+        }
+
+        assert response =
+                 %{"result" => [row], "status" => "1"} =
+                 conn
+                 |> get("/api", params)
+                 |> json_response(200)
+
+        assert Map.take(row, Map.keys(known_l1_fee_fields())) == known_l1_fee_fields()
+
+        {:actual, total_fee} = Transaction.fee(transaction, :wei)
+
+        assert Decimal.equal?(
+                 total_fee,
+                 String.to_integer(row["gasUsed"]) * String.to_integer(row["gasPrice"]) +
+                   String.to_integer(row["L1FeesPaid"])
+               )
+
+        assert :ok = ExJsonSchema.Validator.validate(txlist_schema(), response)
+      end
+
+      test "tokentx returns the L1 fee fields of the transfer's transaction", %{conn: conn} do
+        transaction =
+          :transaction
+          |> insert(known_l1_fee_attrs())
+          |> with_block()
+
+        token = insert(:token, type: "ERC-20")
+
+        token_transfer =
+          insert(:token_transfer,
+            block: transaction.block,
+            transaction: transaction,
+            block_number: transaction.block_number,
+            token_contract_address: token.contract_address,
+            token_type: "ERC-20"
+          )
+
+        params = %{
+          "module" => "account",
+          "action" => "tokentx",
+          "address" => to_string(token_transfer.from_address.hash)
+        }
+
+        assert response =
+                 %{"result" => [row], "status" => "1"} =
+                 conn
+                 |> get("/api", params)
+                 |> json_response(200)
+
+        assert Map.take(row, Map.keys(known_l1_fee_fields())) == known_l1_fee_fields()
+        assert :ok = ExJsonSchema.Validator.validate(tokentx_schema(), response)
+      end
+
+      test "txlistinternal returns the parent transaction's L1 fee fields by txhash and by address", %{conn: conn} do
+        address = insert(:address)
+        contract_address = insert(:contract_address)
+
+        transaction =
+          :transaction
+          |> insert([from_address: address, to_address: nil] ++ known_l1_fee_attrs())
+          |> with_contract_creation(contract_address)
+          |> with_block()
+
+        insert(:internal_transaction_create,
+          transaction: transaction,
+          transaction_index: transaction.index,
+          index: 0,
+          value: 1,
+          from_address: address,
+          created_contract_code: contract_address.contract_code,
+          created_contract_address: contract_address,
+          block_number: transaction.block_number
+        )
+
+        for lookup_params <- [%{"txhash" => "#{transaction.hash}"}, %{"address" => "#{address.hash}"}] do
+          params = Map.merge(%{"module" => "account", "action" => "txlistinternal"}, lookup_params)
+
+          assert response =
+                   %{"result" => [row], "status" => "1"} =
+                   conn
+                   |> get("/api", params)
+                   |> json_response(200)
+
+          assert row["transactionHash"] == "#{transaction.hash}"
+          assert Map.take(row, Map.keys(known_l1_fee_fields())) == known_l1_fee_fields()
+          assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+        end
+      end
+    end
+  else
+    describe "rollup L1 fee fields" do
+      test "txlist carries no L1 fee fields on chains without an L1 fee", %{conn: conn} do
+        address = insert(:address)
+
+        :transaction
+        |> insert(from_address: address)
+        |> with_block()
+
+        params = %{
+          "module" => "account",
+          "action" => "txlist",
+          "address" => "#{address.hash}"
+        }
+
+        assert %{"result" => [row], "status" => "1"} =
+                 conn
+                 |> get("/api", params)
+                 |> json_response(200)
+
+        refute Map.has_key?(row, "L1FeesPaid")
+      end
     end
   end
 
@@ -5435,8 +5584,62 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
     })
   end
 
+  # Rollup L1 fee fields added by `BlockScoutWeb.API.RPC.RPCView.l1_fee_fields/1` on chain types storing an L1 fee.
+  # Factory transactions carry no L1 fee, so these are the renderings for an unknown fee.
+  case Application.compile_env(:explorer, :chain_type) do
+    :optimism ->
+      defp expected_l1_fee_fields do
+        %{"L1FeesPaid" => "0", "L1GasUsed" => "", "L1GasPrice" => "", "L1FeeScalar" => ""}
+      end
+
+    :scroll ->
+      defp expected_l1_fee_fields, do: %{"L1FeesPaid" => "0"}
+
+    _ ->
+      defp expected_l1_fee_fields, do: %{}
+  end
+
+  # A transaction carrying a known rollup L1 fee (the Base Sepolia example from the feature request) and
+  # the fields the RPC views are expected to render for it.
+  case Application.compile_env(:explorer, :chain_type) do
+    :optimism ->
+      defp known_l1_fee_attrs do
+        [
+          l1_fee: %Wei{value: Decimal.new(83_741_055_139)},
+          l1_gas_used: Decimal.new(1600),
+          l1_gas_price: %Wei{value: Decimal.new(2_227_405)},
+          l1_fee_scalar: Decimal.new("0.684")
+        ]
+      end
+
+      defp known_l1_fee_fields do
+        %{"L1FeesPaid" => "83741055139", "L1GasUsed" => "1600", "L1GasPrice" => "2227405", "L1FeeScalar" => "0.684"}
+      end
+
+    :scroll ->
+      defp known_l1_fee_attrs, do: [l1_fee: %Wei{value: Decimal.new(83_741_055_139)}]
+      defp known_l1_fee_fields, do: %{"L1FeesPaid" => "83741055139"}
+
+    _ ->
+      :ok
+  end
+
+  @l1_fee_schema_properties %{
+    "L1FeesPaid" => %{"type" => "string"},
+    "L1GasUsed" => %{"type" => "string"},
+    "L1GasPrice" => %{"type" => "string"},
+    "L1FeeScalar" => %{"type" => "string"}
+  }
+
+  # Resolves a list schema whose items may also carry the rollup L1 fee fields.
+  defp resolve_schema_with_l1_fee_fields(result) do
+    result
+    |> update_in(["items", "properties"], &Map.merge(&1, @l1_fee_schema_properties))
+    |> resolve_schema()
+  end
+
   defp txlist_schema do
-    resolve_schema(%{
+    resolve_schema_with_l1_fee_fields(%{
       "type" => ["null", "array"],
       "items" => %{
         "type" => "object",
@@ -5465,7 +5668,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   end
 
   defp txlistinternal_schema do
-    resolve_schema(%{
+    resolve_schema_with_l1_fee_fields(%{
       "type" => ["array", "null"],
       "items" => %{
         "type" => "object",
@@ -5490,7 +5693,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   end
 
   defp tokentx_schema do
-    resolve_schema(%{
+    resolve_schema_with_l1_fee_fields(%{
       "type" => ["array", "null"],
       "items" => %{
         "type" => "object",

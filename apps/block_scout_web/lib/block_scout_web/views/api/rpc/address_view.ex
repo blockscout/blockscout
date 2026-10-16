@@ -138,6 +138,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "confirmations" => "#{transaction.confirmations}",
       "methodId" => Transaction.method_id(transaction)
     }
+    |> Map.merge(RPCView.l1_fee_fields(transaction))
   end
 
   # Prepares an internal transaction for API response.
@@ -160,6 +161,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
       "isError" => if(internal_transaction.error, do: "1", else: "0"),
       "errCode" => "#{internal_transaction.error}"
     }
+    |> Map.merge(RPCView.l1_fee_fields(internal_transaction))
   end
 
   defp prepare_common_token_transfer(token_transfer, max_block_number, decoded_input) do
@@ -203,6 +205,7 @@ defmodule BlockScoutWeb.API.RPC.AddressView do
     }
     |> Map.merge(tt_denormalization_fields)
     |> Map.merge(prepare_decoded_input(decoded_input))
+    |> Map.merge(RPCView.l1_fee_fields(token_transfer.transaction))
   end
 
   defp prepare_token_transfer(%{token_type: "ERC-721"} = token_transfer, max_block_number, decoded_input) do
