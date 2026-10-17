@@ -23,4 +23,29 @@ defmodule Explorer.Tags.AddressToTagTest do
                Repo.all(AddressToTag)
     end
   end
+
+  describe "add_tag_to_addresses/2" do
+    test "adds the tag without touching the addresses that already carry it" do
+      tag = insert(:address_tag)
+      tagged = insert(:address)
+      new = insert(:address)
+      insert(:address_to_tag, tag: tag, address: tagged)
+
+      assert {1, nil} = AddressToTag.add_tag_to_addresses(tag.id, [tagged.hash, new.hash])
+
+      assert AddressToTag |> Repo.all() |> Enum.map(& &1.address_hash) |> Enum.sort() ==
+               Enum.sort([tagged.hash, new.hash])
+    end
+
+    test "skips addresses missing from the addresses table" do
+      tag = insert(:address_tag)
+
+      assert {0, nil} = AddressToTag.add_tag_to_addresses(tag.id, [address_hash()])
+      assert Repo.all(AddressToTag) == []
+    end
+
+    test "does nothing for no addresses" do
+      assert {0, nil} = AddressToTag.add_tag_to_addresses(1, [])
+    end
+  end
 end

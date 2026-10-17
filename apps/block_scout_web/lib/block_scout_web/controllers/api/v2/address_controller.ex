@@ -54,6 +54,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
 
   alias Explorer.Chain.Token.FiatValue
   alias Explorer.Chain.Token.Instance
+  alias Explorer.Chain.TokenTransfer.PoisoningAttack
   alias Explorer.SmartContract.Helper, as: SmartContractHelper
 
   alias BlockScoutWeb.API.V2.CeloView
@@ -601,6 +602,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
                 @api_true
               )
               |> Instance.preload_nft(@api_true)
+              |> PoisoningAttack.preload_for_token_transfers(@api_true)
               |> maybe_preload_ens_and_metadata(:token_transfers),
             next_page_params: next_page_params
           })
