@@ -56,22 +56,27 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsFirstTopicIdFkey d
   # sobelow_skip ["SQL"]
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def db_index_operation_status do
-    {started?, completed?} =
+    validated? =
       case Repo.query("""
            SELECT convalidated
            FROM pg_constraint
            WHERE conname = '#{@constraint_name}';
            """) do
-        {:ok, %Postgrex.Result{rows: [[true]]}} -> {true, true}
-        {:ok, %Postgrex.Result{rows: [[false]]}} -> {true, false}
-        {:ok, %Postgrex.Result{rows: [[]]}} -> {false, false}
-        _ -> {nil, nil}
+        {:ok, %Postgrex.Result{rows: [[validated?]]}} -> validated?
+        _ -> nil
+      end
+
+    in_progress? =
+      case check_db_index_operation_progress() do
+        :in_progress -> true
+        :finished_or_not_started -> false
+        _ -> nil
       end
 
     cond do
-      completed? -> :completed
-      started? -> :not_completed
-      is_nil(completed?) or is_nil(started?) -> :unknown
+      validated? == true -> :completed
+      is_nil(validated?) or is_nil(in_progress?) -> :unknown
+      in_progress? == true -> :not_completed
       true -> :not_initialized
     end
   end
