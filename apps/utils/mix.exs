@@ -37,7 +37,7 @@ defmodule Utils.MixProject do
       {:httpoison, "~> 3.0"},
       {:inet_cidr, "~> 1.0"},
       {:mime, "~> 2.0"},
-      {:tesla, "~> 1.21.0"}
+      {:tesla, "~> 1.22.0"}
     ]
   end
 
