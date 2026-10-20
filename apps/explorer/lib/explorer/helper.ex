@@ -855,6 +855,46 @@ defmodule Explorer.Helper do
   end
 
   @doc """
+  Calls a Hammer rate limit function on the configured backend, falling back to
+  the ETS backend when the Redis backend is unavailable.
+
+  `Hammer.Redis` raises on connection errors and timeouts instead of returning
+  `{:error, reason}`, so without this fallback an unavailable Redis fails every
+  rate-limited request. With it, rate limiting degrades to the per-node ETS
+  counters until Redis is reachable again.
+
+  ## Parameters
+  - `backend`: The configured backend module.
+  - `redis_backend`: The Redis backend module of the same wrapper.
+  - `ets_backend`: The ETS backend module of the same wrapper, used as the fallback.
+  - `function`: The name of the function to call.
+  - `args`: The arguments of the function.
+
+  ## Returns
+  - The result of the function call on the configured backend, or on the ETS
+    backend if the Redis backend is unavailable.
+  """
+  @spec call_with_ets_fallback(module(), module(), module(), atom(), list()) :: any()
+  def call_with_ets_fallback(redis_backend, redis_backend, ets_backend, function, args) do
+    apply(redis_backend, function, args)
+  rescue
+    error in [Redix.ConnectionError, Redix.Error] ->
+      Logger.warning(fn ->
+        ["Redis rate limit backend is unavailable, falling back to ETS: ", Exception.message(error)]
+      end)
+
+      apply(ets_backend, function, args)
+  catch
+    :exit, reason ->
+      Logger.warning(fn -> ["Redis rate limit backend is unavailable, falling back to ETS: ", inspect(reason)] end)
+      apply(ets_backend, function, args)
+  end
+
+  def call_with_ets_fallback(backend, _redis_backend, _ets_backend, function, args) do
+    apply(backend, function, args)
+  end
+
+  @doc """
   Builds an `Ecto.Query.dynamic/2` expression restricting the first query
   binding's `block_number_field` to the traceable block ranges configured via
   `TRACE_BLOCK_RANGES` (or `TRACE_FIRST_BLOCK`/`TRACE_LAST_BLOCK`).
