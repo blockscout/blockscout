@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Runs a command inside the project's devcontainer.
-# Prefers `devcontainer exec` when available, falls back to `docker exec`.
+# Runs a command inside the project's container.
+# get-container-id.sh selects the runtime: the Apple `container` started by
+# .devcontainer/apple-container/bs-container, or the docker devcontainer
+# (through `devcontainer exec` when the CLI is available, else `docker exec`).
 #
 # Usage: exec.sh [--env-file PATH]... [-e KEY=VALUE]... <command> [args...]
 #
@@ -46,8 +48,11 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
 
-# Verify a container is running (exits with a friendly message if not)
-CONTAINER_ID="$("$SCRIPT_DIR/get-container-id.sh")"
+# Select the runtime and verify a container is running (exits with a friendly
+# message if not). Output format: "<runtime> <container-id>".
+RESOLVED="$("$SCRIPT_DIR/get-container-id.sh")"
+RUNTIME="${RESOLVED%% *}"
+CONTAINER_ID="${RESOLVED#* }"
 
 # --- Execution helpers --------------------------------------------------------
 
@@ -85,12 +90,18 @@ run_docker() {
   exec docker exec -u "$remote_user" -w "$workspace_dir" "$CONTAINER_ID" "$@"
 }
 
+# The Apple container mounts the project at /workspace, as the docker-compose
+# devcontainer does.
+run_apple_container() {
+  exec container exec -u vscode -w /workspace "$CONTAINER_ID" "$@"
+}
+
 run_in_container() {
-  if command -v devcontainer >/dev/null 2>&1; then
-    run_devcontainer "$@"
-  else
-    run_docker "$@"
-  fi
+  case "$RUNTIME" in
+    apple) run_apple_container "$@" ;;
+    devcontainer) run_devcontainer "$@" ;;
+    *) run_docker "$@" ;;
+  esac
 }
 
 # --- Build the command to run inside the container ----------------------------

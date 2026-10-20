@@ -39,5 +39,6 @@ Which variables are needed depends on the task — refer to the relevant skill (
 
 - The container workspace is a bind mount of the host project directory — file edits on the host are immediately visible inside the container and vice versa.
 - For long-running commands, use `run_in_background: true` on the Bash tool call.
-- If no container is running, the script exits with an error suggesting how to start one. Relay this to the user.
+- The script runs the command in the Apple `container` (started by `.devcontainer/apple-container/bs-container up`) or in the docker devcontainer. `BS_CONTAINER_RUNTIME` (`apple` | `devcontainer`) in `.devcontainer/.blockscout_config` selects it. Without the variable, the Apple container is used when the `container` CLI is installed.
+- If no container is running, or no tool to run one is installed, the script exits with an error suggesting how to start one. Relay this to the user; do not start the container yourself.
 - For non-Elixir commands (e.g., `psql`, `git`), use `exec.sh` without env flags — they don't need the Blockscout environment.
