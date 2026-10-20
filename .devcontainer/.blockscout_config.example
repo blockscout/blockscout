@@ -1,3 +1,9 @@
+# Container that the agent scripts use to run mix commands
+# (.agents/skills/devcontainer/scripts/exec.sh): apple or devcontainer.
+# If it is not set, the Apple container is used when the container CLI is
+# installed. Otherwise the docker devcontainer is used.
+# BS_CONTAINER_RUNTIME=apple
+
 CHAIN_TYPE=ethereum
 
 ETHEREUM_JSONRPC_VARIANT=geth

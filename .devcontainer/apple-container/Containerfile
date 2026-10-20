@@ -1,0 +1,36 @@
+# Image for running Blockscout Elixir tasks (mix compile, mix test, credo,
+# cspell, dialyzer) with Apple `container`. It extends the devcontainer image
+# with PostgreSQL 17, so the database is available at localhost:5432 exactly
+# as in the docker-compose devcontainer (network_mode: service:db).
+FROM ghcr.io/blockscout/devcontainer-elixir:1.19.4-erlang-27.3.4.6
+
+ARG PG_MAJOR=17
+
+# The base image keeps a Yarn apt source whose signing key expired. Yarn is
+# not needed here, so the source is removed to let apt-get update succeed.
+RUN rm -f /etc/apt/sources.list.d/yarn.list \
+  && apt-get update \
+  && export DEBIAN_FRONTEND=noninteractive \
+  && apt-get install -y --no-install-recommends curl ca-certificates gnupg lsb-release \
+  && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+     | gpg --dearmor -o /usr/share/keyrings/pgdg.gpg \
+  && echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+     > /etc/apt/sources.list.d/pgdg.list \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends postgresql-${PG_MAJOR} \
+  #
+  # FFmpeg headers for the :xav dependency. .devcontainer/Dockerfile installs
+  # them, but the published devcontainer-elixir image does not have them yet.
+  && apt-get install -y --no-install-recommends pkg-config \
+     libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libavdevice-dev \
+  && apt-get clean -y \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV PG_MAJOR=${PG_MAJOR} \
+    PGDATA=/var/lib/pgdata/data
+
+COPY entrypoint.sh /usr/local/bin/bs-entrypoint.sh
+RUN chmod +x /usr/local/bin/bs-entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/bs-entrypoint.sh"]
+CMD ["sleep", "infinity"]

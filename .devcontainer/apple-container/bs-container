@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+# Manages the Blockscout Elixir container that runs on Apple `container`.
+#
+# Usage: bs-container <build|up|down|rm|status|shell|logs|name|reset-volumes>
+#
+# Only the project directory is mounted, at /workspace as in the
+# docker-compose devcontainer. So _build, deps and priv/plts in the project
+# directory work in both containers without a recompile. Only the PostgreSQL
+# data lives in a named volume.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel)"
+
+IMAGE="${BS_CONTAINER_IMAGE:-bs-elixir-dev:latest}"
+
+# The container of this project directory, in any state, found by its label.
+labeled_container() {
+  container ls --all --format json 2>/dev/null \
+    | jq -r --arg root "$PROJECT_ROOT" \
+      '.[] | select(.configuration.labels["bs.project_root"] == $root) | .configuration.id' \
+    | head -n 1
+}
+
+# Each project directory (clone or worktree) gets its own container and
+# database volume, as with devcontainer. An existing container of the directory keeps
+# its name. A new one is named after the directory plus a hash of its path,
+# because a container name cannot hold slashes.
+default_name() {
+  local existing base hash
+  existing="$(labeled_container)"
+  if [ -n "$existing" ]; then
+    echo "$existing"
+    return
+  fi
+  base="$(basename "$PROJECT_ROOT" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9_.-]+/-/g')"
+  hash="$(printf '%s' "$PROJECT_ROOT" | shasum -a 256 | cut -c1-8)"
+  echo "${base}-${hash}"
+}
+
+NAME="${BS_CONTAINER_NAME:-$(default_name)}"
+CPUS="${BS_CONTAINER_CPUS:-8}"
+MEMORY="${BS_CONTAINER_MEMORY:-12G}"
+
+WORKSPACE=/workspace
+
+# volume name -> mount target
+VOLUMES=(
+  "${NAME}-pgdata:/var/lib/pgdata"
+)
+
+usage() {
+  sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+container_state() {
+  container inspect "$NAME" 2>/dev/null | jq -r '.[0].status | if type == "object" then .state else . end // empty' 2>/dev/null || true
+}
+
+cmd_build() {
+  container build -t "$IMAGE" -f "$SCRIPT_DIR/Containerfile" "$SCRIPT_DIR"
+}
+
+cmd_up() {
+  local state
+  state="$(container_state)"
+  if [ "$state" = "running" ]; then
+    echo "Container $NAME is already running."
+    return
+  fi
+  if [ -n "$state" ]; then
+    container start "$NAME"
+    return
+  fi
+  if ! container image inspect "$IMAGE" >/dev/null 2>&1; then
+    cmd_build
+  fi
+
+  local mount_args=() vol name
+  for vol in "${VOLUMES[@]}"; do
+    name="${vol%%:*}"
+    if ! container volume inspect "$name" >/dev/null 2>&1; then
+      container volume create "$name" >/dev/null
+    fi
+    mount_args+=(--volume "$vol")
+  done
+
+  container run --detach --init \
+    --name "$NAME" \
+    --label "bs.project_root=${PROJECT_ROOT}" \
+    --cpus "$CPUS" --memory "$MEMORY" \
+    --volume "${PROJECT_ROOT}:${WORKSPACE}" \
+    "${mount_args[@]}" \
+    --workdir "$WORKSPACE" \
+    "$IMAGE" >/dev/null
+  echo "Container $NAME started."
+}
+
+cmd_down() {
+  container stop "$NAME"
+}
+
+cmd_rm() {
+  container stop "$NAME" >/dev/null 2>&1 || true
+  container delete "$NAME"
+}
+
+cmd_reset_volumes() {
+  cmd_rm || true
+  local vol
+  for vol in "${VOLUMES[@]}"; do
+    container volume delete "${vol%%:*}" || true
+  done
+}
+
+case "${1:-}" in
+  build) cmd_build ;;
+  up) cmd_up ;;
+  down|stop) cmd_down ;;
+  rm) cmd_rm ;;
+  reset-volumes) cmd_reset_volumes ;;
+  status) container ls --all | awk -v n="$NAME" 'NR == 1 || $1 == n' ;;
+  shell) exec container exec -it -u vscode -w "$WORKSPACE" "$NAME" bash ;;
+  logs) exec container logs "$NAME" ;;
+  name) echo "$NAME" ;;
+  *) usage; exit 1 ;;
+esac
