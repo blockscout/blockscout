@@ -31,12 +31,24 @@ defmodule EthereumJSONRPC.ArbitrumTest do
       assert Arbitrum.value_to_address(topic) == "0x3078727d4c7fb6619873320688dff66af82346b2"
     end
 
-    test "pads a 0x-prefixed hex string shorter than 40 digits" do
-      assert Arbitrum.value_to_address("0xabc") == "0x" <> String.duplicate("0", 37) <> "abc"
+    test "keeps a 0x-prefixed 40-digit address string as is" do
+      assert Arbitrum.value_to_address("0x3078727d4c7fb6619873320688dff66af82346b2") ==
+               "0x3078727d4c7fb6619873320688dff66af82346b2"
     end
 
-    test "raises for a binary that is neither 20 bytes long nor 0x-prefixed" do
+    test "treats any 20-byte binary as raw bytes, even one that reads as a short 0x string" do
+      # "0x" plus 18 hex digits is 20 bytes long, the same size as a raw address.
+      # A raw address can legitimately start with the bytes 0x30 0x78 (ASCII "0x"),
+      # so the content of a 20-byte binary is never inspected: it is always hex-encoded.
+      # Supported 0x-prefixed strings have 40 or 64 digits and are 42 or 66 bytes long.
+      short_string = "0x" <> String.duplicate("a", 18)
+
+      assert Arbitrum.value_to_address(short_string) == "0x" <> Base.encode16(short_string, case: :lower)
+    end
+
+    test "raises for a binary that is neither 20 bytes long nor a 0x-prefixed 40- or 64-digit string" do
       assert_raise FunctionClauseError, fn -> Arbitrum.value_to_address("abc") end
+      assert_raise FunctionClauseError, fn -> Arbitrum.value_to_address("0xabc") end
       assert_raise FunctionClauseError, fn -> Arbitrum.value_to_address(<<1::152>>) end
     end
   end

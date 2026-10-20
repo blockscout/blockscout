@@ -63,8 +63,8 @@ defmodule Explorer.Arbitrum.Withdraw do
   @typep l2_timestamp :: non_neg_integer()
   @typep callvalue :: non_neg_integer()
   @typep data :: binary()
-  @typep token_address_hash :: Hash.Address.t() | nil
-  @typep token_destination_address_hash :: Hash.Address.t() | nil
+  @typep token_address_hash :: Hash.Address.t()
+  @typep token_destination_address_hash :: Hash.Address.t()
   @typep token_amount :: non_neg_integer()
   @typep token_decimals :: non_neg_integer() | nil
   @typep token_name :: binary() | nil

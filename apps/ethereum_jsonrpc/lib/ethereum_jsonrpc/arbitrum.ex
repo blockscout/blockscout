@@ -258,12 +258,15 @@ defmodule EthereumJSONRPC.Arbitrum do
       hex-encoded as they are. The content of the bytes is never inspected, so an
       address whose first bytes happen to be `0x30 0x78` (ASCII `"0x"`) or `0x00`
       is encoded correctly.
-    - A `0x`-prefixed hex string of any length, such as a 32-byte event topic that
-      holds a left-padded address (for example the `destination` topic of the
-      `L2ToL1Tx` event). Leading zeros are trimmed and the value is padded back
-      to 40 hex digits.
+    - A `0x`-prefixed hex string of exactly 40 or 64 hex digits: a plain address,
+      or a 32-byte event topic that holds a left-padded address (for example the
+      `destination` topic of the `L2ToL1Tx` event). Leading zeros are trimmed and
+      the value is padded back to 40 hex digits.
 
-    Any other value raises `FunctionClauseError`.
+    The two shapes cannot collide: a `0x`-prefixed string of 40 or 64 hex digits
+    is 42 or 66 bytes long, never 20. Any 20-byte binary is treated as raw bytes,
+    even one that reads as a short `0x` string, because a raw address can start
+    with the bytes `0x30 0x78`. Any other value raises `FunctionClauseError`.
 
     ## Parameters
       - value: raw 20-byte binary or `0x` prefixed hex string to be cast into an
@@ -279,7 +282,7 @@ defmodule EthereumJSONRPC.Arbitrum do
     "0x" <> Base.encode16(raw_address, case: :lower)
   end
 
-  def value_to_address("0x" <> hex) do
+  def value_to_address("0x" <> hex) when byte_size(hex) == 40 or byte_size(hex) == 64 do
     padded_hex =
       hex
       |> String.trim_leading("0")
