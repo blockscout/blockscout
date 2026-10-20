@@ -251,21 +251,38 @@ defmodule EthereumJSONRPC.Arbitrum do
   @doc """
     Casts a value into an Ethereum address (hex-string, 0x-prefixed, not checksummed).
 
+    Two input shapes are supported:
+
+    - A raw 20-byte binary, as returned by the ABI decoder for the `address` type
+      (for example the `caller` field of the `L2ToL1Tx` event). The bytes are
+      hex-encoded as they are. The content of the bytes is never inspected, so an
+      address whose first bytes happen to be `0x30 0x78` (ASCII `"0x"`) or `0x00`
+      is encoded correctly.
+    - A `0x`-prefixed hex string of exactly 40 or 64 hex digits: a plain address,
+      or a 32-byte event topic that holds a left-padded address (for example the
+      `destination` topic of the `L2ToL1Tx` event). Leading zeros are trimmed and
+      the value is padded back to 40 hex digits.
+
+    The two shapes cannot collide: a `0x`-prefixed string of 40 or 64 hex digits
+    is 42 or 66 bytes long, never 20. Any 20-byte binary is treated as raw bytes,
+    even one that reads as a short `0x` string, because a raw address can start
+    with the bytes `0x30 0x78`. Any other value raises `FunctionClauseError`.
+
     ## Parameters
-      - value: `0x` prefixed hex string or byte array to be cast into an Ethereum address.
+      - value: raw 20-byte binary or `0x` prefixed hex string to be cast into an
+        Ethereum address.
 
     ## Returns
       - A string representing the Ethereum address in hex format, prefixed with '0x'
   """
   @spec value_to_address(binary()) :: String.t()
-  def value_to_address(value) do
-    hex =
-      cond do
-        is_binary(value) and String.starts_with?(value, "0x") -> String.trim_leading(value, "0x")
-        is_binary(value) -> Base.encode16(value, case: :lower)
-        true -> raise ArgumentError, "Unsupported address format"
-      end
+  def value_to_address(value)
 
+  def value_to_address(<<_::binary-size(20)>> = raw_address) do
+    "0x" <> Base.encode16(raw_address, case: :lower)
+  end
+
+  def value_to_address("0x" <> hex) when byte_size(hex) == 40 or byte_size(hex) == 64 do
     padded_hex =
       hex
       |> String.trim_leading("0")
