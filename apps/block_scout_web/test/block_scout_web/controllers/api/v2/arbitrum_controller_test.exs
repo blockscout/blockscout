@@ -595,6 +595,80 @@ defmodule BlockScoutWeb.API.V2.ArbitrumControllerTest do
         assert token["decimals"] == 18
       end
 
+      # Regression for https://github.com/blockscout/blockscout/issues/14964.
+      # The ABI decoder returns addresses as raw 20-byte binaries. An address whose
+      # first bytes are 0x30 0x78 (ASCII "0x") used to be mistaken for a hex string
+      # by `EthereumJSONRPC.Arbitrum.value_to_address/1`, which produced an invalid
+      # address and made `Hash.Address.cast/1` fail in `log_to_withdrawal/2`.
+      test "returns withdrawal when the caller address starts with 0x3078", %{conn: conn} do
+        transaction = insert(:transaction) |> with_block()
+
+        message_id = 8_290_647
+        caller_address = "0x3078727d4c7fb6619873320688dff66af82346b2"
+        {:ok, %{bytes: caller_bytes}} = Explorer.Chain.Hash.Address.cast(caller_address)
+
+        insert(:arbitrum_message,
+          direction: :from_l2,
+          message_id: message_id,
+          originating_transaction_hash: transaction.hash,
+          completion_transaction_hash: transaction_hash(),
+          status: :relayed
+        )
+
+        insert_l2_to_l1_log!(transaction, message_id: message_id, caller: caller_bytes, data: <<>>)
+
+        request = get(conn, "/api/v2/arbitrum/messages/withdrawals/#{transaction.hash}")
+        assert response = json_response(request, 200)
+
+        assert [item] = response["items"]
+        assert item["id"] == message_id
+        assert String.downcase(item["caller_address_hash"]) == caller_address
+      end
+
+      # Same root cause as above, on the token side: the L1 token address decoded
+      # from `finalizeInboundTransfer(...)` calldata starts with 0x30 0x78. The ERC20
+      # metadata call must target the real token contract.
+      test "returns ERC20 withdrawal when the L1 token address starts with 0x3078", %{conn: conn} do
+        setup_arbitrum_l1_rpc_mocks!()
+
+        transaction = insert(:transaction) |> with_block()
+
+        message_id = 8_010_513
+
+        insert(:arbitrum_message,
+          direction: :from_l2,
+          message_id: message_id,
+          originating_transaction_hash: transaction.hash,
+          completion_transaction_hash: transaction_hash(),
+          status: :relayed
+        )
+
+        l1_token_address = "0x3078b2cc5d775cbe45ea8c921bf743968c3d2625"
+        l1_recipient_address = "0xb8018422bce25d82e70cb98fda96a4f502d89427"
+        amount = 1_000_000_000_000_000_000
+
+        insert_l2_to_l1_log!(transaction,
+          message_id: message_id,
+          data: build_finalize_inbound_transfer_calldata(l1_token_address, l1_recipient_address, amount)
+        )
+
+        expect_erc20_metadata!(l1_token_address, name: "Test Token", symbol: "TST", decimals: 18)
+
+        request = get(conn, "/api/v2/arbitrum/messages/withdrawals/#{transaction.hash}")
+        assert response = json_response(request, 200)
+
+        assert [item] = response["items"]
+        assert item["status"] == "relayed"
+
+        token = item["token"]
+        assert token != nil
+        assert String.downcase(token["address_hash"]) == l1_token_address
+        assert token["amount"] == Integer.to_string(amount)
+        assert token["name"] == "Test Token"
+        assert token["symbol"] == "TST"
+        assert token["decimals"] == 18
+      end
+
       # Native ETH withdrawal whose DB-side message is :initiated.
       # Forces `get_actual_message_status/1` to run: it calls Outbox.outbox()/
       # sequencerInbox() (batched) plus Outbox.isSpent(message_id) on the L1 RPC,

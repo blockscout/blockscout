@@ -415,7 +415,7 @@ defmodule Explorer.Arbitrum.ClaimRollupMessage do
 
     # getting additional token properties needed to display purposes
     # TODO: it's need to cache token_info (e.g. with Explorer.Chain.OrderedCache) to reduce requests number
-    token_info = ERC20.fetch_token_properties(ArbitrumRpc.value_to_address(token), json_l1_rpc_named_arguments)
+    token_info = ERC20.fetch_token_properties(to_string(token_bin), json_l1_rpc_named_arguments)
 
     %{
       address_hash: token_bin,
