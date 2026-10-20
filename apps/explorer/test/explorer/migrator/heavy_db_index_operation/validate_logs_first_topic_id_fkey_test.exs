@@ -2,6 +2,8 @@
 defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsFirstTopicIdFkeyTest do
   use Explorer.DataCase, async: false
 
+  import ExUnit.CaptureLog
+
   alias Explorer.Migrator.{FillLogsOptimizedFields, HeavyDbIndexOperation, MigrationStatus}
   alias Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsFirstTopicIdFkey
 
@@ -24,6 +26,20 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsFirstTopicIdFkeyTe
       Repo.query!("ALTER TABLE logs VALIDATE CONSTRAINT logs_first_topic_id_fkey")
 
       assert ValidateLogsFirstTopicIdFkey.db_index_operation_status() == :completed
+    end
+
+    test "reports a missing constraint as unknown" do
+      Repo.query!("ALTER TABLE logs RENAME CONSTRAINT logs_first_topic_id_fkey TO logs_first_topic_id_fkey_renamed")
+
+      assert capture_log(fn ->
+               assert ValidateLogsFirstTopicIdFkey.db_index_operation_status() == :unknown
+             end) =~ "Constraint logs_first_topic_id_fkey is not found on the logs table"
+    end
+
+    test "ignores a constraint with the same name on another table" do
+      Repo.query!("CREATE TABLE same_constraint_name (id integer CONSTRAINT logs_first_topic_id_fkey CHECK (id > 0))")
+
+      assert ValidateLogsFirstTopicIdFkey.db_index_operation_status() == :not_initialized
     end
 
     test "validates the constraint left NOT VALID on an existing install" do
@@ -61,7 +77,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsFirstTopicIdFkeyTe
 
   defp constraint_validated? do
     %{rows: [[validated?]]} =
-      Repo.query!("SELECT convalidated FROM pg_constraint WHERE conname = 'logs_first_topic_id_fkey'")
+      Repo.query!(
+        "SELECT convalidated FROM pg_constraint WHERE conrelid = 'logs'::regclass AND conname = 'logs_first_topic_id_fkey'"
+      )
 
     validated?
   end
