@@ -32,6 +32,24 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetricsTest do
 
       assert IndexerMetrics.missing_blocks_count() == 1
     end
+
+    if Application.compile_env(:explorer, :chain_type) == :filecoin do
+      test "does not count recorded null rounds as missing blocks" do
+        previous_block_ranges = Application.get_env(:indexer, :block_ranges)
+        on_exit(fn -> Application.put_env(:indexer, :block_ranges, previous_block_ranges) end)
+
+        Application.put_env(:indexer, :block_ranges, "1..5,10..latest")
+
+        Enum.each([1, 3, 5, 10, 13], fn number ->
+          insert(:block, number: number, consensus: true)
+        end)
+
+        # 2 and 11 are null rounds, 4 and 12 are genuinely missing
+        Explorer.Chain.NullRoundHeight.insert_heights([2, 11])
+
+        assert IndexerMetrics.missing_blocks_count() == 2
+      end
+    end
   end
 
   describe "refetch_needed_blocks_count/0" do
@@ -142,6 +160,49 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetricsTest do
       insert(:pending_transaction_operation, transaction_hash: transaction2.hash)
 
       assert IndexerMetrics.missing_internal_transactions_count() == 2
+    end
+  end
+
+  describe "missing_address_native_coin_balances_count/0" do
+    test "counts only unfetched coin balances within configured ranges and latest tail" do
+      previous_block_ranges = Application.get_env(:indexer, :block_ranges)
+      on_exit(fn -> Application.put_env(:indexer, :block_ranges, previous_block_ranges) end)
+
+      Application.put_env(:indexer, :block_ranges, "1..3,5..latest")
+
+      address = insert(:address)
+
+      # within ranges and unfetched -> counted
+      insert(:unfetched_balance, address_hash: address.hash, block_number: 1)
+      insert(:unfetched_balance, address_hash: address.hash, block_number: 7)
+      # within ranges but fetched -> not counted
+      insert(:unfetched_balance,
+        address_hash: address.hash,
+        block_number: 2,
+        value: 100,
+        value_fetched_at: DateTime.utc_now()
+      )
+
+      # unfetched but outside the ranges -> not counted
+      insert(:unfetched_balance, address_hash: address.hash, block_number: 4)
+
+      assert IndexerMetrics.missing_address_native_coin_balances_count() == 2
+    end
+
+    test "counts only within finite ranges" do
+      previous_block_ranges = Application.get_env(:indexer, :block_ranges)
+      on_exit(fn -> Application.put_env(:indexer, :block_ranges, previous_block_ranges) end)
+
+      Application.put_env(:indexer, :block_ranges, "10..12,20..22")
+
+      address = insert(:address)
+
+      insert(:unfetched_balance, address_hash: address.hash, block_number: 11)
+      insert(:unfetched_balance, address_hash: address.hash, block_number: 21)
+      # outside the finite ranges -> not counted
+      insert(:unfetched_balance, address_hash: address.hash, block_number: 30)
+
+      assert IndexerMetrics.missing_address_native_coin_balances_count() == 2
     end
   end
 

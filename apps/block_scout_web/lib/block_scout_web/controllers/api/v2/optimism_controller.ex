@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.{Chain, PagingOptions}
   alias Explorer.Chain.Cache.ChainId
+  alias Explorer.Chain.Cache.Counters.Optimism.DepositsCount, as: DepositsCountCache
   alias Explorer.Chain.{Data, Hash, Token, Transaction}
 
   alias Explorer.Chain.Optimism.{
@@ -423,7 +424,11 @@ defmodule BlockScoutWeb.API.V2.OptimismController do
   """
   @spec deposits_count(Plug.Conn.t(), map()) :: Plug.Conn.t()
   def deposits_count(conn, _params) do
-    count = Deposit.count(@api_true)
+    count =
+      case DepositsCountCache.fetch(@api_true) do
+        nil -> Chain.get_table_rows_total_count(Deposit, @api_true)
+        cached_count -> Decimal.to_integer(cached_count)
+      end
 
     conn
     |> put_status(200)

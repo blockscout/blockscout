@@ -14,6 +14,7 @@ defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
 
   alias Explorer.Chain.{Address, DenormalizationHelper, Hash, TokenTransfer, Transaction}
   alias Explorer.Chain.CsvExport.{AsyncHelper, Helper}
+  alias Explorer.Chain.Token.UIMultiplierChange
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.{PagingOptions, Repo}
 
@@ -26,6 +27,7 @@ defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
 
     address_hash
     |> fetch_all_token_transfers(from_block, to_block, filter_type, filter_value, paging_options, options)
+    |> UIMultiplierChange.put_ui_multipliers()
     |> to_csv_format(address_hash)
     |> Helper.dump_to_stream()
   end
@@ -63,6 +65,7 @@ defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
       "TokenDecimals",
       "TokenSymbol",
       "TokensTransferred",
+      "UIMultiplier",
       "TransactionFee",
       "Status",
       "ErrCode"
@@ -82,6 +85,10 @@ defmodule Explorer.Chain.CsvExport.Address.TokenTransfers do
           token_transfer.token.decimals,
           token_transfer.token.symbol,
           token_transfer.amount,
+          # amounts are exported raw, `TokenDecimals` and `UIMultiplier` being
+          # the separate columns they are displayed through, so that the export
+          # loses nothing
+          token_transfer.ui_multiplier,
           fee(token_transfer.transaction),
           token_transfer.transaction.status,
           token_transfer.transaction.error

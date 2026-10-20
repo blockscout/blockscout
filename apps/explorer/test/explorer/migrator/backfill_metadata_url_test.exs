@@ -106,7 +106,7 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
       assert MigrationStatus.get_status("backfill_metadata_url") == nil
 
       BackfillMetadataURL.start_link([])
-      Process.sleep(100)
+      wait_for_migration_completion()
 
       [instance_1, instance_2] =
         Instance
@@ -428,7 +428,7 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
       assert MigrationStatus.get_status("backfill_metadata_url") == nil
 
       BackfillMetadataURL.start_link([])
-      Process.sleep(100)
+      wait_for_migration_completion()
 
       [instance_1, instance_2] =
         Instance
@@ -446,6 +446,22 @@ defmodule Explorer.Migrator.BackfillMetadataURLTest do
       assert instance_1.error == "not_printable"
 
       assert MigrationStatus.get_status("backfill_metadata_url") == "completed"
+    end
+  end
+
+  # The migration runs asynchronously and now performs A + AAAA lookups per URL, so a fixed
+  # sleep is racy. Poll for completion instead.
+  defp wait_for_migration_completion(retries \\ 100) do
+    cond do
+      MigrationStatus.get_status("backfill_metadata_url") == "completed" ->
+        :ok
+
+      retries == 0 ->
+        flunk("backfill_metadata_url migration did not complete in time")
+
+      true ->
+        Process.sleep(50)
+        wait_for_migration_completion(retries - 1)
     end
   end
 end

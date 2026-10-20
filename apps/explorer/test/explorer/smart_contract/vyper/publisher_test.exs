@@ -81,5 +81,30 @@ if Application.compile_env(:explorer, :chain_type) !== :zksync do
         assert smart_contract.name == valid_attrs["name"]
       end
     end
+
+    describe "publish_smart_contract/4" do
+      test "stores bare hex constructor arguments with 0x prefix" do
+        contract_code_info = Factory.contract_code_info_vyper()
+
+        contract_address = insert(:contract_address, contract_code: contract_code_info.bytecode)
+
+        constructor_arguments =
+          [42]
+          |> ABI.TypeEncoder.encode([{:uint, 256}])
+          |> Base.encode16(case: :lower)
+
+        params = %{
+          "contract_source_code" => contract_code_info.source_code,
+          "compiler_version" => contract_code_info.version,
+          "name" => contract_code_info.name,
+          "constructor_arguments" => constructor_arguments
+        }
+
+        assert {:ok, %SmartContract{} = smart_contract} =
+                 Publisher.publish_smart_contract(contract_address.hash, params, contract_code_info.abi, false)
+
+        assert to_string(smart_contract.constructor_arguments) == "0x" <> constructor_arguments
+      end
+    end
   end
 end

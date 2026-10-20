@@ -133,14 +133,78 @@ defmodule Explorer.Chain.NullRoundHeight do
     end
   end
 
-  # Constructs a query to fetch neighboring null round heights in batches.
-  @spec neighboring_null_rounds_query(non_neg_integer(), :previous | :next) :: Ecto.Query.t()
-  defp neighboring_null_rounds_query(number, :previous) do
-    from(nrh in __MODULE__, where: nrh.height < ^number, order_by: [desc: :height], limit: @null_rounds_batch_size)
+  @doc """
+    Determines the actual neighboring block numbers of several blocks
+    considering null rounds.
+
+    A batch counterpart of `neighbor_block_number/2`: a batch of null rounds
+    per given block is fetched with one query in the direction, starting from
+    the farthest given block. For a run of consecutive blocks, such as
+    a realtime batch, this covers the null rounds between them and beyond.
+    Further queries are made only for the blocks whose neighbors lie beyond
+    the fetched null rounds.
+
+    ## Parameters
+    - `numbers`: The reference block heights
+    - `direction`: Either `:previous` or `:next` to indicate search direction
+
+    ## Returns
+    - A map from each reference block height to its actual neighboring block
+      number.
+  """
+  @spec neighbor_block_numbers([non_neg_integer()], :previous | :next) :: %{non_neg_integer() => non_neg_integer()}
+  def neighbor_block_numbers([], _direction), do: %{}
+
+  def neighbor_block_numbers(numbers, direction) do
+    {min_number, max_number} = Enum.min_max(numbers)
+
+    # The fetched null rounds are bounded by the number of blocks rather than by their span
+    batch_size = length(numbers) * @null_rounds_batch_size
+
+    # One null round more than the batch size tells whether there are any beyond the batch
+    null_rounds =
+      case direction do
+        :previous -> max_number
+        :next -> min_number
+      end
+      |> neighboring_null_rounds_query(direction, batch_size + 1)
+      |> select([nrh], nrh.height)
+      |> Repo.all()
+
+    # No more null rounds than the batch size mean there are none beyond the fetched ones
+    farthest_fetched = if length(null_rounds) <= batch_size, do: nil, else: List.last(null_rounds)
+
+    null_rounds_set = MapSet.new(null_rounds)
+
+    Map.new(numbers, &{&1, skip_null_rounds(&1, direction, null_rounds_set, farthest_fetched)})
   end
 
-  defp neighboring_null_rounds_query(number, :next) do
-    from(nrh in __MODULE__, where: nrh.height > ^number, order_by: [asc: :height], limit: @null_rounds_batch_size)
+  # Moves from the number in the direction through the fetched null rounds. The null rounds beyond
+  # the farthest fetched one are unknown, so they are looked up once the fetched ones are exhausted.
+  defp skip_null_rounds(number, direction, null_rounds, farthest_fetched) do
+    neighbor = BlockNumberHelper.move_by_one(number, direction)
+
+    cond do
+      MapSet.member?(null_rounds, neighbor) -> skip_null_rounds(neighbor, direction, null_rounds, farthest_fetched)
+      beyond?(neighbor, farthest_fetched, direction) -> neighbor_block_number(number, direction)
+      true -> neighbor
+    end
+  end
+
+  defp beyond?(_height, nil, _direction), do: false
+  defp beyond?(height, farthest_fetched, :previous), do: height < farthest_fetched
+  defp beyond?(height, farthest_fetched, :next), do: height > farthest_fetched
+
+  # Constructs a query to fetch neighboring null round heights in batches.
+  @spec neighboring_null_rounds_query(non_neg_integer(), :previous | :next, pos_integer()) :: Ecto.Query.t()
+  defp neighboring_null_rounds_query(number, direction, batch_size \\ @null_rounds_batch_size)
+
+  defp neighboring_null_rounds_query(number, :previous, batch_size) do
+    from(nrh in __MODULE__, where: nrh.height < ^number, order_by: [desc: :height], limit: ^batch_size)
+  end
+
+  defp neighboring_null_rounds_query(number, :next, batch_size) do
+    from(nrh in __MODULE__, where: nrh.height > ^number, order_by: [asc: :height], limit: ^batch_size)
   end
 
   # Fetches the next batch of null round heights from the database

@@ -166,8 +166,7 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
                   circulating_market_cap: Decimal.new("100"),
                   fiat_value: Decimal.new("1"),
                   volume_24h: Decimal.new("10"),
-                  circulating_supply: Decimal.new("1000000"),
-                  total_supply: Decimal.new("2000000")
+                  circulating_supply: Decimal.new("1000000")
                 },
                 %{
                   id: "3",
@@ -181,8 +180,7 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
                   circulating_market_cap: Decimal.new("300.03"),
                   fiat_value: Decimal.new("3.3"),
                   volume_24h: Decimal.new("33.333"),
-                  circulating_supply: Decimal.new("3000000"),
-                  total_supply: Decimal.new("6000000")
+                  circulating_supply: Decimal.new("3000000")
                 },
                 %{
                   id: "4",
@@ -196,8 +194,7 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
                   circulating_market_cap: Decimal.new("4"),
                   fiat_value: Decimal.new("4"),
                   volume_24h: Decimal.new("4"),
-                  circulating_supply: Decimal.new("4000000"),
-                  total_supply: Decimal.new("8000000")
+                  circulating_supply: Decimal.new("4000000")
                 }
               ]} == CoinGecko.fetch_tokens(nil, 5)
     end
@@ -239,8 +236,7 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
                   circulating_market_cap: Decimal.new("300.03"),
                   fiat_value: Decimal.new("3.3"),
                   volume_24h: Decimal.new("33.333"),
-                  circulating_supply: Decimal.new("3000000"),
-                  total_supply: Decimal.new("6000000")
+                  circulating_supply: Decimal.new("3000000")
                 },
                 %{
                   id: "4",
@@ -254,10 +250,35 @@ defmodule Explorer.Market.Source.CoinGeckoTest do
                   circulating_market_cap: Decimal.new("4"),
                   fiat_value: Decimal.new("4"),
                   volume_24h: Decimal.new("4"),
-                  circulating_supply: Decimal.new("4000000"),
-                  total_supply: Decimal.new("8000000")
+                  circulating_supply: Decimal.new("4000000")
                 }
               ]} == CoinGecko.fetch_tokens(nil, 2)
+    end
+
+    test "caps per_page at the CoinGecko limit of 250", %{bypass: bypass} do
+      Bypass.expect_once(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, json_coins_list())
+      end)
+
+      Bypass.expect_once(bypass, "GET", "/coins/markets", fn conn ->
+        assert conn.query_string == "vs_currency=aed&ids=4,3,1&per_page=250&page=1"
+        Conn.resp(conn, 200, json_coins_markets())
+      end)
+
+      assert {:ok, [], true, [_, _, _]} = CoinGecko.fetch_tokens(nil, 500)
+    end
+
+    test "returns an error for a non-list /coins/markets body", %{bypass: bypass} do
+      Bypass.expect_once(bypass, "GET", "/coins/list", fn conn ->
+        Conn.resp(conn, 200, json_coins_list())
+      end)
+
+      Bypass.expect_once(bypass, "GET", "/coins/markets", fn conn ->
+        Conn.resp(conn, 200, ~s({"status": {"error_code": 10005, "error_message": "plan limit"}}))
+      end)
+
+      assert {:error, error} = CoinGecko.fetch_tokens(nil, 5)
+      assert error =~ "CoinGecko"
     end
   end
 

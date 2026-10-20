@@ -27,20 +27,34 @@ defmodule BlockScoutWeb.NFTHelper do
           nil
       end
 
-    if result && String.trim(result) == "", do: nil, else: result
+    normalize_url(result)
   end
 
+  @doc """
+  Returns the `external_url` from the token instance metadata, or `nil` when it is
+  missing, blank, not a string, or not an `http(s)` URL. Metadata is user-controlled,
+  so the value may be of any JSON type; a list is unwrapped to its first element,
+  anything else that is not a string is treated as absent. The value is rendered as
+  a link `href`, so non-web schemes such as `javascript:` or `data:` are rejected.
+  """
+  @spec external_url(Explorer.Chain.Token.Instance.t() | nil) :: String.t() | nil
   def external_url(nil), do: nil
 
-  def external_url(instance) do
-    result =
-      if instance.metadata && instance.metadata["external_url"] do
-        instance.metadata["external_url"]
-      else
-        external_url(nil)
-      end
+  def external_url(%{metadata: %{"external_url" => external_url}}) do
+    external_url
+    |> normalize_url()
+    |> web_url()
+  end
 
-    if !result || (result && String.trim(result)) == "", do: external_url(nil), else: result
+  def external_url(_instance), do: nil
+
+  defp web_url(nil), do: nil
+
+  defp web_url(url) do
+    case URI.parse(url) do
+      %URI{scheme: scheme, host: host} when scheme in ["http", "https"] and is_binary(host) and host != "" -> url
+      _ -> nil
+    end
   end
 
   def retrieve_image(image) when is_nil(image), do: nil
@@ -54,28 +68,50 @@ defmodule BlockScoutWeb.NFTHelper do
     retrieve_image(image_url)
   end
 
-  def retrieve_image(image_url) do
+  def retrieve_image(image_url) when is_binary(image_url) do
     image_url
     |> URI.decode()
     |> URI.encode()
     |> compose_resource_url()
   end
 
+  def retrieve_image(_image), do: nil
+
+  # Metadata values come from arbitrary JSON, so a URL field may hold a list,
+  # a map, a number, etc. Only a non-blank string is a usable URL.
+  defp normalize_url(url) when is_binary(url) do
+    if String.trim(url) == "", do: nil, else: url
+  end
+
+  defp normalize_url([first | _]), do: normalize_url(first)
+
+  defp normalize_url(_), do: nil
+
   @doc """
-  Composes a full IPFS URL from the given image URL.
+  Composes a full gateway URL from the given resource URL.
+
+  Supports IPFS (`ipfs://`), Arweave (`ar://`), and Swarm (`bzz://`) resource
+  URLs, resolving them against the corresponding configured gateway. Any other
+  URL is returned unchanged.
 
   ## Parameters
 
-    - image_url: The URL of the image to be composed into an IPFS URL. It can be nil.
+    - image_url: The URL of the resource to be resolved to a gateway URL. It can be nil.
 
   ## Returns
 
-    - A string representing the full IPFS URL or nil.
+    - A string representing the full gateway URL, the original URL, or nil.
 
   ## Examples
 
       iex> compose_resource_url("ipfs://QmTzQ1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1")
       "https://ipfs.io/ipfs/QmTzQ1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1e1Y1"
+
+      iex> compose_resource_url("ar://Ah3vCrgV-9hEkA2Zl4Yq0iL5wGuMD5-Zr9EAF9zjHDU")
+      "https://arweave.net/Ah3vCrgV-9hEkA2Zl4Yq0iL5wGuMD5-Zr9EAF9zjHDU"
+
+      iex> compose_resource_url("bzz://swarm-devrel.eth/assets/swarm-logo.svg")
+      "https://gateway.ethswarm.org/bzz/swarm-devrel.eth/assets/swarm-logo.svg"
 
   """
   @spec compose_resource_url(String.t() | nil) :: String.t() | nil
@@ -101,6 +137,11 @@ defmodule BlockScoutWeb.NFTHelper do
         # take resource id after "ar://" prefix
         resource_id = image_url |> String.slice(5..-1//1)
         MetadataRetriever.arweave_link(resource_id)
+
+      image_url_downcase =~ ~r/^bzz:\/\// ->
+        # take resource id after "bzz://" prefix
+        resource_id = image_url |> String.slice(6..-1//1)
+        MetadataRetriever.swarm_link(resource_id)
 
       true ->
         image_url

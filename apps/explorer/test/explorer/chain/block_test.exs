@@ -2,6 +2,7 @@
 defmodule Explorer.Chain.BlockTest do
   use Explorer.DataCase
 
+  import Explorer.QuerySources, only: [with_query_sources: 1]
   import Mox
 
   alias Ecto.Changeset
@@ -11,6 +12,7 @@ defmodule Explorer.Chain.BlockTest do
   alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue}
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.PagingOptions
+  alias Explorer.Utility.MissingBlockRange
   alias Explorer.TestHelper
 
   describe "changeset/2" do
@@ -150,6 +152,92 @@ defmodule Explorer.Chain.BlockTest do
       )
 
       assert Block.next_block_base_fee_per_gas() == Decimal.new(1100)
+    end
+  end
+
+  describe "preload_eip1559_config/1" do
+    if Application.compile_env(:explorer, :chain_type) == :optimism do
+      test "resolves the config of a batch of blocks with a single query" do
+        %Explorer.Chain.Optimism.EIP1559ConfigUpdate{}
+        |> Explorer.Chain.Optimism.EIP1559ConfigUpdate.changeset(%{
+          l2_block_number: 10,
+          l2_block_hash: block_hash(),
+          base_fee_max_change_denominator: 50,
+          elasticity_multiplier: 4
+        })
+        |> Repo.insert!()
+
+        blocks =
+          for number <- [5, 15] do
+            insert(:block, number: number, gas_limit: Decimal.new(30_000_000), gas_used: Decimal.new(15_000_000))
+          end
+
+        {[before_update, after_update], preload_query_sources} =
+          with_query_sources(fn -> Block.preload_eip1559_config(blocks) end)
+
+        # The superchain config defaults (`constants`) are read once for the whole batch
+        assert preload_query_sources == ["op_eip1559_config_updates", "constants", "constants"]
+
+        # The env defaults apply before the first update, as the superchain config is not set
+        assert before_update.eip1559_config ==
+                 {Application.get_env(:explorer, :base_fee_max_change_denominator),
+                  Application.get_env(:explorer, :elasticity_multiplier)}
+
+        assert after_update.eip1559_config == {50, 4}
+
+        {gas_targets, gas_target_query_sources} =
+          with_query_sources(fn -> Enum.map([before_update, after_update], &Block.gas_target/1) end)
+
+        assert gas_targets == [0.0, 100.0]
+        assert gas_target_query_sources == []
+
+        # Not preloaded blocks still resolve the config on their own
+        {gas_targets, gas_target_query_sources} = with_query_sources(fn -> Enum.map(blocks, &Block.gas_target/1) end)
+
+        assert gas_targets == [0.0, 100.0]
+
+        assert gas_target_query_sources == [
+                 "op_eip1559_config_updates",
+                 "constants",
+                 "constants",
+                 "op_eip1559_config_updates"
+               ]
+      end
+
+      test "does not read the defaults when every block has an update" do
+        %Explorer.Chain.Optimism.EIP1559ConfigUpdate{}
+        |> Explorer.Chain.Optimism.EIP1559ConfigUpdate.changeset(%{
+          l2_block_number: 10,
+          l2_block_hash: block_hash(),
+          base_fee_max_change_denominator: 50,
+          elasticity_multiplier: 4
+        })
+        |> Repo.insert!()
+
+        blocks = for number <- [15, 16], do: insert(:block, number: number)
+
+        {preloaded_blocks, preload_query_sources} =
+          with_query_sources(fn -> Block.preload_eip1559_config(blocks) end)
+
+        assert preload_query_sources == ["op_eip1559_config_updates"]
+        assert Enum.map(preloaded_blocks, & &1.eip1559_config) == [{50, 4}, {50, 4}]
+      end
+    else
+      test "leaves the blocks as is without queries" do
+        blocks = insert_list(2, :block)
+
+        assert with_query_sources(fn -> Block.preload_eip1559_config(blocks) end) == {blocks, []}
+      end
+
+      test "gas_target/1 uses the env config without queries" do
+        block = insert(:block, gas_limit: Decimal.new(30_000_000), gas_used: Decimal.new(15_000_000))
+
+        {gas_target, query_sources} = with_query_sources(fn -> Block.gas_target(block) end)
+
+        # The default elasticity multiplier is 2, so the gas target is met exactly
+        assert gas_target == 0.0
+        assert query_sources == []
+      end
     end
   end
 
@@ -533,6 +621,21 @@ defmodule Explorer.Chain.BlockTest do
 
       # Balances are intentionally excluded from `full_refetch/1`.
       assert Repo.aggregate(BalancesExportQueue, :count, :id) == 0
+    end
+  end
+
+  describe "set_refetch_needed_for_other_consensus_blocks/2" do
+    test "marks only the consensus blocks with other hashes and adds their numbers to the missing ranges" do
+      other_block = insert(:block, number: 10)
+      non_consensus_block = insert(:block, number: 10, consensus: false)
+      given_block = insert(:block, number: 11)
+
+      assert [10] = Block.set_refetch_needed_for_other_consensus_blocks([10, 11], [given_block.hash])
+
+      assert %Block{refetch_needed: true} = Repo.get(Block, other_block.hash)
+      assert %Block{refetch_needed: false} = Repo.get(Block, non_consensus_block.hash)
+      assert %Block{refetch_needed: false} = Repo.get(Block, given_block.hash)
+      assert [%MissingBlockRange{from_number: 10, to_number: 10}] = Repo.all(MissingBlockRange)
     end
   end
 end

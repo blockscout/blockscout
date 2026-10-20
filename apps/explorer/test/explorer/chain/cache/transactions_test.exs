@@ -112,6 +112,23 @@ defmodule Explorer.Chain.Cache.TransactionsTest do
     end
   end
 
+  describe "do_raw_update/2 with propagate: false" do
+    test "writes the received elements as is, without touching the database" do
+      Application.put_env(:explorer, :mode, :api)
+
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block) |> preload_all()
+      prepared = [{Transactions.element_to_id(transaction), transaction}]
+
+      # the rows are gone: the receiving node must not need them
+      Repo.delete!(transaction)
+
+      Transactions.do_raw_update(prepared, false)
+
+      assert Transactions.take(1) == [transaction]
+    end
+  end
+
   defp preload_all(transactions) when is_list(transactions) do
     Enum.map(transactions, &preload_all(&1))
   end

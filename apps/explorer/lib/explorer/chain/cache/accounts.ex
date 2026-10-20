@@ -2,6 +2,12 @@
 defmodule Explorer.Chain.Cache.Accounts do
   @moduledoc """
   Caches the top Addresses
+
+  Holds the first page of `/api/v2/addresses`. In `:all` mode the indexer
+  invalidates it through `drop/1` when a cached address changes its balance; in
+  `:api` mode the entries expire on `CACHE_TOP_ADDRESSES_TTL` instead. In both
+  modes `Explorer.Chain.Cache.Accounts.Refresher` refills it in the background,
+  so requests only refill it when they miss.
   """
 
   alias Explorer.Chain.Address

@@ -10,6 +10,10 @@ defmodule Explorer.Market.Source.CoinGecko do
 
   @behaviour Source
 
+  # CoinGecko rejects `/coins/markets` requests with `per_page` above 250, so a
+  # larger configured batch size is capped here and processed across several requests.
+  @coins_markets_max_per_page 250
+
   @impl Source
   def native_coin_fetching_enabled?, do: not is_nil(config(:coin_id))
 
@@ -41,7 +45,8 @@ defmodule Explorer.Market.Source.CoinGecko do
 
   @impl Source
   def fetch_tokens(state, batch_size) do
-    {to_fetch, remaining} = Enum.split(state, batch_size)
+    per_page = min(batch_size, @coins_markets_max_per_page)
+    {to_fetch, remaining} = Enum.split(state, per_page)
 
     joined_token_ids = Enum.map_join(to_fetch, ",", & &1.id)
 
@@ -50,14 +55,19 @@ defmodule Explorer.Market.Source.CoinGecko do
            |> URI.append_path("/coins/markets")
            |> URI.append_query("vs_currency=#{config(:currency)}")
            |> URI.append_query("ids=#{joined_token_ids}")
-           |> URI.append_query("per_page=#{batch_size}")
+           |> URI.append_query("per_page=#{per_page}")
            |> URI.append_query("page=1")
            |> URI.to_string(),
-           headers()
+           headers(),
+           __MODULE__,
+           :coins_markets
          ) do
-      {:ok, data} ->
+      {:ok, data} when is_list(data) ->
         to_import = put_market_data_to_tokens(to_fetch, data)
         {:ok, remaining, Enum.empty?(remaining), to_import}
+
+      {:ok, unexpected_response} ->
+        {:error, Source.unexpected_response_error("CoinGecko", unexpected_response)}
 
       {:error, _reason} = error ->
         error
@@ -89,7 +99,9 @@ defmodule Explorer.Market.Source.CoinGecko do
              |> URI.append_query("vs_currency=#{config(:currency)}")
              |> URI.append_query("days=#{previous_days}")
              |> URI.to_string(),
-             headers()
+             headers(),
+             __MODULE__,
+             :coins_market_chart_market_cap
            ) do
       market_caps =
         case market_caps_dates do
@@ -133,7 +145,9 @@ defmodule Explorer.Market.Source.CoinGecko do
              |> URI.append_query("developer_data=false")
              |> URI.append_query("sparkline=false")
              |> URI.to_string(),
-             headers()
+             headers(),
+             __MODULE__,
+             :coins_details
            ) do
       {:ok,
        %Token{
@@ -166,7 +180,9 @@ defmodule Explorer.Market.Source.CoinGecko do
              |> URI.append_path("/coins/list")
              |> URI.append_query("include_platform=true")
              |> URI.to_string(),
-             headers()
+             headers(),
+             __MODULE__,
+             :coins_list
            ) do
       tokens
       |> Enum.reduce([], &reduce_coingecko_token(&1, &2, platform))
@@ -214,12 +230,11 @@ defmodule Explorer.Market.Source.CoinGecko do
   end
 
   defp put_market_data_to_tokens(tokens, market_data) do
-    # /coins/markets returns an array of coin objects keyed by "id"
-    market_data_map =
-      market_data
-      |> Enum.reduce(%{}, fn coin_data, acc ->
-        Map.put(acc, coin_data["id"], coin_data)
-      end)
+    # /coins/markets returns an array of coin objects, each carrying its "id".
+    # Note: `total_supply` from the response is intentionally not imported: `Token.total_supply`
+    # holds the raw on-chain `totalSupply()` value maintained by the token total supply fetchers,
+    # while CoinGecko reports a unit-scaled amount.
+    market_data_map = Map.new(market_data, &{&1["id"], &1})
 
     tokens
     |> Enum.reduce([], fn token, to_import ->
@@ -230,8 +245,7 @@ defmodule Explorer.Market.Source.CoinGecko do
               fiat_value: Source.to_decimal(coin_data["current_price"]),
               circulating_market_cap: Source.to_decimal(coin_data["market_cap"]),
               volume_24h: Source.to_decimal(coin_data["total_volume"]),
-              circulating_supply: Source.to_decimal(coin_data["circulating_supply"]),
-              total_supply: Source.to_decimal(coin_data["total_supply"])
+              circulating_supply: Source.to_decimal(coin_data["circulating_supply"])
             })
 
           [token_with_market_data | to_import]
@@ -252,7 +266,9 @@ defmodule Explorer.Market.Source.CoinGecko do
              |> URI.append_query("vs_currency=#{config(:currency)}")
              |> URI.append_query("days=#{previous_days}")
              |> URI.to_string(),
-             headers()
+             headers(),
+             __MODULE__,
+             :coins_market_chart_price
            ) do
       closings =
         case prices do

@@ -2,6 +2,8 @@
 defmodule BlockScoutWeb.TransactionView do
   use BlockScoutWeb, :view
 
+  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias BlockScoutWeb.{AccessHelper, AddressView, BlockView, TabHelper}
   alias BlockScoutWeb.Account.AuthController
   alias BlockScoutWeb.Cldr.Number
@@ -146,6 +148,7 @@ defmodule BlockScoutWeb.TransactionView do
       amounts: [],
       token_ids: token_transfer.token_ids,
       token_type: token_transfer.token_type,
+      ui_multiplier: token_transfer.ui_multiplier,
       to_address_hash: token_transfer.to_address_hash,
       from_address_hash: token_transfer.from_address_hash
     }
@@ -161,6 +164,7 @@ defmodule BlockScoutWeb.TransactionView do
       amounts: amounts,
       token_ids: token_transfer.token_ids,
       token_type: token_transfer.token_type,
+      ui_multiplier: token_transfer.ui_multiplier,
       to_address_hash: token_transfer.to_address_hash,
       from_address_hash: token_transfer.from_address_hash
     }
@@ -175,6 +179,7 @@ defmodule BlockScoutWeb.TransactionView do
       amounts: [],
       token_ids: token_transfer.token_ids,
       token_type: token_transfer.token_type,
+      ui_multiplier: token_transfer.ui_multiplier,
       to_address_hash: token_transfer.to_address_hash,
       from_address_hash: token_transfer.from_address_hash
     }
@@ -478,6 +483,14 @@ defmodule BlockScoutWeb.TransactionView do
   def to_address_hash(%Transaction{to_address_hash: address_hash}), do: address_hash
 
   def transaction_display_type(%Transaction{} = transaction) do
+    case {chain_type(), transaction.type, transaction.index} do
+      {:optimism, 0x7E, 0} -> gettext("L1 attr info tx")
+      {:optimism, 0x7D, _} -> gettext("Post exec tx")
+      _ -> default_transaction_display_type(transaction)
+    end
+  end
+
+  defp default_transaction_display_type(transaction) do
     cond do
       involves_token_transfers?(transaction) ->
         token_transfer_type = get_transaction_type_from_token_transfers(transaction.token_transfers)

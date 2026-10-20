@@ -126,6 +126,7 @@ defmodule Explorer.Chain.SmartContract do
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.SmartContract.Helper
+  alias Explorer.SmartContract.Solidity.Publisher, as: SolidityPublisher
   alias Explorer.SmartContract.Solidity.Verifier
 
   @typep api? :: {:api?, true | false}
@@ -853,6 +854,7 @@ defmodule Explorer.Chain.SmartContract do
           smart_contract
       ) do
     if args = Verifier.parse_constructor_arguments_for_sourcify_contract(address_hash, smart_contract.abi) do
+      args = SolidityPublisher.clear_constructor_arguments(args)
       smart_contract |> __MODULE__.changeset(%{constructor_arguments: args}) |> Repo.update()
       %__MODULE__{smart_contract | constructor_arguments: args}
     else
@@ -869,6 +871,7 @@ defmodule Explorer.Chain.SmartContract do
       ) do
     if args =
          Verifier.parse_constructor_arguments_for_sourcify_contract(address_hash, smart_contract.abi, deployed_bytecode) do
+      args = SolidityPublisher.clear_constructor_arguments(args)
       smart_contract |> __MODULE__.changeset(%{constructor_arguments: args}) |> Repo.update()
       %Address{address | smart_contract: %__MODULE__{smart_contract | constructor_arguments: args}}
     else
@@ -1294,6 +1297,38 @@ defmodule Explorer.Chain.SmartContract do
 
   def get_abi(address_hash_string, _) when is_nil(address_hash_string) do
     []
+  end
+
+  @doc """
+  Gets ABIs of the verified smart contracts among the given address hashes in a
+  single query.
+
+  Only the `abi` column is selected. Address hashes without a verified smart
+  contract are absent from the result.
+
+  ## Parameters
+  - `address_hashes`: The address hashes to look up.
+  - `options`: An optional keyword list of options, such as selecting a specific repository.
+
+  ## Returns
+  - A map of address hash to ABI.
+  """
+  @spec abis_by_address_hashes([Hash.Address.t()], Keyword.t()) :: %{Hash.Address.t() => abi() | nil}
+  def abis_by_address_hashes(address_hashes, options \\ [])
+
+  def abis_by_address_hashes([], _options), do: %{}
+
+  def abis_by_address_hashes(address_hashes, options) do
+    query =
+      from(
+        smart_contract in __MODULE__,
+        where: smart_contract.address_hash in ^address_hashes,
+        select: {smart_contract.address_hash, smart_contract.abi}
+      )
+
+    query
+    |> Chain.select_repo(options).all()
+    |> Map.new()
   end
 
   @doc """

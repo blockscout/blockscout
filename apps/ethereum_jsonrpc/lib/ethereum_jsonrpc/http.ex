@@ -25,7 +25,8 @@ defmodule EthereumJSONRPC.HTTP do
   def json_rpc(%{method: method} = request, options) when is_map(request) do
     json = encode_json(request)
     http = Keyword.fetch!(options, :http)
-    {url_type, url} = url(options, method)
+    url_type = url_type(options, method)
+    url = CommonHelper.get_available_url(options, url_type)
     http_options = Keyword.fetch!(options, :http_options)
 
     with {:ok, %{body: body, status_code: code}} <- http.json_rpc(url, json, headers(), http_options),
@@ -41,25 +42,75 @@ defmodule EthereumJSONRPC.HTTP do
   end
 
   def json_rpc([batch | _] = chunked_batch_request, options) when is_list(batch) do
-    chunked_json_rpc(chunked_batch_request, options, [])
+    chunked_batch_request
+    |> Enum.flat_map(&group_by_url_type(&1, options))
+    |> chunked_json_rpc(options, [])
   end
 
   def json_rpc(batch_request, options) when is_list(batch_request) do
     batch_size = Application.get_env(:ethereum_jsonrpc, __MODULE__)[:batch_size]
-    chunked_batch_request = Enum.chunk_every(batch_request, batch_size)
-    maybe_log_big_batch(chunked_batch_request)
+    maybe_log_big_batch(batch_request, batch_size)
+
+    chunked_batch_request =
+      batch_request
+      |> group_by_url_type(options)
+      |> Enum.flat_map(fn {url_type, requests} ->
+        requests |> Enum.chunk_every(batch_size) |> Enum.map(&{url_type, &1})
+      end)
+
     chunked_json_rpc(chunked_batch_request, options, [])
   end
 
-  defp maybe_log_big_batch([]), do: :ok
-  defp maybe_log_big_batch([_]), do: :ok
-
-  defp maybe_log_big_batch([first_chunk | _] = batch) do
-    Logger.warning(
-      "Big amount of node requests in batch: #{batch |> Enum.map(&length/1) |> Enum.sum()}, 1st_chunk_1st_request: #{inspect(List.first(first_chunk))}"
-    )
+  # Requests within a single batch can be mapped to different url types (e.g. `eth_call`
+  # requests are sent to `eth_call_urls`), so the batch has to be split by the url type
+  # its methods are mapped to. Url types that are configured with the same urls are kept
+  # together in order to not send redundant requests.
+  #
+  # Note that this reorders the requests, so the responses of a batch are not returned in
+  # the order of the requests and have to be matched by their id (see
+  # `t:EthereumJSONRPC.Transport.batch_response/0`).
+  @spec group_by_url_type([Transport.request()], Keyword.t()) :: [{atom(), [Transport.request()]}]
+  defp group_by_url_type(requests, options) do
+    requests
+    |> Enum.group_by(& &1[:method])
+    |> Enum.sort_by(&elem(&1, 0))
+    |> Enum.reduce([], fn {method, method_requests}, acc ->
+      merge_url_type_requests(url_type(options, method), method_requests, acc, options)
+    end)
+    |> Enum.map(fn {_urls, url_type, grouped_requests} -> {url_type, grouped_requests} end)
   end
 
+  defp merge_url_type_requests(url_type, requests, acc, options) do
+    urls = {
+      CommonHelper.url_type_to_urls(url_type, options),
+      CommonHelper.url_type_to_urls(url_type, options, :fallback)
+    }
+
+    case List.keyfind(acc, urls, 0) do
+      nil ->
+        acc ++ [{urls, url_type, requests}]
+
+      {_urls, existing_url_type, existing_requests} ->
+        # `:http` is preferred as the representative of a merged group, so that endpoint
+        # availability is tracked under the type these urls are primarily configured for
+        merged_url_type = if :http in [existing_url_type, url_type], do: :http, else: existing_url_type
+
+        List.keyreplace(acc, urls, 0, {urls, merged_url_type, existing_requests ++ requests})
+    end
+  end
+
+  defp maybe_log_big_batch(batch_request, batch_size) do
+    count = Enum.count(batch_request)
+
+    if count > batch_size do
+      Logger.warning(
+        "Big amount of node requests in batch: #{count}, 1st_chunk_1st_request: #{inspect(List.first(batch_request))}"
+      )
+    end
+  end
+
+  # An empty batch produces no chunks, which matches the JSONRPC 2.0 standard saying that an empty batch (`[]`) returns
+  # an empty response (`""`): an empty response isn't valid JSON, so instead act like it returns an empty list (`[]`)
   defp chunked_json_rpc([], _options, decoded_response_bodies) when is_list(decoded_response_bodies) do
     list =
       decoded_response_bodies
@@ -70,16 +121,10 @@ defmodule EthereumJSONRPC.HTTP do
     {:ok, list}
   end
 
-  # JSONRPC 2.0 standard says that an empty batch (`[]`) returns an empty response (`""`), but an empty response isn't
-  # valid JSON, so instead act like it returns an empty list (`[]`)
-  defp chunked_json_rpc([[] | tail], options, decoded_response_bodies) do
-    chunked_json_rpc(tail, options, decoded_response_bodies)
-  end
-
-  defp chunked_json_rpc([[%{method: method} | _] = batch | tail] = chunks, options, decoded_response_bodies)
+  defp chunked_json_rpc([{url_type, batch} | tail] = chunks, options, decoded_response_bodies)
        when is_list(tail) and is_list(decoded_response_bodies) do
     http = Keyword.fetch!(options, :http)
-    {url_type, url} = url(options, method)
+    url = CommonHelper.get_available_url(options, url_type)
     http_options = Keyword.fetch!(options, :http_options)
 
     json = encode_json(batch)
@@ -110,7 +155,7 @@ defmodule EthereumJSONRPC.HTTP do
     end
   end
 
-  defp rechunk_json_rpc([batch | tail], options, response, decoded_response_bodies) do
+  defp rechunk_json_rpc([{url_type, batch} | tail], options, response, decoded_response_bodies) do
     case length(batch) do
       # it can't be made any smaller
       1 ->
@@ -134,7 +179,7 @@ defmodule EthereumJSONRPC.HTTP do
       batch_size ->
         split_size = div(batch_size, 2)
         {first_chunk, second_chunk} = Enum.split(batch, split_size)
-        new_chunks = [first_chunk, second_chunk | tail]
+        new_chunks = [{url_type, first_chunk}, {url_type, second_chunk} | tail]
         chunked_json_rpc(new_chunks, options, decoded_response_bodies)
     end
   end
@@ -260,16 +305,18 @@ defmodule EthereumJSONRPC.HTTP do
     end
   end
 
-  defp url(options, method) when is_list(options) and is_binary(method) do
+  @spec url_type(Keyword.t(), String.t() | nil) :: atom()
+  defp url_type(options, method) when is_list(options) and is_binary(method) do
     with {:ok, method_to_url} <- Keyword.fetch(options, :method_to_url),
          {:ok, method_atom} <- to_existing_atom(method),
          {:ok, url_type} <- Keyword.fetch(method_to_url, method_atom) do
-      {url_type, CommonHelper.get_available_url(options, url_type)}
+      url_type
     else
-      _ ->
-        {:http, CommonHelper.get_available_url(options, :http)}
+      _ -> :http
     end
   end
+
+  defp url_type(_options, _method), do: :http
 
   defp to_existing_atom(string) do
     {:ok, String.to_existing_atom(string)}

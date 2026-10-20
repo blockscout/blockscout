@@ -63,15 +63,50 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       insert(:token_transfer, transaction: transaction, from_address: address, block_number: transaction.block_number)
 
+      {:ok, now} = DateTime.now("Etc/UTC")
+
       conn =
         conn
         |> put_req_header("accept", "application/csv")
-        |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{})
+        |> get("/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
+          "from_period" => DateTime.add(now, -1, :minute) |> DateTime.to_iso8601(),
+          "to_period" => DateTime.to_iso8601(now)
+        })
 
       assert conn.status == 200
 
       assert Enum.any?(get_resp_header(conn, "content-type"), fn type ->
                String.contains?(type, "application/csv")
+             end)
+
+      assert conn.resp_body =~ to_string(transaction.hash)
+    end
+
+    test "returns 422 when from_period or to_period is omitted", %{conn: conn} do
+      address = insert(:address)
+
+      conn =
+        get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/token-transfers/csv", %{
+          "from_period" => "2023-01-01"
+        })
+
+      assert conn.status == 422
+      assert %{"errors" => [%{"source" => %{"pointer" => "/to_period"}} | _]} = json_response(conn, 422)
+    end
+
+    test "returns JSON 404 for unknown address when Accept: application/csv is sent", %{conn: conn} do
+      conn =
+        conn
+        |> put_req_header("accept", "application/csv")
+        |> get("/api/v2/addresses/0x000000000000000000000000000000000000dEaD/token-transfers/csv", %{
+          "from_period" => "2023-01-01",
+          "to_period" => "2023-01-02"
+        })
+
+      assert conn.status == 404
+
+      assert Enum.any?(get_resp_header(conn, "content-type"), fn type ->
+               String.contains?(type, "application/json")
              end)
     end
 

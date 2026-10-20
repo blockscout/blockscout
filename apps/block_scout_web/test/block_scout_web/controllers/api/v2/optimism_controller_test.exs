@@ -27,6 +27,27 @@ defmodule BlockScoutWeb.API.V2.OptimismControllerTest do
     end
   end
 
+  describe "/optimism/deposits/count" do
+    if @chain_type == :optimism do
+      test "returns cached deposits count", %{conn: conn} do
+        insert_list(5, :op_deposit)
+
+        Explorer.Chain.Cache.Counters.Optimism.DepositsCount.consolidate()
+
+        request = get(conn, "/api/v2/optimism/deposits/count")
+        assert json_response(request, 200) == 5
+      end
+
+      test "returns an integer estimate when the cache is cold", %{conn: conn} do
+        insert_list(2, :op_deposit)
+
+        request = get(conn, "/api/v2/optimism/deposits/count")
+        assert count = json_response(request, 200)
+        assert is_integer(count)
+      end
+    end
+  end
+
   describe "/optimism/interop/messages" do
     if @chain_type == :optimism do
       test "handles message with 0x prefixed payload", %{conn: conn} do

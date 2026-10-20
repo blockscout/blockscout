@@ -9,6 +9,7 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
   import Explorer.Chain, only: [select_repo: 1]
 
   alias Explorer.Account.{TagAddress, WatchlistAddress}
+  alias Explorer.Chain.Cache.AddressTags, as: AddressTagsCache
   alias Explorer.Repo
   alias Explorer.Tags.{AddressTag, AddressToTag}
 
@@ -67,23 +68,28 @@ defmodule BlockScoutWeb.Models.GetAddressTags do
   def get_tags_on_address(address_hash, opts \\ [])
 
   def get_tags_on_address(address_hash, opts) when not is_nil(address_hash) do
-    common_tags_base_query()
-    |> where([tt, att], att.address_hash == ^address_hash)
-    |> select_repo(opts).all()
+    get_tags_on_addresses([address_hash], opts)
   end
 
   def get_tags_on_address(_, _), do: []
 
+  # Served from `Explorer.Chain.Cache.AddressTags`; only addresses missing from
+  # the cache reach the database, in one query.
   defp get_tags_on_addresses(address_hashes, opts) do
-    common_tags_base_query()
-    |> where([tt, att], att.address_hash in ^address_hashes)
-    |> select_repo(opts).all()
+    AddressTagsCache.fetch(address_hashes, fn missing_address_hashes ->
+      common_tags_base_query()
+      |> where([att], att.address_hash in ^missing_address_hashes)
+      |> select_repo(opts).all()
+    end)
   end
 
+  # Starts from `address_to_tags` so the `address_hash` filter is applied
+  # through its index before joining the tags, rather than scanning
+  # `address_tags` and filtering the joined rows afterwards.
   defp common_tags_base_query do
     from(
-      tt in AddressTag,
-      left_join: att in AddressToTag,
+      att in AddressToTag,
+      join: tt in AddressTag,
       on: tt.id == att.tag_id,
       where: tt.label != ^"validator",
       select: %{label: tt.label, display_name: tt.display_name, address_hash: att.address_hash}

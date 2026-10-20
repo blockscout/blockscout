@@ -5,7 +5,7 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
   import Mox
 
   alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.MultichainSearchDb.{MainExportQueue, TokenInfoExportQueue}
+  alias Explorer.Chain.MultichainSearchDb.{BalancesExportQueue, MainExportQueue, TokenInfoExportQueue}
   alias Explorer.Chain.{Hash, Token, Wei}
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.{Repo, TestHelper}
@@ -156,6 +156,58 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                  (record.hash == transaction_1.hash.bytes && record.hash_type == :transaction) ||
                  (record.hash == transaction_2.hash.bytes && record.hash_type == :transaction)
              end)
+    end
+
+    test "dedupes the same address passed with different coin balances and populates queues on error without crashing" do
+      bypass = Bypass.open()
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      Application.put_env(:explorer, MultichainSearch,
+        service_url: "http://localhost:#{bypass.port}",
+        api_key: "12345",
+        addresses_chunk_size: 7000
+      )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, MultichainSearch, service_url: nil, api_key: nil, addresses_chunk_size: 7000)
+        Bypass.down(bypass)
+      end)
+
+      TestHelper.get_chain_id_mock()
+
+      Bypass.expect_once(bypass, "POST", "/api/v1/import:batch", fn conn ->
+        Conn.resp(
+          conn,
+          500,
+          Jason.encode!(%{"code" => 0, "message" => "Error"})
+        )
+      end)
+
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 0
+      assert Repo.aggregate(BalancesExportQueue, :count, :id) == 0
+
+      address = insert(:address, fetched_coin_balance: 100)
+      # the same address row read at a different moment, after the indexer updated its balance
+      stale_address = %{address | fetched_coin_balance: Wei.from(Decimal.new(50), :wei)}
+
+      params = %{
+        addresses: [address, stale_address],
+        blocks: [],
+        transactions: [],
+        address_current_token_balances: []
+      }
+
+      expected_address = address_export_data(address)
+
+      assert {:error,
+              %{
+                addresses: [^expected_address],
+                address_coin_balances: [%{address_hash: _, value: _}]
+              }} = MultichainSearch.batch_import(params)
+
+      assert Repo.aggregate(MainExportQueue, :count, :hash) == 1
+      assert Repo.aggregate(BalancesExportQueue, :count, :id) == 1
     end
 
     test "returns {:error, data_to_retry} when at least one chunk is failed" do
@@ -821,6 +873,98 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
                token_type: "ERC-1155"
              }
     end
+
+    test "adds ERC-8056 multiplier fields taken from the fetched metadata" do
+      enable_multichain_search()
+
+      # the token row still says ERC-20: the fetched metadata is what found the ERC-8056 interface
+      assert MultichainSearch.prepare_token_metadata_for_queue(
+               %Token{type: "ERC-20", name: "Scaled", symbol: "SCL"},
+               %{
+                 type: "ERC-8056",
+                 name: "Scaled",
+                 symbol: "SCL",
+                 decimals: 18,
+                 ui_multiplier: 1_000_000_000_000_000_000,
+                 new_ui_multiplier: 2_000_000_000_000_000_000,
+                 ui_multiplier_effective_at: ~U[2026-09-01 00:00:00.000000Z]
+               }
+             ) == %{
+               token_type: "ERC-8056",
+               name: "Scaled",
+               symbol: "SCL",
+               decimals: 18,
+               ui_multiplier: "1000000000000000000",
+               new_ui_multiplier: "2000000000000000000",
+               ui_multiplier_effective_at: "2026-09-01T00:00:00Z"
+             }
+    end
+
+    test "falls back to the multiplier stored in the token row and omits the missing fields" do
+      enable_multichain_search()
+
+      assert MultichainSearch.prepare_token_metadata_for_queue(
+               %Token{type: "ERC-8056", ui_multiplier: Decimal.new("1000000000000000000")},
+               %{name: "Scaled"}
+             ) == %{
+               token_type: "ERC-8056",
+               name: "Scaled",
+               ui_multiplier: "1000000000000000000"
+             }
+    end
+
+    test "does not add multiplier fields to tokens of other types" do
+      enable_multichain_search()
+
+      assert MultichainSearch.prepare_token_metadata_for_queue(
+               %Token{type: "ERC-20", ui_multiplier: Decimal.new("1000000000000000000")},
+               %{name: "Plain", ui_multiplier: 1_000_000_000_000_000_000}
+             ) == %{
+               token_type: "ERC-20",
+               name: "Plain"
+             }
+    end
+  end
+
+  describe "prepare_token_metadata_for_queue/1" do
+    test "returns an empty map when the service is disabled" do
+      assert MultichainSearch.prepare_token_metadata_for_queue(%Token{type: "ERC-8056", name: "Scaled"}) == %{}
+    end
+
+    test "takes the whole metadata from the token row" do
+      enable_multichain_search()
+
+      assert MultichainSearch.prepare_token_metadata_for_queue(%Token{
+               type: "ERC-8056",
+               name: "Scaled",
+               symbol: "SCL",
+               decimals: Decimal.new(18),
+               total_supply: Decimal.new("1000000000000000000000"),
+               icon_url: "http://localhost:1235/test.png",
+               ui_multiplier: Decimal.new("1000000000000000000"),
+               new_ui_multiplier: Decimal.new("2000000000000000000"),
+               ui_multiplier_effective_at: ~U[2026-09-01 00:00:00.000000Z]
+             }) == %{
+               token_type: "ERC-8056",
+               name: "Scaled",
+               symbol: "SCL",
+               decimals: 18,
+               total_supply: "1000000000000000000000",
+               icon_url: "http://localhost:1235/test.png",
+               ui_multiplier: "1000000000000000000",
+               new_ui_multiplier: "2000000000000000000",
+               ui_multiplier_effective_at: "2026-09-01T00:00:00Z"
+             }
+    end
+
+    test "omits the fields the token row lacks" do
+      enable_multichain_search()
+
+      assert MultichainSearch.prepare_token_metadata_for_queue(%Token{type: "ERC-20", symbol: "PLN"}) == %{
+               token_type: "ERC-20",
+               symbol: "PLN"
+             }
+    end
   end
 
   describe "prepare_token_total_supply_for_queue/1" do
@@ -1370,5 +1514,17 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
       contract_name: nil,
       is_verified_contract: false
     }
+  end
+
+  defp enable_multichain_search do
+    initial = Application.get_env(:explorer, MultichainSearch) || []
+
+    Application.put_env(
+      :explorer,
+      MultichainSearch,
+      Keyword.merge(initial, service_url: "http://localhost:1234", api_key: "12345", token_info_chunk_size: 1000)
+    )
+
+    on_exit(fn -> Application.put_env(:explorer, MultichainSearch, initial) end)
   end
 end

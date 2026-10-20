@@ -30,7 +30,8 @@ defmodule Explorer.Migrator.FillLogsCompressedData do
     limit = batch_size() * concurrency()
 
     logs =
-      unprocessed_data_query()
+      state
+      |> unprocessed_data_query()
       |> limit(^limit)
       |> Repo.all(timeout: :infinity)
 
@@ -44,8 +45,16 @@ defmodule Explorer.Migrator.FillLogsCompressedData do
   end
 
   @impl FillingMigration
-  def unprocessed_data_query do
-    from(l in Log, where: not is_nil(l.data), order_by: [desc: l.block_number])
+  def unprocessed_data_query(state) do
+    Log
+    |> where([l], not is_nil(l.data))
+    |> then(fn query ->
+      case Map.get(state, "max_block_number") do
+        nil -> query
+        max_block_number -> where(query, [l], l.block_number <= ^max_block_number)
+      end
+    end)
+    |> order_by([l], desc: l.block_number)
   end
 
   @impl FillingMigration

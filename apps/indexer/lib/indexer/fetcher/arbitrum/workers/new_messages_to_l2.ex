@@ -25,7 +25,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
 
   import Explorer.Helper, only: [decode_data: 2]
 
-  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1]
+  import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_debug: 1, log_warning: 1]
 
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
   alias Indexer.Fetcher.Arbitrum.Utils.Helper, as: ArbitrumHelper
@@ -245,9 +245,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   newly discovered messages as range delimiters.
 
   Note: When consecutive messages are missing (no fully indexed message between
-  them), processing one may also import others in the same L1 block range. This
-  results in some messages being imported multiple times, which is harmless due
-  to Chain.import's upsert behavior.
+  them), processing one may also import others in the same L1 block range as a
+  side effect. Before processing each message, its origination status is
+  re-checked against the database so that messages already back-filled by an
+  earlier iteration of this same loop are skipped instead of triggering a
+  redundant L1 scan.
 
   The cursor advances by the configured range size with each iteration. The
   task completes and stops when the next iteration's range would extend below
@@ -264,6 +266,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
       - JSON RPC arguments for L1
       - L1 bridge address
       - L1 rollup initialization block
+      - L1 RPC block range for chunking `eth_getLogs` requests
       - L1 RPC chunk size for batch requests
       - Message ID range window size
     - `task_data`: Contains:
@@ -288,6 +291,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
             :json_l1_rpc_named_arguments => EthereumJSONRPC.json_rpc_named_arguments(),
             :l1_bridge_address => binary(),
             :l1_rollup_init_block => non_neg_integer(),
+            :l1_rpc_block_range => non_neg_integer(),
             :l1_rpc_chunk_size => non_neg_integer(),
             :missed_message_ids_range => non_neg_integer(),
             optional(any()) => any()
@@ -308,6 +312,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
           config: %{
             json_l1_rpc_named_arguments: json_rpc_named_arguments,
             l1_rpc_chunk_size: chunk_size,
+            l1_rpc_block_range: rpc_block_range,
             l1_bridge_address: bridge_address,
             l1_rollup_init_block: l1_rollup_init_block,
             missed_message_ids_range: missed_message_ids_range
@@ -336,31 +341,41 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
       log_info(
         "Found #{length(missing_origination_message_ids)} messages with missing origination in range #{start_message_id}..#{end_message_id}"
       )
+    end
 
-      # Process each missing message (already in descending order from highest to lowest ID).
-      #
-      # Note on duplicate imports: When consecutive messages are missing (no fully indexed
-      # message between them), processing the higher-ID message may also discover and import
-      # lower-ID messages within the same L1 block range. For example:
-      #   - Messages A(indexed), B(missing), C(missing), D(indexed)
-      #   - Processing C: L1 range spans A..D, both B and C are discovered and imported
-      #   - Processing B: B is imported again (already has origination from previous step)
-      #
-      # This is expected and harmless - Chain.import performs upserts, so reimporting
-      # the same message data is idempotent. Duplicate imports only occur with consecutive
-      # missing messages; alternating indexed/missing patterns naturally prevent this.
-      missing_origination_message_ids
-      |> Enum.each(fn message_id ->
+    # Process each missing message (already in descending order from highest to lowest ID).
+    #
+    # Note on co-import side effect: When consecutive messages are missing (no fully
+    # indexed message between them), processing the higher-ID message may also discover
+    # and import lower-ID messages within the same L1 block range. For example:
+    #   - Messages A(indexed), B(missing), C(missing), D(indexed)
+    #   - Processing C: L1 range spans A..D, both B and C are discovered and imported
+    #   - Processing B: origination is already present from the previous step, so the
+    #     skip check below avoids re-scanning L1 for it
+    #
+    # This side effect is intentionally not short-circuited by an early exit from this
+    # loop - scanning every remaining chunk for the highest-ID message is what lets
+    # neighbouring missing messages in the same gap get co-discovered in the first
+    # place. Instead, each message is re-checked against the database immediately
+    # before it would be processed: if an earlier iteration of this same loop already
+    # filled in its origination data, the message is skipped and no RPC call is made
+    # for it at all.
+    missing_origination_message_ids
+    |> Enum.each(fn message_id ->
+      if origination_info_missing?(message_id) do
         discover_and_import_single_missing_message(
           message_id,
           l1_rollup_init_block,
           safe_l1_block,
           bridge_address,
           json_rpc_named_arguments,
-          chunk_size
+          chunk_size,
+          rpc_block_range
         )
-      end)
-    end
+      else
+        log_debug("Message ID #{message_id} already has originating block number, skipping")
+      end
+    end)
 
     # Move cursor backward for next iteration
     next_end_message_id = start_message_id - 1
@@ -380,6 +395,18 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
       |> set_missing_origination_completion(should_complete)
 
     {:ok, updated_state}
+  end
+
+  # Tells whether the message still lacks its originating block number, i.e. it
+  # was not back-filled as a side effect of processing a higher message ID
+  # earlier in the same `check_missing_origination/1` loop. The check must run
+  # immediately before the message is processed - a single query ahead of the
+  # loop would not observe those side effects.
+  #
+  # A single-ID range (message_id, message_id) is a valid query - the guards
+  # only require non-negative IDs with start <= end.
+  defp origination_info_missing?(message_id) do
+    DbMessages.messages_to_l2_completed_but_originating_info_missed(message_id, message_id) != []
   end
 
   # Discovers and imports origination information for a single L1-to-L2 message
@@ -408,6 +435,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
   # - `bridge_address`: L1 bridge contract address for log filtering
   # - `json_rpc_named_arguments`: RPC configuration
   # - `chunk_size`: Batch size for RPC requests
+  # - `rpc_block_range`: Maximum width of a single `eth_getLogs` request; the
+  #   discovered L1 block range is split into chunks of at most this width so
+  #   that the node's per-request block-range limit is never exceeded
   #
   # ## Returns
   # - `:ok` after attempting to discover and import the message
@@ -417,7 +447,8 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
          safe_l1_block,
          bridge_address,
          json_rpc_named_arguments,
-         chunk_size
+         chunk_size,
+         rpc_block_range
        ) do
     log_debug("Discovering origination for message ID #{message_id}")
 
@@ -442,15 +473,25 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
       lower_than: higher_bound.message_id
     }
 
-    # Discover messages in the L1 block range, filtering to only messages
-    # within the discovered bounds (exclusive)
-    discover(
-      bridge_address,
+    # Since the L1 block range to search could be wider than `rpc_block_range`
+    # it is required to divide it into smaller chunks so that a single
+    # `eth_getLogs` request never exceeds the node's per-request block-range
+    # limit. `filter_range` is computed once above and reused for every chunk,
+    # so chunking does not change which messages end up imported.
+    ArbitrumHelper.execute_for_block_range_in_chunks(
       l1_start_block,
       l1_end_block,
-      json_rpc_named_arguments,
-      chunk_size,
-      filter_range
+      rpc_block_range,
+      fn chunk_start, chunk_end ->
+        discover(
+          bridge_address,
+          chunk_start,
+          chunk_end,
+          json_rpc_named_arguments,
+          chunk_size,
+          filter_range
+        )
+      end
     )
 
     :ok
@@ -568,7 +609,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
           [%{String.t() => any()}],
           EthereumJSONRPC.json_rpc_named_arguments(),
           non_neg_integer(),
-          %{higher_than: non_neg_integer(), lower_than: non_neg_integer()} | nil
+          %{higher_than: integer(), lower_than: non_neg_integer()} | nil
         ) :: [Arbitrum.Message.to_import()]
   defp get_messages_from_logs(logs, json_rpc_named_arguments, chunk_size, only_messages_in_range)
 
@@ -580,8 +621,26 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewMessagesToL2 do
     transactions_to_from =
       Rpc.execute_transactions_requests_and_get_from(transactions_requests, json_rpc_named_arguments, chunk_size)
 
+    # A successful-but-null `eth_getTransactionByHash` response (e.g. from a
+    # lagging or pruned node behind a load balancer) leaves the originator
+    # address unknown. Such a message must not be imported at all: persisting it
+    # with the block number filled but the originator empty would make it look
+    # complete to the discovery queries keyed on the block number, so it would
+    # never be re-processed. Left unimported, it stays selectable for a retry on
+    # a later pass.
+    {messages_with_originator, messages_without_originator} =
+      Enum.split_with(messages, fn msg ->
+        not is_nil(transactions_to_from[msg.originating_transaction_hash])
+      end)
+
+    unless Enum.empty?(messages_without_originator) do
+      log_warning(
+        "Skipping import of #{length(messages_without_originator)} L1-to-L2 messages with unknown originator address"
+      )
+    end
+
     complete_messages =
-      Enum.map(messages, fn msg ->
+      Enum.map(messages_with_originator, fn msg ->
         Map.merge(msg, %{
           originator_address: transactions_to_from[msg.originating_transaction_hash],
           status: :initiated

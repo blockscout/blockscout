@@ -11,7 +11,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
     chain_type: [:explorer, :chain_type],
     arc_native_token_address: [:indexer, [:arc, :arc_native_token_address]]
 
-  alias Explorer.{Chain, PagingOptions, Repo}
+  alias Explorer.{Chain, Helper, PagingOptions, Repo}
   alias Explorer.Chain.{Address, Block, Hash, InternalTransaction, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Address.CoinBalance
 
@@ -133,10 +133,15 @@ defmodule Explorer.Chain.Address.CoinBalance do
         ) :: {:ok, accumulator}
         when accumulator: term()
   def stream_unfetched_balances(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
+    # Balances at non-traceable block numbers are skipped by the catch-up fetcher
+    # (see `Indexer.Fetcher.CoinBalance.Helper.run/3`), so they must be excluded
+    # here as well. Otherwise they are never marked as fetched and, once their
+    # count reaches the init query limit, they shadow all fetchable balances.
     query =
       from(
         balance in CoinBalance,
         where: is_nil(balance.value_fetched_at),
+        where: ^Helper.traceable_block_numbers_dynamic(:block_number),
         select: %{address_hash: balance.address_hash, block_number: balance.block_number}
       )
 
@@ -178,28 +183,23 @@ defmodule Explorer.Chain.Address.CoinBalance do
   end
 
   @doc """
-  Retrieves paginated coin balance records for a given address with timestamp interpolation.
+  Retrieves paginated coin balance records for a given address hash with timestamp interpolation.
 
-  This function fetches coin balance history for an address, applying pagination
-  and performing timestamp calculations for blocks. It includes an optimization
-  that returns an empty list immediately when the paging key is `{0}`, avoiding
-  unnecessary database queries. For other cases, it processes balances by
-  filtering records with values, calculating block timestamp ranges, and
-  interpolating timestamps for intermediate blocks when multiple blocks are
-  present.
+  Fetches coin balance history for an address, applying pagination and performing
+  timestamp calculations for blocks. Returns an empty list immediately when the
+  paging key is `{0}`, avoiding unnecessary database queries.
 
   ## Parameters
-  - `address`: Address.t() - The address record to fetch coin balances for
-  - `options`: [Chain.paging_options() | Chain.api?()] - Query options including
-    paging configuration and API mode selection
+  - `address_hash`: `Hash.Address.t()` - The address hash to fetch coin balances for.
+  - `options`: keyword list with paging and API mode options.
 
   ## Returns
   - `[t()]` - List of coin balance records sorted by block number in descending
     order, with interpolated timestamps, or empty list if paging key is `{0}` or
-    no balances exist
+    no balances exist.
   """
-  @spec address_to_coin_balances(Address.t(), [Chain.paging_options() | Chain.api?()]) :: [t()]
-  def address_to_coin_balances(address, options) do
+  @spec address_hash_to_coin_balances(Hash.Address.t(), [Chain.paging_options() | Chain.api?()]) :: [t()]
+  def address_hash_to_coin_balances(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, PagingOptions.default_paging_options())
 
     case paging_options do
@@ -207,13 +207,13 @@ defmodule Explorer.Chain.Address.CoinBalance do
         []
 
       _ ->
-        address_to_coin_balances_internal(address, options, paging_options)
+        address_hash_to_coin_balances_internal(address_hash, options, paging_options)
     end
   end
 
-  defp address_to_coin_balances_internal(address, options, paging_options) do
+  defp address_hash_to_coin_balances_internal(address_hash, options, paging_options) do
     balances_raw =
-      address.hash
+      address_hash
       |> fetch_coin_balances(paging_options)
       |> page_coin_balances(paging_options)
       |> Chain.select_repo(options).all()

@@ -867,6 +867,8 @@ defmodule Explorer.EthRPC do
     3 => "fourth"
   }
 
+  @no_result "No result"
+
   @spec responses([map()]) :: [map()]
   def responses(requests) do
     requests =
@@ -913,7 +915,7 @@ defmodule Explorer.EthRPC do
           format_error(error, Map.get(request, "id"))
 
         # the request URL is intentionally dropped from the reason to avoid exposing it
-        {:proxy, {:error, {:bad_response = error, _request_url}}} ->
+        {:proxy, {:error, {error, _request_url}}} when error in [:bad_response, :bad_gateway] ->
           format_error(inspect(error), @internal_error_code, Map.get(request, "id"))
 
         {:proxy, {:error, %Mint.TransportError{reason: reason}}} ->
@@ -980,32 +982,35 @@ defmodule Explorer.EthRPC do
     end)
   end
 
+  # Responses of a batch request are not guaranteed to be returned in the order of the
+  # requests, so they are matched by id. The index of the request is used as the id sent
+  # to the node, since the id provided by the user can be duplicated or nil. The user's
+  # id is attached to the response by `responses/1` anyway.
   defp json_rpc(map) when is_map(map) do
     to_request =
-      Enum.flat_map(Map.values(map), fn
-        {:error, _} ->
+      Enum.flat_map(map, fn
+        {_index, {:error, _}} ->
           []
 
-        %{"jsonrpc" => _json_rpc, "method" => _method, "params" => _params, "id" => _id} = request ->
-          [request_to_elixir(request)]
+        {index, request} when is_map(request) ->
+          [request |> request_to_elixir() |> Map.put(:id, index)]
 
         _ ->
           []
       end)
 
-    with [_ | _] = to_request <- to_request,
+    with [_ | _] <- to_request,
          {:ok, responses} <-
            EthereumJSONRPC.json_rpc(to_request, Application.get_env(:explorer, :json_rpc_named_arguments)) do
-      {map, []} =
-        Enum.map_reduce(map, responses, fn
-          {_index, {:error, _}} = elem, responses ->
-            {elem, responses}
+      index_to_response = Map.new(responses, &{&1.id, &1})
 
-          {index, _request}, [response | other_responses] ->
-            {{index, response}, other_responses}
-        end)
+      Map.new(map, fn
+        {_index, {:error, _}} = elem ->
+          elem
 
-      Enum.into(map, %{})
+        {index, _request} ->
+          {index, Map.get(index_to_response, index, {:error, @no_result})}
+      end)
     else
       [] ->
         map
@@ -1111,13 +1116,17 @@ defmodule Explorer.EthRPC do
   """
   @spec eth_get_transaction_by_hash(String.t()) :: {:ok, map() | nil} | {:error, error()}
   def eth_get_transaction_by_hash(transaction_hash_string) do
-    necessity_by_association =
-      %{signed_authorizations: :optional}
-      |> Map.merge(chain_type_transaction_necessity_by_association())
+    # `signed_authorizations` are preloaded separately, only for EIP-7702
+    # (type 4) transactions, to skip the query for every other type.
+    render_func = fn transaction ->
+      transaction
+      |> Transaction.preload_signed_authorizations(api?: true)
+      |> render_transaction()
+    end
 
-    validate_and_render_transaction(transaction_hash_string, &render_transaction/1,
+    validate_and_render_transaction(transaction_hash_string, render_func,
       api?: true,
-      necessity_by_association: necessity_by_association
+      necessity_by_association: chain_type_transaction_necessity_by_association()
     )
   end
 
@@ -1261,25 +1270,29 @@ defmodule Explorer.EthRPC do
 
   defp maybe_add_access_list(props, _transaction), do: props
 
-  defp maybe_add_chain_type_extra_transaction_info_properties(props, %{beacon_blob_transaction: beacon_blob_transaction}) do
-    if Application.get_env(:explorer, :chain_type) == :ethereum && beacon_blob_transaction do
+  # The `beacon_blob_transaction` association exists on the `Transaction` struct
+  # only when the chain type is `:ethereum` at compile time, so these clauses
+  # are compiled in under the same condition; otherwise dialyzer reports a
+  # pattern that can never match.
+  if @chain_type == :ethereum do
+    defp maybe_add_chain_type_extra_transaction_info_properties(props, %{
+           beacon_blob_transaction: beacon_blob_transaction
+         })
+         when not is_nil(beacon_blob_transaction) do
       props
       |> Map.put("maxFeePerBlobGas", Helper.decimal_to_hex(beacon_blob_transaction.max_fee_per_blob_gas))
       |> Map.put("blobVersionedHashes", beacon_blob_transaction.blob_versioned_hashes)
-    else
-      props
     end
   end
 
   defp maybe_add_chain_type_extra_transaction_info_properties(props, _transaction), do: props
 
-  defp maybe_add_chain_type_extra_receipt_properties(props, %{beacon_blob_transaction: beacon_blob_transaction}) do
-    if Application.get_env(:explorer, :chain_type) == :ethereum && beacon_blob_transaction do
+  if @chain_type == :ethereum do
+    defp maybe_add_chain_type_extra_receipt_properties(props, %{beacon_blob_transaction: beacon_blob_transaction})
+         when not is_nil(beacon_blob_transaction) do
       props
       |> Map.put("blobGasPrice", Helper.decimal_to_hex(beacon_blob_transaction.blob_gas_price))
       |> Map.put("blobGasUsed", Helper.decimal_to_hex(beacon_blob_transaction.blob_gas_used))
-    else
-      props
     end
   end
 
@@ -1603,6 +1616,13 @@ defmodule Explorer.EthRPC do
   defp block_param("latest"), do: {:ok, :latest}
   defp block_param("earliest"), do: {:ok, :earliest}
   defp block_param("pending"), do: {:ok, :pending}
+
+  defp block_param("0x" <> hexadecimal_digits) do
+    case Integer.parse(hexadecimal_digits, 16) do
+      {integer, ""} -> {:ok, integer}
+      _ -> :error
+    end
+  end
 
   defp block_param(string_integer) when is_bitstring(string_integer) do
     case quantity_to_integer(string_integer) do

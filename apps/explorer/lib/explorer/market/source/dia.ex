@@ -58,7 +58,9 @@ defmodule Explorer.Market.Source.DIA do
                  |> URI.append_path("/#{blockchain}")
                  |> URI.append_path("/#{token.contract_address_hash}")
                  |> URI.to_string(),
-                 []
+                 [],
+                 __MODULE__,
+                 :asset_quotation_token
                ) do
             {:ok, data} ->
               token_to_import =
@@ -142,7 +144,9 @@ defmodule Explorer.Market.Source.DIA do
              base_url()
              |> URI.append_path("/assetQuotation/#{blockchain}/#{coin_address_hash}")
              |> URI.to_string(),
-             []
+             [],
+             __MODULE__,
+             :asset_quotation_coin
            ) do
       {:ok,
        %Token{
@@ -176,7 +180,9 @@ defmodule Explorer.Market.Source.DIA do
              |> URI.append_path("/quotedAssets")
              |> URI.append_query("blockchain=#{blockchain}")
              |> URI.to_string(),
-             []
+             [],
+             __MODULE__,
+             :quoted_assets
            ) do
       tokens
       |> Enum.reduce([], &reduce_dia_token(&1, &2, coin_address_hash))
@@ -234,7 +240,9 @@ defmodule Explorer.Market.Source.DIA do
              |> URI.append_query("starttime=#{unix_from}")
              |> URI.append_query("endtime=#{unix_now}")
              |> URI.to_string(),
-             []
+             [],
+             __MODULE__,
+             :asset_chart_points
            ) do
       values
       |> Enum.reduce_while(%{}, fn value, acc ->

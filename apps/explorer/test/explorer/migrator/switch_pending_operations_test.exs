@@ -136,5 +136,71 @@ defmodule Explorer.Migrator.SwitchPendingOperationsTest do
       assert [] = Repo.all(PendingTransactionOperation)
       assert [_, _] = Repo.all(PendingBlockOperation)
     end
+
+    test "from pto to pbo keeps priority and processes in small batches" do
+      initial_helper_config = Application.get_env(:explorer, Explorer.Chain.PendingOperationsHelper)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.PendingOperationsHelper, initial_helper_config)
+      end)
+
+      Application.put_env(
+        :explorer,
+        Explorer.Chain.PendingOperationsHelper,
+        Keyword.put(initial_helper_config || [], :transactions_batch_size, 2)
+      )
+
+      prioritized_block = insert(:block)
+      regular_block = insert(:block)
+
+      [first_prioritized, second_prioritized, third_prioritized] =
+        3
+        |> insert_list(:transaction)
+        |> with_block(prioritized_block)
+
+      regular_transactions =
+        2
+        |> insert_list(:transaction)
+        |> with_block(regular_block)
+
+      pending_transaction = insert(:transaction)
+
+      insert(:pending_transaction_operation, transaction_hash: first_prioritized.hash)
+      insert(:pending_transaction_operation, transaction_hash: second_prioritized.hash, priority: 1)
+      insert(:pending_transaction_operation, transaction_hash: third_prioritized.hash)
+
+      Enum.each(regular_transactions ++ [pending_transaction], fn %{hash: transaction_hash} ->
+        insert(:pending_transaction_operation, transaction_hash: transaction_hash)
+      end)
+
+      json_rpc_config = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+      Application.put_env(
+        :explorer,
+        :json_rpc_named_arguments,
+        Keyword.put(json_rpc_config, :variant, EthereumJSONRPC.Geth)
+      )
+
+      geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(geth_config, :block_traceable?, true))
+
+      SwitchPendingOperations.start_link([])
+      Process.sleep(200)
+
+      assert [] = Repo.all(PendingTransactionOperation)
+
+      pbos = Repo.all(PendingBlockOperation)
+      assert length(pbos) == 2
+
+      assert %PendingBlockOperation{block_number: prioritized_number, priority: 1} =
+               Enum.find(pbos, &(&1.block_hash == prioritized_block.hash))
+
+      assert prioritized_number == prioritized_block.number
+
+      assert %PendingBlockOperation{block_number: regular_number, priority: nil} =
+               Enum.find(pbos, &(&1.block_hash == regular_block.hash))
+
+      assert regular_number == regular_block.number
+    end
   end
 end

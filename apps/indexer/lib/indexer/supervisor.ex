@@ -57,6 +57,7 @@ defmodule Indexer.Supervisor do
     TokenCountersUpdater,
     TokenInstanceImporter,
     TokenTotalSupplyUpdater,
+    TokenUIMultiplierUpdater,
     TokenUpdater,
     UncleBlock,
     Withdrawal
@@ -72,10 +73,7 @@ defmodule Indexer.Supervisor do
 
   alias Indexer.Migrator.RecoveryWETHTokenTransfers
 
-  alias Indexer.Temporary.{
-    UncatalogedTokenTransfers,
-    UnclesWithoutIndex
-  }
+  alias Indexer.Temporary.UnclesWithoutIndex
 
   alias Indexer.Utils.EventNotificationsCleaner
 
@@ -273,13 +271,13 @@ defmodule Indexer.Supervisor do
         {EmptyBlocksSanitizer.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {PendingTransactionsSanitizer, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         {TokenTotalSupplyUpdater, [[]]},
+        {TokenUIMultiplierUpdater, [[]]},
         AddressNonceUpdater,
 
         # Notifications cleaner
         configure(EventNotificationsCleaner, [[]]),
 
         # Temporary workers
-        {UncatalogedTokenTransfers.Supervisor, [[]]},
         {UnclesWithoutIndex.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {PendingOpsCleaner, [[], []]},

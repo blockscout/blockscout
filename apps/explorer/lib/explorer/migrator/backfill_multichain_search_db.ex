@@ -127,8 +127,13 @@ defmodule Explorer.Migrator.BackfillMultichainSearchDB do
                 # credo:disable-for-next-line Credo.Check.Refactor.Nesting
                 extract_address_from_result(result) ++ addresses_acc
               end)
-              |> Enum.uniq()
               |> Enum.reject(&is_nil/1)
+              # The same address may be preloaded by several of the concurrent queries above
+              # while the indexer keeps updating `addresses` (e.g. `fetched_coin_balance`), so
+              # the structs for one hash can differ. Dedupe by hash, keeping the snapshot with
+              # the most recently fetched coin balance.
+              |> Enum.sort_by(&(&1.fetched_coin_balance_block_number || -1), :desc)
+              |> Enum.uniq_by(& &1.hash)
 
             to_import = %{
               addresses: addresses,

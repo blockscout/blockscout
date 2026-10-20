@@ -110,7 +110,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Stats.Response do
         static_gas_price: General.IntegerStringNullable,
         total_addresses: General.IntegerString,
         total_blocks: General.IntegerString,
-        total_gas_used: General.IntegerString,
         total_transactions: General.IntegerString,
         transactions_today: General.IntegerString,
         tvl: General.IntegerStringNullable
@@ -133,7 +132,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Stats.Response do
         :static_gas_price,
         :total_addresses,
         :total_blocks,
-        :total_gas_used,
         :total_transactions,
         :transactions_today,
         :tvl

@@ -82,6 +82,85 @@ defmodule BlockScoutWeb.NFTHelperTest do
       metadata = %{"properties" => []}
       assert NFTHelper.get_media_src(metadata, true) == nil
     end
+
+    test "unwraps image when it is a list of urls" do
+      metadata = %{"image" => ["https://example.com/first.png", "https://example.com/second.png"]}
+      assert NFTHelper.get_media_src(metadata, true) == "https://example.com/first.png"
+    end
+
+    test "returns nil when properties.image is a non-string value" do
+      assert NFTHelper.get_media_src(%{"properties" => %{"image" => ["https://example.com/a.png"]}}, true) ==
+               "https://example.com/a.png"
+
+      assert NFTHelper.get_media_src(%{"properties" => %{"image" => 42}}, true) == nil
+      assert NFTHelper.get_media_src(%{"properties" => %{"image" => %{"description" => %{}}}}, true) == nil
+    end
+  end
+
+  describe "external_url/1" do
+    test "returns nil for nil instance" do
+      assert NFTHelper.external_url(nil) == nil
+    end
+
+    test "returns nil when metadata is nil or has no external_url" do
+      assert NFTHelper.external_url(%{metadata: nil}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"name" => "NFT"}}) == nil
+    end
+
+    test "returns external_url when it is a string" do
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "https://example.com"}}) ==
+               "https://example.com"
+    end
+
+    test "returns nil when external_url is blank" do
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => ""}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "   "}}) == nil
+    end
+
+    test "unwraps external_url when it is a list" do
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => ["https://cryptoversecomic.com"]}}) ==
+               "https://cryptoversecomic.com"
+
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => []}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => [nil, "https://example.com"]}}) == nil
+    end
+
+    test "returns nil when external_url is not a string" do
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => 123}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => %{"url" => "https://example.com"}}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => true}}) == nil
+    end
+
+    test "accepts http and https URLs only" do
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "http://example.com/path?q=1"}}) ==
+               "http://example.com/path?q=1"
+
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "HTTPS://Example.com"}}) ==
+               "HTTPS://Example.com"
+    end
+
+    test "returns nil for non-web schemes and scheme-less values" do
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "javascript:alert(1)"}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => ["javascript:alert(1)"]}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "data:text/html,<script>1</script>"}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "ipfs://QmHash"}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "example.com"}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "/relative/path"}}) == nil
+      assert NFTHelper.external_url(%{metadata: %{"external_url" => "http://"}}) == nil
+    end
+  end
+
+  describe "retrieve_image/1" do
+    test "returns nil for non-string, non-map, non-list values" do
+      assert NFTHelper.retrieve_image(nil) == nil
+      assert NFTHelper.retrieve_image(42) == nil
+      assert NFTHelper.retrieve_image(true) == nil
+    end
+
+    test "unwraps list and returns nil for empty list" do
+      assert NFTHelper.retrieve_image(["https://example.com/a.png"]) == "https://example.com/a.png"
+      assert NFTHelper.retrieve_image([]) == nil
+    end
   end
 
   describe "compose_resource_url/1" do
@@ -104,6 +183,27 @@ defmodule BlockScoutWeb.NFTHelperTest do
       url = "IpFs://baFybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json"
 
       assert "https://ipfs.io/ipfs/baFybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm/51.json" ==
+               NFTHelper.compose_resource_url(url)
+    end
+
+    test "transforms bzz link with host and path" do
+      url = "bzz://swarm-devrel.eth/assets/swarm-logo.svg"
+
+      assert "https://gateway.ethswarm.org/bzz/swarm-devrel.eth/assets/swarm-logo.svg" ==
+               NFTHelper.compose_resource_url(url)
+    end
+
+    test "transforms bzz link with bare hash" do
+      hash = "1234abcd" <> String.duplicate("0", 56)
+      url = "bzz://" <> hash
+
+      assert "https://gateway.ethswarm.org/bzz/#{hash}/" == NFTHelper.compose_resource_url(url)
+    end
+
+    test "transforms bzz link in different case" do
+      url = "BzZ://swarm-devrel.eth/assets/swarm-logo.svg"
+
+      assert "https://gateway.ethswarm.org/bzz/swarm-devrel.eth/assets/swarm-logo.svg" ==
                NFTHelper.compose_resource_url(url)
     end
   end

@@ -40,6 +40,10 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
 
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json", "csv"])
+    # CSV responses set their content type explicitly; keep JSON as the render
+    # format so error responses (404/422/403) render their JSON templates even
+    # when the client sends `Accept: application/csv`.
+    plug(:put_format, "json")
     plug(CheckApiV2)
     plug(:fetch_session)
     plug(:protect_from_forgery)
@@ -89,6 +93,7 @@ defmodule BlockScoutWeb.Routers.TokensApiV2Router do
     get("/:address_hash_param/counters", V2.TokenController, :counters)
     get("/:address_hash_param/transfers", V2.TokenController, :transfers)
     get("/:address_hash_param/holders", V2.TokenController, :holders)
+    get("/:address_hash_param/ui-multiplier-changes", V2.TokenController, :ui_multiplier_changes)
     get("/:address_hash_param/instances", V2.TokenController, :instances)
     get("/:address_hash_param/instances/:token_id_param", V2.TokenController, :instance)
     get("/:address_hash_param/instances/:token_id_param/media-type", V2.TokenController, :media_type)

@@ -37,6 +37,10 @@ defmodule Explorer.Chain.Token.Schema do
         field(:volume_24h, FiatValue)
         field(:circulating_supply, :decimal)
         field(:transfer_count, :integer)
+        field(:counters_updated_at, :integer)
+        field(:ui_multiplier, :decimal)
+        field(:new_ui_multiplier, :decimal)
+        field(:ui_multiplier_effective_at, :utc_datetime_usec)
 
         belongs_to(
           :contract_address,
@@ -72,6 +76,7 @@ defmodule Explorer.Chain.Token do
   * ERC-404
   * ZRC-2 (for Zilliqa chain type)
   * ERC-7984
+  * ERC-8056
 
   ## Token Specifications
 
@@ -82,6 +87,7 @@ defmodule Explorer.Chain.Token do
   * [ERC-404](https://github.com/Pandora-Labs-Org/erc404)
   * [ZRC-2](https://github.com/Zilliqa/ZRC/blob/main/zrcs/zrc-2.md)
   * [ERC-7984](https://github.com/ethereum/ERCs/blob/39197cde3e32d8fc7fde74c7d0ce5e67ad4de409/ERCS/erc-7984.md)
+  * [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056)
   """
   require Logger
 
@@ -95,14 +101,11 @@ defmodule Explorer.Chain.Token do
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{Address, BridgedToken, Hash, Search, Token}
   alias Explorer.Chain.Cache.{BackgroundMigrations, BlockNumber}
-  alias Explorer.Chain.Cache.Counters.{TokenHoldersCount, TokenTransfersCount}
+  alias Explorer.Chain.Cache.Counters.TokenCounters
   alias Explorer.Chain.Import.Runner
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.Repo
   alias Explorer.SmartContract.Helper
-
-  # milliseconds
-  @timeout 60_000
 
   @default_sorting [
     desc_nulls_last: :circulating_market_cap,
@@ -137,11 +140,18 @@ defmodule Explorer.Chain.Token do
   * `circulating_market_cap` - The circulating market cap of a token in a configured currency (USD by default).
   * `icon_url` - URL of the token's icon.
   * `is_verified_via_admin_panel` - is token verified via admin panel.
+  * `ui_multiplier` - ERC-8056 multiplier currently in effect, with 18 decimals
+    of precision. `nil` for tokens that do not implement ERC-8056.
+  * `new_ui_multiplier` - ERC-8056 multiplier scheduled to replace
+    `ui_multiplier` at `ui_multiplier_effective_at`.
+  * `ui_multiplier_effective_at` - moment `new_ui_multiplier` takes effect. Use
+    `effective_ui_multiplier/2` instead of reading `ui_multiplier` directly, as
+    the switch happens with no on-chain event to index.
   """
   Explorer.Chain.Token.Schema.generate()
 
   @required_attrs ~w(contract_address_hash type)a
-  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block metadata_updated_at updated_at fiat_value circulating_market_cap circulating_supply icon_url is_verified_via_admin_panel volume_24h)a
+  @optional_attrs ~w(cataloged decimals name symbol total_supply skip_metadata total_supply_updated_at_block metadata_updated_at updated_at fiat_value circulating_market_cap circulating_supply icon_url is_verified_via_admin_panel volume_24h ui_multiplier new_ui_multiplier ui_multiplier_effective_at)a
 
   @doc """
     Returns the **ordered** list of allowed NFT type labels.
@@ -153,6 +163,28 @@ defmodule Explorer.Chain.Token do
       "ERC-1155",
       "ERC-404"
     ]
+
+  @doc """
+  Returns the [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056) multiplier the
+  amounts of the token have to be displayed with at `at` (now by default), or
+  `nil` for tokens that do not implement ERC-8056.
+  """
+  @spec effective_ui_multiplier(t(), DateTime.t()) :: Decimal.t() | nil
+  def effective_ui_multiplier(token, at \\ DateTime.utc_now())
+
+  def effective_ui_multiplier(%__MODULE__{ui_multiplier: nil}, _at), do: nil
+
+  def effective_ui_multiplier(%__MODULE__{new_ui_multiplier: nil} = token, _at), do: token.ui_multiplier
+
+  def effective_ui_multiplier(%__MODULE__{ui_multiplier_effective_at: nil} = token, _at), do: token.ui_multiplier
+
+  def effective_ui_multiplier(%__MODULE__{} = token, at) do
+    if Timex.before?(at, token.ui_multiplier_effective_at) do
+      token.ui_multiplier
+    else
+      token.new_ui_multiplier
+    end
+  end
 
   @doc false
   def changeset(%Token{} = token, params \\ %{}) do
@@ -221,6 +253,27 @@ defmodule Explorer.Chain.Token do
     |> cataloged_tokens()
     |> Chain.add_fetcher_limit(limited?)
     |> order_by(asc_nulls_first: :metadata_updated_at)
+    |> Repo.stream_reduce(initial, reducer)
+  end
+
+  @doc """
+  Streams cataloged tokens with their current counter values (holders and
+  transfers counts) for the periodic counters export. Tokens whose counters
+  were never consolidated (`counters_updated_at IS NULL`) are skipped rather
+  than exported as zeros.
+  """
+  @spec stream_cataloged_tokens_for_counters(
+          initial :: accumulator,
+          reducer :: (entry :: __MODULE__.t(), accumulator -> accumulator),
+          limited? :: boolean()
+        ) :: {:ok, accumulator}
+        when accumulator: term()
+  def stream_cataloged_tokens_for_counters(initial, reducer, limited? \\ false) when is_function(reducer, 2) do
+    __MODULE__
+    |> where([token], token.cataloged == true and not is_nil(token.counters_updated_at))
+    |> select([token], struct(token, [:contract_address_hash, :holder_count, :transfer_count]))
+    |> Chain.add_fetcher_limit(limited?)
+    |> order_by(asc: :contract_address_hash)
     |> Repo.stream_reduce(initial, reducer)
   end
 
@@ -316,17 +369,24 @@ defmodule Explorer.Chain.Token do
           symbol: fragment("COALESCE(EXCLUDED.symbol, ?)", token.symbol),
           total_supply: fragment("COALESCE(EXCLUDED.total_supply, ?)", token.total_supply),
           decimals: fragment("COALESCE(EXCLUDED.decimals, ?)", token.decimals),
+          ui_multiplier: fragment("COALESCE(EXCLUDED.ui_multiplier, ?)", token.ui_multiplier),
+          new_ui_multiplier: fragment("COALESCE(EXCLUDED.new_ui_multiplier, ?)", token.new_ui_multiplier),
+          ui_multiplier_effective_at:
+            fragment("COALESCE(EXCLUDED.ui_multiplier_effective_at, ?)", token.ui_multiplier_effective_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", token.updated_at),
           metadata_updated_at: fragment("GREATEST(?, EXCLUDED.metadata_updated_at)", token.metadata_updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.total_supply, EXCLUDED.decimals) IS DISTINCT FROM (?, ?, ?, ?)",
+          "(EXCLUDED.name, EXCLUDED.symbol, EXCLUDED.total_supply, EXCLUDED.decimals, EXCLUDED.ui_multiplier, EXCLUDED.new_ui_multiplier, EXCLUDED.ui_multiplier_effective_at) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
           token.name,
           token.symbol,
           token.total_supply,
-          token.decimals
+          token.decimals,
+          token.ui_multiplier,
+          token.new_ui_multiplier,
+          token.ui_multiplier_effective_at
         )
     )
   end
@@ -475,49 +535,6 @@ defmodule Explorer.Chain.Token do
   end
 
   @doc """
-    Updates token_holder_count for a given contract_address_hash.
-    It used by Explorer.Chain.Cache.Counters.TokenHoldersCount module.
-  """
-  @spec update_token_holder_count(Hash.Address.t(), integer()) :: {non_neg_integer(), nil}
-  def update_token_holder_count(contract_address_hash, holders_count) when not is_nil(holders_count) do
-    now = DateTime.utc_now()
-
-    Repo.update_all(
-      from(t in __MODULE__,
-        where: t.contract_address_hash == ^contract_address_hash,
-        update: [set: [holder_count: ^holders_count, updated_at: ^now]]
-      ),
-      [],
-      timeout: @timeout
-    )
-  end
-
-  @doc """
-    Updates `transfer_count` field for a given `contract_address_hash`.
-    Used by the `Explorer.Chain.Cache.Counters.TokenTransfersCount` module.
-
-    ## Parameters
-    - `contract_address_hash`: The address of the token contract.
-    - `transfer_count`: The updated counter value.
-
-    ## Returns
-    - `{updated_count, nil}` tuple where `updated_count` is the number of updated rows in the db table.
-  """
-  @spec update_token_transfer_count(Hash.Address.t(), non_neg_integer()) :: {non_neg_integer(), nil}
-  def update_token_transfer_count(contract_address_hash, transfer_count) when not is_nil(transfer_count) do
-    now = DateTime.utc_now()
-
-    Repo.update_all(
-      from(t in __MODULE__,
-        where: t.contract_address_hash == ^contract_address_hash,
-        update: [set: [transfer_count: ^transfer_count, updated_at: ^now]]
-      ),
-      [],
-      timeout: @timeout
-    )
-  end
-
-  @doc """
   Drops token info for the given token:
   Sets is_verified_via_admin_panel to false, icon_url to nil, symbol to nil, name to nil.
   Don't forget to set/update token's symbol and name after this function.
@@ -580,75 +597,32 @@ defmodule Explorer.Chain.Token do
   end
 
   @doc """
-  Fetches token counters (transfers count and holders count) for a given token address.
+  Fetches the token counters (transfers count and holders count) for a given
+  token.
 
-  This function spawns two async tasks to fetch the token transfers count and
-  token holders count concurrently. If a task times out or exits, it falls back
-  to fetching the cached value.
+  The transfers count is served from the incremental counter cache
+  (`Explorer.Chain.Cache.Counters.TokenCounters`) falling back to the
+  `transfer_count` column; the holders count comes straight from the
+  `holder_count` column, which is maintained live by the import-time deltas.
+  No aggregates run in the calling process — a token whose counters were never
+  calculated reports zeros and is marked for consolidation.
 
   ## Parameters
-  - `address_hash`: The contract address hash of the token
-  - `timeout`: The timeout in milliseconds for the async tasks
+  - `token`: The token to fetch the counters for
 
   ## Returns
-  - A tuple `{transfers_count, holders_count}` where each value is an integer or nil
+  - A tuple `{transfers_count, holders_count}` of non-negative integers
   """
-  @spec fetch_token_counters(Hash.Address.t(), timeout()) :: {integer() | nil, integer() | nil}
-  def fetch_token_counters(address_hash, timeout) do
-    total_token_transfers_task =
-      Task.async(fn ->
-        TokenTransfersCount.fetch(address_hash)
-      end)
+  @spec fetch_token_counters(t()) :: {non_neg_integer(), non_neg_integer()}
+  def fetch_token_counters(%__MODULE__{} = token) do
+    transfers_count = TokenCounters.fetch(token)
+    holders_count = token.holder_count || 0
 
-    total_token_holders_task =
-      Task.async(fn ->
-        TokenHoldersCount.fetch(address_hash)
-      end)
-
-    [total_token_transfers_task, total_token_holders_task]
-    |> Task.yield_many(timeout)
-    |> Enum.map(fn {task, res} ->
-      case res do
-        {:ok, result} ->
-          result
-
-        {:exit, reason} ->
-          Logger.warning("Query fetching token counters terminated: #{inspect(reason)}")
-
-          fallback_cached_value_based_on_async_task_pid(
-            task.pid,
-            total_token_transfers_task.pid,
-            total_token_holders_task.pid,
-            address_hash
-          )
-
-        nil ->
-          Logger.warning("Query fetching token counters timed out.")
-
-          fallback_cached_value_based_on_async_task_pid(
-            task.pid,
-            total_token_transfers_task.pid,
-            total_token_holders_task.pid,
-            address_hash
-          )
-      end
-    end)
-    |> List.to_tuple()
-  end
-
-  defp fallback_cached_value_based_on_async_task_pid(
-         task_pid,
-         total_token_transfers_task_pid,
-         total_token_holders_task_pid,
-         address_hash
-       ) do
-    case task_pid do
-      ^total_token_transfers_task_pid ->
-        TokenTransfersCount.fetch_count_from_cache(address_hash)
-
-      ^total_token_holders_task_pid ->
-        TokenHoldersCount.fetch_count_from_cache(address_hash)
+    if is_nil(token.counters_updated_at) or is_nil(token.holder_count) do
+      TokenCounters.mark_dirty_at_max_block(token.contract_address_hash)
     end
+
+    {transfers_count, holders_count}
   end
 
   @doc """
