@@ -4,6 +4,10 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
   Loads selected Optimism chain parameters from a Superchain TOML file,
   persists them to the `constants` table, and serves DB-backed values
   with env-based fallback.
+
+  An explicitly defined dedicated env variable (e.g. `INDEXER_OPTIMISM_L1_BATCH_SUBMITTER`)
+  always takes priority over the corresponding value from the TOML file. The TOML value
+  is used only when the env variable is not set or holds an invalid value.
   """
 
   require Logger
@@ -34,7 +38,7 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
 
         {:error, reason} ->
           Logger.warning(
-            "Cannot load Superchain TOML config. Falling back to dedicated env vars. Reason: #{inspect(reason)}"
+            "Cannot load Superchain TOML config. Using dedicated env vars only. Reason: #{inspect(reason)}"
           )
 
           %{}
@@ -298,11 +302,12 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
     end
   end
 
-  defp set_integer(key, value_from_toml, fallback_value) do
+  # Persists an integer constant. An explicitly set env value takes priority over the TOML value.
+  defp set_integer(key, value_from_toml, value_from_env) do
     value =
       cond do
+        is_integer(value_from_env) and value_from_env >= 0 -> value_from_env
         is_integer(value_from_toml) and value_from_toml >= 0 -> value_from_toml
-        is_integer(fallback_value) and fallback_value >= 0 -> fallback_value
         true -> nil
       end
 
@@ -312,11 +317,12 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
     end
   end
 
-  defp set_address(key, value_from_toml, fallback_value) do
+  # Persists an address constant. An explicitly set env value takes priority over the TOML value.
+  defp set_address(key, value_from_toml, value_from_env) do
     value =
       cond do
+        address?(value_from_env) -> String.downcase(value_from_env)
         address?(value_from_toml) -> String.downcase(value_from_toml)
-        address?(fallback_value) -> String.downcase(fallback_value)
         true -> nil
       end
 
