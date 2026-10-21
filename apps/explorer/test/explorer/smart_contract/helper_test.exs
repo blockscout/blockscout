@@ -1,12 +1,16 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.SmartContract.HelperTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   use Explorer.DataCase
 
   import Mox
   setup :verify_on_exit!
 
-  alias Explorer.SmartContract.Helper
+  alias Explorer.Chain.Data
+  alias Explorer.SmartContract.{CreationDataResolver, Helper}
+
+  @internal_transaction_fetcher_supervisor Indexer.Fetcher.InternalTransaction.Supervisor
+  @creation_fields ~w(blockNumber transactionHash transactionIndex deployer creationCode)
 
   describe "payable?" do
     test "returns true when there is payable function" do
@@ -225,6 +229,179 @@ defmodule Explorer.SmartContract.HelperTest do
                  "0x0000000000000000000000000000000000000001",
                  abi
                )
+    end
+  end
+
+  if Application.compile_env(:explorer, :chain_type) != :zksync do
+    describe "fetch_data_for_verification/3" do
+      setup do
+        resolver_config = Application.get_env(:explorer, CreationDataResolver) || []
+        supervisor_config = Application.get_env(:indexer, @internal_transaction_fetcher_supervisor)
+        json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+
+        Application.put_env(:explorer, CreationDataResolver, Keyword.merge(resolver_config, enabled: true))
+        Application.put_env(:indexer, @internal_transaction_fetcher_supervisor, disabled?: false)
+
+        # trace by block (`trace_replayBlockTransactions`)
+        Application.put_env(:explorer, :json_rpc_named_arguments,
+          transport: EthereumJSONRPC.Mox,
+          transport_options: [],
+          variant: EthereumJSONRPC.Nethermind
+        )
+
+        on_exit(fn ->
+          Application.put_env(:explorer, CreationDataResolver, resolver_config)
+          Application.put_env(:explorer, :json_rpc_named_arguments, json_rpc_named_arguments)
+
+          if is_nil(supervisor_config) do
+            Application.delete_env(:indexer, @internal_transaction_fetcher_supervisor)
+          else
+            Application.put_env(:indexer, @internal_transaction_fetcher_supervisor, supervisor_config)
+          end
+        end)
+
+        %{address: insert(:contract_address)}
+      end
+
+      test "returns creation data with chainId when the creation transaction is in the DB", %{address: address} do
+        transaction =
+          :transaction
+          |> insert(created_contract_address_hash: address.hash)
+          |> with_block(status: :ok)
+
+        {creation_input, deployed_bytecode, metadata} =
+          Helper.fetch_data_for_verification(address.hash, nil, on_demand?: true)
+
+        assert creation_input == Data.to_string(transaction.input)
+        assert deployed_bytecode == Data.to_string(address.contract_code)
+        assert Map.has_key?(metadata, "chainId")
+        assert metadata["contractAddress"] == to_string(address.hash)
+        assert metadata["runtimeCode"] == Data.to_string(address.contract_code)
+        assert metadata["blockNumber"] == to_string(transaction.block_number)
+        assert metadata["transactionHash"] == to_string(transaction.hash)
+        assert metadata["transactionIndex"] == to_string(transaction.index)
+        assert metadata["deployer"] == to_string(transaction.from_address_hash)
+        assert metadata["creationCode"] == Data.to_string(transaction.input)
+      end
+
+      test "keeps chainId and skips discovery on a DB miss when on_demand? is false", %{address: address} do
+        {creation_input, _deployed_bytecode, metadata} = Helper.fetch_data_for_verification(address.hash)
+
+        assert is_nil(creation_input)
+        assert Map.has_key?(metadata, "chainId")
+        assert Enum.all?(@creation_fields, &(not Map.has_key?(metadata, &1)))
+      end
+
+      test "omits chainId on a DB miss when on-demand discovery is disabled", %{address: address} do
+        Application.put_env(
+          :explorer,
+          CreationDataResolver,
+          Keyword.merge(Application.get_env(:explorer, CreationDataResolver), enabled: false)
+        )
+
+        {creation_input, _deployed_bytecode, metadata} =
+          Helper.fetch_data_for_verification(address.hash, nil, on_demand?: true)
+
+        assert is_nil(creation_input)
+        refute Map.has_key?(metadata, "chainId")
+        assert metadata["contractAddress"] == to_string(address.hash)
+        assert metadata["runtimeCode"] == Data.to_string(address.contract_code)
+        assert Enum.all?(@creation_fields, &(not Map.has_key?(metadata, &1)))
+      end
+
+      test "keeps chainId without creation fields for a genesis contract", %{address: address} do
+        address_hash_string = to_string(address.hash)
+
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn [
+                                                    %{
+                                                      id: id,
+                                                      method: "eth_getCode",
+                                                      params: [^address_hash_string, "0x0"]
+                                                    }
+                                                  ],
+                                                  _ ->
+          {:ok, [%{id: id, result: "0x6080"}]}
+        end)
+
+        {creation_input, _deployed_bytecode, metadata} =
+          Helper.fetch_data_for_verification(address.hash, nil, on_demand?: true)
+
+        assert is_nil(creation_input)
+        assert Map.has_key?(metadata, "chainId")
+        assert Enum.all?(@creation_fields, &(not Map.has_key?(metadata, &1)))
+      end
+
+      test "returns creation data discovered from the trace with chainId", %{address: address} do
+        address_hash_string = to_string(address.hash)
+        factory = "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca"
+        init = "0x6060604052341561000f57600080fd5b336000806101000a8154"
+        now = Timex.now()
+
+        [_, _, _, block, _] =
+          Enum.map(0..4, fn number ->
+            insert(:block, number: number, timestamp: Timex.shift(now, minutes: number - 10))
+          end)
+
+        transaction = :transaction |> insert() |> with_block(block, status: :ok)
+        transaction_hash_string = to_string(transaction.hash)
+
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn [%{id: id, method: "eth_getCode", params: [^address_hash_string, "0x0"]}], _ ->
+          {:ok, [%{id: id, result: "0x"}]}
+        end)
+        |> expect(:json_rpc, fn [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}], _ ->
+          {:ok, [%{id: id, result: nil}]}
+        end)
+        |> expect(:json_rpc, fn %{method: "eth_getTransactionCount", params: [^address_hash_string, "0x2"]}, _ ->
+          {:ok, "0x0"}
+        end)
+        |> expect(:json_rpc, fn %{method: "eth_getTransactionCount", params: [^address_hash_string, "0x3"]}, _ ->
+          {:ok, "0x1"}
+        end)
+        |> expect(:json_rpc, fn requests, _ when is_list(requests) ->
+          {:ok,
+           Enum.map(requests, fn
+             %{id: id, method: "eth_getCode", params: [^address_hash_string, "0x2"]} -> %{id: id, result: "0x"}
+             %{id: id, method: "eth_getCode", params: [^address_hash_string, "0x3"]} -> %{id: id, result: "0x6080"}
+           end)}
+        end)
+        |> expect(:json_rpc, fn [%{id: id, method: "trace_replayBlockTransactions", params: ["0x3", ["trace"]]}], _ ->
+          {:ok,
+           [
+             %{
+               id: id,
+               result: [
+                 %{
+                   "output" => "0x",
+                   "stateDiff" => nil,
+                   "trace" => [
+                     %{
+                       "action" => %{"from" => factory, "gas" => "0x4d0f0", "init" => init, "value" => "0x0"},
+                       "result" => %{"address" => address_hash_string, "code" => "0x6080", "gasUsed" => "0x28b6b"},
+                       "subtraces" => 0,
+                       "traceAddress" => [0],
+                       "type" => "create"
+                     }
+                   ],
+                   "transactionHash" => transaction_hash_string,
+                   "vmTrace" => nil
+                 }
+               ]
+             }
+           ]}
+        end)
+
+        {creation_input, _deployed_bytecode, metadata} =
+          Helper.fetch_data_for_verification(address.hash, nil, on_demand?: true)
+
+        assert creation_input == init
+        assert Map.has_key?(metadata, "chainId")
+        assert metadata["blockNumber"] == "3"
+        assert metadata["transactionHash"] == transaction_hash_string
+        assert metadata["transactionIndex"] == to_string(transaction.index)
+        assert metadata["deployer"] == factory
+        assert metadata["creationCode"] == init
+      end
     end
   end
 end
