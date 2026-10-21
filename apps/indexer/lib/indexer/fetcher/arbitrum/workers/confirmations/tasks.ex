@@ -308,46 +308,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
 
   def historical_confirmations_discovery_completed?(_), do: false
 
-  @doc """
-    Determines the lowest parent chain block that can hold a confirmation of an indexed rollup block.
-
-    A confirmation cannot come before its rollup block, and an execution of an
-    L2-to-L1 message cannot come before the confirmation of its rollup block.
-    Thus other historical discoveries use this block as their lower bound.
-
-    The function reads the confirmations with a `top` not below the first
-    indexed rollup block. It gives the lowest parent chain block among them. The
-    function does not use the confirmation that owns the first indexed rollup
-    block. In the inverted order, an older parent chain block holds the
-    confirmation of a higher `top`. Then the owner is not the earliest
-    confirmation of an indexed rollup block. A bound at the owner loses the
-    executions below it.
-
-    While the backfill process runs, the backfill can find an earlier
-    confirmation of an indexed rollup block later. Thus the bound can move down,
-    and it never moves up. A discovery that uses the bound must not stop at it
-    before the backfill process is complete.
-
-    If the table does not hold a confirmation of the first indexed rollup block,
-    the function gives `nil`. The bound is unknown, and a discovery that uses it
-    must wait. The backfill process can stop early at an event with a `top` below
-    the first indexed rollup block. Then the table holds no such confirmation
-    until the main process finds one. No execution of an indexed message can
-    exist on the parent chain before this confirmation, so the wait loses
-    nothing.
-
-    ## Parameters
-    - `state`: A map containing the configuration with `rollup_first_block`
-
-    ## Returns
-    - The number of the parent chain block
-    - `nil` if the bound is unknown
-  """
-  @spec lowest_l1_block_for_confirmations(confirmations_related_state()) :: non_neg_integer() | nil
-  def lowest_l1_block_for_confirmations(%{config: %{rollup_first_block: rollup_first_block}}) do
-    DbSettlement.lowest_l1_block_of_confirmations_from_rollup_block(rollup_first_block)
-  end
-
   # Loads the cursors of both processes into the state.
   #
   # The cursors come from the database. If the database has no cursors, the

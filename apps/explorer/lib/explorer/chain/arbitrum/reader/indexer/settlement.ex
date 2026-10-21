@@ -16,8 +16,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
 
   alias Explorer.Chain.Arbitrum.{
     DaMultiPurposeRecord,
-    L1Batch,
-    RollupBlockConfirmation
+    L1Batch
   }
 
   alias Explorer.Chain.Arbitrum.Reader.Common
@@ -207,34 +206,6 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Settlement do
   @spec highest_confirmed_block() :: FullBlock.block_number() | nil
   def highest_confirmed_block do
     Common.highest_confirmed_block(api?: false)
-  end
-
-  @doc """
-    Retrieves the lowest L1 block that holds a confirmation of a rollup block not below the given one.
-
-    The function reads all confirmations with `top` not below the given rollup
-    block, and gives the lowest L1 block of their confirmation transactions. The
-    confirmations can come in the inverted order: an older L1 block holds the
-    confirmation of a higher `top`. Thus the confirmation with the lowest such
-    `top` is not always the earliest one on L1, and the function does not use it.
-
-    ## Parameters
-    - `rollup_block_number`: The number of the rollup block.
-
-    ## Returns
-    - The L1 block number, or `nil` if the rollup block is not confirmed.
-  """
-  @spec lowest_l1_block_of_confirmations_from_rollup_block(FullBlock.block_number()) :: FullBlock.block_number() | nil
-  def lowest_l1_block_of_confirmations_from_rollup_block(rollup_block_number) do
-    query =
-      from(
-        confirmation in RollupBlockConfirmation,
-        join: transaction in assoc(confirmation, :confirmation_transaction),
-        where: confirmation.top >= ^rollup_block_number,
-        select: min(transaction.block_number)
-      )
-
-    Repo.one(query)
   end
 
   @doc """

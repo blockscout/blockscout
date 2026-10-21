@@ -49,10 +49,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.TestCase do
       import Mox
 
       alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
-      alias Explorer.Chain.Arbitrum.{LifecycleTransaction, Message, RollupBlockConfirmation}
+      alias Explorer.Chain.Arbitrum.{L1Execution, LifecycleTransaction, Message, RollupBlockConfirmation}
       alias Explorer.Chain.Arbitrum.Reader.Common, as: ArbitrumReader
       alias Explorer.Chain.Cache.Counters.LastFetchedCounter
       alias Explorer.Repo
+      alias Indexer.Fetcher.Arbitrum.Utils.Db.Messages, as: DbMessages
       alias Indexer.Fetcher.Arbitrum.Utils.Db.Settlement, as: DbSettlement
       alias Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks
 
@@ -115,6 +116,11 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.TestCase do
       # The lowest-indexed rollup block.
       @rollup_first_block 1
 
+      # The parent chain block from which the instance indexes the parent chain,
+      # for the first run of the historical executions discovery without a cursor
+      # and without a known execution.
+      @l1_start_block 210
+
       setup :verify_on_exit!
 
       setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
@@ -141,6 +147,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.TestCase do
             },
             l1_outbox_address: @outbox_address,
             l1_rollup_init_block: Keyword.get(options, :l1_rollup_init_block, @l1_rollup_init_block),
+            l1_start_block: @l1_start_block,
             rollup_first_block: Keyword.get(options, :rollup_first_block, @rollup_first_block)
           },
           task_data: %{
@@ -182,11 +189,45 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.TestCase do
 
       def cursor(process), do: DbSettlement.confirmations_cursor(process)
 
+      # Writes the cursor of the historical executions discovery. An earlier run
+      # of that discovery writes the same cursor.
+      def seed_executions_cursor(cursor) do
+        {:ok, _} = LastFetchedCounter.upsert(%{counter_type: "arbitrum_historical_executions_cursor", value: cursor})
+        :ok
+      end
+
+      def executions_cursor, do: DbMessages.historical_executions_cursor()
+
       # Inserts the latest batch with its commitment in the given parent chain
-      # block. The start point of the discovery is this block.
+      # block. The start point of the discovery is this block. The range of the
+      # batch does not hold `@rollup_first_block`, so the batch does not give the
+      # lower bound of the historical executions discovery.
       def seed_latest_batch(commitment_l1_block) do
         commitment_transaction = insert(:arbitrum_lifecycle_transaction, block_number: commitment_l1_block)
-        insert(:arbitrum_l1_batch, commitment_id: commitment_transaction.id)
+        insert(:arbitrum_l1_batch, commitment_id: commitment_transaction.id, start_block: 1000, end_block: 1010)
+      end
+
+      # Inserts a batch whose range holds the given rollup block, with its
+      # commitment in the given parent chain block. The lower bound of the
+      # historical executions discovery is this parent chain block, if the rollup
+      # block is `@rollup_first_block`.
+      def seed_batch_of_rollup_block(rollup_block_number, commitment_l1_block) do
+        commitment_transaction = insert(:arbitrum_lifecycle_transaction, block_number: commitment_l1_block)
+
+        insert(:arbitrum_l1_batch,
+          commitment_id: commitment_transaction.id,
+          start_block: rollup_block_number,
+          end_block: rollup_block_number + 10
+        )
+      end
+
+      # Inserts an execution of the message with the given identifier, in the
+      # given parent chain block. An earlier run of the discovery of executions
+      # found this execution.
+      def insert_execution(message_id, l1_block_number) do
+        execution_transaction = insert(:arbitrum_lifecycle_transaction, block_number: l1_block_number)
+
+        Repo.insert!(%L1Execution{message_id: message_id, execution_id: execution_transaction.id})
       end
 
       # Inserts the rollup blocks of the range. The discovery reads the number of

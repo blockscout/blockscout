@@ -249,21 +249,6 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Settlement do
   end
 
   @doc """
-    Retrieves the lowest L1 block that holds a confirmation of a rollup block not below the given one.
-
-    ## Parameters
-    - `rollup_block_number`: The number of the rollup block.
-
-    ## Returns
-    - The L1 block number, or `nil` if the rollup block is not confirmed.
-  """
-  @spec lowest_l1_block_of_confirmations_from_rollup_block(FullBlock.block_number()) :: FullBlock.block_number() | nil
-  def lowest_l1_block_of_confirmations_from_rollup_block(rollup_block_number)
-      when is_integer(rollup_block_number) and rollup_block_number >= 0 do
-    Reader.lowest_l1_block_of_confirmations_from_rollup_block(rollup_block_number)
-  end
-
-  @doc """
     Retrieves the block number associated with a specific hash of a rollup block.
 
     ## Parameters

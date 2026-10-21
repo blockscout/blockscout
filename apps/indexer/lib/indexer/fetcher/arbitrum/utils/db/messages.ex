@@ -12,15 +12,21 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_warning: 1]
 
+  alias Ecto.Multi
   alias Explorer.Chain.Arbitrum.Reader.Indexer.Messages, as: Reader
 
   alias Explorer.Chain.Arbitrum.{
     L1Execution,
+    LifecycleTransaction,
     Message
   }
 
   alias Explorer.Chain.Block, as: FullBlock
+  alias Explorer.Chain.Cache.Counters.LastFetchedCounter
   alias Explorer.Chain.Hash
+  alias Explorer.Chain.Import
+  alias Explorer.Chain.Import.Runner.Arbitrum, as: ImportRunner
+  alias Explorer.Repo
 
   alias Indexer.Fetcher.Arbitrum.Utils.Db.Tools, as: DbTools
 
@@ -28,6 +34,8 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
 
   @no_messages_warning "No messages to L2 found in DB"
   @no_executions_warning "No L1 executions found in DB"
+
+  @historical_executions_cursor_type "arbitrum_historical_executions_cursor"
 
   @doc """
     Calculates the next L1 block number to search for the latest message sent to L2.
@@ -143,6 +151,11 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
     Determines the L1 block number just before the block that contains the earliest known
     execution transaction for an L2-to-L1 message.
 
+    The historical discovery of executions starts from this block if it has no
+    cursor, see `historical_executions_cursor/0`. A database from a release
+    without the cursor has executions and no cursor. Thus the discovery continues
+    below the executions that it found before the upgrade.
+
     ## Parameters
     - `value_if_nil`: The default value to return if no execution transactions for
        L2-to-L1 messages have been found.
@@ -162,6 +175,71 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
       value ->
         value - 1
     end
+  end
+
+  @doc """
+    Reads the cursor of the historical discovery of executions.
+
+    The cursor is the number of the lowest parent chain block that the discovery
+    read. The discovery moves down the parent chain, so its next window ends at
+    the block below the cursor. The cursor lives in the table
+    `last_fetched_counters`.
+
+    ## Returns
+    - The number of the parent chain block, or `nil` if the discovery has no cursor.
+  """
+  @spec historical_executions_cursor() :: FullBlock.block_number() | nil
+  def historical_executions_cursor do
+    case LastFetchedCounter.get(@historical_executions_cursor_type, nullable: true) do
+      nil -> nil
+      value -> Decimal.to_integer(value)
+    end
+  end
+
+  @doc """
+    Imports the executions of one window of the historical discovery together with the new cursor.
+
+    The lifecycle transactions, the executions, and the cursor change in one
+    database transaction. Thus a restart after the import reads the next window,
+    and a restart before the import reads the same window again. The function
+    writes the cursor also for a window without executions.
+
+    ## Parameters
+    - `discovered`: A map with the lists `lifecycle_transactions` and `executions`
+      in the import format.
+    - `cursor`: The new value of the cursor: the first block of the window.
+
+    ## Returns
+    - `:ok`
+  """
+  @spec import_historical_executions(
+          %{
+            :lifecycle_transactions => [LifecycleTransaction.to_import()],
+            :executions => [L1Execution.to_import()],
+            optional(any()) => any()
+          },
+          FullBlock.block_number()
+        ) :: :ok
+  def import_historical_executions(discovered, cursor) when is_integer(cursor) and cursor >= 0 do
+    {:ok, import_multi} =
+      Import.all_single_multi(
+        [ImportRunner.LifecycleTransactions, ImportRunner.L1Executions],
+        %{
+          arbitrum_lifecycle_transactions: %{params: discovered.lifecycle_transactions},
+          arbitrum_l1_executions: %{params: discovered.executions},
+          timeout: :infinity
+        }
+      )
+
+    multi =
+      Multi.run(import_multi, :write_historical_executions_cursor, fn _repo, _changes ->
+        {:ok, _} = LastFetchedCounter.upsert(%{counter_type: @historical_executions_cursor_type, value: cursor})
+        {:ok, :ok}
+      end)
+
+    {:ok, _} = Repo.transaction(multi, timeout: :infinity)
+
+    :ok
   end
 
   @doc """

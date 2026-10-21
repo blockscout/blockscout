@@ -374,7 +374,6 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     historical_batches_end_block = DbSettlement.l1_block_to_discover_earliest_committed_batch(l1_start_block - 1)
 
     new_executions_start_block = DbMessages.l1_block_to_discover_latest_execution(l1_start_block)
-    historical_executions_end_block = DbMessages.l1_block_to_discover_earliest_execution(l1_start_block - 1)
 
     {lowest_batch, missing_batches_end_batch} = DbSettlement.get_min_max_batch_numbers()
 
@@ -405,8 +404,11 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       new_executions: %{
         start_block: new_executions_start_block
       },
+      # The cursor of the historical executions discovery lives in the database.
+      # The task reads it at its first run, or computes the start point if no
+      # cursor exists.
       historical_executions: %{
-        end_block: historical_executions_end_block
+        end_block: nil
       },
       missing_batches: %{
         end_batch: missing_batches_end_batch
@@ -538,13 +540,11 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
   # Executes a worker function and conditionally reschedules the task based on its completion status.
   #
-  # The worker returns `{:ok, new_state}`, `{:no_batches, new_state}`, or
-  # `{:no_confirmations, new_state}`. For `:ok`, the next run comes after the
-  # interval of the task. For `:no_batches`, the worker waits for the first
-  # batch. For `:no_confirmations`, the worker waits for the confirmations
-  # discovery. In both cases of a wait, the next run comes after the interval of
-  # `:new_confirmations`. Thus a task that waits does not fill the log and does
-  # not query the database often.
+  # The worker returns `{:ok, new_state}` or `{:no_batches, new_state}`. For
+  # `:ok`, the next run comes after the interval of the task. For `:no_batches`,
+  # the worker waits for the first batch, and the next run comes after the
+  # interval of `:new_confirmations`. Thus a task that waits does not fill the
+  # log and does not query the database often.
   #
   # ## Parameters
   # - `state`: The current state containing completed tasks and intervals
@@ -572,7 +572,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
 
     {status, state_after_worker_run} =
       case worker_function.(state) do
-        {status, new_state} when status in [:ok, :no_batches, :no_confirmations] -> {status, new_state}
+        {status, new_state} when status in [:ok, :no_batches] -> {status, new_state}
         {status, _} -> raise("Worker #{inspect(worker_function)} returned unexpected status #{inspect(status)}")
       end
 
@@ -587,17 +587,15 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   end
 
   # Selects the interval before the next run of a stoppable task by the status of
-  # the worker. A worker that waits for the first batch or for the confirmations
-  # discovery runs after the interval of `:new_confirmations`, which is the
-  # configured recheck interval.
+  # the worker. A worker that waits for the first batch runs after the interval
+  # of `:new_confirmations`, which is the configured recheck interval.
   @spec select_interval_by_status(
-          :ok | :no_batches | :no_confirmations,
+          :ok | :no_batches,
           stoppable_fetcher_task(),
           fetcher_tasks_intervals()
         ) :: non_neg_integer()
   defp select_interval_by_status(:ok, task_tag, intervals), do: intervals[task_tag]
   defp select_interval_by_status(:no_batches, _task_tag, intervals), do: intervals[:new_confirmations]
-  defp select_interval_by_status(:no_confirmations, _task_tag, intervals), do: intervals[:new_confirmations]
 
   # Returns true if the task should be rescheduled (not marked as completed)
   @spec rescheduled?(atom(), %{:completed_tasks => completion_status(), optional(any()) => any()}) :: boolean()
