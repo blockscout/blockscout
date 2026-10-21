@@ -1622,7 +1622,12 @@ config :indexer, Indexer.Fetcher.Optimism,
   block_duration: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_BLOCK_DURATION", 2),
   start_block_l1: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L1_START_BLOCK"),
   portal: System.get_env("INDEXER_OPTIMISM_L1_PORTAL_CONTRACT"),
-  isthmus_timestamp_l2: optimism_l2_isthmus_timestamp
+  isthmus_timestamp_l2: optimism_l2_isthmus_timestamp,
+  # Explicit (nil when unset) EIP-1559 values. Unlike the :explorer-level settings, these have no defaults,
+  # so the Superchain TOML values can take priority over the global defaults when the env vars are not set.
+  eip1559_base_fee_max_change_denominator:
+    ConfigHelper.parse_integer_or_nil_env_var("EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR"),
+  eip1559_elasticity_multiplier: ConfigHelper.parse_integer_or_nil_env_var("EIP_1559_ELASTICITY_MULTIPLIER")
 
 config :indexer, Indexer.Fetcher.Optimism.Deposit,
   transaction_type: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L1_DEPOSITS_TRANSACTION_TYPE", 126)

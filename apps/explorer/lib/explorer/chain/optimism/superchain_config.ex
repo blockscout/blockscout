@@ -4,6 +4,10 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
   Loads selected Optimism chain parameters from a Superchain TOML file,
   persists them to the `constants` table, and serves DB-backed values
   with env-based fallback.
+
+  An explicitly defined dedicated env variable (e.g. `INDEXER_OPTIMISM_L1_BATCH_SUBMITTER`)
+  always takes priority over the corresponding value from the TOML file. The TOML value
+  is used only when the env variable is not set or holds an invalid value.
   """
 
   require Logger
@@ -34,7 +38,7 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
 
         {:error, reason} ->
           Logger.warning(
-            "Cannot load Superchain TOML config. Falling back to dedicated env vars. Reason: #{inspect(reason)}"
+            "Cannot load Superchain TOML config. Using dedicated env vars only. Reason: #{inspect(reason)}"
           )
 
           %{}
@@ -55,16 +59,19 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
 
       set_integer(@jovian_timestamp_key, toml_values[{"hardforks", "jovian_time"}], jovian_timestamp_l2_fallback())
 
+      # For the EIP-1559 values the explicit env values (nil when unset) are used here instead of the
+      # :explorer-level settings which always have defaults. Otherwise the defaults would always win
+      # over the TOML values. The defaults are still applied by the readers when the constant is absent.
       set_integer(
         @eip1559_denominator_key,
         toml_values[{"optimism", "eip1559_denominator"}],
-        eip1559_base_fee_max_change_denominator_fallback()
+        eip1559_base_fee_max_change_denominator_env()
       )
 
       set_integer(
         @eip1559_elasticity_key,
         toml_values[{"optimism", "eip1559_elasticity"}],
-        eip1559_elasticity_multiplier_fallback()
+        eip1559_elasticity_multiplier_env()
       )
 
       set_address(
@@ -91,10 +98,12 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
         optimism_l1_batch_inbox_fallback()
       )
 
+      # A zero start block is rejected by the OP fetchers, so only a positive explicit value
+      # overrides the TOML one. Zero or invalid env values leave the TOML value in effect.
       set_integer(
         @batch_start_block_key,
         toml_values[{"genesis.l1", "number"}],
-        optimism_l1_batch_start_block_fallback()
+        positive_or_nil(optimism_l1_batch_start_block_fallback())
       )
 
       set_integer(
@@ -298,11 +307,12 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
     end
   end
 
-  defp set_integer(key, value_from_toml, fallback_value) do
+  # Persists an integer constant. An explicitly set env value takes priority over the TOML value.
+  defp set_integer(key, value_from_toml, value_from_env) do
     value =
       cond do
+        is_integer(value_from_env) and value_from_env >= 0 -> value_from_env
         is_integer(value_from_toml) and value_from_toml >= 0 -> value_from_toml
-        is_integer(fallback_value) and fallback_value >= 0 -> fallback_value
         true -> nil
       end
 
@@ -312,11 +322,12 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
     end
   end
 
-  defp set_address(key, value_from_toml, fallback_value) do
+  # Persists an address constant. An explicitly set env value takes priority over the TOML value.
+  defp set_address(key, value_from_toml, value_from_env) do
     value =
       cond do
+        address?(value_from_env) -> String.downcase(value_from_env)
         address?(value_from_toml) -> String.downcase(value_from_toml)
-        address?(fallback_value) -> String.downcase(fallback_value)
         true -> nil
       end
 
@@ -368,6 +379,9 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
     end
   end
 
+  defp positive_or_nil(value) when is_integer(value) and value > 0, do: value
+  defp positive_or_nil(_), do: nil
+
   defp blank_to_nil(nil), do: nil
 
   defp blank_to_nil(value) when is_binary(value) do
@@ -397,12 +411,24 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
     Application.get_env(:indexer, Indexer.Fetcher.Optimism.EIP1559ConfigUpdate, [])[:jovian_timestamp_l2]
   end
 
+  # Global value with a default (used by the readers when no constant is stored).
   defp eip1559_base_fee_max_change_denominator_fallback do
     Application.get_env(:explorer, :base_fee_max_change_denominator)
   end
 
+  # Global value with a default (used by the readers when no constant is stored).
   defp eip1559_elasticity_multiplier_fallback do
     Application.get_env(:explorer, :elasticity_multiplier)
+  end
+
+  # Explicit env value, nil when EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR is not set.
+  defp eip1559_base_fee_max_change_denominator_env do
+    Application.get_env(:indexer, Indexer.Fetcher.Optimism, [])[:eip1559_base_fee_max_change_denominator]
+  end
+
+  # Explicit env value, nil when EIP_1559_ELASTICITY_MULTIPLIER is not set.
+  defp eip1559_elasticity_multiplier_env do
+    Application.get_env(:indexer, Indexer.Fetcher.Optimism, [])[:eip1559_elasticity_multiplier]
   end
 
   defp optimism_l1_system_config_contract_fallback do

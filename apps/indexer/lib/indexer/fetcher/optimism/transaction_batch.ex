@@ -1604,6 +1604,10 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
     error_message = &"Cannot call public getters of SystemConfig. Error: #{inspect(&1)}"
 
+    env = Application.get_all_env(:indexer)[__MODULE__]
+    env_inbox = env[:inbox]
+    env_submitter = env[:submitter]
+
     fallback_start_block = SuperchainConfig.optimism_l1_batch_start_block()
     fallback_inbox = SuperchainConfig.optimism_l1_batch_inbox()
     fallback_submitter = SuperchainConfig.optimism_l1_batch_submitter()
@@ -1627,9 +1631,13 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
 
     # An explicitly configured inbox/submitter overrides the value read from the SystemConfig contract.
     # Only kicks in when the corresponding env variable holds a correct address, so the on-chain value
-    # is still used by default.
-    batch_inbox = system_config_address(result_by_id[batch_inbox_request_id], fallback_inbox)
-    batch_submitter = system_config_address(result_by_id[batch_submitter_request_id], fallback_submitter)
+    # is still used by default. The SuperchainConfig-backed values (which may originate from the
+    # Superchain TOML file) never override the on-chain getters: they are used only when the getter
+    # result is absent (e.g. the call reverted).
+    batch_inbox = system_config_address(result_by_id[batch_inbox_request_id], env_inbox, fallback_inbox)
+
+    batch_submitter =
+      system_config_address(result_by_id[batch_submitter_request_id], env_submitter, fallback_submitter)
 
     if is_nil(batch_inbox) and Map.has_key?(result_by_id, batch_submitter_request_id) do
       Logger.error(
@@ -1643,16 +1651,20 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   end
 
   # Returns an address read from a SystemConfig getter unless the corresponding env variable
-  # defines a correct address (which takes precedence). Returns `nil` if the getter result
-  # is absent (e.g. the call reverted) and the env variable is not defined.
-  @spec system_config_address(String.t() | nil, String.t() | nil) :: String.t() | nil
-  defp system_config_address(getter_result, env_address) do
+  # defines a correct address (which takes precedence). If the getter result is absent
+  # (e.g. the call reverted) and the env variable is not defined, the fallback address
+  # (SuperchainConfig-backed) is returned when it is correct, otherwise `nil`.
+  @spec system_config_address(String.t() | nil, String.t() | nil, String.t() | nil) :: String.t() | nil
+  defp system_config_address(getter_result, env_address, fallback_address) do
     cond do
       Helper.address_correct?(env_address) ->
         env_address
 
       is_binary(getter_result) and String.starts_with?(getter_result, "0x000000000000000000000000") ->
         "0x" <> String.slice(getter_result, 26..-1//1)
+
+      Helper.address_correct?(fallback_address) ->
+        fallback_address
 
       true ->
         nil

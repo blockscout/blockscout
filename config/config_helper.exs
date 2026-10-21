@@ -157,13 +157,19 @@ defmodule ConfigHelper do
     end
   end
 
+  @doc """
+  Parses a non-negative integer from the env var. Returns `nil` when the env var is unset,
+  blank, negative, or not a fully-formed integer (e.g. has trailing text).
+  Surrounding whitespace is ignored.
+  """
   @spec parse_integer_or_nil_env_var(String.t()) :: non_neg_integer() | nil
   def parse_integer_or_nil_env_var(env_var) do
     env_var
     |> System.get_env("")
+    |> String.trim()
     |> Integer.parse()
     |> case do
-      {integer, _} -> integer
+      {integer, ""} when integer >= 0 -> integer
       _ -> nil
     end
   end
