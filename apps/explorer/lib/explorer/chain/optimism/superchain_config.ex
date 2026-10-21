@@ -59,16 +59,19 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
 
       set_integer(@jovian_timestamp_key, toml_values[{"hardforks", "jovian_time"}], jovian_timestamp_l2_fallback())
 
+      # For the EIP-1559 values the explicit env values (nil when unset) are used here instead of the
+      # :explorer-level settings which always have defaults. Otherwise the defaults would always win
+      # over the TOML values. The defaults are still applied by the readers when the constant is absent.
       set_integer(
         @eip1559_denominator_key,
         toml_values[{"optimism", "eip1559_denominator"}],
-        eip1559_base_fee_max_change_denominator_fallback()
+        eip1559_base_fee_max_change_denominator_env()
       )
 
       set_integer(
         @eip1559_elasticity_key,
         toml_values[{"optimism", "eip1559_elasticity"}],
-        eip1559_elasticity_multiplier_fallback()
+        eip1559_elasticity_multiplier_env()
       )
 
       set_address(
@@ -95,10 +98,12 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
         optimism_l1_batch_inbox_fallback()
       )
 
+      # A zero start block is rejected by the OP fetchers, so only a positive explicit value
+      # overrides the TOML one. Zero or invalid env values leave the TOML value in effect.
       set_integer(
         @batch_start_block_key,
         toml_values[{"genesis.l1", "number"}],
-        optimism_l1_batch_start_block_fallback()
+        positive_or_nil(optimism_l1_batch_start_block_fallback())
       )
 
       set_integer(
@@ -374,6 +379,9 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
     end
   end
 
+  defp positive_or_nil(value) when is_integer(value) and value > 0, do: value
+  defp positive_or_nil(_), do: nil
+
   defp blank_to_nil(nil), do: nil
 
   defp blank_to_nil(value) when is_binary(value) do
@@ -403,12 +411,24 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
     Application.get_env(:indexer, Indexer.Fetcher.Optimism.EIP1559ConfigUpdate, [])[:jovian_timestamp_l2]
   end
 
+  # Global value with a default (used by the readers when no constant is stored).
   defp eip1559_base_fee_max_change_denominator_fallback do
     Application.get_env(:explorer, :base_fee_max_change_denominator)
   end
 
+  # Global value with a default (used by the readers when no constant is stored).
   defp eip1559_elasticity_multiplier_fallback do
     Application.get_env(:explorer, :elasticity_multiplier)
+  end
+
+  # Explicit env value, nil when EIP_1559_BASE_FEE_MAX_CHANGE_DENOMINATOR is not set.
+  defp eip1559_base_fee_max_change_denominator_env do
+    Application.get_env(:indexer, Indexer.Fetcher.Optimism, [])[:eip1559_base_fee_max_change_denominator]
+  end
+
+  # Explicit env value, nil when EIP_1559_ELASTICITY_MULTIPLIER is not set.
+  defp eip1559_elasticity_multiplier_env do
+    Application.get_env(:indexer, Indexer.Fetcher.Optimism, [])[:eip1559_elasticity_multiplier]
   end
 
   defp optimism_l1_system_config_contract_fallback do
