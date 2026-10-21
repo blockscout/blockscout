@@ -104,27 +104,40 @@ defmodule Indexer.Fetcher.Beacon.Deposit do
     end
   end
 
+  # Handles a consensus loss reported by the blocks import runner.
+  #
+  # The cursor is always rebuilt from the deposits that survived in the
+  # database, never from `block_number` itself. The fetcher trails the chain
+  # head by however many blocks carry no deposit, so the reorged block is
+  # usually ahead of the cursor; moving the cursor to it would silently skip
+  # every deposit log in between, and the node fallback (which starts from the
+  # cursor) could never recover them. When nothing was deleted the state is
+  # left untouched, which also makes the notification idempotent: the runner
+  # may report the same block number several times.
   @impl GenServer
   def handle_cast({:lost_consensus, block_number}, %__MODULE__{} = state) do
-    {_deleted_deposits_count, deleted_deposits} =
+    {deleted_deposits_count, _} =
       Repo.delete_all(
         from(
           d in Deposit,
-          where: d.block_number > ^block_number,
-          select: d.index
+          where: d.block_number > ^block_number
         ),
         timeout: :infinity
       )
 
-    deposit_index = Enum.min(deleted_deposits, fn -> state.deposit_index + 1 end)
+    if deleted_deposits_count > 0 do
+      last_processed_deposit = Deposit.get_latest_deposit() || %{index: -1, block_number: -1, log_index: -1}
 
-    {:noreply,
-     %{
-       state
-       | deposit_index: deposit_index - 1,
-         last_processed_log_block_number: block_number,
-         last_processed_log_index: -1
-     }}
+      {:noreply,
+       %{
+         state
+         | deposit_index: last_processed_deposit.index,
+           last_processed_log_block_number: last_processed_deposit.block_number,
+           last_processed_log_index: last_processed_deposit.log_index
+       }}
+    else
+      {:noreply, state}
+    end
   rescue
     postgrex_error in Postgrex.Error ->
       Logger.error(

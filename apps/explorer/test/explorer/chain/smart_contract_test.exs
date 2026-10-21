@@ -549,4 +549,69 @@ defmodule Explorer.Chain.SmartContractTest do
 
     refute log =~ ~s(Error determining value json for "tuple")
   end
+
+  describe "check_and_update_constructor_args/1" do
+    setup do
+      # the last 2 bytes of the deployed bytecode hold the length of the CBOR metadata preceding them
+      metadata = "a1b2c3d4" <> "0004"
+
+      constructor_arguments =
+        [42]
+        |> ABI.TypeEncoder.encode([{:uint, 256}])
+        |> Base.encode16(case: :lower)
+
+      address = insert(:address, contract_code: "0x6080604052" <> metadata)
+
+      :transaction
+      |> insert(
+        created_contract_address_hash: address.hash,
+        input: "0x6080604052" <> metadata <> constructor_arguments
+      )
+      |> with_block(status: :ok)
+
+      smart_contract =
+        insert(:smart_contract,
+          address_hash: address.hash,
+          verified_via_sourcify: true,
+          constructor_arguments: nil,
+          abi: [
+            %{
+              "type" => "constructor",
+              "inputs" => [%{"name" => "value", "type" => "uint256"}],
+              "stateMutability" => "nonpayable"
+            }
+          ]
+        )
+
+      %{address: address, smart_contract: smart_contract, constructor_arguments: "0x" <> constructor_arguments}
+    end
+
+    test "stores 0x-prefixed constructor arguments parsed for a Sourcify-verified smart contract", %{
+      address: address,
+      smart_contract: smart_contract,
+      constructor_arguments: constructor_arguments
+    } do
+      updated_smart_contract = SmartContract.check_and_update_constructor_args(smart_contract)
+
+      assert to_string(updated_smart_contract.constructor_arguments) == constructor_arguments
+
+      assert to_string(Repo.get_by(SmartContract, address_hash: address.hash).constructor_arguments) ==
+               constructor_arguments
+    end
+
+    test "stores 0x-prefixed constructor arguments parsed for an address with a Sourcify-verified smart contract", %{
+      address: address,
+      smart_contract: smart_contract,
+      constructor_arguments: constructor_arguments
+    } do
+      address = %Address{Repo.reload!(address) | smart_contract: smart_contract}
+
+      updated_address = SmartContract.check_and_update_constructor_args(address)
+
+      assert to_string(updated_address.smart_contract.constructor_arguments) == constructor_arguments
+
+      assert to_string(Repo.get_by(SmartContract, address_hash: address.hash).constructor_arguments) ==
+               constructor_arguments
+    end
+  end
 end

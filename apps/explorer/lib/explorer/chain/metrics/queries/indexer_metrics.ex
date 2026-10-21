@@ -18,7 +18,10 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   alias Explorer.Repo
 
   @doc """
-  Query to get the number of missing block numbers in the DB
+  Query to get the number of missing block numbers in the DB.
+
+  On the Filecoin chain type, heights recorded in `null_round_heights` are not counted:
+  a null round has no block by design, so it can never be indexed.
   """
   # sobelow_skip ["SQL"]
   @spec missing_blocks_count() :: integer()
@@ -28,6 +31,8 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
     if block_ranges == [] do
       0
     else
+      missing_condition = missing_block_condition()
+
       {sql_parts, params} =
         Enum.reduce(block_ranges, {[], []}, fn
           first..last//_, {parts, acc_params} ->
@@ -39,9 +44,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
             part = """
             SELECT COUNT(*) AS missing_count
             FROM generate_series($#{param_index_from}::bigint, $#{param_index_to}::bigint) AS num(number)
-            WHERE NOT EXISTS (
-              SELECT 1 FROM blocks b WHERE b.number = num.number AND b.consensus
-            )
+            WHERE #{missing_condition}
             """
 
             {[part | parts], [to, from | acc_params]}
@@ -55,9 +58,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
               $#{param_index}::bigint,
               (SELECT COALESCE(MAX(number), $#{param_index}) FROM blocks)::bigint
             ) AS num(number)
-            WHERE NOT EXISTS (
-              SELECT 1 FROM blocks b WHERE b.number = num.number AND b.consensus
-            )
+            WHERE #{missing_condition}
             """
 
             {[part | parts], [start_from | acc_params]}
@@ -76,6 +77,27 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
         _ ->
           0
       end
+    end
+  end
+
+  # SQL predicate over `num.number` from `generate_series` telling whether the number is
+  # a missing block. On Filecoin, heights recorded as null rounds are excluded as well.
+  defp missing_block_condition do
+    base = """
+    NOT EXISTS (
+      SELECT 1 FROM blocks b WHERE b.number = num.number AND b.consensus
+    )
+    """
+
+    if Application.get_env(:explorer, :chain_type) == :filecoin do
+      base <>
+        """
+        AND NOT EXISTS (
+          SELECT 1 FROM null_round_heights nrh WHERE nrh.height = num.number
+        )
+        """
+    else
+      base
     end
   end
 
@@ -217,6 +239,63 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
            rows: [[missing_current_token_balances_count]]
          }} ->
           missing_current_token_balances_count
+
+        _ ->
+          0
+      end
+    end
+  end
+
+  @doc """
+  Query to get the count of address native coin balances with missing values
+  """
+  # sobelow_skip ["SQL"]
+  @spec missing_address_native_coin_balances_count() :: integer()
+  def missing_address_native_coin_balances_count do
+    block_ranges = RangesHelper.get_block_ranges()
+
+    if block_ranges == [] do
+      0
+    else
+      {range_conditions, params} =
+        Enum.reduce(block_ranges, {[], []}, fn
+          first..last//_, {conditions, acc_params} ->
+            from = min(first, last)
+            to = max(first, last)
+            param_index_from = length(acc_params) + 1
+            param_index_to = length(acc_params) + 2
+
+            condition =
+              "(cb.block_number >= $#{param_index_from}::bigint AND cb.block_number <= $#{param_index_to}::bigint)"
+
+            {[condition | conditions], [to, from | acc_params]}
+
+          start_from, {conditions, acc_params} ->
+            param_index = length(acc_params) + 1
+            condition = "cb.block_number >= $#{param_index}::bigint"
+            {[condition | conditions], [start_from | acc_params]}
+        end)
+
+      range_filter =
+        range_conditions
+        |> Enum.reverse()
+        |> Enum.join(" OR ")
+
+      sql_string = """
+      SELECT COUNT(1) as missing_address_native_coin_balances_count
+      FROM address_coin_balances cb
+      WHERE cb.value_fetched_at is NULL
+      AND (#{range_filter});
+      """
+
+      case SQL.query(Repo, sql_string, Enum.reverse(params), timeout: :infinity) do
+        {:ok,
+         %Postgrex.Result{
+           command: :select,
+           columns: ["missing_address_native_coin_balances_count"],
+           rows: [[missing_address_native_coin_balances_count]]
+         }} ->
+          missing_address_native_coin_balances_count
 
         _ ->
           0

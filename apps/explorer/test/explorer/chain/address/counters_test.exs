@@ -30,6 +30,62 @@ defmodule Explorer.Chain.Address.CountersTest do
     end
   end
 
+  describe "address_existence_checks/2" do
+    test "returns the existence checks" do
+      address = insert(:address)
+      insert(:block, miner: address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:log,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        transaction: transaction,
+        address: address
+      )
+
+      assert %{
+               has_validated_blocks: true,
+               has_logs: true,
+               has_tokens: false,
+               has_token_transfers: false,
+               has_beacon_chain_withdrawals: false
+             } = Counters.address_existence_checks(address.hash, api?: true)
+    end
+
+    test "degrades `has_logs` to false instead of hanging while the logs table is locked" do
+      address = insert(:address)
+      insert(:block, miner: address)
+
+      with_table_locked("logs", fn ->
+        assert %{
+                 has_validated_blocks: true,
+                 has_logs: false,
+                 has_tokens: false,
+                 has_token_transfers: false,
+                 has_beacon_chain_withdrawals: false
+               } = Counters.address_existence_checks(address.hash, api?: true)
+      end)
+    end
+
+    test "reports every check as false instead of hanging while another checked table is locked" do
+      address = insert(:address)
+
+      with_table_locked("token_transfers", fn ->
+        assert %{
+                 has_validated_blocks: false,
+                 has_logs: false,
+                 has_tokens: false,
+                 has_token_transfers: false,
+                 has_beacon_chain_withdrawals: false
+               } = Counters.address_existence_checks(address.hash, api?: true)
+      end)
+    end
+  end
+
   describe "address_limited_counters/2" do
     test "counts logs matched by `address_id` and by the legacy `address_hash` while the optimized fields migration is in progress" do
       set_fill_logs_optimized_fields_migration_started()

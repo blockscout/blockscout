@@ -1,7 +1,15 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Indexer.Fetcher.TokenCountersUpdater do
   @moduledoc """
-  Updates counters for cataloged tokens.
+  Periodically exports the counters of cataloged tokens to the Multichain
+  Search service.
+
+  The counter values are read straight from the `tokens.holder_count` and
+  `tokens.transfer_count` columns — they are maintained by the incremental
+  counters machinery (import-time holder deltas and
+  `Explorer.Chain.Cache.Counters.TokenCountersConsolidator`), so no aggregates
+  run here. Tokens not yet consolidated are skipped until their first
+  consolidation.
   """
   use Indexer.Fetcher, restart: :permanent
 
@@ -10,7 +18,6 @@ defmodule Indexer.Fetcher.TokenCountersUpdater do
   alias Explorer.Chain.Token
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Indexer.BufferedTask
-  alias Timex.Duration
 
   @behaviour BufferedTask
 
@@ -44,28 +51,33 @@ defmodule Indexer.Fetcher.TokenCountersUpdater do
 
   @impl BufferedTask
   def init(initial, reducer, _) do
-    counters_updater_milliseconds_interval = Application.get_env(:indexer, __MODULE__)[:milliseconds_interval]
+    # BufferedTask re-runs init whenever the queue drains; throttle the full
+    # export sweep to the configured interval (the legacy implementation was
+    # implicitly throttled by the metadata staleness predicate it reused)
+    interval = Application.get_env(:indexer, __MODULE__)[:milliseconds_interval]
+    last_stream_at = :persistent_term.get({__MODULE__, :last_stream_at}, 0)
+    now = System.system_time(:millisecond)
 
-    interval_in_minutes =
-      counters_updater_milliseconds_interval
-      |> Duration.from_milliseconds()
-      |> Duration.to_minutes()
-      |> trunc()
+    if now - last_stream_at >= interval do
+      :persistent_term.put({__MODULE__, :last_stream_at}, now)
 
-    {:ok, tokens} = Token.stream_cataloged_tokens(initial, reducer, interval_in_minutes, true)
+      {:ok, tokens} = Token.stream_cataloged_tokens_for_counters(initial, reducer, true)
 
-    tokens
+      tokens
+    else
+      initial
+    end
   end
 
   @impl BufferedTask
   def run(entries, _json_rpc_named_arguments) do
-    Logger.debug("updating token counters")
+    Logger.debug("exporting token counters")
 
     entries
     |> Enum.reduce(%{}, fn token, acc ->
-      {transfers_count, holders_count} = Token.fetch_token_counters(token.contract_address_hash, :infinity)
+      data_for_multichain =
+        MultichainSearch.prepare_token_counters_for_queue(token.transfer_count || 0, token.holder_count || 0)
 
-      data_for_multichain = MultichainSearch.prepare_token_counters_for_queue(transfers_count, holders_count)
       Map.put(acc, token.contract_address_hash.bytes, data_for_multichain)
     end)
     |> MultichainSearch.send_token_info_to_queue(:counters)

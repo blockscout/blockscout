@@ -2,6 +2,13 @@
 defmodule Explorer.Chain.Cache.Counters.TransactionsCount do
   @moduledoc """
   Cache for total transactions count.
+
+  The count is consolidated by an async task running `COUNT(*)` over the
+  `transactions` table and refreshed every `CACHE_TXS_COUNT_PERIOD`. On large
+  chains this scan is expensive, and the only consumer of the exact value is the
+  REST API output, so the consolidation can be turned off with
+  `CACHE_TXS_COUNT_CONSOLIDATION_DISABLED=true`. In that case `get/0` returns the
+  cheap `pg_class` estimate and never starts the counting task.
   """
 
   use Explorer.Chain.MapCache,
@@ -28,16 +35,31 @@ defmodule Explorer.Chain.Cache.Counters.TransactionsCount do
   """
   @spec get() :: non_neg_integer()
   def get do
-    cached_value_from_ets = __MODULE__.get_count()
+    if enable_consolidation?() do
+      cached_value_from_ets = __MODULE__.get_count()
 
-    CacheCountersHelper.evaluate_count(@cache_key, cached_value_from_ets, :estimated_transactions_count)
+      CacheCountersHelper.evaluate_count(@cache_key, cached_value_from_ets, :estimated_transactions_count)
+    else
+      CacheCountersHelper.estimated_transactions_count()
+    end
+  end
+
+  @doc """
+  Returns whether the exact count consolidation is enabled.
+
+  Controlled by `CACHE_TXS_COUNT_CONSOLIDATION_DISABLED`. When disabled, no
+  counting task is started and `get/0` falls back to the `pg_class` estimate.
+  """
+  @spec enable_consolidation?() :: boolean()
+  def enable_consolidation? do
+    Application.get_env(:explorer, __MODULE__)[:enable_consolidation]
   end
 
   defp handle_fallback(:count) do
     # This will get the task PID if one exists, check if it's running and launch
     # a new task if task doesn't exist or it's not running.
     # See next `handle_fallback` definition
-    safe_get_async_task()
+    if enable_consolidation?(), do: safe_get_async_task()
 
     {:return, nil}
   end

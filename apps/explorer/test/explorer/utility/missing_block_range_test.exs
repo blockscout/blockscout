@@ -2,8 +2,11 @@
 defmodule Explorer.Utility.MissingBlockRangeTest do
   use ExUnit.Case, async: true
 
-  alias Explorer.Utility.MissingBlockRange
+  import Explorer.Factory
+
+  alias Explorer.Chain.Block
   alias Explorer.Repo
+  alias Explorer.Utility.MissingBlockRange
 
   describe "add_ranges_by_block_numbers/2" do
     setup do
@@ -481,5 +484,83 @@ defmodule Explorer.Utility.MissingBlockRangeTest do
                range.from_number == 34 and range.to_number == 31 and range.priority == 1
              end)
     end
+  end
+
+  describe "clear_batch_if_indexed/1" do
+    setup do
+      # blocks are inserted here, so unlike the rest of the module these tests
+      # are run in a sandbox transaction instead of committing to the database
+      :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
+      Repo.delete_all(MissingBlockRange)
+
+      :ok
+    end
+
+    test "clears only the numbers of consensus blocks not marked with refetch_needed" do
+      Repo.insert!(%MissingBlockRange{from_number: 10, to_number: 1, priority: nil})
+
+      insert(:block, number: 3)
+      insert(:block, number: 4)
+      insert(:block, number: 5)
+      insert(:block, number: 6, refetch_needed: true)
+      insert(:block, number: 7, consensus: false)
+
+      MissingBlockRange.clear_batch_if_indexed([8..3//-1])
+
+      assert [%{from_number: 10, to_number: 6}, %{from_number: 2, to_number: 1}] = sorted_ranges()
+    end
+
+    test "keeps the not indexed numbers between the indexed ones" do
+      Repo.insert!(%MissingBlockRange{from_number: 10, to_number: 1, priority: nil})
+
+      insert(:block, number: 2)
+      insert(:block, number: 3)
+      insert(:block, number: 6)
+      insert(:block, number: 7)
+
+      MissingBlockRange.clear_batch_if_indexed([1..10])
+
+      assert [%{from_number: 10, to_number: 8}, %{from_number: 5, to_number: 4}, %{from_number: 1, to_number: 1}] =
+               sorted_ranges()
+    end
+
+    test "clears the numbers at the lower bound of the block ranges" do
+      Repo.insert!(%MissingBlockRange{from_number: 3, to_number: 0, priority: nil})
+
+      Enum.each(0..3, &insert(:block, number: &1))
+
+      MissingBlockRange.clear_batch_if_indexed([0..3])
+
+      assert [] = sorted_ranges()
+    end
+
+    test "keeps the priority of the not indexed numbers" do
+      Repo.insert!(%MissingBlockRange{from_number: 5, to_number: 1, priority: 1})
+
+      insert(:block, number: 2)
+      insert(:block, number: 3)
+
+      MissingBlockRange.clear_batch_if_indexed([1..5])
+
+      assert [%{from_number: 5, to_number: 4, priority: 1}, %{from_number: 1, to_number: 1, priority: 1}] =
+               sorted_ranges()
+    end
+
+    test "keeps a number invalidated after its block has been imported" do
+      insert(:block, number: 42)
+
+      # e.g. the failure handler of a concurrent import of the same height
+      Block.set_refetch_needed([42])
+
+      MissingBlockRange.clear_batch_if_indexed([42..42])
+
+      assert [%{from_number: 42, to_number: 42}] = sorted_ranges()
+    end
+  end
+
+  defp sorted_ranges do
+    MissingBlockRange
+    |> Repo.all()
+    |> Enum.sort_by(& &1.from_number, :desc)
   end
 end

@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.TransactionStateView do
 
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Wei}
+  alias Explorer.Chain.Token.ScaledUIAmount
 
   import Explorer.Chain.Transaction.StateChange, only: [fee_payer_loss: 1, from_loss: 1, has_diff?: 1, to_profit: 1]
 
@@ -27,12 +28,20 @@ defmodule BlockScoutWeb.TransactionStateView do
     has_diff?(from_loss(transaction)) or has_diff?(to_profit(transaction)) or has_diff?(fee_payer_loss(transaction))
   end
 
-  def display_value(balance, :coin, _token_id) do
+  def display_value(balance, coin_or_transfer, token_id, ui_multiplier \\ nil)
+
+  def display_value(balance, :coin, _token_id, _ui_multiplier) do
     format_wei_value(balance, :ether)
   end
 
-  def display_value(balance, token_transfer, token_id) do
-    render("_token_balance.html", transfer: token_transfer, balance: balance, token_id: token_id)
+  # this page renders the final number itself, so unlike the API it applies the
+  # ERC-8056 multiplier of the transaction rather than handing it over
+  def display_value(balance, token_transfer, token_id, ui_multiplier) do
+    render("_token_balance.html",
+      transfer: token_transfer,
+      balance: ScaledUIAmount.scale(balance, ui_multiplier),
+      token_id: token_id
+    )
   end
 
   def display_erc_721(token_transfer) do

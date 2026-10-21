@@ -418,7 +418,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
     case result do
       {:ok, %{inserted: inserted, errors: []}} ->
         log_import_timings(inserted, fetch_duration, time_before)
-        MissingBlockRange.clear_batch([block_number_to_fetch..block_number_to_fetch])
+        MissingBlockRange.clear_batch_if_indexed([block_number_to_fetch..block_number_to_fetch])
         Logger.debug("Fetched and imported.")
 
       {:ok, %{inserted: _, errors: [_ | _] = errors}} ->

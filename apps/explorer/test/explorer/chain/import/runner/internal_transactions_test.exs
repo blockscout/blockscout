@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
   use Explorer.DataCase
 
   alias Ecto.Multi
-  alias Explorer.Chain.{Block, Data, Wei, PendingBlockOperation, Transaction, InternalTransaction}
+  alias Explorer.Chain.{Block, Data, Wei, PendingBlockOperation, Transaction, TransactionError, InternalTransaction}
   alias Explorer.Chain.Import.Runner.InternalTransactions
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
 
@@ -139,6 +139,90 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert :ok == Repo.get(Transaction, transaction1.hash).status
       assert :ok == Repo.get(Transaction, transaction2.hash).status
+    end
+
+    test "caps a long trace error at 255 characters before storing it in transaction_errors and transactions.error" do
+      transaction = insert(:transaction) |> with_block(status: :error)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      # 339-character error returned by a Geth `callTracer` for a failed precompile call
+      error =
+        "err message: unlock store fee failed: air-credential-default " <>
+          "e6a5828d666166b3d5e19e0b01f64277663290a170bca04fae96949b01c42546 update stream record failed: " <>
+          "air-credential-default e6a5828d666166b3d5e19e0b01f64277663290a170bca04fae96949b01c42546 " <>
+          "stream record 0x9eA05E1447889cF23E20e8306F3A8F481D2F0761 is frozen: invalid global virtual group"
+
+      assert String.length(error) > 255
+
+      expected_error = String.slice(error, 0, 255)
+
+      internal_transaction_changes = make_internal_transaction_changes(transaction, 0, error)
+
+      assert {:ok, _} = run_internal_transactions([internal_transaction_changes])
+
+      assert %InternalTransaction{error_id: error_id} =
+               Repo.get_by(InternalTransaction,
+                 block_number: transaction.block_number,
+                 transaction_index: transaction.index,
+                 index: 0
+               )
+
+      assert expected_error == TransactionError.id_to_error(error_id)
+      assert expected_error == Repo.get(Transaction, transaction.hash).error
+    end
+
+    test "caps a non-printable trace error at 255 characters after escaping it" do
+      transaction = insert(:transaction) |> with_block(status: :error)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      # 200 NUL bytes, each escaped to `\0` (2 characters) by `inspect/2`, so the escaped message is 400 characters
+      error = :binary.copy(<<0>>, 200)
+
+      internal_transaction_changes = make_internal_transaction_changes(transaction, 0, error)
+
+      assert {:ok, _} = run_internal_transactions([internal_transaction_changes])
+
+      assert %InternalTransaction{error_id: error_id} =
+               Repo.get_by(InternalTransaction,
+                 block_number: transaction.block_number,
+                 transaction_index: transaction.index,
+                 index: 0
+               )
+
+      stored_error = TransactionError.id_to_error(error_id)
+
+      assert 255 == String.length(stored_error)
+      assert String.printable?(stored_error)
+      assert String.starts_with?(stored_error, "\\0\\0")
+    end
+
+    test "caps a trace error by code points, not graphemes, so multi-code-point graphemes fit varchar(255)" do
+      transaction = insert(:transaction) |> with_block(status: :error)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      # "e" + combining acute accent: one grapheme, two code points. 200 graphemes = 400 code points,
+      # which PostgreSQL counts as 400 characters for `varchar(255)`.
+      error = String.duplicate("é", 200)
+
+      assert 200 == String.length(error)
+      assert 400 == length(String.codepoints(error))
+
+      internal_transaction_changes = make_internal_transaction_changes(transaction, 0, error)
+
+      assert {:ok, _} = run_internal_transactions([internal_transaction_changes])
+
+      assert %InternalTransaction{error_id: error_id} =
+               Repo.get_by(InternalTransaction,
+                 block_number: transaction.block_number,
+                 transaction_index: transaction.index,
+                 index: 0
+               )
+
+      stored_error = TransactionError.id_to_error(error_id)
+
+      assert length(String.codepoints(stored_error)) <= 255
+      assert String.starts_with?(error, stored_error)
+      assert stored_error == Repo.get(Transaction, transaction.hash).error
     end
 
     # test "simple coin transfer has no internal transaction inserted for Nethermind" do

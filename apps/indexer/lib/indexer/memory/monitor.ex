@@ -111,9 +111,50 @@ defmodule Indexer.Memory.Monitor do
         _ -> Application.get_env(:indexer, :system_memory_percentage)
       end
 
-    case :memsup.get_system_memory_data()[:total_memory] do
+    case total_memory() do
       nil -> default_limit
       total_memory -> floor(total_memory * percentage / 100)
+    end
+  end
+
+  @cgroup_memory_limit_paths [
+    # cgroup v2
+    "/sys/fs/cgroup/memory.max",
+    # cgroup v1
+    "/sys/fs/cgroup/memory/memory.limit_in_bytes"
+  ]
+
+  # cgroup v1 reports "no limit" as a huge sentinel number (PAGE_COUNTER_MAX)
+  # rather than a keyword, so values above this threshold are treated as unset
+  @cgroup_no_limit_threshold 1 <<< 60
+
+  # When running in a container, the memory available to the pod is defined by
+  # its cgroup limit, while `:memsup` reports the host's total memory, so the
+  # cgroup limit takes precedence when it is present and set.
+  defp total_memory do
+    cgroup_memory_limit() || :memsup.get_system_memory_data()[:total_memory]
+  end
+
+  defp cgroup_memory_limit do
+    Enum.find_value(@cgroup_memory_limit_paths, &read_cgroup_memory_limit/1)
+  end
+
+  defp read_cgroup_memory_limit(path) do
+    case File.read(path) do
+      {:ok, content} -> parse_cgroup_memory_limit(content)
+      _ -> nil
+    end
+  end
+
+  @doc false
+  def parse_cgroup_memory_limit(content) do
+    with {limit, ""} <- Integer.parse(String.trim(content)),
+         true <- limit > 0 and limit < @cgroup_no_limit_threshold do
+      limit
+    else
+      # content is "max" (cgroup v2 for "no limit"), not a plain positive integer,
+      # or the limit is not set
+      _ -> nil
     end
   end
 

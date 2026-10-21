@@ -63,6 +63,7 @@ defmodule Explorer.Factory do
     Token,
     TokenTransfer,
     Token.Instance,
+    Token.UIMultiplierChange,
     Transaction,
     TransactionError,
     Wei,
@@ -1029,6 +1030,20 @@ defmodule Explorer.Factory do
     }
   end
 
+  def token_ui_multiplier_change_factory do
+    block = build(:block)
+
+    %UIMultiplierChange{
+      token: build(:token),
+      block: block,
+      block_number: block.number,
+      log_index: sequence("token_ui_multiplier_change_log_index", & &1),
+      old_multiplier: Decimal.new("1000000000000000000"),
+      new_multiplier: Decimal.new("2000000000000000000"),
+      effective_at: DateTime.utc_now()
+    }
+  end
+
   def unique_token_factory do
     Map.replace(token_factory(), :name, sequence("Infinite Token"))
   end
@@ -1358,7 +1373,7 @@ defmodule Explorer.Factory do
         "key" => sequence("value"),
         "image_url" => sequence("image_url"),
         "animation_url" => sequence("image_url"),
-        "external_url" => sequence("external_url")
+        "external_url" => sequence("https://example.com/external_url")
       },
       error: nil,
       owner_address_hash: insert(:address).hash

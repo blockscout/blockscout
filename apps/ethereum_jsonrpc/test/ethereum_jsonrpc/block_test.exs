@@ -95,6 +95,47 @@ defmodule EthereumJSONRPC.BlockTest do
     end
   end
 
+  describe "to_elixir/1" do
+    # Nethermind returns `nonce` and `mixHash` as `null` for AuRa blocks (e.g. pre-merge Gnosis)
+    test "drops nil PoW-only fields so elixir_to_params/1 falls back to defaults" do
+      elixir =
+        Block.to_elixir(%{
+          "difficulty" => "0xfffffffffffffffffffffffffffffffe",
+          "extraData" => "0x",
+          "gasLimit" => "0x1c9c380",
+          "gasUsed" => "0x1f1e57",
+          "hash" => "0x3be18f3167d097104e5256ca2eb04a8148241b0d7270c55a5547f1f4dc90307d",
+          "logsBloom" => "0x",
+          "miner" => "0x0000999dc55126ca626c20377f0045946db69b6e",
+          "mixHash" => nil,
+          "nonce" => nil,
+          "number" => "0x13b09fd",
+          "parentHash" => "0x39558c126fdbbb412271b6dc5b34922f16ae786a883f33ba3a55b5f0f5f0f5f0",
+          "receiptsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+          "sha3Uncles" => nil,
+          "size" => "0x92c",
+          "stateRoot" => "0x6fd0a5d82ca77d9f38c3ebbde11b11d304a5fcf3854f291df64395ab38ed43ba",
+          "timestamp" => "0x620b2ff9",
+          "totalDifficulty" => nil,
+          "transactions" => [],
+          "transactionsRoot" => "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
+          "uncles" => nil,
+          "baseFeePerGas" => "0x8"
+        })
+
+      for key <- ~w(nonce mixHash sha3Uncles uncles) do
+        refute Map.has_key?(elixir, key), "expected #{key} to be dropped"
+      end
+
+      assert %{
+               nonce: "0x0000000000000000",
+               mix_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+               sha3_uncles: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+               uncles: []
+             } = Block.elixir_to_params(elixir)
+    end
+  end
+
   describe "elixir_to_transactions/1" do
     test "converts to empty list if there is not transaction key" do
       assert Block.elixir_to_transactions(%{}) == []

@@ -5,9 +5,8 @@ defmodule Explorer.Chain.Address.Reputation do
   """
   use Explorer.Schema
 
-  alias Explorer.Chain.Address.ScamBadgeToAddress
+  alias Explorer.Chain.Cache.ScamAddresses
   alias Explorer.Chain.Hash
-  alias Explorer.Repo
 
   @enum_values [:ok, :scam]
   def enum_values, do: @enum_values
@@ -19,20 +18,18 @@ defmodule Explorer.Chain.Address.Reputation do
   end
 
   def preload_reputation(address_hashes) do
-    scam_badges =
+    scam_hashes =
       if Application.get_env(:block_scout_web, :hide_scam_addresses) do
-        ScamBadgeToAddress
-        |> where([sb], sb.address_hash in ^address_hashes)
-        |> Repo.replica().all()
-        |> Map.new(&{&1.address_hash, &1})
+        ScamAddresses.scam_hashes(address_hashes)
       else
-        %{}
+        MapSet.new()
       end
 
     Enum.map(address_hashes, fn address_hash ->
-      case Map.get(scam_badges, address_hash) do
-        nil -> {address_hash, %__MODULE__{reputation: "ok"}}
-        _badge -> {address_hash, %__MODULE__{reputation: "scam"}}
+      if MapSet.member?(scam_hashes, address_hash) do
+        {address_hash, %__MODULE__{reputation: "scam"}}
+      else
+        {address_hash, %__MODULE__{reputation: "ok"}}
       end
     end)
   end

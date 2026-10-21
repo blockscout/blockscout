@@ -9,6 +9,7 @@ defmodule Explorer.Chain.CsvExport.Token.Holders do
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.CsvExport.AsyncHelper
   alias Explorer.Chain.CsvExport.Helper, as: CsvHelper
+  alias Explorer.Chain.Token.ScaledUIAmount
 
   @spec export(Hash.Address.t(), any(), any(), any(), any(), any()) ::
           Enumerable.t()
@@ -46,12 +47,20 @@ defmodule Explorer.Chain.CsvExport.Token.Holders do
       "Balance"
     ]
 
+    # Balances are exported the way the holders page shows them rather than raw,
+    # so the ERC-8056 multiplier belongs in the number itself — the current one,
+    # since a current balance is a statement about now.
+    ui_multiplier = Token.effective_ui_multiplier(token)
+
     holders_list =
       holders
       |> Stream.map(fn ctb ->
         [
           Address.checksum(ctb.address_hash),
-          ctb.value |> CurrencyHelper.divide_decimals(token.decimals) |> Decimal.to_string(:xsd)
+          ctb.value
+          |> ScaledUIAmount.scale(ui_multiplier)
+          |> CurrencyHelper.divide_decimals(token.decimals)
+          |> Decimal.to_string(:xsd)
         ]
       end)
 

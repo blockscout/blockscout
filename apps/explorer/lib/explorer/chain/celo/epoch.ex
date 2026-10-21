@@ -447,14 +447,25 @@ defmodule Explorer.Chain.Celo.Epoch do
   @spec block_range_to_epoch_range(integer(), integer(), Keyword.t()) :: {integer(), integer()} | nil
   def block_range_to_epoch_range(from_block, to_block, options \\ []) do
     query =
-      from(e in __MODULE__,
-        where: e.end_block_number >= ^from_block and e.end_block_number < ^to_block,
-        select: {min(e.number), max(e.number)}
-      )
+      from(e in __MODULE__, select: {min(e.number), max(e.number)})
+      |> where_end_block_number_from(from_block)
+      |> where_end_block_number_to(to_block)
 
     case Chain.select_repo(options).one(query) do
       {nil, nil} -> nil
       res -> res
     end
+  end
+
+  defp where_end_block_number_from(query, nil), do: query
+
+  defp where_end_block_number_from(query, from_block) do
+    from(e in query, where: e.end_block_number >= ^from_block)
+  end
+
+  defp where_end_block_number_to(query, nil), do: query
+
+  defp where_end_block_number_to(query, to_block) do
+    from(e in query, where: e.end_block_number < ^to_block)
   end
 end

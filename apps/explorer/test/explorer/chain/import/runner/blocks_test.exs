@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   alias Explorer.Chain.{Address, Block, Transaction, PendingBlockOperation}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.{Chain, Repo}
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Utility.{CountersRefetchBlock, MissingBlockRange}
 
   describe "run/1" do
     setup do
@@ -87,6 +87,98 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
       assert Repo.one!(from(transaction_fork in Transaction.Fork, select: "ctid")) == ctid,
              "Tuple was written even though it is not distinct"
+    end
+
+    test "re-import of a block queued for re-fetch subtracts its old content from the address counters", %{
+      consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number},
+      options: options
+    } do
+      consensus_block = insert(:block, %{hash: block_hash, number: block_number, refetch_needed: true})
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(consensus_block)
+
+      gas_used = Decimal.to_integer(transaction.gas_used)
+
+      from_address = Repo.get(Address, transaction.from_address_hash)
+
+      from_address
+      |> Ecto.Changeset.change(%{
+        transactions_count: 5,
+        token_transfers_count: 2,
+        gas_used: gas_used + 100,
+        counters_updated_at: block_number + 10
+      })
+      |> Repo.update!()
+
+      block_params =
+        params_for(:block, hash: block_hash, miner_hash: miner_hash, number: block_number, consensus: true)
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
+
+      assert {:ok, %{counters_refetched_block_numbers: [^block_number]}} =
+               Multi.new()
+               |> Blocks.run([block_changes], options)
+               |> Repo.transaction()
+
+      reloaded = Repo.get(Address, transaction.from_address_hash)
+
+      assert reloaded.transactions_count == 4
+      assert reloaded.token_transfers_count == 2
+      assert reloaded.gas_used == 100
+      assert reloaded.counters_updated_at == block_number + 10
+
+      assert Repo.aggregate(CountersRefetchBlock, :count) == 1
+
+      # a second import of the same block applies no further deltas: the
+      # re-fetch was already settled into the queue
+      assert {:ok, %{counters_refetched_block_numbers: []}} =
+               Multi.new()
+               |> Blocks.run([block_changes], options)
+               |> Repo.transaction()
+
+      assert Repo.get(Address, transaction.from_address_hash).transactions_count == 4
+    end
+
+    test "a reorg below the consolidation watermark resets it to force a full recalculation", %{
+      consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number},
+      options: options
+    } do
+      consensus_block = insert(:block, %{hash: block_hash, number: block_number})
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(consensus_block)
+
+      consolidated_address =
+        Address
+        |> Repo.get(transaction.from_address_hash)
+        |> Ecto.Changeset.change(%{counters_updated_at: block_number + 10})
+        |> Repo.update!()
+
+      fresh_address =
+        Address
+        |> Repo.get(transaction.to_address_hash)
+        |> Ecto.Changeset.change(%{counters_updated_at: block_number - 1})
+        |> Repo.update!()
+
+      block_params =
+        params_for(:block, hash: block_hash, miner_hash: miner_hash, number: block_number, consensus: false)
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
+
+      assert {:ok, %{counters_corrections: %{reset: reset_bytes}}} =
+               Multi.new()
+               |> Blocks.run([block_changes], options)
+               |> Repo.transaction()
+
+      assert reset_bytes == [consolidated_address.hash.bytes]
+      assert is_nil(Repo.get(Address, consolidated_address.hash).counters_updated_at)
+      # the forked transaction was above this watermark, so it stays intact
+      assert Repo.get(Address, fresh_address.hash).counters_updated_at == block_number - 1
     end
 
     test "coin balances are deleted and new balances are derived if some blocks lost consensus",
@@ -705,6 +797,86 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
               }} = Multi.new() |> Blocks.run(changes_list, options) |> Repo.transaction()
     end
 
+    test "change instance owner when the previous transfer is a batch transfer with several token ids",
+         %{consensus_block: %{hash: block_hash, miner_hash: miner_hash, number: block_number}, options: options} do
+      block_number = block_number + 1
+      consensus_block = insert(:block, %{hash: block_hash, number: block_number})
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(consensus_block)
+
+      token_address = insert(:contract_address)
+      insert(:token, contract_address: token_address, type: "ERC-721")
+      id = Decimal.new(7)
+      other_id = Decimal.new(3)
+
+      tt =
+        insert(:token_transfer,
+          token_ids: [id],
+          token_type: "ERC-721",
+          transaction: transaction,
+          token_contract_address: token_address,
+          block_number: block_number,
+          block: consensus_block
+        )
+
+      %{hash: hash_1} = params_for(:block, consensus: true, miner_hash: miner_hash)
+      consensus_block_1 = insert(:block, %{hash: hash_1, number: block_number - 1})
+
+      transaction_1 =
+        :transaction
+        |> insert()
+        |> with_block(consensus_block_1)
+
+      # the forked token id is not the first element of the historical transfer's `token_ids`
+      batch_tt =
+        insert(:token_transfer,
+          token_ids: [other_id, id],
+          amounts: [Decimal.new(1), Decimal.new(1)],
+          token_type: "ERC-1155",
+          transaction: transaction_1,
+          token_contract_address: token_address,
+          block_number: consensus_block_1.number,
+          block: consensus_block_1
+        )
+
+      instance =
+        insert(:token_instance,
+          token_contract_address_hash: token_address.hash,
+          token_id: id,
+          owner_updated_at_block: tt.block_number,
+          owner_updated_at_log_index: tt.log_index,
+          owner_address_hash: insert(:address).hash
+        )
+
+      block_params =
+        params_for(:block, hash: block_hash, miner_hash: miner_hash, number: block_number, consensus: false)
+
+      %Ecto.Changeset{valid?: true, changes: block_changes} = Block.changeset(%Block{}, block_params)
+      changes_list = [block_changes]
+      error = instance.error
+      batch_block_number = batch_tt.block_number
+      batch_log_index = batch_tt.log_index
+      owner_address_hash = batch_tt.to_address_hash
+      token_address_hash = token_address.hash
+
+      assert {:ok,
+              %{
+                update_token_instances_owner: [
+                  %Explorer.Chain.Token.Instance{
+                    token_id: ^id,
+                    error: ^error,
+                    owner_updated_at_block: ^batch_block_number,
+                    owner_updated_at_log_index: ^batch_log_index,
+                    owner_address_hash: ^owner_address_hash,
+                    token_contract_address_hash: ^token_address_hash
+                  }
+                ]
+              }} = Multi.new() |> Blocks.run(changes_list, options) |> Repo.transaction()
+    end
+
     if @chain_identity == {:optimism, :celo} do
       test "removes celo epoch rewards and sets fetched? = false when starting block loses consensus", %{
         consensus_block: %{miner_hash: miner_hash} = parent_block,
@@ -946,6 +1118,77 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
 
       Blocks.process_blocks_consensus([new_block1_changes], Repo, opts)
       assert_received {:"$gen_cast", {:lost_consensus, _}}
+    end
+
+    test "does not trigger beacon deposit reorg handling for blocks that were already non-consensus" do
+      Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: true)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: false)
+      end)
+
+      BlockNumber.set_max(50)
+
+      Process.register(self(), Indexer.Fetcher.Beacon.Deposit)
+
+      block0 = insert(:block, consensus: true, number: 0)
+      insert(:block, consensus: false, number: 1)
+
+      new_block1 = params_for(:block, miner_hash: insert(:address).hash, parent_hash: block0.hash, number: 1)
+
+      %Ecto.Changeset{valid?: true, changes: new_block1_changes} = Block.changeset(%Block{}, new_block1)
+
+      opts = %{
+        timeout: 60_000,
+        timestamps: %{updated_at: DateTime.utc_now()}
+      }
+
+      # the old fork block is still reported for the cleanup steps of the import
+      assert {:ok, [{1, _}]} = Blocks.process_blocks_consensus([new_block1_changes], Repo, opts)
+      refute_received {:"$gen_cast", {:lost_consensus, _}}
+    end
+
+    test "run/3 reports the reorg block number instead of notifying the beacon deposit fetcher from the transaction" do
+      Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: true)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.Cache.BlockNumber, enabled: false)
+      end)
+
+      BlockNumber.set_max(50)
+
+      Process.register(self(), Indexer.Fetcher.Beacon.Deposit)
+
+      insert(:block, consensus: true, number: 0)
+      insert(:block, consensus: true, number: 1)
+      insert(:block, consensus: false, number: 2)
+
+      miner = insert(:address)
+      new_block0 = params_for(:block, miner_hash: miner.hash, number: 0)
+      new_block1 = params_for(:block, miner_hash: miner.hash, parent_hash: new_block0.hash, number: 1)
+
+      %Ecto.Changeset{valid?: true, changes: new_block1_changes} = Block.changeset(%Block{}, new_block1)
+
+      timestamp = DateTime.utc_now()
+      options = %{timestamps: %{inserted_at: timestamp, updated_at: timestamp}}
+
+      assert {:ok,
+              %{
+                blocks_consensus: %{
+                  beacon_deposit_reorg_block_number: 0,
+                  nonconsensus_blocks: nonconsensus_blocks
+                },
+                lose_consensus: lose_consensus
+              }} =
+               Multi.new()
+               |> Blocks.run([new_block1_changes], options)
+               |> Repo.transaction()
+
+      assert [{0, _}, {1, _}] = Enum.sort(nonconsensus_blocks)
+      assert Enum.sort(lose_consensus) == Enum.sort(nonconsensus_blocks)
+
+      # the notification is sent by `Explorer.Chain.Import.all/1` after the commit
+      refute_received {:"$gen_cast", {:lost_consensus, _}}
     end
   end
 

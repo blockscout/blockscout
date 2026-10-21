@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
   alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
+  alias Explorer.Chain.Token.UIMultiplierChange
   alias Explorer.Chain.{TokenTransfer, Transaction}
 
   def render("token_transfer.json", %{token_transfer: nil}) do
@@ -27,8 +28,9 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
       }) do
     %{
       "items" =>
-        Enum.map(
-          token_transfers,
+        token_transfers
+        |> UIMultiplierChange.put_ui_multipliers(api?: true)
+        |> Enum.map(
           &render("token_transfer.json", %{
             token_transfer: &1,
             decoded_transaction_input: &1.transaction && decoded_transactions_map[&1.transaction.hash],
@@ -103,7 +105,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
         }
 
       {:ok, value, decimals} ->
-        %{"value" => value, "decimals" => decimals}
+        %{"value" => value, "decimals" => decimals, "ui_multiplier" => token_transfer.ui_multiplier}
 
       _ ->
         nil

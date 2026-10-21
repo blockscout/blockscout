@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
   use BlockScoutWeb, :controller
 
   import BlockScoutWeb.Chain, only: [paging_options: 1]
-  import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 3, split_list_by_page: 1]
+  import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 3, split_list_by_page: 2]
 
   alias Explorer.Chain
   alias Explorer.Chain.{DenormalizationHelper, Transaction}
@@ -17,7 +17,7 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
            transaction_from_hash(transaction_hash),
          paging_options <- paging_options(params) do
       logs = Chain.transaction_to_logs(transaction_hash, Keyword.merge(paging_options, @api_true))
-      {logs, next_page} = split_list_by_page(logs)
+      {logs, next_page} = split_list_by_page(logs, paging_options[:paging_options])
 
       transaction_updated =
         if (error == "Reverted" || error == "execution reverted") && !revert_reason do

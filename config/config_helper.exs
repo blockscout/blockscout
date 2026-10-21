@@ -168,8 +168,14 @@ defmodule ConfigHelper do
     end
   end
 
-  @spec parse_time_env_var(String.t(), String.t() | nil) :: non_neg_integer() | nil
-  def parse_time_env_var(env_var, default_value \\ nil) do
+  @doc """
+  Parses a time value (e.g. `10s`, `5m`, `1h`) from the env var into milliseconds.
+
+  Options:
+    * `:min` - the minimum allowed value in milliseconds; a smaller value (e.g. a negative duration) raises at startup.
+  """
+  @spec parse_time_env_var(String.t(), String.t() | nil, keyword()) :: integer() | nil
+  def parse_time_env_var(env_var, default_value \\ nil, opts \\ []) do
     case safe_get_env(env_var, default_value) do
       "" ->
         nil
@@ -180,10 +186,18 @@ defmodule ConfigHelper do
             raise "Invalid time format in environment variable #{env_var}: #{value}"
 
           time ->
-            time
+            validate_min(env_var, time, value, Keyword.get(opts, :min))
         end
     end
   end
+
+  defp validate_min(_env_var, time, _raw_value, nil), do: time
+
+  defp validate_min(env_var, time, raw_value, min) when time < min do
+    raise "#{env_var} must be >= #{min} ms, got: #{raw_value}"
+  end
+
+  defp validate_min(_env_var, time, _raw_value, _min), do: time
 
   @doc """
   Parses value of env var through catalogued values list. If a value is not in the list, nil is returned.
@@ -263,9 +277,23 @@ defmodule ConfigHelper do
     if(disable_indexer?, do: :timer.seconds(1), else: false)
   end
 
-  @spec cache_global_ttl(boolean()) :: non_neg_integer()
+  @doc """
+  TTL of a cache that the indexer keeps up to date: `nil` (no expiration) while
+  the indexer runs, a fixed 5 seconds when it is disabled.
+  """
+  @spec cache_global_ttl(boolean()) :: non_neg_integer() | nil
   def cache_global_ttl(disable_indexer?) do
     if(disable_indexer?, do: :timer.seconds(5))
+  end
+
+  @doc """
+  Same as `cache_global_ttl/1`, but when the indexer is disabled the TTL is read
+  from the `env_var` environment variable (in the time format accepted by
+  `parse_time_env_var/2`), falling back to `default_value` when it is not set.
+  """
+  @spec cache_global_ttl(boolean(), String.t(), String.t()) :: non_neg_integer() | nil
+  def cache_global_ttl(disable_indexer?, env_var, default_value) do
+    if(disable_indexer?, do: parse_time_env_var(env_var, default_value))
   end
 
   @spec indexer_memory_limit() :: integer()
