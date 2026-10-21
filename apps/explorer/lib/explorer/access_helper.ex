@@ -26,7 +26,10 @@ defmodule Explorer.AccessHelper do
     restricted_list_var = Application.get_env(:explorer, :addresses_blacklist)
     addresses_blacklist = (restricted_list_var && String.split(restricted_list_var, ",")) || []
 
-    key = if params && Map.has_key?(params, "key"), do: Map.get(params, "key"), else: nil
+    # API v2 controllers run `OpenApiSpex.Plug.CastAndValidate`, which replaces
+    # `conn.params` with an atom-keyed map, so the key may come as either
+    # `"key"` or `:key`.
+    key = params && (Map.get(params, "key") || Map.get(params, :key))
     correct_key = key && key == Application.get_env(:explorer, :addresses_blacklist_key)
 
     {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)

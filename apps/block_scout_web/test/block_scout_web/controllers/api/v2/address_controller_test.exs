@@ -95,6 +95,38 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       check_response(correct_response, json_response)
     end
 
+    test "restricted address is accessible with the correct key", %{conn: conn} do
+      address = insert(:address)
+      address_hash_string = Address.checksum(address.hash)
+
+      old_blacklist = Application.get_env(:explorer, :addresses_blacklist)
+      old_key = Application.get_env(:explorer, :addresses_blacklist_key)
+      Application.put_env(:explorer, :addresses_blacklist, address_hash_string)
+      Application.put_env(:explorer, :addresses_blacklist_key, "secret")
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :addresses_blacklist, old_blacklist)
+        Application.put_env(:explorer, :addresses_blacklist_key, old_key)
+      end)
+
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _, _ -> {:ok, []} end)
+
+      assert %{"message" => "Restricted access"} =
+               conn
+               |> get("/api/v2/addresses/#{address_hash_string}")
+               |> json_response(403)
+
+      assert %{"message" => "Restricted access"} =
+               conn
+               |> get("/api/v2/addresses/#{address_hash_string}", %{"key" => "wrong"})
+               |> json_response(403)
+
+      assert %{"hash" => ^address_hash_string} =
+               conn
+               |> get("/api/v2/addresses/#{address_hash_string}", %{"key" => "secret"})
+               |> json_response(200)
+    end
+
     test "get 422 on invalid address", %{conn: conn} do
       request = get(conn, "/api/v2/addresses/0x")
 
