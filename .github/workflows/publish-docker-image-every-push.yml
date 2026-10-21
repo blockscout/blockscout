@@ -12,7 +12,7 @@ on:
 env:
   OTP_VERSION: '28.5'
   ELIXIR_VERSION: '1.20.4'
-  RELEASE_VERSION: 12.0.2
+  RELEASE_VERSION: 12.0.3
 
 permissions:
   contents: read

@@ -21,7 +21,7 @@ defmodule Explorer.Mixfile do
       lockfile: "../../mix.lock",
       package: package(),
       start_permanent: Mix.env() == :prod,
-      version: "12.0.2",
+      version: "12.0.3",
       elixirc_options: [
         no_warn_undefined: [
           BlockScoutWeb.Routers.WebRouter.Helpers,

@@ -1,5 +1,13 @@
 # Changelog
 
+## 12.0.3
+
+### 🐛 Bug Fixes
+
+- Encode Arbitrum L2ToL1Tx caller addresses that start with 0x3078 ([#14965](https://github.com/blockscout/blockscout/issues/14965))
+- ValidateLogsFirstTopicIdFkey endless loop ([#14958](https://github.com/blockscout/blockscout/issues/14958))
+
+
 ## 12.0.2
 
 ### 🚀 Features
