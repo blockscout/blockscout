@@ -116,23 +116,25 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenTransfer do
         ]
   def read_block_logs(block_number, transfer_events) do
     Log
-    |> join(:inner, [l], b in Block, on: b.number == l.block_number and b.consensus == true)
+    |> join(:inner, [l], b in Block, as: :block, on: b.number == l.block_number and b.consensus == true)
     |> Log.join_transaction_query()
     |> Log.join_address_mapping_query()
+    |> Log.join_first_topic_query()
     |> join(:left, [l], a in TokenAdapter,
-      on: a.zrc2_address_hash == coalesce(l.address_hash, as(:address_mapping).address_hash)
+      as: :adapter,
+      on: a.zrc2_address_hash == as(:address_mapping).address_hash
     )
     |> where([l], l.block_number == ^block_number)
     |> Log.filter_by_topic_query(:first_topic, transfer_events)
-    |> select([l, b, t, _am, a], %{
-      first_topic: l.first_topic,
-      data: l.data,
-      address_hash: coalesce(l.address_hash, as(:address_mapping).address_hash),
-      transaction_hash: t.hash,
+    |> select([l], %{
+      first_topic: as(:first_topic).value,
+      data: l.compressed_data,
+      address_hash: as(:address_mapping).address_hash,
+      transaction_hash: as(:transaction).hash,
       index: l.index,
       block_number: l.block_number,
-      block_hash: b.hash,
-      adapter_address_hash: a.adapter_address_hash
+      block_hash: as(:block).hash,
+      adapter_address_hash: as(:adapter).adapter_address_hash
     })
     |> Repo.all(timeout: :infinity)
   end

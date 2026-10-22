@@ -14,7 +14,6 @@ defmodule Explorer.Migrator.FillLogsCompressedData do
   alias Explorer.Chain.Log
   alias Explorer.Migrator.{FillingMigration, FillLogsOptimizedFields}
   alias Explorer.Repo
-  alias Explorer.Utility.LogHelper
 
   @migration_name "fill_logs_compressed_data"
 
@@ -70,30 +69,16 @@ defmodule Explorer.Migrator.FillLogsCompressedData do
     {ordered_params, conflict_target} =
       case chain_identity() do
         {:optimism, :celo} ->
-          if LogHelper.primary_key_updated?() do
-            {
-              Enum.sort_by(params, &{&1.block_number, &1.index}),
-              [:index, :block_number]
-            }
-          else
-            {
-              Enum.sort_by(params, &{&1.block_number, &1.index}),
-              [:index, :block_hash]
-            }
-          end
+          {
+            Enum.sort_by(params, &{&1.block_number, &1.index}),
+            [:index, :block_number]
+          }
 
         _ ->
-          if LogHelper.primary_key_updated?() do
-            {
-              Enum.sort_by(params, &{&1.block_number, &1.transaction_index, &1.index}),
-              [:transaction_index, :index, :block_number]
-            }
-          else
-            {
-              Enum.sort_by(params, &{&1.block_number, &1.transaction_index, &1.index}),
-              [:transaction_hash, :index, :block_hash]
-            }
-          end
+          {
+            Enum.sort_by(params, &{&1.block_number, &1.transaction_index, &1.index}),
+            [:transaction_index, :index, :block_number]
+          }
       end
 
     {count, _} =

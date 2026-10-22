@@ -314,7 +314,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPos
   defp check_if_validator_payment_distributed_events_exist(block_number) do
     Log
     |> where([l], l.block_number == ^block_number)
-    |> where([l], l.address_hash == ^epoch_manager_contract_address_hash())
+    |> Log.address_match_query(epoch_manager_contract_address_hash())
     |> Log.filter_by_topic_query(:first_topic, @validator_epoch_payment_distributed_event_topic)
     |> Repo.exists?()
   end

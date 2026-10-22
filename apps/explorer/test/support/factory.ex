@@ -932,17 +932,19 @@ defmodule Explorer.Factory do
 
   def log_factory(attrs) do
     block = build(:block)
-    transaction = build(:transaction)
     data = data(:log_data)
 
     all_attrs =
       attrs
       |> adjust_log_address_attrs()
       |> adjust_log_transaction_attrs()
+      |> adjust_log_block_attrs()
       |> adjust_log_first_topic_attrs()
+      |> adjust_log_data_attrs()
 
     %Log{
       block: block,
+      block_hash: block.hash,
       block_number: block.number,
       data: data,
       compressed_data: data,
@@ -951,7 +953,6 @@ defmodule Explorer.Factory do
       index: sequence("log_index", & &1),
       second_topic: nil,
       third_topic: nil,
-      transaction: transaction,
       transaction_index: transaction_index()
     }
     |> merge_attributes(all_attrs)
@@ -991,27 +992,82 @@ defmodule Explorer.Factory do
 
     address_attrs
     |> Map.merge(address_related_attrs)
+    |> Map.update!(:address_hash, &cast_log_virtual_field(Hash.Address, &1))
     |> Map.merge(other_attrs)
   end
 
   defp adjust_log_transaction_attrs(attrs) do
     transaction_attrs =
       case Map.get(attrs, :transaction) do
-        %{index: index} when not is_nil(index) -> %{transaction_index: index}
+        %{hash: hash, index: index} when not is_nil(index) -> %{transaction_hash: hash, transaction_index: index}
+        %{hash: hash} -> %{transaction_hash: hash}
         _ -> %{}
       end
 
     Map.merge(attrs, transaction_attrs)
   end
 
+  # The `block` association fills `block_number` on insert, so the default block is dropped when `block_number` is
+  # given explicitly or is taken from the collated transaction: otherwise the default block would override it.
+  defp adjust_log_block_attrs(attrs) do
+    block_attrs =
+      case attrs do
+        %{block: %{hash: block_hash, number: block_number}} ->
+          %{block_hash: block_hash, block_number: block_number}
+
+        %{block: nil} ->
+          %{block_hash: nil}
+
+        %{block_number: _} ->
+          %{block: nil, block_hash: nil}
+
+        %{transaction: %{block_number: block_number, block_hash: block_hash}} when not is_nil(block_number) ->
+          %{block: nil, block_hash: block_hash, block_number: block_number}
+
+        _ ->
+          %{}
+      end
+
+    Map.merge(attrs, block_attrs)
+  end
+
   defp adjust_log_first_topic_attrs(attrs) do
     first_topic_attrs =
       case Map.get(attrs, :first_topic) do
-        nil -> %{}
-        first_topic -> %{first_topic_id: LogFirstTopic.find_or_create(first_topic).id}
+        nil ->
+          %{}
+
+        first_topic ->
+          first_topic = cast_log_virtual_field(Hash.Full, first_topic)
+          %{first_topic: first_topic, first_topic_id: LogFirstTopic.find_or_create(first_topic).id}
       end
 
     Map.merge(attrs, first_topic_attrs)
+  end
+
+  # `data` is a virtual field that `Explorer.Chain.Log.prepare_data/1` fills from `compressed_data`
+  defp adjust_log_data_attrs(attrs) do
+    case attrs do
+      %{data: data} when not is_nil(data) ->
+        data = cast_log_virtual_field(Data, data)
+
+        attrs
+        |> Map.put(:data, data)
+        |> Map.put_new(:compressed_data, data)
+
+      %{compressed_data: compressed_data} ->
+        Map.put_new(attrs, :data, cast_log_virtual_field(Data, compressed_data))
+
+      _ ->
+        attrs
+    end
+  end
+
+  defp cast_log_virtual_field(_type, nil), do: nil
+
+  defp cast_log_virtual_field(type, value) do
+    {:ok, casted_value} = type.cast(value)
+    casted_value
   end
 
   def token_factory do
@@ -1065,7 +1121,7 @@ defmodule Explorer.Factory do
     }
   end
 
-  def token_transfer_log_factory do
+  def token_transfer_log_factory(attrs) do
     to_address = build(:address)
     from_address = build(:address)
 
@@ -1085,7 +1141,7 @@ defmodule Explorer.Factory do
       transaction_index: transaction_index()
     }
 
-    build(:log, log_params)
+    build(:log, Map.merge(log_params, attrs))
   end
 
   def token_transfer_log_with_transaction(%Log{} = log, %Transaction{} = transaction) do
@@ -1153,7 +1209,7 @@ defmodule Explorer.Factory do
     }
   end
 
-  def erc7984_token_transfer_log_factory do
+  def erc7984_token_transfer_log_factory(attrs) do
     from_address = build(:address)
     to_address = build(:address)
     token_address = insert(:contract_address)
@@ -1175,7 +1231,7 @@ defmodule Explorer.Factory do
       transaction: transaction
     }
 
-    build(:log, log_params)
+    build(:log, Map.merge(log_params, attrs))
   end
 
   def erc7984_token_transfer_factory do

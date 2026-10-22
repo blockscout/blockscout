@@ -51,20 +51,18 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
 
         assert match?(
                  [
-                   %{index: 0, data: %Explorer.Chain.Data{bytes: <<2>>}},
-                   %{index: 1, data: %Explorer.Chain.Data{bytes: <<1>>}},
-                   %{index: 2, data: %Explorer.Chain.Data{bytes: <<3>>}}
+                   %{index: 0, compressed_data: %Explorer.Chain.Data{bytes: <<2>>}},
+                   %{index: 1, compressed_data: %Explorer.Chain.Data{bytes: <<1>>}},
+                   %{index: 2, compressed_data: %Explorer.Chain.Data{bytes: <<3>>}}
                  ],
                  updated_logs
                )
 
-        assert %Log{log4 | address: nil, block: nil, transaction: nil, address_mapping: nil} == %Log{
-                 Repo.one(Log |> where([log], log.block_number != ^block.number))
-                 | address: nil,
-                   block: nil,
-                   transaction: nil,
-                   address_mapping: nil
-               }
+        assert Map.take(log4, Log.__schema__(:fields)) ==
+                 Log
+                 |> where([log], log.block_number != ^block.number)
+                 |> Repo.one()
+                 |> Map.take(Log.__schema__(:fields))
       end
 
       test "correctly identifies and updates duplicated log index logs & updates corresponding token transfers and token instances" do
@@ -133,9 +131,9 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
 
         assert match?(
                  [
-                   %{index: 0, data: %Explorer.Chain.Data{bytes: <<2>>}},
-                   %{index: 1, data: %Explorer.Chain.Data{bytes: <<1>>}},
-                   %{index: 2, data: %Explorer.Chain.Data{bytes: <<3>>}}
+                   %{index: 0, compressed_data: %Explorer.Chain.Data{bytes: <<2>>}},
+                   %{index: 1, compressed_data: %Explorer.Chain.Data{bytes: <<1>>}},
+                   %{index: 2, compressed_data: %Explorer.Chain.Data{bytes: <<3>>}}
                  ],
                  updated_logs
                )
@@ -146,13 +144,11 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
         assert [%{log_index: 1, block_number: ^block_number}] =
                  Repo.all(TokenTransfer |> where([tt], tt.token_type == "ERC-721"))
 
-        assert %Log{log4 | address: nil, block: nil, transaction: nil, address_mapping: nil} == %Log{
-                 Repo.one(Log |> where([log], log.block_number != ^block.number))
-                 | address: nil,
-                   block: nil,
-                   transaction: nil,
-                   address_mapping: nil
-               }
+        assert Map.take(log4, Log.__schema__(:fields)) ==
+                 Log
+                 |> where([log], log.block_number != ^block.number)
+                 |> Repo.one()
+                 |> Map.take(Log.__schema__(:fields))
       end
 
       test "correctly handles cases where there are no duplicated log index logs" do

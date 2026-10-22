@@ -71,6 +71,7 @@ defmodule Explorer.Migrator.CeloL2Epochs do
     changes_list =
       logs
       |> Log.preload_block()
+      |> Log.prepare_first_topic()
       |> Enum.reduce(%{}, fn log, epochs_acc ->
         # Extract epoch number from the log
         [epoch_number] = log.second_topic |> to_string() |> Helper.decode_data([{:uint, 256}])

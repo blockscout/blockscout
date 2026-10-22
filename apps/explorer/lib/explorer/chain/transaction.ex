@@ -19,7 +19,6 @@ defmodule Explorer.Chain.Transaction.Schema do
     Data,
     Hash,
     InternalTransaction,
-    Log,
     PendingTransactionOperation,
     SignedAuthorization,
     TokenTransfer,
@@ -269,8 +268,6 @@ defmodule Explorer.Chain.Transaction.Schema do
           type: Hash.Address
         )
 
-        has_many(:logs, Log, foreign_key: :transaction_hash, references: :hash)
-
         has_many(:token_transfers, TokenTransfer, foreign_key: :transaction_hash, references: :hash)
 
         belongs_to(
@@ -497,7 +494,6 @@ defmodule Explorer.Chain.Transaction do
      | `:error` | Don't Care                       | Non-Empty  | Don't Care      | When `internal_transactions` are indexed. | Fetched                 | A contract call that failed.                                                                        |
      | `nil`    | Don't Care                       | Don't Care | Don't Care      | When `internal_transactions` are indexed. | Depends                 | A pending post-Byzantium transaction will only know its status from receipt.                        |
      | `nil`    | Don't Care                       | Don't Care | Don't Care      | When `internal_transactions` are indexed. | Fetched                 | A pre-Byzantium transaction requires internal transactions to determine status.                     |
-   * `logs` - events that occurred while mining the `transaction`.
    * `nonce` - the number of transaction made by the sender prior to this one
    * `r` - the R field of the signature. The (r, s) is the normal output of an ECDSA signature, where r is computed as
        the X coordinate of a point R, modulo the curve order n.

@@ -377,6 +377,50 @@ defmodule Explorer.Chain.TokenTransferTest do
       assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number + 1, block_number + 100)
       assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(max(block_number - 100, 0), block_number - 1)
     end
+
+    test "ignores token transfers of a non-consensus block at the same height" do
+      block = insert(:block)
+      address = insert(:address)
+
+      transaction =
+        insert(:transaction,
+          block_number: block.number,
+          block_hash: block.hash,
+          cumulative_gas_used: 0,
+          gas_used: 0,
+          index: 0
+        )
+
+      log =
+        insert(:token_transfer_log,
+          transaction: transaction,
+          block: block,
+          address_hash: address.hash,
+          address: address
+        )
+
+      non_consensus_block = insert(:block, number: block.number, consensus: false)
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: non_consensus_block,
+        block_number: non_consensus_block.number,
+        block_consensus: false,
+        log_index: log.index
+      )
+
+      block_number = block.number
+      assert [^block_number] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: block,
+        block_number: block.number,
+        log_index: log.index
+      )
+
+      assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
+    end
   end
 
   if @chain_identity == {:optimism, :celo} do
@@ -416,6 +460,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         transaction: nil,
         transaction_hash: nil,
         block: log.block,
+        block_number: log.block_number,
         log_index: log.index,
         token_contract_address: token_contract_address,
         from_address: from_address,

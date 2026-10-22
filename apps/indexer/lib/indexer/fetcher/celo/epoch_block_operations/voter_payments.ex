@@ -167,7 +167,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
     Log
     |> where([l], l.block_number >= ^start_block_number)
     |> where([l], l.block_number <= ^end_block_number)
-    |> where([l], l.address_hash == ^election_contract_address)
+    |> Log.address_match_query(election_contract_address)
     |> Log.filter_by_topic_query(:first_topic, @epoch_rewards_distributed_to_voters_topic)
   end
 
@@ -181,7 +181,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
     query =
       start_block_number
       |> epoch_rewards_distributed_to_voters_query(end_block_number)
-      |> select([l], l.data)
+      |> select([l], l.compressed_data)
 
     voter_rewards_from_event_total =
       query

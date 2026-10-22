@@ -5,10 +5,12 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
 
   alias Explorer.Helper, as: ExplorerHelper
 
-  alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.{Address, Hash, Transaction}
+  alias Explorer.Chain
+  alias Explorer.Chain.{Address, Hash, Log, Transaction}
 
   @suave_bid_event "0x83481d5b04dea534715acad673a8177a46fc93882760f36bdc16ccac439d504e"
+
+  @api_true [api?: true]
 
   def extend_transaction_json_response(
         %Transaction{} = transaction,
@@ -48,7 +50,7 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
         )
 
       out_json
-      |> Map.put("allowed_peekers", suave_parse_allowed_peekers(transaction.logs))
+      |> Map.put("allowed_peekers", suave_parse_allowed_peekers(transaction))
       |> Map.put(
         "execution_node",
         APIHelper.address_with_info(
@@ -94,20 +96,23 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
     end
   end
 
-  # @spec suave_parse_allowed_peekers(Ecto.Schema.has_many(Log.t())) :: [String.t()]
-  defp suave_parse_allowed_peekers(%NotLoaded{}), do: []
-
-  defp suave_parse_allowed_peekers(logs) do
+  @spec suave_parse_allowed_peekers(Transaction.t()) :: [String.t()]
+  defp suave_parse_allowed_peekers(transaction) do
     suave_bid_contracts =
       Application.get_all_env(:explorer)[Transaction][:suave_bid_contracts]
       |> String.split(",")
       |> Enum.map(fn sbc -> String.downcase(String.trim(sbc)) end)
 
     bid_event =
-      Enum.find(logs, fn log ->
+      transaction
+      |> Log.fetch_logs_by_transaction(@api_true)
+      |> Log.preload_address(@api_true, Chain.select_repo(@api_true))
+      |> Log.prepare_first_topic()
+      |> Enum.find(fn log ->
         sanitize_log_first_topic(log.first_topic) == @suave_bid_event &&
           Enum.member?(suave_bid_contracts, String.downcase(Hash.to_string(log.address_hash)))
       end)
+      |> Log.prepare_data()
 
     if is_nil(bid_event) do
       []

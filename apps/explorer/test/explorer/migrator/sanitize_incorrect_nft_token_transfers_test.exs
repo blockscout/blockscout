@@ -37,6 +37,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfersTest do
           from_address: insert(:address),
           token_contract_address: token_address,
           block: deposit_log.block,
+          block_number: deposit_log.block_number,
           transaction: deposit_log.transaction,
           log_index: deposit_log.index
         )
@@ -62,6 +63,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfersTest do
         from_address: insert(:address),
         token_contract_address: token_address,
         block: withdrawal_log.block,
+        block_number: withdrawal_log.block_number,
         transaction: withdrawal_log.transaction,
         log_index: withdrawal_log.index
       )

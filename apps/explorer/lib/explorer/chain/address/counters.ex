@@ -51,7 +51,7 @@ defmodule Explorer.Chain.Address.Counters do
   @transactions_types [:transactions_from, :transactions_to, :transactions_contract]
 
   defp address_hash_to_logs_query(address_hash) do
-    Log.address_match_union_query(address_hash, fn address_match_dynamic -> where(Log, ^address_match_dynamic) end)
+    Log.address_match_query(Log, address_hash)
   end
 
   defp address_hash_to_validated_blocks_query(address_hash) do
@@ -63,11 +63,7 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   def check_if_logs_at_address(address_hash, options \\ []) do
-    address_hash
-    |> Log.address_match_dynamics()
-    |> Enum.any?(fn address_match_dynamic ->
-      select_repo(options).exists?(where(Log, ^address_match_dynamic))
-    end)
+    select_repo(options).exists?(address_hash_to_logs_query(address_hash))
   end
 
   def check_if_token_transfers_at_address(address_hash, options \\ []) do
@@ -146,11 +142,7 @@ defmodule Explorer.Chain.Address.Counters do
 
     query =
       if check_logs? do
-        # the select has to be applied inside every union branch, see `Log.address_match_union_query/3`
-        logs_query =
-          Log.address_match_union_query(address_hash, fn address_match_dynamic ->
-            Log |> where(^address_match_dynamic) |> select([_], %{one: 1})
-          end)
+        logs_query = address_hash |> address_hash_to_logs_query() |> select([_], 1)
 
         select_merge(query, [_], %{has_logs: exists(logs_query)})
       else

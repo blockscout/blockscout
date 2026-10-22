@@ -61,7 +61,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
       Log
       |> where([l], l.block_number in ^block_numbers)
       |> Repo.all(timeout: :infinity)
-      |> Enum.group_by(& &1.block_hash)
+      |> Enum.group_by(& &1.block_number)
       |> Map.to_list()
 
     logs_to_update =
@@ -70,24 +70,16 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
       |> Enum.reject(&(&1 == :ignore))
       |> List.flatten()
 
-    {ids, logs, ids_to_new_index} =
+    {ids, log_primary_keys, logs, ids_to_new_index} =
       logs_to_update
-      |> Enum.reduce({[], [], %{}}, fn {%Log{} = log, new_index}, {ids, logs, ids_to_new_index} ->
+      |> Enum.reduce({[], [], [], %{}}, fn {%Log{} = log, new_index}, {ids, log_primary_keys, logs, ids_to_new_index} ->
         id = {log.transaction_hash, log.block_hash, log.index}
 
-        {[id | ids],
+        {[id | ids], [{log.block_number, log.transaction_index, log.index} | log_primary_keys],
          [
            %Log{log | index: new_index}
            |> Map.from_struct()
-           |> Map.drop([
-             :block,
-             :address,
-             :transaction,
-             :__meta__,
-             :address_by_hash,
-             :address_mapping,
-             :log_first_topic
-           ])
+           |> Map.take(Log.__schema__(:fields))
            | logs
          ], Map.put(ids_to_new_index, id, new_index)}
       end)
@@ -101,7 +93,7 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
       Log
       |> where(
         [log],
-        ^QueryHelper.tuple_in([:transaction_hash, :block_hash, :index], prepared_ids)
+        ^QueryHelper.tuple_in([:block_number, :transaction_index, :index], log_primary_keys)
       )
       |> Repo.delete_all(timeout: :infinity)
 
@@ -184,16 +176,16 @@ defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogs do
     Enum.count(logs_to_update)
   end
 
-  defp process_block({block_hash, logs}) do
+  defp process_block({block_number, logs}) do
     if logs |> Enum.frequencies_by(& &1.index) |> Map.values() |> Enum.max() == 1 do
       :ignore
     else
-      Logger.error("Found logs with same index within one block: #{block_hash} in DB")
-
-      logs = Repo.preload(logs, :transaction)
+      Logger.error("Found logs with same index within one block: #{block_number} in DB")
 
       logs
-      |> Enum.sort_by(&{&1.transaction.index, &1.index, &1.transaction_hash})
+      |> Log.preload_block()
+      |> Log.preload_transaction()
+      |> Enum.sort_by(&{&1.transaction_index, &1.index})
       |> Enum.with_index(&{&1, &2})
     end
   end

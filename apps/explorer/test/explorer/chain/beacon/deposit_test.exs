@@ -8,9 +8,7 @@ defmodule Explorer.Chain.Beacon.DepositTest do
   @deposit_event_signature "0x649BBC62D0E31342AFEA4E5CD82D4049E7E1EE912FC0889AA790803BE39038C5"
 
   describe "get_logs_with_deposits/4" do
-    test "fetches logs matched by `address_id` and by the legacy `address_hash` while the optimized fields migration is in progress" do
-      set_fill_logs_optimized_fields_migration_started()
-
+    test "fetches deposit logs of the deposit contract" do
       deposit_contract_address = insert(:address)
       {:ok, first_topic} = Hash.Full.cast(@deposit_event_signature)
 
@@ -27,30 +25,25 @@ defmodule Explorer.Chain.Beacon.DepositTest do
         first_topic: first_topic
       ]
 
-      # already migrated log, matched by `address_id`
-      insert(:log, log_params ++ [index: 1, address_hash: nil])
-      # not yet migrated log, matched by the legacy `address_hash`
-      insert(:log, log_params ++ [index: 2, address_mapping: nil])
-      # re-imported log with both fields filled, returned once
-      insert(:log, log_params ++ [index: 3])
+      %{data: first_log_data} = insert(:log, log_params ++ [index: 1])
+      %{data: second_log_data} = insert(:log, log_params ++ [index: 2])
       # log of another address
-      insert(:log, log_params ++ [index: 4, address: insert(:address), address_mapping: nil])
+      insert(:log, log_params ++ [index: 3, address: insert(:address)])
       # log with another first topic
-      insert(:log, log_params ++ [index: 5, first_topic: nil, address_hash: nil])
+      insert(:log, log_params ++ [index: 4, first_topic: nil])
 
       logs = Deposit.get_logs_with_deposits(deposit_contract_address.hash, transaction.block_number - 1, 0, 10)
 
-      assert [1, 2, 3] == Enum.map(logs, & &1.index)
+      assert [%{index: 1, data: ^first_log_data}, %{index: 2, data: ^second_log_data}] = logs
 
       assert Enum.all?(logs, fn log ->
-               log.block_number == transaction.block_number and log.transaction_hash == transaction.hash and
-                 log.from_address_hash == transaction.from_address_hash and log.first_topic == first_topic
+               log.block_number == transaction.block_number and log.block_hash == transaction.block_hash and
+                 log.transaction_hash == transaction.hash and log.from_address_hash == transaction.from_address_hash and
+                 log.first_topic == first_topic
              end)
     end
 
-    test "respects the limit and the paging key while the optimized fields migration is in progress" do
-      set_fill_logs_optimized_fields_migration_started()
-
+    test "respects the limit and the paging key" do
       deposit_contract_address = insert(:address)
       {:ok, first_topic} = Hash.Full.cast(@deposit_event_signature)
 
@@ -67,9 +60,9 @@ defmodule Explorer.Chain.Beacon.DepositTest do
         first_topic: first_topic
       ]
 
-      insert(:log, log_params ++ [index: 1, address_hash: nil])
-      insert(:log, log_params ++ [index: 2, address_mapping: nil])
-      insert(:log, log_params ++ [index: 3, address_hash: nil])
+      insert(:log, log_params ++ [index: 1])
+      insert(:log, log_params ++ [index: 2])
+      insert(:log, log_params ++ [index: 3])
 
       assert [1] ==
                deposit_contract_address.hash
