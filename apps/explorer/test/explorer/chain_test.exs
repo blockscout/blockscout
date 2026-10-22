@@ -106,9 +106,7 @@ defmodule Explorer.ChainTest do
       assert Enum.count(Chain.address_to_logs(address_hash, false)) == 2
     end
 
-    test "fetches logs matched by `address_id` and by the legacy `address_hash` while the optimized fields migration is in progress" do
-      set_fill_logs_optimized_fields_migration_started()
-
+    test "fetches only logs of the address ordered from the newest" do
       %Address{hash: address_hash} = address = insert(:address)
 
       transaction =
@@ -116,44 +114,22 @@ defmodule Explorer.ChainTest do
         |> insert(to_address: address)
         |> with_block()
 
-      # already migrated log, matched by `address_id`
-      insert(:log,
-        block: transaction.block,
-        block_number: transaction.block_number,
-        transaction: transaction,
-        index: 1,
-        address: address,
-        address_hash: nil
-      )
-
-      # not yet migrated log, matched by the legacy `address_hash`
-      insert(:log,
-        block: transaction.block,
-        block_number: transaction.block_number,
-        transaction: transaction,
-        index: 2,
-        address: address,
-        address_mapping: nil
-      )
-
-      # log re-imported before it is migrated: the upsert fills `address_id` while
-      # `address_hash` is kept, so both fields match the address and the log has to
-      # be returned once
-      insert(:log,
-        block: transaction.block,
-        block_number: transaction.block_number,
-        transaction: transaction,
-        index: 3,
-        address: address
-      )
+      for index <- 1..3 do
+        insert(:log,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          transaction: transaction,
+          index: index,
+          address: address
+        )
+      end
 
       insert(:log,
         block: transaction.block,
         block_number: transaction.block_number,
         transaction: transaction,
         index: 4,
-        address: insert(:address),
-        address_mapping: nil
+        address: insert(:address)
       )
 
       assert [3, 2, 1] == address_hash |> Chain.address_to_logs(false) |> Enum.map(& &1.index)
@@ -165,43 +141,6 @@ defmodule Explorer.ChainTest do
       paging_options = %PagingOptions{page_size: 50, key: {transaction.block_number, 2}}
 
       assert [1] == address_hash |> Chain.address_to_logs(false, paging_options: paging_options) |> Enum.map(& &1.index)
-    end
-
-    test "filters logs by topic while the optimized fields migration is in progress" do
-      set_fill_logs_optimized_fields_migration_started()
-
-      %Address{hash: address_hash} = address = insert(:address)
-
-      transaction =
-        :transaction
-        |> insert(to_address: address)
-        |> with_block()
-
-      {:ok, first_topic} = Hash.Full.cast(@first_topic_hex_string)
-
-      insert(:log,
-        block: transaction.block,
-        block_number: transaction.block_number,
-        transaction: transaction,
-        index: 1,
-        address: address,
-        address_hash: nil
-      )
-
-      insert(:log,
-        block: transaction.block,
-        block_number: transaction.block_number,
-        transaction: transaction,
-        index: 2,
-        address: address,
-        address_mapping: nil,
-        first_topic: first_topic
-      )
-
-      assert [2] ==
-               address_hash
-               |> Chain.address_to_logs(false, topic: @first_topic_hex_string)
-               |> Enum.map(& &1.index)
     end
 
     test "paginates logs" do
@@ -1410,12 +1349,7 @@ defmodule Explorer.ChainTest do
                     second_topic: ^second_topic,
                     third_topic: ^third_topic,
                     fourth_topic: nil,
-                    transaction_hash: %Hash{
-                      byte_count: 32,
-                      bytes:
-                        <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
-                          101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                    },
+                    block_number: 37,
                     transaction_index: 1,
                     inserted_at: %{},
                     updated_at: %{}
@@ -1841,6 +1775,28 @@ defmodule Explorer.ChainTest do
         insert(:log, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
 
       assert [%Log{transaction_hash: ^transaction_hash, index: ^index}] = Chain.transaction_to_logs(transaction.hash)
+    end
+
+    test "skips logs at the position kept by a transaction of a block that lost consensus" do
+      non_consensus_block = insert(:block)
+
+      non_consensus_transaction =
+        :transaction
+        |> insert()
+        |> with_block(non_consensus_block, index: 0, block_consensus: false)
+
+      non_consensus_block |> change(consensus: false) |> Repo.update!()
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: non_consensus_block.number), index: 0)
+
+      %Log{index: index} =
+        insert(:log, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
+
+      assert [] = Chain.transaction_to_logs(non_consensus_transaction.hash)
+      assert [%Log{index: ^index}] = Chain.transaction_to_logs(transaction.hash)
     end
 
     test "with logs can be paginated" do

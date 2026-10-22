@@ -264,6 +264,28 @@ defmodule Explorer.EthRPCTest do
                @fourth_topic_hex_string
              ]
     end
+
+    test "renders no logs for a transaction of a block that lost consensus" do
+      non_consensus_block = insert(:block)
+
+      non_consensus_transaction =
+        :transaction
+        |> insert()
+        |> with_block(non_consensus_block, index: 0, block_consensus: false)
+
+      non_consensus_block |> change(consensus: false) |> Repo.update!()
+
+      # the consensus transaction takes the position kept by the non-consensus one
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: non_consensus_block.number), index: 0)
+
+      insert(:log, transaction: transaction, block: transaction.block, block_number: transaction.block_number)
+
+      assert {:ok, %{"logs" => []}} = EthRPC.eth_get_transaction_receipt(to_string(non_consensus_transaction.hash))
+      assert {:ok, %{"logs" => [_log]}} = EthRPC.eth_get_transaction_receipt(to_string(transaction.hash))
+    end
   end
 
   defp set_extended_proxy_methods_enabled(value) do

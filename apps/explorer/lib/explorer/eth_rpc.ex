@@ -1165,7 +1165,7 @@ defmodule Explorer.EthRPC do
   @spec eth_get_transaction_receipt(String.t()) :: {:ok, map() | nil} | {:error, error()}
   def eth_get_transaction_receipt(transaction_hash_string) do
     necessity_by_association =
-      %{block: :optional, logs: :optional}
+      %{block: :optional}
       |> Map.merge(chain_type_transaction_necessity_by_association())
 
     validate_and_render_transaction(transaction_hash_string, &render_transaction_receipt/1,
@@ -1186,7 +1186,8 @@ defmodule Explorer.EthRPC do
     {:ok, status} = Status.dump(transaction.status)
 
     logs =
-      transaction.logs
+      transaction
+      |> Log.fetch_logs_by_transaction(api?: true)
       |> Log.preload_block()
       |> Log.preload_transaction()
       |> Log.preload_address()

@@ -46,7 +46,6 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
   alias Explorer.Chain.Celo.ElectionReward, as: CeloElectionReward
   alias Explorer.Chain.Celo.Epoch, as: CeloEpoch
   alias Explorer.Chain.Celo.EpochReward, as: CeloEpochReward
-  alias Explorer.Utility.LogHelper
 
   @behaviour Runner
 
@@ -1220,13 +1219,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       Log
       |> where([l], l.block_number in ^non_consensus_block_numbers)
       |> select([l], select_ctid(l))
-      |> then(fn query ->
-        if LogHelper.primary_key_updated?() do
-          order_by(query, [l], [l.transaction_index, l.index, l.block_number])
-        else
-          order_by(query, [l], [l.transaction_hash, l.index, l.block_hash])
-        end
-      end)
+      |> order_by([l], [l.transaction_index, l.index, l.block_number])
       |> lock("FOR UPDATE")
 
     query =

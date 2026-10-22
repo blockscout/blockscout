@@ -39,10 +39,12 @@ defmodule Explorer.Utility.VersionUpgrade do
 
   alias Explorer.Application.Constants
   alias Explorer.Chain.Block
-  alias Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey
+  alias Explorer.Migrator.HeavyDbIndexOperation.{UpdateInternalTransactionsPrimaryKey, UpdateLogsPrimaryKey}
 
   alias Explorer.Migrator.{
     FillInternalTransactionsAddressIds,
+    FillLogsCompressedData,
+    FillLogsOptimizedFields,
     MigrationStatus,
     SanitizeDuplicatedLogIndexLogs
   }
@@ -61,6 +63,15 @@ defmodule Explorer.Utility.VersionUpgrade do
       required_completed_migrations: [
         FillInternalTransactionsAddressIds.migration_name(),
         {SanitizeDuplicatedLogIndexLogs.migration_name(), [:rsk, :filecoin]}
+      ]
+    },
+    %{
+      since: "13.0.0",
+      min_from: "12.0.0",
+      required_completed_migrations: [
+        FillLogsOptimizedFields.migration_name(),
+        FillLogsCompressedData.migration_name(),
+        UpdateLogsPrimaryKey.migration_name()
       ]
     }
   ]

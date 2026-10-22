@@ -197,7 +197,6 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
         :suave ->
           @transaction_necessity_by_association
-          |> Map.put(:logs, :optional)
           |> Map.put([execution_node: :names], :optional)
           |> Map.put([wrapped_to_address: :names], :optional)
 

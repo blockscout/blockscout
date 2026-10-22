@@ -6,6 +6,7 @@ defmodule Explorer.Chain.LogTest do
 
   alias Ecto.Changeset
   alias Explorer.Chain.{Log, SmartContract}
+  alias Explorer.Utility.LogFirstTopic
 
   @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
 
@@ -39,25 +40,20 @@ defmodule Explorer.Chain.LogTest do
     end
 
     test "accepts optional attributes" do
-      params =
-        params_for(
-          :log,
-          address_hash: build(:address).hash,
-          first_topic: @first_topic_hex_string_1,
-          transaction_hash: build(:transaction).hash,
-          block_hash: build(:block).hash
-        )
+      %LogFirstTopic{id: first_topic_id} = LogFirstTopic.find_or_create(topic(@first_topic_hex_string_1))
+
+      params = Map.put(params_for(:log, address_hash: build(:address).hash), :first_topic_id, first_topic_id)
 
       result = Log.changeset(%Log{}, params)
 
       assert result.valid? == true
-      assert result.changes.first_topic == topic(@first_topic_hex_string_1)
+      assert result.changes.first_topic_id == first_topic_id
     end
 
     test "assigns optional attributes" do
-      params = Map.put(params_for(:log), :first_topic, topic(@first_topic_hex_string_1))
+      params = Map.put(params_for(:log), :second_topic, topic(@first_topic_hex_string_1))
       changeset = Log.changeset(%Log{}, params)
-      assert changeset.changes.first_topic === topic(@first_topic_hex_string_1)
+      assert changeset.changes.second_topic === topic(@first_topic_hex_string_1)
     end
   end
 
@@ -237,6 +233,84 @@ defmodule Explorer.Chain.LogTest do
                  {"_number", "uint256", false, 0},
                  {"_belly", "bool", true, true}
                ]}, _} = Log.decode(log, transaction, [], false, false, abi)
+    end
+  end
+
+  describe "lookups by transaction" do
+    # A transaction of a block that lost consensus keeps its `{block_number, index}` position, which is taken here by
+    # a consensus transaction with a log.
+    setup do
+      non_consensus_block = insert(:block)
+
+      non_consensus_transaction =
+        :transaction
+        |> insert()
+        |> with_block(non_consensus_block, index: 0, block_consensus: false)
+
+      non_consensus_block |> Changeset.change(consensus: false) |> Repo.update!()
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: non_consensus_block.number), index: 0)
+
+      log =
+        insert(:log,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          first_topic: @first_topic_hex_string_1
+        )
+
+      %{non_consensus_transaction: non_consensus_transaction, transaction: transaction, log: log}
+    end
+
+    test "fetch_logs_by_transaction/2 skips a non-consensus transaction", %{
+      non_consensus_transaction: non_consensus_transaction,
+      transaction: transaction,
+      log: %Log{index: index}
+    } do
+      assert [] == Log.fetch_logs_by_transaction(non_consensus_transaction)
+      assert [%Log{index: ^index}] = Log.fetch_logs_by_transaction(transaction)
+    end
+
+    test "fetch_log_by_transaction_and_first_topic/3 skips a non-consensus transaction", %{
+      non_consensus_transaction: non_consensus_transaction,
+      transaction: transaction,
+      log: %Log{index: index}
+    } do
+      assert is_nil(Log.fetch_log_by_transaction_and_first_topic(non_consensus_transaction, @first_topic_hex_string_1))
+
+      assert %Log{index: ^index} = Log.fetch_log_by_transaction_and_first_topic(transaction, @first_topic_hex_string_1)
+    end
+
+    test "user_op_to_logs/2 skips a non-consensus transaction", %{
+      non_consensus_transaction: non_consensus_transaction,
+      transaction: transaction,
+      log: %Log{index: index}
+    } do
+      user_op = fn transaction_hash ->
+        %{
+          "transaction_hash" => to_string(transaction_hash),
+          "user_logs_start_index" => 0,
+          "user_logs_count" => 10
+        }
+      end
+
+      assert [] == Log.user_op_to_logs(user_op.(non_consensus_transaction.hash), [])
+      assert [%Log{index: ^index}] = Log.user_op_to_logs(user_op.(transaction.hash), [])
+    end
+
+    test "preload_transaction/4 attaches the consensus transaction", %{
+      non_consensus_transaction: non_consensus_transaction,
+      transaction: %{hash: transaction_hash},
+      log: log
+    } do
+      # rewrites the row of the non-consensus transaction, so that it is read after the consensus one
+      non_consensus_transaction |> Changeset.change() |> Repo.update!(force: true)
+
+      assert [%Log{transaction: %{hash: ^transaction_hash}, transaction_hash: ^transaction_hash}] =
+               Log.preload_transaction([log])
     end
   end
 end

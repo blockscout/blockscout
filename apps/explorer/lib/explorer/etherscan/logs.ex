@@ -28,9 +28,7 @@ defmodule Explorer.Etherscan.Logs do
   }
 
   @log_fields [
-    :data,
     :compressed_data,
-    :first_topic,
     :first_topic_id,
     :second_topic,
     :third_topic,
@@ -151,8 +149,7 @@ defmodule Explorer.Etherscan.Logs do
   # Re-selects the joined query through an outer subquery so that fields
   # taken from the `logs` subquery are loaded with their schema types (`Hash`
   # structs instead of raw binaries), then applies the final ordering and fills
-  # `data` and `first_topic` of logs stored with `compressed_data` and
-  # `first_topic_id` only.
+  # `data` and `first_topic` from `compressed_data` and `first_topic_id`.
   defp fetch_ordered(query) do
     query
     |> Chain.wrapped_union_subquery()
@@ -182,7 +179,7 @@ defmodule Explorer.Etherscan.Logs do
         block_timestamp: as(:transaction).block_timestamp,
         block_consensus: as(:transaction).block_consensus,
         transaction_hash: as(:transaction).hash,
-        address_hash: coalesce(log.address_hash, as(:address_mapping).address_hash)
+        address_hash: as(:address_mapping).address_hash
       })
       |> order_by([log], asc: log.block_number, asc: log.index)
     else
@@ -202,7 +199,7 @@ defmodule Explorer.Etherscan.Logs do
         block_timestamp: block.timestamp,
         block_consensus: block.consensus,
         transaction_hash: transaction.hash,
-        address_hash: coalesce(log.address_hash, address_mapping.address_hash)
+        address_hash: address_mapping.address_hash
       })
       |> order_by([log, _t, _am, _b], asc: log.block_number, asc: log.index)
     end

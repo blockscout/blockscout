@@ -54,6 +54,7 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfersTest do
         to_address: address_1,
         token_contract_address: token_address,
         block: block_1,
+        block_number: block_1.number,
         transaction: transaction_random,
         log_index: log_random_1.index
       )
@@ -74,6 +75,7 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfersTest do
         to_address: address_1,
         token_contract_address: token_address,
         block: block_1,
+        block_number: block_1.number,
         transaction: transaction_random,
         log_index: log_random_2.index
       )
@@ -128,6 +130,7 @@ defmodule Indexer.Migrator.RecoveryWETHTokenTransfersTest do
           to_address: address_3,
           token_contract_address: token_address,
           block: log_6.block,
+          block_number: log_6.block_number,
           transaction: log_6.transaction,
           log_index: log_6.index
         )

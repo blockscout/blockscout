@@ -214,23 +214,15 @@ defmodule Explorer.Chain do
         to_block = to_block(options)
 
         query =
-          Log.address_match_union_query(
-            address_hash,
-            fn address_match_dynamic ->
-              Log
-              |> where(^address_match_dynamic)
-              |> join(:inner, [log], block in Block, on: block.number == log.block_number)
-              |> where([_l, block], block.consensus == true)
-              |> page_logs(paging_options)
-              |> filter_topic(Keyword.get(options, :topic))
-              |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
-            end,
-            fn query ->
-              query
-              |> order_by([log], desc: log.block_number, desc: log.index)
-              |> limit(^paging_options.page_size)
-            end
-          )
+          Log
+          |> Log.address_match_query(address_hash)
+          |> join(:inner, [log], block in Block, on: block.number == log.block_number)
+          |> where([_l, block], block.consensus == true)
+          |> page_logs(paging_options)
+          |> filter_topic(Keyword.get(options, :topic))
+          |> BlockReaderGeneral.where_block_number_in_period(from_block, to_block)
+          |> order_by([log], desc: log.block_number, desc: log.index)
+          |> limit(^paging_options.page_size)
 
         transaction_preloads =
           if csv_export? do

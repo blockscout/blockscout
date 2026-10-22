@@ -8,7 +8,6 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPri
   alias Explorer.Chain.{Block, Celo.Epoch, Log}
   alias Explorer.Chain.Cache.CeloCoreContracts
   alias Explorer.Repo
-  alias Explorer.Utility.LogHelper
   alias Indexer.Transform.Celo.ValidatorEpochPaymentDistributions
 
   @spec fetch(Epoch.t()) :: {:ok, list()}
@@ -21,22 +20,14 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPri
       |> Log.address_match_query(validators_contract_address)
       |> where([log], log.block_number == ^block_number)
       |> Log.filter_by_topic_query(:first_topic, epoch_payment_distributions_signature)
-      |> then(fn query ->
-        cond do
-          LogHelper.fill_optimized_fields_migration_finished?() ->
-            where(query, [log], is_nil(log.transaction_index))
-
-          LogHelper.fill_optimized_fields_migration_started?() ->
-            where(query, [log], is_nil(log.transaction_hash) and is_nil(log.transaction_index))
-
-          true ->
-            where(query, [log], is_nil(log.transaction_hash))
-        end
-      end)
+      |> where([log], is_nil(log.transaction_index))
 
     payments =
       query
       |> Repo.all()
+      |> Log.preload_address()
+      |> Log.prepare_data()
+      |> Log.prepare_first_topic()
       |> ValidatorEpochPaymentDistributions.parse()
       |> Enum.flat_map(fn %{
                             validator_address: validator_address,

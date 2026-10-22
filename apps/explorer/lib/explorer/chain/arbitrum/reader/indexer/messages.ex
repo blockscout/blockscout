@@ -343,6 +343,11 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
     |> order_by(desc: :block_number, desc: :index)
     |> select([log], log)
     |> Repo.all()
+    |> Log.preload_block()
+    |> Log.preload_transaction()
+    |> Log.preload_address()
+    |> Log.prepare_data()
+    |> Log.prepare_first_topic()
   end
 
   # Constructs a query to retrieve missed L2-to-L1 messages.

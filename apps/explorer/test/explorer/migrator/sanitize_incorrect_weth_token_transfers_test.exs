@@ -35,6 +35,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         from_address: insert(:address),
         token_contract_address: token_address,
         block: deposit_log.block,
+        block_number: deposit_log.block_number,
         transaction: deposit_log.transaction,
         log_index: deposit_log.index
       )
@@ -54,6 +55,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         from_address: insert(:address),
         token_contract_address: token_address,
         block: withdrawal_log.block,
+        block_number: withdrawal_log.block_number,
         transaction: withdrawal_log.transaction,
         log_index: withdrawal_log.index
       )
@@ -85,6 +87,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         from_address: insert(:address),
         token_contract_address: whitelisted_token_address,
         block: withdrawal_log.block,
+        block_number: withdrawal_log.block_number,
         transaction: withdrawal_log.transaction,
         log_index: withdrawal_log.index
       )
@@ -104,6 +107,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         from_address: insert(:address),
         token_contract_address: whitelisted_token_address,
         block: deposit_log.block,
+        block_number: deposit_log.block_number,
         transaction: deposit_log.transaction,
         log_index: deposit_log.index
       )
@@ -125,6 +129,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
           from_address: burn_address,
           token_contract_address: whitelisted_token_address,
           block: withdrawal_log_duplicate.block,
+          block_number: withdrawal_log_duplicate.block_number,
           transaction: withdrawal_log_duplicate.transaction,
           log_index: withdrawal_log_duplicate.index
         )
@@ -144,6 +149,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         to_address: tt_withdrawal.to_address,
         token_contract_address: whitelisted_token_address,
         block: withdrawal_log_duplicate_original.block,
+        block_number: withdrawal_log_duplicate_original.block_number,
         transaction: withdrawal_log_duplicate_original.transaction,
         log_index: withdrawal_log_duplicate_original.index,
         amount: tt_withdrawal.amount
@@ -165,6 +171,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
           to_address: burn_address,
           token_contract_address: whitelisted_token_address,
           block: deposit_log_duplicate.block,
+          block_number: deposit_log_duplicate.block_number,
           transaction: deposit_log_duplicate.transaction,
           log_index: deposit_log_duplicate.index
         )
@@ -184,6 +191,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         to_address: burn_address,
         token_contract_address: whitelisted_token_address,
         block: deposit_log_duplicate_original.block,
+        block_number: deposit_log_duplicate_original.block_number,
         transaction: deposit_log_duplicate_original.transaction,
         log_index: deposit_log_duplicate_original.index,
         amount: tt_deposit.amount

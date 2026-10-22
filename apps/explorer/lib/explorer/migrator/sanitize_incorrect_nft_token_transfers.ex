@@ -112,9 +112,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectNFTTokenTransfers do
       |> Log.join_transaction_query()
       |> Log.join_address_mapping_query()
       |> where(^Log.first_topic_is_deposit_or_withdrawal_signature())
-      |> join(:left, [log], token in Token,
-        on: coalesce(log.address_hash, as(:address_mapping).address_hash) == token.contract_address_hash
-      )
+      |> join(:left, [log], token in Token, on: as(:address_mapping).address_hash == token.contract_address_hash)
       |> where([log, _t, _am, token], token.type == ^"ERC-721")
       |> select([log], %{
         block_hash: as(:transaction).block_hash,

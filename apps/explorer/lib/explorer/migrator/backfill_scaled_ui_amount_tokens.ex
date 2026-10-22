@@ -54,6 +54,8 @@ defmodule Explorer.Migrator.BackfillScaledUIAmountTokens do
       |> preload([:address_mapping])
       |> limit(^limit)
       |> Repo.all(timeout: :infinity)
+      |> Log.preload_block()
+      |> Log.preload_transaction()
       |> Log.prepare_data()
       |> Enum.map(&with_address_hash/1)
 
