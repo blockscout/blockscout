@@ -379,10 +379,7 @@ defmodule Explorer.Chain.TokenTransferTest do
       assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(max(block_number - 100, 0), block_number - 1)
     end
 
-    test "matches Arc native token logs whether the address is kept in `address_id` or in `address_hash`" do
-      # both formats are present while the optimized fields migration is in progress
-      set_fill_logs_optimized_fields_migration_started()
-
+    test "matches Arc native token logs by `address_id`" do
       arc_native_token = insert(:address)
       arc_native_token_system = insert(:address)
       token = insert(:address)
@@ -405,16 +402,11 @@ defmodule Explorer.Chain.TokenTransferTest do
 
       uncataloged_logs = [
         insert_optimized_log(token, transfer_event),
-        insert_optimized_log(arc_native_token_system, native_coin_transferred_event),
-        insert_legacy_address_log(token, transfer_event),
-        insert_legacy_address_log(arc_native_token_system, native_coin_transferred_event)
+        insert_optimized_log(arc_native_token_system, native_coin_transferred_event)
       ]
 
       # ERC-20 `Transfer` events of the native token are ignored on Arc
-      ignored_logs = [
-        insert_optimized_log(arc_native_token, transfer_event),
-        insert_legacy_address_log(arc_native_token, transfer_event)
-      ]
+      ignored_logs = [insert_optimized_log(arc_native_token, transfer_event)]
 
       block_numbers = Enum.map(uncataloged_logs ++ ignored_logs, & &1.block_number)
 
@@ -429,6 +421,50 @@ defmodule Explorer.Chain.TokenTransferTest do
         end
 
       assert uncataloged_logs |> Enum.map(& &1.block_number) |> Enum.sort() == Enum.sort(uncataloged_block_numbers)
+    end
+
+    test "ignores token transfers of a non-consensus block at the same height" do
+      block = insert(:block)
+      address = insert(:address)
+
+      transaction =
+        insert(:transaction,
+          block_number: block.number,
+          block_hash: block.hash,
+          cumulative_gas_used: 0,
+          gas_used: 0,
+          index: 0
+        )
+
+      log =
+        insert(:token_transfer_log,
+          transaction: transaction,
+          block: block,
+          address_hash: address.hash,
+          address: address
+        )
+
+      non_consensus_block = insert(:block, number: block.number, consensus: false)
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: non_consensus_block,
+        block_number: non_consensus_block.number,
+        block_consensus: false,
+        log_index: log.index
+      )
+
+      block_number = block.number
+      assert [^block_number] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: block,
+        block_number: block.number,
+        log_index: log.index
+      )
+
+      assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
     end
   end
 
@@ -469,6 +505,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         transaction: nil,
         transaction_hash: nil,
         block: log.block,
+        block_number: log.block_number,
         log_index: log.index,
         token_contract_address: token_contract_address,
         from_address: from_address,
@@ -516,8 +553,8 @@ defmodule Explorer.Chain.TokenTransferTest do
     end
   end
 
-  # Inserts a log in the format used since v12: `address_hash` and `first_topic`
-  # are kept only in `address_id` and `first_topic_id`.
+  # Inserts a log whose address and first topic are kept only in `address_id`
+  # and `first_topic_id`.
   defp insert_optimized_log(address, first_topic) do
     insert(:log,
       address: address,
@@ -525,11 +562,5 @@ defmodule Explorer.Chain.TokenTransferTest do
       first_topic: nil,
       first_topic_id: LogFirstTopic.find_or_create(first_topic).id
     )
-  end
-
-  # Inserts a log not processed by the `fill_logs_optimized_fields` migration
-  # yet: its address is kept only in `address_hash`.
-  defp insert_legacy_address_log(address, first_topic) do
-    insert(:log, address: address, address_mapping: nil, first_topic: first_topic)
   end
 end

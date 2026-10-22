@@ -24,10 +24,10 @@ defmodule Explorer.Chain.Import.Runner.LogsTest do
         }
       end
 
-      assert {:ok, %{logs: [%Log{block_hash: block_hash}]}} =
+      assert {:ok, %{logs: [%Log{block_number: block_number}]}} =
                Chain.import(%{logs: %{params: [log_params.(consensus_block), log_params.(non_consensus_block)]}})
 
-      assert block_hash == consensus_block.hash
+      assert block_number == consensus_block.number
       assert Repo.aggregate(Log, :count) == 1
     end
   end

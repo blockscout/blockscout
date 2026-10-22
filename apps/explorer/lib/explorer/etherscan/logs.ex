@@ -28,9 +28,7 @@ defmodule Explorer.Etherscan.Logs do
   }
 
   @log_fields [
-    :data,
     :compressed_data,
-    :first_topic,
     :first_topic_id,
     :second_topic,
     :third_topic,
@@ -72,60 +70,37 @@ defmodule Explorer.Etherscan.Logs do
   @spec list_logs(map()) :: [map()]
   def list_logs(filter, paging_options \\ @default_paging_options)
 
-  # The address is matched through `Log.address_match_union_query/3`, one
-  # `UNION ALL` branch per address condition. While the optimized fields
-  # migration is in progress, a log of the address is matched either by
-  # `address_id` or by the legacy `address_hash`, and a single `OR` condition
-  # makes the planner collect and sort every log of the address in the block
-  # range before the LIMIT. Each branch is ordered and limited on its own
-  # instead, so it stays an ordered index scan that stops at the LIMIT.
-  #
-  # Each branch matches the topics and joins the transactions by the fields its
-  # logs are stored with (see `t:Explorer.Chain.Log.storage/0`). Conditions
-  # over both formats, such as `first_topic_id = $1 OR first_topic = $2`, keep
-  # the `address_id` composite indexes from being used and make every
-  # transaction lookup a `BitmapOr` of two index scans.
-  #
-  # Since the LIMIT is applied inside the branches, consensus is checked there,
-  # for the reasons given for the topic-only clause below, and the page fields
-  # are selected from the same transaction join, so each log of the page is
-  # looked up in `transactions` once.
-  #
-  # Every branch requires the transaction in the log's own block: the selected
-  # block number comes from the log, the other block fields come from the
-  # transaction. Before the migration has started, the only branch matches by
-  # `address_hash` with no known storage, so it is joined as a legacy one: by
-  # the transaction hash and the block number.
+  # The logs of the address are ordered and limited in a single query, so it
+  # stays an ordered index scan that stops at the LIMIT. Since the LIMIT is
+  # applied there, consensus is checked before it, for the reasons given for
+  # the topic-only clause below, and the page fields are selected from the
+  # same transaction join, so each log of the page is looked up in
+  # `transactions` once.
   def list_logs(%{address_hash: address_hash} = filter, paging_options) when not is_nil(address_hash) do
     paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
 
-    address_hash
-    |> Log.address_match_union_query(
-      fn address_match_dynamic, storage ->
-        # With `union_multiple_values: true` `where_topic_match/3` may turn the
-        # branch into a UNION ALL, so it is applied last and the branch is
-        # wrapped into a subquery: `where/3` and `select/3` on a combination
-        # query would only affect its first branch, and a combination can only
-        # be ordered through a subquery.
-        Log
-        |> where(^address_match_dynamic)
-        |> where([log], log.block_number >= ^prepared_filter.from_block)
-        |> where([log], log.block_number <= ^prepared_filter.to_block)
-        |> join_consensus_transaction(storage || :legacy)
-        |> page_logs(paging_options)
-        |> select_page_fields(%{
-          # every log of the branch belongs to the filtered address
-          address_hash: dynamic(type(^address_hash, Hash.Address)),
-          # the branch is ordered by the selected block number, which is taken
-          # from the log so that an index on `logs` returns the rows in order
-          block_number: dynamic([log], log.block_number)
-        })
-        |> where_topic_match(prepared_filter, union_multiple_values: true, storage: storage)
-        |> Chain.wrapped_union_subquery()
-      end,
-      &order_and_limit/1
-    )
+    # With `union_multiple_values: true` `where_topic_match/3` may turn the
+    # query into a UNION ALL, so it is applied last and the query is wrapped
+    # into a subquery: `where/3` and `select/3` on a combination query would
+    # only affect its first branch, and a combination can only be ordered
+    # through a subquery.
+    Log
+    |> Log.address_match_query(address_hash)
+    |> where([log], log.block_number >= ^prepared_filter.from_block)
+    |> where([log], log.block_number <= ^prepared_filter.to_block)
+    |> join_consensus_transaction()
+    |> page_logs(paging_options)
+    |> select_page_fields(%{
+      # every log of the query belongs to the filtered address
+      address_hash: dynamic(type(^address_hash, Hash.Address)),
+      # the query is ordered by the selected block number, which is taken from
+      # the log so that an index on `logs` returns the rows in order
+      block_number: dynamic([log], log.block_number)
+    })
+    |> where_topic_match(prepared_filter, union_multiple_values: true)
+    |> Chain.wrapped_union_subquery()
+    |> order_and_limit()
     |> fetch()
   end
 
@@ -167,7 +142,7 @@ defmodule Explorer.Etherscan.Logs do
     |> limit(1000)
   end
 
-  # Joins every log to its transaction through `Log.join_transaction_query/2`,
+  # Joins every log to its transaction through `Log.join_transaction_query/1`,
   # a few index lookups per log, and keeps only consensus ones: by
   # `transactions.block_consensus` once the transactions denormalization has
   # finished, by `blocks.consensus` before that. `transactions.block_consensus`
@@ -177,8 +152,8 @@ defmodule Explorer.Etherscan.Logs do
   # checks consensus inside the page subquery and again in
   # `join_transaction_data/1` with the same join and predicate, so no row that
   # makes it into the page is dropped by the outer join.
-  defp join_consensus_transaction(logs_query, storage \\ nil) do
-    logs_query = Log.join_transaction_query(logs_query, storage)
+  defp join_consensus_transaction(logs_query) do
+    logs_query = Log.join_transaction_query(logs_query)
 
     if DenormalizationHelper.transactions_denormalization_finished?() do
       where(logs_query, as(:transaction).block_consensus == true)
@@ -191,7 +166,7 @@ defmodule Explorer.Etherscan.Logs do
 
   # Selects the log fields and every transaction and block field that the
   # `getLogs` and `eth_getLogs` renderers use, so the logs need no further
-  # preloads. Expects the bindings of `join_consensus_transaction/2`; the
+  # preloads. Expects the bindings of `join_consensus_transaction/1`; the
   # selected shape is identical in both denormalization states. `fields` adds
   # or overrides the selected fields.
   defp select_page_fields(query, fields) do
@@ -232,8 +207,7 @@ defmodule Explorer.Etherscan.Logs do
     |> fetch()
   end
 
-  # Fills `data` and `first_topic` of logs stored with `compressed_data` and
-  # `first_topic_id` only.
+  # Fills `data` and `first_topic` from `compressed_data` and `first_topic_id`.
   defp fetch(query) do
     query
     |> Repo.replica().all()
@@ -248,9 +222,7 @@ defmodule Explorer.Etherscan.Logs do
     |> subquery()
     |> join_consensus_transaction()
     |> Log.join_address_mapping_query()
-    |> select_page_fields(%{
-      address_hash: dynamic([log], coalesce(log.address_hash, as(:address_mapping).address_hash))
-    })
+    |> select_page_fields(%{address_hash: dynamic(as(:address_mapping).address_hash)})
     |> order_by([log], asc: log.block_number, asc: log.index)
   end
 
@@ -281,7 +253,7 @@ defmodule Explorer.Etherscan.Logs do
         Log.filter_by_topic_query(query, topic, filter[topic], opts)
 
       _ ->
-        where_multiple_topics_match(query, filter, opts[:storage])
+        where_multiple_topics_match(query, filter)
     end
   end
 
@@ -325,32 +297,32 @@ defmodule Explorer.Etherscan.Logs do
     end
   end
 
-  defp where_multiple_topics_match(query, filter, storage) do
+  defp where_multiple_topics_match(query, filter) do
     Enum.reduce(Map.keys(@topic_operations), query, fn topic_operation, acc_query ->
-      where_multiple_topics_match(acc_query, filter, topic_operation, filter[topic_operation], storage)
+      where_multiple_topics_match(acc_query, filter, topic_operation, filter[topic_operation])
     end)
   end
 
-  defp where_multiple_topics_match(query, filter, topic_operation, "and", storage) do
+  defp where_multiple_topics_match(query, filter, topic_operation, "and") do
     {topic_a, topic_b} = @topic_operations[topic_operation]
 
     dynamic =
       dynamic(
         [l],
-        ^Log.topic_filter_dynamic(topic_a, [filter[topic_a]], storage) and
-          ^Log.topic_filter_dynamic(topic_b, List.wrap(filter[topic_b]), storage)
+        ^Log.topic_filter_dynamic(topic_a, [filter[topic_a]]) and
+          ^Log.topic_filter_dynamic(topic_b, List.wrap(filter[topic_b]))
       )
 
     where(query, [l], ^dynamic)
   end
 
-  defp where_multiple_topics_match(query, filter, topic_operation, "or", storage) do
+  defp where_multiple_topics_match(query, filter, topic_operation, "or") do
     {topic_a, topic_b} = @topic_operations[topic_operation]
     topic_values_list = [[filter[topic_a]], List.wrap(filter[topic_b])]
-    where(query, [l], ^Log.filter_by_topic_dynamic([topic_a, topic_b], topic_values_list, storage))
+    where(query, [l], ^Log.filter_by_topic_dynamic([topic_a, topic_b], topic_values_list))
   end
 
-  defp where_multiple_topics_match(query, _, _, _, _), do: query
+  defp where_multiple_topics_match(query, _, _, _), do: query
 
   defp page_logs(query, %{block_number: nil, log_index: nil}) do
     query

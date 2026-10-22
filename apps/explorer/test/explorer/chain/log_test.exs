@@ -40,25 +40,20 @@ defmodule Explorer.Chain.LogTest do
     end
 
     test "accepts optional attributes" do
-      params =
-        params_for(
-          :log,
-          address_hash: build(:address).hash,
-          first_topic: @first_topic_hex_string_1,
-          transaction_hash: build(:transaction).hash,
-          block_hash: build(:block).hash
-        )
+      %LogFirstTopic{id: first_topic_id} = LogFirstTopic.find_or_create(topic(@first_topic_hex_string_1))
+
+      params = Map.put(params_for(:log, address_hash: build(:address).hash), :first_topic_id, first_topic_id)
 
       result = Log.changeset(%Log{}, params)
 
       assert result.valid? == true
-      assert result.changes.first_topic == topic(@first_topic_hex_string_1)
+      assert result.changes.first_topic_id == first_topic_id
     end
 
     test "assigns optional attributes" do
-      params = Map.put(params_for(:log), :first_topic, topic(@first_topic_hex_string_1))
+      params = Map.put(params_for(:log), :second_topic, topic(@first_topic_hex_string_1))
       changeset = Log.changeset(%Log{}, params)
-      assert changeset.changes.first_topic === topic(@first_topic_hex_string_1)
+      assert changeset.changes.second_topic === topic(@first_topic_hex_string_1)
     end
   end
 
@@ -243,9 +238,6 @@ defmodule Explorer.Chain.LogTest do
 
   describe "fetch_log_by_transaction_and_first_topic/3" do
     test "restores the fields of a log stored in the optimized format" do
-      # logs without `first_topic` are found by `first_topic_id` only once the migration is started
-      set_fill_logs_optimized_fields_migration_started()
-
       transaction = :transaction |> insert() |> with_block()
       %Address{hash: address_hash} = address = insert(:address)
       first_topic = topic(@first_topic_hex_string_1)
@@ -266,8 +258,6 @@ defmodule Explorer.Chain.LogTest do
 
   describe "user_op_to_logs/2" do
     test "restores the fields of logs stored in the optimized format" do
-      set_fill_logs_optimized_fields_migration_started()
-
       transaction = :transaction |> insert() |> with_block()
       %Address{hash: address_hash} = address = insert(:address)
       first_topic = topic(@first_topic_hex_string_1)
@@ -288,27 +278,25 @@ defmodule Explorer.Chain.LogTest do
   end
 
   describe "prepare_optimized_fields/2" do
-    test "restores the fields of logs stored in the optimized format and keeps legacy logs as is" do
+    test "restores the fields of logs stored in the optimized format" do
       transaction = :transaction |> insert() |> with_block()
       %Address{hash: address_hash} = address = insert(:address)
       first_topic = topic(@first_topic_hex_string_1)
       data = %Data{bytes: <<1, 2, 3>>}
 
       insert_optimized_log(transaction, address, first_topic, data)
+      insert_optimized_log(transaction, address, first_topic, data)
 
-      insert(:log,
-        transaction: transaction,
-        block: transaction.block,
-        block_number: transaction.block_number,
-        address_mapping: nil,
-        first_topic: first_topic
-      )
-
-      assert [%Log{address_hash: nil, first_topic: nil, data: nil}, %Log{address_id: nil} = legacy_log] =
+      assert [
+               %Log{address_hash: nil, first_topic: nil, data: nil},
+               %Log{address_hash: nil, first_topic: nil, data: nil}
+             ] =
                logs = Log |> order_by(:index) |> Repo.all()
 
-      assert [%Log{address_hash: ^address_hash, first_topic: ^first_topic, data: ^data}, ^legacy_log] =
-               Log.prepare_optimized_fields(logs)
+      assert [
+               %Log{address_hash: ^address_hash, first_topic: ^first_topic, data: ^data},
+               %Log{address_hash: ^address_hash, first_topic: ^first_topic, data: ^data}
+             ] = Log.prepare_optimized_fields(logs)
     end
 
     test "accepts a single log and nil" do
@@ -326,8 +314,8 @@ defmodule Explorer.Chain.LogTest do
     end
   end
 
-  # Inserts a log in the format used since v12: `address_hash`, `first_topic`
-  # and `data` are kept only in `address_id`, `first_topic_id` and
+  # Inserts a log whose `address_hash`, `first_topic` and `data` are left unset,
+  # so they have to be restored from `address_id`, `first_topic_id` and
   # `compressed_data`.
   defp insert_optimized_log(transaction, address, first_topic, data) do
     insert(:log,
@@ -341,5 +329,83 @@ defmodule Explorer.Chain.LogTest do
       data: nil,
       compressed_data: data
     )
+  end
+
+  describe "lookups by transaction" do
+    # A transaction of a block that lost consensus keeps its `{block_number, index}` position, which is taken here by
+    # a consensus transaction with a log.
+    setup do
+      non_consensus_block = insert(:block)
+
+      non_consensus_transaction =
+        :transaction
+        |> insert()
+        |> with_block(non_consensus_block, index: 0, block_consensus: false)
+
+      non_consensus_block |> Changeset.change(consensus: false) |> Repo.update!()
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block(insert(:block, number: non_consensus_block.number), index: 0)
+
+      log =
+        insert(:log,
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
+          first_topic: @first_topic_hex_string_1
+        )
+
+      %{non_consensus_transaction: non_consensus_transaction, transaction: transaction, log: log}
+    end
+
+    test "fetch_logs_by_transaction/2 skips a non-consensus transaction", %{
+      non_consensus_transaction: non_consensus_transaction,
+      transaction: transaction,
+      log: %Log{index: index}
+    } do
+      assert [] == Log.fetch_logs_by_transaction(non_consensus_transaction)
+      assert [%Log{index: ^index}] = Log.fetch_logs_by_transaction(transaction)
+    end
+
+    test "fetch_log_by_transaction_and_first_topic/3 skips a non-consensus transaction", %{
+      non_consensus_transaction: non_consensus_transaction,
+      transaction: transaction,
+      log: %Log{index: index}
+    } do
+      assert is_nil(Log.fetch_log_by_transaction_and_first_topic(non_consensus_transaction, @first_topic_hex_string_1))
+
+      assert %Log{index: ^index} = Log.fetch_log_by_transaction_and_first_topic(transaction, @first_topic_hex_string_1)
+    end
+
+    test "user_op_to_logs/2 skips a non-consensus transaction", %{
+      non_consensus_transaction: non_consensus_transaction,
+      transaction: transaction,
+      log: %Log{index: index}
+    } do
+      user_op = fn transaction_hash ->
+        %{
+          "transaction_hash" => to_string(transaction_hash),
+          "user_logs_start_index" => 0,
+          "user_logs_count" => 10
+        }
+      end
+
+      assert [] == Log.user_op_to_logs(user_op.(non_consensus_transaction.hash), [])
+      assert [%Log{index: ^index}] = Log.user_op_to_logs(user_op.(transaction.hash), [])
+    end
+
+    test "preload_transaction/4 attaches the consensus transaction", %{
+      non_consensus_transaction: non_consensus_transaction,
+      transaction: %{hash: transaction_hash},
+      log: log
+    } do
+      # rewrites the row of the non-consensus transaction, so that it is read after the consensus one
+      non_consensus_transaction |> Changeset.change() |> Repo.update!(force: true)
+
+      assert [%Log{transaction: %{hash: ^transaction_hash}, transaction_hash: ^transaction_hash}] =
+               Log.preload_transaction([log])
+    end
   end
 end

@@ -181,10 +181,6 @@ defmodule Explorer.Migrator.CeloL2EpochsTest do
       end
 
       test "backfills epochs from logs stored in the optimized format" do
-        # logs without `first_topic` and `address_hash` are found by `first_topic_id`
-        # and `address_id` only once the migration is started
-        set_fill_logs_optimized_fields_migration_started()
-
         epoch_manager_address = insert(:address)
 
         old_env = Application.get_env(:explorer, :celo)

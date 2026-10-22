@@ -138,7 +138,7 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
       from(l in Log, where: ^Log.topic_filter_dynamic(:first_topic, Erc404.dedicated_events()))
       |> Log.join_address_mapping_query()
       |> distinct(true)
-      |> select([l], %{address_hash: coalesce(l.address_hash, as(:address_mapping).address_hash)})
+      |> select(%{address_hash: as(:address_mapping).address_hash})
 
     from(t in Token,
       join: emitter in subquery(emitters_query),

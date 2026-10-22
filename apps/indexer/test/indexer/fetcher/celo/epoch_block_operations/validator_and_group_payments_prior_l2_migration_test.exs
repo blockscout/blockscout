@@ -37,10 +37,6 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPri
 
     describe "fetch/1" do
       test "parses payments from logs stored in the optimized format", %{validators_contract: validators_contract} do
-        # logs without `address_hash` and `first_topic` are found by `address_id`
-        # and `first_topic_id` only once the migration is started
-        set_fill_logs_optimized_fields_migration_started()
-
         block = insert(:block)
         %{hash: validator_address_hash} = insert(:address)
         %{hash: group_address_hash} = insert(:address)

@@ -27,25 +27,17 @@ defmodule Explorer.Chain.Optimism.WithdrawalTest do
 
     @l2_block_number 123_456_789
 
-    setup do
-      # logs without `first_topic` are joined by `first_topic_id` only once the migration is started
-      set_fill_logs_optimized_fields_migration_started()
-      :ok
-    end
-
     describe "list/1" do
       test "fills `msg_log_data` of `MessagePassed` logs stored with `compressed_data` only" do
-        compressed_log_data = %Data{bytes: <<1, 2, 3>>}
-        legacy_log_data = %Data{bytes: <<4, 5, 6>>}
+        first_log_data = %Data{bytes: <<1, 2, 3>>}
+        second_log_data = %Data{bytes: <<4, 5, 6>>}
 
-        # imported by v12+: the payload is stored in `compressed_data` only
-        insert_withdrawal_with_message_passed_log(1, data: nil, compressed_data: compressed_log_data)
-        # not processed by the `fill_logs_compressed_data` migration yet
-        insert_withdrawal_with_message_passed_log(2, data: legacy_log_data, compressed_data: nil)
+        insert_withdrawal_with_message_passed_log(1, data: nil, compressed_data: first_log_data)
+        insert_withdrawal_with_message_passed_log(2, data: nil, compressed_data: second_log_data)
 
         withdrawals = Withdrawal.list()
 
-        assert [{2, legacy_log_data}, {1, compressed_log_data}] ==
+        assert [{2, second_log_data}, {1, first_log_data}] ==
                  Enum.map(withdrawals, &{Decimal.to_integer(&1.msg_nonce), &1.msg_log_data})
 
         refute Enum.any?(withdrawals, &Map.has_key?(&1, :msg_log_compressed_data))
