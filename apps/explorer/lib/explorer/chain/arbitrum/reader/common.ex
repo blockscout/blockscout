@@ -31,10 +31,11 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
   import Explorer.Chain, only: [select_repo: 1, string_to_full_hash: 1]
 
   alias Explorer.Chain.Arbitrum.{
-    BatchBlock,
     DaMultiPurposeRecord,
     L1Batch,
-    Message
+    LifecycleTransaction,
+    Message,
+    RollupBlockConfirmation
   }
 
   alias Explorer.Chain.Block, as: FullBlock
@@ -44,22 +45,57 @@ defmodule Explorer.Chain.Arbitrum.Reader.Common do
   @doc """
     Retrieves the number of the highest confirmed rollup block.
 
+    The number is the highest `top` of the table of confirmations. This block can be
+    above the blocks that the instance indexes.
+
     ## Parameters
     - `options`: A keyword list of options:
       - `:api?` - Whether the function is being called from an API context.
 
     ## Returns
-    - The number of the highest confirmed rollup block, or `nil` if no confirmed rollup blocks are found.
+    - The number of the highest confirmed rollup block, or `nil` if no confirmation is found.
   """
   @spec highest_confirmed_block(api?: boolean()) :: FullBlock.block_number() | nil
   def highest_confirmed_block(options) do
     query =
       from(
-        rb in BatchBlock,
-        where: not is_nil(rb.confirmation_id),
-        select: rb.block_number,
-        order_by: [desc: rb.block_number],
+        confirmation in RollupBlockConfirmation,
+        select: confirmation.top,
+        order_by: [desc: confirmation.top],
         limit: 1
+      )
+
+    select_repo(options).one(query)
+  end
+
+  @doc """
+    Retrieves the parent chain transaction that confirms the given rollup block.
+
+    A rollup block is confirmed if a confirmation with `top` not below the block
+    exists. The owner of the block is the confirmation with the lowest such `top`.
+    The function reads the owner through the index on `top` with one query.
+
+    ## Parameters
+    - `rollup_block_number`: The number of the rollup block.
+    - `options`: A keyword list of options:
+      - `:api?` - Whether the function is being called from an API context.
+
+    ## Returns
+    - The `Explorer.Chain.Arbitrum.LifecycleTransaction` of the owner, or `nil` if the
+      rollup block is not confirmed.
+  """
+  @spec confirmation_transaction_for_rollup_block(FullBlock.block_number(), api?: boolean()) ::
+          LifecycleTransaction.t() | nil
+  def confirmation_transaction_for_rollup_block(rollup_block_number, options)
+      when is_integer(rollup_block_number) and rollup_block_number >= 0 do
+    query =
+      from(
+        confirmation in RollupBlockConfirmation,
+        join: transaction in assoc(confirmation, :confirmation_transaction),
+        where: confirmation.top >= ^rollup_block_number,
+        order_by: [asc: confirmation.top],
+        limit: 1,
+        select: transaction
       )
 
     select_repo(options).one(query)

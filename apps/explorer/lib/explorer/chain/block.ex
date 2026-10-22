@@ -97,9 +97,10 @@ defmodule Explorer.Chain.Block.Schema do
                                 through: [:arbitrum_batch, :commitment_transaction]
                               )
 
-                              has_one(:arbitrum_confirmation_transaction,
-                                through: [:arbitrum_batch_block, :confirmation_transaction]
-                              )
+                              # The parent chain transaction that confirms the block. The API
+                              # controller reads it from `Explorer.Chain.Arbitrum.RollupBlockConfirmation`
+                              # after the main query.
+                              field(:arbitrum_confirmation_transaction, :any, virtual: true)
                             end,
                             2
                           )
