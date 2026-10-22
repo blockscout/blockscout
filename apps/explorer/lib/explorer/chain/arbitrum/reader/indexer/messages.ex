@@ -343,6 +343,8 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
     |> order_by(desc: :block_number, desc: :index)
     |> select([log], log)
     |> Repo.all()
+    |> Log.preload_block()
+    |> Log.preload_transaction()
     |> Log.prepare_optimized_fields()
   end
 

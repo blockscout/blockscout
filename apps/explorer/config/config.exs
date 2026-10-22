@@ -209,6 +209,7 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsFirstTopicIdFkey,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.RemoveLogsObsoleteColumns,
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesTokenHoldersIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalancesTokenContractAddressHashValueIndex
     ] do

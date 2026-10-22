@@ -143,7 +143,6 @@ defmodule Explorer.Chain.TokenTransfer do
   use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
 
   use Utils.RuntimeEnvHelper,
-    chain_identity: [:explorer, :chain_identity],
     chain_type: [:explorer, :chain_type],
     arc_native_token_address: [:indexer, [:arc, :arc_native_token_address]],
     arc_native_token_system_address: [:indexer, [:arc, :arc_native_token_system_address]]
@@ -768,8 +767,8 @@ defmodule Explorer.Chain.TokenTransfer do
             @arc_native_coin_burned_event
           ])
 
-        # An address match gives `NULL` for logs that keep the address in the
-        # other field, and `NOT` would keep it `NULL` and drop such logs, so the
+        # `address_id` is nullable, an address match gives `NULL` for a log
+        # without it, and `NOT` would keep it `NULL` and drop such a log, so the
         # matches are coalesced to `false`.
         arc_native_token_filter =
           dynamic(coalesce(^Log.address_match_dynamic(arc_native_token_address()), false))
@@ -787,37 +786,22 @@ defmodule Explorer.Chain.TokenTransfer do
     end
   end
 
-  # Builds a query to check if a token transfer exists for a given log. Handles
-  # chain-specific logic for transaction_hash comparison.
+  # Builds a query to check if a token transfer exists for a given log.
   #
-  # For Celo epoch blocks, `transaction_hash` can be `nil` in both `Log` and
-  # `TokenTransfer`. A direct SQL comparison `NULL = NULL` evaluates to
-  # `UNKNOWN` (effectively false in this context). Therefore, we need a
-  # NULL-safe comparison for `transaction_hash`. Additionally, `block_hash` is
-  # included in the join condition to uniquely identify the token transfer, as
-  # `transaction_hash` (when nil) and `log_index` alone are insufficient.
+  # Logs are stored for consensus blocks only and the log index is unique within
+  # a block, so the token transfer is matched by `block_number` and `log_index`.
+  # This also covers Celo epoch logs, which are not linked to a transaction.
+  # Token transfers of the blocks which lost consensus are kept with
+  # `block_consensus` set to `false`, so they are skipped: otherwise a token
+  # transfer of a replaced block could be taken for the one of the consensus
+  # block at the same height.
   @spec token_transfer_exists_query() :: Ecto.Query.t()
   defp token_transfer_exists_query do
-    query =
-      from(tt in TokenTransfer,
-        where: tt.block_hash == parent_as(:log).block_hash,
-        where: tt.log_index == parent_as(:log).index
-      )
-
-    chain_identity()
-    |> case do
-      {:optimism, :celo} ->
-        query
-        |> where(
-          [tt],
-          tt.transaction_hash == parent_as(:log).transaction_hash or
-            (is_nil(parent_as(:log).transaction_hash) and is_nil(tt.transaction_hash))
-        )
-
-      _ ->
-        query
-        |> where([tt], tt.transaction_hash == parent_as(:log).transaction_hash)
-    end
+    from(tt in TokenTransfer,
+      where: tt.block_number == parent_as(:log).block_number,
+      where: tt.log_index == parent_as(:log).index,
+      where: tt.block_consensus == true
+    )
   end
 
   @doc """

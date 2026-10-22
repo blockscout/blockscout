@@ -184,13 +184,12 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
     query =
       start_block_number
       |> epoch_rewards_distributed_to_voters_query(end_block_number)
-      |> select([l], %{data: l.data, compressed_data: l.compressed_data})
+      |> select([l], l.compressed_data)
 
     voter_rewards_from_event_total =
       query
       |> Repo.all()
-      |> Log.prepare_data()
-      |> Enum.map(fn %{data: data} ->
+      |> Enum.map(fn data ->
         [amount] = decode_data(data, [{:uint, 256}])
         amount
       end)

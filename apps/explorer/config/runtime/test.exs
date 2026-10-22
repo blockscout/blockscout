@@ -160,7 +160,8 @@ for migrator <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.RemoveArbitrumBatchL2BlocksConfirmationId
+      Explorer.Migrator.HeavyDbIndexOperation.RemoveArbitrumBatchL2BlocksConfirmationId,
+      Explorer.Migrator.HeavyDbIndexOperation.RemoveLogsObsoleteColumns
     ] do
   config :explorer, migrator, enabled: false
 end
