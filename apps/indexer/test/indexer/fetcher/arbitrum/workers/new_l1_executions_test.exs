@@ -339,6 +339,24 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert executions_cursor() == @l1_start_block - 3
       end
 
+      # The database holds the cursor of an earlier run at the bound: the
+      # earlier run read the window at the bound. After a restart, the end block
+      # is `nil`. The first run loads the cursor, reads nothing, and the
+      # discovery is complete.
+      test "is complete at the first run after a restart if the stored cursor is at the bound", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        seed_batch_of_rollup_block(@rollup_first_block, @commitment_l1_block)
+        seed_executions_cursor(@commitment_l1_block)
+        expect_no_rpc()
+
+        state = run_historical(executions_state(json_rpc_named_arguments, nil))
+
+        assert end_block(state) == @commitment_l1_block - 1
+        assert executions_cursor() == @commitment_l1_block
+        assert NewL1Executions.historical_executions_discovery_completed?(state)
+      end
+
       # The discovery of new executions reads the parent chain up from its start
       # block to the latest block. It finds the execution, but it does not write
       # the cursor of the historical discovery.
@@ -367,35 +385,45 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
     end
 
     describe "the executions below the window where the backfill process stopped" do
-      # The backfill process of the confirmations discovery stopped early: its
-      # window held a confirmation with a `top` below the first indexed rollup
-      # block, and its cursor is at the init block. The parent chain holds a
-      # confirmation in the inverted order below that window, which confirms a
-      # higher `top` in an older block. The backfill process did not find it.
-      # An execution lies between the commitment block of the batch of the first
-      # indexed rollup block and the lowest confirmation which the backfill
-      # process found. The bound of the executions discovery is the commitment
-      # block, so the discovery finds the execution.
-      test "are found below the lowest confirmation which the backfill process found", %{
+      # The window below the start point of the backfill process is 145..194.
+      @backfill_logs_block_range 50
+
+      # The scenario of the review. The window of the backfill process holds an
+      # event with a `top` below the first indexed rollup block, so the process
+      # stops early. The parent chain holds a confirmation in the inverted order
+      # below that window: an older block holds an event with a higher `top`.
+      # The backfill process does not read it, and the table does not confirm
+      # the rollup blocks of that event. An execution of a message from these
+      # rollup blocks lies between the commitment block of the batch of the
+      # first indexed rollup block and the lowest confirmation which the
+      # backfill process found. The bound of the executions discovery is the
+      # commitment block, so the discovery finds the execution after the
+      # backfill process stopped.
+      test "are found after the backfill process stopped early", %{
         json_rpc_named_arguments: json_rpc_named_arguments
       } do
         rollup_first_block = 5
-        lowest_found_confirmation_l1_block = @commitment_l1_block + 8
-        inverted_confirmation_l1_block = @commitment_l1_block + 5
+        inverted_confirmation_l1_block = @commitment_l1_block + 4
         execution_l1_block = @commitment_l1_block + 6
 
-        seed_cursors(@main_cursor, @l1_rollup_init_block)
+        blocks = seed_blocks(3..35)
+        seed_cursors(@main_cursor, @backfill_cursor)
         seed_batch_of_rollup_block(rollup_first_block, @commitment_l1_block)
-        insert_row(20, insert_confirmation(@earlier_confirmation_l1_block))
-        insert_row(3, insert_confirmation(lowest_found_confirmation_l1_block))
         message = insert_confirmed_message_from_l2(7)
+        stop_confirmation_hash = to_string(transaction_hash())
+        inverted_confirmation_hash = to_string(transaction_hash())
         execution_transaction_hash = to_string(transaction_hash())
 
         expect_parent_chain(
           [
             build_send_root_updated_log(
-              "0x" <> String.duplicate("2", 64),
-              to_string(transaction_hash()),
+              rollup_block_hash(blocks, 3),
+              stop_confirmation_hash,
+              @earlier_confirmation_l1_block
+            ),
+            build_send_root_updated_log(
+              rollup_block_hash(blocks, 30),
+              inverted_confirmation_hash,
               inverted_confirmation_l1_block
             )
           ],
@@ -405,9 +433,19 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         )
 
         state =
-          run_historical(
-            executions_state(json_rpc_named_arguments, @executions_end_block, rollup_first_block: rollup_first_block)
+          run_backfill(
+            executions_state(json_rpc_named_arguments, @executions_end_block,
+              rollup_first_block: rollup_first_block,
+              logs_block_range: @backfill_logs_block_range
+            )
           )
+
+        assert cursor(:backfill) == @l1_rollup_init_block
+        assert rows() == [{3, stop_confirmation_hash}]
+        assert is_nil(owner(30))
+        assert Tasks.historical_confirmations_discovery_completed?(state)
+
+        state = run_historical(state)
 
         assert execution(message) == execution_transaction_hash
         assert message_status(message) == :relayed

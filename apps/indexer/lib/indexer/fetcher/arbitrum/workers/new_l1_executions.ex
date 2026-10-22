@@ -122,7 +122,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
       discovered = discover(outbox_address, start_block, end_block, l1_rpc_config)
 
       if discovered.executions != [] do
-        log_import_of_executions(discovered)
+        log_info("Executions for #{length(discovered.executions)} L2 messages will be imported")
 
         {:ok, _} =
           Chain.import(%{
@@ -210,7 +210,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
       discovered = discover(outbox_address, start_block, end_block, l1_rpc_config)
 
       if discovered.executions != [] do
-        log_import_of_executions(discovered)
+        log_info("Executions for #{length(discovered.executions)} L2 messages will be imported")
       end
 
       :ok = DbMessages.import_historical_executions(discovered, start_block)
@@ -377,11 +377,6 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.NewL1Executions do
     {lifecycle_transactions, executions} = get_executions_from_logs(logs, l1_rpc_config)
 
     %{lifecycle_transactions: lifecycle_transactions, executions: executions}
-  end
-
-  @spec log_import_of_executions(discovered_executions()) :: :ok
-  defp log_import_of_executions(%{executions: executions}) do
-    log_info("Executions for #{length(executions)} L2 messages will be imported")
   end
 
   # Inspects all unexecuted messages to potentially mark them as completed,

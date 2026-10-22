@@ -206,11 +206,15 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
 
     The second condition is a window with an event with a `top` below the first
     indexed rollup block. The function imports the event and sets the cursor to
-    `l1_rollup_init_block`. The events below confirm only the rollup blocks that
-    the instance does not index. This condition stops an instance that indexes
-    only the recent rollup blocks before it reads the full history of the parent
-    chain. If the first indexed rollup block is 0, this condition never occurs,
-    and the first condition stops the backfill.
+    `l1_rollup_init_block`. The events below usually confirm only the rollup
+    blocks that the instance does not index. This condition stops an instance
+    that indexes only the recent rollup blocks before it reads the full history
+    of the parent chain. The condition is best effort: in the inverted order,
+    an older block below the window can hold an event with a higher `top`, and
+    the process does not read it. Then the confirmation of these rollup blocks
+    is a later event that the main process finds, and the status of the blocks
+    does not change. If the first indexed rollup block is 0, this condition
+    never occurs, and the first condition stops the backfill.
 
     The function does nothing if no batch exists, or if the cursor is at
     `l1_rollup_init_block` or below it. If no batch exists, the function returns
@@ -264,9 +268,13 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
         ConfirmationsDiscovery.perform(outbox_address, start_block, end_block, l1_rpc_config, rollup_rpc_config)
 
       # The second stop condition. The events below an event with a `top` below
-      # the first indexed rollup block confirm only the rollup blocks that the
-      # instance does not index. If the first indexed rollup block is 0, this
-      # condition never occurs, and the first condition stops the backfill.
+      # the first indexed rollup block usually confirm only the rollup blocks
+      # that the instance does not index. In the inverted order, an older block
+      # below the window can hold an event with a higher `top`. The process does
+      # not read it. Then the main process gives the confirmation of these rollup
+      # blocks to a later event, and the status of the blocks does not change.
+      # If the first indexed rollup block is 0, this condition never occurs, and
+      # the first condition stops the backfill.
       new_cursor =
         if not is_nil(discovered.lowest_top) and discovered.lowest_top < rollup_first_block do
           log_info(

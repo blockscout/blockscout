@@ -5,7 +5,9 @@ defmodule Indexer.Fetcher.Arbitrum.Utils.Db.Messages do
 
     This module serves as a wrapper around the database reader functions from
     `Explorer.Chain.Arbitrum.Reader.Indexer.Messages`, providing additional data
-    transformation and error handling capabilities.
+    transformation and error handling capabilities. It also writes one window of
+    the historical discovery of L2-to-L1 message executions together with the
+    cursor of that discovery, in one database transaction.
   """
 
   alias EthereumJSONRPC.Arbitrum.Constants.Events, as: ArbitrumEvents
