@@ -11,6 +11,7 @@ defmodule Explorer.Chain.Import.Runner.Logs do
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Import, Log}
+  alias Explorer.Chain.Import.Runner.Helper
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Utility.{AddressIdToAddressHash, LogFirstTopic, LogHelper}
 
@@ -48,7 +49,13 @@ defmodule Explorer.Chain.Import.Runner.Logs do
 
     Multi.run(multi, :logs, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
-        fn -> insert(repo, changes_list, insert_options) end,
+        fn ->
+          # logs of a block that lost consensus after its import must not be inserted, see the helper docs
+          consensus_changes_list =
+            Helper.reject_changes_of_non_consensus_blocks(repo, changes_list, insert_options, "logs")
+
+          insert(repo, consensus_changes_list, insert_options)
+        end,
         :block_referencing,
         :logs,
         :logs

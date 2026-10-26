@@ -13,6 +13,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
 
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Import, TokenTransfer}
+  alias Explorer.Chain.Import.Runner.Helper
   alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
@@ -47,7 +48,13 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
 
     Multi.run(multi, :token_transfers, fn repo, _ ->
       Instrumenter.block_import_stage_runner(
-        fn -> insert(repo, changes_list, insert_options) end,
+        fn ->
+          # token transfers of a block that lost consensus after its import must not be inserted, see the helper docs
+          consensus_changes_list =
+            Helper.reject_changes_of_non_consensus_blocks(repo, changes_list, insert_options, "token transfers")
+
+          insert(repo, consensus_changes_list, insert_options)
+        end,
         :block_referencing,
         :token_transfers,
         :token_transfers
