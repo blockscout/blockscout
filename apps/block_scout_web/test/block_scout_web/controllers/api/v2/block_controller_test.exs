@@ -1313,5 +1313,50 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
         assert %{"errors" => [_]} = json_response(request, 422)
       end
     end
+
+    # The confirmation of a rollup block comes from the table of confirmations. A
+    # row of the table confirms the rollup block `top` and all rollup blocks below
+    # it. The owner of a block is the row with the lowest `top` not below the
+    # block.
+    describe "/blocks/{block_hash_or_number} with Arbitrum confirmations" do
+      test "shows the confirmation transaction of a confirmed block", %{conn: conn} do
+        block = insert(:block, consensus: true)
+        confirmation = insert(:arbitrum_lifecycle_transaction)
+        insert(:arbitrum_rollup_block_confirmation, top: block.number + 5, confirmation_id: confirmation.id)
+
+        request = get(conn, "/api/v2/blocks/#{block.number}")
+        assert response = json_response(request, 200)
+        assert response["arbitrum"]["confirmation_transaction"]["hash"] == to_string(confirmation.hash)
+        assert response["arbitrum"]["status"] == "Confirmed on base"
+      end
+
+      test "shows the confirmation with the lowest top not below the block", %{conn: conn} do
+        block = insert(:block, consensus: true)
+        owner = insert(:arbitrum_lifecycle_transaction)
+        later_confirmation = insert(:arbitrum_lifecycle_transaction)
+
+        insert(:arbitrum_rollup_block_confirmation,
+          top: block.number - 1,
+          confirmation_id: insert(:arbitrum_lifecycle_transaction).id
+        )
+
+        insert(:arbitrum_rollup_block_confirmation, top: block.number, confirmation_id: owner.id)
+        insert(:arbitrum_rollup_block_confirmation, top: block.number + 10, confirmation_id: later_confirmation.id)
+
+        request = get(conn, "/api/v2/blocks/#{block.number}")
+        assert response = json_response(request, 200)
+        assert response["arbitrum"]["confirmation_transaction"]["hash"] == to_string(owner.hash)
+      end
+
+      test "shows no confirmation transaction for a block above the highest confirmed block", %{conn: conn} do
+        block = insert(:block, consensus: true)
+        insert(:arbitrum_rollup_block_confirmation, top: block.number - 1)
+
+        request = get(conn, "/api/v2/blocks/#{block.number}")
+        assert response = json_response(request, 200)
+        assert is_nil(response["arbitrum"]["confirmation_transaction"]["hash"])
+        assert response["arbitrum"]["status"] == "Processed on rollup"
+      end
+    end
   end
 end

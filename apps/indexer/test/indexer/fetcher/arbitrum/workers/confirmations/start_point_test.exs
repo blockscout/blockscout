@@ -1,0 +1,166 @@
+# SPDX-License-Identifier: LicenseRef-Blockscout
+if Application.get_env(:explorer, :chain_type) == :arbitrum do
+  defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.StartPointTest do
+    use Indexer.Fetcher.Arbitrum.Workers.Confirmations.TestCase
+
+    import ExUnit.CaptureLog
+
+    # See `Indexer.Fetcher.Arbitrum.Workers.Confirmations.TestCase` for the
+    # conventions this suite of files follows.
+
+    # At the first run, the processes read their cursors from the database. If no
+    # cursor exists, the start point is the parent chain block of the commitment
+    # of the latest batch. If `finalized_confirmations` is `true`, the start
+    # point is not above the safe block. The processes write both cursors before
+    # the first window. If no batch exists, the discovery waits.
+    describe "the start point of the discovery" do
+      # The database holds the cursors of an earlier run. The processes use them.
+      test "uses the cursors of the database", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+        blocks = seed_blocks(1..12)
+        seed_cursors(@earlier_confirmation_l1_block, @earlier_confirmation_l1_block + 1)
+        insert_row(5, insert_confirmation(@earlier_confirmation_l1_block - 10))
+
+        confirmation_transaction_hash = to_string(transaction_hash())
+
+        # The event is above the main cursor of the database and below the start
+        # point which the latest batch would give.
+        expect_parent_chain([
+          build_send_root_updated_log(
+            rollup_block_hash(blocks, 10),
+            confirmation_transaction_hash,
+            @earlier_confirmation_l1_block + 10
+          )
+        ])
+
+        state = run_main(state(json_rpc_named_arguments))
+
+        assert cursor(:main) == @safe_l1_block
+        assert state.task_data.historical_confirmations.cursor == @earlier_confirmation_l1_block + 1
+        assert Enum.member?(rows(), {10, confirmation_transaction_hash})
+      end
+
+      # The database holds no cursor and a batch. The start point is the parent
+      # chain block of the commitment of the batch. The main cursor gets the block
+      # below the start point, and the backfill cursor gets the start point.
+      test "writes both cursors from the latest batch before the first window", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        seed_latest_batch(@start_point)
+        expect_parent_chain([])
+
+        state = run_backfill(state(json_rpc_named_arguments, logs_block_range: 50))
+
+        assert cursor(:main) == @main_cursor
+        assert cursor(:backfill) == @backfill_cursor - 50
+        assert state.task_data.new_confirmations.cursor == @main_cursor
+      end
+
+      # The latest batch is the batch with the highest number. Its commitment gives
+      # the start point, also when an older batch has a higher commitment block.
+      test "takes the commitment of the batch with the highest number", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        seed_latest_batch(@start_point + 5)
+        seed_latest_batch(@start_point)
+        expect_parent_chain([])
+
+        # The main process waits because the table is empty. The cursors are
+        # written before the wait.
+        state = run_main(state(json_rpc_named_arguments))
+
+        assert cursor(:main) == @main_cursor
+        assert cursor(:backfill) == @backfill_cursor
+        assert state.task_data.new_confirmations.cursor == @main_cursor
+        assert state.task_data.historical_confirmations.cursor == @backfill_cursor
+      end
+
+      # The commitment of the latest batch is above the safe block, and
+      # `finalized_confirmations` is `true`. The backfill process reads a block
+      # only once, and a re-org of the parent chain can move a block above the
+      # safe block. Thus the start point is the safe block.
+      test "does not start above the safe block when the discovery tracks finalized confirmations", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        seed_latest_batch(@safe_l1_block + 20)
+        expect_parent_chain([])
+
+        state = run_backfill(state(json_rpc_named_arguments, logs_block_range: 50))
+
+        assert cursor(:main) == @safe_l1_block - 1
+        assert cursor(:backfill) == @safe_l1_block - 50
+        assert state.task_data.new_confirmations.cursor == @safe_l1_block - 1
+      end
+
+      # The commitment of the latest batch is above the safe block, and
+      # `finalized_confirmations` is `false`. The main process reads the blocks
+      # above the safe block again in each window. Thus the start point is the
+      # commitment block.
+      test "starts above the safe block when the discovery does not track finalized confirmations", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        seed_latest_batch(@safe_l1_block + 20)
+        expect_parent_chain([])
+
+        state = run_backfill(state(json_rpc_named_arguments, logs_block_range: 50, finalized_confirmations: false))
+
+        assert cursor(:main) == @safe_l1_block + 19
+        assert cursor(:backfill) == @safe_l1_block + 20 - 50
+        assert state.task_data.new_confirmations.cursor == @safe_l1_block + 19
+      end
+
+      # The safe block is below `l1_rollup_init_block`. The start point is the
+      # init block, so the backfill process is complete at once.
+      test "does not start below the rollup init block", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        seed_latest_batch(@start_point)
+        expect_parent_chain([], safe: @l1_rollup_init_block - 10)
+
+        state = run_backfill(state(json_rpc_named_arguments))
+
+        assert cursor(:main) == @l1_rollup_init_block - 1
+        assert cursor(:backfill) == @l1_rollup_init_block
+        assert Tasks.historical_confirmations_discovery_completed?(state)
+      end
+
+      # The database holds no cursor and no batch. The discovery waits, writes a
+      # log message, and sends no request. The backfill process returns the status
+      # `:no_batches`, so the tracker runs it again after a longer interval.
+      test "waits and writes a log message when no batch exists", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        expect_no_rpc()
+
+        log =
+          capture_log(fn ->
+            state = run_main(state(json_rpc_named_arguments))
+            assert is_nil(state.task_data.new_confirmations.cursor)
+
+            assert {:no_batches, state} = run_backfill_with_status(state(json_rpc_named_arguments))
+            assert is_nil(state.task_data.historical_confirmations.cursor)
+            refute Tasks.historical_confirmations_discovery_completed?(state)
+          end)
+
+        assert log =~ "waits for the first batch"
+        assert is_nil(cursor(:main))
+        assert is_nil(cursor(:backfill))
+      end
+
+      # A restart does not compute the start point again. The database holds the
+      # cursors and a newer batch. The processes use the cursors.
+      test "does not compute the start point again after a restart", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        seed_cursors(@earlier_confirmation_l1_block, @earlier_confirmation_l1_block + 1)
+        seed_latest_batch(@start_point)
+        expect_parent_chain([])
+
+        state = run_backfill(state(json_rpc_named_arguments, logs_block_range: 50))
+
+        assert cursor(:main) == @earlier_confirmation_l1_block
+        assert cursor(:backfill) == @earlier_confirmation_l1_block + 1 - 50
+        assert state.task_data.new_confirmations.cursor == @earlier_confirmation_l1_block
+      end
+    end
+  end
+end
