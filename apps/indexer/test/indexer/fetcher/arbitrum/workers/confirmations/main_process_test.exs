@@ -138,6 +138,35 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
         assert lifecycle_transaction(known_confirmation_hash).block_number == @confirmation_l1_block
       end
 
+      # With `finalized_confirmations` set to `false`, the process reads the
+      # blocks above the safe block again. A re-org replaced the confirmation
+      # transaction of a known `top` with a different transaction: the row of
+      # this `top` now points to the new transaction.
+      test "replaces the transaction of a known top after a re-org when finalized_confirmations is false", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        blocks = seed_blocks(1..12)
+        # The cursor is above the safe block: the process reached the head before.
+        seed_cursors(@confirmation_l1_block + 4)
+
+        reorged_confirmation = insert_confirmation(@stale_confirmation_l1_block)
+        insert_row(10, reorged_confirmation)
+
+        new_confirmation_hash = to_string(transaction_hash())
+
+        expect_parent_chain(
+          [build_send_root_updated_log(rollup_block_hash(blocks, 10), new_confirmation_hash, @confirmation_l1_block)],
+          safe: @confirmation_l1_block,
+          latest: @latest_l1_block
+        )
+
+        run_main(state(json_rpc_named_arguments, finalized_confirmations: false))
+
+        assert cursor(:main) == @latest_l1_block
+        assert rows() == [{10, new_confirmation_hash}]
+        assert lifecycle_transaction(new_confirmation_hash).block_number == @confirmation_l1_block
+      end
+
       # With `finalized_confirmations` set to `true`, the window ends at the safe
       # block. If the cursor is at the safe block, there is no window.
       test "does nothing when the cursor is at the safe block", %{

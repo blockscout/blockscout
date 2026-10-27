@@ -3,8 +3,9 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.RollupBlockConfirmations do
   @moduledoc """
     Bulk imports of Explorer.Chain.Arbitrum.RollupBlockConfirmation.
 
-    A row with a known `top` is never changed: the first event that confirms a
-    rollup block keeps the row. Thus the import does nothing on a conflict.
+    On a conflict on `top`, the import changes the row only if the new row holds
+    a different confirmation transaction. Thus a repeated window changes nothing,
+    and a transaction that replaced one lost in a re-org takes over the row of its `top`.
   """
 
   require Ecto.Query
@@ -13,6 +14,8 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.RollupBlockConfirmations do
   alias Explorer.Chain.Arbitrum.RollupBlockConfirmation
   alias Explorer.Chain.Import
   alias Explorer.Prometheus.Instrumenter
+
+  import Ecto.Query, only: [from: 2]
 
   @behaviour Import.Runner
 
@@ -63,7 +66,7 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.RollupBlockConfirmations do
           {:ok, [RollupBlockConfirmation.t()]}
           | {:error, [Changeset.t()]}
   def insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
-    on_conflict = Map.get(options, :on_conflict, :nothing)
+    on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Arbitrum.RollupBlockConfirmation ShareLocks order (see docs: sharelock.md)
     ordered_changes_list = Enum.sort_by(changes_list, & &1.top)
@@ -81,5 +84,19 @@ defmodule Explorer.Chain.Import.Runner.Arbitrum.RollupBlockConfirmations do
       )
 
     {:ok, inserted}
+  end
+
+  defp default_on_conflict do
+    from(
+      confirmation in RollupBlockConfirmation,
+      update: [
+        set: [
+          # don't update `top` as it is a primary key and used for the conflict target
+          confirmation_id: fragment("EXCLUDED.confirmation_id"),
+          updated_at: fragment("EXCLUDED.updated_at")
+        ]
+      ],
+      where: fragment("EXCLUDED.confirmation_id IS DISTINCT FROM ?", confirmation.confirmation_id)
+    )
   end
 end

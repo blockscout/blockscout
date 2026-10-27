@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
       otherwise. In the second case, each window starts at the lower of the block
       after the cursor and the safe block. Thus the process reads the blocks above
       the safe block again, and a re-org of the parent chain does not lose an event.
+      A transaction that replaced one lost in a re-org takes over the row of its `top`.
     - The backfill process moves down the parent chain from its cursor. It stops
       when its cursor reaches `l1_rollup_init_block`, or when it finds an event with
       a `top` below the lowest rollup block that the instance indexes. In the

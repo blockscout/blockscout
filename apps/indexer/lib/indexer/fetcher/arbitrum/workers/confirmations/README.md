@@ -36,9 +36,9 @@ The backfill process stops in two cases:
 
 The second stop rule is best effort. In the inverted order, an older parent chain block below the stop window can hold an event with a `top` not below the lowest indexed rollup block. The backfill process does not read this event. Example: the lowest indexed rollup block is 1000. The stop window holds an event with `top` 900 in the parent chain block 5000, and the parent chain block 4500 holds an event with `top` 1200. The backfill process stops at the first event, and it never adds the second one. The main process adds a later event with a higher `top`, and the API shows the transaction of that later event as the confirmation of the rollup blocks 1000 to 1200. The status of a block or a message does not change, because the later event confirms the same rollup blocks.
 
-If `INDEXER_ARBITRUM_CONFIRMATIONS_TRACKING_FINALIZED` is `false`, each window of the main process starts at the lower of the block after the cursor and the safe block. Thus the process reads the blocks above the safe block again, and a re-org of the parent chain does not lose an event. The upsert of the lifecycle transaction on its hash updates the block number and the timestamp of a moved transaction.
+If `INDEXER_ARBITRUM_CONFIRMATIONS_TRACKING_FINALIZED` is `false`, each window of the main process starts at the lower of the block after the cursor and the safe block. Thus the process reads the blocks above the safe block again, and a re-org of the parent chain does not lose an event. The upsert of the lifecycle transaction on its hash updates the block number and the timestamp of a moved transaction. A transaction that replaced one lost in a re-org takes over the row of its `top`.
 
-If an RPC request fails, the process does not move its cursor and reads the same window again. A repeated window does not damage the data: the import of a row with a known `top` does nothing.
+If an RPC request fails, the process does not move its cursor and reads the same window again. A repeated window does not damage the data: the import changes nothing for a row that holds the same transaction.
 
 ## The lower bound of other discoveries
 
