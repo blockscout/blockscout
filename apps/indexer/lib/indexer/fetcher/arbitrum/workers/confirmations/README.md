@@ -19,7 +19,7 @@ The table `arbitrum_rollup_block_confirmations` holds one row for each `SendRoot
 
 The order of `top` gives the rollup blocks of each row. A row owns the rollup blocks above the `top` of the row below it, up to its own `top`. The lowest row owns the blocks from 0. If a row with `top` not below a rollup block exists, the rollup block is confirmed. The row with the lowest such `top` holds the confirmation transaction of the block.
 
-The discovery only adds rows. It never changes or deletes a row. Thus the rows always cover the rollup blocks from 0 to the highest `top`, without gaps and without overlaps. The position of an event in the parent chain does not change the result of the events that the discovery reads. This also holds for an AnyTrust chain, where an older parent chain block can hold the confirmation of a higher rollup block. The second stop rule of the backfill process limits the set of the events that the discovery reads, see "The processes".
+The discovery adds rows, and it never deletes a row or changes its `top`. It can replace the transaction of a known `top`, see "The processes". Thus the rows always cover the rollup blocks from 0 to the highest `top`, without gaps and without overlaps. The position of an event in the parent chain does not change the result of the events that the discovery reads. This also holds for an AnyTrust chain, where an older parent chain block can hold the confirmation of a higher rollup block. The second stop rule of the backfill process limits the set of the events that the discovery reads, see "The processes".
 
 ## The processes
 

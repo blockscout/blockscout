@@ -18,8 +18,10 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Discovery do
     The table stores only `top` of each row. The order of `top` gives the rollup
     blocks of each row. Thus the module does not read the position of an event in
     the parent chain, and the result does not depend on the order of the events.
-    Two events with the same `top` give one row: the import keeps the row that the
-    code wrote first.
+    Two events with the same `top` in one window give one row: the module keeps
+    the first event. The import replaces the stored transaction of a known `top`
+    if the new row holds a different one, see
+    `Explorer.Chain.Import.Runner.Arbitrum.RollupBlockConfirmations`.
 
     If the highest `top` of the window is above the highest `top` in the database,
     the module marks the L2-to-L1 messages up to the new highest `top` as

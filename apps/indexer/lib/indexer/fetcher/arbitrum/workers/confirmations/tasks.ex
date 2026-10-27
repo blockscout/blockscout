@@ -35,8 +35,9 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Confirmations.Tasks do
     that the backfill process finds confirms almost all indexed rollup blocks
     before the main process reads the head of the parent chain.
 
-    The order of the events does not change the result. Thus the final table does
-    not depend on which process found an event, or when.
+    On the canonical parent chain, each `top` has one event. Thus the order of
+    the events does not change the result, and the final table does not depend
+    on which process found an event, or when.
   """
 
   import Indexer.Fetcher.Arbitrum.Utils.Logging, only: [log_info: 1, log_warning: 1]

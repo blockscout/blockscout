@@ -99,6 +99,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         run_main(state(json_rpc_named_arguments))
         rows_after_first_run = rows()
+        confirmations_after_first_run = Repo.all(from(c in RollupBlockConfirmation, order_by: c.top))
         transactions_after_first_run = Repo.all(from(t in LifecycleTransaction, order_by: t.id))
 
         seed_cursors()
@@ -106,6 +107,7 @@ if Application.get_env(:explorer, :chain_type) == :arbitrum do
 
         assert cursor(:main) == @safe_l1_block
         assert rows() == rows_after_first_run
+        assert Repo.all(from(c in RollupBlockConfirmation, order_by: c.top)) == confirmations_after_first_run
         assert Repo.all(from(t in LifecycleTransaction, order_by: t.id)) == transactions_after_first_run
       end
 
