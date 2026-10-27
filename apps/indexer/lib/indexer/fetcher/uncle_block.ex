@@ -3,6 +3,9 @@ defmodule Indexer.Fetcher.UncleBlock do
   @moduledoc """
   Fetches `t:Explorer.Chain.Block.t/0` by `hash` and updates `t:Explorer.Chain.Block.SecondDegreeRelation.t/0`
   `uncle_fetched_at` where the `uncle_hash` matches `hash`.
+
+  Uncles that are already stored are not imported again: a stored consensus block that turns out to be an uncle
+  gets its number scheduled for refetch instead.
   """
 
   use Indexer.Fetcher, restart: :permanent
@@ -10,10 +13,13 @@ defmodule Indexer.Fetcher.UncleBlock do
 
   require Logger
 
+  import Ecto.Query, only: [from: 2]
+
   alias Ecto.Changeset
   alias EthereumJSONRPC.Blocks
-  alias Explorer.Chain
+  alias Explorer.{Chain, Repo}
   alias Explorer.Chain.Block, as: ExplorerChainBlock
+  alias Explorer.Chain.Block.SecondDegreeRelation
   alias Explorer.Chain.Cache.{Accounts, Uncles}
   alias Explorer.Chain.Hash
   alias Indexer.{Block, BufferedTask, Tracer}
@@ -123,16 +129,137 @@ defmodule Indexer.Fetcher.UncleBlock do
 
   def run_blocks(%Blocks{blocks_params: []}, _, original_entries), do: {:retry, original_entries}
 
-  def run_blocks(
-        %Blocks{
-          blocks_params: blocks_params,
-          transactions_params: transactions_params,
-          block_second_degree_relations_params: block_second_degree_relations_params,
-          errors: errors
-        },
-        block_fetcher,
-        original_entries
-      ) do
+  def run_blocks(%Blocks{blocks_params: blocks_params} = blocks, block_fetcher, original_entries) do
+    blocks_params
+    |> Enum.map(&Map.get(&1, :hash))
+    |> Enum.filter(&is_binary/1)
+    |> handle_stored_uncles()
+    |> case do
+      {:ok, stored_hashes} ->
+        blocks
+        |> reject_stored_uncles(stored_hashes)
+        |> import_blocks(block_fetcher, original_entries)
+
+      {:error, reason} ->
+        Logger.error(fn -> ["failed to handle stored uncles: ", inspect(reason)] end,
+          error_count: Enum.count(original_entries)
+        )
+
+        {:retry, original_entries}
+    end
+  end
+
+  # Handles the fetched uncles that are already stored, so that they are not imported again.
+  #
+  # An uncle import must not change a stored block. Re-importing a stored consensus block as an uncle
+  # would mark it as non-consensus bypassing the consensus loss handling of
+  # `Explorer.Chain.Import.Runner.Blocks`: its logs and other data would stay, and its number would not
+  # be refetched. Instead, the numbers of the stored consensus uncles are scheduled for refetch: the refetch
+  # imports the block that is canonical at that height, and the consensus loss handling removes the data
+  # of the stale block. The relations of all the stored uncles are marked as fetched.
+  #
+  # Returns `{:ok, stored_hashes}` with a `MapSet` of the stored uncle hashes as strings.
+  defp handle_stored_uncles([]), do: {:ok, MapSet.new()}
+
+  defp handle_stored_uncles(uncle_hashes) do
+    stored_uncles =
+      Repo.all(
+        from(block in ExplorerChainBlock,
+          where: block.hash in ^uncle_hashes,
+          select: %{hash: block.hash, number: block.number, consensus: block.consensus}
+        )
+      )
+
+    stored_hashes = Enum.map(stored_uncles, & &1.hash)
+    refetch_block_numbers = for %{consensus: true, number: number} <- stored_uncles, uniq: true, do: number
+
+    with {:ok, _} <- mark_stored_uncles(stored_hashes, refetch_block_numbers) do
+      log_refetch(refetch_block_numbers)
+      {:ok, MapSet.new(stored_hashes, &to_string/1)}
+    end
+  end
+
+  defp mark_stored_uncles([], _refetch_block_numbers), do: {:ok, nil}
+
+  defp mark_stored_uncles(stored_hashes, refetch_block_numbers) do
+    Repo.transaction(fn ->
+      if refetch_block_numbers != [] do
+        ExplorerChainBlock.set_refetch_needed(refetch_block_numbers)
+      end
+
+      set_uncles_fetched(stored_hashes)
+    end)
+  end
+
+  # Sets `uncle_fetched_at` for the relations of the given uncles that are not marked as fetched yet.
+  defp set_uncles_fetched(uncle_hashes) do
+    locked_query =
+      from(
+        relation in SecondDegreeRelation,
+        where: relation.uncle_hash in ^uncle_hashes and is_nil(relation.uncle_fetched_at),
+        # Enforce SecondDegreeRelation ShareLocks order (see docs: sharelocks.md)
+        order_by: [asc: relation.nephew_hash, asc: relation.uncle_hash],
+        lock: "FOR NO KEY UPDATE"
+      )
+
+    Repo.update_all(
+      from(
+        relation in SecondDegreeRelation,
+        join: locked in subquery(locked_query),
+        on: relation.nephew_hash == locked.nephew_hash and relation.uncle_hash == locked.uncle_hash
+      ),
+      set: [uncle_fetched_at: DateTime.utc_now()]
+    )
+  end
+
+  # Drops the stored uncles and their transactions and relations from the fetched data,
+  # as an uncle import must not change stored blocks.
+  defp reject_stored_uncles(%Blocks{} = blocks, stored_hashes) do
+    if Enum.empty?(stored_hashes) do
+      blocks
+    else
+      %Blocks{
+        blocks
+        | blocks_params: Enum.reject(blocks.blocks_params, &stored_hash?(Map.get(&1, :hash), stored_hashes)),
+          transactions_params:
+            Enum.reject(blocks.transactions_params, &stored_hash?(Map.get(&1, :block_hash), stored_hashes)),
+          block_second_degree_relations_params:
+            Enum.reject(
+              blocks.block_second_degree_relations_params,
+              &stored_hash?(Map.get(&1, :nephew_hash), stored_hashes)
+            )
+      }
+    end
+  end
+
+  defp stored_hash?(hash, stored_hashes) when is_binary(hash),
+    do: MapSet.member?(stored_hashes, String.downcase(hash))
+
+  defp stored_hash?(_hash, _stored_hashes), do: false
+
+  defp log_refetch([]), do: :ok
+
+  defp log_refetch(block_numbers) do
+    Logger.warning(fn ->
+      [
+        "Consensus blocks are fetched as uncles, set refetch_needed for their numbers: ",
+        inspect(Enum.sort(block_numbers))
+      ]
+    end)
+  end
+
+  defp import_blocks(%Blocks{blocks_params: [], errors: errors}, _block_fetcher, _original_entries), do: retry(errors)
+
+  defp import_blocks(
+         %Blocks{
+           blocks_params: blocks_params,
+           transactions_params: transactions_params,
+           block_second_degree_relations_params: block_second_degree_relations_params,
+           errors: errors
+         },
+         block_fetcher,
+         original_entries
+       ) do
     addresses_params = Addresses.extract_addresses(%{blocks: blocks_params, transactions: transactions_params})
 
     case Block.Fetcher.import(block_fetcher, %{
@@ -189,7 +316,10 @@ defmodule Indexer.Fetcher.UncleBlock do
   end
 
   defp uncle_blocks(chain_import_options) do
-    put_in(chain_import_options, [:blocks, :params, Access.all(), :consensus], false)
+    chain_import_options
+    |> put_in([:blocks, :params, Access.all(), :consensus], false)
+    # do not overwrite a block that a concurrent import stored after `run_blocks/3` checked the uncles
+    |> put_in([:blocks, :on_conflict], :nothing)
   end
 
   defp fork_transactions(chain_import_options) do
