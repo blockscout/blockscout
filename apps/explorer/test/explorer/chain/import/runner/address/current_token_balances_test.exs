@@ -661,6 +661,41 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
                  options
                )
     end
+
+    test "a holder of a token_id outside the batch stays a holder when the batch token_ids become positive", %{
+      address: %Address{hash: address_hash} = address,
+      options: options
+    } do
+      %Token{contract_address_hash: token_contract_address_hash} = insert(:token, type: "ERC-1155", holder_count: 1)
+
+      Enum.each([{1, 0, 1}, {2, 0, 1}, {3, 9, 3}], fn {token_id, value, block_number} ->
+        insert(:address_current_token_balance,
+          address: address,
+          token_contract_address_hash: token_contract_address_hash,
+          token_id: token_id,
+          token_type: "ERC-1155",
+          value: value,
+          block_number: block_number
+        )
+      end)
+
+      changes_list =
+        Enum.map([1, 2], fn token_id ->
+          %{
+            address_hash: address_hash,
+            token_contract_address_hash: token_contract_address_hash,
+            block_number: 2,
+            value: Decimal.new(5),
+            value_fetched_at: DateTime.utc_now(),
+            token_id: Decimal.new(token_id),
+            token_type: "ERC-1155"
+          }
+        end)
+
+      # token_ids 1 and 2 are the batch rows of the pair, token_id 3 already made the address a holder
+      assert {:ok, %{address_current_token_balances_update_token_holder_counts: []}} =
+               run_changes_list(changes_list, options)
+    end
   end
 
   defp run_changes(changes, options) when is_map(changes) do

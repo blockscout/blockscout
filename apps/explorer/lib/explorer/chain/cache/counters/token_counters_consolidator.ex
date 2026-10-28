@@ -234,7 +234,7 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidator do
             ^transfer_deltas
           ),
         on: token.contract_address_hash == deltas.hash,
-        where: token.contract_address_hash in subquery(tokens_lock_query(hashes)),
+        where: token.contract_address_hash in subquery(Token.lock_query(hashes)),
         where: token.counters_updated_at == deltas.expected_from,
         update: [
           set: [
@@ -286,7 +286,7 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidator do
   defp arm_holder_counts(hashes) do
     query =
       from(token in Token,
-        where: token.contract_address_hash in subquery(tokens_lock_query(hashes)),
+        where: token.contract_address_hash in subquery(Token.lock_query(hashes)),
         where: is_nil(token.holder_count),
         update: [set: [holder_count: 0, updated_at: ^DateTime.utc_now()]]
       )
@@ -368,7 +368,7 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidator do
             ^transfer_counts
           ),
         on: token.contract_address_hash == values.hash,
-        where: token.contract_address_hash in subquery(tokens_lock_query(hashes)),
+        where: token.contract_address_hash in subquery(Token.lock_query(hashes)),
         where: is_nil(token.counters_updated_at),
         update: [
           set: [
@@ -507,7 +507,7 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidator do
             ^transfer_deltas
           ),
         on: token.contract_address_hash == deltas.hash,
-        where: token.contract_address_hash in subquery(tokens_lock_query(hashes)),
+        where: token.contract_address_hash in subquery(Token.lock_query(hashes)),
         # only apply when the watermark is unchanged since the deltas were
         # computed; changed tokens are reset below for a full recalculation
         where: token.counters_updated_at == deltas.expected_watermark,
@@ -563,21 +563,8 @@ defmodule Explorer.Chain.Cache.Counters.TokenCountersConsolidator do
     Repo.all(query, timeout: query_timeout())
   end
 
-  # Enforce Token ShareLocks order (see docs: sharelocks.md)
-  defp tokens_lock_query(hashes_bytes) do
-    hashes = Enum.map(hashes_bytes, &%Hash{byte_count: 20, bytes: &1})
-
-    from(
-      token in Token,
-      where: token.contract_address_hash in ^hashes,
-      select: token.contract_address_hash,
-      order_by: token.contract_address_hash,
-      lock: "FOR NO KEY UPDATE"
-    )
-  end
-
   defp covered_tokens_lock_query(hashes_bytes, min_block_number) do
-    where(tokens_lock_query(hashes_bytes), [token], token.counters_updated_at >= ^min_block_number)
+    where(Token.lock_query(hashes_bytes), [token], token.counters_updated_at >= ^min_block_number)
   end
 
   defp burn_address_bytes do
