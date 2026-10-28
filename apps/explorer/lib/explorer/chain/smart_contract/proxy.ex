@@ -65,7 +65,14 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
   @zero_address_hash_string "0x0000000000000000000000000000000000000000"
   @zero_bytes32_string "0x0000000000000000000000000000000000000000000000000000000000000000"
-  @revert_error_message_markers ["execution reverted", "vm execution error"]
+  # Revert wording differs between node clients:
+  # - Geth/Erigon/Reth/Anvil: "execution reverted" (also EIP-1474 code 3)
+  # - Besu: "Execution reverted"
+  # - Frontier (Moonbeam, Astar, Creditcoin, ...), Hardhat, Ganache:
+  #   "VM Exception while processing transaction: revert" with code -32603
+  # - Nethermind: "VM execution error." with code -32015
+  # A bare "revert" marker covers all of the above except Nethermind.
+  @revert_error_message_markers ["revert", "vm execution error"]
 
   @type options :: [{:api?, true | false}]
 
@@ -363,8 +370,18 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   defp handle_response({:storage, _}, %{result: result}) when is_binary(result), do: {:ok, result}
   defp handle_response({:call, _}, %{result: result}) when is_binary(result), do: {:ok, result}
 
-  defp handle_response({:call, _}, %{error: error}) do
-    if revert_error?(error), do: {:ok, nil}, else: :error
+  defp handle_response({:call, data}, %{error: error}) do
+    if revert_error?(error) do
+      {:ok, nil}
+    else
+      # a non-revert error aborts the whole proxy detection batch, so make the
+      # reason visible instead of silently leaving the implementation unresolved
+      Logger.warning(
+        "Proxy implementation detection aborted: eth_call #{data} failed with a non-revert error: #{inspect(error)}"
+      )
+
+      :error
+    end
   end
 
   defp handle_response(_, _), do: :error

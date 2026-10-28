@@ -360,6 +360,47 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
       assert Proxy.fetch_value({:call, "0x5c60da1b"}, address.hash) == {:ok, nil}
     end
 
+    test "returns nil when eth_call reverts with a Frontier-style message", %{address: address} do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:error, %{code: -32603, message: "VM Exception while processing transaction: revert", data: "0x"}}
+      end)
+
+      assert Proxy.fetch_value({:call, "0x5c60da1b"}, address.hash) == {:ok, nil}
+    end
+
+    test "returns nil when eth_call reverts with a Nethermind-style message", %{address: address} do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:error, %{code: -32015, message: "VM execution error.", data: "Reverted 0x"}}
+      end)
+
+      assert Proxy.fetch_value({:call, "0x5c60da1b"}, address.hash) == {:ok, nil}
+    end
+
+    test "keeps storage values when a batched eth_call reverts with a Frontier-style message", %{address: address} do
+      storage_req = {:storage, "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"}
+      call_req = {:call, "0x5c60da1b"}
+      implementation = "0x000000000000000000000000fe69297fa372d6b480ad75863784d9254bc74099"
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn requests, _ ->
+        responses =
+          Enum.map(requests, fn
+            %{id: id, method: "eth_getStorageAt"} ->
+              %{id: id, result: implementation}
+
+            %{id: id, method: "eth_call"} ->
+              %{
+                id: id,
+                error: %{code: -32603, message: "VM Exception while processing transaction: revert", data: "0x"}
+              }
+          end)
+
+        {:ok, responses}
+      end)
+
+      assert Proxy.fetch_values([storage_req, call_req], address.hash) ==
+               {:ok, %{storage_req => implementation, call_req => nil}}
+    end
+
     test "returns error when eth_call fails with a non-binary error message", %{address: address} do
       expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
         {:error, %{message: {:closed, :timeout}}}
