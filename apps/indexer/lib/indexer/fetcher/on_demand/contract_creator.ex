@@ -2,6 +2,18 @@
 defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   @moduledoc """
   Ensures that we have a smart-contract creator address indexed.
+
+  The lookup state is kept in the `:contract_creator_lookup` ETS table:
+
+    * `{address_hash_string, {:in_progress, lookup_ref} | block_number, updated_at}` - the
+      lookup of the contract creation block of the address is running or has found the block;
+    * `{{:pending_block, block_number}, [address_hash_string]}` - the addresses whose
+      contract creation block is waiting to be imported.
+
+  Address entries expire after an hour. The cleanup after block import runs only on the
+  node that imports blocks, so on the other nodes an address whose creator is still
+  unknown is looked up again once its entry has expired. A lookup can outlive its entry,
+  so its result is applied only while the entry still holds the lookup's `lookup_ref`.
   """
 
   require Logger
@@ -19,8 +31,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   alias Indexer.Fetcher.InternalTransaction
 
   @table_name :contract_creator_lookup
-  @pending_blocks_cache_key "pending_blocks"
   @max_json_rpc_retries 5
+  @entry_ttl :timer.hours(1)
+  @sweep_interval :timer.minutes(10)
 
   def start_link(_) do
     if :ets.whereis(@table_name) == :undefined do
@@ -59,19 +72,10 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
          true <- is_nil(creator_hash),
          false <- Address.eoa_with_code?(address),
          true <- table_exists?(),
-         {:address_lookup, [{_, contract_creation_block_number}]} <-
-           {:address_lookup, :ets.lookup(@table_name, address_cache_name(address.hash))},
-         {:pending_blocks_lookup, [{@pending_blocks_cache_key, blocks}]} <-
-           {:pending_blocks_lookup, :ets.lookup(@table_name, @pending_blocks_cache_key)},
-         contract_creation_block when is_nil(contract_creation_block) <-
-           Enum.find(blocks, fn %{block_number: block_number} ->
-             block_number == contract_creation_block_number
-           end) do
+         # neither a running lookup nor a found block waiting for import is restarted until the entry expires
+         false <- fresh_entry?(address_cache_name(address.hash)) do
       GenServer.cast(__MODULE__, {:fetch, address})
     else
-      {:address_lookup, []} ->
-        GenServer.cast(__MODULE__, {:fetch, address})
-
       _ ->
         :ignore
     end
@@ -88,6 +92,15 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     }
 
     find_contract_creation_block_number(initial_block_ranges, address_hash, @max_json_rpc_retries)
+  catch
+    # a crashed lookup must still report a result, otherwise the address stays :in_progress until the entry expires
+    kind, reason ->
+      Logger.error(
+        "Error while looking up contract creation block for address #{to_string(address_hash)}: " <>
+          Exception.format(kind, reason, __STACKTRACE__)
+      )
+
+      :error
   end
 
   defp find_contract_creation_block_number(block_ranges, address_hash, retries_left) do
@@ -166,43 +179,72 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
   @impl true
   def init([]) do
+    schedule_sweep()
+
     {:ok, %{}}
   end
 
   @impl true
   def handle_cast({:fetch, address}, state) do
     address_hash = address.hash
-    :ets.insert(@table_name, {address_cache_name(address_hash), :in_progress})
+    key = address_cache_name(address_hash)
 
-    Task.start(fn ->
-      result = fetch_contract_creator_address_hash(address_hash)
-      GenServer.cast(__MODULE__, {:fetch_result, address_hash, result})
-    end)
+    # several requests can cast a fetch for the same address before the first cast is handled
+    unless fresh_entry?(key) do
+      forget_pending_block(key)
+      lookup_ref = make_ref()
+      :ets.insert(@table_name, {key, {:in_progress, lookup_ref}, now()})
+
+      Task.start(fn ->
+        result = fetch_contract_creator_address_hash(address_hash)
+        GenServer.cast(__MODULE__, {:fetch_result, address_hash, lookup_ref, result})
+      end)
+    end
 
     {:noreply, state}
   end
 
   @impl true
-  def handle_cast({:fetch_result, address_hash, contract_creation_block_number}, state)
-      when is_integer(contract_creation_block_number) do
-    address_hash_string = to_string(address_hash)
+  def handle_cast({:fetch_result, address_hash, lookup_ref, result}, state) do
+    key = address_cache_name(address_hash)
 
-    pending_blocks =
-      case pending_blocks_cache() do
-        [] ->
-          []
+    # the entry may have expired and been taken over by a newer lookup, its state must not be overwritten
+    case :ets.lookup(@table_name, key) do
+      [{^key, {:in_progress, ^lookup_ref}, _updated_at}] ->
+        apply_fetch_result(address_hash, key, result)
 
-        [{_, pending_blocks}] ->
-          pending_blocks
-      end
+      _ ->
+        Logger.warning(
+          "Dropping outdated contract creation block lookup result for address #{to_string(address_hash)}: #{inspect(result)}"
+        )
+    end
 
-    updated_pending_blocks = [
-      %{block_number: contract_creation_block_number, address_hash_string: address_hash_string}
-      | Enum.reject(pending_blocks, fn %{address_hash_string: addr} -> addr == address_hash_string end)
-    ]
+    {:noreply, state}
+  end
 
-    :ets.insert(@table_name, {address_cache_name(address_hash), contract_creation_block_number})
-    :ets.insert(@table_name, {@pending_blocks_cache_key, updated_pending_blocks})
+  @impl true
+  def handle_cast({:update_pending_contract_creator_cache, imported}, state) do
+    imported
+    |> Map.get(:blocks, [])
+    |> Enum.each(&remove_imported_block(Map.get(&1, :number)))
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(:sweep, state) do
+    sweep_expired_entries()
+    schedule_sweep()
+
+    {:noreply, state}
+  end
+
+  def handle_info(_message, state), do: {:noreply, state}
+
+  defp apply_fetch_result(_address_hash, key, contract_creation_block_number)
+       when is_integer(contract_creation_block_number) do
+    :ets.insert(@table_name, {key, contract_creation_block_number, now()})
+    add_to_block_index(contract_creation_block_number, key)
 
     # Change `1` to specific label when `priority` field becomes `Ecto.Enum`.
     priority = 1
@@ -221,53 +263,18 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
         MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], priority)
       end
     end
-
-    {:noreply, state}
   end
 
-  @impl true
-  def handle_cast({:fetch_result, address_hash, unexpected_value}, state) do
+  defp apply_fetch_result(address_hash, key, unexpected_value) do
     Logger.error(
       "Unexpected contract creation block number for address #{to_string(address_hash)}: #{inspect(unexpected_value)}"
     )
 
-    :ets.delete(@table_name, address_cache_name(address_hash))
-
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_cast({:update_pending_contract_creator_cache, imported}, state) do
-    imported_block_numbers =
-      imported
-      |> Map.get(:blocks, [])
-      |> Enum.map(&Map.get(&1, :number))
-
-    maybe_update_pending_contract_creator_cache(imported_block_numbers)
-
-    {:noreply, state}
+    :ets.delete(@table_name, key)
   end
 
   defp address_cache_name(address_hash) do
     to_string(address_hash)
-  end
-
-  # Retrieves the cached list of blocks where contract creator lookup is pending from the ETS table.
-
-  # The function looks up the ETS table using the key `"pending_blocks"` and returns
-  # a list of tuples where each tuple contains a string (representing the block identifier)
-  # and a list of maps (representing the block data).
-
-  # ## Returns
-
-  # - `[{String.t(), [map()]}]`: A list of tuples containing block identifiers and their associated data.
-  @spec pending_blocks_cache() :: [{String.t(), [map()]}]
-  defp pending_blocks_cache do
-    if table_exists?() do
-      :ets.lookup(@table_name, @pending_blocks_cache_key)
-    else
-      []
-    end
   end
 
   defp table_exists? do
@@ -275,8 +282,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   end
 
   @doc """
-  Asynchronously updates value of ETS cache :contract_creator_lookup for key "pending_blocks":
-  removes block from the cache since the block has been imported.
+  Asynchronously removes the imported blocks from the pending blocks index of the
+  ETS cache :contract_creator_lookup, so that their addresses are checked again on
+  the next request.
   """
   @spec async_update_cache_of_contract_creator_on_demand(map()) :: :ok
   def async_update_cache_of_contract_creator_on_demand(imported) do
@@ -284,35 +292,75 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     :ok
   end
 
-  defp maybe_update_pending_contract_creator_cache([]), do: :ok
+  defp fresh_entry?(key) do
+    case :ets.lookup(@table_name, key) do
+      [{^key, _lookup_state, updated_at}] -> not expired?(updated_at)
+      _ -> false
+    end
+  end
 
-  defp maybe_update_pending_contract_creator_cache(imported_block_numbers) do
-    case pending_blocks_cache() do
-      [{@pending_blocks_cache_key, pending_blocks}] ->
-        update_pending_contract_creator_blocks(pending_blocks, imported_block_numbers)
+  defp expired?(updated_at), do: now() - updated_at > @entry_ttl
+
+  defp now, do: System.monotonic_time(:millisecond)
+
+  defp add_to_block_index(block_number, key) do
+    index_key = {:pending_block, block_number}
+
+    keys =
+      case :ets.lookup(@table_name, index_key) do
+        [{^index_key, keys}] -> List.delete(keys, key)
+        [] -> []
+      end
+
+    :ets.insert(@table_name, {index_key, [key | keys]})
+  end
+
+  # An expired entry of the address may still be referenced by the index of its block
+  defp forget_pending_block(key) do
+    case :ets.lookup(@table_name, key) do
+      [{^key, block_number, _updated_at}] when is_integer(block_number) -> remove_from_block_index(block_number, key)
+      _ -> :ok
+    end
+  end
+
+  defp remove_from_block_index(block_number, key) do
+    index_key = {:pending_block, block_number}
+
+    case :ets.lookup(@table_name, index_key) do
+      [{^index_key, keys}] ->
+        case List.delete(keys, key) do
+          [] -> :ets.delete(@table_name, index_key)
+          rest -> :ets.insert(@table_name, {index_key, rest})
+        end
 
       [] ->
         :ok
     end
   end
 
-  defp update_pending_contract_creator_blocks([], _imported_block_numbers), do: []
+  # The addresses of an imported block are checked again on the next request,
+  # their creator is expected to be indexed by then
+  defp remove_imported_block(block_number) do
+    # todo: emit event that contract creator updated for the contract. This was the purpose keeping address_hash_string in that cache key.
+    case :ets.take(@table_name, {:pending_block, block_number}) do
+      [{_index_key, keys}] -> Enum.each(keys, &:ets.match_delete(@table_name, {&1, block_number, :_}))
+      [] -> :ok
+    end
+  end
 
-  defp update_pending_contract_creator_blocks(pending_blocks, imported_block_numbers) do
-    updated_pending_block_numbers =
-      Enum.filter(pending_blocks, fn pending_block ->
-        if Enum.member?(imported_block_numbers, pending_block.block_number) do
-          # todo: emit event that contract creator updated for the contract. This was the purpose keeping address_hash_string in that cache key.
-          :ets.delete(@table_name, pending_block.address_hash_string)
-          false
-        else
-          true
-        end
-      end)
+  defp schedule_sweep do
+    Process.send_after(self(), :sweep, @sweep_interval)
+  end
 
-    :ets.insert(
-      @table_name,
-      {@pending_blocks_cache_key, updated_pending_block_numbers}
-    )
+  # Drops the address entries that outlived the TTL together with their block index records
+  defp sweep_expired_entries do
+    cutoff = now() - @entry_ttl
+
+    @table_name
+    |> :ets.select([{{:"$1", :"$2", :"$3"}, [{:<, :"$3", cutoff}], [{{:"$1", :"$2"}}]}])
+    |> Enum.each(fn {key, lookup_state} ->
+      if is_integer(lookup_state), do: remove_from_block_index(lookup_state, key)
+      :ets.delete(@table_name, key)
+    end)
   end
 end

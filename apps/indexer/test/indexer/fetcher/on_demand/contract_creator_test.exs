@@ -75,7 +75,32 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
       contract_address =
         insert(:address, contract_code: "0x1234")
 
-      :ets.insert(:contract_creator_lookup, {to_string(contract_address.hash), :in_progress})
+      :ets.insert(
+        :contract_creator_lookup,
+        {to_string(contract_address.hash), {:in_progress, make_ref()}, monotonic_now()}
+      )
+
+      assert :ignore =
+               ContractCreatorOnDemand.trigger_fetch(
+                 contract_address
+                 |> Repo.preload([:contract_creation_transaction])
+                 |> Address.maybe_preload_contract_creation_internal_transaction([])
+               )
+    end
+
+    test "does nothing if creation transaction block number lookup is in progress while other blocks are pending" do
+      contract_address =
+        insert(:address, contract_code: "0x1234")
+
+      other_contract_address = insert(:address, contract_code: "0x5678")
+
+      :ets.insert(
+        :contract_creator_lookup,
+        {to_string(contract_address.hash), {:in_progress, make_ref()}, monotonic_now()}
+      )
+
+      :ets.insert(:contract_creator_lookup, {to_string(other_contract_address.hash), 12345, monotonic_now()})
+      :ets.insert(:contract_creator_lookup, {{:pending_block, 12345}, [to_string(other_contract_address.hash)]})
 
       assert :ignore =
                ContractCreatorOnDemand.trigger_fetch(
@@ -89,7 +114,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
       contract_address =
         insert(:address, contract_code: "0x1234")
 
-      :ets.insert(:contract_creator_lookup, {to_string(contract_address.hash), 12345})
+      :ets.insert(:contract_creator_lookup, {to_string(contract_address.hash), 12345, monotonic_now()})
 
       assert :ignore =
                ContractCreatorOnDemand.trigger_fetch(
@@ -103,12 +128,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
       contract_address =
         insert(:address, contract_code: "0x1234")
 
-      :ets.insert(:contract_creator_lookup, {to_string(contract_address.hash), 12345})
-
-      :ets.insert(
-        :contract_creator_lookup,
-        {"pending_blocks", [%{block_number: 12345, address_hash_string: to_string(contract_address.hash)}]}
-      )
+      :ets.insert(:contract_creator_lookup, {to_string(contract_address.hash), 12345, monotonic_now()})
+      :ets.insert(:contract_creator_lookup, {{:pending_block, 12345}, [to_string(contract_address.hash)]})
 
       assert :ignore =
                ContractCreatorOnDemand.trigger_fetch(
@@ -161,8 +182,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
 
       assert [%{from_number: 3, to_number: 3, priority: 1}] = Repo.all(MissingBlockRange)
 
-      assert :ets.lookup(:contract_creator_lookup, "pending_blocks") == [
-               {"pending_blocks", [%{block_number: 3, address_hash_string: contract_address_hash}]}
+      assert :ets.lookup(:contract_creator_lookup, {:pending_block, 3}) == [
+               {{:pending_block, 3}, [contract_address_hash]}
              ]
     end
 
@@ -204,8 +225,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
 
     assert [%{from_number: 2, to_number: 2, priority: 1}] = Repo.all(MissingBlockRange)
 
-    assert :ets.lookup(:contract_creator_lookup, "pending_blocks") == [
-             {"pending_blocks", [%{block_number: 2, address_hash_string: contract_address_hash}]}
+    assert :ets.lookup(:contract_creator_lookup, {:pending_block, 2}) == [
+             {{:pending_block, 2}, [contract_address_hash]}
            ]
   end
 
@@ -239,8 +260,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
 
     assert [%{from_number: 1, to_number: 1, priority: 1}] = Repo.all(MissingBlockRange)
 
-    assert :ets.lookup(:contract_creator_lookup, "pending_blocks") == [
-             {"pending_blocks", [%{block_number: 1, address_hash_string: contract_address_hash}]}
+    assert :ets.lookup(:contract_creator_lookup, {:pending_block, 1}) == [
+             {{:pending_block, 1}, [contract_address_hash]}
            ]
   end
 
@@ -342,17 +363,13 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
 
     :timer.sleep(300)
 
-    # Must be the resolved integer, not the :in_progress atom that was written at fetch start
-    assert :ets.lookup(:contract_creator_lookup, contract_address_hash) == [
-             {contract_address_hash, 3}
-           ]
+    # Must be the resolved integer, not the {:in_progress, _} state that was written at fetch start
+    assert [{^contract_address_hash, 3, _updated_at}] = :ets.lookup(:contract_creator_lookup, contract_address_hash)
   end
 
-  # Regression: Enum.member?(pending_blocks, block_number) compared an integer against a
-  # list of maps and was always false, allowing the same address to accumulate duplicate
-  # entries in pending_blocks. The fix uses Enum.reject/2 on address_hash_string so a
-  # stale entry is replaced rather than duplicated.
-  test "replaces a stale pending_blocks entry for the same address instead of duplicating it" do
+  # An entry that outlived the TTL is looked up again, and the address moves from the index
+  # of its stale block to the block found by the new lookup instead of being listed twice.
+  test "looks up an expired entry again and replaces its stale pending block" do
     contract_address =
       insert(:address, contract_code: "0x1234")
 
@@ -366,13 +383,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
 
     contract_address_hash = to_string(contract_address.hash)
 
-    # Pre-seed a stale pending_blocks entry for the same address at a different block (999).
-    # Without the fix, Enum.member?(pending_blocks, 3) would be false (integer vs map),
-    # the new entry would be prepended, and the list would grow to two entries.
-    :ets.insert(
-      :contract_creator_lookup,
-      {"pending_blocks", [%{block_number: 999, address_hash_string: contract_address_hash}]}
-    )
+    :ets.insert(:contract_creator_lookup, {contract_address_hash, 999, monotonic_now() - :timer.hours(24)})
+    :ets.insert(:contract_creator_lookup, {{:pending_block, 999}, [contract_address_hash]})
 
     EthereumJSONRPC.Mox
     |> eth_get_transaction_count_mock(contract_address_hash, "0x2", "0x0")
@@ -387,11 +399,148 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
 
     :timer.sleep(300)
 
-    # Exactly one entry for this address — the stale block 999 entry was replaced
-    assert :ets.lookup(:contract_creator_lookup, "pending_blocks") == [
-             {"pending_blocks", [%{block_number: 3, address_hash_string: contract_address_hash}]}
+    assert [] == :ets.lookup(:contract_creator_lookup, {:pending_block, 999})
+
+    assert :ets.lookup(:contract_creator_lookup, {:pending_block, 3}) == [
+             {{:pending_block, 3}, [contract_address_hash]}
            ]
+
+    assert [{^contract_address_hash, 3, _updated_at}] = :ets.lookup(:contract_creator_lookup, contract_address_hash)
   end
+
+  test "starts a single lookup when fetches for the same address arrive before the first one is handled" do
+    contract_address =
+      insert(:address, contract_code: "0x1234")
+
+    now = Timex.now()
+
+    Enum.each(0..4, fn i ->
+      insert(:block, number: i, refetch_needed: i == 3, timestamp: Timex.shift(now, minutes: -i))
+    end)
+
+    Explorer.Chain.Cache.BlockNumber.get_max()
+
+    contract_address_hash = to_string(contract_address.hash)
+    test_pid = self()
+
+    stub(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                              method: "eth_getTransactionCount",
+                                              params: [^contract_address_hash, block_number]
+                                            },
+                                            _ ->
+      send(test_pid, {:eth_get_transaction_count, block_number})
+      {:ok, if(block_number == "0x2", do: "0x0", else: "0x1")}
+    end)
+
+    GenServer.cast(ContractCreatorOnDemand, {:fetch, contract_address})
+    GenServer.cast(ContractCreatorOnDemand, {:fetch, contract_address})
+
+    assert_receive {:eth_get_transaction_count, "0x2"}
+    assert_receive {:eth_get_transaction_count, "0x3"}
+    refute_receive {:eth_get_transaction_count, _}, 500
+
+    assert [{^contract_address_hash, 3, _updated_at}] = :ets.lookup(:contract_creator_lookup, contract_address_hash)
+  end
+
+  test "clears the in-progress mark when the lookup crashes" do
+    contract_address =
+      insert(:address, contract_code: "0x1234")
+
+    now = Timex.now()
+
+    Enum.each(0..4, fn i ->
+      insert(:block, number: i, timestamp: Timex.shift(now, minutes: -i))
+    end)
+
+    Explorer.Chain.Cache.BlockNumber.get_max()
+
+    contract_address_hash = to_string(contract_address.hash)
+
+    stub(EthereumJSONRPC.Mox, :json_rpc, fn _request, _options -> raise "unexpected response" end)
+
+    assert :ok =
+             ContractCreatorOnDemand.trigger_fetch(
+               contract_address
+               |> Repo.preload([:contract_creation_transaction])
+               |> Address.maybe_preload_contract_creation_internal_transaction([])
+             )
+
+    :timer.sleep(300)
+
+    assert [] == :ets.lookup(:contract_creator_lookup, contract_address_hash)
+  end
+
+  test "removes the addresses of imported blocks from the cache" do
+    imported_hash = to_string(build(:address).hash)
+    pending_hash = to_string(build(:address).hash)
+
+    :ets.insert(:contract_creator_lookup, {imported_hash, 3, monotonic_now()})
+    :ets.insert(:contract_creator_lookup, {{:pending_block, 3}, [imported_hash]})
+    :ets.insert(:contract_creator_lookup, {pending_hash, 5, monotonic_now()})
+    :ets.insert(:contract_creator_lookup, {{:pending_block, 5}, [pending_hash]})
+
+    ContractCreatorOnDemand.async_update_cache_of_contract_creator_on_demand(%{blocks: [%{number: 3}]})
+    :sys.get_state(ContractCreatorOnDemand)
+
+    assert [] == :ets.lookup(:contract_creator_lookup, imported_hash)
+    assert [] == :ets.lookup(:contract_creator_lookup, {:pending_block, 3})
+    assert [{^pending_hash, 5, _updated_at}] = :ets.lookup(:contract_creator_lookup, pending_hash)
+    assert [{{:pending_block, 5}, [^pending_hash]}] = :ets.lookup(:contract_creator_lookup, {:pending_block, 5})
+  end
+
+  test "sweeps expired entries together with their pending blocks" do
+    expired_hash = to_string(build(:address).hash)
+    expired_in_progress_hash = to_string(build(:address).hash)
+    fresh_hash = to_string(build(:address).hash)
+    expired_at = monotonic_now() - :timer.hours(24)
+
+    :ets.insert(:contract_creator_lookup, {expired_hash, 7, expired_at})
+    :ets.insert(:contract_creator_lookup, {{:pending_block, 7}, [expired_hash]})
+    :ets.insert(:contract_creator_lookup, {expired_in_progress_hash, {:in_progress, make_ref()}, expired_at})
+    :ets.insert(:contract_creator_lookup, {fresh_hash, 8, monotonic_now()})
+    :ets.insert(:contract_creator_lookup, {{:pending_block, 8}, [fresh_hash]})
+
+    send(Process.whereis(ContractCreatorOnDemand), :sweep)
+    :sys.get_state(ContractCreatorOnDemand)
+
+    assert [] == :ets.lookup(:contract_creator_lookup, expired_hash)
+    assert [] == :ets.lookup(:contract_creator_lookup, {:pending_block, 7})
+    assert [] == :ets.lookup(:contract_creator_lookup, expired_in_progress_hash)
+    assert [{^fresh_hash, 8, _updated_at}] = :ets.lookup(:contract_creator_lookup, fresh_hash)
+    assert [{{:pending_block, 8}, [^fresh_hash]}] = :ets.lookup(:contract_creator_lookup, {:pending_block, 8})
+  end
+
+  test "drops the result of a lookup whose entry was taken over by a newer lookup" do
+    address_hash = build(:address).hash
+    address_hash_string = to_string(address_hash)
+    newer_lookup_ref = make_ref()
+
+    :ets.insert(:contract_creator_lookup, {address_hash_string, {:in_progress, newer_lookup_ref}, monotonic_now()})
+
+    GenServer.cast(ContractCreatorOnDemand, {:fetch_result, address_hash, make_ref(), 3})
+    GenServer.cast(ContractCreatorOnDemand, {:fetch_result, address_hash, make_ref(), :error})
+    :sys.get_state(ContractCreatorOnDemand)
+
+    assert [{^address_hash_string, {:in_progress, ^newer_lookup_ref}, _updated_at}] =
+             :ets.lookup(:contract_creator_lookup, address_hash_string)
+
+    assert [] == :ets.lookup(:contract_creator_lookup, {:pending_block, 3})
+    assert [] == Repo.all(MissingBlockRange)
+  end
+
+  test "drops the result of a lookup whose entry has been swept" do
+    address_hash = build(:address).hash
+    address_hash_string = to_string(address_hash)
+
+    GenServer.cast(ContractCreatorOnDemand, {:fetch_result, address_hash, make_ref(), 3})
+    :sys.get_state(ContractCreatorOnDemand)
+
+    assert [] == :ets.lookup(:contract_creator_lookup, address_hash_string)
+    assert [] == :ets.lookup(:contract_creator_lookup, {:pending_block, 3})
+    assert [] == Repo.all(MissingBlockRange)
+  end
+
+  defp monotonic_now, do: System.monotonic_time(:millisecond)
 
   defp eth_get_transaction_count_mock(mox, contract_address_hash, block_number, nonce) do
     mox
