@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Chain.SmartContract.ProxyTest do
   use Explorer.DataCase, async: false
+  import ExUnit.CaptureLog
   import Mox
   alias Explorer.Chain.Hash
   alias Explorer.Chain.SmartContract
@@ -399,6 +400,21 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
 
       assert Proxy.fetch_values([storage_req, call_req], address.hash) ==
                {:ok, %{storage_req => implementation, call_req => nil}}
+    end
+
+    test "returns error for a transport error even if the RPC URL contains a revert marker", %{address: address} do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:error, {:bad_gateway, "https://revert-rpc.example.com/v1/secret-api-key"}}
+      end)
+
+      log =
+        capture_log(fn ->
+          assert Proxy.fetch_value({:call, "0x5c60da1b"}, address.hash) == :error
+        end)
+
+      assert log =~ "Proxy implementation detection aborted"
+      assert log =~ "bad_gateway"
+      refute log =~ "secret-api-key"
     end
 
     test "returns error when eth_call fails with a non-binary error message", %{address: address} do
