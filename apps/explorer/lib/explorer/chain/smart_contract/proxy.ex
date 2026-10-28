@@ -65,7 +65,14 @@ defmodule Explorer.Chain.SmartContract.Proxy do
 
   @zero_address_hash_string "0x0000000000000000000000000000000000000000"
   @zero_bytes32_string "0x0000000000000000000000000000000000000000000000000000000000000000"
-  @revert_error_message_markers ["execution reverted", "vm execution error"]
+  # Revert wording differs between node clients:
+  # - Geth/Erigon/Reth/Anvil: "execution reverted" (also EIP-1474 code 3)
+  # - Besu: "Execution reverted"
+  # - Frontier (Moonbeam, Astar, Creditcoin, ...), Hardhat, Ganache:
+  #   "VM Exception while processing transaction: revert" with code -32603
+  # - Nethermind: "VM execution error." with code -32015
+  # A bare "revert" marker covers all of the above except Nethermind.
+  @revert_error_message_markers ["revert", "vm execution error"]
 
   @type options :: [{:api?, true | false}]
 
@@ -363,26 +370,64 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   defp handle_response({:storage, _}, %{result: result}) when is_binary(result), do: {:ok, result}
   defp handle_response({:call, _}, %{result: result}) when is_binary(result), do: {:ok, result}
 
-  defp handle_response({:call, _}, %{error: error}) do
-    if revert_error?(error), do: {:ok, nil}, else: :error
+  defp handle_response({:call, data}, %{error: error}) do
+    error = normalize_error(error)
+
+    if revert_error?(error) do
+      {:ok, nil}
+    else
+      # a non-revert error aborts the whole proxy detection batch, so make the
+      # reason visible instead of silently leaving the implementation unresolved
+      Logger.warning(
+        "Proxy implementation detection aborted: eth_call #{data} failed with a non-revert error: #{error_summary(error)}"
+      )
+
+      :error
+    end
   end
 
   defp handle_response(_, _), do: :error
 
+  # HTTP and batched IPC responses are standardized to atom keys by the
+  # transport, but a single-call IPC error is passed through as the raw decoded
+  # JSON map with string keys
+  defp normalize_error(%{} = error) when is_map_key(error, "code") or is_map_key(error, "message") do
+    %{code: error["code"], message: error["message"], data: error["data"]}
+  end
+
+  defp normalize_error(error), do: error
+
   # error code 3 is the standard EIP-1474 code for reverted execution
   defp revert_error?(%{code: 3}), do: true
 
-  defp revert_error?(error) do
+  # Only an actual RPC error message can describe a revert. Transport errors
+  # such as `{:bad_gateway, url}`, `:timeout` or `%{message: {:closed, :timeout}}`
+  # are never reverts, and must not be matched against the markers (a URL
+  # containing "revert" would otherwise be misclassified).
+  defp revert_error?(%{message: message}) when is_binary(message), do: revert_message?(message)
+  defp revert_error?(message) when is_binary(message), do: revert_message?(message)
+  defp revert_error?(_), do: false
+
+  defp revert_message?(message) do
     # revert message casing differs between node clients (e.g. Geth "execution
     # reverted" vs Besu "Execution reverted"), so match case-insensitively
-    message = error |> error_message() |> String.downcase()
+    downcased = String.downcase(message)
 
-    Enum.any?(@revert_error_message_markers, &String.contains?(message, &1))
+    Enum.any?(@revert_error_message_markers, &String.contains?(downcased, &1))
   end
 
-  defp error_message(%{message: message}) when is_binary(message), do: message
-  defp error_message(error) when is_binary(error) or is_atom(error), do: to_string(error)
-  defp error_message(error), do: inspect(error)
+  # Short, credential-free description of a non-revert error for logging.
+  # Transport errors like `{:bad_gateway, url}` carry the RPC URL, which may
+  # embed an API key, so only the error category is logged for those.
+  defp error_summary(%{code: code, message: message}) when is_integer(code) and is_binary(message),
+    do: "code #{code}: #{message}"
+
+  defp error_summary(%{message: message}) when is_binary(message), do: message
+  defp error_summary(%{message: message}), do: error_summary(message)
+  defp error_summary(%{reason: reason}) when is_atom(reason), do: to_string(reason)
+  defp error_summary({category, _}) when is_atom(category), do: to_string(category)
+  defp error_summary(error) when is_atom(error) or is_binary(error), do: to_string(error)
+  defp error_summary(_), do: "unrecognized error"
 
   @doc """
   Returns combined ABI from proxy and implementation smart-contracts
