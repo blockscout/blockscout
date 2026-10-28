@@ -371,6 +371,8 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   defp handle_response({:call, _}, %{result: result}) when is_binary(result), do: {:ok, result}
 
   defp handle_response({:call, data}, %{error: error}) do
+    error = normalize_error(error)
+
     if revert_error?(error) do
       {:ok, nil}
     else
@@ -385,6 +387,15 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   end
 
   defp handle_response(_, _), do: :error
+
+  # HTTP and batched IPC responses are standardized to atom keys by the
+  # transport, but a single-call IPC error is passed through as the raw decoded
+  # JSON map with string keys
+  defp normalize_error(%{} = error) when is_map_key(error, "code") or is_map_key(error, "message") do
+    %{code: error["code"], message: error["message"], data: error["data"]}
+  end
+
+  defp normalize_error(error), do: error
 
   # error code 3 is the standard EIP-1474 code for reverted execution
   defp revert_error?(%{code: 3}), do: true
@@ -408,7 +419,9 @@ defmodule Explorer.Chain.SmartContract.Proxy do
   # Short, credential-free description of a non-revert error for logging.
   # Transport errors like `{:bad_gateway, url}` carry the RPC URL, which may
   # embed an API key, so only the error category is logged for those.
-  defp error_summary(%{code: code, message: message}) when is_binary(message), do: "code #{code}: #{message}"
+  defp error_summary(%{code: code, message: message}) when is_integer(code) and is_binary(message),
+    do: "code #{code}: #{message}"
+
   defp error_summary(%{message: message}) when is_binary(message), do: message
   defp error_summary(%{message: message}), do: error_summary(message)
   defp error_summary(%{reason: reason}) when is_atom(reason), do: to_string(reason)

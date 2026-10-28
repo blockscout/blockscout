@@ -402,6 +402,21 @@ defmodule Explorer.Chain.SmartContract.ProxyTest do
                {:ok, %{storage_req => implementation, call_req => nil}}
     end
 
+    test "returns nil when a single-call IPC error with string keys is a revert", %{address: address} do
+      # the IPC transport passes single-call errors through as raw decoded JSON
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:error, %{"code" => -32603, "message" => "VM Exception while processing transaction: revert", "data" => "0x"}}
+      end)
+
+      assert Proxy.fetch_value({:call, "0x5c60da1b"}, address.hash) == {:ok, nil}
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
+        {:error, %{"code" => 3, "message" => "Reverted", "data" => "0x08c379a0"}}
+      end)
+
+      assert Proxy.fetch_value({:call, "0x5c60da1b"}, address.hash) == {:ok, nil}
+    end
+
     test "returns error for a transport error even if the RPC URL contains a revert marker", %{address: address} do
       expect(EthereumJSONRPC.Mox, :json_rpc, fn _, _ ->
         {:error, {:bad_gateway, "https://revert-rpc.example.com/v1/secret-api-key"}}
