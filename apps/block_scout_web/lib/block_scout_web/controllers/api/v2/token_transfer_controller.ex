@@ -20,6 +20,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
   import Explorer.Chain.Address.MetadataPreloader, only: [maybe_preload_ens_and_metadata: 2]
 
   alias Explorer.Chain.Token.Instance
+  alias Explorer.Chain.TokenTransfer.PoisoningAttack
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
 
@@ -95,6 +96,7 @@ defmodule BlockScoutWeb.API.V2.TokenTransferController do
       token_transfers:
         token_transfers
         |> Instance.preload_nft(@api_true)
+        |> PoisoningAttack.preload_for_token_transfers(@api_true)
         |> maybe_preload_ens_and_metadata(:token_transfers),
       decoded_transactions_map: decoded_transactions_map,
       next_page_params: next_page_params

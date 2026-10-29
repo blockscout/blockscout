@@ -65,7 +65,7 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
   - A list of `%Explorer.Utility.AddressIdToAddressHash{}` structs when
     `to_map?` is `false`
   """
-  @spec find_or_create_multiple([Hash.Address.t() | nil], true) :: %{optional(Hash.Address.t()) => integer()}
+  @spec find_or_create_multiple([Hash.Address.t() | nil], true) :: %{optional(String.t()) => integer()}
   @spec find_or_create_multiple([Hash.Address.t() | nil], false) :: [__MODULE__.t()]
   def find_or_create_multiple(address_hashes, to_map? \\ true) do
     filtered_address_hashes =

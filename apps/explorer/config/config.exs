@@ -27,6 +27,8 @@ config :explorer, Explorer.Chain.Cache.ContractMethods, enabled: true
 
 config :explorer, Explorer.Chain.Cache.AddressTags, enabled: true
 
+config :explorer, Explorer.Chain.TokenTransfer.PoisoningAttack.Recipients, enabled: true
+
 config :explorer, Explorer.Chain.Cache.Accounts.Refresher, enabled: true
 
 config :explorer, Explorer.Chain.Cache.Counters.TransactionsCount, enable_consolidation: true

@@ -51,6 +51,7 @@ defmodule Indexer.Block.Fetcher do
     SignedAuthorizationStatus,
     Token,
     TokenInstanceImporter,
+    TokenTransferPoisoning,
     UncleBlock
   }
 
@@ -763,6 +764,17 @@ defmodule Indexer.Block.Fetcher do
   end
 
   def async_import_replaced_transactions(_, _), do: :ok
+
+  @doc """
+  Hands the imported token transfers to the poisoning attack detection, along
+  with the transactions they came in.
+  """
+  @spec async_import_token_transfer_poisoning(map(), boolean()) :: :ok
+  def async_import_token_transfer_poisoning(%{token_transfers: [_ | _] = token_transfers} = imported, realtime?) do
+    TokenTransferPoisoning.async_fetch(token_transfers, Map.get(imported, :transactions, []), realtime?, 10_000)
+  end
+
+  def async_import_token_transfer_poisoning(_, _), do: :ok
 
   def async_import_celo_epoch_block_operations(%{celo_epochs: epochs}, realtime?) do
     CeloEpochBlockOperations.async_fetch(epochs, realtime?)

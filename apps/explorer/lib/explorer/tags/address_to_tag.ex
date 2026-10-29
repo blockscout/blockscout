@@ -117,6 +117,34 @@ defmodule Explorer.Tags.AddressToTag do
     end
   end
 
+  @doc """
+  Adds the tag to the given addresses, keeping the ones it already has.
+
+  Unlike `set_tag_to_addresses/2`, which makes the given list the complete
+  set of addresses carrying the tag, this only adds. Addresses missing from
+  the `addresses` table are skipped.
+  """
+  @spec add_tag_to_addresses(non_neg_integer(), [Hash.Address.t()]) :: {non_neg_integer(), nil}
+  def add_tag_to_addresses(_tag_id, []), do: {0, nil}
+
+  def add_tag_to_addresses(tag_id, address_hashes) do
+    now = DateTime.utc_now()
+
+    existing_hashes =
+      Address
+      |> where([address], address.hash in ^address_hashes)
+      |> select([address], address.hash)
+      |> Repo.all()
+
+    case Enum.map(existing_hashes, &%{tag_id: tag_id, address_hash: &1, inserted_at: now, updated_at: now}) do
+      [] ->
+        {0, nil}
+
+      entries ->
+        Repo.insert_all(__MODULE__, entries, on_conflict: :nothing, conflict_target: [:address_hash, :tag_id])
+    end
+  end
+
   defp build_address_to_tag_changeset(address_hash_string, tag_id) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          :ok <- Address.check_address_exists(address_hash) do
