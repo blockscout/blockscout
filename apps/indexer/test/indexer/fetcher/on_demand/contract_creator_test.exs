@@ -386,9 +386,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
     :ets.insert(:contract_creator_lookup, {contract_address_hash, 999, monotonic_now() - :timer.hours(24)})
     :ets.insert(:contract_creator_lookup, {{:pending_block, 999}, [contract_address_hash]})
 
-    EthereumJSONRPC.Mox
-    |> eth_get_transaction_count_mock(contract_address_hash, "0x2", "0x0")
-    |> eth_get_transaction_count_mock(contract_address_hash, "0x3", "0x1")
+    stub_eth_get_transaction_count(contract_address_hash, fn block_number ->
+      if block_number == "0x2", do: "0x0", else: "0x1"
+    end)
 
     assert :ok =
              ContractCreatorOnDemand.trigger_fetch(
@@ -397,7 +397,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
                |> Address.maybe_preload_contract_creation_internal_transaction([])
              )
 
-    :timer.sleep(300)
+    assert_receive {:eth_get_transaction_count, lookup_pid, "0x2"}, 1_000
+    await_lookup(lookup_pid)
 
     assert [] == :ets.lookup(:contract_creator_lookup, {:pending_block, 999})
 
@@ -421,25 +422,22 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
     Explorer.Chain.Cache.BlockNumber.get_max()
 
     contract_address_hash = to_string(contract_address.hash)
-    test_pid = self()
 
-    stub(EthereumJSONRPC.Mox, :json_rpc, fn %{
-                                              method: "eth_getTransactionCount",
-                                              params: [^contract_address_hash, block_number]
-                                            },
-                                            _ ->
-      send(test_pid, {:eth_get_transaction_count, block_number})
-      {:ok, if(block_number == "0x2", do: "0x0", else: "0x1")}
+    stub_eth_get_transaction_count(contract_address_hash, fn block_number ->
+      if block_number == "0x2", do: "0x0", else: "0x1"
     end)
 
     GenServer.cast(ContractCreatorOnDemand, {:fetch, contract_address})
     GenServer.cast(ContractCreatorOnDemand, {:fetch, contract_address})
 
-    assert_receive {:eth_get_transaction_count, "0x2"}
-    assert_receive {:eth_get_transaction_count, "0x3"}
-    refute_receive {:eth_get_transaction_count, _}, 500
+    assert_receive {:eth_get_transaction_count, lookup_pid, "0x2"}, 1_000
+    await_lookup(lookup_pid)
 
+    assert_received {:eth_get_transaction_count, ^lookup_pid, "0x3"}
     assert [{^contract_address_hash, 3, _updated_at}] = :ets.lookup(:contract_creator_lookup, contract_address_hash)
+
+    # both fetches are handled by now, a second lookup would repeat the calls from another process
+    refute_receive {:eth_get_transaction_count, _, _}, 500
   end
 
   test "clears the in-progress mark when the lookup crashes" do
@@ -456,7 +454,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
 
     contract_address_hash = to_string(contract_address.hash)
 
-    stub(EthereumJSONRPC.Mox, :json_rpc, fn _request, _options -> raise "unexpected response" end)
+    stub_eth_get_transaction_count(contract_address_hash, fn _block_number -> raise "unexpected response" end)
 
     assert :ok =
              ContractCreatorOnDemand.trigger_fetch(
@@ -465,7 +463,8 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
                |> Address.maybe_preload_contract_creation_internal_transaction([])
              )
 
-    :timer.sleep(300)
+    assert_receive {:eth_get_transaction_count, lookup_pid, "0x2"}, 1_000
+    await_lookup(lookup_pid)
 
     assert [] == :ets.lookup(:contract_creator_lookup, contract_address_hash)
   end
@@ -540,7 +539,69 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
     assert [] == Repo.all(MissingBlockRange)
   end
 
+  # Regression: when the address already had a nonce at block 0 (e.g. a genesis contract), the search
+  # moved the right border below block 0 and kept querying block 0 forever.
+  test "stops the lookup when the address already has a nonce at block 0" do
+    contract_address =
+      insert(:address, contract_code: "0x1234")
+
+    now = Timex.now()
+
+    Enum.each(0..4, fn i ->
+      insert(:block, number: i, timestamp: Timex.shift(now, minutes: -i))
+    end)
+
+    Explorer.Chain.Cache.BlockNumber.get_max()
+
+    contract_address_hash = to_string(contract_address.hash)
+
+    stub_eth_get_transaction_count(contract_address_hash, fn _block_number -> "0x1" end)
+
+    assert :ok =
+             ContractCreatorOnDemand.trigger_fetch(
+               contract_address
+               |> Repo.preload([:contract_creation_transaction])
+               |> Address.maybe_preload_contract_creation_internal_transaction([])
+             )
+
+    assert_receive {:eth_get_transaction_count, lookup_pid, "0x2"}, 1_000
+    # without the fix the lookup never ends
+    await_lookup(lookup_pid)
+
+    assert_received {:eth_get_transaction_count, ^lookup_pid, "0x1"}
+    assert_received {:eth_get_transaction_count, ^lookup_pid, "0x0"}
+    refute_received {:eth_get_transaction_count, _, _}
+
+    assert [{^contract_address_hash, :not_found, _updated_at}] =
+             :ets.lookup(:contract_creator_lookup, contract_address_hash)
+
+    assert [] == Repo.all(MissingBlockRange)
+  end
+
   defp monotonic_now, do: System.monotonic_time(:millisecond)
+
+  # Answers eth_getTransactionCount for the address with the nonce returned by `nonce_by_block`
+  # and reports every call to the test process along with the pid of the lookup that made it
+  defp stub_eth_get_transaction_count(contract_address_hash, nonce_by_block) do
+    test_pid = self()
+
+    stub(EthereumJSONRPC.Mox, :json_rpc, fn %{
+                                              method: "eth_getTransactionCount",
+                                              params: [^contract_address_hash, block_number]
+                                            },
+                                            _ ->
+      send(test_pid, {:eth_get_transaction_count, self(), block_number})
+      {:ok, nonce_by_block.(block_number)}
+    end)
+  end
+
+  # The lookup casts its result right before it exits, so once it is down the result is queued
+  # in the GenServer ahead of the :sys.get_state/1 request and has been applied when the call returns
+  defp await_lookup(lookup_pid) do
+    monitor_ref = Process.monitor(lookup_pid)
+    assert_receive {:DOWN, ^monitor_ref, :process, ^lookup_pid, _reason}, 1_000
+    :sys.get_state(ContractCreatorOnDemand)
+  end
 
   defp eth_get_transaction_count_mock(mox, contract_address_hash, block_number, nonce) do
     mox
