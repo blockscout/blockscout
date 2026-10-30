@@ -5,8 +5,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
   The lookup state is kept in the `:contract_creator_lookup` ETS table:
 
-    * `{address_hash_string, {:in_progress, lookup_ref} | block_number, updated_at}` - the
-      lookup of the contract creation block of the address is running or has found the block;
+    * `{address_hash_string, {:in_progress, lookup_ref} | block_number | :not_found, updated_at}` -
+      the lookup of the contract creation block of the address is running, has found the block,
+      or has found that the address already has a nonce at block 0 (e.g. a genesis contract);
     * `{{:pending_block, block_number}, [address_hash_string]}` - the addresses whose
       contract creation block is waiting to be imported.
 
@@ -81,7 +82,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     end
   end
 
-  @spec fetch_contract_creator_address_hash(Explorer.Chain.Hash.Address.t()) :: non_neg_integer() | :error
+  @spec fetch_contract_creator_address_hash(Explorer.Chain.Hash.Address.t()) :: non_neg_integer() | :not_found | :error
   defp fetch_contract_creator_address_hash(address_hash) do
     max_block_number = BlockNumber.get_max()
 
@@ -165,6 +166,11 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
   defp maybe_continue_binary_search(block_ranges, address_hash, nonce, retries_left) do
     cond do
+      # The address already has a nonce at the start of the range (e.g. it is allocated in genesis), so there is
+      # no creation block to find. Without this check the search keeps querying the same block forever.
+      block_ranges.right < block_ranges.left ->
+        :not_found
+
       block_ranges.left == block_ranges.right ->
         block_ranges.left
 
@@ -263,6 +269,11 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
         MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], priority)
       end
     end
+  end
+
+  # kept until the entry expires, so that the search is not repeated on every request
+  defp apply_fetch_result(_address_hash, key, :not_found) do
+    :ets.insert(@table_name, {key, :not_found, now()})
   end
 
   defp apply_fetch_result(address_hash, key, unexpected_value) do
