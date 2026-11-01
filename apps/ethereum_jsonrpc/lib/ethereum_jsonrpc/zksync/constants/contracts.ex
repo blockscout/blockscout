@@ -57,6 +57,7 @@ defmodule EthereumJSONRPC.ZkSync.Constants.Contracts do
   @selector_prove_batches "7f61885c"
   @selector_prove_batches_shared_bridge_c37533bb "c37533bb"
   @selector_prove_batches_shared_bridge_e12a6137 "e12a6137"
+  @selector_prove_batches_shared_bridge_9271e450 "9271e450"
 
   @doc """
     Returns selector of the `proveBatches` function
@@ -72,6 +73,11 @@ defmodule EthereumJSONRPC.ZkSync.Constants.Contracts do
     Returns selector of the `proveBatchesSharedBridge` function with selector e12a6137
   """
   def prove_batches_shared_bridge_e12a6137_selector, do: @selector_prove_batches_shared_bridge_e12a6137
+
+  @doc """
+    Returns selector of the `proveBatchesSharedBridge` function with selector 9271e450
+  """
+  def prove_batches_shared_bridge_9271e450_selector, do: @selector_prove_batches_shared_bridge_9271e450
 
   @doc """
     Returns selector with ABI (object of `ABI.FunctionSelector`) of the function:
@@ -129,6 +135,31 @@ defmodule EthereumJSONRPC.ZkSync.Constants.Contracts do
       types: [
         # _chainId
         {:uint, 256},
+        # _processBatchFrom
+        {:uint, 256},
+        # _processBatchTo
+        {:uint, 256},
+        # _proofData
+        :bytes
+      ]
+    }
+
+  @doc """
+    Returns selector with ABI (object of `ABI.FunctionSelector`) of the function:
+
+      proveBatchesSharedBridge(
+        address _chainAddress,
+        uint256 _processBatchFrom,
+        uint256 _processBatchTo,
+        bytes calldata _proofData
+      )
+  """
+  def prove_batches_shared_bridge_9271e450_selector_with_abi,
+    do: %ABI.FunctionSelector{
+      function: "proveBatchesSharedBridge",
+      types: [
+        # _chainAddress
+        :address,
         # _processBatchFrom
         {:uint, 256},
         # _processBatchTo
