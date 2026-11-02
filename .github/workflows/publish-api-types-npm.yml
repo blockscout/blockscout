@@ -21,7 +21,7 @@ on:
 
 env:
   OTP_VERSION: "28.5"
-  ELIXIR_VERSION: "1.20.4"
+  ELIXIR_VERSION: "1.20.5"
   NODE_VERSION: "22"
 
 permissions:
