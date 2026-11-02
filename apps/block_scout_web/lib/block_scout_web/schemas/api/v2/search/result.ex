@@ -491,6 +491,111 @@ defmodule BlockScoutWeb.Schemas.API.V2.Search.Result.TacOperation do
   })
 end
 
+defmodule BlockScoutWeb.Schemas.API.V2.Search.Result.Pool.Pool do
+  @moduledoc """
+  This module defines the schema for the pool object nested in a pool search result.
+
+  The object is returned by the `contracts-info` microservice and is proxied verbatim,
+  so this schema mirrors the microservice contract rather than describing a
+  Blockscout-owned struct.
+  """
+  require OpenApiSpex
+
+  alias BlockScoutWeb.Schemas.API.V2.General
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "Pool",
+    description: "DEX pool as returned by the contracts-info service.",
+    type: :object,
+    properties: %{
+      pool_id: %Schema{
+        type: :string,
+        nullable: false,
+        description: "Pool identifier: the pool ID for Uniswap v4 pools, the pool contract address otherwise.",
+        example: "0xe63e32b2ae40601662f760d6bf5d771057324fbd97784fe1d3717069f7b75d45"
+      },
+      contract_address: %Schema{type: :string, nullable: false},
+      chain_id: %Schema{
+        type: :string,
+        nullable: false,
+        description: "Either just `chain_id` or `chain_id:instance_id`",
+        example: "1"
+      },
+      is_contract: %Schema{type: :boolean, nullable: false},
+      base_token_address: General.AddressHash,
+      base_token_symbol: %Schema{type: :string, nullable: false},
+      base_token_icon_url: %Schema{type: :string, nullable: true},
+      quote_token_address: General.AddressHash,
+      quote_token_symbol: %Schema{type: :string, nullable: false},
+      quote_token_icon_url: %Schema{type: :string, nullable: true},
+      base_token_fully_diluted_valuation_usd: General.FloatStringNullable,
+      base_token_market_cap_usd: General.FloatStringNullable,
+      quote_token_fully_diluted_valuation_usd: General.FloatStringNullable,
+      quote_token_market_cap_usd: General.FloatStringNullable,
+      fee: General.FloatStringNullable,
+      liquidity: General.FloatStringNullable,
+      volume_usd_24h: General.FloatStringNullable,
+      dex: %Schema{
+        type: :object,
+        properties: %{
+          id: %Schema{type: :string, nullable: false, example: "uniswap-v4-ethereum"},
+          name: %Schema{type: :string, nullable: false, example: "Uniswap V4 (Ethereum)"}
+        },
+        required: [:id, :name],
+        additionalProperties: false,
+        nullable: false
+      },
+      coin_gecko_terminal_url: %Schema{type: :string, nullable: false}
+    },
+    required: [
+      :pool_id,
+      :contract_address,
+      :chain_id,
+      :is_contract,
+      :base_token_address,
+      :base_token_symbol,
+      :base_token_icon_url,
+      :quote_token_address,
+      :quote_token_symbol,
+      :quote_token_icon_url,
+      :base_token_fully_diluted_valuation_usd,
+      :base_token_market_cap_usd,
+      :quote_token_fully_diluted_valuation_usd,
+      :quote_token_market_cap_usd,
+      :fee,
+      :liquidity,
+      :volume_usd_24h,
+      :dex,
+      :coin_gecko_terminal_url
+    ],
+    additionalProperties: false
+  })
+end
+
+defmodule BlockScoutWeb.Schemas.API.V2.Search.Result.Pool do
+  @moduledoc """
+  Search result for a DEX pool found by its pool ID. `pool` is the pool object
+  returned by the external contracts-info microservice.
+  """
+  require OpenApiSpex
+
+  alias BlockScoutWeb.Schemas.API.V2.Search.Result
+  alias OpenApiSpex.Schema
+
+  OpenApiSpex.schema(%{
+    title: "SearchResultPool",
+    type: :object,
+    properties: %{
+      type: %Schema{type: :string, enum: ["pool"], nullable: false},
+      pool: Result.Pool.Pool,
+      priority: %Schema{type: :integer, nullable: false}
+    },
+    required: [:type, :pool, :priority],
+    additionalProperties: false
+  })
+end
+
 defmodule BlockScoutWeb.Schemas.API.V2.Search.Result.Item do
   @moduledoc """
   A single search result item. Discriminated union on `type`.
@@ -512,7 +617,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Search.Result.Item do
       Result.Transaction,
       Result.UserOperation,
       Result.Blob,
-      Result.TacOperation
+      Result.TacOperation,
+      Result.Pool
     ],
     discriminator: %OpenApiSpex.Discriminator{
       propertyName: "type",
@@ -527,7 +633,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Search.Result.Item do
         "transaction" => "#/components/schemas/SearchResultTransaction",
         "user_operation" => "#/components/schemas/SearchResultUserOperation",
         "blob" => "#/components/schemas/SearchResultBlob",
-        "tac_operation" => "#/components/schemas/SearchResultTacOperation"
+        "tac_operation" => "#/components/schemas/SearchResultTacOperation",
+        "pool" => "#/components/schemas/SearchResultPool"
       }
     }
   })

@@ -155,6 +155,14 @@ defmodule BlockScoutWeb.API.V2.SearchView do
     }
   end
 
+  def prepare_search_result(%{type: "pool"} = search_result) do
+    %{
+      "type" => search_result.type,
+      "pool" => search_result.pool,
+      "priority" => search_result.priority
+    }
+  end
+
   defp hash_to_string(%Hash{} = hash), do: to_string(hash)
 
   defp hash_to_string(bytes) do

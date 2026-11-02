@@ -8,6 +8,7 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
   alias Plug.Conn.Query
 
   @tac_operations_path "/api/v2/tac/operations"
+  @pool_id "0xe63e32b2ae40601662f760d6bf5d771057324fbd97784fe1d3717069f7b75d45"
 
   describe "/search" do
     setup do
@@ -1948,6 +1949,45 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert Enum.at(response["items"], 0)["ens_info"]["name"] == full_name
       assert Enum.at(response["items"], 0)["address_hash"] == to_string(ens_address)
     end
+
+    test "finds a pool by pool ID", %{conn: conn} do
+      bypass = setup_contracts_info(enabled: true)
+
+      Bypass.expect_once(
+        bypass,
+        "GET",
+        "/api/v1/chains/1/pools",
+        fn conn ->
+          assert conn.params["query"] == @pool_id
+          Plug.Conn.resp(conn, 200, Utils.JSON.encode!(%{"items" => [pool_response()], "next_page_params" => nil}))
+        end
+      )
+
+      request = get(conn, "/api/v2/search?q=#{@pool_id}")
+
+      assert %{
+               "items" => [
+                 %{
+                   "type" => "pool",
+                   "pool" => pool_response(),
+                   "priority" => 0
+                 }
+               ],
+               "next_page_params" => nil
+             } == json_response(request, 200)
+    end
+
+    test "degrades gracefully on an error from contracts-info microservice", %{conn: conn} do
+      bypass = setup_contracts_info(enabled: true)
+
+      Bypass.expect_once(bypass, "GET", "/api/v1/chains/1/pools", fn conn ->
+        Plug.Conn.resp(conn, 500, "")
+      end)
+
+      request = get(conn, "/api/v2/search?q=#{@pool_id}")
+
+      assert %{"items" => [], "next_page_params" => nil} == json_response(request, 200)
+    end
   end
 
   describe "/search/check-redirect" do
@@ -2979,5 +3019,75 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       request = get(conn, "/api/v2/search/quick?q=qwertyuioiuytrewertyuioiuytrertyuio")
       assert [] = json_response(request, 200)
     end
+
+    test "finds a pool by pool ID using the configured instance ID", %{conn: conn} do
+      bypass = setup_contracts_info(enabled: true, instance_id: "100")
+
+      Bypass.expect_once(
+        bypass,
+        "GET",
+        "/api/v1/chains/100/pools",
+        fn conn ->
+          assert conn.params["query"] == @pool_id
+          Plug.Conn.resp(conn, 200, Utils.JSON.encode!(%{"items" => [pool_response()], "next_page_params" => nil}))
+        end
+      )
+
+      request = get(conn, "/api/v2/search/quick?q=#{@pool_id}")
+
+      assert [
+               %{
+                 "type" => "pool",
+                 "pool" => pool_response(),
+                 "priority" => 0
+               }
+             ] == json_response(request, 200)
+    end
+  end
+
+  defp setup_contracts_info(config) do
+    bypass = Bypass.open()
+    contracts_info_envs = Application.get_env(:explorer, Explorer.MicroserviceInterfaces.ContractsInfo)
+    old_chain_id = Application.get_env(:block_scout_web, :chain_id)
+
+    Application.put_env(
+      :explorer,
+      Explorer.MicroserviceInterfaces.ContractsInfo,
+      Keyword.put(config, :service_url, "http://localhost:#{bypass.port}")
+    )
+
+    Application.put_env(:block_scout_web, :chain_id, 1)
+
+    on_exit(fn ->
+      Bypass.down(bypass)
+      Application.put_env(:explorer, Explorer.MicroserviceInterfaces.ContractsInfo, contracts_info_envs)
+      Application.put_env(:block_scout_web, :chain_id, old_chain_id)
+    end)
+
+    bypass
+  end
+
+  defp pool_response do
+    %{
+      "pool_id" => @pool_id,
+      "contract_address" => @pool_id,
+      "chain_id" => "1",
+      "is_contract" => false,
+      "base_token_address" => "0x6c3ea9036406852006290770bedfcaba0e23a0e8",
+      "base_token_symbol" => "PYUSD",
+      "base_token_icon_url" => "https://coin-images.coingecko.com/coins/images/31212/large/PYUSD_Token_Logo_2x.png",
+      "quote_token_address" => "0xdc035d45d973e3ec169d2276ddab16f1e407384f",
+      "quote_token_symbol" => "USDC",
+      "quote_token_icon_url" => nil,
+      "base_token_fully_diluted_valuation_usd" => "1926310355.97568",
+      "base_token_market_cap_usd" => "3002763034.79385",
+      "quote_token_fully_diluted_valuation_usd" => nil,
+      "quote_token_market_cap_usd" => nil,
+      "fee" => nil,
+      "liquidity" => "99679489.8565",
+      "volume_usd_24h" => "70347842.2947911",
+      "dex" => %{"id" => "uniswap-v4-ethereum", "name" => "Uniswap V4 (Ethereum)"},
+      "coin_gecko_terminal_url" => "https://www.geckoterminal.com/eth/pools/#{@pool_id}"
+    }
   end
 end

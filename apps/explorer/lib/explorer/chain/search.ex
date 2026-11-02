@@ -30,7 +30,7 @@ defmodule Explorer.Chain.Search do
     UserOperation
   }
 
-  alias Explorer.MicroserviceInterfaces.{Metadata, TACOperationLifecycle}
+  alias Explorer.MicroserviceInterfaces.{ContractsInfo, Metadata, TACOperationLifecycle}
 
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
@@ -97,13 +97,16 @@ defmodule Explorer.Chain.Search do
 
   defp search_result({:full_hash, full_hash}, paging_options, query_string, options) do
     tac_operation_task = Task.async(fn -> search_tac_operations(query_string, paging_options) end)
+    pool_task = run_pool_task_if_first_page(paging_options, full_hash)
     results = full_hash_search_if_first_page(paging_options, full_hash, options)
 
     %{items: tac_operation_results, next_page_params: tac_operation_next_page_params} =
       await_task_with_paging(tac_operation_task)
 
+    pool_results = (pool_task && await_task(pool_task)) || []
+
     trim_list_and_prepare_next_page_params(
-      results ++ tac_operation_results,
+      results ++ pool_results ++ tac_operation_results,
       paging_options,
       query_string,
       %{},
@@ -355,6 +358,12 @@ defmodule Explorer.Chain.Search do
 
   defp run_ens_task_if_first_page(_, _query_string, _options), do: nil
 
+  defp run_pool_task_if_first_page(%PagingOptions{key: nil}, full_hash) do
+    Task.async(fn -> search_pools(to_string(full_hash)) end)
+  end
+
+  defp run_pool_task_if_first_page(_, _full_hash), do: nil
+
   @spec balanced_unpaginated_search_result(
           search_results(),
           PagingOptions.t(),
@@ -394,10 +403,12 @@ defmodule Explorer.Chain.Search do
 
   defp balanced_unpaginated_search_result({:full_hash, full_hash}, paging_options, query_string, options) do
     tac_operation_task = Task.async(fn -> search_tac_operations(query_string, paging_options) end)
+    pool_task = run_pool_task_if_first_page(paging_options, full_hash)
     results = full_hash_search_if_first_page(paging_options, full_hash, options)
     %{items: tac_operation_results} = await_task_with_paging(tac_operation_task)
+    pool_results = (pool_task && await_task(pool_task)) || []
 
-    [results, tac_operation_results]
+    [results, pool_results, tac_operation_results]
   end
 
   defp balanced_unpaginated_search_result({:number, block_number}, _paging_options, _query_string, options) do
@@ -1015,6 +1026,24 @@ defmodule Explorer.Chain.Search do
 
       error ->
         error
+    end
+  end
+
+  defp search_pools(pool_id) do
+    case ContractsInfo.get_pools_by_id(pool_id) do
+      {:ok, pools} ->
+        Enum.map(pools, fn pool ->
+          search_fields()
+          |> Map.merge(%{
+            type: "pool",
+            pool: pool,
+            address_hash: nil,
+            timestamp: nil
+          })
+        end)
+
+      _ ->
+        []
     end
   end
 
