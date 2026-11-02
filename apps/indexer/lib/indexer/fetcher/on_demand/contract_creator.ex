@@ -7,7 +7,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
     * `{address_hash_string, {:in_progress, lookup_ref} | block_number | :not_found, updated_at}` -
       the lookup of the contract creation block of the address is running, has found the block,
-      or has found that the address already has a nonce at block 0 (e.g. a genesis contract);
+      or has found that the address has no creation block (e.g. it is allocated in genesis);
     * `{{:pending_block, block_number}, [address_hash_string]}` - the addresses whose
       contract creation block is waiting to be imported.
 
@@ -22,7 +22,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
   use GenServer
   use Indexer.Fetcher, restart: :permanent
 
-  import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1, json_rpc: 2, quantity_to_integer: 1]
 
   alias EthereumJSONRPC.Nonce
   alias EthereumJSONRPC.Utility.RangesHelper
@@ -89,7 +89,7 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     initial_block_ranges = %{
       left: 0,
       right: max_block_number,
-      previous_nonce: nil
+      max: max_block_number
     }
 
     find_contract_creation_block_number(initial_block_ranges, address_hash, @max_json_rpc_retries)
@@ -104,36 +104,56 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
       :error
   end
 
-  defp find_contract_creation_block_number(block_ranges, address_hash, retries_left) do
+  # A contract gets nonce 1 in the block where it is created (EIP-161) and its nonce never decreases after that,
+  # so the creation block is the first block where the address has a nonce. The search keeps it within left..right.
+  defp find_contract_creation_block_number(%{left: left, right: right} = block_ranges, address_hash, retries_left)
+       when left < right do
+    middle = div(left + right, 2)
+
+    case fetch_nonce(address_hash, middle, retries_left) do
+      {:ok, 0, retries_left} ->
+        find_contract_creation_block_number(%{block_ranges | left: middle + 1}, address_hash, retries_left)
+
+      {:ok, _nonce, retries_left} ->
+        find_contract_creation_block_number(%{block_ranges | right: middle}, address_hash, retries_left)
+
+      :error ->
+        :error
+    end
+  end
+
+  # The address already has a nonce at block 0 (e.g. it is allocated in genesis), so there is no creation block
+  defp find_contract_creation_block_number(%{left: 0, right: 0}, _address_hash, _retries_left), do: :not_found
+
+  # The search has narrowed down to the max block without querying it. Without a nonce there the address was created
+  # later, or it got no nonce at creation (e.g. it is allocated in genesis without a nonce, or created before EIP-161).
+  defp find_contract_creation_block_number(%{right: block_number, max: block_number}, address_hash, retries_left) do
+    case fetch_nonce(address_hash, block_number, retries_left) do
+      {:ok, 0, _retries_left} -> :not_found
+      {:ok, _nonce, _retries_left} -> block_number
+      :error -> :error
+    end
+  end
+
+  defp find_contract_creation_block_number(%{left: block_number}, _address_hash, _retries_left), do: block_number
+
+  defp fetch_nonce(address_hash, block_number, retries_left) do
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-    medium = trunc((block_ranges.right - block_ranges.left) / 2)
-    medium_position = block_ranges.left + medium
 
-    params = %{block_quantity: integer_to_quantity(medium_position), address: to_string(address_hash)}
-
-    id_to_params = id_to_params([params])
+    params = %{block_quantity: integer_to_quantity(block_number), address: to_string(address_hash)}
 
     case params
          |> Map.merge(%{id: 0})
          |> Nonce.request()
          |> json_rpc(json_rpc_named_arguments) do
       {:ok, response} ->
-        case Nonce.from_response(%{id: 0, result: response}, id_to_params) do
-          {:ok, %{nonce: 0}} ->
-            left_new = new_left_position(medium, medium_position)
-            block_ranges = Map.put(block_ranges, :left, left_new)
+        case quantity_to_integer(response) do
+          nonce when is_integer(nonce) ->
+            {:ok, nonce, retries_left}
 
-            maybe_continue_binary_search(block_ranges, address_hash, 0, retries_left)
-
-          {:ok, %{nonce: nonce}} when nonce > 0 ->
-            right_new = new_right_position(medium, medium_position)
-            block_ranges = Map.put(block_ranges, :right, right_new)
-
-            maybe_continue_binary_search(block_ranges, address_hash, nonce, retries_left)
-
-          _ ->
+          nil ->
             Logger.error("Error while fetching 'eth_getTransactionCount' for address #{to_string(address_hash)}")
-            retry_find_contract_creation_block_number(block_ranges, address_hash, retries_left)
+            retry_fetch_nonce(address_hash, block_number, retries_left)
         end
 
       {:error, reason} ->
@@ -141,46 +161,19 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
           "Error while fetching 'eth_getTransactionCount' for address #{to_string(address_hash)}: #{inspect(reason)}"
         )
 
-        retry_find_contract_creation_block_number(block_ranges, address_hash, retries_left)
+        retry_fetch_nonce(address_hash, block_number, retries_left)
     end
   end
 
-  defp retry_find_contract_creation_block_number(_block_ranges, address_hash, 0) do
+  defp retry_fetch_nonce(address_hash, _block_number, 0) do
     Logger.error("Reached max retry attempts for 'eth_getTransactionCount' for address #{to_string(address_hash)}")
 
     :error
   end
 
-  defp retry_find_contract_creation_block_number(block_ranges, address_hash, retries_left) do
+  defp retry_fetch_nonce(address_hash, block_number, retries_left) do
     :timer.sleep(1000)
-    find_contract_creation_block_number(block_ranges, address_hash, retries_left - 1)
-  end
-
-  defp new_left_position(medium, medium_position) do
-    if medium == 0, do: medium_position + 1, else: medium_position
-  end
-
-  defp new_right_position(medium, medium_position) do
-    if medium == 0, do: medium_position - 1, else: medium_position
-  end
-
-  defp maybe_continue_binary_search(block_ranges, address_hash, nonce, retries_left) do
-    cond do
-      # The address already has a nonce at the start of the range (e.g. it is allocated in genesis), so there is
-      # no creation block to find. Without this check the search keeps querying the same block forever.
-      block_ranges.right < block_ranges.left ->
-        :not_found
-
-      block_ranges.left == block_ranges.right ->
-        block_ranges.left
-
-      block_ranges.right - block_ranges.left == 1 && nonce !== block_ranges.previous_nonce ->
-        block_ranges.right
-
-      true ->
-        block_ranges = Map.put(block_ranges, :previous_nonce, nonce)
-        find_contract_creation_block_number(block_ranges, address_hash, retries_left)
-    end
+    fetch_nonce(address_hash, block_number, retries_left - 1)
   end
 
   @impl true

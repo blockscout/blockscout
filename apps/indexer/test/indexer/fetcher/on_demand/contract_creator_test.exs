@@ -578,6 +578,108 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
     assert [] == Repo.all(MissingBlockRange)
   end
 
+  # Regression: the search took the max block for the creation block without querying it, so an address
+  # without a nonce there (e.g. allocated in genesis without a nonce) got the max block.
+  test "finds no creation block when the address has no nonce at the max block" do
+    contract_address =
+      insert(:address, contract_code: "0x1234")
+
+    now = Timex.now()
+
+    Enum.each(0..4, fn i ->
+      insert(:block, number: i, timestamp: Timex.shift(now, minutes: -i))
+    end)
+
+    Explorer.Chain.Cache.BlockNumber.get_max()
+
+    contract_address_hash = to_string(contract_address.hash)
+
+    stub_eth_get_transaction_count(contract_address_hash, fn _block_number -> "0x0" end)
+
+    assert :ok =
+             ContractCreatorOnDemand.trigger_fetch(
+               contract_address
+               |> Repo.preload([:contract_creation_transaction])
+               |> Address.maybe_preload_contract_creation_internal_transaction([])
+             )
+
+    assert_receive {:eth_get_transaction_count, lookup_pid, "0x2"}, 1_000
+    await_lookup(lookup_pid)
+
+    assert_received {:eth_get_transaction_count, ^lookup_pid, "0x4"}
+
+    assert [{^contract_address_hash, :not_found, _updated_at}] =
+             :ets.lookup(:contract_creator_lookup, contract_address_hash)
+  end
+
+  # Regression: once the search narrowed down to blocks 0 and 1, it took block 1 without querying block 0
+  # if the nonce had changed since the previous query.
+  test "finds no creation block for a genesis contract that deployed a contract in block 2" do
+    contract_address =
+      insert(:address, contract_code: "0x1234")
+
+    now = Timex.now()
+
+    Enum.each(0..4, fn i ->
+      insert(:block, number: i, timestamp: Timex.shift(now, minutes: -i))
+    end)
+
+    Explorer.Chain.Cache.BlockNumber.get_max()
+
+    contract_address_hash = to_string(contract_address.hash)
+
+    stub_eth_get_transaction_count(contract_address_hash, fn block_number ->
+      if block_number in ["0x0", "0x1"], do: "0x1", else: "0x2"
+    end)
+
+    assert :ok =
+             ContractCreatorOnDemand.trigger_fetch(
+               contract_address
+               |> Repo.preload([:contract_creation_transaction])
+               |> Address.maybe_preload_contract_creation_internal_transaction([])
+             )
+
+    assert_receive {:eth_get_transaction_count, lookup_pid, "0x2"}, 1_000
+    await_lookup(lookup_pid)
+
+    assert_received {:eth_get_transaction_count, ^lookup_pid, "0x0"}
+
+    assert [{^contract_address_hash, :not_found, _updated_at}] =
+             :ets.lookup(:contract_creator_lookup, contract_address_hash)
+  end
+
+  test "finds the creation block when it is the max block" do
+    contract_address =
+      insert(:address, contract_code: "0x1234")
+
+    now = Timex.now()
+
+    Enum.each(0..4, fn i ->
+      insert(:block, number: i, refetch_needed: i == 4, timestamp: Timex.shift(now, minutes: -i))
+    end)
+
+    Explorer.Chain.Cache.BlockNumber.get_max()
+
+    contract_address_hash = to_string(contract_address.hash)
+
+    stub_eth_get_transaction_count(contract_address_hash, fn block_number ->
+      if block_number == "0x4", do: "0x1", else: "0x0"
+    end)
+
+    assert :ok =
+             ContractCreatorOnDemand.trigger_fetch(
+               contract_address
+               |> Repo.preload([:contract_creation_transaction])
+               |> Address.maybe_preload_contract_creation_internal_transaction([])
+             )
+
+    assert_receive {:eth_get_transaction_count, lookup_pid, "0x2"}, 1_000
+    await_lookup(lookup_pid)
+
+    assert [{^contract_address_hash, 4, _updated_at}] = :ets.lookup(:contract_creator_lookup, contract_address_hash)
+    assert [%{from_number: 4, to_number: 4, priority: 1}] = Repo.all(MissingBlockRange)
+  end
+
   defp monotonic_now, do: System.monotonic_time(:millisecond)
 
   # Answers eth_getTransactionCount for the address with the nonce returned by `nonce_by_block`
