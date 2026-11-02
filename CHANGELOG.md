@@ -1,5 +1,27 @@
 # Changelog
 
+## 12.0.4
+
+### 🐛 Bug Fixes
+
+- Stop duplicate on-demand contract creator lookups and expire its cache ([#14986](https://github.com/blockscout/blockscout/issues/14986))
+- Iterate SanitizeIncorrectWETHTokenTransfers by block ranges ([#14987](https://github.com/blockscout/blockscout/issues/14987))
+- Recognize Frontier-style revert errors in proxy implementation detection ([#14985](https://github.com/blockscout/blockscout/issues/14985))
+- Fix non-consensus logs and token transfers appearings ([#14977](https://github.com/blockscout/blockscout/issues/14977))
+- Accept atom-keyed `key` param in restricted-access check for API v2 ([#14970](https://github.com/blockscout/blockscout/issues/14970))
+- Prioritize explicit OP env vars over Superchain TOML config values ([#14967](https://github.com/blockscout/blockscout/issues/14967))
+
+### ⚙️ Miscellaneous Tasks
+
+- Add service tag type to the MetadataTag OpenAPI schema ([#14989](https://github.com/blockscout/blockscout/issues/14989))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `MIGRATION_SANITIZE_INCORRECT_WETH_BLOCKS_BATCH_SIZE`            | Number of blocks processed in each range by the incorrect WETH token transfer sanitizer. Implemented in [#14987](https://github.com/blockscout/blockscout/pull/14987).                                                                                                                                                                                               | Version: master <br />Default: `10000` <br />Applications: Indexer        |
+
+
 ## 12.0.3
 
 ### 🐛 Bug Fixes
