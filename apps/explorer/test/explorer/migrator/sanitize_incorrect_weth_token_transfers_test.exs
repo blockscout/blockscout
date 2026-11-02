@@ -35,6 +35,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         from_address: insert(:address),
         token_contract_address: token_address,
         block: deposit_log.block,
+        block_number: deposit_log.block_number,
         transaction: deposit_log.transaction,
         log_index: deposit_log.index
       )
@@ -54,6 +55,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         from_address: insert(:address),
         token_contract_address: token_address,
         block: withdrawal_log.block,
+        block_number: withdrawal_log.block_number,
         transaction: withdrawal_log.transaction,
         log_index: withdrawal_log.index
       )
@@ -85,6 +87,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         from_address: insert(:address),
         token_contract_address: whitelisted_token_address,
         block: withdrawal_log.block,
+        block_number: withdrawal_log.block_number,
         transaction: withdrawal_log.transaction,
         log_index: withdrawal_log.index
       )
@@ -104,6 +107,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         from_address: insert(:address),
         token_contract_address: whitelisted_token_address,
         block: deposit_log.block,
+        block_number: deposit_log.block_number,
         transaction: deposit_log.transaction,
         log_index: deposit_log.index
       )
@@ -125,6 +129,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
           from_address: burn_address,
           token_contract_address: whitelisted_token_address,
           block: withdrawal_log_duplicate.block,
+          block_number: withdrawal_log_duplicate.block_number,
           transaction: withdrawal_log_duplicate.transaction,
           log_index: withdrawal_log_duplicate.index
         )
@@ -135,6 +140,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
           address: whitelisted_token_address,
           transaction: withdrawal_log_duplicate.transaction,
           block: withdrawal_log_duplicate.block,
+          block_number: withdrawal_log_duplicate.block_number,
           transaction_index: transaction_5.index,
           block_number: transaction_5.block_number
         )
@@ -144,6 +150,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         to_address: tt_withdrawal.to_address,
         token_contract_address: whitelisted_token_address,
         block: withdrawal_log_duplicate_original.block,
+        block_number: withdrawal_log_duplicate_original.block_number,
         transaction: withdrawal_log_duplicate_original.transaction,
         log_index: withdrawal_log_duplicate_original.index,
         amount: tt_withdrawal.amount
@@ -165,6 +172,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
           to_address: burn_address,
           token_contract_address: whitelisted_token_address,
           block: deposit_log_duplicate.block,
+          block_number: deposit_log_duplicate.block_number,
           transaction: deposit_log_duplicate.transaction,
           log_index: deposit_log_duplicate.index
         )
@@ -175,6 +183,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
           address: whitelisted_token_address,
           transaction: deposit_log_duplicate.transaction,
           block: deposit_log_duplicate.block,
+          block_number: deposit_log_duplicate.block_number,
           transaction_index: transaction_6.index,
           block_number: transaction_6.block_number
         )
@@ -184,6 +193,7 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
         to_address: burn_address,
         token_contract_address: whitelisted_token_address,
         block: deposit_log_duplicate_original.block,
+        block_number: deposit_log_duplicate_original.block_number,
         transaction: deposit_log_duplicate_original.transaction,
         log_index: deposit_log_duplicate_original.index,
         amount: tt_deposit.amount
@@ -191,14 +201,20 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
 
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == nil
 
-      Application.put_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
-        batch_size: 1,
-        concurrency: 1,
-        timeout: 0
+      migrator_env = Application.get_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers) || []
+
+      Application.put_env(
+        :explorer,
+        Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
+        Keyword.merge(migrator_env, batch_size: 1, concurrency: 1, timeout: 0, blocks_batch_size: 2)
       )
 
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers, migrator_env)
+      end)
+
       SanitizeIncorrectWETHTokenTransfers.start_link([])
-      Process.sleep(100)
+      Process.sleep(300)
 
       assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == "completed"
 
@@ -236,6 +252,67 @@ defmodule Explorer.Migrator.SanitizeIncorrectWETHTokenTransfersTest do
       assert deposit_analogue.log_index == deposit_log_duplicate_original.index
 
       Application.put_env(:explorer, Explorer.Chain.TokenTransfer, env)
+    end
+
+    test "Resumes a migration started by the previous version from the whole chain range" do
+      %{contract_address: token_address} = insert(:token, type: "ERC-20")
+      insert(:block, consensus: true)
+
+      transaction = :transaction |> insert() |> with_block()
+
+      deposit_log =
+        insert(:log,
+          first_topic: TokenTransfer.weth_deposit_signature(),
+          transaction: transaction,
+          transaction_index: transaction.index,
+          block_number: transaction.block_number,
+          block: transaction.block
+        )
+
+      insert(:token_transfer,
+        from_address: insert(:address),
+        token_contract_address: token_address,
+        block: deposit_log.block,
+        block_number: deposit_log.block_number,
+        transaction: deposit_log.transaction,
+        log_index: deposit_log.index
+      )
+
+      env = Application.get_env(:explorer, Explorer.Chain.TokenTransfer)
+
+      Application.put_env(
+        :explorer,
+        Explorer.Chain.TokenTransfer,
+        env
+        |> Keyword.put(:whitelisted_weth_contracts, [])
+        |> Keyword.put(:weth_token_transfers_filtering_enabled, true)
+      )
+
+      on_exit(fn -> Application.put_env(:explorer, Explorer.Chain.TokenTransfer, env) end)
+
+      migrator_env = Application.get_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers) || []
+
+      Application.put_env(
+        :explorer,
+        Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
+        Keyword.merge(migrator_env, batch_size: 1, concurrency: 1, timeout: 0, blocks_batch_size: 1)
+      )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers, migrator_env)
+      end)
+
+      # Meta written by the previous version of the migrator: the step only, no block cursor
+      MigrationStatus.set_status("sanitize_incorrect_weth_transfers", "started")
+
+      MigrationStatus.set_meta("sanitize_incorrect_weth_transfers", %{"step" => "delete_not_whitelisted_weth_transfers"})
+
+      SanitizeIncorrectWETHTokenTransfers.start_link([])
+      Process.sleep(300)
+
+      assert MigrationStatus.get_status("sanitize_incorrect_weth_transfers") == "completed"
+      assert MigrationStatus.fetch("sanitize_incorrect_weth_transfers").meta == nil
+      assert Repo.all(TokenTransfer) == []
     end
   end
 end
