@@ -69,8 +69,12 @@ defmodule Explorer.SmartContract.Helper do
 
   @doc """
   Calculates MD5 hash of given binary.
+
+  Used as a non-security fingerprint of contract bytecode (`contract_code_md5`),
+  not for any cryptographic purpose.
   """
   @spec md5(binary()) :: String.t()
+  # sobelow_skip ["Crypto.WeakHash"]
   def md5(bytes) do
     :md5
     |> :crypto.hash(bytes)

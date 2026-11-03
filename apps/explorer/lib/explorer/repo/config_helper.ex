@@ -95,6 +95,10 @@ defmodule Explorer.Repo.ConfigHelper do
   def ssl_options(database_url \\ nil), do: ssl_options(database_url, &System.get_env/1)
 
   @spec ssl_options(database_url :: String.t() | nil, env_function :: (String.t() -> String.t() | nil)) :: Keyword.t()
+  # `verify_none` is intentional for `allow`/`prefer`/`require`: those libpq
+  # sslmodes encrypt the transport without verifying the server certificate.
+  # Certificate verification is enabled by `verify-ca` and `verify-full`.
+  # sobelow_skip ["Config.TLSVerify"]
   def ssl_options(database_url, env_function) do
     case ecto_ssl_mode(database_url, env_function) do
       "disable" ->
