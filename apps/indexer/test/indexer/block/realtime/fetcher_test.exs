@@ -1349,4 +1349,38 @@ defmodule Indexer.Block.Realtime.FetcherTest do
       assert %{consensus: true} = block_1_new
     end
   end
+
+  if Application.compile_env(:explorer, :chain_type) == :filecoin do
+    describe "fetch_and_import_block/3" do
+      test "records a null round at the head instead of reporting a fetch error", %{
+        block_fetcher: %Indexer.Block.Fetcher{} = block_fetcher,
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+          EthereumJSONRPC.Mox
+          |> expect(:json_rpc, fn [%{id: id, method: "eth_getBlockByNumber", params: ["0x61FFDA", true]}], _ ->
+            {:ok,
+             [
+               %{
+                 id: id,
+                 jsonrpc: "2.0",
+                 error: %{code: 12, message: "requested epoch was a null round (6422490)"}
+               }
+             ]}
+          end)
+          # Nothing was fetched, so any follow-up request (e.g. beneficiaries) is an empty batch
+          |> stub(:json_rpc, fn [], _ -> {:ok, []} end)
+
+          log =
+            ExUnit.CaptureLog.capture_log(fn ->
+              Realtime.Fetcher.fetch_and_import_block(6_422_490, block_fetcher, false)
+            end)
+
+          assert [6_422_490] == Explorer.Chain.NullRoundHeight |> Explorer.Repo.all() |> Enum.map(& &1.height)
+          refute log =~ "failed to fetch block"
+          assert log =~ "null round"
+        end
+      end
+    end
+  end
 end

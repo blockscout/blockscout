@@ -36,6 +36,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   alias EthereumJSONRPC.{Blocks, Subscription}
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
+  alias Explorer.Chain.NullRoundHeight
   alias Explorer.Utility.MissingBlockRange
   alias Indexer.{Block, Tracer}
   alias Indexer.Block.Realtime.TaskSupervisor
@@ -422,13 +423,21 @@ defmodule Indexer.Block.Realtime.Fetcher do
         Logger.debug("Fetched and imported.")
 
       {:ok, %{inserted: _, errors: [_ | _] = errors}} ->
-        Logger.error(fn ->
-          [
-            "failed to fetch block: ",
-            inspect(errors),
-            ".  Block will be retried by catchup indexer."
-          ]
-        end)
+        # On Filecoin, the head may land on a null round: an epoch without a block.
+        # It is recorded rather than retried, so it is not an error.
+        case NullRoundHeight.record_null_round_errors(errors) do
+          [] ->
+            Logger.info("Block #{block_number_to_fetch} is a null round, recorded as such.")
+
+          remaining_errors ->
+            Logger.error(fn ->
+              [
+                "failed to fetch block: ",
+                inspect(remaining_errors),
+                ".  Block will be retried by catchup indexer."
+              ]
+            end)
+        end
 
       {:error, {:import = step, [%Changeset{} | _] = changesets}} ->
         Prometheus.Instrumenter.set_import_errors_count()
