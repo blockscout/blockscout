@@ -4035,6 +4035,36 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       compare_item(address, address_json)
     end
 
+    test "leaves out the addresses configured in TOP_ADDRESSES_EXCLUDED_ADDRESSES", %{conn: conn} do
+      excluded = insert(:address, fetched_coin_balance: 10, transactions_count: 10)
+      kept = insert(:address, fetched_coin_balance: 5, transactions_count: 5)
+
+      initial = Application.get_env(:explorer, Address)
+
+      Application.put_env(
+        :explorer,
+        Address,
+        Keyword.merge(initial || [], excluded_top_addresses: [to_string(excluded.hash)])
+      )
+
+      on_exit(fn ->
+        if initial,
+          do: Application.put_env(:explorer, Address, initial),
+          else: Application.delete_env(:explorer, Address)
+      end)
+
+      response = conn |> get("/api/v2/addresses") |> json_response(200)
+
+      assert Enum.map(response["items"], & &1["hash"]) == [Address.checksum(kept.hash)]
+      # the exclusion does not touch the supply the percentages are computed against
+      assert response["total_supply"] == to_string(Chain.total_supply())
+
+      sorted_response =
+        conn |> get("/api/v2/addresses", %{"sort" => "transactions_count", "order" => "desc"}) |> json_response(200)
+
+      assert Enum.map(sorted_response["items"], & &1["hash"]) == [Address.checksum(kept.hash)]
+    end
+
     test "check smart contract properties", %{conn: conn} do
       smart_contract =
         insert(:smart_contract,

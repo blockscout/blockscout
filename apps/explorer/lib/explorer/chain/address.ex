@@ -523,6 +523,9 @@ defmodule Explorer.Chain.Address do
   when it holds enough entries; otherwise the cache is refilled through
   `Explorer.Chain.Cache.Accounts.Refresher`, which runs the query once for all
   requests that miss at the same time.
+
+  Addresses listed in `TOP_ADDRESSES_EXCLUDED_ADDRESSES` (see
+  `excluded_top_addresses/0`) are left out of every page and of the cache.
   """
   @spec list_top_addresses :: [{__MODULE__.t(), non_neg_integer()}]
   def list_top_addresses(options \\ []) do
@@ -705,11 +708,31 @@ defmodule Explorer.Chain.Address do
           )
 
         base_query
+        |> exclude_configured_top_addresses()
         |> Chain.join_associations(necessity_by_association)
         |> SortingHelper.apply_sorting(sorting_options, @default_sorting)
         |> SortingHelper.page_with_sorting(paging_options, sorting_options, @default_sorting)
         |> Chain.select_repo(options).all()
     end
+  end
+
+  # Leaves the query untouched when `TOP_ADDRESSES_EXCLUDED_ADDRESSES` is unset.
+  @spec exclude_configured_top_addresses(Ecto.Query.t()) :: Ecto.Query.t()
+  defp exclude_configured_top_addresses(query) do
+    case excluded_top_addresses() do
+      [] -> query
+      hashes -> where(query, [a], a.hash not in ^hashes)
+    end
+  end
+
+  @doc """
+  Downcased hashes of the addresses excluded from the top addresses list
+  (`TOP_ADDRESSES_EXCLUDED_ADDRESSES`), for example a protocol reserve whose
+  balance would otherwise sit on top of the ranking.
+  """
+  @spec excluded_top_addresses() :: [String.t()]
+  def excluded_top_addresses do
+    Application.get_env(:explorer, __MODULE__, [])[:excluded_top_addresses] || []
   end
 
   @doc """

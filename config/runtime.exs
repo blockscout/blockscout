@@ -708,6 +708,9 @@ end
 
 config :explorer, Explorer.Chain.Cache.Accounts.Refresher, update_interval: top_addresses_update_interval
 
+config :explorer, Explorer.Chain.Address,
+  excluded_top_addresses: ConfigHelper.parse_address_list_env_var("TOP_ADDRESSES_EXCLUDED_ADDRESSES")
+
 config :explorer, Explorer.Chain.Cache.Uncles,
   ttl_check_interval: false,
   global_ttl: nil

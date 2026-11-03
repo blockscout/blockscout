@@ -79,6 +79,46 @@ defmodule Explorer.Chain.AddressTest do
                |> Enum.map(& &1.hash)
     end
 
+    test "leaves out the addresses configured in TOP_ADDRESSES_EXCLUDED_ADDRESSES" do
+      excluded = insert(:address, fetched_coin_balance: 10, transactions_count: 10)
+
+      kept_hashes =
+        2..1//-1
+        |> Enum.map(&insert(:address, fetched_coin_balance: &1, transactions_count: &1))
+        |> Enum.map(& &1.hash)
+
+      with_excluded_top_addresses([excluded.hash], fn ->
+        # first page, served through the cache refill
+        assert kept_hashes == Address.list_top_addresses() |> Enum.map(& &1.hash)
+
+        # sorted request, served straight from the database
+        assert kept_hashes ==
+                 [sorting: [desc: :transactions_count]]
+                 |> Address.list_top_addresses()
+                 |> Enum.map(& &1.hash)
+      end)
+
+      assert [excluded.hash | kept_hashes] == Address.list_top_addresses() |> Enum.map(& &1.hash)
+    end
+
+    defp with_excluded_top_addresses(hashes, fun) do
+      initial = Application.get_env(:explorer, Address)
+
+      Application.put_env(
+        :explorer,
+        Address,
+        Keyword.merge(initial || [], excluded_top_addresses: Enum.map(hashes, &to_string/1))
+      )
+
+      try do
+        fun.()
+      after
+        if initial,
+          do: Application.put_env(:explorer, Address, initial),
+          else: Application.delete_env(:explorer, Address)
+      end
+    end
+
     # flaky test
     # test "with top addresses in order with matching value" do
     #   test_hashes =
