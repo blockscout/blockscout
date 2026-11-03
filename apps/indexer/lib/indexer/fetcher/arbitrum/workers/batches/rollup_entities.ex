@@ -157,8 +157,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.RollupEntities do
         blocks_map
         |> Map.put(block.number, %{
           block_number: block.number,
-          batch_number: batch_num,
-          confirmation_id: nil
+          batch_number: batch_num
         })
 
       {updated_blocks_map, updated_transactions_list}
@@ -345,7 +344,7 @@ defmodule Indexer.Fetcher.Arbitrum.Workers.Batches.RollupEntities do
         Map.put(
           blocks_map,
           blk_num,
-          %{block_number: blk_num, batch_number: batch_num, confirmation_id: nil}
+          %{block_number: blk_num, batch_number: batch_num}
         )
 
       updated_transactions_list =

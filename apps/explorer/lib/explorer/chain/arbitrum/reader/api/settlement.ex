@@ -33,6 +33,7 @@ defmodule Explorer.Chain.Arbitrum.Reader.API.Settlement do
   }
 
   alias Explorer.{Chain, PagingOptions}
+  alias Explorer.Chain.Arbitrum.LifecycleTransaction
   alias Explorer.Chain.Arbitrum.Reader.Common
   alias Explorer.Chain.Block, as: FullBlock
   alias Explorer.Chain.Cache.BackgroundMigrations, as: MigrationStatuses
@@ -453,6 +454,24 @@ defmodule Explorer.Chain.Arbitrum.Reader.API.Settlement do
   @spec highest_confirmed_block() :: FullBlock.block_number() | nil
   def highest_confirmed_block do
     Common.highest_confirmed_block(@api_true)
+  end
+
+  @doc """
+    Retrieves the parent chain transaction that confirms the given rollup block.
+
+    It calls `Common.confirmation_transaction_for_rollup_block/2` with `@api_true`
+    option to use replica database.
+
+    ## Parameters
+    - `rollup_block_number`: The number of the rollup block.
+
+    ## Returns
+    - The `Explorer.Chain.Arbitrum.LifecycleTransaction` that confirms the block, or
+      `nil` if the block is not confirmed.
+  """
+  @spec confirmation_transaction_for_rollup_block(FullBlock.block_number()) :: LifecycleTransaction.t() | nil
+  def confirmation_transaction_for_rollup_block(rollup_block_number) do
+    Common.confirmation_transaction_for_rollup_block(rollup_block_number, @api_true)
   end
 
   @doc """
