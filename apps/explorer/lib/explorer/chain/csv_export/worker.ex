@@ -55,11 +55,20 @@ defmodule Explorer.Chain.CsvExport.Worker do
 
       {:ok, address_hash} = Chain.string_to_address_hash(address_hash_string)
 
+      options =
+        case args do
+          %{"include_zero_value" => include_zero_value} when is_boolean(include_zero_value) ->
+            [show_scam_tokens?: show_scam_tokens?, include_zero_value: include_zero_value]
+
+          _ ->
+            [show_scam_tokens?: show_scam_tokens?]
+        end
+
       address_hash
       |> csv_export_module.export(
         from_period,
         to_period,
-        [show_scam_tokens?: show_scam_tokens?],
+        options,
         args["filter_type"],
         args["filter_value"]
       )

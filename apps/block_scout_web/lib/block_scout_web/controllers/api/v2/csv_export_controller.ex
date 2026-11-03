@@ -168,7 +168,15 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
   defp do_csv_export(true, conn, params, csv_export_module) do
     params =
       params
-      |> Map.take([:address_hash, :from_period, :to_period, :filter_type, :filter_value, :show_scam_tokens?])
+      |> Map.take([
+        :address_hash,
+        :from_period,
+        :to_period,
+        :filter_type,
+        :filter_value,
+        :show_scam_tokens?,
+        :include_zero_value
+      ])
       |> Map.put(:module, to_string(csv_export_module))
 
     case AsyncCsvExportRequest.create(AccessHelper.conn_to_ip_string(conn), params) do
@@ -191,7 +199,7 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
     |> csv_export_module.export(
       params[:from_period],
       params[:to_period],
-      [show_scam_tokens?: params[:show_scam_tokens?]],
+      export_options(params),
       params[:filter_type],
       params[:filter_value]
     )
@@ -204,6 +212,20 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
           {:halt, conn}
       end
     end)
+  end
+
+  # Builds the keyword options passed to the exporter's `export/6`. Only
+  # `include_zero_value` is export-specific (internal transactions); the other
+  # exporters ignore it.
+  @spec export_options(map()) :: Keyword.t()
+  defp export_options(params) do
+    [show_scam_tokens?: params[:show_scam_tokens?]]
+    |> Keyword.merge(
+      case Map.fetch(params, :include_zero_value) do
+        {:ok, include_zero_value} when is_boolean(include_zero_value) -> [include_zero_value: include_zero_value]
+        _ -> []
+      end
+    )
   end
 
   operation :token_transfers_csv,
@@ -284,7 +306,8 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
 
   operation :internal_transactions_csv,
     summary: "Export internal transactions as CSV",
-    description: "Exports internal transactions for a specific address as a CSV file.",
+    description:
+      "Exports internal transactions for a specific address as a CSV file. Pass `include_zero_value=false` to omit zero-value call-type internal transactions, matching the list endpoint.",
     parameters:
       base_params() ++
         [
@@ -292,7 +315,8 @@ defmodule BlockScoutWeb.API.V2.CsvExportController do
           from_period_param(),
           to_period_param(),
           filter_type_param(),
-          filter_value_param()
+          filter_value_param(),
+          include_zero_value_param()
         ],
     responses: [
       ok: {"CSV file of internal transactions.", "application/csv", nil},

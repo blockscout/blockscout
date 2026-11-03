@@ -192,6 +192,69 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
       assert Enum.count(result) == 600
     end
 
+    test "excludes zero-value call internal transactions when include_zero_value: false" do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      zero_value_call =
+        insert(:internal_transaction,
+          index: 1,
+          transaction: transaction,
+          to_address: address,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          type: :call,
+          value: Decimal.new(0)
+        )
+
+      non_zero_call =
+        insert(:internal_transaction,
+          index: 2,
+          transaction: transaction,
+          to_address: address,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          type: :call,
+          value: Decimal.new(1)
+        )
+
+      zero_value_create =
+        insert(:internal_transaction_create,
+          index: 3,
+          transaction: transaction,
+          created_contract_address: address,
+          to_address: nil,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index,
+          value: Decimal.new(0)
+        )
+
+      {:ok, now} = DateTime.now("Etc/UTC")
+
+      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
+
+      exported_indexes = fn options ->
+        address.hash
+        |> AddressInternalTransactionsCsvExporter.export(from_period, to_period, options, nil, nil)
+        |> Enum.to_list()
+        |> Enum.drop(1)
+        |> Enum.map(fn [_, _, [[], index] | _] -> String.to_integer(index) end)
+        |> Enum.sort()
+      end
+
+      assert exported_indexes.(include_zero_value: false) == [non_zero_call.index, zero_value_create.index]
+
+      assert exported_indexes.([]) ==
+               Enum.sort([zero_value_call.index, non_zero_call.index, zero_value_create.index])
+
+      assert exported_indexes.(include_zero_value: true) == exported_indexes.([])
+    end
+
     test "don't fall on is_nil(gas_used)" do
       address = insert(:address)
 

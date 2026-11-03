@@ -9,13 +9,30 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.CsvExport.{AsyncHelper, Helper}
 
+  @doc """
+  Streams the internal transactions of `address_hash` within the given period as CSV rows.
+
+  ## Options
+
+    - `:include_zero_value` - when `false`, zero-value call-type internal
+      transactions are excluded, mirroring the `include_zero_value` query
+      parameter of the paginated internal transactions endpoints. Defaults to `true`.
+  """
   @spec export(Hash.Address.t(), String.t(), String.t(), Keyword.t(), String.t() | nil, String.t() | nil) ::
           Enumerable.t()
-  def export(address_hash, from_period, to_period, _options, filter_type, filter_value) do
+  def export(address_hash, from_period, to_period, options, filter_type, filter_value) do
     {from_block, to_block} = Helper.block_from_period(from_period, to_period)
+    include_zero_value? = Keyword.get(options, :include_zero_value, true)
 
     address_hash
-    |> fetch_all_internal_transactions(from_block, to_block, filter_type, filter_value, Helper.paging_options())
+    |> fetch_all_internal_transactions(
+      from_block,
+      to_block,
+      filter_type,
+      filter_value,
+      include_zero_value?,
+      Helper.paging_options()
+    )
     |> Enum.sort_by(&{&1.block_number, &1.index, &1.transaction_index}, :desc)
     |> to_csv_format()
     |> Helper.dump_to_stream()
@@ -28,6 +45,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
          to_block,
          filter_type,
          filter_value,
+         include_zero_value?,
          paging_options
        ) do
     options =
@@ -35,6 +53,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
       |> Keyword.put(:paging_options, paging_options)
       |> Keyword.put(:from_block, from_block)
       |> Keyword.put(:to_block, to_block)
+      |> Keyword.put(:include_zero_value, include_zero_value?)
       |> Keyword.put(:timeout, AsyncHelper.db_timeout())
       |> (&if(Helper.valid_filter?(filter_type, filter_value, "internal_transactions"),
             do: &1 |> Keyword.put(:direction, String.to_atom(filter_value)),
