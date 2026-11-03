@@ -109,6 +109,9 @@ defmodule BlockScout.Mixfile do
       {:absinthe_plug, git: "https://github.com/blockscout/absinthe_plug.git", tag: "1.5.8", override: true},
       {:tesla, "~> 1.22.0"},
       {:mint, "~> 1.11.0"},
+      # `mock` pins `meck ~> 0.9.2`, which fails to compile on OTP 29 (bare `catch`
+      # deprecation + `warnings_as_errors`). meck 1.x keeps the same API.
+      {:meck, "~> 1.2", override: true, only: [:test], runtime: false},
       # Documentation
       {:ex_doc, "~> 0.40.1", only: :dev, runtime: false},
       {:number, "~> 1.0.3"}

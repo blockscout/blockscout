@@ -20,7 +20,7 @@ on:
         required: true
 
 env:
-  OTP_VERSION: "28.5"
+  OTP_VERSION: "29.1.2"
   ELIXIR_VERSION: "1.20.5"
   NODE_VERSION: "22"
 
