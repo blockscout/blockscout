@@ -421,6 +421,21 @@ defmodule ConfigHelper do
     end
   end
 
+  @doc """
+  Parses a comma-separated list of address hashes, downcased, raising on an
+  entry that is not a `0x`-prefixed 20-byte hex string so that a typo fails at
+  boot instead of on the first query that uses the list.
+  """
+  @spec parse_address_list_env_var(String.t()) :: [String.t()]
+  def parse_address_list_env_var(env_var) do
+    addresses = env_var |> parse_list_env_var("") |> Enum.map(&String.trim/1)
+
+    case Enum.reject(addresses, &Regex.match?(~r/^0x[0-9a-f]{40}$/, &1)) do
+      [] -> addresses
+      invalid -> raise "Invalid address hash(es) in #{env_var}: #{Enum.join(invalid, ", ")}"
+    end
+  end
+
   @spec parse_url_env_var(String.t(), String.t() | nil, boolean()) :: String.t() | nil
   def parse_url_env_var(env_var, default_value \\ nil, trailing_slash_needed? \\ false) do
     with url when url != "" <- safe_get_env(env_var, default_value),
