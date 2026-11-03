@@ -477,6 +477,62 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
       assert conn.status == 200
       assert conn.resp_body |> String.split("\n") |> Enum.count() == 5
     end
+
+    test "include_zero_value=false excludes zero-value call internal transactions", %{conn: conn} do
+      init_config = Application.get_env(:block_scout_web, :recaptcha)
+      Application.put_env(:block_scout_web, :recaptcha, is_disabled: true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :recaptcha, init_config) end)
+
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        index: 1,
+        transaction: transaction,
+        to_address: address,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        index: 2,
+        transaction: transaction,
+        to_address: address,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      {:ok, now} = DateTime.now("Etc/UTC")
+      from_period = DateTime.add(now, -1, :day) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
+
+      path = "/api/v2/addresses/#{Address.checksum(address.hash)}/internal-transactions/csv"
+
+      conn_filtered =
+        get(conn, path, %{
+          "from_period" => from_period,
+          "to_period" => to_period,
+          "include_zero_value" => "false"
+        })
+
+      assert conn_filtered.status == 200
+      # header + 1 row + trailing newline
+      assert [_header, row, ""] = String.split(conn_filtered.resp_body, "\n")
+      assert row =~ ~r/^[^,]+,2,/
+
+      conn_default = get(conn, path, %{"from_period" => from_period, "to_period" => to_period})
+
+      assert conn_default.status == 200
+      assert conn_default.resp_body |> String.split("\n") |> Enum.count() == 4
+    end
   end
 
   describe "GET /api/v2/csv-exports/:uuid" do
@@ -722,6 +778,137 @@ defmodule BlockScoutWeb.Api.V2.CsvExportControllerTest do
 
       assert %{"request_id" => request_id} = json_response(conn, 202)
       assert is_binary(request_id)
+    end
+
+    test "passes include_zero_value through to the async internal-transactions export job", %{conn: conn} do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        index: 0,
+        transaction: transaction,
+        from_address: address,
+        block_number: transaction.block_number,
+        transaction_index: transaction.index
+      )
+
+      {:ok, now} = DateTime.now("Etc/UTC")
+      from_period = DateTime.add(now, -1, :day) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
+
+      conn =
+        get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/internal-transactions/csv", %{
+          "from_period" => from_period,
+          "to_period" => to_period,
+          "include_zero_value" => "false"
+        })
+
+      assert %{"request_id" => request_id} = json_response(conn, 202)
+
+      assert [job] = all_enqueued(worker: Explorer.Chain.CsvExport.Worker)
+      assert job.args["request_id"] == request_id
+      assert job.args["module"] == "Elixir.BlockScoutWeb.CsvExport.Address.InternalTransactions"
+      assert job.args["include_zero_value"] == false
+    end
+
+    test "async internal-transactions export job omits zero-value call internal transactions", %{
+      conn: conn,
+      bypass: bypass
+    } do
+      # One large upload chunk keeps the whole CSV in a single request body so
+      # the assertions below can look for complete transaction hashes.
+      config = Application.get_env(:explorer, Explorer.Chain.CsvExport)
+
+      Application.put_env(
+        :explorer,
+        Explorer.Chain.CsvExport,
+        Keyword.merge(config,
+          chunk_size: 1_000_000,
+          tmp_dir: Path.join(System.tmp_dir!(), "csv_export_test_#{:rand.uniform(100_000)}")
+        )
+      )
+
+      address = insert(:address)
+
+      zero_value_transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      non_zero_transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        index: 1,
+        transaction: zero_value_transaction,
+        to_address: address,
+        block_number: zero_value_transaction.block_number,
+        transaction_index: zero_value_transaction.index,
+        type: :call,
+        value: Decimal.new(0)
+      )
+
+      insert(:internal_transaction,
+        index: 1,
+        transaction: non_zero_transaction,
+        to_address: address,
+        block_number: non_zero_transaction.block_number,
+        transaction_index: non_zero_transaction.index,
+        type: :call,
+        value: Decimal.new(1)
+      )
+
+      {:ok, now} = DateTime.now("Etc/UTC")
+      from_period = DateTime.add(now, -1, :day) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
+
+      conn =
+        get(conn, "/api/v2/addresses/#{Address.checksum(address.hash)}/internal-transactions/csv", %{
+          "from_period" => from_period,
+          "to_period" => to_period,
+          "include_zero_value" => "false"
+        })
+
+      assert %{"request_id" => request_id} = json_response(conn, 202)
+      assert [job] = all_enqueued(worker: Explorer.Chain.CsvExport.Worker)
+
+      test_pid = self()
+
+      Bypass.expect(bypass, fn conn ->
+        [path | _] = String.split(conn.request_path, "?")
+
+        cond do
+          path == "/api/chunk/add" ->
+            {:ok, body, conn} = Plug.Conn.read_body(conn)
+            send(test_pid, {:chunk, body})
+            Plug.Conn.resp(conn, 200, "")
+
+          path == "/api/chunk/complete" ->
+            Plug.Conn.resp(
+              conn,
+              200,
+              Utils.JSON.encode!(%{"FileInfo" => %{"Id" => "test-file-id", "ExpireAt" => DateTime.to_unix(now)}})
+            )
+
+          true ->
+            Plug.Conn.resp(conn, 404, "Not found")
+        end
+      end)
+
+      assert :ok = perform_job(Explorer.Chain.CsvExport.Worker, job.args)
+
+      assert_receive {:chunk, csv_body}
+      assert csv_body =~ "TxHash"
+      assert csv_body =~ to_string(non_zero_transaction.hash)
+      refute csv_body =~ to_string(zero_value_transaction.hash)
+
+      assert Explorer.Chain.CsvExport.Request.get_by_uuid(request_id).status == :completed
     end
 
     test "returns 202 with request_id for logs export when async enabled", %{conn: conn} do
