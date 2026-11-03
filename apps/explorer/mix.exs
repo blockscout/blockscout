@@ -96,6 +96,9 @@ defmodule Explorer.Mixfile do
       {:logger_file_backend, "~> 0.0.10"},
       {:logger_json, "~> 7.0"},
       {:math, "~> 0.7.0"},
+      # `mock` pins `meck ~> 0.9.2`, which fails to compile on OTP 29 (bare `catch`
+      # deprecation + `warnings_as_errors`). meck 1.x keeps the same API.
+      {:meck, "~> 1.2", override: true, only: [:test], runtime: false},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:mox, "~> 1.3.2"},
       {:nimble_csv, "~> 1.1"},
