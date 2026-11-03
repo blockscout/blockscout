@@ -408,6 +408,7 @@ defmodule Indexer.Block.Realtime.Fetcher do
   defp do_remove_assets_by_number(_, _), do: :ok
 
   @decorate span(tracer: Tracer)
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp do_fetch_and_import_block(block_number_to_fetch, block_fetcher, retry) do
     time_before = Timex.now()
 
