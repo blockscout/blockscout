@@ -67,6 +67,10 @@ defmodule BlockScoutWeb.Plug.RedisCookie do
     binary
   end
 
+  # The binary has already been verified (`MessageVerifier`) or decrypted
+  # (`MessageEncryptor`) with `secret_key_base` in `read_raw_cookie/2`, so it
+  # is not attacker-controlled. Mirrors upstream `Plug.Session.COOKIE`.
+  # sobelow_skip ["Misc.BinToTerm"]
   defp decode({:ok, binary}, :external_term_format, log) do
     {:term,
      try do
