@@ -765,7 +765,7 @@ defmodule Explorer.Chain.Transaction do
     }
   ]
 
-  defp process_hex_revert_reason(hex_revert_reason, %__MODULE__{to_address: smart_contract, hash: hash}, options) do
+  defp process_hex_revert_reason(hex_revert_reason, %__MODULE__{to_address: to_address, hash: hash}, options) do
     case Base.decode16(hex_revert_reason, case: :mixed) do
       {:ok, binary_revert_reason} ->
         case find_and_decode(@default_error_abi, binary_revert_reason, hash) do
@@ -778,7 +778,7 @@ defmodule Explorer.Chain.Transaction do
           _ ->
             decoded_input_data(
               %__MODULE__{
-                to_address: smart_contract,
+                to_address: revert_reason_to_address(to_address),
                 hash: hash,
                 input: %Data{bytes: binary_revert_reason}
               },
@@ -790,6 +790,15 @@ defmodule Explorer.Chain.Transaction do
         hex_revert_reason
     end
   end
+
+  # A revert reason always comes from executed contract code, so the input
+  # decoding guards that skip transactions without a contract callee do not
+  # apply here: a contract creation (`to_address` is `nil`) or a callee whose
+  # bytecode is not stored yet are reduced to the "not loaded" case, which
+  # looks the error selector up among the `contract_methods` candidates.
+  defp revert_reason_to_address(nil), do: %NotLoaded{}
+  defp revert_reason_to_address(%Address{contract_code: nil}), do: %NotLoaded{}
+  defp revert_reason_to_address(to_address), do: to_address
 
   # Because there is no contract association, we know the contract was not verified
   @spec decoded_input_data(
