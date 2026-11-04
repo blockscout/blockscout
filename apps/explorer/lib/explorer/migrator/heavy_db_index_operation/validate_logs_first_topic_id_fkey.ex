@@ -8,21 +8,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsFirstTopicIdFkey d
 
   require Logger
 
-  alias Explorer.Migrator.{FillLogsOptimizedFields, HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.{FillLogsOptimizedFields, HeavyDbIndexOperation}
 
   @table_name :logs
   @index_name "logs_first_topic_id_fkey_constraint"
   @operation_type :create
   @constraint_name "logs_first_topic_id_fkey"
-
-  @impl HeavyDbIndexOperation
-  def table_name, do: @table_name
-
-  @impl HeavyDbIndexOperation
-  def operation_type, do: @operation_type
-
-  @impl HeavyDbIndexOperation
-  def index_name, do: @index_name
 
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
@@ -98,14 +89,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ValidateLogsFirstTopicIdFkey d
       _ -> :error
     end
   end
-
-  @impl HeavyDbIndexOperation
-  def running_other_heavy_migration_exists?(migration_name) do
-    MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, migration_name)
-  end
-
-  @impl HeavyDbIndexOperation
-  def update_cache, do: :ok
 
   defp validate_constraint_query_string do
     "ALTER TABLE #{@table_name} VALIDATE CONSTRAINT #{@constraint_name};"

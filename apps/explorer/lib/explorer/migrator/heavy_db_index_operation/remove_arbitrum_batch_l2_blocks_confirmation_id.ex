@@ -19,7 +19,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveArbitrumBatchL2BlocksCon
 
   require Logger
 
-  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.HeavyDbIndexOperation
   alias Explorer.Migrator.HeavyDbIndexOperation.DropArbitrumBatchL2BlocksUnconfirmedBlocksIndex
   alias Explorer.Repo
 
@@ -27,15 +27,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveArbitrumBatchL2BlocksCon
   @column_name "confirmation_id"
   @index_name "arbitrum_batch_l2_blocks_remove_confirmation_id"
   @operation_type :create
-
-  @impl HeavyDbIndexOperation
-  def table_name, do: @table_name
-
-  @impl HeavyDbIndexOperation
-  def operation_type, do: @operation_type
-
-  @impl HeavyDbIndexOperation
-  def index_name, do: @index_name
 
   @impl HeavyDbIndexOperation
   def dependent_from_migrations, do: [DropArbitrumBatchL2BlocksUnconfirmedBlocksIndex.migration_name()]
@@ -92,14 +83,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveArbitrumBatchL2BlocksCon
 
   @impl HeavyDbIndexOperation
   def restart_db_index_operation, do: db_index_operation()
-
-  @impl HeavyDbIndexOperation
-  def running_other_heavy_migration_exists?(migration_name) do
-    MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, migration_name)
-  end
-
-  @impl HeavyDbIndexOperation
-  def update_cache, do: :ok
 
   defp drop_column_query_string do
     """

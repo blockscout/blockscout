@@ -3,7 +3,28 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   @moduledoc """
   Provides a template for making heavy DB operations such as creation/deletion of new indexes in the large tables
   with tracking status of those migrations.
+
+  ## Default callback implementations
+
+  Modules that `use` this behaviour only have to declare a few module attributes; the
+  callbacks that are the same for every plain index creation/deletion are generated at
+  compile time by `__before_compile__/1` unless the module defines them itself:
+
+  - `table_name/0`, `operation_type/0`, `index_name/0` return `@table_name`,
+    `@operation_type` and `@index_name` respectively.
+  - `dependent_from_migrations/0` returns `[]`.
+  - `update_cache/0` is a no-op.
+  - `running_other_heavy_migration_exists?/1` checks `Explorer.Migrator.MigrationStatus`
+    for other heavy migrations on `@table_name`.
+  - `db_index_operation/0`, `check_db_index_operation_progress/0`,
+    `db_index_operation_status/0` and `restart_db_index_operation/0` are generated for
+    `:create` operations that declare either `@query_string` or `@table_columns`
+    (optionally with `@unique_index true`), and for `:drop` operations. `:rename`
+    operations and any other custom operation must implement them explicitly.
   """
+
+  alias Explorer.Migrator.HeavyDbIndexOperation.Helper
+  alias Explorer.Migrator.MigrationStatus
 
   @doc """
   Returns the name of the migration. The name is used to track the operation's status in
@@ -126,6 +147,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
     # credo:disable-for-next-line
     quote do
       @behaviour Explorer.Migrator.HeavyDbIndexOperation
+      @before_compile Explorer.Migrator.HeavyDbIndexOperation
 
       use GenServer, restart: :transient
 
@@ -285,6 +307,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
         )
       end
 
+      @impl Explorer.Migrator.HeavyDbIndexOperation
       def migration_name do
         index_name_lower_case = String.downcase(index_name())
 
@@ -292,6 +315,138 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
           "#{HeavyDbIndexOperationHelper.heavy_db_operation_migration_name_prefix()}#{to_string(operation_type())}"
 
         "#{db_operation_prefix}_#{index_name_lower_case}"
+      end
+    end
+  end
+
+  @doc false
+  defmacro __before_compile__(env) do
+    module = env.module
+
+    {:__block__, [], default_getters(module) ++ default_index_operation_callbacks(module)}
+  end
+
+  # Generates the callbacks which only return module attributes or constants,
+  # unless the module defines them itself.
+  defp default_getters(module) do
+    defaults = [
+      {:table_name, 0, quote(do: def(table_name, do: @table_name))},
+      {:operation_type, 0, quote(do: def(operation_type, do: @operation_type))},
+      {:index_name, 0, quote(do: def(index_name, do: @index_name))},
+      {:dependent_from_migrations, 0, quote(do: def(dependent_from_migrations, do: []))},
+      {:update_cache, 0, quote(do: def(update_cache, do: :ok))},
+      {:running_other_heavy_migration_exists?, 1,
+       quote do
+         def running_other_heavy_migration_exists?(migration_name) do
+           MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, migration_name)
+         end
+       end}
+    ]
+
+    for {name, arity, definition} <- defaults, not Module.defines?(module, {name, arity}) do
+      quote do
+        @impl Explorer.Migrator.HeavyDbIndexOperation
+        unquote(definition)
+      end
+    end
+  end
+
+  # Generates the callbacks performing the index operation itself for plain
+  # `:create` and `:drop` operations, unless the module defines them itself.
+  defp default_index_operation_callbacks(module) do
+    operation_type = Module.get_attribute(module, :operation_type)
+    query_string? = Module.has_attribute?(module, :query_string)
+    table_columns? = Module.has_attribute?(module, :table_columns)
+    unique? = Module.get_attribute(module, :unique_index) == true
+
+    case {operation_type, query_string?, table_columns?} do
+      {:create, true, _} ->
+        create_index_callbacks(module, quote(do: @query_string))
+
+      {:create, false, true} ->
+        create_index_callbacks(
+          module,
+          quote do
+            Helper.create_index_query_string(@index_name, @table_name, @table_columns, unquote(unique?))
+          end
+        )
+
+      {:drop, _, _} ->
+        drop_index_callbacks(module)
+
+      _ ->
+        []
+    end
+  end
+
+  defp create_index_callbacks(module, query_string_ast) do
+    defaults = [
+      {:db_index_operation, 0,
+       quote do
+         def db_index_operation do
+           Helper.create_db_index(unquote(query_string_ast))
+         end
+       end},
+      {:check_db_index_operation_progress, 0,
+       quote do
+         def check_db_index_operation_progress do
+           Helper.check_db_index_operation_progress(@index_name, unquote(query_string_ast))
+         end
+       end},
+      {:db_index_operation_status, 0,
+       quote do
+         def db_index_operation_status do
+           Helper.db_index_creation_status(@index_name)
+         end
+       end},
+      {:restart_db_index_operation, 0,
+       quote do
+         def restart_db_index_operation do
+           Helper.safely_drop_db_index(@index_name)
+         end
+       end}
+    ]
+
+    emit_undefined(module, defaults)
+  end
+
+  defp drop_index_callbacks(module) do
+    defaults = [
+      {:db_index_operation, 0,
+       quote do
+         def db_index_operation do
+           Helper.safely_drop_db_index(@index_name)
+         end
+       end},
+      {:check_db_index_operation_progress, 0,
+       quote do
+         def check_db_index_operation_progress do
+           operation = Helper.drop_index_query_string(@index_name)
+           Helper.check_db_index_operation_progress(@index_name, operation)
+         end
+       end},
+      {:db_index_operation_status, 0,
+       quote do
+         def db_index_operation_status do
+           Helper.db_index_dropping_status(@index_name)
+         end
+       end},
+      {:restart_db_index_operation, 0,
+       quote do
+         def restart_db_index_operation do
+           Helper.safely_drop_db_index(@index_name)
+         end
+       end}
+    ]
+
+    emit_undefined(module, defaults)
+  end
+
+  defp emit_undefined(module, defaults) do
+    for {name, arity, definition} <- defaults, not Module.defines?(module, {name, arity}) do
+      quote do
+        @impl Explorer.Migrator.HeavyDbIndexOperation
+        unquote(definition)
       end
     end
   end

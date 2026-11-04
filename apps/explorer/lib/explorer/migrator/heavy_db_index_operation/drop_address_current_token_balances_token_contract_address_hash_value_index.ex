@@ -22,7 +22,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalance
   require Logger
 
   alias Ecto.Adapters.SQL
-  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.HeavyDbIndexOperation
   alias Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesTokenHoldersIndex
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper, as: HeavyDbIndexOperationHelper
   alias Explorer.Repo
@@ -33,15 +33,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalance
   # index content (see `redundant_index_names/0`)
   @index_name "address_current_token_balances_token_contract_address_hash__val"
   @operation_type :drop
-
-  @impl HeavyDbIndexOperation
-  def table_name, do: @table_name
-
-  @impl HeavyDbIndexOperation
-  def operation_type, do: @operation_type
-
-  @impl HeavyDbIndexOperation
-  def index_name, do: @index_name
 
   @impl HeavyDbIndexOperation
   def dependent_from_migrations do
@@ -95,14 +86,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalance
   def restart_db_index_operation do
     db_index_operation()
   end
-
-  @impl HeavyDbIndexOperation
-  def running_other_heavy_migration_exists?(migration_name) do
-    MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, migration_name)
-  end
-
-  @impl HeavyDbIndexOperation
-  def update_cache, do: :ok
 
   # Finds indexes on the table matching the old token holders index content:
   # the exact column list, the burn address filter, the `value > 0` condition
