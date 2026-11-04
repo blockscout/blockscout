@@ -1371,12 +1371,16 @@ defmodule Indexer.Block.Realtime.FetcherTest do
           # Nothing was fetched, so any follow-up request (e.g. beneficiaries) is an empty batch
           |> stub(:json_rpc, fn [], _ -> {:ok, []} end)
 
+          # The epoch may already have been queued as missing before being recognized as a null round
+          insert(:missing_block_range, from_number: 6_422_490, to_number: 6_422_490)
+
           log =
             ExUnit.CaptureLog.capture_log(fn ->
               Realtime.Fetcher.fetch_and_import_block(6_422_490, block_fetcher, false)
             end)
 
           assert [6_422_490] == Explorer.Chain.NullRoundHeight |> Explorer.Repo.all() |> Enum.map(& &1.height)
+          assert [] == Explorer.Repo.all(Explorer.Utility.MissingBlockRange)
           refute log =~ "failed to fetch block"
           assert log =~ "null round"
         end

@@ -428,6 +428,9 @@ defmodule Indexer.Block.Realtime.Fetcher do
         # It is recorded rather than retried, so it is not an error.
         case NullRoundHeight.record_null_round_errors(errors) do
           [] ->
+            # A recorded null round counts as indexed, so it is removed from the missing ranges
+            # in case it was queued there before being recognized.
+            MissingBlockRange.clear_batch_if_indexed([block_number_to_fetch..block_number_to_fetch])
             Logger.info("Block #{block_number_to_fetch} is a null round, recorded as such.")
 
           remaining_errors ->
