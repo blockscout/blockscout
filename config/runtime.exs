@@ -558,7 +558,7 @@ config :explorer, Explorer.Market.Source.CoinMarketCap,
 config :explorer, Explorer.Market.Source.CryptoCompare,
   base_url: ConfigHelper.parse_url_env_var("MARKET_CRYPTOCOMPARE_BASE_URL", "https://min-api.cryptocompare.com"),
   api_key: System.get_env("MARKET_CRYPTOCOMPARE_API_KEY"),
-  coin_symbol: System.get_env("MARKET_CRYPTOCOMPARE_COIN_SYMBOL", coin),
+  coin_symbol: System.get_env("MARKET_CRYPTOCOMPARE_COIN_SYMBOL"),
   secondary_coin_symbol:
     System.get_env("MARKET_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL") ||
       System.get_env("EXCHANGE_RATES_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL"),

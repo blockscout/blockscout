@@ -21,6 +21,18 @@ defmodule Explorer.MarketTest do
     test "with enabled history fetcher" do
       ConCache.delete(:market_history, :last_update)
 
+      # The history fetcher only starts when at least one history source is
+      # configured, and no market source is enabled by default in the test env.
+      old_source_env = Application.get_env(:explorer, Explorer.Market.Source)
+
+      Application.put_env(
+        :explorer,
+        Explorer.Market.Source,
+        Keyword.merge(old_source_env, native_coin_history_source: Explorer.Market.Source.OneCoinSource)
+      )
+
+      on_exit(fn -> Application.put_env(:explorer, Explorer.Market.Source, old_source_env) end)
+
       start_supervised!(Explorer.Market.Fetcher.History)
       start_supervised!(Explorer.Market)
 
