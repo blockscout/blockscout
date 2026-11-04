@@ -130,8 +130,8 @@ defmodule Explorer.Chain.Address.Counters do
   defp run_address_existence_checks(repo, address_hash, check_logs?) do
     validated_blocks_query = address_hash |> address_hash_to_validated_blocks_query() |> select([_], 1)
     token_balances_query = address_hash |> address_hash_to_token_balances_query() |> select([_], 1)
-    token_transfers_from_query = from(tt in TokenTransfer, where: tt.from_address_hash == ^address_hash, select: 1)
-    token_transfers_to_query = from(tt in TokenTransfer, where: tt.to_address_hash == ^address_hash, select: 1)
+    token_transfers_from_query = token_transfers_existence_query(address_hash, :from_address_hash)
+    token_transfers_to_query = token_transfers_existence_query(address_hash, :to_address_hash)
     withdrawals_query = Withdrawal.address_hash_to_withdrawals_existence_query(address_hash)
 
     query =
@@ -139,7 +139,8 @@ defmodule Explorer.Chain.Address.Counters do
         select: %{
           has_validated_blocks: exists(validated_blocks_query),
           has_tokens: exists(token_balances_query),
-          has_token_transfers: exists(token_transfers_from_query) or exists(token_transfers_to_query),
+          has_token_transfers:
+            not is_nil(subquery(token_transfers_from_query)) or not is_nil(subquery(token_transfers_to_query)),
           has_beacon_chain_withdrawals: exists(withdrawals_query)
         }
       )
@@ -158,6 +159,26 @@ defmodule Explorer.Chain.Address.Counters do
       end
 
     LockTimeout.run(repo, fn repo -> repo.one(query) end)
+  end
+
+  # Existence check of token transfers sent from / received by the address,
+  # as a scalar subquery: `(SELECT 1 ... ORDER BY block_number DESC LIMIT 1)`.
+  #
+  # A plain `exists(...)` is a planner trap for hyper-active addresses: for a
+  # value estimated to match tens of millions of `token_transfers` rows
+  # PostgreSQL prefers a sequential scan, expecting a hit within the first few
+  # heap pages, while the first matching row may be hundreds of GB into the
+  # table, so the check runs for minutes whenever those pages are not cached.
+  # PostgreSQL strips `ORDER BY`/`LIMIT` from `EXISTS` subqueries, so the only
+  # way to pin the `(<address field>, block_number)` index is a scalar subquery
+  # ordered by the indexed column; the caller compares its result with `NULL`.
+  @spec token_transfers_existence_query(Hash.Address.t(), :from_address_hash | :to_address_hash) :: Ecto.Query.t()
+  defp token_transfers_existence_query(address_hash, address_field) do
+    TokenTransfer
+    |> where([tt], field(tt, ^address_field) == ^address_hash)
+    |> order_by([tt], desc: tt.block_number)
+    |> limit(1)
+    |> select([_], 1)
   end
 
   @doc """
