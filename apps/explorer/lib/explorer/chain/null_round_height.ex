@@ -74,6 +74,38 @@ defmodule Explorer.Chain.NullRoundHeight do
     Repo.insert_all(__MODULE__, params, on_conflict: :nothing)
   end
 
+  @doc """
+    Records the null rounds among block fetch errors and returns the remaining errors.
+
+    Lotus rejects a request for a null round epoch with the message
+    `requested epoch was a null round`, with the epoch appended in newer versions,
+    e.g. `requested epoch was a null round (6394248)`. Such errors are not failures:
+    the heights are stored as null rounds so that the block fetchers skip them, and
+    only the other errors are returned to be handled as real ones.
+
+    ## Parameters
+    - `errors`: Block fetch errors, each carrying the block number in `data.number`.
+
+    ## Returns
+    - The errors that are not null rounds.
+  """
+  @spec record_null_round_errors([map()]) :: [map()]
+  def record_null_round_errors(errors) do
+    {null_rounds, other_errors} = Enum.split_with(errors, &null_round_error?/1)
+
+    null_rounds
+    |> Enum.map(fn %{data: %{number: number}} -> number end)
+    |> insert_heights()
+
+    other_errors
+  end
+
+  defp null_round_error?(%{message: "requested epoch was a null round" <> _, data: %{number: number}})
+       when is_integer(number),
+       do: true
+
+  defp null_round_error?(_error), do: false
+
   # Finds the neighboring block number in a sequence of null rounds.
   #
   # Analyzes a batch of previous null rounds to determine the actual neighboring block number,

@@ -75,5 +75,28 @@ defmodule Explorer.Chain.NullRoundHeightTest do
         assert with_query_sources(fn -> NullRoundHeight.neighbor_block_numbers([], :previous) end) == {%{}, []}
       end
     end
+
+    describe "record_null_round_errors/1" do
+      test "records null rounds reported with and without the epoch suffix and returns the other errors" do
+        other_error = %{code: 1, data: %{number: 102}, message: "something else"}
+
+        errors = [
+          %{code: 12, data: %{number: 100}, message: "requested epoch was a null round (100)"},
+          %{message: "requested epoch was a null round", data: %{number: 101}},
+          other_error
+        ]
+
+        assert NullRoundHeight.record_null_round_errors(errors) == [other_error]
+
+        assert [100, 101] == NullRoundHeight |> Explorer.Repo.all() |> Enum.map(& &1.height) |> Enum.sort()
+      end
+
+      test "returns all errors untouched when none is a null round" do
+        errors = [%{code: 1, data: %{number: 100}, message: "boom"}]
+
+        assert NullRoundHeight.record_null_round_errors(errors) == errors
+        assert NullRoundHeight.total() == 0
+      end
+    end
   end
 end
