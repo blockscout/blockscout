@@ -745,6 +745,19 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @doc """
+  Returns `true` if the internal transactions storage is disabled with `INDEXER_DISABLE_INTERNAL_TRANSACTIONS_STORAGE`.
+
+  Traces are still fetched and processed in this mode: they update the transactions (status, error, created
+  contract), the created contracts' code, the coin balances to fetch and the self-destructed contracts. Only the
+  internal transactions creating contracts are stored, since they are the source of the creator and of the
+  creation bytecode of contracts deployed by other contracts.
+  """
+  @spec storage_disabled?() :: boolean()
+  def storage_disabled? do
+    Application.get_env(:explorer, __MODULE__, [])[:storage_disabled?] == true
+  end
+
+  @doc """
     Determines whether internal transactions for the given block number are present in the database.
 
     When the DeleteZeroValueInternalTransactions migration is enabled, internal

@@ -269,6 +269,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       # Reject zero-value internal transactions only here, right before the DB write,
       # so it never affects block-completeness validation (see `prepare_data/1`).
       |> maybe_reject_zero_value()
+      # Same for the internal transactions storage switch: everything else in `run/3` still uses all of them.
+      |> maybe_keep_only_contract_creations()
       |> Enum.map(fn internal_transaction ->
         Map.put(internal_transaction, :trace_address, nil)
       end)
@@ -592,6 +594,26 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       _ -> internal_transactions
     end
   end
+
+  # With the storage disabled, only the internal transactions creating contracts are stored: they are the
+  # source of the creator and of the creation bytecode of contracts deployed by other contracts. The first
+  # trace (index 0) is skipped, since a contract creation transaction already holds the created contract
+  # address and the creation input.
+  defp maybe_keep_only_contract_creations(internal_transactions) do
+    if InternalTransaction.storage_disabled?() do
+      Enum.filter(internal_transactions, &contract_creation?/1)
+    else
+      internal_transactions
+    end
+  end
+
+  # `created_contract_address_id` is set only for successful creations: the changeset drops it for failed ones,
+  # and `Indexer.Fetcher.InternalTransaction` drops it when a parent call reverted.
+  defp contract_creation?(%{index: index, created_contract_address_id: created_contract_address_id})
+       when is_integer(index) and index > 0 and not is_nil(created_contract_address_id),
+       do: true
+
+  defp contract_creation?(_internal_transaction), do: false
 
   # Makes a trace error message storable: non-printable binaries are escaped via `inspect/2`, then the
   # result is capped at `@max_error_length` code points. PostgreSQL `varchar(n)` counts code points, not

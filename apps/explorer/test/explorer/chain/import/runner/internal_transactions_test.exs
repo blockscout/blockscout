@@ -3,9 +3,21 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
   use Explorer.DataCase
 
   alias Ecto.Multi
-  alias Explorer.Chain.{Block, Data, Wei, PendingBlockOperation, Transaction, TransactionError, InternalTransaction}
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    Data,
+    Wei,
+    PendingBlockOperation,
+    Transaction,
+    TransactionError,
+    InternalTransaction
+  }
+
   alias Explorer.Chain.Import.Runner.InternalTransactions
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
+  alias Explorer.Utility.AddressIdToAddressHash
 
   setup do
     config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
@@ -863,6 +875,153 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
     end
   end
 
+  describe "internal transactions storage disabled" do
+    setup do
+      initial_config = Application.get_env(:explorer, InternalTransaction)
+
+      Application.put_env(
+        :explorer,
+        InternalTransaction,
+        Keyword.merge(initial_config || [], storage_disabled?: true)
+      )
+
+      on_exit(fn ->
+        if is_nil(initial_config) do
+          Application.delete_env(:explorer, InternalTransaction)
+        else
+          Application.put_env(:explorer, InternalTransaction, initial_config)
+        end
+      end)
+    end
+
+    test "run/3 stores only the internal transactions creating contracts and still validates the block" do
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block, status: :ok)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      contract_address = insert(:address)
+
+      changes = [
+        make_internal_transaction_changes(transaction, 0, nil),
+        make_contract_creation_changes(transaction, 1, contract_address.hash),
+        make_internal_transaction_changes(transaction, 2, nil)
+      ]
+
+      assert {:ok, %{internal_transactions: [%InternalTransaction{index: 1}]}} = run_internal_transactions(changes)
+
+      assert [%InternalTransaction{index: 1, created_contract_address_id: created_contract_address_id}] =
+               stored_internal_transactions(transaction)
+
+      assert AddressIdToAddressHash.id_to_hash(created_contract_address_id) == contract_address.hash
+
+      assert %{consensus: true, refetch_needed: refetch_needed} = Repo.get(Block, block.hash)
+      refute refetch_needed
+      assert PendingBlockOperation |> Repo.get(block.hash) |> is_nil()
+    end
+
+    test "run/3 does not store failed contract creations" do
+      transaction = insert(:transaction) |> with_block(status: :ok)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      # a failed creation keeps no created contract, like the changeset leaves it
+      failed_creation_changes =
+        transaction
+        |> make_contract_creation_changes(1, nil)
+        |> Map.merge(%{error: "Reverted", created_contract_code: nil, gas_used: nil})
+
+      assert {:ok, _} =
+               run_internal_transactions([
+                 make_internal_transaction_changes(transaction, 0, nil),
+                 failed_creation_changes
+               ])
+
+      assert [] == stored_internal_transactions(transaction)
+      assert PendingBlockOperation |> Repo.get(transaction.block_hash) |> is_nil()
+    end
+
+    test "run/3 still updates transactions from the traces" do
+      block = insert(:block)
+      reverted_transaction = insert(:transaction) |> with_block(block, status: :error)
+      transaction_with_failed_call = insert(:transaction) |> with_block(block, status: :ok)
+      contract_creation_transaction = insert(:transaction) |> with_block(block, status: :ok)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      contract_address = insert(:address)
+
+      changes = [
+        make_internal_transaction_changes(reverted_transaction, 0, "Reverted"),
+        make_internal_transaction_changes(transaction_with_failed_call, 0, nil),
+        make_internal_transaction_changes(transaction_with_failed_call, 1, "Reverted"),
+        make_contract_creation_changes(contract_creation_transaction, 0, contract_address.hash)
+      ]
+
+      assert {:ok, %{internal_transactions: []}} = run_internal_transactions(changes)
+
+      assert %Transaction{status: :error, error: "Reverted"} = Repo.get(Transaction, reverted_transaction.hash)
+
+      assert %Transaction{status: :ok, has_error_in_internal_transactions: true} =
+               Repo.get(Transaction, transaction_with_failed_call.hash)
+
+      assert %Transaction{created_contract_address_hash: created_contract_address_hash} =
+               Repo.get(Transaction, contract_creation_transaction.hash)
+
+      assert created_contract_address_hash == contract_address.hash
+
+      for transaction <- [reverted_transaction, transaction_with_failed_call, contract_creation_transaction] do
+        assert [] == stored_internal_transactions(transaction)
+      end
+
+      assert PendingBlockOperation |> Repo.get(block.hash) |> is_nil()
+    end
+
+    test "run/3 still empties contract_code of self-destructed contracts" do
+      transaction = insert(:transaction) |> with_block(status: :ok)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      contract_address = insert(:address, contract_code: "0x6080604052")
+
+      selfdestruct_changes = %{
+        block_number: transaction.block_number,
+        from_address_hash: contract_address.hash,
+        to_address_hash: insert(:address).hash,
+        gas: nil,
+        trace_address: [0],
+        transaction_index: transaction.index,
+        index: 1,
+        type: :selfdestruct,
+        value: Wei.from(Decimal.new(0), :wei)
+      }
+
+      assert {:ok, _} =
+               run_internal_transactions([
+                 make_internal_transaction_changes(transaction, 0, nil),
+                 selfdestruct_changes
+               ])
+
+      assert %Data{bytes: <<>>} = Repo.get(Address, contract_address.hash).contract_code
+      assert [] == stored_internal_transactions(transaction)
+    end
+
+    test "run_insert_only/2 does not store the first trace" do
+      transaction = insert(:transaction) |> with_block(status: :ok)
+
+      InternalTransactions.run_insert_only([make_internal_transaction_changes(transaction, 0, nil)], %{
+        timeout: :infinity,
+        timestamps: %{inserted_at: DateTime.utc_now(), updated_at: DateTime.utc_now()}
+      })
+
+      assert [] == stored_internal_transactions(transaction)
+    end
+  end
+
+  defp stored_internal_transactions(transaction) do
+    from(i in InternalTransaction,
+      where: i.block_number == ^transaction.block_number and i.transaction_index == ^transaction.index,
+      order_by: i.index
+    )
+    |> Repo.all()
+  end
+
   defp run_internal_transactions(changes_list, multi \\ Multi.new()) when is_list(changes_list) do
     multi
     |> InternalTransactions.run(InternalTransactions.prepare_data(changes_list), %{
@@ -900,6 +1059,23 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       value: Wei.from(Decimal.new(1), :wei),
       error: error,
       block_number: transaction.block_number
+    }
+  end
+
+  defp make_contract_creation_changes(transaction, index, created_contract_address_hash) do
+    %{
+      block_number: transaction.block_number,
+      created_contract_address_hash: created_contract_address_hash,
+      created_contract_code: %Data{bytes: <<0x60, 0x80, 0x60, 0x40, 0x52>>},
+      from_address_hash: insert(:address).hash,
+      gas: 50_000,
+      gas_used: 25_000,
+      index: index,
+      init: %Data{bytes: <<1, 2, 3>>},
+      trace_address: [],
+      transaction_index: transaction.index,
+      type: :create,
+      value: Wei.from(Decimal.new(0), :wei)
     }
   end
 
