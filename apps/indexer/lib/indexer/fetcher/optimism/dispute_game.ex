@@ -20,6 +20,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
   alias Explorer.Chain.Data
   alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Optimism.{DisputeGame, SuperchainConfig, Withdrawal}
+  alias Explorer.Chain.SmartContract
   alias Indexer.Fetcher.Optimism
   alias Indexer.Helper, as: IndexerHelper
 
@@ -261,12 +262,13 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
 
   # Returns the DisputeGameFactory contract address. An explicitly configured address
   # (INDEXER_OPTIMISM_L1_DISPUTE_GAME_FACTORY_CONTRACT env variable or DisputeGameFactoryProxy
-  # from the Superchain config) takes priority. Otherwise, the address is read from the
-  # disputeGameFactory() public getter of the OptimismPortal contract.
+  # from the Superchain config) takes priority. A zero address is treated as not configured.
+  # Otherwise, the address is read from the disputeGameFactory() public getter of the OptimismPortal contract.
   defp get_dispute_game_factory_address(optimism_portal, json_rpc_named_arguments) do
     configured_factory = SuperchainConfig.optimism_l1_dispute_game_factory_contract()
 
-    if IndexerHelper.address_correct?(configured_factory) do
+    if IndexerHelper.address_correct?(configured_factory) and
+         String.downcase(configured_factory) != SmartContract.burn_address_hash_string() do
       configured_factory
     else
       read_dispute_game_factory_address(optimism_portal, json_rpc_named_arguments)
