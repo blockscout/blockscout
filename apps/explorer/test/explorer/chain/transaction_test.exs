@@ -394,6 +394,53 @@ defmodule Explorer.Chain.TransactionTest do
     end
   end
 
+  describe "decoded_revert_reason/3" do
+    @custom_error_abi %{
+      "inputs" => [%{"name" => "balance", "type" => "uint256"}],
+      "name" => "InsufficientBalance",
+      "type" => "error"
+    }
+
+    setup do
+      encoded_reason = ABI.encode("InsufficientBalance(uint256)", [7])
+
+      insert(:contract_method, identifier: binary_part(encoded_reason, 0, 4), abi: @custom_error_abi, type: "error")
+
+      %{hex_reason: Base.encode16(encoded_reason, case: :lower)}
+    end
+
+    test "decodes a custom error of a contract creation transaction by contract_methods candidates", %{
+      hex_reason: hex_reason
+    } do
+      transaction = insert(:transaction, to_address: nil)
+
+      assert {:error, :contract_not_verified,
+              [{:ok, _, "InsufficientBalance(uint256 balance)", [{"balance", "uint256", 7}]}]} =
+               Transaction.decoded_revert_reason(transaction, hex_reason)
+    end
+
+    test "decodes a custom error of a callee without stored bytecode by contract_methods candidates", %{
+      hex_reason: hex_reason
+    } do
+      transaction =
+        :transaction
+        |> insert(to_address: insert(:address, contract_code: nil))
+        |> Repo.preload(to_address: :smart_contract)
+
+      assert {:error, :contract_not_verified,
+              [{:ok, _, "InsufficientBalance(uint256 balance)", [{"balance", "uint256", 7}]}]} =
+               Transaction.decoded_revert_reason(transaction, hex_reason)
+    end
+
+    test "decodes the default Error(string) reason of a contract creation transaction" do
+      hex_reason = "Error(string)" |> ABI.encode(["out of funds"]) |> Base.encode16(case: :lower)
+      transaction = insert(:transaction, to_address: nil)
+
+      assert {:ok, "08c379a0", "Error(string reason)", [{"reason", "string", "out of funds"}]} =
+               Transaction.decoded_revert_reason(transaction, "0x" <> hex_reason)
+    end
+  end
+
   describe "decode_transactions/3" do
     @decoded_set_10 {:ok, "60fe47b1", "set(uint256 x)", [{"x", "uint256", 10}]}
     @abi_sources ["proxy_implementations", "smart_contracts", "addresses"]
