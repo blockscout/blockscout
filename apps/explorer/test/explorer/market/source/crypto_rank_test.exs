@@ -70,6 +70,23 @@ defmodule Explorer.Market.Source.CryptoRankTest do
               }} ==
                CryptoRank.fetch_native_coin()
     end
+
+    test "strips a trailing version segment from base_url", %{bypass: bypass, old_env: old_env} do
+      Application.put_env(
+        :explorer,
+        CryptoRank,
+        Keyword.merge(Application.get_env(:explorer, CryptoRank), base_url: "http://localhost:#{bypass.port}/v1")
+      )
+
+      on_exit(fn -> Application.put_env(:explorer, CryptoRank, old_env) end)
+
+      Bypass.expect_once(bypass, "GET", "/v3/currencies/3", fn conn ->
+        Conn.resp(conn, 200, json_coin(3, "2514.75325703684"))
+      end)
+
+      assert {:ok, %Explorer.Market.Token{fiat_value: fiat_value}} = CryptoRank.fetch_native_coin()
+      assert Decimal.equal?(fiat_value, Decimal.new("2514.75325703684"))
+    end
   end
 
   describe "secondary_coin_fetching_enabled?" do
@@ -182,6 +199,24 @@ defmodule Explorer.Market.Source.CryptoRankTest do
              } == CryptoRank.fetch_tokens(50, 50)
 
       # cspell:enable
+    end
+
+    test "strips a trailing version segment and slash from base_url", %{bypass: bypass, old_env: old_env} do
+      Application.put_env(
+        :explorer,
+        CryptoRank,
+        Keyword.merge(Application.get_env(:explorer, CryptoRank), base_url: "http://localhost:#{bypass.port}/v1/")
+      )
+
+      on_exit(fn -> Application.put_env(:explorer, CryptoRank, old_env) end)
+
+      Bypass.expect_once(bypass, "GET", "/v1/dedicated/blockscout/currencies/contracts/96", fn conn ->
+        assert conn.query_string == "api_key=api_key&limit=50&skip=50"
+        Conn.resp(conn, 200, json_tokens_2nd_page())
+      end)
+
+      assert {:ok, nil, true, tokens} = CryptoRank.fetch_tokens(50, 50)
+      assert length(tokens) == 2
     end
   end
 

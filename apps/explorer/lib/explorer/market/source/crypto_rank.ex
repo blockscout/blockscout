@@ -13,7 +13,8 @@ defmodule Explorer.Market.Source.CryptoRank do
   parameter.
 
   `base_url` must therefore point at the API host without a version segment
-  (`https://api.cryptorank.io` by default).
+  (`https://api.cryptorank.io` by default); a trailing `/v1` is stripped for
+  backwards compatibility.
   """
 
   alias Explorer.Chain.Hash
@@ -221,17 +222,27 @@ defmodule Explorer.Market.Source.CryptoRank do
   defp unix_ms_to_datetime(_), do: nil
 
   defp v3_url(path) do
-    :base_url |> config() |> URI.parse() |> URI.append_path("/v3" <> path)
+    base_url() |> URI.append_path("/v3" <> path)
   end
 
   defp dedicated_url(path) do
-    url = :base_url |> config() |> URI.parse() |> URI.append_path("/v1/dedicated/blockscout" <> path)
+    url = base_url() |> URI.append_path("/v1/dedicated/blockscout" <> path)
 
     if config(:api_key) do
       URI.append_query(url, "api_key=#{config(:api_key)}")
     else
       url
     end
+  end
+
+  # Strips a trailing version segment (e.g. `/v1`, the previous default) and
+  # trailing slash so that overrides of `base_url` cannot produce duplicated or
+  # stale version segments; the version is appended per endpoint.
+  defp base_url do
+    :base_url
+    |> config()
+    |> String.replace(~r{(/v\d+)?/*$}, "")
+    |> URI.parse()
   end
 
   defp headers do
