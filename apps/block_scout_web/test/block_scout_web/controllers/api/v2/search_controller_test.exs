@@ -3020,13 +3020,13 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       assert [] = json_response(request, 200)
     end
 
-    test "finds a pool by pool ID using the configured instance ID", %{conn: conn} do
-      bypass = setup_contracts_info(enabled: true, instance_id: "100")
+    test "finds a pool by pool ID using the configured chain specifier", %{conn: conn} do
+      bypass = setup_contracts_info(enabled: true, chain_specifier: "1:main")
 
       Bypass.expect_once(
         bypass,
         "GET",
-        "/api/v1/chains/100/pools",
+        "/api/v1/chains/1:main/pools",
         fn conn ->
           assert conn.params["query"] == @pool_id
           Plug.Conn.resp(conn, 200, Utils.JSON.encode!(%{"items" => [pool_response()], "next_page_params" => nil}))

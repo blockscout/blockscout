@@ -62,8 +62,8 @@ defmodule Explorer.MicroserviceInterfaces.ContractsInfo do
     "#{Microservice.base_url(__MODULE__)}/api/v1"
   end
 
-  # Either just `chain_id` or `chain_id:instance_id`
+  # Either just `chain_id` or `chain_id:instance_id`, defaults to `chain_id`
   defp chain_specifier do
-    Application.get_env(:explorer, __MODULE__)[:instance_id] || Application.get_env(:block_scout_web, :chain_id)
+    Application.get_env(:explorer, __MODULE__)[:chain_specifier] || Application.get_env(:block_scout_web, :chain_id)
   end
 end
