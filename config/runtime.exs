@@ -824,6 +824,11 @@ config :explorer, Explorer.MicroserviceInterfaces.TACOperationLifecycle,
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_TAC_OPERATION_LIFECYCLE_ENABLED", "true"),
   service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_TAC_OPERATION_LIFECYCLE_URL")
 
+config :explorer, Explorer.MicroserviceInterfaces.ContractsInfo,
+  service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_CONTRACTS_INFO_URL"),
+  enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_CONTRACTS_INFO_ENABLED"),
+  chain_specifier: System.get_env("MICROSERVICE_CONTRACTS_INFO_CHAIN_SPECIFIER")
+
 audit_reports_table_url = System.get_env("CONTRACT_AUDIT_REPORTS_AIRTABLE_URL")
 audit_reports_api_key = System.get_env("CONTRACT_AUDIT_REPORTS_AIRTABLE_API_KEY")
 
