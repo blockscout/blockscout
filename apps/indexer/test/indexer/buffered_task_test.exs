@@ -239,6 +239,7 @@ defmodule Indexer.BufferedTaskTest do
 
     test "with 0 size without maximum size schedules next flush and hibernates" do
       bound_queue = %BoundQueue{}
+      old_timer = Process.send_after(self(), :flush, :timer.minutes(5))
 
       refute BoundQueue.shrunk?(bound_queue)
 
@@ -249,15 +250,40 @@ defmodule Indexer.BufferedTaskTest do
                  callback_module: ShrinkableTask,
                  callback_module_state: nil,
                  bound_queue: bound_queue,
-                 flush_interval: 50,
-                 flush_timer: nil,
+                 flush_interval: :timer.minutes(5),
+                 flush_timer: old_timer,
                  task_supervisor: BufferedTaskSup,
                  max_batch_size: 1,
                  max_concurrency: 1,
                  poll: false
                })
 
-      refute flush_timer == nil
+      assert Process.read_timer(old_timer) == false
+      assert is_integer(Process.read_timer(flush_timer))
+    end
+
+    test "with 0 size and poll keeps a single flush timer after the delayed initial stream" do
+      start_supervised!({Task.Supervisor, name: BufferedTaskSup})
+
+      assert {:noreply, %BufferedTask{flush_timer: first_timer} = state, :hibernate} =
+               BufferedTask.handle_info(:flush, %BufferedTask{
+                 callback_module: EmptyTask,
+                 callback_module_state: nil,
+                 flush_interval: :timer.minutes(5),
+                 task_supervisor: BufferedTaskSup,
+                 max_batch_size: 1,
+                 max_concurrency: 1,
+                 init_task: :complete
+               })
+
+      assert_receive :initial_stream, @assert_receive_timeout
+
+      assert {:noreply, %BufferedTask{flush_timer: second_timer, init_task: init_ref}} =
+               BufferedTask.handle_info(:initial_stream, state)
+
+      assert_receive {^init_ref, :ok}, @assert_receive_timeout
+      assert Process.read_timer(first_timer) == false
+      assert is_integer(Process.read_timer(second_timer))
     end
 
     test "with 0 size with maximum size calls init/2 to get work that was shed before scheduling next flush and hibernates" do

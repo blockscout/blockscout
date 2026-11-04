@@ -1285,6 +1285,12 @@ defmodule Indexer.BufferedTask do
     if state.flush_interval == :infinity do
       state
     else
+      # Keep one flush timer per worker. Overwriting a live reference leaves
+      # the previous timer running and starts another repeating flush chain.
+      if is_reference(state.flush_timer) do
+        Process.cancel_timer(state.flush_timer)
+      end
+
       timer = Process.send_after(self(), :flush, state.flush_interval)
       %__MODULE__{state | flush_timer: timer}
     end
