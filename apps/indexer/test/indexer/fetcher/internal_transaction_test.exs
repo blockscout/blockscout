@@ -530,6 +530,175 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
              )
     end
 
+    test "processes traces but stores only contract creations when the internal transactions storage is disabled",
+         %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      initial_config = Application.get_env(:explorer, Chain.InternalTransaction)
+
+      Application.put_env(
+        :explorer,
+        Chain.InternalTransaction,
+        Keyword.merge(initial_config || [], storage_disabled?: true)
+      )
+
+      on_exit(fn ->
+        if is_nil(initial_config) do
+          Application.delete_env(:explorer, Chain.InternalTransaction)
+        else
+          Application.put_env(:explorer, Chain.InternalTransaction, initial_config)
+        end
+      end)
+
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block, status: :ok)
+      block_hash = block.hash
+      block_number = block.number
+      insert(:pending_block_operation, block_hash: block_hash, block_number: block_number)
+
+      sender_hash_string = "0xa931c862e662134b85e4dc4baf5c70cc9ba74db4"
+      factory_hash_string = "0x1469b17ebf82fedf56f04109e5207bdc4554288c"
+      created_contract_hash_string = "0xee4019030fb5c2b68c42105552c6268d56c6cbfe"
+      created_contract_code = "0x6080604052"
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        case Keyword.fetch!(json_rpc_named_arguments, :variant) do
+          EthereumJSONRPC.Nethermind ->
+            EthereumJSONRPC.Mox
+            |> expect(:json_rpc, fn [%{id: id, method: "trace_replayBlockTransactions"}], _options ->
+              {:ok,
+               [
+                 %{
+                   id: id,
+                   result: [
+                     %{
+                       "output" => "0x",
+                       "stateDiff" => nil,
+                       "trace" => [
+                         %{
+                           "action" => %{
+                             "callType" => "call",
+                             "from" => sender_hash_string,
+                             "gas" => "0x8600",
+                             "input" => "0xb118e2db0000000000000000000000000000000000000000000000000000000000000008",
+                             "to" => factory_hash_string,
+                             "value" => "0x174876e800"
+                           },
+                           "result" => %{"gasUsed" => "0x7d37", "output" => "0x"},
+                           "subtraces" => 1,
+                           "traceAddress" => [],
+                           "type" => "call"
+                         },
+                         %{
+                           "action" => %{
+                             "from" => factory_hash_string,
+                             "gas" => "0x32dcf",
+                             "init" => created_contract_code,
+                             "value" => "0x0"
+                           },
+                           "result" => %{
+                             "address" => created_contract_hash_string,
+                             "code" => created_contract_code,
+                             "gasUsed" => "0xb08"
+                           },
+                           "subtraces" => 0,
+                           "traceAddress" => [0],
+                           "type" => "create"
+                         }
+                       ],
+                       "transactionHash" => to_string(transaction.hash),
+                       "vmTrace" => nil
+                     }
+                   ]
+                 }
+               ]}
+            end)
+
+          EthereumJSONRPC.Geth ->
+            EthereumJSONRPC.Mox
+            |> expect(:json_rpc, fn [%{id: id, method: "debug_traceTransaction"}], _options ->
+              {:ok,
+               [
+                 %{
+                   id: id,
+                   result: [
+                     %{
+                       "blockNumber" => block.number,
+                       "transactionIndex" => 0,
+                       "transactionHash" => to_string(transaction.hash),
+                       "index" => 0,
+                       "traceAddress" => [],
+                       "type" => "call",
+                       "callType" => "call",
+                       "from" => sender_hash_string,
+                       "to" => factory_hash_string,
+                       "gas" => "0x8600",
+                       "gasUsed" => "0x7d37",
+                       "input" => "0xb118e2db0000000000000000000000000000000000000000000000000000000000000008",
+                       "output" => "0x",
+                       "value" => "0x174876e800"
+                     },
+                     %{
+                       "blockNumber" => block.number,
+                       "transactionIndex" => 0,
+                       "transactionHash" => to_string(transaction.hash),
+                       "index" => 1,
+                       "traceAddress" => [0],
+                       "type" => "create",
+                       "from" => factory_hash_string,
+                       "createdContractAddressHash" => created_contract_hash_string,
+                       "createdContractCode" => created_contract_code,
+                       "gas" => "0x32dcf",
+                       "gasUsed" => "0xb08",
+                       "init" => created_contract_code,
+                       "value" => "0x0"
+                     }
+                   ]
+                 }
+               ]}
+            end)
+
+          variant_name ->
+            raise ArgumentError, "Unsupported variant name (#{variant_name})"
+        end
+      end
+
+      CoinBalanceCatchup.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+      start_token_balance_fetcher(json_rpc_named_arguments)
+
+      assert :ok == InternalTransaction.run([block_number], json_rpc_named_arguments)
+
+      assert nil == Repo.get(PendingBlockOperation, block_hash)
+
+      {:ok, sender_hash} = Chain.string_to_address_hash(sender_hash_string)
+      {:ok, factory_hash} = Chain.string_to_address_hash(factory_hash_string)
+      {:ok, created_contract_hash} = Chain.string_to_address_hash(created_contract_hash_string)
+
+      # only the contract creation is stored
+      assert [%Chain.InternalTransaction{index: 1, created_contract_address_id: created_contract_address_id}] =
+               Repo.all(from(i in Chain.InternalTransaction, where: i.block_number == ^block_number))
+
+      assert Explorer.Utility.AddressIdToAddressHash.id_to_hash(created_contract_address_id) == created_contract_hash
+
+      assert %Chain.Transaction{status: :ok} = Repo.get(Chain.Transaction, transaction.hash)
+
+      created_contract = Repo.get(Chain.Address, created_contract_hash)
+
+      if elem(@chain_identity, 0) == :zksync do
+        # zksync traces carry no created contract code (`Indexer.Transform.Addresses` does not extract it there)
+        assert %Chain.Address{contract_code: nil} = created_contract
+      else
+        assert %Chain.Address{contract_code: %Chain.Data{}} = created_contract
+      end
+
+      # coin balances of all the participants are still scheduled for fetching
+      for address_hash <- [sender_hash, factory_hash, created_contract_hash] do
+        assert Repo.exists?(
+                 from(cb in Chain.Address.CoinBalance,
+                   where: cb.address_hash == ^address_hash and cb.block_number == ^block_number
+                 )
+               )
+      end
+    end
+
     test "retries fetching by transactions when fetching by block returns incorrect number of top-level calls", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
