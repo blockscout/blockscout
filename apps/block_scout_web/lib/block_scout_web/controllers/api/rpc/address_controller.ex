@@ -188,10 +188,8 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
   def txlistinternal(conn, params, address_param, :address) do
     with {:params, {:ok, options}} <- {:params, optional_params(params)},
          {:format, {:ok, address_hash}} <- to_address_hash(address_param),
-         {:address, :ok} <- {:address, Address.check_address_exists(address_hash, @api_true)},
-         {{:ok, internal_transactions}, _, _} <-
-           {list_internal_transactions(address_hash, options), options[:startblock], options[:endblock]} do
-      render_internal_transactions(conn, internal_transactions, options[:startblock], options[:endblock])
+         {:address, :ok} <- {:address, Address.check_address_exists(address_hash, @api_true)} do
+      render_listed_internal_transactions(conn, list_internal_transactions(address_hash, options), options)
     else
       {:format, :error} ->
         render(conn, :error, error: @invalid_address_message)
@@ -201,25 +199,43 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
       {:params, {:error, :results_window_too_large}} ->
         render(conn, :error, error: @results_window_too_large_message, data: nil)
-
-      {{:error, :not_found}, start_block_number, end_block_number} ->
-        render_internal_transactions(conn, [], start_block_number, end_block_number)
     end
   end
 
   def txlistinternal(conn, params, :no_param) do
-    with {:ok, options} <- optional_params(params),
-         {{:ok, internal_transactions}, _, _} <-
-           {list_internal_transactions(:all, options), options[:startblock], options[:endblock]} do
-      render_internal_transactions(conn, internal_transactions, options[:startblock], options[:endblock])
-    else
+    case optional_params(params) do
+      {:ok, options} ->
+        render_listed_internal_transactions(conn, list_internal_transactions(:all, options), options)
+
       {:error, :results_window_too_large} ->
         render(conn, :error, error: @results_window_too_large_message, data: nil)
-
-      {{:error, :not_found}, start_block_number, end_block_number} ->
-        render_internal_transactions(conn, [], start_block_number, end_block_number)
     end
   end
+
+  defp render_listed_internal_transactions(conn, {:ok, internal_transactions}, options),
+    do: render_internal_transactions(conn, internal_transactions, options[:startblock], options[:endblock])
+
+  defp render_listed_internal_transactions(conn, {:error, :not_found}, options),
+    do: render_internal_transactions(conn, [], options[:startblock], options[:endblock])
+
+  # the internal transactions are fetched from the node, and the request stopped before `next_block_number`
+  defp render_listed_internal_transactions(conn, {:incomplete, internal_transactions, next_block_number}, options) do
+    render(conn, :pending_internal_transaction,
+      message: not_fetched_internal_transactions_message(next_block_number, options[:order_by_direction]),
+      data: internal_transactions
+    )
+  end
+
+  # The results of the new block range are paged from its start: with the page number kept, the first ones are skipped
+  defp not_fetched_internal_transactions_message(next_block_number, :asc),
+    do:
+      "Internal transactions of the blocks from #{next_block_number} were not fetched from the node in this request, " <>
+        "request them with startblock=#{next_block_number} and page=1"
+
+  defp not_fetched_internal_transactions_message(next_block_number, _desc),
+    do:
+      "Internal transactions of the blocks up to #{next_block_number} were not fetched from the node in this request, " <>
+        "request them with endblock=#{next_block_number} and page=1"
 
   # With an empty result the pending status is the only useful information the response
   # carries, so the strict check is kept here: pending blocks at the chain head are not
@@ -611,8 +627,8 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
 
   defp list_internal_transactions(transaction_or_address_hash_param_or_no_param, options) do
     case BlockScoutWebChain.list_internal_transactions(transaction_or_address_hash_param_or_no_param, options) do
-      [] -> {:error, :not_found}
-      internal_transactions -> {:ok, internal_transactions}
+      {:ok, []} -> {:error, :not_found}
+      result -> result
     end
   end
 

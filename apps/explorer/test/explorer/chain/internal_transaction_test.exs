@@ -9,9 +9,13 @@ defmodule Explorer.Chain.InternalTransactionTest do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Data, InternalTransaction, Wei}
   alias Explorer.Chain.InternalTransaction.Type
+  alias Explorer.Migrator.DeleteZeroValueInternalTransactions
   alias Explorer.PagingOptions
 
   doctest InternalTransaction
+
+  defp restore_explorer_env(key, nil), do: Application.delete_env(:explorer, key)
+  defp restore_explorer_env(key, value), do: Application.put_env(:explorer, key, value)
 
   describe "changeset/2" do
     test "with valid attributes" do
@@ -1290,6 +1294,62 @@ defmodule Explorer.Chain.InternalTransactionTest do
       )
 
       assert length(InternalTransaction.fetch(exclude_origin_internal_transaction: false)) == 2
+    end
+  end
+
+  describe "present_in_db?/2" do
+    setup do
+      initial_config = Application.get_env(:explorer, InternalTransaction)
+      initial_delete_zero_value_config = Application.get_env(:explorer, DeleteZeroValueInternalTransactions)
+
+      on_exit(fn ->
+        restore_explorer_env(InternalTransaction, initial_config)
+        restore_explorer_env(DeleteZeroValueInternalTransactions, initial_delete_zero_value_config)
+      end)
+
+      Application.put_env(
+        :explorer,
+        DeleteZeroValueInternalTransactions,
+        Keyword.merge(initial_delete_zero_value_config || [], enabled: false)
+      )
+
+      %{initial_config: initial_config || [], initial_delete_zero_value_config: initial_delete_zero_value_config || []}
+    end
+
+    test "returns true when internal transactions are stored", %{initial_config: initial_config} do
+      Application.put_env(:explorer, InternalTransaction, Keyword.merge(initial_config, storage_disabled?: false))
+
+      assert InternalTransaction.present_in_db?(10)
+      assert InternalTransaction.present_in_db?(10, false)
+    end
+
+    test "returns false for any block when the storage is disabled", %{initial_config: initial_config} do
+      Application.put_env(:explorer, InternalTransaction, Keyword.merge(initial_config, storage_disabled?: true))
+
+      refute InternalTransaction.present_in_db?(10)
+      refute InternalTransaction.present_in_db?(10, false)
+
+      # pending transactions have no internal transactions to fetch
+      assert InternalTransaction.present_in_db?(nil)
+    end
+
+    test "returns false only for zero-value calls of blocks deleted by DeleteZeroValueInternalTransactions", %{
+      initial_config: initial_config,
+      initial_delete_zero_value_config: initial_delete_zero_value_config
+    } do
+      Application.put_env(:explorer, InternalTransaction, Keyword.merge(initial_config, storage_disabled?: false))
+
+      Application.put_env(
+        :explorer,
+        DeleteZeroValueInternalTransactions,
+        Keyword.merge(initial_delete_zero_value_config, enabled: true, storage_period: 0)
+      )
+
+      block = insert(:block, timestamp: Timex.shift(Timex.now(), hours: -1))
+
+      refute InternalTransaction.present_in_db?(block.number)
+      assert InternalTransaction.present_in_db?(block.number, false)
+      assert InternalTransaction.present_in_db?(block.number + 1)
     end
   end
 

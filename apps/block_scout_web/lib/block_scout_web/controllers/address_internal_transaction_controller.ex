@@ -12,7 +12,8 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
     only: [
       current_filter: 1,
       paging_options: 1,
-      address_to_internal_transactions: 2
+      address_to_internal_transactions: 2,
+      internal_transactions_next_page_params_from_block: 2
     ]
 
   import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 3, split_list_by_page: 1]
@@ -25,36 +26,35 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
   alias Phoenix.View
 
+  @address_fields [
+    {:from_address_hash, :from_address},
+    {:to_address_hash, :to_address},
+    {:created_contract_address_hash, :created_contract_address}
+  ]
+
+  @address_necessity_by_association %{:names => :optional, :smart_contract => :optional}
+
   def index(conn, %{"address_id" => address_hash_string, "type" => "JSON"} = params) do
     with {:ok, address_hash} <- Chain.string_to_address_hash(address_hash_string),
          {:ok, address} <-
            Chain.hash_to_address(address_hash, necessity_by_association: %{:smart_contract => :optional}),
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
-      full_options =
-        [
-          address_preloads: [
-            created_contract_address: [:names, :smart_contract],
-            from_address: [:names, :smart_contract],
-            to_address: [:names, :smart_contract]
-          ]
-        ]
-        |> Keyword.merge(paging_options(params))
-        |> Keyword.merge(current_filter(params))
+      full_options = Keyword.merge(paging_options(params), current_filter(params))
 
-      internal_transactions_plus_one = address_to_internal_transactions(address_hash, full_options)
-      {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
+      {internal_transactions, next_page_params} =
+        address_hash
+        |> address_to_internal_transactions(full_options)
+        |> paginate_internal_transactions(params)
 
       next_page_path =
-        case next_page_params(next_page, internal_transactions, params) do
-          nil ->
-            nil
+        if next_page_params,
+          do: address_internal_transaction_path(conn, :index, address_hash, Map.delete(next_page_params, "type"))
 
-          next_page_params ->
-            address_internal_transaction_path(conn, :index, address_hash, Map.delete(next_page_params, "type"))
-        end
-
+      # the addresses are loaded by hash: the internal transactions fetched from the node don't have them preloaded
       internal_transactions_json =
-        Enum.map(internal_transactions, fn internal_transaction ->
+        internal_transactions
+        |> Chain.preload_address_participants(@address_fields, @address_necessity_by_association, [])
+        |> Enum.map(fn internal_transaction ->
           View.render_to_string(
             InternalTransactionView,
             "_tile.html",
@@ -135,4 +135,13 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         not_found(conn)
     end
   end
+
+  defp paginate_internal_transactions({:ok, internal_transactions_plus_one}, params) do
+    {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
+    {internal_transactions, next_page_params(next_page, internal_transactions, params)}
+  end
+
+  # fetched from the node, and the request stopped before `next_block_number`: the next page goes on with it
+  defp paginate_internal_transactions({:incomplete, internal_transactions, next_block_number}, params),
+    do: {internal_transactions, internal_transactions_next_page_params_from_block(params, next_block_number)}
 end

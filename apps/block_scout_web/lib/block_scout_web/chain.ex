@@ -874,6 +874,22 @@ defmodule BlockScoutWeb.Chain do
     {items, next_page_params}
   end
 
+  @doc """
+  Returns the next page params of internal transactions (the latest ones or an address's) going on with the given
+  block: the page ended before it, e.g. when the node was not queried for the internal transactions of that block
+  and the older ones within the request. The next page takes the internal transactions older than the first one of
+  the block after it.
+  """
+  @spec internal_transactions_next_page_params_from_block(map(), non_neg_integer()) :: map()
+  def internal_transactions_next_page_params_from_block(params, block_number) do
+    paging_params = %{block_number: block_number + 1, transaction_index: 0, index: 0}
+
+    params
+    |> delete_parameters_from_next_page_params()
+    |> Map.drop(map_to_string_keys(paging_params))
+    |> Map.merge(paging_params)
+  end
+
   defp decimal_parse(input_string) do
     case Decimal.parse(input_string) do
       {decimal, ""} -> decimal
@@ -1267,7 +1283,8 @@ defmodule BlockScoutWeb.Chain do
     When internal transactions are present in the database (for recent blocks
     within the storage period), they are fetched from the DB. For older blocks
     where zero-value internal transactions have been deleted, the function
-    falls back to fetching on-demand from the JSON-RPC node.
+    falls back to fetching on-demand from the JSON-RPC node. When the internal
+    transactions storage is disabled, they are always fetched on-demand.
 
     ## Parameters
     - `options`: Keyword list with optional keys:
@@ -1275,9 +1292,11 @@ defmodule BlockScoutWeb.Chain do
       - `:transaction_hash` - filter by specific transaction option
 
     ## Returns
-    - List of InternalTransaction structs
+    - `{:ok, internal_transactions}` with InternalTransaction structs
+    - `{:incomplete, internal_transactions, next_block_number}` when the node is not queried for the blocks from
+      `next_block_number` down within the request (see `Indexer.Fetcher.OnDemand.InternalTransaction.fetch_latest/1`)
   """
-  @spec fetch_internal_transactions(Keyword.t()) :: [InternalTransaction.t()]
+  @spec fetch_internal_transactions(Keyword.t()) :: InternalTransactionOnDemand.scan_result(InternalTransaction.t())
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def fetch_internal_transactions(options) do
     paging_options = Keyword.get(options, :paging_options, @default_paging_options)
@@ -1299,16 +1318,19 @@ defmodule BlockScoutWeb.Chain do
     cond do
       match?(%PagingOptions{key: {0, 0, 0}}, paging_options) or
           match?(%PagingOptions{key: %{transaction_index: 0, index: 0}}, paging_options) ->
-        []
+        {:ok, []}
 
       not is_nil(transaction_hash) ->
         case hash_to_transaction(transaction_hash) do
           {:ok, transaction} ->
-            transaction_to_internal_transactions(transaction, options_with_necessity)
+            {:ok, transaction_to_internal_transactions(transaction, options_with_necessity)}
 
           {:error, :not_found} ->
-            []
+            {:ok, []}
         end
+
+      InternalTransaction.storage_disabled?() ->
+        InternalTransactionOnDemand.fetch_latest(options_with_necessity)
 
       match?(%PagingOptions{key: {_, _, _}}, paging_options) and
         include_zero_value? and
@@ -1319,16 +1341,16 @@ defmodule BlockScoutWeb.Chain do
         from_db = InternalTransaction.fetch(options_with_necessity)
 
         from_node =
-          if include_zero_value? and InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size) do
+          if InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size, include_zero_value?) do
             InternalTransactionOnDemand.fetch_latest(options_with_necessity)
           else
-            []
+            {:ok, []}
           end
 
-        merge_internal_transactions(from_db, from_node, paging_options.page_size)
+        merge_with_node_scan(from_db, from_node, paging_options.page_size, :desc)
 
       true ->
-        InternalTransaction.fetch(options_with_necessity)
+        {:ok, InternalTransaction.fetch(options_with_necessity)}
     end
   end
 
@@ -1337,14 +1359,16 @@ defmodule BlockScoutWeb.Chain do
 
     When internal transactions are present in the database (for recent blocks
     within the storage period), they are fetched from the DB. For older blocks
-    where zero-value internal transactions have been deleted, the function
-    falls back to fetching on-demand from the JSON-RPC node.
+    where zero-value internal transactions have been deleted, or when the internal
+    transactions storage is disabled, the function falls back to fetching on-demand
+    from the JSON-RPC node.
 
     ## Parameters
     - `transaction`: The transaction struct to fetch internal transactions for
     - `options`: Keyword list with optional keys:
       - `:necessity_by_association` - associations to preload as required or optional
       - `:paging_options` - pagination options including page_size and key
+      - `:include_zero_value` - whether to include zero-value calls (default: true)
 
     ## Returns
     - List of InternalTransaction structs for the given transaction
@@ -1353,7 +1377,7 @@ defmodule BlockScoutWeb.Chain do
   def transaction_to_internal_transactions(transaction, options \\ []) do
     include_zero_value? = Keyword.get(options, :include_zero_value, true)
 
-    if InternalTransaction.present_in_db?(transaction.block_number) or not include_zero_value? do
+    if InternalTransaction.present_in_db?(transaction.block_number, include_zero_value?) do
       InternalTransaction.transaction_to_internal_transactions(transaction.hash, options)
     else
       InternalTransactionOnDemand.fetch_by_transaction(transaction, options)
@@ -1365,8 +1389,9 @@ defmodule BlockScoutWeb.Chain do
 
     When internal transactions are present in the database (for recent blocks
     within the storage period), they are fetched from the DB. For older blocks
-    where zero-value internal transactions have been deleted, the function
-    falls back to fetching on-demand from the JSON-RPC node.
+    where zero-value internal transactions have been deleted, or when the internal
+    transactions storage is disabled, the function falls back to fetching on-demand
+    from the JSON-RPC node.
 
     ## Parameters
     - `block`: The block struct to fetch internal transactions for
@@ -1376,6 +1401,7 @@ defmodule BlockScoutWeb.Chain do
       - `:paging_options` - pagination options including page_size and key
       - `:type` - filter by transaction type
       - `:call_type` - filter by call type
+      - `:include_zero_value` - whether to include zero-value calls (default: true)
 
     ## Returns
     - List of InternalTransaction structs for the given block
@@ -1384,7 +1410,7 @@ defmodule BlockScoutWeb.Chain do
   def block_to_internal_transactions(block, options \\ []) do
     include_zero_value? = Keyword.get(options, :include_zero_value, true)
 
-    if InternalTransaction.present_in_db?(block.number) or not include_zero_value? do
+    if InternalTransaction.present_in_db?(block.number, include_zero_value?) do
       InternalTransaction.block_to_internal_transactions(block.number, options)
     else
       InternalTransactionOnDemand.fetch_by_block(block, options)
@@ -1404,17 +1430,21 @@ defmodule BlockScoutWeb.Chain do
       - `:paging_options` - pagination options including page_size and key
       - `:necessity_by_association` - associations to preload as required or optional
       - `:address_preloads` - addresses to preload with nested associations
+      - `:include_zero_value` - whether to include zero-value calls (default: true)
 
     ## Returns
-    - List of InternalTransaction structs for the given address
+    - `{:ok, internal_transactions}` with InternalTransaction structs for the given address
+    - `{:incomplete, internal_transactions, next_block_number}` when the node is not queried for the blocks from
+      `next_block_number` down within the request (see `Indexer.Fetcher.OnDemand.InternalTransaction.fetch_by_address/2`)
   """
-  @spec address_to_internal_transactions(Hash.Address.t(), Keyword.t()) :: [InternalTransaction.t()]
+  @spec address_to_internal_transactions(Hash.Address.t(), Keyword.t()) ::
+          InternalTransactionOnDemand.scan_result(InternalTransaction.t())
   def address_to_internal_transactions(address_hash, options \\ []) do
     paging_options = Keyword.get(options, :paging_options, default_paging_options())
 
     case paging_options do
       %PagingOptions{key: {0, 0, 0}} ->
-        []
+        {:ok, []}
 
       _ ->
         include_zero_value? = Keyword.get(options, :include_zero_value, true)
@@ -1422,13 +1452,13 @@ defmodule BlockScoutWeb.Chain do
         from_db = InternalTransaction.fetch_from_db_by_address(address_hash, options)
 
         from_node =
-          if include_zero_value? and InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size) do
+          if InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size, include_zero_value?) do
             InternalTransactionOnDemand.fetch_by_address(address_hash, options)
           else
-            []
+            {:ok, []}
           end
 
-        merge_internal_transactions(from_db, from_node, paging_options.page_size)
+        merge_with_node_scan(from_db, from_node, paging_options.page_size, :desc)
     end
   end
 
@@ -1438,54 +1468,60 @@ defmodule BlockScoutWeb.Chain do
 
     When internal transactions are present in the database (for recent blocks
     within the storage period), they are fetched from the DB. For older blocks
-    where zero-value internal transactions have been deleted, the function
-    falls back to fetching on-demand from the JSON-RPC node.
+    where zero-value internal transactions have been deleted, or when the internal
+    transactions storage is disabled, the function falls back to fetching on-demand
+    from the JSON-RPC node.
 
     ## Parameters
     - `transaction_or_address_hash_param_or_no_param`: Transaction or address hash or `:all` as a source to fetching internal transactions
     - `options`: Map of options
 
     ## Returns
-    - List of InternalTransaction fields maps for the given param
+    - `{:ok, internal_transactions}` with InternalTransaction fields maps for the given param
+    - `{:incomplete, internal_transactions, next_block_number}` for an address or `:all` when the node is not
+      queried for the blocks from `next_block_number` on within the request (see
+      `Indexer.Fetcher.OnDemand.InternalTransaction.etherscan_fetch_by_address/2` and
+      `Indexer.Fetcher.OnDemand.InternalTransaction.etherscan_fetch_latest/1`)
   """
-  @spec list_internal_transactions(Hash.Full.t() | Hash.Address.t() | :all, map()) :: [map()]
+  @spec list_internal_transactions(Hash.Full.t() | Hash.Address.t() | :all, map()) ::
+          InternalTransactionOnDemand.scan_result(map())
   def list_internal_transactions(%Hash{byte_count: unquote(Hash.Full.byte_count())} = transaction_hash, raw_options) do
     options = Map.merge(Etherscan.default_options(), raw_options)
 
     case hash_to_transaction(transaction_hash) do
       {:ok, transaction} ->
-        if not options.include_zero_value or InternalTransaction.present_in_db?(transaction.block_number) do
-          Etherscan.list_internal_transactions(transaction.hash, options)
+        if InternalTransaction.present_in_db?(transaction.block_number, options.include_zero_value) do
+          {:ok, Etherscan.list_internal_transactions(transaction.hash, options)}
         else
-          InternalTransactionOnDemand.etherscan_fetch_by_transaction(transaction, options)
+          {:ok, InternalTransactionOnDemand.etherscan_fetch_by_transaction(transaction, options)}
         end
 
       {:error, :not_found} ->
-        []
+        {:ok, []}
     end
   end
 
   def list_internal_transactions(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash, raw_options) do
-    from_db = Etherscan.list_internal_transactions(address_hash, raw_options)
-
     options = Map.merge(Etherscan.default_options(), raw_options)
 
-    from_node =
-      if options.include_zero_value and InternalTransactionOnDemand.should_fetch?(from_db, options.page_size) do
-        InternalTransactionOnDemand.etherscan_fetch_by_address(address_hash, options)
-      else
-        []
-      end
+    from_db = Etherscan.list_internal_transactions(address_hash, options)
 
-    merge_internal_transactions(from_db, from_node, options.page_size, options.order_by_direction)
+    if InternalTransactionOnDemand.should_fetch?(from_db, options.page_size, options.include_zero_value) do
+      merge_address_internal_transactions_page(address_hash, from_db, options)
+    else
+      {:ok, from_db}
+    end
   end
 
   def list_internal_transactions(:all, raw_options) do
     options = Map.merge(Etherscan.default_options(), raw_options)
 
     cond do
+      InternalTransaction.storage_disabled?() ->
+        InternalTransactionOnDemand.etherscan_fetch_latest(options)
+
       not options.include_zero_value ->
-        Etherscan.list_internal_transactions(:all, options)
+        {:ok, Etherscan.list_internal_transactions(:all, options)}
 
       not is_nil(options[:endblock]) and not InternalTransaction.present_in_db?(options[:endblock]) ->
         InternalTransactionOnDemand.etherscan_fetch_latest(options)
@@ -1493,21 +1529,79 @@ defmodule BlockScoutWeb.Chain do
       Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled] ->
         from_db = Etherscan.list_internal_transactions(:all, options)
 
-        from_node =
-          if InternalTransactionOnDemand.should_fetch?(from_db, options.page_size) do
-            InternalTransactionOnDemand.etherscan_fetch_latest(options)
-          else
-            []
-          end
-
-        merge_internal_transactions(from_db, from_node, options.page_size, options.order_by_direction)
+        if InternalTransactionOnDemand.should_fetch?(from_db, options.page_size) do
+          merge_all_internal_transactions_page(from_db, options)
+        else
+          {:ok, from_db}
+        end
 
       true ->
-        Etherscan.list_internal_transactions(:all, options)
+        {:ok, Etherscan.list_internal_transactions(:all, options)}
     end
   end
 
-  defp merge_internal_transactions(first_list, second_list, limit, sort_direction \\ :desc) do
+  # The node scan can stop before the requested page (see `merge_with_node_scan/4`), so the page is cut out
+  # of the merged items like in `merge_address_internal_transactions_page/3`
+  defp merge_all_internal_transactions_page(page_from_db, %{page_number: page_number, page_size: page_size} = options) do
+    leading_options = %{options | page_number: 1, page_size: page_number * page_size}
+
+    leading_from_db =
+      if page_number == 1,
+        do: page_from_db,
+        else: Etherscan.list_internal_transactions(:all, leading_options)
+
+    leading_from_db
+    |> merge_with_node_scan(
+      InternalTransactionOnDemand.etherscan_fetch_latest(leading_options),
+      leading_options.page_size,
+      options.order_by_direction
+    )
+    |> InternalTransactionOnDemand.map_scan_result(&Enum.drop(&1, (page_number - 1) * page_size))
+  end
+
+  # Merges the DB items with the ones of a node scan. When the scan stopped before `next_block_number`, the
+  # internal transactions of that block and the following ones (in the scan order) that are not in the DB (not
+  # stored, or deleted zero-value calls) are not fetched yet, so their DB items are left for the next request, and
+  # the result stays incomplete unless it fills the page.
+  defp merge_with_node_scan(from_db, {:ok, from_node}, limit, sort_direction),
+    do: {:ok, merge_internal_transactions(from_db, from_node, limit, sort_direction)}
+
+  defp merge_with_node_scan(from_db, {:incomplete, from_node, next_block_number}, limit, sort_direction) do
+    merged =
+      from_db
+      |> Enum.filter(&scanned_block_number?(&1.block_number, next_block_number, sort_direction))
+      |> merge_internal_transactions(from_node, limit, sort_direction)
+
+    if Enum.count(merged) >= limit, do: {:ok, merged}, else: {:incomplete, merged, next_block_number}
+  end
+
+  defp scanned_block_number?(block_number, next_block_number, :asc), do: block_number < next_block_number
+  defp scanned_block_number?(block_number, next_block_number, _desc), do: block_number > next_block_number
+
+  # The DB and the node have different items, so their pages don't match: both are read from the first item up to the
+  # end of the requested page, and the page is cut out of their merged items
+  defp merge_address_internal_transactions_page(
+         address_hash,
+         page_from_db,
+         %{page_number: page_number, page_size: page_size} = options
+       ) do
+    leading_options = %{options | page_number: 1, page_size: page_number * page_size}
+
+    leading_from_db =
+      if page_number == 1,
+        do: page_from_db,
+        else: Etherscan.list_internal_transactions(address_hash, leading_options)
+
+    leading_from_db
+    |> merge_with_node_scan(
+      InternalTransactionOnDemand.etherscan_fetch_by_address(address_hash, leading_options),
+      leading_options.page_size,
+      options.order_by_direction
+    )
+    |> InternalTransactionOnDemand.map_scan_result(&Enum.drop(&1, (page_number - 1) * page_size))
+  end
+
+  defp merge_internal_transactions(first_list, second_list, limit, sort_direction) do
     sort_func =
       case sort_direction do
         :asc -> &<=/2

@@ -13,7 +13,9 @@ defmodule Indexer.Fetcher.OnDemand.FirstTrace do
   require Logger
 
   def maybe_trigger_fetch(transaction, opts \\ []) do
-    if !Application.get_env(:explorer, :shrink_internal_transactions_enabled) do
+    # the first trace is fetched only to be stored, and it is not stored when the storage is disabled
+    if !Application.get_env(:explorer, :shrink_internal_transactions_enabled) and
+         !InternalTransaction.storage_disabled?() do
       transaction.hash
       |> InternalTransaction.all_transaction_to_internal_transactions(opts)
       |> Enum.any?(&(&1.index == 0))
