@@ -2,6 +2,19 @@
 defmodule Explorer.Market.Source.CryptoRank do
   @moduledoc """
   Adapter for fetching market history from https://cryptorank.io/.
+
+  Native/secondary coin data and price history are fetched from the public
+  v3 API (`/v3/currencies/:id` and `/v3/currencies/:id/sparkline`), which is
+  authenticated with the `X-Api-Key` header.
+
+  Tokens are fetched from the dedicated Blockscout endpoint
+  (`/v1/dedicated/blockscout/currencies/contracts/:platform_id`), which is not
+  part of the public API and is only served under v1 with the `api_key` query
+  parameter.
+
+  `base_url` must therefore point at the API host without a version segment
+  (`https://api.cryptorank.io` by default); a trailing `/v1` is stripped for
+  backwards compatibility.
   """
 
   alias Explorer.Chain.Hash
@@ -32,12 +45,11 @@ defmodule Explorer.Market.Source.CryptoRank do
     with platform_id when not is_nil(platform_id) <- config(:platform),
          {:ok, %{"data" => tokens}} when is_list(tokens) <-
            Source.http_request(
-             base_url()
-             |> URI.append_path("/dedicated/blockscout/currencies/contracts/#{platform_id}")
+             dedicated_url("/currencies/contracts/#{platform_id}")
              |> URI.append_query("limit=#{batch_size}")
              |> URI.append_query("skip=#{skip}")
              |> URI.to_string(),
-             headers(),
+             [],
              __MODULE__,
              :currencies_contracts
            ) do
@@ -115,29 +127,33 @@ defmodule Explorer.Market.Source.CryptoRank do
 
   defp do_fetch_coin(coin_id, coin_id_not_specified_error) do
     with coin_id when not is_nil(coin_id) <- coin_id,
-         {:ok, %{"data" => coin}} <-
+         {:ok, %{"data" => coin} = response} when is_map(coin) <-
            Source.http_request(
-             base_url() |> URI.append_path("/currencies/#{coin_id}") |> URI.to_string(),
+             v3_url("/currencies/#{coin_id}")
+             |> URI.append_query("convert=#{config(:currency)}")
+             |> URI.to_string(),
              headers(),
              __MODULE__,
              :currencies_details
            ) do
-      coin_data = coin["values"][config(:currency)]
+      circulating_supply = Source.to_decimal(coin["circulatingSupply"])
 
       {:ok,
        %Token{
-         available_supply: Source.to_decimal(coin["circulatingSupply"]),
-         total_supply: Source.to_decimal(coin["totalSupply"]) || Source.to_decimal(coin["circulatingSupply"]),
-         btc_value: Source.to_decimal(coin["values"]["BTC"]["price"]),
-         last_updated: Source.maybe_get_date(coin["lastUpdated"]),
-         market_cap: Source.to_decimal(coin_data["marketCap"]),
+         available_supply: circulating_supply,
+         total_supply: Source.to_decimal(coin["totalSupply"]) || circulating_supply,
+         # v3 returns prices in fiat only (`convert` accepts USD/EUR), no BTC quote
+         btc_value: nil,
+         # the profile carries no update timestamp, use the response time instead
+         last_updated: unix_ms_to_datetime(get_in(response, ["status", "timestamp"])),
+         market_cap: Source.to_decimal(coin["marketCap"]),
          tvl: nil,
          name: coin["name"],
-         symbol: String.upcase(coin["symbol"]),
-         fiat_value: Source.to_decimal(coin_data["price"]),
-         volume_24h: Source.to_decimal(coin_data["volume24h"]),
-         image_url: Source.handle_image_url(coin["images"]["60x60"] || coin["images"]["16x16"]),
-         circulating_supply: Source.to_decimal(coin["circulatingSupply"])
+         symbol: coin["symbol"] && String.upcase(coin["symbol"]),
+         fiat_value: Source.to_decimal(coin["price"]),
+         volume_24h: Source.to_decimal(coin["volume24h"]),
+         image_url: Source.handle_image_url(coin["imageUrl"]),
+         circulating_supply: circulating_supply
        }}
     else
       nil -> {:error, coin_id_not_specified_error}
@@ -151,35 +167,28 @@ defmodule Explorer.Market.Source.CryptoRank do
            if(secondary_coin?, do: config(:secondary_coin_id), else: config(:coin_id)),
          from = Date.utc_today() |> Date.add(-previous_days) |> Date.to_iso8601(),
          to = Date.utc_today() |> Date.to_iso8601(),
-         {:ok, %{"data" => %{"dates" => dates, "prices" => opening_prices}}} <-
+         {:ok, %{"data" => points}} when is_list(points) <-
            Source.http_request(
-             base_url()
-             |> URI.append_path("/currencies/#{coin_id}/sparkline")
+             v3_url("/currencies/#{coin_id}/sparkline")
              |> URI.append_query("interval=1d")
              |> URI.append_query("from=#{from}")
              |> URI.append_query("to=#{to}")
+             |> URI.append_query("sortOrder=asc")
              |> URI.to_string(),
              headers(),
              __MODULE__,
              :currencies_sparkline
            ) do
-      closing_prices =
-        case opening_prices do
-          [_ | closing_prices] -> closing_prices
-          _ -> []
-        end
-
       result =
-        [dates, opening_prices, Stream.concat(closing_prices, [nil])]
-        |> Enum.zip_with(fn [date, opening_price, closing_price] ->
-          date = Source.maybe_get_date(date)
+        points
+        |> Enum.map(fn point -> {point["time"], Source.to_decimal(point["price"])} end)
+        |> Enum.chunk_every(2, 1)
+        |> Enum.map(fn
+          [{time, opening_price}, {_next_time, closing_price}] ->
+            price_history_entry(time, opening_price, closing_price, secondary_coin?)
 
-          %{
-            closing_price: Source.to_decimal(closing_price) || Source.to_decimal(opening_price),
-            date: date && DateTime.to_date(date),
-            opening_price: Source.to_decimal(opening_price),
-            secondary_coin: secondary_coin?
-          }
+          [{time, opening_price}] ->
+            price_history_entry(time, opening_price, nil, secondary_coin?)
         end)
 
       {:ok, result}
@@ -191,16 +200,53 @@ defmodule Explorer.Market.Source.CryptoRank do
     end
   end
 
-  defp base_url do
-    if config(:api_key) do
-      :base_url |> config() |> URI.parse() |> URI.append_query("api_key=#{config(:api_key)}")
-    else
-      :base_url |> config() |> URI.parse()
+  defp price_history_entry(time, opening_price, closing_price, secondary_coin?) do
+    datetime = unix_ms_to_datetime(time)
+
+    %{
+      closing_price: closing_price || opening_price,
+      date: datetime && DateTime.to_date(datetime),
+      opening_price: opening_price,
+      secondary_coin: secondary_coin?
+    }
+  end
+
+  @spec unix_ms_to_datetime(term()) :: DateTime.t() | nil
+  defp unix_ms_to_datetime(timestamp) when is_integer(timestamp) do
+    case DateTime.from_unix(timestamp, :millisecond) do
+      {:ok, datetime} -> datetime
+      _ -> nil
     end
   end
 
+  defp unix_ms_to_datetime(_), do: nil
+
+  defp v3_url(path) do
+    base_url() |> URI.append_path("/v3" <> path)
+  end
+
+  defp dedicated_url(path) do
+    url = base_url() |> URI.append_path("/v1/dedicated/blockscout" <> path)
+
+    if config(:api_key) do
+      URI.append_query(url, "api_key=#{config(:api_key)}")
+    else
+      url
+    end
+  end
+
+  # Strips a trailing version segment (e.g. `/v1`, the previous default) and
+  # trailing slash so that overrides of `base_url` cannot produce duplicated or
+  # stale version segments; the version is appended per endpoint.
+  defp base_url do
+    :base_url
+    |> config()
+    |> String.replace(~r{(/v\d+)?/*$}, "")
+    |> URI.parse()
+  end
+
   defp headers do
-    []
+    if config(:api_key), do: [{"X-Api-Key", "#{config(:api_key)}"}], else: []
   end
 
   @spec config(atom()) :: term
