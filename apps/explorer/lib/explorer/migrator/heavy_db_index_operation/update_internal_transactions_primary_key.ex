@@ -9,7 +9,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrim
   require Logger
 
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.HeavyDbIndexOperation
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
     CreateInternalTransactionsBlockNumberTransactionIndexIndexUniqueIndex,
@@ -21,15 +21,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrim
   @table_name :internal_transactions
   @index_name "internal_transactions_pkey"
   @operation_type :create
-
-  @impl HeavyDbIndexOperation
-  def table_name, do: @table_name
-
-  @impl HeavyDbIndexOperation
-  def operation_type, do: @operation_type
-
-  @impl HeavyDbIndexOperation
-  def index_name, do: @index_name
 
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
@@ -144,11 +135,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrim
         Logger.error("Migration UpdateInternalTransactionsPrimaryKey rollback failed: #{inspect(error)}")
         :error
     end
-  end
-
-  @impl HeavyDbIndexOperation
-  def running_other_heavy_migration_exists?(migration_name) do
-    MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, migration_name)
   end
 
   @impl HeavyDbIndexOperation

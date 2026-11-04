@@ -39,6 +39,8 @@ This approach is preferred when:
 
 ```elixir
 @table_columns [:column1, :column2]
+# Optional: build a UNIQUE index
+@unique_index true
 ```
 
 This approach is simpler and more suitable when:
@@ -216,41 +218,49 @@ end
    ```elixir
    defmodule Explorer.Migrator.HeavyDbIndexOperation.CreateYourNewIndex do
      use Explorer.Migrator.HeavyDbIndexOperation
-     
+
+     alias Explorer.Migrator.HeavyDbIndexOperation
+
      @table_name :your_table
      @index_name "your_index_name"
      @operation_type :create
-     
+
      # Choose one approach:
      @table_columns [:column1, :column2]
      # or
      @query_string """
-     CREATE INDEX ... 
+     CREATE INDEX ...
      """
-     
-     # The rest of the module is implementation of callbacks described below
+
+     # Only the callbacks that differ from the defaults need to be defined
+     @impl HeavyDbIndexOperation
+     def dependent_from_migrations, do: [SomeOtherMigration.migration_name()]
    end
    ```
 
-2. Required Callbacks:
+   For a plain `:drop` operation only `@table_name`, `@index_name` and `@operation_type :drop` are needed.
 
-   All callbacks must be implemented in your module, but many of them can delegate to helper functions:
+2. Callbacks and their defaults:
 
-   Basic callbacks (usually just return module attributes):
-   - `table_name/0` - Returns the table name (usually returns `@table_name`)
-   - `operation_type/0` - Returns `:create`, `:drop`, or `:rename` (usually returns `@operation_type`)
-   - `index_name/0` - Returns the index name (usually returns `@index_name`). For `:rename` operations, this should return the **new** index name
-   
+   `use Explorer.Migrator.HeavyDbIndexOperation` generates a default implementation for every callback
+   the module does not define itself (see `Explorer.Migrator.HeavyDbIndexOperation.__before_compile__/1`).
+   Define a callback explicitly only when the default does not fit.
+
+   Basic callbacks (default: return the module attribute):
+   - `table_name/0` - Returns `@table_name`
+   - `operation_type/0` - Returns `@operation_type` (`:create`, `:drop`, or `:rename`)
+   - `index_name/0` - Returns `@index_name`. For `:rename` operations, define it to return the **new** index name
+
    Operation-specific callbacks:
-   - `dependent_from_migrations/0` - Returns list of migration names that must complete before this one
-   - `update_cache/0` - Updates the in-memory cache when migration completes
-   
-   Helper-delegating callbacks:
-   - `db_index_operation/0` - Executes the index creation/deletion. In most cases, enough to use `HeavyDbIndexOperationHelper.create_db_index/1` or `HeavyDbIndexOperationHelper.safely_drop_db_index/1`
-   - `check_db_index_operation_progress/0` - Checks if operation is in progress. In most cases, enough to use `HeavyDbIndexOperationHelper.check_db_index_operation_progress/2`. In order to build the query string, you can use `HeavyDbIndexOperationHelper.create_index_query_string/3` or `HeavyDbIndexOperationHelper.drop_index_query_string/1`.
-   - `db_index_operation_status/0` - Gets current operation status. In most cases, enough to use `HeavyDbIndexOperationHelper.db_index_creation_status/1` or `HeavyDbIndexOperationHelper.db_index_dropping_status/1`
-   - `restart_db_index_operation/0` - Handles operation restart. In most cases, enough to use `HeavyDbIndexOperationHelper.safely_drop_db_index/1`
-   - `running_other_heavy_migration_exists?/1` - Checks for conflicting migrations. In most cases, enough to use `MigrationStatus.running_other_heavy_migration_for_table_exists?/2`
+   - `dependent_from_migrations/0` - Returns list of migration names that must complete before this one (default: `[]`)
+   - `update_cache/0` - Updates the in-memory cache when migration completes (default: no-op)
+   - `running_other_heavy_migration_exists?/1` - Checks for conflicting migrations (default: `MigrationStatus.running_other_heavy_migration_for_table_exists?/2` on `@table_name`)
+
+   Index operation callbacks. Defaults are generated for `:create` operations that declare `@query_string` or `@table_columns` (optionally `@unique_index true`) and for `:drop` operations. `:rename` operations and any other custom operation (constraint validation, column removal, primary key change, ...) must implement all four:
+   - `db_index_operation/0` - Executes the index creation/deletion (default: `HeavyDbIndexOperationHelper.create_db_index/1` or `HeavyDbIndexOperationHelper.safely_drop_db_index/1`)
+   - `check_db_index_operation_progress/0` - Checks if operation is in progress (default: `HeavyDbIndexOperationHelper.check_db_index_operation_progress/2` with the create/drop query string). In order to build a custom query string, you can use `HeavyDbIndexOperationHelper.create_index_query_string/3` or `HeavyDbIndexOperationHelper.drop_index_query_string/1`.
+   - `db_index_operation_status/0` - Gets current operation status (default: `HeavyDbIndexOperationHelper.db_index_creation_status/1` or `HeavyDbIndexOperationHelper.db_index_dropping_status/1`)
+   - `restart_db_index_operation/0` - Handles operation restart (default: `HeavyDbIndexOperationHelper.safely_drop_db_index/1`)
 
 ## Configuration Updates
 

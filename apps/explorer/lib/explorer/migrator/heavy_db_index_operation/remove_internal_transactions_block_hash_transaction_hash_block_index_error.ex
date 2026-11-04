@@ -8,7 +8,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
 
   require Logger
 
-  alias Explorer.Migrator.{HeavyDbIndexOperation, MigrationStatus}
+  alias Explorer.Migrator.HeavyDbIndexOperation
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
     CreateInternalTransactionsBlockNumberCreatedContractAddressIdPartialIndex,
@@ -23,15 +23,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
   @table_name :internal_transactions
   @index_name "internal_transactions_remove_block_hash_transaction_hash_block_index_error"
   @operation_type :create
-
-  @impl HeavyDbIndexOperation
-  def table_name, do: @table_name
-
-  @impl HeavyDbIndexOperation
-  def operation_type, do: @operation_type
-
-  @impl HeavyDbIndexOperation
-  def index_name, do: @index_name
 
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
@@ -99,14 +90,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveInternalTransactionsBloc
   @impl HeavyDbIndexOperation
   # sobelow_skip ["SQL"]
   def restart_db_index_operation, do: db_index_operation()
-
-  @impl HeavyDbIndexOperation
-  def running_other_heavy_migration_exists?(migration_name) do
-    MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, migration_name)
-  end
-
-  @impl HeavyDbIndexOperation
-  def update_cache, do: :ok
 
   # sobelow_skip ["SQL"]
   defp drop_blocks_foreign_key do
