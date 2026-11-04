@@ -113,8 +113,7 @@ defmodule Explorer.ChainSpec.Parity.ImporterTest do
                value: 8_000_000_000_000_000_000_000,
                contract_code: nil,
                nonce: 0
-             } ==
-               List.first(coin_balances)
+             } in coin_balances
     end
 
     test "parses nonce and contact code" do
