@@ -56,6 +56,29 @@ defmodule Explorer.Chain.Address.CountersTest do
              } = Counters.address_existence_checks(address.hash, api?: true)
     end
 
+    test "detects token transfers sent from and received by the address" do
+      sender = insert(:address)
+      recipient = insert(:address)
+      bystander = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:token_transfer,
+        from_address: sender,
+        to_address: recipient,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number
+      )
+
+      assert %{has_token_transfers: true} = Counters.address_existence_checks(sender.hash, api?: true)
+      assert %{has_token_transfers: true} = Counters.address_existence_checks(recipient.hash, api?: true)
+      assert %{has_token_transfers: false} = Counters.address_existence_checks(bystander.hash, api?: true)
+    end
+
     test "degrades `has_logs` to false instead of hanging while the logs table is locked" do
       address = insert(:address)
       insert(:block, miner: address)
