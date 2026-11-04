@@ -1565,19 +1565,18 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
   # Gets the number of a start block (from which this fetcher should start),
   # the inbox address, and the batcher (batch submitter) address.
   #
-  # Each getter is handled independently: if a getter is unavailable (the call reverts or the whole request fails),
-  # only that value is fallen back from the corresponding env variable (INDEXER_OPTIMISM_L1_START_BLOCK,
-  # INDEXER_OPTIMISM_L1_BATCH_INBOX, INDEXER_OPTIMISM_L1_BATCH_SUBMITTER) while the others are still taken
-  # from the contract. In particular, SystemConfig v4.0.0 (OP Stack Upgrade 20) removed the `batchInbox()` getter,
-  # so the inbox address must be defined through INDEXER_OPTIMISM_L1_BATCH_INBOX for such chains, whereas
-  # `startBlock()` and `batcherHash()` are still readable.
-  # If SystemConfig has obsolete implementation, the values are fallen back from the corresponding
-  # SuperchainConfig-backed values.
-  #
-  # Moreover, if INDEXER_OPTIMISM_L1_BATCH_INBOX and/or INDEXER_OPTIMISM_L1_BATCH_SUBMITTER are explicitly set,
-  # they take precedence over the corresponding values read from the SystemConfig contract. This is needed when
+  # The configured values (INDEXER_OPTIMISM_L1_START_BLOCK, INDEXER_OPTIMISM_L1_BATCH_INBOX,
+  # INDEXER_OPTIMISM_L1_BATCH_SUBMITTER env variables, or the corresponding Superchain config values)
+  # always take precedence over the values read from the SystemConfig contract. This is needed when
   # the on-chain SystemConfig `batchInbox` (or `batcherHash`) diverges from the address the batcher actually uses,
   # e.g. during an inbox migration where the SystemConfig value is updated ahead of the batcher.
+  # The RPC call is skipped entirely when all three values are configured.
+  #
+  # Each getter is handled independently: only the values which are not configured are taken from the contract,
+  # and a getter which is unavailable (the call reverts or the whole request fails) leaves only its own value
+  # undefined. In particular, SystemConfig v4.0.0 (OP Stack Upgrade 20) removed the `batchInbox()` getter,
+  # so the inbox address must be configured for such chains, whereas `startBlock()` and `batcherHash()`
+  # are still readable.
   #
   # ## Parameters
   # - `contract_address`: An address of SystemConfig contract.
@@ -1593,78 +1592,88 @@ defmodule Indexer.Fetcher.Optimism.TransactionBatch do
     batch_inbox_request_id = 1
     batch_submitter_request_id = 2
 
-    requests = [
-      # startBlock() public getter
-      Contract.eth_call_request("0x48cd4cb1", contract_address, start_block_request_id, nil, nil),
-      # batchInbox() public getter (removed in SystemConfig v4.0.0, so the call can revert)
-      Contract.eth_call_request("0xdac6e63a", contract_address, batch_inbox_request_id, nil, nil),
-      # batcherHash() public getter
-      Contract.eth_call_request("0xe81b2c6d", contract_address, batch_submitter_request_id, nil, nil)
-    ]
-
-    error_message = &"Cannot call public getters of SystemConfig. Error: #{inspect(&1)}"
-
-    env = Application.get_all_env(:indexer)[__MODULE__]
-    env_inbox = env[:inbox]
-    env_submitter = env[:submitter]
-
-    fallback_start_block = SuperchainConfig.optimism_l1_batch_start_block()
-    fallback_inbox = SuperchainConfig.optimism_l1_batch_inbox()
-    fallback_submitter = SuperchainConfig.optimism_l1_batch_submitter()
+    # The SuperchainConfig getters already apply the env-over-TOML priority.
+    configured_start_block = positive_integer_or_nil(SuperchainConfig.optimism_l1_batch_start_block())
+    configured_inbox = SuperchainConfig.optimism_l1_batch_inbox()
+    configured_submitter = SuperchainConfig.optimism_l1_batch_submitter()
 
     result_by_id =
-      case Helper.repeated_call(
-             &json_rpc/2,
-             [requests, json_rpc_named_arguments],
-             error_message,
-             Helper.finite_retries_number()
-           ) do
-        {:ok, responses} -> Map.new(responses, &{&1.id, Map.get(&1, :result)})
-        _ -> %{}
+      if all_system_config_values_configured?(configured_start_block, configured_inbox, configured_submitter) do
+        %{}
+      else
+        requests = [
+          # startBlock() public getter
+          Contract.eth_call_request("0x48cd4cb1", contract_address, start_block_request_id, nil, nil),
+          # batchInbox() public getter (removed in SystemConfig v4.0.0, so the call can revert)
+          Contract.eth_call_request("0xdac6e63a", contract_address, batch_inbox_request_id, nil, nil),
+          # batcherHash() public getter
+          Contract.eth_call_request("0xe81b2c6d", contract_address, batch_submitter_request_id, nil, nil)
+        ]
+
+        read_system_config_getters(requests, json_rpc_named_arguments)
       end
 
-    start_block =
-      result_by_id
-      |> Map.get(start_block_request_id)
-      |> Kernel.||(fallback_start_block)
-      |> quantity_to_integer()
+    start_block = configured_start_block || quantity_to_integer(result_by_id[start_block_request_id])
+    batch_inbox = system_config_address(configured_inbox, result_by_id[batch_inbox_request_id])
+    batch_submitter = system_config_address(configured_submitter, result_by_id[batch_submitter_request_id])
 
-    # An explicitly configured inbox/submitter overrides the value read from the SystemConfig contract.
-    # Only kicks in when the corresponding env variable holds a correct address, so the on-chain value
-    # is still used by default. The SuperchainConfig-backed values (which may originate from the
-    # Superchain TOML file) never override the on-chain getters: they are used only when the getter
-    # result is absent (e.g. the call reverted).
-    batch_inbox = system_config_address(result_by_id[batch_inbox_request_id], env_inbox, fallback_inbox)
-
-    batch_submitter =
-      system_config_address(result_by_id[batch_submitter_request_id], env_submitter, fallback_submitter)
-
-    if is_nil(batch_inbox) and Map.has_key?(result_by_id, batch_submitter_request_id) do
-      Logger.error(
-        "The batchInbox() getter of SystemConfig is not available (it was removed in SystemConfig v4.0.0 by OP Stack Upgrade 20). Please, define the batch inbox address via INDEXER_OPTIMISM_L1_BATCH_INBOX env variable."
-      )
-    end
+    log_missing_batch_inbox(batch_inbox, Map.has_key?(result_by_id, batch_submitter_request_id))
 
     if !is_nil(start_block) and Helper.address_correct?(batch_inbox) and Helper.address_correct?(batch_submitter) do
       {start_block, String.downcase(batch_inbox), String.downcase(batch_submitter)}
     end
   end
 
-  # Returns an address read from a SystemConfig getter unless the corresponding env variable
-  # defines a correct address (which takes precedence). If the getter result is absent
-  # (e.g. the call reverted) and the env variable is not defined, the fallback address
-  # (SuperchainConfig-backed) is returned when it is correct, otherwise `nil`.
-  @spec system_config_address(String.t() | nil, String.t() | nil, String.t() | nil) :: String.t() | nil
-  defp system_config_address(getter_result, env_address, fallback_address) do
+  # Calls the given SystemConfig getters and returns a map of request id to getter result.
+  # The map is empty when the request fails. A reverted getter is present with a `nil` result.
+  @spec read_system_config_getters([map()], EthereumJSONRPC.json_rpc_named_arguments()) :: %{
+          non_neg_integer() => String.t() | nil
+        }
+  defp read_system_config_getters(requests, json_rpc_named_arguments) do
+    error_message = &"Cannot call public getters of SystemConfig. Error: #{inspect(&1)}"
+
+    case Helper.repeated_call(
+           &json_rpc/2,
+           [requests, json_rpc_named_arguments],
+           error_message,
+           Helper.finite_retries_number()
+         ) do
+      {:ok, responses} -> Map.new(responses, &{&1.id, Map.get(&1, :result)})
+      _ -> %{}
+    end
+  end
+
+  defp positive_integer_or_nil(value) when is_integer(value) and value > 0, do: value
+  defp positive_integer_or_nil(_), do: nil
+
+  @spec all_system_config_values_configured?(non_neg_integer() | nil, String.t() | nil, String.t() | nil) ::
+          boolean()
+  defp all_system_config_values_configured?(start_block, inbox, submitter) do
+    not is_nil(start_block) and Helper.address_correct?(inbox) and Helper.address_correct?(submitter)
+  end
+
+  # Logs an error when the batch inbox is unknown although the SystemConfig getters were readable
+  # (i.e. the `batchInbox()` getter itself is absent).
+  @spec log_missing_batch_inbox(String.t() | nil, boolean()) :: :ok
+  defp log_missing_batch_inbox(nil, true) do
+    Logger.error(
+      "The batchInbox() getter of SystemConfig is not available (it was removed in SystemConfig v4.0.0 by OP Stack Upgrade 20). Please, define the batch inbox address via INDEXER_OPTIMISM_L1_BATCH_INBOX env variable or batch_inbox_addr in the Superchain config."
+    )
+  end
+
+  defp log_missing_batch_inbox(_batch_inbox, _getters_readable?), do: :ok
+
+  # Returns the configured address when it is correct (it takes precedence). Otherwise, returns
+  # the address read from a SystemConfig getter, or `nil` when the getter result is absent
+  # (e.g. the call reverted).
+  @spec system_config_address(String.t() | nil, String.t() | nil) :: String.t() | nil
+  defp system_config_address(configured_address, getter_result) do
     cond do
-      Helper.address_correct?(env_address) ->
-        env_address
+      Helper.address_correct?(configured_address) ->
+        configured_address
 
       is_binary(getter_result) and String.starts_with?(getter_result, "0x000000000000000000000000") ->
         "0x" <> String.slice(getter_result, 26..-1//1)
-
-      Helper.address_correct?(fallback_address) ->
-        fallback_address
 
       true ->
         nil

@@ -24,6 +24,7 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
   @eip1559_elasticity_key "optimism_eip1559_elasticity_multiplier"
   @system_config_contract_key "optimism_l1_system_config_contract"
   @portal_contract_key "optimism_l1_portal_contract"
+  @dispute_game_factory_contract_key "optimism_l1_dispute_game_factory_contract"
   @batch_submitter_key "optimism_l1_batch_submitter"
   @batch_inbox_key "optimism_l1_batch_inbox"
   @batch_start_block_key "optimism_l1_batch_start_block"
@@ -84,6 +85,12 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
         @portal_contract_key,
         toml_values[{"addresses", "OptimismPortalProxy"}],
         optimism_l1_portal_contract_fallback()
+      )
+
+      set_address(
+        @dispute_game_factory_contract_key,
+        toml_values[{"addresses", "DisputeGameFactoryProxy"}],
+        optimism_l1_dispute_game_factory_contract_fallback()
       )
 
       set_address(
@@ -149,6 +156,11 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
   @spec optimism_l1_portal_contract() :: String.t() | nil
   def optimism_l1_portal_contract do
     get_address(@portal_contract_key, optimism_l1_portal_contract_fallback())
+  end
+
+  @spec optimism_l1_dispute_game_factory_contract() :: String.t() | nil
+  def optimism_l1_dispute_game_factory_contract do
+    get_address(@dispute_game_factory_contract_key, optimism_l1_dispute_game_factory_contract_fallback())
   end
 
   @spec optimism_l1_batch_submitter() :: String.t() | nil
@@ -437,6 +449,10 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
 
   defp optimism_l1_portal_contract_fallback do
     Application.get_env(:indexer, Indexer.Fetcher.Optimism, [])[:portal]
+  end
+
+  defp optimism_l1_dispute_game_factory_contract_fallback do
+    Application.get_env(:indexer, Indexer.Fetcher.Optimism, [])[:optimism_l1_dispute_game_factory]
   end
 
   defp optimism_l1_batch_submitter_fallback do

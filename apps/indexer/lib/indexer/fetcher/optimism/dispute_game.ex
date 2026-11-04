@@ -97,7 +97,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
 
       {:dispute_game_factory_available, false} ->
         Logger.error(
-          "Cannot get DisputeGameFactory contract address from the OptimismPortal contract. Probably, this is the first implementation of OptimismPortal."
+          "Cannot get DisputeGameFactory contract address from the OptimismPortal contract. Probably, this is the first implementation of OptimismPortal. Define the address with INDEXER_OPTIMISM_L1_DISPUTE_GAME_FACTORY_CONTRACT env variable or DisputeGameFactoryProxy in the Superchain config."
         )
 
         {:stop, :normal, %{}}
@@ -259,7 +259,21 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
     end
   end
 
+  # Returns the DisputeGameFactory contract address. An explicitly configured address
+  # (INDEXER_OPTIMISM_L1_DISPUTE_GAME_FACTORY_CONTRACT env variable or DisputeGameFactoryProxy
+  # from the Superchain config) takes priority. Otherwise, the address is read from the
+  # disputeGameFactory() public getter of the OptimismPortal contract.
   defp get_dispute_game_factory_address(optimism_portal, json_rpc_named_arguments) do
+    configured_factory = SuperchainConfig.optimism_l1_dispute_game_factory_contract()
+
+    if IndexerHelper.address_correct?(configured_factory) do
+      configured_factory
+    else
+      read_dispute_game_factory_address(optimism_portal, json_rpc_named_arguments)
+    end
+  end
+
+  defp read_dispute_game_factory_address(optimism_portal, json_rpc_named_arguments) do
     req = Contract.eth_call_request("0xf2b4e617", optimism_portal, 0, nil, nil)
 
     error_message =
