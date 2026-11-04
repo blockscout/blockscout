@@ -18,7 +18,8 @@ defmodule Explorer.Market.Source.CryptoRankTest do
         base_url: "http://localhost:#{bypass.port}",
         api_key: "api_key",
         coin_id: "3",
-        secondary_coin_id: "4"
+        secondary_coin_id: "4",
+        currency: "USD"
       )
     )
 
@@ -46,17 +47,18 @@ defmodule Explorer.Market.Source.CryptoRankTest do
 
   describe "fetch_native_coin" do
     test "fetches native coin", %{bypass: bypass} do
-      Bypass.expect_once(bypass, "GET", "/currencies/3", fn conn ->
-        assert conn.query_string == "api_key=api_key"
-        Conn.resp(conn, 200, json_coin(3, 2514.75325703684))
+      Bypass.expect_once(bypass, "GET", "/v3/currencies/3", fn conn ->
+        assert conn.query_string == "convert=USD"
+        assert Conn.get_req_header(conn, "x-api-key") == ["api_key"]
+        Conn.resp(conn, 200, json_coin(3, "2514.75325703684"))
       end)
 
       assert {:ok,
               %Explorer.Market.Token{
                 available_supply: Decimal.new("120723694"),
-                btc_value: Decimal.new("0.0241643324256002"),
+                btc_value: nil,
                 fiat_value: Decimal.new("2514.75325703684"),
-                image_url: "https://img.cryptorank.io/coins/60x60.ethereum1524754015525.png",
+                image_url: "https://img.cryptorank.io/coins/ethereum1524754015525.png",
                 last_updated: ~U[2025-06-02 14:22:32.759Z],
                 market_cap: Decimal.new("303823300492.5147"),
                 name: "Ethereum",
@@ -84,17 +86,18 @@ defmodule Explorer.Market.Source.CryptoRankTest do
 
   describe "fetch_secondary_coin" do
     test "fetches secondary coin", %{bypass: bypass} do
-      Bypass.expect_once(bypass, "GET", "/currencies/4", fn conn ->
-        assert conn.query_string == "api_key=api_key"
-        Conn.resp(conn, 200, json_coin(4, 1000.123456789))
+      Bypass.expect_once(bypass, "GET", "/v3/currencies/4", fn conn ->
+        assert conn.query_string == "convert=USD"
+        assert Conn.get_req_header(conn, "x-api-key") == ["api_key"]
+        Conn.resp(conn, 200, json_coin(4, "1000.123456789"))
       end)
 
       assert {:ok,
               %Explorer.Market.Token{
                 available_supply: Decimal.new("120723694"),
-                btc_value: Decimal.new("0.0241643324256002"),
+                btc_value: nil,
                 fiat_value: Decimal.new("1000.123456789"),
-                image_url: "https://img.cryptorank.io/coins/60x60.ethereum1524754015525.png",
+                image_url: "https://img.cryptorank.io/coins/ethereum1524754015525.png",
                 last_updated: ~U[2025-06-02 14:22:32.759Z],
                 market_cap: Decimal.new("303823300492.5147"),
                 name: "Ethereum",
@@ -122,7 +125,9 @@ defmodule Explorer.Market.Source.CryptoRankTest do
 
   describe "fetch_tokens" do
     test "fetches tokens", %{bypass: bypass} do
-      Bypass.expect(bypass, "GET", "/dedicated/blockscout/currencies/contracts/96", fn conn ->
+      Bypass.expect(bypass, "GET", "/v1/dedicated/blockscout/currencies/contracts/96", fn conn ->
+        assert Conn.get_req_header(conn, "x-api-key") == []
+
         case conn.query_string do
           "api_key=api_key&limit=50&skip=0" ->
             Conn.resp(conn, 200, json_tokens())
@@ -198,8 +203,9 @@ defmodule Explorer.Market.Source.CryptoRankTest do
       from = Date.utc_today() |> Date.add(-previous_days) |> Date.to_iso8601()
       to = Date.utc_today() |> Date.to_iso8601()
 
-      Bypass.expect_once(bypass, "GET", "/currencies/3/sparkline", fn conn ->
-        assert conn.query_string == "api_key=api_key&interval=1d&from=#{from}&to=#{to}"
+      Bypass.expect_once(bypass, "GET", "/v3/currencies/3/sparkline", fn conn ->
+        assert conn.query_string == "interval=1d&from=#{from}&to=#{to}&sortOrder=asc"
+        assert Conn.get_req_header(conn, "x-api-key") == ["api_key"]
 
         Conn.resp(conn, 200, json_native_coin_history())
       end)
@@ -259,8 +265,9 @@ defmodule Explorer.Market.Source.CryptoRankTest do
       from = Date.utc_today() |> Date.add(-previous_days) |> Date.to_iso8601()
       to = Date.utc_today() |> Date.to_iso8601()
 
-      Bypass.expect_once(bypass, "GET", "/currencies/4/sparkline", fn conn ->
-        assert conn.query_string == "api_key=api_key&interval=1d&from=#{from}&to=#{to}"
+      Bypass.expect_once(bypass, "GET", "/v3/currencies/4/sparkline", fn conn ->
+        assert conn.query_string == "interval=1d&from=#{from}&to=#{to}&sortOrder=asc"
+        assert Conn.get_req_header(conn, "x-api-key") == ["api_key"]
 
         Conn.resp(conn, 200, json_secondary_coin_history())
       end)
@@ -331,68 +338,41 @@ defmodule Explorer.Market.Source.CryptoRankTest do
     {
       "data": {
         "id": #{coin_id},
-        "rank": 2,
         "slug": "ethereum",
-        "name": "Ethereum",
         "symbol": "ETH",
-        "category": "Chain",
+        "name": "Ethereum",
+        "rank": 2,
         "type": "coin",
-        "volume24hBase": 2315094.5634,
-        "circulatingSupply": 120723694,
-        "totalSupply": 120723694,
-        "images": {
-          "16x16": "https://img.cryptorank.io/coins/icon.ethereum1524754015525.png",
-          "200x200": "https://img.cryptorank.io/coins/ethereum1524754015525.png",
-          "60x60": "https://img.cryptorank.io/coins/60x60.ethereum1524754015525.png"
+        "lifecycle": "traded",
+        "category": {"id": 1, "slug": "chain", "name": "Chain"},
+        "tags": [],
+        "imageUrl": "https://img.cryptorank.io/coins/ethereum1524754015525.png",
+        "description": "Ethereum is a decentralized platform",
+        "listingDate": "2015-08-07T00:00:00.000Z",
+        "links": [],
+        "price": "#{fiat_value}",
+        "pricePercentChange": {
+          "h24": 0.4248,
+          "d7": -1.3799,
+          "d30": 37.1343,
+          "m3": 16.9385,
+          "ytd": -30.9087
         },
-        "values": {
-          "USD": {
-            "price": #{fiat_value},
-            "volume24h": 5826359746,
-            "high24h": 2546.560850604021,
-            "low24h": 2480.175296733773,
-            "marketCap": 303823300492.5147,
-            "percentChange24h": 0.4248,
-            "percentChange7d": -1.3799,
-            "percentChange30d": 37.1343,
-            "percentChange3m": 16.9385,
-            "percentChange6m": -30.9087
-          },
-          "BTC": {
-            "price": 0.0241643324256002,
-            "volume24h": 55942,
-            "high24h": 0.0241883039284151,
-            "low24h": 0.0236807597840912,
-            "marketCap": 2917207.4734624363,
-            "percentChange24h": 0.8852,
-            "percentChange7d": 3.8147,
-            "percentChange30d": 26.8718,
-            "percentChange3m": -3.0863,
-            "percentChange6m": -36.4735
-          },
-          "ETH": {
-            "price": 1,
-            "volume24h": 2315094,
-            "high24h": 1,
-            "low24h": 1,
-            "marketCap": 120723694,
-            "percentChange24h": 0,
-            "percentChange7d": 0,
-            "percentChange30d": 0,
-            "percentChange3m": 0,
-            "percentChange6m": 0
-          }
-        },
-        "lastUpdated": "2025-06-02T14:22:32.759Z",
-        "tokens": []
+        "volume24h": "5826359746",
+        "marketCap": "303823300492.5147",
+        "volMcapRatio": 0.0192,
+        "volatility": 2.1,
+        "high24hUsd": "2546.560850604021",
+        "low24hUsd": "2480.175296733773",
+        "fullyDilutedValuation": "303823300492.5147",
+        "circulatingPercent": 100,
+        "circulatingSupply": "120723694",
+        "totalSupply": "120723694",
+        "maxSupply": null
       },
       "status": {
-        "time": "2025-06-02T14:23:23.902Z",
-        "success": true,
-        "code": 200,
-        "message": "OK",
-        "responseTime": 1,
-        "creditsCost": 1
+        "timestamp": 1748874152759,
+        "usedCredits": 1
       }
     }
     """
@@ -415,13 +395,13 @@ defmodule Explorer.Market.Source.CryptoRankTest do
 
   defp json_native_coin_history do
     """
-    {"data":{"dates":["2025-05-28T00:00:00.000Z","2025-05-29T00:00:00.000Z","2025-05-30T00:00:00.000Z","2025-05-31T00:00:00.000Z","2025-06-01T00:00:00.000Z"],"volumes":[10438545595.534193,7970411497.8339,11568734237.80682,10646850181.382534,5666095954.980677],"prices":[2662.609005038795,2681.794582393094,2631.742984069461,2532.024768716731,2528.507007933771],"currency":"USD"},"status":{"time":"2025-06-02T15:32:53.690Z","success":true,"code":200,"message":"OK","responseTime":21,"creditsCost":1}}
+    {"data":[{"time":1748390400000,"price":"2662.609005038795","volume":"10438545595.534193"},{"time":1748476800000,"price":"2681.794582393094","volume":"7970411497.8339"},{"time":1748563200000,"price":"2631.742984069461","volume":"11568734237.80682"},{"time":1748649600000,"price":"2532.024768716731","volume":"10646850181.382534"},{"time":1748736000000,"price":"2528.507007933771","volume":"5666095954.980677"}],"status":{"timestamp":1748878373690,"usedCredits":1}}
     """
   end
 
   defp json_secondary_coin_history do
     """
-    {"data":{"dates":["2025-05-28T00:00:00.000Z","2025-05-29T00:00:00.000Z","2025-05-30T00:00:00.000Z","2025-05-31T00:00:00.000Z","2025-06-01T00:00:00.000Z"],"volumes":[16697342.091162598,15904676.379819755,18808755.81579478,31779868.78666319,21254600.77892847],"prices":[6.669271727877,6.558096674134,6.443746862121,5.80657534093,5.903371964672],"currency":"USD"},"status":{"time":"2025-06-02T15:34:36.792Z","success":true,"code":200,"message":"OK","responseTime":49,"creditsCost":1}}
+    {"data":[{"time":1748390400000,"price":"6.669271727877","volume":"16697342.091162598"},{"time":1748476800000,"price":"6.558096674134","volume":"15904676.379819755"},{"time":1748563200000,"price":"6.443746862121","volume":"18808755.81579478"},{"time":1748649600000,"price":"5.80657534093","volume":"31779868.78666319"},{"time":1748736000000,"price":"5.903371964672","volume":"21254600.77892847"}],"status":{"timestamp":1748878476792,"usedCredits":1}}
     """
   end
 end

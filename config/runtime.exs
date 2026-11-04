@@ -570,7 +570,7 @@ config :explorer, Explorer.Market.Source.CryptoRank,
       ConfigHelper.parse_integer_or_nil_env_var("EXCHANGE_RATES_CRYPTORANK_PLATFORM_ID"),
   base_url:
     ConfigHelper.parse_url_env_var("MARKET_CRYPTORANK_BASE_URL") ||
-      ConfigHelper.parse_url_env_var("EXCHANGE_RATES_CRYPTORANK_BASE_URL", "https://api.cryptorank.io/v1"),
+      ConfigHelper.parse_url_env_var("EXCHANGE_RATES_CRYPTORANK_BASE_URL", "https://api.cryptorank.io"),
   api_key: System.get_env("MARKET_CRYPTORANK_API_KEY") || System.get_env("EXCHANGE_RATES_CRYPTORANK_API_KEY"),
   coin_id:
     System.get_env("MARKET_CRYPTORANK_COIN_ID") ||
