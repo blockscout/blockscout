@@ -92,6 +92,24 @@ defmodule Explorer.Market.Source.CryptoCompareTest do
 
       refute CryptoCompare.native_coin_price_history_fetching_enabled?()
     end
+
+    test "returns true if only api_key is configured" do
+      config = Application.get_env(:explorer, CryptoCompare)
+      Application.put_env(:explorer, CryptoCompare, Keyword.merge(config || [], coin_symbol: nil, api_key: "key"))
+
+      on_exit(fn -> Application.put_env(:explorer, CryptoCompare, config) end)
+
+      assert CryptoCompare.native_coin_price_history_fetching_enabled?()
+    end
+
+    test "returns false if coin_symbol is not configured and api_key is empty" do
+      config = Application.get_env(:explorer, CryptoCompare)
+      Application.put_env(:explorer, CryptoCompare, Keyword.merge(config || [], coin_symbol: nil, api_key: ""))
+
+      on_exit(fn -> Application.put_env(:explorer, CryptoCompare, config) end)
+
+      refute CryptoCompare.native_coin_price_history_fetching_enabled?()
+    end
   end
 
   describe "fetch_native_coin_price_history/1" do
@@ -124,6 +142,22 @@ defmodule Explorer.Market.Source.CryptoCompareTest do
                   secondary_coin: false
                 }
               ]} == CryptoCompare.fetch_native_coin_price_history(3)
+    end
+
+    test "falls back to COIN if coin_symbol is not configured", %{bypass: bypass} do
+      config = Application.get_env(:explorer, CryptoCompare)
+      Application.put_env(:explorer, CryptoCompare, Keyword.merge(config, coin_symbol: nil))
+      Application.put_env(:explorer, :coin, "FALLBACK")
+
+      on_exit(fn -> Application.put_env(:explorer, CryptoCompare, config) end)
+
+      Bypass.expect_once(bypass, "GET", "data/v2/histoday", fn conn ->
+        assert conn.query_string =~ "fsym=FALLBACK&"
+
+        Conn.resp(conn, 200, json_data_v2_histoday())
+      end)
+
+      assert {:ok, [_ | _]} = CryptoCompare.fetch_native_coin_price_history(3)
     end
 
     test "sets Authorization header if api key is configured", %{bypass: bypass} do
@@ -226,6 +260,15 @@ defmodule Explorer.Market.Source.CryptoCompareTest do
                   secondary_coin: true
                 }
               ]} == CryptoCompare.fetch_secondary_coin_price_history(3)
+    end
+
+    test "returns error without COIN fallback if secondary_coin_symbol is not configured" do
+      config = Application.get_env(:explorer, CryptoCompare)
+      Application.put_env(:explorer, CryptoCompare, Keyword.merge(config, secondary_coin_symbol: nil))
+
+      on_exit(fn -> Application.put_env(:explorer, CryptoCompare, config) end)
+
+      assert {:error, "Secondary coin ID not specified"} == CryptoCompare.fetch_secondary_coin_price_history(3)
     end
   end
 

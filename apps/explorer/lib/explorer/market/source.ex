@@ -336,9 +336,12 @@ defmodule Explorer.Market.Source do
 
   Uses configured source (`MARKET_NATIVE_COIN_HISTORY_SOURCE`) or finds the first
   available provider in `@sources` order, so CoinGecko is preferred whenever
-  `MARKET_COINGECKO_COIN_ID` is set. CryptoCompare remains available as an
-  explicit choice (`MARKET_NATIVE_COIN_HISTORY_SOURCE=crypto_compare`) or as a
-  fallback when no earlier source is configured.
+  `MARKET_COINGECKO_COIN_ID` is set. CryptoCompare is opt-in: it is only
+  auto-selected when `MARKET_CRYPTOCOMPARE_COIN_SYMBOL` or
+  `MARKET_CRYPTOCOMPARE_API_KEY` is set, and remains available as an explicit
+  choice (`MARKET_NATIVE_COIN_HISTORY_SOURCE=crypto_compare`). An instance with
+  none of the sources configured gets `nil` instead of an implicit CryptoCompare
+  fallback.
 
   ## Returns
   - A module ready to fetch data, or
@@ -357,8 +360,11 @@ defmodule Explorer.Market.Source do
 
   Uses configured source (`MARKET_SECONDARY_COIN_HISTORY_SOURCE`) or finds the
   first available provider in `@sources` order, so CoinGecko is preferred whenever
-  `MARKET_COINGECKO_SECONDARY_COIN_ID` is set. CryptoCompare remains available as
-  an explicit choice or as a fallback when no earlier source is configured.
+  `MARKET_COINGECKO_SECONDARY_COIN_ID` is set. CryptoCompare is opt-in: it is only
+  auto-selected when `MARKET_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL` (or the legacy
+  `EXCHANGE_RATES_CRYPTOCOMPARE_SECONDARY_COIN_SYMBOL`) is set, and remains
+  available as an explicit choice
+  (`MARKET_SECONDARY_COIN_HISTORY_SOURCE=crypto_compare`).
 
   ## Returns
   - A module ready to fetch data, or

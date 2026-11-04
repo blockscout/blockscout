@@ -30,6 +30,37 @@ defmodule Explorer.Market.SourceTest do
 
       assert Source.native_coin_price_history_source() == CryptoCompare
     end
+
+    test "selects CryptoCompare when only its API key is configured" do
+      put_coin_gecko_config(coin_id: nil)
+      put_coin_market_cap_config(coin_id: nil)
+      put_crypto_compare_config(coin_symbol: nil, api_key: "test_api_key")
+
+      assert Source.native_coin_price_history_source() == CryptoCompare
+    end
+
+    test "does not select CryptoCompare when neither its coin symbol nor its API key is configured" do
+      put_coin_gecko_config(coin_id: nil)
+      put_coin_market_cap_config(coin_id: nil)
+      put_crypto_compare_config(coin_symbol: nil, api_key: nil)
+
+      assert is_nil(Source.native_coin_price_history_source())
+    end
+
+    test "does not select CryptoCompare when its API key is empty" do
+      put_coin_gecko_config(coin_id: nil)
+      put_coin_market_cap_config(coin_id: nil)
+      put_crypto_compare_config(coin_symbol: nil, api_key: "")
+
+      assert is_nil(Source.native_coin_price_history_source())
+    end
+
+    test "returns explicitly configured CryptoCompare without its coin symbol or API key" do
+      put_source_config(native_coin_history_source: CryptoCompare)
+      put_crypto_compare_config(coin_symbol: nil, api_key: nil)
+
+      assert Source.native_coin_price_history_source() == CryptoCompare
+    end
   end
 
   describe "secondary_coin_price_history_source/0" do
@@ -53,6 +84,21 @@ defmodule Explorer.Market.SourceTest do
       put_coin_gecko_config(secondary_coin_id: nil)
       put_coin_market_cap_config(secondary_coin_id: nil)
       put_crypto_compare_config(secondary_coin_symbol: "OP")
+
+      assert Source.secondary_coin_price_history_source() == CryptoCompare
+    end
+
+    test "does not select CryptoCompare when its secondary coin symbol is not configured" do
+      put_coin_gecko_config(secondary_coin_id: nil)
+      put_coin_market_cap_config(secondary_coin_id: nil)
+      put_crypto_compare_config(secondary_coin_symbol: nil, api_key: "test_api_key")
+
+      assert is_nil(Source.secondary_coin_price_history_source())
+    end
+
+    test "returns explicitly configured CryptoCompare without its secondary coin symbol" do
+      put_source_config(secondary_coin_history_source: CryptoCompare)
+      put_crypto_compare_config(secondary_coin_symbol: nil, api_key: nil)
 
       assert Source.secondary_coin_price_history_source() == CryptoCompare
     end
