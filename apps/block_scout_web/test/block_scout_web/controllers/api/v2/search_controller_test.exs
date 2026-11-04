@@ -3,6 +3,8 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
   use BlockScoutWeb.ConnCase
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
+  import ExUnit.CaptureLog
+
   alias Explorer.Chain.{Address, Block}
   alias Explorer.Tags.AddressTag
   alias Plug.Conn.Query
@@ -1987,6 +1989,20 @@ defmodule BlockScoutWeb.API.V2.SearchControllerTest do
       request = get(conn, "/api/v2/search?q=#{@pool_id}")
 
       assert %{"items" => [], "next_page_params" => nil} == json_response(request, 200)
+    end
+
+    test "does not call contracts-info microservice when chain specifier is not configured", %{conn: conn} do
+      _bypass = setup_contracts_info(enabled: true)
+      Application.put_env(:block_scout_web, :chain_id, nil)
+
+      log =
+        capture_log(fn ->
+          request = get(conn, "/api/v2/search?q=#{@pool_id}")
+
+          assert %{"items" => [], "next_page_params" => nil} == json_response(request, 200)
+        end)
+
+      assert log =~ "chain specifier is not configured"
     end
   end
 
