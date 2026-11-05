@@ -768,8 +768,14 @@ defmodule Explorer.Chain.TokenTransfer do
             @arc_native_coin_burned_event
           ])
 
-        arc_native_token_filter = log_address_filter_dynamic(arc_native_token_address())
-        arc_native_token_system_filter = log_address_filter_dynamic(arc_native_token_system_address())
+        # An address match gives `NULL` for logs that keep the address in the
+        # other field, and `NOT` would keep it `NULL` and drop such logs, so the
+        # matches are coalesced to `false`.
+        arc_native_token_filter =
+          dynamic(coalesce(^Log.address_match_dynamic(arc_native_token_address()), false))
+
+        arc_native_token_system_filter =
+          dynamic(coalesce(^Log.address_match_dynamic(arc_native_token_system_address()), false))
 
         dynamic(
           (^base_filter and not (^erc20_transfer_filter and ^arc_native_token_filter)) or
@@ -779,20 +785,6 @@ defmodule Explorer.Chain.TokenTransfer do
       _ ->
         base_filter
     end
-  end
-
-  # Matches logs emitted by the given address, whether a log keeps it in
-  # `address_id` or in the legacy `address_hash`. Comparing a `NULL` field gives
-  # `NULL`, which would stay `NULL` under `NOT` and drop the log from the result,
-  # so the match is coalesced to `false`.
-  @spec log_address_filter_dynamic(Hash.Address.t() | String.t()) :: Ecto.Query.dynamic_expr()
-  defp log_address_filter_dynamic(address_hash) do
-    address_match =
-      address_hash
-      |> Log.address_match_dynamics()
-      |> Enum.reduce(fn match_dynamic, acc -> dynamic(^acc or ^match_dynamic) end)
-
-    dynamic(coalesce(^address_match, false))
   end
 
   # Builds a query to check if a token transfer exists for a given log. Handles

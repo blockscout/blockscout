@@ -250,7 +250,7 @@ defmodule Explorer.Chain do
         |> Log.preload_transaction(transaction_preloads, select_repo(options))
         |> Log.preload_address(options, select_repo(options))
         |> Log.prepare_data()
-        |> Log.prepare_first_topic()
+        |> Log.prepare_first_topic(options)
     end
   end
 
@@ -2032,7 +2032,7 @@ defmodule Explorer.Chain do
     |> Log.preload_transaction(transaction_preloads, select_repo(options))
     |> Log.preload_address(options, select_repo(options))
     |> Log.prepare_data()
-    |> Log.prepare_first_topic()
+    |> Log.prepare_first_topic(options)
   end
 
   @doc """
