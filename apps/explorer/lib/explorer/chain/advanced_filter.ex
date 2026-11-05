@@ -565,7 +565,7 @@ defmodule Explorer.Chain.AdvancedFilter do
 
     filtered_and_paginated_query =
       token_transfer_query
-      |> ExplorerHelper.maybe_hide_scam_addresses_for_token_transfers(options)
+      |> maybe_hide_scam_token_transfers(options)
       |> limit_query(paging_options)
       |> query_function.(false)
       |> limit_query(paging_options)
@@ -578,6 +578,26 @@ defmodule Explorer.Chain.AdvancedFilter do
       filtered_and_paginated_query
       |> repo.all(repo_options)
       |> repo.preload([:transaction, [token: Reputation.reputation_association()]])
+    end
+  end
+
+  # The scam badge filter is skipped when the request names the tokens to
+  # include. The user asked for those tokens' transfers, so hiding them is not
+  # expected (the token page shows them too), and for a scam token the badge
+  # predicate rejects every row: PostgreSQL would walk the token's whole
+  # transfer history in index order looking for a page it can never fill.
+  defp maybe_hide_scam_token_transfers(query, options) do
+    if explicit_tokens_included?(options) do
+      query
+    else
+      ExplorerHelper.maybe_hide_scam_addresses_for_token_transfers(query, options)
+    end
+  end
+
+  defp explicit_tokens_included?(options) do
+    case process_address_inclusion(options[:token_contract_address_hashes]) do
+      {:include, token_contract_address_hashes} -> Enum.any?(token_contract_address_hashes, &(&1 != "native"))
+      _ -> false
     end
   end
 
