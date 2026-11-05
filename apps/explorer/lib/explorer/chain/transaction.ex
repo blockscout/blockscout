@@ -3130,14 +3130,52 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Returns pending transactions list from the DB
+  Returns a page of pending transactions (see `pending_transactions_query/1`) inserted
+  before `inserted_before`.
+
+  The transactions are ordered by `{inserted_at, hash}`, the columns of the
+  `pending_txs_index` partial index, so every page is a short index range scan.
+
+  ## Parameters
+  - `inserted_before`: only the transactions inserted before this time are returned;
+    pass the same value for every page, so that the walk over the pages ends
+  - `page_size`: the maximum number of transactions to return
+  - `last_key`: `{inserted_at, hash}` of the last transaction of the previous
+    page, or `nil` for the first page
+
+  ## Returns
+  - A list of maps with the `hash` and `inserted_at` of the transactions
   """
-  @spec pending_transactions_list(non_neg_integer()) :: Ecto.Schema.t() | term()
-  def pending_transactions_list(window_size \\ 86_400_000) do
+  @spec stale_pending_transactions_page(
+          DateTime.t(),
+          pos_integer(),
+          {DateTime.t(), Hash.Full.t()} | nil
+        ) :: [%{hash: Hash.Full.t(), inserted_at: DateTime.t()}]
+  def stale_pending_transactions_page(inserted_before, page_size, last_key) do
     __MODULE__
     |> pending_transactions_query()
-    |> where([t], t.inserted_at < ago(^window_size, "millisecond"))
-    |> Repo.all(timeout: :infinity)
+    |> where([transaction], transaction.inserted_at < ^inserted_before)
+    |> where_after_pending_key(last_key)
+    |> order_by([transaction], asc: transaction.inserted_at, asc: transaction.hash)
+    |> limit(^page_size)
+    |> select([transaction], map(transaction, [:hash, :inserted_at]))
+    |> Repo.all()
+  end
+
+  defp where_after_pending_key(query, nil), do: query
+
+  defp where_after_pending_key(query, {inserted_at, hash}) do
+    where(
+      query,
+      [transaction],
+      fragment(
+        "(?, ?) > (?, ?)",
+        transaction.inserted_at,
+        transaction.hash,
+        type(^inserted_at, :utc_datetime_usec),
+        type(^hash, Hash.Full)
+      )
+    )
   end
 
   @doc """
