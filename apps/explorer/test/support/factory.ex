@@ -1962,7 +1962,8 @@ defmodule Explorer.Factory do
           second_topic: nil,
           third_topic: nil,
           fourth_topic: nil,
-          data: %Data{bytes: data_raw}
+          data: %Data{bytes: data_raw},
+          compressed_data: %Data{bytes: data_raw}
         },
         attrs
         |> Map.drop([

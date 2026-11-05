@@ -343,6 +343,46 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
                  Repo.all(from(d in Deposit, order_by: [asc: :index]))
       end
 
+      test "processes logs stored with `compressed_data` only" do
+        state = Map.put(@state, :batch_size, 5)
+
+        deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")
+
+        transaction_a = insert(:transaction) |> with_block()
+
+        # `data` is `NULL` for logs imported by v12+, the payload is in `compressed_data` only
+        log_a =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 0,
+            transaction: transaction_a,
+            block: transaction_a.block,
+            data: nil
+          )
+
+        transaction_b = insert(:transaction) |> with_block()
+
+        log_b =
+          insert(:beacon_deposit_log,
+            address: deposit_contract_address,
+            deposit_index: 1,
+            transaction: transaction_b,
+            block: transaction_b.block,
+            data: nil
+          )
+
+        DepositFetcher.handle_info(:process_logs, state)
+
+        log_a_transaction_hash = log_a.transaction_hash
+        log_b_transaction_hash = log_b.transaction_hash
+
+        # deposit indexes are decoded from the log payload
+        assert [
+                 %Deposit{index: 0, transaction_hash: ^log_a_transaction_hash},
+                 %Deposit{index: 1, transaction_hash: ^log_b_transaction_hash}
+               ] = Repo.all(from(d in Deposit, order_by: [asc: :index]))
+      end
+
       test "fallbacks to fetch data from the node when non-sequential logs are detected (logs starts not from 0, between batches)",
            %{json_rpc_named_arguments: json_rpc_named_arguments} do
         deposit_contract_address = insert(:address, hash: "0x00000000219ab540356cbb839cbe05303d7705fa")

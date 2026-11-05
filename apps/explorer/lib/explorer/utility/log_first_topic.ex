@@ -6,6 +6,7 @@ defmodule Explorer.Utility.LogFirstTopic do
 
   use Explorer.Schema
 
+  alias Explorer.Chain
   alias Explorer.Chain.Hash
   alias Explorer.Repo
 
@@ -61,15 +62,20 @@ defmodule Explorer.Utility.LogFirstTopic do
 
   ## Parameters
   - `ids`: A list of first topic mapping ids to look up
+  - `options`: `api?: true` reads the mappings from the replica
 
   ## Returns
   - A list of `%Explorer.Utility.LogFirstTopic{}` structs for the matching ids
   """
-  @spec fetch_by_ids([integer()]) :: [__MODULE__.t()]
-  def fetch_by_ids(ids) do
+  @spec fetch_by_ids([integer()], [Chain.api?()]) :: [__MODULE__.t()]
+  def fetch_by_ids(ids, options \\ [])
+
+  def fetch_by_ids([], _options), do: []
+
+  def fetch_by_ids(ids, options) do
     __MODULE__
     |> where([t], t.id in ^ids)
-    |> Repo.all()
+    |> Chain.select_repo(options).all()
   end
 
   @doc """

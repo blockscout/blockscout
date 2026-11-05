@@ -89,11 +89,13 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
           from: l2_transaction.from_address_hash,
           msg_log_sender_address_hash: log.third_topic,
           msg_log_target_address_hash: log.fourth_topic,
-          msg_log_data: log.data
+          msg_log_data: log.data,
+          msg_log_compressed_data: log.compressed_data
         })
         |> page_optimism_withdrawals(paging_options)
         |> limit(^paging_options.page_size)
         |> select_repo(options).all(timeout: :infinity)
+        |> Enum.map(&prepare_msg_log_data/1)
     end
   end
 
@@ -166,7 +168,8 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         msg_nonce: w.msg_nonce,
         msg_log_sender_address_hash: log.third_topic,
         msg_log_target_address_hash: log.fourth_topic,
-        msg_log_data: log.data
+        msg_log_data: log.data,
+        msg_log_compressed_data: log.compressed_data
       })
 
     # The withdrawals are optional data of the transaction page, which must not
@@ -175,6 +178,8 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
     case LockTimeout.run(Repo.replica(), fn repo -> repo.all(query) end, timeout: :infinity) do
       {:ok, withdrawals} ->
         Enum.map(withdrawals, fn w ->
+          w = prepare_msg_log_data(w)
+
           msg_nonce =
             Bitwise.band(
               Decimal.to_integer(w.msg_nonce),
@@ -188,6 +193,13 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
       {:error, :lock_timeout} ->
         []
     end
+  end
+
+  @spec prepare_msg_log_data(map()) :: map()
+  defp prepare_msg_log_data(%{msg_log_compressed_data: compressed_data} = w) do
+    w
+    |> Map.delete(:msg_log_compressed_data)
+    |> Map.put(:msg_log_data, w.msg_log_data || compressed_data)
   end
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity

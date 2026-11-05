@@ -6,12 +6,13 @@ defmodule Explorer.Migrator.CeloAccountsTest do
     chain_identity: [:explorer, :chain_identity]
 
   if @chain_identity == {:optimism, :celo} do
-    alias Explorer.Factory
-    alias Explorer.Migrator.{CeloAccounts, MigrationStatus}
     alias Explorer.Chain.{Address, Hash}
     alias Explorer.Chain.Celo.{Account, PendingAccountOperation}
     alias Explorer.Chain.Celo.Legacy.Events
+    alias Explorer.Factory
+    alias Explorer.Migrator.{CeloAccounts, MigrationStatus}
     alias Explorer.Repo
+    alias Explorer.Utility.LogFirstTopic
 
     describe "celo_accounts migration" do
       test "enqueues pending operations for new celo addresses" do
@@ -62,6 +63,31 @@ defmodule Explorer.Migrator.CeloAccountsTest do
         assert Repo.get(Address, new_address_hash)
         assert Repo.get(PendingAccountOperation, existing_account_address.hash) == nil
         assert Repo.aggregate(PendingAccountOperation, :count, :address_hash) == 2
+        assert MigrationStatus.get_status("celo_accounts") == "completed"
+      end
+
+      test "processes logs stored in the optimized format" do
+        # logs without `first_topic` are found by `first_topic_id` only once the migration is started
+        set_fill_logs_optimized_fields_migration_started()
+
+        address_hash = Factory.address_hash()
+        name_data = "0x" <> Base.encode16(ABI.encode("(string)", [{"validator"}]), case: :lower)
+
+        # `first_topic` and `data` are kept only in `first_topic_id` and `compressed_data` since v12
+        insert(:log,
+          first_topic: nil,
+          first_topic_id: LogFirstTopic.find_or_create(Events.account_name_event()).id,
+          second_topic: zero_pad(address_hash),
+          data: nil,
+          compressed_data: name_data
+        )
+
+        assert MigrationStatus.set_status("celo_accounts", "started")
+        {:ok, pid} = CeloAccounts.start_link([])
+        ref = Process.monitor(pid)
+        assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 1_000
+
+        assert [%PendingAccountOperation{address_hash: ^address_hash}] = Repo.all(PendingAccountOperation)
         assert MigrationStatus.get_status("celo_accounts") == "completed"
       end
     end

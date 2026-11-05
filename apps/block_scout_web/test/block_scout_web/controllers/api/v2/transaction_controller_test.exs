@@ -611,27 +611,10 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
 
     if @chain_type == :suave do
+      alias Explorer.Utility.LogFirstTopic
+
       test "renders peeker starting with 0x", %{conn: conn} do
-        bid_contract = insert(:address)
-
-        old_env = Application.get_env(:explorer, Transaction, [])
-
-        Application.put_env(
-          :explorer,
-          Transaction,
-          Keyword.merge(old_env, suave_bid_contracts: to_string(bid_contract.hash))
-        )
-
-        on_exit(fn ->
-          Application.put_env(:explorer, Transaction, old_env)
-        end)
-
-        transaction =
-          insert(:transaction,
-            to_address_hash: bid_contract.hash,
-            to_address: bid_contract,
-            execution_node_hash: bid_contract.hash
-          )
+        {bid_contract, transaction} = insert_suave_bid_transaction()
 
         insert(:log,
           transaction_hash: transaction.hash,
@@ -639,6 +622,29 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           address: bid_contract,
           first_topic: "0x83481d5b04dea534715acad673a8177a46fc93882760f36bdc16ccac439d504e",
           data:
+            "0x11111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000003078505152535455565758595a5b5c5d5e5f6061"
+        )
+
+        request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+
+        assert %{"allowed_peekers" => ["0x3078505152535455565758595a5b5C5D5E5f6061"]} = json_response(request, 200)
+      end
+
+      test "renders peekers of a bid event stored in the optimized format", %{conn: conn} do
+        {bid_contract, transaction} = insert_suave_bid_transaction()
+
+        # `address_hash`, `first_topic` and `data` are kept only in `address_id`,
+        # `first_topic_id` and `compressed_data` since v12
+        insert(:log,
+          transaction_hash: transaction.hash,
+          transaction: transaction,
+          address: bid_contract,
+          address_hash: nil,
+          first_topic: nil,
+          first_topic_id:
+            LogFirstTopic.find_or_create("0x83481d5b04dea534715acad673a8177a46fc93882760f36bdc16ccac439d504e").id,
+          data: nil,
+          compressed_data:
             "0x11111111111111111111111111111111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000010000000000000000000000003078505152535455565758595a5b5c5d5e5f6061"
         )
 
@@ -4231,6 +4237,40 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/preview")
 
       assert %{"from" => %{"ens_domain_name" => nil}} = json_response(request, 200)
+    end
+  end
+
+  if @chain_type == :suave do
+    # Inserts a Suave transaction sent to a bid contract, which is registered in
+    # the `suave_bid_contracts` setting for the test. The wrapped transaction
+    # fields required by the API schema are filled.
+    defp insert_suave_bid_transaction do
+      bid_contract = insert(:address)
+
+      old_env = Application.get_env(:explorer, Transaction, [])
+
+      Application.put_env(
+        :explorer,
+        Transaction,
+        Keyword.merge(old_env, suave_bid_contracts: to_string(bid_contract.hash))
+      )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Transaction, old_env)
+      end)
+
+      transaction =
+        insert(:transaction,
+          to_address_hash: bid_contract.hash,
+          to_address: bid_contract,
+          execution_node_hash: bid_contract.hash,
+          wrapped_type: 0,
+          wrapped_to_address_hash: bid_contract.hash,
+          wrapped_input: "0x",
+          wrapped_hash: transaction_hash()
+        )
+
+      {bid_contract, transaction}
     end
   end
 end

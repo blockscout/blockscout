@@ -159,7 +159,7 @@ defmodule Explorer.Etherscan.Logs do
     |> order_by([log], asc: log.block_number, asc: log.index)
     |> Repo.replica().all()
     |> Log.prepare_data()
-    |> Log.prepare_first_topic()
+    |> Log.prepare_first_topic(api?: true)
   end
 
   # Wraps `logs_query` in a subquery and joins each log to its consensus

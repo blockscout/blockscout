@@ -6,7 +6,7 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
   alias Explorer.Helper, as: ExplorerHelper
 
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.{Address, Hash, Transaction}
+  alias Explorer.Chain.{Address, Hash, Log, Transaction}
 
   @suave_bid_event "0x83481d5b04dea534715acad673a8177a46fc93882760f36bdc16ccac439d504e"
 
@@ -104,7 +104,9 @@ defmodule BlockScoutWeb.API.V2.SuaveView do
       |> Enum.map(fn sbc -> String.downcase(String.trim(sbc)) end)
 
     bid_event =
-      Enum.find(logs, fn log ->
+      logs
+      |> Log.prepare_optimized_fields(api?: true)
+      |> Enum.find(fn log ->
         sanitize_log_first_topic(log.first_topic) == @suave_bid_event &&
           Enum.member?(suave_bid_contracts, String.downcase(Hash.to_string(log.address_hash)))
       end)

@@ -768,11 +768,18 @@ defmodule Explorer.Chain.TokenTransfer do
             @arc_native_coin_burned_event
           ])
 
+        # An address match gives `NULL` for logs that keep the address in the
+        # other field, and `NOT` would keep it `NULL` and drop such logs, so the
+        # matches are coalesced to `false`.
+        arc_native_token_filter =
+          dynamic(coalesce(^Log.address_match_dynamic(arc_native_token_address()), false))
+
+        arc_native_token_system_filter =
+          dynamic(coalesce(^Log.address_match_dynamic(arc_native_token_system_address()), false))
+
         dynamic(
-          [log: l],
-          (^base_filter and
-             not (^erc20_transfer_filter and l.address_hash == ^arc_native_token_address())) or
-            (^arc_native_coin_filter and l.address_hash == ^arc_native_token_system_address())
+          (^base_filter and not (^erc20_transfer_filter and ^arc_native_token_filter)) or
+            (^arc_native_coin_filter and ^arc_native_token_system_filter)
         )
 
       _ ->

@@ -527,6 +527,7 @@ defmodule Explorer.Chain.Log do
     |> filter_by_topic_query(:first_topic, first_topic)
     |> limit(1)
     |> Chain.select_repo(options).one()
+    |> prepare_optimized_fields(options)
   end
 
   @doc """
@@ -573,6 +574,7 @@ defmodule Explorer.Chain.Log do
     |> preload_block(Chain.select_repo(options))
     |> preload_transaction([], Chain.select_repo(options))
     |> preload_address(options, Chain.select_repo(options))
+    |> prepare_optimized_fields(options)
   end
 
   @doc """
@@ -1027,7 +1029,17 @@ defmodule Explorer.Chain.Log do
     end
   end
 
-  defp address_match_dynamic(address_hash) do
+  @doc """
+  Returns a single condition matching logs of the given address: the
+  `address_match_dynamics/1` conditions combined with `OR`.
+
+  A log that keeps its address in the field the condition doesn't match by
+  gives `NULL` rather than `false`. A condition that is negated should be
+  wrapped in `coalesce(..., false)`, or `NOT` keeps it `NULL` and drops such
+  logs.
+  """
+  @spec address_match_dynamic(Hash.Address.t() | binary()) :: Ecto.Query.dynamic_expr()
+  def address_match_dynamic(address_hash) do
     address_hash
     |> address_match_dynamics()
     |> Enum.reduce(fn match_dynamic, acc -> dynamic([l], ^acc or ^match_dynamic) end)
@@ -1255,26 +1267,70 @@ defmodule Explorer.Chain.Log do
   Ensures that `first_topic` is populated from `first_topic_id` when needed.
 
   Topic values are loaded from `log_first_topics` in batch for list inputs.
+  With `api?: true`, they are read from the replica.
   """
-  @spec prepare_first_topic(map() | [map()] | nil) :: map() | [map()] | nil
-  def prepare_first_topic(nil), do: nil
+  @spec prepare_first_topic(map() | [map()] | nil, [Chain.api?()]) :: map() | [map()] | nil
+  def prepare_first_topic(logs, options \\ [])
 
-  def prepare_first_topic(logs) when is_list(logs) do
+  def prepare_first_topic(nil, _options), do: nil
+
+  def prepare_first_topic(logs, options) when is_list(logs) do
     first_topics_map =
       logs
       |> Enum.map(& &1.first_topic_id)
       |> Enum.uniq()
       |> Enum.reject(&is_nil/1)
-      |> LogFirstTopic.fetch_by_ids()
+      |> LogFirstTopic.fetch_by_ids(options)
       |> Map.new(&{&1.id, &1.value})
 
     Enum.map(logs, &%{&1 | first_topic: &1.first_topic || first_topics_map[&1.first_topic_id]})
   end
 
-  def prepare_first_topic(log) do
+  def prepare_first_topic(log, options) do
     [log]
-    |> prepare_first_topic()
+    |> prepare_first_topic(options)
     |> List.first()
+  end
+
+  @doc """
+  Restores `data`, `first_topic` and `address_hash` of logs stored in the
+  optimized format, which keeps them only in `compressed_data`,
+  `first_topic_id` and `address_id`.
+
+  Expects logs with all of these fields, such as `t:t/0` structs. A query that
+  selects only some of the fields restores them with `prepare_data/1` and
+  `prepare_first_topic/2`. First topics and address hashes are loaded in batch,
+  from the replica with `api?: true`.
+  """
+  @spec prepare_optimized_fields(map() | [map()] | nil, [Chain.api?()]) :: map() | [map()] | nil
+  def prepare_optimized_fields(logs, options \\ [])
+
+  def prepare_optimized_fields(nil, _options), do: nil
+
+  def prepare_optimized_fields(logs, options) when is_list(logs) do
+    logs
+    |> prepare_data()
+    |> prepare_first_topic(options)
+    |> prepare_address_hash(options)
+  end
+
+  def prepare_optimized_fields(log, options) do
+    [log]
+    |> prepare_optimized_fields(options)
+    |> List.first()
+  end
+
+  defp prepare_address_hash(logs, options) do
+    address_hashes_map =
+      logs
+      |> Enum.filter(&is_nil(&1.address_hash))
+      |> Enum.map(& &1.address_id)
+      |> Enum.uniq()
+      |> Enum.reject(&is_nil/1)
+      |> AddressIdToAddressHash.fetch_by_ids(options)
+      |> Map.new(&{&1.address_id, &1.address_hash})
+
+    Enum.map(logs, &%{&1 | address_hash: &1.address_hash || address_hashes_map[&1.address_id]})
   end
 
   defp preload_addresses_for_not_migrated_logs([], _preloads, _repo), do: []
