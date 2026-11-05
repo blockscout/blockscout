@@ -105,7 +105,9 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenTransfer do
   @spec read_block_logs(non_neg_integer(), [String.t()]) :: [
           %{
             first_topic: Hash.t(),
+            first_topic_id: integer() | nil,
             data: Data.t(),
+            compressed_data: Data.t() | nil,
             address_hash: Hash.t(),
             transaction_hash: Hash.t(),
             index: non_neg_integer(),
@@ -126,7 +128,9 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenTransfer do
     |> Log.filter_by_topic_query(:first_topic, transfer_events)
     |> select([l, b, t, _am, a], %{
       first_topic: l.first_topic,
+      first_topic_id: l.first_topic_id,
       data: l.data,
+      compressed_data: l.compressed_data,
       address_hash: coalesce(l.address_hash, as(:address_mapping).address_hash),
       transaction_hash: t.hash,
       index: l.index,
@@ -135,6 +139,8 @@ defmodule Explorer.Chain.Zilliqa.Zrc2.TokenTransfer do
       adapter_address_hash: a.adapter_address_hash
     })
     |> Repo.all(timeout: :infinity)
+    |> Log.prepare_data()
+    |> Log.prepare_first_topic()
   end
 
   @doc """

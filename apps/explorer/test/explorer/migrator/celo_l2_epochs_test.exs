@@ -6,11 +6,15 @@ defmodule Explorer.Migrator.CeloL2EpochsTest do
     chain_identity: [:explorer, :chain_identity]
 
   if @chain_identity == {:optimism, :celo} do
-    alias Explorer.Migrator.{CeloL2Epochs, MigrationStatus}
     alias Explorer.Chain.Celo.Epoch
+    alias Explorer.Migrator.{CeloL2Epochs, MigrationStatus}
     alias Explorer.Repo
+    alias Explorer.Utility.LogFirstTopic
 
     import Ecto.Query
+
+    @epoch_processing_started_topic "0xae58a33f8b8d696bcbaca9fa29d9fdc336c140e982196c2580db3d46f3e6d4b6"
+    @epoch_processing_ended_topic "0xc8e58d8e6979dd5e68bad79d4a4368a1091f6feb2323e612539b1b84e0663a8f"
 
     describe "celo_l2_epochs migration" do
       test "backfills epochs from logs" do
@@ -173,6 +177,59 @@ defmodule Explorer.Migrator.CeloL2EpochsTest do
         assert third_epoch.fetched? == false
 
         # Confirm migration status is completed
+        assert MigrationStatus.get_status("celo_l2_epochs") == "completed"
+      end
+
+      test "backfills epochs from logs stored in the optimized format" do
+        # logs without `first_topic` and `address_hash` are found by `first_topic_id`
+        # and `address_id` only once the migration is started
+        set_fill_logs_optimized_fields_migration_started()
+
+        epoch_manager_address = insert(:address)
+
+        old_env = Application.get_env(:explorer, :celo)
+
+        Application.put_env(
+          :explorer,
+          :celo,
+          Keyword.merge(old_env || [], epoch_manager_contract_address: to_string(epoch_manager_address.hash))
+        )
+
+        on_exit(fn ->
+          Application.put_env(:explorer, :celo, old_env)
+        end)
+
+        # since v12 `first_topic` and `address_hash` are kept only in `first_topic_id` and `address_id`
+        log_params = [
+          address: epoch_manager_address,
+          address_hash: nil,
+          first_topic: nil,
+          second_topic: "0x000000000000000000000000000000000000000000000000000000000000002a"
+        ]
+
+        start_log =
+          insert(:log, log_params ++ [first_topic_id: LogFirstTopic.find_or_create(@epoch_processing_started_topic).id])
+
+        end_log =
+          insert(:log, log_params ++ [first_topic_id: LogFirstTopic.find_or_create(@epoch_processing_ended_topic).id])
+
+        {:ok, pid} = CeloL2Epochs.start_link([])
+        ref = Process.monitor(pid)
+
+        # the migrator stops itself once the migration is completed
+        assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 5_000
+
+        start_block_hash = start_log.block_hash
+        end_block_hash = end_log.block_hash
+
+        assert [
+                 %Epoch{
+                   number: 42,
+                   start_processing_block_hash: ^start_block_hash,
+                   end_processing_block_hash: ^end_block_hash
+                 }
+               ] = Repo.all(Epoch)
+
         assert MigrationStatus.get_status("celo_l2_epochs") == "completed"
       end
     end

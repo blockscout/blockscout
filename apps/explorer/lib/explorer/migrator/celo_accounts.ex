@@ -55,7 +55,10 @@ defmodule Explorer.Migrator.CeloAccounts do
 
   @impl FillingMigration
   def update_batch(logs) do
-    %{accounts: pending_operation_params} = Accounts.parse(logs)
+    %{accounts: pending_operation_params} =
+      logs
+      |> Log.prepare_optimized_fields()
+      |> Accounts.parse()
 
     unique_pending_operation_params = Enum.uniq_by(pending_operation_params, & &1.address_hash)
     address_params = Enum.map(unique_pending_operation_params, &%{hash: &1.address_hash})

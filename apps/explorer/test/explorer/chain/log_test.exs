@@ -5,7 +5,8 @@ defmodule Explorer.Chain.LogTest do
   import Mox
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Log, SmartContract}
+  alias Explorer.Chain.{Address, Data, Log, SmartContract}
+  alias Explorer.Utility.LogFirstTopic
 
   @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
 
@@ -238,5 +239,107 @@ defmodule Explorer.Chain.LogTest do
                  {"_belly", "bool", true, true}
                ]}, _} = Log.decode(log, transaction, [], false, false, abi)
     end
+  end
+
+  describe "fetch_log_by_transaction_and_first_topic/3" do
+    test "restores the fields of a log stored in the optimized format" do
+      # logs without `first_topic` are found by `first_topic_id` only once the migration is started
+      set_fill_logs_optimized_fields_migration_started()
+
+      transaction = :transaction |> insert() |> with_block()
+      %Address{hash: address_hash} = address = insert(:address)
+      first_topic = topic(@first_topic_hex_string_1)
+      data = %Data{bytes: <<1, 2, 3>>}
+
+      insert_optimized_log(transaction, address, first_topic, data)
+
+      assert %Log{address_hash: ^address_hash, first_topic: ^first_topic, data: ^data} =
+               Log.fetch_log_by_transaction_and_first_topic(transaction, first_topic, api?: true)
+    end
+
+    test "returns nil when there is no such log" do
+      transaction = :transaction |> insert() |> with_block()
+
+      assert is_nil(Log.fetch_log_by_transaction_and_first_topic(transaction, topic(@first_topic_hex_string_1)))
+    end
+  end
+
+  describe "user_op_to_logs/2" do
+    test "restores the fields of logs stored in the optimized format" do
+      set_fill_logs_optimized_fields_migration_started()
+
+      transaction = :transaction |> insert() |> with_block()
+      %Address{hash: address_hash} = address = insert(:address)
+      first_topic = topic(@first_topic_hex_string_1)
+      data = %Data{bytes: <<1, 2, 3>>}
+
+      log = insert_optimized_log(transaction, address, first_topic, data)
+
+      user_op = %{
+        "transaction_hash" => transaction.hash,
+        "block_hash" => transaction.block_hash,
+        "user_logs_start_index" => log.index,
+        "user_logs_count" => 1
+      }
+
+      assert [%Log{address_hash: ^address_hash, first_topic: ^first_topic, data: ^data}] =
+               Log.user_op_to_logs(user_op, api?: true)
+    end
+  end
+
+  describe "prepare_optimized_fields/2" do
+    test "restores the fields of logs stored in the optimized format and keeps legacy logs as is" do
+      transaction = :transaction |> insert() |> with_block()
+      %Address{hash: address_hash} = address = insert(:address)
+      first_topic = topic(@first_topic_hex_string_1)
+      data = %Data{bytes: <<1, 2, 3>>}
+
+      insert_optimized_log(transaction, address, first_topic, data)
+
+      insert(:log,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        address_mapping: nil,
+        first_topic: first_topic
+      )
+
+      assert [%Log{address_hash: nil, first_topic: nil, data: nil}, %Log{address_id: nil} = legacy_log] =
+               logs = Log |> order_by(:index) |> Repo.all()
+
+      assert [%Log{address_hash: ^address_hash, first_topic: ^first_topic, data: ^data}, ^legacy_log] =
+               Log.prepare_optimized_fields(logs)
+    end
+
+    test "accepts a single log and nil" do
+      transaction = :transaction |> insert() |> with_block()
+      %Address{hash: address_hash} = address = insert(:address)
+      first_topic = topic(@first_topic_hex_string_1)
+      data = %Data{bytes: <<1, 2, 3>>}
+
+      insert_optimized_log(transaction, address, first_topic, data)
+
+      assert %Log{address_hash: ^address_hash, first_topic: ^first_topic, data: ^data} =
+               Log |> Repo.one() |> Log.prepare_optimized_fields(api?: true)
+
+      assert is_nil(Log.prepare_optimized_fields(nil))
+    end
+  end
+
+  # Inserts a log in the format used since v12: `address_hash`, `first_topic`
+  # and `data` are kept only in `address_id`, `first_topic_id` and
+  # `compressed_data`.
+  defp insert_optimized_log(transaction, address, first_topic, data) do
+    insert(:log,
+      transaction: transaction,
+      block: transaction.block,
+      block_number: transaction.block_number,
+      address: address,
+      address_hash: nil,
+      first_topic: nil,
+      first_topic_id: LogFirstTopic.find_or_create(first_topic).id,
+      data: nil,
+      compressed_data: data
+    )
   end
 end

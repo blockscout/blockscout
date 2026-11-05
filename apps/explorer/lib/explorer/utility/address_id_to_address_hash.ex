@@ -172,4 +172,28 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
     |> select([a], a.address_hash)
     |> Chain.select_repo(options).all()
   end
+
+  @doc """
+  Retrieves the address mappings for the given address ids.
+
+  Unlike `ids_to_hashes/2`, the result keeps the id of each hash.
+
+  ## Parameters
+  - `ids`: A list of address ids to look up
+  - `options`: `api?: true` reads the mappings from the replica
+
+  ## Returns
+  - A list of `%Explorer.Utility.AddressIdToAddressHash{}` structs for the
+    matching ids
+  """
+  @spec fetch_by_ids([integer()], [Chain.api?()]) :: [__MODULE__.t()]
+  def fetch_by_ids(ids, options \\ [])
+
+  def fetch_by_ids([], _options), do: []
+
+  def fetch_by_ids(ids, options) do
+    __MODULE__
+    |> where([a], a.address_id in ^ids)
+    |> Chain.select_repo(options).all()
+  end
 end
