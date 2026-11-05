@@ -106,17 +106,21 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
       other_tt = insert(:token_transfer, transaction: transaction, block_number: transaction.block_number, log_index: 1)
 
-      request =
-        get(conn, "/api/v2/advanced-filters", %{
-          "token_contract_address_hashes_to_include" => to_string(scam_tt.token_contract_address_hash),
-          "token_contract_address_hashes_to_exclude" => to_string(scam_tt.token_contract_address_hash),
-          "transaction_types" => "ERC-20"
-        })
+      scam_token_hash = to_string(scam_tt.token_contract_address_hash)
 
-      response = json_response(request, 200)
+      for include <- [scam_token_hash, "#{scam_token_hash},#{scam_token_hash}"] do
+        request =
+          get(conn, "/api/v2/advanced-filters", %{
+            "token_contract_address_hashes_to_include" => include,
+            "token_contract_address_hashes_to_exclude" => scam_token_hash,
+            "transaction_types" => "ERC-20"
+          })
 
-      assert [item] = response["items"]
-      assert item["token"]["address_hash"] == Address.checksum(other_tt.token_contract_address_hash)
+        response = json_response(request, 200)
+
+        assert [item] = response["items"]
+        assert item["token"]["address_hash"] == Address.checksum(other_tt.token_contract_address_hash)
+      end
     end
 
     test "get token-transfers with ok reputation with hide_scam_addresses=false", %{conn: conn} do
