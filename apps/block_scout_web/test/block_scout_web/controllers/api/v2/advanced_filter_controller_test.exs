@@ -4,7 +4,7 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
 
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.SmartContract
-  alias Explorer.Chain.{AdvancedFilter, Data, Hash}
+  alias Explorer.Chain.{Address, AdvancedFilter, Data, Hash}
   alias Explorer.{Factory, TestHelper}
 
   describe "/advanced_filters" do
@@ -57,6 +57,70 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       response = json_response(request, 200)
 
       assert response["items"] == []
+    end
+
+    test "get token-transfers of a scam token named in token_contract_address_hashes_to_include while scam tokens are hidden",
+         %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      transaction = insert(:transaction) |> with_block()
+
+      scam_tt = insert(:token_transfer, transaction: transaction, block_number: transaction.block_number, log_index: 0)
+      insert(:scam_badge_to_address, address_hash: scam_tt.token_contract_address_hash)
+
+      other_tt = insert(:token_transfer, transaction: transaction, block_number: transaction.block_number, log_index: 1)
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "token_contract_address_hashes_to_include" => to_string(scam_tt.token_contract_address_hash)
+        })
+
+      response = json_response(request, 200)
+
+      assert [item] = response["items"]
+      assert item["token"]["address_hash"] == Address.checksum(scam_tt.token_contract_address_hash)
+      assert item["token"]["reputation"] == "scam"
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "token_contract_address_hashes_to_include" => to_string(other_tt.token_contract_address_hash)
+        })
+
+      response = json_response(request, 200)
+
+      assert [item] = response["items"]
+      assert item["token"]["address_hash"] == Address.checksum(other_tt.token_contract_address_hash)
+    end
+
+    test "hide scam token-transfers when the include list is cancelled out by the exclude list", %{conn: conn} do
+      init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
+      Application.put_env(:block_scout_web, :hide_scam_addresses, true)
+      on_exit(fn -> Application.put_env(:block_scout_web, :hide_scam_addresses, init_value) end)
+
+      transaction = insert(:transaction) |> with_block()
+
+      scam_tt = insert(:token_transfer, transaction: transaction, block_number: transaction.block_number, log_index: 0)
+      insert(:scam_badge_to_address, address_hash: scam_tt.token_contract_address_hash)
+
+      other_tt = insert(:token_transfer, transaction: transaction, block_number: transaction.block_number, log_index: 1)
+
+      scam_token_hash = to_string(scam_tt.token_contract_address_hash)
+
+      for include <- [scam_token_hash, "#{scam_token_hash},#{scam_token_hash}"] do
+        request =
+          get(conn, "/api/v2/advanced-filters", %{
+            "token_contract_address_hashes_to_include" => include,
+            "token_contract_address_hashes_to_exclude" => scam_token_hash,
+            "transaction_types" => "ERC-20"
+          })
+
+        response = json_response(request, 200)
+
+        assert [item] = response["items"]
+        assert item["token"]["address_hash"] == Address.checksum(other_tt.token_contract_address_hash)
+      end
     end
 
     test "get token-transfers with ok reputation with hide_scam_addresses=false", %{conn: conn} do
@@ -1381,6 +1445,67 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert response = json_response(request, 200)
 
       assert Enum.count(response["items"]) == 6
+    end
+
+    test "filter by token contract address include drops every occurrence of an excluded hash", %{conn: conn} do
+      token_a = insert(:token)
+      token_b = insert(:token)
+      token_c = insert(:token)
+
+      transaction = :transaction |> insert() |> with_block()
+
+      for {token, log_index} <- Enum.with_index([token_a, token_b, token_c]) do
+        insert(:token_transfer,
+          token_contract_address: token.contract_address,
+          transaction: transaction,
+          block_number: transaction.block_number,
+          log_index: log_index
+        )
+      end
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "token_contract_address_hashes_to_include" =>
+            "#{token_a.contract_address_hash},#{token_a.contract_address_hash},#{token_b.contract_address_hash}",
+          "token_contract_address_hashes_to_exclude" => to_string(token_a.contract_address_hash)
+        })
+
+      assert response = json_response(request, 200)
+
+      assert [item] = response["items"]
+      assert item["token"]["address_hash"] == Address.checksum(token_b.contract_address_hash)
+    end
+
+    test "filter by token contract address keeps the exclusion when it empties the include list", %{conn: conn} do
+      token_a = insert(:token)
+      token_b = insert(:token)
+      token_c = insert(:token)
+
+      transaction = :transaction |> insert() |> with_block()
+
+      for {token, log_index} <- Enum.with_index([token_a, token_b, token_c]) do
+        insert(:token_transfer,
+          token_contract_address: token.contract_address,
+          transaction: transaction,
+          block_number: transaction.block_number,
+          log_index: log_index
+        )
+      end
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "token_contract_address_hashes_to_include" =>
+            "#{token_a.contract_address_hash},#{token_a.contract_address_hash}",
+          "token_contract_address_hashes_to_exclude" => to_string(token_a.contract_address_hash)
+        })
+
+      assert response = json_response(request, 200)
+
+      assert response["items"] |> Enum.map(& &1["token"]["address_hash"]) |> Enum.sort() ==
+               Enum.sort([
+                 Address.checksum(token_b.contract_address_hash),
+                 Address.checksum(token_c.contract_address_hash)
+               ])
     end
 
     test "filter by token contract address exclude", %{conn: conn} do
