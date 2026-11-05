@@ -1447,6 +1447,67 @@ defmodule BlockScoutWeb.API.V2.AdvancedFilterControllerTest do
       assert Enum.count(response["items"]) == 6
     end
 
+    test "filter by token contract address include drops every occurrence of an excluded hash", %{conn: conn} do
+      token_a = insert(:token)
+      token_b = insert(:token)
+      token_c = insert(:token)
+
+      transaction = :transaction |> insert() |> with_block()
+
+      for {token, log_index} <- Enum.with_index([token_a, token_b, token_c]) do
+        insert(:token_transfer,
+          token_contract_address: token.contract_address,
+          transaction: transaction,
+          block_number: transaction.block_number,
+          log_index: log_index
+        )
+      end
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "token_contract_address_hashes_to_include" =>
+            "#{token_a.contract_address_hash},#{token_a.contract_address_hash},#{token_b.contract_address_hash}",
+          "token_contract_address_hashes_to_exclude" => to_string(token_a.contract_address_hash)
+        })
+
+      assert response = json_response(request, 200)
+
+      assert [item] = response["items"]
+      assert item["token"]["address_hash"] == Address.checksum(token_b.contract_address_hash)
+    end
+
+    test "filter by token contract address keeps the exclusion when it empties the include list", %{conn: conn} do
+      token_a = insert(:token)
+      token_b = insert(:token)
+      token_c = insert(:token)
+
+      transaction = :transaction |> insert() |> with_block()
+
+      for {token, log_index} <- Enum.with_index([token_a, token_b, token_c]) do
+        insert(:token_transfer,
+          token_contract_address: token.contract_address,
+          transaction: transaction,
+          block_number: transaction.block_number,
+          log_index: log_index
+        )
+      end
+
+      request =
+        get(conn, "/api/v2/advanced-filters", %{
+          "token_contract_address_hashes_to_include" =>
+            "#{token_a.contract_address_hash},#{token_a.contract_address_hash}",
+          "token_contract_address_hashes_to_exclude" => to_string(token_a.contract_address_hash)
+        })
+
+      assert response = json_response(request, 200)
+
+      assert response["items"] |> Enum.map(& &1["token"]["address_hash"]) |> Enum.sort() ==
+               Enum.sort([
+                 Address.checksum(token_b.contract_address_hash),
+                 Address.checksum(token_c.contract_address_hash)
+               ])
+    end
+
     test "filter by token contract address exclude", %{conn: conn} do
       token_a = insert(:token)
       token_b = insert(:token)

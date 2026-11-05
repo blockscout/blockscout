@@ -1808,8 +1808,10 @@ defmodule Explorer.Chain.AdvancedFilter do
         {:exclude, to_exclude}
 
       {to_include, to_exclude} when is_list(to_include) ->
+        # An include list that the exclude list empties must not turn into "no
+        # filter": the exclusions still apply.
         case Enum.reject(to_include, &(&1 in (to_exclude || []))) do
-          [] -> nil
+          [] -> {:exclude, to_exclude}
           to_include -> {:include, to_include}
         end
     end
