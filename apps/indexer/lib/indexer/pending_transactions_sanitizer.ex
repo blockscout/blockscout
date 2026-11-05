@@ -216,23 +216,43 @@ defmodule Indexer.PendingTransactionsSanitizer do
     end
   end
 
-  # The full transaction is loaded only here, since `Transaction.changeset/2`
-  # validates its required fields.
+  # The transaction is locked until its update is committed, so a block import can't
+  # include it into a block between the check and the update. The full transaction is
+  # loaded, since `Transaction.changeset/2` validates its required fields.
   defp invalidate_block_if_pending(block, hash, receipt) do
-    case Repo.get(Transaction, hash) do
-      %Transaction{block_hash: nil} = pending_transaction ->
-        invalidate_block(block, pending_transaction, receipt)
+    pending_transaction_query =
+      from(
+        transaction in Transaction,
+        where: transaction.hash == ^hash and is_nil(transaction.block_hash),
+        lock: "FOR UPDATE"
+      )
 
-      _ ->
+    update_result =
+      Repo.transact(fn ->
+        case Repo.one(pending_transaction_query) do
+          nil -> {:ok, :not_pending}
+          pending_transaction -> update_pending_transaction(pending_transaction, block, receipt)
+        end
+      end)
+
+    case update_result do
+      {:ok, :not_pending} ->
         Logger.debug(
           "Transaction with hash #{hash} is not pending anymore, cancel update",
           fetcher: :pending_transactions_to_refetch
         )
+
+      {:ok, _updated_transaction} ->
+        invalidate_block(block, hash)
+
+      {:error, error} ->
+        Logger.error("Failed to update pending transaction with hash #{hash}: #{inspect(error)}")
+        invalidate_block(block, hash)
     end
   end
 
-  defp invalidate_block(block, pending_transaction, transaction) do
-    transaction_info = to_elixir(transaction)
+  defp update_pending_transaction(pending_transaction, block, receipt) do
+    transaction_info = to_elixir(receipt)
 
     pending_transaction
     |> Transaction.changeset(%{
@@ -248,20 +268,13 @@ defmodule Indexer.PendingTransactionsSanitizer do
     |> Changeset.put_change(:block_timestamp, block.timestamp)
     |> Changeset.put_change(:block_consensus, block.consensus)
     |> Repo.update()
-    |> case do
-      {:ok, _result} ->
-        :ok
+  end
 
-      {:error, error} ->
-        Logger.error("Failed to update pending transaction with hash #{pending_transaction.hash}: #{inspect(error)}")
-    end
-
+  defp invalidate_block(block, hash) do
     if block.consensus do
       Block.set_refetch_needed(block.number)
     else
-      Logger.debug(
-        "Pending transaction with hash #{pending_transaction.hash} assigned to block ##{block.number} with hash #{block.hash}"
-      )
+      Logger.debug("Pending transaction with hash #{hash} assigned to block ##{block.number} with hash #{block.hash}")
     end
   end
 end
