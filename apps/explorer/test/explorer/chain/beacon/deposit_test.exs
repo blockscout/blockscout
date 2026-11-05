@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Beacon.DepositTest do
   use Explorer.DataCase
 
   alias Explorer.Chain.Beacon.Deposit
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Data, Hash}
 
   @deposit_event_signature "0x649BBC62D0E31342AFEA4E5CD82D4049E7E1EE912FC0889AA790803BE39038C5"
 
@@ -80,6 +80,70 @@ defmodule Explorer.Chain.Beacon.DepositTest do
                deposit_contract_address.hash
                |> Deposit.get_logs_with_deposits(transaction.block_number, 1, 10)
                |> Enum.map(& &1.index)
+    end
+
+    test "fills `data` of logs stored with `compressed_data` only" do
+      deposit_contract_address = insert(:address)
+      {:ok, first_topic} = Hash.Full.cast(@deposit_event_signature)
+
+      transaction =
+        :transaction
+        |> insert(to_address: deposit_contract_address)
+        |> with_block()
+
+      log_params = [
+        block: transaction.block,
+        block_number: transaction.block_number,
+        transaction: transaction,
+        address: deposit_contract_address,
+        first_topic: first_topic
+      ]
+
+      compressed_data = %Data{bytes: <<1, 2, 3>>}
+      legacy_data = %Data{bytes: <<4, 5, 6>>}
+
+      # imported by v12+: the payload is stored in `compressed_data` only
+      insert(:log, log_params ++ [index: 1, data: nil, compressed_data: compressed_data])
+      # not processed by the `fill_logs_compressed_data` migration yet
+      insert(:log, log_params ++ [index: 2, data: legacy_data, compressed_data: nil])
+
+      assert [{1, compressed_data}, {2, legacy_data}] ==
+               deposit_contract_address.hash
+               |> Deposit.get_logs_with_deposits(transaction.block_number - 1, 0, 10)
+               |> Enum.map(&{&1.index, &1.data})
+    end
+
+    test "fills `data` of logs stored with `compressed_data` only while the optimized fields migration is in progress" do
+      set_fill_logs_optimized_fields_migration_started()
+
+      deposit_contract_address = insert(:address)
+      {:ok, first_topic} = Hash.Full.cast(@deposit_event_signature)
+
+      transaction =
+        :transaction
+        |> insert(to_address: deposit_contract_address)
+        |> with_block()
+
+      log_params = [
+        block: transaction.block,
+        block_number: transaction.block_number,
+        transaction: transaction,
+        address: deposit_contract_address,
+        first_topic: first_topic
+      ]
+
+      migrated_log_data = %Data{bytes: <<1, 2, 3>>}
+      legacy_log_data = %Data{bytes: <<4, 5, 6>>}
+
+      # matched by `address_id`
+      insert(:log, log_params ++ [index: 1, address_hash: nil, data: nil, compressed_data: migrated_log_data])
+      # matched by the legacy `address_hash`
+      insert(:log, log_params ++ [index: 2, address_mapping: nil, data: nil, compressed_data: legacy_log_data])
+
+      assert [{1, migrated_log_data}, {2, legacy_log_data}] ==
+               deposit_contract_address.hash
+               |> Deposit.get_logs_with_deposits(transaction.block_number - 1, 0, 10)
+               |> Enum.map(&{&1.index, &1.data})
     end
   end
 end

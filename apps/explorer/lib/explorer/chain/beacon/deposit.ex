@@ -251,7 +251,8 @@ defmodule Explorer.Chain.Beacon.Deposit do
   - A list of deposit event logs with the following fields:
     - Log fields: `first_topic`, `second_topic`, `third_topic`,
       `fourth_topic`, `data`, `index`, `block_number`, `block_hash`,
-      `transaction_hash`.
+      `transaction_hash`. `data` is filled from `compressed_data` for logs
+      stored in the compressed format.
     - Transaction fields: `from_address_hash`, `block_timestamp`.
   """
   @spec get_logs_with_deposits(
@@ -264,6 +265,7 @@ defmodule Explorer.Chain.Beacon.Deposit do
             first_topic: Hash.Full.t(),
             first_topic_id: integer(),
             data: Data.t(),
+            compressed_data: Data.t() | nil,
             index: non_neg_integer(),
             block_number: non_neg_integer(),
             block_hash: Hash.Full.t(),
@@ -287,6 +289,7 @@ defmodule Explorer.Chain.Beacon.Deposit do
             first_topic: log.first_topic,
             first_topic_id: log.first_topic_id,
             data: log.data,
+            compressed_data: log.compressed_data,
             index: log.index,
             block_number: log.block_number,
             block_hash: as(:transaction).block_hash,
@@ -304,6 +307,7 @@ defmodule Explorer.Chain.Beacon.Deposit do
 
     query
     |> Repo.all()
+    |> Log.prepare_data()
     |> Log.prepare_first_topic()
   end
 

@@ -41,5 +41,6 @@ defmodule Explorer.Chain.Arbitrum.Reader.API.General do
     |> Log.filter_by_topic_query(:first_topic, topic0)
     |> order_by(asc: :index)
     |> select_repo(@api_true).all()
+    |> Log.prepare_data()
   end
 end

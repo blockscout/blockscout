@@ -527,6 +527,8 @@ defmodule Explorer.Chain.Log do
     |> filter_by_topic_query(:first_topic, first_topic)
     |> limit(1)
     |> Chain.select_repo(options).one()
+    |> prepare_data()
+    |> prepare_first_topic()
   end
 
   @doc """
@@ -573,6 +575,8 @@ defmodule Explorer.Chain.Log do
     |> preload_block(Chain.select_repo(options))
     |> preload_transaction([], Chain.select_repo(options))
     |> preload_address(options, Chain.select_repo(options))
+    |> prepare_data()
+    |> prepare_first_topic()
   end
 
   @doc """

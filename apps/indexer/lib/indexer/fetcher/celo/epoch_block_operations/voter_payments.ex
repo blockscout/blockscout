@@ -8,7 +8,8 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
   import Explorer.Helper,
     only: [
       decode_data: 2,
-      abi_to_method_id: 1
+      abi_to_method_id: 1,
+      truncate_address_hash: 1
     ]
 
   import Indexer.Helper,
@@ -66,10 +67,12 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
 
     {:ok, election_contract_address} = CeloCoreContracts.get_address(:election, start_block.number)
 
-    elected_groups_query =
+    elected_group_address_hashes =
       start_block.number
       |> epoch_rewards_distributed_to_voters_query(end_block.number)
-      |> select([l], fragment("SUBSTRING(? from 13)", l.second_topic))
+      |> select([l], l.second_topic)
+      |> Repo.all()
+      |> Enum.map(&truncate_address_hash/1)
 
     end_block_number = end_block.number
 
@@ -77,7 +80,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
       from(
         v in ValidatorGroupVote,
         where:
-          v.group_address_hash in subquery(elected_groups_query) and
+          v.group_address_hash in ^elected_group_address_hashes and
             v.block_number <= ^end_block_number,
         distinct: true,
         select: {v.account_address_hash, v.group_address_hash}
@@ -167,7 +170,7 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
     Log
     |> where([l], l.block_number >= ^start_block_number)
     |> where([l], l.block_number <= ^end_block_number)
-    |> where([l], l.address_hash == ^election_contract_address)
+    |> Log.address_match_query(election_contract_address)
     |> Log.filter_by_topic_query(:first_topic, @epoch_rewards_distributed_to_voters_topic)
   end
 
@@ -181,12 +184,13 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.VoterPayments do
     query =
       start_block_number
       |> epoch_rewards_distributed_to_voters_query(end_block_number)
-      |> select([l], l.data)
+      |> select([l], %{data: l.data, compressed_data: l.compressed_data})
 
     voter_rewards_from_event_total =
       query
       |> Repo.all()
-      |> Enum.map(fn data ->
+      |> Log.prepare_data()
+      |> Enum.map(fn %{data: data} ->
         [amount] = decode_data(data, [{:uint, 256}])
         amount
       end)

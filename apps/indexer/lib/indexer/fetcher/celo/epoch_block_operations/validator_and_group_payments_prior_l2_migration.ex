@@ -37,6 +37,9 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPri
     payments =
       query
       |> Repo.all()
+      |> Log.preload_address()
+      |> Log.prepare_data()
+      |> Log.prepare_first_topic()
       |> ValidatorEpochPaymentDistributions.parse()
       |> Enum.flat_map(fn %{
                             validator_address: validator_address,

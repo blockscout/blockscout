@@ -5,7 +5,8 @@ defmodule Explorer.Chain.LogTest do
   import Mox
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Log, SmartContract}
+  alias Explorer.Chain.{Data, Log, SmartContract}
+  alias Explorer.Utility.LogFirstTopic
 
   @first_topic_hex_string_1 "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
 
@@ -238,5 +239,62 @@ defmodule Explorer.Chain.LogTest do
                  {"_belly", "bool", true, true}
                ]}, _} = Log.decode(log, transaction, [], false, false, abi)
     end
+  end
+
+  describe "fetch_log_by_transaction_and_first_topic/3" do
+    test "fills `first_topic` and `data` of a log stored in the optimized format" do
+      # logs without `first_topic` are found by `first_topic_id` only once the migration is started
+      set_fill_logs_optimized_fields_migration_started()
+
+      transaction = :transaction |> insert() |> with_block()
+      first_topic = topic(@first_topic_hex_string_1)
+      data = %Data{bytes: <<1, 2, 3>>}
+
+      insert_optimized_log(transaction, first_topic, data)
+
+      assert %Log{first_topic: ^first_topic, data: ^data} =
+               Log.fetch_log_by_transaction_and_first_topic(transaction, first_topic)
+    end
+
+    test "returns nil when there is no such log" do
+      transaction = :transaction |> insert() |> with_block()
+
+      assert is_nil(Log.fetch_log_by_transaction_and_first_topic(transaction, topic(@first_topic_hex_string_1)))
+    end
+  end
+
+  describe "user_op_to_logs/2" do
+    test "fills `first_topic` and `data` of logs stored in the optimized format" do
+      set_fill_logs_optimized_fields_migration_started()
+
+      transaction = :transaction |> insert() |> with_block()
+      first_topic = topic(@first_topic_hex_string_1)
+      data = %Data{bytes: <<1, 2, 3>>}
+
+      log = insert_optimized_log(transaction, first_topic, data)
+
+      user_op = %{
+        "transaction_hash" => transaction.hash,
+        "block_hash" => transaction.block_hash,
+        "user_logs_start_index" => log.index,
+        "user_logs_count" => 1
+      }
+
+      assert [%Log{first_topic: ^first_topic, data: ^data}] = Log.user_op_to_logs(user_op, [])
+    end
+  end
+
+  # Inserts a log in the format used since v12: `first_topic` and `data` are
+  # kept only in `first_topic_id` and `compressed_data`.
+  defp insert_optimized_log(transaction, first_topic, data) do
+    insert(:log,
+      transaction: transaction,
+      block: transaction.block,
+      block_number: transaction.block_number,
+      first_topic: nil,
+      first_topic_id: LogFirstTopic.find_or_create(first_topic).id,
+      data: nil,
+      compressed_data: data
+    )
   end
 end
