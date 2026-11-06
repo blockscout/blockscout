@@ -78,5 +78,34 @@ defmodule Indexer.Fetcher.TokenTest do
                 }} = Chain.token_from_address_hash(contract_address_hash)
       end
     end
+
+    test "catalogs a token whose bytecode halts the EVM with skip_metadata so it is not asked again", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      token = insert(:token, name: nil, symbol: nil, total_supply: nil, decimals: nil, cataloged: false)
+      contract_address_hash = token.contract_address_hash
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        # every getter fails, and each is retried `:token_functions_reader_max_retries` (3) times
+        expect(
+          EthereumJSONRPC.Mox,
+          :json_rpc,
+          3,
+          fn requests, _opts ->
+            {:ok,
+             Enum.map(requests, fn %{id: id, method: "eth_call"} ->
+               %{id: id, error: %{code: -32003, message: "EVM error: StackUnderflow"}, jsonrpc: "2.0"}
+             end)}
+          end
+        )
+
+        assert TokenFetcher.run([contract_address_hash], json_rpc_named_arguments) == :ok
+
+        assert {:ok, %Token{cataloged: true, skip_metadata: true, name: nil}} =
+                 Chain.token_from_address_hash(contract_address_hash)
+
+        assert TokenFetcher.init([], &[&1 | &2], json_rpc_named_arguments) == []
+      end
+    end
   end
 end

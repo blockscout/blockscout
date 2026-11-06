@@ -337,12 +337,6 @@ defmodule Explorer.Token.MetadataRetriever do
     |> elem(0)
   end
 
-  defp contract_failure?({:error, %{message: message}}) when is_binary(message),
-    do: String.match?(message, ~r/execution.*revert/)
-
-  defp contract_failure?({:error, %{data: data}}) when is_binary(data),
-    do: String.match?(data, ~r/execution.*revert/)
-
   defp contract_failure?(error), do: EthereumJSONRPC.contract_failure?(error)
 
   defp try_to_fetch_erc_1155_name(base_metadata, contract_address_hash, token_type) do

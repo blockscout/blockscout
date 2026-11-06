@@ -1110,4 +1110,57 @@ defmodule EthereumJSONRPCSyncTest do
                 }}
     end
   end
+
+  describe "contract_failure?/1" do
+    test "recognises a revert and running out of gas" do
+      assert EthereumJSONRPC.contract_failure?({:error, "execution reverted"})
+      assert EthereumJSONRPC.contract_failure?({:error, "(-32000) execution reverted: not owner"})
+      assert EthereumJSONRPC.contract_failure?({:error, "Execution reverted"})
+      assert EthereumJSONRPC.contract_failure?({:error, "out of gas: gas required exceeds allowance (50000000)"})
+      assert EthereumJSONRPC.contract_failure?(%{error: "execution reverted"})
+    end
+
+    test "recognises an EVM halt on broken bytecode however the node words it" do
+      # reth
+      assert EthereumJSONRPC.contract_failure?({:error, "(-32003) EVM error: StackUnderflow"})
+      assert EthereumJSONRPC.contract_failure?({:error, "EVM error: InvalidJump"})
+      # Geth / Erigon
+      assert EthereumJSONRPC.contract_failure?({:error, "(-32000) stack underflow (1 <=> 2)"})
+      assert EthereumJSONRPC.contract_failure?({:error, "invalid opcode: opcode 0xfe not defined"})
+      assert EthereumJSONRPC.contract_failure?({:error, "invalid jump destination"})
+      assert EthereumJSONRPC.contract_failure?({:error, "stack limit reached 1024 (1023)"})
+      # Nethermind
+      assert EthereumJSONRPC.contract_failure?({:error, "VM execution error."})
+    end
+
+    test "recognises a failure reported inside an error map" do
+      assert EthereumJSONRPC.contract_failure?({:error, %{code: -32003, message: "EVM error: StackUnderflow"}})
+
+      assert EthereumJSONRPC.contract_failure?(
+               {:error, %{code: -32015, data: "Reverted 0x", message: "Execution reverted"}}
+             )
+
+      assert EthereumJSONRPC.contract_failure?({:error, %{data: "execution reverted"}})
+      assert EthereumJSONRPC.contract_failure?({:error, :unable_to_decode})
+      assert EthereumJSONRPC.contract_failure?(%{error: :unable_to_decode})
+    end
+
+    test "does not treat a node or transport error as a contract failure" do
+      refute EthereumJSONRPC.contract_failure?({:error, "network error"})
+      refute EthereumJSONRPC.contract_failure?({:error, "(-32005) rate limit exceeded"})
+      refute EthereumJSONRPC.contract_failure?({:error, "(-32000) header not found"})
+      refute EthereumJSONRPC.contract_failure?({:error, %{code: -32603, message: "internal error"}})
+      refute EthereumJSONRPC.contract_failure?({:error, :timeout})
+      # a struct (no `Access`) must not raise
+      decode_error =
+        try do
+          JSON.decode!("<html>")
+        rescue
+          error in JSON.DecodeError -> error
+        end
+
+      refute EthereumJSONRPC.contract_failure?({:error, decode_error})
+      refute EthereumJSONRPC.contract_failure?(:ok)
+    end
+  end
 end
