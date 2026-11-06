@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
 
   alias Explorer.Chain.Address
   alias Explorer.Repo
+  alias Explorer.ThirdPartyIntegrations.Keycloak
 
   setup %{conn: conn} do
     auth = build(:auth)
@@ -1087,6 +1088,153 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
              |> get("/api/account/v2/user/custom_abis")
              |> json_response(200) == []
     end
+  end
+
+  describe "/api/account/v2/user/settings" do
+    @keycloak_user_id "0c1f5c1e-6f2a-4d3b-9b8e-2a7d5f4e3c21"
+    @keycloak_user_path "/admin/realms/test/users/#{@keycloak_user_id}"
+
+    setup %{conn: conn, user: user} do
+      bypass = Bypass.open()
+      keycloak_env = Application.get_env(:explorer, Keycloak)
+      auth0_env = Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)
+
+      # settings are available only when Keycloak is the active auth provider
+      Application.put_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth, Keyword.put(auth0_env, :domain, nil))
+
+      Application.put_env(:explorer, Keycloak,
+        domain: "http://localhost:#{bypass.port}",
+        realm: "test",
+        # unique client_id prevents reuse of an admin token cached in Redis by another test run
+        client_id: "client_#{System.unique_integer([:positive])}",
+        client_secret: "secret"
+      )
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Keycloak, keycloak_env)
+        Application.put_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth, auth0_env)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      end)
+
+      Bypass.stub(bypass, "POST", "/realms/test/protocol/openid-connect/token", fn conn ->
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(%{"access_token" => "token", "expires_in" => 300}))
+      end)
+
+      {:ok,
+       bypass: bypass, conn: Plug.Test.init_test_session(conn, current_user: Map.put(user, :uid, @keycloak_user_id))}
+    end
+
+    test "get settings", %{conn: conn, bypass: bypass} do
+      expect_get_keycloak_user(bypass, %{
+        "address" => ["0x0000000000000000000000000000000000000001"],
+        "settings.address_format" => ["base16"],
+        "settings.table_columns_token_transfers_index" => [~s({"hidden":["age"]})]
+      })
+
+      assert conn
+             |> get("/api/account/v2/user/settings")
+             |> json_response(200) == %{
+               "address_format" => "base16",
+               "table_columns_token_transfers_index" => ~s({"hidden":["age"]})
+             }
+    end
+
+    test "get settings of user without attributes", %{conn: conn, bypass: bypass} do
+      expect_get_keycloak_user(bypass, nil)
+
+      assert conn |> get("/api/account/v2/user/settings") |> json_response(200) == %{}
+    end
+
+    test "update settings", %{conn: conn, bypass: bypass} do
+      test_pid = self()
+
+      expect_get_keycloak_user(bypass, %{
+        "address" => ["0x0000000000000000000000000000000000000001"],
+        "settings.a" => ["1"],
+        "settings.b" => ["2"],
+        "settings.untouched" => ["5"]
+      })
+
+      Bypass.expect_once(bypass, "PUT", @keycloak_user_path, fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        send(test_pid, {:keycloak_put, Utils.JSON.decode!(body)})
+        Plug.Conn.resp(conn, 204, "")
+      end)
+
+      assert conn
+             |> patch_settings(%{"a" => nil, "b" => "3", "c" => "4"})
+             |> json_response(200) == %{"b" => "3", "c" => "4", "untouched" => "5"}
+
+      assert_receive {:keycloak_put, %{"email" => "user@example.com", "attributes" => attributes}}
+
+      assert attributes == %{
+               "address" => ["0x0000000000000000000000000000000000000001"],
+               "settings.b" => ["3"],
+               "settings.c" => ["4"],
+               "settings.untouched" => ["5"]
+             }
+    end
+
+    test "rejects invalid key", %{conn: conn} do
+      assert %{"message" => "Invalid setting key" <> _} =
+               conn |> patch_settings(%{"valid_key" => "1", "Invalid-Key" => "2"}) |> json_response(422)
+    end
+
+    test "rejects too long key", %{conn: conn} do
+      conn |> patch_settings(%{String.duplicate("a", 65) => "1"}) |> json_response(422)
+    end
+
+    test "rejects non-string value", %{conn: conn} do
+      assert %{"message" => "Invalid value for setting a: must be a string or null"} =
+               conn |> patch_settings(%{"a" => 1}) |> json_response(422)
+    end
+
+    test "rejects empty value", %{conn: conn} do
+      assert %{"message" => "Invalid value for setting a: must not be empty, use null to delete the setting"} =
+               conn |> patch_settings(%{"a" => ""}) |> json_response(422)
+    end
+
+    test "rejects too long value", %{conn: conn} do
+      assert %{"message" => "Value for setting a exceeds 2048 bytes"} =
+               conn |> patch_settings(%{"a" => String.duplicate("a", 2049)}) |> json_response(422)
+    end
+
+    test "rejects update exceeding settings count limit", %{conn: conn, bypass: bypass} do
+      expect_get_keycloak_user(bypass, Map.new(1..100, &{"settings.key_#{&1}", ["value"]}))
+
+      assert %{"message" => "Number of settings exceeds 100"} =
+               conn |> patch_settings(%{"key_1" => nil, "new_1" => "1", "new_2" => "2"}) |> json_response(422)
+    end
+
+    test "returns 401 for unauthenticated user" do
+      assert build_conn() |> get("/api/account/v2/user/settings") |> json_response(401)
+      assert build_conn() |> patch_settings(%{"a" => "1"}) |> json_response(401)
+    end
+
+    test "returns 404 when Keycloak is not configured", %{conn: conn} do
+      Application.put_env(:explorer, Keycloak, domain: nil)
+
+      assert conn |> get("/api/account/v2/user/settings") |> json_response(404)
+      assert conn |> patch_settings(%{"a" => "1"}) |> json_response(404)
+    end
+  end
+
+  defp expect_get_keycloak_user(bypass, attributes) do
+    user = %{"id" => @keycloak_user_id, "username" => "user", "email" => "user@example.com", "enabled" => true}
+    # Keycloak omits "attributes" for users without attributes
+    user = if attributes, do: Map.put(user, "attributes", attributes), else: user
+
+    Bypass.expect_once(bypass, "GET", @keycloak_user_path, fn conn ->
+      Plug.Conn.resp(conn, 200, Utils.JSON.encode!(user))
+    end)
+  end
+
+  defp patch_settings(conn, body) do
+    conn
+    |> put_req_header("content-type", "application/json")
+    |> patch("/api/account/v2/user/settings", Utils.JSON.encode!(body))
   end
 
   def convert_date(request) do

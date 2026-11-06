@@ -29,6 +29,9 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   @otp_length 6
   @otp_ttl_seconds 300
   @max_otp_attempts 3
+  @custom_settings_prefix "settings."
+  @max_setting_value_size 2048
+  @max_settings_count 100
 
   @spec enabled?() :: boolean()
   def enabled? do
@@ -216,6 +219,112 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
       {:ok, create_auth(user, address_hash)}
     end
   end
+
+  @doc """
+  Fetches account settings of a Keycloak user.
+
+  Settings are stored as user attributes prefixed with `#{@custom_settings_prefix}`.
+
+  ## Parameters
+  - `user_id`: Keycloak user ID
+
+  ## Returns
+  - `{:ok, settings}` with a flat map of setting keys to values
+  - `{:error, String.t()}` or `:error` if the user could not be fetched
+  """
+  @spec get_user_settings(String.t()) :: {:ok, %{String.t() => String.t()}} | {:error, String.t()} | :error
+  def get_user_settings(user_id) do
+    with {:ok, user} <- get_user(user_id) do
+      {:ok, extract_settings(user)}
+    end
+  end
+
+  @doc """
+  Applies a batch of changes to account settings of a Keycloak user.
+
+  A non-empty string value creates or replaces the setting, `nil` deletes it, keys absent
+  from `diff` are left untouched. The whole batch is validated before anything
+  is written and is applied with a single user update.
+
+  ## Parameters
+  - `user_id`: Keycloak user ID
+  - `diff`: map of setting keys to new values (`String.t()` or `nil`)
+
+  ## Returns
+  - `{:ok, settings}` with the full settings map after the update
+  - `{:invalid_settings, String.t()}` if the diff or the resulting settings are invalid
+  - `{:error, String.t()}` or `:error` if a Keycloak request failed
+  """
+  @spec update_user_settings(String.t(), map()) ::
+          {:ok, %{String.t() => String.t()}} | {:invalid_settings, String.t()} | {:error, String.t()} | :error
+  def update_user_settings(user_id, diff) do
+    with :ok <- validate_settings_diff(diff),
+         {:ok, user} <- get_user(user_id),
+         settings = user |> extract_settings() |> apply_settings_diff(diff),
+         :ok <- validate_settings_count(settings),
+         :ok <- update_user(user_id, put_settings(user, settings)) do
+      {:ok, settings}
+    end
+  end
+
+  defp extract_settings(user) do
+    (user["attributes"] || %{})
+    |> Enum.flat_map(fn
+      {@custom_settings_prefix <> key, [value | _]} -> [{key, value}]
+      _ -> []
+    end)
+    |> Map.new()
+  end
+
+  defp apply_settings_diff(settings, diff) do
+    Enum.reduce(diff, settings, fn
+      {key, nil}, acc -> Map.delete(acc, key)
+      {key, value}, acc -> Map.put(acc, key, value)
+    end)
+  end
+
+  defp put_settings(user, settings) do
+    other_attributes =
+      Map.reject(user["attributes"] || %{}, fn {name, _} -> String.starts_with?(name, @custom_settings_prefix) end)
+
+    settings_attributes = Map.new(settings, fn {key, value} -> {@custom_settings_prefix <> key, [value]} end)
+
+    Map.put(user, "attributes", Map.merge(other_attributes, settings_attributes))
+  end
+
+  defp validate_settings_diff(diff) do
+    Enum.reduce_while(diff, :ok, fn {key, value}, :ok ->
+      case validate_setting(key, value) do
+        :ok -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp validate_setting(key, value) do
+    cond do
+      not (is_binary(key) and Regex.match?(~r/^[a-z0-9_]{1,64}$/, key)) ->
+        {:invalid_settings, "Invalid setting key #{inspect(key)}: must match ^[a-z0-9_]{1,64}$"}
+
+      not (is_binary(value) or is_nil(value)) ->
+        {:invalid_settings, "Invalid value for setting #{key}: must be a string or null"}
+
+      # Keycloak drops attributes with empty values, so such a setting would not be persisted
+      value == "" ->
+        {:invalid_settings, "Invalid value for setting #{key}: must not be empty, use null to delete the setting"}
+
+      is_binary(value) and byte_size(value) > @max_setting_value_size ->
+        {:invalid_settings, "Value for setting #{key} exceeds #{@max_setting_value_size} bytes"}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp validate_settings_count(settings) when map_size(settings) > @max_settings_count,
+    do: {:invalid_settings, "Number of settings exceeds #{@max_settings_count}"}
+
+  defp validate_settings_count(_settings), do: :ok
 
   @doc false
   def get_user(user_id) do
