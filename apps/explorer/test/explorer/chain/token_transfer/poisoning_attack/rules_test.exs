@@ -499,7 +499,6 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
     test "maps the verdict onto the attack row" do
       params = fake_outgoing() |> Rules.evaluate(config()) |> Result.to_attack_params()
 
-      assert params.block_hash == block_hash()
       assert params.log_index == 1
       assert params.block_number == 100
       assert params.victim_address_hash == hash(@victim)

@@ -134,7 +134,7 @@ defmodule Indexer.Fetcher.TokenTransferPoisoningTest do
       assert :ok = TokenTransferPoisoning.run(entries, nil)
 
       assert [%PoisoningAttack{} = attack] = PoisoningAttack |> PoisoningAttack.with_address_hashes() |> Repo.all()
-      assert attack.block_hash == token_transfer.block_hash
+      assert attack.block_number == token_transfer.block_number
       assert attack.log_index == token_transfer.log_index
       assert attack.victim_address_hash == victim.hash
       assert attack.mimic_address_hash == mimic.hash

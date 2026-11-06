@@ -13,6 +13,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
   alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
   alias Explorer.Chain.{Address, Block, PendingBlockOperation, SmartContract, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.TokenTransfer.PoisoningAttack
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.{Chain, Repo}
   alias Explorer.Utility.{CountersRefetchBlock, MissingBlockRange}
@@ -26,6 +27,28 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       options = %{timestamps: %{inserted_at: timestamp, updated_at: timestamp}}
 
       %{consensus_block: block, options: options}
+    end
+
+    test "delete_token_transfer_poisoning_attacks removes the verdicts of a block that lost consensus", %{
+      consensus_block: %{number: block_number} = block,
+      options: options
+    } do
+      # the block at this height that the import is about to replace
+      reorged_block = insert(:block, number: block_number, consensus: true)
+      transaction = :transaction |> insert() |> with_block(reorged_block)
+
+      token_transfer =
+        insert(:token_transfer, transaction: transaction, block: reorged_block, block_number: block_number)
+
+      insert(:token_transfer_poisoning_attack, token_transfer: token_transfer)
+      untouched = insert(:token_transfer_poisoning_attack)
+
+      assert count(PoisoningAttack) == 2
+
+      assert {:ok, %{delete_token_transfer_poisoning_attacks: 1}} = run_block_consensus_change(block, true, options)
+
+      assert [%PoisoningAttack{block_number: untouched_number}] = Repo.all(PoisoningAttack)
+      assert untouched_number == untouched.block_number
     end
 
     test "derive_transaction_forks replaces hash on conflicting (uncle_hash, index)", %{

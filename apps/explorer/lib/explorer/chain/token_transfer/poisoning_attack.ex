@@ -32,10 +32,11 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
   than the name itself — and `details` carries what each of them matched, so
   the API can explain the verdict.
 
-  Rows are keyed by the block hash and log index of the transfer and are never
-  deleted on a reorg: a transfer of a block that lost consensus is not listed
-  anywhere, so its row is simply never joined. A re-imported block overwrites
-  the row.
+  Rows are keyed by the block number and log index of the transfer. When a
+  block loses consensus the import of its replacement deletes the rows of that
+  block number (see `Explorer.Chain.Import.Runner.Blocks`), so a verdict of a
+  reorged block can never attach to the transfer that took its place; the
+  replacement block is then scored like any other.
   """
 
   use Explorer.Schema
@@ -54,15 +55,14 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
     {:issuer_address_hash, :issuer_address_id}
   ]
 
-  @required_attrs ~w(block_hash log_index block_number token_contract_address_id victim_address_id mimic_address_id score rules)a
+  @required_attrs ~w(block_number log_index token_contract_address_id victim_address_id mimic_address_id score rules)a
   @optional_attrs ~w(transaction_hash issuer_address_id details)a
 
   @primary_key false
   typed_schema "token_transfer_poisoning_attacks" do
-    field(:block_hash, Hash.Full, primary_key: true, null: false)
+    field(:block_number, :integer, primary_key: true, null: false) :: Block.block_number()
     field(:log_index, :integer, primary_key: true, null: false)
     field(:transaction_hash, Hash.Full, null: true)
-    field(:block_number, :integer, null: false) :: Block.block_number()
     field(:score, :integer, null: false)
     field(:rules, {:array, Ecto.Enum}, values: Rules.names(), null: false)
     field(:details, :map, null: false, default: %{})
@@ -109,7 +109,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
     attack
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
-    |> unique_constraint([:block_hash, :log_index])
+    |> unique_constraint([:block_number, :log_index])
   end
 
   @doc """
@@ -141,7 +141,6 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
         {:replace,
          [
            :transaction_hash,
-           :block_number,
            :token_contract_address_id,
            :victim_address_id,
            :mimic_address_id,
@@ -151,7 +150,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
            :details,
            :updated_at
          ]},
-      conflict_target: [:block_hash, :log_index]
+      conflict_target: [:block_number, :log_index]
     )
   end
 
@@ -221,15 +220,20 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
   def preload_for_token_transfers(token_transfers, options) do
     keys =
       token_transfers
-      |> Enum.filter(&match?(%TokenTransfer{block_hash: %Hash{}, log_index: log_index} when is_integer(log_index), &1))
-      |> Enum.map(&{&1.block_hash, &1.log_index})
+      |> Enum.filter(
+        &match?(
+          %TokenTransfer{block_number: number, log_index: index} when is_integer(number) and is_integer(index),
+          &1
+        )
+      )
+      |> Enum.map(&{&1.block_number, &1.log_index})
       |> Enum.uniq()
 
     attacks_by_key = fetch_by_keys(keys, options)
 
     Enum.map(token_transfers, fn
-      %TokenTransfer{block_hash: block_hash, log_index: log_index} = token_transfer ->
-        %{token_transfer | poisoning_attack: Map.get(attacks_by_key, {block_hash, log_index})}
+      %TokenTransfer{block_number: block_number, log_index: log_index} = token_transfer ->
+        %{token_transfer | poisoning_attack: Map.get(attacks_by_key, {block_number, log_index})}
 
       other ->
         other
@@ -251,14 +255,34 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
   defp fetch_by_keys([], _options), do: %{}
 
   defp fetch_by_keys(keys, options) do
-    {block_hashes, log_indexes} = Enum.unzip(keys)
+    {block_numbers, log_indexes} = Enum.unzip(keys)
     key_set = MapSet.new(keys)
 
     __MODULE__
-    |> where([attack], attack.block_hash in ^Enum.uniq(block_hashes) and attack.log_index in ^Enum.uniq(log_indexes))
+    |> where(
+      [attack],
+      attack.block_number in ^Enum.uniq(block_numbers) and attack.log_index in ^Enum.uniq(log_indexes)
+    )
     |> with_address_hashes()
     |> Chain.select_repo(options).all()
-    |> Enum.filter(&MapSet.member?(key_set, {&1.block_hash, &1.log_index}))
-    |> Map.new(&{{&1.block_hash, &1.log_index}, &1})
+    |> Enum.filter(&MapSet.member?(key_set, {&1.block_number, &1.log_index}))
+    |> Map.new(&{{&1.block_number, &1.log_index}, &1})
+  end
+
+  @doc """
+  Deletes the verdicts recorded for the given block numbers, for the import
+  of a block that replaces one that lost consensus. Runs on the given repo so
+  that it takes part in the import transaction.
+  """
+  @spec delete_by_block_numbers(Ecto.Repo.t(), [Block.block_number()], timeout()) :: non_neg_integer()
+  def delete_by_block_numbers(_repo, [], _timeout), do: 0
+
+  def delete_by_block_numbers(repo, block_numbers, timeout) do
+    {count, _} =
+      __MODULE__
+      |> where([attack], attack.block_number in ^block_numbers)
+      |> repo.delete_all(timeout: timeout)
+
+    count
   end
 end

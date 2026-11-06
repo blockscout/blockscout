@@ -1895,7 +1895,6 @@ defmodule Explorer.Factory do
     # the row stores address ids; the hashes are kept on the virtual fields the
     # way a read through `PoisoningAttack.with_address_hashes/1` returns them
     attack = %PoisoningAttack{
-      block_hash: token_transfer.block_hash,
       log_index: token_transfer.log_index,
       transaction_hash: token_transfer.transaction_hash,
       block_number: token_transfer.block_number,

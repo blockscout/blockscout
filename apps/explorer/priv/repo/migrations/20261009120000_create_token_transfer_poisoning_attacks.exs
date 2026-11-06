@@ -10,10 +10,9 @@ defmodule Explorer.Repo.Migrations.CreateTokenTransferPoisoningAttacks do
     )
 
     create table(:token_transfer_poisoning_attacks, primary_key: false) do
-      add(:block_hash, :bytea, null: false, primary_key: true)
+      add(:block_number, :bigint, null: false, primary_key: true)
       add(:log_index, :integer, null: false, primary_key: true)
       add(:transaction_hash, :bytea, null: true)
-      add(:block_number, :bigint, null: false)
       # address ids as mapped by `address_ids_to_address_hashes`
       add(:token_contract_address_id, :bigint, null: false)
       add(:victim_address_id, :bigint, null: false)

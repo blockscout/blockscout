@@ -53,7 +53,6 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Result do
   @spec to_attack_params(t()) :: map()
   def to_attack_params(%__MODULE__{token_transfer: %TokenTransfer{} = token_transfer} = result) do
     %{
-      block_hash: token_transfer.block_hash,
       log_index: token_transfer.log_index,
       transaction_hash: token_transfer.transaction_hash,
       block_number: token_transfer.block_number,

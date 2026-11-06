@@ -30,7 +30,7 @@ defmodule Indexer.Fetcher.TokenTransferPoisoning do
 
   # What the detector reads off a transfer; the rest of the imported struct is
   # dropped before buffering so the queue holds no associations
-  @entry_fields ~w(from_address_hash to_address_hash token_contract_address_hash amount amounts token_ids token_type block_hash block_number log_index transaction_hash)a
+  @entry_fields ~w(from_address_hash to_address_hash token_contract_address_hash amount amounts token_ids token_type block_number log_index transaction_hash)a
 
   @doc """
   Buffers the scorable transfers of an import batch for detection.

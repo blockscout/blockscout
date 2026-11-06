@@ -15,7 +15,6 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttackTest do
   defp attack_params(token_transfer, overrides \\ %{}) do
     Map.merge(
       %{
-        block_hash: token_transfer.block_hash,
         log_index: token_transfer.log_index,
         transaction_hash: token_transfer.transaction_hash,
         block_number: token_transfer.block_number,
@@ -45,7 +44,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttackTest do
       assert {1, nil} = PoisoningAttack.insert_all([params])
 
       assert [%PoisoningAttack{} = attack] = PoisoningAttack |> PoisoningAttack.with_address_hashes() |> Repo.all()
-      assert attack.block_hash == token_transfer.block_hash
+      assert attack.block_number == token_transfer.block_number
       assert attack.log_index == token_transfer.log_index
       assert attack.transaction_hash == token_transfer.transaction_hash
       assert attack.token_contract_address_hash == token_transfer.token_contract_address_hash
@@ -119,12 +118,12 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttackTest do
       assert [%{poisoning_attack: %PoisoningAttack{} = preloaded}, %{poisoning_attack: nil}] =
                PoisoningAttack.preload_for_token_transfers([flagged, clean])
 
-      assert preloaded.block_hash == attack.block_hash
+      assert preloaded.block_number == attack.block_number
       assert preloaded.log_index == attack.log_index
       assert preloaded.score == attack.score
     end
 
-    test "matches on both block hash and log index" do
+    test "matches on both block number and log index" do
       # same log index in another block must not be picked up
       flagged = insert_token_transfer()
       insert(:token_transfer_poisoning_attack, token_transfer: flagged)
