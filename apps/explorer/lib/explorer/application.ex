@@ -34,6 +34,7 @@ defmodule Explorer.Application do
   alias Explorer.Chain.Cache.ContractMethods, as: ContractMethodsCache
   alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
   alias Explorer.Chain.Supply.RSK
+  alias Explorer.Chain.TokenTransfer.PoisoningAttack.Recipients, as: PoisoningRecipientsCache
 
   alias Explorer.Market.MarketHistoryCache
   alias Explorer.MicroserviceInterfaces.{HttpClient, MultichainSearch}
@@ -157,6 +158,15 @@ defmodule Explorer.Application do
           global_ttl: :infinity
         )
         |> only_in_mode(:api),
+        # the poisoning attack detection runs in the indexer, where it keeps the
+        # recent recipients of the victims it scores
+        PoisoningRecipientsCache.cache_name()
+        |> con_cache_child_spec(
+          ttl_check_interval: :timer.minutes(1),
+          global_ttl: :infinity
+        )
+        |> only_in_mode(:indexer),
+        configure_mode_dependent_process(Explorer.Chain.Cache.KnownAssets, :indexer),
         configure(Explorer.Utility.VersionUpgrade),
         configure_mode_dependent_process(Explorer.Utility.VersionConstantsUpdater, :indexer),
         configure_mode_dependent_process(Explorer.Market.Fetcher.Coin, :api),

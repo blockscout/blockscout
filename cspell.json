@@ -25,7 +25,9 @@
         // Ignore long base64/base58-style account identifiers (TON addresses, hashes, etc.)
         "[A-Za-z0-9+\\-:]{40,}",
         // Ignore escaped hex byte sequences inside strings
-        "\\\\x[0-9a-f]{2,}"
+        "\\\\x[0-9a-f]{2,}",
+        // Ignore escaped Unicode codepoints inside strings
+        "\\\\u[0-9A-Fa-f]{4}"
     ],
     // words - list of words to be always considered correct
     "words": [
@@ -43,6 +45,7 @@
         "Aiubo",
         "alfajores",
         "algs",
+        "alikes",
         "alloc",
         "Alookup",
         "amzootyukbugmx",
@@ -165,6 +168,7 @@
         "codecv",
         "codeformat",
         "codegen",
+        "codepoint",
         "codepoints",
         "coef",
         "coeff",
@@ -181,6 +185,7 @@
         "compilerversion",
         "concache",
         "cond",
+        "confusables",
         "conkey",
         "conname",
         "contype",
@@ -357,6 +362,7 @@
         "hljs",
         "Hodl",
         "holesky",
+        "homoglyphs",
         "Homomorphic",
         "HOPR",
         "httpoison",
@@ -497,6 +503,7 @@
         "Neue",
         "newkey",
         "nextval",
+        "nfkc",
         "nftproduct",
         "ngettext",
         "nillifies",
@@ -645,6 +652,7 @@
         "safelow",
         "savechives",
         "schemaname",
+        "scorable",
         "Secon",
         "secp",
         "Segoe",
@@ -734,6 +742,7 @@
         "testpassword",
         "testtest",
         "testuser",
+        "tetherusd",
         "thead",
         "thicccbrowz",
         "throttable",
@@ -775,6 +784,7 @@
         "unfetched",
         "unfinalized",
         "Unichain",
+        "unioned",
         "unindexed",
         "Unitarion",
         "Unitorius",
@@ -834,6 +844,7 @@
         "WITHDRAWABILITY",
         "wobserver",
         "wordsize",
+        "wrappedether",
         "wysdvjkizxonu",
         "x-ratelimit-limit",
         "x-ratelimit-remaining",
@@ -869,7 +880,8 @@
         "zkevm",
         "zksolc",
         "zksync",
-        "zstd"
+        "zstd",
+        "ＵＳＤＴ"
     ],
     "enableFiletypes": [
         "dotenv",
