@@ -12,10 +12,10 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.LocalReporterTest do
 
   @moduletag :capture_log
 
-  defp result(victim, mimic, issuer) do
+  defp result(victim, mimic, issuer, rules \\ [:lookalike_recipient, :suspicious_outgoing]) do
     %Result{
       score: 7,
-      rules: [:lookalike_recipient, :suspicious_outgoing],
+      rules: rules,
       victim: victim,
       mimic: mimic,
       issuer: issuer
@@ -72,6 +72,39 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.LocalReporterTest do
 
       assert scam_badges() == MapSet.new([attacker.hash])
       assert phishing_tagged() == MapSet.new([attacker.hash])
+    end
+
+    test "leaves the counterparty untagged when no look-alike was matched" do
+      victim = insert(:address)
+      airdrop_recipient = insert(:address)
+      issuer = insert(:address)
+
+      # a badged issuer airdropping a fake asset: the recipient is a target, not a mimic
+      assert :ok =
+               LocalReporter.report([
+                 result(victim.hash, airdrop_recipient.hash, issuer.hash, [
+                   :scam_flag,
+                   :name_imitation,
+                   :suspicious_outgoing
+                 ])
+               ])
+
+      assert scam_badges() == MapSet.new([issuer.hash])
+      assert phishing_tagged() == MapSet.new()
+      refute Repo.get_by(AddressTag, label: "phishing")
+    end
+
+    test "tags a counterparty that sent the transaction itself whatever the rules" do
+      victim = insert(:address)
+      duster = insert(:address)
+
+      assert :ok =
+               LocalReporter.report([
+                 result(victim.hash, duster.hash, duster.hash, [:scam_flag, :dust_from_counterparty])
+               ])
+
+      assert scam_badges() == MapSet.new([duster.hash])
+      assert phishing_tagged() == MapSet.new([duster.hash])
     end
 
     test "copes without an issuer" do

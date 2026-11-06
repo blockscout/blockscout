@@ -5,6 +5,13 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.LocalReporter do
   own reputation data: the issuer of the attack gets the scam badge, the
   mimic address the public `phishing` tag.
 
+  The mimic is tagged only when the verdict identified one: when the
+  `lookalike_recipient` rule fired, or when the mimic sent the transaction
+  itself. Every other rule tells something about the issuer or the token, not
+  about the counterparty — a badged issuer airdropping a fake asset to
+  thousands of addresses scores as an attack on each of them, and its
+  recipients are its targets, not its accomplices.
+
   The victim is never marked, even when it is also the issuer or the mimic
   of the verdict — a self-transfer never gets this far, but the guard costs
   nothing. Both writes are idempotent, so repeated attacks by the same
@@ -47,8 +54,15 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.LocalReporter do
   defp issuers(%Result{issuer: %Hash{} = issuer, victim: victim}) when issuer != victim, do: [issuer]
   defp issuers(_result), do: []
 
-  defp mimics(%Result{mimic: %Hash{} = mimic, victim: victim}) when mimic != victim, do: [mimic]
+  defp mimics(%Result{mimic: %Hash{} = mimic, victim: victim} = result) when mimic != victim do
+    if mimic_identified?(result), do: [mimic], else: []
+  end
+
   defp mimics(_result), do: []
+
+  defp mimic_identified?(%Result{mimic: mimic, issuer: issuer, rules: rules}) do
+    mimic == issuer or :lookalike_recipient in rules
+  end
 
   defp mark_issuers([]), do: :ok
 
