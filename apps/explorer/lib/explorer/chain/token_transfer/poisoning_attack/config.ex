@@ -14,7 +14,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Config do
   alias Explorer.Chain.TokenTransfer.PoisoningAttack
   alias Explorer.Chain.TokenTransfer.PoisoningAttack.{LocalReporter, Rules}
 
-  @default_token_types ["ERC-20", "ERC-8056"]
+  @default_token_types ["ERC-20", "ERC-8056", "ERC-7984"]
 
   @typedoc """
   * `score_threshold` — score from which a transfer counts as an attack.

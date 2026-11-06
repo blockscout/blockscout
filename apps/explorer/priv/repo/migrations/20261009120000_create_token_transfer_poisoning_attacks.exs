@@ -5,7 +5,7 @@ defmodule Explorer.Repo.Migrations.CreateTokenTransferPoisoningAttacks do
   def change do
     # keep in sync with `Explorer.Chain.TokenTransfer.PoisoningAttack.Rules.names/0`
     execute(
-      "CREATE TYPE token_transfer_poisoning_rule AS ENUM ('zero_amount', 'sender_mismatch', 'suspicious_outgoing', 'initiator_fanout', 'dust_from_counterparty', 'scam_flag', 'lookalike_recipient', 'name_imitation')",
+      "CREATE TYPE token_transfer_poisoning_rule AS ENUM ('zero_amount', 'sender_mismatch', 'suspicious_outgoing', 'initiator_fanout', 'dust_from_counterparty', 'scam_flag', 'lookalike_recipient', 'name_imitation', 'hidden_amount')",
       "DROP TYPE token_transfer_poisoning_rule"
     )
 

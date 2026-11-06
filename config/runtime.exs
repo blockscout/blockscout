@@ -1132,7 +1132,7 @@ config :explorer, Explorer.Chain.TokenTransfer.PoisoningAttack,
   dust_default_threshold: ConfigHelper.safe_get_env("TOKEN_TRANSFER_POISONING_DUST_DEFAULT_THRESHOLD", "0.01"),
   unverified_token_weight:
     ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_POISONING_UNVERIFIED_TOKEN_WEIGHT", 1, min: 0),
-  token_types: ConfigHelper.parse_list_env_var("TOKEN_TRANSFER_POISONING_TOKEN_TYPES", "ERC-20,ERC-8056"),
+  token_types: ConfigHelper.parse_list_env_var("TOKEN_TRANSFER_POISONING_TOKEN_TYPES", "ERC-20,ERC-8056,ERC-7984"),
   ignored_addresses: ConfigHelper.parse_list_env_var("TOKEN_TRANSFER_POISONING_IGNORED_ADDRESSES", ""),
   known_assets_override: ConfigHelper.parse_json_env_var("TOKEN_TRANSFER_POISONING_KNOWN_ASSETS", "{}"),
   known_assets_update_interval:

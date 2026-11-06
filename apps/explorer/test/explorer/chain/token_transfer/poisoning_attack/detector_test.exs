@@ -99,6 +99,20 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.DetectorTest do
       assert result.issuer == mimic.hash
     end
 
+    test "flags a confidential token sent by a look-alike directly, amount unseen" do
+      victim = victim_with_history()
+      mimic = insert(:address, hash: hash(@mimic))
+      token = token(type: "ERC-7984")
+
+      token_transfer = transfer(mimic, token.contract_address, mimic, victim, nil, token)
+
+      assert [%Result{score: 5} = result] = Detector.detect([entry(token_transfer)])
+
+      assert result.rules == [:lookalike_recipient, :hidden_amount]
+      assert result.victim == victim.hash
+      assert result.mimic == mimic.hash
+    end
+
     test "picks the orientation with the higher score" do
       # The victim is the recipient here: the attacker's contract emits Transfer(mimic -> victim, 0)
       victim = victim_with_history()

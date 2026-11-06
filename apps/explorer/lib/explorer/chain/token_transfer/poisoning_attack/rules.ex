@@ -8,6 +8,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
   | Rule | Weight | Fires when |
   |---|---|---|
   | `zero_amount` | 0 | a fungible transfer carries no value |
+  | `hidden_amount` | 0 | a confidential token (ERC-7984, ZRC-2) hides the amount of the transfer |
   | `sender_mismatch` | 0 | the transaction sender is not the transfer sender |
   | `suspicious_outgoing` | 2 | the victim is the transfer sender and the transaction sender is neither participant |
   | `initiator_fanout` | 1 | the transaction sender touched many distinct addresses within the batch |
@@ -16,9 +17,12 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
   | `lookalike_recipient` | 5 | the counterparty is unseen and resembles a previous recipient of the victim |
   | `name_imitation` | 2 (+1 unverified) | the token imitates the name or symbol of a known asset from another contract |
 
-  `zero_amount` and `sender_mismatch` carry no weight: they are the candidate
-  trigger that decides whether the costly `lookalike_recipient` lookup is worth
-  running (see `candidate?/2`), not evidence by themselves.
+  `zero_amount`, `hidden_amount` and `sender_mismatch` carry no weight: they
+  are the candidate trigger that decides whether the costly
+  `lookalike_recipient` lookup is worth running (see `candidate?/2`), not
+  evidence by themselves. A hidden amount is a trigger of its own because a
+  confidential token lets the attacker plant a transfer whose emptiness nobody
+  can see, in either direction.
 
   A mint or burn is never scored, and a transfer explained by an attributed
   flow — a verified, named or tagged contract, a Safe, an EIP-7702 account, an
@@ -32,6 +36,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
 
   @weights %{
     zero_amount: 0,
+    hidden_amount: 0,
     sender_mismatch: 0,
     suspicious_outgoing: 2,
     initiator_fanout: 1,
@@ -43,7 +48,10 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
 
   # The order is the one of the `token_transfer_poisoning_rule` database enum;
   # append new rules at the end and add them to the enum in a migration
-  @names ~w(zero_amount sender_mismatch suspicious_outgoing initiator_fanout dust_from_counterparty scam_flag lookalike_recipient name_imitation)a
+  @names ~w(zero_amount sender_mismatch suspicious_outgoing initiator_fanout dust_from_counterparty scam_flag lookalike_recipient name_imitation hidden_amount)a
+
+  # Token types whose transfers carry an encrypted amount, stored as `nil`
+  @confidential_token_types ["ERC-7984", "ZRC-2"]
 
   @typedoc "The name of a rule, as stored and exposed by the API."
   @type name ::
@@ -55,6 +63,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
           | :scam_flag
           | :lookalike_recipient
           | :name_imitation
+          | :hidden_amount
 
   @doc """
   The names of all rules, the values of the `rules` column of
@@ -103,10 +112,18 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
   def candidate?(%Context{} = context, %Config{} = config) do
     suppressed? = attributed_flow?(context, config)
 
-    Enum.any?([zero_amount(context), sender_mismatch(context), dust_from_counterparty(context, config)], fn
-      nil -> false
-      {rule, _weight, _details} -> not (suppressed? and rule in @explained_by_attribution)
-    end)
+    Enum.any?(
+      [
+        zero_amount(context),
+        hidden_amount(context),
+        sender_mismatch(context),
+        dust_from_counterparty(context, config)
+      ],
+      fn
+        nil -> false
+        {rule, _weight, _details} -> not (suppressed? and rule in @explained_by_attribution)
+      end
+    )
   end
 
   @doc """
@@ -127,6 +144,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
     signals =
       [
         zero_amount(context),
+        hidden_amount(context),
         sender_mismatch(context),
         suspicious_outgoing(context),
         initiator_fanout(context, config),
@@ -216,6 +234,18 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
   end
 
   defp zero_amount(_context), do: nil
+
+  defp hidden_amount(%Context{amount: nil} = context) do
+    if token_type(context) in @confidential_token_types, do: {:hidden_amount, @weights.hidden_amount, %{}}, else: nil
+  end
+
+  defp hidden_amount(_context), do: nil
+
+  defp token_type(%Context{token_transfer: %TokenTransfer{token_type: type}}) when is_binary(type),
+    do: String.upcase(type)
+
+  defp token_type(%Context{token: %Token{type: type}}) when is_binary(type), do: String.upcase(type)
+  defp token_type(_context), do: nil
 
   defp sender_mismatch(%Context{issuer: nil}), do: nil
 

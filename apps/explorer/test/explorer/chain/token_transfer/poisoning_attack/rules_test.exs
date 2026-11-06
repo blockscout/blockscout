@@ -119,6 +119,21 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
   end
 
   describe "candidate?/2" do
+    test "a confidential token transfer is a candidate whoever sent it" do
+      # the mimic sends directly: no sender mismatch, and the amount is encrypted
+      token_transfer = %{transfer(@mimic, @victim, nil) | token_type: "ERC-7984"}
+      context = dust_incoming(token_transfer: token_transfer, amount: nil, token: token(type: "ERC-7984"))
+
+      assert Rules.candidate?(context, config())
+    end
+
+    test "a missing amount on a plain token is not a candidate" do
+      token_transfer = transfer(@mimic, @victim, nil)
+      context = dust_incoming(token_transfer: token_transfer, amount: nil)
+
+      refute Rules.candidate?(context, config())
+    end
+
     test "a zero amount is a candidate" do
       assert Rules.candidate?(fake_outgoing(recipients: nil), config())
     end
@@ -203,6 +218,25 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
   end
 
   describe "evaluate/2 — dust from a look-alike" do
+    test "a confidential dust transfer from a look-alike scores the look-alike alone" do
+      token_transfer = %{transfer(@mimic, @victim, nil) | token_type: "ERC-7984"}
+      context = dust_incoming(token_transfer: token_transfer, amount: nil, token: token(type: "ERC-7984"))
+
+      result = Rules.evaluate(context, config())
+
+      assert rule_names(result) == [:lookalike_recipient, :hidden_amount]
+      assert result.score == 5
+      refute :dust_from_counterparty in rule_names(result)
+      assert Result.attack?(result, config())
+    end
+
+    test "the hidden amount trigger reads the token type off the token when the transfer has none" do
+      token_transfer = %{transfer(@mimic, @victim, nil) | token_type: nil}
+      context = dust_incoming(token_transfer: token_transfer, amount: nil, token: token(type: "ERC-7984"))
+
+      assert :hidden_amount in rule_names(Rules.evaluate(context, config()))
+    end
+
     test "scores dust plus look-alike recipient" do
       result = Rules.evaluate(dust_incoming(), config())
 
@@ -442,6 +476,11 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
   end
 
   describe "normalize_asset_name/1" do
+    test "confidential tokens are scored by default" do
+      assert "ERC-7984" in %Config{}.token_types
+      assert "ERC-7984" in Config.load().token_types
+    end
+
     test "drops case, separators and format characters" do
       assert Rules.normalize_asset_name("Tether USD") == "tetherusd"
       assert Rules.normalize_asset_name("tether-usd") == "tetherusd"
