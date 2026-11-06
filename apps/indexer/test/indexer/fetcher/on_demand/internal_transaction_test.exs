@@ -50,9 +50,179 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
     refute InternalTransactionOnDemand.should_fetch?([], 10)
   end
 
+  describe "should_fetch?/3" do
+    setup do
+      id_to_hash = insert(:address_id_to_address_hash, address: insert(:address))
+
+      insert(:deleted_internal_transactions_address_placeholder,
+        address_id: id_to_hash.address_id,
+        block_number: 1,
+        count_tos: 1,
+        count_froms: 1
+      )
+
+      :ok
+    end
+
+    test "does not fetch internal transactions without zero-value calls when they are stored" do
+      put_storage_disabled(false)
+
+      assert InternalTransactionOnDemand.should_fetch?([], 10, true)
+      refute InternalTransactionOnDemand.should_fetch?([], 10, false)
+    end
+
+    test "fetches internal transactions without zero-value calls when the storage is disabled" do
+      put_storage_disabled(true)
+
+      assert InternalTransactionOnDemand.should_fetch?([], 10, true)
+      assert InternalTransactionOnDemand.should_fetch?([], 10, false)
+    end
+  end
+
+  test "fetch_by_transaction/2 rejects zero-value calls when include_zero_value is false" do
+    transaction = :transaction |> insert() |> with_block()
+
+    mock_transaction_trace_with_zero_value_call(2)
+
+    assert [%InternalTransaction{index: 1}, %InternalTransaction{index: 2}] =
+             InternalTransactionOnDemand.fetch_by_transaction(transaction)
+
+    assert [%InternalTransaction{index: 2}] =
+             InternalTransactionOnDemand.fetch_by_transaction(transaction, include_zero_value: false)
+  end
+
+  test "etherscan_fetch_by_transaction/2 orders internal transactions and rejects zero-value calls by default" do
+    transaction = :transaction |> insert() |> with_block()
+
+    mock_transaction_trace_with_zero_value_call(2)
+
+    assert [%{index: 2}] = InternalTransactionOnDemand.etherscan_fetch_by_transaction(transaction, %{})
+
+    assert [%{index: 2}, %{index: 1}] =
+             InternalTransactionOnDemand.etherscan_fetch_by_transaction(transaction, %{include_zero_value: true})
+  end
+
+  test "etherscan_fetch_by_address/2 returns the requested page" do
+    address = insert(:address)
+    address_hash_str = to_string(address.hash)
+    id_to_hash = insert(:address_id_to_address_hash, address: address)
+
+    for block_number <- 1..3 do
+      insert(:block, number: block_number)
+
+      insert(:deleted_internal_transactions_address_placeholder,
+        address_id: id_to_hash.address_id,
+        block_number: block_number,
+        count_tos: block_number,
+        count_froms: 0
+      )
+    end
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn
+      [%{id: id_1, params: ["0x3", _]}, %{id: id_2, params: ["0x2", _]}], _ ->
+        {:ok,
+         [
+           %{id: id_1, result: block_traces_with_calls_to(address_hash_str, 3, 3)},
+           %{id: id_2, result: block_traces_with_calls_to(address_hash_str, 2, 2)}
+         ]}
+    end)
+
+    Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth,
+      tracer: "call_tracer",
+      debug_trace_timeout: "5s",
+      block_traceable?: true
+    )
+
+    # the first page holds the internal transactions of transactions 2 and 1 of block 3
+    assert [%{block_number: 3, transaction_index: 0}, %{block_number: 2, transaction_index: 1}] =
+             InternalTransactionOnDemand.etherscan_fetch_by_address(address.hash, %{
+               filter_by: "to",
+               page_size: 2,
+               page_number: 2
+             })
+  end
+
+  defp mock_transaction_trace_with_zero_value_call(times) do
+    expect(EthereumJSONRPC.Mox, :json_rpc, times, fn [%{id: id, params: _}], _ ->
+      {:ok,
+       [
+         %{
+           id: id,
+           result: %{
+             "type" => "CALL",
+             "from" => "0x117b358218da5a4f647072ddb50ded038ed63d17",
+             "to" => "0x205a6b72ce16736c9d87172568a9c0cb9304de0d",
+             "value" => "0x0",
+             "gas" => "0x106f5",
+             "gasUsed" => "0x106f5",
+             "input" => "0x",
+             "output" => "0x",
+             "calls" => [
+               %{
+                 "type" => "CALL",
+                 "from" => "0x205a6b72ce16736c9d87172568a9c0cb9304de0d",
+                 "to" => "0x4200000000000000000000000000000000000015",
+                 "value" => "0x0",
+                 "gas" => "0xe9a3c",
+                 "gasUsed" => "0x4a28",
+                 "input" => "0x",
+                 "output" => "0x"
+               },
+               %{
+                 "type" => "CALL",
+                 "from" => "0x205a6b72ce16736c9d87172568a9c0cb9304de0d",
+                 "to" => "0x4200000000000000000000000000000000000016",
+                 "value" => "0x1",
+                 "gas" => "0xe9a3c",
+                 "gasUsed" => "0x4a28",
+                 "input" => "0x",
+                 "output" => "0x"
+               }
+             ]
+           }
+         }
+       ]}
+    end)
+
+    Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, tracer: "call_tracer", debug_trace_timeout: "5s")
+  end
+
+  # `debug_traceBlockByNumber` result with `transactions_count` transactions, each of them with a nested call
+  # transferring value to the given address
+  defp block_traces_with_calls_to(to_address_hash_str, block_number, transactions_count) do
+    for transaction_index <- 0..(transactions_count - 1) do
+      %{
+        "result" => %{
+          "calls" => [
+            %{
+              "from" => "0x4200000000000000000000000000000000000015",
+              "gas" => "0xe9a3c",
+              "gasUsed" => "0x4a28",
+              "input" => "0x",
+              "output" => "0x",
+              "to" => to_address_hash_str,
+              "type" => "CALL",
+              "value" => "0x1"
+            }
+          ],
+          "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
+          "gas" => "0xf4240",
+          "gasUsed" => "0xb6f9",
+          "input" => "0x",
+          "output" => "0x",
+          "to" => to_address_hash_str,
+          "type" => "CALL",
+          "value" => "0x0"
+        },
+        "txHash" => "0x" <> String.pad_leading("#{block_number}#{transaction_index}", 64, "0")
+      }
+    end
+  end
+
   defp snapshot_env_restore do
     initial_ethereum_jsonrpc_env = Application.get_all_env(:ethereum_jsonrpc)
     initial_json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    initial_internal_transaction_config = Application.get_env(:explorer, InternalTransaction)
 
     initial_on_demand_internal_transaction_config =
       Application.get_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction)
@@ -60,6 +230,12 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
     on_exit(fn ->
       Application.put_all_env([{:ethereum_jsonrpc, initial_ethereum_jsonrpc_env}])
       Application.put_env(:explorer, :json_rpc_named_arguments, initial_json_rpc_named_arguments)
+
+      if is_nil(initial_internal_transaction_config) do
+        Application.delete_env(:explorer, InternalTransaction)
+      else
+        Application.put_env(:explorer, InternalTransaction, initial_internal_transaction_config)
+      end
 
       if is_nil(initial_on_demand_internal_transaction_config) do
         Application.delete_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction)
@@ -71,6 +247,11 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
         )
       end
     end)
+  end
+
+  defp put_storage_disabled(storage_disabled?) do
+    config = Application.get_env(:explorer, InternalTransaction) || []
+    Application.put_env(:explorer, InternalTransaction, Keyword.put(config, :storage_disabled?, storage_disabled?))
   end
 
   test "fetch_by_transaction/2" do

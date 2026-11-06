@@ -17,7 +17,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
   alias Explorer.Chain.Import.Runner.InternalTransactions
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
-  alias Explorer.Utility.AddressIdToAddressHash
+  alias Explorer.Utility.{AddressIdToAddressHash, InternalTransactionsAddressPlaceholder}
 
   setup do
     config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
@@ -731,6 +731,21 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert updated_address.contract_code != %Data{bytes: <<>>}
     end
 
+    test "does not store address placeholders when internal transactions are stored" do
+      transaction = insert(:transaction) |> with_block(status: :ok)
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
+      changes = Enum.map(0..2, &make_internal_transaction_changes(transaction, &1, nil))
+
+      assert {:ok, %{internal_transactions_address_placeholders: 0}} = run_internal_transactions(changes)
+
+      refute Repo.exists?(
+               from(placeholder in InternalTransactionsAddressPlaceholder,
+                 where: placeholder.block_number == ^transaction.block_number
+               )
+             )
+    end
+
     test "handles selfdestruct with no matching address gracefully" do
       block = insert(:block)
       transaction = insert(:transaction) |> with_block(block, status: :ok)
@@ -1000,6 +1015,45 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert %Data{bytes: <<>>} = Repo.get(Address, contract_address.hash).contract_code
       assert [] == stored_internal_transactions(transaction)
+    end
+
+    test "run/3 stores address placeholders of the internal transactions that are not stored" do
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block, status: :ok)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      sender = insert(:address)
+      receiver = insert(:address)
+      contract_address = insert(:address)
+
+      # the first trace represents the transaction itself
+      first_trace_changes = make_internal_transaction_changes(transaction, 0, nil)
+
+      calls_changes =
+        for index <- 1..2 do
+          transaction
+          |> make_internal_transaction_changes(index, nil)
+          |> Map.merge(%{from_address_hash: sender.hash, to_address_hash: receiver.hash})
+        end
+
+      # the contract creation is stored itself
+      creation_changes =
+        transaction
+        |> make_contract_creation_changes(3, contract_address.hash)
+        |> Map.put(:from_address_hash, sender.hash)
+
+      assert {:ok, _} = run_internal_transactions([first_trace_changes | calls_changes] ++ [creation_changes])
+
+      sender_id = AddressIdToAddressHash.hash_to_id(sender.hash)
+      receiver_id = AddressIdToAddressHash.hash_to_id(receiver.hash)
+
+      assert InternalTransactionsAddressPlaceholder
+             |> where([placeholder], placeholder.block_number == ^block.number)
+             |> Repo.all()
+             |> MapSet.new(&{&1.address_id, &1.count_froms, &1.count_tos}) ==
+               MapSet.new([{sender_id, 2, 0}, {receiver_id, 0, 2}])
+
+      assert [%InternalTransaction{index: 3}] = stored_internal_transactions(transaction)
     end
 
     test "run_insert_only/2 does not store the first trace" do
