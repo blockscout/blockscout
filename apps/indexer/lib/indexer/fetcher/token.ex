@@ -7,6 +7,8 @@ defmodule Indexer.Fetcher.Token do
   use Indexer.Fetcher, restart: :permanent
   use Spandex.Decorators
 
+  require Logger
+
   alias Explorer.Chain
   alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Token
@@ -72,7 +74,7 @@ defmodule Indexer.Fetcher.Token do
     |> MetadataRetriever.get_functions_of(set_skip_metadata: true)
     |> case do
       %{skip_metadata: false} ->
-        :ok
+        postpone_cataloging(token)
 
       token_params ->
         data_for_multichain = MultichainSearch.prepare_token_metadata_for_queue(token, token_params)
@@ -84,6 +86,37 @@ defmodule Indexer.Fetcher.Token do
         {:ok, _} = Token.update(token, Map.put(token_params, :cataloged, true))
         :ok
     end
+  end
+
+  # Every getter failed for a reason that is not a contract failure (transport
+  # error, rate limit, lagging node), so the token stays uncataloged. Left as
+  # is, `init/3` would select it again right away: `Indexer.BufferedTask`
+  # re-runs `init` without delay as long as the previous run pushed anything,
+  # which turned 50 such tokens into ~80 failing `eth_call`/s on Unichain.
+  # The next attempt is therefore pushed back exponentially, the way
+  # `Indexer.Fetcher.TokenBalance.Helper` does for token balances.
+  defp postpone_cataloging(token) do
+    retries_count = (token.metadata_retries_count || 0) + 1
+    refetch_after = define_refetch_after(retries_count)
+
+    Logger.debug(fn ->
+      "Cataloging of token #{to_string(token.contract_address_hash)} failed #{retries_count} time(s), " <>
+        "next attempt after #{DateTime.to_iso8601(refetch_after)}"
+    end)
+
+    Token.schedule_metadata_refetch(token, retries_count, refetch_after)
+  end
+
+  defp define_refetch_after(retries_count) do
+    config = Application.get_env(:indexer, __MODULE__)
+
+    coef = config[:exp_timeout_coeff]
+    max_refetch_interval = config[:max_refetch_interval]
+    max_retries_count = :math.log(max_refetch_interval / 1000 / coef)
+
+    value = floor(coef * :math.exp(min(retries_count, max_retries_count)))
+
+    Timex.shift(Timex.now(), seconds: value)
   end
 
   defp defaults do

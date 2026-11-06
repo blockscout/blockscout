@@ -30,6 +30,8 @@ defmodule Explorer.Chain.Token.Schema do
         field(:skip_metadata, :boolean)
         field(:total_supply_updated_at_block, :integer)
         field(:metadata_updated_at, :utc_datetime_usec)
+        field(:metadata_retries_count, :integer, default: 0)
+        field(:metadata_refetch_after, :utc_datetime_usec)
         field(:fiat_value, FiatValue)
         field(:circulating_market_cap, FiatValue)
         field(:icon_url, :string)
@@ -130,6 +132,10 @@ defmodule Explorer.Chain.Token do
   * `decimals` - Number of decimal places the token can be subdivided to
   * `type` - Type of token
   * `cataloged` - Flag for if token information has been cataloged
+  * `metadata_retries_count` - how many times cataloging failed for a reason that is not a contract failure
+    (transport error, rate limit, lagging node). Drives the exponential backoff of the next attempt.
+  * `metadata_refetch_after` - moment before which `Indexer.Fetcher.Token` does not retry cataloging the token.
+    `nil` when the token has never failed to catalog.
   * `contract_address` - The `t:Address.t/0` of the token's contract
   * `contract_address_hash` - Address hash foreign key
   * `holder_count` - the number of `t:Explorer.Chain.Address.t/0` (except the burn address) that have a
@@ -357,6 +363,27 @@ defmodule Explorer.Chain.Token do
       {:error, :token, changeset, _} ->
         {:error, changeset}
     end
+  end
+
+  @doc """
+  Postpones the next cataloging attempt of an uncataloged token until
+  `refetch_after`, recording `retries_count` failed attempts so far. Tokens
+  with `metadata_refetch_after` in the future are skipped by
+  `Explorer.Chain.stream_uncataloged_token_contract_address_hashes/3`.
+  """
+  @spec schedule_metadata_refetch(t(), non_neg_integer(), DateTime.t()) :: :ok
+  def schedule_metadata_refetch(%__MODULE__{contract_address_hash: contract_address_hash}, retries_count, refetch_after) do
+    __MODULE__
+    |> where([token], token.contract_address_hash == ^contract_address_hash)
+    |> Repo.update_all(
+      set: [
+        metadata_retries_count: retries_count,
+        metadata_refetch_after: refetch_after,
+        updated_at: DateTime.utc_now()
+      ]
+    )
+
+    :ok
   end
 
   defp token_metadata_update_on_conflict do
