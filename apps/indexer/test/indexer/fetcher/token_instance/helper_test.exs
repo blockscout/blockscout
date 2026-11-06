@@ -564,6 +564,39 @@ defmodule Indexer.Fetcher.TokenInstance.HelperTest do
       assert not instance.is_banned
     end
 
+    test "stores an EVM halt on tokenURI as VM execution error so the instance gets banned on schedule" do
+      erc_721_token = insert(:token, type: "ERC-721")
+
+      token_instance =
+        insert(:token_instance,
+          token_contract_address_hash: erc_721_token.contract_address_hash,
+          error: "error",
+          metadata: nil,
+          retries_count: 9
+        )
+
+      token_address = to_string(erc_721_token.contract_address_hash)
+
+      data =
+        "0xc87b56dd" <>
+          (ABI.TypeEncoder.encode([Decimal.to_integer(token_instance.token_id)], [{:uint, 256}])
+           |> Base.encode16(case: :lower))
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [%{id: id, method: "eth_call", params: [%{data: ^data, to: ^token_address}, "latest"]}],
+                              _options ->
+        {:ok, [%{error: %{code: -32003, message: "EVM error: StackUnderflow"}, id: id, jsonrpc: "2.0"}]}
+      end)
+
+      Helper.batch_fetch_instances([
+        %{contract_address_hash: token_instance.token_contract_address_hash, token_id: token_instance.token_id}
+      ])
+
+      [instance] = Repo.all(Instance)
+      assert instance.error == "VM execution error"
+      assert instance.is_banned
+    end
+
     test "don't set is_banned (429 error)", %{bypass: bypass} do
       erc_721_token = insert(:token, type: "ERC-721")
 

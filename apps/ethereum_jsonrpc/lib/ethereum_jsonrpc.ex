@@ -964,16 +964,24 @@ defmodule EthereumJSONRPC do
   @doc """
   Determines whether a given error represents a contract execution failure.
 
-  This function checks if an error indicates a contract failure by examining
-  specific error patterns. It supports both map-based and tuple-based error
-  formats. The function identifies two types of contract failures:
-  1. Errors with the atom `:unable_to_decode`
-  2. Binary errors containing the pattern "execution" followed by "revert"
-  3. Binary errors containing the pattern "out of gas"
+  A contract failure is an answer from the node saying that the called code
+  itself failed: a revert, running out of gas, or the EVM halting on broken
+  bytecode (a stack underflow, an invalid opcode or jump, ...). Such a call
+  fails the same way every time it is repeated, so callers use this to stop
+  asking. Anything else — a transport error, a rate limit, a node that is
+  behind — is not a contract failure and is worth retrying.
+
+  Nodes word these errors differently: Geth/Erigon say `execution reverted`,
+  `stack underflow (1 <=> 2)` or `invalid opcode: ...`, reth says
+  `EVM error: StackUnderflow` for every halt reason, Nethermind says
+  `VM execution error`, Besu capitalises `Execution reverted`. The patterns
+  below cover all of them; a JSON-RPC error code prefix such as `(-32003) `
+  in front of the message does not get in the way.
 
   ## Parameters
   - `error`: The error to check. Can be a map with an `:error` key, a tuple
-    `{:error, reason}`, or any other value.
+    `{:error, reason}` where the reason is a message or an error map with a
+    `:message`/`:data`, or any other value.
 
   ## Returns
   - `true` if the error represents a contract failure
@@ -982,13 +990,37 @@ defmodule EthereumJSONRPC do
   @spec contract_failure?(any()) :: boolean()
   def contract_failure?(%{error: :unable_to_decode}), do: true
 
-  def contract_failure?(%{error: error}) when is_binary(error),
-    do: String.match?(error, ~r/execution.*revert/) or String.match?(error, ~r/out of gas/)
+  def contract_failure?(%{error: error}) when is_binary(error), do: contract_failure_message?(error)
 
   def contract_failure?({:error, :unable_to_decode}), do: true
 
-  def contract_failure?({:error, error}) when is_binary(error),
-    do: String.match?(error, ~r/execution.*revert/) or String.match?(error, ~r/out of gas/)
+  def contract_failure?({:error, error}) when is_binary(error), do: contract_failure_message?(error)
+
+  def contract_failure?({:error, %{} = error}) do
+    Enum.any?([error[:message], error[:data]], &(is_binary(&1) and contract_failure_message?(&1)))
+  end
 
   def contract_failure?(_), do: false
+
+  @contract_failure_patterns [
+    # Geth, Erigon, Besu (`Execution reverted`), reth (`execution reverted: ...`)
+    ~r/execution.*revert/i,
+    # Geth, Erigon, reth (`out of gas: gas required exceeds allowance`)
+    ~r/out of gas/,
+    # Nethermind
+    ~r/VM execution error/,
+    # reth: every `HaltReason`, e.g. `EVM error: StackUnderflow`, `EVM error: InvalidJump`
+    ~r/EVM error/,
+    # Geth and Erigon halt reasons (core/vm/errors.go)
+    ~r/stack underflow/,
+    ~r/stack limit reached/,
+    ~r/invalid opcode/,
+    ~r/invalid jump destination/,
+    ~r/write protection/,
+    ~r/return data out of bounds/
+  ]
+
+  defp contract_failure_message?(message) do
+    Enum.any?(@contract_failure_patterns, &String.match?(message, &1))
+  end
 end

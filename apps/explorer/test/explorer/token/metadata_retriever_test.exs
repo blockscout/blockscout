@@ -817,6 +817,30 @@ defmodule Explorer.Token.MetadataRetrieverTest do
 
       assert MetadataRetriever.get_functions_of(token, set_skip_metadata: true) == %{skip_metadata: false}
     end
+
+    test "sets skip_metadata if the contract's bytecode halts the EVM on every getter" do
+      token = insert(:token, contract_address: build(:contract_address))
+
+      # reth wording for a contract whose runtime code is e.g. `PUSH1 0x00; RETURN`
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        3,
+        fn requests, _opts ->
+          {:ok,
+           Enum.map(requests, fn
+             %{id: id, method: "eth_call", params: [%{data: _, to: _}, "latest"]} ->
+               %{
+                 id: id,
+                 error: %{code: -32003, message: "EVM error: StackUnderflow"},
+                 jsonrpc: "2.0"
+               }
+           end)}
+        end
+      )
+
+      assert MetadataRetriever.get_functions_of(token, set_skip_metadata: true) == %{skip_metadata: true}
+    end
   end
 
   describe "fetch_json/4" do
