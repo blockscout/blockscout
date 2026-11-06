@@ -214,6 +214,46 @@ defmodule Indexer.Fetcher.TokenBalance.HistoricalTest do
       assert Repo.all(Address.TokenBalance) == []
     end
 
+    test "in case of an EVM halt error inserts the token into missing balanceOf tokens like a revert" do
+      address = insert(:address)
+      %{contract_address_hash: token_contract_address_hash} = insert(:token)
+
+      insert(:token_balance,
+        token_contract_address_hash: token_contract_address_hash,
+        address: address,
+        block_number: 0,
+        value_fetched_at: nil,
+        value: nil
+      )
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
+          {:ok,
+           [
+             %{
+               id: id,
+               jsonrpc: "2.0",
+               error: %{code: -32003, message: "EVM error: StackUnderflow"}
+             }
+           ]}
+        end
+      )
+
+      assert TokenBalanceHistorical.run(
+               [
+                 {address.hash.bytes, token_contract_address_hash.bytes, 1, "ERC-20", nil, 0}
+               ],
+               nil
+             ) == :ok
+
+      assert %{token_contract_address_hash: ^token_contract_address_hash, block_number: 1} =
+               Repo.one(MissingBalanceOfToken)
+
+      assert Repo.all(Address.TokenBalance) == []
+    end
+
     test "in case of other error updates the refetch_after and retries_count of token balance" do
       address = insert(:address)
       %{contract_address_hash: token_contract_address_hash} = insert(:token)

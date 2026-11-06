@@ -120,8 +120,12 @@ defmodule EthereumJSONRPC.NFT do
       {:error, error} ->
         error = to_string(error)
 
+        # Every way the called code itself can fail (revert, out of gas, an EVM
+        # halt on broken bytecode such as `EVM error: StackUnderflow`) is folded
+        # into one error, so the instance gets the retry/ban schedule of a
+        # contract that does not answer rather than that of a flaky node.
         error =
-          if error =~ "execution reverted" or error =~ @vm_execution_error do
+          if EthereumJSONRPC.contract_failure?({:error, error}) do
             @vm_execution_error
           else
             error
