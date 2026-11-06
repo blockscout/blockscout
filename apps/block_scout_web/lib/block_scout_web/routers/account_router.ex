@@ -136,6 +136,9 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
     scope "/user" do
       get("/info", UserController, :info)
 
+      get("/settings", UserController, :get_settings)
+      patch("/settings", UserController, :update_settings)
+
       get("/watchlist", UserController, :watchlist)
       delete("/watchlist/:id", UserController, :delete_watchlist)
       post("/watchlist", UserController, :create_watchlist)

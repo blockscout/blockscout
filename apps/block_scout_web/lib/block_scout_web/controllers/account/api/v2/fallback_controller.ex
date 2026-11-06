@@ -54,6 +54,13 @@ defmodule BlockScoutWeb.Account.API.V2.FallbackController do
     |> render(:message, %{message: message})
   end
 
+  def call(conn, {:invalid_settings, message}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(UserView)
+    |> render(:message, %{message: message})
+  end
+
   def call(conn, {:watchlist_delete, false}) do
     conn
     |> put_status(:not_found)
