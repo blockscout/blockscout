@@ -488,6 +488,14 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
       assert Rules.normalize_asset_name("ＵＳＤＴ") == "usdt"
     end
 
+    test "folds homoglyphs onto the Latin letters they imitate" do
+      # Cyrillic Ѕ and Т in place of S and T, Cyrillic е in place of e
+      assert Rules.normalize_asset_name("UЅ" <> "DТ") == "usdt"
+      assert Rules.normalize_asset_name("Teth" <> "е" <> "r USD") == "tetherusd"
+      # Cherokee Ꮃ, Greek Ε, Cyrillic Т and Н
+      assert Rules.normalize_asset_name("ᎳΕ" <> "ТН") == "weth"
+    end
+
     test "ignores names shorter than two characters" do
       assert Rules.normalize_asset_name("$") == nil
       assert Rules.normalize_asset_name("a") == nil

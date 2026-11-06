@@ -15,7 +15,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
   | `dust_from_counterparty` | 1 | the counterparty sent a positive amount below the dust threshold of the token |
   | `scam_flag` | 3 | the token contract, the counterparty or the transaction sender carries a scam badge |
   | `lookalike_recipient` | 5 | the counterparty is unseen and resembles a previous recipient of the victim |
-  | `name_imitation` | 2 (+1 unverified) | the token imitates the name or symbol of a known asset from another contract |
+  | `name_imitation` | 2 (+1 unverified) | the token imitates the name or symbol of a known asset from another contract, homoglyphs included |
 
   `zero_amount`, `hidden_amount` and `sender_mismatch` carry no weight: they
   are the candidate trigger that decides whether the costly
@@ -32,7 +32,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
   """
 
   alias Explorer.Chain.{Hash, Token, TokenTransfer}
-  alias Explorer.Chain.TokenTransfer.PoisoningAttack.{Config, Context, Result}
+  alias Explorer.Chain.TokenTransfer.PoisoningAttack.{Config, Confusables, Context, Result}
 
   @weights %{
     zero_amount: 0,
@@ -202,12 +202,16 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
 
   @doc """
   The form in which asset names and symbols are compared: Unicode compatibility
-  normalized, lowercased, with format characters and everything that is not a
-  letter or a digit dropped. Names shorter than two characters are ignored.
+  normalized, lowercased, letters of other scripts that resemble Latin ones
+  folded onto them (see `Explorer.Chain.TokenTransfer.PoisoningAttack.Confusables`),
+  with format characters and everything that is not a letter or a digit
+  dropped. Names shorter than two characters are ignored.
 
       iex> normalize_asset_name("Tether USD")
       "tetherusd"
       iex> normalize_asset_name("ＵＳＤＴ")
+      "usdt"
+      iex> normalize_asset_name("U\\u0405D\\u0422")
       "usdt"
       iex> normalize_asset_name("$")
       nil
@@ -220,6 +224,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
       name
       |> String.normalize(:nfkc)
       |> String.downcase()
+      |> Confusables.skeleton()
       |> String.replace(~r/[^\p{L}\p{N}]/u, "")
 
     if String.length(normalized) >= 2, do: normalized, else: nil
