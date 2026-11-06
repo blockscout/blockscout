@@ -1267,7 +1267,8 @@ defmodule BlockScoutWeb.Chain do
     When internal transactions are present in the database (for recent blocks
     within the storage period), they are fetched from the DB. For older blocks
     where zero-value internal transactions have been deleted, the function
-    falls back to fetching on-demand from the JSON-RPC node.
+    falls back to fetching on-demand from the JSON-RPC node. When the internal
+    transactions storage is disabled, they are always fetched on-demand.
 
     ## Parameters
     - `options`: Keyword list with optional keys:
@@ -1310,6 +1311,9 @@ defmodule BlockScoutWeb.Chain do
             []
         end
 
+      InternalTransaction.storage_disabled?() ->
+        InternalTransactionOnDemand.fetch_latest(options_with_necessity)
+
       match?(%PagingOptions{key: {_, _, _}}, paging_options) and
         include_zero_value? and
           not InternalTransaction.present_in_db?(elem(paging_options.key, 0)) ->
@@ -1319,7 +1323,7 @@ defmodule BlockScoutWeb.Chain do
         from_db = InternalTransaction.fetch(options_with_necessity)
 
         from_node =
-          if include_zero_value? and InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size) do
+          if InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size, include_zero_value?) do
             InternalTransactionOnDemand.fetch_latest(options_with_necessity)
           else
             []
@@ -1337,14 +1341,16 @@ defmodule BlockScoutWeb.Chain do
 
     When internal transactions are present in the database (for recent blocks
     within the storage period), they are fetched from the DB. For older blocks
-    where zero-value internal transactions have been deleted, the function
-    falls back to fetching on-demand from the JSON-RPC node.
+    where zero-value internal transactions have been deleted, or when the internal
+    transactions storage is disabled, the function falls back to fetching on-demand
+    from the JSON-RPC node.
 
     ## Parameters
     - `transaction`: The transaction struct to fetch internal transactions for
     - `options`: Keyword list with optional keys:
       - `:necessity_by_association` - associations to preload as required or optional
       - `:paging_options` - pagination options including page_size and key
+      - `:include_zero_value` - whether to include zero-value calls (default: true)
 
     ## Returns
     - List of InternalTransaction structs for the given transaction
@@ -1353,7 +1359,7 @@ defmodule BlockScoutWeb.Chain do
   def transaction_to_internal_transactions(transaction, options \\ []) do
     include_zero_value? = Keyword.get(options, :include_zero_value, true)
 
-    if InternalTransaction.present_in_db?(transaction.block_number) or not include_zero_value? do
+    if InternalTransaction.present_in_db?(transaction.block_number, include_zero_value?) do
       InternalTransaction.transaction_to_internal_transactions(transaction.hash, options)
     else
       InternalTransactionOnDemand.fetch_by_transaction(transaction, options)
@@ -1365,8 +1371,9 @@ defmodule BlockScoutWeb.Chain do
 
     When internal transactions are present in the database (for recent blocks
     within the storage period), they are fetched from the DB. For older blocks
-    where zero-value internal transactions have been deleted, the function
-    falls back to fetching on-demand from the JSON-RPC node.
+    where zero-value internal transactions have been deleted, or when the internal
+    transactions storage is disabled, the function falls back to fetching on-demand
+    from the JSON-RPC node.
 
     ## Parameters
     - `block`: The block struct to fetch internal transactions for
@@ -1376,6 +1383,7 @@ defmodule BlockScoutWeb.Chain do
       - `:paging_options` - pagination options including page_size and key
       - `:type` - filter by transaction type
       - `:call_type` - filter by call type
+      - `:include_zero_value` - whether to include zero-value calls (default: true)
 
     ## Returns
     - List of InternalTransaction structs for the given block
@@ -1384,7 +1392,7 @@ defmodule BlockScoutWeb.Chain do
   def block_to_internal_transactions(block, options \\ []) do
     include_zero_value? = Keyword.get(options, :include_zero_value, true)
 
-    if InternalTransaction.present_in_db?(block.number) or not include_zero_value? do
+    if InternalTransaction.present_in_db?(block.number, include_zero_value?) do
       InternalTransaction.block_to_internal_transactions(block.number, options)
     else
       InternalTransactionOnDemand.fetch_by_block(block, options)
@@ -1404,6 +1412,7 @@ defmodule BlockScoutWeb.Chain do
       - `:paging_options` - pagination options including page_size and key
       - `:necessity_by_association` - associations to preload as required or optional
       - `:address_preloads` - addresses to preload with nested associations
+      - `:include_zero_value` - whether to include zero-value calls (default: true)
 
     ## Returns
     - List of InternalTransaction structs for the given address
@@ -1422,7 +1431,7 @@ defmodule BlockScoutWeb.Chain do
         from_db = InternalTransaction.fetch_from_db_by_address(address_hash, options)
 
         from_node =
-          if include_zero_value? and InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size) do
+          if InternalTransactionOnDemand.should_fetch?(from_db, paging_options.page_size, include_zero_value?) do
             InternalTransactionOnDemand.fetch_by_address(address_hash, options)
           else
             []
@@ -1438,8 +1447,9 @@ defmodule BlockScoutWeb.Chain do
 
     When internal transactions are present in the database (for recent blocks
     within the storage period), they are fetched from the DB. For older blocks
-    where zero-value internal transactions have been deleted, the function
-    falls back to fetching on-demand from the JSON-RPC node.
+    where zero-value internal transactions have been deleted, or when the internal
+    transactions storage is disabled, the function falls back to fetching on-demand
+    from the JSON-RPC node.
 
     ## Parameters
     - `transaction_or_address_hash_param_or_no_param`: Transaction or address hash or `:all` as a source to fetching internal transactions
@@ -1454,7 +1464,7 @@ defmodule BlockScoutWeb.Chain do
 
     case hash_to_transaction(transaction_hash) do
       {:ok, transaction} ->
-        if not options.include_zero_value or InternalTransaction.present_in_db?(transaction.block_number) do
+        if InternalTransaction.present_in_db?(transaction.block_number, options.include_zero_value) do
           Etherscan.list_internal_transactions(transaction.hash, options)
         else
           InternalTransactionOnDemand.etherscan_fetch_by_transaction(transaction, options)
@@ -1471,7 +1481,7 @@ defmodule BlockScoutWeb.Chain do
     options = Map.merge(Etherscan.default_options(), raw_options)
 
     from_node =
-      if options.include_zero_value and InternalTransactionOnDemand.should_fetch?(from_db, options.page_size) do
+      if InternalTransactionOnDemand.should_fetch?(from_db, options.page_size, options.include_zero_value) do
         InternalTransactionOnDemand.etherscan_fetch_by_address(address_hash, options)
       else
         []
@@ -1484,6 +1494,9 @@ defmodule BlockScoutWeb.Chain do
     options = Map.merge(Etherscan.default_options(), raw_options)
 
     cond do
+      InternalTransaction.storage_disabled?() ->
+        InternalTransactionOnDemand.etherscan_fetch_latest(options)
+
       not options.include_zero_value ->
         Etherscan.list_internal_transactions(:all, options)
 

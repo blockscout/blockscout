@@ -745,29 +745,55 @@ defmodule Explorer.Chain.InternalTransaction do
   end
 
   @doc """
-    Determines whether internal transactions for the given block number are present in the database.
+  Returns `true` if the internal transactions storage is disabled with `INDEXER_DISABLE_INTERNAL_TRANSACTIONS_STORAGE`.
 
-    When the DeleteZeroValueInternalTransactions migration is enabled, internal
-    transactions for blocks older than the border_number may have been removed
-    from the database. This function returns false for those old blocks,
-    indicating that the data must be fetched on-demand from RPC instead.
+  Traces are still fetched and processed in this mode: they update the transactions (status, error, created
+  contract), the created contracts' code, the coin balances to fetch and the self-destructed contracts. Only the
+  internal transactions creating contracts are stored, since they are the source of the creator and of the
+  creation bytecode of contracts deployed by other contracts. The rest is fetched on demand from the node (see
+  `present_in_db?/2`), and `Explorer.Utility.InternalTransactionsAddressPlaceholder` keeps the blocks to trace
+  for an address.
+  """
+  @spec storage_disabled?() :: boolean()
+  def storage_disabled? do
+    Application.get_env(:explorer, __MODULE__, [])[:storage_disabled?] == true
+  end
+
+  @doc """
+    Determines whether the requested internal transactions of the given block number are present in the database.
+
+    When the internal transactions storage is disabled (see `storage_disabled?/0`), they are not stored at all.
+    When the DeleteZeroValueInternalTransactions migration is enabled, zero-value calls of blocks older than
+    the border_number may have been removed from the database, while the rest of internal transactions is kept.
+    This function returns false in these cases, indicating that the data must be fetched on-demand from RPC instead.
 
     ## Parameters
     - `block_number`: The block number to check, or nil for pending transactions
+    - `include_zero_value?`: Whether zero-value calls are requested
 
     ## Returns
     - `true` if internal transactions are present in the database
-    - `false` if internal transactions have been deleted and must be fetched on-demand
+    - `false` if internal transactions are not stored or have been deleted and must be fetched on-demand
   """
-  @spec present_in_db?(non_neg_integer() | nil) :: boolean()
-  def present_in_db?(nil), do: true
+  @spec present_in_db?(non_neg_integer() | nil, boolean()) :: boolean()
+  def present_in_db?(block_number, include_zero_value? \\ true)
 
-  def present_in_db?(block_number) do
-    if Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled] do
-      border_number = DeleteZeroValueInternalTransactions.border_number()
-      is_nil(border_number) or border_number < block_number
-    else
-      true
+  def present_in_db?(nil, _include_zero_value?), do: true
+
+  def present_in_db?(block_number, include_zero_value?) do
+    cond do
+      storage_disabled?() ->
+        false
+
+      not include_zero_value? ->
+        true
+
+      Application.get_env(:explorer, DeleteZeroValueInternalTransactions)[:enabled] ->
+        border_number = DeleteZeroValueInternalTransactions.border_number()
+        is_nil(border_number) or border_number < block_number
+
+      true ->
+        true
     end
   end
 
