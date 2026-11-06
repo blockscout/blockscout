@@ -296,15 +296,18 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
     {:ok, updated_state}
   end
 
-  # Executes or returns a task back to the queue based on its timeout and failure threshold.
+  # Executes a task whose scheduled time has arrived.
   #
   # The function evaluates three conditions in sequence:
   # 1. Whether the task's timeout has elapsed (current time >= timeout)
   # 2. Whether the task hasn't exceeded the failure threshold or is an initial task (timeout == 0)
   #
   # If all conditions are met, executes the appropriate task runner. Otherwise:
-  # - If timeout hasn't elapsed: Returns the task to the queue with the same timeout
-  # - If failure threshold exceeded: Applies a 10-minute cooldown and reschedules
+  # - If timeout hasn't elapsed: sleeps until that time, then queues the same task
+  # - If failure threshold exceeded: sleeps for the 10-minute cooldown, then queues the task
+  #
+  # A future task must not be returned with `{:retry, ...}`. BufferedTask runs a
+  # retried entry again immediately, which keeps this process busy until the timeout.
   #
   # ## Parameters
   # - `timeout`: Unix timestamp in milliseconds when the task should execute
@@ -312,8 +315,7 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
   # - `state`: Current state containing configuration and intervals
   #
   # ## Returns
-  # - `{:ok, state}` on successful execution
-  # - `{:retry, [{timeout, task_tag}], state}` when task needs to be rescheduled
+  # - `{:ok, state}` when the runner finishes, or when the task was deferred
   def run([{timeout, task_tag}], state) do
     now = DateTime.to_unix(DateTime.utc_now(), :millisecond)
 
@@ -323,24 +325,30 @@ defmodule Indexer.Fetcher.Arbitrum.TrackingBatchesStatuses do
       runner.(state)
     else
       {:timeout_elapsed, false} ->
-        # Task is scheduled for future execution, retry with same timeout
-        {:retry, [{timeout, task_tag}], state}
+        defer_task_until(timeout, task_tag)
+        {:ok, state}
 
       {:threshold_ok, false} ->
-        # Task has been failing too frequently, apply cooldown
         new_timeout = now + @cooldown_interval
 
         log_warning(
           "Task #{task_tag} has been failing abnormally, applying cooldown for #{div(@cooldown_interval, 1000)} seconds"
         )
 
-        {:retry, [{new_timeout, task_tag}], state}
+        defer_task_until(new_timeout, task_tag)
+        {:ok, state}
 
       {:runner_defined, nil} ->
-        # Unknown task type
         log_warning("Unknown task type: #{inspect(task_tag)}")
         {:ok, state}
     end
+  end
+
+  # Sleeps until `timeout`, then adds the task back to this fetcher's queue.
+  # The timer is not tied to the short-lived task process that called this function.
+  defp defer_task_until(timeout, task_tag) do
+    delay = max(timeout - DateTime.to_unix(DateTime.utc_now(), :millisecond), 0)
+    :timer.apply_after(delay, BufferedTask, :buffer, [__MODULE__, [{timeout, task_tag}], false])
   end
 
   defp task_runners do
