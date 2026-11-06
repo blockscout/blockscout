@@ -140,7 +140,7 @@ defmodule Indexer.Fetcher.TokenTransferPoisoningTest do
       assert attack.mimic_address_hash == mimic.hash
       assert attack.issuer_address_hash == attacker.hash
       assert attack.score == 7
-      assert "lookalike_recipient" in attack.rules
+      assert :lookalike_recipient in attack.rules
 
       # and the participants are marked
       assert Repo.get(ScamBadgeToAddress, attacker.hash)

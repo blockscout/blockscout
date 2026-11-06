@@ -75,7 +75,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.DetectorTest do
       assert [%Result{} = result] = Detector.detect([entry(token_transfer)])
 
       assert result.score == 7
-      assert result.rules == ["lookalike_recipient", "suspicious_outgoing", "zero_amount", "sender_mismatch"]
+      assert result.rules == [:lookalike_recipient, :suspicious_outgoing, :zero_amount, :sender_mismatch]
       assert result.details["lookalike_recipient"]["matched_recipient"] == @recipient
       assert result.victim == victim.hash
       assert result.mimic == mimic.hash
@@ -93,7 +93,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.DetectorTest do
 
       assert [%Result{score: 6} = result] = Detector.detect([entry(token_transfer)])
 
-      assert result.rules == ["lookalike_recipient", "dust_from_counterparty"]
+      assert result.rules == [:lookalike_recipient, :dust_from_counterparty]
       assert result.victim == victim.hash
       assert result.mimic == mimic.hash
       assert result.issuer == mimic.hash
@@ -113,7 +113,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.DetectorTest do
 
       assert result.victim == victim.hash
       assert result.mimic == mimic.hash
-      assert "lookalike_recipient" in result.rules
+      assert :lookalike_recipient in result.rules
     end
 
     test "scores a legitimate transfer zero without the look-alike lookup" do
@@ -139,7 +139,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.DetectorTest do
 
       assert [%Result{score: 5} = result] = Detector.detect([entry(token_transfer)])
 
-      assert result.rules == ["scam_flag", "suspicious_outgoing", "zero_amount", "sender_mismatch"]
+      assert result.rules == [:scam_flag, :suspicious_outgoing, :zero_amount, :sender_mismatch]
       assert result.details["scam_flag"] == %{"participants" => ["issuer"]}
     end
 
@@ -164,7 +164,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.DetectorTest do
 
       assert [%Result{} = result] = Detector.detect([entry(token_transfer)])
 
-      assert "name_imitation" in result.rules
+      assert :name_imitation in result.rules
       assert result.details["name_imitation"]["accepted_contracts"] == [to_string(accepted)]
       assert result.details["name_imitation"]["unverified"] == true
       # suspicious outgoing (2) + imitation (2) + unverified (1)
@@ -182,7 +182,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.DetectorTest do
 
       assert [%Result{score: 0} = result] = Detector.detect([entry(token_transfer)])
 
-      assert result.suppressed == ["sender_mismatch", "suspicious_outgoing"]
+      assert result.suppressed == [:sender_mismatch, :suspicious_outgoing]
     end
 
     test "counts the fan-out handed in with the entry" do
@@ -195,7 +195,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.DetectorTest do
       token_transfer = transfer(attacker, attacker_contract, victim, stranger, Decimal.new(0), token)
 
       assert [%Result{score: 3} = result] = Detector.detect([entry(token_transfer, 25)])
-      assert "initiator_fanout" in result.rules
+      assert :initiator_fanout in result.rules
     end
 
     test "leaves out mints, burns and non-fungible transfers" do

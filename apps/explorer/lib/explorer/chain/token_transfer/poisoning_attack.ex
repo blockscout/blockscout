@@ -27,8 +27,10 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
   hashes and resolves the ids, and the queries built on `with_address_hashes/1`
   join the mapping back so that readers never see an id.
 
-  `rules` lists the names of the rules that fired and `details` carries what
-  each of them matched, so the API can explain the verdict.
+  `rules` lists the names of the rules that fired — an array of the
+  `token_transfer_poisoning_rule` database enum, one byte per entry rather
+  than the name itself — and `details` carries what each of them matched, so
+  the API can explain the verdict.
 
   Rows are keyed by the block hash and log index of the transfer and are never
   deleted on a reorg: a transfer of a block that lost consensus is not listed
@@ -40,6 +42,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
 
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Hash, TokenTransfer, Transaction}
+  alias Explorer.Chain.TokenTransfer.PoisoningAttack.Rules
   alias Explorer.Utility.AddressIdToAddressHash
 
   # `{hash field, id field}` of every participant: the hashes come in, the ids
@@ -61,7 +64,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack do
     field(:transaction_hash, Hash.Full, null: true)
     field(:block_number, :integer, null: false) :: Block.block_number()
     field(:score, :integer, null: false)
-    field(:rules, {:array, :string}, null: false)
+    field(:rules, {:array, Ecto.Enum}, values: Rules.names(), null: false)
     field(:details, :map, null: false, default: %{})
 
     field(:token_contract_address_hash, Hash.Address, virtual: true)

@@ -41,6 +41,28 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
     name_imitation: 2
   }
 
+  # The order is the one of the `token_transfer_poisoning_rule` database enum;
+  # append new rules at the end and add them to the enum in a migration
+  @names ~w(zero_amount sender_mismatch suspicious_outgoing initiator_fanout dust_from_counterparty scam_flag lookalike_recipient name_imitation)a
+
+  @typedoc "The name of a rule, as stored and exposed by the API."
+  @type name ::
+          :zero_amount
+          | :sender_mismatch
+          | :suspicious_outgoing
+          | :initiator_fanout
+          | :dust_from_counterparty
+          | :scam_flag
+          | :lookalike_recipient
+          | :name_imitation
+
+  @doc """
+  The names of all rules, the values of the `rules` column of
+  `Explorer.Chain.TokenTransfer.PoisoningAttack`.
+  """
+  @spec names() :: [name()]
+  def names, do: @names
+
   @explained_by_attribution [:sender_mismatch, :suspicious_outgoing, :initiator_fanout]
 
   @typedoc "A rule that fired: its name, its weight and what it matched."
@@ -97,7 +119,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
       victim: context.victim,
       mimic: context.counterparty,
       issuer: context.issuer,
-      suppressed: [Atom.to_string(type)]
+      suppressed: [type]
     }
   end
 
@@ -127,9 +149,9 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Rules do
     %Result{
       token_transfer: context.token_transfer,
       score: Enum.reduce(fired, 0, fn {_rule, weight, _details}, acc -> acc + weight end),
-      rules: Enum.map(fired, fn {rule, _weight, _details} -> Atom.to_string(rule) end),
+      rules: Enum.map(fired, fn {rule, _weight, _details} -> rule end),
       details: Map.new(fired, fn {rule, _weight, details} -> {Atom.to_string(rule), details} end),
-      suppressed: Enum.map(suppressed, fn {rule, _weight, _details} -> Atom.to_string(rule) end),
+      suppressed: Enum.map(suppressed, fn {rule, _weight, _details} -> rule end),
       victim: context.victim,
       mimic: context.counterparty,
       issuer: context.issuer

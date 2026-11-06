@@ -1908,7 +1908,7 @@ defmodule Explorer.Factory do
       issuer_address_hash: issuer_address_hash,
       issuer_address_id: address_id(issuer_address_hash),
       score: 7,
-      rules: ["suspicious_outgoing", "lookalike_recipient"],
+      rules: [:suspicious_outgoing, :lookalike_recipient],
       details: %{"lookalike_recipient" => %{"matched_recipient" => to_string(address_hash())}}
     }
 

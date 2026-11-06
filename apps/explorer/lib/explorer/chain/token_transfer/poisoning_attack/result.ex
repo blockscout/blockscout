@@ -6,14 +6,15 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Result do
   """
 
   alias Explorer.Chain.{Hash, TokenTransfer}
-  alias Explorer.Chain.TokenTransfer.PoisoningAttack.Config
+  alias Explorer.Chain.TokenTransfer.PoisoningAttack.{Config, Rules}
 
   @typedoc """
   * `score` — sum of the weights of the rules that fired.
   * `rules` — names of the rules that fired, heaviest first.
-  * `details` — what each rule matched, keyed by rule name.
+  * `details` — what each rule matched, keyed by the rule name as a string
+    (it is stored as JSON).
   * `suppressed` — names of the rules that would have fired but were explained
-    away by an attributed flow or a mint / burn.
+    away by an attributed flow, or the kind of mint / burn that was not scored.
   * `victim`, `mimic`, `issuer` — the participants of the attack as seen from
     this verdict; `mimic` is the counterparty whether or not the verdict is
     positive.
@@ -21,9 +22,9 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Result do
   @type t :: %__MODULE__{
           token_transfer: TokenTransfer.t() | nil,
           score: non_neg_integer(),
-          rules: [String.t()],
+          rules: [Rules.name()],
           details: %{String.t() => map()},
-          suppressed: [String.t()],
+          suppressed: [atom()],
           victim: Hash.Address.t() | nil,
           mimic: Hash.Address.t() | nil,
           issuer: Hash.Address.t() | nil

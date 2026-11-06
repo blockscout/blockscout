@@ -24,7 +24,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttackTest do
         mimic_address_hash: token_transfer.to_address_hash,
         issuer_address_hash: address_hash(),
         score: 7,
-        rules: ["suspicious_outgoing", "lookalike_recipient"],
+        rules: [:suspicious_outgoing, :lookalike_recipient],
         details: %{"lookalike_recipient" => %{"prefix" => "ab12"}}
       },
       overrides
@@ -53,7 +53,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttackTest do
       assert attack.mimic_address_hash == token_transfer.to_address_hash
       assert attack.issuer_address_hash == params.issuer_address_hash
       assert attack.score == 7
-      assert attack.rules == ["suspicious_outgoing", "lookalike_recipient"]
+      assert attack.rules == [:suspicious_outgoing, :lookalike_recipient]
       assert attack.details == %{"lookalike_recipient" => %{"prefix" => "ab12"}}
       assert attack.inserted_at
       assert attack.updated_at
@@ -100,9 +100,9 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttackTest do
       assert {1, nil} = PoisoningAttack.insert_all([attack_params(token_transfer)])
 
       assert {1, nil} =
-               PoisoningAttack.insert_all([attack_params(token_transfer, %{score: 9, rules: ["scam_flag"]})])
+               PoisoningAttack.insert_all([attack_params(token_transfer, %{score: 9, rules: [:scam_flag]})])
 
-      assert [%PoisoningAttack{score: 9, rules: ["scam_flag"]}] = Repo.all(PoisoningAttack)
+      assert [%PoisoningAttack{score: 9, rules: [:scam_flag]}] = Repo.all(PoisoningAttack)
     end
   end
 

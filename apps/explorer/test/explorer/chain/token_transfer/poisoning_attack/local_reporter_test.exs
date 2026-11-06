@@ -15,7 +15,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.LocalReporterTest do
   defp result(victim, mimic, issuer) do
     %Result{
       score: 7,
-      rules: ["lookalike_recipient", "suspicious_outgoing"],
+      rules: [:lookalike_recipient, :suspicious_outgoing],
       victim: victim,
       mimic: mimic,
       issuer: issuer

@@ -7,18 +7,10 @@ defmodule BlockScoutWeb.Schemas.API.V2.TokenTransfer.PoisoningAttack do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.General
+  alias Explorer.Chain.TokenTransfer.PoisoningAttack.Rules
   alias OpenApiSpex.Schema
 
-  @rules [
-    "zero_amount",
-    "sender_mismatch",
-    "suspicious_outgoing",
-    "initiator_fanout",
-    "dust_from_counterparty",
-    "scam_flag",
-    "lookalike_recipient",
-    "name_imitation"
-  ]
+  @rules Enum.map(Rules.names(), &Atom.to_string/1)
 
   OpenApiSpex.schema(%{
     title: "TokenTransferPoisoningAttack",

@@ -174,7 +174,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
       result = Rules.evaluate(fake_outgoing(), config())
 
       assert result.score == 7
-      assert rule_names(result) == ["lookalike_recipient", "suspicious_outgoing", "zero_amount", "sender_mismatch"]
+      assert rule_names(result) == [:lookalike_recipient, :suspicious_outgoing, :zero_amount, :sender_mismatch]
       assert result.details["lookalike_recipient"]["matched_recipient"] == @recipient
       assert result.details["lookalike_recipient"]["prefix"] == "ab12"
       assert result.details["lookalike_recipient"]["suffix"] == "cd34"
@@ -189,14 +189,14 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
 
       result = Rules.evaluate(context, config())
 
-      refute "suspicious_outgoing" in rule_names(result)
+      refute :suspicious_outgoing in rule_names(result)
       assert result.score == 0
     end
 
     test "nothing fires without an issuer except the look-alike" do
       result = Rules.evaluate(fake_outgoing(issuer: nil, transaction_to: nil), config())
 
-      assert rule_names(result) == ["lookalike_recipient", "zero_amount"]
+      assert rule_names(result) == [:lookalike_recipient, :zero_amount]
       assert result.score == 5
       assert result.issuer == nil
     end
@@ -207,7 +207,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
       result = Rules.evaluate(dust_incoming(), config())
 
       assert result.score == 6
-      assert rule_names(result) == ["lookalike_recipient", "dust_from_counterparty"]
+      assert rule_names(result) == [:lookalike_recipient, :dust_from_counterparty]
       assert result.details["dust_from_counterparty"] == %{"amount" => "5", "threshold" => "10000000000000000"}
     end
 
@@ -216,21 +216,21 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
 
       result = Rules.evaluate(dust_incoming(), config)
 
-      refute "dust_from_counterparty" in rule_names(result)
+      refute :dust_from_counterparty in rule_names(result)
     end
 
     test "skips the default threshold when the decimals are unknown" do
       result = Rules.evaluate(dust_incoming(token: token(decimals: nil)), config())
 
-      refute "dust_from_counterparty" in rule_names(result)
+      refute :dust_from_counterparty in rule_names(result)
     end
 
     test "a zero amount is not dust" do
       token_transfer = transfer(@mimic, @victim, 0)
       result = Rules.evaluate(dust_incoming(token_transfer: token_transfer, amount: token_transfer.amount), config())
 
-      refute "dust_from_counterparty" in rule_names(result)
-      assert "zero_amount" in rule_names(result)
+      refute :dust_from_counterparty in rule_names(result)
+      assert :zero_amount in rule_names(result)
     end
 
     test "dust sent to the counterparty does not count" do
@@ -242,7 +242,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
           config()
         )
 
-      refute "dust_from_counterparty" in rule_names(result)
+      refute :dust_from_counterparty in rule_names(result)
     end
   end
 
@@ -250,24 +250,24 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
     test "does not fire for a counterparty already among the recipients" do
       context = fake_outgoing(recipients: MapSet.new([hash(@mimic), hash(@recipient)]))
 
-      refute "lookalike_recipient" in rule_names(Rules.evaluate(context, config()))
+      refute :lookalike_recipient in rule_names(Rules.evaluate(context, config()))
     end
 
     test "does not fire when the recipients are not loaded" do
-      refute "lookalike_recipient" in rule_names(Rules.evaluate(fake_outgoing(recipients: nil), config()))
+      refute :lookalike_recipient in rule_names(Rules.evaluate(fake_outgoing(recipients: nil), config()))
     end
 
     test "does not fire when no recipient resembles the counterparty" do
       context = fake_outgoing(recipients: MapSet.new([hash(@stranger)]))
 
-      refute "lookalike_recipient" in rule_names(Rules.evaluate(context, config()))
+      refute :lookalike_recipient in rule_names(Rules.evaluate(context, config()))
     end
 
     test "respects the configured prefix and suffix lengths" do
       # @recipient and @mimic share 4 leading and 4 trailing chars only
-      refute "lookalike_recipient" in rule_names(Rules.evaluate(fake_outgoing(), config(prefix_length: 5)))
-      refute "lookalike_recipient" in rule_names(Rules.evaluate(fake_outgoing(), config(suffix_length: 5)))
-      assert "lookalike_recipient" in rule_names(Rules.evaluate(fake_outgoing(), config(prefix_length: 2)))
+      refute :lookalike_recipient in rule_names(Rules.evaluate(fake_outgoing(), config(prefix_length: 5)))
+      refute :lookalike_recipient in rule_names(Rules.evaluate(fake_outgoing(), config(suffix_length: 5)))
+      assert :lookalike_recipient in rule_names(Rules.evaluate(fake_outgoing(), config(prefix_length: 2)))
     end
   end
 
@@ -277,7 +277,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
 
       result = Rules.evaluate(context, config())
 
-      assert "scam_flag" in rule_names(result)
+      assert :scam_flag in rule_names(result)
       assert result.details["scam_flag"] == %{"participants" => ["token_contract", "issuer"]}
       # scam flag plus the suspicious outgoing transfer
       assert result.score == 5
@@ -286,7 +286,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
     test "the victim's own flag does not count" do
       context = fake_outgoing(scam_hashes: MapSet.new([hash(@victim)]), recipients: nil)
 
-      refute "scam_flag" in rule_names(Rules.evaluate(context, config()))
+      refute :scam_flag in rule_names(Rules.evaluate(context, config()))
     end
 
     test "flags the counterparty" do
@@ -311,7 +311,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
 
       result = Rules.evaluate(context, config())
 
-      assert "name_imitation" in rule_names(result)
+      assert :name_imitation in rule_names(result)
       assert result.score == 5
 
       assert result.details["name_imitation"] == %{
@@ -354,11 +354,11 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
           recipients: nil
         )
 
-      refute "name_imitation" in rule_names(Rules.evaluate(context, config()))
+      refute :name_imitation in rule_names(Rules.evaluate(context, config()))
     end
 
     test "does not fire when the token is not cataloged", %{known_assets: known_assets} do
-      refute "name_imitation" in rule_names(
+      refute :name_imitation in rule_names(
                Rules.evaluate(fake_outgoing(token: nil, known_assets: known_assets), config())
              )
     end
@@ -368,12 +368,12 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
     test "fires at the threshold" do
       result = Rules.evaluate(fake_outgoing(fanout: 10, recipients: nil), config())
 
-      assert "initiator_fanout" in rule_names(result)
+      assert :initiator_fanout in rule_names(result)
       assert result.details["initiator_fanout"] == %{"distinct_participants" => 10}
     end
 
     test "does not fire below the threshold" do
-      refute "initiator_fanout" in rule_names(Rules.evaluate(fake_outgoing(fanout: 9, recipients: nil), config()))
+      refute :initiator_fanout in rule_names(Rules.evaluate(fake_outgoing(fanout: 9, recipients: nil), config()))
     end
   end
 
@@ -383,7 +383,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
 
       assert result.score == 0
       assert result.rules == []
-      assert result.suppressed == ["token_minting"]
+      assert result.suppressed == [:token_minting]
     end
 
     test "an attributed flow suppresses the sender signals but keeps the others" do
@@ -396,15 +396,15 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RulesTest do
 
       result = Rules.evaluate(context, config())
 
-      assert result.suppressed == ["sender_mismatch", "suspicious_outgoing", "initiator_fanout"]
-      assert rule_names(result) == ["lookalike_recipient", "scam_flag", "zero_amount"]
+      assert result.suppressed == [:sender_mismatch, :suspicious_outgoing, :initiator_fanout]
+      assert rule_names(result) == [:lookalike_recipient, :scam_flag, :zero_amount]
       assert result.score == 8
     end
 
     test "an address from the ignored list suppresses the sender signals" do
       result = Rules.evaluate(fake_outgoing(), config(ignored_addresses: [hash(@attacker)]))
 
-      assert "suspicious_outgoing" in result.suppressed
+      assert :suspicious_outgoing in result.suppressed
       assert result.score == 5
     end
 
