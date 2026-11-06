@@ -40,16 +40,11 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Result do
             issuer: nil
 
   @doc """
-  Whether the verdict identifies the transfer as a poisoning attack.
+  Whether the verdict identifies the transfer as a poisoning attack, which is
+  also what decides whether it is recorded.
   """
   @spec attack?(t(), Config.t()) :: boolean()
   def attack?(%__MODULE__{score: score}, %Config{score_threshold: threshold}), do: score >= threshold
-
-  @doc """
-  Whether the verdict is worth persisting.
-  """
-  @spec storable?(t(), Config.t()) :: boolean()
-  def storable?(%__MODULE__{score: score}, %Config{store_min_score: min_score}), do: score >= min_score
 
   @doc """
   The row of `Explorer.Chain.TokenTransfer.PoisoningAttack` this verdict

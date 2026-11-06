@@ -1122,7 +1122,6 @@ config :explorer, Explorer.Chain.Cache.KnownAssets,
 
 config :explorer, Explorer.Chain.TokenTransfer.PoisoningAttack,
   score_threshold: ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_POISONING_SCORE_THRESHOLD", 5, min: 1),
-  store_min_score: ConfigHelper.parse_integer_or_nil_env_var("TOKEN_TRANSFER_POISONING_STORE_MIN_SCORE"),
   prefix_length: ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_POISONING_PREFIX_LENGTH", 4, min: 0),
   suffix_length: ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_POISONING_SUFFIX_LENGTH", 4, min: 0),
   recipients_limit: ConfigHelper.parse_integer_env_var("TOKEN_TRANSFER_POISONING_RECIPIENTS_LIMIT", 200, min: 1),

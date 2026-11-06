@@ -17,9 +17,8 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Config do
   @default_token_types ["ERC-20", "ERC-8056", "ERC-7984"]
 
   @typedoc """
-  * `score_threshold` — score from which a transfer counts as an attack.
-  * `store_min_score` — score from which a verdict is persisted; defaults to
-    `score_threshold`.
+  * `score_threshold` — score from which a transfer counts as an attack and
+    is recorded.
   * `prefix_length` / `suffix_length` — number of leading / trailing hex
     characters two addresses must share to count as look-alikes.
   * `recipients_limit` — how many of the victim's latest token transfers and
@@ -46,7 +45,6 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Config do
   """
   @type t :: %__MODULE__{
           score_threshold: pos_integer(),
-          store_min_score: pos_integer(),
           prefix_length: non_neg_integer(),
           suffix_length: non_neg_integer(),
           recipients_limit: pos_integer(),
@@ -64,7 +62,6 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Config do
         }
 
   defstruct score_threshold: 5,
-            store_min_score: 5,
             prefix_length: 4,
             suffix_length: 4,
             recipients_limit: 200,
@@ -92,7 +89,6 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Config do
 
     %__MODULE__{
       score_threshold: score_threshold,
-      store_min_score: integer(env[:store_min_score], score_threshold),
       prefix_length: integer(env[:prefix_length], 4),
       suffix_length: integer(env[:suffix_length], 4),
       recipients_limit: integer(env[:recipients_limit], 200),

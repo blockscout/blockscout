@@ -144,7 +144,7 @@ defmodule Indexer.Fetcher.TokenTransferPoisoning do
     attacks =
       entries
       |> Detector.detect()
-      |> Enum.filter(&Result.storable?(&1, config))
+      |> Enum.filter(&Result.attack?(&1, config))
 
     {count, _} = attacks |> Enum.map(&Result.to_attack_params/1) |> PoisoningAttack.insert_all()
 
