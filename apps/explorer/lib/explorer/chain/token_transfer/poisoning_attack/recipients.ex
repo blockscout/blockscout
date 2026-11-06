@@ -12,18 +12,32 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Recipients do
   detector the mimic as a known recipient. Zero-value transfers are skipped
   for the same reason.
 
+  Those two filters are what makes a poisoned victim expensive: its latest
+  transfers are mostly the attacker's, and filtering them out before counting
+  towards the limit would walk its history far beyond it. So the transfer
+  lookup reads a fixed window of the victim's latest transfers off the
+  `(from_address_hash, block_number)` index first — `@scan_multiplier` times
+  the limit — and only then drops the ones it did not initiate. A victim
+  whose whole window is attacks ends up with the recipients of its signed
+  transactions alone, which is where the copied addresses mostly come from
+  anyway.
+
   Victims are usually poisoned repeatedly, so the set is cached per victim for
   `recipients_cache_ttl`; the block bound of a cache hit is the one of the
   first lookup, a staleness worth at most the TTL.
   """
 
-  import Ecto.Query, only: [from: 2]
+  import Ecto.Query, only: [from: 2, subquery: 1]
 
   alias Explorer.Chain
   alias Explorer.Chain.{Hash, TokenTransfer, Transaction}
   alias Explorer.Chain.TokenTransfer.PoisoningAttack.Config
 
   @cache_name :token_transfer_poisoning_recipients
+
+  # How many of the victim's latest sent transfers are read before the ones it
+  # did not initiate are dropped: the bound of the index scan
+  @scan_multiplier 5
 
   @spec cache_name() :: atom()
   def cache_name, do: @cache_name
@@ -67,10 +81,27 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Recipients do
   @doc false
   @spec token_transfer_recipients_query(Hash.Address.t(), non_neg_integer(), pos_integer()) :: Ecto.Query.t()
   def token_transfer_recipients_query(victim, before_block, limit) do
-    from(token_transfer in TokenTransfer,
-      join: transaction in assoc(token_transfer, :transaction),
-      where: token_transfer.from_address_hash == ^victim,
-      where: token_transfer.block_number < ^before_block,
+    # The inner query is bounded by the `(from_address_hash, block_number)`
+    # index alone; its LIMIT keeps the planner from pushing the other filters
+    # into the scan
+    latest_sent =
+      from(token_transfer in TokenTransfer,
+        where: token_transfer.from_address_hash == ^victim,
+        where: token_transfer.block_number < ^before_block,
+        order_by: [desc: token_transfer.block_number],
+        limit: ^(limit * @scan_multiplier),
+        select: %{
+          to_address_hash: token_transfer.to_address_hash,
+          transaction_hash: token_transfer.transaction_hash,
+          block_number: token_transfer.block_number,
+          block_consensus: token_transfer.block_consensus,
+          amount: token_transfer.amount
+        }
+      )
+
+    from(token_transfer in subquery(latest_sent),
+      join: transaction in Transaction,
+      on: transaction.hash == token_transfer.transaction_hash,
       where: token_transfer.block_consensus == true,
       where: transaction.from_address_hash == ^victim,
       where: is_nil(token_transfer.amount) or token_transfer.amount > 0,

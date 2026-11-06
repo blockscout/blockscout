@@ -113,6 +113,32 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.RecipientsTest do
       assert Recipients.query(victim.hash, @before_block, 200) == MapSet.new()
     end
 
+    test "reads a bounded window of sent transfers before dropping the attacks" do
+      victim = insert(:address)
+      genuine = insert(:address)
+      attacker = insert(:address)
+
+      sent_token_transfer(victim, genuine, 10)
+
+      # five poisoning transfers emitted from the victim after the genuine send:
+      # with a limit of 1 the window is five rows, which they fill
+      for block_number <- 20..24 do
+        transaction = sent_transaction(attacker, build(:address), block_number)
+
+        insert(:token_transfer,
+          from_address: victim,
+          to_address: build(:address),
+          amount: Decimal.new(0),
+          transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number
+        )
+      end
+
+      assert Recipients.query(victim.hash, @before_block, 1) == MapSet.new()
+      assert Recipients.query(victim.hash, @before_block, 2) == MapSet.new([genuine.hash])
+    end
+
     test "keeps the latest ones only when over the limit" do
       victim = insert(:address)
       oldest = insert(:address)
