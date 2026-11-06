@@ -27,7 +27,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
-  alias Explorer.Utility.{AddressIdToAddressHash, MissingBlockRange}
+  alias Explorer.Utility.{AddressIdToAddressHash, InternalTransactionsAddressPlaceholder, MissingBlockRange}
 
   import Ecto.Query
 
@@ -166,6 +166,18 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         :block_pending,
         :internal_transactions,
         :internal_transactions
+      )
+    end)
+    |> Multi.run(:internal_transactions_address_placeholders, fn repo,
+                                                                 %{
+                                                                   valid_internal_transactions:
+                                                                     valid_internal_transactions
+                                                                 } ->
+      Instrumenter.block_import_stage_runner(
+        fn -> maybe_insert_address_placeholders(repo, valid_internal_transactions, insert_options) end,
+        :block_pending,
+        :internal_transactions,
+        :internal_transactions_address_placeholders
       )
     end)
     |> Multi.run(:update_transactions, fn repo,
@@ -614,6 +626,22 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
        do: true
 
   defp contract_creation?(_internal_transaction), do: false
+
+  # With the storage disabled, the internal transactions that are not stored are fetched on demand from the node
+  # by `Indexer.Fetcher.OnDemand.InternalTransaction`. To serve an address, it traces the blocks that these
+  # placeholders point at.
+  defp maybe_insert_address_placeholders(repo, valid_internal_transactions, %{timeout: timeout}) do
+    if InternalTransaction.storage_disabled?() do
+      count =
+        valid_internal_transactions
+        |> Enum.reject(&contract_creation?/1)
+        |> then(&InternalTransactionsAddressPlaceholder.insert_for_internal_transactions(repo, &1, timeout: timeout))
+
+      {:ok, count}
+    else
+      {:ok, 0}
+    end
+  end
 
   # Makes a trace error message storable: non-printable binaries are escaped via `inspect/2`, then the
   # result is capped at `@max_error_length` code points. PostgreSQL `varchar(n)` counts code points, not

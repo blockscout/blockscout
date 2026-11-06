@@ -2761,6 +2761,49 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
     end
+
+    test "via on-demand fetcher when the internal transactions storage is disabled", %{conn: conn} do
+      original_config = Application.get_env(:explorer, Explorer.Chain.InternalTransaction)
+
+      Application.put_env(
+        :explorer,
+        Explorer.Chain.InternalTransaction,
+        Keyword.merge(original_config || [], storage_disabled?: true)
+      )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.InternalTransaction, original_config)
+      end)
+
+      transaction = :transaction |> insert() |> with_block()
+
+      mock_contract_creation_trace_fetching(transaction)
+
+      # zero-value calls are not requested by default, which doesn't affect contract creations
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "txhash" => "#{transaction.hash}"
+      }
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert [
+               %{
+                 "contractAddress" => "0x205a6b72ce16736c9d87172568a9c0cb9304de0d",
+                 "from" => "0x117b358218da5a4f647072ddb50ded038ed63d17",
+                 "transactionHash" => transaction_hash,
+                 "type" => "create"
+               }
+             ] = response["result"]
+
+      assert transaction_hash == to_string(transaction.hash)
+      assert response["status"] == "1"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
   end
 
   describe "txlistinternal with address" do
