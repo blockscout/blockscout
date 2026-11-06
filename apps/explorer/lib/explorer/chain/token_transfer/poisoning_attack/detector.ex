@@ -10,7 +10,9 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Detector do
 
   A transfer is scored once per victim it may have, and the verdict kept is
   the one with the highest score; on a tie the transfer sender is taken as
-  the victim, the way a fake outgoing transfer reads.
+  the victim, the way a fake outgoing transfer reads. Once a verdict matched
+  a look-alike the other side is not scored at all: the mimic is identified,
+  and the other side's lookup would be for the mimic's own history.
   """
 
   alias Explorer.Chain
@@ -114,12 +116,21 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.Detector do
 
     token_transfer
     |> Rules.orientations(entry.issuer)
-    |> Enum.map(fn {victim, counterparty} ->
-      base
-      |> Map.merge(%{victim: victim, counterparty: counterparty})
-      |> with_recipients(config, options)
-      |> Rules.evaluate(config)
+    |> Enum.reduce_while([], fn {victim, counterparty}, verdicts ->
+      verdict =
+        base
+        |> Map.merge(%{victim: victim, counterparty: counterparty})
+        |> with_recipients(config, options)
+        |> Rules.evaluate(config)
+
+      if :lookalike_recipient in verdict.rules do
+        {:halt, [verdict]}
+      else
+        {:cont, [verdict | verdicts]}
+      end
     end)
+    # back in orientation order, so that a tie goes to the transfer sender
+    |> Enum.reverse()
     |> Enum.max_by(& &1.score, fn -> nil end)
   end
 

@@ -7,7 +7,7 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.DetectorTest do
   alias Explorer.Chain.{Address, Hash, SmartContract}
   alias Explorer.Repo
   alias Explorer.Chain.TokenTransfer.PoisoningAttack
-  alias Explorer.Chain.TokenTransfer.PoisoningAttack.{Detector, Result}
+  alias Explorer.Chain.TokenTransfer.PoisoningAttack.{Detector, Recipients, Result}
 
   @recipient "0xab1200000000000000000000000000000000cd34"
   @mimic "0xab12ffffffffffffffffffffffffffffffffcd34"
@@ -111,6 +111,34 @@ defmodule Explorer.Chain.TokenTransfer.PoisoningAttack.DetectorTest do
       assert result.rules == [:lookalike_recipient, :hidden_amount]
       assert result.victim == victim.hash
       assert result.mimic == mimic.hash
+    end
+
+    test "does not look up the other side once a look-alike matched" do
+      initial = Application.get_env(:explorer, Recipients) || []
+      Application.put_env(:explorer, Recipients, Keyword.merge(initial, enabled: true))
+      on_exit(fn -> Application.put_env(:explorer, Recipients, initial) end)
+
+      # the application starts the cache in `:all` mode; start one here only when it did not
+      case start_supervised({ConCache, name: Recipients.cache_name(), ttl_check_interval: false}) do
+        {:ok, _pid} -> :ok
+        {:error, {{:already_started, _pid}, _spec}} -> :ok
+        {:error, {:already_started, _pid}} -> :ok
+      end
+
+      victim = victim_with_history()
+      mimic = insert(:address, hash: hash(@mimic))
+      attacker = insert(:address)
+      attacker_contract = insert(:contract_address)
+      token = token()
+
+      token_transfer = transfer(attacker, attacker_contract, victim, mimic, Decimal.new(0), token)
+
+      assert [%Result{score: 7, victim: victim_hash}] = Detector.detect([entry(token_transfer)])
+      assert victim_hash == victim.hash
+
+      # the victim's recipients were loaded, the mimic's never were
+      assert %MapSet{} = ConCache.get(Recipients.cache_name(), victim.hash)
+      assert ConCache.get(Recipients.cache_name(), mimic.hash) == nil
     end
 
     test "picks the orientation with the higher score" do
