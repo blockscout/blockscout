@@ -2302,6 +2302,15 @@ defmodule Explorer.ChainTest do
     assert Chain.stream_uncataloged_token_contract_address_hashes([], &[&1 | &2]) == {:ok, [uncatalog_address]}
   end
 
+  test "stream_uncataloged_token_contract_address_hashes/2 skips tokens whose metadata refetch is scheduled in the future" do
+    insert(:token, cataloged: false, metadata_refetch_after: Timex.shift(Timex.now(), minutes: 10))
+
+    %Token{contract_address_hash: due_address} =
+      insert(:token, cataloged: false, metadata_refetch_after: Timex.shift(Timex.now(), minutes: -10))
+
+    assert Chain.stream_uncataloged_token_contract_address_hashes([], &[&1 | &2]) == {:ok, [due_address]}
+  end
+
   describe "transaction_has_token_transfers?/1" do
     test "returns true if transaction has token transfers" do
       transaction = insert(:transaction)

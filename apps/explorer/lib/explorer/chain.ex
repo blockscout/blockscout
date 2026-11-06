@@ -2606,6 +2606,11 @@ defmodule Explorer.Chain do
 
   @doc """
   Streams a lists token contract addresses that haven't been cataloged.
+
+  Tokens whose last cataloging attempt failed for a reason that is not a
+  contract failure carry a `metadata_refetch_after` timestamp and are left out
+  until it has passed, so a transport error or a lagging node does not make
+  `Indexer.Fetcher.Token` re-read the same token at full speed.
   """
   @spec stream_uncataloged_token_contract_address_hashes(
           initial :: accumulator,
@@ -2620,6 +2625,7 @@ defmodule Explorer.Chain do
         token in Token,
         where: token.cataloged == false or is_nil(token.cataloged),
         where: is_nil(token.skip_metadata) or token.skip_metadata == false,
+        where: is_nil(token.metadata_refetch_after) or token.metadata_refetch_after <= ^DateTime.utc_now(),
         select: token.contract_address_hash
       )
 

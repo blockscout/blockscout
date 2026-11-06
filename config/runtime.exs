@@ -1303,7 +1303,10 @@ disable_pending_transactions_fetcher? = ConfigHelper.parse_bool_env_var("INDEXER
 
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor, disabled?: disable_pending_transactions_fetcher?
 
-config :indexer, Indexer.Fetcher.Token, concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_CONCURRENCY", 10)
+config :indexer, Indexer.Fetcher.Token,
+  concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_CONCURRENCY", 10),
+  max_refetch_interval: ConfigHelper.parse_time_env_var("INDEXER_TOKEN_MAX_REFETCH_INTERVAL", "168h"),
+  exp_timeout_coeff: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_EXPONENTIAL_TIMEOUT_COEFF", 100)
 
 config :indexer, Indexer.Fetcher.TokenBalance.Historical,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_ARCHIVAL_TOKEN_BALANCES_BATCH_SIZE", 100),
