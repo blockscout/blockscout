@@ -1151,6 +1151,15 @@ defmodule EthereumJSONRPCSyncTest do
       refute EthereumJSONRPC.contract_failure?({:error, "(-32000) header not found"})
       refute EthereumJSONRPC.contract_failure?({:error, %{code: -32603, message: "internal error"}})
       refute EthereumJSONRPC.contract_failure?({:error, :timeout})
+      # a struct (no `Access`) must not raise
+      decode_error =
+        try do
+          JSON.decode!("<html>")
+        rescue
+          error in JSON.DecodeError -> error
+        end
+
+      refute EthereumJSONRPC.contract_failure?({:error, decode_error})
       refute EthereumJSONRPC.contract_failure?(:ok)
     end
   end

@@ -996,8 +996,9 @@ defmodule EthereumJSONRPC do
 
   def contract_failure?({:error, error}) when is_binary(error), do: contract_failure_message?(error)
 
+  # `%{}` also matches structs, which do not implement `Access`, hence `Map.get/2`.
   def contract_failure?({:error, %{} = error}) do
-    Enum.any?([error[:message], error[:data]], &(is_binary(&1) and contract_failure_message?(&1)))
+    Enum.any?([Map.get(error, :message), Map.get(error, :data)], &(is_binary(&1) and contract_failure_message?(&1)))
   end
 
   def contract_failure?(_), do: false
