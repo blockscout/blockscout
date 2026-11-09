@@ -269,6 +269,32 @@ defmodule Explorer.Chain.TransactionTest do
     end
   end
 
+  describe "by_block_number_index_query/1" do
+    test "returns the transactions of the given {block_number, index} pairs once" do
+      block = insert(:block)
+      other_block = insert(:block)
+
+      :transaction |> insert() |> with_block(block, index: 0)
+      second = :transaction |> insert() |> with_block(block, index: 1)
+      third = :transaction |> insert() |> with_block(other_block, index: 0)
+      :transaction |> insert() |> with_block(other_block, index: 1)
+
+      hashes =
+        [{block.number, 1}, {other_block.number, 0}, {block.number, 1}, {other_block.number, 5}]
+        |> Transaction.by_block_number_index_query()
+        |> Repo.all()
+        |> Enum.map(& &1.hash)
+
+      assert Enum.sort(hashes) == Enum.sort([second.hash, third.hash])
+    end
+
+    test "returns no transactions for an empty list" do
+      :transaction |> insert() |> with_block(insert(:block), index: 0)
+
+      assert [] |> Transaction.by_block_number_index_query() |> Repo.all() == []
+    end
+  end
+
   describe "last_nonce_by_address_query/1" do
     test "returns the nonce value from the last block" do
       address = insert(:address)

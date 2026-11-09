@@ -327,7 +327,7 @@ defmodule Explorer.Chain.Transaction do
   alias Ecto.Changeset
   alias EthereumJSONRPC
   alias EthereumJSONRPC.Transaction, as: EthereumJSONRPCTransaction
-  alias Explorer.{Chain, Helper, PagingOptions, QueryHelper, Repo, SortingHelper}
+  alias Explorer.{Chain, Helper, PagingOptions, Repo, SortingHelper}
 
   alias Explorer.Chain.{
     Address,
@@ -1472,13 +1472,31 @@ defmodule Explorer.Chain.Transaction do
   end
 
   @doc """
-  Builds an `Ecto.Query` to fetch transaction by {block_number, index} pairs
+  Builds an `Ecto.Query` to fetch transactions by `{block_number, index}` pairs.
+
+  The pairs are passed as two arrays and joined through `unnest`, so the query
+  text doesn't depend on the number of pairs and each pair is one index lookup.
+  A row-value `IN` list (`Explorer.QueryHelper.tuple_in/2`) becomes an `OR` with
+  a branch per pair, which PostgreSQL may check against every row it reads.
+
+  Duplicate pairs are dropped, so each transaction is returned once.
   """
   @spec by_block_number_index_query([{non_neg_integer(), non_neg_integer()}]) :: Ecto.Query.t()
   def by_block_number_index_query(block_number_index_pairs) do
+    {block_numbers, indexes} =
+      block_number_index_pairs
+      |> Enum.uniq()
+      |> Enum.unzip()
+
     from(
       t in __MODULE__,
-      where: ^QueryHelper.tuple_in([:block_number, :index], block_number_index_pairs)
+      join:
+        pair in fragment(
+          "SELECT * FROM unnest(?::integer[], ?::integer[]) AS pair(block_number, index)",
+          ^block_numbers,
+          ^indexes
+        ),
+      on: t.block_number == pair.block_number and t.index == pair.index
     )
   end
 

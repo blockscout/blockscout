@@ -1436,27 +1436,9 @@ defmodule Explorer.Chain.InternalTransaction do
     transactions =
       case existing_transactions do
         nil ->
-          {block_numbers, transaction_indexes} =
-            internal_transactions
-            |> Enum.map(&{&1.block_number, &1.transaction_index})
-            |> Enum.uniq()
-            |> Enum.unzip()
-
-          from(
-            pair in fragment(
-              """
-              SELECT *
-              FROM unnest(?::integer[], ?::integer[]) AS pair(block_number, transaction_index)
-              """,
-              type(^block_numbers, {:array, :integer}),
-              type(^transaction_indexes, {:array, :integer})
-            ),
-            join: transaction in Transaction,
-            on:
-              transaction.block_number == pair.block_number and
-                transaction.index == pair.transaction_index,
-            select: transaction
-          )
+          internal_transactions
+          |> Enum.map(&{&1.block_number, &1.transaction_index})
+          |> Transaction.by_block_number_index_query()
           |> repo.all()
 
         transactions ->

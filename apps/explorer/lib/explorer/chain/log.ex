@@ -1178,7 +1178,6 @@ defmodule Explorer.Chain.Log do
         nil ->
           logs
           |> Enum.map(&{&1.block_number, &1.transaction_index})
-          |> Enum.uniq()
           |> Transaction.by_block_number_index_query()
           |> repo.all()
           |> repo.preload(preloads)
