@@ -89,10 +89,16 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
   def update_settings(conn, _params) do
     with {:enabled, true} <- {:enabled, settings_enabled?()},
          {:auth, %{uid: uid}} <- {:auth, current_user(conn)},
-         {:ok, settings} <- Keycloak.update_user_settings(uid, conn.body_params) do
+         {:ok, diff} <- settings_diff(conn.body_params),
+         {:ok, settings} <- Keycloak.update_user_settings(uid, diff) do
       conn |> put_status(200) |> json(settings)
     end
   end
+
+  # the settings pipeline nests the whole JSON body under "_json"; body params of
+  # other content types or of an empty body are not a JSON object
+  defp settings_diff(%{"_json" => %{} = diff}), do: {:ok, diff}
+  defp settings_diff(_body_params), do: {:invalid_settings, "Request body must be a JSON object"}
 
   # settings are stored in Keycloak user attributes, so session uid must be a Keycloak user ID
   defp settings_enabled?, do: Keycloak.enabled?() and not Auth0.enabled?()

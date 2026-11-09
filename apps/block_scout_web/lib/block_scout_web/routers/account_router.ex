@@ -17,6 +17,11 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
 
   @max_query_string_length 5_000
 
+  # Fits a full sync of settings in one PATCH: 100 settings with 64-byte keys and 2048-byte values
+  # (see Explorer.ThirdPartyIntegrations.Keycloak) even if every byte is JSON-escaped as \uXXXX,
+  # plus 64 bytes per setting for quotes, separators and whitespace
+  @max_settings_body_length 100 * (6 * (64 + 2048) + 64)
+
   pipeline :account_web do
     plug(
       Plug.Parsers,
@@ -37,7 +42,7 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
     plug(BlockScoutWeb.ChecksumAddress)
   end
 
-  pipeline :account_api_v2 do
+  pipeline :account_api_v2_parsers do
     plug(
       Plug.Parsers,
       parsers: [:urlencoded, :multipart, :json],
@@ -46,7 +51,24 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
       pass: ["*/*"],
       json_decoder: JSON
     )
+  end
 
+  # Settings accept only JSON. The whole body is nested under "_json", so that the controller can
+  # tell a JSON object from other JSON values without forbidding "_json" as a setting key.
+  # Other content types pass through with unfetched body params and are rejected by the controller.
+  pipeline :account_api_v2_settings_parsers do
+    plug(
+      Plug.Parsers,
+      parsers: [:json],
+      nest_all_json: true,
+      length: @max_settings_body_length,
+      query_string_length: @max_query_string_length,
+      pass: ["*/*"],
+      json_decoder: JSON
+    )
+  end
+
+  pipeline :account_api_v2 do
     plug(BlockScoutWeb.Plug.Logger, application: :api_v2)
     plug(:accepts, ["json"])
     plug(:fetch_session)
@@ -116,8 +138,15 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
     )
   end
 
+  scope "/v2/user", as: :account_v2 do
+    pipe_through([:account_api_v2_settings_parsers, :account_api_v2])
+
+    get("/settings", UserController, :get_settings)
+    patch("/settings", UserController, :update_settings)
+  end
+
   scope "/v2", as: :account_v2 do
-    pipe_through(:account_api_v2)
+    pipe_through([:account_api_v2_parsers, :account_api_v2])
 
     get("/authenticate", AuthenticateController, :authenticate_get)
     post("/authenticate", AuthenticateController, :authenticate_post)
@@ -135,9 +164,6 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
 
     scope "/user" do
       get("/info", UserController, :info)
-
-      get("/settings", UserController, :get_settings)
-      patch("/settings", UserController, :update_settings)
 
       get("/watchlist", UserController, :watchlist)
       delete("/watchlist/:id", UserController, :delete_watchlist)
@@ -171,7 +197,7 @@ defmodule BlockScoutWeb.Routers.AccountRouter do
   end
 
   scope "/v2" do
-    pipe_through(:account_api_v2)
+    pipe_through([:account_api_v2_parsers, :account_api_v2])
 
     scope "/tags" do
       get("/address/:address_hash", TagsController, :tags_address)

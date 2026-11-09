@@ -303,22 +303,34 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
 
   defp validate_setting(key, value) do
     cond do
-      not (is_binary(key) and Regex.match?(~r/^[a-z0-9_]{1,64}$/, key)) ->
-        {:invalid_settings, "Invalid setting key #{inspect(key)}: must match ^[a-z0-9_]{1,64}$"}
+      not (is_binary(key) and Regex.match?(~r/\A[a-z0-9_]{1,64}\z/, key)) ->
+        {:invalid_settings, "Invalid setting key #{inspect(key)}: must be 1-64 characters of a-z, 0-9 and _"}
 
-      not (is_binary(value) or is_nil(value)) ->
+      is_nil(value) ->
+        :ok
+
+      not is_binary(value) ->
         {:invalid_settings, "Invalid value for setting #{key}: must be a string or null"}
 
-      # Keycloak drops attributes with empty values, so such a setting would not be persisted
-      value == "" ->
-        {:invalid_settings, "Invalid value for setting #{key}: must not be empty, use null to delete the setting"}
+      # Keycloak drops attributes with blank values, so such a setting would not be persisted
+      keycloak_blank?(value) ->
+        {:invalid_settings, "Invalid value for setting #{key}: must not be blank, use null to delete the setting"}
 
-      is_binary(value) and byte_size(value) > @max_setting_value_size ->
+      byte_size(value) > @max_setting_value_size ->
         {:invalid_settings, "Value for setting #{key} exceeds #{@max_setting_value_size} bytes"}
 
       true ->
         :ok
     end
+  end
+
+  # Mirrors Java's String.isBlank/0 (Character.isWhitespace/1), which Keycloak uses to drop attribute values.
+  # Non-blank values are stored by Keycloak as is, so they are not trimmed here either.
+  defp keycloak_blank?(value) do
+    Regex.match?(
+      ~r/\A[\x{9}-\x{D}\x{1C}-\x{20}\x{1680}\x{2000}-\x{2006}\x{2008}-\x{200A}\x{2028}\x{2029}\x{205F}\x{3000}]*\z/u,
+      value
+    )
   end
 
   defp validate_settings_count(settings) when map_size(settings) > @max_settings_count,

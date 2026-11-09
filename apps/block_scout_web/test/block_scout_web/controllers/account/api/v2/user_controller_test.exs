@@ -1148,8 +1148,6 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
     end
 
     test "update settings", %{conn: conn, bypass: bypass} do
-      test_pid = self()
-
       expect_get_keycloak_user(bypass, %{
         "address" => ["0x0000000000000000000000000000000000000001"],
         "settings.a" => ["1"],
@@ -1157,11 +1155,7 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
         "settings.untouched" => ["5"]
       })
 
-      Bypass.expect_once(bypass, "PUT", @keycloak_user_path, fn conn ->
-        {:ok, body, conn} = Plug.Conn.read_body(conn)
-        send(test_pid, {:keycloak_put, Utils.JSON.decode!(body)})
-        Plug.Conn.resp(conn, 204, "")
-      end)
+      expect_put_keycloak_user(bypass)
 
       assert conn
              |> patch_settings(%{"a" => nil, "b" => "3", "c" => "4"})
@@ -1177,13 +1171,72 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
              }
     end
 
+    test "stores non-blank values and _json key as is", %{conn: conn, bypass: bypass} do
+      expect_get_keycloak_user(bypass, nil)
+      expect_put_keycloak_user(bypass)
+
+      # NBSP is not whitespace for Java's String.isBlank/0, so Keycloak keeps it
+      settings = %{"padded" => "  dark \n", "nbsp" => " ", "_json" => "dark"}
+
+      assert conn |> patch_settings(settings) |> json_response(200) == settings
+
+      assert_receive {:keycloak_put, %{"attributes" => attributes}}
+
+      assert attributes == %{
+               "settings.padded" => ["  dark \n"],
+               "settings.nbsp" => [" "],
+               "settings._json" => ["dark"]
+             }
+    end
+
+    test "accepts a full sync of maximum settings in one request", %{conn: conn, bypass: bypass} do
+      expect_get_keycloak_user(bypass, nil)
+      expect_put_keycloak_user(bypass)
+
+      # every byte of "\x01" is JSON-escaped as \u0001
+      settings =
+        Map.new(1..100, fn i ->
+          {String.duplicate("k", 61) <> String.pad_leading("#{i}", 3, "0"), String.duplicate("\x01", 2048)}
+        end)
+
+      body = Utils.JSON.encode!(settings)
+      assert byte_size(body) > 1_000_000
+
+      assert conn
+             |> put_req_header("content-type", "application/json")
+             |> patch("/api/account/v2/user/settings", body)
+             |> json_response(200) == settings
+    end
+
     test "rejects invalid key", %{conn: conn} do
       assert %{"message" => "Invalid setting key" <> _} =
                conn |> patch_settings(%{"valid_key" => "1", "Invalid-Key" => "2"}) |> json_response(422)
     end
 
+    test "rejects key with trailing newline", %{conn: conn} do
+      assert %{"message" => "Invalid setting key \"theme\\n\"" <> _} =
+               conn |> patch_settings(%{"theme\n" => "dark"}) |> json_response(422)
+    end
+
     test "rejects too long key", %{conn: conn} do
       conn |> patch_settings(%{String.duplicate("a", 65) => "1"}) |> json_response(422)
+    end
+
+    test "rejects body that is not a JSON object", %{conn: conn} do
+      for body <- ["dark", 1, [], [%{"a" => "1"}], nil] do
+        assert %{"message" => "Request body must be a JSON object"} =
+                 conn |> patch_settings(body) |> json_response(422)
+      end
+    end
+
+    test "rejects body with unsupported content type", %{conn: conn} do
+      for content_type <- ["text/plain", "application/x-www-form-urlencoded"] do
+        assert %{"message" => "Request body must be a JSON object"} =
+                 conn
+                 |> put_req_header("content-type", content_type)
+                 |> patch("/api/account/v2/user/settings", "a=1")
+                 |> json_response(422)
+      end
     end
 
     test "rejects non-string value", %{conn: conn} do
@@ -1191,9 +1244,12 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
                conn |> patch_settings(%{"a" => 1}) |> json_response(422)
     end
 
-    test "rejects empty value", %{conn: conn} do
-      assert %{"message" => "Invalid value for setting a: must not be empty, use null to delete the setting"} =
-               conn |> patch_settings(%{"a" => ""}) |> json_response(422)
+    test "rejects blank value", %{conn: conn} do
+      # whitespace by Java's Character.isWhitespace/1, which Keycloak uses to drop blank attribute values
+      for value <- ["", "   ", "\t\n", "\x1F", " ", "　"] do
+        assert %{"message" => "Invalid value for setting a: must not be blank, use null to delete the setting"} =
+                 conn |> patch_settings(%{"a" => value}) |> json_response(422)
+      end
     end
 
     test "rejects too long value", %{conn: conn} do
@@ -1228,6 +1284,16 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
 
     Bypass.expect_once(bypass, "GET", @keycloak_user_path, fn conn ->
       Plug.Conn.resp(conn, 200, Utils.JSON.encode!(user))
+    end)
+  end
+
+  defp expect_put_keycloak_user(bypass) do
+    test_pid = self()
+
+    Bypass.expect_once(bypass, "PUT", @keycloak_user_path, fn conn ->
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
+      send(test_pid, {:keycloak_put, Utils.JSON.decode!(body)})
+      Plug.Conn.resp(conn, 204, "")
     end)
   end
 
