@@ -57,42 +57,45 @@ defmodule Explorer.SmartContract.EthBytecodeDBInterface do
     http_post_request(url, body |> append_metadata(metadata), options)
   end
 
-  def process_verifier_response(
-        %{
-          "allianceSources" => [%{"matchType" => "PARTIAL"} | _],
-          "ethBytecodeDbSources" => _,
-          "sourcifySources" => [%{"matchType" => "FULL"} = src | _]
-        },
-        _
-      ) do
-    {:ok, Map.put(src, "sourcify?", true)}
-  end
+  # Source lists returned by `sources:search-all`, in order of preference among
+  # candidates with the same match type. The second element is the flag set on
+  # the chosen source so that the publisher records where it came from.
+  @search_all_source_lists [
+    {"allianceSources", "verifier_alliance?"},
+    {"sourcifySources", "sourcify?"},
+    {"ethBytecodeDbSources", nil}
+  ]
 
-  def process_verifier_response(
-        %{
-          "allianceSources" => [%{"matchType" => "PARTIAL"} | _],
-          "ethBytecodeDbSources" => [%{"matchType" => "FULL"} = src | _],
-          "sourcifySources" => _
-        },
-        _
-      ) do
-    {:ok, src}
-  end
+  @doc """
+    Picks the source to verify the contract with from a `sources:search-all`
+    response.
 
-  def process_verifier_response(%{"allianceSources" => [src | _]}, _) do
-    {:ok, Map.put(src, "verifier_alliance?", true)}
-  end
+    A `FULL` match from any of the lists is always preferred over a `PARTIAL`
+    one. Among candidates with the same match type, verifier alliance sources
+    win over Sourcify ones, which in turn win over eth-bytecode-db ones. Every
+    element of every list is considered, not only the head, since
+    eth-bytecode-db orders its list by update time rather than by match type.
 
-  def process_verifier_response(%{"sourcifySources" => [src | _]}, _) do
-    {:ok, Map.put(src, "sourcify?", true)}
-  end
+    For responses of the other search endpoints (`sources:search`,
+    `sources:search-alliance`) the first returned source is taken.
+  """
+  @spec process_verifier_response(map(), keyword()) :: {:ok, map() | nil} | {:error, :no_matched_sources}
+  def process_verifier_response(response, options)
 
-  def process_verifier_response(%{"ethBytecodeDbSources" => [src | _]}, _) do
-    {:ok, src}
-  end
+  def process_verifier_response(response, _options)
+      when is_map_key(response, "ethBytecodeDbSources") or is_map_key(response, "sourcifySources") or
+             is_map_key(response, "allianceSources") do
+    candidates =
+      Enum.flat_map(@search_all_source_lists, fn {key, flag} ->
+        response
+        |> Map.get(key, [])
+        |> Enum.map(&tag_source(&1, flag))
+      end)
 
-  def process_verifier_response(%{"ethBytecodeDbSources" => [], "sourcifySources" => [], "allianceSources" => []}, _) do
-    {:error, :no_matched_sources}
+    case Enum.find(candidates, &full_match?/1) || List.first(candidates) do
+      nil -> {:error, :no_matched_sources}
+      source -> {:ok, source}
+    end
   end
 
   def process_verifier_response(%{"sources" => [src | _]}, options) do
@@ -106,6 +109,12 @@ defmodule Explorer.SmartContract.EthBytecodeDBInterface do
   def process_verifier_response(%{"sources" => []}, _) do
     {:ok, nil}
   end
+
+  defp tag_source(source, nil), do: source
+  defp tag_source(source, flag), do: Map.put(source, flag, true)
+
+  defp full_match?(%{"matchType" => "FULL"}), do: true
+  defp full_match?(_), do: false
 
   def bytecode_search_sources_url do
     # workaround because of https://github.com/PSPDFKit-labs/bypass/issues/122
