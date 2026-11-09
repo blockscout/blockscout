@@ -879,6 +879,28 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       end)
     end
 
+    test "returns {:error, \"metadata too large\"} when {id} substitution expands the payload past the configured size" do
+      # 5 placeholders of 4 bytes each become 5 * 64 bytes once substituted.
+      json = "{\"name\":\"" <> String.duplicate("{id}", 5) <> "\"}"
+      data_uri = "data:application/json," <> json
+      hex_token_id = String.duplicate("a", 64)
+
+      with_max_metadata_size(byte_size(data_uri) + 100, fn ->
+        assert {:error, "metadata too large"} == MetadataRetriever.fetch_json({:ok, [data_uri]}, nil, hex_token_id)
+      end)
+    end
+
+    test "substitutes {id} when the expanded payload stays within the configured size" do
+      json = "{\"name\":\"{id}\"}"
+      data_uri = "data:application/json," <> json
+      hex_token_id = String.duplicate("a", 64)
+
+      with_max_metadata_size(byte_size(json) + 60, fn ->
+        assert {:ok, %{metadata: %{"name" => hex_token_id}}} ==
+                 MetadataRetriever.fetch_json({:ok, [data_uri]}, nil, hex_token_id)
+      end)
+    end
+
     test "returns {:error, \"metadata too large\"} when the fetched body exceeds the configured size", %{
       bypass: bypass
     } do

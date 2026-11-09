@@ -1018,7 +1018,7 @@ defmodule Explorer.Token.MetadataRetriever do
          hex_token_id,
          from_base_uri?
        ) do
-    with :ok <- check_inline_payload_size(base64_encoded_json),
+    with :ok <- check_payload_size(base64_encoded_json),
          {:ok, base64_decoded} <- Base.decode64(base64_encoded_json) do
       fetch_json_from_uri({:ok, [base64_decoded]}, ipfs_params, token_id, hex_token_id, from_base_uri?)
     else
@@ -1081,7 +1081,7 @@ defmodule Explorer.Token.MetadataRetriever do
     if is_binary(path) and valid_ipfs_path?(public_ipfs_link(path)) do
       fetch_from_ipfs(path, hex_token_id)
     else
-      with :ok <- check_inline_payload_size(token_uri_string) do
+      with :ok <- check_payload_size(token_uri_string) do
         json = ExplorerHelper.decode_json(token_uri_string, true)
 
         check_type(json, hex_token_id)
@@ -1090,7 +1090,7 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   defp fetch_json_from_json_string(json, ipfs_params, token_id, hex_token_id, from_base_uri?, type) do
-    with :ok <- check_inline_payload_size(json) do
+    with :ok <- check_payload_size(json) do
       decoded_json = URI.decode(json)
 
       fetch_json_from_uri({:ok, [decoded_json]}, ipfs_params, token_id, hex_token_id, from_base_uri?)
@@ -1322,20 +1322,23 @@ defmodule Explorer.Token.MetadataRetriever do
     {:ok, %{metadata: json}}
   end
 
+  # Every `{id}` (4 bytes) becomes a 64-char hex token id, so a payload that fit before
+  # substitution can grow up to 16x here; it is measured again before being decoded and stored.
   defp check_type(json, hex_token_id) when is_map(json) do
-    metadata =
-      case json
-           |> Utils.JSON.encode!()
-           |> String.replace(@erc1155_token_id_placeholder, hex_token_id)
-           |> Utils.JSON.decode() do
-        {:ok, map} ->
-          map
+    substituted_json =
+      json
+      |> Utils.JSON.encode!()
+      |> String.replace(@erc1155_token_id_placeholder, hex_token_id)
 
-        _ ->
-          json
-      end
+    with :ok <- check_payload_size(substituted_json) do
+      metadata =
+        case Utils.JSON.decode(substituted_json) do
+          {:ok, map} -> map
+          _ -> json
+        end
 
-    {:ok, %{metadata: metadata}}
+      {:ok, %{metadata: metadata}}
+    end
   end
 
   defp check_type(_, _) do
@@ -1397,8 +1400,9 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   # Inline payloads (`data:application/json...` and bare JSON returned by `tokenURI`) are decoded in
-  # place, so they are bounded before any decoding. Base64 payloads are measured in encoded form.
-  defp check_inline_payload_size(payload) do
+  # place, so they are bounded before any decoding; base64 payloads are measured in encoded form.
+  # Every payload, inline or fetched, is measured once more after `{id}` substitution in `check_type/2`.
+  defp check_payload_size(payload) do
     if byte_size(payload) > max_metadata_size() do
       {:error, @metadata_too_large}
     else
