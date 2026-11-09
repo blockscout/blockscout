@@ -72,24 +72,41 @@ defmodule Explorer.Etherscan.Logs do
   @spec list_logs(map()) :: [map()]
   def list_logs(filter, paging_options \\ @default_paging_options)
 
+  # The address is matched through `Log.address_match_union_query/3`, one
+  # `UNION ALL` branch per address condition. While the optimized fields
+  # migration is in progress, a log of the address is matched either by
+  # `address_id` or by the legacy `address_hash`, and a single `OR` condition
+  # makes the planner collect and sort every log of the address in the block
+  # range before the LIMIT. Each branch is ordered and limited on its own
+  # instead, so it stays an ordered index scan that stops at the LIMIT.
+  #
+  # Since the LIMIT is applied before `join_transaction_data/1`, consensus is
+  # checked inside the branches, for the reasons given for the topic-only
+  # clause below.
   def list_logs(%{address_hash: address_hash} = filter, paging_options) when not is_nil(address_hash) do
     paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
 
-    # With `union_multiple_values: true` `where_topic_match/3` may turn the
-    # query into a UNION ALL, so it must be applied last: `where/3` on a
-    # combination query would only affect its first branch.
-    logs_query =
-      Log
-      |> Log.address_match_query(address_hash)
-      |> where([log], log.block_number >= ^prepared_filter.from_block)
-      |> where([log], log.block_number <= ^prepared_filter.to_block)
-      |> page_logs(paging_options)
-      |> where_topic_match(prepared_filter, union_multiple_values: true)
-
-    logs_query
+    address_hash
+    |> Log.address_match_union_query(
+      fn address_match_dynamic ->
+        # With `union_multiple_values: true` `where_topic_match/3` may turn the
+        # branch into a UNION ALL, so it is applied last and the branch is
+        # wrapped into a subquery: `where/3` on a combination query would only
+        # affect its first branch, and a combination can only be ordered
+        # through a subquery.
+        Log
+        |> where(^address_match_dynamic)
+        |> where([log], log.block_number >= ^prepared_filter.from_block)
+        |> where([log], log.block_number <= ^prepared_filter.to_block)
+        |> where_consensus()
+        |> page_logs(paging_options)
+        |> where_topic_match(prepared_filter, union_multiple_values: true)
+        |> Chain.wrapped_union_subquery()
+      end,
+      &order_and_limit/1
+    )
     |> join_transaction_data()
-    |> limit(1000)
     |> fetch_ordered()
   end
 
@@ -118,12 +135,17 @@ defmodule Explorer.Etherscan.Logs do
       |> where([log], log.block_number <= ^prepared_filter.to_block)
       |> where_consensus()
       |> page_logs(paging_options)
-      |> order_by([log], asc: log.block_number, asc: log.index)
-      |> limit(1000)
+      |> order_and_limit()
 
     logs_query
     |> join_transaction_data()
     |> fetch_ordered()
+  end
+
+  defp order_and_limit(logs_query) do
+    logs_query
+    |> order_by([log], asc: log.block_number, asc: log.index)
+    |> limit(1000)
   end
 
   # Keeps only logs whose consensus predicate matches the one applied by
