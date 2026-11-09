@@ -30,6 +30,8 @@ defmodule Explorer.Market.Source.DefiLlamaTest do
       DefiLlama,
       Keyword.merge(defillama_configuration || [],
         base_url: "http://localhost:#{bypass.port}",
+        pro_base_url: "http://localhost:#{bypass.port}",
+        api_key: nil,
         coin_id: "Ethereum"
       )
     )
@@ -151,6 +153,30 @@ defmodule Explorer.Market.Source.DefiLlamaTest do
                   tvl: Decimal.new("52000000000")
                 }
               ]} == DefiLlama.fetch_tvl_history(3)
+    end
+
+    test "uses the Pro API with the key in the path when api_key is configured", %{bypass: bypass} do
+      config = Application.get_env(:explorer, DefiLlama)
+      Application.put_env(:explorer, DefiLlama, Keyword.merge(config, api_key: "test-api-key"))
+
+      Bypass.expect_once(bypass, "GET", "/test-api-key/api/v2/historicalChainTvl/Ethereum", fn conn ->
+        refute Enum.any?(conn.req_headers, fn {name, _value} -> String.contains?(name, "api") end)
+        assert conn.query_string == ""
+        Conn.resp(conn, 200, json_historical_chain_tvl())
+      end)
+
+      assert {:ok, [%{date: ~D[2025-02-12]} | _]} = DefiLlama.fetch_tvl_history(3)
+    end
+
+    test "uses the free API when api_key is an empty string", %{bypass: bypass} do
+      config = Application.get_env(:explorer, DefiLlama)
+      Application.put_env(:explorer, DefiLlama, Keyword.merge(config, api_key: ""))
+
+      Bypass.expect_once(bypass, "GET", "/historicalChainTvl/Ethereum", fn conn ->
+        Conn.resp(conn, 200, json_historical_chain_tvl())
+      end)
+
+      assert {:ok, [%{date: ~D[2025-02-12]} | _]} = DefiLlama.fetch_tvl_history(3)
     end
 
     test "returns error when coin_id not configured" do

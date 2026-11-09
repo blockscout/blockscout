@@ -2,6 +2,12 @@
 defmodule Explorer.Market.Source.DefiLlama do
   @moduledoc """
   Adapter for fetching market history from https://defillama.com/.
+
+  TVL history requests go to the free API when `MARKET_DEFILLAMA_API_KEY` is
+  unset or empty, and to the Pro API only when the key is non-empty. DefiLlama
+  expects the key as a path segment between the Pro host and the endpoint
+  (`https://pro-api.llama.fi/{API_KEY}/api/v2/...`), not as a header or query
+  parameter, so the key never appears in request headers.
   """
 
   alias Explorer.Helper
@@ -75,8 +81,19 @@ defmodule Explorer.Market.Source.DefiLlama do
     end
   end
 
+  # Free API: `<base_url>/historicalChainTvl/...`.
+  # Pro API:  `<pro_base_url>/<api_key>/api/v2/historicalChainTvl/...`.
+  @spec base_url() :: URI.t()
   defp base_url do
-    URI.parse(config(:base_url))
+    case config(:api_key) do
+      api_key when api_key in [nil, ""] ->
+        URI.parse(config(:base_url))
+
+      api_key ->
+        config(:pro_base_url)
+        |> URI.parse()
+        |> URI.append_path("/#{URI.encode(api_key)}/api/v2")
+    end
   end
 
   defp headers do
