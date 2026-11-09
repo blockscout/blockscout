@@ -373,7 +373,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
           changes_list
           |> Enum.reject(&is_nil(Map.get(&1, :transaction_index)))
           |> Enum.map(&{&1.block_number, &1.transaction_index})
-          |> Enum.uniq()
           |> Transaction.by_block_number_index_query()
           |> repo.all()
           |> Enum.map(& &1.hash)

@@ -91,8 +91,6 @@ defmodule Explorer.Etherscan.Logs do
     |> join_transaction_data()
     |> limit(1000)
     |> fetch_ordered()
-    |> Log.preload_block()
-    |> Log.preload_transaction([], Repo.replica())
   end
 
   # Since address_hash was not present, we know that a topic filter has been
@@ -164,7 +162,9 @@ defmodule Explorer.Etherscan.Logs do
 
   # Wraps `logs_query` in a subquery and joins each log to its consensus
   # transaction through `Log.join_transaction_query/1`, a few index lookups per
-  # log. The selected shape is identical in both denormalization states.
+  # log. The selected shape is identical in both denormalization states. It
+  # holds every transaction and block field that the `getLogs` and
+  # `eth_getLogs` renderers use, so the logs need no further preloads.
   defp join_transaction_data(logs_query) do
     if DenormalizationHelper.transactions_denormalization_finished?() do
       logs_query
