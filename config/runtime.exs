@@ -582,7 +582,9 @@ config :explorer, Explorer.Market.Source.CryptoRank,
 
 config :explorer, Explorer.Market.Source.DefiLlama,
   coin_id: System.get_env("MARKET_DEFILLAMA_COIN_ID"),
-  base_url: "https://api.llama.fi/v2"
+  api_key: System.get_env("MARKET_DEFILLAMA_API_KEY"),
+  base_url: "https://api.llama.fi/v2",
+  pro_base_url: "https://pro-api.llama.fi"
 
 config :explorer, Explorer.Market.Source.Mobula,
   platform: System.get_env("MARKET_MOBULA_PLATFORM_ID") || System.get_env("EXCHANGE_RATES_MOBULA_CHAIN_ID"),
