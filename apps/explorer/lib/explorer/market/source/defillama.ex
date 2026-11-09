@@ -3,9 +3,9 @@ defmodule Explorer.Market.Source.DefiLlama do
   @moduledoc """
   Adapter for fetching market history from https://defillama.com/.
 
-  Requests go to the free API by default. When `MARKET_DEFILLAMA_API_KEY` is
-  set, requests are sent to the Pro API instead. DefiLlama expects the key as a
-  path segment between the Pro host and the endpoint
+  TVL history requests go to the free API when `MARKET_DEFILLAMA_API_KEY` is
+  unset or empty, and to the Pro API only when the key is non-empty. DefiLlama
+  expects the key as a path segment between the Pro host and the endpoint
   (`https://pro-api.llama.fi/{API_KEY}/api/v2/...`), not as a header or query
   parameter, so the key never appears in request headers.
   """
