@@ -854,6 +854,65 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       {:ok, bypass: bypass}
     end
 
+    test "returns {:error, \"metadata too large\"} when an inline data uri exceeds the configured size" do
+      json = "data:application/json,{\"name\":\"" <> String.duplicate("a", 100) <> "\"}"
+
+      with_max_metadata_size(64, fn ->
+        assert {:error, "metadata too large"} == MetadataRetriever.fetch_json({:ok, [json]})
+      end)
+    end
+
+    test "returns {:error, \"metadata too large\"} when an inline base64 data uri exceeds the configured size" do
+      json = Base.encode64("{\"name\":\"" <> String.duplicate("a", 100) <> "\"}")
+
+      with_max_metadata_size(64, fn ->
+        assert {:error, "metadata too large"} ==
+                 MetadataRetriever.fetch_json({:ok, ["data:application/json;base64," <> json]})
+      end)
+    end
+
+    test "decodes an inline data uri that fits within the configured size" do
+      json = "data:application/json,{\"name\":\"small\"}"
+
+      with_max_metadata_size(byte_size(json), fn ->
+        assert {:ok, %{metadata: %{"name" => "small"}}} == MetadataRetriever.fetch_json({:ok, [json]})
+      end)
+    end
+
+    test "returns {:error, \"metadata too large\"} when the fetched body exceeds the configured size", %{
+      bypass: bypass
+    } do
+      path = "/api/card/large"
+      url = "http://localhost:#{bypass.port}#{path}"
+      body = "{\"name\":\"" <> String.duplicate("a", 4_096) <> "\"}"
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        Conn.resp(conn, 200, body)
+      end)
+
+      with_max_metadata_size(1_024, fn ->
+        assert {:error, "metadata too large"} == MetadataRetriever.fetch_json({:ok, [url]})
+      end)
+    end
+
+    test "stores a fetched body whose size does not exceed the configured size", %{bypass: bypass} do
+      path = "/api/card/fits"
+      url = "http://localhost:#{bypass.port}#{path}"
+      body = "{\"name\":\"fits\"}"
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      Bypass.expect(bypass, "GET", path, fn conn ->
+        Conn.resp(conn, 200, body)
+      end)
+
+      with_max_metadata_size(byte_size(body), fn ->
+        assert {:ok_store_uri, %{metadata: %{"name" => "fits"}}, url} == MetadataRetriever.fetch_json({:ok, [url]})
+      end)
+    end
+
     test "returns {:error, @no_uri_error} when empty uri is passed" do
       error = {:error, "no uri"}
       token_id = "TOKEN_ID"
@@ -1698,6 +1757,22 @@ defmodule Explorer.Token.MetadataRetrieverTest do
 
     test "an unanswered call is neither" do
       assert probe(%{error: %{code: -32603, message: "timeout"}, jsonrpc: "2.0"}) == :error
+    end
+  end
+
+  defp with_max_metadata_size(size, fun) do
+    initial = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper) || []
+
+    Application.put_env(
+      :indexer,
+      Indexer.Fetcher.TokenInstance.Helper,
+      Keyword.merge(initial, max_metadata_size: size)
+    )
+
+    try do
+      fun.()
+    after
+      Application.put_env(:indexer, Indexer.Fetcher.TokenInstance.Helper, initial)
     end
   end
 end

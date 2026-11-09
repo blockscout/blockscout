@@ -17,6 +17,15 @@ defmodule Utils.HttpClient.HTTPoisonHelper do
     |> add_follow_redirect_option(options[:follow_redirect])
     |> add_insecure_option(options[:insecure])
     |> add_params_option(options[:params])
+    |> add_max_body_length_option(options[:max_body_length])
+  end
+
+  # Caps the buffered response body at the transport level: hackney aborts the request
+  # with `{:error, :body_too_large}` instead of downloading the whole body first.
+  defp add_max_body_length_option(options, nil), do: options
+
+  defp add_max_body_length_option(options, max_body_length) do
+    Keyword.put(options, :hackney, [{:max_body_size, max_body_length} | options[:hackney] || []])
   end
 
   defp add_recv_timeout_option(options, nil), do: options
