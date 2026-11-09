@@ -757,7 +757,8 @@ defmodule Explorer.Chain.Token.Instance do
       ":nxdomain",
       "econnrefused",
       ":econnrefused",
-      "blacklist"
+      "blacklist",
+      "metadata too large"
     ],
     # 32767 is the maximum value for retries_count (smallint)
     @max_retries_count_value => ["request error: 429"]

@@ -43,8 +43,17 @@ defmodule Utils.HttpClient.TeslaHelper do
       |> add_recv_timeout_option(options[:recv_timeout])
       |> add_timeout_option(options[:timeout])
       |> add_insecure_option(options[:insecure])
+      |> add_max_body_length_option(options[:max_body_length])
 
     [adapter: adapter_options]
+  end
+
+  # Caps the buffered response body at the adapter level: `Tesla.Adapter.Mint` stops reading
+  # and returns `{:error, :body_too_large}` once the limit is exceeded.
+  defp add_max_body_length_option(options, nil), do: options
+
+  defp add_max_body_length_option(options, max_body_length) do
+    Keyword.put(options, :max_body, max_body_length)
   end
 
   defp add_timeout_middleware(middleware \\ [], timeout)

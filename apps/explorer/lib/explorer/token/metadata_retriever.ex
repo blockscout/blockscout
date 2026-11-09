@@ -23,7 +23,11 @@ defmodule Explorer.Token.MetadataRetriever do
   @invalid_base64_data "invalid data:application/json;base64"
   @invalid_ipfs_path "invalid ipfs path"
   @invalid_swarm_path "invalid swarm path"
+  @metadata_too_large "metadata too large"
   @default_headers [{"User-Agent", "blockscout-12.0.4"}]
+
+  # Fallback for `INDEXER_TOKEN_INSTANCE_METADATA_MAX_SIZE` when the config key is absent (10 MiB).
+  @default_max_metadata_size 10_485_760
 
   # https://eips.ethereum.org/EIPS/eip-1155#metadata
   @erc1155_token_id_placeholder "{id}"
@@ -1014,12 +1018,12 @@ defmodule Explorer.Token.MetadataRetriever do
          hex_token_id,
          from_base_uri?
        ) do
-    case Base.decode64(base64_encoded_json) do
-      {:ok, base64_decoded} ->
-        fetch_json_from_uri({:ok, [base64_decoded]}, ipfs_params, token_id, hex_token_id, from_base_uri?)
-
-      _ ->
-        {:error, @invalid_base64_data}
+    with :ok <- check_payload_size(base64_encoded_json),
+         {:ok, base64_decoded} <- Base.decode64(base64_encoded_json) do
+      fetch_json_from_uri({:ok, [base64_decoded]}, ipfs_params, token_id, hex_token_id, from_base_uri?)
+    else
+      {:error, @metadata_too_large} = error -> error
+      _ -> {:error, @invalid_base64_data}
     end
   rescue
     e ->
@@ -1060,13 +1064,7 @@ defmodule Explorer.Token.MetadataRetriever do
         fetch_metadata_inner(url, ipfs_params, token_id, hex_token_id, from_base_uri?)
 
       {:bare_path, path} ->
-        if is_binary(path) and valid_ipfs_path?(public_ipfs_link(path)) do
-          fetch_from_ipfs(path, hex_token_id)
-        else
-          json = ExplorerHelper.decode_json(token_uri_string, true)
-
-          check_type(json, hex_token_id)
-        end
+        fetch_from_bare_path(path, token_uri_string, hex_token_id)
     end
   rescue
     e ->
@@ -1078,10 +1076,25 @@ defmodule Explorer.Token.MetadataRetriever do
       {:error, "invalid token_uri_string"}
   end
 
-  defp fetch_json_from_json_string(json, ipfs_params, token_id, hex_token_id, from_base_uri?, type) do
-    decoded_json = URI.decode(json)
+  # A bare path is either an IPFS CID/path or raw JSON returned directly by `tokenURI`.
+  defp fetch_from_bare_path(path, token_uri_string, hex_token_id) do
+    if is_binary(path) and valid_ipfs_path?(public_ipfs_link(path)) do
+      fetch_from_ipfs(path, hex_token_id)
+    else
+      with :ok <- check_payload_size(token_uri_string) do
+        json = ExplorerHelper.decode_json(token_uri_string, true)
 
-    fetch_json_from_uri({:ok, [decoded_json]}, ipfs_params, token_id, hex_token_id, from_base_uri?)
+        check_type(json, hex_token_id)
+      end
+    end
+  end
+
+  defp fetch_json_from_json_string(json, ipfs_params, token_id, hex_token_id, from_base_uri?, type) do
+    with :ok <- check_payload_size(json) do
+      decoded_json = URI.decode(json)
+
+      fetch_json_from_uri({:ok, [decoded_json]}, ipfs_params, token_id, hex_token_id, from_base_uri?)
+    end
   rescue
     e ->
       Logger.warning(["Unknown metadata format #{inspect(json)}.", Exception.format(:error, e, __STACKTRACE__)],
@@ -1177,7 +1190,11 @@ defmodule Explorer.Token.MetadataRetriever do
            headers,
            [
              validate_host?: regular_url?(ipfs_params),
-             transport_opts: [recv_timeout: 30_000, pool: :token_instance_fetcher]
+             transport_opts: [
+               recv_timeout: 30_000,
+               pool: :token_instance_fetcher,
+               max_body_length: max_metadata_size()
+             ]
            ],
            fn request_uri, request_headers, request_opts ->
              HttpClient.get(request_uri, request_headers, request_opts)
@@ -1215,6 +1232,13 @@ defmodule Explorer.Token.MetadataRetriever do
         end
 
         {:error, reason |> to_string() |> truncate_error()}
+
+      # Tesla/Mint returns the bare atom, HTTPoison wraps it in `%HTTPoison.Error{}`.
+      {:error, :body_too_large} ->
+        metadata_too_large_error(uri)
+
+      {:error, %{reason: :body_too_large}} ->
+        metadata_too_large_error(uri)
 
       {:error, reason} ->
         Logger.warning(
@@ -1298,20 +1322,23 @@ defmodule Explorer.Token.MetadataRetriever do
     {:ok, %{metadata: json}}
   end
 
+  # Every `{id}` (4 bytes) becomes a 64-char hex token id, so a payload that fit before
+  # substitution can grow up to 16x here; it is measured again before being decoded and stored.
   defp check_type(json, hex_token_id) when is_map(json) do
-    metadata =
-      case json
-           |> Utils.JSON.encode!()
-           |> String.replace(@erc1155_token_id_placeholder, hex_token_id)
-           |> Utils.JSON.decode() do
-        {:ok, map} ->
-          map
+    substituted_json =
+      json
+      |> Utils.JSON.encode!()
+      |> String.replace(@erc1155_token_id_placeholder, hex_token_id)
 
-        _ ->
-          json
-      end
+    with :ok <- check_payload_size(substituted_json) do
+      metadata =
+        case Utils.JSON.decode(substituted_json) do
+          {:ok, map} -> map
+          _ -> json
+        end
 
-    {:ok, %{metadata: metadata}}
+      {:ok, %{metadata: metadata}}
+    end
   end
 
   defp check_type(_, _) do
@@ -1370,6 +1397,35 @@ defmodule Explorer.Token.MetadataRetriever do
     else
       {:error, @invalid_ipfs_path}
     end
+  end
+
+  # Inline payloads (`data:application/json...` and bare JSON returned by `tokenURI`) are decoded in
+  # place, so they are bounded before any decoding; base64 payloads are measured in encoded form.
+  # Every payload, inline or fetched, is measured once more after `{id}` substitution in `check_type/2`.
+  defp check_payload_size(payload) do
+    if byte_size(payload) > max_metadata_size() do
+      {:error, @metadata_too_large}
+    else
+      :ok
+    end
+  end
+
+  defp metadata_too_large_error(uri) do
+    Logger.debug(
+      ["Request to token uri: #{inspect(uri)} returned a body larger than #{max_metadata_size()} bytes."],
+      fetcher: :token_instances
+    )
+
+    {:error, @metadata_too_large}
+  end
+
+  # Upper bound in bytes for a metadata payload, whether fetched over HTTP or inlined in the
+  # token URI. Configured via `INDEXER_TOKEN_INSTANCE_METADATA_MAX_SIZE`.
+  @spec max_metadata_size() :: pos_integer()
+  defp max_metadata_size do
+    :indexer
+    |> Application.get_env(Indexer.Fetcher.TokenInstance.Helper, [])
+    |> Keyword.get(:max_metadata_size, @default_max_metadata_size)
   end
 
   @doc """
