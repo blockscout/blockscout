@@ -2,7 +2,7 @@
 # cspell, dialyzer) with Apple `container`. It extends the devcontainer image
 # with PostgreSQL 17, so the database is available at localhost:5432 exactly
 # as in the docker-compose devcontainer (network_mode: service:db).
-FROM ghcr.io/blockscout/devcontainer-elixir:1.19.4-erlang-27.3.4.6
+FROM ghcr.io/blockscout/devcontainer-elixir:1.20.5-erlang-29.1.2
 
 ARG PG_MAJOR=17
 

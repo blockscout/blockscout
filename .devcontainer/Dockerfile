@@ -1,6 +1,6 @@
 # Since this is a copy of https://github.com/blockscout/devcontainer-elixir/blob/main/Dockerfile
 # So after successful testing this file, the original one must be updated as well.
-ARG VARIANT="1.19.4-erlang-27.3.4.6-debian-bookworm-20251117"
+ARG VARIANT="1.20.5-erlang-29.1.2-debian-bookworm-20261104"
 FROM hexpm/elixir:${VARIANT}
 
 # ARGs declared before FROM are not persisted beyond the FROM instruction.
@@ -35,7 +35,7 @@ RUN apt-get update \
   # Install Node.js for use with web applications
   && curl -sSL ${NODE_SCRIPT_SOURCE} -o /tmp/node-setup.sh \
   && /bin/bash /tmp/node-setup.sh "${NVM_DIR}" "${NODE_VERSION}" "${USERNAME}" \
-  && npm install -g cspell@latest \
+  && npm install -g cspell@9 \
   #
   # Install dependencies
   && apt-get install -y build-essential inotify-tools ffmpeg pkg-config \
