@@ -1093,6 +1093,7 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
   describe "/api/account/v2/user/settings" do
     @keycloak_user_id "0c1f5c1e-6f2a-4d3b-9b8e-2a7d5f4e3c21"
     @keycloak_user_path "/admin/realms/test/users/#{@keycloak_user_id}"
+    @keycloak_settings_path "/realms/test/blockscout/users/#{@keycloak_user_id}/settings"
 
     setup %{conn: conn, user: user} do
       bypass = Bypass.open()
@@ -1148,56 +1149,80 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
     end
 
     test "update settings", %{conn: conn, bypass: bypass} do
-      expect_get_keycloak_user(bypass, %{
-        "address" => ["0x0000000000000000000000000000000000000001"],
-        "settings.a" => ["1"],
-        "settings.b" => ["2"],
-        "settings.untouched" => ["5"]
-      })
-
-      expect_put_keycloak_user(bypass)
+      expect_patch_keycloak_settings(bypass, %{"b" => "3", "c" => "4", "untouched" => "5"})
 
       assert conn
              |> patch_settings(%{"a" => nil, "b" => "3", "c" => "4"})
              |> json_response(200) == %{"b" => "3", "c" => "4", "untouched" => "5"}
 
-      assert_receive {:keycloak_put, %{"email" => "user@example.com", "attributes" => attributes}}
+      # only the changes are sent, the extension applies them to the stored settings
+      assert_receive {:keycloak_patch, diff}
+      assert diff == %{"a" => nil, "b" => "3", "c" => "4"}
+    end
 
-      assert attributes == %{
-               "address" => ["0x0000000000000000000000000000000000000001"],
-               "settings.b" => ["3"],
-               "settings.c" => ["4"],
-               "settings.untouched" => ["5"]
+    # Several Blockscout instances share a realm, so settings of a user can be updated by two requests at once.
+    # A read-modify-write of the whole user via the admin API drops the first change when the second request read
+    # the user before the first one wrote it. The fake Keycloak always returns such a stale user on read.
+    test "concurrent updates of different settings keep both changes", %{conn: conn, bypass: bypass} do
+      attributes = start_supervised!({Agent, fn -> %{"settings.untouched" => ["5"]} end})
+      stale_user = %{"id" => @keycloak_user_id, "username" => "user", "attributes" => Agent.get(attributes, & &1)}
+
+      # admin API: reads return the stale user, writes replace all attributes
+      Bypass.stub(bypass, "GET", @keycloak_user_path, fn conn ->
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(stale_user))
+      end)
+
+      Bypass.stub(bypass, "PUT", @keycloak_user_path, fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        Agent.update(attributes, fn _ -> Utils.JSON.decode!(body)["attributes"] end)
+        Plug.Conn.resp(conn, 204, "")
+      end)
+
+      # extension: applies the changes to the stored attributes atomically
+      Bypass.stub(bypass, "PATCH", @keycloak_settings_path, fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+
+        settings =
+          Agent.get_and_update(attributes, fn stored ->
+            updated =
+              Enum.reduce(Utils.JSON.decode!(body), stored, fn
+                {key, nil}, acc -> Map.delete(acc, "settings." <> key)
+                {key, value}, acc -> Map.put(acc, "settings." <> key, [value])
+              end)
+
+            {Map.new(updated, fn {"settings." <> key, [value]} -> {key, value} end), updated}
+          end)
+
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(settings))
+      end)
+
+      assert conn |> patch_settings(%{"a" => "1"}) |> json_response(200)
+      assert conn |> patch_settings(%{"b" => "2"}) |> json_response(200)
+
+      assert Agent.get(attributes, & &1) == %{
+               "settings.untouched" => ["5"],
+               "settings.a" => ["1"],
+               "settings.b" => ["2"]
              }
     end
 
     test "stores non-blank values and _json key as is", %{conn: conn, bypass: bypass} do
-      expect_get_keycloak_user(bypass, nil)
-      expect_put_keycloak_user(bypass)
-
       # NBSP is not whitespace for Java's String.isBlank/0, so Keycloak keeps it
       settings = %{"padded" => "  dark \n", "nbsp" => " ", "_json" => "dark"}
+      expect_patch_keycloak_settings(bypass, settings)
 
       assert conn |> patch_settings(settings) |> json_response(200) == settings
-
-      assert_receive {:keycloak_put, %{"attributes" => attributes}}
-
-      assert attributes == %{
-               "settings.padded" => ["  dark \n"],
-               "settings.nbsp" => [" "],
-               "settings._json" => ["dark"]
-             }
+      assert_receive {:keycloak_patch, ^settings}
     end
 
     test "accepts a full sync of maximum settings in one request", %{conn: conn, bypass: bypass} do
-      expect_get_keycloak_user(bypass, nil)
-      expect_put_keycloak_user(bypass)
-
       # every byte of "\x01" is JSON-escaped as \u0001
       settings =
         Map.new(1..100, fn i ->
           {String.duplicate("k", 61) <> String.pad_leading("#{i}", 3, "0"), String.duplicate("\x01", 2048)}
         end)
+
+      expect_patch_keycloak_settings(bypass, settings)
 
       body = Utils.JSON.encode!(settings)
       assert byte_size(body) > 1_000_000
@@ -1206,6 +1231,8 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
              |> put_req_header("content-type", "application/json")
              |> patch("/api/account/v2/user/settings", body)
              |> json_response(200) == settings
+
+      assert_receive {:keycloak_patch, ^settings}
     end
 
     test "rejects invalid key", %{conn: conn} do
@@ -1257,11 +1284,14 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
                conn |> patch_settings(%{"a" => String.duplicate("a", 2049)}) |> json_response(422)
     end
 
-    test "rejects update exceeding settings count limit", %{conn: conn, bypass: bypass} do
-      expect_get_keycloak_user(bypass, Map.new(1..100, &{"settings.key_#{&1}", ["value"]}))
+    test "returns validation error of the extension", %{conn: conn, bypass: bypass} do
+      # the number of settings is checked by the extension, as it depends on the stored settings
+      Bypass.expect_once(bypass, "PATCH", @keycloak_settings_path, fn conn ->
+        Plug.Conn.resp(conn, 422, Utils.JSON.encode!(%{"error" => "Number of settings exceeds 100"}))
+      end)
 
       assert %{"message" => "Number of settings exceeds 100"} =
-               conn |> patch_settings(%{"key_1" => nil, "new_1" => "1", "new_2" => "2"}) |> json_response(422)
+               conn |> patch_settings(%{"new_1" => "1"}) |> json_response(422)
     end
 
     test "returns 401 for unauthenticated user" do
@@ -1287,13 +1317,13 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
     end)
   end
 
-  defp expect_put_keycloak_user(bypass) do
+  defp expect_patch_keycloak_settings(bypass, settings) do
     test_pid = self()
 
-    Bypass.expect_once(bypass, "PUT", @keycloak_user_path, fn conn ->
+    Bypass.expect_once(bypass, "PATCH", @keycloak_settings_path, fn conn ->
       {:ok, body, conn} = Plug.Conn.read_body(conn)
-      send(test_pid, {:keycloak_put, Utils.JSON.decode!(body)})
-      Plug.Conn.resp(conn, 204, "")
+      send(test_pid, {:keycloak_patch, Utils.JSON.decode!(body)})
+      Plug.Conn.resp(conn, 200, Utils.JSON.encode!(settings))
     end)
   end
 

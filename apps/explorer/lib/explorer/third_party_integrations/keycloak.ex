@@ -31,7 +31,6 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   @max_otp_attempts 3
   @custom_settings_prefix "settings."
   @max_setting_value_size 2048
-  @max_settings_count 100
 
   @spec enabled?() :: boolean()
   def enabled? do
@@ -206,15 +205,13 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
     end
   end
 
+  # The extension sets only the address attribute. A read-modify-write of the whole user via the admin API
+  # would drop attributes, e.g. settings, written by a concurrent request after the user was read.
   defp link_address_to_user(user_id, address_hash) do
-    with {:ok, user} <- get_user(user_id),
-         new_attributes = %{"address" => [String.downcase(address_hash)]},
-         merged =
-           Map.update(user, "attributes", new_attributes, fn attributes ->
-             Map.merge(attributes, new_attributes)
-           end),
-         :ok <-
-           "#{users_path()}/#{user_id}" |> admin_put(merged) |> handle_update("Failed to link address to user"),
+    with :ok <-
+           "#{extension_users_path()}/#{user_id}/address"
+           |> admin_request(:put, %{address: String.downcase(address_hash)})
+           |> handle_update("Failed to link address to user"),
          {:ok, user} <- get_user(user_id) do
       {:ok, create_auth(user, address_hash)}
     end
@@ -243,8 +240,10 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   Applies a batch of changes to account settings of a Keycloak user.
 
   A non-empty string value creates or replaces the setting, `nil` deletes it, keys absent
-  from `diff` are left untouched. The whole batch is validated before anything
-  is written and is applied with a single user update.
+  from `diff` are left untouched. The batch is validated here and then applied atomically by
+  the Keycloak extension (https://github.com/blockscout/keycloak-user-api-extension), which
+  changes only the attributes of the changed settings. Unlike a read-modify-write of the whole
+  user via the admin API, concurrent updates of different settings do not overwrite each other.
 
   ## Parameters
   - `user_id`: Keycloak user ID
@@ -258,14 +257,25 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   @spec update_user_settings(String.t(), map()) ::
           {:ok, %{String.t() => String.t()}} | {:invalid_settings, String.t()} | {:error, String.t()} | :error
   def update_user_settings(user_id, diff) do
-    with :ok <- validate_settings_diff(diff),
-         {:ok, user} <- get_user(user_id),
-         settings = user |> extract_settings() |> apply_settings_diff(diff),
-         :ok <- validate_settings_count(settings),
-         :ok <- update_user(user_id, put_settings(user, settings)) do
-      {:ok, settings}
+    with :ok <- validate_settings_diff(diff) do
+      "#{extension_users_path()}/#{user_id}/settings"
+      |> admin_request(:patch, diff)
+      |> handle_settings_update()
     end
   end
+
+  defp handle_settings_update({:ok, %{status_code: 200, body: body}}), do: {:ok, Utils.JSON.decode!(body)}
+
+  # the extension also checks the number of settings, which depends on the stored ones
+  defp handle_settings_update({:ok, %{status_code: 422, body: body}} = response) do
+    case Utils.JSON.decode(body) do
+      {:ok, %{"error" => message}} when is_binary(message) -> {:invalid_settings, message}
+      _ -> handle_error(response, "Failed to update user settings")
+    end
+  end
+
+  defp handle_settings_update({:ok, %{status_code: 404}}), do: {:error, "User not found"}
+  defp handle_settings_update(error), do: handle_error(error, "Failed to update user settings")
 
   defp extract_settings(user) do
     (user["attributes"] || %{})
@@ -274,22 +284,6 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
       _ -> []
     end)
     |> Map.new()
-  end
-
-  defp apply_settings_diff(settings, diff) do
-    Enum.reduce(diff, settings, fn
-      {key, nil}, acc -> Map.delete(acc, key)
-      {key, value}, acc -> Map.put(acc, key, value)
-    end)
-  end
-
-  defp put_settings(user, settings) do
-    other_attributes =
-      Map.reject(user["attributes"] || %{}, fn {name, _} -> String.starts_with?(name, @custom_settings_prefix) end)
-
-    settings_attributes = Map.new(settings, fn {key, value} -> {@custom_settings_prefix <> key, [value]} end)
-
-    Map.put(user, "attributes", Map.merge(other_attributes, settings_attributes))
   end
 
   defp validate_settings_diff(diff) do
@@ -333,11 +327,6 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
     )
   end
 
-  defp validate_settings_count(settings) when map_size(settings) > @max_settings_count,
-    do: {:invalid_settings, "Number of settings exceeds #{@max_settings_count}"}
-
-  defp validate_settings_count(_settings), do: :ok
-
   @doc false
   def get_user(user_id) do
     case admin_get("#{users_path()}/#{user_id}") do
@@ -372,10 +361,12 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
     end
   end
 
-  defp admin_put(path, body) do
+  defp admin_put(path, body), do: admin_request(path, :put, body)
+
+  defp admin_request(path, method, body) do
     with {:ok, token} <- get_admin_token() do
       HttpClient.request(
-        :put,
+        method,
         build_url(path),
         auth_headers(token) ++ @json_headers,
         Utils.JSON.encode!(body)
@@ -463,6 +454,9 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   end
 
   defp users_path, do: "/admin/realms/#{URI.encode(realm())}/users"
+
+  # endpoints of https://github.com/blockscout/keycloak-user-api-extension
+  defp extension_users_path, do: "/realms/#{URI.encode(realm())}/blockscout/users"
 
   defp extract_location_id(headers) do
     Enum.find_value(headers, fn {key, value} ->
