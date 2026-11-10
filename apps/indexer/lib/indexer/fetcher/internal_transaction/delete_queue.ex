@@ -15,6 +15,7 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueue do
   alias Explorer.Chain.{InternalTransaction, PendingOperationsHelper}
 
   alias Explorer.Chain.InternalTransaction.DeleteQueue
+  alias Explorer.Utility.InternalTransactionsAddressPlaceholder
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.InternalTransaction, as: InternalTransactionFetcher
   alias Indexer.Helper, as: IndexerHelper
@@ -61,6 +62,8 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueue do
         |> where([it], it.block_number in ^block_numbers)
         |> Repo.delete_all(timeout: :infinity)
 
+        maybe_delete_address_placeholders(block_numbers)
+
         PendingOperationsHelper.insert_pending_operations(block_numbers)
       end)
 
@@ -75,6 +78,14 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueue do
       {:error, error} ->
         Logger.error("Unable to clean internal transactions for reorg: #{inspect(error)}")
         {:retry, block_numbers}
+    end
+  end
+
+  # With the internal transactions storage disabled, the placeholders stand for the internal transactions of the
+  # blocks: they are deleted as well, and the internal transactions fetcher stores them anew
+  defp maybe_delete_address_placeholders(block_numbers) do
+    if InternalTransaction.storage_disabled?() do
+      InternalTransactionsAddressPlaceholder.delete_by_block_numbers(Repo, block_numbers, timeout: :infinity)
     end
   end
 

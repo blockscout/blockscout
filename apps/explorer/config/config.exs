@@ -210,7 +210,8 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesTokenHoldersIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalancesTokenContractAddressHashValueIndex
+      Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalancesTokenContractAddressHashValueIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateDeletedInternalTransactionsAddressPlaceholdersBlockNumberIndex
     ] do
   config :explorer, index_operation, enabled: true
 end

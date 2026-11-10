@@ -168,13 +168,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         :internal_transactions
       )
     end)
-    |> Multi.run(:internal_transactions_address_placeholders, fn repo,
-                                                                 %{
-                                                                   valid_internal_transactions:
-                                                                     valid_internal_transactions
-                                                                 } ->
+    |> Multi.run(:internal_transactions_address_placeholders, fn repo, changes ->
       Instrumenter.block_import_stage_runner(
-        fn -> maybe_insert_address_placeholders(repo, valid_internal_transactions, insert_options) end,
+        fn -> maybe_insert_address_placeholders(repo, changes, insert_options) end,
         :block_pending,
         :internal_transactions,
         :internal_transactions_address_placeholders
@@ -630,8 +626,21 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   # With the storage disabled, the internal transactions that are not stored are fetched on demand from the node
   # by `Indexer.Fetcher.OnDemand.InternalTransaction`. To serve an address, it traces the blocks that these
   # placeholders point at.
-  defp maybe_insert_address_placeholders(repo, valid_internal_transactions, %{timeout: timeout}) do
+  defp maybe_insert_address_placeholders(
+         repo,
+         %{
+           acquire_pending_internal_transactions: pending_ops_hashes,
+           acquire_transactions: transactions,
+           invalid_block_numbers: invalid_block_numbers,
+           valid_internal_transactions: valid_internal_transactions
+         },
+         %{timeout: timeout}
+       ) do
     if InternalTransaction.storage_disabled?() do
+      pending_ops_hashes
+      |> address_placeholders_block_numbers_to_rebuild(transactions, invalid_block_numbers)
+      |> then(&InternalTransactionsAddressPlaceholder.delete_by_block_numbers(repo, &1, timeout: timeout))
+
       count =
         valid_internal_transactions
         |> Enum.reject(&contract_creation?/1)
@@ -642,6 +651,21 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       {:ok, 0}
     end
   end
+
+  # With pending block operations, all the internal transactions of a block come in one batch, so the placeholders
+  # of the processed blocks are built anew. This drops the outdated ones, e.g. of the addresses that are not in a
+  # block anymore after a reorg, also when the block has no internal transactions left. With pending transaction
+  # operations, a block comes in several batches, so their counts are added up, and the placeholders of reorged
+  # blocks are deleted by `Indexer.Fetcher.InternalTransaction.DeleteQueue`.
+  defp address_placeholders_block_numbers_to_rebuild({:block_hashes, _}, transactions, invalid_block_numbers) do
+    transactions
+    |> MapSet.new(& &1.block_number)
+    |> MapSet.difference(MapSet.new(invalid_block_numbers))
+    |> MapSet.to_list()
+  end
+
+  defp address_placeholders_block_numbers_to_rebuild({:transaction_hashes, _}, _transactions, _invalid_block_numbers),
+    do: []
 
   # Makes a trace error message storable: non-printable binaries are escaped via `inspect/2`, then the
   # result is capped at `@max_error_length` code points. PostgreSQL `varchar(n)` counts code points, not

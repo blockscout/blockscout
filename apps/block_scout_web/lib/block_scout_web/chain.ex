@@ -1476,18 +1476,15 @@ defmodule BlockScoutWeb.Chain do
   end
 
   def list_internal_transactions(%Hash{byte_count: unquote(Hash.Address.byte_count())} = address_hash, raw_options) do
-    from_db = Etherscan.list_internal_transactions(address_hash, raw_options)
-
     options = Map.merge(Etherscan.default_options(), raw_options)
 
-    from_node =
-      if InternalTransactionOnDemand.should_fetch?(from_db, options.page_size, options.include_zero_value) do
-        InternalTransactionOnDemand.etherscan_fetch_by_address(address_hash, options)
-      else
-        []
-      end
+    from_db = Etherscan.list_internal_transactions(address_hash, options)
 
-    merge_internal_transactions(from_db, from_node, options.page_size, options.order_by_direction)
+    if InternalTransactionOnDemand.should_fetch?(from_db, options.page_size, options.include_zero_value) do
+      merge_address_internal_transactions_page(address_hash, from_db, options)
+    else
+      from_db
+    end
   end
 
   def list_internal_transactions(:all, raw_options) do
@@ -1518,6 +1515,27 @@ defmodule BlockScoutWeb.Chain do
       true ->
         Etherscan.list_internal_transactions(:all, options)
     end
+  end
+
+  # The DB and the node have different items, so their pages don't match: both are read from the first item up to the
+  # end of the requested page, and the page is cut out of their merged items
+  defp merge_address_internal_transactions_page(
+         address_hash,
+         page_from_db,
+         %{page_number: page_number, page_size: page_size} = options
+       ) do
+    leading_options = %{options | page_number: 1, page_size: page_number * page_size}
+
+    leading_from_db =
+      if page_number == 1,
+        do: page_from_db,
+        else: Etherscan.list_internal_transactions(address_hash, leading_options)
+
+    leading_from_node = InternalTransactionOnDemand.etherscan_fetch_by_address(address_hash, leading_options)
+
+    leading_from_db
+    |> merge_internal_transactions(leading_from_node, leading_options.page_size, options.order_by_direction)
+    |> Enum.drop((page_number - 1) * page_size)
   end
 
   defp merge_internal_transactions(first_list, second_list, limit, sort_direction \\ :desc) do

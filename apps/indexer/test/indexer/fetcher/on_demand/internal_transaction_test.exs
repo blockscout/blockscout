@@ -142,6 +142,126 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
              })
   end
 
+  describe "fetch_by_address/2" do
+    setup do
+      address = insert(:address)
+      %{address_id: address_id} = insert(:address_id_to_address_hash, address: address)
+
+      %{address: address, address_hash_str: to_string(address.hash), address_id: address_id}
+    end
+
+    test "goes on past the block of the paging key", %{
+      address: address,
+      address_hash_str: address_hash_str,
+      address_id: address_id
+    } do
+      insert_to_placeholders(address_id, %{3 => 3, 2 => 2})
+
+      mock_block_traces(2, %{
+        "0x3" => block_traces_with_calls_to(address_hash_str, 3, 3),
+        "0x2" => block_traces_with_calls_to(address_hash_str, 2, 2)
+      })
+
+      # the previous page ended in the middle of block 3
+      assert [%{block_number: 3, transaction_index: 0}, %{block_number: 2, transaction_index: 1}] =
+               InternalTransactionOnDemand.fetch_by_address(address.hash,
+                 direction: :to,
+                 paging_options: %PagingOptions{key: {3, 1, 1}, page_size: 2}
+               )
+    end
+
+    test "goes on past the blocks without matching internal transactions", %{
+      address: address,
+      address_hash_str: address_hash_str,
+      address_id: address_id
+    } do
+      insert_to_placeholders(address_id, %{4 => 2, 3 => 2, 2 => 2})
+
+      mock_block_traces(3, %{
+        # outdated placeholders, e.g. of a reorged block
+        "0x4" => block_traces_with_calls_to(to_string(insert(:address).hash), 4, 2),
+        "0x3" => block_traces_with_calls_to(address_hash_str, 3, 2, "0x0"),
+        "0x2" => block_traces_with_calls_to(address_hash_str, 2, 2)
+      })
+
+      assert [%{block_number: 2, transaction_index: 1}, %{block_number: 2, transaction_index: 0}] =
+               InternalTransactionOnDemand.fetch_by_address(address.hash,
+                 direction: :to,
+                 include_zero_value: false,
+                 paging_options: %PagingOptions{page_size: 2}
+               )
+    end
+
+    test "fetches a range of a single block", %{
+      address: address,
+      address_hash_str: address_hash_str,
+      address_id: address_id
+    } do
+      insert_to_placeholders(address_id, %{2 => 1})
+
+      mock_block_traces(1, %{"0x2" => block_traces_with_calls_to(address_hash_str, 2, 1)})
+
+      assert [%{block_number: 2}] =
+               InternalTransactionOnDemand.fetch_by_address(address.hash,
+                 direction: :to,
+                 from_block: 2,
+                 to_block: 2,
+                 paging_options: %PagingOptions{page_size: 2}
+               )
+    end
+  end
+
+  test "etherscan_fetch_latest/1 traces the blocks up from the lower boundary in ascending order" do
+    address_hash_str = to_string(insert(:address).hash)
+
+    for block_number <- 1..3 do
+      insert(:block, number: block_number)
+    end
+
+    mock_block_traces(2, %{
+      "0x1" => block_traces_with_calls_to(address_hash_str, 1, 1),
+      "0x2" => block_traces_with_calls_to(address_hash_str, 2, 1)
+    })
+
+    assert [%{block_number: 2}] =
+             InternalTransactionOnDemand.etherscan_fetch_latest(%{
+               order_by_direction: :asc,
+               startblock: 1,
+               endblock: 3,
+               page_size: 1,
+               page_number: 2
+             })
+  end
+
+  defp insert_to_placeholders(address_id, count_tos_by_block_number) do
+    for {block_number, count_tos} <- count_tos_by_block_number do
+      insert(:block, number: block_number)
+
+      insert(:deleted_internal_transactions_address_placeholder,
+        address_id: address_id,
+        block_number: block_number,
+        count_tos: count_tos,
+        count_froms: 0
+      )
+    end
+  end
+
+  # `debug_traceBlockByNumber` responses for any batches of the given blocks
+  defp mock_block_traces(times, traces_by_block_quantity) do
+    expect(EthereumJSONRPC.Mox, :json_rpc, times, fn requests, _ ->
+      {:ok,
+       Enum.map(requests, fn %{id: id, params: [block_quantity, _]} ->
+         %{id: id, result: Map.fetch!(traces_by_block_quantity, block_quantity)}
+       end)}
+    end)
+
+    Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth,
+      tracer: "call_tracer",
+      debug_trace_timeout: "5s",
+      block_traceable?: true
+    )
+  end
+
   defp mock_transaction_trace_with_zero_value_call(times) do
     expect(EthereumJSONRPC.Mox, :json_rpc, times, fn [%{id: id, params: _}], _ ->
       {:ok,
@@ -188,8 +308,8 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
   end
 
   # `debug_traceBlockByNumber` result with `transactions_count` transactions, each of them with a nested call
-  # transferring value to the given address
-  defp block_traces_with_calls_to(to_address_hash_str, block_number, transactions_count) do
+  # transferring `value` to the given address
+  defp block_traces_with_calls_to(to_address_hash_str, block_number, transactions_count, value \\ "0x1") do
     for transaction_index <- 0..(transactions_count - 1) do
       %{
         "result" => %{
@@ -202,7 +322,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
               "output" => "0x",
               "to" => to_address_hash_str,
               "type" => "CALL",
-              "value" => "0x1"
+              "value" => value
             }
           ],
           "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",

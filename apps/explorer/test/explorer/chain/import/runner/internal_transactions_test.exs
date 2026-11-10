@@ -15,6 +15,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
     InternalTransaction
   }
 
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.Import.Runner.InternalTransactions
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
   alias Explorer.Utility.{AddressIdToAddressHash, InternalTransactionsAddressPlaceholder}
@@ -1056,6 +1057,105 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
       assert [%InternalTransaction{index: 3}] = stored_internal_transactions(transaction)
     end
 
+    test "run/3 rebuilds the address placeholders of the processed blocks" do
+      BackgroundMigrations.set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished(
+        true
+      )
+
+      on_exit(fn ->
+        BackgroundMigrations.set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished(
+          false
+        )
+      end)
+
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block, status: :ok)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      # e.g. a block that replaced a reorged one and has no internal transactions except the first traces
+      block_without_calls = insert(:block)
+      transaction_without_calls = insert(:transaction) |> with_block(block_without_calls, status: :ok)
+      insert(:pending_block_operation, block_hash: block_without_calls.hash, block_number: block_without_calls.number)
+
+      not_processed_block = insert(:block)
+
+      %{address_id: outdated_address_id} = AddressIdToAddressHash.find_or_create(insert(:address).hash)
+
+      for block_number <- [block.number, block_without_calls.number, not_processed_block.number] do
+        insert(:deleted_internal_transactions_address_placeholder,
+          address_id: outdated_address_id,
+          block_number: block_number
+        )
+      end
+
+      sender = insert(:address)
+      receiver = insert(:address)
+
+      call_changes =
+        transaction
+        |> make_internal_transaction_changes(1, nil)
+        |> Map.merge(%{from_address_hash: sender.hash, to_address_hash: receiver.hash})
+
+      assert {:ok, _} =
+               run_internal_transactions([
+                 make_internal_transaction_changes(transaction, 0, nil),
+                 call_changes,
+                 make_internal_transaction_changes(transaction_without_calls, 0, nil)
+               ])
+
+      sender_id = AddressIdToAddressHash.hash_to_id(sender.hash)
+      receiver_id = AddressIdToAddressHash.hash_to_id(receiver.hash)
+
+      assert address_placeholders() ==
+               MapSet.new([
+                 {sender_id, block.number, 1, 0},
+                 {receiver_id, block.number, 0, 1},
+                 {outdated_address_id, not_processed_block.number, 1, 1}
+               ])
+    end
+
+    test "run/3 adds up the address placeholders of a block coming in batches of transactions" do
+      initial_json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+      geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+
+      Application.put_env(
+        :explorer,
+        :json_rpc_named_arguments,
+        Keyword.put(initial_json_rpc_named_arguments, :variant, EthereumJSONRPC.Geth)
+      )
+
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, Keyword.put(geth_config, :block_traceable?, false))
+
+      on_exit(fn ->
+        Application.put_env(:explorer, :json_rpc_named_arguments, initial_json_rpc_named_arguments)
+        Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, geth_config)
+      end)
+
+      block = insert(:block)
+      address = insert(:address)
+      other_address = insert(:address)
+
+      # the internal transactions of the transactions go in opposite directions
+      for {from_address, to_address} <- [{address, other_address}, {other_address, address}] do
+        transaction = insert(:transaction) |> with_block(block, status: :ok)
+        insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+
+        call_changes =
+          transaction
+          |> make_internal_transaction_changes(1, nil)
+          |> Map.merge(%{from_address_hash: from_address.hash, to_address_hash: to_address.hash})
+
+        assert {:ok, _} =
+                 run_internal_transactions([make_internal_transaction_changes(transaction, 0, nil), call_changes])
+      end
+
+      address_id = AddressIdToAddressHash.hash_to_id(address.hash)
+      other_address_id = AddressIdToAddressHash.hash_to_id(other_address.hash)
+
+      assert address_placeholders() ==
+               MapSet.new([{address_id, block.number, 1, 1}, {other_address_id, block.number, 1, 1}])
+    end
+
     test "run_insert_only/2 does not store the first trace" do
       transaction = insert(:transaction) |> with_block(status: :ok)
 
@@ -1066,6 +1166,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
 
       assert [] == stored_internal_transactions(transaction)
     end
+  end
+
+  defp address_placeholders do
+    InternalTransactionsAddressPlaceholder
+    |> Repo.all()
+    |> MapSet.new(&{&1.address_id, &1.block_number, &1.count_froms, &1.count_tos})
   end
 
   defp stored_internal_transactions(transaction) do

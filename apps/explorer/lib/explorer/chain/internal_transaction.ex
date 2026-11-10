@@ -753,6 +753,10 @@ defmodule Explorer.Chain.InternalTransaction do
   creation bytecode of contracts deployed by other contracts. The rest is fetched on demand from the node (see
   `present_in_db?/2`), and `Explorer.Utility.InternalTransactionsAddressPlaceholder` keeps the blocks to trace
   for an address.
+
+  Turning the storage back on doesn't restore the internal transactions of the blocks indexed without it: these
+  blocks are read from the DB again, where only their contract creations are stored. They have to be refetched,
+  e.g. with `Explorer.Chain.Block.full_refetch/1`.
   """
   @spec storage_disabled?() :: boolean()
   def storage_disabled? do

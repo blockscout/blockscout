@@ -83,7 +83,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished,
     key: :create_logs_block_number_transaction_index_index_unique_index_finished,
     key: :create_logs_first_topic_id_index_finished,
-    key: :fill_logs_optimized_fields_finished
+    key: :fill_logs_optimized_fields_finished,
+    key: :heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished
 
   @dialyzer :no_match
 
@@ -113,6 +114,7 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateAddressesVerifiedHashIndex,
     CreateAddressesVerifiedTransactionsCountDescHashIndex,
     CreateArbitrumBatchL2BlocksUnconfirmedBlocksIndex,
+    CreateDeletedInternalTransactionsAddressPlaceholdersBlockNumberIndex,
     CreateInternalTransactionsBlockNumberCreatedContractAddressIdPartialIndex,
     CreateInternalTransactionsBlockNumberDescTransactionIndexDescIndexDescIndex,
     CreateLogsAddressHashBlockNumberDescIndexDescIndex,
@@ -566,6 +568,15 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     set_and_return_migration_status(
       CreateTransactionsTokenTransferMethodIdOrderedIndex,
       &set_heavy_indexes_create_transactions_token_transfer_method_id_ordered_index_finished/1
+    )
+  end
+
+  defp handle_fallback(
+         :heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished
+       ) do
+    set_and_return_migration_status(
+      CreateDeletedInternalTransactionsAddressPlaceholdersBlockNumberIndex,
+      &set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished/1
     )
   end
 

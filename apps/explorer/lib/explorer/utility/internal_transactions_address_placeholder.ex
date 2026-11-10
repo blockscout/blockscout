@@ -7,6 +7,7 @@ defmodule Explorer.Utility.InternalTransactionsAddressPlaceholder do
 
   use Explorer.Schema
 
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Repo
 
   @primary_key false
@@ -34,8 +35,10 @@ defmodule Explorer.Utility.InternalTransactionsAddressPlaceholder do
   Stores the placeholders of the given internal transactions, which are not stored themselves: for each address and
   block, the number of the internal transactions to (`count_tos`) and from (`count_froms`) the address.
 
-  First traces (index 0) are skipped, as they represent the transactions themselves. Existing placeholders of the same
-  address and block are replaced.
+  First traces (index 0) are skipped, as they represent the transactions themselves. The counts are added to the
+  existing placeholders of the same address and block: the internal transactions of a block can come in several
+  batches (with pending transaction operations), and each internal transaction comes once, unless its block is
+  processed again. Such blocks get their placeholders deleted first (see `delete_by_block_numbers/3`).
 
   ## Parameters
   - `repo`: The repo to insert with
@@ -47,7 +50,8 @@ defmodule Explorer.Utility.InternalTransactionsAddressPlaceholder do
   """
   @spec insert_for_internal_transactions(module(), [map()], Keyword.t()) :: non_neg_integer()
   def insert_for_internal_transactions(repo, internal_transactions, options \\ []) do
-    insert_options = Keyword.merge(options, on_conflict: :replace_all, conflict_target: [:address_id, :block_number])
+    insert_options =
+      Keyword.merge(options, on_conflict: add_counts_on_conflict(), conflict_target: [:address_id, :block_number])
 
     internal_transactions
     |> Enum.group_by(& &1.block_number)
@@ -71,6 +75,71 @@ defmodule Explorer.Utility.InternalTransactionsAddressPlaceholder do
       {inserted_count, _} = repo.insert_all(__MODULE__, batch, insert_options)
       count + inserted_count
     end)
+  end
+
+  # The sum is computed as integer: `smallint + smallint` raises on overflow instead of reaching `LEAST`
+  defp add_counts_on_conflict do
+    from(
+      placeholder in __MODULE__,
+      update: [
+        set: [
+          count_tos: fragment("LEAST(?::integer + EXCLUDED.count_tos, ?)", placeholder.count_tos, ^@smallint_max_value),
+          count_froms:
+            fragment("LEAST(?::integer + EXCLUDED.count_froms, ?)", placeholder.count_froms, ^@smallint_max_value)
+        ]
+      ]
+    )
+  end
+
+  @doc """
+  Deletes the placeholders of the given blocks, e.g. before the internal transactions of the blocks are processed
+  again.
+
+  Does nothing until the index on `block_number` is created by
+  `Explorer.Migrator.HeavyDbIndexOperation.CreateDeletedInternalTransactionsAddressPlaceholdersBlockNumberIndex`:
+  the primary key starts with `address_id`, so without the index the deletion would scan the whole table.
+
+  ## Parameters
+  - `repo`: The repo to delete with
+  - `block_numbers`: Numbers of the blocks to delete the placeholders of
+  - `options`: Options for `delete_all`, e.g. `timeout`
+
+  ## Returns
+  - The number of deleted placeholders
+  """
+  @spec delete_by_block_numbers(module(), [non_neg_integer()], Keyword.t()) :: non_neg_integer()
+  def delete_by_block_numbers(repo, block_numbers, options \\ [])
+
+  def delete_by_block_numbers(_repo, [], _options), do: 0
+
+  def delete_by_block_numbers(repo, block_numbers, options) do
+    if BackgroundMigrations.get_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished() do
+      locked_placeholders_query =
+        from(
+          placeholder in __MODULE__,
+          where: placeholder.block_number in ^block_numbers,
+          select: %{address_id: placeholder.address_id, block_number: placeholder.block_number},
+          # Enforce the lock order of `insert_for_internal_transactions/3`
+          order_by: [asc: placeholder.address_id, asc: placeholder.block_number],
+          lock: "FOR UPDATE"
+        )
+
+      {count, _} =
+        repo.delete_all(
+          from(
+            placeholder in __MODULE__,
+            join: locked_placeholder in subquery(locked_placeholders_query),
+            on:
+              placeholder.address_id == locked_placeholder.address_id and
+                placeholder.block_number == locked_placeholder.block_number
+          ),
+          options
+        )
+
+      count
+    else
+      0
+    end
   end
 
   defp increment_count(placeholders, nil, _block_number, _counter), do: placeholders
