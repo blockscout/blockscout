@@ -2,6 +2,8 @@
 defmodule Explorer.Chain.Optimism.SuperchainConfigTest do
   use Explorer.DataCase, async: false
 
+  import ExUnit.CaptureLog
+
   alias Explorer.Chain.Optimism.SuperchainConfig
 
   @toml_factory "0xE5965Ab5962eDc7477C8520243A95517CD252fA9"
@@ -49,6 +51,36 @@ defmodule Explorer.Chain.Optimism.SuperchainConfigTest do
       put_optimism_env(superchain_config_file_path: nil, optimism_l1_dispute_game_factory: nil)
 
       assert :ok = SuperchainConfig.refresh()
+      assert is_nil(SuperchainConfig.optimism_l1_dispute_game_factory_contract())
+    end
+  end
+
+  describe "local Superchain config file validation" do
+    test "ignores a file with an extension other than .toml", %{toml_path: toml_path} do
+      txt_path = Path.rootname(toml_path) <> ".txt"
+      File.cp!(toml_path, txt_path)
+      on_exit(fn -> File.rm(txt_path) end)
+
+      put_optimism_env(superchain_config_file_path: txt_path, optimism_l1_dispute_game_factory: nil)
+
+      log = capture_log(fn -> assert :ok = SuperchainConfig.refresh() end)
+
+      assert log =~ "invalid_file_extension"
+      assert is_nil(SuperchainConfig.optimism_l1_dispute_game_factory_contract())
+    end
+
+    test "ignores a .toml file whose content is not valid TOML", %{toml_path: toml_path} do
+      File.write!(toml_path, """
+      root:x:0:0:root:/root:/bin/bash
+      DisputeGameFactoryProxy = "#{@toml_factory}"
+      """)
+
+      put_optimism_env(superchain_config_file_path: toml_path, optimism_l1_dispute_game_factory: nil)
+
+      log = capture_log(fn -> assert :ok = SuperchainConfig.refresh() end)
+
+      assert log =~ "invalid_toml_content"
+      refute log =~ "root:x"
       assert is_nil(SuperchainConfig.optimism_l1_dispute_game_factory_contract())
     end
   end
