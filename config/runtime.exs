@@ -1455,8 +1455,8 @@ config :indexer, Indexer.Fetcher.MultichainSearchDb.CountersFetcher.Supervisor,
       !transactions_stats_enabled
 
 config :indexer, Indexer.Fetcher.Stats.HotSmartContracts.Supervisor,
-  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_HOT_SMART_CONTRACTS_FETCHER"),
-  enabled: !ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_HOT_SMART_CONTRACTS_FETCHER")
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_HOT_SMART_CONTRACTS_FETCHER", "true"),
+  enabled: !ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_HOT_SMART_CONTRACTS_FETCHER", "true")
 
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE", 10),
