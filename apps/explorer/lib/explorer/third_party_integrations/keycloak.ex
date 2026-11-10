@@ -227,12 +227,15 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
 
   ## Returns
   - `{:ok, settings}` with a flat map of setting keys to values
-  - `{:error, String.t()}` or `:error` if the user could not be fetched
+  - `{:error, :user_not_found}` if there is no such user in Keycloak
+  - `:error` if the user could not be fetched
   """
-  @spec get_user_settings(String.t()) :: {:ok, %{String.t() => String.t()}} | {:error, String.t()} | :error
+  @spec get_user_settings(String.t()) :: {:ok, %{String.t() => String.t()}} | {:error, :user_not_found} | :error
   def get_user_settings(user_id) do
-    with {:ok, user} <- get_user(user_id) do
-      {:ok, extract_settings(user)}
+    case get_user(user_id) do
+      {:ok, user} -> {:ok, extract_settings(user)}
+      {:error, "User not found"} -> {:error, :user_not_found}
+      error -> error
     end
   end
 
@@ -252,10 +255,11 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   ## Returns
   - `{:ok, settings}` with the full settings map after the update
   - `{:invalid_settings, String.t()}` if the diff or the resulting settings are invalid
-  - `{:error, String.t()}` or `:error` if a Keycloak request failed
+  - `{:error, :user_not_found}` if there is no such user in Keycloak
+  - `:error` if a Keycloak request failed
   """
   @spec update_user_settings(String.t(), map()) ::
-          {:ok, %{String.t() => String.t()}} | {:invalid_settings, String.t()} | {:error, String.t()} | :error
+          {:ok, %{String.t() => String.t()}} | {:invalid_settings, String.t()} | {:error, :user_not_found} | :error
   def update_user_settings(user_id, diff) do
     with :ok <- validate_settings_diff(diff) do
       "#{extension_users_path()}/#{user_id}/settings"
@@ -274,7 +278,14 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
     end
   end
 
-  defp handle_settings_update({:ok, %{status_code: 404}}), do: {:error, "User not found"}
+  # Keycloak responds with 404 to a request to a missing endpoint as well, e.g. when the extension is not installed
+  defp handle_settings_update({:ok, %{status_code: 404, body: body}} = response) do
+    case Utils.JSON.decode(body) do
+      {:ok, %{"error" => "User not found"}} -> {:error, :user_not_found}
+      _ -> handle_error(response, "Failed to update user settings")
+    end
+  end
+
   defp handle_settings_update(error), do: handle_error(error, "Failed to update user settings")
 
   defp extract_settings(user) do

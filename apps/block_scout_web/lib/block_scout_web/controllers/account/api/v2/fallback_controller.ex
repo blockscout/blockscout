@@ -33,6 +33,13 @@ defmodule BlockScoutWeb.Account.API.V2.FallbackController do
     |> render(:changeset_errors, changeset: changeset)
   end
 
+  def call(conn, {:error, :user_not_found}) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(UserView)
+    |> render(:message, %{message: "User not found"})
+  end
+
   def call(conn, {:error, message}) do
     conn
     |> put_status(500)
