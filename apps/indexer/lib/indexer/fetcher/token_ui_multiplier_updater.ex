@@ -66,11 +66,7 @@ defmodule Indexer.Fetcher.TokenUIMultiplierUpdater do
   def add_changes([]), do: :ok
 
   def add_changes(changes) do
-    if disabled?() do
-      :ok
-    else
-      GenServer.cast(__MODULE__, {:add_changes, changes})
-    end
+    GenServer.cast(__MODULE__, {:add_changes, changes})
   end
 
   @impl GenServer

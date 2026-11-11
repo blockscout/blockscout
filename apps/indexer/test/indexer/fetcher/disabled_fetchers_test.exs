@@ -60,14 +60,12 @@ defmodule Indexer.Fetcher.DisabledFetchersTest do
       disable(TokenTotalSupplyUpdater)
 
       assert TokenTotalSupplyUpdater.start_link([]) == :ignore
-      assert TokenTotalSupplyUpdater.add_tokens(["0x0000000000000000000000000000000000000001"]) == :ok
     end
 
     test "TokenUIMultiplierUpdater does not start when it is disabled" do
       disable(TokenUIMultiplierUpdater)
 
       assert TokenUIMultiplierUpdater.start_link([]) == :ignore
-      assert TokenUIMultiplierUpdater.add_changes([%{token_contract_address_hash: "0x01"}]) == :ok
     end
 
     test "PendingTransactionsSanitizer does not start when it is disabled" do

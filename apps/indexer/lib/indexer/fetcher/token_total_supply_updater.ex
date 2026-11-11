@@ -39,11 +39,7 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
   end
 
   def add_tokens(contract_address_hashes) do
-    if disabled?() do
-      :ok
-    else
-      GenServer.cast(__MODULE__, {:add_tokens, contract_address_hashes})
-    end
+    GenServer.cast(__MODULE__, {:add_tokens, contract_address_hashes})
   end
 
   def handle_cast({:add_tokens, contract_address_hashes}, state) do
