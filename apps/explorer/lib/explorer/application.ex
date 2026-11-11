@@ -210,6 +210,7 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.BackfillScaledUIAmountTokens, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeScaledUIAmountTokenTransferTypes, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.SanitizeEip7708TokenTransfers, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.TransactionBlockConsensus, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.TokenTransferBlockConsensus, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.RestoreOmittedWETHTransfers, :indexer),
