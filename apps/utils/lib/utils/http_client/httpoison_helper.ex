@@ -18,6 +18,19 @@ defmodule Utils.HttpClient.HTTPoisonHelper do
     |> add_insecure_option(options[:insecure])
     |> add_params_option(options[:params])
     |> add_max_body_length_option(options[:max_body_length])
+    |> add_hostname_option(options[:hostname])
+  end
+
+  # Set by `Utils.HttpClient.SafeFetch` when the URL host is a validated IP literal: hackney
+  # sends `server_name_indication` as SNI and verifies the certificate against it. The request
+  # is kept on HTTP/1.1 because over HTTP/2 hackney drops the `Host` header and builds
+  # `:authority` from the connection host, i.e. from the IP literal.
+  defp add_hostname_option(options, nil), do: options
+
+  defp add_hostname_option(options, hostname) do
+    options
+    |> Keyword.put(:ssl, server_name_indication: String.to_charlist(hostname))
+    |> Keyword.put(:hackney, [{:protocols, [:http1]} | options[:hackney] || []])
   end
 
   # Caps the buffered response body at the transport level: hackney aborts the request

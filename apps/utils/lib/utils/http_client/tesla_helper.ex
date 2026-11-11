@@ -44,8 +44,31 @@ defmodule Utils.HttpClient.TeslaHelper do
       |> add_timeout_option(options[:timeout])
       |> add_insecure_option(options[:insecure])
       |> add_max_body_length_option(options[:max_body_length])
+      |> add_hostname_option(options[:hostname])
+      |> add_inet6_option(options[:inet6])
 
     [adapter: adapter_options]
+  end
+
+  # Set by `Utils.HttpClient.SafeFetch` when the validated address is IPv6: Mint connects over
+  # an `:inet` socket unless told otherwise, and an IPv6 literal cannot be reached that way.
+  # Mint reads `:inet6` from the transport options, not from the connect options. Its IPv4
+  # fallback is switched off: retrying an IPv6 literal over IPv4 turns a connection error into
+  # `:nxdomain`, which hides the real reason from the caller.
+  defp add_inet6_option(options, true) do
+    Keyword.update(options, :transport_opts, [inet6: true, inet4: false], fn transport_opts ->
+      transport_opts |> Keyword.put(:inet6, true) |> Keyword.put(:inet4, false)
+    end)
+  end
+
+  defp add_inet6_option(options, _inet6), do: options
+
+  # Set by `Utils.HttpClient.SafeFetch` when the URL host is a validated IP literal: Mint
+  # takes the `Host` header, SNI and the certificate hostname check from `:hostname`.
+  defp add_hostname_option(options, nil), do: options
+
+  defp add_hostname_option(options, hostname) do
+    Keyword.put(options, :hostname, hostname)
   end
 
   # Caps the buffered response body at the adapter level: `Tesla.Adapter.Mint` stops reading

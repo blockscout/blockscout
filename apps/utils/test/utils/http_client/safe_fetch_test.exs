@@ -134,4 +134,255 @@ defmodule Utils.HttpClient.SafeFetchTest do
     t = transport(fn @public -> {:error, :econnrefused} end)
     assert SafeFetch.request(@public, [], [], t) == {:error, :econnrefused}
   end
+
+  test "passes headers and transport_opts through unchanged for an IP literal host" do
+    parent = self()
+
+    t = fn url, headers, opts ->
+      send(parent, {:requested, url, headers, opts})
+      {:ok, resp(200, [], "ok")}
+    end
+
+    assert {:ok, %{status_code: 200}} = SafeFetch.request(@public, [{"Accept", "*/*"}], [transport_opts: [a: 1]], t)
+    assert_received {:requested, @public, [{"Accept", "*/*"}], [a: 1]}
+  end
+
+  describe "DNS pinning" do
+    # A rebinding host: a nameserver under the attacker's control answers the lookup made
+    # by the validation with a public address and the next one with an internal address.
+    setup do
+      start_fake_nameserver([{8, 8, 8, 8}, {127, 0, 0, 1}])
+      :ok
+    end
+
+    test "connects to the validated address instead of resolving the host again" do
+      parent = self()
+
+      t = fn url, headers, opts ->
+        send(parent, {:requested, url, headers, opts})
+        {:ok, resp(200, [], "ok")}
+      end
+
+      assert {:ok, %{status_code: 200}} =
+               SafeFetch.request("http://rebind.test/meta", [{"Accept", "*/*"}], [transport_opts: [a: 1]], t)
+
+      assert_received {:requested, "http://8.8.8.8/meta", [{"Host", "rebind.test"}, {"Accept", "*/*"}],
+                       [hostname: "rebind.test", a: 1]}
+
+      # What the HTTP client would have gotten had it resolved the host itself.
+      assert DNS.resolve("rebind.test", :a) == {:ok, [{127, 0, 0, 1}]}
+    end
+
+    test "keeps scheme, non-default port, path and query" do
+      parent = self()
+
+      t = fn url, headers, opts ->
+        send(parent, {:requested, url, headers, opts})
+        {:ok, resp(200, [], "ok")}
+      end
+
+      assert {:ok, _} = SafeFetch.request("https://rebind.test:8443/a/b?x=1", [], [], t)
+
+      assert_received {:requested, "https://8.8.8.8:8443/a/b?x=1", [{"Host", "rebind.test:8443"}],
+                       [hostname: "rebind.test"]}
+    end
+
+    test "pins redirect targets as well" do
+      t =
+        transport(fn
+          "http://8.8.8.8/first" -> {:ok, resp(302, [{"location", "http://rebind.test/second"}])}
+        end)
+
+      # The second lookup of the rebinding host answers with the internal address.
+      assert SafeFetch.request("http://rebind.test/first", [], [], t) == {:error, :blacklist}
+      refute_received {:requested, "http://rebind.test/second"}
+      refute_received {:requested, "http://127.0.0.1/second"}
+    end
+  end
+
+  describe "DNS pinning of an IPv6-only host" do
+    setup do
+      start_fake_nameserver([{0x2606, 0x4700, 0x4700, 0, 0, 0, 0, 0x1111}])
+      :ok
+    end
+
+    test "connects to the bracketed address over an IPv6 socket" do
+      parent = self()
+
+      t = fn url, headers, opts ->
+        send(parent, {:requested, url, headers, opts})
+        {:ok, resp(200, [], "ok")}
+      end
+
+      assert {:ok, %{status_code: 200}} = SafeFetch.request("http://rebind.test/meta", [], [], t)
+
+      assert_received {:requested, "http://[2606:4700:4700::1111]/meta", [{"Host", "rebind.test"}],
+                       [hostname: "rebind.test", inet6: true]}
+    end
+  end
+
+  describe "DNS pinning of a host with several addresses" do
+    setup do
+      start_fake_nameserver([[{:a, {8, 8, 8, 8}}, {:a, {1, 1, 1, 1}}, {:a, {9, 9, 9, 9}}]])
+      :ok
+    end
+
+    test "moves to the next validated address when the connection fails" do
+      t =
+        transport(fn
+          "http://8.8.8.8/meta" -> {:error, :econnrefused}
+          "http://1.1.1.1/meta" -> {:error, %{reason: :ehostunreach}}
+          "http://9.9.9.9/meta" -> {:ok, resp(200, [], "ok")}
+        end)
+
+      assert {:ok, %{status_code: 200}} = SafeFetch.request("http://multi.test/meta", [], [], t)
+      assert_received {:requested, "http://8.8.8.8/meta"}
+      assert_received {:requested, "http://1.1.1.1/meta"}
+      assert_received {:requested, "http://9.9.9.9/meta"}
+    end
+
+    test "returns the last error when every address fails to connect" do
+      t = transport(fn _url -> {:error, :econnrefused} end)
+
+      assert SafeFetch.request("http://multi.test/meta", [], [], t) == {:error, :econnrefused}
+      assert_received {:requested, "http://9.9.9.9/meta"}
+    end
+
+    test "does not retry an error that is not a connection failure" do
+      t = transport(fn "http://8.8.8.8/meta" -> {:error, :timeout} end)
+
+      assert SafeFetch.request("http://multi.test/meta", [], [], t) == {:error, :timeout}
+      refute_received {:requested, "http://1.1.1.1/meta"}
+    end
+
+    test "gives a retry only the part of the connection timeout that is left" do
+      parent = self()
+
+      t = fn url, _headers, opts ->
+        send(parent, {:requested, url, opts[:timeout]})
+        Process.sleep(10)
+        {:error, :econnrefused}
+      end
+
+      assert SafeFetch.request("http://multi.test/meta", [], [transport_opts: [timeout: 60_000]], t) ==
+               {:error, :econnrefused}
+
+      assert_received {:requested, "http://8.8.8.8/meta", 60_000}
+      assert_received {:requested, "http://1.1.1.1/meta", left}
+      assert is_integer(left) and left in 1..59_990
+    end
+
+    test "bounds the retries by a default budget when no connection timeout is given" do
+      parent = self()
+
+      t = fn url, _headers, opts ->
+        send(parent, {:requested, url, opts[:timeout]})
+        {:error, :econnrefused}
+      end
+
+      assert SafeFetch.request("http://multi.test/meta", [], [], t) == {:error, :econnrefused}
+
+      assert_received {:requested, "http://8.8.8.8/meta", nil}
+      assert_received {:requested, "http://1.1.1.1/meta", left}
+      assert is_integer(left) and left in 1..8_000
+    end
+
+    test "stops retrying once the connection timeout is spent" do
+      t =
+        transport(fn _url ->
+          Process.sleep(50)
+          {:error, :connect_timeout}
+        end)
+
+      assert SafeFetch.request("http://multi.test/meta", [], [transport_opts: [timeout: 50]], t) ==
+               {:error, :connect_timeout}
+
+      assert_received {:requested, "http://8.8.8.8/meta"}
+      refute_received {:requested, "http://1.1.1.1/meta"}
+    end
+  end
+
+  describe "DNS pinning of a CNAME host" do
+    # A resolver answers an A query for an alias with the CNAME record followed by the
+    # address records of its target.
+    setup do
+      start_fake_nameserver([[{:cname, ~c"cdn.example.test"}, {:a, {8, 8, 8, 8}}]])
+      :ok
+    end
+
+    test "pins the address record, not the alias target" do
+      parent = self()
+
+      t = fn url, headers, opts ->
+        send(parent, {:requested, url, headers, opts})
+        {:ok, resp(200, [], "ok")}
+      end
+
+      assert {:ok, %{status_code: 200}} = SafeFetch.request("http://alias.test/meta", [], [], t)
+      assert_received {:requested, "http://8.8.8.8/meta", [{"Host", "alias.test"}], [hostname: "alias.test"]}
+    end
+  end
+
+  # Starts a fake authoritative nameserver on 127.0.0.1 and puts it first in the resolver
+  # list used by `DNS.resolve`. An answer is an IPv4 or IPv6 address, or a list of
+  # `{type, data}` records; a query consumes the next answer when it holds a record of the
+  # queried type (TTL 0, so nothing gets cached) and gets no records otherwise.
+  defp start_fake_nameserver(answers) do
+    parent = self()
+
+    pid =
+      spawn_link(fn ->
+        {:ok, socket} = :gen_udp.open(0, [:binary, active: false, ip: {127, 0, 0, 1}])
+        {:ok, port} = :inet.port(socket)
+        send(parent, {:nameserver_port, port})
+        serve_dns(socket, answers)
+      end)
+
+    port =
+      receive do
+        {:nameserver_port, port} -> port
+      end
+
+    # The first `:inet_res` query in the VM loads `/etc/resolv.conf` and replaces the
+    # nameserver list with its content, which would drop the entry inserted below.
+    :ok = :inet_db.res_update_conf()
+    :ok = :inet_db.ins_ns({127, 0, 0, 1}, port)
+
+    on_exit(fn ->
+      :inet_db.del_ns({127, 0, 0, 1}, port)
+      Process.exit(pid, :kill)
+    end)
+  end
+
+  defp serve_dns(socket, answers) do
+    {:ok, {ip, port, packet}} = :gen_udp.recv(socket, 0)
+    {:ok, query} = :inet_dns.decode(packet)
+    [question] = :inet_dns.msg(query, :qdlist)
+    domain = :inet_dns.dns_query(question, :domain)
+    type = :inet_dns.dns_query(question, :type)
+
+    {records, rest} =
+      case answers do
+        [answer | rest] ->
+          records = records(answer)
+          if List.keymember?(records, type, 0), do: {records, rest}, else: {[], answers}
+
+        [] ->
+          {[], []}
+      end
+
+    anlist =
+      Enum.map(records, fn {rr_type, data} ->
+        :inet_dns.make_rr(domain: domain, type: rr_type, class: :in, ttl: 0, data: data)
+      end)
+
+    header = :inet_dns.make_header(:inet_dns.msg(query, :header), qr: true, aa: true)
+    response = :inet_dns.make_msg(header: header, qdlist: [question], anlist: anlist)
+    :ok = :gen_udp.send(socket, ip, port, :inet_dns.encode(response))
+    serve_dns(socket, rest)
+  end
+
+  defp records(address) when tuple_size(address) == 4, do: [{:a, address}]
+  defp records(address) when tuple_size(address) == 8, do: [{:aaaa, address}]
+  defp records(records) when is_list(records), do: records
 end

@@ -24,5 +24,20 @@ defmodule Utils.HttpClient.HTTPoisonHelperTest do
       refute Keyword.has_key?(opts, :hackney)
       assert opts[:recv_timeout] == 1_000
     end
+
+    test "forwards hostname as the SNI ssl option" do
+      opts = HTTPoisonHelper.request_opts(hostname: "example.com")
+
+      assert opts[:ssl] == [server_name_indication: ~c"example.com"]
+    end
+
+    test "restricts a request with a hostname to HTTP/1.1" do
+      # Over HTTP/2 hackney drops the `Host` header and derives `:authority` from the
+      # connection host, which is the pinned IP literal.
+      opts = HTTPoisonHelper.request_opts(hostname: "example.com", max_body_length: 1024)
+
+      assert Keyword.fetch!(opts[:hackney], :protocols) == [:http1]
+      assert Keyword.fetch!(opts[:hackney], :max_body_size) == 1024
+    end
   end
 end

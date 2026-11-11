@@ -9,7 +9,7 @@ defmodule NFTMediaHandler.Media.Fetcher do
 
   import Utils.TokenInstanceHelper, only: [media_type: 4]
 
-  alias Utils.HttpClient.SafeFetch
+  alias Utils.HttpClient.{HTTPoisonHelper, SafeFetch}
 
   @doc """
   Fetches media from the given URL with the specified headers.
@@ -43,7 +43,9 @@ defmodule NFTMediaHandler.Media.Fetcher do
              url,
              headers,
              [validate_host?: validate_host?, transport_opts: [max_body_length: 20_000_000]],
-             fn request_url, request_headers, opts -> HTTPoison.get(request_url, request_headers, opts) end
+             fn request_url, request_headers, opts ->
+               HTTPoison.get(request_url, request_headers, HTTPoisonHelper.request_opts(opts))
+             end
            ) do
       {:ok, media_type, body}
     else
