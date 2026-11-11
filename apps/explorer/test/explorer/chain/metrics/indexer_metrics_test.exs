@@ -227,17 +227,27 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetricsTest do
       insert(:address_current_token_balance, token_type: "ERC-20", value: nil, value_fetched_at: nil)
       insert(:address_current_token_balance, token_type: "ERC-20")
 
-      :ok
+      {:ok, previous_config: previous_config || []}
     end
 
-    test "returns 0 when current token balances fetcher is disabled" do
-      Application.put_env(:indexer, Indexer.Fetcher.TokenBalance.Current.Supervisor, disabled?: true)
+    test "returns 0 when current token balances fetcher is disabled", %{previous_config: previous_config} do
+      Application.put_env(
+        :indexer,
+        Indexer.Fetcher.TokenBalance.Current.Supervisor,
+        Keyword.merge(previous_config, disabled?: true)
+      )
 
       assert IndexerMetrics.missing_current_token_balances_count() == 0
     end
 
-    test "counts current token balances with missing values when fetcher is enabled" do
-      Application.put_env(:indexer, Indexer.Fetcher.TokenBalance.Current.Supervisor, disabled?: false)
+    test "counts current token balances with missing values when fetcher is enabled", %{
+      previous_config: previous_config
+    } do
+      Application.put_env(
+        :indexer,
+        Indexer.Fetcher.TokenBalance.Current.Supervisor,
+        Keyword.merge(previous_config, disabled?: false)
+      )
 
       assert IndexerMetrics.missing_current_token_balances_count() == 2
     end
