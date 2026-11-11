@@ -7,11 +7,29 @@ defmodule Indexer.Fetcher.DisabledFetchersTest do
     ContractCode,
     SignedAuthorizationStatus,
     Token,
+    TokenBalance,
     TokenTotalSupplyUpdater,
-    TokenUIMultiplierUpdater
+    TokenUIMultiplierUpdater,
+    UncleBlock
   }
 
   alias Indexer.PendingTransactionsSanitizer
+  alias Indexer.Temporary.UnclesWithoutIndex
+
+  @runtime_config_path Path.expand("../../../../../config/runtime.exs", __DIR__)
+
+  # The environment variable and the module whose `disabled?/0` it controls.
+  @disable_env_vars [
+    {"INDEXER_DISABLE_TOKEN_FETCHER", Token.Supervisor},
+    {"INDEXER_DISABLE_CURRENT_TOKEN_BALANCES_FETCHER", TokenBalance.Current.Supervisor},
+    {"INDEXER_DISABLE_CONTRACT_CODE_FETCHER", ContractCode.Supervisor},
+    {"INDEXER_DISABLE_SIGNED_AUTHORIZATION_STATUS_FETCHER", SignedAuthorizationStatus.Supervisor},
+    {"INDEXER_DISABLE_UNCLE_BLOCK_FETCHER", UncleBlock.Supervisor},
+    {"INDEXER_DISABLE_UNCLES_WITHOUT_INDEX_FETCHER", UnclesWithoutIndex.Supervisor},
+    {"INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER", TokenTotalSupplyUpdater},
+    {"INDEXER_DISABLE_TOKEN_UI_MULTIPLIER_UPDATER_FETCHER", TokenUIMultiplierUpdater},
+    {"INDEXER_DISABLE_PENDING_TRANSACTIONS_SANITIZER", PendingTransactionsSanitizer}
+  ]
 
   # Sets `disabled?: true` for the given configuration key and restores the
   # initial configuration when the test exits.
@@ -20,13 +38,74 @@ defmodule Indexer.Fetcher.DisabledFetchersTest do
 
     Application.put_env(:indexer, config_key, Keyword.put(initial_config || [], :disabled?, true))
 
-    on_exit(fn ->
-      if is_nil(initial_config) do
-        Application.delete_env(:indexer, config_key)
-      else
-        Application.put_env(:indexer, config_key, initial_config)
-      end
+    on_exit(fn -> restore_config(config_key, initial_config) end)
+  end
+
+  defp restore_config(config_key, nil), do: Application.delete_env(:indexer, config_key)
+  defp restore_config(config_key, initial_config), do: Application.put_env(:indexer, config_key, initial_config)
+
+  # Evaluates `config/runtime.exs` with the current environment variables and
+  # copies each `disabled?` value that it sets for the `:indexer` application
+  # into the application environment. The configuration keys are taken from
+  # the file, so a key that the code does not read has no effect here, as in
+  # a real start of the application.
+  defp apply_disabled_flags_from_runtime_config do
+    @runtime_config_path
+    |> Config.Reader.read!(env: :test, target: :host)
+    |> Keyword.get(:indexer, [])
+    |> Enum.filter(fn {_config_key, value} -> Keyword.keyword?(value) and Keyword.has_key?(value, :disabled?) end)
+    |> Enum.each(fn {config_key, value} ->
+      current_config = Application.get_env(:indexer, config_key) || []
+      Application.put_env(:indexer, config_key, Keyword.put(current_config, :disabled?, value[:disabled?]))
     end)
+  end
+
+  defp set_env_var(name, value) do
+    initial_value = System.get_env(name)
+
+    if is_nil(value), do: System.delete_env(name), else: System.put_env(name, value)
+
+    on_exit(fn ->
+      if is_nil(initial_value), do: System.delete_env(name), else: System.put_env(name, initial_value)
+    end)
+  end
+
+  describe "config/runtime.exs" do
+    setup do
+      # `config/runtime.exs` evaluates `config_helper.exs`, which defines a
+      # module that is already loaded
+      initial_ignore_module_conflict = Code.get_compiler_option(:ignore_module_conflict)
+      Code.put_compiler_option(:ignore_module_conflict, true)
+
+      initial_indexer_config = Application.get_all_env(:indexer)
+
+      on_exit(fn ->
+        Code.put_compiler_option(:ignore_module_conflict, initial_ignore_module_conflict)
+
+        Enum.each(Application.get_all_env(:indexer), fn {config_key, _value} ->
+          restore_config(config_key, Keyword.get(initial_indexer_config, config_key))
+        end)
+      end)
+
+      Enum.each(@disable_env_vars, fn {env_var, _module} -> set_env_var(env_var, nil) end)
+    end
+
+    test "each INDEXER_DISABLE_* variable disables its fetcher" do
+      apply_disabled_flags_from_runtime_config()
+
+      for {env_var, module} <- @disable_env_vars do
+        refute module.disabled?(), "#{inspect(module)} is disabled although #{env_var} is not set"
+      end
+
+      for {env_var, module} <- @disable_env_vars do
+        System.put_env(env_var, "true")
+        apply_disabled_flags_from_runtime_config()
+
+        assert module.disabled?(), "#{env_var}=true does not disable #{inspect(module)}"
+
+        System.delete_env(env_var)
+      end
+    end
   end
 
   describe "fetchers based on BufferedTask" do

@@ -187,14 +187,17 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   defp maybe_filter_by_trace_first_block(query, _trace_first_block), do: query
 
   @doc """
-  Query to get the count of current token balances with missing values
+  Query to get the count of current token balances with missing values.
+
+  Returns 0 if the current token balances fetcher is disabled, because the
+  indexer does not fetch these values then.
   """
   # sobelow_skip ["SQL"]
   @spec missing_current_token_balances_count() :: integer()
   def missing_current_token_balances_count do
     block_ranges = RangesHelper.get_block_ranges()
 
-    if block_ranges == [] do
+    if current_token_balances_fetcher_disabled?() or block_ranges == [] do
       0
     else
       {range_conditions, params} =
@@ -244,6 +247,12 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
           0
       end
     end
+  end
+
+  defp current_token_balances_fetcher_disabled? do
+    :indexer
+    |> Application.get_env(Indexer.Fetcher.TokenBalance.Current.Supervisor, [])
+    |> Keyword.get(:disabled?) == true
   end
 
   @doc """

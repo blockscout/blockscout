@@ -206,6 +206,43 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetricsTest do
     end
   end
 
+  describe "missing_current_token_balances_count/0" do
+    setup do
+      previous_block_ranges = Application.get_env(:indexer, :block_ranges)
+      previous_config = Application.get_env(:indexer, Indexer.Fetcher.TokenBalance.Current.Supervisor)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, :block_ranges, previous_block_ranges)
+
+        if is_nil(previous_config) do
+          Application.delete_env(:indexer, Indexer.Fetcher.TokenBalance.Current.Supervisor)
+        else
+          Application.put_env(:indexer, Indexer.Fetcher.TokenBalance.Current.Supervisor, previous_config)
+        end
+      end)
+
+      Application.put_env(:indexer, :block_ranges, "0..latest")
+
+      insert(:address_current_token_balance, token_type: "ERC-20", value: nil, value_fetched_at: nil)
+      insert(:address_current_token_balance, token_type: "ERC-20", value: nil, value_fetched_at: nil)
+      insert(:address_current_token_balance, token_type: "ERC-20")
+
+      :ok
+    end
+
+    test "returns 0 when current token balances fetcher is disabled" do
+      Application.put_env(:indexer, Indexer.Fetcher.TokenBalance.Current.Supervisor, disabled?: true)
+
+      assert IndexerMetrics.missing_current_token_balances_count() == 0
+    end
+
+    test "counts current token balances with missing values when fetcher is enabled" do
+      Application.put_env(:indexer, Indexer.Fetcher.TokenBalance.Current.Supervisor, disabled?: false)
+
+      assert IndexerMetrics.missing_current_token_balances_count() == 2
+    end
+  end
+
   describe "missing_archival_token_balances_count/0" do
     test "returns 0 when archival token balances fetcher is disabled" do
       previous_config =
