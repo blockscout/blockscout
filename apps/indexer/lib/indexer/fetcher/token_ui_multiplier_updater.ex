@@ -36,7 +36,20 @@ defmodule Indexer.Fetcher.TokenUIMultiplierUpdater do
   @max_attempts 10
 
   def start_link(_) do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+    if disabled?() do
+      :ignore
+    else
+      GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+    end
+  end
+
+  @doc """
+  Returns `true` if the updater is disabled in the configuration, so that it
+  is not started and the changes passed to `add_changes/1` are dropped.
+  """
+  @spec disabled?() :: boolean()
+  def disabled? do
+    Application.get_env(:indexer, __MODULE__, [])[:disabled?] == true
   end
 
   @impl GenServer
@@ -53,7 +66,11 @@ defmodule Indexer.Fetcher.TokenUIMultiplierUpdater do
   def add_changes([]), do: :ok
 
   def add_changes(changes) do
-    GenServer.cast(__MODULE__, {:add_changes, changes})
+    if disabled?() do
+      :ok
+    else
+      GenServer.cast(__MODULE__, {:add_changes, changes})
+    end
   end
 
   @impl GenServer

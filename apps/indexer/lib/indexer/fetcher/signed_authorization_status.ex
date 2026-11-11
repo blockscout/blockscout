@@ -61,17 +61,21 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
         realtime?,
         timeout \\ 5000
       ) do
-    grouped_signed_authorizations = signed_authorizations |> Enum.group_by(& &1.transaction_hash)
+    if __MODULE__.Supervisor.disabled?() do
+      :ok
+    else
+      grouped_signed_authorizations = signed_authorizations |> Enum.group_by(& &1.transaction_hash)
 
-    BufferedTask.buffer(
-      __MODULE__,
-      transactions
-      |> RangesHelper.filter_traceable_block_numbers()
-      |> Enum.map(&Map.put(&1, :signed_authorizations, Map.get(grouped_signed_authorizations, &1.hash, [])))
-      |> entries_from_transactions(),
-      realtime?,
-      timeout
-    )
+      BufferedTask.buffer(
+        __MODULE__,
+        transactions
+        |> RangesHelper.filter_traceable_block_numbers()
+        |> Enum.map(&Map.put(&1, :signed_authorizations, Map.get(grouped_signed_authorizations, &1.hash, [])))
+        |> entries_from_transactions(),
+        realtime?,
+        timeout
+      )
+    end
   end
 
   # Chunks a list of transactions into entries, with all transactions from the same block grouped together.
