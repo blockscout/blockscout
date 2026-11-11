@@ -2,7 +2,7 @@
 defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
-  alias Explorer.Chain.{Address, InternalTransaction}
+  alias Explorer.Chain.{Address, InternalTransaction, PendingOperationsHelper}
   alias Explorer.Chain.Cache.BackgroundMigrations
 
   describe "/internal-transactions" do
@@ -56,6 +56,81 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
 
       assert response["meta"]["message"] ==
                "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "tolerates pending blocks within the chain head tolerance on the first page", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        transaction_index: 0,
+        block_number: transaction.block_number,
+        index: 1
+      )
+
+      # the block of the returned internal transaction is itself inside the tolerance window
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+      insert(:block, number: transaction.block_number + pending_head_tolerance() - 1)
+
+      request = get(conn, "/api/v2/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
+
+      # a listing filtered by transaction hash is bounded to that transaction, so the strict check applies
+      request = get(conn, "/api/v2/internal-transactions", %{"transaction_hash" => to_string(transaction.hash)})
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "returns pending status for a pending block exactly tolerance blocks behind the chain head", %{conn: conn} do
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      insert(:internal_transaction,
+        transaction: transaction,
+        transaction_index: 0,
+        block_number: transaction.block_number,
+        index: 1
+      )
+
+      pending_block = insert(:block, number: transaction.block_number + 1)
+      insert(:pending_block_operation, block_hash: pending_block.hash, block_number: pending_block.number)
+      insert(:block, number: pending_block.number + pending_head_tolerance())
+
+      request = get(conn, "/api/v2/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+
+      # a following page is bounded by its paging parameters, so only its own block range is checked
+      request =
+        get(conn, "/api/v2/internal-transactions", %{
+          "block_number" => "#{pending_block.number}",
+          "transaction_index" => "0",
+          "index" => "0"
+        })
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
     end
 
     test "non empty list", %{conn: conn} do
@@ -238,6 +313,10 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
       assert response_default = json_response(request_default, 200)
       assert Enum.count(response_default["items"]) == 2
     end
+  end
+
+  defp pending_head_tolerance do
+    Application.get_env(:explorer, PendingOperationsHelper)[:internal_transactions_pending_head_tolerance]
   end
 
   defp compare_item(%InternalTransaction{} = internal_transaction, json) do

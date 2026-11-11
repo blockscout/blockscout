@@ -249,10 +249,6 @@ config :block_scout_web, BlockScoutWeb.Chain.Address.CoinBalance,
 
 config :block_scout_web, BlockScoutWeb.API.V2, enabled: ConfigHelper.parse_bool_env_var("API_V2_ENABLED", "true")
 
-config :block_scout_web, BlockScoutWeb.API.RPC.AddressController,
-  internal_transactions_pending_head_tolerance:
-    ConfigHelper.parse_integer_env_var("API_INTERNAL_TRANSACTIONS_PENDING_HEAD_TOLERANCE", 200, min: 0)
-
 config :block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
   service_url: ConfigHelper.parse_url_env_var("MICROSERVICE_TRANSACTION_INTERPRETATION_URL"),
   enabled: ConfigHelper.parse_bool_env_var("MICROSERVICE_TRANSACTION_INTERPRETATION_ENABLED")
@@ -648,7 +644,9 @@ config :explorer, Explorer.Market.Fetcher.History,
 config :explorer, Explorer.Chain.PendingOperationsHelper,
   transactions_batch_size:
     ConfigHelper.parse_integer_env_var("PENDING_OPERATIONS_HELPER_TRANSACTIONS_BATCH_SIZE", 1000, min: 1),
-  blocks_batch_size: ConfigHelper.parse_integer_env_var("PENDING_OPERATIONS_HELPER_BLOCKS_BATCH_SIZE", 10, min: 1)
+  blocks_batch_size: ConfigHelper.parse_integer_env_var("PENDING_OPERATIONS_HELPER_BLOCKS_BATCH_SIZE", 10, min: 1),
+  internal_transactions_pending_head_tolerance:
+    ConfigHelper.parse_integer_env_var("API_INTERNAL_TRANSACTIONS_PENDING_HEAD_TOLERANCE", 200, min: 0)
 
 config :explorer, Explorer.Chain.Transaction,
   block_miner_gets_burnt_fees?: ConfigHelper.parse_bool_env_var("BLOCK_MINER_GETS_BURNT_FEES"),

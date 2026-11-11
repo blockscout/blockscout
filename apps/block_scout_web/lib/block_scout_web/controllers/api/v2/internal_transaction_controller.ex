@@ -70,7 +70,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
         |> paginate_list(params, options[:paging_options])
 
       pending_status? =
-        pending_status?(internal_transactions, transaction_hash)
+        pending_status?(internal_transactions, transaction_hash, options[:paging_options])
 
       conn
       |> put_status(200)
@@ -86,7 +86,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
   end
 
   defp empty_response(conn, transaction_hash) do
-    pending_status? = pending_status?([], transaction_hash)
+    pending_status? = pending_status?([], transaction_hash, nil)
 
     conn
     |> put_status(200)
@@ -115,7 +115,11 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
     end
   end
 
-  defp pending_status?(internal_transactions, transaction_hash) do
-    InternalTransactionsPendingStatusHelper.internal_transactions_pending?(internal_transactions, transaction_hash)
+  defp pending_status?(internal_transactions, transaction_hash, paging_options) do
+    InternalTransactionsPendingStatusHelper.internal_transactions_pending?(
+      internal_transactions,
+      transaction_hash,
+      paging_options
+    )
   end
 end

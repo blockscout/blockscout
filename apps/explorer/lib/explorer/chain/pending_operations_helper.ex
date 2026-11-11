@@ -5,6 +5,7 @@ defmodule Explorer.Chain.PendingOperationsHelper do
   import Ecto.Query
 
   alias Explorer.Chain.{Block, Hash, PendingBlockOperation, PendingTransactionOperation, Transaction}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.{Helper, Repo}
   alias Indexer.Fetcher.InternalTransaction, as: InternalTransactionFetcher
 
@@ -15,6 +16,42 @@ defmodule Explorer.Chain.PendingOperationsHelper do
 
   defp blocks_batch_size,
     do: Application.get_env(:explorer, Explorer.Chain.PendingOperationsHelper)[:blocks_batch_size] || 10
+
+  defp pending_head_tolerance,
+    do:
+      Application.get_env(:explorer, Explorer.Chain.PendingOperationsHelper)[
+        :internal_transactions_pending_head_tolerance
+      ] || 0
+
+  @doc """
+  Returns the upper bound of the block range to check for pending internal transactions,
+  ignoring pending blocks at the chain head for ranges reaching the head.
+
+  Internal transactions are fetched asynchronously, so on chains with a short block time the
+  most recent blocks are practically always pending. When the requested range reaches the
+  chain head (`max_block_number` is `nil` or at or above the head), the last
+  `internal_transactions_pending_head_tolerance` blocks are therefore cut off the range;
+  otherwise every such request would permanently report pending internal transactions. A
+  `max_block_number` below the head is returned unchanged, because the requested range is
+  then really bounded and the response really is incomplete. With the tolerance set to `0`
+  the bound is always returned unchanged.
+  """
+  @spec head_tolerant_max_block_number(non_neg_integer() | nil) :: non_neg_integer() | nil
+  def head_tolerant_max_block_number(max_block_number) do
+    tolerance = pending_head_tolerance()
+
+    if tolerance == 0 do
+      max_block_number
+    else
+      head_block_number = BlockNumber.get_max()
+
+      if is_nil(max_block_number) or max_block_number >= head_block_number do
+        max(head_block_number - tolerance, 0)
+      else
+        max_block_number
+      end
+    end
+  end
 
   def pending_operations_type do
     if Application.get_env(:explorer, :json_rpc_named_arguments)[:variant] == EthereumJSONRPC.Geth and

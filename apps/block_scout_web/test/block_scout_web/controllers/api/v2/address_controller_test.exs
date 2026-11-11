@@ -18,6 +18,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     Block,
     InternalTransaction,
     Log,
+    PendingOperationsHelper,
     Token,
     Token.Instance,
     TokenTransfer,
@@ -2385,6 +2386,102 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
 
       assert response = json_response(request, 200)
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+    end
+
+    test "tolerates pending blocks within the chain head tolerance on the first page", %{conn: conn} do
+      address = insert(:address)
+
+      block = insert(:block)
+      insert_address_internal_transaction(address, block)
+
+      # the pending block lies between the two returned internal transactions, inside the
+      # tolerance window, so it is ignored
+      pending_block = insert(:block, number: block.number + 1)
+      insert(:pending_block_operation, block_hash: pending_block.hash, block_number: pending_block.number)
+      insert_address_internal_transaction(address, insert(:block, number: block.number + 2))
+      insert(:block, number: block.number + pending_head_tolerance())
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 2
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
+    end
+
+    test "returns pending status for a pending block exactly tolerance blocks behind the chain head", %{conn: conn} do
+      address = insert(:address)
+
+      block = insert(:block)
+      insert_address_internal_transaction(address, block)
+
+      # the pending block is above the newest returned internal transaction, but it is not
+      # inside the tolerance window, so the open-ended first page still covers it
+      pending_block = insert(:block, number: block.number + 1)
+      insert(:pending_block_operation, block_hash: pending_block.hash, block_number: pending_block.number)
+      insert(:block, number: pending_block.number + pending_head_tolerance())
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["meta"]["status"] == 2
+
+      assert response["meta"]["message"] ==
+               "Some internal transactions within this block range have not yet been processed"
+
+      # a following page is bounded by its paging parameters, so only its own block range is checked
+      request =
+        get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", %{
+          "block_number" => "#{pending_block.number}",
+          "transaction_index" => "0",
+          "index" => "0"
+        })
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
+    end
+
+    test "checks only the block range of the first page when tolerance is disabled", %{conn: conn} do
+      configuration = Application.get_env(:explorer, PendingOperationsHelper)
+
+      Application.put_env(
+        :explorer,
+        PendingOperationsHelper,
+        Keyword.put(configuration, :internal_transactions_pending_head_tolerance, 0)
+      )
+
+      on_exit(fn -> Application.put_env(:explorer, PendingOperationsHelper, configuration) end)
+
+      address = insert(:address)
+
+      block = insert(:block)
+      insert_address_internal_transaction(address, block)
+
+      # a pending block above the page is outside the checked range
+      pending_block = insert(:block, number: block.number + 1)
+      insert(:pending_block_operation, block_hash: pending_block.hash, block_number: pending_block.number)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
+      assert response["meta"]["status"] == 1
+      assert is_nil(response["meta"]["message"])
+
+      # a pending block inside the page is reported even right at the chain head
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+      assert response = json_response(request, 200)
+      assert Enum.count(response["items"]) == 1
       assert response["meta"]["status"] == 2
 
       assert response["meta"]["message"] ==
@@ -6243,6 +6340,25 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
         check_paginated_response(response, response_2nd_page, deposits)
       end
     end
+  end
+
+  defp pending_head_tolerance do
+    Application.get_env(:explorer, PendingOperationsHelper)[:internal_transactions_pending_head_tolerance]
+  end
+
+  defp insert_address_internal_transaction(address, block) do
+    transaction =
+      :transaction
+      |> insert()
+      |> with_block(block)
+
+    insert(:internal_transaction,
+      transaction: transaction,
+      index: 1,
+      block_number: block.number,
+      transaction_index: transaction.index,
+      from_address: address
+    )
   end
 
   defp compare_item(%Address{} = address, json) do
