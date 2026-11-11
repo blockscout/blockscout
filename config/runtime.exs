@@ -1396,9 +1396,7 @@ config :indexer, Indexer.Fetcher.TokenUpdater.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER")
 
 config :indexer, Indexer.Fetcher.TokenTotalSupplyUpdater,
-  disabled?:
-    ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER") ||
-      ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_TOTAL_SUPPLY_UPDATER_FETCHER")
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER")
 
 config :indexer, Indexer.Fetcher.TokenUIMultiplierUpdater,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_UI_MULTIPLIER_UPDATER_FETCHER")
