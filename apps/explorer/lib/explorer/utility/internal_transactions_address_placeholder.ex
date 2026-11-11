@@ -113,7 +113,7 @@ defmodule Explorer.Utility.InternalTransactionsAddressPlaceholder do
   def delete_by_block_numbers(_repo, [], _options), do: 0
 
   def delete_by_block_numbers(repo, block_numbers, options) do
-    if BackgroundMigrations.get_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished() do
+    if block_number_index_ready?() do
       locked_placeholders_query =
         from(
           placeholder in __MODULE__,
@@ -140,6 +140,16 @@ defmodule Explorer.Utility.InternalTransactionsAddressPlaceholder do
     else
       0
     end
+  end
+
+  @doc """
+  Returns `true` once `Explorer.Migrator.HeavyDbIndexOperation.CreateDeletedInternalTransactionsAddressPlaceholdersBlockNumberIndex`
+  has created the index on `block_number`, so the placeholders can be deleted by block.
+  """
+  @spec block_number_index_ready?() :: boolean()
+  def block_number_index_ready? do
+    BackgroundMigrations.get_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished() ==
+      true
   end
 
   defp increment_count(placeholders, nil, _block_number, _counter), do: placeholders

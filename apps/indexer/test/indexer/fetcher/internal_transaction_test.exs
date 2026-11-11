@@ -12,6 +12,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
   alias Ecto.Multi
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, PendingBlockOperation, PendingTransactionOperation}
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.Import.Runner.Blocks
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
   alias Indexer.Fetcher.{InternalTransaction, PendingTransaction}
@@ -540,12 +541,21 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
         Keyword.merge(initial_config || [], storage_disabled?: true)
       )
 
+      # the internal transactions are left out once the placeholders can be rebuilt by block
+      BackgroundMigrations.set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished(
+        true
+      )
+
       on_exit(fn ->
         if is_nil(initial_config) do
           Application.delete_env(:explorer, Chain.InternalTransaction)
         else
           Application.put_env(:explorer, Chain.InternalTransaction, initial_config)
         end
+
+        BackgroundMigrations.set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished(
+          false
+        )
       end)
 
       block = insert(:block)

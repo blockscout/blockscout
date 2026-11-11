@@ -901,12 +901,17 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         Keyword.merge(initial_config || [], storage_disabled?: true)
       )
 
+      # the internal transactions are left out once the placeholders can be rebuilt by block
+      set_placeholders_block_number_index_finished(true)
+
       on_exit(fn ->
         if is_nil(initial_config) do
           Application.delete_env(:explorer, InternalTransaction)
         else
           Application.put_env(:explorer, InternalTransaction, initial_config)
         end
+
+        set_placeholders_block_number_index_finished(false)
       end)
     end
 
@@ -1058,16 +1063,6 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
     end
 
     test "run/3 rebuilds the address placeholders of the processed blocks" do
-      BackgroundMigrations.set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished(
-        true
-      )
-
-      on_exit(fn ->
-        BackgroundMigrations.set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished(
-          false
-        )
-      end)
-
       block = insert(:block)
       transaction = insert(:transaction) |> with_block(block, status: :ok)
       insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
@@ -1112,6 +1107,52 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
                  {receiver_id, block.number, 0, 1},
                  {outdated_address_id, not_processed_block.number, 1, 1}
                ])
+    end
+
+    test "run/3 rebuilds the address placeholders of the processed blocks without transactions" do
+      # e.g. a block that replaced a reorged one and got its pending operation from the reorg cleanup
+      block = insert(:block)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      %{address_id: outdated_address_id} = AddressIdToAddressHash.find_or_create(insert(:address).hash)
+
+      insert(:deleted_internal_transactions_address_placeholder,
+        address_id: outdated_address_id,
+        block_number: block.number
+      )
+
+      assert {:ok, _} = run_internal_transactions([make_empty_block_changes(block.number)])
+
+      assert address_placeholders() == MapSet.new()
+      assert PendingBlockOperation |> Repo.get(block.hash) |> is_nil()
+    end
+
+    test "run/3 stores the internal transactions until the index on the placeholders block number is created" do
+      set_placeholders_block_number_index_finished(false)
+
+      block = insert(:block)
+      transaction = insert(:transaction) |> with_block(block, status: :ok)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      sender = insert(:address)
+      %{address_id: sender_id} = AddressIdToAddressHash.find_or_create(sender.hash)
+
+      # e.g. a placeholder of the previous processing of the block, which can't be deleted by block yet
+      insert(:deleted_internal_transactions_address_placeholder, address_id: sender_id, block_number: block.number)
+
+      call_changes =
+        transaction
+        |> make_internal_transaction_changes(1, nil)
+        |> Map.put(:from_address_hash, sender.hash)
+
+      assert {:ok, %{internal_transactions_address_placeholders: 0}} =
+               run_internal_transactions([make_internal_transaction_changes(transaction, 0, nil), call_changes])
+
+      # the call is stored as with the storage on (the first trace is stored depending on the JSON-RPC variant)
+      assert 1 in Enum.map(stored_internal_transactions(transaction), & &1.index)
+
+      # no counts are added on top of the placeholder
+      assert address_placeholders() == MapSet.new([{sender_id, block.number, 1, 1}])
     end
 
     test "run/3 adds up the address placeholders of a block coming in batches of transactions" do
@@ -1172,6 +1213,12 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
     InternalTransactionsAddressPlaceholder
     |> Repo.all()
     |> MapSet.new(&{&1.address_id, &1.block_number, &1.count_froms, &1.count_tos})
+  end
+
+  defp set_placeholders_block_number_index_finished(finished?) do
+    BackgroundMigrations.set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished(
+      finished?
+    )
   end
 
   defp stored_internal_transactions(transaction) do

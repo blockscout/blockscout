@@ -66,6 +66,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       |> Map.take(~w(on_conflict timeout)a)
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
+      |> Map.put(:omit_internal_transactions?, omit_internal_transactions?())
 
     transactions_timeout = options[Runner.Transactions.option_key()][:timeout] || Runner.Transactions.timeout()
 
@@ -240,6 +241,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       |> Map.take(~w(on_conflict timeout)a)
       |> Map.put_new(:timeout, @timeout)
       |> Map.put(:timestamps, timestamps)
+      |> Map.put(:omit_internal_transactions?, omit_internal_transactions?())
 
     # filter out params with just `block_number` (indicating blocks without internal transactions)
     internal_transactions_params = Enum.filter(changes_list, &Map.has_key?(&1, :type))
@@ -264,11 +266,17 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   @spec insert(Repo.t(), [map], %{
           optional(:on_conflict) => Runner.on_conflict(),
           required(:timeout) => timeout,
-          required(:timestamps) => Import.timestamps()
+          required(:timestamps) => Import.timestamps(),
+          required(:omit_internal_transactions?) => boolean()
         }) ::
           {:ok, [InternalTransaction.t()]}
           | {:error, [Changeset.t()]}
-  defp insert(repo, valid_internal_transactions, %{timeout: timeout, timestamps: timestamps} = options)
+  defp insert(
+         repo,
+         valid_internal_transactions,
+         %{timeout: timeout, timestamps: timestamps, omit_internal_transactions?: omit_internal_transactions?} =
+           options
+       )
        when is_list(valid_internal_transactions) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
@@ -278,7 +286,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       # so it never affects block-completeness validation (see `prepare_data/1`).
       |> maybe_reject_zero_value()
       # Same for the internal transactions storage switch: everything else in `run/3` still uses all of them.
-      |> maybe_keep_only_contract_creations()
+      |> maybe_keep_only_contract_creations(omit_internal_transactions?)
       |> Enum.map(fn internal_transaction ->
         Map.put(internal_transaction, :trace_address, nil)
       end)
@@ -603,17 +611,23 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
     end
   end
 
+  # With the storage disabled, the internal transactions are left out, and their address placeholders are written
+  # instead. This starts once the index on the placeholders block number is created: without it, the placeholders of
+  # the blocks processed again can't be rebuilt (see `InternalTransactionsAddressPlaceholder.delete_by_block_numbers/3`),
+  # so until then the internal transactions are stored as usual. The index is created instantly on a new instance.
+  defp omit_internal_transactions? do
+    InternalTransaction.storage_disabled?() and InternalTransactionsAddressPlaceholder.block_number_index_ready?()
+  end
+
   # With the storage disabled, only the internal transactions creating contracts are stored: they are the
   # source of the creator and of the creation bytecode of contracts deployed by other contracts. The first
   # trace (index 0) is skipped, since a contract creation transaction already holds the created contract
   # address and the creation input.
-  defp maybe_keep_only_contract_creations(internal_transactions) do
-    if InternalTransaction.storage_disabled?() do
-      Enum.filter(internal_transactions, &contract_creation?/1)
-    else
-      internal_transactions
-    end
-  end
+  defp maybe_keep_only_contract_creations(internal_transactions, true = _omit_internal_transactions?),
+    do: Enum.filter(internal_transactions, &contract_creation?/1)
+
+  defp maybe_keep_only_contract_creations(internal_transactions, false = _omit_internal_transactions?),
+    do: internal_transactions
 
   # `created_contract_address_id` is set only for successful creations: the changeset drops it for failed ones,
   # and `Indexer.Fetcher.InternalTransaction` drops it when a parent call reverted.
@@ -630,42 +644,39 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
          repo,
          %{
            acquire_pending_internal_transactions: pending_ops_hashes,
-           acquire_transactions: transactions,
            invalid_block_numbers: invalid_block_numbers,
            valid_internal_transactions: valid_internal_transactions
          },
-         %{timeout: timeout}
+         %{timeout: timeout, omit_internal_transactions?: true}
        ) do
-    if InternalTransaction.storage_disabled?() do
-      pending_ops_hashes
-      |> address_placeholders_block_numbers_to_rebuild(transactions, invalid_block_numbers)
-      |> then(&InternalTransactionsAddressPlaceholder.delete_by_block_numbers(repo, &1, timeout: timeout))
+    repo
+    |> address_placeholders_block_numbers_to_rebuild(pending_ops_hashes, invalid_block_numbers)
+    |> then(&InternalTransactionsAddressPlaceholder.delete_by_block_numbers(repo, &1, timeout: timeout))
 
-      count =
-        valid_internal_transactions
-        |> Enum.reject(&contract_creation?/1)
-        |> then(&InternalTransactionsAddressPlaceholder.insert_for_internal_transactions(repo, &1, timeout: timeout))
+    count =
+      valid_internal_transactions
+      |> Enum.reject(&contract_creation?/1)
+      |> then(&InternalTransactionsAddressPlaceholder.insert_for_internal_transactions(repo, &1, timeout: timeout))
 
-      {:ok, count}
-    else
-      {:ok, 0}
-    end
+    {:ok, count}
   end
+
+  defp maybe_insert_address_placeholders(_repo, _changes, %{omit_internal_transactions?: false}), do: {:ok, 0}
 
   # With pending block operations, all the internal transactions of a block come in one batch, so the placeholders
   # of the processed blocks are built anew. This drops the outdated ones, e.g. of the addresses that are not in a
-  # block anymore after a reorg, also when the block has no internal transactions left. With pending transaction
-  # operations, a block comes in several batches, so their counts are added up, and the placeholders of reorged
-  # blocks are deleted by `Indexer.Fetcher.InternalTransaction.DeleteQueue`.
-  defp address_placeholders_block_numbers_to_rebuild({:block_hashes, _}, transactions, invalid_block_numbers) do
-    transactions
-    |> MapSet.new(& &1.block_number)
-    |> MapSet.difference(MapSet.new(invalid_block_numbers))
-    |> MapSet.to_list()
+  # block anymore after a reorg. The blocks are taken from their pending operations, so the ones without transactions
+  # are rebuilt as well. With pending transaction operations, a block comes in several batches, so their counts are
+  # added up, and the placeholders of reorged blocks are deleted by `Indexer.Fetcher.InternalTransaction.DeleteQueue`.
+  defp address_placeholders_block_numbers_to_rebuild(repo, {:block_hashes, block_hashes}, invalid_block_numbers) do
+    block_hashes
+    |> PendingOperationsHelper.block_hash_in_query()
+    |> select([pending_operation], pending_operation.block_number)
+    |> repo.all()
+    |> Enum.reject(&(&1 in invalid_block_numbers))
   end
 
-  defp address_placeholders_block_numbers_to_rebuild({:transaction_hashes, _}, _transactions, _invalid_block_numbers),
-    do: []
+  defp address_placeholders_block_numbers_to_rebuild(_repo, {:transaction_hashes, _}, _invalid_block_numbers), do: []
 
   # Makes a trace error message storable: non-printable binaries are escaped via `inspect/2`, then the
   # result is capped at `@max_error_length` code points. PostgreSQL `varchar(n)` counts code points, not

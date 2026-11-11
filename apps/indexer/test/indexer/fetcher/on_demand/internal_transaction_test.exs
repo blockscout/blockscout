@@ -233,6 +233,74 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
              })
   end
 
+  describe "fetch_latest/1" do
+    test "stops after tracing the maximum number of blocks" do
+      # empty blocks, so the page is never filled
+      expect(EthereumJSONRPC.Mox, :json_rpc, 100, fn [%{id: id, params: [_block_quantity, _]}], _ ->
+        {:ok, [%{id: id, result: []}]}
+      end)
+
+      put_block_traceable_geth_config()
+
+      assert [] =
+               InternalTransactionOnDemand.fetch_latest(
+                 to_block: 1_000,
+                 paging_options: %PagingOptions{page_size: 1}
+               )
+    end
+
+    test "stops at a block that fails to be traced" do
+      address_hash_str = to_string(insert(:address).hash)
+
+      for block_number <- 1..3 do
+        insert(:block, number: block_number)
+      end
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn [%{id: id, params: [block_quantity, _]}], _ ->
+        case block_quantity do
+          "0x3" -> {:ok, [%{id: id, result: block_traces_with_calls_to(address_hash_str, 3, 1)}]}
+          "0x2" -> {:ok, [%{id: id, error: %{code: -32_000, message: "tracing failed"}}]}
+        end
+      end)
+
+      put_block_traceable_geth_config()
+
+      # block 1 is not traced, so that the failed block 2 doesn't leave a gap
+      assert [%{block_number: 3}] =
+               InternalTransactionOnDemand.fetch_latest(to_block: 3, paging_options: %PagingOptions{page_size: 3})
+    end
+  end
+
+  test "fetch_by_block/2 returns the traced transactions of a block when a batch fails (block_traceable?: false)" do
+    Application.put_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction, transactions_batch_size: 1)
+
+    address_hash_str = to_string(insert(:address).hash)
+    block = insert(:block)
+    traced_transaction = :transaction |> insert() |> with_block(block)
+    traced_transaction_hash_str = to_string(traced_transaction.hash)
+    :transaction |> insert() |> with_block(block)
+
+    expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn [%{id: id, params: [transaction_hash_str, _]}], _ ->
+      if transaction_hash_str == traced_transaction_hash_str do
+        [%{"result" => trace}] = block_traces_with_calls_to(address_hash_str, block.number, 1)
+        {:ok, [%{id: id, result: trace}]}
+      else
+        {:ok, [%{id: id, error: %{code: -32_000, message: "tracing failed"}}]}
+      end
+    end)
+
+    Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth,
+      tracer: "call_tracer",
+      debug_trace_timeout: "5s",
+      block_traceable?: false
+    )
+
+    traced_transaction_index = traced_transaction.index
+
+    assert [%InternalTransaction{transaction_index: ^traced_transaction_index, index: 1}] =
+             InternalTransactionOnDemand.fetch_by_block(block, [])
+  end
+
   defp insert_to_placeholders(address_id, count_tos_by_block_number) do
     for {block_number, count_tos} <- count_tos_by_block_number do
       insert(:block, number: block_number)
@@ -255,6 +323,10 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
        end)}
     end)
 
+    put_block_traceable_geth_config()
+  end
+
+  defp put_block_traceable_geth_config do
     Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth,
       tracer: "call_tracer",
       debug_trace_timeout: "5s",

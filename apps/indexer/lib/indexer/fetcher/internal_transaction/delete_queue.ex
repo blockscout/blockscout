@@ -82,7 +82,9 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueue do
   end
 
   # With the internal transactions storage disabled, the placeholders stand for the internal transactions of the
-  # blocks: they are deleted as well, and the internal transactions fetcher stores them anew
+  # blocks: they are deleted as well, and the internal transactions fetcher stores them anew. Until the index on the
+  # placeholders block number is created, the deletion is skipped, but there is nothing of the fetcher to delete:
+  # it keeps storing the internal transactions instead of the placeholders until then.
   defp maybe_delete_address_placeholders(block_numbers) do
     if InternalTransaction.storage_disabled?() do
       InternalTransactionsAddressPlaceholder.delete_by_block_numbers(Repo, block_numbers, timeout: :infinity)
