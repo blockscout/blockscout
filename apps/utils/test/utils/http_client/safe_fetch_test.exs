@@ -255,7 +255,7 @@ defmodule Utils.HttpClient.SafeFetchTest do
       refute_received {:requested, "http://1.1.1.1/meta"}
     end
 
-    test "gives a retry only the part of the connection timeout that is left" do
+    test "gives each attempt but the last half of the connection timeout that is left" do
       parent = self()
 
       t = fn url, _headers, opts ->
@@ -267,12 +267,15 @@ defmodule Utils.HttpClient.SafeFetchTest do
       assert SafeFetch.request("http://multi.test/meta", [], [transport_opts: [timeout: 60_000]], t) ==
                {:error, :econnrefused}
 
-      assert_received {:requested, "http://8.8.8.8/meta", 60_000}
-      assert_received {:requested, "http://1.1.1.1/meta", left}
-      assert is_integer(left) and left in 1..59_990
+      assert_received {:requested, "http://8.8.8.8/meta", first}
+      assert_received {:requested, "http://1.1.1.1/meta", second}
+      assert_received {:requested, "http://9.9.9.9/meta", last}
+      assert first in 29_990..30_000
+      assert second in 20_000..29_995
+      assert last in 40_000..59_980
     end
 
-    test "bounds the retries by a default budget when no connection timeout is given" do
+    test "shares a default budget when no connection timeout is given" do
       parent = self()
 
       t = fn url, _headers, opts ->
@@ -282,9 +285,10 @@ defmodule Utils.HttpClient.SafeFetchTest do
 
       assert SafeFetch.request("http://multi.test/meta", [], [], t) == {:error, :econnrefused}
 
-      assert_received {:requested, "http://8.8.8.8/meta", nil}
-      assert_received {:requested, "http://1.1.1.1/meta", left}
-      assert is_integer(left) and left in 1..8_000
+      assert_received {:requested, "http://8.8.8.8/meta", first}
+      assert_received {:requested, "http://9.9.9.9/meta", last}
+      assert first in 3_990..4_000
+      assert last in 7_000..8_000
     end
 
     test "stops retrying once the connection timeout is spent" do
@@ -299,6 +303,42 @@ defmodule Utils.HttpClient.SafeFetchTest do
 
       assert_received {:requested, "http://8.8.8.8/meta"}
       refute_received {:requested, "http://1.1.1.1/meta"}
+    end
+  end
+
+  describe "DNS pinning of a host with IPv4 and IPv6 addresses" do
+    setup do
+      start_fake_nameserver([
+        [{:a, {8, 8, 8, 8}}, {:a, {1, 1, 1, 1}}],
+        {0x2606, 0x4700, 0x4700, 0, 0, 0, 0, 0x1111}
+      ])
+
+      :ok
+    end
+
+    test "tries an IPv6 address when IPv4 connections stall" do
+      parent = self()
+
+      # An IPv4 connection that gets no answer takes the whole timeout it is given.
+      t = fn url, _headers, opts ->
+        send(parent, {:requested, url, opts[:timeout]})
+
+        if opts[:inet6] do
+          {:ok, resp(200, [], "ok")}
+        else
+          Process.sleep(opts[:timeout])
+          {:error, :connect_timeout}
+        end
+      end
+
+      assert {:ok, %{status_code: 200}} =
+               SafeFetch.request("http://dual.test/meta", [], [transport_opts: [timeout: 200]], t)
+
+      # The address families alternate, and the stalled attempt gets half of the budget.
+      assert_received {:requested, "http://8.8.8.8/meta", stalled}
+      assert stalled in 90..100
+      assert_received {:requested, "http://[2606:4700:4700::1111]/meta", _timeout}
+      refute_received {:requested, "http://1.1.1.1/meta", _timeout}
     end
   end
 

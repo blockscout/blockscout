@@ -11,8 +11,8 @@ defmodule Utils.HttpClient.SafeFetch do
   A validated host is also pinned: the request is issued against the IP addresses that
   passed validation rather than against the hostname, so the HTTP client does not resolve
   the host a second time (DNS rebinding). The addresses are tried in turn while connecting
-  fails, as the client itself would have done, within one connection timeout for all of
-  them. See `pin/2`.
+  fails, alternating IPv4 and IPv6, within one connection timeout for all of them. See
+  `pin/2` and `try_each/4`.
 
   The concrete HTTP client is injected as a `transport` closure of arity 3
   (`url, headers, transport_opts -> {:ok, response} | {:error, term}`), so this module
@@ -32,8 +32,8 @@ defmodule Utils.HttpClient.SafeFetch do
   # which is also what a response timeout looks like.
   @connect_errors [:econnrefused, :ehostunreach, :enetunreach, :connect_timeout]
 
-  # Budget for the retries when the caller sets no connection timeout, counted from the first
-  # attempt (hackney's default connect timeout).
+  # Budget for the attempts when the caller sets no connection timeout (hackney's default
+  # connect timeout).
   @default_connect_timeout 8_000
 
   @type transport :: (String.t(), list(), keyword() -> {:ok, term()} | {:error, term()})
@@ -115,25 +115,28 @@ defmodule Utils.HttpClient.SafeFetch do
   # Issues the requests in turn: a failure to connect moves on to the next address, as the
   # HTTP client does when it resolves the host itself; any other error, and the error of the
   # last address, is returned as-is. The caller's connection timeout (`:timeout` in
-  # `transport_opts`) is one budget for all attempts, as in `:gen_tcp.connect/4`: a retry
-  # gets what is left of it and none is made once it is spent. Without a `:timeout` the first
-  # attempt gets the client's default and the retries share `@default_connect_timeout`.
+  # `transport_opts`, `@default_connect_timeout` when it is not set) is one budget for all
+  # attempts, and each attempt but the last gets half of what is left of it. An address that
+  # does not answer therefore cannot use up the budget before the next one, of the other
+  # address family (see `alternate_families/1`), is tried: hackney raced the families when it
+  # resolved the host itself. A single request is issued with the caller's options as they are.
+  defp try_each([request], headers, opts, transport) do
+    issue(request, headers, Keyword.get(opts, :transport_opts, []), transport)
+  end
+
   defp try_each(requests, headers, opts, transport) do
     transport_opts = Keyword.get(opts, :transport_opts, [])
-    try_each(requests, headers, transport_opts, transport, deadline(transport_opts[:timeout]))
+    try_in_turn(requests, headers, transport_opts, transport, deadline(transport_opts[:timeout]))
   end
 
-  defp try_each([request], headers, transport_opts, transport, _deadline) do
-    issue(request, headers, transport_opts, transport)
-  end
+  defp try_in_turn([request | rest], headers, transport_opts, transport, deadline) do
+    left = deadline - System.monotonic_time(:millisecond)
+    timeout = if rest == [], do: left, else: div(left, 2)
 
-  defp try_each([request | rest], headers, transport_opts, transport, deadline) do
-    case issue(request, headers, transport_opts, transport) do
+    case issue(request, headers, Keyword.put(transport_opts, :timeout, timeout), transport) do
       {:error, error} = result ->
-        left = deadline - System.monotonic_time(:millisecond)
-
-        if connect_error?(error) and left > 0 do
-          try_each(rest, headers, Keyword.put(transport_opts, :timeout, left), transport, deadline)
+        if rest != [] and connect_error?(error) and System.monotonic_time(:millisecond) < deadline do
+          try_in_turn(rest, headers, transport_opts, transport, deadline)
         else
           result
         end
@@ -168,12 +171,24 @@ defmodule Utils.HttpClient.SafeFetch do
     if ip_literal?(uri.host) do
       [{url, [], []}]
     else
-      Enum.map(ip_list, fn ip ->
+      ip_list
+      |> alternate_families()
+      |> Enum.map(fn ip ->
         connect_url = URI.to_string(%{uri | host: ip |> :inet.ntoa() |> to_string()})
         {connect_url, [{"Host", host_header(uri)}], pin_opts(uri.host, ip)}
       end)
     end
   end
+
+  # Orders the addresses IPv4 and IPv6 in turn, IPv4 first, so that when one address family
+  # does not answer, the other one is tried next (RFC 8305, section 4).
+  defp alternate_families(ip_list) do
+    {ipv4, ipv6} = Enum.split_with(ip_list, &(tuple_size(&1) == 4))
+    alternate(ipv4, ipv6)
+  end
+
+  defp alternate([ipv4 | ipv4_rest], [ipv6 | ipv6_rest]), do: [ipv4, ipv6 | alternate(ipv4_rest, ipv6_rest)]
+  defp alternate(ipv4, ipv6), do: ipv4 ++ ipv6
 
   # An IPv6 literal needs an IPv6 socket, which the Tesla/Mint transport opens only when asked.
   defp pin_opts(host, ip) when tuple_size(ip) == 8, do: [hostname: host, inet6: true]
