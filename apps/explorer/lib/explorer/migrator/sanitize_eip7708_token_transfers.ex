@@ -15,8 +15,8 @@ defmodule Explorer.Migrator.SanitizeEip7708TokenTransfers do
 
   import Ecto.Query
 
-  alias Explorer.Chain.{Hash, Token, TokenTransfer}
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
+  alias Explorer.Chain.{Hash, Token, TokenTransfer}
   alias Explorer.Migrator.FillingMigration
   alias Explorer.Repo
 
