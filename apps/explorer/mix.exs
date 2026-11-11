@@ -121,6 +121,8 @@ defmodule Explorer.Mixfile do
       {:telemetry, "~> 1.4.1"},
       # `Timex.Duration` for `Explorer.Chain.Cache.Counters.AverageBlockTime.average_block_time/0`
       {:timex, "~> 3.7.1"},
+      # Validation of the Superchain config file content
+      {:toml, "~> 0.7"},
       {:con_cache, "~> 1.0"},
       {:tesla, "~> 1.22.0"},
       {:cbor, "~> 1.0"},

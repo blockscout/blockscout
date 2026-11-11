@@ -16,6 +16,9 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
 
   alias Explorer.Application.Constants
   alias Explorer.Repo
+  alias Utils.LocalFile
+
+  @local_file_extensions [".toml"]
 
   @holocene_timestamp_key "optimism_l2_holocene_timestamp"
   @isthmus_timestamp_key "optimism_l2_isthmus_timestamp"
@@ -194,7 +197,8 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
         {:error, :superchain_config_file_path_not_set}
 
       file_path ->
-        with {:ok, content} <- read_superchain_file(file_path) do
+        with {:ok, content} <- read_superchain_file(file_path),
+             :ok <- validate_toml(content) do
           parse_toml(content)
         end
     end
@@ -205,13 +209,26 @@ defmodule Explorer.Chain.Optimism.SuperchainConfig do
     |> blank_to_nil()
   end
 
-  # sobelow_skip ["Traversal.FileModule"]
+  # A local path is only read if it points to a regular `.toml` file, so that
+  # the env variable cannot be used to read arbitrary local files.
   defp read_superchain_file(file_path) do
     if String.starts_with?(file_path, ["http://", "https://"]) do
       read_remote_superchain_file(file_path)
     else
-      File.read(file_path)
+      LocalFile.read(file_path, @local_file_extensions)
     end
+  end
+
+  # Ensures the content is a valid TOML document before any value is taken
+  # from it. The parser error is not propagated, since it can quote the
+  # offending part of the content, which would then end up in the logs.
+  defp validate_toml(content) do
+    case Toml.decode(content) do
+      {:ok, _} -> :ok
+      {:error, _} -> {:error, :invalid_toml_content}
+    end
+  rescue
+    _ -> {:error, :invalid_toml_content}
   end
 
   defp read_remote_superchain_file(url) do
