@@ -150,7 +150,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:spandex_datadog, "~> 1.0"},
       # `:spandex` tracing of `:phoenix`
       {:spandex_phoenix, "~> 1.0"},
-      {:timex, "~> 3.7.1"},
+      {:timex, "~> 4.0.0"},
       {:wallaby, "~> 0.30", only: :test, runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:ex_json_schema, "~> 0.11.0"},

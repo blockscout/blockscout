@@ -77,7 +77,7 @@ defmodule EthereumJSONRPC.MixProject do
       {:spandex_datadog, "~> 1.0"},
       {:tesla, "~> 1.22.0"},
       # Convert unix timestamps in JSONRPC to DateTimes
-      {:timex, "~> 3.7.1"},
+      {:timex, "~> 4.0.0"},
       # Encode/decode function names and arguments
       {:ex_abi, "~> 0.8"},
       # `:verify_fun` for `Socket.Web.connect`
