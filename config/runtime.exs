@@ -912,8 +912,8 @@ config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
     ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_BLOCKS_BATCH_SIZE", 10_000, min: 1)
 
 config :explorer, Explorer.Migrator.SanitizeEip7708TokenTransfers,
-  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_EIP7708_TOKEN_TRANSFERS_BATCH_SIZE", 500),
-  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_EIP7708_TOKEN_TRANSFERS_CONCURRENCY", 1),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_EIP7708_TOKEN_TRANSFERS_BATCH_SIZE", 500, min: 1),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_EIP7708_TOKEN_TRANSFERS_CONCURRENCY", 1, min: 1),
   timeout: ConfigHelper.parse_time_env_var("MIGRATION_SANITIZE_EIP7708_TOKEN_TRANSFERS_TIMEOUT", "0s")
 
 config :explorer, Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatus,
