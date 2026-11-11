@@ -88,18 +88,22 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
     unprocessed_empty_blocks_list = unprocessed_empty_blocks_list_query(limit())
 
     if !Enum.empty?(unprocessed_empty_blocks_list) do
-      blocks_response =
+      id_to_params =
         unprocessed_empty_blocks_list
         |> Enum.map(fn %{number: block_number} -> %{number: integer_to_quantity(block_number)} end)
         |> id_to_params()
+
+      blocks_response =
+        id_to_params
         |> Blocks.requests(&ByNumber.request(&1, false, false))
         |> json_rpc(json_rpc_named_arguments)
 
       case blocks_response do
         {:ok, result} ->
-          {non_empty_blocks, empty_blocks} = classify_blocks_from_result(result)
+          {non_empty_blocks, empty_blocks, errors} = classify_blocks_from_result(result, id_to_params)
           process_non_empty_blocks(non_empty_blocks)
           process_empty_blocks(empty_blocks)
+          process_errors(errors)
 
           Logger.info("Batch of empty blocks is sanitized",
             fetcher: :empty_blocks_to_refetch
@@ -114,14 +118,24 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
     end
   end
 
-  defp classify_blocks_from_result(result) do
-    result
-    |> Enum.reduce({[], []}, fn %{id: _id, result: block}, {non_empty_blocks, empty_blocks} ->
-      if Enum.empty?(block["transactions"]) do
-        {non_empty_blocks, [block_fields(block) | empty_blocks]}
-      else
-        {[block_fields(block) | non_empty_blocks], empty_blocks}
-      end
+  # Blocks with failed requests are only collected into errors: they keep `is_empty = nil`
+  # and are requested again on the next run.
+  defp classify_blocks_from_result(result, id_to_params) do
+    Enum.reduce(result, {[], [], []}, fn
+      %{result: %{"transactions" => transactions} = block}, {non_empty_blocks, empty_blocks, errors} ->
+        if Enum.empty?(transactions) do
+          {non_empty_blocks, [block_fields(block) | empty_blocks], errors}
+        else
+          {[block_fields(block) | non_empty_blocks], empty_blocks, errors}
+        end
+
+      # the node doesn't have the block
+      %{id: id, result: nil}, {non_empty_blocks, empty_blocks, errors} ->
+        error = %{code: 404, message: "Not Found", data: id_to_params[id]}
+        {non_empty_blocks, empty_blocks, [error | errors]}
+
+      %{id: id, error: error}, {non_empty_blocks, empty_blocks, errors} ->
+        {non_empty_blocks, empty_blocks, [Map.put(error, :data, id_to_params[id]) | errors]}
     end)
   end
 
@@ -176,6 +190,16 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
     )
 
     mark_blocks_as_empty(empty_blocks |> Enum.map(& &1.hash))
+  end
+
+  defp process_errors([]), do: :ok
+
+  defp process_errors(errors) do
+    Logger.error(
+      "Failed to fetch #{Enum.count(errors)} blocks of the batch, they will be requested again on the next run: " <>
+        inspect(errors),
+      fetcher: :empty_blocks_to_refetch
+    )
   end
 
   @spec mark_blocks_as_empty([Hash.Full.t()]) ::
