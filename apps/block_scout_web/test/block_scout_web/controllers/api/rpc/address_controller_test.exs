@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   alias BlockScoutWeb.API.RPC.AddressController
   alias Explorer.{Chain, Repo, TestHelper}
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.{Events.Subscriber, InternalTransaction, Transaction, Wei}
+  alias Explorer.Chain.{Events.Subscriber, InternalTransaction, PendingOperationsHelper, Transaction, Wei}
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Utility.AddressIdToAddressHash
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
@@ -2119,9 +2119,15 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       conn: conn,
       params: params
     } do
-      configuration = Application.get_env(:block_scout_web, AddressController)
-      Application.put_env(:block_scout_web, AddressController, internal_transactions_pending_head_tolerance: 0)
-      on_exit(fn -> Application.put_env(:block_scout_web, AddressController, configuration) end)
+      configuration = Application.get_env(:explorer, PendingOperationsHelper)
+
+      Application.put_env(
+        :explorer,
+        PendingOperationsHelper,
+        Keyword.put(configuration, :internal_transactions_pending_head_tolerance, 0)
+      )
+
+      on_exit(fn -> Application.put_env(:explorer, PendingOperationsHelper, configuration) end)
 
       address = insert(:address)
       address_2 = insert(:address)
@@ -5536,7 +5542,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   end
 
   defp pending_head_tolerance do
-    Application.get_env(:block_scout_web, AddressController)[:internal_transactions_pending_head_tolerance]
+    Application.get_env(:explorer, PendingOperationsHelper)[:internal_transactions_pending_head_tolerance]
   end
 
   defp insert_internal_transaction(block, from_address, to_address) do

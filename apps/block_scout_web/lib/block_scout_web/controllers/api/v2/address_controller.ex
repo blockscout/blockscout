@@ -679,7 +679,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             paginate_list(results_plus_one, params, full_options[:paging_options])
 
           pending_status? =
-            InternalTransactionsPendingStatusHelper.address_internal_transactions_pending?(internal_transactions)
+            InternalTransactionsPendingStatusHelper.address_internal_transactions_pending?(
+              internal_transactions,
+              full_options[:paging_options]
+            )
 
           conn
           |> put_status(200)
@@ -698,7 +701,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           })
 
         _ ->
-          pending_status? = InternalTransactionsPendingStatusHelper.address_internal_transactions_pending?([])
+          pending_status? = InternalTransactionsPendingStatusHelper.address_internal_transactions_pending?([], nil)
 
           conn
           |> put_status(200)

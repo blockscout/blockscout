@@ -6,6 +6,7 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper do
   """
 
   alias Explorer.Chain.PendingOperationsHelper
+  alias Explorer.PagingOptions
 
   @pending_message "Some internal transactions within this block range have not yet been processed"
 
@@ -16,14 +17,14 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper do
 
   @doc """
   Checks whether the global internal-transactions endpoint scope contains pending operations.
+
+  Pending blocks at the chain head are tolerated on the first page of a listing not filtered
+  by transaction hash, see `block_range_to_check/3`.
   """
-  @spec internal_transactions_pending?(list(), any() | nil) :: boolean()
-  def internal_transactions_pending?(internal_transactions, transaction_hash \\ nil) do
+  @spec internal_transactions_pending?(list(), any() | nil, PagingOptions.t() | nil) :: boolean()
+  def internal_transactions_pending?(internal_transactions, transaction_hash, paging_options) do
     {min_block_number, max_block_number} =
-      internal_transactions
-      |> extract_block_numbers()
-      |> expand_block_range()
-      |> then(&(&1 || {nil, nil}))
+      block_range_to_check(internal_transactions, paging_options, is_nil(transaction_hash))
 
     # Tx hashes extracted from the fetched page are already within the page's block range, so
     # they are covered by the block-range PTO check inside
@@ -43,14 +44,13 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper do
   Only checks block-range pending operations — tx-hash checking is not meaningful here
   because internal transactions are imported atomically per transaction: if any internal
   transaction exists for a given tx_hash, all of them are already imported.
+
+  Pending blocks at the chain head are tolerated on the first page of the listing, see
+  `block_range_to_check/3`.
   """
-  @spec address_internal_transactions_pending?(list()) :: boolean()
-  def address_internal_transactions_pending?(internal_transactions) do
-    {min_block_number, max_block_number} =
-      internal_transactions
-      |> extract_block_numbers()
-      |> expand_block_range()
-      |> then(&(&1 || {nil, nil}))
+  @spec address_internal_transactions_pending?(list(), PagingOptions.t() | nil) :: boolean()
+  def address_internal_transactions_pending?(internal_transactions, paging_options) do
+    {min_block_number, max_block_number} = block_range_to_check(internal_transactions, paging_options, true)
 
     PendingOperationsHelper.pending_operations_in_block_range?(min_block_number, max_block_number)
   end
@@ -91,6 +91,42 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper do
     PendingOperationsHelper.pending_operations_for_blocks_or_transactions?(block_numbers, transaction_hashes)
   end
 
+  # Returns the block range to check for pending operations for a page of internal transactions.
+  #
+  # The range spans the block numbers of the returned page. The first page of a listing which
+  # is not bounded otherwise (`open_ended?`) reaches the chain head, so its upper bound is
+  # replaced by `PendingOperationsHelper.head_tolerant_max_block_number/1` of an open-ended
+  # range. This ignores pending blocks within the chain head tolerance, which are practically
+  # always present on chains with a short block time, and at the same time catches pending
+  # blocks between the newest returned internal transaction and the tolerated head, which
+  # belong to the requested scope as well. Any following page is bounded by its paging
+  # parameters, so it keeps the strict check against its own block range, and so does the
+  # first page when the tolerance is disabled.
+  #
+  # An empty page carries no block range, so the whole set of pending operations is checked:
+  # with an empty result the pending status is the only information about the missing data.
+  @spec block_range_to_check(list(), PagingOptions.t() | nil, boolean()) ::
+          {non_neg_integer() | nil, non_neg_integer() | nil}
+  defp block_range_to_check(internal_transactions, paging_options, open_ended?) do
+    case extract_block_numbers(internal_transactions) do
+      [] ->
+        {nil, nil}
+
+      block_numbers ->
+        {min_block_number, max_block_number} = Enum.min_max(block_numbers)
+
+        if open_ended? and first_page?(paging_options) do
+          # `nil` when the tolerance is disabled: the page's own range is checked then
+          {min_block_number, PendingOperationsHelper.head_tolerant_max_block_number(nil) || max_block_number}
+        else
+          {min_block_number, max_block_number}
+        end
+    end
+  end
+
+  defp first_page?(%PagingOptions{key: nil}), do: true
+  defp first_page?(_paging_options), do: false
+
   defp maybe_prepend_hash(transaction_hashes, nil), do: transaction_hashes
 
   defp maybe_prepend_hash(transaction_hashes, transaction_hash) do
@@ -115,11 +151,5 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionsPendingStatusHelper do
     |> Enum.map(& &1.transaction_hash)
     |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
-  end
-
-  defp expand_block_range([]), do: nil
-
-  defp expand_block_range(block_numbers) do
-    Enum.min_max(block_numbers)
   end
 end
