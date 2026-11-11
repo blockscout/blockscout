@@ -31,6 +31,12 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
   # Limits the blocks traced one by one for the latest internal transactions in one request, see `fetch_enough/4`
   @max_latest_fetch_blocks 100
 
+  @typedoc """
+  The result of `fetch_latest/1` and `etherscan_fetch_latest/1`. With `:incomplete`, the internal transactions of
+  the blocks from `next_block_number` on (in the scan direction) are not fetched.
+  """
+  @type latest_result(item) :: {:ok, [item]} | {:incomplete, [item], next_block_number :: non_neg_integer()}
+
   @doc """
     Determines whether internal transactions should be fetched on-demand based on DB records and limit.
 
@@ -85,68 +91,85 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
       - `:to_block` - upper boundary for block number
 
     The blocks are traced one by one, at most `#{@max_latest_fetch_blocks}` of them, until the page is filled. The
-    search also stops at a block that fails to be traced. In both cases, the internal transactions found so far are
-    returned.
+    search also stops at a block that fails to be traced, not to leave a gap. In both cases the result is
+    incomplete: the internal transactions found so far and the block to go on with.
 
     ## Returns
-    - List of latest InternalTransaction structs
+    - `{:ok, internal_transactions}` with the latest InternalTransaction structs
+    - `{:incomplete, internal_transactions, next_block_number}` when the blocks from `next_block_number` on (in the
+      scan direction) are not traced
   """
-  @spec fetch_latest(Keyword.t()) :: [InternalTransaction.t()]
+  @spec fetch_latest(Keyword.t()) :: latest_result(InternalTransaction.t())
   def fetch_latest(options) do
     if internal_transactions_fetching_disabled?() do
-      []
+      {:ok, []}
     else
       paging_options = Keyword.get(options, :paging_options, @default_paging_options)
 
       from_block = Chain.from_block(options)
       to_block = Chain.to_block(options)
 
-      internal_transactions =
-        case Keyword.get(options, :sort_direction) do
-          :asc ->
-            # the oldest internal transactions are found by tracing the blocks up from the lower boundary
-            (from_block || 0)
-            |> fetch_enough(
-              %{
-                last_block_number: to_block || BlockNumber.get_max(),
-                direction: :asc,
-                count: paging_options.page_size,
-                blocks_left: @max_latest_fetch_blocks
-              },
-              options
-            )
+      case Keyword.get(options, :sort_direction) do
+        :asc ->
+          # the oldest internal transactions are found by tracing the blocks up from the lower boundary
+          (from_block || 0)
+          |> fetch_enough(
+            %{
+              last_block_number: to_block || BlockNumber.get_max(),
+              direction: :asc,
+              count: paging_options.page_size,
+              blocks_left: @max_latest_fetch_blocks
+            },
+            options
+          )
+          |> map_latest_result(fn internal_transactions ->
+            internal_transactions
             |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, &<=/2)
+            |> Enum.take(paging_options.page_size)
+          end)
 
-          _ ->
-            to_block_number =
-              case {paging_options, to_block} do
-                {%PagingOptions{key: {block_number, _, _}}, _} -> block_number
-                {_, block_number} when is_integer(block_number) -> block_number
-                _ -> BlockNumber.get_max()
-              end
+        _ ->
+          to_block_number =
+            case {paging_options, to_block} do
+              {%PagingOptions{key: {block_number, _, _}}, _} -> block_number
+              {_, block_number} when is_integer(block_number) -> block_number
+              _ -> BlockNumber.get_max()
+            end
 
-            index_internal_transaction_desc_order =
-              Keyword.get(options, :index_internal_transaction_desc_order, true)
+          index_internal_transaction_desc_order = Keyword.get(options, :index_internal_transaction_desc_order, true)
 
-            to_block_number
-            |> fetch_enough(
-              %{
-                last_block_number: from_block || 0,
-                direction: :desc,
-                count: paging_options.page_size,
-                blocks_left: @max_latest_fetch_blocks
-              },
-              options
-            )
+          to_block_number
+          |> fetch_enough(
+            %{
+              last_block_number: from_block || 0,
+              direction: :desc,
+              count: paging_options.page_size,
+              blocks_left: @max_latest_fetch_blocks
+            },
+            options
+          )
+          |> map_latest_result(fn internal_transactions ->
+            internal_transactions
             |> Enum.sort_by(&{&1.block_number, &1.transaction_index, &1.index}, &>=/2)
             |> page_internal_transaction(paging_options, %{
               index_internal_transaction_desc_order: index_internal_transaction_desc_order
             })
-        end
-
-      Enum.take(internal_transactions, paging_options.page_size)
+            |> Enum.take(paging_options.page_size)
+          end)
+      end
     end
   end
+
+  @doc """
+  Applies `fun` to the internal transactions of the result of `fetch_latest/1` or `etherscan_fetch_latest/1`,
+  keeping the status.
+  """
+  @spec map_latest_result(latest_result(item), ([item] -> [result_item])) :: latest_result(result_item)
+        when item: term(), result_item: term()
+  def map_latest_result({:ok, internal_transactions}, fun), do: {:ok, fun.(internal_transactions)}
+
+  def map_latest_result({:incomplete, internal_transactions, next_block_number}, fun),
+    do: {:incomplete, fun.(internal_transactions), next_block_number}
 
   @doc """
     Fetches internal transactions for the given transaction from node.
@@ -499,9 +522,11 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
       and block range
 
     ## Returns
-    - List of internal transactions serialized in Etherscan format
+    - `{:ok, internal_transactions}` with the requested page of internal transactions serialized in Etherscan format
+    - `{:incomplete, internal_transactions, next_block_number}` when the blocks from `next_block_number` on are not
+      traced, see `fetch_latest/1`
   """
-  @spec etherscan_fetch_latest(map()) :: [map()]
+  @spec etherscan_fetch_latest(map()) :: latest_result(map())
   def etherscan_fetch_latest(raw_options) do
     options = Map.merge(Etherscan.default_options(), raw_options)
 
@@ -517,27 +542,31 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
 
     prepared_options
     |> fetch_latest()
-    |> different_from_parent_transaction()
-    |> etherscan_page(options)
-    |> Chain.select_repo(prepared_options).preload(:block)
-    |> Enum.map(&etherscan_serialize/1)
+    |> map_latest_result(fn internal_transactions ->
+      internal_transactions
+      |> different_from_parent_transaction()
+      |> etherscan_page(options)
+      |> Chain.select_repo(prepared_options).preload(:block)
+      |> Enum.map(&etherscan_serialize/1)
+    end)
   end
 
   # Traces the blocks one by one, from `block_number` towards `last_block_number`, until `count` internal
   # transactions are found. On a chain with few internal transactions (empty blocks, `include_zero_value: false`)
   # one request could trace thousands of blocks this way, so it stops after `blocks_left` blocks. It also stops at a
-  # block that fails to be traced, not to leave a gap in the results.
+  # block that fails to be traced, not to leave a gap in the results. In both cases, the result is incomplete with
+  # the block to go on with.
   defp fetch_enough(block_number, params, options, acc \\ [])
-
-  defp fetch_enough(_block_number, %{blocks_left: 0}, _options, acc), do: acc
 
   defp fetch_enough(block_number, %{direction: :desc, last_block_number: last_block_number}, _options, acc)
        when block_number < last_block_number,
-       do: acc
+       do: {:ok, acc}
 
   defp fetch_enough(block_number, %{direction: :asc, last_block_number: last_block_number}, _options, acc)
        when block_number > last_block_number,
-       do: acc
+       do: {:ok, acc}
+
+  defp fetch_enough(block_number, %{blocks_left: 0}, _options, acc), do: {:incomplete, acc, block_number}
 
   defp fetch_enough(block_number, %{direction: direction, count: count} = params, options, acc) do
     case block_internal_transactions(%Block{number: block_number, hash: nil}, Keyword.put(options, :unlimited, true)) do
@@ -558,7 +587,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         result = Enum.concat(acc, internal_transactions)
 
         if fetched_count >= count or (direction == :desc and block_number == 0) do
-          result
+          {:ok, result}
         else
           block_number
           |> neighbor_block_number(direction)
@@ -570,7 +599,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         end
 
       {:error, _traced_internal_transactions} ->
-        acc
+        {:incomplete, acc, block_number}
     end
   end
 

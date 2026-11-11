@@ -28,7 +28,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
     address = insert(:address)
     opts = [paging_options: %PagingOptions{page_size: 5}]
 
-    assert [] = InternalTransactionOnDemand.fetch_latest(opts)
+    assert {:ok, []} = InternalTransactionOnDemand.fetch_latest(opts)
     assert [] = InternalTransactionOnDemand.fetch_by_transaction(transaction, opts)
     assert [] = InternalTransactionOnDemand.fetch_by_block(block, opts)
     assert [] = InternalTransactionOnDemand.fetch_by_address(address.hash, opts)
@@ -223,13 +223,30 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
       "0x2" => block_traces_with_calls_to(address_hash_str, 2, 1)
     })
 
-    assert [%{block_number: 2}] =
+    assert {:ok, [%{block_number: 2}]} =
              InternalTransactionOnDemand.etherscan_fetch_latest(%{
                order_by_direction: :asc,
                startblock: 1,
                endblock: 3,
                page_size: 1,
                page_number: 2
+             })
+  end
+
+  test "etherscan_fetch_latest/1 reports the block to go on with when the page is not filled within the request" do
+    # empty blocks, so the page is never filled
+    expect(EthereumJSONRPC.Mox, :json_rpc, 100, fn [%{id: id, params: [_block_quantity, _]}], _ ->
+      {:ok, [%{id: id, result: []}]}
+    end)
+
+    put_block_traceable_geth_config()
+
+    assert {:incomplete, [], 101} =
+             InternalTransactionOnDemand.etherscan_fetch_latest(%{
+               order_by_direction: :asc,
+               startblock: 1,
+               endblock: 1_000,
+               page_size: 1
              })
   end
 
@@ -242,8 +259,24 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
 
       put_block_traceable_geth_config()
 
-      assert [] =
+      # blocks 1000 down to 901 are traced
+      assert {:incomplete, [], 900} =
                InternalTransactionOnDemand.fetch_latest(
+                 to_block: 1_000,
+                 paging_options: %PagingOptions{page_size: 1}
+               )
+    end
+
+    test "fetches a range of the maximum number of blocks completely" do
+      expect(EthereumJSONRPC.Mox, :json_rpc, 100, fn [%{id: id, params: [_block_quantity, _]}], _ ->
+        {:ok, [%{id: id, result: []}]}
+      end)
+
+      put_block_traceable_geth_config()
+
+      assert {:ok, []} =
+               InternalTransactionOnDemand.fetch_latest(
+                 from_block: 901,
                  to_block: 1_000,
                  paging_options: %PagingOptions{page_size: 1}
                )
@@ -265,8 +298,8 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
 
       put_block_traceable_geth_config()
 
-      # block 1 is not traced, so that the failed block 2 doesn't leave a gap
-      assert [%{block_number: 3}] =
+      # block 1 is not traced, so that the failed block 2 doesn't leave a gap, and the caller can retry with block 2
+      assert {:incomplete, [%{block_number: 3}], 2} =
                InternalTransactionOnDemand.fetch_latest(to_block: 3, paging_options: %PagingOptions{page_size: 3})
     end
   end

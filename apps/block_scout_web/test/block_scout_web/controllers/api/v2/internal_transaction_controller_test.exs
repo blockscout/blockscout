@@ -2,6 +2,8 @@
 defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
   use BlockScoutWeb.ConnCase
 
+  import Mox
+
   alias Explorer.Chain.{Address, InternalTransaction, PendingOperationsHelper}
   alias Explorer.Chain.Cache.BackgroundMigrations
 
@@ -313,6 +315,151 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
       assert response_default = json_response(request_default, 200)
       assert Enum.count(response_default["items"]) == 2
     end
+  end
+
+  # `EthereumJSONRPC.RSK` and `EthereumJSONRPC.Filecoin` variants trace blocks with `trace_block`
+  if Application.compile_env(:explorer, :chain_type) not in [:rsk, :filecoin] do
+    describe "/internal-transactions fetched from the node" do
+      setup :set_mox_global
+      setup :verify_on_exit!
+
+      setup do
+        BackgroundMigrations.set_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(
+          true
+        )
+
+        initial_geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+
+        Application.put_env(
+          :ethereum_jsonrpc,
+          EthereumJSONRPC.Geth,
+          Keyword.merge(initial_geth_config || [], tracer: "call_tracer", block_traceable?: true)
+        )
+
+        on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, initial_geth_config) end)
+      end
+
+      test "goes on with the block that fails to be traced on the next page when the storage is disabled", %{
+        conn: conn
+      } do
+        put_explorer_config(InternalTransaction, storage_disabled?: true)
+
+        for block_number <- 0..3 do
+          insert(:block, number: block_number)
+        end
+
+        expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn [%{id: id, params: [block_quantity, _]}], _ ->
+          case block_quantity do
+            "0x3" -> {:ok, [%{id: id, result: block_traces_with_value_call(3)}]}
+            "0x2" -> {:ok, [%{id: id, error: %{code: -32_000, message: "tracing failed"}}]}
+          end
+        end)
+
+        request = get(conn, "/api/v2/internal-transactions")
+
+        assert %{"items" => [%{"block_number" => 3}], "next_page_params" => next_page_params} =
+                 json_response(request, 200)
+
+        assert %{"block_number" => 3, "transaction_index" => 0, "index" => 0} = next_page_params
+
+        # block 2 is traced again on the next page, followed by the older blocks
+        expect(EthereumJSONRPC.Mox, :json_rpc, 4, fn [%{id: id, params: [block_quantity, _]}], _ ->
+          case EthereumJSONRPC.quantity_to_integer(block_quantity) do
+            0 -> {:ok, [%{id: id, result: []}]}
+            block_number -> {:ok, [%{id: id, result: block_traces_with_value_call(block_number)}]}
+          end
+        end)
+
+        request = get(conn, "/api/v2/internal-transactions", next_page_params)
+
+        assert %{"items" => [%{"block_number" => 2}, %{"block_number" => 1}], "next_page_params" => nil} =
+                 json_response(request, 200)
+      end
+
+      test "leaves the DB items of the blocks not traced by the node for the next page", %{conn: conn} do
+        # zero-value calls of all the blocks are deleted
+        put_explorer_config(Explorer.Migrator.DeleteZeroValueInternalTransactions, enabled: true, storage_period: 0)
+
+        blocks =
+          for block_number <- 0..3, into: %{} do
+            {block_number, insert(:block, number: block_number, timestamp: Timex.shift(Timex.now(), days: -1))}
+          end
+
+        for block_number <- [3, 1] do
+          transaction = :transaction |> insert() |> with_block(blocks[block_number])
+
+          insert(:internal_transaction,
+            transaction: transaction,
+            transaction_index: transaction.index,
+            index: 2,
+            value: 1,
+            block_number: block_number
+          )
+        end
+
+        %{address_id: address_id} = insert(:address_id_to_address_hash, address: insert(:address))
+        insert(:deleted_internal_transactions_address_placeholder, address_id: address_id, block_number: 2)
+
+        expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn [%{id: id, params: [block_quantity, _]}], _ ->
+          case block_quantity do
+            "0x3" -> {:ok, [%{id: id, result: block_traces_with_value_call(3)}]}
+            "0x2" -> {:ok, [%{id: id, error: %{code: -32_000, message: "tracing failed"}}]}
+          end
+        end)
+
+        request = get(conn, "/api/v2/internal-transactions")
+
+        # the DB item of block 1 waits for the node to trace block 2
+        assert %{"items" => [_ | _] = items, "next_page_params" => %{"block_number" => 3}} =
+                 json_response(request, 200)
+
+        assert Enum.all?(items, &(&1["block_number"] == 3))
+      end
+    end
+  end
+
+  defp put_explorer_config(module, config) do
+    initial_config = Application.get_env(:explorer, module)
+    Application.put_env(:explorer, module, Keyword.merge(initial_config || [], config))
+
+    on_exit(fn ->
+      if is_nil(initial_config) do
+        Application.delete_env(:explorer, module)
+      else
+        Application.put_env(:explorer, module, initial_config)
+      end
+    end)
+  end
+
+  # `debug_traceBlockByNumber` result with a transaction that transfers value in a nested call
+  defp block_traces_with_value_call(block_number) do
+    [
+      %{
+        "result" => %{
+          "calls" => [
+            %{
+              "from" => "0x4200000000000000000000000000000000000015",
+              "gas" => "0xe9a3c",
+              "gasUsed" => "0x4a28",
+              "input" => "0x",
+              "output" => "0x",
+              "to" => "0x4200000000000000000000000000000000000016",
+              "type" => "CALL",
+              "value" => "0x1"
+            }
+          ],
+          "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
+          "gas" => "0xf4240",
+          "gasUsed" => "0xb6f9",
+          "input" => "0x",
+          "output" => "0x",
+          "to" => "0x4200000000000000000000000000000000000015",
+          "type" => "CALL",
+          "value" => "0x0"
+        },
+        "txHash" => "0x" <> String.pad_leading("#{block_number}", 64, "0")
+      }
+    ]
   end
 
   defp pending_head_tolerance do

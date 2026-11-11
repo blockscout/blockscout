@@ -1801,6 +1801,59 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       {:ok, %{params: params}}
     end
 
+    # `EthereumJSONRPC.RSK` and `EthereumJSONRPC.Filecoin` variants trace blocks with `trace_block`
+    if Application.compile_env(:explorer, :chain_type) not in [:rsk, :filecoin] do
+      test "reports the internal transactions not fetched from the node when their storage is disabled", %{
+        conn: conn,
+        params: params
+      } do
+        initial_config = Application.get_env(:explorer, InternalTransaction)
+        initial_geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+
+        Application.put_env(
+          :explorer,
+          InternalTransaction,
+          Keyword.merge(initial_config || [], storage_disabled?: true)
+        )
+
+        Application.put_env(
+          :ethereum_jsonrpc,
+          EthereumJSONRPC.Geth,
+          Keyword.merge(initial_geth_config || [], tracer: "call_tracer", block_traceable?: true)
+        )
+
+        on_exit(fn ->
+          Application.put_env(:explorer, InternalTransaction, initial_config)
+          Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, initial_geth_config)
+        end)
+
+        for block_number <- 1..3 do
+          insert(:block, number: block_number)
+        end
+
+        expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn [%{id: id, params: [block_quantity, _]}], _ ->
+          case block_quantity do
+            "0x3" -> {:ok, [%{id: id, result: block_traces_with_value_call(3)}]}
+            "0x2" -> {:ok, [%{id: id, error: %{code: -32_000, message: "tracing failed"}}]}
+          end
+        end)
+
+        # block 2 fails to be traced, so the request stops before it
+        assert %{
+                 "status" => "2",
+                 "message" => message,
+                 "result" => [%{"blockNumber" => "3"}]
+               } =
+                 response =
+                 conn
+                 |> get("/api", Map.put(params, "endblock", "3"))
+                 |> json_response(200)
+
+        assert message =~ "endblock=2"
+        assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+      end
+    end
+
     test "returns empty result, if no internal transactions", %{conn: conn, params: params} do
       response =
         conn
@@ -5688,6 +5741,37 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
   defp pending_head_tolerance do
     Application.get_env(:explorer, PendingOperationsHelper)[:internal_transactions_pending_head_tolerance]
+  end
+
+  # `debug_traceBlockByNumber` result with a transaction that transfers value in a nested call
+  defp block_traces_with_value_call(block_number) do
+    [
+      %{
+        "result" => %{
+          "calls" => [
+            %{
+              "from" => "0x4200000000000000000000000000000000000015",
+              "gas" => "0xe9a3c",
+              "gasUsed" => "0x4a28",
+              "input" => "0x",
+              "output" => "0x",
+              "to" => "0x4200000000000000000000000000000000000016",
+              "type" => "CALL",
+              "value" => "0x1"
+            }
+          ],
+          "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
+          "gas" => "0xf4240",
+          "gasUsed" => "0xb6f9",
+          "input" => "0x",
+          "output" => "0x",
+          "to" => "0x4200000000000000000000000000000000000015",
+          "type" => "CALL",
+          "value" => "0x0"
+        },
+        "txHash" => "0x" <> String.pad_leading("#{block_number}", 64, "0")
+      }
+    ]
   end
 
   defp insert_internal_transaction(block, from_address, to_address) do

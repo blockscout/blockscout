@@ -5,8 +5,9 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
 
   import Mox
 
-  alias Explorer.Chain.Address
-  alias Explorer.Utility.MissingBlockRange
+  alias Explorer.Chain.{Address, Block, PendingBlockOperation, PendingTransactionOperation}
+  alias Explorer.Chain.Cache.BackgroundMigrations
+  alias Explorer.Utility.{InternalTransactionsAddressPlaceholder, MissingBlockRange}
   alias Indexer.Fetcher.OnDemand.ContractCreator, as: ContractCreatorOnDemand
 
   setup :verify_on_exit!
@@ -678,6 +679,96 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
 
     assert [{^contract_address_hash, 4, _updated_at}] = :ets.lookup(:contract_creator_lookup, contract_address_hash)
     assert [%{from_number: 4, to_number: 4, priority: 1}] = Repo.all(MissingBlockRange)
+  end
+
+  describe "queueing the creation block when the internal transactions fetcher is disabled" do
+    setup do
+      put_env(:indexer, Indexer.Fetcher.InternalTransaction, disabled?: true)
+      put_env(:explorer, Explorer.Chain.InternalTransaction, storage_disabled?: true)
+      put_env(:explorer, :json_rpc_named_arguments, variant: EthereumJSONRPC.Geth)
+
+      BackgroundMigrations.set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished(
+        true
+      )
+
+      on_exit(fn ->
+        BackgroundMigrations.set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished(
+          false
+        )
+      end)
+
+      now = Timex.now()
+
+      for i <- 0..4 do
+        insert(:block, number: i, timestamp: Timex.shift(now, minutes: -i))
+      end
+
+      # the contract is created in block 4, which is processed already
+      creation_transaction = :transaction |> insert() |> with_block(Repo.get_by!(Block, number: 4))
+      %{address_id: address_id} = insert(:address_id_to_address_hash, address: insert(:address))
+
+      for block_number <- [3, 4] do
+        insert(:deleted_internal_transactions_address_placeholder, address_id: address_id, block_number: block_number)
+      end
+
+      %{creation_transaction: creation_transaction}
+    end
+
+    test "deletes the address placeholders of the block with pending operations by transactions", %{
+      creation_transaction: %{hash: creation_transaction_hash}
+    } do
+      put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, block_traceable?: false)
+
+      look_up_contract_created_in_block_4()
+
+      # the placeholders are counted anew for all the transactions of the block
+      assert [%PendingTransactionOperation{transaction_hash: ^creation_transaction_hash, priority: 1}] =
+               Repo.all(PendingTransactionOperation)
+
+      assert [%{block_number: 3}] = Repo.all(InternalTransactionsAddressPlaceholder)
+    end
+
+    test "keeps the address placeholders of the block with pending operations by blocks" do
+      put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, block_traceable?: true)
+
+      look_up_contract_created_in_block_4()
+
+      # the placeholders are rebuilt when the block is processed
+      assert [%PendingBlockOperation{block_number: 4, priority: 1}] = Repo.all(PendingBlockOperation)
+      assert [3, 4] = InternalTransactionsAddressPlaceholder |> Repo.all() |> Enum.map(& &1.block_number) |> Enum.sort()
+    end
+  end
+
+  defp look_up_contract_created_in_block_4 do
+    contract_address = insert(:address, contract_code: "0x1234")
+    contract_address_hash = to_string(contract_address.hash)
+
+    stub_eth_get_transaction_count(contract_address_hash, fn block_number ->
+      if block_number == "0x4", do: "0x1", else: "0x0"
+    end)
+
+    assert :ok =
+             ContractCreatorOnDemand.trigger_fetch(
+               contract_address
+               |> Repo.preload([:contract_creation_transaction])
+               |> Address.maybe_preload_contract_creation_internal_transaction([])
+             )
+
+    assert_receive {:eth_get_transaction_count, lookup_pid, _block_number}, 1_000
+    await_lookup(lookup_pid)
+  end
+
+  defp put_env(app, key, config) do
+    initial_config = Application.get_env(app, key)
+    Application.put_env(app, key, Keyword.merge(initial_config || [], config))
+
+    on_exit(fn ->
+      if is_nil(initial_config) do
+        Application.delete_env(app, key)
+      else
+        Application.put_env(app, key, initial_config)
+      end
+    end)
   end
 
   defp monotonic_now, do: System.monotonic_time(:millisecond)
