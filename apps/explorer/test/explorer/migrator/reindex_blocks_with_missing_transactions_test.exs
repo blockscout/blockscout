@@ -26,17 +26,21 @@ defmodule Explorer.Migrator.ReindexBlocksWithMissingTransactionsTest do
   end
 
   test "Reindex blocks with missing transactions" do
+    # The migrator walks every block number from the chain's max down to 0, one
+    # number per iteration with batch_size: 1 and concurrency: 1. Pinning the
+    # blocks to low explicit numbers keeps that walk short regardless of how far
+    # the global `block_number` factory sequence has advanced in this test run.
     %{block: %{number: block_number_correct}} =
       :transaction
       |> insert()
-      |> with_block()
+      |> with_block(insert(:block, number: 1))
 
     correct_block_number_quantity = EthereumJSONRPC.integer_to_quantity(block_number_correct)
 
     %{block: %{number: block_number_incorrect}} =
       :transaction
       |> insert()
-      |> with_block()
+      |> with_block(insert(:block, number: 2))
 
     incorrect_block_number_quantity = EthereumJSONRPC.integer_to_quantity(block_number_incorrect)
 
