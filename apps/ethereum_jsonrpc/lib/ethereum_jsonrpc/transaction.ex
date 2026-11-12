@@ -349,7 +349,7 @@ defmodule EthereumJSONRPC.Transaction do
     normalized_elixir =
       elixir
       |> chain_type_normalization()
-      |> eip_8430_compatibility_fields()
+      |> transaction_type_normalization()
 
     normalized_elixir
     |> do_elixir_to_params()
@@ -628,18 +628,24 @@ defmodule EthereumJSONRPC.Transaction do
 
   defp eden_compatibility_fields(elixir), do: elixir
 
+  # Normalizes the transaction by its EIP-2718 type. Unlike `chain_type_normalization/1`, this
+  # step applies to all chain types.
+  @spec transaction_type_normalization(%{String.t() => any()}) :: %{String.t() => any()}
+  defp transaction_type_normalization(%{"type" => @eip_8430_transaction_type} = elixir) do
+    eip_8430_compatibility_fields(elixir)
+  end
+
+  defp transaction_type_normalization(elixir), do: elixir
+
   # EIP-8430 transactions (EIP-2718 type `0x79`) carry the signatures in `senderAuth` and
   # `payerAuth` instead of the `r`, `s` and `v` fields. Add zero compatibility values for the
   # missing signature fields, because the corresponding database columns do not accept `NULL`.
-  # This applies to all chain types.
   @spec eip_8430_compatibility_fields(%{String.t() => any()}) :: %{String.t() => any()}
-  defp eip_8430_compatibility_fields(%{"type" => @eip_8430_transaction_type} = elixir) do
+  defp eip_8430_compatibility_fields(elixir) do
     Enum.reduce(~w(r s v), elixir, fn key, transaction ->
       if Map.get(transaction, key), do: transaction, else: Map.put(transaction, key, 0)
     end)
   end
-
-  defp eip_8430_compatibility_fields(elixir), do: elixir
 
   defp chain_type_fields(params, elixir) do
     case chain_type() do
