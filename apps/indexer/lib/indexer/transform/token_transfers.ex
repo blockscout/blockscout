@@ -275,9 +275,12 @@ defmodule Indexer.Transform.TokenTransfers do
   # ERC-20 token transfer
   defp parse_params(%{second_topic: second_topic, third_topic: third_topic, fourth_topic: nil} = log)
        when not is_nil(second_topic) and not is_nil(third_topic) do
-    if arc_native_token_transfer_event?(log) do
+    if arc_native_token_transfer_event?(log) or non_arc_eip7708_transfer_log?(log) do
       # for :arc chain type we need to ignore ERC-20 Transfer events from the native token as there are
-      # NativeCoinTransferred, NativeCoinMinted, NativeCoinBurned, EIP-7708 events instead
+      # NativeCoinTransferred, NativeCoinMinted, NativeCoinBurned, EIP-7708 events instead.
+      # On other chain types EIP-7708 protocol `Transfer` logs emitted by SYSTEM_ADDRESS mirror native
+      # coin movements that are already tracked as transaction values and internal transactions, and
+      # SYSTEM_ADDRESS has no token metadata, so they must not become ERC-20 token transfers
       nil
     else
       # handle the transfer for other cases
@@ -597,8 +600,29 @@ defmodule Indexer.Transform.TokenTransfers do
           optional(any()) => any()
         }) :: boolean()
   defp arc_eip7708_transfer_log?(log) do
-    chain_type() == :arc and log.first_topic == TokenTransfer.constant() and
-      log.address_hash == TokenTransfer.eip7708_system_address()
+    chain_type() == :arc and eip7708_transfer_log?(log)
+  end
+
+  # EIP-7708 protocol `Transfer` log on a chain type that has no native-token mapping for it.
+  @spec non_arc_eip7708_transfer_log?(%{
+          :first_topic => String.t(),
+          :address_hash => String.t(),
+          optional(any()) => any()
+        }) :: boolean()
+  defp non_arc_eip7708_transfer_log?(log) do
+    chain_type() != :arc and eip7708_transfer_log?(log)
+  end
+
+  # `Transfer` log whose emitter is the EIP-7708 SYSTEM_ADDRESS, regardless of chain type.
+  @spec eip7708_transfer_log?(%{
+          :first_topic => String.t(),
+          :address_hash => String.t(),
+          optional(any()) => any()
+        }) :: boolean()
+  defp eip7708_transfer_log?(log) do
+    log.first_topic == TokenTransfer.constant() and
+      is_binary(log.address_hash) and
+      String.downcase(log.address_hash) == TokenTransfer.eip7708_system_address()
   end
 
   # Determines if the given log is the NativeCoinTransferred event emitted by the native token system address on Arc chain.

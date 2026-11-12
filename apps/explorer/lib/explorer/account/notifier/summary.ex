@@ -9,7 +9,7 @@ defmodule Explorer.Account.Notifier.Summary do
   alias Explorer
   alias Explorer.Account.Notifier.Summary
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Token, Transaction, Wei}
+  alias Explorer.Chain.{Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Token.ScaledUIAmount
 
   @unknown "Unknown"
@@ -52,14 +52,19 @@ defmodule Explorer.Account.Notifier.Summary do
   def handle_collection(_transaction, []), do: []
 
   def handle_collection(transaction, transfers_list) do
-    Enum.map(
-      transfers_list,
-      fn transfer ->
-        transaction
-        |> fetch_summary(transfer)
-      end
-    )
+    transfers_list
+    |> Enum.reject(&eip7708_system_transfer?/1)
+    |> Enum.map(fn transfer -> fetch_summary(transaction, transfer) end)
   end
+
+  # Token transfers derived from EIP-7708 protocol `Transfer` logs (emitter is SYSTEM_ADDRESS)
+  # mirror the native coin value that the coin summary already covers, so they must not
+  # produce a second notification with an unscaled amount of an "Unknown" token.
+  defp eip7708_system_transfer?(%Chain.TokenTransfer{token_contract_address_hash: token_contract_address_hash}) do
+    to_string(token_contract_address_hash) == TokenTransfer.eip7708_system_address()
+  end
+
+  defp eip7708_system_transfer?(_), do: false
 
   defp fetch_summary(%Chain.Transaction{block_number: nil}), do: :nothing
 

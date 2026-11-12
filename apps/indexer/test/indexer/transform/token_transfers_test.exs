@@ -688,6 +688,44 @@ defmodule Indexer.Transform.TokenTransfersTest do
     end
   end
 
+  if @chain_type != :arc do
+    describe "parse/1 with EIP-7708 protocol logs" do
+      test "ignores Transfer logs emitted by the EIP-7708 system address" do
+        log = %{
+          address_hash: Explorer.Chain.TokenTransfer.eip7708_system_address(),
+          block_number: 1,
+          block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+          first_topic: Explorer.Chain.TokenTransfer.constant(),
+          fourth_topic: nil,
+          index: 0,
+          second_topic: "0x0000000000000000000000001000000000000000000000000000000000000001",
+          third_topic: "0x0000000000000000000000002000000000000000000000000000000000000002",
+          transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+
+        assert %{tokens: [], token_transfers: []} = TokenTransfers.parse([log])
+      end
+
+      test "ignores Transfer logs emitted by the EIP-7708 system address in checksummed form" do
+        log = %{
+          address_hash: "0xffffFFFfFFffffffffffffffFfFFFfffFFFfFFfE",
+          block_number: 1,
+          block_hash: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          data: "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+          first_topic: Explorer.Chain.TokenTransfer.constant(),
+          fourth_topic: nil,
+          index: 0,
+          second_topic: "0x0000000000000000000000001000000000000000000000000000000000000001",
+          third_topic: "0x0000000000000000000000002000000000000000000000000000000000000002",
+          transaction_hash: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+
+        assert %{tokens: [], token_transfers: []} = TokenTransfers.parse([log])
+      end
+    end
+  end
+
   describe "parse/1 with ERC-8056 logs" do
     @erc8056_contract "0xf2eec76e45b328df99a34fa696320a262cb92154"
     @transfer_topic "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"

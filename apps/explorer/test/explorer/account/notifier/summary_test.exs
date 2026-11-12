@@ -5,6 +5,7 @@ defmodule Explorer.Account.Notifier.SummaryTest do
   import Explorer.Factory
 
   alias Explorer.Account.Notifier.Summary
+  alias Explorer.Chain
   alias Explorer.Chain.{TokenTransfer, Transaction, Wei}
   alias Explorer.Repo
 
@@ -141,6 +142,46 @@ defmodule Explorer.Account.Notifier.SummaryTest do
                  transaction_hash: transaction.hash,
                  transaction_fee: fee,
                  type: "ERC-20"
+               }
+             ]
+    end
+
+    test "ERC-20 Token transfer of the EIP-7708 system address is skipped" do
+      transaction =
+        %Transaction{
+          from_address: transaction_from_address,
+          to_address: transaction_to_address,
+          block_number: block_number,
+          hash: transaction_hash
+        } = with_block(insert(:transaction))
+
+      {:ok, system_address_hash} = Chain.string_to_address_hash(TokenTransfer.eip7708_system_address())
+      system_address = insert(:address, hash: system_address_hash)
+      system_token = insert(:token, contract_address: system_address, name: nil, symbol: nil, decimals: nil)
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        token_contract_address: system_address,
+        token_type: system_token.type,
+        amount: transaction.value.value
+      )
+
+      {_, fee} = Transaction.fee(transaction, :gwei)
+
+      assert Summary.process(transaction) == [
+               %Summary{
+                 amount: Wei.to(transaction.value, :ether),
+                 block_number: block_number,
+                 from_address_hash: transaction_from_address.hash,
+                 method: "transfer",
+                 name: "ETH",
+                 subject: "Coin transaction",
+                 to_address_hash: transaction_to_address.hash,
+                 transaction_hash: transaction_hash,
+                 transaction_fee: fee,
+                 type: "COIN"
                }
              ]
     end
