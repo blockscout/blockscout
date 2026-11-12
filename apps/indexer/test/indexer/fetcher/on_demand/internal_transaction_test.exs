@@ -31,7 +31,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
     assert {:ok, []} = InternalTransactionOnDemand.fetch_latest(opts)
     assert [] = InternalTransactionOnDemand.fetch_by_transaction(transaction, opts)
     assert [] = InternalTransactionOnDemand.fetch_by_block(block, opts)
-    assert [] = InternalTransactionOnDemand.fetch_by_address(address.hash, opts)
+    assert {:ok, []} = InternalTransactionOnDemand.fetch_by_address(address.hash, opts)
   end
 
   test "should_fetch?/2 returns false when internal transactions fetcher is disabled" do
@@ -134,7 +134,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
     )
 
     # the first page holds the internal transactions of transactions 2 and 1 of block 3
-    assert [%{block_number: 3, transaction_index: 0}, %{block_number: 2, transaction_index: 1}] =
+    assert {:ok, [%{block_number: 3, transaction_index: 0}, %{block_number: 2, transaction_index: 1}]} =
              InternalTransactionOnDemand.etherscan_fetch_by_address(address.hash, %{
                filter_by: "to",
                page_size: 2,
@@ -163,7 +163,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
       })
 
       # the previous page ended in the middle of block 3
-      assert [%{block_number: 3, transaction_index: 0}, %{block_number: 2, transaction_index: 1}] =
+      assert {:ok, [%{block_number: 3, transaction_index: 0}, %{block_number: 2, transaction_index: 1}]} =
                InternalTransactionOnDemand.fetch_by_address(address.hash,
                  direction: :to,
                  paging_options: %PagingOptions{key: {3, 1, 1}, page_size: 2}
@@ -184,7 +184,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
         "0x2" => block_traces_with_calls_to(address_hash_str, 2, 2)
       })
 
-      assert [%{block_number: 2, transaction_index: 1}, %{block_number: 2, transaction_index: 0}] =
+      assert {:ok, [%{block_number: 2, transaction_index: 1}, %{block_number: 2, transaction_index: 0}]} =
                InternalTransactionOnDemand.fetch_by_address(address.hash,
                  direction: :to,
                  include_zero_value: false,
@@ -201,12 +201,108 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
 
       mock_block_traces(1, %{"0x2" => block_traces_with_calls_to(address_hash_str, 2, 1)})
 
-      assert [%{block_number: 2}] =
+      assert {:ok, [%{block_number: 2}]} =
                InternalTransactionOnDemand.fetch_by_address(address.hash,
                  direction: :to,
                  from_block: 2,
                  to_block: 2,
                  paging_options: %PagingOptions{page_size: 2}
+               )
+    end
+
+    test "reports the block to go on with when the rounds are over", %{
+      address: address,
+      address_hash_str: address_hash_str,
+      address_id: address_id
+    } do
+      insert_to_placeholders(address_id, Map.new(1..6, &{&1, 1}))
+
+      # the newer blocks have zero-value calls only, so each round traces one of them and finds nothing
+      mock_block_traces(
+        5,
+        Map.new(2..6, &{"0x#{Integer.to_string(&1, 16)}", block_traces_with_calls_to(address_hash_str, &1, 1, "0x0")})
+      )
+
+      assert {:incomplete, [], 1} =
+               InternalTransactionOnDemand.fetch_by_address(address.hash,
+                 direction: :to,
+                 include_zero_value: false,
+                 paging_options: %PagingOptions{page_size: 1}
+               )
+    end
+
+    test "keeps the internal transactions traced before a block that fails to be traced", %{
+      address: address,
+      address_hash_str: address_hash_str,
+      address_id: address_id
+    } do
+      Application.put_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction, blocks_batch_size: 1)
+
+      insert_to_placeholders(address_id, %{3 => 1, 2 => 1, 1 => 1})
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 3, fn [%{id: id, params: ["0x" <> block_number_str, _]}], _ ->
+        case String.to_integer(block_number_str, 16) do
+          2 ->
+            {:ok, [%{id: id, error: %{code: -32_000, message: "tracing failed"}}]}
+
+          block_number ->
+            {:ok, [%{id: id, result: block_traces_with_calls_to(address_hash_str, block_number, 1)}]}
+        end
+      end)
+
+      put_block_traceable_geth_config()
+
+      # block 1 is traced, but it is left out with the failed block 2, not to leave a gap, and the caller can retry
+      # with block 2
+      assert {:incomplete, [%InternalTransaction{block_number: 3}], 2} =
+               InternalTransactionOnDemand.fetch_by_address(address.hash,
+                 direction: :to,
+                 paging_options: %PagingOptions{page_size: 3}
+               )
+    end
+
+    test "keeps the internal transactions traced before a block that fails to be traced (block_traceable?: false)",
+         %{
+           address: address,
+           address_hash_str: address_hash_str,
+           address_id: address_id
+         } do
+      Application.put_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction, transactions_batch_size: 1)
+
+      block_numbers_by_transaction_hash =
+        Map.new([3, 2, 1], fn block_number ->
+          insert(:deleted_internal_transactions_address_placeholder,
+            address_id: address_id,
+            block_number: block_number,
+            count_tos: 1,
+            count_froms: 0
+          )
+
+          transaction = :transaction |> insert() |> with_block(insert(:block, number: block_number))
+          {to_string(transaction.hash), block_number}
+        end)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, 3, fn [%{id: id, params: [transaction_hash_str, _]}], _ ->
+        case Map.fetch!(block_numbers_by_transaction_hash, transaction_hash_str) do
+          2 ->
+            {:ok, [%{id: id, error: %{code: -32_000, message: "tracing failed"}}]}
+
+          block_number ->
+            [%{"result" => trace}] = block_traces_with_calls_to(address_hash_str, block_number, 1)
+            {:ok, [%{id: id, result: trace}]}
+        end
+      end)
+
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth,
+        tracer: "call_tracer",
+        debug_trace_timeout: "5s",
+        block_traceable?: false
+      )
+
+      assert {:incomplete, [%InternalTransaction{block_number: 3}], 2} =
+               InternalTransactionOnDemand.fetch_by_address(address.hash,
+                 direction: :to,
+                 paging_options: %PagingOptions{page_size: 3}
                )
     end
   end
@@ -799,8 +895,9 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
       paging_options: %PagingOptions{page_size: 4}
     ]
 
-    assert [%InternalTransaction{}, %InternalTransaction{}, %InternalTransaction{}, %InternalTransaction{}] =
-             result = InternalTransactionOnDemand.fetch_by_address(address.hash, opts)
+    assert {:ok,
+            [%InternalTransaction{}, %InternalTransaction{}, %InternalTransaction{}, %InternalTransaction{}] = result} =
+             InternalTransactionOnDemand.fetch_by_address(address.hash, opts)
 
     assert result |> Enum.filter(&(&1.block_number == 3)) |> Enum.count() == 3
     assert result |> Enum.filter(&(&1.block_number == 2)) |> Enum.count() == 1
@@ -850,12 +947,12 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
 
     opts = [paging_options: %PagingOptions{page_size: 1}]
 
-    assert [%InternalTransaction{type: :create, to_address_hash: to_address_hash}] =
+    assert {:ok, [%InternalTransaction{type: :create, to_address_hash: to_address_hash}]} =
              InternalTransactionOnDemand.fetch_by_address(address.hash, Keyword.put(opts, :direction, :to))
 
     assert to_address_hash == address.hash
 
-    assert [] =
+    assert {:ok, []} =
              InternalTransactionOnDemand.fetch_by_address(address.hash, Keyword.put(opts, :direction, :to_address_hash))
   end
 
@@ -923,7 +1020,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
       paging_options: %PagingOptions{page_size: 2}
     ]
 
-    assert [%InternalTransaction{block_number: 2}, %InternalTransaction{block_number: 1}] =
+    assert {:ok, [%InternalTransaction{block_number: 2}, %InternalTransaction{block_number: 1}]} =
              InternalTransactionOnDemand.fetch_by_address(address.hash, opts)
   end
 
@@ -991,7 +1088,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
       paging_options: %PagingOptions{page_size: 2}
     ]
 
-    assert [%InternalTransaction{block_number: 2}, %InternalTransaction{block_number: 1}] =
+    assert {:ok, [%InternalTransaction{block_number: 2}, %InternalTransaction{block_number: 1}]} =
              InternalTransactionOnDemand.fetch_by_address(address.hash, opts)
   end
 
@@ -1032,7 +1129,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
       paging_options: %PagingOptions{page_size: 4}
     ]
 
-    assert [] = InternalTransactionOnDemand.fetch_by_address(address.hash, opts)
+    assert {:ok, []} = InternalTransactionOnDemand.fetch_by_address(address.hash, opts)
   end
 
   test "etherscan_fetch_by_transaction/2" do

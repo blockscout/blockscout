@@ -687,13 +687,16 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreatorTest do
       put_env(:explorer, Explorer.Chain.InternalTransaction, storage_disabled?: true)
       put_env(:explorer, :json_rpc_named_arguments, variant: EthereumJSONRPC.Geth)
 
+      initial_index_finished? =
+        BackgroundMigrations.get_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished()
+
       BackgroundMigrations.set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished(
         true
       )
 
       on_exit(fn ->
         BackgroundMigrations.set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished(
-          false
+          initial_index_finished?
         )
       end)
 

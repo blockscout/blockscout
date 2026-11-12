@@ -41,7 +41,12 @@ defmodule BlockScoutWeb.AddressInternalTransactionController do
         |> Keyword.merge(paging_options(params))
         |> Keyword.merge(current_filter(params))
 
-      internal_transactions_plus_one = address_to_internal_transactions(address_hash, full_options)
+      internal_transactions_plus_one =
+        case address_to_internal_transactions(address_hash, full_options) do
+          {:ok, internal_transactions} -> internal_transactions
+          {:incomplete, internal_transactions, _next_block_number} -> internal_transactions
+        end
+
       {internal_transactions, next_page} = split_list_by_page(internal_transactions_plus_one)
 
       next_page_path =

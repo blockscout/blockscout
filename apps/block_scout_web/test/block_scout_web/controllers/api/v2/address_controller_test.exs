@@ -2627,6 +2627,109 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response_default = json_response(request_default, 200)
       assert Enum.count(response_default["items"]) == 2
     end
+
+    # `EthereumJSONRPC.RSK` and `EthereumJSONRPC.Filecoin` variants trace blocks with `trace_block`
+    if @chain_type not in [:rsk, :filecoin] do
+      test "goes on with the block that fails to be traced on the next page when the storage is disabled", %{
+        conn: conn
+      } do
+        initial_config = Application.get_env(:explorer, InternalTransaction)
+        initial_geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+
+        Application.put_env(
+          :explorer,
+          InternalTransaction,
+          Keyword.merge(initial_config || [], storage_disabled?: true)
+        )
+
+        Application.put_env(
+          :ethereum_jsonrpc,
+          EthereumJSONRPC.Geth,
+          Keyword.merge(initial_geth_config || [], tracer: "call_tracer", block_traceable?: true)
+        )
+
+        on_exit(fn ->
+          Application.put_env(:explorer, InternalTransaction, initial_config)
+          Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, initial_geth_config)
+        end)
+
+        address = insert(:address)
+        address_hash_str = to_string(address.hash)
+        %{address_id: address_id} = insert(:address_id_to_address_hash, address: address)
+
+        for block_number <- 1..3 do
+          insert(:block, number: block_number)
+
+          insert(:deleted_internal_transactions_address_placeholder,
+            address_id: address_id,
+            block_number: block_number,
+            count_tos: 1,
+            count_froms: 0
+          )
+        end
+
+        # `debug_traceBlockByNumber` result with a transaction that transfers value to the address in a nested call
+        block_traces = fn block_quantity ->
+          [
+            %{
+              "result" => %{
+                "calls" => [
+                  %{
+                    "from" => "0x4200000000000000000000000000000000000015",
+                    "gas" => "0xe9a3c",
+                    "gasUsed" => "0x4a28",
+                    "input" => "0x",
+                    "output" => "0x",
+                    "to" => address_hash_str,
+                    "type" => "CALL",
+                    "value" => "0x1"
+                  }
+                ],
+                "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
+                "gas" => "0xf4240",
+                "gasUsed" => "0xb6f9",
+                "input" => "0x",
+                "output" => "0x",
+                "to" => "0x4200000000000000000000000000000000000015",
+                "type" => "CALL",
+                "value" => "0x0"
+              },
+              "txHash" => "0x" <> String.pad_leading(String.trim_leading(block_quantity, "0x"), 64, "0")
+            }
+          ]
+        end
+
+        # blocks 3 and 2 are traced in one batch, and block 1 fails in another one
+        expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn requests, _ ->
+          {:ok,
+           Enum.map(requests, fn
+             %{id: id, params: ["0x1", _]} -> %{id: id, error: %{code: -32_000, message: "tracing failed"}}
+             %{id: id, params: [block_quantity, _]} -> %{id: id, result: block_traces.(block_quantity)}
+           end)}
+        end)
+
+        request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
+
+        assert %{
+                 "items" => [%{"block_number" => 3}, %{"block_number" => 2}],
+                 "next_page_params" => next_page_params
+               } = json_response(request, 200)
+
+        assert %{"block_number" => 2, "transaction_index" => 0, "index" => 0} = next_page_params
+
+        # block 1 is traced on the next page
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn requests, _ ->
+          {:ok,
+           Enum.map(requests, fn %{id: id, params: [block_quantity, _]} ->
+             %{id: id, result: block_traces.(block_quantity)}
+           end)}
+        end)
+
+        request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions", next_page_params)
+
+        assert %{"items" => [%{"block_number" => 1}], "next_page_params" => nil} = json_response(request, 200)
+      end
+    end
   end
 
   describe "/addresses/{address_hash}/blocks-validated" do

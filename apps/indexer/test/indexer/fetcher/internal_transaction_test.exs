@@ -541,6 +541,9 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
         Keyword.merge(initial_config || [], storage_disabled?: true)
       )
 
+      initial_index_finished? =
+        BackgroundMigrations.get_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished()
+
       # the internal transactions are left out once the placeholders can be rebuilt by block
       BackgroundMigrations.set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished(
         true
@@ -554,7 +557,7 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
         end
 
         BackgroundMigrations.set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished(
-          false
+          initial_index_finished?
         )
       end)
 

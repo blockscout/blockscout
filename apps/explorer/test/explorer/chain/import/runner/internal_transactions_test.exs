@@ -901,6 +901,9 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
         Keyword.merge(initial_config || [], storage_disabled?: true)
       )
 
+      initial_index_finished? =
+        BackgroundMigrations.get_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished()
+
       # the internal transactions are left out once the placeholders can be rebuilt by block
       set_placeholders_block_number_index_finished(true)
 
@@ -911,7 +914,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactionsTest do
           Application.put_env(:explorer, InternalTransaction, initial_config)
         end
 
-        set_placeholders_block_number_index_finished(false)
+        set_placeholders_block_number_index_finished(initial_index_finished?)
       end)
     end
 

@@ -51,7 +51,10 @@ defmodule Explorer.Utility.InternalTransactionsAddressPlaceholderTest do
         insert(:deleted_internal_transactions_address_placeholder, address_id: address_id, block_number: block_number)
       end
 
-      on_exit(fn -> set_block_number_index_finished(false) end)
+      initial_index_finished? =
+        BackgroundMigrations.get_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished()
+
+      on_exit(fn -> set_block_number_index_finished(initial_index_finished?) end)
 
       %{address_id: address_id}
     end

@@ -84,6 +84,9 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueueTest do
       Keyword.merge(internal_transaction_config || [], storage_disabled?: true)
     )
 
+    initial_index_finished? =
+      BackgroundMigrations.get_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished()
+
     set_placeholders_block_number_index_finished(true)
 
     on_exit(fn ->
@@ -93,7 +96,7 @@ defmodule Indexer.Fetcher.InternalTransaction.DeleteQueueTest do
         Application.put_env(:explorer, InternalTransaction, internal_transaction_config)
       end
 
-      set_placeholders_block_number_index_finished(false)
+      set_placeholders_block_number_index_finished(initial_index_finished?)
     end)
 
     %{block_number: block_number} = :transaction |> insert() |> with_block()

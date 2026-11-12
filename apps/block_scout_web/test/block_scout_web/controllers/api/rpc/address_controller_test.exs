@@ -2960,6 +2960,103 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
         assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
       end
+
+      test "reports the internal transactions not fetched from the node within the request when their storage is disabled",
+           %{conn: conn} do
+        initial_config = Application.get_env(:explorer, InternalTransaction)
+        initial_geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+
+        Application.put_env(
+          :explorer,
+          InternalTransaction,
+          Keyword.merge(initial_config || [], storage_disabled?: true)
+        )
+
+        Application.put_env(
+          :ethereum_jsonrpc,
+          EthereumJSONRPC.Geth,
+          Keyword.merge(initial_geth_config || [], tracer: "call_tracer", block_traceable?: true)
+        )
+
+        on_exit(fn ->
+          Application.put_env(:explorer, InternalTransaction, initial_config)
+          Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, initial_geth_config)
+        end)
+
+        address = insert(:address)
+        address_hash_str = to_string(address.hash)
+        address_id = AddressIdToAddressHash.find_or_create(address.hash).address_id
+
+        for block_number <- 1..6 do
+          insert(:block, number: block_number)
+
+          insert(:deleted_internal_transactions_address_placeholder,
+            address_id: address_id,
+            block_number: block_number,
+            count_tos: 1,
+            count_froms: 0
+          )
+        end
+
+        # the newer blocks have zero-value calls to the address only, and block 1 transfers value to it
+        expect(EthereumJSONRPC.Mox, :json_rpc, 6, fn [%{id: id, params: [block_quantity, _]}], _ ->
+          {:ok,
+           [
+             %{
+               id: id,
+               result: [
+                 %{
+                   "result" => %{
+                     "calls" => [
+                       %{
+                         "from" => "0x4200000000000000000000000000000000000015",
+                         "gas" => "0xe9a3c",
+                         "gasUsed" => "0x4a28",
+                         "input" => "0x",
+                         "output" => "0x",
+                         "to" => address_hash_str,
+                         "type" => "CALL",
+                         "value" => if(block_quantity == "0x1", do: "0x1", else: "0x0")
+                       }
+                     ],
+                     "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
+                     "gas" => "0xf4240",
+                     "gasUsed" => "0xb6f9",
+                     "input" => "0x",
+                     "output" => "0x",
+                     "to" => "0x4200000000000000000000000000000000000015",
+                     "type" => "CALL",
+                     "value" => "0x0"
+                   },
+                   "txHash" => "0x" <> String.pad_leading(String.trim_leading(block_quantity, "0x"), 64, "0")
+                 }
+               ]
+             }
+           ]}
+        end)
+
+        params = %{
+          "module" => "account",
+          "action" => "txlistinternal",
+          "address" => address_hash_str,
+          "offset" => "1"
+        }
+
+        # each round of the request traces one of the newer blocks and finds nothing, so it stops before block 1
+        assert %{"status" => "2", "message" => message, "result" => []} =
+                 response =
+                 conn
+                 |> get("/api", params)
+                 |> json_response(200)
+
+        assert message =~ "endblock=1"
+        assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+
+        assert %{"status" => "1", "result" => [%{"blockNumber" => "1"}]} =
+                 conn
+                 |> get("/api", Map.put(params, "endblock", "1"))
+                 |> json_response(200)
+      end
     end
 
     test "with an invalid address", %{conn: conn} do

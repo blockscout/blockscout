@@ -324,6 +324,9 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
       setup :verify_on_exit!
 
       setup do
+        initial_index_finished? =
+          BackgroundMigrations.get_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished()
+
         BackgroundMigrations.set_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(
           true
         )
@@ -336,7 +339,13 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
           Keyword.merge(initial_geth_config || [], tracer: "call_tracer", block_traceable?: true)
         )
 
-        on_exit(fn -> Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, initial_geth_config) end)
+        on_exit(fn ->
+          BackgroundMigrations.set_heavy_indexes_create_internal_transactions_block_number_desc_transaction_index_desc_index_desc_index_finished(
+            initial_index_finished?
+          )
+
+          Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, initial_geth_config)
+        end)
       end
 
       test "goes on with the block that fails to be traced on the next page when the storage is disabled", %{

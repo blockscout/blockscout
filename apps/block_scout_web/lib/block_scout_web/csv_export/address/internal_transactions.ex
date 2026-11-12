@@ -60,7 +60,11 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
             else: &1
           )).()
 
-    address_to_internal_transactions(address_hash, options)
+    # an incomplete scan of the node gives the internal transactions found within the request
+    case address_to_internal_transactions(address_hash, options) do
+      {:ok, internal_transactions} -> internal_transactions
+      {:incomplete, internal_transactions, _next_block_number} -> internal_transactions
+    end
   end
 
   defp to_csv_format(internal_transactions) do
