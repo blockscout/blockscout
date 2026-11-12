@@ -5,8 +5,9 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
   alias BlockScoutWeb.API.V2.{Helper, TokenView, TransactionView}
   alias Ecto.Association.NotLoaded
   alias Explorer.Chain
+  alias Explorer.Chain.{Address, TokenTransfer, Transaction}
   alias Explorer.Chain.Token.UIMultiplierChange
-  alias Explorer.Chain.{TokenTransfer, Transaction}
+  alias Explorer.Chain.TokenTransfer.PoisoningAttack
 
   def render("token_transfer.json", %{token_transfer: nil}) do
     nil
@@ -62,9 +63,30 @@ defmodule BlockScoutWeb.API.V2.TokenTransferView do
       "block_hash" => to_string(token_transfer.block_hash),
       "block_number" => token_transfer.block_number,
       "log_index" => token_transfer.log_index,
-      "token_type" => token_transfer.token_type
+      "token_type" => token_transfer.token_type,
+      "poisoning" => prepare_poisoning_attack(Map.get(token_transfer, :poisoning_attack))
     }
   end
+
+  @doc """
+  Prepares the poisoning attack verdict of a token transfer, as filled by
+  `Explorer.Chain.TokenTransfer.PoisoningAttack.preload_for_token_transfers/2`,
+  to be returned in the API v2 endpoints. `nil` for a transfer that is not
+  identified as an attack, or whose verdict was not loaded.
+  """
+  @spec prepare_poisoning_attack(PoisoningAttack.t() | nil) :: map() | nil
+  def prepare_poisoning_attack(%PoisoningAttack{} = attack) do
+    %{
+      "score" => attack.score,
+      "rules" => attack.rules,
+      "details" => attack.details,
+      "victim" => Address.checksum(attack.victim_address_hash),
+      "mimic" => Address.checksum(attack.mimic_address_hash),
+      "issuer" => attack.issuer_address_hash && Address.checksum(attack.issuer_address_hash)
+    }
+  end
+
+  def prepare_poisoning_attack(_), do: nil
 
   # NOTE: Duplicated with `token_instance` reduction in
   # Explorer.Chain.CsvExport.AdvancedFilter

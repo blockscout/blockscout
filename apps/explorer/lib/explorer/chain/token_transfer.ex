@@ -17,6 +17,7 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
   }
 
   alias Explorer.Chain.Token.Instance
+  alias Explorer.Chain.TokenTransfer.PoisoningAttack
 
   # Remove `transaction_hash` from primary key for `optimism-celo` chain type. See
   # `Explorer.Chain.Log.Schema` for more details.
@@ -65,6 +66,9 @@ defmodule Explorer.Chain.TokenTransfer.Schema do
         field(:token_type, :string)
         field(:block_consensus, :boolean)
         field(:token_instance, :any, virtual: true) :: Instance.t() | nil
+        # The poisoning attack verdict of this transfer, filled by
+        # `Explorer.Chain.TokenTransfer.PoisoningAttack.preload_for_token_transfers/2`
+        field(:poisoning_attack, :any, virtual: true) :: PoisoningAttack.t() | nil
 
         belongs_to(:from_address, Address,
           foreign_key: :from_address_hash,

@@ -27,6 +27,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     Token,
     Token.Instance,
     TokenTransfer,
+    TokenTransfer.PoisoningAttack,
     Transaction
   }
 
@@ -269,6 +270,14 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
         :address_referencing,
         :blocks,
         :delete_logs
+      )
+    end)
+    |> Multi.run(:delete_token_transfer_poisoning_attacks, fn repo, %{lose_consensus: non_consensus_blocks} ->
+      Instrumenter.block_import_stage_runner(
+        fn -> delete_token_transfer_poisoning_attacks(repo, non_consensus_blocks, insert_options) end,
+        :address_referencing,
+        :blocks,
+        :delete_token_transfer_poisoning_attacks
       )
     end)
     |> Multi.run(:update_token_instances_owner, fn repo, %{derive_transaction_forks: transactions} ->
@@ -1265,6 +1274,19 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
       )
 
     {:ok, Enum.map(result, & &1.block_number)}
+  end
+
+  # The poisoning verdicts are keyed by block number, so the ones of a block
+  # that lost consensus have to go before its replacement is scored
+  defp delete_token_transfer_poisoning_attacks(_, [], _), do: {:ok, 0}
+
+  defp delete_token_transfer_poisoning_attacks(repo, non_consensus_blocks, %{timeout: timeout}) do
+    non_consensus_block_numbers = Enum.map(non_consensus_blocks, fn {number, _hash} -> number end)
+
+    {:ok, PoisoningAttack.delete_by_block_numbers(repo, non_consensus_block_numbers, timeout)}
+  rescue
+    postgrex_error in Postgrex.Error ->
+      {:error, %{exception: postgrex_error, block_numbers: Enum.map(non_consensus_blocks, &elem(&1, 0))}}
   end
 
   defp delete_logs(_, [], _), do: {:ok, []}
