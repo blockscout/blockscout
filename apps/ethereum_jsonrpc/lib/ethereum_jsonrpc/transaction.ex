@@ -30,6 +30,9 @@ defmodule EthereumJSONRPC.Transaction do
   # EIP-2718 type of the Eden sponsored (batched) transaction: `0x76`.
   @eden_sponsored_transaction_type 118
 
+  # EIP-2718 type of the EIP-8430 transaction: `0x79`.
+  @eip_8430_transaction_type 0x79
+
   @post_exec_tx_type 0x7D
   @zero_address_hash_string "0x0000000000000000000000000000000000000000"
 
@@ -343,7 +346,10 @@ defmodule EthereumJSONRPC.Transaction do
   """
   @spec elixir_to_params(elixir) :: params
   def elixir_to_params(elixir) do
-    normalized_elixir = chain_type_normalization(elixir)
+    normalized_elixir =
+      elixir
+      |> chain_type_normalization()
+      |> eip_8430_compatibility_fields()
 
     normalized_elixir
     |> do_elixir_to_params()
@@ -622,6 +628,19 @@ defmodule EthereumJSONRPC.Transaction do
 
   defp eden_compatibility_fields(elixir), do: elixir
 
+  # EIP-8430 transactions (EIP-2718 type `0x79`) carry the signatures in `senderAuth` and
+  # `payerAuth` instead of the `r`, `s` and `v` fields. Add zero compatibility values for the
+  # missing signature fields, because the corresponding database columns do not accept `NULL`.
+  # This applies to all chain types.
+  @spec eip_8430_compatibility_fields(%{String.t() => any()}) :: %{String.t() => any()}
+  defp eip_8430_compatibility_fields(%{"type" => @eip_8430_transaction_type} = elixir) do
+    Enum.reduce(~w(r s v), elixir, fn key, transaction ->
+      if Map.get(transaction, key), do: transaction, else: Map.put(transaction, key, 0)
+    end)
+  end
+
+  defp eip_8430_compatibility_fields(elixir), do: elixir
+
   defp chain_type_fields(params, elixir) do
     case chain_type() do
       :ethereum ->
@@ -864,8 +883,15 @@ defmodule EthereumJSONRPC.Transaction do
     defp entry_to_elixir({"gasLimit" = key, quantity_or_nil}),
       do: {key, quantity_or_nil && quantity_to_integer(quantity_or_nil)}
 
-    defp entry_to_elixir({"calls" = key, calls}) when is_list(calls),
-      do: {key, Enum.map(calls, &call_to_elixir/1)}
+    # Only a flat list of call objects is an Eden `calls` array. Other transaction types can use
+    # the same key for a different structure, for example EIP-8430 uses a list of call phases.
+    defp entry_to_elixir({"calls" = key, calls}) when is_list(calls) do
+      if Enum.all?(calls, &is_map/1) do
+        {key, Enum.map(calls, &call_to_elixir/1)}
+      else
+        {:ignore, :ignore}
+      end
+    end
   end
 
   defp entry_to_elixir(_) do
