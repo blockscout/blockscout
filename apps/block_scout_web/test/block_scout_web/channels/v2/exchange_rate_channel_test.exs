@@ -108,7 +108,15 @@ defmodule BlockScoutWeb.V2.ExchangeRateChannelTest do
 
       MarketHistory.bulk_insert(records)
 
-      Market.fetch_recent_history()
+      # `Coin.handle_info/2` above broadcasts the `:exchange_rate` chain event, which the `Main`
+      # realtime handler processes in its own process, caching the market history that is still
+      # empty at that moment. Wait until the handler is done with the event and drop what it has
+      # cached, so that the history is read from the DB again.
+      if pid = Process.whereis(BlockScoutWeb.RealtimeEventHandlers.Main), do: :sys.get_state(pid)
+      ConCache.delete(MarketHistoryCache.cache_name(), MarketHistoryCache.updated_at_key())
+      ConCache.delete(MarketHistoryCache.cache_name(), MarketHistoryCache.data_key())
+
+      assert Enum.map(Market.fetch_recent_history(), &Map.take(&1, [:date, :closing_price])) == records
 
       topic = "exchange_rate:new_rate"
       @endpoint.subscribe(topic)

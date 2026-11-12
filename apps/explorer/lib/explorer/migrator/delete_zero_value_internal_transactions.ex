@@ -102,8 +102,10 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
     end
   end
 
+  # The range is inclusive on both ends, so it may consist of a single block: this happens
+  # when the previous batch ended exactly one block below the border block.
   defp clear_internal_transactions(from_number, to_number)
-       when is_integer(from_number) and is_integer(to_number) and from_number < to_number do
+       when is_integer(from_number) and is_integer(to_number) and from_number <= to_number do
     dynamic_condition = dynamic([it], it.block_number >= ^from_number and it.block_number <= ^to_number)
 
     do_clear_internal_transactions(dynamic_condition)
