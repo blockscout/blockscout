@@ -3,6 +3,9 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   @moduledoc """
   Periodically checks empty blocks starting from the head of the chain, detects for which blocks transactions should be refetched
   and set refetch_needed=true for block in order to refetch transactions.
+
+  The blocks that the node fails to return are left out of the next batches until fewer than a batch of
+  unchecked blocks is left, so they don't block the check of the rest. Then the next pass requests them again.
   """
 
   use GenServer
@@ -24,8 +27,11 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   @interval :timer.seconds(10)
   @batch_size 10
   @head_offset 1000
+  # the list of the failed blocks is reset when it gets longer, e.g. if the node lacks a part of the history
+  @max_failed_blocks 1000
 
-  defstruct json_rpc_named_arguments: []
+  # `failed_block_hashes` are the blocks that the node failed to return during the current pass
+  defstruct json_rpc_named_arguments: [], failed_block_hashes: []
 
   def child_spec([init_arguments]) do
     child_spec([init_arguments, []])
@@ -60,20 +66,20 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
   @impl GenServer
   def handle_info(
         :sanitize_empty_blocks,
-        %{json_rpc_named_arguments: json_rpc_named_arguments} = state
+        %{json_rpc_named_arguments: json_rpc_named_arguments, failed_block_hashes: failed_block_hashes} = state
       ) do
     Logger.info("Start sanitizing of empty blocks. Batch size is #{limit()}",
       fetcher: :empty_blocks_to_refetch
     )
 
-    sanitize_empty_blocks(json_rpc_named_arguments)
+    failed_block_hashes = sanitize_empty_blocks(json_rpc_named_arguments, failed_block_hashes)
 
     Process.send_after(self(), :sanitize_empty_blocks, interval())
 
-    {:noreply, state}
+    {:noreply, %{state | failed_block_hashes: failed_block_hashes}}
   end
 
-  defp sanitize_empty_blocks(json_rpc_named_arguments) do
+  defp sanitize_empty_blocks(json_rpc_named_arguments, failed_block_hashes) do
     unprocessed_non_empty_blocks_query = unprocessed_non_empty_blocks_query(limit())
 
     Repo.update_all(
@@ -85,43 +91,80 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
       timeout: :infinity
     )
 
-    unprocessed_empty_blocks_list = unprocessed_empty_blocks_list_query(limit())
+    unprocessed_empty_blocks_list = unprocessed_empty_blocks_list_query(limit(), failed_block_hashes)
+    new_failed_blocks = check_blocks_on_node(unprocessed_empty_blocks_list, json_rpc_named_arguments)
 
-    if !Enum.empty?(unprocessed_empty_blocks_list) do
-      blocks_response =
-        unprocessed_empty_blocks_list
-        |> Enum.map(fn %{number: block_number} -> %{number: integer_to_quantity(block_number)} end)
-        |> id_to_params()
-        |> Blocks.requests(&ByNumber.request(&1, false, false))
-        |> json_rpc(json_rpc_named_arguments)
+    next_failed_block_hashes(unprocessed_empty_blocks_list, new_failed_blocks, failed_block_hashes)
+  end
 
-      case blocks_response do
-        {:ok, result} ->
-          {non_empty_blocks, empty_blocks} = classify_blocks_from_result(result)
-          process_non_empty_blocks(non_empty_blocks)
-          process_empty_blocks(empty_blocks)
+  # Returns the blocks that the node failed to return
+  defp check_blocks_on_node([], _json_rpc_named_arguments), do: []
 
-          Logger.info("Batch of empty blocks is sanitized",
-            fetcher: :empty_blocks_to_refetch
-          )
+  defp check_blocks_on_node(blocks, json_rpc_named_arguments) do
+    id_to_params =
+      blocks
+      |> Enum.map(fn %{number: block_number} -> %{number: integer_to_quantity(block_number)} end)
+      |> id_to_params()
 
-        {:error, reason} ->
-          Logger.error(
-            "Failed to fetch blocks batch: #{inspect(reason)}",
-            fetcher: :empty_blocks_to_refetch
-          )
-      end
+    blocks_response =
+      id_to_params
+      |> Blocks.requests(&ByNumber.request(&1, false, false))
+      |> json_rpc(json_rpc_named_arguments)
+
+    case blocks_response do
+      {:ok, result} ->
+        {non_empty_blocks, empty_blocks, errors} = classify_blocks_from_result(result, id_to_params)
+        process_non_empty_blocks(non_empty_blocks)
+        process_empty_blocks(empty_blocks)
+        process_errors(errors)
+
+        Logger.info("Batch of empty blocks is sanitized",
+          fetcher: :empty_blocks_to_refetch
+        )
+
+        returned_block_numbers = MapSet.new(non_empty_blocks ++ empty_blocks, & &1.number)
+        Enum.reject(blocks, &MapSet.member?(returned_block_numbers, &1.number))
+
+      {:error, reason} ->
+        Logger.error(
+          "Failed to fetch blocks batch: #{inspect(reason)}",
+          fetcher: :empty_blocks_to_refetch
+        )
+
+        blocks
     end
   end
 
-  defp classify_blocks_from_result(result) do
-    result
-    |> Enum.reduce({[], []}, fn %{id: _id, result: block}, {non_empty_blocks, empty_blocks} ->
-      if Enum.empty?(block["transactions"]) do
-        {non_empty_blocks, [block_fields(block) | empty_blocks]}
-      else
-        {[block_fields(block) | non_empty_blocks], empty_blocks}
-      end
+  # A batch smaller than the limit means that the unchecked blocks are over: the next pass
+  # starts over and requests the failed blocks again.
+  defp next_failed_block_hashes(blocks, new_failed_blocks, failed_block_hashes) do
+    failed_block_hashes = Enum.map(new_failed_blocks, & &1.hash) ++ failed_block_hashes
+
+    if Enum.count(blocks) < limit() or Enum.count(failed_block_hashes) > @max_failed_blocks do
+      []
+    else
+      failed_block_hashes
+    end
+  end
+
+  # Blocks with failed requests are only collected into errors: they keep `is_empty = nil`
+  # and are requested again on the next pass.
+  defp classify_blocks_from_result(result, id_to_params) do
+    Enum.reduce(result, {[], [], []}, fn
+      %{result: %{"transactions" => transactions} = block}, {non_empty_blocks, empty_blocks, errors} ->
+        if Enum.empty?(transactions) do
+          {non_empty_blocks, [block_fields(block) | empty_blocks], errors}
+        else
+          {[block_fields(block) | non_empty_blocks], empty_blocks, errors}
+        end
+
+      # the node doesn't have the block
+      %{id: id, result: nil}, {non_empty_blocks, empty_blocks, errors} ->
+        error = %{code: 404, message: "Not Found", data: id_to_params[id]}
+        {non_empty_blocks, empty_blocks, [error | errors]}
+
+      %{id: id, error: error}, {non_empty_blocks, empty_blocks, errors} ->
+        {non_empty_blocks, empty_blocks, [Map.put(error, :data, id_to_params[id]) | errors]}
     end)
   end
 
@@ -175,7 +218,34 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
       fetcher: :empty_blocks_to_refetch
     )
 
-    mark_blocks_as_empty(empty_blocks |> Enum.map(& &1.hash))
+    block_hashes = Enum.map(empty_blocks, & &1.hash)
+    mark_blocks_as_empty(block_hashes)
+    refetch_blocks_from_other_forks(Enum.map(empty_blocks, & &1.number), block_hashes)
+  end
+
+  # The node has another block at the same height, so the consensus block in the DB is from a stale fork
+  defp refetch_blocks_from_other_forks(block_numbers, node_block_hashes) do
+    case Block.set_refetch_needed_for_other_consensus_blocks(block_numbers, node_block_hashes) do
+      [] ->
+        :ok
+
+      refetched_block_numbers ->
+        Logger.info(
+          "Blocks with numbers #{inspect(refetched_block_numbers)} differ from the node's blocks at the same height. " <>
+            "Setting refetch_needed = true for them to re-fetch.",
+          fetcher: :empty_blocks_to_refetch
+        )
+    end
+  end
+
+  defp process_errors([]), do: :ok
+
+  defp process_errors(errors) do
+    Logger.error(
+      "Failed to fetch #{Enum.count(errors)} blocks of the batch, they will be requested again on the next pass: " <>
+        inspect(errors),
+      fetcher: :empty_blocks_to_refetch
+    )
   end
 
   @spec mark_blocks_as_empty([Hash.Full.t()]) ::
@@ -256,13 +326,14 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizer do
     )
   end
 
-  defp unprocessed_empty_blocks_list_query(limit) do
+  defp unprocessed_empty_blocks_list_query(limit, excluded_block_hashes) do
     candidate_blocks_query = consensus_blocks_with_nil_is_empty_query(limit)
 
     empty_blocks_query =
       from(
         block in candidate_blocks_query,
-        where: not exists(any_block_transactions_query())
+        where: not exists(any_block_transactions_query()),
+        where: block.hash not in ^excluded_block_hashes
       )
 
     empty_blocks_query
