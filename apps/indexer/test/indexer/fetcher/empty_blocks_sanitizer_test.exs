@@ -4,7 +4,7 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizerTest do
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase, async: false
 
-  import EthereumJSONRPC, only: [integer_to_quantity: 1]
+  import EthereumJSONRPC, only: [integer_to_quantity: 1, quantity_to_integer: 1]
   import Mox
 
   alias Indexer.Fetcher.EmptyBlocksSanitizer
@@ -202,6 +202,102 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizerTest do
     end
   end
 
+  test "blocks failed to be fetched are requested once per pass", %{
+    json_rpc_named_arguments: json_rpc_named_arguments
+  } do
+    put_sanitizer_env(batch_size: 2, interval: 50)
+
+    # Setup: 3 unchecked blocks and a batch of 2, so the first pass takes 2 batches
+    # whatever order the candidate query returns the blocks in
+    failed_blocks = [insert(:block, number: 1_001, is_empty: nil), insert(:block, number: 1_000, is_empty: nil)]
+    block_to_process = insert(:block, number: 500, is_empty: nil)
+    insert(:block, number: 2_000, is_empty: true)
+
+    # Setup jsonrpc client: the node never returns the failed blocks, the requested block numbers are sent to the test
+    failed_block_numbers = Enum.map(failed_blocks, & &1.number)
+    test_pid = self()
+
+    if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+      EthereumJSONRPC.Mox
+      |> stub(:json_rpc, fn requests, _options ->
+        block_numbers = Enum.map(requests, fn %{params: [block_number, false]} -> quantity_to_integer(block_number) end)
+        send(test_pid, {:requested_block_numbers, block_numbers})
+
+        responses =
+          Enum.map(requests, fn %{id: id, method: "eth_getBlockByNumber", params: [block_number, false]} ->
+            if quantity_to_integer(block_number) in failed_block_numbers do
+              %{id: id, jsonrpc: "2.0", result: nil}
+            else
+              %{id: id, jsonrpc: "2.0", result: block_json(block_number, block_to_process.hash, [])}
+            end
+          end)
+
+        {:ok, responses}
+      end)
+    end
+
+    EmptyBlocksSanitizer.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+    # the first pass requests every unchecked block once
+    assert_receive {:requested_block_numbers, first_batch}, 5_000
+    assert_receive {:requested_block_numbers, second_batch}, 5_000
+    assert Enum.sort(first_batch ++ second_batch) == Enum.sort([block_to_process.number | failed_block_numbers])
+
+    # the next pass requests the failed blocks again. The batches are handled one by one,
+    # so the blocks of the first pass are already updated.
+    assert_receive {:requested_block_numbers, third_batch}, 5_000
+    assert Enum.sort(third_batch) == Enum.sort(failed_block_numbers)
+
+    assert Repo.get!(Block, block_to_process.hash).is_empty == true, "invalid `is_empty` value set for processed block"
+
+    for block <- failed_blocks do
+      assert Repo.get!(Block, block.hash).is_empty == nil, "invalid `is_empty` value set for failed block"
+    end
+  end
+
+  test "process db-empty blocks that differ from the node's blocks at the same height", %{
+    json_rpc_named_arguments: json_rpc_named_arguments
+  } do
+    # Setup
+    block_to_process = insert(:block, is_empty: nil)
+    populate_database_with_dummy_blocks()
+
+    # Setup jsonrpc client: the node has another empty block at the same height
+    encoded_expected_block_number = integer_to_quantity(block_to_process.number)
+    node_block_hash = "0x" <> String.duplicate("ff", 32)
+
+    if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+      EthereumJSONRPC.Mox
+      |> expect(
+        :json_rpc,
+        fn [
+             %{
+               id: id,
+               method: "eth_getBlockByNumber",
+               params: [^encoded_expected_block_number, false]
+             }
+           ],
+           _options ->
+          eth_get_block_by_number_response(id, encoded_expected_block_number, node_block_hash, [])
+        end
+      )
+    end
+
+    EmptyBlocksSanitizer.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+    processed_block =
+      wait_for_results(fn ->
+        Repo.one!(
+          from(block in Block,
+            where: block.hash == ^block_to_process.hash and block.updated_at != ^block_to_process.updated_at
+          )
+        )
+      end)
+
+    assert processed_block.is_empty == nil, "invalid `is_empty` value set for processed block"
+    assert processed_block.refetch_needed == true, "invalid `refetch_needed` value set for processed block"
+  end
+
   test "only old enough blocks are sanitized", %{json_rpc_named_arguments: json_rpc_named_arguments} do
     # Setup
     block_to_process = insert(:block, is_empty: nil)
@@ -224,6 +320,12 @@ defmodule Indexer.Fetcher.EmptyBlocksSanitizerTest do
     end)
 
     assert Repo.one!(from(b in Block, select: count("*"), where: is_nil(b.is_empty))) == @head_offset
+  end
+
+  defp put_sanitizer_env(new_opts) do
+    opts = Application.get_env(:indexer, EmptyBlocksSanitizer)
+    Application.put_env(:indexer, EmptyBlocksSanitizer, Keyword.merge(opts, new_opts))
+    on_exit(fn -> Application.put_env(:indexer, EmptyBlocksSanitizer, opts) end)
   end
 
   defp populate_database_with_dummy_blocks() do
