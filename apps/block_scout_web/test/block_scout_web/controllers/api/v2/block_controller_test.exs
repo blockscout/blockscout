@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.API.V2.BlockControllerTest do
   use BlockScoutWeb.ConnCase
-  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
+  use Utils.CompileTimeEnvHelper,
+    chain_type: [:explorer, :chain_type],
+    chain_identity: [:explorer, :chain_identity]
 
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction, Withdrawal}
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
@@ -991,7 +994,7 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
       )
 
       internal_transactions =
-        51..1
+        51..1//-1
         |> Enum.map(fn index ->
           transaction =
             :transaction

@@ -56,7 +56,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
   describe "viewing top addresses" do
     setup do
-      addresses = Enum.map(150..101, &insert(:address, fetched_coin_balance: &1))
+      addresses = Enum.map(150..101//-1, &insert(:address, fetched_coin_balance: &1))
 
       {:ok, %{addresses: addresses}}
     end

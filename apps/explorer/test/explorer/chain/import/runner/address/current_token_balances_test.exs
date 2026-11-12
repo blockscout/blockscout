@@ -385,7 +385,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
       time_before = ~U[2024-12-31 00:00:00.000000Z]
       time_after = ~U[2025-01-01 00:00:00.000000Z]
 
-      assert time_before > time_after
+      assert Map.from_struct(time_before) > Map.from_struct(time_after)
 
       insert(
         :address_current_token_balance,

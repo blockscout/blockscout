@@ -2,7 +2,7 @@
 defmodule Explorer.Chain.Cache.Counters.Optimism.DepositsCountTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.Cache.Counters.Optimism.DepositsCount
+  alias Explorer.Chain.Cache.Counters.Optimism.DepositsCount, warn: false
 
   if Application.compile_env(:explorer, :chain_type) == :optimism do
     test "populates the cache with the number of deposits" do

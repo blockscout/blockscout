@@ -604,7 +604,7 @@ defmodule Explorer.Chain.SmartContractTest do
       smart_contract: smart_contract,
       constructor_arguments: constructor_arguments
     } do
-      address = %Address{Repo.reload!(address) | smart_contract: smart_contract}
+      address = %{Repo.reload!(address) | smart_contract: smart_contract}
 
       updated_address = SmartContract.check_and_update_constructor_args(address)
 

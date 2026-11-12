@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.API.V2.ShibariumControllerTest do
   use BlockScoutWeb.ConnCase
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  alias Explorer.Chain.Shibarium.Bridge
+  alias Explorer.Chain.Shibarium.Bridge, warn: false
 
   if @chain_type == :shibarium do
     describe "/api/v2/shibarium/deposits" do

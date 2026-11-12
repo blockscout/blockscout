@@ -44,7 +44,7 @@ defmodule BlockScoutWeb.V2.BlockChannelTest do
     end
   end
 
-  test "user is able to join to common channels", %{topic: topic} do
+  test "user is able to join to common channels", %{topic: _topic} do
     common_channels = ["new_block", "indexing", "indexing_internal_transactions"]
 
     Enum.each(common_channels, fn channel ->

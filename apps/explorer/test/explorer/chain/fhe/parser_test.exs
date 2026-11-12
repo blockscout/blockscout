@@ -4,7 +4,6 @@ defmodule Explorer.Chain.Fhe.ParserTest do
 
   alias ABI.TypeEncoder
   alias Explorer.Chain.{Fhe.Parser, Hash, Log}
-  alias Explorer.Helper
 
   describe "get_event_name/1" do
     test "returns correct event name for FheAdd" do

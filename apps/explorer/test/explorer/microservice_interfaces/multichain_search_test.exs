@@ -1231,8 +1231,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
       assert chunk[:block_ranges] == [
                %{
-                 max_block_number: to_string(max(block_1.number, block_2.number)),
-                 min_block_number: to_string(min(block_1.number, block_2.number))
+                 max_block_number: to_string(Enum.max([block_1.number, block_2.number])),
+                 min_block_number: to_string(Enum.min([block_1.number, block_2.number]))
                }
              ]
 
@@ -1298,8 +1298,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
       assert chunk[:block_ranges] == [
                %{
-                 max_block_number: to_string(max(block_1.number, block_2.number)),
-                 min_block_number: to_string(min(block_1.number, block_2.number))
+                 max_block_number: to_string(Enum.max([block_1.number, block_2.number])),
+                 min_block_number: to_string(Enum.min([block_1.number, block_2.number]))
                }
              ]
 
@@ -1377,8 +1377,8 @@ defmodule Explorer.MicroserviceInterfaces.MultichainSearchTest do
 
       assert first_chunk[:block_ranges] == [
                %{
-                 max_block_number: to_string(max(block_1.number, block_2.number)),
-                 min_block_number: to_string(min(block_1.number, block_2.number))
+                 max_block_number: to_string(Enum.max([block_1.number, block_2.number])),
+                 min_block_number: to_string(Enum.min([block_1.number, block_2.number]))
                }
              ]
 

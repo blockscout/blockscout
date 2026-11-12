@@ -5,7 +5,7 @@ defmodule Explorer.Chain.Import.Runner.FheOperationsTest do
   import Mox
 
   alias Ecto.Multi
-  alias Explorer.Chain.{Block, FheOperation, Hash, Transaction}
+  alias Explorer.Chain.{FheOperation, Transaction}
   alias Explorer.Chain.Import.Runner.FheOperations
   alias Explorer.Repo
 

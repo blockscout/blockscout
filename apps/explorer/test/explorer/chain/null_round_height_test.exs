@@ -2,9 +2,9 @@
 defmodule Explorer.Chain.NullRoundHeightTest do
   use Explorer.DataCase
 
-  import Explorer.QuerySources, only: [with_query_sources: 1]
+  import Explorer.QuerySources, only: [with_query_sources: 1], warn: false
 
-  alias Explorer.Chain.NullRoundHeight
+  alias Explorer.Chain.NullRoundHeight, warn: false
 
   if Application.compile_env(:explorer, :chain_type) == :filecoin do
     describe "neighbor_block_numbers/2" do

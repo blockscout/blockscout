@@ -4,7 +4,7 @@ defmodule Explorer.Chain.FheContractCheckerTest do
 
   import Mox
 
-  alias Explorer.Chain.{Address, FheContractChecker, Hash}
+  alias Explorer.Chain.{FheContractChecker, Hash}
   alias Explorer.Tags.{AddressTag, AddressToTag}
   alias Explorer.Repo
 

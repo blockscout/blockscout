@@ -2,7 +2,7 @@
 defmodule Explorer.Chain.FheOperationTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.{Block, FheOperation, Hash, Transaction}
+  alias Explorer.Chain.FheOperation
 
   describe "by_transaction_hash/1" do
     test "returns empty list when no operations exist" do

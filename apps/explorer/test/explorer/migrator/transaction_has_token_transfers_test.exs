@@ -1,7 +1,6 @@
 defmodule Explorer.Migrator.TransactionHasTokenTransfersTest do
   use Explorer.DataCase, async: false
 
-  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.Transaction
   alias Explorer.Migrator.{MigrationStatus, TransactionHasTokenTransfers}
   alias Explorer.Repo

@@ -2,7 +2,7 @@
 defmodule Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCountTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount
+  alias Explorer.Chain.Cache.Counters.Optimism.LastOutputRootSizeCount, warn: false
 
   if Application.compile_env(:explorer, :chain_type) == :optimism do
     test "populates the cache with the number of transactions in last output root" do
