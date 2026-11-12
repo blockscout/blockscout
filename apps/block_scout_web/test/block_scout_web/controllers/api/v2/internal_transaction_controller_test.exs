@@ -71,9 +71,10 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
         index: 1
       )
 
-      # the block of the returned internal transaction is itself inside the tolerance window
-      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
-      insert(:block, number: transaction.block_number + pending_head_tolerance() - 1)
+      # the pending block is one block inside the tolerance window, so it is ignored
+      pending_block = insert(:block, number: transaction.block_number + 1)
+      insert(:pending_block_operation, block_hash: pending_block.hash, block_number: pending_block.number)
+      insert(:block, number: pending_block.number + pending_head_tolerance() - 1)
 
       request = get(conn, "/api/v2/internal-transactions")
 
@@ -82,11 +83,15 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionControllerTest do
       assert response["meta"]["status"] == 1
       assert is_nil(response["meta"]["message"])
 
-      # a listing filtered by transaction hash is bounded to that transaction, so the strict check applies
+      # a listing filtered by transaction hash is bounded to that transaction, so the strict check
+      # applies to its block even though the block is inside the tolerance window. The number of
+      # items is not asserted: internal transactions of a pending block are hidden when pending
+      # operations are tracked per block, which depends on the JSON RPC variant.
+      insert(:pending_block_operation, block_hash: transaction.block_hash, block_number: transaction.block_number)
+
       request = get(conn, "/api/v2/internal-transactions", %{"transaction_hash" => to_string(transaction.hash)})
 
       assert response = json_response(request, 200)
-      assert Enum.count(response["items"]) == 1
       assert response["meta"]["status"] == 2
 
       assert response["meta"]["message"] ==
