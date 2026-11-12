@@ -1,6 +1,6 @@
 ---
 name: run-server
-description: "Use this skill when you need to start, launch, or run the Blockscout backend server (mix phx.server). Trigger on phrases like 'start the server', 'run blockscout', 'launch the API', 'start indexing', 'run phx.server', or when the user wants to see the explorer running locally. Also use when preparing environment configuration for running the server, or when a previous server start failed due to missing env vars."
+description: "Use this skill when you need to start, launch, or run the Blockscout backend server (mix phx.server). Trigger on phrases like 'start the server', 'run blockscout', 'launch the API', 'start indexing', 'run phx.server', or when the user wants to see the explorer running locally. Also use when preparing environment configuration for running the server, or when a previous server start failed due to missing env vars. Also use when running the indexer locally against a real network or public/paid RPC endpoint, when the RPC node returns rate-limit errors (429, 'too many requests'), or when the user wants to test block, transaction, receipt or log import with fewer JSON-RPC requests or lower local resource use."
 ---
 
 # Running the Blockscout server
@@ -34,6 +34,27 @@ DISABLE_INDEXER=true
 ```
 
 In this mode `ETHEREUM_JSONRPC_HTTP_URL` is not strictly required, but some API responses will be incomplete without historical indexed data.
+
+### Low-RPC local indexing profile
+
+Use this profile when the indexer runs on a local machine against a real network and the goal is to test the block import pipeline (blocks, transactions, receipts, logs, token transfers). RPC providers rate-limit aggressively, and a default indexer start fires many parallel requests from background fetchers that such a test does not need. The profile cuts those requests and lowers database, memory and external-service use.
+
+Build the env file from the template:
+
+```bash
+cp .claude/skills/run-server/references/low-rpc-local.env tmp/<name>.env
+```
+
+Then append the three essential variables above. Two values need a decision per network:
+
+- `ETHEREUM_JSONRPC_VARIANT` — set it to the node's client. The template uses `geth`.
+- `ETHEREUM_JSONRPC_RECEIPTS_BY_BLOCK=true` — switches receipts to one `eth_getBlockReceipts` call per block. Remove the line if the node or provider does not support that method.
+
+If rate-limit errors persist, lower `INDEXER_CATCHUP_BLOCKS_CONCURRENCY` or raise `INDEXER_CATCHUP_BLOCK_INTERVAL` before touching anything else; those two set the main request rate.
+
+With this profile the database intentionally lacks token metadata, address coin and token balances, contract bytecode and internal transactions. Do not treat empty fields of that kind as a bug. If the task needs one of them, remove the matching `INDEXER_DISABLE_*` line from the env file.
+
+Variable names drift between releases. When editing the template, confirm each name still appears in `config/runtime.exs` (or in `apps/indexer/config/{dev,prod}/<variant>.exs` for `INDEXER_CATCHUP_BLOCK_INTERVAL`); an unknown name is silently ignored.
 
 ### Finding additional variables
 

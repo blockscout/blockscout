@@ -84,3 +84,6 @@ tasks_in_progress
 /temp
 
 openapi.yaml
+
+# Local env files and scratch data (see the run-server skill)
+/tmp/
