@@ -241,6 +241,40 @@ if Application.get_env(:explorer, :chain_type) == :optimism do
 
         assert is_nil(Constants.get_constant_value(Withdrawal.respected_game_type_updated_at_constant()))
       end
+
+      test "keeps the stored retirement timestamp if the getter returns an empty response", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        Constants.set_constant_value(Withdrawal.respected_game_type_updated_at_constant(), "1753329835")
+
+        expect(
+          EthereumJSONRPC.Mox,
+          :json_rpc,
+          9,
+          fn
+            requests, _options when is_list(requests) ->
+              {:ok, Enum.map(requests, &mox_handle_continue_calls/1)}
+
+            %{params: [%{data: "0x4fd0434c"}, _]}, _options ->
+              {:ok, "0x"}
+
+            request, _options ->
+              {:ok, mox_handle_continue_calls(request).result}
+          end
+        )
+
+        assert {:noreply, %{end_index: 4}} =
+                 DisputeGame.handle_info(:continue, %{
+                   dispute_game_factory: "0x3078000000000000000000000000000000000001",
+                   optimism_portal: "0x3078000000000000000000000000000000000002",
+                   start_index: 0,
+                   end_index: 3,
+                   json_rpc_named_arguments: json_rpc_named_arguments
+                 })
+
+        assert "1753329835" ==
+                 Constants.get_constant_value(Withdrawal.respected_game_type_updated_at_constant())
+      end
     end
   end
 end

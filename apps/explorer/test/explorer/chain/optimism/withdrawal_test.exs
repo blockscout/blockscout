@@ -68,7 +68,13 @@ defmodule Explorer.Chain.Optimism.WithdrawalTest do
 
     describe "status/3" do
       setup do
+        # the cache is shared between tests, so the current value is read
+        # (without triggering the fallback) and restored after each test
+        %{id: initial_chain_id} = ChainId.current_values([:id])
         ChainId.set_id(10)
+
+        on_exit(fn -> ChainId.set_id(initial_chain_id) end)
+
         :ok
       end
 
@@ -142,6 +148,38 @@ defmodule Explorer.Chain.Optimism.WithdrawalTest do
         insert_game(21, created_days_ago: 1, resolved_days_ago: nil, l2_block_number: withdrawal.l2_block_number)
 
         assert {"Ready to prove", nil} == Withdrawal.status(withdrawal)
+      end
+
+      test "ignores a proof submitted at the creation timestamp of the game" do
+        enable_fault_proofs(retired_days_ago: 800)
+        withdrawal = withdrawal()
+
+        # the proof is mature and the game is resolved, but OptimismPortal requires
+        # the proof timestamp to be greater than the game creation timestamp
+        game = insert_game(20, created_days_ago: 10, resolved_days_ago: 6)
+        insert_proven_event(withdrawal, 10, game_index: 20, l1_timestamp: game.created_at)
+
+        assert {"Ready to prove", nil} == Withdrawal.status(withdrawal)
+      end
+
+      test "ignores a proof made against L2OutputOracle when there are no indexed respected games" do
+        enable_fault_proofs()
+        withdrawal = withdrawal()
+
+        # the respected game type is known, but the games of this type are not indexed yet
+        insert_proven_event(withdrawal, 900, game_index: 5)
+        insert_game(5, game_type: @retired_game_type, created_days_ago: 500, resolved_days_ago: 496)
+
+        assert {"Waiting for state root", nil} == Withdrawal.status(withdrawal)
+      end
+
+      test "keeps the `Proven` status for a proof with unknown game when there are no indexed respected games" do
+        enable_fault_proofs(retired_days_ago: 800)
+        withdrawal = withdrawal()
+
+        insert_proven_event(withdrawal, 2, [])
+
+        assert {"Proven", nil} == Withdrawal.status(withdrawal)
       end
 
       test "returns `Ready for relay` for a mature proof made after the void one" do

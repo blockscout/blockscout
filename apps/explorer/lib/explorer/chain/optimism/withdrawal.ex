@@ -285,13 +285,15 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         respected_games
       end
 
-    proven_events =
+    all_proven_events =
       w.hash
       |> proven_events_by_hash()
       |> Enum.map(fn {l1_timestamp, game_address_hash, game_index} ->
         {l1_timestamp, game_by_address_hash_or_index(game_address_hash, game_index)}
       end)
-      |> reject_void_proofs(respected_games)
+
+    fault_proofs_enabled? = all_proven_events != [] and fault_proofs_enabled?(respected_games)
+    proven_events = reject_void_proofs(all_proven_events, fault_proofs_enabled?)
 
     if proven_events == [] do
       cond do
@@ -305,7 +307,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
           {@withdrawal_status_waiting_for_state_root, nil}
       end
     else
-      handle_proven_status(proven_events, respected_games)
+      handle_proven_status(proven_events, fault_proofs_enabled?)
     end
   end
 
@@ -319,7 +321,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   """
   @spec respected_games([Chain.api?()]) :: list()
   def respected_games(options) do
-    case Helper.parse_integer(Constants.get_constant_value("optimism_respected_game_type")) do
+    case respected_game_type() do
       nil ->
         []
 
@@ -357,6 +359,32 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   @spec respected_game_type_updated_at_constant() :: binary()
   def respected_game_type_updated_at_constant do
     @respected_game_type_updated_at
+  end
+
+  # Reads the respected game type (the `respectedGameType` value of the OptimismPortal contract)
+  # stored by the `Indexer.Fetcher.Optimism.DisputeGame` module.
+  #
+  # ## Returns
+  # - The game type number, or `nil` if that's unknown (Fault Proofs are not active for the chain).
+  @spec respected_game_type() :: non_neg_integer() | nil
+  defp respected_game_type do
+    Helper.parse_integer(Constants.get_constant_value("optimism_respected_game_type"))
+  end
+
+  # Determines whether Fault Proofs are active for the chain, i.e. the respected game type is known.
+  #
+  # A non-empty list of respected games implies that, so the constant is only read when there are
+  # no indexed games of the respected type (e.g. right after the respected game type was changed,
+  # or while the dispute games are still being indexed).
+  #
+  # ## Parameters
+  # - `respected_games`: A list of games returned by the `respected_games(options)` function.
+  #
+  # ## Returns
+  # - `true` if Fault Proofs are active, `false` otherwise.
+  @spec fault_proofs_enabled?(list()) :: boolean()
+  defp fault_proofs_enabled?(respected_games) do
+    respected_games != [] or not is_nil(respected_game_type())
   end
 
   # Checks whether there is a respected dispute game the given withdrawal can be proven against.
@@ -447,16 +475,15 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   # ## Parameters
   # - `proven_events`: A list of WithdrawalProven events. Each item is `{l1_timestamp, game}` tuple
   #                    where `game` is the bound dispute game info (`nil` if unknown).
-  # - `respected_games`: A list of games returned by the `respected_games(options)` function.
+  # - `fault_proofs_enabled?`: `true` if Fault Proofs are active for the chain.
   #
   # ## Returns
   # - The list of the events which can still be used to finalize the withdrawal.
-  @spec reject_void_proofs([{DateTime.t(), map() | nil}], list()) :: [{DateTime.t(), map() | nil}]
-  defp reject_void_proofs([], _respected_games), do: []
+  @spec reject_void_proofs([{DateTime.t(), map() | nil}], boolean()) :: [{DateTime.t(), map() | nil}]
+  defp reject_void_proofs([], _fault_proofs_enabled?), do: []
 
-  defp reject_void_proofs(proven_events, respected_games) do
+  defp reject_void_proofs(proven_events, fault_proofs_enabled?) do
     retirement_timestamp = retirement_timestamp()
-    fault_proofs_enabled? = respected_games != []
 
     Enum.reject(proven_events, fn {l1_timestamp, game} ->
       void_proof?(l1_timestamp, game, retirement_timestamp, fault_proofs_enabled?)
@@ -472,9 +499,11 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   # created after the proof referencing it, any proof submitted at the retirement timestamp or before it
   # is void. That covers the proofs made against L2OutputOracle before Fault Proofs activation as well.
   #
-  # If the retirement timestamp is unknown, a proof is still considered void when the bound game was created
-  # after the proof: this is the L2OutputOracle proof which `_l2OutputIndex` argument is stored as
-  # `game_index` (the both versions of the `proveWithdrawalTransaction` method have the same signature).
+  # Regardless of the retirement timestamp, the contract requires the proof timestamp to be greater than
+  # the creation timestamp of the bound game. So, if Fault Proofs are active, a proof is also void when
+  # the bound game was created at the proof's timestamp or after it. The latter is the L2OutputOracle proof
+  # which `_l2OutputIndex` argument is stored as `game_index` (the both versions of
+  # the `proveWithdrawalTransaction` method have the same signature).
   #
   # ## Parameters
   # - `l1_timestamp`: The L1 block timestamp of the WithdrawalProven event.
@@ -495,7 +524,7 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
         true
 
       true ->
-        fault_proofs_enabled? and not is_nil(game) and DateTime.compare(l1_timestamp, game.created_at) == :lt
+        fault_proofs_enabled? and not is_nil(game) and DateTime.compare(l1_timestamp, game.created_at) != :gt
     end
   end
 
@@ -517,20 +546,20 @@ defmodule Explorer.Chain.Optimism.Withdrawal do
   # ## Parameters
   # - `proven_events`: A non-empty list of WithdrawalProven events. Each item is `{l1_timestamp, game}` tuple
   #                    where `game` is the bound dispute game info (`nil` if unknown).
-  # - `respected_games`: A list of games returned by the `respected_games(options)` function.
+  # - `fault_proofs_enabled?`: `true` if Fault Proofs are active for the chain.
   #
   # ## Returns
   # - `{status, datetime}` tuple where the `status` is the current withdrawal status,
   #                        `datetime` is the point of time when the challenge period ends.
   #                        (only for `In challenge period` status).
-  @spec handle_proven_status(list(), list()) :: {String.t(), DateTime.t() | nil}
-  defp handle_proven_status(proven_events, respected_games) do
+  @spec handle_proven_status(list(), boolean()) :: {String.t(), DateTime.t() | nil}
+  defp handle_proven_status(proven_events, fault_proofs_enabled?) do
     statuses =
       proven_events
       |> Enum.reduce_while([], fn {l1_timestamp, game}, acc ->
         # credo:disable-for-lines:16 Credo.Check.Refactor.PipeChainStart
         cond do
-          is_nil(game) and not Enum.empty?(respected_games) ->
+          is_nil(game) and fault_proofs_enabled? ->
             # here we cannot exactly determine the status `Waiting a game to resolve` or
             # `Ready for relay` or `In challenge period`
             # as we don't know the game index and address. In this case we display the `Proven` status

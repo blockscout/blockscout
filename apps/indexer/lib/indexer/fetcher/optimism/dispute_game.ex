@@ -225,6 +225,10 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
     error_message = &"Cannot get respectedGameTypeUpdatedAt() from OptimismPortal contract. Error: #{inspect(&1)}"
 
     case IndexerHelper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, 1) do
+      {:ok, "0x"} ->
+        # the getter is not supported by the contract
+        Logger.error(error_message.("empty response"))
+
       {:ok, value} ->
         Constants.set_constant_value(
           Withdrawal.respected_game_type_updated_at_constant(),
