@@ -1299,7 +1299,8 @@ config :indexer, Indexer.Transform.FheOperations,
 
 config :indexer, Indexer.PendingTransactionsSanitizer,
   interval: ConfigHelper.parse_time_env_var("INDEXER_PENDING_TRANSACTIONS_SANITIZER_INTERVAL", "1h"),
-  window_size: ConfigHelper.parse_time_env_var("INDEXER_PENDING_TRANSACTIONS_WINDOW_SIZE", "1d")
+  window_size: ConfigHelper.parse_time_env_var("INDEXER_PENDING_TRANSACTIONS_WINDOW_SIZE", "1d"),
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_PENDING_TRANSACTIONS_SANITIZER")
 
 config :indexer, Indexer.TokenTransferBlockConsensusSanitizer,
   interval: ConfigHelper.parse_time_env_var("INDEXER_TOKEN_TRANSFER_BLOCK_CONSENSUS_SANITIZER_INTERVAL", "20m")
@@ -1309,6 +1310,18 @@ disable_pending_transactions_fetcher? = ConfigHelper.parse_bool_env_var("INDEXER
 config :indexer, Indexer.Fetcher.PendingTransaction.Supervisor, disabled?: disable_pending_transactions_fetcher?
 
 config :indexer, Indexer.Fetcher.Token, concurrency: ConfigHelper.parse_integer_env_var("INDEXER_TOKEN_CONCURRENCY", 10)
+
+config :indexer, Indexer.Fetcher.Token.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_FETCHER")
+
+config :indexer, Indexer.Fetcher.ContractCode.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CONTRACT_CODE_FETCHER")
+
+config :indexer, Indexer.Fetcher.UncleBlock.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_UNCLE_BLOCK_FETCHER")
+
+config :indexer, Indexer.Temporary.UnclesWithoutIndex.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_UNCLES_WITHOUT_INDEX_FETCHER")
 
 config :indexer, Indexer.Fetcher.TokenBalance.Historical,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_ARCHIVAL_TOKEN_BALANCES_BATCH_SIZE", 100),
@@ -1323,6 +1336,9 @@ config :indexer, Indexer.Fetcher.TokenBalance.Historical.Supervisor,
 config :indexer, Indexer.Fetcher.TokenBalance.Current,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_CURRENT_TOKEN_BALANCES_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_CURRENT_TOKEN_BALANCES_CONCURRENCY", 10)
+
+config :indexer, Indexer.Fetcher.TokenBalance.Current.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CURRENT_TOKEN_BALANCES_FETCHER")
 
 config :indexer, Indexer.Fetcher.TokenCountersUpdater,
   milliseconds_interval: ConfigHelper.parse_time_env_var("TOKEN_COUNTERS_UPDATE_INTERVAL", "3h")
@@ -1389,8 +1405,11 @@ config :indexer, Indexer.Fetcher.CoinBalance.Realtime.Supervisor, disabled?: dis
 config :indexer, Indexer.Fetcher.TokenUpdater.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER")
 
-config :indexer, Indexer.Fetcher.TokenTotalSupplyUpdater.Supervisor,
+config :indexer, Indexer.Fetcher.TokenTotalSupplyUpdater,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER")
+
+config :indexer, Indexer.Fetcher.TokenUIMultiplierUpdater,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_TOKEN_UI_MULTIPLIER_UPDATER_FETCHER")
 
 config :indexer, Indexer.Fetcher.TokenCountersUpdater.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER")
@@ -1611,6 +1630,9 @@ config :indexer, Indexer.Fetcher.MultichainSearchDb.CountersExportQueue,
 
 config :indexer, Indexer.Fetcher.SignedAuthorizationStatus,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_SIGNED_AUTHORIZATION_STATUS_BATCH_SIZE", 10)
+
+config :indexer, Indexer.Fetcher.SignedAuthorizationStatus.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_SIGNED_AUTHORIZATION_STATUS_FETCHER")
 
 config :indexer, Indexer.Fetcher.Optimism.TransactionBatch.Supervisor, enabled: ConfigHelper.chain_type() == :optimism
 config :indexer, Indexer.Fetcher.Optimism.OutputRoot.Supervisor, enabled: ConfigHelper.chain_type() == :optimism

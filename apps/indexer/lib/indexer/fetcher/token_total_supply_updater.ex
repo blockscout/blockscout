@@ -16,7 +16,20 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
   @default_update_interval :timer.seconds(10)
 
   def start_link(_) do
-    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+    if disabled?() do
+      :ignore
+    else
+      GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+    end
+  end
+
+  @doc """
+  Returns `true` if the updater is disabled in the configuration, so that it
+  is not started and the tokens passed to `add_tokens/1` are dropped.
+  """
+  @spec disabled?() :: boolean()
+  def disabled? do
+    Application.get_env(:indexer, __MODULE__, [])[:disabled?] == true
   end
 
   def init(_) do

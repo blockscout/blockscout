@@ -62,18 +62,22 @@ defmodule Indexer.Fetcher.ContractCode do
 
   @spec async_fetch([Transaction.t()], boolean(), integer()) :: :ok
   def async_fetch(transactions, realtime?, timeout \\ 5000) when is_list(transactions) do
-    transaction_fields =
-      transactions
-      |> Enum.filter(&transaction_with_unfetched_created_contract_code?(&1))
-      |> Enum.map(&Map.take(&1, @transaction_fields))
-      |> Enum.uniq()
+    if __MODULE__.Supervisor.disabled?() do
+      :ok
+    else
+      transaction_fields =
+        transactions
+        |> Enum.filter(&transaction_with_unfetched_created_contract_code?(&1))
+        |> Enum.map(&Map.take(&1, @transaction_fields))
+        |> Enum.uniq()
 
-    BufferedTask.buffer(
-      __MODULE__,
-      transaction_fields,
-      realtime?,
-      timeout
-    )
+      BufferedTask.buffer(
+        __MODULE__,
+        transaction_fields,
+        realtime?,
+        timeout
+      )
+    end
   end
 
   @doc false

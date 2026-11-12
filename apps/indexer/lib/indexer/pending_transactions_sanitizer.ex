@@ -37,7 +37,20 @@ defmodule Indexer.PendingTransactionsSanitizer do
   end
 
   def start_link(init_opts, gen_server_opts \\ []) do
-    GenServer.start_link(__MODULE__, init_opts, Keyword.put_new(gen_server_opts, :name, __MODULE__))
+    if disabled?() do
+      :ignore
+    else
+      GenServer.start_link(__MODULE__, init_opts, Keyword.put_new(gen_server_opts, :name, __MODULE__))
+    end
+  end
+
+  @doc """
+  Returns `true` if the sanitizer is disabled in the configuration, so that it
+  is not started.
+  """
+  @spec disabled?() :: boolean()
+  def disabled? do
+    Application.get_env(:indexer, __MODULE__, [])[:disabled?] == true
   end
 
   def init(opts) when is_list(opts) do

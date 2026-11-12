@@ -64,7 +64,11 @@ defmodule Indexer.Fetcher.Token do
   """
   @spec async_fetch([Address.t()], boolean()) :: :ok
   def async_fetch(token_contract_addresses, realtime?) do
-    BufferedTask.buffer(__MODULE__, token_contract_addresses, realtime?)
+    if __MODULE__.Supervisor.disabled?() do
+      :ok
+    else
+      BufferedTask.buffer(__MODULE__, token_contract_addresses, realtime?)
+    end
   end
 
   defp catalog_token(token) do
