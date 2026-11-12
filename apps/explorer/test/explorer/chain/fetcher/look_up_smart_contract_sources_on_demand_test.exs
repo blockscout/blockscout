@@ -57,7 +57,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemandTest do
 
     test "does not skip verification for non-bytecode proxy types" do
       Explorer.Mock.TeslaAdapter
-      |> stub(:call, fn env, _opts ->
+      |> stub(:call, fn %Tesla.Env{} = env, _opts ->
         {:ok, %Tesla.Env{env | status: 200, body: Jason.encode!(%{"sources" => []})}}
       end)
 
@@ -82,7 +82,7 @@ defmodule Explorer.Chain.Fetcher.LookUpSmartContractSourcesOnDemandTest do
 
     test "does not skip verification for address without proxy implementation" do
       Explorer.Mock.TeslaAdapter
-      |> stub(:call, fn env, _opts ->
+      |> stub(:call, fn %Tesla.Env{} = env, _opts ->
         {:ok, %Tesla.Env{env | status: 200, body: Jason.encode!(%{"sources" => []})}}
       end)
 

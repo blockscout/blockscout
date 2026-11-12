@@ -20,7 +20,7 @@ defmodule BlockScoutWeb.API.V2.ConfigControllerTest do
       assert %{"chain_type" => chain_type} = response
 
       # Compare string representations
-      expected_chain_type = if is_atom(@chain_type), do: Atom.to_string(@chain_type), else: @chain_type
+      expected_chain_type = to_string(@chain_type)
       assert chain_type == expected_chain_type
     end
 

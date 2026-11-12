@@ -486,7 +486,7 @@ defmodule Explorer.Chain.TokenTransferTest do
 
       transaction = insert(:transaction) |> with_block()
 
-      erc7984_transfer =
+      _erc7984_transfer =
         insert(
           :token_transfer,
           token_type: "ERC-7984",

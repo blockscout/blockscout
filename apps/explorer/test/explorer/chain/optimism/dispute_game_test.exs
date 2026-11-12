@@ -2,9 +2,9 @@
 defmodule Explorer.Chain.Optimism.DisputeGameTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.Cache.ChainId
+  alias Explorer.Chain.Cache.ChainId, warn: false
   alias Explorer.Chain.Data
-  alias Explorer.Chain.Optimism.DisputeGame
+  alias Explorer.Chain.Optimism.DisputeGame, warn: false
 
   if Application.compile_env(:explorer, :chain_type) == :optimism do
     # game types are taken from `GameTypes` library of the OP Stack contracts

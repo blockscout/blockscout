@@ -2,9 +2,9 @@
 defmodule Explorer.Chain.Optimism.EIP1559ConfigUpdateTest do
   use Explorer.DataCase
 
-  import Explorer.QuerySources, only: [with_query_sources: 1]
+  import Explorer.QuerySources, only: [with_query_sources: 1], warn: false
 
-  alias Explorer.Chain.Optimism.EIP1559ConfigUpdate
+  alias Explorer.Chain.Optimism.EIP1559ConfigUpdate, warn: false
 
   if Application.compile_env(:explorer, :chain_type) == :optimism do
     describe "actual_configs_for_blocks/1" do

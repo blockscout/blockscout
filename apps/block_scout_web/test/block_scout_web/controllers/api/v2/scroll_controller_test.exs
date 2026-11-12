@@ -5,7 +5,7 @@ defmodule BlockScoutWeb.API.V2.ScrollControllerTest do
 
   import Mox
 
-  alias Explorer.Chain.Scroll.{Batch, Bridge}
+  alias Explorer.Chain.Scroll.{Batch, Bridge}, warn: false
 
   setup :set_mox_global
 
@@ -50,37 +50,39 @@ defmodule BlockScoutWeb.API.V2.ScrollControllerTest do
     end
   end
 
-  defp check_paginated_response(first_page_resp, second_page_resp, items) do
-    assert Enum.count(first_page_resp["items"]) == 50
-    assert first_page_resp["next_page_params"] != nil
-    compare_item(Enum.at(items, 50), Enum.at(first_page_resp["items"], 0))
-    compare_item(Enum.at(items, 1), Enum.at(first_page_resp["items"], 49))
+  if @chain_type == :scroll do
+    defp check_paginated_response(first_page_resp, second_page_resp, items) do
+      assert Enum.count(first_page_resp["items"]) == 50
+      assert first_page_resp["next_page_params"] != nil
+      compare_item(Enum.at(items, 50), Enum.at(first_page_resp["items"], 0))
+      compare_item(Enum.at(items, 1), Enum.at(first_page_resp["items"], 49))
 
-    assert Enum.count(second_page_resp["items"]) == 1
-    assert second_page_resp["next_page_params"] == nil
-    compare_item(Enum.at(items, 0), Enum.at(second_page_resp["items"], 0))
-  end
+      assert Enum.count(second_page_resp["items"]) == 1
+      assert second_page_resp["next_page_params"] == nil
+      compare_item(Enum.at(items, 0), Enum.at(second_page_resp["items"], 0))
+    end
 
-  defp compare_item(%Batch{} = item, json) do
-    assert item.number == json["number"]
-    assert to_string(item.commit_transaction_hash) == json["commitment_transaction"]["hash"]
-    assert item.commit_block_number == json["commitment_transaction"]["block_number"]
-    assert DateTime.to_iso8601(item.commit_timestamp) == json["commitment_transaction"]["timestamp"]
-    assert item.container == String.to_atom(json["data_availability"]["batch_data_container"])
-  end
+    defp compare_item(%Batch{} = item, json) do
+      assert item.number == json["number"]
+      assert to_string(item.commit_transaction_hash) == json["commitment_transaction"]["hash"]
+      assert item.commit_block_number == json["commitment_transaction"]["block_number"]
+      assert DateTime.to_iso8601(item.commit_timestamp) == json["commitment_transaction"]["timestamp"]
+      assert item.container == String.to_atom(json["data_availability"]["batch_data_container"])
+    end
 
-  defp compare_item(%Bridge{} = item, json) do
-    assert item.index == json["id"]
-    assert DateTime.to_iso8601(item.block_timestamp) == json["origination_timestamp"]
-    assert item.block_number == json["origination_transaction_block_number"]
-    assert to_string(item.amount) == json["value"]
+    defp compare_item(%Bridge{} = item, json) do
+      assert item.index == json["id"]
+      assert DateTime.to_iso8601(item.block_timestamp) == json["origination_timestamp"]
+      assert item.block_number == json["origination_transaction_block_number"]
+      assert to_string(item.amount) == json["value"]
 
-    if item.type == :deposit do
-      assert to_string(item.l1_transaction_hash) == json["origination_transaction_hash"]
-      assert to_string(item.l2_transaction_hash) == json["completion_transaction_hash"]
-    else
-      assert to_string(item.l2_transaction_hash) == json["origination_transaction_hash"]
-      assert to_string(item.l1_transaction_hash) == json["completion_transaction_hash"]
+      if item.type == :deposit do
+        assert to_string(item.l1_transaction_hash) == json["origination_transaction_hash"]
+        assert to_string(item.l2_transaction_hash) == json["completion_transaction_hash"]
+      else
+        assert to_string(item.l2_transaction_hash) == json["origination_transaction_hash"]
+        assert to_string(item.l1_transaction_hash) == json["completion_transaction_hash"]
+      end
     end
   end
 end

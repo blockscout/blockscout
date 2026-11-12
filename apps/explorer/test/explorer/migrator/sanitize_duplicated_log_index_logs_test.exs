@@ -2,11 +2,12 @@
 defmodule Explorer.Migrator.SanitizeDuplicatedLogIndexLogsTest do
   use Explorer.DataCase, async: false
 
-  alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.Log
-  alias Explorer.Chain.TokenTransfer
-  alias Explorer.Chain.Token.Instance
-  alias Explorer.Migrator.{SanitizeDuplicatedLogIndexLogs, MigrationStatus}
+  alias Explorer.Chain.Cache.BackgroundMigrations, warn: false
+  alias Explorer.Chain.Log, warn: false
+  alias Explorer.Chain.TokenTransfer, warn: false
+  alias Explorer.Chain.Token.Instance, warn: false
+  alias Explorer.Migrator.MigrationStatus, warn: false
+  alias Explorer.Migrator.SanitizeDuplicatedLogIndexLogs, warn: false
 
   if Application.compile_env(:explorer, :chain_type) in [:rsk, :filecoin] do
     describe "Sanitize duplicated log index logs" do

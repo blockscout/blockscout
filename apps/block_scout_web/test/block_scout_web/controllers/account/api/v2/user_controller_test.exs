@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
   use BlockScoutWeb.ConnCase
-  use Utils.RuntimeEnvHelper, chain_type: [:explorer, :chain_type]
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
   alias Explorer.Account.{
     Identity,
@@ -177,7 +177,7 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
            }}
         end)
 
-      assert Enum.all?(created, fn {addr, map_tag, map} ->
+      assert Enum.all?(created, fn {addr, map_tag, _map} ->
                response =
                  conn
                  |> get("/api/account/v2/tags/address/#{addr}")
@@ -236,7 +236,7 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
            }}
         end)
 
-      assert Enum.all?(created, fn {addr, map_tag, map} ->
+      assert Enum.all?(created, fn {addr, map_tag, _map} ->
                response =
                  conn
                  |> get("/api/account/v2/tags/address/#{addr}")
@@ -1127,15 +1127,7 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
       }
     }
 
-    notification_settings_extended =
-      if chain_type() == :zilliqa do
-        Map.put(notification_settings, "ZRC-2", %{
-          "incoming" => watchlist.watch_zrc_2_input,
-          "outcoming" => watchlist.watch_zrc_2_output
-        })
-      else
-        notification_settings
-      end
+    notification_settings_extended = put_chain_type_notification_settings(notification_settings, watchlist)
 
     assert json["address_hash"] == to_string(watchlist.address_hash)
     assert json["name"] == watchlist.name
@@ -1143,6 +1135,18 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
     assert json["address"]["hash"] == Address.checksum(watchlist.address_hash)
     assert json["notification_methods"]["email"] == watchlist.notify_email
     assert json["notification_settings"] == notification_settings_extended
+  end
+
+  # ZRC-2 fields exist in the WatchlistAddress schema only when compiled for Zilliqa
+  if @chain_type == :zilliqa do
+    defp put_chain_type_notification_settings(notification_settings, watchlist) do
+      Map.put(notification_settings, "ZRC-2", %{
+        "incoming" => watchlist.watch_zrc_2_input,
+        "outcoming" => watchlist.watch_zrc_2_output
+      })
+    end
+  else
+    defp put_chain_type_notification_settings(notification_settings, _watchlist), do: notification_settings
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, list) do

@@ -2026,7 +2026,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token_transfers =
         for i <- tt do
-          %TokenTransfer{i | token_ids: [id], amount: Decimal.new(1275)}
+          %{i | token_ids: [id], amount: Decimal.new(1275)}
         end
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
@@ -2089,7 +2089,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token_transfers =
         for i <- 0..50 do
-          %TokenTransfer{tt | token_ids: [i], amount: i}
+          %{tt | token_ids: [i], amount: i}
         end
 
       filter = %{"type" => "ERC-1155", "filter" => "to"}
@@ -2133,7 +2133,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token_transfers_1 =
         for i <- 0..24 do
-          %TokenTransfer{tt_1 | token_ids: [i], amount: i}
+          %{tt_1 | token_ids: [i], amount: i}
         end
 
       transaction_2 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
@@ -2152,7 +2152,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token_transfers_2 =
         for i <- 25..49 do
-          %TokenTransfer{tt_2 | token_ids: [i], amount: i}
+          %{tt_2 | token_ids: [i], amount: i}
         end
 
       tt_3 =
@@ -2198,7 +2198,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token_transfers_1 =
         for i <- 0..24 do
-          %TokenTransfer{tt_1 | token_ids: [i], amount: i}
+          %{tt_1 | token_ids: [i], amount: i}
         end
 
       transaction_2 = insert(:transaction, input: "0xabcd010203040506") |> with_block()
@@ -2217,7 +2217,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       token_transfers_2 =
         for i <- 25..50 do
-          %TokenTransfer{tt_2 | token_ids: [i], amount: i}
+          %{tt_2 | token_ids: [i], amount: i}
         end
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/token-transfers")
@@ -5044,7 +5044,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
             token_contract_address_hash: token.contract_address_hash
           )
 
-        %Instance{ti | current_token_balance: ctb}
+        %{ti | current_token_balance: ctb}
       end
 
       response =
@@ -5080,7 +5080,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
               token_contract_address_hash: token.contract_address_hash
             )
 
-          %Instance{ti | current_token_balance: current_token_balance}
+          %{ti | current_token_balance: current_token_balance}
         end
         |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id}, :desc)
 
@@ -5116,7 +5116,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
               token_contract_address_hash: token.contract_address_hash
             )
 
-          %Instance{ti | current_token_balance: current_token_balance}
+          %{ti | current_token_balance: current_token_balance}
         end
         |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id}, :desc)
 
@@ -5166,7 +5166,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
               token_contract_address_hash: token.contract_address_hash
             )
 
-          %Instance{ti | current_token_balance: current_token_balance}
+          %{ti | current_token_balance: current_token_balance}
         end
         |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id}, :desc)
 
@@ -5226,7 +5226,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
               token_contract_address_hash: token.contract_address_hash
             )
 
-          %Instance{ti | current_token_balance: current_token_balance}
+          %{ti | current_token_balance: current_token_balance}
         end
         |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id}, :desc)
 
@@ -5423,7 +5423,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
 
-        %Instance{ti | current_token_balance: current_token_balance}
+        %{ti | current_token_balance: current_token_balance}
       end
 
       token = insert(:token, type: "ERC-1155")
@@ -5447,7 +5447,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
 
-        %Instance{ti | current_token_balance: current_token_balance}
+        %{ti | current_token_balance: current_token_balance}
       end
 
       token = insert(:token, type: "ERC-404")
@@ -5471,7 +5471,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
 
-        %Instance{ti | current_token_balance: current_token_balance}
+        %{ti | current_token_balance: current_token_balance}
       end
 
       request =
@@ -5547,7 +5547,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
 
-        %Instance{ti | current_token_balance: current_token_balance}
+        %{ti | current_token_balance: current_token_balance}
       end
 
       token = insert(:token, type: "ERC-1155")
@@ -5572,7 +5572,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
 
-        %Instance{ti | current_token_balance: current_token_balance}
+        %{ti | current_token_balance: current_token_balance}
       end
 
       token = insert(:token, type: "ERC-404")
@@ -5597,7 +5597,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
 
-        %Instance{ti | current_token_balance: current_token_balance}
+        %{ti | current_token_balance: current_token_balance}
       end
 
       request =
@@ -5671,7 +5671,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
 
-        %Instance{ti | current_token_balance: current_token_balance}
+        %{ti | current_token_balance: current_token_balance}
       end
 
       token = insert(:token, type: "ERC-1155")
@@ -5695,7 +5695,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
 
-        %Instance{ti | current_token_balance: current_token_balance}
+        %{ti | current_token_balance: current_token_balance}
       end
 
       token = insert(:token, type: "ERC-404")
@@ -5719,7 +5719,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
 
-        %Instance{ti | current_token_balance: current_token_balance}
+        %{ti | current_token_balance: current_token_balance}
       end
 
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-721"})
@@ -5768,7 +5768,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
 
-        %Instance{ti | current_token_balance: current_token_balance}
+        %{ti | current_token_balance: current_token_balance}
       end
 
       token = insert(:token, type: "ERC-1155")
@@ -5794,7 +5794,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
 
-        %Instance{ti | current_token_balance: current_token_balance}
+        %{ti | current_token_balance: current_token_balance}
       end
 
       token = insert(:token, type: "ERC-404")
@@ -5820,7 +5820,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
           )
           |> Repo.preload([:token])
 
-        %Instance{ti | current_token_balance: current_token_balance}
+        %{ti | current_token_balance: current_token_balance}
       end
 
       request = conn |> get("/api/v2/addresses/#{address.hash}/nft/collections", %{type: "ERC-721"})
@@ -5894,7 +5894,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                 )
                 |> Repo.preload([:token])
 
-              %Instance{ti | current_token_balance: current_token_balance}
+              %{ti | current_token_balance: current_token_balance}
             end
             |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id}, :desc)
 
@@ -5940,7 +5940,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                 )
                 |> Repo.preload([:token])
 
-              %Instance{ti | current_token_balance: current_token_balance}
+              %{ti | current_token_balance: current_token_balance}
             end
             |> Enum.sort_by(& &1.token_id, :desc)
 
@@ -5987,7 +5987,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                 )
                 |> Repo.preload([:token])
 
-              %Instance{ti | current_token_balance: current_token_balance}
+              %{ti | current_token_balance: current_token_balance}
             end
             |> Enum.sort_by(& &1.token_id, :desc)
 
@@ -6019,7 +6019,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                 )
                 |> Repo.preload([:token])
 
-              %Instance{ti | current_token_balance: current_token_balance}
+              %{ti | current_token_balance: current_token_balance}
             end
             |> Enum.sort_by(& &1.token_id, :desc)
 
@@ -6076,7 +6076,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                 )
                 |> Repo.preload([:token])
 
-              %Instance{ti | current_token_balance: current_token_balance}
+              %{ti | current_token_balance: current_token_balance}
             end
             |> Enum.sort_by(& &1.token_id, :desc)
 
@@ -6108,7 +6108,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
                 )
                 |> Repo.preload([:token])
 
-              %Instance{ti | current_token_balance: current_token_balance}
+              %{ti | current_token_balance: current_token_balance}
             end
             |> Enum.sort_by(& &1.token_id, :desc)
 

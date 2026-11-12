@@ -3,7 +3,7 @@ defmodule BlockScoutWeb.Api.V2.Ethereum.DepositControllerTest do
   use BlockScoutWeb.ConnCase
   use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
 
-  alias Explorer.Repo
+  alias Explorer.Repo, warn: false
 
   if @chain_type == :ethereum do
     describe "/beacon/deposits" do

@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
   alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
-  alias Explorer.Chain.{Address, Block, PendingBlockOperation, SmartContract, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, SmartContract, Token, TokenTransfer, Transaction}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.{Chain, Repo}
   alias Explorer.Utility.{CountersRefetchBlock, MissingBlockRange}

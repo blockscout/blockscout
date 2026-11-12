@@ -202,7 +202,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
             do: AddressContractView.sourcify_repo_url(target_contract.address_hash, target_contract.partially_verified)
           ),
         "can_be_visualized_via_sol2uml" => false,
-        "name" => target_contract && target_contract.name,
+        "name" => target_contract.name,
         "compiler_version" => target_contract.compiler_version,
         "optimization_enabled" => target_contract.optimization,
         "optimization_runs" => target_contract.optimization_runs,
@@ -309,7 +309,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
             do: AddressContractView.sourcify_repo_url(target_contract.address_hash, target_contract.partially_verified)
           ),
         "can_be_visualized_via_sol2uml" => false,
-        "name" => target_contract && target_contract.name,
+        "name" => target_contract.name,
         "compiler_version" => target_contract.compiler_version,
         "optimization_enabled" => target_contract.optimization,
         "optimization_runs" => target_contract.optimization_runs,
@@ -461,7 +461,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
         "minimal_proxy_address_hash" => nil,
         "sourcify_repo_url" => nil,
         "can_be_visualized_via_sol2uml" => false,
-        "name" => target_contract && target_contract.name,
+        "name" => target_contract.name,
         "compiler_version" => target_contract.compiler_version,
         "optimization_enabled" => target_contract.optimization,
         "optimization_runs" => target_contract.optimization_runs,
@@ -621,7 +621,7 @@ defmodule BlockScoutWeb.API.V2.SmartContractControllerTest do
             do: AddressContractView.sourcify_repo_url(target_contract.address_hash, target_contract.partially_verified)
           ),
         "can_be_visualized_via_sol2uml" => false,
-        "name" => target_contract && target_contract.name,
+        "name" => target_contract.name,
         "compiler_version" => target_contract.compiler_version,
         "optimization_enabled" => target_contract.optimization,
         "optimization_runs" => target_contract.optimization_runs,

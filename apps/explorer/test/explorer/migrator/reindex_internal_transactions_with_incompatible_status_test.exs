@@ -16,7 +16,7 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatusTes
 
     test "Adds new pbo for incorrect internal transactions" do
       incorrect_block_numbers =
-        Enum.map(1..5, fn i ->
+        Enum.map(1..5, fn _i ->
           block = insert(:block)
           transaction = :transaction |> insert() |> with_block(block, status: :error)
 
@@ -34,7 +34,7 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatusTes
 
       transaction_error = insert(:transaction_error, message: "error")
 
-      Enum.each(1..5, fn i ->
+      Enum.each(1..5, fn _i ->
         block = insert(:block)
         transaction = :transaction |> insert() |> with_block(block, status: :error)
 
@@ -50,7 +50,7 @@ defmodule Explorer.Migrator.ReindexInternalTransactionsWithIncompatibleStatusTes
         )
       end)
 
-      Enum.each(1..5, fn i ->
+      Enum.each(1..5, fn _i ->
         block = insert(:block)
         transaction = :transaction |> insert() |> with_block(block, status: :ok)
 

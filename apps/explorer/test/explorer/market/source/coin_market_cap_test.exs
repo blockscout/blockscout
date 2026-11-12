@@ -2,7 +2,6 @@
 defmodule Explorer.Market.Source.CoinMarketCapTest do
   use ExUnit.Case
 
-  alias Explorer.Market.Source
   alias Explorer.Market.Source.CoinMarketCap
   alias Plug.Conn
 
@@ -352,7 +351,7 @@ defmodule Explorer.Market.Source.CoinMarketCapTest do
     """
   end
 
-  defp json_cryptocurrency_quotes_historical_market_cap(quote_) do
+  defp json_cryptocurrency_quotes_historical_market_cap(_quote) do
     """
     {
       "status": {

@@ -10,11 +10,9 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
   import Mox
 
   alias Explorer.Account.{Identity, WatchlistAddress}
-  alias Explorer.Chain.{Address, FheOperation, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.{Address, InternalTransaction, Log, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Beacon.Deposit, as: BeaconDeposit
   alias Explorer.{Repo, TestHelper}
-
-  require Logger
 
   setup do
     Supervisor.terminate_child(Explorer.Supervisor, Explorer.Chain.Cache.Transactions.child_id())
@@ -571,7 +569,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       assert Enum.count(response["token_transfers"]) == 1
       assert is_map(Enum.at(response["token_transfers"], 0)["total"])
-      assert compare_item(%TokenTransfer{tt | amount: 2}, Enum.at(response["token_transfers"], 0))
+      assert compare_item(%{tt | amount: 2}, Enum.at(response["token_transfers"], 0))
     end
 
     test "return transaction with input starting with 0x", %{conn: conn} do
@@ -1424,7 +1422,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       token_transfers =
         for i <- tt do
-          %TokenTransfer{i | token_ids: [id], amount: Decimal.new(1275)}
+          %{i | token_ids: [id], amount: Decimal.new(1275)}
         end
 
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/token-transfers")
@@ -1490,7 +1488,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       token_transfers =
         for i <- 0..50 do
-          %TokenTransfer{tt | token_ids: [i], amount: i}
+          %{tt | token_ids: [i], amount: i}
         end
 
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/token-transfers")
@@ -1526,7 +1524,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       token_transfers_1 =
         for i <- 0..24 do
-          %TokenTransfer{tt_1 | token_ids: [i], amount: i}
+          %{tt_1 | token_ids: [i], amount: i}
         end
 
       tt_2 =
@@ -1542,7 +1540,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       token_transfers_2 =
         for i <- 25..49 do
-          %TokenTransfer{tt_2 | token_ids: [i], amount: i}
+          %{tt_2 | token_ids: [i], amount: i}
         end
 
       tt_3 =
@@ -1585,7 +1583,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       token_transfers_1 =
         for i <- 0..24 do
-          %TokenTransfer{tt_1 | token_ids: [i], amount: i}
+          %{tt_1 | token_ids: [i], amount: i}
         end
 
       tt_2 =
@@ -1601,7 +1599,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
 
       token_transfers_2 =
         for i <- 25..50 do
-          %TokenTransfer{tt_2 | token_ids: [i], amount: i}
+          %{tt_2 | token_ids: [i], amount: i}
         end
 
       request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/token-transfers")

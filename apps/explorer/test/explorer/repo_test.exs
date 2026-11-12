@@ -11,7 +11,7 @@ defmodule Explorer.RepoTest do
 
   describe "safe_insert_all/3" do
     test "inserting duplicate rows in one chunk is logged before re-raising exception" do
-      transaction = insert(:transaction) |> with_block()
+      _transaction = insert(:transaction) |> with_block()
 
       params =
         params_for(

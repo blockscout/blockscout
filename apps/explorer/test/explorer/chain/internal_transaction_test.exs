@@ -7,8 +7,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
   import Mox
 
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, Block, Data, InternalTransaction, Transaction, Wei}
-  alias Explorer.Chain.Cache.BackgroundMigrations
+  alias Explorer.Chain.{Address, Data, InternalTransaction, Wei}
   alias Explorer.Chain.InternalTransaction.Type
   alias Explorer.PagingOptions
 
@@ -95,7 +94,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
         |> insert()
         |> with_block(block)
 
-      first =
+      _first =
         insert(:internal_transaction,
           transaction: transaction,
           index: 0,
@@ -866,7 +865,7 @@ defmodule Explorer.Chain.InternalTransactionTest do
     test "pages by {block_number, transaction_index, index}" do
       address = insert(:address)
 
-      pending_transaction = insert(:transaction)
+      _pending_transaction = insert(:transaction)
 
       a_block = insert(:block, number: 2000)
 
