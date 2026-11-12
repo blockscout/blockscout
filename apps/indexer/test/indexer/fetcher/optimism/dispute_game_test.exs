@@ -6,7 +6,9 @@ if Application.get_env(:explorer, :chain_type) == :optimism do
 
     import Mox
 
+    alias Explorer.Application.Constants
     alias Explorer.Chain.Data
+    alias Explorer.Chain.Optimism.Withdrawal
     alias Indexer.Fetcher.Optimism.DisputeGame
 
     setup :verify_on_exit!
@@ -28,6 +30,17 @@ if Application.get_env(:explorer, :chain_type) == :optimism do
            })
            when data in ~w(0x3c9f397c 0x19effeb4 0x200d2ed2),
            do: %{id: id, jsonrpc: "2.0", result: "0x0"}
+
+      # respectedGameTypeUpdatedAt() getter of OptimismPortal
+      defp mox_handle_continue_calls(%{
+             id: id,
+             method: "eth_call",
+             params: [
+               %{data: "0x4fd0434c", to: _},
+               _
+             ]
+           }),
+           do: %{id: id, jsonrpc: "2.0", result: "0x6881b0ab"}
 
       defp mox_handle_continue_calls(%{
              id: id,
@@ -122,7 +135,7 @@ if Application.get_env(:explorer, :chain_type) == :optimism do
         expect(
           EthereumJSONRPC.Mox,
           :json_rpc,
-          8,
+          9,
           fn
             requests, _options when is_list(requests) ->
               {:ok, Enum.map(requests, &mox_handle_continue_calls/1)}
@@ -193,6 +206,40 @@ if Application.get_env(:explorer, :chain_type) == :optimism do
                    status: 0
                  }
                ] = Repo.all(Explorer.Chain.Optimism.DisputeGame)
+
+        assert "1753329835" ==
+                 Constants.get_constant_value(Withdrawal.respected_game_type_updated_at_constant())
+      end
+
+      test "keeps working if the retirement timestamp cannot be read", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        expect(
+          EthereumJSONRPC.Mox,
+          :json_rpc,
+          9,
+          fn
+            requests, _options when is_list(requests) ->
+              {:ok, Enum.map(requests, &mox_handle_continue_calls/1)}
+
+            %{params: [%{data: "0x4fd0434c"}, _]}, _options ->
+              {:error, %{code: 3, message: "execution reverted"}}
+
+            request, _options ->
+              {:ok, mox_handle_continue_calls(request).result}
+          end
+        )
+
+        assert {:noreply, %{end_index: 4}} =
+                 DisputeGame.handle_info(:continue, %{
+                   dispute_game_factory: "0x3078000000000000000000000000000000000001",
+                   optimism_portal: "0x3078000000000000000000000000000000000002",
+                   start_index: 0,
+                   end_index: 3,
+                   json_rpc_named_arguments: json_rpc_named_arguments
+                 })
+
+        assert is_nil(Constants.get_constant_value(Withdrawal.respected_game_type_updated_at_constant()))
       end
     end
   end

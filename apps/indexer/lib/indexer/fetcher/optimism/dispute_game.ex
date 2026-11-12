@@ -127,6 +127,7 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
     time_before = Timex.now()
 
     update_respected_game_type(optimism_portal, json_rpc_named_arguments)
+    update_respected_game_type_updated_at(optimism_portal, json_rpc_named_arguments)
 
     chunks_number = ceil((end_index - start_index + 1) / @games_range_size)
     chunk_range = Range.new(0, max(chunks_number - 1, 0), 1)
@@ -211,6 +212,28 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
       "optimism_respected_game_type",
       json_rpc_named_arguments
     )
+  end
+
+  # Reads the retirement timestamp from the `respectedGameTypeUpdatedAt()` public getter of the OptimismPortal
+  # contract and stores it in the constants table. The proofs submitted at this timestamp or before it are
+  # not accepted by the contract anymore (see `Explorer.Chain.Optimism.Withdrawal.status/3`).
+  #
+  # Unlike the other constants, a failed read doesn't stop the fetcher: the previously stored value (if any)
+  # is kept, and the read is repeated on the next iteration.
+  defp update_respected_game_type_updated_at(optimism_portal, json_rpc_named_arguments) do
+    req = Contract.eth_call_request("0x4fd0434c", optimism_portal, 0, nil, nil)
+    error_message = &"Cannot get respectedGameTypeUpdatedAt() from OptimismPortal contract. Error: #{inspect(&1)}"
+
+    case IndexerHelper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, 1) do
+      {:ok, value} ->
+        Constants.set_constant_value(
+          Withdrawal.respected_game_type_updated_at_constant(),
+          Integer.to_string(quantity_to_integer(value))
+        )
+
+      _ ->
+        :ok
+    end
   end
 
   defp update_game_statuses(json_rpc_named_arguments) do
