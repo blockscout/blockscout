@@ -2434,12 +2434,18 @@ defmodule Explorer.Chain.Transaction do
       end)
       |> Enum.zip(transactions)
 
-    # assemble a new methods map from methods in non-decoded transactions
+    # assemble a new methods map from methods in non-decoded transactions;
+    # ids are cast to `MethodIdentifier.t()` so that the cache keys match the
+    # `identifier` of the fetched `ContractMethod.t()` records
     methods_map =
       decoded_transactions
       |> Enum.flat_map(fn
-        {nil, %{input: %{bytes: <<method_id::binary-size(4), _::binary>>}}} -> [method_id]
-        _ -> []
+        {nil, %{input: %{bytes: <<method_id::binary-size(4), _::binary>>}}} ->
+          {:ok, method_id} = MethodIdentifier.cast(method_id)
+          [method_id]
+
+        _ ->
+          []
       end)
       |> Enum.uniq()
       |> ContractMethodsCache.find_contract_methods(opts)

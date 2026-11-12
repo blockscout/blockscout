@@ -6,7 +6,8 @@ defmodule Explorer.Chain.TransactionTest do
   import Explorer.QuerySources, only: [with_query_sources: 1]
 
   alias Ecto.Changeset
-  alias Explorer.Chain.{Address, InternalTransaction, SmartContract, Transaction}
+  alias Explorer.Chain.{Address, InternalTransaction, MethodIdentifier, SmartContract, Transaction}
+  alias Explorer.Chain.Cache.ContractMethods, as: ContractMethodsCache
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.{PagingOptions, TestHelper}
 
@@ -520,6 +521,35 @@ defmodule Explorer.Chain.TransactionTest do
       assert [@decoded_set_10] = result
       assert "smart_contracts" in sources
       refute "proxy_implementations" in sources
+    end
+
+    test "decodes input by contract_methods candidates consistently when the cache is enabled" do
+      config = Application.get_env(:explorer, ContractMethodsCache) || []
+      Application.put_env(:explorer, ContractMethodsCache, Keyword.merge(config, enabled: true))
+
+      contract_method = insert(:contract_method)
+      {:ok, method_id} = MethodIdentifier.cast(contract_method.identifier)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, ContractMethodsCache, config)
+        ConCache.delete(ContractMethodsCache.cache_name(), {:contract_method, method_id})
+      end)
+
+      input_data = "set(uint)" |> ABI.encode([10]) |> Base.encode16(case: :lower)
+
+      transaction =
+        :transaction
+        |> insert(to_address: insert(:address, contract_code: nil), input: "0x" <> input_data)
+        |> Repo.preload(to_address: [:smart_contract, :proxy_implementations])
+
+      # the first call populates the cache, the second one is served from it
+      assert [@decoded_set_10] = Transaction.decode_transactions([transaction], true, api?: true)
+
+      {result, sources} =
+        with_query_sources(fn -> Transaction.decode_transactions([transaction], true, api?: true) end)
+
+      assert [@decoded_set_10] = result
+      refute "contract_methods" in sources
     end
   end
 
