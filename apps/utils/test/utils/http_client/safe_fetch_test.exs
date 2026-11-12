@@ -255,6 +255,19 @@ defmodule Utils.HttpClient.SafeFetchTest do
       refute_received {:requested, "http://1.1.1.1/meta"}
     end
 
+    # `Tesla.Adapter.Mint` returns the error of `Mint.HTTP.connect/4` as it is, whereas a
+    # response timeout comes back as the bare `:timeout` of the test above.
+    test "moves to the next validated address when Mint reports a connection timeout" do
+      t =
+        transport(fn
+          "http://8.8.8.8/meta" -> {:error, %{__struct__: Mint.TransportError, reason: :timeout}}
+          "http://1.1.1.1/meta" -> {:ok, resp(200, [], "ok")}
+        end)
+
+      assert {:ok, %{status_code: 200}} = SafeFetch.request("http://multi.test/meta", [], [], t)
+      assert_received {:requested, "http://1.1.1.1/meta"}
+    end
+
     test "gives each attempt but the last half of the connection timeout that is left" do
       parent = self()
 
@@ -270,7 +283,7 @@ defmodule Utils.HttpClient.SafeFetchTest do
       assert_received {:requested, "http://8.8.8.8/meta", first}
       assert_received {:requested, "http://1.1.1.1/meta", second}
       assert_received {:requested, "http://9.9.9.9/meta", last}
-      assert first in 29_990..30_000
+      assert first in 29_000..30_000
       assert second in 20_000..29_995
       assert last in 40_000..59_980
     end

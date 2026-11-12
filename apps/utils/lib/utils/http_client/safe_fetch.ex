@@ -28,8 +28,7 @@ defmodule Utils.HttpClient.SafeFetch do
   @redirect_statuses [301, 302, 303, 307, 308]
 
   # Errors of establishing the connection, after which the next validated address is tried.
-  # A connect timeout is recognised in hackney's form only: Mint reports it as `:timeout`,
-  # which is also what a response timeout looks like.
+  # `:connect_timeout` is hackney's connect timeout; Mint's is recognised in `connect_error?/1`.
   @connect_errors [:econnrefused, :ehostunreach, :enetunreach, :connect_timeout]
 
   # Budget for the attempts when the caller sets no connection timeout (hackney's default
@@ -154,7 +153,10 @@ defmodule Utils.HttpClient.SafeFetch do
   defp deadline(_timeout), do: deadline(@default_connect_timeout)
 
   # hackney reports a bare atom (wrapped in `%HTTPoison.Error{}` by HTTPoison), Mint a
-  # `%Mint.TransportError{}`.
+  # `%Mint.TransportError{}`. `Tesla.Adapter.Mint` returns the error of `Mint.HTTP.connect/4`
+  # as it is and turns a response timeout into a bare `:timeout`, so a `:timeout` in the struct
+  # is a connection timeout. Mint is not a dependency of this application, hence the map pattern.
+  defp connect_error?(%{__struct__: Mint.TransportError, reason: :timeout}), do: true
   defp connect_error?(%{reason: reason}), do: reason in @connect_errors
   defp connect_error?(reason), do: reason in @connect_errors
 
@@ -180,8 +182,10 @@ defmodule Utils.HttpClient.SafeFetch do
     end
   end
 
-  # Orders the addresses IPv4 and IPv6 in turn, IPv4 first, so that when one address family
-  # does not answer, the other one is tried next (RFC 8305, section 4).
+  # Orders the addresses IPv4 and IPv6 in turn, so that when one address family does not
+  # answer, the other one is tried next (RFC 8305, section 4). IPv4 goes first, unlike in the
+  # RFC: IPv6 that is routed but black-holed is common enough in deployments not to spend half
+  # of the budget on it before an IPv4 address is tried.
   defp alternate_families(ip_list) do
     {ipv4, ipv6} = Enum.split_with(ip_list, &(tuple_size(&1) == 4))
     alternate(ipv4, ipv6)
