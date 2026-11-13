@@ -49,6 +49,7 @@ defmodule Explorer.Factory do
     Block,
     ContractMethod,
     Data,
+    EIP8430Transaction,
     FheOperation,
     Hash,
     InternalTransaction,
@@ -1329,6 +1330,22 @@ defmodule Explorer.Factory do
       v: 0,
       authority: address_hash(),
       status: nil
+    }
+  end
+
+  def eip_8430_transaction_factory do
+    %EIP8430Transaction{
+      transaction: build(:transaction),
+      has_named_sender: true,
+      nonce_key: 0,
+      valid_after: 0,
+      valid_before: 0,
+      metadata: %Data{bytes: <<>>},
+      payer_type: :self,
+      payer: nil,
+      sender_auth: %Data{bytes: <<1>>},
+      payer_auth: %Data{bytes: <<>>},
+      account_changes: []
     }
   end
 
