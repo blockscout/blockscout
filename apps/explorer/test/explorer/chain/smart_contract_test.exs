@@ -4,7 +4,7 @@ defmodule Explorer.Chain.SmartContractTest do
 
   import ExUnit.CaptureLog
   import Mox
-  alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
   alias Explorer.Chain.SmartContract.VerificationStatus
 
   doctest Explorer.Chain.SmartContract
@@ -348,6 +348,51 @@ defmodule Explorer.Chain.SmartContractTest do
                SmartContract.update_smart_contract(%{address_hash: address.hash, name: "SimpleStorage"})
 
       assert primary_names.() == ["SimpleStorage"]
+    end
+
+    test "rejects a partial match over a full match and keeps the stored contract", %{address: address} do
+      assert {:ok, %SmartContract{partially_verified: false}} =
+               SmartContract.update_smart_contract(%{
+                 address_hash: address.hash,
+                 partially_verified: false,
+                 name: "FullMatch"
+               })
+
+      log =
+        capture_log(fn ->
+          assert {:error, %Ecto.Changeset{valid?: false, errors: [partially_verified: _]}} =
+                   SmartContract.update_smart_contract(
+                     %{address_hash: address.hash, partially_verified: true, name: "PartialMatch"},
+                     [],
+                     [
+                       %{
+                         file_name: "partial.sol",
+                         contract_source_code: "contract PartialMatch {}",
+                         address_hash: address.hash
+                       }
+                     ]
+                   )
+        end)
+
+      assert log =~ "Failed to update smart contract"
+
+      assert %SmartContract{name: "FullMatch", partially_verified: false} =
+               Repo.get_by(SmartContract, address_hash: address.hash)
+
+      assert ["FullMatch"] ==
+               Repo.all(
+                 from(n in Address.Name, where: n.address_hash == ^address.hash and n.primary == true, select: n.name)
+               )
+
+      refute Repo.get_by(SmartContractAdditionalSource, address_hash: address.hash, file_name: "partial.sol")
+
+      # a full match may still replace a full match
+      assert {:ok, %SmartContract{name: "FullMatch2", partially_verified: false}} =
+               SmartContract.update_smart_contract(%{
+                 address_hash: address.hash,
+                 partially_verified: false,
+                 name: "FullMatch2"
+               })
     end
 
     test "check nothing changed", %{valid_attrs: valid_attrs, address: address} do

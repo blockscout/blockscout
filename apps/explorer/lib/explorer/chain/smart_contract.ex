@@ -1096,7 +1096,13 @@ defmodule Explorer.Chain.SmartContract do
           |> lock("FOR UPDATE")
           |> repo.one()
 
-        {:ok, smart_contract}
+        # Re-check under the row lock: a concurrent verification may have stored a
+        # full match after the caller's own `verified_with_full_match?/2` check.
+        if partial_match_over_full_match?(smart_contract, attrs) do
+          {:error, full_match_downgrade_changeset(smart_contract)}
+        else
+          {:ok, smart_contract}
+        end
       end)
       |> Multi.run(:delete_sources, fn repo, _ ->
         {count, _} =
@@ -1172,6 +1178,26 @@ defmodule Explorer.Chain.SmartContract do
 
         {:error, failed_value}
     end
+  end
+
+  # `partially_verified: nil` is treated as a full match, consistent with
+  # `verified_with_full_match?/2`.
+  defp partial_match_over_full_match?(%__MODULE__{partially_verified: partially_verified}, attrs) do
+    partially_verified != true and Map.get(attrs, :partially_verified) == true
+  end
+
+  defp partial_match_over_full_match?(_smart_contract, _attrs), do: false
+
+  defp full_match_downgrade_changeset(smart_contract) do
+    changeset =
+      smart_contract
+      |> Changeset.change()
+      |> Changeset.add_error(
+        :partially_verified,
+        "Cannot update fully verified smart contract with partially verified contract"
+      )
+
+    %{changeset | action: :update}
   end
 
   @doc """
