@@ -1,5 +1,75 @@
 # Changelog
 
+## 12.1.0
+
+### 🚀 Features
+
+- Add MARKET_DEFILLAMA_API_KEY for the DefiLlama market source ([#15030](https://github.com/blockscout/blockscout/issues/15030))
+- Take DisputeGameFactory address from Superchain config and let configured OP values win over SystemConfig getters ([#15015](https://github.com/blockscout/blockscout/issues/15015))
+- Add search by pool id ([#15005](https://github.com/blockscout/blockscout/issues/15005))
+- Support include_zero_value in address internal transactions CSV export ([#15008](https://github.com/blockscout/blockscout/issues/15008))
+- Exclude configured addresses from the top accounts list ([#15007](https://github.com/blockscout/blockscout/issues/15007))
+
+### 🐛 Bug Fixes
+
+- Delete zero-value internal transactions of the border block ([#15051](https://github.com/blockscout/blockscout/issues/15051))
+- Ignore void proofs in OP withdrawal status ([#15049](https://github.com/blockscout/blockscout/issues/15049))
+- Pin validated IP addresses in SafeFetch to prevent DNS rebinding ([#15046](https://github.com/blockscout/blockscout/issues/15046))
+- Allow disabling indexer fetchers with environment variables ([#15039](https://github.com/blockscout/blockscout/issues/15039))
+- Ignore EIP-7708 system address Transfer logs as ERC-20 token transfers ([#15042](https://github.com/blockscout/blockscout/issues/15042))
+- Cast method ids before ContractMethods cache lookup ([#15045](https://github.com/blockscout/blockscout/issues/15045))
+- Handle rpc errors in EmptyBlocksSanitizer ([#15044](https://github.com/blockscout/blockscout/issues/15044))
+- Tolerate pending internal transactions at chain head in API v2 ([#15040](https://github.com/blockscout/blockscout/issues/15040))
+- Validate extension and content of local config files ([#15035](https://github.com/blockscout/blockscout/issues/15035))
+- Limit token instance metadata size before storing it ([#15027](https://github.com/blockscout/blockscout/issues/15027))
+- Prefer FULL match from any source in eth-bytecode-db search-all response ([#15028](https://github.com/blockscout/blockscout/issues/15028))
+- Treat EVM halt errors as contract failures in token metadata fetchers ([#15023](https://github.com/blockscout/blockscout/issues/15023))
+- Limit data processed by PendingTransactionsSanitizer at once ([#15021](https://github.com/blockscout/blockscout/issues/15021))
+- Add missing log fields preparations ([#15019](https://github.com/blockscout/blockscout/issues/15019))
+- Skip scam token filter in advanced filter when tokens are included ([#15020](https://github.com/blockscout/blockscout/issues/15020))
+- Avoid seq scan in address token transfers existence check ([#15018](https://github.com/blockscout/blockscout/issues/15018))
+- Decode revert reasons of contract creations by contract_methods candidates ([#15016](https://github.com/blockscout/blockscout/issues/15016))
+- Fix BufferedTask timer accumulate ([#15013](https://github.com/blockscout/blockscout/issues/15013))
+- Make CryptoCompare an opt-in price history source ([#15012](https://github.com/blockscout/blockscout/issues/15012))
+- Record null rounds hit by the realtime fetcher instead of erroring on Filecoin ([#15011](https://github.com/blockscout/blockscout/issues/15011))
+- Store Arbitrum rollup block confirmations in a dedicated table ([#14940](https://github.com/blockscout/blockscout/issues/14940))
+
+### 🚜 Refactor
+
+- Generate default HeavyDbIndexOperation callbacks in __before_compile__ ([#15017](https://github.com/blockscout/blockscout/issues/15017))
+
+### ⚡ Performance
+
+- Remove redundant transactions preload in getLogs ([#15029](https://github.com/blockscout/blockscout/issues/15029))
+
+### ⚙️ Miscellaneous Tasks
+
+- Eliminate compiler warnings in explorer and block_scout_web tests ([#15050](https://github.com/blockscout/blockscout/issues/15050))
+- Stabilize explorer tests ([#15048](https://github.com/blockscout/blockscout/issues/15048))
+- Flaky exchange rate channel test (race with market history cache restart) ([#15057](https://github.com/blockscout/blockscout/issues/15057))
+- Disable Hot smart-contracts functionality by default ([#15034](https://github.com/blockscout/blockscout/issues/15034))
+- Migrate CryptoRank market source to the v3 API ([#15014](https://github.com/blockscout/blockscout/issues/15014))
+- Update Erlang OTP 28 -> 29 ([#15010](https://github.com/blockscout/blockscout/issues/15010))
+- Bump Elixir version to 1.20.5 ([#14994](https://github.com/blockscout/blockscout/issues/14994))
+
+### New ENV variables
+
+| Variable                                            | Description                                                                                                                                                                                     | Parameters                                                          |
+|-----------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `INDEXER_DISABLE_CONTRACT_CODE_FETCHER`                       | If `true`, `Indexer.Fetcher.ContractCode` fetcher doesn't run. Implemented in [#15039](https://github.com/blockscout/blockscout/pull/15039).                                                                                                                                                                                                                                                                                                                                                                                    | Version: v12.1.0\+ <br />Default: `false` <br />Applications: Indexer                                      |
+| `INDEXER_DISABLE_CURRENT_TOKEN_BALANCES_FETCHER`              | If `true`, `Indexer.Fetcher.TokenBalance.Current` fetcher doesn't run. Implemented in [#15039](https://github.com/blockscout/blockscout/pull/15039).                                                                                                                                                                                                                                                                                                                                                                             | Version: v12.1.0\+ <br />Default: `false` <br />Applications: Indexer                                      |
+| `INDEXER_DISABLE_PENDING_TRANSACTIONS_SANITIZER`              | If `true`, `Indexer.PendingTransactionsSanitizer` doesn't run. Implemented in [#15039](https://github.com/blockscout/blockscout/pull/15039).                                                                                                                                                                                                                                                                                                                                                                                    | Version: v12.1.0\+ <br />Default: `false` <br />Applications: Indexer                                      |
+| `INDEXER_DISABLE_SIGNED_AUTHORIZATION_STATUS_FETCHER`         | If `true`, `Indexer.Fetcher.SignedAuthorizationStatus` fetcher doesn't run. Implemented in [#15039](https://github.com/blockscout/blockscout/pull/15039).                                                                                                                                                                                                                                                                                                                                                                         | Version: v12.1.0\+ <br />Default: `false` <br />Applications: Indexer                                      |
+| `INDEXER_DISABLE_TOKEN_FETCHER`                               | If `true`, `Indexer.Fetcher.Token` fetcher doesn't run. Implemented in [#15039](https://github.com/blockscout/blockscout/pull/15039).                                                                                                                                                                                                                                                                                                                                                                                            | Version: v12.1.0\+ <br />Default: `false` <br />Applications: Indexer                                      |
+| `INDEXER_DISABLE_TOKEN_UI_MULTIPLIER_UPDATER_FETCHER`         | If `true`, `Indexer.Fetcher.TokenUIMultiplierUpdater` doesn't run. Multiplier changes imported while disabled are not recovered. Implemented in [#15039](https://github.com/blockscout/blockscout/pull/15039).                                                                                                                                                                                                                                                                                                               | Version: v12.1.0\+ <br />Default: `false` <br />Applications: Indexer                                      |
+| `INDEXER_DISABLE_UNCLE_BLOCK_FETCHER`                         | If `true`, `Indexer.Fetcher.UncleBlock` fetcher doesn't run. Implemented in [#15039](https://github.com/blockscout/blockscout/pull/15039).                                                                                                                                                                                                                                                                                                                                                                                       | Version: v12.1.0\+ <br />Default: `false` <br />Applications: Indexer                                      |
+| `INDEXER_DISABLE_UNCLES_WITHOUT_INDEX_FETCHER`                | If `true`, `Indexer.Temporary.UnclesWithoutIndex` fetcher doesn't run. Implemented in [#15039](https://github.com/blockscout/blockscout/pull/15039).                                                                                                                                                                                                                                                                                                                                                                             | Version: v12.1.0\+ <br />Default: `false` <br />Applications: Indexer                                      |
+| `INDEXER_TOKEN_INSTANCE_METADATA_MAX_SIZE`                    | Maximum size in bytes for token instance metadata. The minimum value is `1`; payloads larger than this limit are stored as an error. Implemented in [#15027](https://github.com/blockscout/blockscout/pull/15027).                                                                                                                                                                                                                                                                                                                | Version: v12.1.0\+ <br />Default: `10485760` <br />Applications: Indexer                                     |
+| `MIGRATION_SANITIZE_INCORRECT_WETH_BLOCKS_BATCH_SIZE`            | Number of blocks processed in each range by the incorrect WETH token transfer sanitizer. Implemented in [#14987](https://github.com/blockscout/blockscout/pull/14987).                                                                                                                                                                                               | Version: v12.1.0\+ <br />Default: `10000` <br />Applications: Indexer        |
+| `TOP_ADDRESSES_EXCLUDED_ADDRESSES`                             | Comma-separated list of address hashes to exclude from the Top Accounts list (`/api/v2/addresses` and the old UI accounts page). Invalid addresses cause startup to fail. Implemented in [#15007](https://github.com/blockscout/blockscout/pull/15007). | Version: v12.1.0\+ <br />Default: (empty) <br />Applications: API |
+
+
+
 ## 12.0.4
 
 ### 🐛 Bug Fixes
