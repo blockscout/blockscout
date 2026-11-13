@@ -47,8 +47,7 @@ defmodule BlockScoutWeb.V2.ExchangeRateChannelTest do
   describe "new_rate" do
     test "subscribed user is notified", %{token: token} do
       Coin.handle_info({nil, {{:ok, token}, false}}, %{})
-      Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
-      Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
+      restart_market_history_cache()
 
       topic = "exchange_rate:new_rate"
       @endpoint.subscribe(topic)
@@ -68,8 +67,7 @@ defmodule BlockScoutWeb.V2.ExchangeRateChannelTest do
     test "subscribed user is notified with market history", %{token: token} do
       initial_market_history_fetcher_enabled_value = :persistent_term.get(:market_history_fetcher_enabled, false)
       :persistent_term.put(:market_history_fetcher_enabled, true)
-      Supervisor.terminate_child(Explorer.Supervisor, {ConCache, MarketHistoryCache.cache_name()})
-      Supervisor.restart_child(Explorer.Supervisor, {ConCache, MarketHistoryCache.cache_name()})
+      restart_market_history_cache()
 
       source_configuration = Application.get_env(:explorer, Explorer.Market.Source)
       fetcher_configuration = Application.get_env(:explorer, Coin)
@@ -91,8 +89,7 @@ defmodule BlockScoutWeb.V2.ExchangeRateChannelTest do
 
       {:ok, state} = Coin.init([])
       Coin.handle_info({nil, {{:ok, token}, false}}, state)
-      Supervisor.terminate_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
-      Supervisor.restart_child(Explorer.Supervisor, {ConCache, Explorer.Market.MarketHistoryCache.cache_name()})
+      restart_market_history_cache()
 
       today = Date.utc_today()
 
@@ -112,7 +109,7 @@ defmodule BlockScoutWeb.V2.ExchangeRateChannelTest do
       # realtime handler processes in its own process, caching the market history that is still
       # empty at that moment. Wait until the handler is done with the event and drop what it has
       # cached, so that the history is read from the DB again.
-      if pid = Process.whereis(BlockScoutWeb.RealtimeEventHandlers.Main), do: :sys.get_state(pid)
+      wait_for_realtime_handler()
       ConCache.delete(MarketHistoryCache.cache_name(), MarketHistoryCache.updated_at_key())
       ConCache.delete(MarketHistoryCache.cache_name(), MarketHistoryCache.data_key())
 
@@ -132,5 +129,20 @@ defmodule BlockScoutWeb.V2.ExchangeRateChannelTest do
           assert false, "Expected message received nothing."
       end
     end
+  end
+
+  # `Coin.handle_info/2` broadcasts the `:exchange_rate` chain event, which the `Main` realtime
+  # handler processes in its own process, reading the market history cache. Restarting the cache
+  # while the handler is in the middle of that read drops the ETS table from under it and crashes
+  # the handler, so the handler's mailbox must be drained first.
+  defp restart_market_history_cache do
+    wait_for_realtime_handler()
+    Supervisor.terminate_child(Explorer.Supervisor, {ConCache, MarketHistoryCache.cache_name()})
+    Supervisor.restart_child(Explorer.Supervisor, {ConCache, MarketHistoryCache.cache_name()})
+  end
+
+  # Returns once the `Main` realtime handler has processed everything sent to it so far.
+  defp wait_for_realtime_handler do
+    if pid = Process.whereis(BlockScoutWeb.RealtimeEventHandlers.Main), do: :sys.get_state(pid)
   end
 end
