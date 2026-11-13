@@ -207,8 +207,15 @@ defmodule Explorer.Chain.Import.Runner.EIP8430TransactionsTest do
     options = %{timestamps: %{inserted_at: timestamp, updated_at: timestamp}}
 
     Multi.new()
-    |> EIP8430Transactions.run(changes_list, options)
+    |> EIP8430Transactions.run(Enum.map(changes_list, &cast_changes/1), options)
     |> Repo.transaction()
+  end
+
+  # `Chain.import/1` passes the changes of a valid changeset to the runner, not the raw params.
+  defp cast_changes(params) do
+    %Ecto.Changeset{valid?: true, changes: changes} = changeset(params)
+
+    changes
   end
 
   defp changeset(attrs), do: EIP8430Transaction.changeset(%EIP8430Transaction{}, attrs)
