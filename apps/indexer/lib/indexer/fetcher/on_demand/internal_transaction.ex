@@ -421,7 +421,8 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
 
   # The placeholder counts only tell how many blocks to trace. A traced block can give fewer matching internal
   # transactions: the paging key cuts off its beginning, zero-value calls get filtered out, a self-call is counted
-  # in both directions, and the placeholders of a reorged block can be outdated. So the blocks are traced in rounds,
+  # in both directions, and a block processed again (after a reorg or a refetch) adds its counts once more and keeps
+  # the placeholders of the addresses that are not in it anymore. So the blocks are traced in rounds,
   # each one going on past the last traced block with the internal transactions still missing, until they are found
   # or the placeholders are over. The result is incomplete when the rounds are over with blocks left to trace,
   # since `@max_address_fetch_rounds` limits the work of a request, or when blocks fail to be traced: the part

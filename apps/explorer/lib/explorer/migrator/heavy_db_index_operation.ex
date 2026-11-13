@@ -57,7 +57,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
               | :tokens
               | :address_current_token_balances
               | :address_token_balances
-              | :deleted_internal_transactions_address_placeholders
   @doc """
   Specifies the type of operation to be performed on the database index.
 

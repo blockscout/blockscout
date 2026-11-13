@@ -2,7 +2,6 @@
 defmodule Explorer.Utility.InternalTransactionsAddressPlaceholderTest do
   use Explorer.DataCase
 
-  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Utility.InternalTransactionsAddressPlaceholder
 
   describe "insert_for_internal_transactions/3" do
@@ -41,45 +40,6 @@ defmodule Explorer.Utility.InternalTransactionsAddressPlaceholderTest do
 
       assert placeholders() == MapSet.new([{address_id, 1, 32_767, 32_767}])
     end
-  end
-
-  describe "delete_by_block_numbers/3" do
-    setup do
-      %{address_id: address_id} = insert(:address_id_to_address_hash, address: insert(:address))
-
-      for block_number <- 1..3 do
-        insert(:deleted_internal_transactions_address_placeholder, address_id: address_id, block_number: block_number)
-      end
-
-      initial_index_finished? =
-        BackgroundMigrations.get_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished()
-
-      on_exit(fn -> set_block_number_index_finished(initial_index_finished?) end)
-
-      %{address_id: address_id}
-    end
-
-    test "deletes the placeholders of the given blocks", %{address_id: address_id} do
-      set_block_number_index_finished(true)
-
-      assert 2 = InternalTransactionsAddressPlaceholder.delete_by_block_numbers(Repo, [1, 3])
-
-      assert placeholders() == MapSet.new([{address_id, 2, 1, 1}])
-    end
-
-    test "does nothing until the index on block_number is created", %{address_id: address_id} do
-      set_block_number_index_finished(false)
-
-      assert 0 = InternalTransactionsAddressPlaceholder.delete_by_block_numbers(Repo, [1, 3])
-
-      assert placeholders() == MapSet.new(1..3, &{address_id, &1, 1, 1})
-    end
-  end
-
-  defp set_block_number_index_finished(finished?) do
-    BackgroundMigrations.set_heavy_indexes_create_deleted_internal_transactions_address_placeholders_block_number_index_finished(
-      finished?
-    )
   end
 
   defp placeholders do

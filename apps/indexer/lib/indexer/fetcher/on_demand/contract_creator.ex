@@ -26,11 +26,10 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
 
   alias EthereumJSONRPC.Nonce
   alias EthereumJSONRPC.Utility.RangesHelper
-  alias Explorer.Chain.{Address, Block, InternalTransaction, PendingOperationsHelper}
+  alias Explorer.Chain.{Address, Block, PendingOperationsHelper}
   alias Explorer.Chain.Cache.BlockNumber
-  alias Explorer.Repo
-  alias Explorer.Utility.{InternalTransactionsAddressPlaceholder, MissingBlockRange}
-  alias Indexer.Fetcher.InternalTransaction, as: InternalTransactionFetcher
+  alias Explorer.Utility.MissingBlockRange
+  alias Indexer.Fetcher.InternalTransaction
 
   @table_name :contract_creator_lookup
   @max_json_rpc_retries 5
@@ -249,11 +248,11 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     # Change `1` to specific label when `priority` field becomes `Ecto.Enum`.
     priority = 1
 
-    if InternalTransactionFetcher.disabled?() do
+    if InternalTransaction.disabled?() do
       if Block.indexed?(contract_creation_block_number) do
         # credo:disable-for-lines:2 Credo.Check.Refactor.Nesting
         if RangesHelper.traceable_block_number?(contract_creation_block_number) do
-          queue_internal_transactions_fetching(contract_creation_block_number, priority)
+          PendingOperationsHelper.insert_pending_operations([contract_creation_block_number], priority)
         end
       else
         MissingBlockRange.add_ranges_by_block_numbers([contract_creation_block_number], priority)
@@ -276,23 +275,6 @@ defmodule Indexer.Fetcher.OnDemand.ContractCreator do
     )
 
     :ets.delete(@table_name, key)
-  end
-
-  # The block can be processed already. With the internal transactions storage disabled and pending operations by
-  # transactions, the address placeholder counts of its transactions would then be added twice: the placeholders of
-  # the block are deleted, and all its transactions are queued to count them anew, as
-  # `Indexer.Fetcher.InternalTransaction.DeleteQueue` does for a reorged block. With pending operations by blocks, the
-  # placeholders of the block are rebuilt when it is processed.
-  defp queue_internal_transactions_fetching(block_number, priority) do
-    if InternalTransaction.storage_disabled?() and PendingOperationsHelper.pending_operations_type() == "transactions" do
-      Repo.transaction(fn ->
-        # the pending operations are locked before the placeholders, the same way they are processed
-        PendingOperationsHelper.insert_pending_operations([block_number], priority)
-        InternalTransactionsAddressPlaceholder.delete_by_block_numbers(Repo, [block_number])
-      end)
-    else
-      PendingOperationsHelper.insert_pending_operations([block_number], priority)
-    end
   end
 
   defp address_cache_name(address_hash) do

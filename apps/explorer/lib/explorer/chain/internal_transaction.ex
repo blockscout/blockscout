@@ -754,11 +754,6 @@ defmodule Explorer.Chain.InternalTransaction do
   `present_in_db?/2`), and `Explorer.Utility.InternalTransactionsAddressPlaceholder` keeps the blocks to trace
   for an address.
 
-  The indexer starts leaving out the internal transactions once
-  `Explorer.Migrator.HeavyDbIndexOperation.CreateDeletedInternalTransactionsAddressPlaceholdersBlockNumberIndex` has
-  created its index (instantly on a new instance): the placeholders of the blocks processed again can't be rebuilt
-  without it. Until then, the internal transactions are stored as usual.
-
   Turning the storage back on doesn't restore the internal transactions of the blocks indexed without it: these
   blocks are read from the DB again, where only their contract creations are stored. They have to be refetched,
   e.g. with `Explorer.Chain.Block.full_refetch/1`.
