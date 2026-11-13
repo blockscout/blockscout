@@ -55,6 +55,13 @@ defmodule Utils.UrlValidatorTest do
       end
     end
 
+    test "blocks local-use NAT64, site-local, benchmarking and documentation ranges" do
+      for host <- ["[64:ff9b:1::a00:1]", "[fec0::1]", "[2001:2::1]", "[3fff::1]"] do
+        assert UrlValidator.validate_uri("http://#{host}/metadata.json") == {:error, :blacklist},
+               "expected #{host} to be blacklisted"
+      end
+    end
+
     test "blocks IPv4-mapped IPv6 pointing at internal addresses" do
       for host <- ["[::ffff:127.0.0.1]", "[::ffff:169.254.169.254]"] do
         assert UrlValidator.validate_uri("http://#{host}/metadata.json") == {:error, :blacklist},
@@ -92,6 +99,20 @@ defmodule Utils.UrlValidatorTest do
       :persistent_term.erase(:parsed_cidr_list)
 
       assert UrlValidator.validate_uri("http://8.8.8.8/metadata.json") == {:error, :blacklist}
+    end
+  end
+
+  describe "validate_and_resolve_uri/1" do
+    test "returns the validated address of an IP literal" do
+      assert UrlValidator.validate_and_resolve_uri("http://8.8.8.8/metadata.json") == {:ok, [{8, 8, 8, 8}]}
+
+      assert UrlValidator.validate_and_resolve_uri("http://[2606:4700:4700::1111]/metadata.json") ==
+               {:ok, [{0x2606, 0x4700, 0x4700, 0, 0, 0, 0, 0x1111}]}
+    end
+
+    test "returns the same errors as validate_uri/1" do
+      assert UrlValidator.validate_and_resolve_uri("http://127.0.0.1/metadata.json") == {:error, :blacklist}
+      assert UrlValidator.validate_and_resolve_uri("ftp://8.8.8.8/metadata.json") == {:error, :disallowed_protocol}
     end
   end
 end

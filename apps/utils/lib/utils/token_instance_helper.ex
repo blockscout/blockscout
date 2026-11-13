@@ -4,7 +4,7 @@ defmodule Utils.TokenInstanceHelper do
   Auxiliary functions for NFTs
   """
 
-  alias Utils.HttpClient.SafeFetch
+  alias Utils.HttpClient.{HTTPoisonHelper, SafeFetch}
 
   @doc """
   Determines the media type of the given URL.
@@ -193,7 +193,7 @@ defmodule Utils.TokenInstanceHelper do
         media_src,
         headers,
         [validate_host?: validate_host?, transport_opts: [timeout: 30_000, recv_timeout: 30_000]],
-        fn url, request_headers, opts -> HTTPoison.head(url, request_headers, opts) end
+        fn url, request_headers, opts -> HTTPoison.head(url, request_headers, HTTPoisonHelper.request_opts(opts)) end
       )
     else
       {:error, :not_a_web_url}

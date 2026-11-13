@@ -56,16 +56,24 @@ defmodule Utils.UrlValidator do
     "100::/64",
     # NAT64 well-known prefix
     "64:ff9b::/96",
+    # NAT64 local-use prefix (RFC 8215): embeds an IPv4 address, translated inside the operator's network
+    "64:ff9b:1::/48",
     # 6to4
     "2002::/16",
     # Teredo tunneling (embeds an IPv4 address)
     "2001::/32",
+    # Benchmarking (RFC 5180), IPv6 counterpart of 198.18.0.0/15
+    "2001:2::/48",
     # Documentation and examples
     "2001:db8::/32",
+    # Documentation and examples (RFC 9637)
+    "3fff::/20",
     # Unique local addresses (covers fc00::/8 and fd00::/8)
     "fc00::/7",
     # Link-local addresses
     "fe80::/10",
+    # Site-local addresses, deprecated predecessor of unique local addresses (RFC 3879)
+    "fec0::/10",
     # Multicast
     "ff00::/8"
   ]
@@ -93,12 +101,28 @@ defmodule Utils.UrlValidator do
   """
   @spec validate_uri(String.t()) :: :ok | {:error, atom()}
   def validate_uri(uri) do
+    case validate_and_resolve_uri(uri) do
+      {:ok, _ip_list} -> :ok
+      error -> error
+    end
+  end
+
+  @doc """
+  Same as `validate_uri/1`, but also returns the validated IP addresses of the host.
+
+  The caller should connect to those addresses instead of the hostname, so the HTTP client
+  does not resolve the host a second time: an attacker-controlled DNS record (TTL 0) can
+  point at a public address while it is being validated and at an internal one when the
+  connection is made (DNS rebinding). IPv4 addresses come first.
+  """
+  @spec validate_and_resolve_uri(String.t()) :: {:ok, [:inet.ip_address(), ...]} | {:error, atom()}
+  def validate_and_resolve_uri(uri) do
     with {:not_printable, false} <- {:not_printable, not String.printable?(uri)},
          {:empty_host, %URI{host: host, scheme: scheme}} when host not in ["", nil] <- {:empty_host, URI.parse(uri)},
          {:disallowed_protocol, false} <- {:disallowed_protocol, scheme not in allowed_uri_protocols()},
          {:nxdomain, ip_list} when not is_nil(ip_list) <- {:nxdomain, host_to_ip_list(host)},
          {:blacklist, false} <- {:blacklist, not Enum.all?(ip_list, &allowed_ip?/1)} do
-      :ok
+      {:ok, ip_list}
     else
       {reason, _} ->
         {:error, reason}
@@ -122,13 +146,16 @@ defmodule Utils.UrlValidator do
     end
   end
 
-  @spec resolve(String.t(), :a | :aaaa) :: [tuple()]
+  @spec resolve(String.t(), :a | :aaaa) :: [:inet.ip_address()]
   defp resolve(host, type) do
     case DNS.resolve(host, type) do
-      {:ok, ip_list} when is_list(ip_list) -> ip_list
+      # The answer for an alias also carries its CNAME record(s), whose data is a name.
+      {:ok, records} when is_list(records) -> Enum.filter(records, &ip_address?/1)
       _ -> []
     end
   end
+
+  defp ip_address?(record), do: is_tuple(record) and tuple_size(record) in [4, 8]
 
   @spec allowed_ip?(tuple()) :: boolean()
   defp allowed_ip?(ip) do
