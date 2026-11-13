@@ -268,6 +268,80 @@ defmodule Utils.HttpClient.SafeFetchTest do
       assert_received {:requested, "http://1.1.1.1/meta"}
     end
 
+    # hackney connects to an IP literal with a plain `gen_tcp`/`ssl` connect and returns
+    # its `:timeout` as it is (`hackney_happy:do_connect/4`, `hackney_ssl:connect/4`); the
+    # test below takes that shape from a real stalled handshake.
+    test "moves to the next validated address when hackney reports a stalled connection as :timeout" do
+      t =
+        transport(fn
+          "http://8.8.8.8/meta" -> {:error, %HTTPoison.Error{reason: :timeout}}
+          "http://1.1.1.1/meta" -> {:ok, resp(200, [], "ok")}
+        end)
+
+      assert {:ok, %{status_code: 200}} = SafeFetch.request("http://multi.test/meta", [], [], t)
+      assert_received {:requested, "http://1.1.1.1/meta"}
+    end
+
+    test "hackney reports a pinned address whose TLS handshake stalls as :timeout" do
+      # A listener that accepts the TCP connection and never answers the TLS handshake.
+      {:ok, listen} = :gen_tcp.listen(0, [:binary, ip: {127, 0, 0, 1}, active: false])
+      {:ok, port} = :inet.port(listen)
+      acceptor = spawn(fn -> for _ <- 1..3, do: :gen_tcp.accept(listen) end)
+      on_exit(fn -> Process.exit(acceptor, :kill) end)
+
+      opts =
+        Utils.HttpClient.HTTPoisonHelper.request_opts(hostname: "pinned.example", timeout: 300, recv_timeout: 5_000)
+
+      assert {:error, %HTTPoison.Error{reason: :timeout}} =
+               HTTPoison.get("https://127.0.0.1:#{port}/meta", [{"Host", "pinned.example"}], opts)
+    end
+
+    test "moves to the next validated address when the network is down or the address timed out" do
+      t =
+        transport(fn
+          "http://8.8.8.8/meta" -> {:error, :etimedout}
+          "http://1.1.1.1/meta" -> {:error, %{reason: :enetdown}}
+          "http://9.9.9.9/meta" -> {:ok, resp(200, [], "ok")}
+        end)
+
+      assert {:ok, %{status_code: 200}} = SafeFetch.request("http://multi.test/meta", [], [], t)
+      assert_received {:requested, "http://9.9.9.9/meta"}
+    end
+
+    test "moves to the next validated address when the address family is unavailable" do
+      # An IPv6 literal tried where IPv6 is disabled, for instance.
+      t =
+        transport(fn
+          "http://8.8.8.8/meta" -> {:error, :eafnosupport}
+          "http://1.1.1.1/meta" -> {:error, %{reason: :eaddrnotavail}}
+          "http://9.9.9.9/meta" -> {:ok, resp(200, [], "ok")}
+        end)
+
+      assert {:ok, %{status_code: 200}} = SafeFetch.request("http://multi.test/meta", [], [], t)
+      assert_received {:requested, "http://9.9.9.9/meta"}
+    end
+
+    test "splits the budget no finer than the minimum attempt timeout and stops below it" do
+      parent = self()
+
+      t = fn url, _headers, opts ->
+        send(parent, {:requested, url, opts[:timeout]})
+        Process.sleep(opts[:timeout])
+        {:error, :connect_timeout}
+      end
+
+      assert SafeFetch.request("http://multi.test/meta", [], [transport_opts: [timeout: 360]], t) ==
+               {:error, :connect_timeout}
+
+      # 180 ms stall leaves ~180 ms: half of it is below the 100 ms minimum, so the second
+      # attempt gets 100 ms, after which too little is left for a third one.
+      assert_received {:requested, "http://8.8.8.8/meta", first}
+      assert_received {:requested, "http://1.1.1.1/meta", second}
+      assert first in 179..180
+      assert second == 100
+      refute_received {:requested, "http://9.9.9.9/meta", _timeout}
+    end
+
     test "gives each attempt but the last half of the connection timeout that is left" do
       parent = self()
 
@@ -345,11 +419,11 @@ defmodule Utils.HttpClient.SafeFetchTest do
       end
 
       assert {:ok, %{status_code: 200}} =
-               SafeFetch.request("http://dual.test/meta", [], [transport_opts: [timeout: 200]], t)
+               SafeFetch.request("http://dual.test/meta", [], [transport_opts: [timeout: 400]], t)
 
       # The address families alternate, and the stalled attempt gets half of the budget.
       assert_received {:requested, "http://8.8.8.8/meta", stalled}
-      assert stalled in 90..100
+      assert stalled in 190..200
       assert_received {:requested, "http://[2606:4700:4700::1111]/meta", _timeout}
       refute_received {:requested, "http://1.1.1.1/meta", _timeout}
     end

@@ -1191,6 +1191,7 @@ defmodule Explorer.Token.MetadataRetriever do
            [
              validate_host?: regular_url?(ipfs_params),
              transport_opts: [
+               timeout: 30_000,
                recv_timeout: 30_000,
                pool: :token_instance_fetcher,
                max_body_length: max_metadata_size()

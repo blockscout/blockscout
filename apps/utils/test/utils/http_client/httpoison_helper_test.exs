@@ -39,5 +39,20 @@ defmodule Utils.HttpClient.HTTPoisonHelperTest do
       assert Keyword.fetch!(opts[:hackney], :protocols) == [:http1]
       assert Keyword.fetch!(opts[:hackney], :max_body_size) == 1024
     end
+
+    test "keeps certificate verification disabled for an insecure request with a hostname" do
+      # With `:ssl` set, HTTPoison merges hackney's `verify_peer` defaults into the ssl options
+      # before hackney sees the `:insecure` flag, so the flag alone no longer disables them.
+      opts = HTTPoisonHelper.request_opts(hostname: "example.com", insecure: true)
+
+      assert Keyword.fetch!(opts[:ssl], :verify) == :verify_none
+      assert :insecure in opts[:hackney]
+    end
+
+    test "trims the trailing dot of the hostname for SNI" do
+      opts = HTTPoisonHelper.request_opts(hostname: "example.com.")
+
+      assert opts[:ssl] == [server_name_indication: ~c"example.com"]
+    end
   end
 end
