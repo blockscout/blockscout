@@ -386,6 +386,14 @@ defmodule Explorer.Chain.SmartContractTest do
 
       refute Repo.get_by(SmartContractAdditionalSource, address_hash: address.hash, file_name: "partial.sol")
 
+      # values the changeset casts to `true` are rejected as well
+      capture_log(fn ->
+        assert {:error, %Ecto.Changeset{errors: [partially_verified: _]}} =
+                 SmartContract.update_smart_contract(%{address_hash: address.hash, partially_verified: "true"})
+      end)
+
+      assert %SmartContract{partially_verified: false} = Repo.get_by(SmartContract, address_hash: address.hash)
+
       # a full match may still replace a full match
       assert {:ok, %SmartContract{name: "FullMatch2", partially_verified: false}} =
                SmartContract.update_smart_contract(%{

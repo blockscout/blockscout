@@ -1181,9 +1181,11 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   # `partially_verified: nil` is treated as a full match, consistent with
-  # `verified_with_full_match?/2`.
+  # `verified_with_full_match?/2`. The incoming value is cast the same way the
+  # changeset casts it, so e.g. `"true"` is also recognized as a partial match.
   defp partial_match_over_full_match?(%__MODULE__{partially_verified: partially_verified}, attrs) do
-    partially_verified != true and Map.get(attrs, :partially_verified) == true
+    partially_verified != true and
+      Ecto.Type.cast(:boolean, Map.get(attrs, :partially_verified)) == {:ok, true}
   end
 
   defp partial_match_over_full_match?(_smart_contract, _attrs), do: false
