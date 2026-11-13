@@ -80,5 +80,87 @@ defmodule EthereumJSONRPC.TransactionTest do
                  "value" => 1
                })
     end
+
+    # Regression test for https://github.com/blockscout/blockscout/issues/15047
+    test "adds zero signature values to EIP-8430 transactions for all chain types" do
+      # The response of `eth_getTransactionByHash` on an OP Stack test network (chain id 84538453).
+      transaction = %{
+        "accountChanges" => [],
+        "blockHash" => "0x07ff03eccab958e2e1312ec4d889b0690d7ae3ff0b5028a04926a54b91f66540",
+        "blockNumber" => "0x4a9b69",
+        "blockTimestamp" => "0x6af25abc",
+        "blockTimestampMs" => "0x1a1c2b27180",
+        "calls" => [
+          [%{"data" => "0x", "to" => "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a", "value" => "0x0"}]
+        ],
+        "chainId" => "0x509f455",
+        "from" => "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a",
+        "gas" => "0x1255c",
+        "gasPrice" => "0x7744d640",
+        "hash" => "0x3e9e6f89469aca60687eaab43e0a2436e5c23acbe3ccd9dd0342fa6004d99b1c",
+        "input" => "0x",
+        "maxFeePerGas" => "0x77541880",
+        "maxPriorityFeePerGas" => "0x3baa0c40",
+        "metadata" => "0x53706f6e736f726564207472616e73616374696f6e",
+        "nonce" => "0x0",
+        "nonceKey" => "0x0",
+        "payer" => "0xc4bb6341064b99ea7812777be8fd8fa8dfe50c7f",
+        "payerAuth" =>
+          "0x0000000000000000000000000000000000000001c1a1dc1e515204f16a2d6c18b8f9caacab7c1d49c27b73c1c1786b2f23500a3c0409bd58182d6efbd9a48ebfceadd469dc03f80bd708eca95d539c92082571da1c",
+        "sender" => "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a",
+        "senderAuth" =>
+          "0x0000000000000000000000000000000000000001f4646b5a9fcff6e29768f4d61a65b4479946e37a094a3116f5b76486ce466abf1a514af6b3ed852c8b30fcc82fb76a3e8bb6f9c92c2a77e7055c42bdbb8bdccc1b",
+        "to" => nil,
+        "transactionIndex" => "0x2",
+        "type" => "0x79",
+        "validAfter" => "0x0",
+        "validBefore" => "0x1a1c2b2a0b1",
+        "value" => "0x0"
+      }
+
+      assert transaction |> Transaction.to_elixir() |> Transaction.elixir_to_params() == %{
+               block_hash: "0x07ff03eccab958e2e1312ec4d889b0690d7ae3ff0b5028a04926a54b91f66540",
+               block_number: 0x4A9B69,
+               from_address_hash: "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a",
+               gas: 0x1255C,
+               gas_price: 0x7744D640,
+               hash: "0x3e9e6f89469aca60687eaab43e0a2436e5c23acbe3ccd9dd0342fa6004d99b1c",
+               index: 2,
+               input: "0x",
+               max_fee_per_gas: 0x77541880,
+               max_priority_fee_per_gas: 0x3BAA0C40,
+               nonce: 0,
+               r: 0,
+               s: 0,
+               to_address_hash: nil,
+               transaction_index: 2,
+               type: 0x79,
+               v: 0,
+               value: 0
+             }
+    end
+
+    test "preserves present signature values of EIP-8430 transactions" do
+      assert %{r: 11, s: 12, v: 1, type: 0x79} =
+               Transaction.elixir_to_params(%{
+                 "blockHash" => "0x07ff03eccab958e2e1312ec4d889b0690d7ae3ff0b5028a04926a54b91f66540",
+                 "blockNumber" => 0x4A9B69,
+                 "from" => "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a",
+                 "gas" => 0x1255C,
+                 "gasPrice" => 0x7744D640,
+                 "hash" => "0x3e9e6f89469aca60687eaab43e0a2436e5c23acbe3ccd9dd0342fa6004d99b1c",
+                 "input" => "0x",
+                 "maxFeePerGas" => 0x77541880,
+                 "maxPriorityFeePerGas" => 0x3BAA0C40,
+                 "nonce" => 0,
+                 "r" => 11,
+                 "s" => 12,
+                 "to" => nil,
+                 "transactionIndex" => 2,
+                 "type" => 0x79,
+                 "v" => 1,
+                 "value" => 0
+               })
+    end
   end
 end

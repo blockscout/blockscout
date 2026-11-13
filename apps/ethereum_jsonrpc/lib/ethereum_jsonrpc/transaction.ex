@@ -30,6 +30,9 @@ defmodule EthereumJSONRPC.Transaction do
   # EIP-2718 type of the Eden sponsored (batched) transaction: `0x76`.
   @eden_sponsored_transaction_type 118
 
+  # EIP-2718 type of the EIP-8430 transaction: `0x79`.
+  @eip_8430_transaction_type 0x79
+
   @post_exec_tx_type 0x7D
   @zero_address_hash_string "0x0000000000000000000000000000000000000000"
 
@@ -343,7 +346,10 @@ defmodule EthereumJSONRPC.Transaction do
   """
   @spec elixir_to_params(elixir) :: params
   def elixir_to_params(elixir) do
-    normalized_elixir = chain_type_normalization(elixir)
+    normalized_elixir =
+      elixir
+      |> chain_type_normalization()
+      |> transaction_type_normalization()
 
     normalized_elixir
     |> do_elixir_to_params()
@@ -608,19 +614,52 @@ defmodule EthereumJSONRPC.Transaction do
   # array instead of the standard `gas`, `to`, `input` and `value` fields. The first call provides
   # the compatibility values for `to` and `input`, while `value` is the sum across all the calls.
   # An empty `calls` array produces an empty input and a zero value.
+  #
+  # `calls` is decoded here and not in `to_elixir/2`, because its structure depends on the
+  # transaction type. Other transaction types can use the same key for a different structure, for
+  # example EIP-8430 uses a list of call phases. `calls` of such transactions is removed.
   @spec eden_compatibility_fields(%{String.t() => any()}) :: %{String.t() => any()}
   defp eden_compatibility_fields(%{"type" => @eden_sponsored_transaction_type} = elixir) do
-    calls = Map.get(elixir, "calls") || []
+    calls = elixir |> Map.get("calls", []) |> Enum.map(&call_to_elixir/1)
     first_call = List.first(calls) || %{}
 
     elixir
+    |> Map.replace("calls", calls)
     |> Map.put("gas", Map.get(elixir, "gasLimit") || Map.get(elixir, "gas"))
     |> Map.put("to", Map.get(first_call, "to"))
     |> Map.put("input", Map.get(first_call, "input") || "0x")
     |> Map.put("value", Enum.reduce(calls, 0, &((Map.get(&1, "value") || 0) + &2)))
   end
 
-  defp eden_compatibility_fields(elixir), do: elixir
+  defp eden_compatibility_fields(elixir), do: Map.delete(elixir, "calls")
+
+  @spec call_to_elixir(%{String.t() => any()}) :: %{String.t() => any()}
+  defp call_to_elixir(call) do
+    %{
+      "to" => Map.get(call, "to"),
+      "value" => quantity_to_integer(Map.get(call, "value")) || 0,
+      "input" => Map.get(call, "input") || "0x"
+    }
+  end
+
+  # Normalizes the transaction by its EIP-2718 type. Unlike `chain_type_normalization/1`, this
+  # step applies to all chain types.
+  @spec transaction_type_normalization(%{String.t() => any()}) :: %{String.t() => any()}
+  defp transaction_type_normalization(%{"type" => @eip_8430_transaction_type} = elixir) do
+    eip_8430_compatibility_fields(elixir)
+  end
+
+  defp transaction_type_normalization(elixir), do: elixir
+
+  # EIP-8430 transactions (EIP-2718 type `0x79`) carry the signatures in `senderAuth` and
+  # `payerAuth` instead of the `r`, `s` and `v` fields. Add zero compatibility values for the
+  # missing signature fields, because the corresponding database columns do not accept `NULL`.
+  @spec eip_8430_compatibility_fields(%{String.t() => any()}) :: %{String.t() => any()}
+  defp eip_8430_compatibility_fields(elixir) do
+    Enum.reduce(~w(r s v), elixir, fn key, transaction ->
+      if Map.get(transaction, key), do: transaction, else: Map.put(transaction, key, 0)
+    end)
+  end
 
   defp chain_type_fields(params, elixir) do
     case chain_type() do
@@ -780,6 +819,7 @@ defmodule EthereumJSONRPC.Transaction do
 
   def to_elixir(transaction, block_timestamp) when is_map(transaction) do
     initial = (block_timestamp && %{"block_timestamp" => block_timestamp}) || %{}
+
     Enum.into(transaction, initial, &entry_to_elixir/1)
   end
 
@@ -864,22 +904,12 @@ defmodule EthereumJSONRPC.Transaction do
     defp entry_to_elixir({"gasLimit" = key, quantity_or_nil}),
       do: {key, quantity_or_nil && quantity_to_integer(quantity_or_nil)}
 
-    defp entry_to_elixir({"calls" = key, calls}) when is_list(calls),
-      do: {key, Enum.map(calls, &call_to_elixir/1)}
+    # `eden_compatibility_fields/1` decodes the calls, because their structure depends on the
+    # transaction type.
+    defp entry_to_elixir({"calls", calls} = entry) when is_list(calls), do: entry
   end
 
   defp entry_to_elixir(_) do
     {:ignore, :ignore}
-  end
-
-  if @chain_type == :eden do
-    @spec call_to_elixir(%{String.t() => any()}) :: %{String.t() => any()}
-    defp call_to_elixir(call) do
-      %{
-        "to" => Map.get(call, "to"),
-        "value" => quantity_to_integer(Map.get(call, "value")) || 0,
-        "input" => Map.get(call, "input") || "0x"
-      }
-    end
   end
 end
