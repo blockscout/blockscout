@@ -7,9 +7,10 @@ defmodule Indexer.Transform.EIP8430Transactions do
 
   require Logger
 
-  alias Explorer.Chain.{Data, EIP8430Transaction}
+  alias Explorer.Chain.{Data, EIP8430Transaction, Hash}
 
-  @address_byte_length 20
+  # The length of an address string: `0x` and 40 hex digits.
+  @address_string_length 42
   @zero_address_bytes <<0::160>>
 
   # The single byte that marks the open payer mode in the wire form of `payer`.
@@ -68,11 +69,11 @@ defmodule Indexer.Transform.EIP8430Transactions do
   defp named_sender?("0x", _transaction_hash), do: false
 
   defp named_sender?(sender, transaction_hash) do
-    case bytes(sender) do
-      {:ok, <<_::binary-size(@address_byte_length)>>} ->
+    case address_bytes(sender) do
+      {:ok, _address_bytes} ->
         true
 
-      _ ->
+      :error ->
         Logger.warning(
           "Unexpected sender value #{inspect(sender)} in EIP-8430 transaction #{transaction_hash}. The sender is recorded as not named."
         )
@@ -89,12 +90,19 @@ defmodule Indexer.Transform.EIP8430Transactions do
   defp classify_payer("0x", _transaction_hash), do: {:self, "0x"}
 
   defp classify_payer(payer, transaction_hash) do
+    case address_bytes(payer) do
+      {:ok, address_bytes} when address_bytes != @zero_address_bytes -> {:named, payer}
+      _ -> classify_non_address_payer(payer, transaction_hash)
+    end
+  end
+
+  # Classifies a `payer` value that is not a non-zero 20-byte address.
+  @spec classify_non_address_payer(any(), EthereumJSONRPC.hash()) ::
+          {EIP8430Transaction.payer_type(), String.t() | nil}
+  defp classify_non_address_payer(payer, transaction_hash) do
     case bytes(payer) do
       {:ok, @open_payer_bytes} ->
         {:open, payer}
-
-      {:ok, <<_::binary-size(@address_byte_length)>> = address_bytes} when address_bytes != @zero_address_bytes ->
-        {:named, payer}
 
       {:ok, _bytes} ->
         log_unknown_payer(payer, transaction_hash)
@@ -112,6 +120,20 @@ defmodule Indexer.Transform.EIP8430Transactions do
       "Unexpected payer value #{inspect(payer)} in EIP-8430 transaction #{transaction_hash}. The payer type is recorded as unknown."
     )
   end
+
+  # Decodes an address string: `0x` and 40 hex digits. Every other term is an error.
+  #
+  # The guard is necessary because `Hash.Address.cast/1` accepts more forms: an integer, and a
+  # binary of 20 bytes that it takes as the raw bytes of the address.
+  @spec address_bytes(any()) :: {:ok, <<_::160>>} | :error
+  defp address_bytes("0x" <> _ = value) when byte_size(value) == @address_string_length do
+    case Hash.Address.cast(value) do
+      {:ok, %Hash{bytes: bytes}} -> {:ok, bytes}
+      :error -> :error
+    end
+  end
+
+  defp address_bytes(_value), do: :error
 
   # Decodes a hex string of bytes. Every other term is an error.
   @spec bytes(any()) :: {:ok, binary()} | :error

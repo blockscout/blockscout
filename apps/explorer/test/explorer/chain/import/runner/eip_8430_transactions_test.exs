@@ -27,6 +27,16 @@ defmodule Explorer.Chain.Import.Runner.EIP8430TransactionsTest do
       assert inserted.account_changes == []
     end
 
+    test "inserts one row if the changes list contains the same transaction twice" do
+      transaction = insert(:transaction)
+
+      assert {:ok, %{eip_8430_transactions: [inserted]}} =
+               run([params(transaction.hash), params(transaction.hash)])
+
+      assert inserted.transaction_hash == transaction.hash
+      assert Repo.aggregate(EIP8430Transaction, :count) == 1
+    end
+
     test "handles an empty changes list" do
       assert {:ok, %{eip_8430_transactions: []}} = run([])
     end

@@ -90,7 +90,16 @@ defmodule Indexer.Transform.EIP8430TransactionsTest do
     end
 
     test "clears the named sender flag for an unexpected sender and writes a warning" do
-      for sender <- ["0x0102", "garbage", 5] do
+      # The list includes a string of 20 characters with and without the `0x` prefix, and a
+      # string of the address length that is not hexadecimal.
+      for sender <- [
+            "0x0102",
+            "garbage",
+            5,
+            "0x123456789012345678",
+            "abcdefghijklmnopqrst",
+            "0xzz8161ba9f012b85eeb347bf3326988cfbeb3b7a"
+          ] do
         log =
           capture_log(fn ->
             assert [%{has_named_sender: false, transaction_hash: @transaction_hash}] =
@@ -132,6 +141,17 @@ defmodule Indexer.Transform.EIP8430TransactionsTest do
       assert log =~ @transaction_hash
     end
 
+    test "classifies a hex string of 20 characters as an unknown payer and keeps the bytes" do
+      payer = "0x123456789012345678"
+
+      log =
+        capture_log(fn ->
+          assert [%{payer_type: :unknown, payer: ^payer}] = parse_with(%{"payer" => payer})
+        end)
+
+      assert log =~ "Unexpected payer value"
+    end
+
     test "classifies the zero address as an unknown payer and keeps the bytes" do
       log =
         capture_log(fn ->
@@ -142,7 +162,7 @@ defmodule Indexer.Transform.EIP8430TransactionsTest do
     end
 
     test "classifies a payer that is not a hex string of bytes as unknown and drops the value" do
-      for payer <- ["garbage", "0xzz", 5] do
+      for payer <- ["garbage", "0xzz", 5, "abcdefghijklmnopqrst", "0xzz8161ba9f012b85eeb347bf3326988cfbeb3b7a"] do
         log =
           capture_log(fn ->
             assert [%{payer_type: :unknown, payer: nil}] = parse_with(%{"payer" => payer})
