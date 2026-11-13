@@ -24,7 +24,7 @@ defmodule Explorer.Token.MetadataRetriever do
   @invalid_ipfs_path "invalid ipfs path"
   @invalid_swarm_path "invalid swarm path"
   @metadata_too_large "metadata too large"
-  @default_headers [{"User-Agent", "blockscout-12.0.4"}]
+  @default_headers [{"User-Agent", "blockscout-12.1.0"}]
 
   # Fallback for `INDEXER_TOKEN_INSTANCE_METADATA_MAX_SIZE` when the config key is absent (10 MiB).
   @default_max_metadata_size 10_485_760
