@@ -99,6 +99,20 @@ defmodule Explorer.Chain.SmartContractTest do
              )
     end
 
+    test "promotes an existing non-primary name with the same value to primary", %{
+      valid_attrs: valid_attrs,
+      address: address
+    } do
+      # e.g. the token fetcher already stored the token name, which equals the contract name
+      insert(:address_name, address: address, name: valid_attrs.name, primary: false)
+      insert(:address_name, address: address, name: "OtherName", primary: true)
+
+      assert {:ok, %SmartContract{}} = SmartContract.create_smart_contract(valid_attrs)
+
+      assert [%Address.Name{name: "SimpleStorage"}] =
+               Repo.all(from(n in Address.Name, where: n.address_hash == ^address.hash and n.primary == true))
+    end
+
     test "trims whitespace from address name", %{valid_attrs: valid_attrs} do
       attrs = %{valid_attrs | name: "     SimpleStorage     "}
       assert {:ok, _} = SmartContract.create_smart_contract(attrs)
@@ -314,6 +328,26 @@ defmodule Explorer.Chain.SmartContractTest do
       assert sc_after_call.compiler_version == Map.get(valid_attrs, :compiler_version)
       assert sc_after_call.optimization == Map.get(valid_attrs, :optimization)
       assert sc_after_call.contract_source_code == "new code"
+    end
+
+    test "re-verification switches the primary address name, including back to a previous name", %{
+      address: address
+    } do
+      primary_names = fn ->
+        Repo.all(from(n in Address.Name, where: n.address_hash == ^address.hash and n.primary == true, select: n.name))
+      end
+
+      assert primary_names.() == ["SimpleStorage"]
+
+      assert {:ok, %SmartContract{name: "NewName"}} =
+               SmartContract.update_smart_contract(%{address_hash: address.hash, name: "NewName"})
+
+      assert primary_names.() == ["NewName"]
+
+      assert {:ok, %SmartContract{name: "SimpleStorage"}} =
+               SmartContract.update_smart_contract(%{address_hash: address.hash, name: "SimpleStorage"})
+
+      assert primary_names.() == ["SimpleStorage"]
     end
 
     test "check nothing changed", %{valid_attrs: valid_attrs, address: address} do
