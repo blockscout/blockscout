@@ -65,8 +65,13 @@ defmodule Explorer.Chain.Import.Runner.EIP8430Transactions do
   defp insert(repo, changes_list, %{timeout: timeout, timestamps: timestamps} = options) when is_list(changes_list) do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
-    # Enforce EIP8430Transaction ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.transaction_hash)
+    # Enforce EIP8430Transaction ShareLocks order (see docs: sharelocks.md).
+    # A node can return the same transaction twice in one block. Two rows with the same key in
+    # one `INSERT ... ON CONFLICT DO UPDATE` make Postgres stop with an error.
+    ordered_changes_list =
+      changes_list
+      |> Enum.sort_by(& &1.transaction_hash)
+      |> Enum.uniq_by(& &1.transaction_hash)
 
     {:ok, _} =
       Import.insert_changes_list(

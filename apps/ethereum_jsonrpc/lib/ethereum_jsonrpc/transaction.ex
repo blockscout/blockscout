@@ -209,6 +209,7 @@ defmodule EthereumJSONRPC.Transaction do
         }
 
   @type params :: %{
+          optional(:eip_8430_fields) => eip_8430_fields(),
           unquote_splicing(@chain_type_fields),
           unquote_splicing(@chain_identity_fields),
           block_hash: EthereumJSONRPC.hash(),
@@ -229,8 +230,7 @@ defmodule EthereumJSONRPC.Transaction do
           max_priority_fee_per_gas: non_neg_integer(),
           max_fee_per_gas: non_neg_integer(),
           type: non_neg_integer(),
-          authorization_list: [SignedAuthorization.params()],
-          eip_8430_fields: eip_8430_fields()
+          authorization_list: [SignedAuthorization.params()]
         }
 
   @typedoc """

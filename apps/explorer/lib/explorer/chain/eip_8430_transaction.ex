@@ -93,7 +93,7 @@ defmodule Explorer.Chain.EIP8430Transaction do
   @doc """
     Validates that the `attrs` are valid.
   """
-  @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Schema.t()
+  @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = struct, attrs \\ %{}) do
     struct
     |> cast(attrs, @required_attrs ++ @optional_attrs)
