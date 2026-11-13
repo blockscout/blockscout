@@ -130,6 +130,9 @@ config :block_scout_web, BlockScoutWeb.Chain,
 config :block_scout_web, BlockScoutWeb.Notifier,
   block_broadcast_enrichment_timeout: 200,
   block_broadcast_enrichment_disabled: ConfigHelper.parse_bool_env_var("DISABLE_BLOCK_BROADCAST_ENRICHMENT"),
+  transaction_broadcast_enrichment_timeout: 200,
+  transaction_broadcast_enrichment_disabled:
+    ConfigHelper.parse_bool_env_var("DISABLE_TRANSACTION_BROADCAST_ENRICHMENT"),
   block_broadcast_type:
     ConfigHelper.parse_catalog_value("BLOCK_BROADCAST_TYPE", ["block", "count"], true, "block") || :block
 

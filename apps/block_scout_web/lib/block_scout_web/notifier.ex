@@ -21,6 +21,14 @@ defmodule BlockScoutWeb.Notifier do
     block_broadcast_enrichment_timeout: [
       :block_scout_web,
       [BlockScoutWeb.Notifier, :block_broadcast_enrichment_timeout]
+    ],
+    transaction_broadcast_enrichment_disabled?: [
+      :block_scout_web,
+      [BlockScoutWeb.Notifier, :transaction_broadcast_enrichment_disabled]
+    ],
+    transaction_broadcast_enrichment_timeout: [
+      :block_scout_web,
+      [BlockScoutWeb.Notifier, :transaction_broadcast_enrichment_timeout]
     ]
 
   require Logger
@@ -738,6 +746,19 @@ defmodule BlockScoutWeb.Notifier do
     end
   end
 
+  # Adds the ENS names and the metadata (name tags) of the participants, as the
+  # REST lists of the same entities do, so that a pushed item names its
+  # addresses the same way as the item loaded by the page. Both microservices
+  # are asked once per broadcast batch, whatever the number of addresses, and
+  # the batch goes out without the enrichment if they do not answer in time.
+  defp maybe_preload_participants_enrichment(items, entity_kind) do
+    if transaction_broadcast_enrichment_disabled?() do
+      items
+    else
+      maybe_preload_ens_and_metadata(items, entity_kind, timeout: transaction_broadcast_enrichment_timeout())
+    end
+  end
+
   defp broadcast_rewards(rewards) do
     {emission_rewards, validator_rewards} =
       Enum.split_with(rewards, fn reward -> reward.address_type == :emission_funds end)
@@ -817,7 +838,8 @@ defmodule BlockScoutWeb.Notifier do
             transactions:
               relevant_transactions
               |> Repo.preload(transaction_broadcast_associations())
-              |> preload_participants(@transaction_address_fields),
+              |> preload_participants(@transaction_address_fields)
+              |> maybe_preload_participants_enrichment(:transactions),
             conn: nil
           })
 
@@ -908,7 +930,7 @@ defmodule BlockScoutWeb.Notifier do
 
         prepared_token_transfers =
           TransactionView.render("token_transfers.json", %{
-            token_transfers: relevant_token_transfers,
+            token_transfers: maybe_preload_participants_enrichment(relevant_token_transfers, :token_transfers),
             conn: nil
           })
 
