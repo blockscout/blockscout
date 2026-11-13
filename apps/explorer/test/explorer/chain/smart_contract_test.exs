@@ -4,7 +4,7 @@ defmodule Explorer.Chain.SmartContractTest do
 
   import ExUnit.CaptureLog
   import Mox
-  alias Explorer.Chain.{Address, SmartContract}
+  alias Explorer.Chain.{Address, SmartContract, SmartContractAdditionalSource}
   alias Explorer.Chain.SmartContract.VerificationStatus
 
   doctest Explorer.Chain.SmartContract
@@ -97,6 +97,20 @@ defmodule Explorer.Chain.SmartContractTest do
                name: smart_contract.name,
                primary: true
              )
+    end
+
+    test "promotes an existing non-primary name with the same value to primary", %{
+      valid_attrs: valid_attrs,
+      address: address
+    } do
+      # e.g. the token fetcher already stored the token name, which equals the contract name
+      insert(:address_name, address: address, name: valid_attrs.name, primary: false)
+      insert(:address_name, address: address, name: "OtherName", primary: true)
+
+      assert {:ok, %SmartContract{}} = SmartContract.create_smart_contract(valid_attrs)
+
+      assert [%Address.Name{name: "SimpleStorage"}] =
+               Repo.all(from(n in Address.Name, where: n.address_hash == ^address.hash and n.primary == true))
     end
 
     test "trims whitespace from address name", %{valid_attrs: valid_attrs} do
@@ -314,6 +328,79 @@ defmodule Explorer.Chain.SmartContractTest do
       assert sc_after_call.compiler_version == Map.get(valid_attrs, :compiler_version)
       assert sc_after_call.optimization == Map.get(valid_attrs, :optimization)
       assert sc_after_call.contract_source_code == "new code"
+    end
+
+    test "re-verification switches the primary address name, including back to a previous name", %{
+      address: address
+    } do
+      primary_names = fn ->
+        Repo.all(from(n in Address.Name, where: n.address_hash == ^address.hash and n.primary == true, select: n.name))
+      end
+
+      assert primary_names.() == ["SimpleStorage"]
+
+      assert {:ok, %SmartContract{name: "NewName"}} =
+               SmartContract.update_smart_contract(%{address_hash: address.hash, name: "NewName"})
+
+      assert primary_names.() == ["NewName"]
+
+      assert {:ok, %SmartContract{name: "SimpleStorage"}} =
+               SmartContract.update_smart_contract(%{address_hash: address.hash, name: "SimpleStorage"})
+
+      assert primary_names.() == ["SimpleStorage"]
+    end
+
+    test "rejects a partial match over a full match and keeps the stored contract", %{address: address} do
+      assert {:ok, %SmartContract{partially_verified: false}} =
+               SmartContract.update_smart_contract(%{
+                 address_hash: address.hash,
+                 partially_verified: false,
+                 name: "FullMatch"
+               })
+
+      log =
+        capture_log(fn ->
+          assert {:error, %Ecto.Changeset{valid?: false, errors: [partially_verified: _]}} =
+                   SmartContract.update_smart_contract(
+                     %{address_hash: address.hash, partially_verified: true, name: "PartialMatch"},
+                     [],
+                     [
+                       %{
+                         file_name: "partial.sol",
+                         contract_source_code: "contract PartialMatch {}",
+                         address_hash: address.hash
+                       }
+                     ]
+                   )
+        end)
+
+      assert log =~ "Failed to update smart contract"
+
+      assert %SmartContract{name: "FullMatch", partially_verified: false} =
+               Repo.get_by(SmartContract, address_hash: address.hash)
+
+      assert ["FullMatch"] ==
+               Repo.all(
+                 from(n in Address.Name, where: n.address_hash == ^address.hash and n.primary == true, select: n.name)
+               )
+
+      refute Repo.get_by(SmartContractAdditionalSource, address_hash: address.hash, file_name: "partial.sol")
+
+      # values the changeset casts to `true` are rejected as well
+      capture_log(fn ->
+        assert {:error, %Ecto.Changeset{errors: [partially_verified: _]}} =
+                 SmartContract.update_smart_contract(%{address_hash: address.hash, partially_verified: "true"})
+      end)
+
+      assert %SmartContract{partially_verified: false} = Repo.get_by(SmartContract, address_hash: address.hash)
+
+      # a full match may still replace a full match
+      assert {:ok, %SmartContract{name: "FullMatch2", partially_verified: false}} =
+               SmartContract.update_smart_contract(%{
+                 address_hash: address.hash,
+                 partially_verified: false,
+                 name: "FullMatch2"
+               })
     end
 
     test "check nothing changed", %{valid_attrs: valid_attrs, address: address} do
