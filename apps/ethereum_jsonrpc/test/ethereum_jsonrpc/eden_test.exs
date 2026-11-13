@@ -54,39 +54,17 @@ defmodule EthereumJSONRPC.EdenTest do
     end
 
     describe "Transaction.to_elixir/2" do
-      test "decodes the Eden 0x76 specific fields" do
+      test "decodes the Eden 0x76 specific fields and keeps the calls raw" do
         elixir = Transaction.to_elixir(sponsored_transaction())
 
+        # `Transaction.elixir_to_params/1` decodes the calls, because their structure depends on
+        # the transaction type.
         assert %{
                  "type" => 118,
                  "gasLimit" => 42_000,
                  "feePayer" => @fee_payer_address_hash,
-                 "calls" => [%{"to" => @first_call_to_address_hash, "value" => 0, "input" => "0x"}]
+                 "calls" => [%{"to" => @first_call_to_address_hash, "value" => "0x0", "input" => "0x"}]
                } = elixir
-      end
-
-      test "defaults the omitted call fields" do
-        elixir = Transaction.to_elixir(sponsored_transaction(%{"calls" => [%{}]}))
-
-        assert %{"calls" => [%{"to" => nil, "value" => 0, "input" => "0x"}]} = elixir
-      end
-
-      test "raises on a malformed call of a sponsored transaction" do
-        transaction = sponsored_transaction(%{"calls" => [%{"to" => @first_call_to_address_hash}, "0x"]})
-
-        assert_raise BadMapError, fn -> Transaction.to_elixir(transaction) end
-      end
-
-      test "drops `calls` of the transactions that are not sponsored" do
-        # EIP-8430 (type `0x79`) uses `calls` for a list of call phases, which can be empty.
-        call_phases = [[%{"data" => "0x", "to" => @first_call_to_address_hash, "value" => "0x0"}]]
-
-        for calls <- [call_phases, []] do
-          elixir = Transaction.to_elixir(sponsored_transaction(%{"type" => "0x79", "calls" => calls}))
-
-          assert %{"type" => 0x79} = elixir
-          refute Map.has_key?(elixir, "calls")
-        end
       end
     end
 
@@ -153,15 +131,39 @@ defmodule EthereumJSONRPC.EdenTest do
         assert %{to_address_hash: nil, input: "0x", value: 0, gas: 42_000, calls: []} = params
       end
 
-      test "does not put the empty `calls` of an EIP-8430 transaction into the params" do
+      test "defaults the omitted call fields" do
         params =
-          %{"type" => "0x79", "calls" => [], "gas" => "0x5208", "to" => nil, "input" => "0x", "value" => "0x0"}
+          %{"calls" => [%{}]}
           |> sponsored_transaction()
           |> Transaction.to_elixir()
           |> Transaction.elixir_to_params()
 
-        assert %{type: 0x79, to_address_hash: nil} = params
-        refute Map.has_key?(params, :calls)
+        assert %{calls: [%{"to" => nil, "value" => 0, "input" => "0x"}]} = params
+      end
+
+      test "raises on a malformed call of a sponsored transaction" do
+        elixir =
+          %{"calls" => [%{"to" => @first_call_to_address_hash}, "0x"]}
+          |> sponsored_transaction()
+          |> Transaction.to_elixir()
+
+        assert_raise BadMapError, fn -> Transaction.elixir_to_params(elixir) end
+      end
+
+      test "drops `calls` of the transactions that are not sponsored" do
+        # EIP-8430 (type `0x79`) uses `calls` for a list of call phases, which can be empty.
+        call_phases = [[%{"data" => "0x", "to" => @first_call_to_address_hash, "value" => "0x0"}]]
+
+        for calls <- [call_phases, []] do
+          params =
+            %{"type" => "0x79", "calls" => calls, "gas" => "0x5208", "to" => nil, "input" => "0x", "value" => "0x0"}
+            |> sponsored_transaction()
+            |> Transaction.to_elixir()
+            |> Transaction.elixir_to_params()
+
+          assert %{type: 0x79, to_address_hash: nil} = params
+          refute Map.has_key?(params, :calls)
+        end
       end
 
       test "keeps the regular transactions untouched" do

@@ -614,19 +614,33 @@ defmodule EthereumJSONRPC.Transaction do
   # array instead of the standard `gas`, `to`, `input` and `value` fields. The first call provides
   # the compatibility values for `to` and `input`, while `value` is the sum across all the calls.
   # An empty `calls` array produces an empty input and a zero value.
+  #
+  # `calls` is decoded here and not in `to_elixir/2`, because its structure depends on the
+  # transaction type. Other transaction types can use the same key for a different structure, for
+  # example EIP-8430 uses a list of call phases. `calls` of such transactions is removed.
   @spec eden_compatibility_fields(%{String.t() => any()}) :: %{String.t() => any()}
   defp eden_compatibility_fields(%{"type" => @eden_sponsored_transaction_type} = elixir) do
-    calls = Map.get(elixir, "calls") || []
+    calls = elixir |> Map.get("calls", []) |> Enum.map(&call_to_elixir/1)
     first_call = List.first(calls) || %{}
 
     elixir
+    |> Map.replace("calls", calls)
     |> Map.put("gas", Map.get(elixir, "gasLimit") || Map.get(elixir, "gas"))
     |> Map.put("to", Map.get(first_call, "to"))
     |> Map.put("input", Map.get(first_call, "input") || "0x")
     |> Map.put("value", Enum.reduce(calls, 0, &((Map.get(&1, "value") || 0) + &2)))
   end
 
-  defp eden_compatibility_fields(elixir), do: elixir
+  defp eden_compatibility_fields(elixir), do: Map.delete(elixir, "calls")
+
+  @spec call_to_elixir(%{String.t() => any()}) :: %{String.t() => any()}
+  defp call_to_elixir(call) do
+    %{
+      "to" => Map.get(call, "to"),
+      "value" => quantity_to_integer(Map.get(call, "value")) || 0,
+      "input" => Map.get(call, "input") || "0x"
+    }
+  end
 
   # Normalizes the transaction by its EIP-2718 type. Unlike `chain_type_normalization/1`, this
   # step applies to all chain types.
@@ -806,9 +820,7 @@ defmodule EthereumJSONRPC.Transaction do
   def to_elixir(transaction, block_timestamp) when is_map(transaction) do
     initial = (block_timestamp && %{"block_timestamp" => block_timestamp}) || %{}
 
-    transaction
-    |> chain_type_sanitization()
-    |> Enum.into(initial, &entry_to_elixir/1)
+    Enum.into(transaction, initial, &entry_to_elixir/1)
   end
 
   def to_elixir(transaction, _block_timestamp) when is_binary(transaction) do
@@ -892,47 +904,12 @@ defmodule EthereumJSONRPC.Transaction do
     defp entry_to_elixir({"gasLimit" = key, quantity_or_nil}),
       do: {key, quantity_or_nil && quantity_to_integer(quantity_or_nil)}
 
-    defp entry_to_elixir({"calls" = key, calls}) when is_list(calls),
-      do: {key, Enum.map(calls, &call_to_elixir/1)}
+    # `eden_compatibility_fields/1` decodes the calls, because their structure depends on the
+    # transaction type.
+    defp entry_to_elixir({"calls", calls} = entry) when is_list(calls), do: entry
   end
 
   defp entry_to_elixir(_) do
     {:ignore, :ignore}
-  end
-
-  # Removes the raw fields that the chain type parses only for specific transaction types. Unlike
-  # `chain_type_normalization/1`, this step operates on the raw JSON-RPC response before the
-  # entries are parsed.
-  @spec chain_type_sanitization(%{String.t() => any()}) :: %{String.t() => any()}
-  defp chain_type_sanitization(transaction) do
-    case chain_type() do
-      :eden -> drop_non_eden_calls(transaction)
-      _ -> transaction
-    end
-  end
-
-  # `calls` is an Eden field only in a sponsored transaction (type `0x76`). Other transaction
-  # types can use the same key for a different structure, for example EIP-8430 uses a list of
-  # call phases. Remove the key from such transactions.
-  @spec drop_non_eden_calls(%{String.t() => any()}) :: %{String.t() => any()}
-  defp drop_non_eden_calls(%{"type" => type} = transaction) when is_binary(type) do
-    if quantity_to_integer(type) == @eden_sponsored_transaction_type do
-      transaction
-    else
-      Map.delete(transaction, "calls")
-    end
-  end
-
-  defp drop_non_eden_calls(transaction), do: Map.delete(transaction, "calls")
-
-  if @chain_type == :eden do
-    @spec call_to_elixir(%{String.t() => any()}) :: %{String.t() => any()}
-    defp call_to_elixir(call) do
-      %{
-        "to" => Map.get(call, "to"),
-        "value" => quantity_to_integer(Map.get(call, "value")) || 0,
-        "input" => Map.get(call, "input") || "0x"
-      }
-    end
   end
 end
