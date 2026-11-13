@@ -132,7 +132,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         _ ->
           to_block_number =
             case {paging_options, to_block} do
-              {%PagingOptions{key: {block_number, _, _}}, _} -> block_number
+              {%PagingOptions{key: {block_number, _, _}}, _} -> min(block_number, BlockNumber.get_max())
               {_, block_number} when is_integer(block_number) -> block_number
               _ -> BlockNumber.get_max()
             end

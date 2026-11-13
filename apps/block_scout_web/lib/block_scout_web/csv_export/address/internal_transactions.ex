@@ -8,9 +8,13 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
 
   alias Explorer.Chain.{Address, Hash, InternalTransaction, Transaction, Wei}
   alias Explorer.Chain.CsvExport.{AsyncHelper, Helper}
+  alias Explorer.PagingOptions
 
   @doc """
   Streams the internal transactions of `address_hash` within the given period as CSV rows.
+
+  The internal transactions missing in the DB are fetched from the node. When the node fails to trace a block of
+  the period, it raises instead of exporting the internal transactions partly.
 
   ## Options
 
@@ -60,10 +64,36 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
             else: &1
           )).()
 
-    # an incomplete scan of the node gives the internal transactions found within the request
+    fetch_internal_transactions_of_period(address_hash, options)
+  end
+
+  # The internal transactions missing in the DB are fetched from the node within a limited scan (see
+  # `BlockScoutWeb.Chain.address_to_internal_transactions/2`), so the export goes on with the block where the scan
+  # stopped until the period or the export limit is covered. A scan that doesn't get past the block it goes on with
+  # means that the node fails to trace that block: the export fails then instead of leaving its internal transactions
+  # out.
+  defp fetch_internal_transactions_of_period(address_hash, options, fetched \\ [], last_next_block_number \\ nil) do
     case address_to_internal_transactions(address_hash, options) do
-      {:ok, internal_transactions} -> internal_transactions
-      {:incomplete, internal_transactions, _next_block_number} -> internal_transactions
+      {:ok, internal_transactions} ->
+        fetched ++ internal_transactions
+
+      {:incomplete, _internal_transactions, ^last_next_block_number} ->
+        raise "Failed to fetch internal transactions of block #{last_next_block_number} from the node"
+
+      {:incomplete, internal_transactions, next_block_number} ->
+        %PagingOptions{page_size: page_size} = paging_options = Keyword.fetch!(options, :paging_options)
+
+        next_options =
+          options
+          |> Keyword.put(:to_block, next_block_number)
+          |> Keyword.put(:paging_options, %{paging_options | page_size: page_size - length(internal_transactions)})
+
+        fetch_internal_transactions_of_period(
+          address_hash,
+          next_options,
+          fetched ++ internal_transactions,
+          next_block_number
+        )
     end
   end
 

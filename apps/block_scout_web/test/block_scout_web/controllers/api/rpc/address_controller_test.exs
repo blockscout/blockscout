@@ -1849,7 +1849,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                  |> get("/api", Map.put(params, "endblock", "3"))
                  |> json_response(200)
 
-        assert message =~ "endblock=2"
+        assert message =~ "endblock=2 and page=1"
         assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
       end
     end
@@ -2987,7 +2987,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
         address_hash_str = to_string(address.hash)
         address_id = AddressIdToAddressHash.find_or_create(address.hash).address_id
 
-        for block_number <- 1..6 do
+        for block_number <- 1..7 do
           insert(:block, number: block_number)
 
           insert(:deleted_internal_transactions_address_placeholder,
@@ -2998,10 +2998,10 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           )
         end
 
-        # the newer blocks have zero-value calls to the address only, and block 1 transfers value to it
-        expect(EthereumJSONRPC.Mox, :json_rpc, 6, fn [%{id: id, params: [block_quantity, _]}], _ ->
+        # blocks 7 and 1 transfer value to the address, and the blocks between them have zero-value calls to it only
+        expect(EthereumJSONRPC.Mox, :json_rpc, 7, fn requests, _ ->
           {:ok,
-           [
+           Enum.map(requests, fn %{id: id, params: [block_quantity, _]} ->
              %{
                id: id,
                result: [
@@ -3016,7 +3016,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                          "output" => "0x",
                          "to" => address_hash_str,
                          "type" => "CALL",
-                         "value" => if(block_quantity == "0x1", do: "0x1", else: "0x0")
+                         "value" => if(block_quantity in ["0x7", "0x1"], do: "0x1", else: "0x0")
                        }
                      ],
                      "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
@@ -3032,7 +3032,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
                  }
                ]
              }
-           ]}
+           end)}
         end)
 
         params = %{
@@ -3042,19 +3042,25 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
           "offset" => "1"
         }
 
-        # each round of the request traces one of the newer blocks and finds nothing, so it stops before block 1
+        assert %{"status" => "1", "result" => [%{"blockNumber" => "7"}]} =
+                 conn
+                 |> get("/api", Map.put(params, "page", "1"))
+                 |> json_response(200)
+
+        # the rounds of the request are over before it finds anything after block 7
         assert %{"status" => "2", "message" => message, "result" => []} =
                  response =
                  conn
-                 |> get("/api", params)
+                 |> get("/api", Map.put(params, "page", "2"))
                  |> json_response(200)
 
-        assert message =~ "endblock=1"
+        assert message =~ "endblock=1 and page=1"
         assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
 
+        # the second internal transaction is the first one of the new block range
         assert %{"status" => "1", "result" => [%{"blockNumber" => "1"}]} =
                  conn
-                 |> get("/api", Map.put(params, "endblock", "1"))
+                 |> get("/api", Map.merge(params, %{"endblock" => "1", "page" => "1"}))
                  |> json_response(200)
       end
     end

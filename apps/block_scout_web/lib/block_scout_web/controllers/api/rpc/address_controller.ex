@@ -226,15 +226,16 @@ defmodule BlockScoutWeb.API.RPC.AddressController do
     )
   end
 
+  # The results of the new block range are paged from its start: with the page number kept, the first ones are skipped
   defp not_fetched_internal_transactions_message(next_block_number, :asc),
     do:
       "Internal transactions of the blocks from #{next_block_number} were not fetched from the node in this request, " <>
-        "request them with startblock=#{next_block_number}"
+        "request them with startblock=#{next_block_number} and page=1"
 
   defp not_fetched_internal_transactions_message(next_block_number, _desc),
     do:
       "Internal transactions of the blocks up to #{next_block_number} were not fetched from the node in this request, " <>
-        "request them with endblock=#{next_block_number}"
+        "request them with endblock=#{next_block_number} and page=1"
 
   # With an empty result the pending status is the only useful information the response
   # carries, so the strict check is kept here: pending blocks at the chain head are not

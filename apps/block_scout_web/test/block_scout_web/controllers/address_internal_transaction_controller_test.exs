@@ -5,6 +5,8 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
   import BlockScoutWeb.Routers.WebRouter.Helpers,
     only: [address_internal_transaction_path: 3, address_internal_transaction_path: 4]
 
+  import Mox
+
   alias Explorer.Chain.{Address, Block, InternalTransaction, Transaction}
   alias Explorer.Market.Token
 
@@ -527,6 +529,101 @@ defmodule BlockScoutWeb.AddressInternalTransactionControllerTest do
         )
 
       assert %{"next_page_path" => nil} = json_response(conn, 200)
+    end
+  end
+
+  # `EthereumJSONRPC.RSK` and `EthereumJSONRPC.Filecoin` variants trace blocks with `trace_block`
+  if Application.compile_env(:explorer, :chain_type) not in [:rsk, :filecoin] do
+    describe "GET index/3 with internal transactions fetched from the node" do
+      setup :verify_on_exit!
+
+      test "goes on with the block that fails to be traced on the next page", %{conn: conn} do
+        address = insert(:address)
+        address_hash_str = to_string(address.hash)
+        %{address_id: address_id} = insert(:address_id_to_address_hash, address: address)
+
+        # the newest internal transaction is in the DB
+        stored_transaction = :transaction |> insert() |> with_block(insert(:block, number: 4))
+
+        insert(:internal_transaction,
+          transaction: stored_transaction,
+          index: 1,
+          block_number: stored_transaction.block_number,
+          transaction_index: stored_transaction.index,
+          to_address: address
+        )
+
+        # the older ones are fetched from the node
+        node_transactions =
+          for block_number <- 3..1//-1 do
+            insert(:deleted_internal_transactions_address_placeholder,
+              address_id: address_id,
+              block_number: block_number,
+              count_tos: 1,
+              count_froms: 0
+            )
+
+            :transaction |> insert() |> with_block(insert(:block, number: block_number))
+          end
+
+        # the transactions of the blocks are traced in one batch, which fails
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn requests, _ ->
+          {:ok, Enum.map(requests, &%{id: &1.id, error: %{code: -32_000, message: "tracing failed"}})}
+        end)
+
+        conn =
+          get(conn, address_internal_transaction_path(conn, :index, Address.checksum(address), %{"type" => "JSON"}))
+
+        assert %{"items" => [stored_tile], "next_page_path" => next_page_path} = json_response(conn, 200)
+        assert stored_tile =~ to_string(stored_transaction.hash)
+
+        assert next_page_path ==
+                 address_internal_transaction_path(BlockScoutWeb.Endpoint, :index, address.hash, %{
+                   block_number: 4,
+                   index: 0,
+                   transaction_index: 0
+                 })
+
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn requests, _ ->
+          {:ok,
+           Enum.map(requests, fn %{id: id} ->
+             %{
+               id: id,
+               result: %{
+                 "type" => "CALL",
+                 "from" => "0x4200000000000000000000000000000000000015",
+                 "to" => "0x4200000000000000000000000000000000000016",
+                 "value" => "0x0",
+                 "gas" => "0x106f5",
+                 "gasUsed" => "0x106f5",
+                 "input" => "0x",
+                 "output" => "0x",
+                 "calls" => [
+                   %{
+                     "type" => "CALL",
+                     "from" => "0x4200000000000000000000000000000000000016",
+                     "to" => address_hash_str,
+                     "value" => "0x1",
+                     "gas" => "0xe9a3c",
+                     "gasUsed" => "0x4a28",
+                     "input" => "0x",
+                     "output" => "0x"
+                   }
+                 ]
+               }
+             }
+           end)}
+        end)
+
+        conn = get(conn, next_page_path <> "&type=JSON")
+
+        assert %{"items" => node_tiles, "next_page_path" => nil} = json_response(conn, 200)
+        assert length(node_tiles) == length(node_transactions)
+
+        for {tile, transaction} <- Enum.zip(node_tiles, node_transactions) do
+          assert tile =~ to_string(transaction.hash)
+        end
+      end
     end
   end
 end
