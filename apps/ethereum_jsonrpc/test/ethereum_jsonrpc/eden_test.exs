@@ -70,6 +70,24 @@ defmodule EthereumJSONRPC.EdenTest do
 
         assert %{"calls" => [%{"to" => nil, "value" => 0, "input" => "0x"}]} = elixir
       end
+
+      test "raises on a malformed call of a sponsored transaction" do
+        transaction = sponsored_transaction(%{"calls" => [%{"to" => @first_call_to_address_hash}, "0x"]})
+
+        assert_raise BadMapError, fn -> Transaction.to_elixir(transaction) end
+      end
+
+      test "drops `calls` of the transactions that are not sponsored" do
+        # EIP-8430 (type `0x79`) uses `calls` for a list of call phases, which can be empty.
+        call_phases = [[%{"data" => "0x", "to" => @first_call_to_address_hash, "value" => "0x0"}]]
+
+        for calls <- [call_phases, []] do
+          elixir = Transaction.to_elixir(sponsored_transaction(%{"type" => "0x79", "calls" => calls}))
+
+          assert %{"type" => 0x79} = elixir
+          refute Map.has_key?(elixir, "calls")
+        end
+      end
     end
 
     describe "Transaction.elixir_to_params/1" do
@@ -133,6 +151,17 @@ defmodule EthereumJSONRPC.EdenTest do
           |> Transaction.elixir_to_params()
 
         assert %{to_address_hash: nil, input: "0x", value: 0, gas: 42_000, calls: []} = params
+      end
+
+      test "does not put the empty `calls` of an EIP-8430 transaction into the params" do
+        params =
+          %{"type" => "0x79", "calls" => [], "gas" => "0x5208", "to" => nil, "input" => "0x", "value" => "0x0"}
+          |> sponsored_transaction()
+          |> Transaction.to_elixir()
+          |> Transaction.elixir_to_params()
+
+        assert %{type: 0x79, to_address_hash: nil} = params
+        refute Map.has_key?(params, :calls)
       end
 
       test "keeps the regular transactions untouched" do

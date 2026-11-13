@@ -805,7 +805,10 @@ defmodule EthereumJSONRPC.Transaction do
 
   def to_elixir(transaction, block_timestamp) when is_map(transaction) do
     initial = (block_timestamp && %{"block_timestamp" => block_timestamp}) || %{}
-    Enum.into(transaction, initial, &entry_to_elixir/1)
+
+    transaction
+    |> chain_type_sanitization()
+    |> Enum.into(initial, &entry_to_elixir/1)
   end
 
   def to_elixir(transaction, _block_timestamp) when is_binary(transaction) do
@@ -889,20 +892,38 @@ defmodule EthereumJSONRPC.Transaction do
     defp entry_to_elixir({"gasLimit" = key, quantity_or_nil}),
       do: {key, quantity_or_nil && quantity_to_integer(quantity_or_nil)}
 
-    # Only a flat list of call objects is an Eden `calls` array. Other transaction types can use
-    # the same key for a different structure, for example EIP-8430 uses a list of call phases.
-    defp entry_to_elixir({"calls" = key, calls}) when is_list(calls) do
-      if Enum.all?(calls, &is_map/1) do
-        {key, Enum.map(calls, &call_to_elixir/1)}
-      else
-        {:ignore, :ignore}
-      end
-    end
+    defp entry_to_elixir({"calls" = key, calls}) when is_list(calls),
+      do: {key, Enum.map(calls, &call_to_elixir/1)}
   end
 
   defp entry_to_elixir(_) do
     {:ignore, :ignore}
   end
+
+  # Removes the raw fields that the chain type parses only for specific transaction types. Unlike
+  # `chain_type_normalization/1`, this step operates on the raw JSON-RPC response before the
+  # entries are parsed.
+  @spec chain_type_sanitization(%{String.t() => any()}) :: %{String.t() => any()}
+  defp chain_type_sanitization(transaction) do
+    case chain_type() do
+      :eden -> drop_non_eden_calls(transaction)
+      _ -> transaction
+    end
+  end
+
+  # `calls` is an Eden field only in a sponsored transaction (type `0x76`). Other transaction
+  # types can use the same key for a different structure, for example EIP-8430 uses a list of
+  # call phases. Remove the key from such transactions.
+  @spec drop_non_eden_calls(%{String.t() => any()}) :: %{String.t() => any()}
+  defp drop_non_eden_calls(%{"type" => type} = transaction) when is_binary(type) do
+    if quantity_to_integer(type) == @eden_sponsored_transaction_type do
+      transaction
+    else
+      Map.delete(transaction, "calls")
+    end
+  end
+
+  defp drop_non_eden_calls(transaction), do: Map.delete(transaction, "calls")
 
   if @chain_type == :eden do
     @spec call_to_elixir(%{String.t() => any()}) :: %{String.t() => any()}
