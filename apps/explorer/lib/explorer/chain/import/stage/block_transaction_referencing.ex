@@ -15,6 +15,7 @@ defmodule Explorer.Chain.Import.Stage.BlockTransactionReferencing do
     Runner.Block.SecondDegreeRelations,
     Runner.Withdrawals,
     Runner.SignedAuthorizations,
+    Runner.EIP8430Transactions,
     Runner.FheOperations
   ]
 
