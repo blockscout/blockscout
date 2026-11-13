@@ -648,6 +648,9 @@ config :explorer, Explorer.Chain.PendingOperationsHelper,
   internal_transactions_pending_head_tolerance:
     ConfigHelper.parse_integer_env_var("API_INTERNAL_TRANSACTIONS_PENDING_HEAD_TOLERANCE", 200, min: 0)
 
+config :explorer, Explorer.Chain.InternalTransaction,
+  storage_disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_INTERNAL_TRANSACTIONS_STORAGE")
+
 config :explorer, Explorer.Chain.Transaction,
   block_miner_gets_burnt_fees?: ConfigHelper.parse_bool_env_var("BLOCK_MINER_GETS_BURNT_FEES"),
   suave_bid_contracts: System.get_env("SUAVE_BID_CONTRACTS", ""),

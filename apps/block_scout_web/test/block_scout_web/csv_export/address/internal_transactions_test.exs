@@ -2,6 +2,8 @@
 defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
   use Explorer.DataCase
 
+  import Mox
+
   alias BlockScoutWeb.CsvExport.Address.InternalTransactions, as: AddressInternalTransactionsCsvExporter
   alias Explorer.Chain.{Address, InternalTransaction, Wei}
   alias Explorer.Utility.AddressIdToAddressHash
@@ -367,6 +369,133 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
       assert result.error == to_string(internal_transaction.error)
 
       assert result.fee == ""
+    end
+  end
+
+  # `EthereumJSONRPC.RSK` and `EthereumJSONRPC.Filecoin` variants trace blocks with `trace_block`
+  if Application.compile_env(:explorer, :chain_type) not in [:rsk, :filecoin] do
+    describe "export/6 with internal transactions fetched from the node" do
+      setup [:set_mox_global, :verify_on_exit!]
+
+      setup do
+        put_env(:explorer, InternalTransaction, storage_disabled?: true)
+        put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, tracer: "call_tracer", block_traceable?: true)
+
+        address = insert(:address)
+        %{address_id: address_id} = insert(:address_id_to_address_hash, address: address)
+        {:ok, now} = DateTime.now("Etc/UTC")
+
+        %{
+          address: address,
+          address_id: address_id,
+          now: now,
+          from_period: now |> DateTime.add(-1, :minute) |> DateTime.to_iso8601(),
+          to_period: DateTime.to_iso8601(now)
+        }
+      end
+
+      test "goes on with the block where the node scan stopped", %{address: address} = context do
+        # the node scan of a page of 2 internal transactions takes a block per round after the first one
+        initial_limit = Application.get_env(:explorer, :csv_export_limit)
+        Application.put_env(:explorer, :csv_export_limit, 2)
+        on_exit(fn -> Application.put_env(:explorer, :csv_export_limit, initial_limit) end)
+
+        insert_blocks_with_placeholders(1..7, context)
+
+        # blocks 7 and 1 transfer value to the address, and the blocks between them have zero-value calls to it only
+        expect(EthereumJSONRPC.Mox, :json_rpc, 6, fn requests, _ ->
+          {:ok,
+           Enum.map(requests, fn %{id: id, params: [block_quantity, _]} ->
+             block_number = EthereumJSONRPC.quantity_to_integer(block_quantity)
+             value = if block_number in [7, 1], do: "0x1", else: "0x0"
+             %{id: id, result: block_traces_with_call_to(address, block_number, value)}
+           end)}
+        end)
+
+        # the first scan stops before block 1 when its rounds are over
+        assert exported_block_numbers(address, context, include_zero_value: false) == ["7", "1"]
+      end
+
+      test "fails when the node fails to trace a block", %{address: address} = context do
+        put_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction, blocks_batch_size: 1)
+
+        insert_blocks_with_placeholders(1..3, context)
+
+        # block 2 fails to be traced in the first scan, and again in the scan going on with it
+        expect(EthereumJSONRPC.Mox, :json_rpc, 5, fn [%{id: id, params: [block_quantity, _]}], _ ->
+          case EthereumJSONRPC.quantity_to_integer(block_quantity) do
+            2 -> {:ok, [%{id: id, error: %{code: -32_000, message: "tracing failed"}}]}
+            block_number -> {:ok, [%{id: id, result: block_traces_with_call_to(address, block_number, "0x1")}]}
+          end
+        end)
+
+        assert_raise RuntimeError, ~r/block 2/, fn -> exported_block_numbers(address, context, []) end
+      end
+    end
+
+    defp insert_blocks_with_placeholders(block_numbers, %{address_id: address_id, now: now}) do
+      for block_number <- block_numbers do
+        insert(:block, number: block_number, timestamp: DateTime.add(now, block_number - 10, :second))
+
+        insert(:deleted_internal_transactions_address_placeholder,
+          address_id: address_id,
+          block_number: block_number,
+          count_tos: 1,
+          count_froms: 0
+        )
+      end
+    end
+
+    defp exported_block_numbers(address, %{from_period: from_period, to_period: to_period}, options) do
+      address.hash
+      |> AddressInternalTransactionsCsvExporter.export(from_period, to_period, options, nil, nil)
+      |> Enum.drop(1)
+      |> Enum.map(&(&1 |> IO.iodata_to_binary() |> String.split(",") |> Enum.at(2)))
+    end
+
+    # `debug_traceBlockByNumber` result with a transaction that transfers `value` to the address in a nested call
+    defp block_traces_with_call_to(address, block_number, value) do
+      [
+        %{
+          "result" => %{
+            "calls" => [
+              %{
+                "from" => "0x4200000000000000000000000000000000000015",
+                "gas" => "0xe9a3c",
+                "gasUsed" => "0x4a28",
+                "input" => "0x",
+                "output" => "0x",
+                "to" => to_string(address.hash),
+                "type" => "CALL",
+                "value" => value
+              }
+            ],
+            "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
+            "gas" => "0xf4240",
+            "gasUsed" => "0xb6f9",
+            "input" => "0x",
+            "output" => "0x",
+            "to" => "0x4200000000000000000000000000000000000015",
+            "type" => "CALL",
+            "value" => "0x0"
+          },
+          "txHash" => "0x" <> String.pad_leading("#{block_number}", 64, "0")
+        }
+      ]
+    end
+
+    # Merges `config` into the application config for the test
+    defp put_env(app, key, config) do
+      initial_config = Application.get_env(app, key)
+      Application.put_env(app, key, Keyword.merge(initial_config || [], config))
+
+      on_exit(fn ->
+        if is_nil(initial_config) do
+          Application.delete_env(app, key)
+        else
+          Application.put_env(app, key, initial_config)
+        end
+      end)
     end
   end
 end

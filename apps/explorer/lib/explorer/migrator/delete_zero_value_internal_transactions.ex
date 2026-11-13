@@ -113,7 +113,6 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
 
   defp clear_internal_transactions(_from, _to), do: :ok
 
-  @smallint_max_value 32767
   defp do_clear_internal_transactions(dynamic_condition) do
     Repo.transaction(
       fn ->
@@ -143,59 +142,7 @@ defmodule Explorer.Migrator.DeleteZeroValueInternalTransactions do
 
         {_count, deleted_internal_transactions} = Repo.delete_all(delete_query, timeout: :infinity)
 
-        placeholders_params =
-          deleted_internal_transactions
-          |> Enum.group_by(& &1.block_number)
-          |> Enum.flat_map(fn {block_number, internal_transactions} ->
-            internal_transactions
-            |> Enum.reduce(%{}, fn
-              %{index: 0}, inner_acc ->
-                inner_acc
-
-              internal_transaction, inner_acc ->
-                from_address_id = internal_transaction.from_address_id
-                to_address_id = internal_transaction.to_address_id
-
-                inner_acc
-                |> Map.update(
-                  from_address_id,
-                  %{
-                    address_id: from_address_id,
-                    block_number: block_number,
-                    count_tos: 0,
-                    count_froms: 1
-                  },
-                  fn existing_params ->
-                    %{existing_params | count_froms: min(existing_params.count_froms + 1, @smallint_max_value)}
-                  end
-                )
-                |> Map.update(
-                  to_address_id,
-                  %{
-                    address_id: to_address_id,
-                    block_number: block_number,
-                    count_tos: 1,
-                    count_froms: 0
-                  },
-                  # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-                  fn existing_params ->
-                    %{existing_params | count_tos: min(existing_params.count_tos + 1, @smallint_max_value)}
-                  end
-                )
-            end)
-            |> Map.values()
-            |> Enum.reject(&is_nil(&1.address_id))
-          end)
-          |> Enum.sort_by(&{&1.address_id, &1.block_number})
-
-        placeholders_params
-        |> Enum.chunk_every(1000)
-        |> Enum.each(fn placeholders_batch ->
-          Repo.insert_all(InternalTransactionsAddressPlaceholder, placeholders_batch,
-            on_conflict: :replace_all,
-            conflict_target: [:address_id, :block_number]
-          )
-        end)
+        InternalTransactionsAddressPlaceholder.insert_for_internal_transactions(Repo, deleted_internal_transactions)
       end,
       timeout: :infinity
     )

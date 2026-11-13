@@ -7,7 +7,7 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
   alias BlockScoutWeb.API.RPC.AddressController
   alias Explorer.{Chain, Repo, TestHelper}
   alias Explorer.Chain.Cache.BackgroundMigrations
-  alias Explorer.Chain.{Events.Subscriber, PendingOperationsHelper, Transaction, Wei}
+  alias Explorer.Chain.{Events.Subscriber, InternalTransaction, PendingOperationsHelper, Transaction, Wei}
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Utility.AddressIdToAddressHash
   alias Indexer.Fetcher.OnDemand.CoinBalance, as: CoinBalanceOnDemand
@@ -1801,6 +1801,59 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       {:ok, %{params: params}}
     end
 
+    # `EthereumJSONRPC.RSK` and `EthereumJSONRPC.Filecoin` variants trace blocks with `trace_block`
+    if Application.compile_env(:explorer, :chain_type) not in [:rsk, :filecoin] do
+      test "reports the internal transactions not fetched from the node when their storage is disabled", %{
+        conn: conn,
+        params: params
+      } do
+        initial_config = Application.get_env(:explorer, InternalTransaction)
+        initial_geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+
+        Application.put_env(
+          :explorer,
+          InternalTransaction,
+          Keyword.merge(initial_config || [], storage_disabled?: true)
+        )
+
+        Application.put_env(
+          :ethereum_jsonrpc,
+          EthereumJSONRPC.Geth,
+          Keyword.merge(initial_geth_config || [], tracer: "call_tracer", block_traceable?: true)
+        )
+
+        on_exit(fn ->
+          Application.put_env(:explorer, InternalTransaction, initial_config)
+          Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, initial_geth_config)
+        end)
+
+        for block_number <- 1..3 do
+          insert(:block, number: block_number)
+        end
+
+        expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn [%{id: id, params: [block_quantity, _]}], _ ->
+          case block_quantity do
+            "0x3" -> {:ok, [%{id: id, result: block_traces_with_value_call(3)}]}
+            "0x2" -> {:ok, [%{id: id, error: %{code: -32_000, message: "tracing failed"}}]}
+          end
+        end)
+
+        # block 2 fails to be traced, so the request stops before it
+        assert %{
+                 "status" => "2",
+                 "message" => message,
+                 "result" => [%{"blockNumber" => "3"}]
+               } =
+                 response =
+                 conn
+                 |> get("/api", Map.put(params, "endblock", "3"))
+                 |> json_response(200)
+
+        assert message =~ "endblock=2 and page=1"
+        assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+      end
+    end
+
     test "returns empty result, if no internal transactions", %{conn: conn, params: params} do
       response =
         conn
@@ -2761,9 +2814,257 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
       assert response["message"] == "OK"
       assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
     end
+
+    test "via on-demand fetcher when the internal transactions storage is disabled", %{conn: conn} do
+      original_config = Application.get_env(:explorer, Explorer.Chain.InternalTransaction)
+
+      Application.put_env(
+        :explorer,
+        Explorer.Chain.InternalTransaction,
+        Keyword.merge(original_config || [], storage_disabled?: true)
+      )
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Explorer.Chain.InternalTransaction, original_config)
+      end)
+
+      transaction = :transaction |> insert() |> with_block()
+
+      mock_contract_creation_trace_fetching(transaction)
+
+      # zero-value calls are not requested by default, which doesn't affect contract creations
+      params = %{
+        "module" => "account",
+        "action" => "txlistinternal",
+        "txhash" => "#{transaction.hash}"
+      }
+
+      assert response =
+               conn
+               |> get("/api/v1", params)
+               |> json_response(200)
+
+      assert [
+               %{
+                 "contractAddress" => "0x205a6b72ce16736c9d87172568a9c0cb9304de0d",
+                 "from" => "0x117b358218da5a4f647072ddb50ded038ed63d17",
+                 "transactionHash" => transaction_hash,
+                 "type" => "create"
+               }
+             ] = response["result"]
+
+      assert transaction_hash == to_string(transaction.hash)
+      assert response["status"] == "1"
+      assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+    end
   end
 
   describe "txlistinternal with address" do
+    # `EthereumJSONRPC.RSK` and `EthereumJSONRPC.Filecoin` variants trace whole blocks instead of transactions
+    if Application.compile_env(:explorer, :chain_type) not in [:rsk, :filecoin] do
+      test "pages the internal transactions merged from the DB and the node when their storage is disabled", %{
+        conn: conn
+      } do
+        initial_config = Application.get_env(:explorer, InternalTransaction)
+        initial_geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+
+        Application.put_env(
+          :explorer,
+          InternalTransaction,
+          Keyword.merge(initial_config || [], storage_disabled?: true)
+        )
+
+        Application.put_env(
+          :ethereum_jsonrpc,
+          EthereumJSONRPC.Geth,
+          Keyword.merge(initial_geth_config || [], tracer: "call_tracer", block_traceable?: false)
+        )
+
+        on_exit(fn ->
+          Application.put_env(:explorer, InternalTransaction, initial_config)
+          Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, initial_geth_config)
+        end)
+
+        address = insert(:address)
+        address_hash_str = to_string(address.hash)
+
+        # an older contract creation is stored in the DB
+        creation_transaction = :transaction |> insert() |> with_block(insert(:block, number: 100))
+
+        insert(:internal_transaction_create,
+          transaction: creation_transaction,
+          transaction_index: creation_transaction.index,
+          index: 1,
+          from_address: address,
+          block_number: creation_transaction.block_number
+        )
+
+        # a newer call is fetched from the node
+        call_transaction = :transaction |> insert() |> with_block(insert(:block, number: 200))
+
+        insert(:deleted_internal_transactions_address_placeholder,
+          address_id: AddressIdToAddressHash.find_or_create(address.hash).address_id,
+          block_number: call_transaction.block_number,
+          count_tos: 0,
+          count_froms: 1
+        )
+
+        expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn [%{id: id, params: _}], _ ->
+          {:ok,
+           [
+             %{
+               id: id,
+               result: %{
+                 "type" => "CALL",
+                 "from" => "0x117b358218da5a4f647072ddb50ded038ed63d17",
+                 "to" => address_hash_str,
+                 "value" => "0x0",
+                 "gas" => "0x106f5",
+                 "gasUsed" => "0x106f5",
+                 "input" => "0x",
+                 "output" => "0x",
+                 "calls" => [
+                   %{
+                     "type" => "CALL",
+                     "from" => address_hash_str,
+                     "to" => "0x4200000000000000000000000000000000000015",
+                     "value" => "0x1",
+                     "gas" => "0xe9a3c",
+                     "gasUsed" => "0x4a28",
+                     "input" => "0x",
+                     "output" => "0x"
+                   }
+                 ]
+               }
+             }
+           ]}
+        end)
+
+        params = %{
+          "module" => "account",
+          "action" => "txlistinternal",
+          "address" => address_hash_str,
+          "offset" => "1"
+        }
+
+        assert %{"result" => [%{"blockNumber" => "200", "type" => "call"}]} =
+                 conn
+                 |> get("/api", Map.put(params, "page", "1"))
+                 |> json_response(200)
+
+        assert %{"result" => [%{"blockNumber" => "100", "type" => "create"}]} =
+                 response =
+                 conn
+                 |> get("/api", Map.put(params, "page", "2"))
+                 |> json_response(200)
+
+        assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+      end
+
+      test "reports the internal transactions not fetched from the node within the request when their storage is disabled",
+           %{conn: conn} do
+        initial_config = Application.get_env(:explorer, InternalTransaction)
+        initial_geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+
+        Application.put_env(
+          :explorer,
+          InternalTransaction,
+          Keyword.merge(initial_config || [], storage_disabled?: true)
+        )
+
+        Application.put_env(
+          :ethereum_jsonrpc,
+          EthereumJSONRPC.Geth,
+          Keyword.merge(initial_geth_config || [], tracer: "call_tracer", block_traceable?: true)
+        )
+
+        on_exit(fn ->
+          Application.put_env(:explorer, InternalTransaction, initial_config)
+          Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, initial_geth_config)
+        end)
+
+        address = insert(:address)
+        address_hash_str = to_string(address.hash)
+        address_id = AddressIdToAddressHash.find_or_create(address.hash).address_id
+
+        for block_number <- 1..7 do
+          insert(:block, number: block_number)
+
+          insert(:deleted_internal_transactions_address_placeholder,
+            address_id: address_id,
+            block_number: block_number,
+            count_tos: 1,
+            count_froms: 0
+          )
+        end
+
+        # blocks 7 and 1 transfer value to the address, and the blocks between them have zero-value calls to it only
+        expect(EthereumJSONRPC.Mox, :json_rpc, 7, fn requests, _ ->
+          {:ok,
+           Enum.map(requests, fn %{id: id, params: [block_quantity, _]} ->
+             %{
+               id: id,
+               result: [
+                 %{
+                   "result" => %{
+                     "calls" => [
+                       %{
+                         "from" => "0x4200000000000000000000000000000000000015",
+                         "gas" => "0xe9a3c",
+                         "gasUsed" => "0x4a28",
+                         "input" => "0x",
+                         "output" => "0x",
+                         "to" => address_hash_str,
+                         "type" => "CALL",
+                         "value" => if(block_quantity in ["0x7", "0x1"], do: "0x1", else: "0x0")
+                       }
+                     ],
+                     "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
+                     "gas" => "0xf4240",
+                     "gasUsed" => "0xb6f9",
+                     "input" => "0x",
+                     "output" => "0x",
+                     "to" => "0x4200000000000000000000000000000000000015",
+                     "type" => "CALL",
+                     "value" => "0x0"
+                   },
+                   "txHash" => "0x" <> String.pad_leading(String.trim_leading(block_quantity, "0x"), 64, "0")
+                 }
+               ]
+             }
+           end)}
+        end)
+
+        params = %{
+          "module" => "account",
+          "action" => "txlistinternal",
+          "address" => address_hash_str,
+          "offset" => "1"
+        }
+
+        assert %{"status" => "1", "result" => [%{"blockNumber" => "7"}]} =
+                 conn
+                 |> get("/api", Map.put(params, "page", "1"))
+                 |> json_response(200)
+
+        # the rounds of the request are over before it finds anything after block 7
+        assert %{"status" => "2", "message" => message, "result" => []} =
+                 response =
+                 conn
+                 |> get("/api", Map.put(params, "page", "2"))
+                 |> json_response(200)
+
+        assert message =~ "endblock=1 and page=1"
+        assert :ok = ExJsonSchema.Validator.validate(txlistinternal_schema(), response)
+
+        # the second internal transaction is the first one of the new block range
+        assert %{"status" => "1", "result" => [%{"blockNumber" => "1"}]} =
+                 conn
+                 |> get("/api", Map.merge(params, %{"endblock" => "1", "page" => "1"}))
+                 |> json_response(200)
+      end
+    end
+
     test "with an invalid address", %{conn: conn} do
       params = %{
         "module" => "account",
@@ -5543,6 +5844,37 @@ defmodule BlockScoutWeb.API.RPC.AddressControllerTest do
 
   defp pending_head_tolerance do
     Application.get_env(:explorer, PendingOperationsHelper)[:internal_transactions_pending_head_tolerance]
+  end
+
+  # `debug_traceBlockByNumber` result with a transaction that transfers value in a nested call
+  defp block_traces_with_value_call(block_number) do
+    [
+      %{
+        "result" => %{
+          "calls" => [
+            %{
+              "from" => "0x4200000000000000000000000000000000000015",
+              "gas" => "0xe9a3c",
+              "gasUsed" => "0x4a28",
+              "input" => "0x",
+              "output" => "0x",
+              "to" => "0x4200000000000000000000000000000000000016",
+              "type" => "CALL",
+              "value" => "0x1"
+            }
+          ],
+          "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
+          "gas" => "0xf4240",
+          "gasUsed" => "0xb6f9",
+          "input" => "0x",
+          "output" => "0x",
+          "to" => "0x4200000000000000000000000000000000000015",
+          "type" => "CALL",
+          "value" => "0x0"
+        },
+        "txHash" => "0x" <> String.pad_leading("#{block_number}", 64, "0")
+      }
+    ]
   end
 
   defp insert_internal_transaction(block, from_address, to_address) do

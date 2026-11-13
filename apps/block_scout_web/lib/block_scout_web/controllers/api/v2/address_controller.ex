@@ -15,7 +15,8 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       current_filter: 1,
       paging_params_with_fiat_value: 1,
       fetch_scam_token_toggle: 2,
-      address_to_internal_transactions: 2
+      address_to_internal_transactions: 2,
+      internal_transactions_next_page_params_from_block: 2
     ]
 
   import BlockScoutWeb.PagingHelper,
@@ -673,10 +674,10 @@ defmodule BlockScoutWeb.API.V2.AddressController do
             |> Keyword.merge(@api_true)
             |> Keyword.put(:include_zero_value, Map.get(params, :include_zero_value, true))
 
-          results_plus_one = address_to_internal_transactions(address_hash, full_options)
-
           {internal_transactions, next_page_params} =
-            paginate_list(results_plus_one, params, full_options[:paging_options])
+            address_hash
+            |> address_to_internal_transactions(full_options)
+            |> paginate_internal_transactions(params, full_options[:paging_options])
 
           pending_status? =
             InternalTransactionsPendingStatusHelper.address_internal_transactions_pending?(
@@ -714,6 +715,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       end
     end
   end
+
+  defp paginate_internal_transactions({:ok, results_plus_one}, params, paging_options),
+    do: paginate_list(results_plus_one, params, paging_options)
+
+  # fetched from the node, and the request stopped before `next_block_number`: the next page goes on with it
+  defp paginate_internal_transactions({:incomplete, internal_transactions, next_block_number}, params, _paging_options),
+    do: {internal_transactions, internal_transactions_next_page_params_from_block(params, next_block_number)}
 
   operation :logs,
     summary: "List event logs emitted by or involving a specific address",
