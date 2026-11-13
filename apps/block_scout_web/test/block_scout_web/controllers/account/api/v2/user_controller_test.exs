@@ -12,6 +12,7 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
 
   alias Explorer.Chain.Address
   alias Explorer.Repo
+  alias Explorer.ThirdPartyIntegrations.Keycloak
 
   setup %{conn: conn} do
     auth = build(:auth)
@@ -1087,6 +1088,268 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
              |> get("/api/account/v2/user/custom_abis")
              |> json_response(200) == []
     end
+  end
+
+  describe "/api/account/v2/user/settings" do
+    @keycloak_user_id "0c1f5c1e-6f2a-4d3b-9b8e-2a7d5f4e3c21"
+    @keycloak_user_path "/admin/realms/test/users/#{@keycloak_user_id}"
+    @keycloak_settings_path "/realms/test/blockscout/users/#{@keycloak_user_id}/settings"
+
+    setup %{conn: conn, user: user} do
+      bypass = Bypass.open()
+      keycloak_env = Application.get_env(:explorer, Keycloak)
+      auth0_env = Application.get_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth)
+
+      # settings are available only when Keycloak is the active auth provider
+      Application.put_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth, Keyword.put(auth0_env, :domain, nil))
+
+      Application.put_env(:explorer, Keycloak,
+        domain: "http://localhost:#{bypass.port}",
+        realm: "test",
+        # unique client_id prevents reuse of an admin token cached in Redis by another test run
+        client_id: "client_#{System.unique_integer([:positive])}",
+        client_secret: "secret"
+      )
+
+      Application.put_env(:tesla, :adapter, Tesla.Adapter.Mint)
+
+      on_exit(fn ->
+        Application.put_env(:explorer, Keycloak, keycloak_env)
+        Application.put_env(:ueberauth, Ueberauth.Strategy.Auth0.OAuth, auth0_env)
+        Application.put_env(:tesla, :adapter, Explorer.Mock.TeslaAdapter)
+      end)
+
+      Bypass.stub(bypass, "POST", "/realms/test/protocol/openid-connect/token", fn conn ->
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(%{"access_token" => "token", "expires_in" => 300}))
+      end)
+
+      {:ok,
+       bypass: bypass, conn: Plug.Test.init_test_session(conn, current_user: Map.put(user, :uid, @keycloak_user_id))}
+    end
+
+    test "get settings", %{conn: conn, bypass: bypass} do
+      expect_get_keycloak_user(bypass, %{
+        "address" => ["0x0000000000000000000000000000000000000001"],
+        "settings.address_format" => ["base16"],
+        "settings.table_columns_token_transfers_index" => [~s({"hidden":["age"]})]
+      })
+
+      assert conn
+             |> get("/api/account/v2/user/settings")
+             |> json_response(200) == %{
+               "address_format" => "base16",
+               "table_columns_token_transfers_index" => ~s({"hidden":["age"]})
+             }
+    end
+
+    test "get settings of user without attributes", %{conn: conn, bypass: bypass} do
+      expect_get_keycloak_user(bypass, nil)
+
+      assert conn |> get("/api/account/v2/user/settings") |> json_response(200) == %{}
+    end
+
+    test "update settings", %{conn: conn, bypass: bypass} do
+      expect_patch_keycloak_settings(bypass, %{"b" => "3", "c" => "4", "untouched" => "5"})
+
+      assert conn
+             |> patch_settings(%{"a" => nil, "b" => "3", "c" => "4"})
+             |> json_response(200) == %{"b" => "3", "c" => "4", "untouched" => "5"}
+
+      # only the changes are sent, the extension applies them to the stored settings
+      assert_receive {:keycloak_patch, diff}
+      assert diff == %{"a" => nil, "b" => "3", "c" => "4"}
+    end
+
+    # Several Blockscout instances share a realm, so settings of a user can be updated by two requests at once.
+    # A read-modify-write of the whole user via the admin API drops the first change when the second request read
+    # the user before the first one wrote it. The fake Keycloak always returns such a stale user on read.
+    test "concurrent updates of different settings keep both changes", %{conn: conn, bypass: bypass} do
+      attributes = start_supervised!({Agent, fn -> %{"settings.untouched" => ["5"]} end})
+      stale_user = %{"id" => @keycloak_user_id, "username" => "user", "attributes" => Agent.get(attributes, & &1)}
+
+      # admin API: reads return the stale user, writes replace all attributes
+      Bypass.stub(bypass, "GET", @keycloak_user_path, fn conn ->
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(stale_user))
+      end)
+
+      Bypass.stub(bypass, "PUT", @keycloak_user_path, fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        Agent.update(attributes, fn _ -> Utils.JSON.decode!(body)["attributes"] end)
+        Plug.Conn.resp(conn, 204, "")
+      end)
+
+      # extension: applies the changes to the stored attributes atomically
+      Bypass.stub(bypass, "PATCH", @keycloak_settings_path, fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+
+        settings =
+          Agent.get_and_update(attributes, fn stored ->
+            updated =
+              Enum.reduce(Utils.JSON.decode!(body), stored, fn
+                {key, nil}, acc -> Map.delete(acc, "settings." <> key)
+                {key, value}, acc -> Map.put(acc, "settings." <> key, [value])
+              end)
+
+            {Map.new(updated, fn {"settings." <> key, [value]} -> {key, value} end), updated}
+          end)
+
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(settings))
+      end)
+
+      assert conn |> patch_settings(%{"a" => "1"}) |> json_response(200)
+      assert conn |> patch_settings(%{"b" => "2"}) |> json_response(200)
+
+      assert Agent.get(attributes, & &1) == %{
+               "settings.untouched" => ["5"],
+               "settings.a" => ["1"],
+               "settings.b" => ["2"]
+             }
+    end
+
+    test "stores non-blank values and _json key as is", %{conn: conn, bypass: bypass} do
+      # NBSP is not whitespace for Java's String.isBlank/0, so Keycloak keeps it
+      settings = %{"padded" => "  dark \n", "nbsp" => " ", "_json" => "dark"}
+      expect_patch_keycloak_settings(bypass, settings)
+
+      assert conn |> patch_settings(settings) |> json_response(200) == settings
+      assert_receive {:keycloak_patch, ^settings}
+    end
+
+    test "accepts a full sync of maximum settings in one request", %{conn: conn, bypass: bypass} do
+      # every byte of "\x01" is JSON-escaped as \u0001
+      settings =
+        Map.new(1..100, fn i ->
+          {String.duplicate("k", 61) <> String.pad_leading("#{i}", 3, "0"), String.duplicate("\x01", 2048)}
+        end)
+
+      expect_patch_keycloak_settings(bypass, settings)
+
+      body = Utils.JSON.encode!(settings)
+      assert byte_size(body) > 1_000_000
+
+      assert conn
+             |> put_req_header("content-type", "application/json")
+             |> patch("/api/account/v2/user/settings", body)
+             |> json_response(200) == settings
+
+      assert_receive {:keycloak_patch, ^settings}
+    end
+
+    test "rejects invalid key", %{conn: conn} do
+      assert %{"message" => "Invalid setting key" <> _} =
+               conn |> patch_settings(%{"valid_key" => "1", "Invalid-Key" => "2"}) |> json_response(422)
+    end
+
+    test "rejects key with trailing newline", %{conn: conn} do
+      assert %{"message" => "Invalid setting key \"theme\\n\"" <> _} =
+               conn |> patch_settings(%{"theme\n" => "dark"}) |> json_response(422)
+    end
+
+    test "rejects too long key", %{conn: conn} do
+      conn |> patch_settings(%{String.duplicate("a", 65) => "1"}) |> json_response(422)
+    end
+
+    test "rejects body that is not a JSON object", %{conn: conn} do
+      for body <- ["dark", 1, [], [%{"a" => "1"}], nil] do
+        assert %{"message" => "Request body must be a JSON object"} =
+                 conn |> patch_settings(body) |> json_response(422)
+      end
+    end
+
+    test "rejects body with unsupported content type", %{conn: conn} do
+      for content_type <- ["text/plain", "application/x-www-form-urlencoded"] do
+        assert %{"message" => "Request body must be a JSON object"} =
+                 conn
+                 |> put_req_header("content-type", content_type)
+                 |> patch("/api/account/v2/user/settings", "a=1")
+                 |> json_response(422)
+      end
+    end
+
+    test "rejects non-string value", %{conn: conn} do
+      assert %{"message" => "Invalid value for setting a: must be a string or null"} =
+               conn |> patch_settings(%{"a" => 1}) |> json_response(422)
+    end
+
+    test "rejects blank value", %{conn: conn} do
+      # whitespace by Java's Character.isWhitespace/1, which Keycloak uses to drop blank attribute values
+      for value <- ["", "   ", "\t\n", "\x1F", " ", "　"] do
+        assert %{"message" => "Invalid value for setting a: must not be blank, use null to delete the setting"} =
+                 conn |> patch_settings(%{"a" => value}) |> json_response(422)
+      end
+    end
+
+    test "rejects too long value", %{conn: conn} do
+      assert %{"message" => "Value for setting a exceeds 2048 bytes"} =
+               conn |> patch_settings(%{"a" => String.duplicate("a", 2049)}) |> json_response(422)
+    end
+
+    test "returns validation error of the extension", %{conn: conn, bypass: bypass} do
+      # the number of settings is checked by the extension, as it depends on the stored settings
+      Bypass.expect_once(bypass, "PATCH", @keycloak_settings_path, fn conn ->
+        Plug.Conn.resp(conn, 422, Utils.JSON.encode!(%{"error" => "Number of settings exceeds 100"}))
+      end)
+
+      assert %{"message" => "Number of settings exceeds 100"} =
+               conn |> patch_settings(%{"new_1" => "1"}) |> json_response(422)
+    end
+
+    test "returns 404 when the user does not exist in Keycloak", %{conn: conn, bypass: bypass} do
+      not_found = Utils.JSON.encode!(%{"error" => "User not found"})
+
+      Bypass.expect_once(bypass, "GET", @keycloak_user_path, &Plug.Conn.resp(&1, 404, not_found))
+      Bypass.expect_once(bypass, "PATCH", @keycloak_settings_path, &Plug.Conn.resp(&1, 404, not_found))
+
+      assert %{"message" => "User not found"} = conn |> get("/api/account/v2/user/settings") |> json_response(404)
+      assert %{"message" => "User not found"} = conn |> patch_settings(%{"a" => "1"}) |> json_response(404)
+    end
+
+    test "returns 500 when the Keycloak extension is not installed", %{conn: conn, bypass: bypass} do
+      # Keycloak's response to a request to a missing endpoint
+      Bypass.expect_once(bypass, "PATCH", @keycloak_settings_path, fn conn ->
+        Plug.Conn.resp(conn, 404, Utils.JSON.encode!(%{"error" => "HTTP 404 Not Found"}))
+      end)
+
+      assert conn |> patch_settings(%{"a" => "1"}) |> json_response(500)
+    end
+
+    test "returns 401 for unauthenticated user" do
+      assert build_conn() |> get("/api/account/v2/user/settings") |> json_response(401)
+      assert build_conn() |> patch_settings(%{"a" => "1"}) |> json_response(401)
+    end
+
+    test "returns 404 when Keycloak is not configured", %{conn: conn} do
+      Application.put_env(:explorer, Keycloak, domain: nil)
+
+      assert conn |> get("/api/account/v2/user/settings") |> json_response(404)
+      assert conn |> patch_settings(%{"a" => "1"}) |> json_response(404)
+    end
+  end
+
+  defp expect_get_keycloak_user(bypass, attributes) do
+    user = %{"id" => @keycloak_user_id, "username" => "user", "email" => "user@example.com", "enabled" => true}
+    # Keycloak omits "attributes" for users without attributes
+    user = if attributes, do: Map.put(user, "attributes", attributes), else: user
+
+    Bypass.expect_once(bypass, "GET", @keycloak_user_path, fn conn ->
+      Plug.Conn.resp(conn, 200, Utils.JSON.encode!(user))
+    end)
+  end
+
+  defp expect_patch_keycloak_settings(bypass, settings) do
+    test_pid = self()
+
+    Bypass.expect_once(bypass, "PATCH", @keycloak_settings_path, fn conn ->
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
+      send(test_pid, {:keycloak_patch, Utils.JSON.decode!(body)})
+      Plug.Conn.resp(conn, 200, Utils.JSON.encode!(settings))
+    end)
+  end
+
+  defp patch_settings(conn, body) do
+    conn
+    |> put_req_header("content-type", "application/json")
+    |> patch("/api/account/v2/user/settings", Utils.JSON.encode!(body))
   end
 
   def convert_date(request) do
