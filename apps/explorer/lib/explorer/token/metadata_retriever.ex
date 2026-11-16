@@ -165,6 +165,33 @@ defmodule Explorer.Token.MetadataRetriever do
     @total_supply_signature => []
   }
 
+  # 89fb4c66 = keccak256(erc20TotalSupply())
+  @erc20_total_supply_signature "89fb4c66"
+  # c5ab3ba6 = keccak256(erc721TotalSupply())
+  @erc721_total_supply_signature "c5ab3ba6"
+  @erc404_signatures [@erc20_total_supply_signature, @erc721_total_supply_signature]
+  @erc404_functions Map.new(@erc404_signatures, &{&1, []})
+  @erc404_abi [
+    %{
+      "constant" => true,
+      "inputs" => [],
+      "name" => "erc20TotalSupply",
+      "outputs" => [%{"name" => "", "type" => "uint256"}],
+      "payable" => false,
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "constant" => true,
+      "inputs" => [],
+      "name" => "erc721TotalSupply",
+      "outputs" => [%{"name" => "", "type" => "uint256"}],
+      "payable" => false,
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ]
+
   @doc """
   Read functions below in the token's smart contract given the contract's address hash.
 
@@ -250,7 +277,10 @@ defmodule Explorer.Token.MetadataRetriever do
       raw_metadata
       |> format_contract_functions_result(contract_address_hash)
 
-    metadata = try_to_fetch_erc_1155_name(base_metadata, contract_address_hash, type)
+    metadata =
+      base_metadata
+      |> try_to_fetch_erc_1155_name(contract_address_hash, type)
+      |> maybe_put_erc404_type(contract_address_hash, type)
 
     if Enum.empty?(metadata) && set_skip_metadata do
       Map.put(
@@ -467,6 +497,55 @@ defmodule Explorer.Token.MetadataRetriever do
         :error
     end
   end
+
+  @doc """
+  Whether the contract is an [ERC-404](https://github.com/Pandora-Labs-Org/erc404)
+  token, judged by the `erc20TotalSupply()` and `erc721TotalSupply()` getters of
+  the reference implementation.
+
+  Some ERC-404 tokens emit the standard `Transfer` event for both of their legs:
+  with 3 topics for the fungible amount and with 4 topics for the NFT id. Their
+  logs alone don't set them apart from contracts that just happen to emit both
+  kinds of `Transfer`, so the contract is asked directly. Only an answer from
+  both getters counts as "yes".
+
+  Returns `{:ok, true}` or `{:ok, false}` when the contract answered — a revert
+  counts as an answer — and `:error` when the node did not, so that the caller
+  can tell a failed lookup apart from a denied claim.
+  """
+  @spec erc404_support(String.t() | Hash.Address.t()) :: {:ok, boolean()} | :error
+  def erc404_support(contract_address_hash) do
+    results =
+      contract_address_hash
+      |> to_string()
+      |> Reader.query_contract(@erc404_abi, @erc404_functions, false)
+
+    answers = Enum.map(@erc404_signatures, &Map.get(results, &1))
+
+    cond do
+      Enum.all?(answers, &match?({:ok, [value]} when is_integer(value), &1)) -> {:ok, true}
+      Enum.any?(answers, &erc404_getter_denied?/1) -> {:ok, false}
+      true -> :error
+    end
+  end
+
+  defp erc404_getter_denied?({:error, :invalid_data}), do: true
+  defp erc404_getter_denied?({:error, _reason} = error), do: contract_failure?(error)
+  defp erc404_getter_denied?(_answer), do: false
+
+  # A newly seen ERC-404 token that emits the standard `Transfer` event for both
+  # of its legs is resolved to ERC-721 from its logs. Such a token is only worth
+  # asking when it answered `decimals()`, which an ordinary ERC-721 contract
+  # doesn't implement, so that ordinary NFT collections cost no extra calls.
+  defp maybe_put_erc404_type(%{decimals: decimals} = metadata, contract_address_hash, "ERC-721")
+       when not is_nil(decimals) do
+    case erc404_support(contract_address_hash) do
+      {:ok, true} -> Map.put(metadata, :type, "ERC-404")
+      _ -> metadata
+    end
+  end
+
+  defp maybe_put_erc404_type(metadata, _contract_address_hash, _type), do: metadata
 
   @doc """
   Reads the [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056) multiplier of a

@@ -912,6 +912,15 @@ config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
   blocks_batch_size:
     ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_BLOCKS_BATCH_SIZE", 10_000, min: 1)
 
+config :explorer, Explorer.Migrator.SanitizeErc404Tokens,
+  enabled: ConfigHelper.parse_bool_env_var("MIGRATION_SANITIZE_ERC404_TOKENS_ENABLED", "false"),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_ERC404_TOKENS_BATCH_SIZE", 1, min: 1),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_ERC404_TOKENS_CONCURRENCY", 1, min: 1),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_SANITIZE_ERC404_TOKENS_TIMEOUT", "0s"),
+  blocks_batch_size:
+    ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_ERC404_TOKENS_BLOCKS_BATCH_SIZE", 10_000, min: 1),
+  from_block: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_ERC404_TOKENS_FROM_BLOCK", 0, min: 0)
+
 config :explorer, Explorer.Migrator.SanitizeEip7708TokenTransfers,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_EIP7708_TOKEN_TRANSFERS_BATCH_SIZE", 500, min: 1),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_EIP7708_TOKEN_TRANSFERS_CONCURRENCY", 1, min: 1),

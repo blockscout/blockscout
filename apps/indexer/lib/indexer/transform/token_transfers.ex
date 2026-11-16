@@ -107,7 +107,7 @@ defmodule Indexer.Transform.TokenTransfers do
     token_transfers =
       tokens_uniq
       |> sanitize_weth_transfers(rough_token_transfers, weth_transfers.token_transfers)
-      |> sanitize_scaled_ui_amount_transfer_types(token_types_map)
+      |> sanitize_transfer_types(token_types_map)
 
     if !skip_additional_fetchers? do
       token_transfers
@@ -217,19 +217,39 @@ defmodule Indexer.Transform.TokenTransfers do
      end), actual_token_types_map}
   end
 
-  # `token_transfers.token_type` is denormalized, and for every other type the
-  # value `do_parse/3` derived from the log is already right. ERC-8056 is the
-  # exception: its transfers look exactly like ERC-20 ones, so the type resolved
-  # for the token has to be carried over to them.
-  defp sanitize_scaled_ui_amount_transfer_types(token_transfers, token_types_map) do
+  # `token_transfers.token_type` is denormalized, and for most types the value
+  # `do_parse/3` derived from the log is already right. The exceptions are
+  # carried over from the type resolved for the token:
+  #
+  # * ERC-8056 transfers look exactly like ERC-20 ones;
+  # * ERC-404 tokens emit the standard `Transfer` event for their legs, either
+  #   for both of them (with 3 topics for the fungible amount and with 4 topics
+  #   for the NFT id) or for one of them next to a dedicated ERC-404 event. Such
+  #   legs are parsed as ERC-20 and ERC-721 transfers and get the shape of the
+  #   transfers parsed from the dedicated ERC-404 events.
+  defp sanitize_transfer_types(token_transfers, token_types_map) do
     Enum.map(token_transfers, fn token_transfer ->
-      if token_types_map[token_transfer.token_contract_address_hash] == "ERC-8056" do
-        %{token_transfer | token_type: "ERC-8056"}
-      else
-        token_transfer
+      case token_types_map[token_transfer.token_contract_address_hash] do
+        "ERC-8056" -> %{token_transfer | token_type: "ERC-8056"}
+        "ERC-404" -> to_erc404_transfer(token_transfer)
+        _ -> token_transfer
       end
     end)
   end
+
+  defp to_erc404_transfer(%{token_type: "ERC-20", amount: amount} = token_transfer) do
+    token_transfer
+    |> Map.delete(:amount)
+    |> Map.merge(%{token_type: "ERC-404", token_ids: [], amounts: [amount]})
+  end
+
+  defp to_erc404_transfer(%{token_type: "ERC-721"} = token_transfer) do
+    token_transfer
+    |> Map.delete(:amount)
+    |> Map.merge(%{token_type: "ERC-404", amounts: []})
+  end
+
+  defp to_erc404_transfer(token_transfer), do: token_transfer
 
   defp define_token_type(token_transfers) do
     Enum.reduce(token_transfers, nil, fn %{token_type: token_type}, acc ->

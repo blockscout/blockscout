@@ -94,6 +94,9 @@ config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enable
 
 config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions, enabled: false
 
+# ERC-404 tokens exist on a few chains only, so the sanitizer is opt-in
+config :explorer, Explorer.Migrator.SanitizeErc404Tokens, enabled: false
+
 config :explorer, Explorer.Utility.VersionConstantsUpdater, enabled: true
 
 config :explorer, Explorer.Utility.VersionUpgrade, enabled: true
