@@ -10,13 +10,15 @@ defmodule Indexer.Transform.AddressCoinBalances do
 
   use Utils.RuntimeEnvHelper,
     chain_type: [:explorer, :chain_type],
-    arc_native_token_system_address: [:indexer, [:arc, :arc_native_token_system_address]]
+    arc_native_token_system_address: [:indexer, [:arc, :arc_native_token_system_address]],
+    internal_transactions_fetcher_disabled?: [:indexer, [Indexer.Fetcher.InternalTransaction.Supervisor, :disabled?]]
 
   import Explorer.Helper, only: [truncate_address_hash: 1]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
   @burn_address_hash_string burn_address_hash_string()
 
+  alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain.TokenTransfer
 
   def params_set(%{} = import_options) do
@@ -215,14 +217,33 @@ defmodule Indexer.Transform.AddressCoinBalances do
     # a transaction MUST have a `from_address_hash`
     initial
     |> MapSet.put(%{address_hash: from_address_hash, block_number: block_number})
-    |> (&(case transaction_params do
-            %{to_address_hash: to_address_hash} when is_binary(to_address_hash) ->
-              MapSet.put(&1, %{address_hash: to_address_hash, block_number: block_number})
-
-            _ ->
-              &1
-          end)).()
+    |> put_transaction_to_address(transaction_params, block_number)
     |> (&transactions_params_chain_type_fields_reducer(transaction_params, &1)).()
+  end
+
+  # The recipient of a zero-value transaction is skipped when the block is going
+  # to be traced: the top-level call itself cannot change the recipient's balance,
+  # and any value moved by nested calls is picked up from internal transactions
+  # (see `internal_transactions_params_reducer/2`). Otherwise contracts that are
+  # called in nearly every block get a coin balance row per block with the same value.
+  defp put_transaction_to_address(acc, %{to_address_hash: to_address_hash} = transaction_params, block_number)
+       when is_binary(to_address_hash) do
+    if to_address_balance_may_change?(transaction_params, block_number) do
+      MapSet.put(acc, %{address_hash: to_address_hash, block_number: block_number})
+    else
+      acc
+    end
+  end
+
+  defp put_transaction_to_address(acc, _transaction_params, _block_number), do: acc
+
+  defp to_address_balance_may_change?(%{value: 0}, block_number), do: not internal_transactions_indexed?(block_number)
+  defp to_address_balance_may_change?(_transaction_params, _block_number), do: true
+
+  # Internal transactions are fetched only when the fetcher is enabled and the
+  # block is inside the trace block ranges.
+  defp internal_transactions_indexed?(block_number) do
+    not internal_transactions_fetcher_disabled?() and RangesHelper.traceable_block_number?(block_number)
   end
 
   if @chain_identity == {:optimism, :celo} do
