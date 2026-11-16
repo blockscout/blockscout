@@ -69,9 +69,14 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
 
     Logger.info("SanitizeErc404Tokens found #{Enum.count(candidates)} candidate tokens")
 
-    state
-    |> Map.merge(%{"pending" => candidates, "candidates" => candidates})
-    |> last_unprocessed_identifiers()
+    state = Map.merge(state, %{"pending" => candidates, "candidates" => candidates})
+
+    # The state is otherwise saved only after the first batch is processed. A
+    # token converted in an interrupted first batch may no longer be found by the
+    # candidate queries, so the whole list is saved before the conversion starts.
+    MigrationStatus.update_meta(@migration_name, state)
+
+    last_unprocessed_identifiers(state)
   end
 
   @impl FillingMigration

@@ -6,7 +6,8 @@ defmodule Indexer.Fetcher.TokenTest do
   import Mox
 
   alias Explorer.Chain
-  alias Explorer.Chain.Token
+  alias Explorer.Chain.{Token, TokenTransfer}
+  alias Explorer.Repo
   alias Indexer.Fetcher.Token, as: TokenFetcher
 
   setup :verify_on_exit!
@@ -105,6 +106,46 @@ defmodule Indexer.Fetcher.TokenTest do
                  Chain.token_from_address_hash(contract_address_hash)
 
         assert TokenFetcher.init([], &[&1 | &2], json_rpc_named_arguments) == []
+      end
+    end
+
+    test "finishes the ERC-404 conversion of a token left uncataloged by a failed attempt", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      # a failed attempt retypes the token before converting its transfers
+      token = insert(:token, type: "ERC-404", decimals: 18, cataloged: false)
+      contract_address_hash = token.contract_address_hash
+      token_address = Repo.preload(token, :contract_address).contract_address
+
+      erc20_transfer =
+        insert(:token_transfer,
+          from_address: insert(:address),
+          token_contract_address: token_address,
+          token_type: "ERC-20",
+          amount: Decimal.new(5),
+          token_ids: nil
+        )
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn requests, _opts ->
+          {:ok,
+           Enum.map(requests, fn %{id: id} ->
+             %{id: id, result: "0x0000000000000000000000000000000000000000000000000000000000000012"}
+           end)}
+        end)
+
+        assert TokenFetcher.run([contract_address_hash], json_rpc_named_arguments) == :ok
+
+        assert {:ok, %Token{type: "ERC-404", cataloged: true}} = Chain.token_from_address_hash(contract_address_hash)
+
+        assert %TokenTransfer{token_type: "ERC-404", amount: nil, token_ids: [], amounts: [amount]} =
+                 Repo.get_by(TokenTransfer,
+                   transaction_hash: erc20_transfer.transaction_hash,
+                   block_hash: erc20_transfer.block_hash,
+                   log_index: erc20_transfer.log_index
+                 )
+
+        assert Decimal.equal?(amount, 5)
       end
     end
   end

@@ -103,11 +103,13 @@ defmodule Explorer.Chain.Token.Erc404 do
       where: ^Log.topic_filter_dynamic(:first_topic, dedicated_events()),
       where: l.block_number >= ^from_block_number,
       # a block keeps only one log with the given index, which is enough to tell
-      # whether the log has been cataloged
+      # whether the log has been cataloged; the block hash rules out the transfers
+      # of a reorged block with the same number
       where:
         not exists(
           from(tt in TokenTransfer,
             where: tt.block_number == parent_as(:log).block_number,
+            where: tt.block_hash == parent_as(:log).block_hash,
             where: tt.log_index == parent_as(:log).index
           )
         ),

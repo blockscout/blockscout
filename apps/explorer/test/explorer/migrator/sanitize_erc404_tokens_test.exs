@@ -176,9 +176,21 @@ defmodule Explorer.Migrator.SanitizeErc404TokensTest do
     assert MigrationStatus.get_status(@migration_name) == nil
 
     SanitizeErc404Tokens.start_link([])
-    Process.sleep(300)
 
-    assert MigrationStatus.get_status(@migration_name) == "completed"
+    assert wait_for_status("completed", 5_000) == "completed"
+  end
+
+  defp wait_for_status(_expected_status, timeout) when timeout <= 0, do: MigrationStatus.get_status(@migration_name)
+
+  defp wait_for_status(expected_status, timeout) do
+    case MigrationStatus.get_status(@migration_name) do
+      ^expected_status ->
+        expected_status
+
+      _ ->
+        Process.sleep(50)
+        wait_for_status(expected_status, timeout - 50)
+    end
   end
 
   defp reload_transfer(%TokenTransfer{} = token_transfer) do
