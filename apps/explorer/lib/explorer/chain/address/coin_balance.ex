@@ -215,7 +215,6 @@ defmodule Explorer.Chain.Address.CoinBalance do
     balances_raw =
       address_hash
       |> fetch_coin_balances(paging_options)
-      |> page_coin_balances(paging_options)
       |> Chain.select_repo(options).all()
       |> preload_transactions(options)
 
@@ -442,9 +441,20 @@ defmodule Explorer.Chain.Address.CoinBalance do
     )
   end
 
-  @doc false
-  def fetch_coin_balances(address_hash, %PagingOptions{page_size: page_size}) do
-    query =
+  @doc """
+  Builds a query returning up to `page_size` coin balance changes (rows whose
+  `delta` against the previous fetched balance is non-zero) for `address_hash`,
+  newest first, starting below the paging key.
+
+  The paging key is applied in the same query that computes `delta`, so it
+  filters rows before the window function runs. Each row's `delta` depends only
+  on older rows, so the result is the same as filtering afterwards, but a
+  condition outside the subquery cannot be pushed below the window function and
+  every next page would rescan the address history from the latest block.
+  """
+  @spec fetch_coin_balances(Hash.Address.t(), PagingOptions.t()) :: Ecto.Query.t()
+  def fetch_coin_balances(address_hash, %PagingOptions{page_size: page_size} = paging_options) do
+    base_query =
       from(
         cb in CoinBalance,
         where: cb.address_hash == ^address_hash,
@@ -455,8 +465,11 @@ defmodule Explorer.Chain.Address.CoinBalance do
         }
       )
 
+    query = page_coin_balances(base_query, paging_options)
+
     from(balance in subquery(query),
       where: balance.delta != 0,
+      order_by: [desc: balance.block_number],
       limit: ^page_size,
       select_merge: %{
         transaction_hash: nil

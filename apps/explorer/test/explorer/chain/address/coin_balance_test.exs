@@ -155,6 +155,26 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       expected_deltas = [600, -300, 800, 500, -700] |> Enum.map(&Decimal.new(&1))
       assert(deltas == expected_deltas)
     end
+
+    test "applies the paging key before computing deltas" do
+      address = insert(:address)
+
+      [b1, b2, b3, b4] =
+        [1000, 2200, 1500, 2000]
+        |> Enum.map(fn value ->
+          block = insert(:block)
+          insert(:fetched_balance, address_hash: address.hash, value: value, block_number: block.number)
+          block.number
+        end)
+
+      result =
+        address.hash
+        |> CoinBalance.fetch_coin_balances(%PagingOptions{page_size: 50, key: {b4}})
+        |> Repo.all()
+
+      assert Enum.map(result, & &1.block_number) == [b3, b2, b1]
+      assert Enum.map(result, & &1.delta) == Enum.map([-700, 1200, 1000], &Decimal.new/1)
+    end
   end
 
   describe "balances_by_day/1" do
