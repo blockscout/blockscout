@@ -9,16 +9,25 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesTest do
   alias Explorer.Utility.MissingBlockRange
   alias Indexer.Fetcher.InternalTransaction
 
+  @head_block_number 10_000
+
   setup do
     initial_fetcher_env = Application.get_env(:indexer, InternalTransaction)
     initial_json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    initial_mode = Application.get_env(:explorer, :mode)
+    initial_runner_env = Application.get_env(:explorer, CoinBalances)
 
     on_exit(fn ->
       Application.put_env(:indexer, InternalTransaction, initial_fetcher_env)
       Application.put_env(:explorer, :json_rpc_named_arguments, initial_json_rpc_named_arguments)
+      Application.put_env(:explorer, :mode, initial_mode)
+      Application.put_env(:explorer, CoinBalances, initial_runner_env)
     end)
 
     set_internal_transactions_fetcher(true)
+
+    # the chain head is far above the blocks of the tests
+    insert(:block, number: @head_block_number)
 
     %{address_hash: insert(:address).hash}
   end
@@ -199,6 +208,45 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesTest do
 
       assert run([%{address_hash: address_hash, block_number: 2}]) == [2]
       assert stored(address_hash) == [{1, 100}, {2, nil}]
+    end
+  end
+
+  describe "run/3 next to the chain head" do
+    test "keeps an unchanged row inside the head margin", %{address_hash: address_hash} do
+      Application.put_env(:explorer, CoinBalances, unchanged_head_margin: 100)
+
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:unfetched_balance, address_hash: address_hash, block_number: @head_block_number - 100)
+      insert(:unfetched_balance, address_hash: address_hash, block_number: @head_block_number - 99)
+
+      assert run([
+               fetched(address_hash, @head_block_number - 100, 100),
+               fetched(address_hash, @head_block_number - 99, 100)
+             ]) == [@head_block_number - 99]
+
+      assert stored(address_hash) == [{1, 100}, {@head_block_number - 99, 100}]
+    end
+
+    test "drops an unchanged row at the head when the margin is zero", %{address_hash: address_hash} do
+      Application.put_env(:explorer, CoinBalances, unchanged_head_margin: 0)
+
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:unfetched_balance, address_hash: address_hash, block_number: @head_block_number)
+
+      assert run([fetched(address_hash, @head_block_number, 100)]) == []
+      assert stored(address_hash) == [{1, 100}]
+    end
+  end
+
+  describe "run/3 on an API instance" do
+    test "keeps unchanged rows", %{address_hash: address_hash} do
+      Application.put_env(:explorer, :mode, :api)
+
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:unfetched_balance, address_hash: address_hash, block_number: 2)
+
+      assert run([fetched(address_hash, 2, 100)]) == [2]
+      assert stored(address_hash) == [{1, 100}, {2, 100}]
     end
   end
 

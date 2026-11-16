@@ -12,8 +12,10 @@ defmodule Indexer.Transform.AddressCoinBalancesTransactionsTest do
     initial_fetcher_env = Application.get_env(:indexer, InternalTransaction)
     initial_supervisor_env = Application.get_env(:indexer, InternalTransactionSupervisor)
     initial_trace_block_ranges = Application.get_env(:indexer, :trace_block_ranges)
+    initial_chain_type = Application.get_env(:explorer, :chain_type)
 
     on_exit(fn ->
+      Application.put_env(:explorer, :chain_type, initial_chain_type)
       Application.put_env(:indexer, InternalTransaction, initial_fetcher_env)
       Application.put_env(:indexer, InternalTransactionSupervisor, initial_supervisor_env)
       Application.put_env(:indexer, :trace_block_ranges, initial_trace_block_ranges)
@@ -99,6 +101,21 @@ defmodule Indexer.Transform.AddressCoinBalancesTransactionsTest do
       Application.put_env(:indexer, :trace_block_ranges, "100..latest")
 
       assert AddressCoinBalances.params_set(%{transactions_params: [transaction_params]}) == MapSet.new([from, to])
+    end
+
+    test "extracts the recipient of a zero-value transaction that is never traced", %{
+      transaction_params: transaction_params,
+      from: from,
+      to: to
+    } do
+      set_internal_transactions_fetcher(false)
+      Application.put_env(:explorer, :chain_type, :zetachain)
+
+      assert AddressCoinBalances.params_set(%{transactions_params: [Map.put(transaction_params, :type, 88)]}) ==
+               MapSet.new([from, to])
+
+      assert AddressCoinBalances.params_set(%{transactions_params: [Map.put(transaction_params, :type, 2)]}) ==
+               MapSet.new([from])
     end
 
     test "extracts the recipient when the transaction has no value field", %{

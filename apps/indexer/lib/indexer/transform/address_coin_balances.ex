@@ -19,7 +19,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
   @burn_address_hash_string burn_address_hash_string()
 
   alias EthereumJSONRPC.Utility.RangesHelper
-  alias Explorer.Chain.TokenTransfer
+  alias Explorer.Chain.{TokenTransfer, Transaction}
 
   def params_set(%{} = import_options) do
     Enum.reduce(import_options, MapSet.new(), &reducer/2)
@@ -237,8 +237,18 @@ defmodule Indexer.Transform.AddressCoinBalances do
 
   defp put_transaction_to_address(acc, _transaction_params, _block_number), do: acc
 
-  defp to_address_balance_may_change?(%{value: 0}, block_number), do: not internal_transactions_indexed?(block_number)
+  defp to_address_balance_may_change?(%{value: 0} = transaction_params, block_number) do
+    not internal_transactions_indexed?(block_number) or non_traceable_transaction?(transaction_params)
+  end
+
   defp to_address_balance_may_change?(_transaction_params, _block_number), do: true
+
+  # Some transactions are never traced although their block is (see
+  # `Explorer.Chain.Transaction.filter_non_traceable_transactions/1`), so value
+  # moved by their nested calls does not show up in internal transactions.
+  defp non_traceable_transaction?(transaction_params) do
+    Transaction.filter_non_traceable_transactions([transaction_params]) == []
+  end
 
   # Internal transactions are fetched only when the fetcher is enabled and the
   # block is inside the trace block ranges. The fetcher's own flag is used, the

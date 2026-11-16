@@ -1553,6 +1553,10 @@ config :indexer, Indexer.Fetcher.InternalTransaction.DeleteQueue,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_DELETE_QUEUE_CONCURRENCY", 1),
   threshold: ConfigHelper.parse_time_env_var("INDEXER_INTERNAL_TRANSACTIONS_DELETE_QUEUE_THRESHOLD", "0s")
 
+config :explorer, Explorer.Chain.Import.Runner.Address.CoinBalances,
+  unchanged_head_margin:
+    ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_UNCHANGED_HEAD_MARGIN", 1_000, min: 0)
+
 coin_balances_batch_size = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_BATCH_SIZE", 100)
 coin_balances_concurrency = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_CONCURRENCY", 10)
 

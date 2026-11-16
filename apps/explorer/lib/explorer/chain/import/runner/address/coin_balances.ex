@@ -11,12 +11,16 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Address.CoinBalance
   alias Explorer.Chain.{Block, Hash, Import, PendingOperationsHelper, Wei}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
 
   # milliseconds
   @timeout 60_000
+
+  # blocks
+  @default_unchanged_head_margin 1_000
 
   @type imported :: [
           %{required(:address_hash) => Hash.Address.t(), required(:block_number) => Block.block_number()}
@@ -135,8 +139,28 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
   # fetched yet. The latter can be checked cheaply only when pending operations
   # are tracked per block, so with per-transaction pending operations nothing is
   # dropped while the internal transactions fetcher is enabled.
+  #
+  # Both conditions are read from the indexer configuration, which an API instance
+  # is not required to share. The on-demand fetchers of an API instance therefore
+  # never drop anything.
   defp unchanged_rejection_enabled? do
-    internal_transactions_fetcher_disabled?() or PendingOperationsHelper.pending_operations_type() == "blocks"
+    Explorer.mode() != :api and
+      (internal_transactions_fetcher_disabled?() or PendingOperationsHelper.pending_operations_type() == "blocks")
+  end
+
+  # The highest block number a balance can be dropped at. Blocks next to the chain
+  # head are imported concurrently and out of order, and a head block that failed
+  # to import is not in `missing_block_ranges` until the next forward scan of the
+  # missing ranges collector. Neither the coin balance placeholders nor the pending
+  # block operation of such a block exist yet, so nothing tells that a row is still
+  # going to show up below a balance fetched at the head. Balances inside the
+  # margin are always written.
+  defp max_droppable_block_number do
+    BlockNumber.get_max() - unchanged_head_margin()
+  end
+
+  defp unchanged_head_margin do
+    Application.get_env(:explorer, __MODULE__, [])[:unchanged_head_margin] || @default_unchanged_head_margin
   end
 
   # The fetcher's own flag is the effective one: it is set when there is no trace
@@ -150,6 +174,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
     existing_values = lock_existing_rows(repo, fetched_changes, timeout)
     batch_values = batch_values(changes_list)
     batch_block_numbers = batch_block_numbers(batch_values)
+    max_droppable_block_number = max_droppable_block_number()
 
     # A row that already has a value is being re-fetched and goes through the upsert.
     # A key that comes with different values in one batch is left to the upsert too.
@@ -158,7 +183,9 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
       |> Enum.uniq_by(&key/1)
       |> Enum.filter(fn change ->
         key = key(change)
-        is_nil(Map.get(existing_values, key)) and Map.fetch!(batch_values, key) != :ambiguous
+
+        change.block_number <= max_droppable_block_number and is_nil(Map.get(existing_values, key)) and
+          Map.fetch!(batch_values, key) != :ambiguous
       end)
 
     repo
